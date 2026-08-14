@@ -5526,7 +5526,9 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
     ] == [
         "scripts/build_options_signal_episode.py",
         "scripts/audit_options_market_memory_context.py",
+        "scripts/audit_options_episode_outcome_coverage.py",
         "engine/options_signal_campaign.py",
+        "engine/options_episode_coverage.py",
     ]
 
     for artifact_id in (

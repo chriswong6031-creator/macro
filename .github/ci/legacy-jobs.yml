@@ -1437,10 +1437,13 @@ jobs:
         # fastapi + httpx: the serving-boundary suite importorskips both and drives
         # FastAPI's TestClient. jsonschema: the read-only operator suite imports
         # Draft202012Validator at module level. pandas/numpy/pyyaml/requests come from
-        # the import-time first-party closure of these ten suites.
-        # No pyarrow/jinja2/plotly/pillow/beautifulsoup4 here: no suite in this lane
-        # imports them and none is needed to import one.
-        run: pip install pytest pandas numpy pyyaml requests fastapi httpx jsonschema boto3
+        # the import-time first-party closure of these ten suites. pyarrow is a real
+        # runtime dependency of B4D-A: query_snapshots imports it lazily while encoding
+        # the deterministic parquet cells exercised by the materializer suite, so an
+        # import-only dependency census does not see it.
+        # No jinja2/plotly/pillow/beautifulsoup4 here: no suite in this lane imports
+        # them and none is needed at runtime.
+        run: pip install pytest pandas numpy pyarrow pyyaml requests fastapi httpx jsonschema boto3
       # Wave 3B-B4D-A adds the three offline seams that turn pinned SEC source objects
       # into filing packages, Company Facts ledgers, and deterministic B4 binding plans
       # (wired 2026-08-02).
