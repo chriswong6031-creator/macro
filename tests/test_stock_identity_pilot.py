@@ -133,6 +133,40 @@ def test_authority_frame_rejects_nulls_and_integer_zero():
         builder._assert_zero_authority_frame(integer_zero, "integer")
 
 
+def test_additive_schema_is_normalized_then_reopened_exactly(tmp_path):
+    frozen = pd.DataFrame(
+        {
+            "when": pd.Series([pd.Timestamp("2020-01-01")], dtype="datetime64[us]"),
+            "label": pd.Series(["sealed"], dtype="str"),
+            "note": pd.Series([None], dtype=object),
+            "authority_can_rank": pd.Series([False], dtype=bool),
+        }
+    )
+    frozen_path = tmp_path / "frozen.parquet"
+    frozen.to_parquet(frozen_path, index=False)
+    candidate = pd.DataFrame(
+        {
+            "when": pd.Series([pd.Timestamp("2026-08-13")], dtype="datetime64[ms]"),
+            "label": ["B"],
+            "note": [None],
+            "authority_can_rank": [False],
+        }
+    )
+    normalized = builder._schema_like(candidate, frozen_path, "candidate")
+    builder._validate_schema_like(normalized, pd.read_parquet(frozen_path), "candidate")
+
+    written = tmp_path / "candidate.parquet"
+    normalized.to_parquet(written, index=False)
+    builder._validate_parquet_schema_like(written, frozen_path, "candidate")
+
+    wrong = normalized.copy()
+    wrong["authority_can_rank"] = 0
+    wrong_path = tmp_path / "wrong.parquet"
+    wrong.to_parquet(wrong_path, index=False)
+    with pytest.raises(SystemExit, match="serialized logical-type drift"):
+        builder._validate_parquet_schema_like(wrong_path, frozen_path, "wrong")
+
+
 def test_b_only_dossier_overrides_disclose_rank_and_open_gap_semantics():
     generic = "\n".join(
         (

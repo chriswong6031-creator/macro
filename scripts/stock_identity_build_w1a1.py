@@ -417,8 +417,9 @@ def _assert_zero_authority_frame(frame: pd.DataFrame, label: str) -> None:
             raise SystemExit(f"{label}: {column} is missing or not all-false")
 
 
-def _schema_like(frame: pd.DataFrame, frozen_path: Path, label: str) -> pd.DataFrame:
-    frozen = pd.read_parquet(frozen_path)
+def _validate_schema_like(
+    frame: pd.DataFrame, frozen: pd.DataFrame, label: str
+) -> None:
     frozen_columns = list(frozen.columns)
     missing = [c for c in frozen_columns if c not in frame.columns]
     extra = [c for c in frame.columns if c not in frozen_columns]
@@ -431,7 +432,45 @@ def _schema_like(frame: pd.DataFrame, frozen_path: Path, label: str) -> pd.DataF
     }
     if type_drift:
         raise SystemExit(f"{label} logical-type drift: {type_drift}")
-    return frame[frozen_columns]
+
+
+def _schema_like(frame: pd.DataFrame, frozen_path: Path, label: str) -> pd.DataFrame:
+    """Normalize one additive row set to the sealed combined-artifact schema."""
+    frozen = pd.read_parquet(frozen_path)
+    frozen_columns = list(frozen.columns)
+    missing = [c for c in frozen_columns if c not in frame.columns]
+    extra = [c for c in frame.columns if c not in frozen_columns]
+    if missing or extra:
+        raise SystemExit(f"{label} schema drift: missing={missing}, extra={extra}")
+    out = frame[frozen_columns].copy()
+    for column, target_dtype in frozen.dtypes.items():
+        try:
+            out[column] = out[column].astype(target_dtype)
+        except (TypeError, ValueError) as exc:
+            raise SystemExit(
+                f"{label}: cannot normalize {column} to {target_dtype}: {exc}"
+            ) from exc
+    _validate_schema_like(out, frozen, label)
+    return out
+
+
+def _validate_parquet_schema_like(
+    path: Path, frozen_path: Path, label: str
+) -> None:
+    """Require serialized column order and Arrow logical types to match W1."""
+    import pyarrow.parquet as pq
+
+    candidate = pq.read_schema(path)
+    frozen = pq.read_schema(frozen_path)
+    if candidate.names != frozen.names:
+        raise SystemExit(f"{label}: serialized column order drifted")
+    type_drift = {
+        name: (str(candidate.field(name).type), str(frozen.field(name).type))
+        for name in frozen.names
+        if candidate.field(name).type != frozen.field(name).type
+    }
+    if type_drift:
+        raise SystemExit(f"{label}: serialized logical-type drift: {type_drift}")
 
 
 def _gold_markdown_with_annotation() -> str:
@@ -873,13 +912,13 @@ def _validate_staged(stage_root: Path, receipt: dict[str, Any], staged_gold: Pat
         (OUTPUT_PATHS[2], "B states"),
         (OUTPUT_PATHS[3], "B episodes"),
     ):
-        reopened = pd.read_parquet(stage_root / relative)
         frozen_path = {
             OUTPUT_PATHS[1]: DATA / "fingerprints" / "pilot_fingerprint_v0.parquet",
             OUTPUT_PATHS[2]: DATA / "state" / "pilot_state_daily.parquet",
             OUTPUT_PATHS[3]: DATA / "episodes" / "pilot_episode_catalog_v0.parquet",
         }[relative]
-        _schema_like(reopened, frozen_path, label)
+        _validate_parquet_schema_like(stage_root / relative, frozen_path, label)
+        reopened = pd.read_parquet(stage_root / relative)
         _assert_zero_authority_frame(reopened, label)
         if set(reopened["symbol"].astype(str)) != {SYMBOL}:
             raise SystemExit(f"{label}: serialized rows are not B-only")
