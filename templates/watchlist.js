@@ -114,6 +114,26 @@
   function te(en, zh) {
     return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + '</span>';
   }
+  /* Sector / theme names reach this page as ONE raw English string per index record,
+     so unlike every other word here they have no zh twin to pair. window.WL_SECTOR_ZH
+     is the build's copy of the glossary (engine.i18n.sector_lexicon), baked into
+     watchlist.html.j2. Absent map, or a name it does not carry, degrades to the
+     English — the same fallback td() takes server-side, and the state this page is
+     in for the minutes between a JS deploy and the next render bake.
+     secZh() is the raw zh string (for matching); secCell() is the bilingual pair. */
+  function secZh(s) {
+    if (!s) return '';
+    var m = window.WL_SECTOR_ZH;
+    return (m && Object.prototype.hasOwnProperty.call(m, s) && m[s]) || String(s);
+  }
+  function secCell(s) { return te(esc(s), esc(secZh(s))); }
+  /* Sort key for the sector column. It has to follow the LABEL, not the English
+     behind it: the glossary is many-to-one across the two taxonomies the libraries
+     emit (Materials + Basic Materials are both 原材料, Consumer Discretionary +
+     Consumer Cyclical are both 可选消费), so an English-keyed sort renders as two
+     separate runs of what a zh reader reads as one sector. `~` is kept as the
+     no-sector sentinel exactly as before — only the string it competes with moves. */
+  function secSortKey(s) { return (isZh() ? secZh(s) : s) || '~'; }
   function el(id) { return document.getElementById(id); }
   // base64url over a UTF-8 JSON string (notes may be non-ASCII)
   function b64enc(str) {
@@ -272,7 +292,7 @@
     var ord = blob.order;
     rows.sort(function (a, b) {
       if (sort === 'name') return a.n.localeCompare(b.n);
-      if (sort === 'sector') return (a.s || '~').localeCompare(b.s || '~') || a.t.localeCompare(b.t);
+      if (sort === 'sector') return secSortKey(a.s).localeCompare(secSortKey(b.s)) || a.t.localeCompare(b.t);
       if (sort === 'added') return (b.added || '').localeCompare(a.added || '');
       if (sort === 'signal') {
         var ra = a.st in STATE_RANK ? STATE_RANK[a.st] : 99;
@@ -325,7 +345,7 @@
       '<div class="wl-sig">' +
         '<span class="state ' + stc + '">' + esc(lbl) + '</span>' +
         (act ? '<span class="wl-action muted">' + esc(act) + '</span>' : '') +
-        (r.s ? '<span class="wl-sector muted">' + esc(r.s) + '</span>' : '') +
+        (r.s ? '<span class="wl-sector muted">' + secCell(r.s) + '</span>' : '') +
       '</div>' +
       '<div class="wl-enrich" data-enrich="' + safe + '"></div>' +
     '</div>';
@@ -794,7 +814,10 @@
       rows = rows.filter(function (r) {
         return r.t.toLowerCase().indexOf(v) >= 0 ||
                (r.n || '').toLowerCase().indexOf(v) >= 0 ||
-               (r.s || '').toLowerCase().indexOf(v) >= 0;
+               (r.s || '').toLowerCase().indexOf(v) >= 0 ||
+               // a zh reader types the label they can SEE (板块 filter box); matching
+               // only the English behind it makes the box look broken to them
+               secZh(r.s).toLowerCase().indexOf(v) >= 0;
       });
     }
     var k = sort.key, d = sort.dir;
@@ -802,7 +825,7 @@
       var r = 0;
       if (k === 'sym') r = a.t.localeCompare(b.t);
       else if (k === 'name') r = a.n.localeCompare(b.n);
-      else if (k === 'sector') r = (a.s || '~').localeCompare(b.s || '~');
+      else if (k === 'sector') r = secSortKey(a.s).localeCompare(secSortKey(b.s));
       else if (k === 'added') r = (b.added || '').localeCompare(a.added || '');
       else if (k === 'signal') {
         var ra = a.st in STATE_RANK ? STATE_RANK[a.st] : 99;
@@ -848,7 +871,7 @@
       ? '<span class="flag ' + det.flag[0] + '">' + te(esc(det.flag[1]), esc(det.flag[2])) + '</span>'
       : '<span class="dash">—</span>';
     var evt = det && det.evt ? det.evt : '<span class="dash">—</span>';
-    var sect = r.s ? '<span class="mut" style="font-size:12px">' + esc(r.s) + '</span>'
+    var sect = r.s ? '<span class="mut" style="font-size:12px">' + secCell(r.s) + '</span>'
                    : '<span class="dash">—</span>';
     return '<tr data-t="' + esc(r.t) + '"' + (openRows[r.t] ? ' aria-expanded="true"' : '') + '>' +
       '<td class="c-sym"><b>' + esc(r.t) + '</b><span class="co">' + esc(r.n) + '</span></td>' +
@@ -878,7 +901,7 @@
     var det = DETAIL[r.t];
     var cells = [];
     cells.push('<div><span class="k">' + te('Day', '当日') + '</span>' + dayCell() + '</div>');
-    if (r.s) cells.push('<div><span class="k">' + te('Sector / theme', '行业 / 主题') + '</span>' + esc(r.s) + '</div>');
+    if (r.s) cells.push('<div><span class="k">' + te('Sector / theme', '行业 / 主题') + '</span>' + secCell(r.s) + '</div>');
     if (det && det.summary) {
       cells.push('<div style="grid-column:1/-1"><span class="k">' + te('Read', '解读') + '</span>' + esc(det.summary) + '</div>');
     } else if (window.SD && det === undefined) {
@@ -1568,7 +1591,8 @@
       sItems = searchList.filter(function (x) {
         return x.t.toLowerCase().indexOf(v) === 0 ||
                (x.n || '').toLowerCase().indexOf(v) >= 0 ||
-               (x.s || '').toLowerCase().indexOf(v) >= 0;
+               (x.s || '').toLowerCase().indexOf(v) >= 0 ||
+               secZh(x.s).toLowerCase().indexOf(v) >= 0;
       }).sort(function (a, b) {
         var ae = a.t.toLowerCase() === v ? -1 : 0, be = b.t.toLowerCase() === v ? -1 : 0;
         if (ae !== be) return ae - be;
@@ -1586,7 +1610,7 @@
       sugg.innerHTML = sItems.map(function (x, i) {
         var inList = has(x.t) ? ' ✓' : '';
         return '<div data-i="' + i + '"><b>' + esc(x.t) + '</b>' +
-          '<small>' + esc(x.n || '') + (x.s ? ' · ' + esc(x.s) : '') + '</small>' +
+          '<small>' + esc(x.n || '') + (x.s ? ' · ' + secCell(x.s) : '') + '</small>' +
           '<span class="mut" style="font-size:11px">' + esc(inList) + '</span></div>';
       }).join('');
       sugg.style.display = sItems.length ? 'block' : 'none';
@@ -1782,7 +1806,10 @@
     render: render,
     hydrate: hydrate,
     detail: function (t) { return DETAIL[t]; },
-    idxRec: idxRec, tickerName: tickerName, tickerSt: tickerSt
+    idxRec: idxRec, tickerName: tickerName, tickerSt: tickerSt,
+    // the sector/theme vocabulary, shared so portfolio.js and watchlist_risk.js
+    // never grow a SECOND lookup that can drift out of step with this one
+    secZh: secZh, secCell: secCell
   };
 
   // ---- init ---------------------------------------------------------------
@@ -2028,7 +2055,10 @@
       stateSig: function () { return stateSig(blob); },
       parseBook: parseBook,
       weightsOf: weightsOf,
-      stageOf: stageOf
+      stageOf: stageOf,
+      secZh: secZh,
+      secCell: secCell,
+      secSortKey: secSortKey
     };
   }
 })();

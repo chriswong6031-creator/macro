@@ -696,6 +696,13 @@ _ACTION_VALUES = frozenset({
     "wait", "enter", "hold", "trim", "trail", "exit", "invalidated",
 })
 
+#: Actions that read as a CURRENT instruction ("do this now").  Barred whenever
+#: the state's ``price_frame`` is not proven current: a stale or unavailable
+#: closing print must never carry more action authority than a fresh one.
+#: "invalidated" is exempt — it mirrors a terminal phase proven by a real print
+#: that is already inside the frame, not a claim about the present tape.
+_STALE_BARRED_ACTIONS = frozenset({"wait", "enter", "hold", "trim", "trail", "exit"})
+
 MANAGEMENT_CONFIDENCE_CEILING = 92   # honest uncertainty cap (mirrors MomoEdge)
 
 
@@ -758,6 +765,17 @@ def validate_management_state(d: dict) -> list[str]:
     action = d.get("recommended_action", "")
     if action and action not in _ACTION_VALUES:
         errors.append(f"recommended_action {action!r} not in {sorted(_ACTION_VALUES)}")
+    # Stale-frame action safety: a state stamped with a price_frame that is not
+    # proven current must not carry a current-looking instruction.  Fail-closed:
+    # a malformed price_frame bars instructions exactly like a stale one.
+    frame = d.get("price_frame")
+    if frame is not None:
+        frame_state = frame.get("state") if isinstance(frame, dict) else None
+        if frame_state != "current" and action in _STALE_BARRED_ACTIONS:
+            errors.append(
+                f"recommended_action {action!r} is barred on a stale price frame "
+                "(no current closing print backs it)"
+            )
     mc = d.get("management_confidence")
     if mc is not None:
         try:

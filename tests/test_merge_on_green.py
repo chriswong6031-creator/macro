@@ -402,7 +402,10 @@ def _run(
 def _required_proof_runs(*, conclusion: str = "success") -> list[dict]:
     return [
         _run(name, conclusion=conclusion)
-        for name in sorted(MOG.REQUIRED_CI_ANCHORS | {MOG.REQUIRED_FENCE_ANCHOR})
+        for name in sorted(
+            MOG.REQUIRED_CI_ANCHORS
+            | {MOG.REQUIRED_CI_GATE, MOG.REQUIRED_FENCE_ANCHOR}
+        )
     ]
 
 
@@ -720,6 +723,19 @@ def test_a_scheduled_pack_red_still_blocks_the_anchor_verdict():
     assert "ci-pack-3 (failure)" in names
 
 
+def test_fences_cannot_prove_a_head_before_ci_gate_registers():
+    """Regression for the exact #5555 unproven-merge race.
+
+    fences.yml concluded first, while ci.yml still had no check run registered on
+    the head.  A conditional ci-gate requirement let fence-pack alone read clean.
+    The aggregate is mandatory even while absent, so this window is incomplete.
+    """
+    runs = [_run("fence-pack", conclusion="success")]
+    verdict, names = MOG.proof_anchor_verdict(runs)
+    assert verdict == "incomplete"
+    assert names == ["ci-gate"]
+
+
 def test_a_skipped_plan_and_gate_is_unproven_not_clean():
     """#4779 survives the conversion: `skipped` is still not a pass.
 
@@ -820,7 +836,10 @@ def _fake_api(
         )
         if template is not None:
             present = {str(run.get("name") or "") for run in runs}
-            for name in sorted(MOG.REQUIRED_CI_ANCHORS | {MOG.REQUIRED_FENCE_ANCHOR}):
+            for name in sorted(
+                MOG.REQUIRED_CI_ANCHORS
+                | {MOG.REQUIRED_CI_GATE, MOG.REQUIRED_FENCE_ANCHOR}
+            ):
                 if name in present:
                     continue
                 anchor = dict(template)
@@ -1402,6 +1421,26 @@ def test_a_pending_pull_request_writes_nothing(monkeypatch, capsys):
     )
     assert MOG.sweep_pull("acme/widgets", _pull(), "read", "write", _freshness()) == "pending"
     assert [call for call in calls if call[0] != "GET"] == [], "waiting must be side-effect free"
+
+
+def test_fence_only_head_is_incomplete_and_never_reaches_merge(monkeypatch, capsys):
+    """End-to-end regression for #5555's exact published-check shape."""
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("fence-pack", conclusion="success")],
+            }
+        },
+    )
+
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(5555), "read", "write", _freshness())
+        == "incomplete"
+    )
+    assert not [call for call in calls if call[1].endswith("/merge")]
+    assert "ci-gate" in capsys.readouterr().out
 
 
 def test_a_red_pull_request_is_labeled_and_commented_exactly_once(monkeypatch, capsys):
@@ -3828,11 +3867,9 @@ def test_refresh_budget_refuses_branch_writes_without_serialized_authority(
     "active,expected_allowance",
     [
         (0, MOG.MAX_IN_FLIGHT_PR_PROOFS),
-        # Run 31736859799: 7 indexed / cap 8 used to leave 1 slot. That is the
-        # measured jam — raise to the stale-green batch floor, not leftover 1.
-        (MOG.MAX_IN_FLIGHT_PR_PROOFS - 1, MOG.HIGH_LOAD_FAIR_REFRESHES),
-        (MOG.MAX_IN_FLIGHT_PR_PROOFS, MOG.HIGH_LOAD_FAIR_REFRESHES),
-        (34, MOG.HIGH_LOAD_FAIR_REFRESHES),
+        (MOG.MAX_IN_FLIGHT_PR_PROOFS - 1, 1),
+        (MOG.MAX_IN_FLIGHT_PR_PROOFS, 0),
+        (34, 0),
         (None, 0),
     ],
 )
@@ -3863,8 +3900,8 @@ def test_repo_wide_active_proofs_clamp_update_branch_capacity(
 @pytest.mark.parametrize(
     "reservation_count,expected_allowance,requires_lease",
     [
-        (0, MOG.HIGH_LOAD_FAIR_REFRESHES, False),
-        (1, MOG.HIGH_LOAD_FAIR_REFRESHES, False),
+        (0, 1, True),
+        (1, 0, False),
     ],
     ids=("owner-run-indexed", "owner-run-not-yet-indexed"),
 )
@@ -6870,7 +6907,7 @@ def test_the_DEFAULT_budget_caps_refreshes_at_the_constant(monkeypatch):
     them green while the shipped sweeper refreshed the whole backlog in one pass —
     which is the exact 84-CI-runs-from-one-sweep failure this cap exists to prevent.
     """
-    assert MOG.HIGH_LOAD_FAIR_REFRESHES == 8
+    assert MOG.HIGH_LOAD_LEASE_THRESHOLD == 1
     assert MOG.SweepBudget("read").max_refreshes == MOG.MAX_REFRESHES_PER_SWEEP
     assert (
         MOG.SweepBudget("read").max_refresh_attempts

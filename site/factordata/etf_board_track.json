@@ -1,0 +1,68 @@
+{
+ "schema": "etf_board_track.v1",
+ "generated_at": "2026-08-14T05:28:00Z",
+ "as_of": "2026-08-14",
+ "first_board": "2026-08-14",
+ "benchmark": "SPY",
+ "horizons": [
+  5,
+  21,
+  63
+ ],
+ "n_boards_logged": 1,
+ "n_snapshot_rows": 20,
+ "n_graded_total": 0,
+ "collecting": true,
+ "per_horizon": {
+  "h5": {
+   "horizon": 5,
+   "n_rows": 20,
+   "n_graded": 0,
+   "n_pending": 20,
+   "n_immature": 18,
+   "n_unpriceable": 2,
+   "n_boards": 0,
+   "n_names": 0,
+   "n_vs_bench": 0,
+   "n_ahead": null,
+   "median_excess_bench": null,
+   "mean_excess_bench": null,
+   "median_ret": null,
+   "state": "collecting"
+  },
+  "h21": {
+   "horizon": 21,
+   "n_rows": 20,
+   "n_graded": 0,
+   "n_pending": 20,
+   "n_immature": 18,
+   "n_unpriceable": 2,
+   "n_boards": 0,
+   "n_names": 0,
+   "n_vs_bench": 0,
+   "n_ahead": null,
+   "median_excess_bench": null,
+   "mean_excess_bench": null,
+   "median_ret": null,
+   "state": "collecting"
+  },
+  "h63": {
+   "horizon": 63,
+   "n_rows": 20,
+   "n_graded": 0,
+   "n_pending": 20,
+   "n_immature": 18,
+   "n_unpriceable": 2,
+   "n_boards": 0,
+   "n_names": 0,
+   "n_vs_bench": 0,
+   "n_ahead": null,
+   "median_excess_bench": null,
+   "mean_excess_bench": null,
+   "median_ret": null,
+   "state": "collecting"
+  }
+ },
+ "rows": [],
+ "source_ledger": "data/etf_board_ledger/"
+}

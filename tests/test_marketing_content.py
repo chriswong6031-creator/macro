@@ -157,6 +157,27 @@ def test_gate_rejects_low_confidence():
     assert is_postable_signal(weak) is False
 
 
+def test_gate_rejects_stale_price_frame():
+    # Stale-frame action safety: a row stamped with a non-current price_frame
+    # has no current closing print behind it (halt/delisting/feed gap) — never
+    # marketable as a live signal, whatever its phase says.
+    from engine.marketing.content_studio import is_postable_signal
+    ok = dict(_SAMPLE_PLANS[0])
+    assert is_postable_signal(ok) is True  # control: same row, no stamp
+    assert is_postable_signal(
+        dict(ok, price_frame={"state": "stale", "last_close_date": "2026-06-10"})
+    ) is False
+    assert is_postable_signal(
+        dict(ok, state={"price_frame": {"state": "stale"}})
+    ) is False
+    # Fail-closed on a malformed stamp…
+    assert is_postable_signal(dict(ok, price_frame="stale")) is False
+    # …while a frame proven current keeps full eligibility.
+    assert is_postable_signal(
+        dict(ok, price_frame={"state": "current", "lag": 0})
+    ) is True
+
+
 def test_gate_rejects_dead_actions():
     from engine.marketing.content_studio import is_postable_signal
     for action in ("exit", "trim", "reduce", "close", "avoid"):

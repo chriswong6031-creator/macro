@@ -10,15 +10,36 @@ lifecycle_state + lifecycle_counts and the page quotes them; nothing is re-deriv
 client-side. This script exists so the mockup's numbers are real and reconcile.
 """
 import json
+import pathlib
 import subprocess
 import collections
 import datetime
 
-REPO = "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/prophet-board-mockup-gate-b3966f"
+# The repo root, resolved from THIS FILE. It used to be an absolute path to a
+# different session's worktree, which stopped existing the moment that session
+# ended — so the generator for a frozen reference could not be run at all.
+# tools/ -> us_stocks -> institutionalize -> refs -> mockups -> repo root
+REPO = str(pathlib.Path(__file__).resolve().parents[5])
+
+# THE PAYLOAD PIN. This was `origin/main`, which is not a version — it is a
+# moving ref, and this repo takes ~24 [skip ci] nightly/wire commits every two
+# hours. A rebake therefore silently replaced the population the review was
+# measuring: the count law (62+95+0+0+2 = 159), the reachability union, the
+# stance mix, the chartless share and every crop would all move, and the next
+# review cycle could no longer compare against the last one. A frozen reference
+# fixture has to be reproducible, so the source is an immutable SHA.
+#
+# 6a809245 carries exactly the vintages board-data.js was baked from:
+#   site/prophet/index.json          asof 2026-08-13  (open 159 / active 179)
+#   site/factordata/us_standouts.json as_of 2026-08-12 (70 buy rows, 8 themes)
+#   site/factordata/us_track_ledger.json as_of 2026-08-07 (scored, 522 rows)
+# Moving this pin is a deliberate re-baseline, never a routine refresh: it
+# changes the population the artifact is judged on.
+PIN = "6a80924547c07c33465a6950a7d0968379699fc3"
 
 
 def git_json(path):
-    out = subprocess.check_output(["git", "show", f"origin/main:{path}"], cwd=REPO)
+    out = subprocess.check_output(["git", "show", f"{PIN}:{path}"], cwd=REPO)
     return json.loads(out)
 
 
@@ -209,10 +230,76 @@ def assert_projection_tracks_engine():
     print("stance projection tracks engine buckets: OK (12 statuses, 5 verbs, no TRIM)")
 
 
+def board_staleness(idx, su):
+    """Mirror production's freshness producer (PRC-305).
+
+    `_compute_board_staleness()` (scripts/build_stock_library.py:1469-1624,
+    called :5734) emits sessions_behind / delayed / unknown into
+    wide["staleness"], which reaches the board template as `_su.staleness`.
+    The board's RANKING runs on the screener's prices, so the vintage that
+    matters is us_standouts.as_of measured against the plan book's asof.
+    `delayed` is production's own threshold: two sessions or more.
+    """
+    price_through = su.get("as_of")
+    asof = idx.get("asof")
+    if not price_through or not asof:
+        return {"price_through": price_through, "sessions_behind": None,
+                "delayed": False, "unknown": True}
+    a = datetime.date.fromisoformat(str(asof)[:10])
+    p = datetime.date.fromisoformat(str(price_through)[:10])
+    behind, cur = 0, a
+    while cur > p and behind < 40:                 # business sessions, Mon-Fri
+        cur -= datetime.timedelta(days=1)
+        if cur.weekday() < 5:
+            behind += 1
+    return {"price_through": price_through, "sessions_behind": behind,
+            "delayed": behind >= 2, "unknown": False}
+
+
+def track_record(led):
+    """Vendor the graded record from its real producer (PRC-307).
+
+    engine/track_scoring.summarize() (track_scoring.py:330-392) ->
+    emit_ledger() (scripts/grade_us_board.py:2625) ->
+    site/factordata/us_track_ledger.json. Only the SUMMARY travels: the 522
+    per-episode rows are not a board-surface fact, and the page must not be
+    able to print a number the ledger did not compute.
+
+    The interval fields are NOT optional decoration — the page is required to
+    print the win rate and its confidence interval together, plus the matured
+    share and the window, so a 58.6% on 18 boards cannot read as a settled edge.
+    """
+    if not led or led.get("state") != "scored":
+        return None
+    s = led.get("summary") or {}
+    meta = led.get("meta") or {}
+    hist = meta.get("history") or {}
+    surv = meta.get("survivorship") or {}
+    bench = led.get("bench") or {}
+    return {
+        "as_of": led.get("as_of"),
+        "win_pct": s.get("win_pct"),
+        "ci_lo_pct": s.get("ci_lo_pct"), "ci_hi_pct": s.get("ci_hi_pct"),
+        "expectancy_pct": s.get("expectancy_pct"),
+        "exp_lo_pct": s.get("exp_lo_pct"), "exp_hi_pct": s.get("exp_hi_pct"),
+        "median_pct": s.get("median_pct"),
+        "profit_factor": s.get("profit_factor"),
+        "median_hold": s.get("median_hold"), "horizon": s.get("horizon"),
+        "n_matured": s.get("n_matured"), "n_inflight": s.get("n_inflight"),
+        "n_skipped_no_price": s.get("n_skipped_no_price"),
+        "n_total": meta.get("n_total"),
+        "n_boards": hist.get("n_boards"), "first_board": hist.get("first_board"),
+        "last_board": hist.get("last_board"),
+        "unscored_published": bool(surv.get("unscored_rows_published")),
+        "bench": bench.get("code"), "bench_en": bench.get("en"), "bench_zh": bench.get("zh"),
+    }
+
+
 def main():
     assert_projection_tracks_engine()
     idx = git_json("site/prophet/index.json")
     su = git_json("site/factordata/us_standouts.json")
+    led = git_json("site/factordata/us_track_ledger.json")
     # The ⚡ trigger's REAL producer: membership in top_setups.buy means a trigger
     # exists; `signal.tier_cascade == "T3"` is the imminent tier. This is what
     # dashboard.html.j2:16187-16189 reads. Trigger recency is NOT inferable from
@@ -370,6 +457,10 @@ def main():
             for t in (su.get("themes_in_favour") or [])
         ],
         "themes_asof": su.get("as_of"),
+        # PRC-305 — the freshness state, in production's own producer shape.
+        "staleness": board_staleness(idx, su),
+        # PRC-307 — the graded record, from us_track_ledger.json.
+        "track": track_record(led),
     }
 
     out = (

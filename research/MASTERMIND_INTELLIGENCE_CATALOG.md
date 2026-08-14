@@ -261,11 +261,38 @@ Declared horizons that have produced **zero** verdicts at their own ruler: `rada
 `altdata`/`altdata_mid`/`altdata_slow` (63), `policy` (126), `narrative_source_call` (28),
 `whitehouse` (7 — graded only at 1/3/4/5).
 
-**Finding C-3.** *No claim family in the Universal Scoreboard has produced a single verdict at
-its own declared horizon.* The corpus began 2026-06-15; 63 trading days had not elapsed by
-2026-08-12. This is an **accrual fact, not a defect** — but it means every hit rate currently
-computable from this store is off-horizon, and reading one as a family's record is precisely
-what `DNR:KILL-OFFHORIZON-VERDICTS` forbids.
+**Finding C-3 (amended 2026-08-13, P0b).** *No claim family in the Universal Scoreboard has
+produced a single verdict at its own declared horizon* as of the 2026-08-12 snapshot above. That
+is **only partly** an accrual fact — it was two different things wearing one description.
+
+For `radar` (63), `altdata_mid`/`altdata_slow` (63) and `policy` at its 84/90/126d rulers, it
+genuinely IS an accrual fact: 63 is already a `GRADE_HORIZONS` rung and the >63 rulers are
+correctly out of the live nightly grader's reach by design (`config/ruling_graph.yml` ruling
+`LH-U6` forbids extending `GRADE_HORIZONS` past 63d there) — those own-ruler verdicts either
+accrue with time or stay off-render/research scope, exactly as intended.
+
+For `policy` at its 30/42/45/60d rulers, `narrative_source_call` (26/27/28d) and `whitehouse`
+(6/7d) it was **not** an accrual fact — it was a defect in `engine/qledger.py::in_scope_horizons`.
+That function only ever graded a claim at a horizon drawn from the fixed ladder
+`GRADE_HORIZONS = (5, 21, 63)`; a claim whose own ruler landed off that ladder — even well below
+its 63d ceiling — was graded at the ladder rungs beneath it and **never** at its own declared
+number, no matter how much time passed. On the live corpus (`data/qledger/claims.jsonl`, 46,630 claims), 12 family/horizon pairs could
+NEVER be read at their own declared ruler before this PR: `policy` @ 30/42/45/60/84/90/126d,
+`narrative_source_call` @ 26/27/28d, `whitehouse` @ 6/7d. Of those, 9 pairs sit at or below the
+63d ceiling — `policy` @ 30 (2 claims), 42 (5), 45 (1), 60 (7); `narrative_source_call` @ 26 (2),
+27 (26), 28 (303); `whitehouse` @ 6 (4), 7 (5) — 355 claims (0.76% of the corpus) that would have
+sat at UNGRADED-at-their-own-ruler forever with no code change.
+
+P0b (this PR) closes that gap for every ruler `<= 63`: `in_scope_horizons` now always includes a
+claim's own declared horizon at or below the ladder's ceiling, additively — no existing grade row
+changes shape, the 355 affected claims simply gain one further row apiece once matured (~0.6%
+growth on the ~16 MB `data/qledger/grades.jsonl` store). The remaining 3 of the 12 pairs —
+`policy` @ 84/90/126 — stay unreachable in the live grader because their ruler sits *above* the
+63d ceiling, which is the LH-U6 boundary, not an oversight.
+
+Either way, every hit rate currently computable from this store remains off-horizon for now
+(63 trading days had not elapsed since the 2026-06-15 corpus start as of 2026-08-12), and reading
+one as a family's settled record is still precisely what `DNR:KILL-OFFHORIZON-VERDICTS` forbids.
 
 ### 4.4 What the directional record actually says, read legally
 

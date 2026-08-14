@@ -1,23 +1,23 @@
 {
   "schema": "stage_context.v1",
-  "asof": "2026-08-13",
-  "data_session": "2026-08-12",
-  "built": "2026-08-13T12:46:53Z",
+  "asof": "2026-08-14",
+  "data_session": "2026-08-13",
+  "built": "2026-08-14T04:35:04Z",
   "is_context_only": true,
   "display_only": true,
   "disclaimer": "Context only — stage classification display, never a signal or sizing input.",
   "counts": {
     "total": 2735,
     "stage1": 141,
-    "stage2": 1564,
-    "stage2_fresh": 369,
-    "stage3": 159,
+    "stage2": 1563,
+    "stage2_fresh": 368,
+    "stage3": 160,
     "stage4": 871,
     "too_young": 350,
-    "new_today": 2
+    "new_today": 0
   },
   "market": {
-    "pct_stage2": 57.2,
+    "pct_stage2": 57.1,
     "pct_stage4": 31.8,
     "weather": "advancing",
     "spy_stage": 2,
@@ -28,7 +28,7 @@
       "ticker": "WYFI",
       "company": "Whitefiber Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -65,100 +65,6 @@
       "sata_change_1w": 0,
       "stage_detailed": "2X_catch_price_above_ma",
       "industry_percentile": null
-    },
-    {
-      "ticker": "KRRO",
-      "company": "Korro Bio Inc",
-      "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
-      "stage": 2,
-      "weeks_in_stage": 6,
-      "fresh": true,
-      "sga_score": 67,
-      "ma30_slope_pct5w": 5.615,
-      "pct_vs_ma30": 9.56,
-      "mansfield_rs": -30.98,
-      "vol_ratio": 0.79,
-      "event": "trendline_recapture",
-      "gate_tier": "T2",
-      "blackout": false,
-      "arc_pos": 0.325,
-      "earnings": {
-        "present": false,
-        "sentiment": null,
-        "performance": null,
-        "tone_word": null,
-        "tags": [],
-        "quarter": null,
-        "summary": null
-      },
-      "why": [
-        "Early in its climb — 6 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 6 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 2.5491,
-      "atr_ext": 0.454,
-      "atr_pct_price": 0.19239,
-      "sata_score": 4,
-      "sata_change_1w": 0,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": 14.1
-    },
-    {
-      "ticker": "VSEC",
-      "company": "VSE Corporation",
-      "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
-      "stage": 2,
-      "weeks_in_stage": 8,
-      "fresh": true,
-      "sga_score": 64,
-      "ma30_slope_pct5w": 1.899,
-      "pct_vs_ma30": 8.89,
-      "mansfield_rs": 3.89,
-      "vol_ratio": 0.78,
-      "event": "trendline_recapture",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.35,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.8,
-        "performance": 8.5,
-        "tone_word": "confident",
-        "tags": [
-          "beat_and_raise",
-          "guidance_raised",
-          "margin_expansion",
-          "demand_acceleration",
-          "new_product"
-        ],
-        "quarter": "Q2",
-        "summary": "VSE reported record Q2 FY2026 revenue of $449 million, up 65% year-over-year with 14% organic growth, and record adjusted EBITDA of $86 million, up 98%, with margin expanding 320 bps to 19.2%. The quarter benefitted from the PAG and NorthStar acquisitions, and management raise…"
-      },
-      "why": [
-        "Early in its climb — 8 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 8 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 26.0387,
-      "atr_ext": 0.684,
-      "atr_pct_price": 0.11935,
-      "sata_score": 5,
-      "sata_change_1w": 1,
-      "stage_detailed": "2X_catch_price_above_ma",
-      "industry_percentile": 51.9
     },
     {
       "ticker": "SILA",
@@ -220,7 +126,7 @@
       "ticker": "HEI",
       "company": "HEICO Corporation",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -279,7 +185,7 @@
       "ticker": "BSVN",
       "company": "Bank7 Corp",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -363,7 +269,7 @@
       "ticker": "HPK",
       "company": "HighPeak Energy Inc",
       "sector": "Energy",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -410,7 +316,7 @@
       "ticker": "CRNX",
       "company": "Crinetics Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -466,7 +372,7 @@
       "ticker": "HOV",
       "company": "Hovnanian Enterprises Inc",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -508,7 +414,7 @@
       "ticker": "ITIC",
       "company": "Investors Title Co",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -605,7 +511,7 @@
       "ticker": "NKTR",
       "company": "Nektar Therapeutics",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -616,7 +522,7 @@
       "vol_ratio": 0.69,
       "event": "pullback_resume",
       "gate_tier": null,
-      "blackout": true,
+      "blackout": false,
       "arc_pos": 0.325,
       "earnings": {
         "present": false,
@@ -629,13 +535,11 @@
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Earnings soon — wait, don't chase"
+        "Trading above its 30-week line — the trend is with it"
       ],
       "why_zh": [
         "上升初期 — 已上行 6 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "财报临近 — 先等待，不要追高"
+        "位于 30 周均线之上 — 趋势向好"
       ],
       "atr_14w": 7.5121,
       "atr_ext": 1.226,
@@ -649,7 +553,7 @@
       "ticker": "AGEN",
       "company": "Agenus Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -691,7 +595,7 @@
       "ticker": "ATAI",
       "company": "AtaiBeckley Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -702,7 +606,7 @@
       "vol_ratio": 2.66,
       "event": "pullback_resume",
       "gate_tier": null,
-      "blackout": true,
+      "blackout": false,
       "arc_pos": 0.325,
       "earnings": {
         "present": false,
@@ -715,13 +619,11 @@
       },
       "why": [
         "Early in its climb — 6 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Earnings soon — wait, don't chase"
+        "Already stretched well above its 30-week line — may need a rest"
       ],
       "why_zh": [
         "上升初期 — 已上行 6 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "财报临近 — 先等待，不要追高"
+        "已明显高于 30 周均线 — 可能需要回踩"
       ],
       "atr_14w": 0.6674,
       "atr_ext": 4.178,
@@ -735,7 +637,7 @@
       "ticker": "FRD",
       "company": "Friedman Industries Inc",
       "sector": "Basic Materials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -828,7 +730,7 @@
       "ticker": "ZVRA",
       "company": "Zevra Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -927,7 +829,7 @@
       "ticker": "MNPR",
       "company": "Monopar Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -969,7 +871,7 @@
       "ticker": "PSNL",
       "company": "Personalis Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1026,7 +928,7 @@
       "ticker": "AMLX",
       "company": "Amylyx Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1068,7 +970,7 @@
       "ticker": "BH",
       "company": "Biglari Holdings Inc",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 6,
       "fresh": true,
@@ -1112,7 +1014,7 @@
       "ticker": "BLZE",
       "company": "Backblaze Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1162,7 +1064,7 @@
       "ticker": "DTIL",
       "company": "Precision Biosciences Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1204,7 +1106,7 @@
       "ticker": "NEXN",
       "company": "Nexxen International Ltd",
       "sector": "Communication Services",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1288,7 +1190,7 @@
       "ticker": "USAR",
       "company": "USA Rare Earth Inc",
       "sector": "Basic Materials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1332,7 +1234,7 @@
       "ticker": "WNC",
       "company": "Wabash National Corp",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -1388,7 +1290,7 @@
       "ticker": "ACIW",
       "company": "ACI Worldwide",
       "sector": "Information Technology",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -1493,7 +1395,7 @@
       "ticker": "HNVR",
       "company": "Hanover Bancorp Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 2,
       "fresh": true,
@@ -1577,7 +1479,7 @@
       "ticker": "CHCO",
       "company": "City Holding Company",
       "sector": "Financials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1619,7 +1521,7 @@
       "ticker": "FDMT",
       "company": "4D Molecular Therapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -1661,7 +1563,7 @@
       "ticker": "MOH",
       "company": "Molina Healthcare",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1716,7 +1618,7 @@
       "ticker": "PAMT",
       "company": "PAMT Corp",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -1755,58 +1657,10 @@
       "industry_percentile": null
     },
     {
-      "ticker": "QLYS",
-      "company": "Qualys",
-      "sector": "Information Technology",
-      "stage_source_asof": "2026-08-12",
-      "stage": 2,
-      "weeks_in_stage": 2,
-      "fresh": true,
-      "sga_score": 49,
-      "ma30_slope_pct5w": 2.431,
-      "pct_vs_ma30": 63.1,
-      "mansfield_rs": 33.53,
-      "vol_ratio": 1.09,
-      "event": "pullback_resume",
-      "gate_tier": "T1",
-      "blackout": false,
-      "arc_pos": 0.275,
-      "earnings": {
-        "present": true,
-        "sentiment": 0.4,
-        "performance": 5.5,
-        "tone_word": "confident",
-        "tags": [
-          "new_product",
-          "demand_acceleration",
-          "guidance_raised"
-        ],
-        "quarter": "Q2",
-        "summary": "Qualys reported Q2 FY2026 revenue growth of 11% to $182.2 million. The company highlighted strong innovation in AI-driven Risk Operations Center (ROC) and QFlex adoption, but noted macro pressure with a small customer cohort delaying decisions. QFlex rolled out to enterprise c…"
-      },
-      "why": [
-        "Early in its climb — 2 weeks up so far",
-        "Already stretched well above its 30-week line — may need a rest",
-        "Also shows a strong confirmation from our other checks"
-      ],
-      "why_zh": [
-        "上升初期 — 已上行 2 周",
-        "已明显高于 30 周均线 — 可能需要回踩",
-        "其他多项验证同样给出强确认"
-      ],
-      "atr_14w": 17.9971,
-      "atr_ext": 3.944,
-      "atr_pct_price": 0.09809,
-      "sata_score": 9,
-      "sata_change_1w": 1,
-      "stage_detailed": "2A_strong_breakout",
-      "industry_percentile": 93.2
-    },
-    {
       "ticker": "PLX",
       "company": "Protalix BioTherapeutics Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -1904,7 +1758,7 @@
       "ticker": "ALTG",
       "company": "Alta Equipment Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -1961,7 +1815,7 @@
       "ticker": "DSGR",
       "company": "Distribution Solutions Group Inc",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 3,
       "fresh": true,
@@ -2003,7 +1857,7 @@
       "ticker": "FAST",
       "company": "Fastenal",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2060,7 +1914,7 @@
       "ticker": "HNST",
       "company": "Honest Company Inc",
       "sector": "Consumer Defensive",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2116,7 +1970,7 @@
       "ticker": "MAN",
       "company": "ManpowerGroup",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -2174,7 +2028,7 @@
       "ticker": "NUAI",
       "company": "New Era Energy & Digital Inc",
       "sector": "Technology",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2185,7 +2039,7 @@
       "vol_ratio": 1.11,
       "event": "trendline_recapture",
       "gate_tier": null,
-      "blackout": true,
+      "blackout": false,
       "arc_pos": 0.3375,
       "earnings": {
         "present": false,
@@ -2198,13 +2052,11 @@
       },
       "why": [
         "Early in its climb — 7 weeks up so far",
-        "Trading above its 30-week line — the trend is with it",
-        "Earnings soon — wait, don't chase"
+        "Trading above its 30-week line — the trend is with it"
       ],
       "why_zh": [
         "上升初期 — 已上行 7 周",
-        "位于 30 周均线之上 — 趋势向好",
-        "财报临近 — 先等待，不要追高"
+        "位于 30 周均线之上 — 趋势向好"
       ],
       "atr_14w": 1.3735,
       "atr_ext": 0.263,
@@ -2218,7 +2070,7 @@
       "ticker": "PENN",
       "company": "Penn Entertainment",
       "sector": "Consumer Discretionary",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2266,7 +2118,7 @@
       "ticker": "WRLD",
       "company": "World Acceptance Corporation",
       "sector": "Financials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2308,7 +2160,7 @@
       "ticker": "AGIO",
       "company": "Agios Pharmaceuticals Inc",
       "sector": "Healthcare",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -2365,7 +2217,7 @@
       "ticker": "FRBA",
       "company": "First Bank (NJ)",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 7,
       "fresh": true,
@@ -2407,7 +2259,7 @@
       "ticker": "ITGR",
       "company": "Integer Holdings Corporation",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2461,7 +2313,7 @@
       "ticker": "LH",
       "company": "Labcorp",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 4,
       "fresh": true,
@@ -2518,7 +2370,7 @@
       "ticker": "MAS",
       "company": "Masco",
       "sector": "Industrials",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2575,7 +2427,7 @@
       "ticker": "NODK",
       "company": "NI Holdings Inc",
       "sector": "Financial",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2617,7 +2469,7 @@
       "ticker": "INCY",
       "company": "Incyte",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 5,
       "fresh": true,
@@ -2676,7 +2528,7 @@
       "ticker": "IPAR",
       "company": "Inter Parfums, Inc.",
       "sector": "Consumer Staples",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 8,
       "fresh": true,
@@ -2733,7 +2585,7 @@
       "ticker": "LEGH",
       "company": "Legacy Housing Corp",
       "sector": "Consumer Cyclical",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 9,
       "fresh": true,
@@ -2822,7 +2674,7 @@
       "ticker": "RVTY",
       "company": "Revvity",
       "sector": "Health Care",
-      "stage_source_asof": "2026-08-12",
+      "stage_source_asof": "2026-08-13",
       "stage": 2,
       "weeks_in_stage": 10,
       "fresh": true,
@@ -2913,9 +2765,175 @@
       "sata_change_1w": 0,
       "stage_detailed": "2X_fallback_bullish",
       "industry_percentile": null
+    },
+    {
+      "ticker": "BLFS",
+      "company": "BioLife Solutions, Inc.",
+      "sector": "Health Care",
+      "stage_source_asof": "2026-08-13",
+      "stage": 2,
+      "weeks_in_stage": 6,
+      "fresh": true,
+      "sga_score": 44,
+      "ma30_slope_pct5w": 4.353,
+      "pct_vs_ma30": 43.91,
+      "mansfield_rs": 24.99,
+      "vol_ratio": 2.29,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.325,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.6111111111111112,
+        "performance": 5.0,
+        "tone_word": "confident",
+        "tags": [
+          "biopreservation",
+          "cgt",
+          "life_science_tools",
+          "margin_pressure",
+          "cross-selling",
+          "guidance_maintained",
+          "pipeline_conversion",
+          "bioprocessing",
+          "cell_and_gene_therapy",
+          "consumables",
+          "cryopreservation",
+          "regenerative_medicine",
+          "biotech_services"
+        ],
+        "quarter": "Q1",
+        "summary": "BPM remained the primary driver of revenue growth with our other cell processing tools also contributing to overall growth."
+      },
+      "why": [
+        "Early in its climb — 6 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 6 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 3.0214,
+      "atr_ext": 3.5,
+      "atr_pct_price": 0.08717,
+      "sata_score": 9,
+      "sata_change_1w": 1,
+      "stage_detailed": "2A_strong_breakout",
+      "industry_percentile": 68.2
+    },
+    {
+      "ticker": "IART",
+      "company": "Integra Lifesciences Holdings",
+      "sector": "Health Care",
+      "stage_source_asof": "2026-08-13",
+      "stage": 2,
+      "weeks_in_stage": 10,
+      "fresh": true,
+      "sga_score": 44,
+      "ma30_slope_pct5w": 7.159,
+      "pct_vs_ma30": 25.96,
+      "mansfield_rs": 13.14,
+      "vol_ratio": 1.13,
+      "event": "pullback_resume",
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.375,
+      "earnings": {
+        "present": true,
+        "sentiment": 0.3333333333333333,
+        "performance": 5.833333333333334,
+        "tone_word": "confident",
+        "tags": [
+          "surgimend",
+          "supply_chain",
+          "guidance",
+          "primatrix",
+          "cost_control",
+          "durasorb",
+          "ent",
+          "medical_devices",
+          "neurosurgery",
+          "wound_care",
+          "tissue_reconstruction",
+          "surgical_instruments",
+          "product_relaunch",
+          "supply_chain_recovery",
+          "deleveraging"
+        ],
+        "quarter": "Q2",
+        "summary": "We benefited from $0.05 per share of tariff favorability versus our May guidance, which contributed to our adjusted EPS performance above the high end."
+      },
+      "why": [
+        "Early in its climb — 10 weeks up so far",
+        "Already stretched well above its 30-week line — may need a rest"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 10 周",
+        "已明显高于 30 周均线 — 可能需要回踩"
+      ],
+      "atr_14w": 2.09,
+      "atr_ext": 1.701,
+      "atr_pct_price": 0.12116,
+      "sata_score": 7,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_fallback_bullish",
+      "industry_percentile": 77.9
+    },
+    {
+      "ticker": "LRN",
+      "company": "Stride, Inc.",
+      "sector": "Consumer Discretionary",
+      "stage_source_asof": "2026-08-13",
+      "stage": 2,
+      "weeks_in_stage": 8,
+      "fresh": true,
+      "sga_score": 44,
+      "ma30_slope_pct5w": 3.819,
+      "pct_vs_ma30": -5.59,
+      "mansfield_rs": -24.51,
+      "vol_ratio": 1.24,
+      "event": null,
+      "gate_tier": null,
+      "blackout": false,
+      "arc_pos": 0.35,
+      "earnings": {
+        "present": true,
+        "sentiment": -0.2,
+        "performance": 5.5,
+        "tone_word": "cautious",
+        "tags": [
+          "margin_contraction",
+          "demand_slowdown",
+          "buyback_or_dividend"
+        ],
+        "quarter": "Q4",
+        "summary": "Stride reported FY2026 revenue of $2.518B (+4.7% YoY), adjusted operating income of $498.4M (+7%), adjusted EBITDA of $617.6M (+8.2%), and adjusted EPS of $8.33. Career Learning revenue grew 19% to $1.04B, while General Education revenue fell 2% to $1.42B. The company noted a …"
+      },
+      "why": [
+        "Early in its climb — 8 weeks up so far",
+        "Still near its 30-week line — not clear of it yet"
+      ],
+      "why_zh": [
+        "上升初期 — 已上行 8 周",
+        "仍接近 30 周均线 — 尚未站稳"
+      ],
+      "atr_14w": 9.3721,
+      "atr_ext": -0.521,
+      "atr_pct_price": 0.11359,
+      "sata_score": 4,
+      "sata_change_1w": 0,
+      "stage_detailed": "2X_catch_price_above_ma",
+      "industry_percentile": 25.0
     }
   ],
   "warnings_stage3": [
+    {
+      "ticker": "RKLB",
+      "company": "RKLB",
+      "weeks_in_stage": 1,
+      "sga_score": 35
+    },
     {
       "ticker": "ARR",
       "company": "Armour Residential REIT",
@@ -2929,15 +2947,9 @@
       "sga_score": 27
     },
     {
-      "ticker": "CRWV",
-      "company": "CRWV",
-      "weeks_in_stage": 3,
-      "sga_score": 25
-    },
-    {
-      "ticker": "RES",
-      "company": "RPC, Inc.",
-      "weeks_in_stage": 3,
+      "ticker": "MC",
+      "company": "Moelis & Company",
+      "weeks_in_stage": 5,
       "sga_score": 25
     },
     {
@@ -3053,7 +3065,7 @@
     {
       "sector": "Financials",
       "n": 222,
-      "pct_stage2": 67.6,
+      "pct_stage2": 67.1,
       "trend": "up"
     },
     {
@@ -6787,8 +6799,8 @@
       41
     ],
     "FBK": [
-      2,
-      1
+      3,
+      20
     ],
     "FBLA": [
       2,
@@ -14086,20 +14098,15 @@
   "changes": {
     "items": [
       {
-        "kind": "entered_stage2",
+        "kind": "topping",
         "ticker": "FBK",
-        "detail": "Moved into an advancing stage"
-      },
-      {
-        "kind": "entered_stage2",
-        "ticker": "STLN",
-        "detail": "Now in an advancing stage"
+        "detail": "Advance is stalling — topping out"
       }
     ],
-    "n": 2
+    "n": 1
   },
   "prev_state": {
-    "asof": "2026-08-10",
+    "asof": "2026-08-13",
     "by_key": {
       "A": {
         "stage": 1,
@@ -18657,9 +18664,9 @@
         "event": "pullback_resume"
       },
       "FBK": {
-        "stage": 3,
-        "fresh": false,
-        "event": null
+        "stage": 2,
+        "fresh": true,
+        "event": "pullback_resume"
       },
       "FBLA": {
         "stage": 2,
@@ -24789,7 +24796,7 @@
       "RUSHA": {
         "stage": 2,
         "fresh": false,
-        "event": "pullback_resume"
+        "event": "trendline_recapture"
       },
       "RVLV": {
         "stage": 4,
@@ -25692,6 +25699,11 @@
         "event": null
       },
       "STLD": {
+        "stage": 2,
+        "fresh": false,
+        "event": "pullback_resume"
+      },
+      "STLN": {
         "stage": 2,
         "fresh": false,
         "event": "pullback_resume"
@@ -32330,9 +32342,9 @@
       "event": "pullback_resume"
     },
     "FBK": {
-      "stage": 2,
-      "fresh": true,
-      "event": "pullback_resume"
+      "stage": 3,
+      "fresh": false,
+      "event": null
     },
     "FBLA": {
       "stage": 2,

@@ -12,6 +12,7 @@ which states it expands, which it refuses to fake, and what it writes down.
 
 from __future__ import annotations
 
+import argparse
 import ast
 import hashlib
 import importlib.util
@@ -103,6 +104,7 @@ class FakeDriver:
         per_cell_failures: bool = False,
         load_error: str | None = None,
         blank_screenshot: bool = False,
+        force_refused: bool = False,
     ) -> None:
         self.calls: list[tuple[str, str]] = []
         self._observed = dict(observed or OBSERVED)
@@ -117,6 +119,10 @@ class FakeDriver:
         # ``fail_routes``, which raises before the driver observed anything at all.
         self._load_error = load_error
         self._blank_screenshot = blank_screenshot
+        # A page whose CSS strips the forced hook: the shot still happens, but the
+        # driver cannot confirm the state, and that must be disclosed rather than
+        # filed under a state nobody saw.
+        self._force_refused = force_refused
         self.closed = False
 
     def capture(self, *, url: str, cell, timeout_s: float):
@@ -124,6 +130,10 @@ class FakeDriver:
         if any(route in url for route in self._fail_routes):
             raise TimeoutError(f"navigation timed out after {timeout_s}s")
         fill = (7 if cell.theme == "dark" else 240) if self._per_theme_bytes else 128
+        if cell.force_state is not None:
+            # A forced state has to look different, or a test asserting on the
+            # suffixed file would be asserting about the rest-state shot.
+            fill = (fill + 1 + sum(ord(char) for char in cell.force_state.name)) % 251
         failures = [dict(item) for item in self._failed_responses]
         if self._per_cell_failures:
             # One failure only this cell sees, so page-level aggregation is visible.
@@ -147,6 +157,11 @@ class FakeDriver:
             payload_bytes_total=1_234_567,
             applied_theme=self._applied_override.get("theme", cell.theme),
             applied_locale=self._applied_override.get("locale", cell.locale),
+            applied_force_state=(
+                None
+                if cell.force_state is None or self._force_refused
+                else cell.force_state.name
+            ),
         )
 
     def close(self) -> None:
@@ -451,6 +466,159 @@ def test_state_the_page_refused_to_apply_is_disclosed(tmp_path: Path, registry: 
     assert state["applied_theme"] == "light" and state["theme"] == "dark"
     mismatch = [gap for gap in page["gaps"] if gap["dimension"] == "state_application"]
     assert mismatch and "light" in mismatch[0]["reason"]
+
+
+# --------------------------------------------------------------------------- #
+# forced presentation states (--force-state)
+# --------------------------------------------------------------------------- #
+
+
+def test_without_the_flag_the_matrix_and_file_names_are_exactly_what_they_were(
+    tmp_path: Path, registry: Path
+):
+    """The feature is opt-in: an unforced run must be indistinguishable from before."""
+
+    _code, manifest = _run(tmp_path, registry, FakeDriver(), "--routes", "/macro.html", "--viewports", "desktop")
+    assert manifest["axes"]["force_states"] == []
+    page = manifest["pages"][0]
+    assert all(state["force_state"] is None for state in page["states"])
+    assert all("--" not in Path(state["file"]).name for state in page["states"] if state["captured"])
+    # The four synthesizable states stay honest gaps when nothing is forced.
+    page_states = {gap["value"]: gap for gap in page["gaps"] if gap["dimension"] == "page_state"}
+    assert set(page_states) == set(cpe.SYNTHETIC_PAGE_STATES)
+    assert all(gap["captured"] is False for gap in page_states.values())
+
+
+def test_force_state_adds_a_suffixed_shot_beside_the_rest_state(tmp_path: Path, registry: Path):
+    _code, manifest = _run(
+        tmp_path,
+        registry,
+        FakeDriver(),
+        "--routes", "/macro.html", "--viewports", "desktop", "--locales", "en", "--themes", "light",
+        "--force-state", "empty:.is-empty",
+        "--force-state", "locked:[data-locked]",
+    )
+    page = manifest["pages"][0]
+    # One cell became three: the page at rest, plus one shot per forced state.
+    assert [state["force_state"] for state in page["states"]] == [None, "empty", "locked"]
+    by_state = {state["force_state"]: state for state in page["states"]}
+    assert Path(by_state[None]["file"]).name == f"{by_state[None]['sha256'][:16]}.png"
+    for name in ("empty", "locked"):
+        row = by_state[name]
+        assert row["captured"] is True
+        assert row["applied_force_state"] == name
+        assert Path(row["file"]).name == f"{row['sha256'][:16]}--{name}.png"
+    # Three distinct shots, not one file wearing three names.
+    assert len({state["sha256"] for state in page["states"]}) == 3
+    assert manifest["axes"]["force_states"][0] == {
+        "name": "empty", "kind": "class", "value": "is-empty", "attribute": None, "spec": "empty:.is-empty",
+    }
+
+
+def test_a_forced_page_state_flips_its_gap_row_and_names_the_forcing(tmp_path: Path, registry: Path):
+    """A forced shot is styling, not data — the gap row stays and says so."""
+
+    _code, manifest = _run(
+        tmp_path, registry, FakeDriver(),
+        "--routes", "/macro.html", "--viewports", "desktop",
+        "--force-state", "empty:.is-empty",
+    )
+    page_states = {
+        gap["value"]: gap for gap in manifest["pages"][0]["gaps"] if gap["dimension"] == "page_state"
+    }
+    # The ledger never loses a row: all four states are still accounted for.
+    assert set(page_states) == set(cpe.SYNTHETIC_PAGE_STATES)
+    assert page_states["empty"]["captured"] is True
+    assert "forced presentation" in page_states["empty"]["reason"]
+    assert "empty:.is-empty" in page_states["empty"]["reason"]
+    assert "data path was not exercised" in page_states["empty"]["reason"]
+    for untouched in ("loading", "stale", "error"):
+        assert page_states[untouched]["captured"] is False
+        assert page_states[untouched]["reason"] == cpe.SYNTHETIC_PAGE_STATE_REASON
+
+
+def test_a_custom_forced_state_invents_no_page_state_gap(tmp_path: Path, registry: Path):
+    _code, manifest = _run(
+        tmp_path, registry, FakeDriver(),
+        "--routes", "/macro.html", "--viewports", "desktop",
+        "--force-state", "hover:[data-probe=hover]",
+    )
+    page_states = {
+        gap["value"] for gap in manifest["pages"][0]["gaps"] if gap["dimension"] == "page_state"
+    }
+    assert "hover" not in page_states
+    assert page_states == set(cpe.SYNTHETIC_PAGE_STATES)
+
+
+def test_a_forced_state_the_page_refused_is_disclosed_not_filed_under_it(
+    tmp_path: Path, registry: Path
+):
+    """The file name must never assert a state the driver could not confirm."""
+
+    _code, manifest = _run(
+        tmp_path, registry, FakeDriver(force_refused=True),
+        "--routes", "/macro.html", "--viewports", "desktop", "--locales", "en", "--themes", "light",
+        "--force-state", "empty:.is-empty",
+    )
+    page = manifest["pages"][0]
+    forced = [state for state in page["states"] if state["force_state"] == "empty"][0]
+    assert forced["captured"] is True and forced["applied_force_state"] is None
+    refusals = [gap for gap in page["gaps"] if gap["dimension"] == "force_state_application"]
+    assert refusals and "did not take" in refusals[0]["reason"]
+    # ...and the state is NOT claimed as a captured page_state.
+    page_states = {gap["value"]: gap for gap in page["gaps"] if gap["dimension"] == "page_state"}
+    assert page_states["empty"]["captured"] is False
+
+
+def test_forced_shots_are_evidence_and_never_move_the_census_metrics(
+    tmp_path: Path, registry: Path
+):
+    common = ("--routes", "/macro.html", "--viewports", "desktop")
+    _code, plain = _run(tmp_path / "a", registry, FakeDriver(), *common)
+    _code, forced = _run(
+        tmp_path / "b", registry, FakeDriver(), *common,
+        "--force-state", "empty:.is-empty",
+    )
+    assert forced["pages"][0]["metrics"] == plain["pages"][0]["metrics"]
+    # The extra shots did happen — the metrics simply do not read them.
+    assert forced["totals"]["states_captured"] == 2 * plain["totals"]["states_captured"]
+    assert forced["pages"][0]["metrics"]["screenshot_completion"] == 1.0
+
+
+@pytest.mark.parametrize(
+    "spec",
+    ["empty", "empty:", ":.is-empty", "empty:div > .x", "empty:[bad", "-empty:.x", "em pty:.x"],
+)
+def test_a_malformed_force_state_is_a_usage_error_with_the_syntax(spec: str):
+    with pytest.raises(argparse.ArgumentTypeError) as excinfo:
+        cpe.parse_force_state(spec)
+    assert "NAME:TARGET" in str(excinfo.value)
+
+
+def test_a_force_state_name_is_lowercased_so_one_spelling_is_one_file(tmp_path: Path, registry: Path):
+    """Two spellings would be two files on Linux and one on macOS."""
+
+    assert cpe.parse_force_state("Empty:.is-empty").name == "empty"
+    with pytest.raises(argparse.ArgumentTypeError, match="twice"):
+        cpe.parse_force_states(["empty:.a", "Empty:.b"])
+
+
+def test_a_bare_attribute_target_parses_to_an_empty_valued_attribute():
+    state = cpe.parse_force_state("locked:[data-locked]")
+    assert (state.kind, state.attribute, state.value) == ("attribute", "data-locked", "")
+    quoted = cpe.parse_force_state('err:[data-state="error"]')
+    assert (quoted.kind, quoted.attribute, quoted.value) == ("attribute", "data-state", "error")
+
+
+def test_a_malformed_force_state_exits_usage_without_writing_an_artifact(
+    tmp_path: Path, registry: Path, capsys
+):
+    code, manifest = _run(
+        tmp_path, registry, FakeDriver(), "--routes", "/macro.html", "--force-state", "bogus"
+    )
+    assert code == cpe.EXIT_USAGE
+    assert manifest == {}
+    assert "NAME:TARGET" in capsys.readouterr().err
 
 
 # --------------------------------------------------------------------------- #

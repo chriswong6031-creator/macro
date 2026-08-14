@@ -543,3 +543,78 @@ def test_the_glance_tier_copy_stays_inside_its_word_budgets():
         r'class="ctt-foot">(.*?)</p>', out, re.DOTALL).group(1))
     foot_en = re.sub(r"<[^>]+>", " ", foot.split('class="l-zh"')[0])
     assert foot_en.count(".") <= 1, foot_en.strip()
+
+
+# ── the roster names every name it prints ───────────────────────────────────
+def _roster_syms(out):
+    """Every ticker the member roster prints, paired with the zh label beside it.
+
+    The THEME VEHICLE line carries a `.ctt-sym` too and legitimately has no name — it
+    names an instrument, not a basket member — so it is stripped before the sweep
+    rather than special-cased inside it.
+    """
+    roster = re.sub(r'<p class="ctt-veh">.*?</p>', "", out, flags=re.DOTALL)
+    return re.findall(
+        r'<span class="ctt-sym">([^<]+)</span>(?:<span class="ctt-zh">([^<]*)</span>)?',
+        roster)
+
+
+def test_no_bucket_prints_a_bare_ticker_where_the_basket_knows_the_name():
+    """The `quiet` group shipped tickers only while every other bucket printed the
+    name beside them (fixed 2026-08-13).
+
+    A CN ticker is a numeric code — `002155.SZ` names nothing in either language on a
+    bilingual page — so the odd bucket out was one line of the roster written in
+    neither. The invariant is swept across the WHOLE panel rather than asserted on the
+    quiet group alone: the defect was a projection that dropped a field it had already
+    computed, and the next one will be too, in whichever bucket is added next.
+    """
+    pairs = _roster_syms(_render(_build()))
+    assert pairs, "the roster rendered no members at all"
+    bare = [sym for sym, zh in pairs if not zh]
+    assert not bare, f"printed without the basket's name: {bare}"
+
+
+def test_the_quiet_remainder_carries_its_names_and_still_shares_one_reason():
+    """The restraint on `quiet` is about the REASON, never the name.
+
+    One shared line under the group (never a fabricated per-name rejection) is the
+    contract; ticker-only was not part of it. `601899.SS` is the fixture's quiet name.
+    """
+    row = _row(_build(), "cn_gold")
+    assert [dict(e) for e in row["quiet_sample"]] == [
+        {"t": "601899.SS", "zh": "紫金矿业"}], row["quiet_sample"]
+
+    out = _render(_build())
+    group = re.search(r'<span class="ctt-gk"><span class="l-en">quiet</span>'
+                      r'<span class="l-zh">未触发</span></span>\s*'
+                      r'<span class="ctt-names">(.*?)</span>\s*</div>',
+                      out, re.DOTALL)
+    assert group, "the quiet group did not render"
+    body = group.group(1)
+    assert "601899.SS" in body and "紫金矿业" in body
+    # still ONE reason for the group, not one per name
+    assert body.count('class="ctt-why"') == 1, body
+
+
+@pytest.mark.skipif(not all(p.exists() for p in _REAL.values()),
+                    reason="committed CN artifacts unavailable")
+def test_the_incident_name_reaches_the_page_labelled_in_whichever_bucket_holds_it():
+    """湖南黄金 is the name the operator asked about on 2026-08-04.
+
+    On 2026-08-07 the ledger moved it from `veto: bearish divergence` to `flat: cut`,
+    which retires a name to `quiet` — and for as long as `quiet` printed tickers only,
+    the incident's own name was the ONE name on the Gold Miners row rendered as a bare
+    code, among five labelled basket-mates. Its bucket is a nightly OUTPUT and this
+    case must never re-assert one, so the assertion is bucket-independent: wherever it
+    sits, it reaches the page with its label.
+    """
+    tape = build_cn_theme_tape(
+        json.loads(_REAL["membership"].read_text()),
+        pd.read_parquet(_REAL["cycles"]),
+        pd.read_parquet(_REAL["candidates"]),
+    )
+    assert tape is not None
+    out = _render(tape)
+    assert "002155.SZ" in out and "湖南黄金" in out
+    assert dict(_roster_syms(out)).get("002155.SZ") == "湖南黄金"

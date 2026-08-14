@@ -398,3 +398,64 @@ def test_ten_day_stale_tushare_witness_hard_fails():
 
     assert r["ok"] is False
     assert any("tushare moneyflow" in f for f in r["fail_reasons"]), r["fail_reasons"]
+
+
+# ── host-disk headroom tripwire (2026-08-13) ─────────────────────────────────
+#
+# Added after the Mac Studio hit literal ENOSPC twice with zero warning
+# (runner _diag receipts 2026-07-26 03:19Z and 2026-08-09 18:48Z — the second
+# crashed a runner that could not write its own crash log). Every other check in
+# this module measures an ARTIFACT; a full disk fails all of them at once with
+# the least legible error last. This one measures the disk itself.
+
+def _mock_usage(free_gb: float, total_gb: float = 1800.0):
+    usage = MagicMock()
+    usage.total = int(total_gb * 1e9)
+    usage.free = int(free_gb * 1e9)
+    return usage
+
+
+def test_disk_headroom_healthy():
+    from scripts.healthcheck import check_disk_headroom
+    with patch("shutil.disk_usage", return_value=_mock_usage(500)):
+        r = check_disk_headroom()
+    assert r["ok"] is True
+    assert not r["warnings"]
+    assert r["free_gb"] == 500.0
+
+
+def test_disk_headroom_warns_below_comfort_line():
+    from scripts.healthcheck import check_disk_headroom
+    with patch("shutil.disk_usage", return_value=_mock_usage(200)):
+        r = check_disk_headroom()
+    assert r["ok"] is True, "warn zone must not fail the heartbeat"
+    assert any("DISK" in w for w in r["warnings"])
+
+
+def test_disk_headroom_fails_below_floor():
+    """The 2026-08-13 measured state (97GB free) must be a FAIL, not a warning —
+    that is the level at which the very next bake can crash runners."""
+    from scripts.healthcheck import check_disk_headroom
+    with patch("shutil.disk_usage", return_value=_mock_usage(97)):
+        r = check_disk_headroom()
+    assert r["ok"] is False
+    assert any("DISK" in f and "ENOSPC" in f for f in r["fail_reasons"])
+
+
+def test_disk_headroom_thresholds_config_overridable():
+    from scripts.healthcheck import check_disk_headroom
+    with patch("shutil.disk_usage", return_value=_mock_usage(97)):
+        r = check_disk_headroom({"warn_free_gb": 90, "fail_free_gb": 50})
+    assert r["ok"] is True
+    assert not r["warnings"], "97GB is above both overridden thresholds"
+
+
+def test_disk_headroom_probe_error_is_blindness_not_breach():
+    """Same discipline as every sentinel here: a guard that cannot see reports
+    a warning and stays green — a false page trains the operator to mute it."""
+    from scripts.healthcheck import check_disk_headroom
+    with patch("shutil.disk_usage", side_effect=OSError("nope")):
+        r = check_disk_headroom()
+    assert r["ok"] is True
+    assert any("blind" in w for w in r["warnings"])
+    assert r["free_gb"] is None
