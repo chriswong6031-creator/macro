@@ -15,9 +15,16 @@ a drive-by.
 stamped with its trigger's own timestamp, cohort boundary at UTC-date granularity,
 coverage = min(date, row). P0d follow-up (2026-08-14, post-merge): C2.4 implementation
 note (demand_chain wired), **C4.4 added** (maturity-aware accounting of rowless cohort
-members — an unpriceable control is counted as uncovered, not as absent), C7 controls
-9-14. Every amendment so far has been strictly strengthening: each one can only lower a
+members — an unmeasurable control is counted as uncovered, not as absent), C7 controls
+9-15. Every amendment so far has been strictly strengthening: each one can only lower a
 reported coverage or narrow an eligible verdict, never the reverse.
+
+The follow-up's own adversarial review then corrected three places where this document
+described more than the code did, which is the failure mode a preregistration exists to
+make visible: C2.4's split was unreachable for the very family being wired (repaired in
+code, not in prose — C7 control 14); C4.4's `control_leg_refused` row named only rule 5
+when the class also absorbs control-leg IMMATURITY; and its all-refused sentence gave one
+outcome where the straddle path gives another.
 
 ---
 
@@ -206,7 +213,7 @@ decides whether it is part of the denominator:
 
 | class | in coverage denominator? | why |
 |---|---|---|
-| `control_leg_refused` | **YES — as UNCOVERED** | a DECLARED control that cannot price over the claim's own shared window (`grade_claim` rule 5 refuses the whole row) |
+| `control_leg_refused` | **YES — as UNCOVERED** | a DECLARED control the shared window cannot MEASURE: either its price series does not yet reach the window's `coverage_date`, or it reaches it and fails the endpoint assertion (`grade_claim` rule 5). Both refuse the whole row, and the class covers both deliberately — see below |
 | `not_yet_matured` | no | the window has not closed; not evidence yet, on either basis |
 | `matured_awaiting_grading` | no | priceable and matured; the grader has simply not written the row yet |
 | `primary_leg_refused` | no | the SUBJECT or BENCH cannot price the window — the claim is ungradeable on every basis, and the benchmark record does not count it either; it is not a control failure |
@@ -225,12 +232,30 @@ claim, and it is now counted as one. `n_cohort_rows` adds the control-refused me
 still projects onto controlled rows only), so this can only ever LOWER a reported
 coverage — the bar moves up, never down.
 
+**Why control MATURITY sits in the refused class while subject maturity does not.** A
+control whose price cache has not yet reached the window's `coverage_date` is temporarily
+unmeasurable, and the claim's own subject/bench legs are already ready — so the row that
+does not exist is missing *because of the control*. Counting it as uncovered is
+fail-closed and self-healing: the coverage number recovers by itself the night the
+control's series catches up, and until then the gate cannot promote on a leg it could not
+read. The asymmetry with `not_yet_matured` (where subject or bench is the laggard) is
+deliberate: there the claim is not evidence yet on ANY basis, so no denominator should
+hold it. The practical cost is disclosed rather than hidden — at
+`CONTROL_COVERAGE_MIN = 0.95` with the 25-date floor, a sector-ETF price-cache lag
+touching two or more claim dates defers an otherwise-passing verdict by a night, and
+`cohort_rowless` says exactly why.
+
 The full classification is published as `cohort_rowless` beside
 `n_control_refused_rows` / `n_control_refused_dates`, and the refusal strings name the
-control-refused counts whenever they are non-zero. A cohort whose controls ALL fail to
-price reports `control_coverage = 0.0` and refuses **naming the control-leg refusal** —
-never "the cohort is EMPTY, still accruing", which is what a graded-rows-only denominator
-said about a family whose every control was broken.
+control-refused counts whenever they are non-zero. A cohort whose controls ALL fail —
+leaving zero graded rows — is never reported as "the cohort is EMPTY, still accruing",
+which is what a graded-rows-only denominator said about a family whose every control was
+broken. It refuses **naming the control-leg refusal**, in one of two shapes: with the
+refused claims on a single clock basis, that basis is adopted and
+`control_coverage = 0.0`; with them straddling two or more explicit bases there is no
+non-arbitrary basis to evaluate on, so `control_coverage` is `None` and the verdict is
+`STATE_MIXED_CLOCK` with the straddle named — the same refusal-to-pool rule the rest of
+this contract applies, never a silently picked basis.
 
 ## C5. Gate semantics (fail-closed matrix)
 
@@ -349,8 +374,19 @@ sufficient and not counted):
     Yahoo-vocabulary rows register `control=None` → test fails. This is
     DSC:CONTROL-VOCABULARY-MISMATCH-KILLED-EVERY-WIRED-CONTROL pinned as a test.
 14. **Refusals are counted, never silent** (C2.4): the registrar path's run stats split
-    `sector_absent` / `vocabulary_unmapped` / `control_equals_subject_or_bench`.
-    Mutation = collapse the buckets or drop the counting → test fails.
+    `sector_absent` / `vocabulary_unmapped` / `control_equals_subject_or_bench`, and the
+    split must be REACHABLE for the family actually wired. Because the canonical resolver
+    normalises before returning, it answers `None` for an unmappable vocabulary value and
+    for an absent ticker alike — so the registrar consults a RAW probe when the sector is
+    empty, and an unmappable value reports `vocabulary_unmapped` carrying the offending
+    value in the run's `::warning`. A split that cannot fire is not a split.
+    Mutation = collapse the buckets, drop the counting, or drop the raw probe → test
+    fails, including on the annotation body.
+15. **The rowless classifier cannot fail quietly toward a better number**: its exception
+    path reports its own `classifier_error` class rather than the legitimate,
+    denominator-excluded `window_unresolvable`, so a broadly-raising classifier is
+    visible in `cohort_rowless` instead of silently restoring the pre-C4.4 denominator.
+    Mutation = route the exception back to `window_unresolvable` → test fails.
 Plus: control-clock write-once (second write is a no-op); clock never pre-created;
 `control==subject`/`control==bench` count as missing (C2.2); the alias normalisation
 refuses unknown vocabulary loudly (D0-2).
