@@ -548,14 +548,34 @@ RECONSTRUCTED_FOOTNOTE_EN = "{n} of the plans now running {were} reconstructed a
 RECONSTRUCTED_FOOTNOTE_ZH = "在跑的计划中有 {n} 只是中断后补记的"
 
 #: Tier 2, board level — the hover behind that clause.
+#:
+#: "over the weekend of" was true while one window existed and became false the day a
+#: second one did: 2026-08-09 was a Sunday, 2026-08-11 a Tuesday. A hover that tells a
+#: reader an outage happened at the weekend when it happened on a Tuesday is a small
+#: false statement on a front-facing surface, so the copy names the day and stops
+#: characterising it.
 RECONSTRUCTED_FOOTNOTE_TIP_EN = (
-    "The nightly run didn't finish over the weekend of {date}. These plans were rebuilt"
+    "The nightly run didn't finish on {date}. These plans were rebuilt"
     " afterwards from the data as it stood that day, their windows are timed from it,"
     " and they are counted on their own in the record."
 )
+#: No space between the interpolated date and 的 — Chinese does not take one, and the
+#: original template only got away with it because a noun phrase followed the slot.
 RECONSTRUCTED_FOOTNOTE_TIP_ZH = (
-    "{date} 那个周末的夜间选股没能跑完。这些计划是事后按当天的数据重新算出来的，时间窗口都从那天"
+    "{date}的夜间选股没能跑完。这些计划是事后按当天的数据重新算出来的，时间窗口都从那天"
     "起算，成绩记录里也单独计数。"
+)
+#: The same hover when the population spans MORE THAN ONE lost night. Naming the earliest
+#: date alone would be a true day and a misleading sentence — the reader would date every
+#: rebuilt plan on the board to a night most of them have nothing to do with.
+RECONSTRUCTED_FOOTNOTE_TIP_MULTI_EN = (
+    "The nightly run didn't finish on {first} or {last}. These plans were rebuilt"
+    " afterwards from the data as it stood on the day each one belongs to, their windows"
+    " are timed from those days, and they are counted on their own in the record."
+)
+RECONSTRUCTED_FOOTNOTE_TIP_MULTI_ZH = (
+    "{first}和{last}的夜间选股都没能跑完。这些计划是事后按各自当天的数据重新算出来的，"
+    "时间窗口从各自那天起算，成绩记录里也单独计数。"
 )
 
 #: The record block's own disclosure line, shaped like its sibling QUARANTINE_NOTE so
@@ -1405,9 +1425,14 @@ def origination_disclosure(rows: Iterable[Mapping[str, Any]] | None) -> dict[str
     plans in the population every caller omits its key, and the artifact and the rendered
     page are byte-identical to what they were before this feature existed.
 
-    ``date`` is the EARLIEST reconstructed ``recorded_at`` in the population.  One replay
-    is one date, so today that is simply "the date"; if a second event ever adds a second
-    date the clause still names a true day rather than silently averaging two.
+    ``date`` is the EARLIEST reconstructed ``recorded_at`` in the population, and it stays
+    that way — it is the machine-readable field, and a range would break every consumer
+    that reads it as a day.  The COPY is what adapts: with one lost night the hover names
+    it, and with more than one it names the first and the last, because naming only the
+    earliest would be a true day inside a misleading sentence — it would date every
+    rebuilt plan on the board to a night most of them have nothing to do with.  That
+    became real on 2026-08-13, when the 2026-08-11 reconstruction joined the 2026-08-09
+    replay in one population.
     """
     reconstructed = [r for r in (rows or []) if is_reconstructed(r)]
     if not reconstructed:
@@ -1426,6 +1451,17 @@ def origination_disclosure(rows: Iterable[Mapping[str, Any]] | None) -> dict[str
         "en": RECONSTRUCTED_FOOTNOTE_EN.format(n=n, were="were" if n != 1 else "was"),
         "zh": RECONSTRUCTED_FOOTNOTE_ZH.format(n=n),
     }
+    distinct = sorted(set(dates))
+    if len(distinct) > 1:
+        first_en, first_zh = _plain_date(distinct[0])
+        last_en, last_zh = _plain_date(distinct[-1])
+        out["dates"] = distinct
+        if first_en and last_en:
+            out["tip_en"] = RECONSTRUCTED_FOOTNOTE_TIP_MULTI_EN.format(
+                first=first_en, last=last_en)
+            out["tip_zh"] = RECONSTRUCTED_FOOTNOTE_TIP_MULTI_ZH.format(
+                first=first_zh, last=last_zh)
+            return out
     if date_en:
         out["tip_en"] = RECONSTRUCTED_FOOTNOTE_TIP_EN.format(date=date_en)
         out["tip_zh"] = RECONSTRUCTED_FOOTNOTE_TIP_ZH.format(date=date_zh)
@@ -1944,6 +1980,49 @@ def resolve_entry_basis(
         "signal_basis_date": signal_basis,
         "signal_lag_sessions": signal_lag,
         "era": SELECTION_ERA,
+    }
+
+
+def price_frame_freshness(
+    price_history: "pd.DataFrame | None",
+    asof: str,
+) -> dict[str, Any]:
+    """Freshness verdict for a management price frame against the run clock.
+
+    The management engine prices every live plan off ``price_history``'s last
+    close, while the horizon clock advances with ``asof`` regardless of whether
+    the tape kept printing.  A halted or delisted name has NO rows after its
+    last print, so the origination lag measure (:func:`_sessions_between`, which
+    counts rows on the name's own tape) reads 0 forever there — the frame cannot
+    testify about its own staleness.  The market clock is therefore measured
+    with :func:`_business_days_between` (the documented fallback authority,
+    deliberately erring toward "stale" across holiday weeks) against the SAME
+    tolerance origination refuses stale candidates at
+    (:data:`STALE_BASIS_MAX_SESSIONS`) — one constant, one doctrine, no second
+    stale-data detector.
+
+    Vocabulary mirrors :func:`resolve_entry_basis`: ``state`` is ``"current"``
+    or ``"stale"`` with the measured ``lag`` and its basis.  Fail-closed: an
+    empty frame or an unmeasurable lag reads ``"stale"`` with ``lag_basis:
+    "unresolved"`` — action authority never survives a frame that cannot prove
+    its own freshness.
+    """
+    run_asof = str(asof)[:10]
+    last_close_date: str | None = None
+    if price_history is not None and not getattr(price_history, "empty", True):
+        try:
+            last_close_date = pd.Timestamp(price_history.index[-1]).date().isoformat()
+        except Exception:  # noqa: BLE001 — an unresolvable index reads as stale below
+            last_close_date = None
+    lag = _business_days_between(last_close_date, run_asof) if last_close_date else None
+    stale = lag is None or lag > STALE_BASIS_MAX_SESSIONS
+    return {
+        "state": "stale" if stale else "current",
+        "last_close_date": last_close_date,
+        "run_asof": run_asof,
+        "lag": lag,
+        "lag_basis": "business_days" if lag is not None else "unresolved",
+        "max_lag": STALE_BASIS_MAX_SESSIONS,
     }
 
 

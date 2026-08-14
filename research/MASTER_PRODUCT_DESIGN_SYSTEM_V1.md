@@ -540,7 +540,7 @@ names (`.ladder`→`.mx-ladder`, `.chg-row`→`.mx-chg-row`, `.empty`→`.mx-emp
 | Plan claim | `.plan-claim` — exactly one savings/entitlement line per plan card (packet §D) | **KEEP** (packet) |
 | DecisionRow | `.mx-chg-row` (name · change clause ≤14w · stance verb from the doctrine vocabulary · chevron; two-line stack ≤640w) | **NEW** (packet PR-0, renamed) |
 | Table | **NEW `.mx-tbl`** — th `--fs-micro` caps `.08em` · cells `--fs-sm` `.tnum` · hairline rows · hover row tint · in-container scroll (min-width, box scrolls) · ≤8 rows at L1 | **NEW (DS-PR-0)** |
-| Tabs / FilterBar | `.mx-tabset` (tasks; `role="tab"` + `aria-controls`; selected tab writes the URL hash; packet §E) · `.mx-ladder` control form (packet §B) · `.segbtn` segmented (shipped) | **NEW/KEEP** |
+| Tabs / FilterBar | `.mx-tabset` (tasks; `role="tab"` + `aria-controls`; selected tab writes the URL hash; packet §E) · `.mx-ladder` control form (packet §B) — **RESTRICTED by Sol ruling 2026-08-12 to Prophet/lifecycle-derived surfaces; it is NOT a general-purpose control and must not proliferate site-wide. On the Prophet Board the canonical-count invariant binds: every displayed setup quantity is a ladder cell, the ladder total, or a deterministic derivation of them — never an independent recount** · `.segbtn` segmented (shipped) | **NEW/KEEP** |
 | Status / Freshness | `.dtp` family — the only freshness/session language; `.dtp-chip` states live/pre/warn/stale/behind; `.dtp-asof` is the one as-of class | **KEEP/EXTEND** (rollout) |
 | Tooltip / Evidence receipt | LENS (`data-tip-en/zh`, `data-tip-rc-*`) — the only popover | **KEEP** |
 | ChartFrame | illus (`lib/illus.py` + `illus.css/js`); every chart's caption answers a stated question | **KEEP/EXTEND** (compliance sweep via factory) |

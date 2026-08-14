@@ -427,7 +427,33 @@ def build_cn_theme_tape(
             "counts": counts,
             "members": {k: v for k, v in grouped.items() if v and k != "quiet"},
             "shared_why": {k: v for k, v in shared.items() if k != "quiet"},
-            "quiet_sample": [m["t"] for m in grouped["quiet"]][:6],
+            # THE QUIET GROUP CARRIES ITS NAMES, like every other bucket — and this is
+            # where the CN tape deliberately DIVERGES from its US sibling, which keeps a
+            # bare list[str] (engine/theme_tape.py `quiet_sample`). The divergence is
+            # about the ticker namespace, not about taste: `WDAY` is a word a US reader
+            # already reads as Workday, while `002155.SZ` names nothing in either of the
+            # two languages this page is written in. The same shape is readable there and
+            # unreadable here, so unifying them would cost the CN reader the name to buy
+            # a symmetry nobody looks at. Do not "fix" this back.
+            #
+            # It shipped ticker-only by oversight, not by decision: the entries below are
+            # the SAME dicts every bucket is built from a few lines up and already carry
+            # `zh`; only this projection dropped it, and the group's stated restraint is
+            # about the REASON (one shared line, never a fabricated per-name rejection),
+            # which a name is not. The cost was exact — on 2026-08-07 the ledger moved
+            # 002155.SZ from `veto: bearish divergence` to `flat: cut`, retiring it here,
+            # and from that night the 2026-08-04 incident's own name printed as a bare
+            # code on the one row built to say where it is, while its five basket-mates
+            # kept their labels (湖南黄金 alone among 紫金矿业 · 山东黄金 · 中金黄金 ·
+            # 山金国际 · 赤峰黄金).
+            #
+            # NAME AND TICKER ONLY, explicitly — not the whole entry. A quiet group of
+            # ONE keeps its per-name `why_*` (the shared-reason collapse above needs two
+            # entries to fire), and handing those to the template would put a per-name
+            # rejection one careless loop away from the group whose entire contract is
+            # ONE reason, stated once. `quiet_why` below still reads the unprojected
+            # entries, so the reason survives at the group level where it belongs.
+            "quiet_sample": [{"t": m["t"], "zh": m["zh"]} for m in grouped["quiet"][:6]],
             "quiet_more": max(0, len(grouped["quiet"]) - 6),
             "quiet_why": shared.get("quiet", (None, None))[0]
                          or next((m.get("why_en") for m in grouped["quiet"]

@@ -234,6 +234,17 @@ LEX: dict[str, str] = {
     "Consumer Discretionary": "可选消费",
     "Communication Services": "通信服务",
     "Information Technology": "信息技术",
+    # The SECOND sector taxonomy the stock libraries actually emit. US rows carry
+    # the 11 GICS names above (build_stock_library.GICS_SECTORS); the CN/HK/CA/Intl
+    # libraries carry yfinance's names, which overlap GICS for seven of eleven and
+    # differ for these four. Missing them is not a cosmetic gap — a watchlist holding
+    # a .HK or .SS name renders its sector in ENGLISH under zh, and nothing raises.
+    # zh copy is the wording already shipped in the china.html.j2 / hk.html.j2 SECZH
+    # literals, so one stock reads the same on its market page and in a watchlist.
+    "Basic Materials": "原材料",
+    "Financial Services": "金融",
+    "Consumer Cyclical": "可选消费",
+    "Consumer Defensive": "必需消费",
     "Semiconductors": "半导体",
     "Small Caps": "小盘股",
     "Equal-Weight S&P": "等权标普",
@@ -655,3 +666,60 @@ LEX: dict[str, str] = {
     "Competitive threat": "竞争压力",
     "Macro-sensitive": "受宏观影响",
 }
+
+
+# --------------------------------------------------------------------------- #
+# The "Sector / theme" vocabulary, named so a CLIENT-side renderer can be handed
+# the same answers `td()` gives on the server.
+#
+# A baked page translates a sector through the `td()`/`tr()` globals at render
+# time. A page that paints its rows in JavaScript from a lazily fetched store
+# cannot: `stockdata/index.json` carries one raw English `s` per ticker and there
+# is no Jinja left to run. The watchlist workspace is exactly that shape, and the
+# consequence was silent — sector names sat in English under `data-lang="zh"`
+# while every label around them translated, because an untranslated name renders
+# perfectly, just in the wrong language.
+#
+# So the vocabulary is enumerated here rather than inferred: a build hands
+# `sector_lexicon()` to the page as a literal map, and the page falls back to the
+# English it already has for anything absent. Three sources feed the list, and
+# tests/test_watchlist_sector_i18n.py pins each one so a taxonomy that grows
+# without its zh twin REDS instead of leaking English:
+#   * the 11 GICS names (US library — scripts/build_stock_library.GICS_SECTORS)
+#   * the 11 yfinance names (CN/HK/CA/Intl libraries — seven overlap GICS)
+#   * the discovery basket names (config.yml `themes.*.name`) — the "theme" half
+# --------------------------------------------------------------------------- #
+SECTOR_KEYS: tuple[str, ...] = (
+    # GICS — build_stock_library.GICS_SECTORS
+    "Energy", "Materials", "Industrials", "Consumer Discretionary",
+    "Consumer Staples", "Health Care", "Financials", "Information Technology",
+    "Communication Services", "Utilities", "Real Estate",
+    # yfinance — the four that differ from GICS (the other seven are above)
+    "Basic Materials", "Financial Services", "Consumer Cyclical",
+    "Consumer Defensive", "Technology", "Healthcare",
+    # discovery thematic baskets — config.yml themes.*.name
+    "Nuclear & SMR Power", "Rare Earth & Critical Minerals",
+    "Data Center Power & Cooling", "Memory, HBM & Storage", "AI Semiconductors",
+    "Semiconductor Equipment (WFE)", "Cybersecurity", "GLP-1 / Obesity",
+    "Defense & Aerospace", "Copper, Steel & Electrification", "Solar",
+    "Robotics & Automation", "Fintech & Payments", "Medical Devices",
+    "Diagnostics & Life-Science Tools", "Agriculture & Fertilizer",
+    "Space & Satellites", "Grid & Electrification",
+)
+
+
+def sector_lexicon() -> dict[str, str]:
+    """`{english sector/theme name: chinese}` for a client-side renderer.
+
+    A name the glossary cannot answer is OMITTED rather than mapped to itself, so
+    the caller's own English fallback stays the single fallback path and the map
+    never asserts a translation it does not have. That makes a dropped key
+    invisible at runtime by design — `tests/test_watchlist_sector_i18n.py` is
+    what makes it loud, by asserting every `SECTOR_KEYS` entry survives.
+    """
+    out: dict[str, str] = {}
+    for key in SECTOR_KEYS:
+        zh = tr(key)
+        if zh and zh != key:
+            out[key] = zh
+    return out

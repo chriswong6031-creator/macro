@@ -2,7 +2,7 @@
   "schema": "price_pressure.v1",
   "engine_version": "price_pressure.v1",
   "asof": "2026-08-12",
-  "generated_utc": "2026-08-13T14:06:37+00:00",
+  "generated_utc": "2026-08-14T05:43:11+00:00",
   "display_only": true,
   "authority": {
     "can_rank": false,
@@ -52,9 +52,9 @@
     "broad_selloff": false,
     "broad_selloff_threshold": 60.0,
     "character": {
-      "verdict": "clear",
-      "primary_label": "Oil shock",
-      "asof": "2026-08-12",
+      "verdict": "quiet",
+      "primary_label": "Real-rate shock",
+      "asof": "2026-08-13",
       "source": "data/regime/latest.json#market_drivers"
     },
     "banner": "Today's pressure is name-by-name, not market-wide.",

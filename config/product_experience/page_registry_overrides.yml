@@ -6,12 +6,15 @@
 #
 # THE LAW
 #   1. Judgment-only fields live here and are NEVER derived: `priority`,
-#      `archetype`, `primary_user_question`, `owner`, plus lifecycle rulings and
-#      the access/entitlement facts a static reader cannot honestly see (a guest
-#      mode, a middleware redirect, an entitlement resolved at request time).
+#      `archetype`, `design_system`, `primary_user_question`, `owner`, plus
+#      lifecycle rulings and the access/entitlement facts a static reader cannot
+#      honestly see (a guest mode, a middleware redirect, an entitlement
+#      resolved at request time).
 #   2. Every entry SHOULD carry `evidence: [paths]` — the file(s) that make the
 #      claim checkable.  An entry with no evidence is a claim with no receipt.
 #      `note:` is appended to the row's notes so the reason travels with the row.
+#      `why:` stays HERE and never reaches the JSON: it records why a judgment
+#      call went the way it did, for the next reader of this file.
 #   3. An override on a page_id that no longer exists is a HARD ERROR: the build
 #      exits non-zero and prints a `::error` annotation.  Stale overrides are how
 #      a registry starts describing pages that were deleted a year ago.
@@ -27,171 +30,1134 @@
 # carry acquisition, activation, or the paid product itself.  P1–P3 assignment
 # is a separate work item and everything else stays `unclassified` rather than
 # being filled in by whoever ran the script last.
+#
+# ARCHETYPE SCOPE (DS-PR-1).  Every row now carries one of the ten canonical
+# archetype ids from the design-system constitution (§10) — the vocabulary is
+# CLOSED and enforced by the builder, and `unclassified` is no longer used by any
+# row.  An archetype names the CANONICAL COMPOSITION a route must follow, so it
+# tracks what the page IS, not how important it is and not whether it is live:
+# an internal mockup of a desk is still a desk.  Entries are grouped by archetype
+# below; a judgment call carries `why:`.
+#
+# DESIGN_SYSTEM SCOPE (DS-PR-1, ratchet R0).  `design_system` is the governance
+# claim for scripts/check_design_system.py.  Shape:
+#   compliant:        bool, REQUIRED.  No row is compliant today.
+#   governed_regions: optional [{template, region}].  ABSENT means the whole
+#                     `source_template` is governed once compliant is true.
+#   exempt:           optional {reason, expires: "YYYY-MM-DD"} — quote the date.
+#   migrated_pr:      optional int — the PR that made the surface compliant.
+#   evidence:         optional str | [str] — the migration's evidence matrix.
+# `archetype` inside `design_system` is a HARD ERROR: one fact, one home.
+# Only the two dashboard rows are seeded, because templates/dashboard.html.j2 is
+# rendered TWICE from one file (scripts/build_site.py mode="macro" -> macro.html,
+# mode="stocks" -> us_stocks.html; the body class at dashboard.html.j2:2047 is
+# what separates them), so a whole-file claim there would be two claims wearing
+# one hat.
 
 version: 1
 
 pages:
 
-  # ── macro · P0 acquisition + activation ────────────────────────────────────
-  macro:index:
-    priority: P0
-    archetype: marketing_landing
-    primary_user_question: "What is this product and why should I trust it?"
-    evidence: ["templates/index.html", "templates/_public_nav.html.j2"]
-    note: "hand-authored flagship landing; mirrors the public chrome family"
+  # ── command_center · the daily entry point ────────────────────────────────────
+  # One surface: where the user starts. Everything else is reachable from it.
 
   macro:start:
-    priority: P0
-    archetype: command_center
+    priority: "P0"
+    archetype: "command_center"
     primary_user_question: "Where do I start today?"
-    evidence: ["config/site_access.yml", "templates/_navlinks.html.j2"]
+    evidence: [config/site_access.yml, templates/_navlinks.html.j2]
     note: "brand-slot entry point in the product nav and the public nav"
 
-  macro:macro:
-    priority: P0
-    primary_user_question: "What is the macro regime right now?"
-    evidence: ["config/site_access.yml"]
+  # ── regime_dashboard · market / country / cycle state ─────────────────────────
+  # Answers 'what is the regime right now' for a market, country or asset class.
 
-  macro:us_stocks:
-    priority: P0
-    archetype: ranked_decision_board
-    primary_user_question: "Which US stocks are set up right now?"
-    evidence: ["config/site_access.yml", "templates/dashboard.html.j2"]
-    note: "anonymous=1 / Free=3 / paid=full summary preview via tier_preview.js"
+  macro:anticipation:
+    archetype: "regime_dashboard"
+    why: "multi-horizon forward outcome cones over the market state — a regime read, not a desk"
 
-  macro:plans:
-    priority: P0
-    archetype: pricing
-    primary_user_question: "What do I get, and what does it cost?"
-    evidence: ["config/site_access.yml", "templates/plans.html.j2"]
+  macro:bonds:
+    archetype: "regime_dashboard"
 
-  macro:research_vault:
-    priority: P0
-    primary_user_question: "What has the research desk published?"
-    evidence: ["config/site_access.yml"]
-    note: "anonymous visitors see the latest three summaries; PDFs stay behind the authenticated /api/research routes"
+  macro:canada:
+    archetype: "regime_dashboard"
 
-  macro:confluence_screener:
-    priority: P0
-    archetype: ranked_decision_board
-    primary_user_question: "Which names line up across the signal stack today?"
-    evidence: ["config/site_access.yml"]
-    note: "free signal-stack lead magnet: rank 1 exposed, paid rows omitted server-side"
+  macro:canada_history:
+    archetype: "regime_dashboard"
 
   macro:china:
-    priority: P0
+    priority: "P0"
+    archetype: "regime_dashboard"
     primary_user_question: "What is the China regime right now?"
-    evidence: ["templates/_navlinks.html.j2"]
+    evidence: [templates/_navlinks.html.j2]
+
+  macro:china_history:
+    archetype: "regime_dashboard"
+
+  macro:commodities:
+    archetype: "regime_dashboard"
+
+  macro:country_cycles:
+    archetype: "regime_dashboard"
+
+  macro:crossasset:
+    archetype: "regime_dashboard"
+
+  macro:crypto:
+    archetype: "regime_dashboard"
+
+  macro:cycle:
+    archetype: "regime_dashboard"
+
+  macro:euro_area:
+    archetype: "regime_dashboard"
+
+  macro:forex:
+    archetype: "regime_dashboard"
+
+  macro:history:
+    archetype: "regime_dashboard"
 
   macro:hk:
-    priority: P0
+    priority: "P0"
+    archetype: "regime_dashboard"
     primary_user_question: "What is the Hong Kong regime right now?"
-    evidence: ["templates/_navlinks.html.j2"]
+    evidence: [templates/_navlinks.html.j2]
+
+  macro:hk_history:
+    archetype: "regime_dashboard"
+
+  macro:india:
+    archetype: "regime_dashboard"
+
+  macro:intl:
+    archetype: "regime_dashboard"
+
+  macro:japan:
+    archetype: "regime_dashboard"
+
+  macro:macro:
+    priority: "P0"
+    archetype: "regime_dashboard"
+    design_system: {compliant: false, governed_regions: [{region: body.page-macro, template: templates/dashboard.html.j2}]}
+    primary_user_question: "What is the macro regime right now?"
+    evidence: [config/site_access.yml]
+
+  macro:macro_context:
+    archetype: "regime_dashboard"
+
+  macro:macro_signals:
+    archetype: "regime_dashboard"
+    why: "the full macro signal board reads the REGIME; it does not rank tradeable names"
+
+  macro:market_structure:
+    archetype: "regime_dashboard"
+
+  macro:markets:
+    archetype: "regime_dashboard"
+
+  macro:sector_cycles:
+    archetype: "regime_dashboard"
+
+  macro:sector_cycles_china:
+    archetype: "regime_dashboard"
+
+  macro:south_korea:
+    archetype: "regime_dashboard"
+
+  macro:spr:
+    archetype: "regime_dashboard"
+    why: "single macro series (petroleum reserves) presented as a commodities-family dashboard"
+
+  macro:stage_analysis:
+    archetype: "regime_dashboard"
+
+  macro:transmission:
+    archetype: "regime_dashboard"
+    why: "policy-transmission mechanism dashboard"
+
+  macro:united_kingdom:
+    archetype: "regime_dashboard"
+
+  mastermind:market_view:
+    archetype: "regime_dashboard"
+
+  # ── discovery_board · ranked boards, screens, radars, heatmaps ────────────────
+  # Answers 'what is worth looking at' — a ranked or filterable set of candidates.
+
+  macro:allocation:
+    archetype: "discovery_board"
+
+  macro:allocation_canada:
+    archetype: "discovery_board"
+
+  macro:allocation_china:
+    archetype: "discovery_board"
+
+  macro:allocation_hk:
+    archetype: "discovery_board"
+
+  macro:baskets_canada:
+    archetype: "discovery_board"
+
+  macro:baskets_china_ths:
+    archetype: "discovery_board"
+
+  macro:baskets_hk:
+    archetype: "discovery_board"
+
+  macro:baskets_intl:
+    archetype: "discovery_board"
+
+  macro:canada_heatmap:
+    archetype: "discovery_board"
+
+  macro:canada_stocks:
+    archetype: "discovery_board"
+
+  macro:china_heatmap:
+    archetype: "discovery_board"
+
+  macro:china_radar:
+    archetype: "discovery_board"
+
+  macro:china_stocks:
+    archetype: "discovery_board"
+
+  macro:china_stocks_lab:
+    archetype: "discovery_board"
+
+  macro:china_strategies:
+    archetype: "discovery_board"
+
+  macro:commodity_strategies:
+    archetype: "discovery_board"
+
+  macro:confluence_screener:
+    priority: "P0"
+    archetype: "discovery_board"
+    primary_user_question: "Which names line up across the signal stack today?"
+    evidence: [config/site_access.yml]
+    note: "free signal-stack lead magnet: rank 1 exposed, paid rows omitted server-side"
+
+  macro:discovery:
+    archetype: "discovery_board"
+
+  macro:factors:
+    archetype: "discovery_board"
+
+  macro:fund_index:
+    archetype: "discovery_board"
+    why: "the fund DIRECTORY is a board you pick from; each macro:fund_* dossier is an instrument_analyzer"
+
+  macro:hk_heatmap:
+    archetype: "discovery_board"
+
+  macro:hk_stocks:
+    archetype: "discovery_board"
+
+  macro:hk_stocks_lab:
+    archetype: "discovery_board"
+
+  macro:impulse:
+    archetype: "discovery_board"
+
+  macro:intl_stocks:
+    archetype: "discovery_board"
+
+  macro:ipo:
+    archetype: "discovery_board"
+
+  macro:leader_radar:
+    archetype: "discovery_board"
+
+  macro:masterminds:
+    archetype: "discovery_board"
+
+  macro:movers:
+    archetype: "discovery_board"
+
+  macro:narrative_radar:
+    archetype: "discovery_board"
+
+  macro:radar:
+    archetype: "discovery_board"
+
+  macro:sector_heatmap:
+    archetype: "discovery_board"
+
+  macro:stock_seasonality:
+    archetype: "discovery_board"
+    why: "ranks NAMES by calendar window, so it is a board — contrast macro:seasonality"
+
+  macro:stocks_index:
+    archetype: "discovery_board"
+
+  macro:strategies:
+    archetype: "discovery_board"
+
+  macro:subsectors:
+    archetype: "discovery_board"
+
+  macro:subsectors_china:
+    archetype: "discovery_board"
+
+  macro:us_stocks:
+    priority: "P0"
+    archetype: "discovery_board"
+    design_system: {compliant: false, governed_regions: [{region: body.page-stocks, template: templates/dashboard.html.j2}]}
+    primary_user_question: "Which US stocks are set up right now?"
+    evidence: [config/site_access.yml, templates/dashboard.html.j2]
+    note: "anonymous=1 / Free=3 / paid=full summary preview via tier_preview.js"
+
+  macro:us_stocks_lab:
+    archetype: "discovery_board"
+
+  macro:us_stocks_v2:
+    archetype: "discovery_board"
+
+  # ── instrument_analyzer · one entity, analysed in depth ───────────────────────
+  # C-company subtype: tickers, sectors, subsectors, rotations, baskets, funds.
+  # C-signal subtype: single named strategies and sleeves.
+
+  macro:basket_canada_family:
+    archetype: "instrument_analyzer"
+
+  macro:basket_china_family:
+    archetype: "instrument_analyzer"
+
+  macro:basket_family:
+    archetype: "instrument_analyzer"
+
+  macro:basket_hk_family:
+    archetype: "instrument_analyzer"
+
+  macro:basket_intl_family:
+    archetype: "instrument_analyzer"
+
+  macro:canada_stock:
+    archetype: "instrument_analyzer"
+
+  macro:china_allocation:
+    archetype: "instrument_analyzer"
+    why: "a single named strategy ('Income Vector'), not the China allocation board"
+
+  macro:china_lookup:
+    archetype: "instrument_analyzer"
+
+  macro:cn_reversal_sleeve:
+    archetype: "instrument_analyzer"
+    why: "one monthly contrarian sleeve, analysed as a single instrument"
+
+  macro:fund_ako:
+    archetype: "instrument_analyzer"
+
+  macro:fund_akre:
+    archetype: "instrument_analyzer"
+
+  macro:fund_altarock:
+    archetype: "instrument_analyzer"
+
+  macro:fund_altimeter:
+    archetype: "instrument_analyzer"
+
+  macro:fund_appaloosa:
+    archetype: "instrument_analyzer"
+
+  macro:fund_aquamarine:
+    archetype: "instrument_analyzer"
+
+  macro:fund_bakerbros:
+    archetype: "instrument_analyzer"
+
+  macro:fund_basswood:
+    archetype: "instrument_analyzer"
+
+  macro:fund_baupost:
+    archetype: "instrument_analyzer"
+
+  macro:fund_berkshire:
+    archetype: "instrument_analyzer"
+
+  macro:fund_casdin:
+    archetype: "instrument_analyzer"
+
+  macro:fund_coatue:
+    archetype: "instrument_analyzer"
+
+  macro:fund_corvex:
+    archetype: "instrument_analyzer"
+
+  macro:fund_d1capital:
+    archetype: "instrument_analyzer"
+
+  macro:fund_dorsey:
+    archetype: "instrument_analyzer"
+
+  macro:fund_dragoneer:
+    archetype: "instrument_analyzer"
+
+  macro:fund_duquesne:
+    archetype: "instrument_analyzer"
+
+  macro:fund_durable:
+    archetype: "instrument_analyzer"
+
+  macro:fund_egerton:
+    archetype: "instrument_analyzer"
+
+  macro:fund_elliott:
+    archetype: "instrument_analyzer"
+
+  macro:fund_engaged:
+    archetype: "instrument_analyzer"
+
+  macro:fund_fairholme:
+    archetype: "instrument_analyzer"
+
+  macro:fund_gates:
+    archetype: "instrument_analyzer"
+
+  macro:fund_giverny:
+    archetype: "instrument_analyzer"
+
+  macro:fund_greenlea:
+    archetype: "instrument_analyzer"
+
+  macro:fund_himalaya:
+    archetype: "instrument_analyzer"
+
+  macro:fund_icahn:
+    archetype: "instrument_analyzer"
+
+  macro:fund_jana:
+    archetype: "instrument_analyzer"
+
+  macro:fund_kimmeridge:
+    archetype: "instrument_analyzer"
+
+  macro:fund_lightstreet:
+    archetype: "instrument_analyzer"
+
+  macro:fund_lonepine:
+    archetype: "instrument_analyzer"
+
+  macro:fund_mudrick:
+    archetype: "instrument_analyzer"
+
+  macro:fund_oaktree:
+    archetype: "instrument_analyzer"
+
+  macro:fund_pabrai:
+    archetype: "instrument_analyzer"
+
+  macro:fund_perceptive:
+    archetype: "instrument_analyzer"
+
+  macro:fund_pershing:
+    archetype: "instrument_analyzer"
+
+  macro:fund_polen:
+    archetype: "instrument_analyzer"
+
+  macro:fund_punchcard:
+    archetype: "instrument_analyzer"
+
+  macro:fund_racapital:
+    archetype: "instrument_analyzer"
+
+  macro:fund_rtw:
+    archetype: "instrument_analyzer"
+
+  macro:fund_sachem:
+    archetype: "instrument_analyzer"
+
+  macro:fund_scion:
+    archetype: "instrument_analyzer"
+
+  macro:fund_soros:
+    archetype: "instrument_analyzer"
+
+  macro:fund_starboard:
+    archetype: "instrument_analyzer"
+
+  macro:fund_tci:
+    archetype: "instrument_analyzer"
+
+  macro:fund_thirdpoint:
+    archetype: "instrument_analyzer"
+
+  macro:fund_tigerglobal:
+    archetype: "instrument_analyzer"
+
+  macro:fund_trian:
+    archetype: "instrument_analyzer"
+
+  macro:fund_valueact:
+    archetype: "instrument_analyzer"
+
+  macro:fund_viking:
+    archetype: "instrument_analyzer"
+
+  macro:fund_whalerock:
+    archetype: "instrument_analyzer"
+
+  macro:hk_lookup:
+    archetype: "instrument_analyzer"
+
+  macro:intl_stock:
+    archetype: "instrument_analyzer"
+
+  macro:rotation_china_family:
+    archetype: "instrument_analyzer"
+
+  macro:rotation_family:
+    archetype: "instrument_analyzer"
+
+  macro:sectors_family:
+    archetype: "instrument_analyzer"
+
+  macro:spvector:
+    archetype: "instrument_analyzer"
+    why: "a single NAMED allocation strategy (S&P/Macro Vector), not an allocation board"
+
+  macro:stock:
+    archetype: "instrument_analyzer"
+
+  macro:stocks_family:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_btc_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_copper_active:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_copper_macro:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_copper_swap:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_gold_active:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_gold_macro:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_gold_swap:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_oil_macro:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_oil_swap:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_silver_active:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_silver_macro:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cm_silver_swap:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cn_credit_margin:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cn_credit_vol:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cn_volmanaged:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cnmm_aggressive:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cnmm_conservative:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_cnmm_moderate:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_copper_growth:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_credit_carry:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_credit_gate_equity:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_curve_recession:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_dual_momentum:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_duration_timing:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_em_debt_carry:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_equalweight_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_eth_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_fin_conditions:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_flight_to_quality:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_gold_macro:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_golden_cross:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_ig_carry:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_lowvol_defensive:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_mm_aggressive:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_mm_conservative:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_mm_moderate:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_momentum_crashguard:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_nasdaq_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_net_liquidity:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_oil_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_quality_flight:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_sahm_timer:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_semis_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_smallcap_trend:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_vix_term_timer:
+    archetype: "instrument_analyzer"
+
+  macro:strategy_vol_managed_sp:
+    archetype: "instrument_analyzer"
+
+  macro:subsector_china_family:
+    archetype: "instrument_analyzer"
+
+  macro:subsector_family:
+    archetype: "instrument_analyzer"
+
+  macro:subsector_nasdaq_family:
+    archetype: "instrument_analyzer"
+
+  macro:subsector_russell_family:
+    archetype: "instrument_analyzer"
+
+  macro:vector:
+    archetype: "instrument_analyzer"
+    why: "single-asset (BTC) strategy sheet"
+
+  # ── intelligence_desk · named research desks ──────────────────────────────────
+  # A standing desk over one domain: policy, flow, alt-data, smart money, China.
+
+  macro:advanced:
+    archetype: "intelligence_desk"
+    why: "renders the Quant Lab surface (page title is 'Quant Lab'), so it takes the desk archetype"
+
+  macro:ai_desk:
+    archetype: "intelligence_desk"
+
+  macro:alt_data:
+    archetype: "intelligence_desk"
+
+  macro:biocatalyst:
+    archetype: "intelligence_desk"
+
+  macro:capital_structure:
+    archetype: "intelligence_desk"
+
+  macro:chat:
+    archetype: "intelligence_desk"
+    why: "conversational AI desk; the v1 vocabulary has no chat archetype and a desk is the closest composition"
+
+  macro:china_altdata:
+    archetype: "intelligence_desk"
+
+  macro:china_intel:
+    archetype: "intelligence_desk"
+
+  macro:china_mechanics:
+    archetype: "intelligence_desk"
+
+  macro:china_policy_watch:
+    archetype: "intelligence_desk"
+
+  macro:china_sector_desk:
+    archetype: "intelligence_desk"
+
+  macro:china_special_situations:
+    archetype: "intelligence_desk"
+
+  macro:committee:
+    archetype: "intelligence_desk"
+
+  macro:congress_trades:
+    archetype: "intelligence_desk"
+    why: "smart-money disclosure desk"
+
+  macro:darkpool:
+    archetype: "intelligence_desk"
+    why: "off-tape flow desk, kin to the other flow/alt-data desks"
+
+  macro:demand:
+    archetype: "intelligence_desk"
+
+  macro:etfs:
+    archetype: "intelligence_desk"
+    why: "smart-money holdings desk ('which stocks fund managers are buying'), kin to macro:smart_money"
+
+  macro:flow_velocity:
+    archetype: "intelligence_desk"
+
+  macro:foresight:
+    archetype: "intelligence_desk"
+
+  macro:fundamental_forensics:
+    archetype: "intelligence_desk"
+
+  macro:government_revenue:
+    archetype: "intelligence_desk"
+
+  macro:intelligence_hub:
+    archetype: "intelligence_desk"
+
+  macro:intraday_flow:
+    archetype: "intelligence_desk"
+
+  macro:market_memory:
+    archetype: "intelligence_desk"
+
+  macro:mastermind:
+    archetype: "intelligence_desk"
+    why: "internal daily mastermind desk (dated rebuild), not a customer surface"
+
+  macro:mockup_ccw_credit_desk:
+    archetype: "intelligence_desk"
+    why: "internal mockup; archetype tracks the composition it PROTOTYPES (a credit desk), not its lifecycle"
+
+  macro:neural_web:
+    archetype: "intelligence_desk"
+
+  macro:odds:
+    archetype: "intelligence_desk"
+    why: "base-rate desk (historical odds), not a ranked board of tradeable names"
+
+  macro:options:
+    archetype: "intelligence_desk"
+    why: "titled 'one workspace' but it is the options DESK; chart_workspace is reserved for the Terminal charting shell"
+
+  macro:policy_watch:
+    archetype: "intelligence_desk"
+
+  macro:quant_lab:
+    archetype: "intelligence_desk"
+    why: "lab desk — outside models rebuilt and measured; desk composition, lab lifecycle"
+
+  macro:seasonality:
+    archetype: "intelligence_desk"
+    why: "factor-seasonality STUDY desk — contrast macro:stock_seasonality, which ranks names"
+
+  macro:sector_central:
+    archetype: "intelligence_desk"
+
+  macro:sector_central_china:
+    archetype: "intelligence_desk"
+
+  macro:signal_lab:
+    archetype: "intelligence_desk"
+    why: "lab desk measuring whether each signal works; desk composition"
+
+  macro:smart_money:
+    archetype: "intelligence_desk"
+
+  macro:special_situations:
+    archetype: "intelligence_desk"
+
+  macro:state_of_themes:
+    archetype: "intelligence_desk"
+
+  macro:tech_lab:
+    archetype: "intelligence_desk"
+    why: "lab desk; desk composition"
+
+  macro:whitehouse:
+    archetype: "intelligence_desk"
+
+  # ── editorial · reading surfaces ──────────────────────────────────────────────
+  # Reports, the vault, methodology, calibration and the free-content estate.
+
+  macro:about_research:
+    archetype: "editorial"
+    why: "public explainer of the research desk — a reading surface, not an acquisition page"
+
+  macro:aibrief:
+    archetype: "editorial"
+    why: "a daily BRIEF is a reading artifact, even though the AI desk generates it"
+
+  macro:blog_family:
+    archetype: "editorial"
+
+  macro:blog_index:
+    archetype: "editorial"
+
+  macro:calibration:
+    archetype: "editorial"
+    why: "calibration/measurement reading surface, kin to macro:measurement"
+
+  macro:learn:
+    archetype: "editorial"
+
+  macro:learn_family:
+    archetype: "editorial"
+
+  macro:learn_index:
+    archetype: "editorial"
+
+  macro:measurement:
+    archetype: "editorial"
+
+  macro:methodology:
+    archetype: "editorial"
+
+  macro:mockup_research_vault:
+    archetype: "editorial"
+    why: "internal mockup of the research vault; same rule as the credit-desk mockup"
+
+  macro:report_ai_master_plan:
+    archetype: "editorial"
+
+  macro:report_bessent_jun24:
+    archetype: "editorial"
+
+  macro:report_haven_audition:
+    archetype: "editorial"
+
+  macro:report_relapse_jul8:
+    archetype: "editorial"
+
+  macro:report_second_act:
+    archetype: "editorial"
+
+  macro:report_warsh_fomc:
+    archetype: "editorial"
+
+  macro:reports:
+    archetype: "editorial"
+
+  macro:research_family:
+    archetype: "editorial"
+
+  macro:research_index:
+    archetype: "editorial"
+
+  macro:research_vault:
+    priority: "P0"
+    archetype: "editorial"
+    primary_user_question: "What has the research desk published?"
+    evidence: [config/site_access.yml]
+    note: "anonymous visitors see the latest three summaries; PDFs stay behind the authenticated /api/research routes"
+
+  macro:us_track_record:
+    archetype: "editorial"
+    why: "a published performance record — a reading surface, not a live board"
+
+  mastermind:agenda:
+    archetype: "editorial"
+    lifecycle: "internal"
+    evidence: [app/web.py]
+    note: "weekly self-critique mirror (advisory only); a maintenance session bookmarks it"
+    why: "weekly self-critique mirror — a reading surface"
+
+  terminal:learn:
+    archetype: "editorial"
+    access_shell: "anonymous"
+    payload_tier: "public"
+    evidence: [terminal/app/learn/page.tsx]
+    note: "static content page, no server-side data reads (revalidate 300)"
+
+  # ── monitor · alerts, news, holdings and service state ────────────────────────
+  # Streams and watch-state: things you check, not things you rank.
+
+  macro:alerts:
+    archetype: "monitor"
+
+  macro:china_news:
+    archetype: "monitor"
+
+  macro:news:
+    archetype: "monitor"
+
+  macro:status:
+    archetype: "monitor"
+    why: "internal VPS/service status board — composes as a live-state monitor, not a content page"
+
+  macro:watchlist:
+    archetype: "monitor"
+    note: "pending IA §10.4 Sol ruling — archetype may move on the ruling"
+
+  macro:winner_health:
+    archetype: "monitor"
+
+  mastermind:desk:
+    archetype: "monitor"
+    lifecycle: "internal"
+    evidence: [app/web.py]
+    note: "desk observability view — operator surface served on the read mirror, not customer product"
+    why: "serves the SAME app/static/index.html shell as / ; archetype follows the shell"
+
+  mastermind:index:
+    archetype: "monitor"
+    why: "serves app/static/index.html — the Portfolio Dashboard shell; same shell, same archetype"
+
+  mastermind:portfolio_desk:
+    priority: "P0"
+    archetype: "monitor"
+    primary_user_question: "What is the desk holding and why?"
+    evidence: [app/web.py]
+
+  mastermind:research:
+    archetype: "monitor"
+    why: "serves the SAME app/static/index.html shell as / ; archetype follows the shell"
+
+  mastermind:self:
+    archetype: "monitor"
+    why: "serves the SAME app/static/index.html shell as / ; archetype follows the shell"
+
+  # ── marketing · acquisition and corporate ─────────────────────────────────────
+  # Anonymous/public chrome family: landing, pricing, products, about.
+
+  macro:about:
+    archetype: "marketing"
+
+  macro:coming_soon:
+    archetype: "marketing"
+    why: "public acquisition placeholder, so it belongs to the marketing family"
+
+  macro:index:
+    priority: "P0"
+    archetype: "marketing"
+    primary_user_question: "What is this product and why should I trust it?"
+    evidence: [templates/index.html, templates/_public_nav.html.j2]
+    note: "hand-authored flagship landing; mirrors the public chrome family"
+
+  macro:plans:
+    priority: "P0"
+    archetype: "marketing"
+    primary_user_question: "What do I get, and what does it cost?"
+    evidence: [config/site_access.yml, templates/plans.html.j2]
+
+  macro:products_family:
+    archetype: "marketing"
 
   macro:products_index:
-    priority: P0
-    archetype: marketing_landing
+    priority: "P0"
+    archetype: "marketing"
     primary_user_question: "What products are there?"
-    evidence: ["templates/_public_nav.html.j2"]
-
-  macro:products_market_terminal:
-    priority: P0
-    archetype: marketing_landing
-    primary_user_question: "What is the Market Terminal and should I sign up?"
-    evidence: ["lib/pages.py", "templates/_public_nav.html.j2"]
-
-  macro:products_mastermind_ai:
-    priority: P0
-    archetype: marketing_landing
-    primary_user_question: "What does the AI actually do for me?"
-    evidence: ["lib/pages.py", "templates/_public_nav.html.j2"]
+    evidence: [templates/_public_nav.html.j2]
 
   macro:products_market_dashboards:
-    priority: P0
-    archetype: marketing_landing
+    priority: "P0"
+    archetype: "marketing"
     primary_user_question: "What do the dashboards cover?"
-    evidence: ["lib/pages.py", "templates/_public_nav.html.j2"]
+    evidence: [lib/pages.py, templates/_public_nav.html.j2]
 
-  # ── terminal · access facts that are not statically derivable ──────────────
-  # The page modules carry NO gate marker for these routes.  Absence of a marker
-  # is not proof of anonymity, so the derived layer leaves them "unknown" and the
-  # fact is recorded here against the code that shows it.
+  macro:products_market_terminal:
+    priority: "P0"
+    archetype: "marketing"
+    primary_user_question: "What is the Market Terminal and should I sign up?"
+    evidence: [lib/pages.py, templates/_public_nav.html.j2]
+
+  macro:products_mastermind_ai:
+    priority: "P0"
+    archetype: "marketing"
+    primary_user_question: "What does the AI actually do for me?"
+    evidence: [lib/pages.py, templates/_public_nav.html.j2]
 
   terminal:landing:
-    access_shell: anonymous
-    payload_tier: public
-    archetype: marketing_landing
-    evidence: ["terminal/app/page.tsx"]
+    archetype: "marketing"
+    access_shell: "anonymous"
+    payload_tier: "public"
+    evidence: [terminal/app/page.tsx]
     note: "anonymous landing; middleware redirects signed-in users to /terminal"
 
-  terminal:terminal:
-    priority: P0
-    access_shell: anonymous
-    payload_tier: public_shell_premium_payload
-    archetype: chart_workspace
-    primary_user_question: "What is this instrument doing?"
-    evidence: ["terminal/app/terminal/page.tsx", "terminal/lib/subscriptionTier.ts"]
-    note: "guest mode: an anonymous visitor gets the guestSymbols watchlist; tier-gated indicators sit behind free|essential|pro"
+  # ── chart_workspace · the Terminal app shell ──────────────────────────────────
+  # Terminal-repo product app routes (charting/analysis workspace).
+
+  terminal:alerts:
+    archetype: "chart_workspace"
+    why: "Terminal app view — chart_workspace records the governing doctrine (adjudicated divergence, census §3.4), not the view's function; re-keying by function would subject Terminal views to Macro archetype law. Adjudicated 2026-08-12, DS-PR-1 review."
+
+  terminal:analysis:
+    archetype: "chart_workspace"
 
   terminal:discover:
-    priority: P0
+    priority: "P0"
+    archetype: "chart_workspace"
     primary_user_question: "What is worth looking at right now?"
-    evidence: ["terminal/components/gates/SignupGate.tsx"]
+    evidence: [terminal/components/gates/SignupGate.tsx]
+    why: "Terminal app view — chart_workspace records the governing doctrine (adjudicated divergence, census §3.4), not the view's function; re-keying by function would subject Terminal views to Macro archetype law. Adjudicated 2026-08-12, DS-PR-1 review."
+
+  terminal:embed_chart:
+    archetype: "chart_workspace"
+    access_shell: "anonymous"
+    payload_tier: "public"
+    evidence: [terminal/app/embed/chart/page.tsx]
+    note: "iframe widget for the dossier pages; robots noindex; nests inside the dark root layout but applies its own ?theme=/?lang= params to the chart surface"
 
   terminal:options:
-    priority: P0
+    priority: "P0"
+    archetype: "chart_workspace"
     primary_user_question: "Where is the options market positioned?"
-    evidence: ["terminal/lib/entitlement.ts"]
+    evidence: [terminal/lib/entitlement.ts]
     note: "terminal_live_options feature — essential + pro (incl. trial); anonymous and free get OptionsPaywall"
 
   terminal:portfolio:
-    priority: P0
+    priority: "P0"
+    archetype: "chart_workspace"
     primary_user_question: "How is my book doing?"
-    evidence: ["terminal/components/gates/SignupGate.tsx"]
+    evidence: [terminal/components/gates/SignupGate.tsx]
+    why: "Terminal app view — chart_workspace records the governing doctrine (adjudicated divergence, census §3.4), not the view's function; re-keying by function would subject Terminal views to Macro archetype law. Adjudicated 2026-08-12, DS-PR-1 review."
 
   terminal:scripts:
-    payload_tier: public_shell_premium_payload
-    evidence: ["terminal/app/(shell)/scripts/page.tsx", "terminal/lib/entitlement.ts"]
+    archetype: "chart_workspace"
+    payload_tier: "public_shell_premium_payload"
+    evidence: [terminal/app/(shell)/scripts/page.tsx, terminal/lib/entitlement.ts]
     note: "signed-in to open the editor; isPaidTier() gates saving/editing beyond the locked flagship script"
 
-  terminal:login:
-    access_shell: anonymous
-    payload_tier: public
-    evidence: ["terminal/app/login/page.tsx"]
-
-  terminal:learn:
-    access_shell: anonymous
-    payload_tier: public
-    evidence: ["terminal/app/learn/page.tsx"]
-    note: "static content page, no server-side data reads (revalidate 300)"
-
-  terminal:embed_chart:
-    access_shell: anonymous
-    payload_tier: public
-    evidence: ["terminal/app/embed/chart/page.tsx"]
-    note: "iframe widget for the dossier pages; robots noindex; nests inside the dark root layout but applies its own ?theme=/?lang= params to the chart surface"
+  terminal:terminal:
+    priority: "P0"
+    archetype: "chart_workspace"
+    access_shell: "anonymous"
+    payload_tier: "public_shell_premium_payload"
+    primary_user_question: "What is this instrument doing?"
+    evidence: [terminal/app/terminal/page.tsx, terminal/lib/subscriptionTier.ts]
+    note: "guest mode: an anonymous visitor gets the guestSymbols watchlist; tier-gated indicators sit behind free|essential|pro"
 
   terminal:x_slug:
-    access_shell: anonymous
-    payload_tier: public
-    evidence: ["terminal/app/x/[slug]/page.tsx"]
+    archetype: "chart_workspace"
+    access_shell: "anonymous"
+    payload_tier: "public"
+    evidence: ['terminal/app/x/[slug]/page.tsx']
 
-  # ── mastermind · lifecycle rulings ─────────────────────────────────────────
-  # Every GET is unauthenticated (app/auth.py removed the browser login), so the
-  # derived access facts stand.  What the derivation cannot see is that two of
-  # these views are ops observability rather than customer product.
+  # ── utility · legal, account, redirect stubs and internal plumbing ────────────
+  # No product composition to govern: legal pages, calculators, moved-notice
+  # stubs and internal QA surfaces.
 
-  mastermind:portfolio_desk:
-    priority: P0
-    primary_user_question: "What is the desk holding and why?"
-    evidence: ["app/web.py"]
+  macro:baskets:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
 
-  mastermind:desk:
-    lifecycle: internal
-    evidence: ["app/web.py"]
-    note: "desk observability view — operator surface served on the read mirror, not customer product"
+  macro:baskets_china:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
 
-  mastermind:agenda:
-    lifecycle: internal
-    evidence: ["app/web.py"]
-    note: "weekly self-critique mirror (advisory only); a maintenance session bookmarks it"
+  macro:btc_strategy:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:disclaimer:
+    archetype: "utility"
+
+  macro:flow_desk:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:flow_leaders:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:gex:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:options_screener:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:privacy:
+    archetype: "utility"
+
+  macro:qa_bottom_sensors:
+    archetype: "utility"
+    why: "internal QA harness output; no product composition to govern"
+
+  macro:subsector_rotation:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:subsector_rotation_china:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  macro:support:
+    archetype: "utility"
+
+  macro:terms:
+    archetype: "utility"
+
+  macro:tools_family:
+    archetype: "utility"
+    why: "calculators and converters — utility surfaces, not a product board"
+
+  macro:tools_index:
+    archetype: "utility"
+    why: "calculators and converters — utility surfaces, not a product board"
+
+  macro:unsubscribe:
+    archetype: "utility"
+
+  macro:validation_timeline:
+    archetype: "utility"
+    why: "internal and untitled; no product composition to govern"
+
+  macro:vector_allocation:
+    archetype: "utility"
+    why: "live route that now serves only a 'moved' notice (page <title> says so); a redirect stub has no product composition to govern"
+
+  terminal:admin:
+    archetype: "utility"
+
+  terminal:dev_settings:
+    archetype: "utility"
+
+  terminal:dev_theater:
+    archetype: "utility"
+
+  terminal:login:
+    archetype: "utility"
+    access_shell: "anonymous"
+    payload_tier: "public"
+    evidence: [terminal/app/login/page.tsx]

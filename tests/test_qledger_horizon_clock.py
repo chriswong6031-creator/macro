@@ -631,9 +631,13 @@ def _mixed_store_rows(n_legacy: int, n_v1: int):
                                ("V", n_v1, q.HORIZON_UNIT_TRADING, date(2026, 1, 1))):
         for i in range(n):
             cid = f"{tag}{i}"
+            # direction=1: these rows' subject_ret (0.06) beats control_ret
+            # (0.01), i.e. a correct bullish call. P0c-1 made control-only hit
+            # counting direction-aware, so a claim must declare a direction for
+            # `hit=True` below to be scoreable as a hit under control_only=True.
             claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
                            "asof": (base + timedelta(days=i)).isoformat(),
-                           "is_placebo": False, "status": "open"})
+                           "is_placebo": False, "status": "open", "direction": 1})
             row = {"claim_id": cid, "horizon_d": 21, "excess": 0.05, "hit": True,
                    "subject_ret": 0.06, "bench_ret": 0.01, "control_ret": 0.01,
                    "graded_at": "2026-08-13T00:00:00+00:00"}
@@ -1143,17 +1147,28 @@ def test_a_resolvable_claim_and_every_legacy_claim_still_register_open(tmp_path)
 # MAJOR 2 (round 3) — the headline guarantee states EXACTLY where it holds
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("horizon_d, holds", [
-    (5, True), (21, True), (63, True),     # the graded rungs
-    (3, True),                             # below the smallest rung: graded at 3
-    (7, False), (30, False), (126, False),  # off-rung: check_by is not a graded exit
+    (5, True), (21, True), (63, True),      # the graded rungs — unaffected by P0b
+    (3, True),                              # below the smallest rung: graded at 3
+    (7, True), (20, True), (30, True), (60, True),   # P0b — off-rung, <= the 63d
+                                             # ceiling: NOW graded at their own ruler
+    (64, False), (84, False), (90, False), (126, False),  # ABOVE the ceiling: still
+                                             # never a graded exit (LH-U6 forbids
+                                             # extending GRADE_HORIZONS past 63d in
+                                             # the live nightly grader)
 ])
-def test_check_by_is_a_graded_exit_only_on_the_graded_rungs(horizon_d, holds):
-    """MAJOR 2 — the docstring asserted unconditionally that "check_by IS the
-    authoritative exit the grader resolves". That is FALSE for every off-rung
-    horizon: check_by is resolved at the claim's OWN horizon_d, the grader grades
-    at `in_scope_horizons(horizon_d)`. Making it true would mean changing
-    GRADE_HORIZONS / in_scope_horizons, which is P0b and out of scope — so the
-    scope is stated instead, and it is EXECUTABLE rather than prose."""
+def test_check_by_is_a_graded_exit_holds_at_or_below_the_ladder_ceiling(
+        horizon_d, holds):
+    """MAJOR 2, updated by P0b (this PR). The docstring used to assert
+    unconditionally that "check_by IS the authoritative exit the grader
+    resolves" — FALSE for every off-rung horizon, because check_by is resolved
+    at the claim's OWN horizon_d while the grader graded only at the fixed
+    5/21/63 rungs. P0b closes that gap for every ruler at or below the
+    ladder's ceiling (`GRADE_HORIZONS[-1]`, 63 today): `in_scope_horizons` now
+    always includes the claim's own declared horizon there, so 7/20/30/60 all
+    flip to True. ABOVE the ceiling the gap is UNCHANGED and intentional —
+    extending `GRADE_HORIZONS` past 63d in the live nightly grader is
+    forbidden by ruling LH-U6 (`config/ruling_graph.yml`) — so 64/84/90/126
+    stay False exactly as they did before this PR."""
     assert q.check_by_is_a_graded_exit(horizon_d) is holds
     assert (horizon_d in q.in_scope_horizons(horizon_d)) is holds
 
@@ -1180,6 +1195,93 @@ def test_an_off_rung_claims_check_by_is_a_real_exit_that_no_grade_row_matches(
                             today=date(2027, 6, 30))
     assert q.check_by_is_a_graded_exit(63)
     assert on["check_by"] in {r["clock_exit_date"] for r in on_rows}
+
+
+# --------------------------------------------------------------------------- #
+# P0b — grade a claim at its OWN declared ruler, within the existing 63d
+# ceiling. `GRADE_HORIZONS` itself is UNCHANGED at (5, 21, 63); this program
+# only ever widens a SINGLE claim's own `in_scope_horizons()` list.
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("horizon_d, expected", [
+    (7, [5, 7]),
+    (20, [5, 20]),
+    (30, [5, 21, 30]),
+    (60, [5, 21, 60]),
+    (63, [5, 21, 63]),
+    (84, [5, 21, 63]),
+    (90, [5, 21, 63]),
+    (126, [5, 21, 63]),
+    (3, [3]),          # existing sub-5 fallback — must not regress
+    (5, [5]),
+    (21, [5, 21]),
+])
+def test_in_scope_horizons_worked_examples(horizon_d, expected):
+    """The CEO's rule (2026-08-13 §6), pinned exactly: a declared ruler
+    <= 63 is always included in its claim's own grade list, on-rung or off;
+    a ruler > 63 is never dynamically added to the live nightly grader — the
+    existing <=63 ladder only, exactly as before P0b."""
+    assert q.in_scope_horizons(horizon_d) == expected
+
+
+def test_grade_horizons_constant_is_unchanged_by_p0b():
+    """P0b does not touch the ladder itself — only a single claim's own
+    grade list. `GRADE_HORIZONS` stays exactly (5, 21, 63)."""
+    assert q.GRADE_HORIZONS == (5, 21, 63)
+
+
+@pytest.mark.parametrize("horizon_d", [
+    64, 70, 84, 90, 100, 126, 180, 252, 365, 504, 756, 1260,
+])
+def test_no_ruler_above_63_ever_enters_in_scope_horizons(horizon_d):
+    """Requirement 3 / LH-U6. For every ruler above the ladder's ceiling —
+    including the multi-year values (252/504/756+) ruling LH-U6 names by
+    name as forbidden in the live nightly grader — `in_scope_horizons`
+    returns EXACTLY the fixed <=63 ladder and never the claim's own number.
+    This is what makes P0b's own-ruler addition structurally unable to
+    violate LH-U6: the ceiling check lives inside `in_scope_horizons` itself,
+    not in a caller's discipline."""
+    hs = q.in_scope_horizons(horizon_d)
+    assert hs == list(q.GRADE_HORIZONS)
+    assert horizon_d not in hs
+    assert max(hs) <= 63
+
+
+def test_an_off_rung_claim_at_or_below_63_now_grades_at_its_own_ruler(
+        prices, tmp_path):
+    """The concrete, positive shape of P0b on a live lane — the mirror image
+    of `test_an_off_rung_claims_check_by_is_a_real_exit_that_no_grade_row_matches`
+    above. A 30-trading-day policy-shaped claim (off-rung, <= the 63d ceiling)
+    now produces a THIRD grade row at its own declared horizon, in addition to
+    the pre-existing 5d/21d rungs — no existing row's shape changes, this is
+    purely additive."""
+    c = _claim(horizon_d=30, horizon_unit=q.HORIZON_UNIT_TRADING)
+    win30 = q.resolve_horizon_window(q._entry_date(c), 30,
+                                     q.HORIZON_UNIT_TRADING, q.MARKET_US)
+    assert c["check_by"] == win30.exit_date.isoformat()
+    assert q.check_by_is_a_graded_exit(30)          # P0b flips this to True
+
+    rows = q.grade_claim({**c, "claim_id": "cid-30"}, root=tmp_path,
+                         today=date(2026, 12, 1))
+    graded = sorted(r["horizon_d"] for r in rows)
+    assert graded == [5, 21, 30]                    # own ruler now present
+    assert c["check_by"] in {r["clock_exit_date"] for r in rows}
+
+
+def test_an_off_ceiling_claim_still_never_grades_at_its_own_ruler(
+        prices, tmp_path):
+    """The negative control for the SAME mechanism, at a ruler ABOVE the
+    ceiling (90d). Even with abundant maturity time, no 90d row is ever
+    produced — `in_scope_horizons` is the single place the ceiling is
+    enforced, and this exercises it end-to-end through `grade_claim`, not
+    only as a unit test of the pure function."""
+    c = _claim(horizon_d=90, horizon_unit=q.HORIZON_UNIT_TRADING)
+    assert not q.check_by_is_a_graded_exit(90)
+
+    rows = q.grade_claim({**c, "claim_id": "cid-90"}, root=tmp_path,
+                         today=date(2027, 6, 30))
+    graded = sorted(r["horizon_d"] for r in rows)
+    assert graded == [5, 21, 63]
+    assert 90 not in graded
 
 
 # --------------------------------------------------------------------------- #
@@ -1524,9 +1626,11 @@ def _two_market_store(n_us: int, n_cn: int):
                                  ("C", n_cn, q.MARKET_CN, date(2026, 6, 1))):
         for i in range(n):
             cid = f"{tag}{i}"
+            # direction=1: see _mixed_store_rows — subject_ret beats
+            # control_ret below, a correct bullish call.
             claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
                            "asof": (base + timedelta(days=i)).isoformat(),
-                           "is_placebo": False, "status": "open"})
+                           "is_placebo": False, "status": "open", "direction": 1})
             grades.append({"claim_id": cid, "horizon_d": 21, "excess": 0.05,
                            "hit": True, "subject_ret": 0.06, "bench_ret": 0.01,
                            "control_ret": 0.01,
@@ -2070,9 +2174,11 @@ def _legacy_plus_two_market_store(n_legacy: int, n_us: int, n_cn: int):
     claims, grades = _two_market_store(n_us=n_us, n_cn=n_cn)
     for i in range(n_legacy):
         cid = f"L{i}"
+        # direction=1: see _mixed_store_rows — subject_ret beats control_ret
+        # below, a correct bullish call.
         claims.append({"claim_id": cid, "desk": "d", "claim_family": "f",
                        "asof": (date(2025, 1, 1) + timedelta(days=i)).isoformat(),
-                       "is_placebo": False, "status": "open"})
+                       "is_placebo": False, "status": "open", "direction": 1})
         # no horizon_unit / clock_version / clock_market == CLOCK_LEGACY
         grades.append({"claim_id": cid, "horizon_d": 21, "excess": 0.05,
                        "hit": True, "subject_ret": 0.06, "bench_ret": 0.01,
@@ -2431,8 +2537,12 @@ def test_an_index_subject_no_longer_lets_the_default_bench_name_the_market():
     provenance, so the claim is refused instead of silently mis-graded."""
     market, reason = q.resolve_claim_market(_mkclaim("radar", "^HSI"))
     assert market is None, "the Hang Seng resolved on somebody else's calendar"
-    assert q.clock_reason_head(reason).startswith(
-        q.MARKET_UNDETERMINED_CONTRADICTION)
+    # MIXED, not "contradiction": the index names HK from its own enumerated
+    # entry — a hard fact the desk table may not veto — and the claim's SPY
+    # default bench names US, so the two LEGS span two markets and have no
+    # single session ruler. That is the honest reason, and it is the same
+    # answer for an unlisted desk as for an enumerated one.
+    assert q.clock_reason_head(reason).startswith(q.MARKET_UNDETERMINED_MIXED)
     assert "HK" in reason and "US" in reason
 
     # ...and with no provenance in play, the index names its own market.
@@ -2495,12 +2605,17 @@ def test_provenance_can_never_re_market_a_symbol_that_names_its_own():
     SPY is a US symbol under every desk. The claim is refused (its two legs
     genuinely span two markets and have no single session ruler) — never
     silently re-marketed."""
+    # SPY is a bare symbol: its US reading is an INFERENCE (valid_us_ticker), not
+    # a hard exchange fact, so it is the weaker arm and a disagreeing provenance
+    # refuses it. This is the arm where agree-or-refuse genuinely binds.
     assert q._ticker_market("SPY", provenance=q.MARKET_CN)[0] is None
     assert q._ticker_market("SPY", provenance=None) == (q.MARKET_US, "")
     assert q._ticker_market("SPY", provenance=q.MARKET_US) == (q.MARKET_US, "")
 
-    # A hard exchange suffix outranks provenance the same way.
-    assert q._ticker_market("600519.SS", provenance=q.MARKET_US)[0] is None
+    # A hard exchange suffix outranks provenance — in the OTHER direction. The
+    # suffix is direct evidence about the instrument and simply wins; the claim
+    # is still refused, one level up, as MIXED (see the test below).
+    assert q._ticker_market("600519.SS", provenance=q.MARKET_US) == (q.MARKET_CN, "")
     assert q._ticker_market("600519.SS", provenance=q.MARKET_CN) == (q.MARKET_CN, "")
 
 
@@ -2609,3 +2724,65 @@ def test_the_hardening_refuses_only_shapes_the_live_corpus_does_not_contain():
     assert market is None
     assert q.clock_reason_head(reason).startswith(
         q.MARKET_UNDETERMINED_FOREIGN_EXCHANGE)
+
+
+def test_a_hard_exchange_suffix_is_never_vetoed_by_provenance():
+    """THE DEFECT WAS THIS CONTRACT'S OWN, AND ITS OWN TEST COULD NOT SEE IT.
+
+    P0a-2's first cut documented `shape_is_decisive` as the seam between a hard
+    exchange fact and a shape inference, threaded it through all four
+    `_corroborate` call sites, and added
+    `test_corroborate_records_the_strength_of_every_call_site` to pin every call
+    site's value — then **never read the parameter in the function body**. Every
+    caller got the agree-or-refuse arm, so a hard suffix was vetoed by a desk
+    table:
+
+        {'desk': 'china_news', 'scope': {'key': '0700.HK'}, 'bench': '2800.HK'}
+            -> (None, 'shape_provenance_contradiction:HK!=CN')
+
+    while the identical claim on the UNLISTED desk `altdata` resolved
+    ('HK', ''). Admissibility depended on whether the desk happened to be
+    enumerated — backwards — and since `DESK_MARKET` carries no HK entry while
+    HK is a first-class market in `CLOCK_CALENDARS`, **no enumerated desk could
+    ever claim a Hong Kong security.**
+
+    The pinning test asserts the parameter's VALUE at each call site, never its
+    EFFECT, so it is a guard that cannot fail on the defect it exists to gate.
+    This test asserts the effect."""
+    hk = {"scope": {"type": "entity", "key": "0700.HK"}, "bench": "2800.HK"}
+    for desk in ("china_news", "cn_importance_v0", "radar", "whitehouse",
+                 "policy", "us_importance_v0", "altdata", "narrative"):
+        claim = dict(hk, desk=desk, claim_family=desk)
+        assert q.resolve_claim_market(claim) == (q.MARKET_HK, ""), desk
+    assert not any(v == q.MARKET_HK for v in q.DESK_MARKET.values()), (
+        "if an HK desk is ever added, this test stops covering the case it "
+        "exists for — the point is that HK resolves with NO provenance help")
+
+    # The leg-level rule, at each of the three DECISIVE shape sources.
+    assert q._ticker_market("0700.HK", provenance=q.MARKET_CN) == (q.MARKET_HK, "")
+    assert q._ticker_market("600519.SS", provenance=q.MARKET_US) == (q.MARKET_CN, "")
+    assert q._ticker_market("^HSI", provenance=q.MARKET_US) == (q.MARKET_HK, "")
+    assert q._ticker_market("BRK.B", provenance=q.MARKET_CN) == (q.MARKET_US, "")
+
+    # ...and the INFERRED arm still binds: a bare symbol's US reading is not a
+    # hard fact, so a disagreeing provenance refuses it.
+    assert q._ticker_market("AAPL", provenance=q.MARKET_CN)[0] is None
+
+
+def test_a_genuinely_cross_market_claim_is_still_refused_as_mixed():
+    """NEGATIVE CONTROL for the fix above: letting a hard suffix win must NOT
+    let a two-market claim through. It is caught one level up, by
+    `resolve_claim_market`'s MIXED refusal, and that is the honest reason — the
+    two legs have no single session ruler, which is a fact about the CLAIM, not
+    a disagreement between two classifiers."""
+    for desk, key, bench in (
+            ("us_importance_v0", "600519.SS", "SPY"),
+            ("radar", "^HSI", "SPY"),
+            ("china_news", "0700.HK", "510300.SS"),
+            ("altdata", "600519.SS", "SPY")):
+        claim = {"desk": desk, "claim_family": desk,
+                 "scope": {"type": "entity", "key": key}, "bench": bench}
+        market, reason = q.resolve_claim_market(claim)
+        assert market is None, (desk, key, bench)
+        assert q.clock_reason_head(reason).startswith(
+            q.MARKET_UNDETERMINED_MIXED), (desk, key, reason)

@@ -28,8 +28,9 @@ The default store is private and outside the repository:
     name_history/year=YYYY.parquet
     {daily,daily_basic,stk_limit,suspend_d,stock_st}/year=YYYY/month=MM/part.parquet
     source_row_classification/{known_excluded,quarantined_unknown}/...
-    source_shards/{daily,daily_basic,stk_limit}/...
-    receipts/requests/<endpoint>/<unit>/<request-hash>.json
+    range_campaigns/<campaign-id>/{plan,terminal_index,campaign_receipt}...
+    source_range_shards/{daily,daily_basic,stk_limit}/<campaign-id>/...
+    receipts/requests/<endpoint>/range:<leaf-id>/<attempt-id>.json
     event_daily/year=YYYY/month=MM/part.parquet
     coverage/daily_security_coverage.parquet
     collection_state.json
@@ -39,10 +40,12 @@ Every response must have the exact requested schema and belong to the exact
 exchange/status/date/ticker request.  Each source unit satisfies
 ``source = landed_A + independently_known_out_of_scope + quarantined_unknown``;
 unknown rows, name orphans, absent/tampered request or classification receipts, or
-an uncovered ticker shard block completeness.  Capped whole-market responses are
-discarded as non-authoritative probes before deterministic per-date/ticker recovery.
-That recovery is not long-horizon scalable, so the immutable operational gate is
-false and every collection path remains disabled in this foundation commit.
+an uncovered ticker-range campaign block completeness.  Capped whole-market
+responses are discarded as non-authoritative probes before deterministic
+ticker-by-date-range recovery.  Range leaves split below the endpoint cap,
+transpose back to exact-day partitions, and keep each attempt immutable.  The
+operational gate nevertheless remains false pending licensed live canary and
+throughput evidence.
 
 ``daily`` is unadjusted nominal price authority and retains zero-volume rows with
 ``positive_volume = volume_lots > 0``.  A traded/listing-session claim must filter
@@ -64,8 +67,8 @@ units.  ``--allow-bulk`` is required above the safety ceiling or for unlimited
 collection.  This code wave made no live vendor call and grants no permission to
 run one.  The code-reviewed trust-root hash set is deliberately empty in this
 foundation commit; a real allowlist hash requires a separate reviewed code change.
-The operational backfill gate is also deliberately false until exact ticker-range
-shards replace the combinatorial exact-date/ticker fallback.
+The operational backfill gate is also deliberately false until a separately
+reviewed authority wave proves the range implementation against licensed data.
 """
 from __future__ import annotations
 
@@ -89,6 +92,7 @@ from typing import Any
 
 import pandas as pd
 
+from collectors import china_tushare_range_shards as crs
 from collectors import tushare_client as tc
 
 log = logging.getLogger(__name__)
@@ -101,9 +105,9 @@ AUTHORIZATION_TRUST_SCHEMA_VERSION = "cn_tushare_authorization_trust_allowlist.v
 # become a trust root only by adding its exact SHA-256 in a reviewed code change;
 # no CLI flag or environment variable can mint a runtime pin.
 CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256: frozenset[str] = frozenset()
-# The current exact-date x ticker cap fallback is deterministic but not a
-# viable 2011-present bulk plan.  Keep every network path fail-closed until a
-# separately reviewed range-shard implementation flips this immutable gate.
+# Scalable range shards are implemented and synthetic-tested, but no licensed
+# live parity/throughput canary has run.  Keep every network path fail-closed
+# until a separate reviewed authority change flips this immutable gate.
 BULK_HISTORICAL_BACKFILL_READY = False
 AUTHORITY = "context_only"
 SOURCE_NAME = "tushare_pro"
@@ -127,7 +131,6 @@ BSE_LAUNCH = date(2021, 11, 15)
 CALENDAR_HISTORY_START = date(1991, 1, 1)
 NAME_HISTORY_START_YEAR = 1990
 NAMECHANGE_MAX_PER_RUN = 5
-SHARD_CALLS_PER_UNIT_SLICE = 8
 FUND_STATUSES = ("L", "D", "I")
 
 AUTHORIZATION_REQUIRED_SCOPE = (
@@ -1498,8 +1501,47 @@ def _expected_request_params(state_endpoint: str, state_unit: str) -> dict[str, 
 
 
 def _unit_request_receipts_valid(
-    state_endpoint: str, state_unit: str, record: Mapping[str, Any], store: Path,
+    state_endpoint: str,
+    state_unit: str,
+    record: Mapping[str, Any],
+    store: Path,
+    campaign_cache: dict[str, crs.CampaignVerification] | None = None,
 ) -> bool:
+    if record.get("collection_method") == "per_ticker_range_shards":
+        reference = record.get("range_campaign_receipt")
+        if not isinstance(reference, Mapping):
+            return False
+        campaign_id = str(reference.get("campaign_id") or "")
+        try:
+            if campaign_cache is not None and campaign_id in campaign_cache:
+                verification = campaign_cache[campaign_id]
+            else:
+                verification = crs.verify_campaign(store, campaign_id)
+                if campaign_cache is not None:
+                    campaign_cache[campaign_id] = verification
+            if not verification.complete:
+                return False
+            campaign_reference = crs.campaign_receipt_reference(store, verification)
+        except crs.RangeShardError:
+            return False
+        try:
+            expected_date = _parse_date(state_unit).isoformat()
+        except (ValueError, SpineError):
+            return False
+        day = verification.day_receipts.get(expected_date)
+        if not isinstance(day, Mapping):
+            return False
+        expected_reference = {
+            **campaign_reference,
+            "trade_date": expected_date,
+            "authoritative_row_count": int(day["authoritative_row_count"]),
+            "authoritative_semantic_sha256": day["authoritative_semantic_sha256"],
+        }
+        return bool(
+            dict(reference) == expected_reference
+            and int(record.get("source_row_count", -1))
+            == int(day["authoritative_row_count"])
+        )
     receipts = record.get("request_receipts")
     if not isinstance(receipts, list) or not receipts:
         return False
@@ -1606,11 +1648,19 @@ def _unit_request_receipts_valid(
     return True
 
 
-def _unit_done(state: Mapping[str, Any], store: Path, endpoint: str, unit: str) -> bool:
+def _unit_done(
+    state: Mapping[str, Any],
+    store: Path,
+    endpoint: str,
+    unit: str,
+    campaign_cache: dict[str, crs.CampaignVerification] | None = None,
+) -> bool:
     record = _unit_record(state, endpoint, unit)
     if not record or record.get("status") not in {"complete", "empty"}:
         return False
-    request_bound = _unit_request_receipts_valid(endpoint, unit, record, store)
+    request_bound = _unit_request_receipts_valid(
+        endpoint, unit, record, store, campaign_cache,
+    )
     equation_holds = int(record.get("source_row_count", 0)) == sum((
         int(record.get("landed_a_row_count", record.get("row_count", 0))),
         int(record.get("known_excluded_row_count", 0)),
@@ -1664,6 +1714,8 @@ def _set_unit(
     generation_id: str | None = None,
     expected_ticker_count: int | None = None,
     expected_ticker_sha256: str | None = None,
+    range_campaign_receipt: Mapping[str, Any] | None = None,
+    persist_state: bool = True,
 ) -> None:
     if status not in {"complete", "empty", "failed", "collecting"}:
         raise SpineError(f"invalid state status: {status}")
@@ -1699,13 +1751,16 @@ def _set_unit(
         record["expected_ticker_count"] = int(expected_ticker_count)
     if expected_ticker_sha256 is not None:
         record["expected_ticker_sha256"] = expected_ticker_sha256
+    if range_campaign_receipt is not None:
+        record["range_campaign_receipt"] = _json_safe(dict(range_campaign_receipt))
     if status in {"complete", "empty"}:
         artifacts = _unit_artifact_receipts(store, endpoint, unit, record)
         if not _unit_artifact_counts_match(artifacts, record):
             raise SpineError(f"{endpoint}/{unit} terminal state disagrees with landed artifact")
         record["unit_artifact_receipts"] = artifacts
     endpoint_units[unit] = record
-    _atomic_json(store / "collection_state.json", state)
+    if persist_state:
+        _atomic_json(store / "collection_state.json", state)
 
 
 def _bse_alias_map(frame: pd.DataFrame) -> dict[str, str]:
@@ -2171,6 +2226,109 @@ def _all_known_a_tickers(store: Path, generation_id: str | None = None) -> set[s
         frame = _read_parquet_strict(path)
         known.update(frame.get("ticker", pd.Series(dtype=str)).astype(str))
     return known
+
+
+def _range_query_identities(
+    store: Path,
+    start: date,
+    end: date,
+    generation_id: str,
+) -> tuple[list[dict[str, str]], str]:
+    """Freeze every historical A query identity, including both BSE code eras.
+
+    ``stock_basic`` supplies lifecycle overlap while in-range ``bak_basic`` rows
+    can only expand the union.  Every official BSE old-code mapping is queried
+    alongside its canonical 920 code; equal overlap is de-duplicated by the
+    range campaign and disagreement blocks transposition.
+    """
+    master, bse_aliases, lookup = _master_maps(store, generation_id)
+    tickers: set[str] = set()
+    for row in master.to_dict(orient="records"):
+        effective_from = _iso(row.get("effective_from"))
+        effective_to = _iso(row.get("effective_to"))
+        if effective_from is None:
+            continue
+        if _parse_date(effective_from) <= end and (
+            effective_to is None or _parse_date(effective_to) >= start
+        ):
+            tickers.add(str(row["ticker"]))
+    pit_receipts: list[dict[str, Any]] = []
+    for path in sorted((store / PIT_UNIVERSE_ENDPOINT).glob("year=*/month=*/part.parquet")):
+        frame = _read_parquet_strict(path)
+        if frame.empty or "trade_date" not in frame.columns:
+            continue
+        subset = frame[
+            (frame["trade_date"].astype(str) >= start.isoformat())
+            & (frame["trade_date"].astype(str) <= end.isoformat())
+        ].copy()
+        if subset.empty:
+            continue
+        tickers.update(subset.get("ticker", pd.Series(dtype=str)).astype(str))
+        pit_receipts.append({
+            "path": path.relative_to(store).as_posix(),
+            "row_count": len(subset),
+            "semantic_sha256": _raw_response_semantic_sha256(subset),
+        })
+    absent = sorted(tickers - set(lookup))
+    if absent:
+        raise SpineError(f"range universe contains tickers absent from pinned master: {absent[:10]}")
+
+    identities: list[dict[str, str]] = []
+    for ticker in sorted(tickers):
+        row = lookup[ticker]
+        canonical_source = _source_ts_code(ticker)
+        identities.append({
+            "canonical_ticker": ticker,
+            "source_ts_code": canonical_source,
+            "alias_kind": "canonical",
+        })
+        observed_source = _source_ts_code(row.get("source_ts_code"))
+        if observed_source != canonical_source:
+            identities.append({
+                "canonical_ticker": ticker,
+                "source_ts_code": observed_source,
+                "alias_kind": "stock_basic_observed_alias",
+            })
+    for old_source, new_source in sorted(bse_aliases.items()):
+        new_identity = canonical_identity(new_source, bse_aliases=bse_aliases)
+        if new_identity.ticker not in tickers:
+            continue
+        identities.append({
+            "canonical_ticker": new_identity.ticker,
+            "source_ts_code": _source_ts_code(old_source),
+            "alias_kind": "bse_old_code",
+        })
+    deduplicated = {
+        (item["canonical_ticker"], item["source_ts_code"]): item
+        for item in identities
+    }
+    identities = sorted(
+        deduplicated.values(),
+        key=lambda item: (
+            item["canonical_ticker"], item["alias_kind"] != "canonical",
+            item["source_ts_code"],
+        ),
+    )
+    witness = {
+        "reference_generation_id": generation_id,
+        "reference_generation_semantic_sha256": _reference_generation_semantic_sha256(
+            store, generation_id,
+        ),
+        "start_date": start.isoformat(),
+        "end_date": end.isoformat(),
+        "canonical_tickers": sorted(tickers),
+        "pit_partition_receipts": pit_receipts,
+        "query_identities": identities,
+    }
+    return identities, hashlib.sha256(_canonical_json_bytes(witness)).hexdigest()
+
+
+def _range_sessions(store: Path, start: date, end: date) -> list[str]:
+    sessions = _read_parquet_strict(store / "reference" / "market_sessions.parquet")
+    return sorted(
+        value for value in sessions["trade_date"].astype(str)
+        if start.isoformat() <= value <= end.isoformat()
+    )
 
 
 def _session_map(store: Path) -> dict[str, int]:
@@ -3259,106 +3417,255 @@ class TushareAShareSpineCollector:
         # The exact frozen union is hashed into the parent shard plan below.
         return sorted(_eligible_tickers_with_pit(self.store, master, trade_date.isoformat()))
 
-    def _collect_daily_shards(
+    def _active_range_campaign(
+        self, endpoint: str, start: date, end: date,
+    ) -> dict[str, Any] | None:
+        record = self.state.get("range_campaigns", {}).get(endpoint)
+        if not isinstance(record, dict):
+            return None
+        if record.get("start_date") != start.isoformat() or record.get("end_date") != end.isoformat():
+            raise SpineError(
+                f"{endpoint} already has a range campaign for a different requested interval"
+            )
+        plan = crs.load_plan(self.store, str(record.get("campaign_id") or ""))
+        if plan.get("endpoint") != endpoint:
+            raise SpineError("range campaign endpoint does not bind central progress state")
+        return record
+
+    def _activate_range_campaign(
         self,
         endpoint: str,
-        trade_date: date,
+        start: date,
+        end: date,
         *,
-        initial_receipts: Sequence[Mapping[str, Any]] = (),
-    ) -> tuple[pd.DataFrame | None, list[Mapping[str, Any]]]:
-        unit = _compact(trade_date)
-        # Retain authoritative persisted request evidence, but replace the
-        # ephemeral progress summary on every resume instead of growing one
-        # duplicate summary per eight-ticker slice.
-        base_receipts = [receipt for receipt in initial_receipts if receipt.get("path")]
-        tickers = self._expected_shard_tickers(trade_date)
-        if not tickers:
-            self._mark_failed(endpoint, unit, "no_independent_A_universe_for_shards")
-            return None, list(base_receipts)
-        ticker_hash = hashlib.sha256("\n".join(tickers).encode("utf-8")).hexdigest()
-        existing = _unit_record(self.state, endpoint, unit)
-        if existing and existing.get("expected_ticker_sha256") not in {None, ticker_hash}:
-            raise SpineError(f"{endpoint}/{unit} shard universe changed during collection")
-        _set_unit(
-            self.state, self.store, endpoint, unit, status="collecting",
-            observed_at=self.observed_at, request_receipts=base_receipts,
-            collection_method="per_ticker_shards", expected_ticker_count=len(tickers),
-            expected_ticker_sha256=ticker_hash,
+        trigger_unit: str,
+        cap_probe_receipt: Mapping[str, Any],
+    ) -> dict[str, Any]:
+        if endpoint not in DENSE_ENDPOINTS:
+            raise SpineError(f"range campaigns are unavailable for {endpoint}")
+        existing = self._active_range_campaign(endpoint, start, end)
+        if existing is not None:
+            return existing
+        generation = self.reference_generation or _current_reference_generation(self.store)
+        assert generation is not None
+        identities, universe_witness = _range_query_identities(
+            self.store, start, end, generation,
         )
-        shard_endpoint = f"{endpoint}_shard"
-        pending = [
-            ticker for ticker in tickers
-            if not _unit_done(self.state, self.store, shard_endpoint, f"{unit}:{ticker}")
-        ]
-        for ticker in pending[:SHARD_CALLS_PER_UNIT_SLICE]:
-            shard_unit = f"{unit}:{ticker}"
-            response = self._call(
-                endpoint, shard_unit, trade_date=unit, ts_code=_source_ts_code(ticker),
-            )
-            frame = response.frame
-            if frame is None:
-                self._mark_failed(
-                    shard_endpoint, shard_unit, "vendor_unavailable_or_unlicensed",
-                    request_receipts=[response.receipt], collection_method="per_ticker_shard",
-                )
-                continue
-            if len(frame) > 1:
-                self._mark_failed(
-                    shard_endpoint, shard_unit, "ticker_shard_returned_multiple_rows",
-                    request_receipts=[response.receipt], source_row_count=len(frame),
-                    quarantined_unknown_row_count=len(frame),
-                    collection_method="per_ticker_shard",
-                )
-                continue
-            shard_path = _shard_partition(self.store, endpoint, trade_date, ticker)
-            if not frame.empty:
-                _atomic_parquet(shard_path, frame)
-            _set_unit(
-                self.state, self.store, shard_endpoint, shard_unit,
-                status="empty" if frame.empty else "complete", observed_at=self.observed_at,
-                row_count=len(frame), source_row_count=len(frame),
-                partition=shard_path if not frame.empty else None,
-                request_receipts=[response.receipt], collection_method="per_ticker_shard",
-            )
-
-        incomplete = [
-            ticker for ticker in tickers
-            if not _unit_done(self.state, self.store, shard_endpoint, f"{unit}:{ticker}")
-        ]
-        summary = {
-            "path": None,
-            "request_id": ticker_hash,
+        sessions = _range_sessions(self.store, start, end)
+        plan = crs.ensure_campaign(
+            self.store,
+            endpoint=endpoint,
+            fields=ENDPOINT_FIELDS[endpoint].split(","),
+            source_row_cap=SOURCE_ROW_CAPS[endpoint],
+            sessions=sessions,
+            query_identities=identities,
+            reference_generation_id=generation,
+            reference_generation_semantic_sha256=_reference_generation_semantic_sha256(
+                self.store, generation,
+            ),
+            universe_witness_sha256=universe_witness,
+        )
+        record = {
+            "campaign_id": plan["campaign_id"],
             "endpoint": endpoint,
-            "unit": unit,
-            "response_status": "shards_incomplete" if incomplete else "shards_complete",
-            "response_row_count": 0,
-            "request_contract_sha256": ticker_hash,
-            "collection_method": "per_ticker_shards",
-            "expected_ticker_count": len(tickers),
-            "completed_ticker_count": len(tickers) - len(incomplete),
+            "start_date": start.isoformat(),
+            "end_date": end.isoformat(),
+            "status": "collecting",
+            "trigger_unit": trigger_unit,
+            "cap_probe_receipt": _json_safe(dict(cap_probe_receipt)),
+            "planned_leaf_count": len(crs.planned_leaves(plan)),
+            "query_identity_count": int(plan["query_identity_count"]),
+            "created_at": self.observed_at,
         }
-        receipts = [*base_receipts, summary]
-        if incomplete:
-            _set_unit(
-                self.state, self.store, endpoint, unit, status="collecting",
-                observed_at=self.observed_at, request_receipts=receipts,
-                collection_method="per_ticker_shards", expected_ticker_count=len(tickers),
-                expected_ticker_sha256=ticker_hash,
-            )
-            return None, receipts
-        frames = []
-        for ticker in tickers:
-            record = _unit_record(self.state, shard_endpoint, f"{unit}:{ticker}")
-            if record and record.get("partition"):
-                frames.append(_read_parquet_strict(self.store / str(record["partition"])))
-        combined = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(
-            columns=ENDPOINT_FIELDS[endpoint].split(",")
+        self.state.setdefault("range_campaigns", {})[endpoint] = record
+        _set_unit(
+            self.state, self.store, endpoint, trigger_unit, status="collecting",
+            observed_at=self.observed_at, request_receipts=[cap_probe_receipt],
+            collection_method="per_ticker_range_shards",
         )
-        if not combined.empty:
-            combined = combined[ENDPOINT_FIELDS[endpoint].split(",")]
-        summary["response_row_count"] = len(combined)
-        summary["response_semantic_sha256"] = _raw_response_semantic_sha256(combined)
-        return combined, receipts
+        return record
+
+    def _collect_range_leaf(
+        self, plan: Mapping[str, Any], leaf: crs.RangeLeaf,
+    ) -> None:
+        if self.max_requests and self.requests_made >= self.max_requests:
+            raise RequestBudgetExhausted("request cap reached; range campaign is resumable")
+        self.requests_made += 1
+        query_kwargs: dict[str, Any] = {
+            "fields": ENDPOINT_FIELDS[leaf.endpoint],
+            "_return_empty": True,
+            **leaf.params,
+        }
+        # Hidden transport retries would consume vendor quota without producing
+        # one immutable attempt receipt per HTTP request.  The range scheduler
+        # owns retries explicitly instead.
+        if self.query is tc.query:
+            query_kwargs["_retries"] = 0
+        frame = self.query(leaf.endpoint, **query_kwargs)
+        if frame is not None and not isinstance(frame, pd.DataFrame):
+            raise SpineError(f"{leaf.endpoint} range query returned a non-DataFrame response")
+        if frame is not None:
+            _assert_configured_token_absent_logical(
+                frame, artifact=f"range-response:{leaf.endpoint}/{leaf.leaf_id}",
+            )
+        try:
+            state = crs.record_attempt(
+                self.store, plan, leaf, frame=frame, observed_at=self.observed_at,
+            )
+        except crs.RangeShardError as exc:
+            self.failures.append({
+                "endpoint": leaf.endpoint,
+                "unit": leaf.unit,
+                "reason": "range_leaf_contract_failed",
+            })
+            raise SpineError("range leaf response failed its exact contract") from exc
+        if state.get("status") == "retryable":
+            self.failures.append({
+                "endpoint": leaf.endpoint,
+                "unit": leaf.unit,
+                "reason": "vendor_unavailable_or_unlicensed",
+            })
+
+    def _materialize_range_campaign(
+        self,
+        endpoint: str,
+        plan: Mapping[str, Any],
+        verification: crs.CampaignVerification,
+    ) -> None:
+        if not verification.complete or verification.receipt is None:
+            raise SpineError("range campaign cannot transpose before exact completion")
+        campaign_reference = crs.campaign_receipt_reference(self.store, verification)
+        resolved = verification.resolved_frame.copy()
+        if not resolved.empty:
+            resolved["trade_date"] = resolved["trade_date"].map(_iso)
+            resolved = resolved.sort_values(["trade_date", "ts_code"], kind="stable")
+        for trade_date_text in plan["sessions"]:
+            trade_date = _parse_date(trade_date_text)
+            unit = _compact(trade_date)
+            raw_day = resolved[
+                resolved["trade_date"].astype(str) == trade_date_text
+            ].copy() if not resolved.empty else pd.DataFrame(columns=ENDPOINT_FIELDS[endpoint].split(","))
+            if raw_day.empty:
+                raise SpineError(
+                    f"{endpoint}/{unit} range campaign returned an unexpected empty open session"
+                )
+            normal = normalise_daily_endpoint(
+                endpoint, raw_day, trade_date, self.store, self.reference_generation,
+            )
+            if normal.landed_a.empty:
+                raise SpineError(f"{endpoint}/{unit} range campaign landed no A-share rows")
+            if not normal.quarantined_unknown.empty:
+                raise SpineError(f"{endpoint}/{unit} range campaign produced quarantined rows")
+            path = _monthly_partition(self.store, endpoint, trade_date)
+            prior = _unit_record(self.state, endpoint, unit)
+            if prior and prior.get("status") in {"complete", "empty"}:
+                prior_receipt = _unit_artifact_receipt(
+                    self.store, endpoint, unit, prior,
+                )
+                new_semantic = _frame_semantic_sha256(normal.landed_a, KEY_COLUMNS[endpoint])
+                if (
+                    int(prior_receipt["unit_row_count"]) != len(normal.landed_a)
+                    or prior_receipt["unit_semantic_sha256"] != new_semantic
+                ):
+                    raise SpineError(
+                        f"{endpoint}/{unit} range/whole-market revision conflict"
+                    )
+            self._replace_source_classifications(endpoint, trade_date, normal)
+            _, revised = _replace_partition_units(
+                path, normal.landed_a, keys=KEY_COLUMNS[endpoint],
+                unit_column="trade_date", units=[trade_date_text],
+            )
+            expected_tickers = self._expected_shard_tickers(trade_date)
+            ticker_hash = hashlib.sha256(
+                "\n".join(expected_tickers).encode("utf-8")
+            ).hexdigest()
+            day_receipt = verification.day_receipts[trade_date_text]
+            range_reference = {
+                **campaign_reference,
+                "trade_date": trade_date_text,
+                "authoritative_row_count": int(day_receipt["authoritative_row_count"]),
+                "authoritative_semantic_sha256": day_receipt[
+                    "authoritative_semantic_sha256"
+                ],
+            }
+            _set_unit(
+                self.state, self.store, endpoint, unit, status="complete",
+                observed_at=self.observed_at, row_count=len(normal.landed_a),
+                source_row_count=len(raw_day),
+                known_excluded_row_count=len(normal.known_excluded),
+                quarantined_unknown_row_count=0, revised_key_count=revised,
+                partition=path,
+                request_receipts=(prior or {}).get("request_receipts", []),
+                collection_method="per_ticker_range_shards",
+                expected_ticker_count=len(expected_tickers),
+                expected_ticker_sha256=ticker_hash,
+                range_campaign_receipt=range_reference,
+                persist_state=False,
+            )
+        campaign_state = self.state.setdefault("range_campaigns", {})[endpoint]
+        campaign_state.update({
+            "status": "complete",
+            "completed_at": self.observed_at,
+            "campaign_receipt": campaign_reference,
+            "authoritative_row_count": int(
+                verification.receipt["authoritative_row_count"]
+            ),
+            "duplicate_alias_observation_row_count": int(
+                verification.receipt["duplicate_alias_observation_row_count"]
+            ),
+        })
+        _atomic_json(self.store / "collection_state.json", self.state)
+
+    def _advance_range_campaign(
+        self, endpoint: str, start: date, end: date, *, request_allowance: int,
+    ) -> bool:
+        record = self._active_range_campaign(endpoint, start, end)
+        if record is None:
+            return False
+        plan = crs.load_plan(self.store, record["campaign_id"])
+        if record.get("status") == "complete":
+            crs.verify_campaign(self.store, plan["campaign_id"])
+            return True
+        if record.get("status") == "failed":
+            raise SpineError(
+                f"{endpoint} range campaign is terminally failed: {record.get('reason')}"
+            )
+        pending = crs.pending_leaves(self.store, plan)
+        for leaf in pending[:max(0, request_allowance)]:
+            try:
+                self._collect_range_leaf(plan, leaf)
+            except SpineError:
+                record["status"] = "failed"
+                record["reason"] = "range_leaf_contract_failed"
+                record["last_advanced_at"] = self.observed_at
+                _atomic_json(self.store / "collection_state.json", self.state)
+                raise
+        pending_after = crs.pending_leaves(self.store, plan)
+        progress = crs.campaign_progress(self.store, plan)
+        record.update(progress)
+        record["last_advanced_at"] = self.observed_at
+        _atomic_json(self.store / "collection_state.json", self.state)
+        if progress["failed_leaf_count"]:
+            record["status"] = "failed"
+            record["reason"] = "range_leaf_contract_failed"
+            _atomic_json(self.store / "collection_state.json", self.state)
+            raise SpineError("range campaign contains a terminally failed leaf")
+        if pending_after:
+            return False
+        try:
+            verification = crs.finalize_campaign(self.store, plan)
+        except crs.RangeShardError as exc:
+            record["status"] = "failed"
+            record["reason"] = "range_campaign_artifact_verification_failed"
+            _atomic_json(self.store / "collection_state.json", self.state)
+            raise SpineError("range campaign failed terminal verification") from exc
+        if not verification.complete:
+            record["status"] = "failed"
+            record["reason"] = "bse_alias_conflict"
+            _atomic_json(self.store / "collection_state.json", self.state)
+            raise SpineError("range campaign retained conflicting BSE alias observations")
+        self._materialize_range_campaign(endpoint, plan, verification)
+        return True
 
     def collect_daily(self, start: date, end: date, endpoints: Sequence[str]) -> None:
         session_path = self.store / "reference" / "market_sessions.parquet"
@@ -3368,12 +3675,21 @@ class TushareAShareSpineCollector:
             & (sessions["trade_date"].astype(str) <= end.isoformat())
         ]
         dates = [_parse_date(value) for value in sorted(sessions["trade_date"], reverse=True)]
+        active_range_endpoints = {
+            endpoint for endpoint in endpoints
+            if endpoint in DENSE_ENDPOINTS
+            and self._active_range_campaign(endpoint, start, end) is not None
+        }
         # Unattempted units first; prior failures are retried only after new work,
         # preventing a historical entitlement gap from starving the rest of the tape.
         work: list[tuple[int, date, str]] = []
         for trade_date in dates:
             for endpoint in endpoints:
                 if endpoint == "stock_st" and trade_date < ST_DAILY_START:
+                    continue
+                if endpoint in active_range_endpoints:
+                    # Once a dense endpoint hits its whole-market cap, its one
+                    # immutable range campaign owns the complete requested span.
                     continue
                 unit = _compact(trade_date)
                 if _unit_done(self.state, self.store, endpoint, unit):
@@ -3382,28 +3698,20 @@ class TushareAShareSpineCollector:
                 work.append((priority, trade_date, endpoint))
         work.sort(key=lambda item: (item[0], -item[1].toordinal(), endpoints.index(item[2])))
         for _, trade_date, endpoint in work:
+            if endpoint in self.state.get("range_campaigns", {}):
+                continue
             unit = _compact(trade_date)
-            existing = _unit_record(self.state, endpoint, unit)
             request_receipts: list[Mapping[str, Any]] = []
-            if existing and existing.get("collection_method") == "per_ticker_shards":
-                frame, request_receipts = self._collect_daily_shards(
-                    endpoint, trade_date,
-                    initial_receipts=existing.get("request_receipts", []),
+            response = self._call(endpoint, unit, trade_date=unit)
+            frame = response.frame
+            request_receipts = [response.receipt]
+            collection_method = "whole_market"
+            if frame is None:
+                self._mark_failed(
+                    endpoint, unit, "vendor_unavailable_or_unlicensed",
+                    request_receipts=request_receipts,
                 )
-                if frame is None:
-                    continue
-                collection_method = "per_ticker_shards"
-            else:
-                response = self._call(endpoint, unit, trade_date=unit)
-                frame = response.frame
-                request_receipts = [response.receipt]
-                collection_method = "whole_market"
-                if frame is None:
-                    self._mark_failed(
-                        endpoint, unit, "vendor_unavailable_or_unlicensed",
-                        request_receipts=request_receipts,
-                    )
-                    continue
+                continue
             cap = SOURCE_ROW_CAPS.get(endpoint)
             if cap is not None and len(frame) >= cap:
                 if endpoint not in DENSE_ENDPOINTS:
@@ -3413,22 +3721,18 @@ class TushareAShareSpineCollector:
                         quarantined_unknown_row_count=len(frame),
                     )
                     continue
-                if collection_method == "whole_market":
-                    if len(request_receipts) != 1:
-                        raise SpineError(
-                            f"{endpoint}/{unit} capped whole-market probe has ambiguous receipts"
-                        )
-                    request_receipts = [
-                        _mark_non_authoritative_cap_probe(
-                            self.store, request_receipts[0], source_cap=cap,
-                        )
-                    ]
-                frame, request_receipts = self._collect_daily_shards(
-                    endpoint, trade_date, initial_receipts=request_receipts,
+                if len(request_receipts) != 1:
+                    raise SpineError(
+                        f"{endpoint}/{unit} capped whole-market probe has ambiguous receipts"
+                    )
+                cap_probe = _mark_non_authoritative_cap_probe(
+                    self.store, request_receipts[0], source_cap=cap,
                 )
-                if frame is None:
-                    continue
-                collection_method = "per_ticker_shards"
+                self._activate_range_campaign(
+                    endpoint, start, end, trigger_unit=unit,
+                    cap_probe_receipt=cap_probe,
+                )
+                continue
             if frame.empty:
                 if endpoint not in EMPTY_ALLOWED_ENDPOINTS:
                     self._mark_failed(endpoint, unit, "unexpected_empty_open_session")
@@ -3500,6 +3804,26 @@ class TushareAShareSpineCollector:
                 expected_ticker_sha256=shard_record.get("expected_ticker_sha256"),
             )
             log.debug("%s %s landed (%d partition rows)", endpoint, unit, rows)
+
+        active = [
+            endpoint for endpoint in endpoints
+            if endpoint in DENSE_ENDPOINTS
+            and self._active_range_campaign(endpoint, start, end) is not None
+            and self.state["range_campaigns"][endpoint].get("status") != "complete"
+        ]
+        for index, endpoint in enumerate(active):
+            if self.max_requests:
+                remaining = self.max_requests - self.requests_made
+                if remaining <= 0:
+                    raise RequestBudgetExhausted(
+                        "request cap reached; range campaigns are resumable"
+                    )
+                allowance = max(1, remaining // (len(active) - index))
+            else:
+                allowance = 10**9
+            self._advance_range_campaign(
+                endpoint, start, end, request_allowance=allowance,
+            )
 
 
 def _expected_endpoint_units(
@@ -4192,6 +4516,7 @@ def _state_unit_summary(
     state: Mapping[str, Any], endpoint: str, expected: Sequence[str], store: Path | None = None,
 ) -> dict[str, Any]:
     records = {unit: _unit_record(state, endpoint, unit) for unit in expected}
+    campaign_cache: dict[str, crs.CampaignVerification] = {}
     failed = [unit for unit, record in records.items() if record and record.get("status") == "failed"]
     accounting = []
     for unit in expected:
@@ -4203,7 +4528,9 @@ def _state_unit_summary(
         equation = source_rows == landed + excluded + unknown
         request_bound = bool(
             store is not None
-            and _unit_request_receipts_valid(endpoint, unit, record, store)
+            and _unit_request_receipts_valid(
+                endpoint, unit, record, store, campaign_cache,
+            )
         )
         artifact_bound = False
         if store is not None and isinstance(record.get("unit_artifact_receipts"), Mapping):
@@ -4246,7 +4573,8 @@ def _state_unit_summary(
                 shard_coverage.get("complete") if shard_coverage else None
             ),
             "complete": bool(
-                store is not None and _unit_done(state, store, endpoint, unit)
+                store is not None
+                and _unit_done(state, store, endpoint, unit, campaign_cache)
             ),
         })
     equations_hold = all(row["equation_holds"] for row in accounting)
@@ -4343,6 +4671,144 @@ def _reference_source_receipts(
         assert receipt is not None
         receipts.append(receipt)
     return receipts
+
+
+def _range_campaign_manifest_summaries(
+    store: Path, state: Mapping[str, Any], start: date, end: date,
+) -> dict[str, dict[str, Any] | None]:
+    """Expose exact campaign evidence without copying paid raw payloads."""
+    summaries: dict[str, dict[str, Any] | None] = {}
+    campaigns = state.get("range_campaigns", {})
+    if not isinstance(campaigns, Mapping):
+        raise SpineError("range campaign state is malformed")
+    for endpoint in sorted(DENSE_ENDPOINTS):
+        record = campaigns.get(endpoint)
+        if record is None:
+            summaries[endpoint] = None
+            continue
+        if not isinstance(record, Mapping):
+            raise SpineError(f"{endpoint} range campaign state is malformed")
+        campaign_id = str(record.get("campaign_id") or "")
+        try:
+            plan = crs.load_plan(store, campaign_id)
+            progress = crs.campaign_progress(store, plan)
+        except crs.RangeShardError as exc:
+            raise SpineError(f"{endpoint} range campaign evidence is invalid") from exc
+        if (
+            plan.get("endpoint") != endpoint
+            or record.get("start_date") != plan.get("start_date")
+            or record.get("end_date") != plan.get("end_date")
+        ):
+            raise SpineError(f"{endpoint} central range state does not bind its plan")
+        plan_path = store / "range_campaigns" / campaign_id / "plan.json"
+        plan_receipt = _json_file_receipt(plan_path, store)
+        if plan_receipt is None:
+            raise SpineError(f"{endpoint} range campaign plan is absent")
+        probe = record.get("cap_probe_receipt")
+        if not isinstance(probe, Mapping) or not probe.get("path"):
+            raise SpineError(f"{endpoint} range campaign lacks its cap trigger receipt")
+        trigger_unit = str(record.get("trigger_unit") or "")
+        if not _unit_request_receipts_valid(
+            endpoint,
+            trigger_unit,
+            {
+                "collection_method": "per_ticker_shards",
+                "request_receipts": [probe],
+            },
+            store,
+        ):
+            raise SpineError(f"{endpoint} range campaign cap trigger is not request-bound")
+        probe_path = _contained_store_path(store, probe["path"])
+        probe_file = _json_file_receipt(probe_path, store)
+        if probe_file is None:
+            raise SpineError(f"{endpoint} range campaign cap trigger is absent")
+        cap_probe_receipt = {
+            **probe_file,
+            "request_id": probe.get("request_id"),
+            "response_row_count": int(probe.get("response_row_count", -1)),
+            "response_status": probe.get("response_status"),
+        }
+        receipt_path = store / "range_campaigns" / campaign_id / "campaign_receipt.json"
+        verification: crs.CampaignVerification | None = None
+        terminal_reference: dict[str, Any] | None = None
+        terminal_receipt: Mapping[str, Any] | None = None
+        if receipt_path.exists():
+            try:
+                verification = crs.verify_campaign(store, campaign_id)
+                terminal_reference = crs.campaign_receipt_reference(store, verification)
+            except crs.RangeShardError as exc:
+                raise SpineError(f"{endpoint} terminal range receipt is invalid") from exc
+            terminal_receipt = verification.receipt
+        campaign_cache = (
+            {campaign_id: verification} if verification is not None else {}
+        )
+        bound_days = 0
+        for trade_date_text in plan["sessions"]:
+            unit = _compact(_parse_date(trade_date_text))
+            unit_record = _unit_record(state, endpoint, unit) or {}
+            if _unit_request_receipts_valid(
+                endpoint, unit, unit_record, store, campaign_cache,
+            ):
+                bound_days += 1
+        status = str(record.get("status") or "")
+        if status not in {"collecting", "complete", "failed"}:
+            raise SpineError(f"{endpoint} range campaign status is invalid")
+        summaries[endpoint] = {
+            "endpoint": endpoint,
+            "campaign_id": campaign_id,
+            "status": status,
+            "requested_range_matches_manifest": bool(
+                plan["start_date"] == start.isoformat()
+                and plan["end_date"] == end.isoformat()
+            ),
+            "start_date": plan["start_date"],
+            "end_date": plan["end_date"],
+            "trigger_unit": trigger_unit,
+            "source_row_cap": int(plan["source_row_cap"]),
+            "split_width_sessions": int(plan["source_row_cap"]) - 1,
+            "split_rule": plan["split_rule"],
+            "session_count": int(plan["session_count"]),
+            "session_sha256": plan["session_sha256"],
+            "query_identity_count": int(plan["query_identity_count"]),
+            "query_identity_sha256": plan["query_identity_sha256"],
+            "reference_generation_id": plan["reference_generation_id"],
+            "reference_generation_semantic_sha256": plan[
+                "reference_generation_semantic_sha256"
+            ],
+            "universe_witness_sha256": plan["universe_witness_sha256"],
+            **progress,
+            "plan_receipt": plan_receipt,
+            "cap_probe_count": 1,
+            "cap_probe_receipt": cap_probe_receipt,
+            "terminal_campaign_receipt": terminal_reference,
+            "observed_response_row_count": (
+                int(terminal_receipt["observed_response_row_count"])
+                if terminal_receipt is not None else None
+            ),
+            "authoritative_row_count": (
+                int(terminal_receipt["authoritative_row_count"])
+                if terminal_receipt is not None else None
+            ),
+            "duplicate_alias_observation_row_count": (
+                int(terminal_receipt["duplicate_alias_observation_row_count"])
+                if terminal_receipt is not None else None
+            ),
+            "conflicting_alias_row_count": (
+                int(terminal_receipt["conflicting_alias_row_count"])
+                if terminal_receipt is not None else None
+            ),
+            "source_accounting_complete": (
+                bool(terminal_receipt["source_accounting_complete"])
+                if terminal_receipt is not None else False
+            ),
+            "transposed_session_count": bound_days,
+            "all_day_receipts_bound": bool(
+                verification is not None
+                and verification.complete
+                and bound_days == int(plan["session_count"])
+            ),
+        }
+    return summaries
 
 
 def build_completeness_manifest(
@@ -4556,6 +5022,7 @@ def build_completeness_manifest(
             & (sessions["trade_date"].astype(str) <= end.isoformat())
         ).sum())
     pit_lifecycle = _pit_lifecycle_reconciliation(store, master, sessions, start, end)
+    range_campaigns = _range_campaign_manifest_summaries(store, state, start, end)
 
     manifest: dict[str, Any] = {
         "schema_version": MANIFEST_SCHEMA_VERSION,
@@ -4565,7 +5032,7 @@ def build_completeness_manifest(
         "deployment_status": (
             "operational_backfill_gate_code_reviewed"
             if BULK_HISTORICAL_BACKFILL_READY
-            else "foundation_only_no_live_entitlement_or_scalable_backfill"
+            else "foundation_only_range_shards_synthetic_no_live_canary"
         ),
         "bulk_historical_backfill_ready": BULK_HISTORICAL_BACKFILL_READY,
         "authorization": authorization,
@@ -4609,6 +5076,7 @@ def build_completeness_manifest(
             "name_history_semantic_sha256": name_history_semantic,
         },
         "endpoints": endpoint_receipts,
+        "range_campaigns": range_campaigns,
         "pit_lifecycle_reconciliation": pit_lifecycle,
         "canonical_event_substrate": canonical_event_substrate,
         "daily_security_coverage": coverage_receipt,
@@ -4671,14 +5139,28 @@ def build_completeness_manifest(
             },
             "cap_fallback": {
                 "endpoints": ["daily", "daily_basic", "stk_limit"],
-                "method": "resumable exact-date per-A-ticker shards with union/dedup/coverage",
-                "fair_slice_requests_per_unit": SHARD_CALLS_PER_UNIT_SLICE,
-                "long_horizon_status": (
-                    "code_reviewed_operational"
-                    if BULK_HISTORICAL_BACKFILL_READY
-                    else "unexercised_non_operational_requires_ticker_range_redesign"
+                "whole_market_fast_path": "exact_trade_date_until_first_documented_cap",
+                "cap_trigger_policy": (
+                    "discard_probe_and_switch_entire_endpoint_requested_interval"
                 ),
-                "range_shard_required_for_promotion": True,
+                "method": "immutable_per_ticker_date_range_campaign",
+                "split_rule": (
+                    "deterministic_contiguous_market_session_chunks_cap_minus_one_v1"
+                ),
+                "leaf_state_model": "separate_atomic_json_per_leaf",
+                "attempt_receipt_model": "immutable_numbered_receipt_per_physical_request",
+                "retry_priority": "unattempted_then_fewest_attempts",
+                "bse_alias_resolution": (
+                    "canonical_preferred_when_equal_conflicting_rows_retained_and_block"
+                ),
+                "transposition_rule": (
+                    "terminal_campaign_then_exact_day_normalize_replace_and_receipt_bind"
+                ),
+                "request_estimate_formula": "H_e + I_e * ceil(S/(C_e-1)) + R_e",
+                "range_shard_implemented": True,
+                "synthetic_verification_complete": True,
+                "licensed_live_canary_complete": False,
+                "live_canary_required_for_promotion": True,
             },
             "price_basis": {
                 "daily": "unadjusted nominal OHLC; pre_close is ex-rights adjusted vendor field",
@@ -4706,7 +5188,7 @@ def build_completeness_manifest(
             "bak_basic exact PIT A-share universe witness begins 2016-01-01; pre-2016 remains a named gap",
             "TuShare trade_cal documentation does not advertise BSE; BSE sessions are derived from SSE=SZSE",
             "endpoint entitlement and sustained live throughput were not exercised in this code-only wave",
-            "exact-date per-ticker cap recovery is non-operational for long history; ticker-range shards are required",
+            "ticker-range cap recovery has synthetic proof only; licensed live cap-trigger parity and throughput are untested",
             "no bitemporal vendor-revision ledger; a same-key re-fetch replaces the local materialization",
             "single-host advisory writer lock is implemented; no distributed multi-host lease exists",
             "the existing Yahoo raw plane is split-adjusted and is incompatible with exact legal limit history",
@@ -4719,8 +5201,10 @@ def build_completeness_manifest(
                 "post-2016 exact-day bak_basic PIT A-share universe witness",
                 "lossless source row accounting with unknown quarantine",
                 "request-bound exact schemas and persisted request/response receipts",
-                "deterministic but operationally gated exact-date per-ticker cap fallback",
-                "discarded cap-probe accounting and authoritative child-response row reconciliation",
+                "immutable endpoint-wide ticker-date-range campaigns with cap-minus-one session leaves",
+                "separate atomic leaf state, immutable physical-attempt receipts, and raw artifact hashes",
+                "BSE canonical/historical alias de-duplication with retained conflict blocking",
+                "discarded cap probes, terminal/day receipts, and exact-day transposition binding",
                 "terminal landed/classification/request artifacts bound by recomputed semantic receipts",
                 "BSE old-code to canonical 920-code identity aliases",
                 "SSE/SZSE exact-calendar consensus with session positions",
@@ -4737,8 +5221,8 @@ def build_completeness_manifest(
                 "pre-2016 exact daily ST membership",
                 "direct BSE trade-calendar endpoint",
                 "minute, auction, order-book, seal-time or fillability history",
-                "live bulk backfill, provider throughput and purchased-addon entitlement",
-                "scalable ticker-range cap recovery and physical HTTP retry-budget accounting",
+                "licensed live cap-trigger parity and purchased-addon entitlement",
+                "sustained throughput, transient retry distribution, wall-clock, and paid request cost",
                 "historical reconciliation of calculated bounds against vendor stk_limit across all rule eras",
             ],
         },

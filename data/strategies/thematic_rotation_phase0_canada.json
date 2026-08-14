@@ -1,7 +1,7 @@
 {
   "schema": "thematic_rotation_phase0.v1",
   "region": "canada",
-  "generated_at": "2026-08-13T12:47:57.845950+00:00",
+  "generated_at": "2026-08-14T04:36:03.400806+00:00",
   "cost_bps": 10.0,
   "universes": {
     "sectors": {
@@ -22,16 +22,16 @@
           "worst_decile_ret": -0.0571
         },
         "top3_mom12_rel": {
-          "cagr": 0.1377,
+          "cagr": 0.1373,
           "sharpe": 0.84,
           "max_dd": -0.4332,
           "calmar": 0.32,
           "n_months": 274,
-          "dsr": 0.988,
+          "dsr": 0.987,
           "worst_decile_ret": -0.0568
         },
         "top3_mom6_rel": {
-          "cagr": 0.1242,
+          "cagr": 0.1244,
           "sharpe": 0.74,
           "max_dd": -0.5005,
           "calmar": 0.25,
@@ -40,16 +40,16 @@
           "worst_decile_ret": -0.0585
         },
         "top3_mom12_dual": {
-          "cagr": 0.1151,
+          "cagr": 0.1154,
           "sharpe": 0.83,
           "max_dd": -0.2426,
-          "calmar": 0.47,
+          "calmar": 0.48,
           "n_months": 274,
           "dsr": 0.988,
           "worst_decile_ret": -0.0489
         },
         "top4_mom12_dual": {
-          "cagr": 0.1095,
+          "cagr": 0.1098,
           "sharpe": 0.91,
           "max_dd": -0.2032,
           "calmar": 0.54,
@@ -61,7 +61,7 @@
       "rank_ic": {
         "1m": {
           "mean_ic": 0.0526,
-          "ic_t_hac": 1.886,
+          "ic_t_hac": 1.889,
           "hit": 0.551,
           "n_steps": 274
         },
@@ -74,7 +74,7 @@
       },
       "tsmom_conditional": {
         "above_trend": {
-          "mean": 0.0092,
+          "mean": 0.0093,
           "std": 0.0564,
           "sharpe": 0.57,
           "p05": -0.0799,
@@ -82,26 +82,26 @@
         },
         "below_trend": {
           "mean": 0.0121,
-          "std": 0.0791,
+          "std": 0.079,
           "sharpe": 0.53,
           "p05": -0.1045,
           "n": 747
         },
-        "mean_diff_t": -0.89,
-        "mean_diff_p": 0.3733
+        "mean_diff_t": -0.85,
+        "mean_diff_p": 0.3932
       },
       "extension_drawdown": {
         "fwd_days": 63,
         "cohorts": {
           "normal": {
             "mean_fwd_maxdd": -0.0668,
-            "p05_fwd_maxdd": -0.223,
-            "n": 33047
+            "p05_fwd_maxdd": -0.2231,
+            "n": 33055
           },
           "stretched": {
             "mean_fwd_maxdd": -0.0566,
             "p05_fwd_maxdd": -0.1799,
-            "n": 8578
+            "n": 8579
           },
           "parabolic": {
             "mean_fwd_maxdd": -0.0661,

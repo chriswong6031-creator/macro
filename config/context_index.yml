@@ -70,6 +70,29 @@ projects:
         chunker: markdown_sections
         source_type: research
 
+      # A4 — temporal state (Agent OS work identity + session transfer).
+      # Same class as ACTIVE_BUILD_MAP and for the same reason: a workstream's status,
+      # waves and next_action describe the state of the work RIGHT NOW and go stale the
+      # moment a wave lands.  `whole_file` because one record IS one retrieval unit —
+      # agentos/README.md rule 1 pins one record per file, and the records are small by
+      # design (§7 field-count budget), so section-splitting them would return half a
+      # record with its frontmatter contract missing.
+      - id: agentos-workstreams
+        roots:
+          - agentos/workstreams/*.md
+        authority_class: A4
+        visibility: shared
+        chunker: whole_file
+        source_type: research
+
+      - id: agentos-handoffs
+        roots:
+          - agentos/handoffs/*.md
+        authority_class: A4
+        visibility: shared
+        chunker: whole_file
+        source_type: research
+
       # A3 — durable interpretation (docs + research markdown)
       - id: site-semantics
         roots:
@@ -94,6 +117,45 @@ projects:
         visibility: shared
         chunker: markdown_sections
         source_type: research
+
+      # A3 — durable interpretation (Agent OS reasoning + evidence).
+      # DELIBERATELY A3, NOT A1.  A decision record says why the organization chose
+      # something; it does not hold kill authority.  `research/DO_NOT_REBUILD.md` keeps
+      # that (A1, `repo-do-not-rebuild` above) and a killing decision writes BOTH — see
+      # agentos/README.md §"Relationship to the stores that already exist".  Promoting
+      # these to A1 would give a record that any session may mint the same rank as an
+      # adjudicated kill row, which is exactly the authority hop the Agent OS refuses.
+      - id: agentos-decisions
+        roots:
+          - agentos/decisions/*.md
+        authority_class: A3
+        visibility: shared
+        chunker: whole_file
+        source_type: research
+
+      - id: agentos-discoveries
+        roots:
+          - agentos/discoveries/*.md
+        authority_class: A3
+        visibility: shared
+        chunker: whole_file
+        source_type: research
+
+      # The contract a cold session reads before writing a record.  Sectioned, unlike
+      # the records themselves: it is a document with independently useful parts.
+      - id: agentos-readme
+        roots:
+          - agentos/README.md
+        authority_class: A3
+        visibility: shared
+        chunker: markdown_sections
+        source_type: research
+
+      # DELIBERATELY NOT INDEXED — `agentos/schema/*.yml`.  Those four files are machine
+      # mirrors of research/MASTERMIND_AGENT_OS_STATE_SCHEMA.md, which `repo-research`
+      # already indexes.  Two copies of one field table split the retrieval vote between
+      # them and push the authored source down the ranking, so the duplicate costs recall
+      # and buys nothing.  Read the schema doc; the mirrors exist for validators.
 
       # A2 — implementation truth (source code)
       - id: repo-engine
@@ -142,6 +204,12 @@ projects:
       - "**/*credential*"
       - "**/*secret*"
       - "**/auth.json"
+      # GENERATED rollup of every agentos/ record, regenerated nightly and marked
+      # DO-NOT-EDIT.  `repo-docs` would otherwise index a second full copy of the record
+      # set: the same sentences retrieved twice, once from the record that owns them and
+      # once from a derived page a session must never edit.  The records are the
+      # retrieval truth; the rollup is a human view.
+      - "docs/AGENT_OS_STATE.md"
       - "site/**"
       - "data/**"
       - "**/__pycache__/**"
