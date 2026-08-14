@@ -1039,18 +1039,18 @@ def check_by_is_a_graded_exit(horizon_d: int) -> bool:
 
     THE SCOPE OF THE HEADLINE GUARANTEE, MADE EXECUTABLE rather than asserted in
     prose. `check_by` is resolved at the claim's OWN `horizon_d`; the grader
-    grades at `in_scope_horizons(horizon_d)`, which is every GRADE_HORIZON
-    (5/21/63) at or below it. Those coincide only when `horizon_d` is itself one
-    of the graded rungs — or is below the smallest one, where `in_scope_horizons`
-    falls back to the claim's own number.
+    grades at `in_scope_horizons(horizon_d)`. As of P0b that list now includes
+    the claim's own ruler whenever it sits at or below the ladder's ceiling
+    (`GRADE_HORIZONS[-1]`, 63 today) — so this predicate is True for EVERY
+    horizon_d <= 63 (on-rung, off-rung, or below the smallest rung — 7, 30, 60
+    all now hold), not only the exact rungs 5/21/63.
 
-    So for horizon_d = 7, 126 or any other off-rung value the deadline a human
-    reads is a REAL resolved exchange exit under the declared unit, but it is not
-    a date any grade row is measured to: the 126-trading-day policy claim is
-    graded at 5, 21 and 63 sessions and its check_by sits at session 126.
-    Aligning them would mean changing `in_scope_horizons` / `GRADE_HORIZONS`,
-    which is P0b and explicitly out of scope here. This predicate is exported so
-    a caller (and a test) can ask the question instead of trusting a docstring.
+    It is False only above that ceiling: a 126-trading-day policy claim still
+    grades at 5, 21 and 63 sessions while its check_by sits at session 126, and
+    that gap is intentional, not a bug — extending `GRADE_HORIZONS` /
+    `in_scope_horizons` past 63d in the live nightly grader is forbidden by
+    ruling LH-U6 (`config/ruling_graph.yml`). This predicate is exported so a
+    caller (and a test) can ask the question instead of trusting a docstring.
     """
     try:
         h = int(horizon_d)
@@ -1212,11 +1212,43 @@ def body_hash(body: str) -> str:
 
 def in_scope_horizons(horizon_d: int) -> list[int]:
     """The horizons a claim of this horizon_d grades at: every GRADE_HORIZON
-    ≤ horizon_d, and always at least the claim's own horizon (so a horizon_d < 5
-    claim still grades once, at its own clock)."""
+    <= horizon_d, PLUS the claim's own declared ruler (P0b) — but only while
+    that ruler sits AT OR BELOW the ladder's existing ceiling.
+
+    THE DEFECT THIS REPAIRS. The docstring here used to promise "always at
+    least the claim's own horizon", but the code only delivered that when the
+    ladder came back EMPTY (horizon_d < 5). For every other value a claim was
+    read at its own declared ruler only if that ruler happened to land exactly
+    on 5, 21 or 63 — so a policy claim at horizon_d=30 graded at [5, 21] and
+    NEVER at 30, forever, no matter how much time passed. That is not an
+    accrual fact (more data would not have fixed it); it is a construction
+    defect, and on the live corpus it made 9 family/horizon pairs (`policy`
+    @ 30/42/45/60, `narrative_source_call` @ 26/27/28, `whitehouse` @ 6/7)
+    permanently unreachable at their own ruler.
+
+    THE RULE (CEO 2026-08-13 §6, P0b). `GRADE_HORIZONS` itself is UNCHANGED —
+    still exactly (5, 21, 63); this function never adds a rung to the ladder,
+    it only ever adds ONE extra element to a single claim's own grade list.
+      * declared ruler <= the ladder's ceiling (`GRADE_HORIZONS[-1]`, 63 today)
+        -> the ruler is included, even when off-rung (7 -> [5, 7]; 30 ->
+        [5, 21, 30]).
+      * declared ruler > the ceiling -> NOT added here. `policy` claims at
+        84/90/126 stay off-render / research scope, exactly as before — see
+        `config/ruling_graph.yml` ruling LH-U6, which forbids extending
+        GRADE_HORIZONS (or what feeds the live nightly grader) past 63d. This
+        function's own-ruler addition never crosses that ceiling, so it
+        cannot violate LH-U6 by construction: nothing above `GRADE_HORIZONS[-1]`
+        is ever appended.
+      * a horizon_d below the smallest rung (< 5) still falls through the
+        empty-ladder branch unchanged and grades once, at its own clock — the
+        pre-P0b behaviour for that case is preserved exactly.
+    """
     hs = [h for h in GRADE_HORIZONS if h <= horizon_d]
     if not hs:
-        hs = [horizon_d]
+        return [horizon_d]
+    ceiling = GRADE_HORIZONS[-1]
+    if horizon_d <= ceiling and horizon_d not in hs:
+        hs = hs + [horizon_d]
     return hs
 
 
@@ -1637,17 +1669,19 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
       EXACTLY WHAT THAT GUARANTEES, AND WHERE IT STOPS. `check_by` is resolved at
       the claim's OWN `horizon_d`; the grader grades at
       `in_scope_horizons(horizon_d)`. Those are the SAME date — check_by IS a
-      graded exit, equal to some row's `clock_exit_date` — only when
-      `check_by_is_a_graded_exit(horizon_d)` holds, i.e. when horizon_d is one of
-      the GRADE_HORIZONS (5/21/63) or below the smallest of them. For an off-rung
-      horizon it is NOT: a 126-trading-day policy claim grades at 5, 21 and 63
-      sessions while its check_by sits at session 126, and a 7-calendar-day
-      whitehouse claim grades at 5 while its check_by sits at day 7. The deadline
-      is still a real, correctly resolved exchange exit under the declared unit —
-      it is simply the claim's own horizon rather than a graded rung. Closing
-      that gap means changing `in_scope_horizons`/`GRADE_HORIZONS`, which is P0b
-      and out of scope here; the predicate is exported so the scope is checkable
-      instead of merely stated.
+      graded exit, equal to some row's `clock_exit_date` — whenever
+      `check_by_is_a_graded_exit(horizon_d)` holds, which as of P0b is every
+      horizon_d at or below the ladder's ceiling (`GRADE_HORIZONS[-1]`, 63
+      today): `in_scope_horizons` now always includes the claim's own ruler
+      there, on-rung or off. It is NOT the same date only ABOVE that ceiling: a
+      126-trading-day policy claim still grades at 5, 21 and 63 sessions while
+      its check_by sits at session 126. The deadline is still a real, correctly
+      resolved exchange exit under the declared unit — it is simply the
+      claim's own horizon rather than a graded rung. Closing that remaining gap
+      would mean extending `GRADE_HORIZONS` itself past 63d in the live nightly
+      grader, which ruling LH-U6 (`config/ruling_graph.yml`) forbids; the
+      predicate is exported so the scope is checkable instead of merely
+      stated.
 
       A CALLER-SUPPLIED `check_by` DOES NOT OVERRIDE THE CLOCK. On a claim that
       DECLARES a unit, the resolver's exit always wins and the supplied value is

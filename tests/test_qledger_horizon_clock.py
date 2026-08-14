@@ -1143,17 +1143,28 @@ def test_a_resolvable_claim_and_every_legacy_claim_still_register_open(tmp_path)
 # MAJOR 2 (round 3) — the headline guarantee states EXACTLY where it holds
 # --------------------------------------------------------------------------- #
 @pytest.mark.parametrize("horizon_d, holds", [
-    (5, True), (21, True), (63, True),     # the graded rungs
-    (3, True),                             # below the smallest rung: graded at 3
-    (7, False), (30, False), (126, False),  # off-rung: check_by is not a graded exit
+    (5, True), (21, True), (63, True),      # the graded rungs — unaffected by P0b
+    (3, True),                              # below the smallest rung: graded at 3
+    (7, True), (20, True), (30, True), (60, True),   # P0b — off-rung, <= the 63d
+                                             # ceiling: NOW graded at their own ruler
+    (64, False), (84, False), (90, False), (126, False),  # ABOVE the ceiling: still
+                                             # never a graded exit (LH-U6 forbids
+                                             # extending GRADE_HORIZONS past 63d in
+                                             # the live nightly grader)
 ])
-def test_check_by_is_a_graded_exit_only_on_the_graded_rungs(horizon_d, holds):
-    """MAJOR 2 — the docstring asserted unconditionally that "check_by IS the
-    authoritative exit the grader resolves". That is FALSE for every off-rung
-    horizon: check_by is resolved at the claim's OWN horizon_d, the grader grades
-    at `in_scope_horizons(horizon_d)`. Making it true would mean changing
-    GRADE_HORIZONS / in_scope_horizons, which is P0b and out of scope — so the
-    scope is stated instead, and it is EXECUTABLE rather than prose."""
+def test_check_by_is_a_graded_exit_holds_at_or_below_the_ladder_ceiling(
+        horizon_d, holds):
+    """MAJOR 2, updated by P0b (this PR). The docstring used to assert
+    unconditionally that "check_by IS the authoritative exit the grader
+    resolves" — FALSE for every off-rung horizon, because check_by is resolved
+    at the claim's OWN horizon_d while the grader graded only at the fixed
+    5/21/63 rungs. P0b closes that gap for every ruler at or below the
+    ladder's ceiling (`GRADE_HORIZONS[-1]`, 63 today): `in_scope_horizons` now
+    always includes the claim's own declared horizon there, so 7/20/30/60 all
+    flip to True. ABOVE the ceiling the gap is UNCHANGED and intentional —
+    extending `GRADE_HORIZONS` past 63d in the live nightly grader is
+    forbidden by ruling LH-U6 (`config/ruling_graph.yml`) — so 64/84/90/126
+    stay False exactly as they did before this PR."""
     assert q.check_by_is_a_graded_exit(horizon_d) is holds
     assert (horizon_d in q.in_scope_horizons(horizon_d)) is holds
 
@@ -1180,6 +1191,93 @@ def test_an_off_rung_claims_check_by_is_a_real_exit_that_no_grade_row_matches(
                             today=date(2027, 6, 30))
     assert q.check_by_is_a_graded_exit(63)
     assert on["check_by"] in {r["clock_exit_date"] for r in on_rows}
+
+
+# --------------------------------------------------------------------------- #
+# P0b — grade a claim at its OWN declared ruler, within the existing 63d
+# ceiling. `GRADE_HORIZONS` itself is UNCHANGED at (5, 21, 63); this program
+# only ever widens a SINGLE claim's own `in_scope_horizons()` list.
+# --------------------------------------------------------------------------- #
+@pytest.mark.parametrize("horizon_d, expected", [
+    (7, [5, 7]),
+    (20, [5, 20]),
+    (30, [5, 21, 30]),
+    (60, [5, 21, 60]),
+    (63, [5, 21, 63]),
+    (84, [5, 21, 63]),
+    (90, [5, 21, 63]),
+    (126, [5, 21, 63]),
+    (3, [3]),          # existing sub-5 fallback — must not regress
+    (5, [5]),
+    (21, [5, 21]),
+])
+def test_in_scope_horizons_worked_examples(horizon_d, expected):
+    """The CEO's rule (2026-08-13 §6), pinned exactly: a declared ruler
+    <= 63 is always included in its claim's own grade list, on-rung or off;
+    a ruler > 63 is never dynamically added to the live nightly grader — the
+    existing <=63 ladder only, exactly as before P0b."""
+    assert q.in_scope_horizons(horizon_d) == expected
+
+
+def test_grade_horizons_constant_is_unchanged_by_p0b():
+    """P0b does not touch the ladder itself — only a single claim's own
+    grade list. `GRADE_HORIZONS` stays exactly (5, 21, 63)."""
+    assert q.GRADE_HORIZONS == (5, 21, 63)
+
+
+@pytest.mark.parametrize("horizon_d", [
+    64, 70, 84, 90, 100, 126, 180, 252, 365, 504, 756, 1260,
+])
+def test_no_ruler_above_63_ever_enters_in_scope_horizons(horizon_d):
+    """Requirement 3 / LH-U6. For every ruler above the ladder's ceiling —
+    including the multi-year values (252/504/756+) ruling LH-U6 names by
+    name as forbidden in the live nightly grader — `in_scope_horizons`
+    returns EXACTLY the fixed <=63 ladder and never the claim's own number.
+    This is what makes P0b's own-ruler addition structurally unable to
+    violate LH-U6: the ceiling check lives inside `in_scope_horizons` itself,
+    not in a caller's discipline."""
+    hs = q.in_scope_horizons(horizon_d)
+    assert hs == list(q.GRADE_HORIZONS)
+    assert horizon_d not in hs
+    assert max(hs) <= 63
+
+
+def test_an_off_rung_claim_at_or_below_63_now_grades_at_its_own_ruler(
+        prices, tmp_path):
+    """The concrete, positive shape of P0b on a live lane — the mirror image
+    of `test_an_off_rung_claims_check_by_is_a_real_exit_that_no_grade_row_matches`
+    above. A 30-trading-day policy-shaped claim (off-rung, <= the 63d ceiling)
+    now produces a THIRD grade row at its own declared horizon, in addition to
+    the pre-existing 5d/21d rungs — no existing row's shape changes, this is
+    purely additive."""
+    c = _claim(horizon_d=30, horizon_unit=q.HORIZON_UNIT_TRADING)
+    win30 = q.resolve_horizon_window(q._entry_date(c), 30,
+                                     q.HORIZON_UNIT_TRADING, q.MARKET_US)
+    assert c["check_by"] == win30.exit_date.isoformat()
+    assert q.check_by_is_a_graded_exit(30)          # P0b flips this to True
+
+    rows = q.grade_claim({**c, "claim_id": "cid-30"}, root=tmp_path,
+                         today=date(2026, 12, 1))
+    graded = sorted(r["horizon_d"] for r in rows)
+    assert graded == [5, 21, 30]                    # own ruler now present
+    assert c["check_by"] in {r["clock_exit_date"] for r in rows}
+
+
+def test_an_off_ceiling_claim_still_never_grades_at_its_own_ruler(
+        prices, tmp_path):
+    """The negative control for the SAME mechanism, at a ruler ABOVE the
+    ceiling (90d). Even with abundant maturity time, no 90d row is ever
+    produced — `in_scope_horizons` is the single place the ceiling is
+    enforced, and this exercises it end-to-end through `grade_claim`, not
+    only as a unit test of the pure function."""
+    c = _claim(horizon_d=90, horizon_unit=q.HORIZON_UNIT_TRADING)
+    assert not q.check_by_is_a_graded_exit(90)
+
+    rows = q.grade_claim({**c, "claim_id": "cid-90"}, root=tmp_path,
+                         today=date(2027, 6, 30))
+    graded = sorted(r["horizon_d"] for r in rows)
+    assert graded == [5, 21, 63]
+    assert 90 not in graded
 
 
 # --------------------------------------------------------------------------- #
