@@ -9,9 +9,9 @@ This repository is operated by multiple Claude accounts and Codex sessions. Repo
    `~/.claude/projects/-Users-chriswong-Documents-Cluade-Macro-Dashboard/memory/MEMORY.md`
    and open the entries relevant to the task. For delivery work, always include
    `session-finish-full-git-chain`, `auto-finish-commit-push-pr`, and
-   `go-live-deploy-mechanics` — read all three under §CI handoff is terminal,
-   which outranks them: they describe the SYSTEM's delivery chain, not how long
-   one worker stays alive.
+   `go-live-deploy-mechanics` — read all three under §Definition of done, which
+   outranks them: one session owns the whole delivery chain through the merge and
+   the live check.
 3. Treat `/Users/chriswong/Documents/Cluade/charting-app` as the connected Terminal
    repository. Authentication, subscriptions, data contracts, APIs, and deployment
    changes may require checking both repositories.
@@ -131,8 +131,8 @@ any record; the machine schemas live in `agentos/schema/` and the handoff protoc
 
 It is a knowledge plane, never a control plane. Nothing under `agentos/` decides
 whether work may run: no gate, no dispatch, no scheduler, no lease with teeth. Execution
-authority stays where it already lives — this repository's hook layer and
-`scripts/ci_handoff.py` for sessions, Mastermind `control_plane/` for worker processes.
+authority stays where it already lives — this repository's hook layer for
+sessions, Mastermind `control_plane/` for worker processes.
 A workstream `claim:` is an advisory author's note in git; never present one as evidence
 that an agent is currently alive or working (`DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY`;
 live occupancy evidence is `git worktree list`). Do not create a second Agent OS store,
@@ -160,7 +160,7 @@ that merges clean with nothing learned needs no records:
 - a **Handoff** when the session claimed a workstream, minted records, or leaves work in
   a state another session must resume. Contract: a competent stranger continues from the
   text alone; every `verified:` claim names the command that backs it. The natural
-  moment is immediately before `python3 scripts/ci_handoff.py`, in the same PR.
+  moment is immediately before the session stops, in the same PR.
 - a **workstream update** when durable state materially changes — status and
   `next_action` at wave boundaries, not per commit.
 
@@ -205,49 +205,10 @@ Do NOT save tokens by reducing reasoning effort — output is only 17% of burn, 
 cutting thinking degrades quality for at most a sixth of the cost. The savings
 are in where work happens and how large the context is.
 
-## CI handoff is terminal (HIGHEST PRECEDENCE)
-
-"System done" and "worker done" are different states, and wherever any rule
-below appears to say otherwise, this section wins. System done is still the
-full delivery chain in the next section. Worker done is earlier: a worker still
-breathing past it is re-asking, on the one shared 5,000/hr REST bucket, a
-question the `merge-on-green` sweeper already re-derives from GitHub's live
-state every ten minutes.
-
-A worker task is COMPLETE and MUST terminate once all five conditions hold:
-
-1. the intended changes are committed and pushed;
-2. the remote pull request head equals the expected local HEAD;
-3. the pull request carries `merge-on-green`;
-4. at least one non-spurious check has started, or a no-CI proof exists;
-5. no concluded genuine-red check exists.
-
-The worker then runs `python3 scripts/ci_handoff.py`, emits the `CI_HANDOFF=`
-receipt line it prints, gives its final response, and terminates. That CLI is
-agent-agnostic on purpose — Codex, a shell script, or a workflow step asks the
-same question and gets the same answer, because it and the Claude `Stop` hook in
-`.claude/hooks/ship_loop_guard.py` hold ONE classifier,
-`scripts/ci_handoff_contract.py`; the pair silently disagreeing is how work gets
-orphaned. It takes one finite snapshot: no watch mode, no poll, no retry loop
-exists anywhere in it. Exit 0 releases the worker; exits 2-7 each NAME the
-condition that failed (2 red, 3 unproven, 4 checkout or head mismatch, 5 no armed
-pull request, 6 sink, 7 infrastructure), so a refusal is a work item, never a
-reason to wait.
-
-After `CI_HANDOFF`, waiting, polling, rerunning, merging, observing the
-deployment, and continuing the next phase in the same session are FORBIDDEN. The
-external controller owns those states. Nothing in the delivery contract is
-removed by this: the sweeper still merges, the shared render lane still bakes,
-and the VPS still pulls main every three minutes — the worker is simply not the
-party sitting there watching them. Condition 4 is why an unproven head still
-blocks: an absence of red is not a pass (#4779), and releasing on a head that
-nothing proves ORPHANS the work, because the sweeper will refuse it for exactly
-the same reason.
-
 ## Definition of done
 
-SYSTEM done for a substantive, verified change is the full delivery chain, which
-is never abandoned partway and never handed back to the operator to finish:
+DONE for a substantive, verified change is the full delivery chain, which is
+never abandoned partway and never handed back to the operator to finish:
 
 1. commit;
 2. push;
@@ -257,14 +218,20 @@ is never abandoned partway and never handed back to the operator to finish:
 6. deploy or wait for the repository's normal deploy lane, then verify the change
    on the real live URL.
 
-That is the SYSTEM's obligation, not one session's lifetime. A worker owns steps
-1-3 plus arming `merge-on-green`, then hands off and terminates per §CI handoff
-is terminal, which outranks this section; the sweeper owns step 5, and the shared
-render lane and the VPS's 3-minute pull own step 6. Do not stop at a local commit
-or an unarmed, un-handed-off pull request — that is abandoned work, not delivered
-work — and equally, do not stay alive to watch steps 5 and 6 happen, because
-watching is not delivery. The only holds are an explicit operator
-request to hold, a genuine non-spurious failing check, or a real deployment blocker.
+**One session owns all six.** There is no earlier "worker done" state — the rule
+that let a session terminate on an armed pull request was REMOVED by the project
+owner on 2026-08-12 ("ur the owner of this project so u keep it until its
+finished, no need for handoff"). It had turned an unfinished job into a
+reported-complete one: a session declared itself done while its pull request sat
+`merge-blocked` on a red check, and the owner had to reopen the work by hand.
+Stopping at a local commit, at an open pull request, or at an armed-but-unmerged
+one is abandoned work, not delivered work.
+
+`merge-on-green` remains available and is still the recommended way to get the
+merge PERFORMED — arming it means you do not have to run the merge yourself. It
+is not a reason to stop: keep the session alive until the pull request is merged
+and the change is verified live. The only holds are an explicit operator request
+to hold, a genuine non-spurious failing check, or a real deployment blocker.
 For Macro, the `Workers Builds: macro` red X is known-spurious. Template/source
 changes must include their paired `site/` artifact when required, and “merged” is
 not “live” until the VPS/render path and live marker are verified.
@@ -309,28 +276,26 @@ main carries no branch protection, so auto-merge has no required checks to gate 
 and merges IMMEDIATELY (verified PR #3889, 2026-07-28 — merged ~1 min after arming
 with packs still pending).
 
-**DEFAULT FINISH — hand the wait to the sweeper, do not sit on it.** After opening
-the pull request, run `gh pr edit <n> --add-label merge-on-green`, then
-`python3 scripts/ci_handoff.py`, emit the `CI_HANDOFF=` marker, and stop
-(§CI handoff is terminal).
+**ARM `merge-on-green`, THEN STAY.** After opening the pull request, run
+`gh pr edit <n> --add-label merge-on-green`.
 `.github/workflows/merge-on-green.yml` (GitHub-hosted `ubuntu-latest`, every 10 minutes,
 deliberately off every self-hosted render pool) squash-merges the
 pull request once every check has CONCLUDED clean, with the known-spurious
 `Workers Builds: macro` X excluded. A genuine red or a merge conflict gets the
 `merge-blocked` label plus ONE explanatory comment instead of a merge; the
 `merge-on-green` label stays armed, so a rerun that greens the head merges on the
-next sweep. `ship_loop_guard.py` releases a session whose armed pull request
-carries no concluded red — a head with NO non-spurious checks at all is unproven
-and still blocks, because the sweeper will never merge that either. This is what
-ends the 20-60 minute CI-hostage wait; the merge-on-CONCLUDED discipline itself is
-unchanged, only who waits. Merging by hand on concluded-green stays mechanically
-valid but is now the EXCEPTION rather than a preference: take it only on an explicit
-operator request to watch this one through, or on a wedge the sweeper provably
-cannot clear — otherwise it spends a live worker for 20-60 minutes duplicating a
-sweep that runs every ten. After any accidental fast merge, the surviving PR proof run
-is the merge's evidence — watch it to conclusion. `--admin` remains only for the
-spurious Workers X, docs-only pull requests that trigger no pack checks, and
-genuine wedges — never to outrun CI.
+next sweep.
+
+Arming it is a BACKSTOP that saves you the merge command — it is not an exit. The
+sweeper cannot fix a red, cannot resolve a conflict, and cannot verify the change
+live; those are yours, and you will not learn they are needed if you have already
+stopped. `ship_loop_guard.py` blocks a session whose pull request is armed but not
+merged, and NAMES the reds the sweeper would refuse, so the answer to "am I done"
+is always "is it merged". Merging by hand on concluded-green stays fully valid and
+is often faster than waiting a sweep. After any accidental fast merge, the
+surviving PR proof run is the merge's evidence — watch it to conclusion. `--admin`
+remains only for the spurious Workers X, docs-only pull requests that trigger no
+pack checks, and genuine wedges — never to outrun CI.
 
 **DISARMING IS NEVER SILENT (PR #5291, 2026-08-11).** The sweeper never removes
 `merge-on-green`; `scripts/merge_on_green.py` has no code path that does. Every
@@ -387,30 +352,36 @@ dispatch is then the mercy kill, not a murder).
 
 ### Waiting on CI without jamming every other session
 
-Waiting is the EXCEPTION now (§CI handoff is terminal): the default finish hands
-the wait to the sweeper and terminates. What follows governs the rare sanctioned
-wait — an operator-requested watch, or a wedge the sweeper cannot clear.
+Every session now waits out its own merge, so this is the ONLY thing restraining
+fleet-wide polling. Treat it as a hard rule, not as advice.
 
 `gh` authenticates as ONE account token, so GitHub REST's 5,000/hr `core` pool is a
 single bucket shared by every parallel session, the babysitter lane, and the hooks.
 Exhausting it 403s all of them for up to an hour — including `ship_loop_guard.py`,
 which spends up to four REST calls per Stop evaluation and **fails closed** when
 rate-limited, so over-polling blocks the very Stop the polling was meant to reach.
-A ci.yml run here takes 30–34 minutes; there is no reason to poll it faster than a
-couple of times per minute.
+A ci.yml run here takes 30–34 minutes. Pace the wait to THAT, not to impatience:
+one status read per minute is already generous, and a run that has been going four
+minutes cannot be finished.
 
-`.claude/hooks/gh_quota_guard.py` (PreToolUse on Bash) denies the three shapes that
-emptied the pool on 2026-07-26:
+`.claude/hooks/gh_quota_guard.py` (PreToolUse on Bash) denies the shapes that
+emptied the pool on 2026-07-26 and 2026-08-09:
 
 - `gh run watch` at its **default `--interval 3`** — nothing on the command line
   says "3 seconds", which is exactly why it passed review. Use `--interval 60`+.
 - a `gh` call inside a loop sleeping under 90s (two watchers on one endpoint at 45s
   went 4,488 → 0 in under an hour);
 - `--paginate` over check-runs/jobs — ~130 checks per PR, where one page already
-  answers "is it still running".
+  answers "is it still running";
+- re-dispatching a main proof workflow (`ci.yml` / `fences.yml` /
+  `integration-baseline.yml`) over one already in flight on main.
 
-Preflight `gh api rate_limit --jq '.resources.core.remaining'` before arming any long
-watch, run ONE watcher per endpoint, and never read an empty or 403 response as a
+The guard governs HOW you watch, never WHETHER you may: reading your own pull
+request's check state is part of owning it through to the merge, and no state
+outside the command line makes that read illegal. What is on you: preflight
+`gh api rate_limit --jq '.resources.core.remaining'` before arming any long watch,
+run exactly ONE watcher per endpoint (a second watcher on the same run buys no
+information and doubles the burn), and never read an empty or 403 response as a
 settled/green result. REST and GraphQL are separate 5,000/hr pools, so `gh pr view`
 continuing to work does not mean `gh api` will.
 
@@ -509,11 +480,15 @@ removes the only thing that would have noticed.
 The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,
-unpushed, unmerged, awaiting a render, or absent from production. It does NOT
-require a worker to outlive its handoff: an armed pull request satisfying
-§CI handoff is terminal RELEASES the session at the unmerged gate instead of
-pinning it, because the guard exists to prove work was delivered, not to keep a
-model breathing while other lanes finish.
+unpushed, unmerged, awaiting a render, or absent from production. `unmerged` is
+satisfied by an actually-MERGED pull request and by nothing else: an armed
+`merge-on-green` pull request blocks like any other unmerged one, and the block
+names the reds the sweeper would refuse so the session is told what to fix rather
+than merely that it may not leave. A red that is genuinely this head's files
+`ci_failed_unmerged`, which is deliberately an INTERNAL code (10 consecutive / 15
+total, not the external 2/3): the state this rule exists to prevent — alive
+session, armed pull request, red the sweeper will never merge, head still
+pushable — must not also be the cheapest state in the guard to leave.
 The dirty snapshot judges only this checkout's own work. Untracked entries under
 another fleet's worktree roots (`.claude/worktrees/`, `.claire/worktrees/`,
 `.codex/worktrees/`, `.codex-worktrees/`) are excluded — a blocked session can neither commit another
@@ -534,6 +509,21 @@ merge at once, but preflight for an in-flight baseline first (see the livelock
 note above: a re-dispatch cancels the very proof every pinned session is waiting
 on). Unknown or lone-sibling evidence stays `ci_failed` (fail-closed).
 
+The PRE-merge path is base-side-aware too, and has to be: now that every session
+stays through its own merge, that path runs on EVERY Stop of EVERY armed session,
+which is exactly the population that inherits a red main. Before an armed head's
+red is called this session's defect, the guard asks whether main's own newest
+concluded `ci.yml`/`fences.yml` run is red on the same job NAME, and failing that
+whether the same name is red on ≥2 independent concurrent sibling heads. If either
+answers, the block is filed as `unmerged` naming MAIN as the cause and
+`gh workflow run ci.yml --ref main` (with the in-flight preflight) as the lever —
+never "fix the cause and re-run", which is how several sessions end up healing one
+pack in parallel, and two partial heals of one pack can never both go green.
+Fail-closed in the safe direction throughout: a stale proof, a lone sibling, an
+undated red, or any probe that raises excuses nothing and the red stays this
+session's, with the gap NAMED in the block. Nothing here releases anybody — both
+outcomes still block, only the advice changes.
+
 An IN-FLIGHT covering render DEFERS rather than blocks (operator ruling
 2026-07-27): a queued or running render whose head covers this merge satisfies the
 render gate and the session proceeds to the live check, because the VPS pulls main
@@ -544,7 +534,7 @@ nightly `scope=all` re-render is the backstop. A render lane that NEVER started
 blocks. Every blocker also carries an escape ladder so an unsatisfiable gate can no
 longer trap a session indefinitely: an EXTERNAL blocker escapes at 2 consecutive OR
 3 cumulative external blocks; ANY code (including the internal ones —
-unmerged/unpushed/uncommitted/unsafe_branch/guard_error) escapes at 10 consecutive
-OR 15 total blocks. Every escape still requires an explicit `SHIP LOOP BLOCKED:`
+unmerged/ci_failed_unmerged/unpushed/uncommitted/unsafe_branch/guard_error)
+escapes at 10 consecutive OR 15 total blocks. Every escape still requires an explicit `SHIP LOOP BLOCKED:`
 evidence report with `stop_hook_active` set, so a session cannot bail on the first
 attempt.
