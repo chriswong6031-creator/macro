@@ -7815,6 +7815,31 @@ jobs:
           PYTHONDONTWRITEBYTECODE=1 python -m pytest
           tests/test_options_mastermindx_capture.py -q -rs
 
+  reference-integrity:
+    if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
+    # design.reference_integrity PR gate (RIG V1, research/REFERENCE_INTEGRITY_GATE_V1.md).
+    # Stops REFERENCE LAUNDERING: a bad product decision becomes a reference, the reference
+    # becomes law, builders reproduce it faithfully, reviewers compare against it instead of
+    # against production, CI says compliant, and the regression is institutionalized.
+    # CI cannot judge taste and does not try — it proves the judgment HAPPENED (dual
+    # independent critics, rationale quarantine, frozen first pass, verdict packet, approval
+    # receipt) and left auditable receipts. Unscoped on purpose: L7/L8/L9 are namespace and
+    # coupling closures over mockups/design_system, research/migration_packets and the page
+    # registry, so a diff that adds a file anywhere in those roots must re-run this.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pyyaml pytest
+      - name: reference-integrity selftest (gate fires on synthetic violations)
+        run: python3 scripts/check_reference_integrity.py --selftest
+      - name: RIG artifact integrity across the checkout (hard gate)
+        run: python3 scripts/check_reference_integrity.py
+      - name: reference-integrity mutation / anti-vacuity suite
+        run: python -m pytest tests/test_check_reference_integrity.py -q
   dataos-foundation:
     # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
     # temporal, price-basis, null, registry and quality spine every later Data OS wave

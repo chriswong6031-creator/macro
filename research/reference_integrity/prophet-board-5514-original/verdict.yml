@@ -1,0 +1,118 @@
+# Design-authority verdict packet — founding RIG adjudication (RIG V1 §7).
+# Issued over: honest ledgers (baseline/proposal), both independent critic receipts
+# (two-pass, rationale-quarantined), and the frozen artifact. The historical outcome
+# this fixture records: BLOCK THE REFERENCE, PRESERVE THE GOOD ARCHITECTURE, REVISE
+# THE CARD.
+schema: mastermind.rig_verdict.v1
+reference_id: prophet-board-5514-original
+
+authority:
+  identity: "Fable main loop — RIG V1 founding adjudication session (design authority per factory §1)"
+  role: design_authority
+
+packet:
+  materially_improved: >
+    The board's information architecture: Setups re-sourced to the canonical plan book
+    (one card per plan row, real committed data); Candidates separated as a second
+    population with its own noun, form, and printed-once total; the producer-less
+    four-stage triage rail replaced by the ruled seven-cell lifecycle whose counts
+    reconcile exactly (62+96+0+0+4=162, mutation-tested by the artifact's own verify
+    tooling); Resolved honestly outside the live count three ways; duplicate ticker
+    episodes rendered as dated "Episode N of M" commitments with forward links;
+    best-in-repo absence discipline (em-dash for key-absent vs receding zero, plain-word
+    empty states); a stronger anonymous gate (skeleton ghosts, honest counts) than
+    production's blur-teaser; structural bilingual work; a designed light mode.
+  materially_worsened: >
+    The card — the unit a paying user actually scans — collapsed from a glance instrument
+    to a reading unit: chart hero, live price, live change, Priority score, zone
+    abstraction, stance verb, and the verb-hue semantic color system are gone, replaced
+    by hue-free caps, a lifecycle word+gloss, multi-line per-class-constant prose
+    (identical on 96 Entered cards — VTC-002), a day-count line, and three labelled
+    execution-level rows. The card also stopped being a link (PRC-005 — no route to any
+    per-name detail or receipt), the ⚠N risk ledger lost its only carrier while
+    instruction increased (PRC-003), the anonymous proof numbers vanished (PRC-011), and
+    the degraded-freshness warning has no slot (PRC-012).
+  disappeared: >
+    On-card: the sparkline chart hero; the live quote and change (the board's only live
+    elements); the printed Priority score and the operator-calibrated Featured cohort;
+    the compact five-state zone chip; the terse ruling stance verb; Prophet's verb-hue
+    identity including the zh direction-flip; the per-card as-of date; the marks taxonomy
+    (Featured/New/Blow-off/Theme-turned/Adjusted) including the shipped "Extended? Not
+    checked" printed null; the card link itself; per-card LENS receipt density (two hover
+    targets remain on the whole page — PRC-016). None received a disposition, a landing,
+    or an escalation in the submission.
+  behavior_harder: >
+    Shortlisting actionable names in seconds (hue-free grid of per-class-constant prose
+    must be read serially); knowing where price is now vs the printed levels (no live
+    quote — and no link to anywhere that has one); detecting chase/momentum context;
+    judging today-readiness ("Act on the best few" above a grid that never says which —
+    VTC-001); reading risk before acting (cautions/earnings/stretch disclosures have no
+    carrier); opening a name at all (inert cards).
+  stronger_claims: >
+    Entry/T1/Void labelled execution levels on every glance-tier card where production
+    showed a compact zone range (exact levels were deliberately paid/detail-tier);
+    "day X of 45" window arithmetic promoted from never-rendered internal fields to every
+    card head — while the artifact's own notes concede the window/overtime producer
+    contradiction (16 rows past-window, Overtime cell 0), so the first card asserts "past
+    its 45-day window" and "in the entry window" simultaneously (PRC-018); imperative,
+    position-presuming what-to-do prose ("Hold the current position", "Exit the full
+    position") where the operator had ruled a terse verb; a hardcoded "Regime Risk-on ·
+    Breadth Broadening" header claim with no producer (PRC-019).
+  intent_vs_convenience: >
+    Product intent (keep): plan-book re-sourcing, lifecycle repair, count reconciliation,
+    Candidates separation, episode handling, absence discipline — all trace to the
+    J9C/J10 ruling and the count cure. Implementation/data convenience (reject): chart,
+    live price/change, name/sector, and lane-chip removals trace to the 25%
+    candidate-join coverage (the artifact's own Q1 measurement) — a data-contract
+    deficiency converted into feature deletion; but the live quote is ticker-keyed (not
+    join-keyed), the Priority value, ⚠ ledger, as-of date, and card link are plan-book-
+    side facts Q1 never reaches (critic pass-2 analysis) — those deletions have no
+    constraint behind them at all; prose and level rows trace to "fields every plan row
+    carries" — source convenience, not a user-job argument.
+  production_preferable_for: >
+    Every glance-tier task: scanning, shortlisting, live price/zone reading, momentum
+    context, readiness ranking, risk-before-acting, and opening a name. A reasonable
+    paying user working the open would prefer production's card grid for the daily job,
+    while preferring the proposal's counts, lifecycle truth, and population structure.
+  strongest_argument_against: >
+    Approving this reference would institutionalize, as design law, a card that is more
+    authoritative and less falsifiable than the surface it replaces — it instructs "Exit
+    the full position" while showing no live price, no chart, no cautions, and no route
+    to the receipts tier (Reviewer A's closing) — with the deletions justified nowhere,
+    reviewed by no one, several driven by an unescalated data gap, and the rest by
+    nothing at all. Builders would faithfully reproduce it across five locale boards,
+    reviewers would compare against it instead of production, and CI would read
+    compliant. That is reference laundering; it is exactly what this gate exists to stop.
+
+blocking_findings:
+  - {finding: PRC-001, resolution: upheld_revise, note: "live quote/change restored or explicitly dispositioned with ruling cover — ticker-keyed, no coverage constraint applies"}
+  - {finding: PRC-002, resolution: upheld_revise, note: "critic self-downgraded to major post-rationale; the revision must still give price geometry a successor or a BLOCKED_DATA escalation to PR-0(c)"}
+  - {finding: PRC-003, resolution: upheld_revise, note: "the ⚠ risk ledger must have a carrier wherever instruction appears"}
+  - {finding: PRC-004, resolution: upheld_revise, note: "what-to-do prose returns to hover/detail tier per the standing 2026-08-03 operator kill"}
+  - {finding: PRC-005, resolution: upheld_revise, note: "cards must link to the name's detail surface; the receipts tier must be reachable"}
+  - {finding: PRC-006, resolution: upheld_revise, note: "critic self-downgraded the hue half (ruling-anchored); the stance verb returns — hue for stance and weight for lifecycle occupy different channels and may coexist"}
+  - {finding: VTC-001, resolution: upheld_revise, note: "an actionable-cohort signal (printed Priority and/or Featured cohort device) must exist on the surface that says 'act on the best few'"}
+  - {finding: VTC-002, resolution: upheld_revise, note: "per-class-constant prose may not occupy per-card space; constants belong in the shelf/footer once, variance belongs on the card"}
+
+overrides: []
+
+verdict: REVISE
+conditions:
+  - "Keep, unchanged in intent: plan-book Setups, Candidates separation, seven-cell lifecycle + weight-cap grammar, count reconciliation, Resolved treatment, episode handling, absence discipline, anon skeleton gate, table view, structural bilingual work."
+  - "Revise the card to preserve or explicitly disposition every baseline glance capability: chart hero (BLOCKED_DATA escalation to PR-0(c) for full-coverage enrichment — not removal), live quote + change (ticker-keyed; no constraint applies), printed Priority or an equivalent cohort device, compact zone abstraction at glance tier, stance verb, verb-hue identity reconciled with lifecycle mark-neutrality (hue on stance, weight on lifecycle), per-card as-of, card-as-link, ⚠ risk carrier, LENS receipt density."
+  - "Adjudicated (A/B tension): the pinned Entry/T1/Void footer rail is good FORM (Reviewer B) at the wrong TIER (Reviewer A / authority delta) — labelled execution levels live at detail/paid tier; the glance card keeps the zone abstraction."
+  - "Remove day-count window arithmetic from the card head until the Overtime producer contradiction (artifact Q2) is resolved by the ruling lane; never render 'past its window' beside 'in the entry window'."
+  - "No producer-less content in a canonical reference: the Groups narrative table, lane counts, and the regime/posture header chips must be sourced or explicitly marked as illustrative-fixture-only (PRC-019)."
+  - "Restore board-level degraded-freshness state and the anonymous proof surface (track record, fired/passed-on) — PRC-011/PRC-012."
+  - "Resubmission is a new frozen artifact + fresh critic receipts under a new RIG artifact set (receipts bind to frozen_sha)."
+preserved_strengths:
+  - "canonical plan-book Setups (one card per plan row, real data)"
+  - "Setups/Candidates separation with disjoint nouns and forms"
+  - "lifecycle repair: ruled seven-cell enum with real producers, weight-encoded, direction-neutral, identity/selection on non-colliding channels"
+  - "Resolved outside the live count, three ways, with the empty state proving the law"
+  - "count reconciliation — every setup integer a ladder value or difference, mutation-tested by the artifact's own tooling"
+  - "episode handling — dated N-of-M chips, forward links from resolved to live"
+  - "table/filter architecture — ladder-as-filter with grid/table toggle that states its own completeness"
+  - "absence discipline — em-dash key-absent vs honest zero, plain-word empty states, disclosed gaps"
+  - "anonymous gate — skeleton ghosts + honest counts beat the blur-teaser"
+  - "structural bilingual work and a designed (not swapped) light mode"

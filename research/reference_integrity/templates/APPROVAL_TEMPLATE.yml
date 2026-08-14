@@ -1,0 +1,21 @@
+# Approval receipt (RIG V1 §7/§12) — exists ONLY when manifest status is approved.
+# This is what a migration packet's RIG-RECEIPT line and a registry compliant-flip stand on.
+schema: mastermind.rig_approval.v1
+reference_id: <same as manifest>
+approved_at: "<YYYY-MM-DD>"
+verdict: APPROVE_REFERENCE   # APPROVE_REFERENCE | APPROVE_WITH_CONDITIONS only
+artifact_sha: <the proposal frozen_sha approved — must equal every receipt's artifact_sha>
+
+authority:
+  identity: "<design authority identity>"
+  role: design_authority
+
+reviewers:                   # identities must differ from each other and from the author
+  - {identity: "<critic A identity>", role: product_regression}
+  - {identity: "<critic B identity>", role: visual_taste}
+
+author:
+  identity: "<proposal author — distinct from both reviewers>"
+
+conditions: []               # carried from the verdict when APPROVE_WITH_CONDITIONS
+overrides: []                # copied from verdict.yml — each cites its finding id; permanent record

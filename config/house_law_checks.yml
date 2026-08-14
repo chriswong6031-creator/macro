@@ -603,6 +603,64 @@ checks:
       main — a coherent board at most one render old beats a stitched hybrid;
       the next render re-lands freshness.
 
+  - law_id: design.reference_integrity
+    summary: >
+      No reference laundering: a proposed design reference may not become law
+      until the product/taste judgment happened, in the right order,
+      independently, and left receipts. No implicit deletion — every production
+      capability receives an explicit disposition, a data-motivated REMOVE is a
+      mis-filed BLOCKED_DATA, a WORSE verdict on a critical user task and an
+      unwarranted "stronger" authority claim are review-blocking until
+      adjudicated, and receipts-or-no-canon: only a reference carrying a valid
+      approval receipt may be cited as compliant by a registry row or as
+      canonical by a migration packet.
+    source_ref:
+      - scripts/check_reference_integrity.py
+      - tests/test_check_reference_integrity.py
+      - research/REFERENCE_INTEGRITY_GATE_V1.md
+    severity: hard
+    check_script: scripts/check_reference_integrity.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: reference-integrity
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        CI cannot judge taste and does not try. The gate proves the judgment
+        HAPPENED (dual independent critics, rationale quarantine, frozen first
+        pass, design-authority verdict packet, approval receipt) and left
+        auditable receipts — never that the design is good.
+      - >-
+        The data-motivated-REMOVE rule (blocked-data-as-removal) is a LEXICAL
+        heuristic over the rationale text. Deliberately no allowlist: by RIG §1 a
+        removal caused by data insufficiency is definitionally a mis-filed
+        BLOCKED_DATA, so a match is enforcement, and a rationale that cannot be
+        told apart from a data excuse is not yet a documented product decision.
+      - >-
+        Sparse agent worktrees under-enumerate L7/L9 locally — mockups/design_system
+        and data/ are excluded from most session checkouts, so those roots emit a
+        ::notice skip instead of a finding. CI checks out the full tree, where both
+        rules are armed; a present-but-missing registry file is a hard error.
+      - >-
+        Status-scaled by design: draft/in_review artifact sets must only be
+        internally valid (mid-flight is legal), and a revise/rejected set keeps its
+        upheld findings without failing CI — that record IS the artifact. Full
+        L1-L6 arms at status approved and under --evaluate.
+    owner_program: design-migration-factory
+    notes: >
+      Founding regression fixture: research/reference_integrity/prophet-board-5514-original/
+      — the original Prophet Board mockup (PR #5514) frozen at 668e5954, with the
+      production baseline it should have been judged against. The suite asserts the
+      checker independently derives the mechanically-derivable defects from that
+      fixture's honest ledgers (five silently dropped capabilities, a coverage-motivated
+      chart removal, receiptless removals, four WORSE critical tasks, three unwarranted
+      authority claims) and that the critic receipts block approval. `--evaluate <id>`
+      runs the full rule set on one artifact set (exit 3 = blocked) for use during
+      reference review; the default repo mode is the PR gate.
+
   # ── Git hygiene ────────────────────────────────────────────────────────────
 
   - law_id: git.no_conflict_markers
