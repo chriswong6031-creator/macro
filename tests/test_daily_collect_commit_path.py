@@ -771,3 +771,57 @@ def test_no_job_restores_a_stale_cache_over_data_it_will_commit(job_name):
         f"panel already in the git checkout) or unstage the path in the commit step the way "
         f"the asia-owned china*/hk* carve-out does."
     )
+
+
+def test_gitignored_russell_cache_uses_the_collect_jobs_exact_same_run_key():
+    """The engine checkout cannot carry the Russell panel; the cache handoff must.
+
+    PR #4798 correctly removed engine's broad ``restore-keys`` because a prefix match
+    could overwrite tonight's tracked panels with a prior run. Russell is the exception
+    to the checkout fallback: ``_closes_cache.parquet`` is gitignored. The producer used
+    ``russell-closes-<run_id>`` while engine requested
+    ``russell-closes-engine-<run_id>``, guaranteeing a miss on cold runners and making
+    the keep-FIRST name-score stamp lose roughly 1,220 names.
+    """
+    path = "data/russell_breadth/_closes_cache.parquet"
+    assert not _is_git_tracked(path), (
+        "the Russell close cache became git-tracked; reassess whether the cross-job "
+        "cache handoff is still the source of truth"
+    )
+
+    doc = yaml.safe_load(DAILY.read_text())
+    engine = doc["jobs"]["engine"]
+    assert "collect" in engine.get("needs", []), (
+        "engine must wait for collect to finish and save the same-run Russell cache"
+    )
+
+    def cache_step(job_name: str) -> dict:
+        matches = [
+            step for step in doc["jobs"][job_name]["steps"]
+            if str((step.get("with") or {}).get("path") or "").strip() == path
+        ]
+        assert len(matches) == 1, (
+            f"expected one {path} cache step in {job_name!r}, found {len(matches)}"
+        )
+        return matches[0]
+
+    producer_step = cache_step("collect")
+    consumer_step = cache_step("engine")
+    producer = producer_step.get("with") or {}
+    consumer = consumer_step.get("with") or {}
+    expected = "russell-closes-${{ github.run_id }}"
+
+    assert producer.get("key") == expected
+    assert consumer_step.get("uses") == "actions/cache/restore@v4", (
+        "engine is a cache consumer only. Using the combined cache action lets a miss "
+        "save an engine-owned key back into the producer's fallback namespace."
+    )
+    assert consumer.get("key") == producer.get("key"), (
+        "engine must request collect's exact same-run Russell cache key. A distinct key "
+        "cannot hit, and adding a broad restore-key would reintroduce the stale-cache "
+        "overwrite that PR #4798 removed."
+    )
+    assert not consumer.get("restore-keys"), (
+        "engine's Russell restore must remain exact-key-only; a prefix fallback may select "
+        "a prior run and silently reintroduce stale source data"
+    )
