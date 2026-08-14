@@ -19,7 +19,8 @@ import logging
 import os
 import sys
 import time
-from datetime import date, timedelta
+import uuid
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -66,6 +67,20 @@ from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noq
 from collectors.us_names_zh import load_aliases_zh as _load_us_aliases_zh  # noqa: E402
 from collectors.us_names_zh import load_names_zh as _load_us_names_zh  # noqa: E402
 from collectors.us_names_zh import lookup as _us_name_zh  # noqa: E402
+
+# Lineage stamp for the artifact PAIR this module writes: signal_gate.json (the gate) and
+# us_standouts.json (the board, whose rows embed a superset copy of each gate verdict).
+# Computed once per PROCESS, so both files written by one run carry the same pair_id — and
+# a differing pair_id on disk therefore means a later run advanced one side without the
+# other. That is not hypothetical: the gate write is guarded (`if sig_verdict:` + a
+# try/except that logs and continues) while the board write is not, and on 2026-08-12 a
+# `scope=all` re-render shipped a fresh board against an unchanged gate (8 of 69 buy rows
+# skewed). `as_of` cannot reveal it — both stamp the DATA date, not the write time.
+_PAIR_EMIT_STAMP = {
+    "pair_id": uuid.uuid4().hex,
+    "at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+    "writer": "build_stock_library",
+}
 
 # Loaded once at module level — small committed JSONs, no I/O on re-import.
 # Feed the search manifest so a Chinese query (苹果 / 英伟达) reaches US names, the
@@ -4369,7 +4384,8 @@ def main() -> int:
         try:
             sig_out = {t: signal_gate.buy_signal(v) for t, v in sig_verdict.items()}
             (site / "factordata" / "signal_gate.json").write_text(
-                json.dumps({"as_of": alpha_asof, "verdicts": sig_out},
+                json.dumps({"as_of": alpha_asof, "verdicts": sig_out,
+                            "emit": _PAIR_EMIT_STAMP},
                            separators=(",", ":"), default=str, allow_nan=False))
             log.info("wrote signal_gate.json (%d verdicts, %d buyable)", len(sig_out),
                      sum(1 for v in sig_verdict.values() if signal_gate.is_buyable(v)))
@@ -5968,6 +5984,9 @@ def main() -> int:
         except Exception as _pool_e:  # noqa: BLE001 — display tier is never fatal
             log.warning("candidate pool skipped (%s)", _pool_e)
 
+        # Same lineage stamp the gate write carries: one pair_id per writer process, so a
+        # skew between the two files is readable off the artifacts themselves.
+        wide["emit"] = _PAIR_EMIT_STAMP
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
@@ -5995,6 +6014,29 @@ def main() -> int:
                       f"us_standouts.json: {'; '.join(_bc_viol)}", flush=True)
         except Exception as _bc_e:  # noqa: BLE001 — guard must never break the render
             log.debug("board-contradictions self-check skipped (%s)", _bc_e)
+        # Pair-coherence self-check, at the exact moment the #5490 skew is CREATED: the
+        # board has just been written, so if the gate write above was skipped (its
+        # `if sig_verdict:` was false, or its try/except swallowed a failure) the two
+        # files on disk now disagree and this is the only place that can say so. Same
+        # bare-print-at-line-start rule as the block above (this module's logger prefixes
+        # every record, so a logged "::warning" is silently dropped by GitHub); warn-only,
+        # because a display-tier guard must never fail the render.
+        try:
+            from scripts.check_signal_gate_coherence import _check as _sg_coherence
+            _sg_viol = _sg_coherence(
+                str(site / "factordata" / "us_standouts.json"),
+                str(site / "factordata" / "signal_gate.json"))
+            if _sg_viol:
+                # The last violation can be the lineage line, not a ticker — count rows only.
+                _sg_rows = [v for v in _sg_viol if not v.startswith("lineage:")]
+                _sg_names = [v.split(":", 1)[0] for v in _sg_rows[:8]]
+                print(f"::warning title=signal-gate-coherence::"
+                      f"{len(_sg_rows)} board row(s) disagree with signal_gate.json "
+                      f"({', '.join(_sg_names)}) — the gate write was skipped or stale "
+                      f"this run; downstream readers demote the gate for these names",
+                      flush=True)
+        except Exception as _sg_e:  # noqa: BLE001 — guard must never break the render
+            log.debug("signal-gate coherence self-check skipped (%s)", _sg_e)
         # forward shadow book — freeze the live score at build time so it can be graded on
         # REALIZED forward returns later (engine/shadow_book; research/MEASUREMENT_FLOOR.md).
         # Additive + display-only + append-only; never fatal.
