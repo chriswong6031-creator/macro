@@ -101,11 +101,16 @@ def verify_key_identity(df: pd.DataFrame) -> dict:
     """Measure the claim the roadmap makes in prose: the board's ``score`` IS name_score's
     ``potential_score``.
 
-    The grader stamps its call ledger with ``asof = utcnow().date()`` — the build runs after
-    the board's own ``as_of`` close — so the ledger date lines up with the board row's
-    ``entry_date``, not its ``as_of``. Both alignments are measured and reported; the
-    mismatched rows are counted per date so a join artifact (a long weekend shifting the
-    build date past the next session) cannot be read as a score divergence.
+    Ledger-date semantics changed on 2026-08-14 (PR #5674 /
+    DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES). BEFORE: the grader stamped
+    ``asof = utcnow().date()`` — the build runs after the board's own ``as_of`` close —
+    so the ledger date lined up with the board row's ``entry_date``, not its ``as_of``.
+    AFTER: the stamp is the board's session ``as_of`` itself (rows carry
+    ``session_keyed=True``), so the ledger date lines up with ``as_of`` directly.
+    Both alignments are measured and reported here precisely so the cutover cannot be
+    read as a score divergence; the mismatched rows are counted per date so a join
+    artifact (a long weekend shifting a wall-clock-era build date past the next
+    session) is visible as such.
     """
     out: dict = {"ledger": NAME_SCORE_LEDGER,
                  "claim": "board conviction.score == name_score.potential_score "

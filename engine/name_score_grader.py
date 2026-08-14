@@ -55,6 +55,10 @@ def _store_path(market: str):
 
 _SHRINK_WARN_RATIO = 0.8   # disclose when a stamp admits < 80% of the previous stamp's names
 _SHRINK_MIN_PREV = 25      # young/tiny ledgers never warn (±a few names is a huge ratio there)
+_GAP_DOW_WINDOW = 15       # trailing stamps that define the ledger's CURRENT weekday
+# cadence for grade()'s PIT-gap disclosure (~3 weeks of weekday stamps; see the
+# cutover comment at the gap scan — an all-history dow set would count every
+# post-2026-08-14 weekend as a gap forever)
 
 
 def _disclose_universe_shrink(market: str, asof: str, n_new: int, prior: pd.DataFrame) -> None:
@@ -98,7 +102,12 @@ _MAX_BAR_LAG_DAYS = 7  # calendar days a name's own last bar may lag the ledger 
 # post-9/11-class 4-session closure: reopen stamp ← last bar one week back), which
 # passes only because the test below is strict `>`; since 2015 the max is 4. Beyond 7
 # the "call" is an echo of a dead or stale feed (store stopped / halt / delisting),
-# not a market observation. Eleven US names were frozen this way when the gate
+# not a market observation. RE-DERIVATION NOTE (2026-08-14, PR #5674): this constant
+# was calibrated against a SESSION-anchored asof, but the US caller stamped wall-clock
+# UTC (session+1) until 2026-08-14 — so the gate ran one real day TIGHTER than
+# documented. Session stamping restores the documented calibration; a feed frozen at
+# exactly 7 calendar days behind the session is now admitted where the pre-fix stamp
+# refused it. Eleven US names were frozen this way when the gate
 # shipped — SATS dead since 2026-06-18 (33 echo rows), QCOM stamped `setting_up`
 # score-63 off a 24-day-stale store — see
 # research/ADJUDICATION_20260803_ORCL_NAME_SCORE_FLATLINE.md. Accepted residual: a
@@ -106,10 +115,22 @@ _MAX_BAR_LAG_DAYS = 7  # calendar days a name's own last bar may lag the ledger 
 # stamp universe-wide (warned loudly below, self-heals the next session).
 
 
-def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = None) -> int:
+def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = None,
+                      session_keyed: bool = True) -> int:
     """Append today's POTENTIAL calls for one market. Each call carries {ticker, score,
     tier, fuel, trigger} plus an as-of `level` (the day's close). Keep-FIRST per
-    (date, ticker). Returns the ledger row count after the merge.
+    (date, ticker). Returns the ledger row count after the merge; the ADMITTED delta
+    is logged per append (an all-dupe batch — e.g. a weekend re-run of an
+    already-stamped session — lands 0 rows while the caller "submitted" thousands,
+    and that must be readable at the write site: adversarial review D4, PR #5674).
+
+    ``session_keyed`` is persisted onto every row written: True = the row's date key
+    is the producing board's own session as_of (the convention since 2026-08-14);
+    False = the caller fell back to the host clock. Rows written before the column
+    existed read as null — the pre-cutover wall-clock era (US/HK/CA/INTL stamped
+    utcnow, i.e. session+1 on post-midnight-UTC appends, so their forward fill was
+    one session later than post-cutover rows; partition on this column before
+    comparing forward metrics across the 2026-08-14 cutover).
 
     A call may also carry `bar_asof` — the date of the name's OWN last price bar.
     When it lags `asof` by more than _MAX_BAR_LAG_DAYS the feed is dead and the call
@@ -141,7 +162,8 @@ def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = 
                 continue
         rows.append({"date": str(asof), "ticker": str(tk), "score": c.get("score"),
                      "tier": c.get("tier"), "fuel": c.get("fuel"),
-                     "trigger": c.get("trigger"), "level": c.get("level")})
+                     "trigger": c.get("trigger"), "level": c.get("level"),
+                     "session_keyed": bool(session_keyed)})
     if stale:
         log.warning("name-score grader (%s): refused %d frozen-feed call(s) — last bar "
                     ">%dd behind %s: %s", market, len(stale), _MAX_BAR_LAG_DAYS, asof,
@@ -161,9 +183,19 @@ def append_name_calls(calls: list[dict], market: str = "CN", asof: str | None = 
             _disclose_universe_shrink(market, str(asof), int(new["ticker"].nunique()), prior)
             combined = pd.concat([prior, new], ignore_index=True).drop_duplicates(
                 subset=["date", "ticker"], keep="first")
+            n_added = int(len(combined) - len(prior))
         else:
             combined = new
+            n_added = int(len(new))
+        if "session_keyed" in combined.columns:
+            # pre-column rows arrive as NaN from the concat union — keep the tri-state
+            # (True / False / null=pre-cutover) as a nullable boolean, not object
+            combined["session_keyed"] = combined["session_keyed"].astype("boolean")
         combined.to_parquet(p, index=False)
+        # the write-site truth: "submitted N" at the caller can land 0 here (keep-FIRST
+        # dedupe of an already-stamped session) and that difference must be visible
+        log.info("name-score grader (%s): %s admitted %d new row(s) of %d submitted "
+                 "(ledger %d)", market, asof, n_added, len(rows), len(combined))
         return int(len(combined))
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("name-score grader (%s): append failed: %s", market, e)
@@ -304,14 +336,22 @@ def grade(market: str = "CN") -> dict | None:
     # PIT continuity disclosure: a missed nightly leaves a hole no later run can
     # backfill (keep-FIRST forward ledger — US 2026-07-13/23/24 are missing exactly
     # this way: the wedged runs never reached the engine commit). A "gap" is a
-    # calendar day inside the stamp range whose weekday this ledger has stamped
-    # before, so a weekday-cadence ledger (CN) never miscounts weekends while the
-    # daily-stamping ledgers (US/HK/CA/INTL) count every day.
+    # calendar day inside the scan range whose weekday this ledger has stamped
+    # before. Cadence is measured on the TRAILING _GAP_DOW_WINDOW stamps only, and
+    # the scan starts at that window's first stamp: the ledgers switched from
+    # wall-clock stamps (Sat/Sun echo stamps possible) to session stamps on
+    # 2026-08-14, so an all-history dow set would keep weekend dows forever and
+    # flag every post-cutover weekend as a gap — saturating stamp_gap_dates[:14]
+    # until a genuinely missed weekday nightly could never surface (adversarial
+    # review D2, PR #5674). The window ages the dead cadence out (~3 weeks)
+    # instead of pinning a cutover constant; CN (weekday-cadence since inception)
+    # is unchanged by construction.
     try:
-        d_idx = pd.to_datetime(pd.Index(out["dates"]))
+        d_idx = pd.to_datetime(pd.Index(out["dates"])).sort_values()
         have = set(d_idx)
-        dows = {d.dayofweek for d in d_idx}
-        gaps = [str(x.date()) for x in pd.date_range(d_idx.min(), d_idx.max(), freq="D")
+        recent = d_idx[-_GAP_DOW_WINDOW:]
+        dows = {d.dayofweek for d in recent}
+        gaps = [str(x.date()) for x in pd.date_range(recent.min(), d_idx.max(), freq="D")
                 if x.dayofweek in dows and x not in have]
         out["n_stamp_gaps"] = len(gaps)
         out["stamp_gap_dates"] = gaps[:14]
