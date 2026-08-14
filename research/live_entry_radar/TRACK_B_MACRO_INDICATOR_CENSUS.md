@@ -46,7 +46,7 @@ flat-window (`hi == lo`) policy, and %D derivation.
 other impl emits NaN, S-5 emits ~0, a silent **false-oversold** on low-vol names. (2) **S-5 binds
 the RSI period to `stoch_len`**, not a separate `rsi_len` (`engine/postcross.py:99`) — identical at
 the 14/14 default, divergent on any retune. Frozen params are duplicated in two places that must
-agree — `engine/canon.py:417-419` and `engine/confluence_tiers.py:56-59`:
+agree (`engine/canon.py:417-419`, `engine/confluence_tiers.py:56-59`):
 `RSI_LEN,FAST_LEN,BASE_LEN,SIG_LEN = 14,14,60,5`; `STOCH_LEN,SMOOTH_K,SMOOTH_D = 14,3,3`;
 `OB,OS = 80,20`; `CONF_W = 8`; `BUY_RSI_MAX = 65`.
 
