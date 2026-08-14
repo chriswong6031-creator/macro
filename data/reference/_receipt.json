@@ -1,6 +1,6 @@
 {
   "authority": "display_only \u2014 DOS-1.1 materializes the spine; nothing reads it as authority yet",
-  "code_version": "6e1c320dd04ae26dc2e4e9beffb935275ba1662c",
+  "code_version": "4fdf835d25fa641ea37c76988719a304766c32f3",
   "coverage": {
     "resolved": 703,
     "total": 712,
@@ -21,7 +21,7 @@
     "reference.security_master",
     "reference.vendor_aliases"
   ],
-  "generated_at": "2026-08-14T15:51:42",
+  "generated_at": "2026-08-14T16:01:42",
   "identity_exceptions": [
     {
       "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
@@ -39,7 +39,7 @@
   "inputs": {
     "config.yml": "43b21e2c46dad3d3cb495275c44c94a987c1acd7521004eef047fc41aff640f4",
     "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
-    "data/baskets/membership.json": "0afa3469962a059add57067a7cf4831d99ba58dc80b4d14ca62a249537c86e1c",
+    "data/baskets/membership.json": "91e86ca7129a17e9fe9b6c77e7622673b66b04e171bdd768bd60bb768c8103cb",
     "data/breadth/constituents.parquet": "a0bad230bfdf0052743d27d74c972f1a0be17ee6ddc732ac26db8086b7b98711",
     "data/symbol_directory/snapshots/2026-08-10.parquet": "f082a2bee3171061b1f61b4b38bba98a2bceccb0a49425a62def9dca9d1eb370",
     "lib/ticker_aliases.py": "e61756c5c1dda0b4f0a3fd06ce532e868adb91b9c38948b7e6cab00dd3893011"
