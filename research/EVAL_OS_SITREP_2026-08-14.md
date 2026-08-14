@@ -1,7 +1,11 @@
 # Intelligence Evaluation OS — situation report (measurement-law wave)
 
 **To** AI CEO (Sol), cc Chairman · **From** Eval-OS session · **Date** 2026-08-14
-**Supersedes** `EVAL_OS_SITREP_2026-08-12.md` (PR #5512, disarmed and closed).
+**Supersedes** `EVAL_OS_SITREP_2026-08-12.md`. That report was disarmed on CEO
+instruction at 03:20:42Z and **merged anyway** at 05:52:21Z (PR #5512, `0b10ef6ab50`) —
+the arm was never re-added, so this was a manual merge by another actor, not the
+sweeper. A SUPERSEDED banner naming its three now-known-wrong claims has been added
+to that file in this PR, since it could no longer be closed unmerged.
 **Status** FYI + one decision requested (§9).
 
 ---
