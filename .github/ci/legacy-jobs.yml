@@ -6267,6 +6267,19 @@ jobs:
       # segregation gate the moment it does.
       - name: force-majeure outage backfill (segregation both ways, nightly passthrough, collision rule, idempotence)
         run: python -m pytest tests/test_prophet_outage_backfill.py -q
+      # Force-majeure 2026-08-11 outage RECONSTRUCTION (operator 2026-08-13). A STEP in
+      # this job rather than a job of its own: it shares this job's import closure and
+      # its whole point is that the two windows are checked together — the segregation
+      # law above now reads a REGISTRY of chartered windows built from both lanes'
+      # constants, so splitting them across jobs would let one half go green against a
+      # registry the other half had already widened.
+      #
+      # What is pinned here and nowhere else: the price truncation (a poisoned 2026-08-12
+      # bar must not reach the tree the board builder reads, and the fence that re-proves
+      # it must fire when one is planted), the chronology refusal, and the pinned
+      # pre-#5370 code vintage. The tests are pure — no board is built in CI.
+      - name: force-majeure outage reconstruction 2026-08-11 (price truncation, chronology, pinned vintage)
+        run: python -m pytest tests/test_prophet_outage_backfill_20260811.py -q
       # The user-facing half of the same feature (#5301): the plain-word EN/ZH chip,
       # receipt and footnote a reconstructed plan carries, plus the record split.
       # Wired HERE, with the lane that mints those plans, and wired at all because it
