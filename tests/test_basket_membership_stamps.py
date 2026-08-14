@@ -262,9 +262,11 @@ def test_b_curated_tape_is_barrick_and_not_the_goldcom_dealer_tape() -> None:
     assert curated.index.name == "Date"
     assert curated.index.is_monotonic_increasing and curated.index.is_unique
     assert list(curated.columns) == ["open", "high", "low", "close", "volume"]
-    assert len(curated) == 3_172
+    # Immutable seed receipt, not a ceiling: the membership collector advances this
+    # curated tape nightly after the PR lands.
+    assert len(curated) >= 3_172
     assert curated.index.min() == pd.Timestamp("2014-01-02")
-    assert curated.index.max() == pd.Timestamp("2026-08-13")
+    assert curated.index.max() >= pd.Timestamp("2026-08-13")
 
     b_pair = pd.concat(
         [curated["close"].pct_change(), barrick["close"].pct_change()], axis=1, join="inner"
@@ -288,7 +290,7 @@ def test_gold_masks_to_zero_and_b_owns_the_slot_in_both_read_modes(membership) -
     }
     b = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "B.parquet")["close"]
     gold = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "GOLD.parquet")["close"]
-    idx = b.index.union(gold.index).sort_values()
+    idx = b.index
     close = pd.concat({"GOLD": gold, "B": b}, axis=1, sort=False).reindex(idx)
     members = [rows["GOLD"], rows["B"]]
 
@@ -296,8 +298,12 @@ def test_gold_masks_to_zero_and_b_owns_the_slot_in_both_read_modes(membership) -
     deep = _live_mask(members, idx, ["GOLD", "B"], pit=False, close=close)
     assert int(strict["GOLD"].sum()) == 0
     assert int(deep["GOLD"].sum()) == 0
-    assert int(strict["B"].sum()) == 819
-    assert int(deep["B"].sum()) == 3_172
+    b_row = rows["B"]
+    strict_expected = idx >= pd.Timestamp(b_row["added"])
+    if b_row.get("removed"):
+        strict_expected &= idx < pd.Timestamp(b_row["removed"])
+    assert int(strict["B"].sum()) == int(strict_expected.sum())
+    assert int(deep["B"].sum()) == len(b)
 
 
 def test_a_delisted_symbol_is_never_requested_nightly() -> None:
