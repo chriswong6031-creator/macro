@@ -1,0 +1,153 @@
+# Production Baseline Manifest — Prophet Board (us_stocks.html), r2 cycle.
+# REUSED from prophet-board-5514-original (RIG baseline/lineage reuse where valid) —
+# production surface unchanged since capture (factory §8.1 foundation files untouched;
+# re-verified 2026-08-13). Production screenshots reference the founding fixture's
+# committed evidence paths, valid once PR #5520 (the gate + founding fixture) merges.
+# RIG V1 §4/§5 (research/REFERENCE_INTEGRITY_GATE_V1.md). Captured against live
+# production 2026-08-12 + origin/main templates; file:line evidence cited per row.
+schema: mastermind.rig_baseline.v1
+reference_id: prophet-board-5514-r2
+captured_at: "2026-08-12"
+
+production:
+  route: us_stocks.html
+  live_url: https://mastermind-x.com/us_stocks.html
+  source_commit: 50944db0d63a5c353a04edcfd7c1e56de717a0f5
+  source_paths:
+    - templates/dashboard.html.j2            # stocks mode; imports _prophet_card as pv (lines 1-2); cards at ~16194
+    - templates/_prophet_card.html.j2        # pv_css 72-366, pv_card 369-440
+    - scripts/build_site.py                  # mode="stocks" -> site/us_stocks.html (:5952)
+    - scripts/build_prophet.py               # site/prophet/index.json + plans/<ID>.json
+  shared_surfaces:
+    # the same card component is live on 5 locale boards — component-level blast radius
+    - {route: china.html / china_stocks.html, builder: scripts/build_china.py:1969}
+    - {route: hk.html / hk_stocks.html, builder: scripts/build_hk.py:1818}
+    - {route: canada.html / canada_stocks.html, builder: scripts/build_canada.py:1523}
+    - {route: intl.html / intl_stocks.html, builder: scripts/build_intl.py:910}
+
+evidence:
+  screenshots:
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/production/prod-desktop-dark-en-standouts-board.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/production/prod-desktop-light-en-standouts-board.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/production/prod-desktop-dark-zh-standouts-board.png, viewport: desktop, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/production/prod-mobile390-dark-en-standouts-board.png, viewport: mobile390, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/production/prod-desktop-dark-en-card-zoom.png, viewport: desktop, theme: dark, locale: en, note: single-card anatomy}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/production/prod-desktop-dark-en-pagetop.png, viewport: desktop, theme: dark, locale: en, note: page-head context}
+  gaps:
+    - {axis: theme, value: light, viewport: mobile390, reason: "matrix bounded for the founding fixture; light behavior evidenced at desktop"}
+    - {axis: access, value: paid, reason: "anonymous capture only per evidence-harness law; #prophet-live paid panel is display:none anonymously — card anatomy evidenced on the anonymous-visible standouts board, template evidence covers the paid panel (same pv_card macro)"}
+
+user_job: >
+  A paying investor choosing which US setups to work on today — which matter most right
+  now, at what stage, and which am I allowed to act on today; secondarily the anonymous
+  visitor judging whether the machine is real.
+
+core_interactions:
+  - glance-scan the card grid and shortlist actionable names in seconds
+  - read live price + change against the stated zone before acting
+  - hover the caution chip (⚠N) for risk sentences; hover receipts via LENS tips
+  - filter/segment by triage shelf (Live now / Setting up / Ran / Basing / Blocked)
+  - toggle grid/table; open a name via card link
+
+information_hierarchy:
+  - "verb pill + ⚡trigger + ⚠caution + live price/change (card top row)"
+  - "chart hero (sparkline, verb-hued)"
+  - "ticker · company · PRIORITY score"
+  - "sector · FEATURED/NEW/lane chips"
+  - "4-stage tracker (Bottoming→Turning→Ready→Trend)"
+  - "ZONE range + as-of date (card footer)"
+
+design_lineage:
+  rulings:
+    - ref: "operator kill 2026-08-03 — verdict-sentence/entry-headline prose removed from cards, 'not coming back'"
+      evidence: "templates/_prophet_card.html.j2:26-34 (header comment), 379-386"
+      implication: "multi-line guidance prose on dense cards is an overturned, operator-rejected design"
+    - ref: "DNR:KILL-PROPHET-POP-MERGE"
+      implication: "card verb remains the ruling stance; no merged scores"
+    - ref: "DNR:KILL-FUSED-COMPOSITE"
+      implication: "no blended confidence numbers; stage/priority stay separate facts"
+    - ref: "research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md (PR #5504)"
+      implication: "lifecycle cells ruled: 7-cell enum, weight-encoded, direction-neutral — governs lifecycle marks, not the card's whole identity"
+    - ref: "P0 packet §B + §G.1 (research/P0_REFERENCE_EXPERIENCE_DESIGN_PACKET.md)"
+      implication: "board reference contract; one lifecycle vocabulary per card; count cure"
+  rejected_variants:
+    - "verdict sentences / what-to-do prose on cards (killed 2026-08-03, above)"
+    - "second lifecycle chip beside the rail (red-team #3: one lifecycle vocabulary per card)"
+  comments:
+    - path: "templates/_prophet_card.html.j2:14-16"
+      note: "direction hues flip red/green under zh — color semantics are load-bearing product identity"
+    - path: "templates/_prophet_card.html.j2:47-54"
+      note: "Featured glow pinned to --pv-buy regardless of verb: priority-engine pick-cohort cue"
+    - path: "templates/dashboard.html.j2:~16198-16206"
+      note: "score deliberately relabelled Priority/优先级 with honest gloss ('how ready today — not a win probability')"
+
+# ── Capability Ledger (RIG §5) ─────────────────────────────────────────────────
+# Stable inventory of what production gives the user. importance: core capabilities
+# are the ones whose silent loss the gate exists to stop.
+capabilities:
+  - id: card.chart_hero
+    user_job: understand recent price geometry instantly, without opening anything
+    evidence: "templates/_prophet_card.html.j2:154-163,376-377 (.pv-chart, verb-hued sparkline SVG)"
+    importance: core
+
+  - id: card.live_quote
+    user_job: know where price is now, live, on the card
+    evidence: "templates/_prophet_card.html.j2:402 (.nb-px.pv-px[data-sym][data-mkt], live.js bound)"
+    importance: core
+
+  - id: card.live_change
+    user_job: detect chase/momentum context (what did it just do)
+    evidence: "templates/_prophet_card.html.j2:402,187-189 (.nb-chg.pv-chg pill; US board passes show_change=true, dashboard.html.j2:~16197)"
+    importance: core
+
+  - id: card.priority_score
+    user_job: rank which setups are most ready today (0-100 with honest gloss)
+    evidence: "dashboard.html.j2:~16198-16206 (Priority/优先级 label + value; 'not a win probability'); _prophet_card.html.j2:407"
+    importance: core
+
+  - id: card.zone_chip
+    user_job: know the relevant price zone compactly, without execution prescription
+    evidence: "templates/_prophet_card.html.j2:421-438 (.pv-zn footer, 5 states: active/muted/re-add/confirm/none)"
+    importance: core
+
+  - id: card.stance_verb
+    user_job: read the ruling stance in one word (buy/near/wait/hold/avoid)
+    evidence: "templates/_prophet_card.html.j2:26-34 (terse-verb ruling), verb pill at card head"
+    importance: core
+
+  - id: card.verb_hue_identity
+    user_job: read stance across the whole grid at a glance; Prophet's semantic color brand (zh direction flip; Featured glow)
+    evidence: "templates/_prophet_card.html.j2:76,79-131 (--pvh per-verb hue driving glow/chart/chip/score/tracker/zone), 14-16 (zh flip), 47-54 (Featured)"
+    importance: core
+
+  - id: card.compact_glance_geometry
+    user_job: full card read in ~2 seconds — glance tier, no prose paragraphs (operator-ruled)
+    evidence: "templates/_prophet_card.html.j2:26-34,379-386 (verdict prose killed 2026-08-03); card ≈200px unit (production card-zoom shot)"
+    importance: core
+
+  - id: card.stage_tracker
+    user_job: see where the setup sits in its price-shape lifecycle
+    evidence: "templates/_prophet_card.html.j2:418-419 (Bottoming→Turning→Ready→Trend rail, 筑底/转向/就绪/趋势)"
+    importance: supporting
+    known_defect: "triage vocabulary producer-less at stage=4 (ruling J9C/J10 census); an IMPROVE disposition is the expected cure"
+
+  - id: card.caution_popover
+    user_job: read risk sentences on demand (⚠N hover/focus popover) without card bloat
+    evidence: "templates/_prophet_card.html.j2:398-400,312-319"
+    importance: supporting
+
+  - id: card.asof_stamp
+    user_job: know how fresh the card's read is
+    evidence: "templates/_prophet_card.html.j2:436-437"
+    importance: supporting
+
+  - id: board.triage_shelves
+    user_job: segment the board by actionability (Live now / Setting up / Ran / Basing / Blocked, counted)
+    evidence: "templates/dashboard.html.j2:15907-15911; production board shot (All 81 · Live now 28 · ...)"
+    importance: supporting
+    known_defect: "count vocabulary duplicated ('69 shown · 93 setups' beside shelf counts) — the count cure the P0 packet §B orders"
+
+  - id: board.track_record_strip
+    user_job: judge whether the machine is real (win rate + per-trade avg + link)
+    evidence: "production board shot (Track record · 59% win · +0.45% a trade)"
+    importance: supporting

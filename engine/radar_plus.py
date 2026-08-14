@@ -114,11 +114,20 @@ def _alt_lean(covered: list, alt_bt: dict, mm_index: dict) -> dict:
 
 
 def _flow_lean(covered: list, ff: dict) -> dict:
-    """Sector-ETF accumulation vs distribution across covered tickers (fund_flows)."""
+    """Sector-ETF accumulation vs distribution across covered tickers (fund_flows).
+
+    Legs the decomposition positively identified as a SPLIT are excluded: this
+    lean is a RANKED input (it votes in `breadth`), and a re-denomination is not
+    a manager decision — counting a 3:1 split as an accumulation vote is the same
+    defect the engine already refuses one layer up. Absent flag => counted, so
+    this is inert until the decomposition publishes it.
+    """
     acc = dist = 0
     for t in covered:
         rows = ff.get(t.upper()) or []
         for r in rows:
+            if r.get("split_adjusted"):
+                continue
             d = (r.get("direction") or "").lower()
             if "accumul" in d:
                 acc += 1

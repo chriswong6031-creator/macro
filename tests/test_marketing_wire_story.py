@@ -82,7 +82,13 @@ def _item(iid: str, headline: str, *, source: str | None = None,
         "url": f"https://wire.example/{iid}",
         "published_at": now.isoformat(),
         "headline": headline,
-        "body_snippet": headline,
+        # A REAL PACKET, not an echo of its own headline (W2E, 2026-08-11): a
+        # body that repeats the headline leaves the deterministic summarizer with
+        # nothing to relay, and compose-or-drop now refuses that item rather than
+        # posting the provider's sentence. These tests are about STORY COLLAPSE,
+        # so the packet has to survive long enough to claim a story.
+        "body_snippet": f"{headline}. The release landed on schedule and the "
+                        f"desk logged it against the prior print.",
         "corroboration_class": "hearsay",
     }
     row.update(extra)

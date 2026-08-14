@@ -202,7 +202,6 @@
   "tests/test_cn_holder_sale.py",
   "tests/test_cn_limit_band_progress_w2.py",
   "tests/test_cn_reversal_sleeve.py",
-  "tests/test_cn_theme_tape.py",
   "tests/test_cohort_metrics.py",
   "tests/test_collect_failfast.py",
   "tests/test_collinearity_phase0.py",

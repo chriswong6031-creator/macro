@@ -608,6 +608,210 @@ def _strip_trailing_source_clause(summary: str, source_name: str, *aliases: str)
     return text
 
 
+#: A headline the publisher already cut off. An ellipsis is the one truncation
+#: marker with no other reading — "…Inflation Must Be R…" is not a sentence in
+#: any register, and relaying it verbatim is indefensible whatever else is true
+#: of the item. (Live, 2026-08-11, flagship account.)
+_TRUNCATED_HEADLINE_RE = re.compile(r"(?:…|\.\.\.)\s*$")
+
+#: A real numeric reading: a percentage, a decimal, a currency figure, or basis
+#: points. Deliberately the SAME shape relay_hygiene uses for its market-figure
+#: escape — one definition of "this headline carries a number a reader can
+#: check", so the admission screen and the compose gate cannot drift apart.
+#: "Q2" is not a reading, which is exactly the distinction that separates a
+#: squawk ("GOLD ROSE ABOUT 0.6% TO AROUND $4,070") from a publisher's editorial
+#: line ("Wendy's Q2 Beat Comes with Dividend Cut, Withdrawn Outlook").
+_RELAY_FIGURE_RE = re.compile(
+    r"(?<!\w)(?:"
+    r"[+-]?\d+(?:\.\d+)?\s*%"
+    r"|\d+\.\d+"
+    r"|[$€£¥]\s?\d"
+    r"|\d+\s?(?:bps|bp|pts?|points?)\b"
+    r"|\d[\d,]*(?:\.\d+)?\s?[KMBT]\b"
+    r")",
+    re.IGNORECASE,
+)
+
+
+def _may_relay_verbatim(scored: dict, headline: str, attribution: str) -> tuple[bool, str]:
+    """May this item post its SOURCE'S OWN SENTENCE as the body? ``(ok, why)``.
+
+    The gate behind compose-or-drop. Reached only when the summarizer produced
+    nothing but the headline back, and only after the macro-print composer has
+    declined the item — so "no" here means the item does not post at all.
+
+    TWO WAYS TO EARN IT, and both say the same thing in different registers: the
+    sentence stands WITHOUT our composition and without trusting whoever handed
+    it to us.
+
+      * AN ATTRIBUTED PRIMARY-SOURCE QUOTE. `corroboration_class ==
+        "direct-quote"` is set by exactly two providers (the Truth Social
+        mirrors) and means the source IS the speaker — the headline is not a
+        publisher's line ABOUT an event, it is the event. "TRUMP: <the post> --
+        on Truth Social" is the oldest legitimate shape a wire desk has.
+      * A CHECKABLE MARKET STATEMENT: `source_authority.self_evident` says the
+        claim rests on a figure rather than on the relayer's standing, AND the
+        headline actually carries that figure. "GOLD ROSE ABOUT 0.6% TO AROUND
+        $4,070 AN OUNCE" and "S. KOREAN TRADE BALANCE ACTUAL 30.32B (FORECAST
+        29.487B)" are facts in wire shorthand; nothing we could compose would
+        make them truer, and the reader can pull both off the tape.
+
+    BOTH GATES ARE NEEDED, and the second half is why. `self_evident` was
+    written to answer "may this post with NO CREDIT", and on its own it is too
+    generous for this question: it returns True for "Wendy's Q2 Beat Comes with
+    Dividend Cut, Withdrawn Outlook as Sales Slump" — a publisher's editorial
+    headline whose only digit is a quarter label — because a slump reads as a
+    market move. Requiring the figure ITSELF is what separates a squawk from
+    copy written to be clicked.
+
+    A TRUNCATED HEADLINE EARNS NOTHING, whichever door it came through.
+    """
+    head = str(headline or "")
+    if _TRUNCATED_HEADLINE_RE.search(head.strip()):
+        return False, "the publisher's headline is cut off mid-sentence"
+
+    if (str(scored.get("corroboration_class") or "") == "direct-quote"
+            and str(attribution or "").strip()):
+        return True, "attributed primary-source direct quote"
+
+    try:
+        from engine.marketing.source_authority import self_evident  # noqa: PLC0415
+        ok, why = self_evident(scored)
+    except Exception as exc:  # noqa: BLE001
+        # FAIL-CLOSED, unlike most soft layers here. This predicate is the only
+        # thing standing between a broken summarizer and the provider's own copy
+        # on the timeline, so a missing module must refuse the relay, not license
+        # it. The cost is a post we do not make; the alternative is the defect.
+        print("::warning title=press-relay-verbatim-gate-failed::"
+              f"{type(exc).__name__}: {exc} — refusing the verbatim relay",
+              flush=True)
+        return False, "self-evidence could not be evaluated"
+
+    if not ok:
+        return False, why
+    if not _RELAY_FIGURE_RE.search(head):
+        return False, "self-evident by class but the headline carries no reading"
+    return True, f"checkable market statement ({why})"
+
+
+def _norm_for_relay_identity(text: object) -> str:
+    """Case- and whitespace-insensitive identity for "is this just the headline".
+
+    Punctuation is deliberately KEPT. Two sentences that differ only in spacing
+    or capitalisation are the same relay; two that differ in their punctuation
+    may not be (a colon can be the whole difference between a wire's shorthand
+    and a written line), and this predicate ends a post's life, so it errs
+    toward letting a genuinely different string through.
+    """
+    return re.sub(r"\s+", " ", str(text or "")).strip().casefold()
+
+
+#: The scheduled-data vendor shape, as it arrives from the wires:
+#:
+#:     "Nonfarm Payrolls For July -23K Vs 85K Est.; 20K Prior"
+#:     "USA Unemployment Rate For July 4.1% Vs 4.2% Est."
+#:
+#: STRICT ON PURPOSE. This is the ONE exception to compose-or-drop, so its parse
+#: has to be the thing that earns the exception: a shape we do not fully
+#: recognise must DROP, never be half-rendered. Every field is required except
+#: the prior, and the period has to be a real month or quarter — a loose
+#: `(?P<period>\S+)` would have let "For Release" through and printed it.
+_MACRO_PRINT_RE = re.compile(
+    r"^(?P<series>.{2,70}?)\s+for\s+"
+    r"(?P<period>(?:jan|feb|march|mar|apr|april|may|jun|june|jul|july|aug|august"
+    r"|sep|sept|september|oct|october|nov|november|dec|december|january|february"
+    r"|q[1-4])[a-z]*(?:\s+\d{4})?)\s+"
+    r"(?P<value>[-+]?\d[\d,]*(?:\.\d+)?\s*[%kmb]?)\s+"
+    r"vs\.?\s+(?P<est>[-+]?\d[\d,]*(?:\.\d+)?\s*[%kmb]?)\s+est\.?"
+    r"(?:\s*[;,]\s*(?P<prior>[-+]?\d[\d,]*(?:\.\d+)?\s*[%kmb]?)\s+prior\.?)?"
+    r"\s*$",
+    re.IGNORECASE,
+)
+
+#: Vendor spellings the desk shortens. DELIBERATELY TINY. Renaming somebody
+#: else's series is the one edit in this composer that could MISSTATE rather
+#: than merely mis-style, so the table holds only shorthand a desk already uses
+#: out loud, and "private nonfarm payrolls" is listed separately precisely so it
+#: can never collapse into the headline series it is not.
+_MACRO_SERIES_ALIASES: tuple[tuple[str, str], ...] = (
+    ("private nonfarm payrolls", "private payrolls"),
+    ("nonfarm payrolls", "payrolls"),
+)
+
+#: Leading country tags the period already implies for a US wire.
+_MACRO_COUNTRY_PREFIX_RE = re.compile(r"^(?:usa|us|u\.s\.|u\.s)\s+", re.IGNORECASE)
+
+
+def _macro_figure(raw: str, *, signed: bool) -> str:
+    """Render one vendor figure in house style: lowercase suffix, honest sign.
+
+    `signed` is the difference between a COUNT and a LEVEL, and it is not
+    cosmetic. A payroll print is a change, so "+85k" and "-23k" are the honest
+    renderings and a bare "85k" hides half the fact. An unemployment RATE is a
+    level: writing "+4.1%" would assert a move that the print does not make.
+    """
+    fig = re.sub(r"\s+", "", str(raw or "").strip())
+    if not fig:
+        return ""
+    fig = re.sub(r"([kmb])$", lambda m: m.group(1).lower(), fig, flags=re.IGNORECASE)
+    if signed and not fig.startswith(("+", "-")):
+        fig = "+" + fig
+    return fig
+
+
+def compose_macro_print(headline: str) -> str:
+    """The DETERMINISTIC house composer for a scheduled data print. "" = no parse.
+
+    THE ONE EXCEPTION TO COMPOSE-OR-DROP (operator, 2026-08-11). Everything else
+    whose summarizer output is unavailable now drops; a macro print does not,
+    because its whole content is three figures in a fixed vendor grammar and
+    code can restate them in house register with no LLM and no invention:
+
+        "Nonfarm Payrolls For July -23K Vs 85K Est.; 20K Prior"
+        -> "July payrolls: -23k against +85k expected. Prior month: +20k."
+
+    Subject-first, lowercase suffixes, "against ... expected", no Title Case and
+    no "Vs ... Est." — the register the composed 80% of this lane already write
+    in. NOTHING IS ADDED: every token in the output came out of the headline or
+    out of the fixed frame. A parse failure returns "" and the caller drops the
+    item loudly, which is the whole point of a strict parse.
+    """
+    m = _MACRO_PRINT_RE.match(re.sub(r"\s+", " ", str(headline or "")).strip())
+    if not m:
+        return ""
+
+    # Lowercase the vendor's Title Case, but leave an ACRONYM alone: "US CPI For
+    # June ..." reads as "June CPI", never "June cpi". An all-caps token in the
+    # source is a name, not a capitalised ordinary word.
+    series = _MACRO_COUNTRY_PREFIX_RE.sub("", m.group("series").strip())
+    series = " ".join(
+        tok if (len(tok) >= 2 and tok.isupper() and tok.isalpha()) else tok.lower()
+        for tok in re.split(r"\s+", series) if tok
+    ).strip(" :-—–")
+    for vendor, short in _MACRO_SERIES_ALIASES:
+        if series == vendor:
+            series = short
+            break
+    if not series:
+        return ""
+
+    period = m.group("period").strip()
+    period = period[:1].upper() + period[1:] if period[:1].isalpha() else period
+
+    # A count is a change and carries its sign; a percentage is a level.
+    signed = not m.group("value").rstrip().endswith("%")
+    value = _macro_figure(m.group("value"), signed=signed)
+    est = _macro_figure(m.group("est"), signed=signed)
+    if not value or not est:
+        return ""
+
+    out = f"{period} {series}: {value} against {est} expected."
+    prior = _macro_figure(m.group("prior") or "", signed=signed)
+    if prior:
+        out += f" Prior month: {prior}."
+    return out
+
+
 def _corroboration_key(item: dict) -> str:
     """A coarse claim key for counting independent corroborating sources.
 
@@ -2301,6 +2505,10 @@ def run_press_tick(
     # Per-tick summarizer census — see the fallback warning below for why a bare
     # counter is load-bearing rather than telemetry garnish.
     summary_modes: dict[str, int] = {}
+    #: Items refused by compose-or-drop this tick (W2E). Counted separately from
+    #: `summary_modes` because the MODE cannot answer the question — see the
+    #: census block at the end of this function.
+    uncomposed_drops = 0
     # THE HELD CLASS, COUNTED PER RUN (operator ruling 2026-08-06). Posts whose
     # only informational surplus was the picture, held once the card was withheld
     # as a restatement of the copy. The operator ratified holding them; the ask
@@ -2551,13 +2759,14 @@ def run_press_tick(
         # LLM lane, so nobody looks at the prompt, the validator, or the source
         # whose packets keep failing — and the deterministic relay is exactly the
         # path that carries a source's own page furniture onto the timeline.
+        #
         summary_violations = list(payload.get("violations_seen") or [])
         if mode not in ("llm", "llm_repaired"):
             _mode_label = ("no LLM output" if mode == "deterministic"
                            else "LLM output rejected twice")
             print("::warning title=press-summary-fallback::"
-                  f"{iid}: {_mode_label} ({mode}); shipping the deterministic "
-                  f"body. source={s.get('source', '?')} "
+                  f"{iid}: {_mode_label} ({mode}); the body did not come from "
+                  f"the summarizer. source={s.get('source', '?')} "
                   f"violations={summary_violations or 'none'}", flush=True)
         summary_modes[mode] = summary_modes.get(mode, 0) + 1
         source_name = str(s.get("source_name", s.get("source", "")))
@@ -2570,6 +2779,92 @@ def run_press_tick(
         _xh = str(s.get("x_handle", "") or "").strip()
         base_summary = _strip_trailing_source_clause(
             summary, source_name, *((f"@{_xh}", _xh) if _xh else ()))
+
+        # ── COMPOSE-OR-DROP (W2E, operator-surfaced 2026-08-11) ───────────────
+        # LOUD WAS NOT ENOUGH. The `press-summary-fallback` warning above shipped
+        # on 2026-08-04 and did exactly what it promised — and then 8 of 40 press
+        # items still went out in raw register on 2026-08-11, because a warning
+        # that annotates a post is a RECEIPT, not a gate. The one the operator
+        # screenshotted on the flagship account was a content-farm SEO listicle,
+        # relayed verbatim:
+        #
+        #   "How To Trade SPY, QQQ, AAPL, MSFT, NVDA, GOOGL, META, And TSLA
+        #    Using Technical Analysis"
+        #
+        # WHAT THIS TEST IS, precisely. `_deterministic_summary` has two legs: the
+        # source's LEAD SENTENCE when the packet carries a usable body, and the
+        # bare `{headline} -- {source_name}` relay when it does not. The first is a
+        # body — a different sentence, carrying information the headline does not,
+        # and the D2 restatement gate still judges it. The second is not a summary
+        # at all; it is the provider's headline wearing our account's name, and it
+        # is what every one of the eight shipped. So the gate is keyed to the
+        # SHAPE, not to the mode: if the body we are about to compose from IS the
+        # headline, there is nothing here to say, and "no post" beats "bot post"
+        # (Voice doctrine v5).
+        #
+        # TWO WAYS OUT, both deterministic rather than discretionary, and they
+        # run IN THIS ORDER.
+        #
+        # 1. COMPOSE. A scheduled MACRO PRINT arrives in a fixed vendor grammar
+        #    whose whole content is three figures, so `compose_macro_print`
+        #    restates it in house register out of code, inventing nothing. This
+        #    is FIRST because a print we can write ourselves should be written
+        #    ourselves — "July payrolls: -23k against +85k expected." is the
+        #    house voice, and "Nonfarm Payrolls For July -23K Vs 85K Est." is a
+        #    vendor's. A shape that does not fully parse gets no half-rendering.
+        # 2. RELAY VERBATIM, but only where the source's own sentence stands
+        #    without us — an attributed primary-source quote, or a checkable
+        #    market statement carrying its own reading. See
+        #    :func:`_may_relay_verbatim` for both doors and for why
+        #    `self_evident` alone is not enough.
+        #
+        # Anything that clears neither drops, loudly and counted.
+        _relay_ok, _relay_why = _may_relay_verbatim(s, headline, attribution)
+        if (_norm_for_relay_identity(base_summary)
+                == _norm_for_relay_identity(headline)):
+            _house = compose_macro_print(headline)
+            if _house:
+                base_summary = _house
+                # RE-BOOK, DO NOT DOUBLE-BOOK. The item was already counted under
+                # the summarizer leg that failed; the census divides by
+                # sum(summary_modes), so booking the rescue as a second row would
+                # make the denominator larger than the number of items.
+                summary_modes[mode] = max(0, summary_modes.get(mode, 0) - 1)
+                if not summary_modes.get(mode):
+                    summary_modes.pop(mode, None)
+                mode = "house_macro_print"
+                summary_modes[mode] = summary_modes.get(mode, 0) + 1
+                print("::notice title=press-summary-house-compose::"
+                      f"{iid}: no composed body, but the headline is a macro "
+                      f"print — the deterministic house composer rendered its "
+                      f"figures. source={s.get('source', '?')}", flush=True)
+            elif not _relay_ok:
+                print("::warning title=press-relay-dropped::"
+                      f"{iid}: compose-or-drop — the only body available IS the "
+                      f"provider headline ({mode}), it is not a parseable macro "
+                      f"print, and it may not relay verbatim ({_relay_why}). "
+                      f"headline={str(headline)[:120]!r} "
+                      f"source={s.get('source', '?')}", flush=True)
+                uncomposed_drops += 1
+                skipped.append({"id": iid, "reason": "relay_uncomposed",
+                                "account": account,
+                                "salience": s.get("salience"),
+                                "summary_mode": mode,
+                                "detail": _relay_why,
+                                "headline": str(headline)[:120]})
+                # WHICH FAILURES ARE WORTH RETRYING — the house already draws
+                # this line (see _TRANSIENT_GIVE_UP_AT above). `deterministic`
+                # means no LLM output existed at all: a missing key, a provider
+                # outage, a timeout. That is ENVIRONMENTAL, and giving up on it
+                # would turn a five-minute outage into a mass kill, so the item
+                # stays unseen and a later tick may compose and post it.
+                # `llm_fallback` means the summarizer wrote twice and the
+                # validator rejected both — a stable property of this packet, so
+                # retrying every ~90s for the life of the process would only
+                # re-pay the LLM bill for the same answer.
+                if mode == "llm_fallback":
+                    seen.add(_emission_key(s))
+                continue
 
         # ── B2-COPY wire voice pass ────────────────────────────────────────────
         # Opener rotation (deterministic + per-account no-repeat), deterministic
@@ -2648,6 +2943,28 @@ def run_press_tick(
             _one_line = f"{headline} -- {attribution}" if attribution else headline
             _shape = {"shape": "short_form", "headline": "", "body": _one_line,
                       "reason": "restatement gate unavailable", "coverage": 1.0}
+
+        # ── A HOUSE-COMPOSED PRINT POSTS ITS OWN SENTENCE (W2E) ───────────────
+        # The restatement gate is right that these two lines say one thing, and
+        # WRONG about which one to keep. Its short form always keeps the
+        # HEADLINE, which is correct when the body is a thin echo of a real
+        # headline — but here the body is the house's own rewrite of the vendor's
+        # grammar, and the headline is the grammar we rewrote:
+        #
+        #   headline  "Nonfarm Payrolls For July -23K Vs 85K Est.; 20K Prior"
+        #   body      "July payrolls: -23k against +85k expected. Prior month: +20k."
+        #
+        # Degrading to the short form would throw the composed sentence away and
+        # post the vendor line alone — which is the exact defect this wave was
+        # opened to close, arriving through the gate meant to prevent duplicates.
+        # So the composed print posts BODY-ONLY: one statement, in house register,
+        # with the headline still carried on the item for the rail and the admin
+        # preview (`clamp_for_x` joins only the non-empty parts).
+        if mode == "house_macro_print":
+            _shape = {"shape": "house_compose", "headline": "", "body": body,
+                      "reason": "the composed print restates the vendor headline "
+                                "by construction; the house sentence is the post",
+                      "coverage": _shape.get("coverage", 1.0)}
 
         if _shape["shape"] == "short_form":
             body = _shape["body"]
@@ -2755,6 +3072,51 @@ def run_press_tick(
             print("::notice title=press-lane-x-clamp::"
                   f"{iid}: {_clamp['reason']}", flush=True)
             provenance["x_clamp"] = _clamp["reason"]
+
+        # ── NOTHING SHIPS THAT IS JUST THE PROVIDER'S HEADLINE (W2E) ──────────
+        # The LAST line of defence, and it judges the text that ACTUALLY POSTS
+        # rather than any of the parts it was built from. Compose-or-drop closes
+        # the path that produced the 2026-08-11 defect, but it is not the only
+        # way back to the headline: the D2 restatement gate degrades a self-
+        # restating post to the SHORT FORM (headline + citation clause), and an
+        # `unnamed` citation tier leaves that clause EMPTY — at which point the
+        # post IS the provider's sentence, relayed verbatim with our name on it,
+        # even though the body it was built from was something else entirely.
+        # That is the shape the operator also flagged on 2026-08-11 ("... will
+        # bring down prices, but not immediately -- CNBC").
+        #
+        # ONE PREDICATE, BOTH GATES. It asks `_may_relay_verbatim` — the same
+        # question compose-or-drop asked about the BODY — about the finished
+        # POST, because the two must not be able to disagree. That also keeps the
+        # 2026-08-04 operator citation law intact: an uncredited self-evident
+        # squawk ("GOLD ROSE ABOUT 0.6% TO AROUND $4,070 AN OUNCE") is RATIFIED
+        # to post as its own line with no credit clause, and a blanket
+        # "text != headline" rule would have silently retired that ruling.
+        #
+        # Compared against BOTH the scrubbed headline and `headline_source`, the
+        # publisher's original: a scrub that removed "More info on this -" must
+        # not become the loophole that lets the remainder through.
+        _final_norm = _norm_for_relay_identity(_clamp["text"])
+        _provider_forms = {_norm_for_relay_identity(headline),
+                           _norm_for_relay_identity(s.get("headline_source") or "")}
+        _provider_forms.discard("")
+        if _final_norm and _final_norm in _provider_forms and not _relay_ok:
+            print("::warning title=press-relay-dropped::"
+                  f"{iid}: the composed post is the provider headline verbatim "
+                  f"(shape={_shape['shape']}, mode={mode}, "
+                  f"citation={decision.get('citation_tier', '?')}) and it may not "
+                  f"relay verbatim ({_relay_why}); a relay that restates its "
+                  "source adds nothing, so it drops. "
+                  f"headline={str(headline)[:120]!r}", flush=True)
+            seen.add(_emission_key(s))
+            skipped.append({"id": iid, "reason": "relay_restates_headline",
+                            "account": account,
+                            "salience": s.get("salience"),
+                            "summary_mode": mode,
+                            "post_shape": _shape["shape"],
+                            "detail": _relay_why,
+                            "headline": str(headline)[:120]})
+            continue
 
         # ── DOES THE CARD EARN ITS PIXELS? ────────────────────────────────────
         # Operator, 2026-08-02: "only use illustrations when you have valuable
@@ -2941,14 +3303,24 @@ def run_press_tick(
     # ratio is the health signal: an LLM lane that is armed, paid for, and
     # rejected on every item looks EXACTLY like a working lane from the outbox,
     # and that is how eight headline relays reached the timeline unnoticed.
+    #
+    # W2E adds the DROP tail. `summary_modes` still counts summarizer provenance
+    # and nothing else — a `deterministic` body can be the source's lead sentence
+    # (a real body, relayed) or the headline itself (nothing, dropped), and the
+    # mode alone cannot tell them apart. `uncomposed_drops` is the count that
+    # can, and it is the same number that appears in `skipped` under
+    # `relay_uncomposed`.
     if summary_modes:
         _llm_n = summary_modes.get("llm", 0) + summary_modes.get("llm_repaired", 0)
         _total = sum(summary_modes.values())
         _line = ", ".join(f"{k}={v}" for k, v in sorted(summary_modes.items()))
+        if uncomposed_drops:
+            _line += f", dropped_uncomposed={uncomposed_drops}"
         if _llm_n < _total:
             print(f"::warning title=press-summarizer-census::{_line} — "
                   f"{_total - _llm_n}/{_total} bodies did NOT come from the "
-                  "summarizer", flush=True)
+                  f"summarizer; {uncomposed_drops} item(s) had no house-written "
+                  "body at all and were DROPPED (compose-or-drop)", flush=True)
         else:
             print(f"::notice title=press-summarizer-census::{_line}", flush=True)
 

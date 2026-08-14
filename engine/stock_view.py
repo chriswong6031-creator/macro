@@ -676,7 +676,12 @@ def _ev_ownership(rec: dict) -> dict | None:
     ff = rec.get("fund_flows") or []
     sm = rec.get("smart_money") or {}
     bo = rec.get("beneficial_ownership") or {}
-    n_funds = len(ff) if isinstance(ff, list) else 0
+    # "N active funds" is a count of DECISIONS, so a leg the split guard flagged
+    # as a re-denomination is not one of them — the fund's share count changed
+    # because the shares were re-cut, not because anyone acted. Absent flag =>
+    # counted, so this is inert until the decomposition publishes it.
+    n_funds = sum(1 for r in ff if not (isinstance(r, dict) and r.get("split_adjusted"))) \
+        if isinstance(ff, list) else 0
     n_hold = sm.get("n_holders")
     if not n_funds and not n_hold and bo.get("signal") != "high":
         return None

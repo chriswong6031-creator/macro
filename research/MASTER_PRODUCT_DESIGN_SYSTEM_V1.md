@@ -40,7 +40,10 @@ architecture does this route belong to"* gets the answer here, in this order:
 If two sources disagree: DESIGN_DOCTRINE (content) > this document (visual/composition law) >
 the archetype reference page (worked example) > any individual live page. A live page is never
 precedent — that is what "the answer depends on whichever page was redesigned most recently"
-means, and it is the failure mode this document exists to end.
+means, and it is the failure mode this document exists to end. **A reference page holds its
+precedence slot only while it carries a Reference Integrity approval receipt** (RIG V1
+amendment 2026-08-12, `research/REFERENCE_INTEGRITY_GATE_V1.md` §12 and §19 below); an
+unapproved reference is provisional — design intent under review, not law.
 
 ---
 
@@ -776,6 +779,32 @@ accepted unless marked):
     rejected; standing dissents: none.
 
 ---
+
+## 19. Reference integrity (RIG V1 amendment, 2026-08-12)
+
+A page or component may only become a **canonical reference** — the §0 precedence slot, a
+§10 archetype exemplar, a factory packet's field-3 citation, a registry `compliant` basis —
+through the Reference Integrity Gate (`research/REFERENCE_INTEGRITY_GATE_V1.md`;
+enforcement `scripts/check_reference_integrity.py`; founding regression fixture
+`research/reference_integrity/prophet-board-5514-original/`). The parts that bind design
+work under THIS document:
+
+1. **Preservation presumption.** Prior user value is presumptively preserved; novelty
+   carries the burden of proof. Every capability of the production surface being replaced
+   receives an explicit disposition (`RETAIN / IMPROVE / RELOCATE / REMOVE /
+   BLOCKED_DATA`) — there is no implicit deletion, and a data-coverage problem is a
+   `BLOCKED_DATA` escalation, never a silent feature removal (RIG §1).
+2. **Design lineage law.** Before redesigning a mature/flagship surface, the designer
+   retrieves and cites: current implementation, production screenshots, historical operator
+   rulings, comments explaining non-obvious decisions, prior rejected variants. Prior
+   decisions are presumptively preserved, not blindly binding — overturned explicitly or
+   not at all (RIG §9).
+3. **Independent dual review, rationale-quarantined.** A Product Regression Critic and a
+   Visual/Taste Critic — neither the author — judge the result against production before
+   they ever see the designer's rationale (RIG §6).
+4. **No self-canonization.** Approval is a design-authority verdict over a forced
+   comparative packet, with every critic blocker resolved or explicitly overridden on the
+   permanent record (RIG §7). Scope classes keep ceremony proportional (RIG §2).
 
 *Wave-0 provenance: census + IA + packet (#5401) as primary evidence; current-main delta audit
 2026-08-12 recorded in the factory doc §8 (foundation files unchanged since census; `--ff-*`

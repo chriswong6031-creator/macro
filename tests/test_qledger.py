@@ -263,7 +263,15 @@ def test_wilson_ci_low():
 def _seed_family(tmp_path, *, n_dates: int, n_hits: int, family: str = "radar",
                  horizon: int = 5) -> None:
     """Write claims + grades directly: one claim per distinct asof date, `n_hits` of them
-    directional hits. promotion_check reads only these two files — no price layer needed."""
+    directional hits. promotion_check reads only these two files — no price layer needed.
+
+    Grade rows carry an EXPLICIT clock stamp (v1/trading_days/US) rather than
+    the pre-P0a unstamped shape. This suite tests §3 Wilson-CI/date-floor
+    mechanics, which are clock-basis-agnostic; stamping keeps that true after
+    P0c-2 (CEO ruling 2026-08-13 §5), which withdraws promotion AUTHORITY from
+    a legacy-only basis specifically — see tests/test_qledger_horizon_clock.py
+    for that contract. An unstamped fixture here would silently start testing
+    the P0c-2 boundary instead of the CI math these tests are named for."""
     d = tmp_path / "data" / "qledger"
     d.mkdir(parents=True, exist_ok=True)
     claims, grades = [], []
@@ -282,7 +290,9 @@ def _seed_family(tmp_path, *, n_dates: int, n_hits: int, family: str = "radar",
                        "subject_ret": 0.05 if hit else -0.03, "bench_ret": 0.01,
                        "control_ret": 0.02,
                        "excess": 0.04 if hit else -0.04, "hit": hit,
-                       "embargo_applied": False})
+                       "embargo_applied": False,
+                       "horizon_unit": q.HORIZON_UNIT_TRADING,
+                       "clock_version": q.CLOCK_V1, "clock_market": q.MARKET_US})
     (d / "claims.jsonl").write_text("".join(json.dumps(r) + "\n" for r in claims))
     (d / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in grades))
 
@@ -345,7 +355,13 @@ def _seed_control_rows(tmp_path, rows, *, family: str = "ctrlfam",
     0.01), and `hit` (the PRIMARY, bench-relative hit stored on the row —
     defaults to True so the outer `if hit is not None` gate in promotion_check
     does not itself exclude the row; these fixtures exist to exercise the
-    control-LEG logic specifically, not the primary-hit gate)."""
+    control-LEG logic specifically, not the primary-hit gate).
+
+    Grade rows carry an EXPLICIT clock stamp (v1/trading_days/US), same
+    rationale as `_seed_family` above: this suite (P0c-1, direction-correct
+    control-only hit counting) is clock-basis-agnostic and must stay that way
+    after P0c-2 (CEO ruling 2026-08-13 §5) withdraws promotion AUTHORITY from
+    an unstamped/legacy basis specifically."""
     d = tmp_path / "data" / "qledger"
     d.mkdir(parents=True, exist_ok=True)
     claims, grades = [], []
@@ -369,7 +385,9 @@ def _seed_control_rows(tmp_path, rows, *, family: str = "ctrlfam",
                        "control_ret": r.get("control_ret"),
                        "excess": r.get("excess", 0.0),
                        "hit": r.get("hit", True),
-                       "embargo_applied": False})
+                       "embargo_applied": False,
+                       "horizon_unit": q.HORIZON_UNIT_TRADING,
+                       "clock_version": q.CLOCK_V1, "clock_market": q.MARKET_US})
     (d / "claims.jsonl").write_text("".join(json.dumps(x) + "\n" for x in claims))
     (d / "grades.jsonl").write_text("".join(json.dumps(x) + "\n" for x in grades))
 
