@@ -291,10 +291,35 @@ Two consequences worth acting on separately (heal chipped 2026-08-14):
   different workstream and this session must not grow a second control plane.
 
 Merge path for this PR is therefore the documented inherited-red route, never
-`--admin`: a fresh main baseline (dispatched 08:09Z, run 31782771758, over a
-clear field — no in-flight main run) postdates these failures and shows the
-same jobs red on main, which is what lets `merge_on_green` exclude them BY NAME
-and merge. No product test was weakened and no red was bypassed.
+`--admin`. No product test was weakened and no red was bypassed.
+
+**The dispatched baseline settled the classification independently.** Run
+31782771758 (main, head b78de9c2f097, 08:09:39Z → 08:42:35Z) — dispatched over
+a clear field per the anti-livelock rule — failed `ci-pack-0/7/8/9/11` and
+PASSED `ci-pack-1`. The PR run failed `ci-pack-0/1/8/9/11`. Read together:
+
+* every pack red on both is inherited — main's own proof says so;
+* `ci-pack-1` is red on the PR and GREEN on main, i.e. the one genuinely
+  PR-caused failure, and it is exactly the `workflow-yaml` mirrored-guard
+  defect diagnosed from annotations and already fixed. Two independent methods
+  (annotation reading + main-baseline differencing) agreeing is what makes this
+  a classification rather than a guess;
+* main additionally reds `ci-pack-7`, which the PR run did not hit — main is
+  worse than this PR's inheritance sample showed.
+
+**The freshness deadlock is visible in this very sequence, and it is why the
+incident's RC-freshness-deadlock is real rather than theoretical:** the excuse
+rule requires main's proof to POSTDATE the PR's failing checks, so a baseline
+finishing at 08:42:35Z cannot excuse a PR whose checks conclude later. Each PR
+push therefore needs a NEWER main baseline behind it — and while main's own
+suite is red, that ordering has to be re-established every time. Sequencing
+used here: land the final PR commit FIRST, let its run conclude, and only then
+dispatch the baseline that will postdate it.
+
+Note on the baseline's 33-minute wall clock (vs the 65–73 min measured earlier
+today): main still runs the OLD `ci.yml` — this repair is not merged — so that
+is hosted-pool load variance, NOT an effect of this PR. Recorded explicitly so
+nobody later reads it as a win.
 
 ## §6 Live probes (post-merge)
 
