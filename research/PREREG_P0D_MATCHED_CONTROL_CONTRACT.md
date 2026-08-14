@@ -79,12 +79,23 @@ same race-free pattern and same write-once law as #5577's evidence clock), writt
 producer wiring can be bypassed around it. Nothing pre-creates these files; a timestamp
 written by hand is the retrospective stamping this design forbids.
 
+> **AMENDED 2026-08-14 (review round 1, strengthening).** C3.1 additionally requires that
+> the clock be recorded with **the triggering claim's own `timestamp`**, not with the
+> moment the registrar hook runs. The field is named
+> `first_controlled_prospective_registration_utc`, so it must BE that registration's
+> stamp. Writing `now()` placed the clock microseconds after every row of its own batch
+> and, under the original instant-granularity C3.2(d), excluded the entire triggering
+> batch from the cohort it had just opened (measured: 5 rows registered, clock started,
+> gate answered `n_cohort_rows=0`). See the C3.2(d) amendment below — the two changes are
+> one repair.
+
 **C3.2** A claim is a **cohort member** iff ALL of:
   (a) its family is `matched_control_required`;
   (b) it is live (not placebo) and directional (`direction` ∈ {+1, −1});
   (c) it declares an explicit `horizon_unit` (legacy-clock rows are pre-contract history
       by construction);
-  (d) its registration stamp `timestamp` ≥ the family's control-clock start;
+  (d) its registration stamp `timestamp` ≥ the family's control-clock start,
+      **compared as UTC DATES** (amended — see below);
   (e) it is **prospective at registration**: its resolved window's `fill_date` is
       strictly after `date(timestamp)` — the same one-clock predicate as #5577's forward
       gate, resolved through `claim_window`. Unresolvable ⇒ NOT a member, counted
@@ -93,6 +104,21 @@ Membership never consults whether the row carries a control — that is what cov
 measures (C4). Clause (e) with the *registration stamp* (not "today") is what makes a
 later import of old-asof rows structurally unable to join the cohort (adversarial
 control #5): a claim registered after its window began fails (e) forever.
+
+> **AMENDED 2026-08-14 (review round 1, strengthening).** Clause (d) compares **UTC
+> DATES**, not instants. An instant comparison made cohort membership depend on
+> sub-millisecond registration ORDER: the clock is stamped by one row of a batch, and
+> every sibling registered microseconds earlier fell below it and left the coverage
+> denominator forever. Measured: the same five-claim batch reported
+> `cohort_rows=1, coverage=1.0` registered uncontrolled-first and
+> `cohort_rows=4, coverage=1.0` registered controlled-first — adversarial control #6
+> defeated by a sort order, with the uncovered rows silently deleted from the
+> denominator rather than counted. A registration DATE is the honest granularity for
+> "was this claim part of the prospective cohort", and it is stable under any intra-day
+> ordering. This is strictly *widening* the cohort — it can only ADD rows to the
+> denominator, never remove them — so no clause is softened. A registration stamp that
+> is unparseable **or timezone-naive** cannot be placed against the clock: it is
+> excluded and COUNTED (fail-closed), never an exception escaping the gate.
 
 **C3.3** Historical claims are untouched: no backfilled controls, no re-labelling, no
 combination of any pre-clock evidence with cohort evidence, no authority minted from
@@ -110,14 +136,34 @@ with zero clock files and reports that fact, not a placeholder.**
 `n_cohort_dates` = independent date clusters over **all** cohort members graded at that
 horizon/basis; `n_controlled_dates` = the same count over cohort members carrying valid
 controls; `control_coverage = n_controlled_dates / n_cohort_dates` (None when the cohort
-is empty). Row counts (`n_cohort_rows`, `n_controlled_rows`) are disclosed beside the
-date-cluster counts. The **issued cohort is always visible**: missing-control rows can
-never leave the denominator (adversarial control #6).
+is empty) — **amended below to the minimum of that ratio and the row ratio**. Row counts
+(`n_cohort_rows`, `n_controlled_rows`) are disclosed beside the date-cluster counts. The
+**issued cohort is always visible**: missing-control rows can never leave the
+denominator (adversarial control #6).
 
 **C4.2** `CONTROL_COVERAGE_MIN = 0.95`, one global constant, pre-registered here.
 Rationale: tolerates a rare metadata failure (the census's ADR tail) without permitting
 subset selection; at the gate's own n=25 floor a family may carry at most one uncovered
 date. Not per-family-tunable — a per-family knob is subset selection with a config file.
+
+> **AMENDED 2026-08-14 (review round 1, strengthening).** `control_coverage` is
+> **`min(date-cluster coverage, ROW coverage)`**, where
+> `date_coverage = n_controlled_dates / n_cohort_dates` and
+> `row_coverage = n_controlled_rows / n_cohort_rows`. **Both are disclosed** (in the
+> verdict's reason string; the four counts they are computed from are already published
+> fields), and the MINIMUM is the number stored in `control_coverage` and compared to
+> `CONTROL_COVERAGE_MIN`.
+>
+> A date-cluster ratio alone asks only "did this date have *a* control?", so ONE
+> controlled row per date bought coverage 1.0 no matter how large the uncovered book
+> sharing that date. Measured: 300 cohort rows with 30 controlled — **10% of the issued
+> cohort** — reported `control_coverage=1.0` and the gate returned **eligible=True**.
+> That is precisely the subset selection this clause exists to forbid, and it is the
+> shape a single-name desk naturally produces (one pick a day carries a control, the
+> rest of the day's book does not). The date ratio measures whether the CALENDAR is
+> covered; the row ratio measures whether the CLAIMS are. The gate needs both, so it
+> takes the worse one. This can only *lower* a reported coverage, never raise one — the
+> bar moves up, never down.
 
 **C4.3** The Wilson interval for the matched-control verdict is computed **only over
 controlled cohort rows**, projected onto `n_controlled_dates` — never onto the full
@@ -142,6 +188,20 @@ denominator). Refusals name their failing clause:
 Benchmark-relative statistics for such a family remain computed and published **as the
 labelled baseline** (`benchmark_baseline`), and can never produce `ready=True` for it
 (adversarial control #1: no fallback under any data condition).
+
+> **IMPLEMENTATION NOTE, 2026-08-14 (review round 1).** The `benchmark_baseline` label is
+> realized as `benchmark_baseline_*` keys in the nightly readiness rows
+> (`benchmark_baseline_hit_rate`, `_excess_mean`, `_mean_abs_excess`, `_excess_basis`,
+> `_excess_mean_by_direction`), populated **only** on a matched-control verdict; the
+> unprefixed keys are `None` there. Before this, the whole-family bench statistics rode
+> in the unprefixed `hit_rate`/`excess_mean` slots of a row whose `n_dates`,
+> `wilson_ci_low` and `control_coverage` described the CONTROLLED COHORT ONLY — two
+> populations in one unlabelled record (measured: `wilson_ci_low=0.886` over 30 cohort
+> rows published beside `hit_rate=0.4286` over 70 whole-family rows). C6.1 requires the
+> four concepts to stay separate wherever they are rendered, and a shared key name is
+> not separation. Keeping pre-clock rows inside the BASELINE numbers is consistent with
+> C3.3 precisely because they are now named: history is disclosed, never combined with
+> cohort evidence.
 
 **C5.2** `benchmark_only` / `unclassified` — evaluated exactly as today's
 `promotion_check(control_only=False)`, with the verdict labelled

@@ -206,7 +206,15 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
         rate = _accrual_rate_per_day(grades, claims, fam, h,
                                      clock_basis=pr.clock_basis)
         proj = _projected_ready_date(pr.n_dates, rate)
-        approaching = (pr.n_dates >= 20 and not pr.eligible)
+        basis = getattr(pr, "evidence_basis", None)
+        # P0d C5.3 (review round 1, note 14): a `not_applicable` family is
+        # STRUCTURALLY unpromotable — there is no directional proposition to
+        # promote — so it can never be "approaching" a gate it will never take.
+        # A salience family sitting at n_dates=24 read as five dates from a
+        # promotion that cannot exist, in the same payload the operator alert
+        # reads.
+        approaching = (pr.n_dates >= 20 and not pr.eligible
+                       and basis != q.EVIDENCE_BASIS_NOT_APPLICABLE)
 
         # hit_rate and excess_mean from track record aggregation.
         # P0a: `_aggregate` is FAIL-CLOSED on a mixed grading-clock basis —
@@ -225,19 +233,41 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
                                  clock_basis=pr.clock_basis)
             fam_stats = stats.get(fam, {})
 
+        # P0d C6.1/C5.1 (review round 1, finding 3) — TWO BASES MAY NEVER SHARE
+        # ONE UNLABELLED SENTENCE. `_aggregate` measures the WHOLE family
+        # BENCH-relative on this clock basis: every pre-clock row, every
+        # uncontrolled row, every row outside the matched cohort. On a
+        # matched-control verdict those numbers sat in `hit_rate` / `excess_mean`
+        # right beside `n_dates`, `wilson_ci_low` and `control_coverage` computed
+        # over the CONTROLLED COHORT ONLY — one row, two populations, no label.
+        # The reviewer's repro published `evidence_basis=matched_control`,
+        # `wilson_ci_low=0.886` (cohort, 30/30) and `hit_rate=0.4286` (whole
+        # family, 30 of 70) in the same record, and a reader has no way to know
+        # they describe different things. The bench numbers are still published —
+        # C5.1 requires the labelled baseline — but under `benchmark_baseline_*`
+        # names, which is what makes keeping the pre-clock rows in them honest
+        # (C3.3: history is disclosed, never combined with cohort evidence).
+        matched = (basis == q.EVIDENCE_BASIS_MATCHED_CONTROL)
+        _base_keys = ("hit_rate", "excess_mean", "mean_abs_excess",
+                      "excess_basis", "excess_mean_by_direction")
+        headline = {k: (None if matched else fam_stats.get(k)) for k in _base_keys}
+        baseline = {f"benchmark_baseline_{k}": (fam_stats.get(k) if matched else None)
+                    for k in _base_keys}
+
         return {
             "n_dates": pr.n_dates,
             "needed": q.PROMOTION_MIN_DATES,
             "wilson_ci_low": pr.wilson_ci_low,
-            "hit_rate": fam_stats.get("hit_rate"),
-            "excess_mean": fam_stats.get("excess_mean"),
             # V1: _aggregate owns the legality gate, so excess_mean is already
             # None for a mixed-direction family; the basis + magnitude +
             # per-direction split travel with it so the admin surface can say
             # WHY rather than dash.
-            "mean_abs_excess": fam_stats.get("mean_abs_excess"),
-            "excess_basis": fam_stats.get("excess_basis"),
-            "excess_mean_by_direction": fam_stats.get("excess_mean_by_direction"),
+            **headline,
+            # C5.1's "benchmark_baseline", realized. Populated only on a
+            # matched-control verdict, where it is the labelled baseline beside
+            # the authority basis; None elsewhere, where the unprefixed keys
+            # already ARE the benchmark reading.
+            **baseline,
             "ready": pr.eligible,
             "approaching": approaching,
             "projected_ready_date": proj,
@@ -292,24 +322,43 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             # is pooled: `by_clock_basis` adds each market's OWN readiness row
             # beside the refused pooled one.
             #
-            # P0d: only a non-required family re-enters here, and it re-enters
-            # on its OWN basis (`control_only=False`) with the same policy label
-            # applied to each sub-result — a per-market cell must not be the one
-            # place an unlabelled (or, for a `not_applicable` family, an
-            # eligible) verdict escapes. A required family's per-basis verdicts
-            # are minted by `matched_control_check(clock_basis=...)` inside
-            # `emit_ladder_states`; readiness reports its refused pooled verdict.
-            if policy != q.CONTROL_POLICY_REQUIRED:
-                per_market = {
+            # P0d: each family re-enters on its OWN evidence basis. A
+            # benchmark/not_applicable family goes back through
+            # `promotion_check_by_market` (`control_only=False`) with the same
+            # policy label applied to each sub-result — a per-market cell must
+            # not be the one place an unlabelled (or, for a `not_applicable`
+            # family, an eligible) verdict escapes. A REQUIRED family goes back
+            # through `matched_control_check(clock_basis=...)`, so its per-basis
+            # cells stay matched-control and can never fall onto a bench basis by
+            # taking the per-market route.
+            #
+            # (review round 1, finding 7) THIS PAYLOAD AND `ladder_states` MUST
+            # AGREE. `emit_ladder_states` already minted per-basis matched
+            # verdicts for a bi-market required family while this path emitted
+            # only the refused pooled one — so the admin Experiments tab and the
+            # readiness alerting, which read THIS payload, would have reported a
+            # required family as permanently un-promotable on both markets while
+            # track_record.json said otherwise. Same enumeration, same rule,
+            # never CLOCK_LEGACY (P0c-2: legacy cannot originate authority).
+            per_basis: dict = {}
+            if policy == q.CONTROL_POLICY_REQUIRED:
+                if pr.current_state == q.STATE_MIXED_CLOCK:
+                    per_basis = {
+                        b: q.matched_control_check(fam, h, root=root, clock_basis=b)
+                        for b in sorted(pr.clock_prior_n_dates or {})
+                        if b != q.CLOCK_LEGACY
+                    }
+            else:
+                per_basis = {
                     b: q._apply_policy_label(mpr, policy, classified)
                     for b, mpr in q.promotion_check_by_market(
                         fam, h, pr, root=root, control_only=False).items()
                 }
-                if per_market:
-                    entry["by_clock_basis"] = {
-                        b: _readiness_row(mpr, fam, h)
-                        for b, mpr in per_market.items()
-                    }
+            if per_basis:
+                entry["by_clock_basis"] = {
+                    b: _readiness_row(mpr, fam, h)
+                    for b, mpr in per_basis.items()
+                }
             fam_res[str(h)] = entry
         result[fam] = fam_res
 
