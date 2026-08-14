@@ -29,13 +29,17 @@ A DERIVED ON-DEMAND VIEW — NOTHING IS COMMITTED
 THE REGISTRY IS NOT A FILE. Two previous rounds committed a generated
 ``data/intelligence_registry.json`` plus a generated Markdown mirror and pinned them by
 equality against a "stable" input. Both pins were scheduled fleet-wide reds, because there
-is no stable input to pin against — measured on this repo 2026-08-12:
+is no stable input to pin against — measured on FULL HISTORY 2026-08-14 (unshallowed
+clone, 11,971 commits reachable; the 2026-08-12 figures below in brackets came off a
+SHALLOW clone and understated every one of them):
 
-  * ``config/synapse.yml``        26 commits, ALL 26 inside the last 14 days (~1.9/day)
-  * ``data/qledger/claims.jsonl`` 13 commits in the last 14 days (append-only)
-  * ``data/species/registry.json`` 1 commit — and that ONE is a SHALLOW-CLONE ARTIFACT
-    (``git rev-parse --is-shallow-repository`` is true; only 1126 commits are reachable),
-    so it is not evidence of stability at all. Round 2 treated it as stable and was wrong.
+  * ``config/synapse.yml``        69 commits in the trailing 14 days   [read as 26]
+  * ``data/qledger/claims.jsonl`` 70 commits in the trailing 14 days   [read as 13]
+  * ``data/species/registry.json`` 1 commit in the trailing 14 days, 17 in its whole
+    history [read as 1 ever]. Round 2 treated "one commit ever" as stability and was wrong
+    twice over: the count was a shallow-clone artifact, AND low churn is not the property a
+    pin needs — every one of those 17 is an ADJUDICATION, which rewrites exactly the rows a
+    registry derives from.
 
 So nothing generated is committed, there is no drift guard, no ``--check`` equality mode,
 and no stable-vs-volatile field split (that split existed ONLY to make a pin safe).

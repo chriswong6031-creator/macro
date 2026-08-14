@@ -107,8 +107,9 @@ unenforced free text, since `_REQUIRED_ARTIFACT_KEYS` is a required-key set, not
 exact-key set — reproducing the C-1/C-2 defect class one field later); and **there is no
 drift law at all** — the registry is a derived on-demand view, nothing generated is
 committed, and there is no `--check` equality mode, because `data/qledger/claims.jsonl` is
-append-only and `config/synapse.yml` took 26 commits in 14 days, so every candidate pin was
-a scheduled fleet-wide red.
+append-only and `config/synapse.yml` took **69 commits in the 14 days to 2026-08-14**
+(measured on full history after the clone was unshallowed; the 26 cited earlier was a
+shallow-clone artifact), so every candidate pin was a scheduled fleet-wide red.
 
 #### T1a / T1b / T1c — the 2026-08-14 fix wave
 
@@ -127,14 +128,23 @@ never a row. Separately, the `weak_filename_heuristic` label was measurably wron
 grading stores, so basename-tightening was measured and **rejected** and the value is now
 `weak_path_heuristic`.
 
-**T1b — fail-closed is unconditional (M4 ruling, 2026-08-14).** An incomplete read is a
-RUN-level defect — the guard failed to do its job — not a corpus condition, so it exits
-non-zero on **every** run in both plain and `--json` mode. `--strict` retains only its own
-meaning (content findings also red), reserved for T7's promotion era. "Incomplete" now
-includes **partial**: a claim store that opens but whose lines do not all parse is named
-with its count while the rows that did parse stay in the view. The live-corpus assertions
-moved onto a fixture root — asserting the C-1 backlog is non-empty would have reddened this
-lane the day T7 drained it.
+**T1b — fail-closed, keyed on the plane that went blind (M4 ruling 2026-08-14, amended the
+same day).** An incomplete read of **PR-plane** input — `synapse.yml`, the overlay,
+`qual_ladder.yml`, `species/registry.json`, the Article-2 table, producer source, all
+config and code moved only by a pull request — is a RUN-level defect the guard failed at,
+so it exits non-zero on **every** run in both plain and `--json` mode. The first form of
+the ruling gated on *any* incomplete read, which handed the nightly the power to red every
+PR in flight: one truncated line of 46,696 in `data/qledger/claims.jsonl` — the **one**
+input an automated lane advances — reddened the whole job. Data-plane blindness is now
+REPRESENTED in full (summary names the plane and the count, `COULD NOT LOOK` annotation,
+`--json unreadable_by_plane`) and gated only under `--strict`. **Deferred, with an owner:**
+no lane passes `--strict` yet, so claim-store corruption alerts everywhere and gates
+nowhere until T7 wires the nightly-side strict run in the wave that drains C-1.
+"Incomplete" includes **partial**: a store that opens but whose lines do not all parse is
+named with its count while the rows that did parse stay in the view. Every live-corpus and
+live-non-emptiness assertion moved onto fixture roots — asserting the C-1 backlog is
+non-empty would have reddened this lane the day T7 drained it, and asserting the live claim
+store parses would have reddened it the night the nightly truncated a line.
 
 **T1c — the guard runs in its OWN legacy job, `intelligence-registry` (CEO ruling
 2026-08-14).** This supersedes the earlier front-of-`neural-web` placement. `run_ci_pack.py`

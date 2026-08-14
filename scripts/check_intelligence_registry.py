@@ -7,13 +7,12 @@ A PURE STRUCTURAL VALIDATOR over a registry it derives IN MEMORY. There is no co
 drift comparison, no ``--check`` equality mode and no "stale artifact" violation. It cannot
 be reddened by an event no PR author caused: nothing it reads is pinned by equality.
 
-Two earlier rounds shipped exactly that pin — first against ``data/qledger/claims.jsonl``
-(append-only, 13 commits in 14 days), then against ``config/synapse.yml`` (26 commits in 14
-days, ALL of them inside the window). Both were scheduled fleet-wide reds. The third input
-that looked stable, ``data/species/registry.json`` with "one commit in its whole history",
-was a SHALLOW-CLONE artifact — ``git rev-parse --is-shallow-repository`` is true here and
-only 1126 commits are reachable, so that count was never evidence. There is no stable input
-to pin against, so nothing is pinned.
+Two earlier rounds shipped exactly that pin — first against ``data/qledger/claims.jsonl``,
+then against ``config/synapse.yml``. Both were scheduled fleet-wide reds. Measured on FULL
+HISTORY 2026-08-14 (unshallowed clone): 70 and 69 commits respectively in the trailing 14
+days. The figures those rounds cited (13 and 26) came off a SHALLOW clone and understated
+the churn by 5.4x and 2.7x — which strengthens the conclusion rather than softening it.
+There is no stable input to pin against, so nothing is pinned.
 
 THE INVARIANTS (law ``epistemics.engine_authority_evidence``)
 ------------------------------------------------------------
@@ -35,15 +34,45 @@ A previous round printed "0 integrity violation(s)" when it could not read its i
 sees. The summary line here ALWAYS carries an ``inputs=`` clause; when anything was
 unreadable it reads ``inputs=INCOMPLETE`` and NAMES what was missed.
 
-AN INCOMPLETE READ EXITS NON-ZERO ON EVERY RUN, WITH OR WITHOUT ``--strict`` (ruling
-2026-08-14). It is a RUN-LEVEL defect — the guard failed to do its job — not a condition of
-the corpus, so it is not the kind of thing an advisory tier exists to soften. Making it
-conditional on a flag nobody passes in CI meant the fail-closed channel printed a warning
-and returned success, which is the same green a clean run returns. Structural violations
-exit non-zero for the same reason: they are properties of the derivation and of the
-hand-edited overlay, green by construction on arrival, so they cannot fire fleet-wide for
-nobody's fault. ``--strict`` keeps its own distinct meaning — content FINDINGS also red —
-and stays reserved for T7's promotion era.
+A PR-PLANE INCOMPLETE READ EXITS NON-ZERO ON EVERY RUN, WITH OR WITHOUT ``--strict``
+(ruling 2026-08-14, amended the same day — see JURISDICTION). It is a RUN-LEVEL defect —
+the guard failed to do its job — not a condition of the corpus, so it is not the kind of
+thing an advisory tier exists to soften. Making it conditional on a flag nobody passes in
+CI meant the fail-closed channel printed a warning and returned success, which is the same
+green a clean run returns. Structural violations exit non-zero for the same reason: they
+are properties of the derivation and of the hand-edited overlay, green by construction on
+arrival, so they cannot fire fleet-wide for nobody's fault.
+
+JURISDICTION — A PR LANE MAY ONLY GATE WHAT A PR ACTOR CAN BREAK
+-----------------------------------------------------------------
+The first form of the ruling above gated on ANY incomplete read, which handed a nightly
+lane the power to red every PR in flight: ONE truncated line in
+``data/qledger/claims.jsonl`` — 1 of 46,696, appended by the nightly, touched by no PR
+author — reddened the whole ``intelligence-registry`` job. That is the scheduled-fleet-red
+shape this program has been refuted for three rounds running, arriving through the fix for
+a different one.
+
+So the exit code is keyed on the PLANE that went blind
+(``scripts/build_intelligence_registry.py`` :data:`DATA_PLANE_INPUTS`):
+
+  PR-PLANE (``synapse.yml``, the overlay, ``qual_ladder.yml``, ``species/registry.json``,
+     the Article-2 module table, producer SOURCE) — all config and code, all moved only by
+     a pull request. Blindness here EXITS 1 on every run. A PR author can cause it and a PR
+     author can fix it.
+  DATA-PLANE (``data/qledger/claims.jsonl`` alone — the only input an automated lane
+     advances) — blindness here is ALWAYS REPRESENTED: named on the summary line with its
+     count, carried in the ``COULD NOT LOOK`` annotation and in the ``--json``
+     ``unreadable_inputs``/``unreadable_by_plane``. It exits non-zero only under
+     ``--strict``, because the PR lane must not go red fleet-wide for a store no PR author
+     touched.
+
+REPRESENTATION IS NOT WEAKENED BY THIS, ONLY THE EXIT CODE IS. Nothing is hidden; a
+corrupted claim store is as loud as it ever was, in every mode. The strict lane is where it
+gates, and wiring a nightly-side ``--strict`` run is deliberately DEFERRED to the T7 wave —
+until that lands, corruption of the claim store alerts but does not gate anywhere.
+
+``--strict`` keeps its own distinct meaning — content FINDINGS also red, plus the
+data-plane — and stays reserved for T7's promotion era.
 
 SEVERITY
 --------
@@ -60,9 +89,10 @@ drop it.
 
 Usage
 -----
-  python3 scripts/check_intelligence_registry.py            # violations OR an INCOMPLETE
-                                                            #   input set exit 1
-  python3 scripts/check_intelligence_registry.py --strict   # content findings also exit 1
+  python3 scripts/check_intelligence_registry.py            # violations OR a PR-PLANE
+                                                            #   blind read exit 1
+  python3 scripts/check_intelligence_registry.py --strict   # content findings and a
+                                                            #   DATA-PLANE blind read too
   python3 scripts/check_intelligence_registry.py --json
   python3 scripts/check_intelligence_registry.py --selftest
 """
@@ -80,9 +110,12 @@ from typing import Any, Callable
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+import yaml  # noqa: E402
+
 from engine.intelligence_registry import (  # noqa: E402
     audit_content,
     build_registry,
+    placeholder_reason,
     resolve_qual_ladder_ref,
     validate_overlay,
     validate_structure,
@@ -293,10 +326,16 @@ def write_fixture_root(
     ``root`` should be a fresh directory. The builder caches reads per ``(root, rel)``
     within a process, so reusing one directory for two variants would serve the first
     variant's text to the second — a control that silently tests nothing.
+
+    A PRODUCER STUB IS WRITTEN FOR EVERY PRODUCER THE SYNAPSE NAMES, not only for the
+    default one. Producer SOURCE is a PR-plane input, so a custom synapse naming producers
+    with no file on disk would read INCOMPLETE for a reason the caller did not ask for —
+    and a fixture that is accidentally blind is a control that proves the wrong thing.
     """
     root.mkdir(parents=True, exist_ok=True)
+    synapse_text = _FIXTURE_ROOT_SYNAPSE if synapse is None else synapse
     files = {
-        "config/synapse.yml": _FIXTURE_ROOT_SYNAPSE if synapse is None else synapse,
+        "config/synapse.yml": synapse_text,
         "config/intelligence_registry_overlay.yml": (
             _FIXTURE_ROOT_OVERLAY if overlay is None else overlay
         ),
@@ -305,13 +344,35 @@ def write_fixture_root(
         ),
         "data/species/registry.json": _FIXTURE_ROOT_SPECIES if species is None else species,
         "data/qledger/claims.jsonl": _FIXTURE_ROOT_CLAIMS if claims is None else claims,
-        FIXTURE_PRODUCER: _FIXTURE_ROOT_PRODUCER_SOURCE,
     }
+    for producer in _fixture_producers(synapse_text):
+        files[producer] = _FIXTURE_ROOT_PRODUCER_SOURCE
     for rel, text in files.items():
         path = root / rel
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(text, encoding="utf-8")
     return root
+
+
+def _fixture_producers(synapse_text: str) -> list[str]:
+    """Every real (non-placeholder) producer path a fixture synapse names.
+
+    Falls back to the default producer when the text does not parse — a deliberately
+    unparseable synapse is one of the states this helper has to be able to write.
+    """
+    try:
+        parsed = yaml.safe_load(synapse_text)
+    except yaml.YAMLError:
+        return [FIXTURE_PRODUCER]
+    if not isinstance(parsed, dict):
+        return [FIXTURE_PRODUCER]
+    producers = {
+        str(entry.get("producer") or "")
+        for entry in (parsed.get("artifacts") or {}).values()
+        if isinstance(entry, dict)
+    }
+    real = sorted(p for p in producers if p and placeholder_reason(p) is None)
+    return real or [FIXTURE_PRODUCER]
 
 
 @contextlib.contextmanager
@@ -800,10 +861,36 @@ def _selftest() -> int:
         "inputs=INCOMPLETE" in out_malformed
         and "claims.jsonl (2 unparseable line(s) of 4)" in out_malformed,
     )
+
+    # ---- JURISDICTION: which plane went blind decides what may RED ---------
+    #
+    # The first form of the M4 ruling gated on ANY incomplete read, which handed the
+    # nightly the power to red every PR in flight: one truncated line of 46,696 in
+    # data/qledger/claims.jsonl reddened the whole job. Representation is unchanged in
+    # both directions below — only the exit code is keyed on the plane.
     add(
-        "NEGATIVE — a partially blind run exits NON-ZERO with NO --strict flag "
-        "(an incomplete read is a RUN-level defect, not a corpus condition)",
-        rc_malformed != 0,
+        "POSITIVE CONTROL — a DATA-PLANE-only blind run stays ADVISORY (rc 0): the claim "
+        "store is nightly-advanced, so a PR lane must not red on it",
+        rc_malformed == 0,
+    )
+    add(
+        "NEGATIVE — ...but it is still fully REPRESENTED: the summary NAMES the plane and "
+        "the COULD NOT LOOK annotation fires",
+        "data-plane:" in out_malformed
+        and "PR-plane:" not in out_malformed
+        and "COULD NOT LOOK" in out_malformed,
+    )
+    rc_malformed_strict, _ = _run_on_fixture(["--strict"], claims=malformed_claims)
+    add(
+        "NEGATIVE — the SAME data-plane blindness DOES red under --strict (the gate is "
+        "deferred to the strict/nightly lane, not deleted)",
+        rc_malformed_strict != 0,
+    )
+    rc_pr_blind, out_pr_blind = _run_on_fixture([], species="{ truncated")
+    add(
+        "NEGATIVE — a PR-PLANE blind run (species store unparseable) exits NON-ZERO with "
+        "NO --strict flag: a PR author can cause it and a PR author can fix it",
+        rc_pr_blind != 0 and "PR-plane:" in out_pr_blind,
     )
     with fixture_root(claims=malformed_claims) as partial_root:
         _, partial_report = build(partial_root)
@@ -899,6 +986,22 @@ def good_row(registry: dict[str, Any], engine_id: str) -> dict[str, Any]:
     return next(r for r in registry["engines"] if r["engine_id"] == engine_id)
 
 
+def _plane_clauses(blind_pr: list[str], blind_data: list[str]) -> list[str]:
+    """The `inputs=INCOMPLETE (...)` body, one clause per blind plane.
+
+    The plane label is not decoration: it answers the reader's first question. `PR-plane`
+    means this run failed and a PR author can fix it; `data-plane` means a lane-advanced
+    store is corrupt, the run is advisory, and the owner is the nightly.
+    """
+    clauses = []
+    for label, names in (("PR-plane", blind_pr), ("data-plane", blind_data)):
+        if not names:
+            continue
+        shown = ", ".join(names[:3]) + (", …" if len(names) > 3 else "")
+        clauses.append(f"{label}: {shown}")
+    return clauses
+
+
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
@@ -913,8 +1016,9 @@ def main(argv: list[str] | None = None) -> int:
         "--strict",
         action="store_true",
         help=(
-            "content FINDINGS also exit non-zero (reserved for T7's promotion era). An "
-            "INCOMPLETE input set exits non-zero on EVERY run, with or without this flag."
+            "content FINDINGS and a DATA-PLANE blind read also exit non-zero (reserved for "
+            "T7's promotion era). A PR-PLANE blind read exits non-zero on EVERY run, with "
+            "or without this flag."
         ),
     )
     parser.add_argument("--json", action="store_true")
@@ -928,10 +1032,15 @@ def main(argv: list[str] | None = None) -> int:
 
     try:
         registry, report = build(root)
-    except SystemExit as exc:
+    except builder.SynapseUnavailable as exc:
         # config/synapse.yml is readable from neither the worktree nor HEAD, or it reads
         # and does not parse as a YAML mapping. Nothing could be derived, so nothing was
         # checked — say that, never a clean count, and never a bare traceback.
+        #
+        # KEYED ON THE SENTINEL, not on `SystemExit`. The broad form attributed ANY
+        # SystemExit escaping build() to the synapse — including one raised at import time
+        # inside a dependency, which would have printed a confident, specific and wrong
+        # diagnosis. Unreachable today; a misattributing handler is still a defect.
         message = str(exc)
         if args.json:
             print(
@@ -939,6 +1048,7 @@ def main(argv: list[str] | None = None) -> int:
                     {
                         "inputs_complete": False,
                         "unreadable_inputs": ["config/synapse.yml"],
+                        "unreadable_by_plane": {"pr": ["config/synapse.yml"], "data": []},
                         "violations": None,
                         "findings": None,
                         "detail": message,
@@ -970,6 +1080,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     findings = audit_content(registry)
     incomplete = report["unreadable_inputs"]
+    by_plane = report["unreadable_by_plane"]
+    blind_pr, blind_data = by_plane["pr"], by_plane["data"]
 
     if args.json:
         print(
@@ -977,6 +1089,7 @@ def main(argv: list[str] | None = None) -> int:
                 {
                     "inputs_complete": report["inputs_complete"],
                     "unreadable_inputs": incomplete,
+                    "unreadable_by_plane": by_plane,
                     "n_engines": registry["meta"]["n_engines"],
                     "violations": violations,
                     "findings": [
@@ -988,9 +1101,10 @@ def main(argv: list[str] | None = None) -> int:
             ),
             flush=True,
         )
-        # An INCOMPLETE read reds unconditionally — see the module docstring's FAIL CLOSED
-        # section. --strict adds ONLY the content findings.
-        return 1 if violations or incomplete or (args.strict and findings) else 0
+        # PR-PLANE blindness reds unconditionally; DATA-PLANE blindness is reported in the
+        # payload above and reds only under --strict — see the module docstring's
+        # JURISDICTION section.
+        return 1 if violations or blind_pr or (args.strict and (findings or blind_data)) else 0
 
     for violation in violations:
         print(f"::error title={TITLE}::{violation}", flush=True)
@@ -1032,12 +1146,11 @@ def main(argv: list[str] | None = None) -> int:
         )
 
     # THE SUMMARY LINE — the one line a CI reader sees. It always carries `inputs=`, so a
-    # run that could not read its inputs can never be mistaken for a clean run.
-    inputs_clause = (
-        "inputs=complete"
-        if report["inputs_complete"]
-        else f"inputs=INCOMPLETE ({len(incomplete)} unreadable: {', '.join(incomplete[:4])}"
-             + (", …)" if len(incomplete) > 4 else ")")
+    # run that could not read its inputs can never be mistaken for a clean run, and when it
+    # is incomplete it NAMES THE PLANE — which is the reader's first question, because the
+    # plane decides whether the red is theirs to fix or the nightly's.
+    inputs_clause = "inputs=complete" if report["inputs_complete"] else (
+        "inputs=INCOMPLETE (" + "; ".join(_plane_clauses(blind_pr, blind_data)) + ")"
     )
     print(
         f"intelligence registry: {registry['meta']['n_engines']} engines, "
@@ -1048,9 +1161,9 @@ def main(argv: list[str] | None = None) -> int:
 
     # Mirrors the --json return above, deliberately in the same shape so the two modes
     # cannot drift into disagreeing about what a failing run is.
-    if violations or incomplete:
+    if violations or blind_pr:
         return 1
-    if args.strict and findings:
+    if args.strict and (findings or blind_data):
         return 1
     return 0
 

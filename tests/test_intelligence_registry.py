@@ -4,8 +4,9 @@ SYNTHETIC INPUT ONLY, WITH ONE DELIBERATE EXCEPTION
 ---------------------------------------------------
 Every behavioural assertion here runs against a hand-built fixture. Nothing asserts on the
 CONTENTS of config/synapse.yml, data/qledger/, data/species/ or config/qual_ladder.yml,
-because none of those is stable: synapse.yml took 26 commits in 14 days and the claim store
-is append-only. A test that pinned "site-us-standouts is user_ranking" or "C-1 is 21
+because none of those is stable: measured on full history 2026-08-14 (unshallowed),
+config/synapse.yml took 69 commits and the append-only claim store 70 in the trailing 14
+days. A test that pinned "site-us-standouts is user_ranking" or "C-1 is 21
 engines" would red main the moment a sibling PR added an artifact — an event no PR author
 on THIS lane caused. Two earlier rounds shipped exactly that scheduled red, first as a
 committed artifact pinned by equality and then as counts pinned in this file.
@@ -108,7 +109,9 @@ def test_no_generated_registry_artifact_is_tracked():
     """THE ROUND-3 ARCHITECTURE, AS A TEST. Two earlier rounds committed a generated
     data/intelligence_registry.json and a generated Markdown mirror and pinned them by
     equality against a 'stable' input. Both were scheduled fleet-wide reds; the pin merely
-    RELOCATED between rounds (claims.jsonl -> synapse.yml, 13 and 26 commits in 14 days).
+    RELOCATED between rounds (claims.jsonl -> synapse.yml; measured on full history
+    2026-08-14, 70 and 69 commits in the trailing 14 days — the 13/26 those rounds cited
+    were shallow-clone artifacts, so the case against pinning is stronger, not weaker).
     There is no stable input on this repo to pin against, so nothing generated is tracked.
     """
     import subprocess
@@ -394,6 +397,44 @@ def test_the_builder_propagates_the_article2_null_rather_than_an_empty_list():
     source = inspect.getsource(builder._article2_modules)
     assert "return None," in source, "the ImportError branch must return the null"
     assert "return [], " not in source and "return []," not in source
+
+
+def test_exactly_one_input_is_data_plane_and_every_other_is_PR_plane():
+    """THE JURISDICTION, AS A TABLE. The exit policy is keyed on this classification, so a
+    new input silently landing on the wrong side would move what the PR lane may red on.
+
+    Only data/qledger/claims.jsonl is advanced by an automated lane (70 commits in the 14
+    days to 2026-08-14). data/species/registry.json LOOKS like a data path and is not: 17
+    commits in its whole history, every one an adjudication PR, so a PR author owns it.
+    """
+    import scripts.build_intelligence_registry as builder
+
+    assert builder.DATA_PLANE_INPUTS == {str(builder.CLAIMS_REL)}
+    for name in builder.ALL_NAMED_INPUTS - builder.DATA_PLANE_INPUTS:
+        assert builder.input_plane(name) == "pr", name
+    # …and the classifier reads the REPORTED entry, suffixes and prefixes included.
+    assert builder.input_plane(f"{builder.CLAIMS_REL} (2 unparseable line(s) of 4)") == "data"
+    assert builder.input_plane("producer:engine/anything.py") == "pr"
+    assert builder.input_plane(str(builder.SPECIES_REL)) == "pr"
+
+
+def test_the_two_planes_partition_every_reported_blindness(tmp_path):
+    """Whatever lands in `unreadable_inputs` must land in exactly one plane — otherwise a
+    blind input could be reported and yet gate nowhere."""
+    import scripts.build_intelligence_registry as builder
+    import scripts.check_intelligence_registry as guard
+
+    root = guard.write_fixture_root(
+        tmp_path / "repo",
+        species="{ truncated",
+        claims='{"desk": "d"}\n{not json\n',
+    )
+    _, report = builder.build(root)
+    planes = report["unreadable_by_plane"]
+    assert planes["pr"] and planes["data"], report["unreadable_inputs"]
+    assert planes["pr"] + planes["data"] == report["unreadable_inputs"]
+    assert not (set(planes["pr"]) & set(planes["data"]))
+    assert report["inputs_complete"] is False
 
 
 def test_a_REAL_article2_import_failure_lands_in_unreadable_inputs(monkeypatch, tmp_path):
@@ -929,6 +970,28 @@ def test_the_graded_evidence_strength_is_a_REQUIRED_field():
     assert any("graded_by_design_evidence" in v for v in validate_structure(registry))
 
 
+def test_no_T1_law_SUMMARY_still_calls_the_heuristic_a_filename_match():
+    """The M3 sweep fixed the enum, the code and the known_limits and MISSED the law's own
+    one-line description, which is what the generated guard-suite doc renders. Scoped to
+    `summary` on purpose: the known_limits legitimately quote the retired wording as dated
+    history ("THE DISCLOSURE SAID 'FILENAME' AND WAS MEASURABLY WRONG UNTIL 2026-08-14")."""
+    import yaml
+
+    registry = yaml.safe_load(
+        (REPO / "config" / "house_law_checks.yml").read_text(encoding="utf-8")
+    )
+    t1_laws = [
+        c for c in registry["checks"]
+        if c.get("check_script") == "scripts/check_intelligence_registry.py"
+    ]
+    assert t1_laws, "the T1 laws must be registered"
+    for law in t1_laws:
+        assert "filename" not in law["summary"].lower(), (
+            f"{law['law_id']}: the summary still describes the rule as a FILENAME match — "
+            f"rule 1 matches anywhere in the path, directory component included"
+        )
+
+
 def test_the_module_docstring_discloses_the_weak_heuristic():
     """The limitation must be readable where the derivation lives, not only in a test."""
     import engine.intelligence_registry as mod
@@ -1307,7 +1370,7 @@ def test_a_nightly_CLAIM_APPEND_invalidates_nothing(monkeypatch):
     ), "a nightly claim append changed the finding set — that is a scheduled fleet-wide red"
 
 
-def test_a_MALFORMED_claim_append_flips_inputs_complete_to_False(monkeypatch):
+def test_a_MALFORMED_claim_append_flips_inputs_complete_to_False(tmp_path):
     """THE OTHER HALF OF THE APPEND SIMULATION, and the B2 negative control in test form.
 
     The pair matters: a VALID append must change nothing (above), and a MALFORMED one must
@@ -1317,24 +1380,28 @@ def test_a_MALFORMED_claim_append_flips_inputs_complete_to_False(monkeypatch):
     stay in the view: under the null law the incompleteness must be REPRESENTED, not made
     to disappear along with the readable half.
 
-    The live store is never touched — `_patched_read` mutates the TEXT the builder reads.
+    ON A FIXTURE ROOT, AND THAT MOVE IS THE POINT. The first version ran against the live
+    tree and opened with `assert before_report["inputs_complete"] is True` — an ABSOLUTE
+    claim about a store the nightly is the sole advancer of. One truncated line appended
+    upstream would have failed the baseline assertion of the very test that exists to prove
+    a truncated line is handled. Its sibling above stays live because every one of ITS
+    assertions is a DIFFERENCE between two builds, so whatever the live store already holds
+    appears on both sides and cancels; this one does not have that property and never did.
     """
     import scripts.build_intelligence_registry as builder
+    import scripts.check_intelligence_registry as guard
 
-    builder._READ_CACHE.clear()
-    before, before_report = builder.build(REPO)
-    assert before_report["inputs_complete"] is True, "the baseline read must be complete"
+    clean = guard.write_fixture_root(tmp_path / "clean")
+    dirty = guard.write_fixture_root(
+        tmp_path / "dirty",
+        claims=guard._FIXTURE_ROOT_CLAIMS
+        + '{"desk": "brand_new", "horizon_d": 21}\n{ not json\n',
+    )
 
-    try:
-        _patched_read(
-            monkeypatch,
-            builder.CLAIMS_REL,
-            lambda text: text + '{"desk": "brand_new", "horizon_d": 21}\n{ not json\n',
-        )
-        after, after_report = builder.build(REPO)
-    finally:
-        builder._READ_CACHE.clear()
+    before, before_report = builder.build(clean)
+    after, after_report = builder.build(dirty)
 
+    assert before_report["inputs_complete"] is True, "the fixture baseline is complete BY CONSTRUCTION"
     assert after_report["inputs_complete"] is False
     assert any(
         "claims.jsonl" in name and "unparseable line(s)" in name
@@ -1348,11 +1415,16 @@ def test_a_MALFORMED_claim_append_flips_inputs_complete_to_False(monkeypatch):
     assert sorted((f.code, f.engine_id) for f in audit_content(after)) == sorted(
         (f.code, f.engine_id) for f in audit_content(before)
     )
+    # The VALID row in the same append still landed — partial blindness never costs the
+    # readable half. Without this the test passes for a reader that discards everything on
+    # the first bad line, which is the opposite of the fix.
+    assert after["meta"]["corpus"]["n_desks"] == before["meta"]["corpus"]["n_desks"] + 1
 
 
 def test_a_SIBLING_PR_adding_a_synapse_artifact_invalidates_nothing(monkeypatch):
-    """SIMULATION (b). config/synapse.yml took 26 commits in 14 days, ALL inside the
-    window; round 2 relocated the equality pin onto it and was refuted for that reason. A
+    """SIMULATION (b). config/synapse.yml took 69 commits in the 14 days to 2026-08-14
+    (measured on full history, unshallowed); round 2 relocated the equality pin onto it and
+    was refuted for that reason. A
     sibling PR registering a new SCORED artifact must leave this lane green: the view grows
     a row and a finding, and nothing is invalidated."""
     import scripts.build_intelligence_registry as builder

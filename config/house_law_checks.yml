@@ -2952,13 +2952,18 @@ checks:
         data/intelligence_registry.json plus a generated Markdown mirror and pinned them by
         equality against a "stable" input; both were scheduled fleet-wide reds and the pin
         merely RELOCATED between rounds. Round 1 pinned against data/qledger/claims.jsonl
-        (append-only, 13 commits in 14 days). Round 2 moved the pin to config/synapse.yml,
-        measured at 26 commits ALL inside 14 days — a MORE volatile input. The third
-        candidate, data/species/registry.json, looked stable at "one commit in its whole
-        history", but this repo is a SHALLOW CLONE (`git rev-parse
-        --is-shallow-repository` is true, 1126 commits reachable), so that count was an
-        incomplete-history artifact and never evidence. There is no stable input on this
-        repo to pin against, so nothing generated is committed and nothing is pinned.
+        (append-only); round 2 moved the pin to config/synapse.yml, a MORE volatile input.
+        Both rounds cited churn figures taken off a SHALLOW clone (13 and 26 commits in 14
+        days) and both UNDERSTATED it. RE-MEASURED ON FULL HISTORY 2026-08-14 (unshallowed,
+        11,971 commits reachable): data/qledger/claims.jsonl 70 commits and
+        config/synapse.yml 69 commits in the trailing 14 days — 5.4x and 2.7x the shallow
+        figures, so the conclusion is strengthened, not softened. The third candidate,
+        data/species/registry.json, looked stable at "one commit in its whole history";
+        on full history it has 17, every one an adjudication PR (last #4358, 2026-08-03).
+        It is genuinely low-churn — but a pin needs stability of CONTENT, and an
+        adjudication rewrites exactly the rows a registry derives from. There is no stable
+        input on this repo to pin against, so nothing generated is committed and nothing
+        is pinned.
       - >-
         SEVERITY IS `warn`, NOT `hard`, EVEN THOUGH THESE ARE PR-CAUSED INVARIANTS. The
         two previous rounds each argued a hard pin was legitimate because "every input
@@ -2970,25 +2975,36 @@ checks:
         the job log; `warn` governs how loudly the registry treats it, not whether the
         script reports it.
       - >-
-        FAIL CLOSED, NOT SILENT, AND UNCONDITIONALLY (ruling 2026-08-14). The summary line
-        ALWAYS carries an `inputs=` clause. When any input could not be read it reads
-        `inputs=INCOMPLETE (...)`, NAMES what was missed, and the run EXITS NON-ZERO — with
-        or without --strict, in plain and --json mode alike. An incomplete read is a
-        RUN-LEVEL defect (the guard failed to do its job), not a condition of the corpus,
-        so the advisory tier does not cover it; gating it on a flag CI does not pass meant
-        the fail-closed channel printed its warning and then returned the same exit code a
-        clean run returns. --strict retains its own distinct meaning: content FINDINGS also
-        red, reserved for T7's promotion era. "Unreadable" includes PARTIAL: a store that
-        opens but whose lines do not all parse is named with its count
-        (`data/qledger/claims.jsonl (2 unparseable line(s) of 4)`) while the rows that DID
-        parse stay in the view — the null law requires the incompleteness be REPRESENTED,
-        not that the readable half be discarded. A document that reads but does not PARSE
-        is the same state as one that could not be read: synapse -> NOT CHECKED + exit 1,
-        overlay and qual_ladder -> treated as absent and NAMED, never a bare traceback.
-        Sparse agent worktrees carry no data/ on disk while ~39,900 data paths are tracked
-        in HEAD, so every read — including producer SOURCE and the qual_ladder_ref probe —
-        goes through the worktree-then-`git show` ladder, and a producer readable from
-        neither is announced rather than silently skipped.
+        FAIL CLOSED, NOT SILENT — AND KEYED ON THE PLANE THAT WENT BLIND (ruling
+        2026-08-14, amended the same day). The summary line ALWAYS carries an `inputs=`
+        clause; when any input could not be read it reads `inputs=INCOMPLETE (...)`, NAMES
+        what was missed AND NAMES ITS PLANE, and the COULD NOT LOOK annotation and the
+        --json `unreadable_inputs`/`unreadable_by_plane` carry the same facts. What differs
+        by plane is only the EXIT CODE. PR-PLANE (config/synapse.yml, the overlay,
+        config/qual_ladder.yml, data/species/registry.json, the Article-2 module table,
+        producer SOURCE — all config and code, all moved only by a pull request) exits
+        non-zero on EVERY run, with or without --strict: a PR author can cause it and a PR
+        author can fix it. DATA-PLANE is exactly ONE input, data/qledger/claims.jsonl, the
+        only one an automated lane advances (70 commits in the 14 days to 2026-08-14); it
+        is fully reported and exits non-zero only under --strict. THE FIRST FORM OF THIS
+        RULING GATED ON ANY INCOMPLETE READ, which handed the nightly the power to red
+        every PR in flight: one truncated line of 46,696 in the claim store reddened the
+        whole intelligence-registry job, for a file no PR author touches — the
+        scheduled-fleet-red shape this program has been refuted for three rounds running,
+        arriving through the fix for a different one. DEFERRED, WITH AN OWNER: no lane
+        passes --strict yet, so corruption of the claim store currently ALERTS everywhere
+        and GATES nowhere; wiring a nightly-side --strict run is T7's, in the same wave
+        that drains the C-1 backlog and flips this law to `hard`. "Unreadable" includes
+        PARTIAL: a store that opens but whose lines do not all parse is named with its
+        count (`data/qledger/claims.jsonl (2 unparseable line(s) of 4)`) while the rows
+        that DID parse stay in the view — the null law requires the incompleteness be
+        REPRESENTED, not that the readable half be discarded. A document that reads but
+        does not PARSE is the same state as one that could not be read: synapse -> NOT
+        CHECKED + exit 1, overlay and qual_ladder -> treated as absent and NAMED, never a
+        bare traceback. Sparse agent worktrees carry no data/ on disk while ~39,900 data
+        paths are tracked in HEAD, so every read — including producer SOURCE and the
+        qual_ladder_ref probe — goes through the worktree-then-`git show` ladder, and a
+        producer readable from neither is announced rather than silently skipped.
       - >-
         `not_an_engine` is the most destructive of the four overlay keys and was once the
         least gated: a 3-character reason removed an authority-bearing engine with every
@@ -3056,8 +3072,8 @@ checks:
       every ref the resolver was given no inputs to probe (AUTHORITY_EVIDENCE_UNCHECKED —
       "could not look", which is reported and is NOT counted as evidence), every
       gate-tripping engine with no curated output_class, every graded_by_design='yes'
-      standing on a filename heuristic (GRADED_BY_DESIGN_IS_HEURISTIC), a graded_by_design
-      value contradicting a resolved ledger, a species whose ledger_binding matches no
+      standing on a path-substring heuristic (GRADED_BY_DESIGN_IS_HEURISTIC), a
+      graded_by_design value contradicting a resolved ledger, a species whose ledger_binding matches no
       engine (SPECIES_UNBOUND), a registered qledger desk with zero rows in the claim
       corpus, and the scored_path_surfaces completeness flag (an artifact read by an
       Article-2 enforcer module while declaring no surfaces — the measured prophet-index
@@ -3113,8 +3129,11 @@ checks:
         Advisory by default for FINDINGS (exit 0 with ::warning annotations); only --strict
         reds on them, and --strict is deliberately NOT passed in CI yet. The findings are
         PRE-EXISTING CONDITIONS of the corpus, not regressions any PR author caused. That
-        leniency does NOT extend to blindness: an INCOMPLETE input set exits non-zero on
-        every run (ruling 2026-08-14) — see the FAIL CLOSED known_limit on the sibling law
+        leniency does NOT extend to PR-PLANE blindness: a run that could not read config or
+        code exits non-zero on every run (ruling 2026-08-14). DATA-PLANE blindness — the
+        nightly-advanced claim store alone — is reported in full and reds only under
+        --strict, because a PR lane must not go red fleet-wide for a store no PR author
+        touched. See the FAIL CLOSED known_limit on the sibling law
         governance.intelligence_registry_integrity.
         MEASURED 2026-08-12 on the derived view (378 engines over 642 synapse artifacts, 7
         cells excluded): 181 findings — 21 AUTHORITY_WITHOUT_EVIDENCE, 113

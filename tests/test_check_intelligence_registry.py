@@ -69,7 +69,9 @@ def test_selftest_covers_both_directions():
     result = _run("--selftest")
     assert "POSITIVE CONTROL" in result.stdout
     assert "NEGATIVE" in result.stdout
-    assert result.stdout.count("[PASS]") >= 60
+    # A FLOOR, NOT AN EQUALITY: adding a control must never require editing this line.
+    # Re-based 2026-08-14 (60 -> 84, the count as shipped) so it measures something again.
+    assert result.stdout.count("[PASS]") >= 84
     assert "[FAIL]" not in result.stdout
 
 
@@ -146,18 +148,34 @@ def test_default_run_is_advisory_for_content_findings():
     """The content law fires on PRE-EXISTING corpus conditions no PR author caused. Wiring
     it hard on arrival would red main fleet-wide, which is how a gate gets routed around.
 
-    ADVISORY COVERS FINDINGS, NOT BLINDNESS (ruling 2026-08-14): a run that could not read
-    an input reds with or without --strict. On a healthy checkout the ladder resolves every
-    input from the worktree or from HEAD, so this run is complete and exits 0."""
-    result = _run()
-    assert result.returncode == 0, result.stdout[-2000:]
+    ADVISORY COVERS FINDINGS **AND THE DATA PLANE** (ruling 2026-08-14, amended): only a
+    PR-PLANE blind read or a structural violation reds without --strict.
+
+    THE EXIT CODE IS ASSERTED AS A FUNCTION OF WHAT THIS SAME RUN REPORTED, not as a
+    constant. `assert rc == 0` was an absolute claim about the live tree: one truncated
+    line appended to data/qledger/claims.jsonl by the nightly falsified it, which is the
+    defect class this suite exists to refuse. The ruling itself is pinned on fixture roots,
+    where the inputs are controlled — see test_a_DATA_PLANE_blind_run_stays_advisory and
+    test_a_PR_PLANE_blind_run_reds_without_strict.
+    """
+    result = _run("--json")  # non-strict: --json and plain return the same value
+    payload = json.loads(result.stdout)
+    expected = 1 if (payload["violations"] or payload["unreadable_by_plane"]["pr"]) else 0
+    assert result.returncode == expected, payload
 
 
 def test_strict_escalates_content_findings():
-    result = _run("--strict")
-    payload = json.loads(_run("--json").stdout)
-    expected = 1 if (payload["violations"] or payload["findings"] or payload["unreadable_inputs"]) else 0
-    assert result.returncode == expected
+    """ONE SUBPROCESS. This compared the exit code of one invocation against the --json
+    payload of a SECOND over the shared checkout — the cross-invocation race
+    test_annotation_volume_is_budgeted was refactored to remove ("observed failing once in
+    8 runs"). `--json --strict` yields both terms from the same process, so the two cannot
+    disagree about which tree they saw."""
+    result = _run("--json", "--strict")
+    payload = json.loads(result.stdout)
+    expected = 1 if (
+        payload["violations"] or payload["findings"] or payload["unreadable_inputs"]
+    ) else 0
+    assert result.returncode == expected, payload
 
 
 def test_structural_violations_exit_non_zero():
@@ -169,17 +187,71 @@ def test_structural_violations_exit_non_zero():
 # Annotation contract (CLAUDE.md §"GitHub annotations must START the line")
 # ---------------------------------------------------------------------------
 
-def test_annotations_start_the_line_and_are_never_logged():
-    result = _run()
+def test_annotations_start_the_line_and_are_never_logged(tmp_path):
+    """ON A FIXTURE ROOT, which guarantees at least one annotation BY CONSTRUCTION.
+
+    `assert annotated` against the live tree was a live NON-EMPTINESS assertion: the guard
+    emits ::warning only for findings and blindness and ::error only for violations, so a
+    tree with none of the three emits nothing at all — and that state is precisely T7's
+    stated success condition (drain C-1, curate output_class, retire the weak heuristic).
+    Succeeding at the program's goal must not red the lane that measures it. Same defect
+    class as the `assert c1` this wave moved off the live corpus, one horizon further out.
+    """
+    root = guard.write_fixture_root(tmp_path / "repo")
+    result = _run("--root", str(root))
     annotated = [
         line for line in result.stdout.splitlines()
         if "::warning" in line or "::error" in line or "::notice" in line
     ]
-    assert annotated, "the guard emitted no annotation at all"
+    assert annotated, "the fixture carries a C-1 finding, so an annotation is guaranteed"
     for line in annotated:
         assert line.startswith("::"), (
             f"annotation does not start the line — GitHub drops it silently: {line!r}"
         )
+
+
+#: A corpus with NOTHING left to report — T7's stated success condition, in miniature. One
+#: decorative display artifact: no authority, no ledger, no evaluated tier, so no C-1, no
+#: OUTPUT_CLASS_MISSING, nothing.
+_HEALED_SYNAPSE = """\
+meta:
+  schema_version: 1
+artifacts:
+  fixture-chip:
+    path: site/fixture_chip.json
+    format: json
+    producer: engine/fixture_gate.py
+    owner_program: fixture-prog
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 24
+    schema: fixture
+    tier: display
+    horizon_role: context
+    consumers: []
+"""
+
+
+def test_a_FULLY_HEALED_corpus_emits_no_annotation_and_still_exits_zero(tmp_path):
+    """THE FORWARD PIN, and the reason two assertions moved off the live tree.
+
+    `main()` emits ::error only for violations and ::warning only for findings and
+    blindness, so a corpus with none of the three emits NOTHING — and that is exactly what
+    T7 is trying to produce (drain C-1, curate output_class, retire the weak heuristic).
+    Two tests asserted the live run emitted at least one annotation, which would have
+    turned the program's success into this lane's red. Succeeding must be green, so it is
+    pinned green here on a corpus that has already succeeded.
+    """
+    root = guard.write_fixture_root(tmp_path / "repo", synapse=_HEALED_SYNAPSE)
+    result = _run("--root", str(root))
+    assert result.returncode == 0, result.stdout
+    annotated = [
+        line for line in result.stdout.splitlines()
+        if line.startswith("::warning") or line.startswith("::error")
+    ]
+    assert annotated == [], "a healed corpus must be silent, not merely quiet"
+    assert "0 structural violation(s), 0 content finding(s), inputs=complete" in result.stdout
 
 
 def test_guard_source_never_routes_an_annotation_through_a_logger():
@@ -188,7 +260,35 @@ def test_guard_source_never_routes_an_annotation_through_a_logger():
         assert bad not in source
 
 
-def test_annotation_volume_is_budgeted():
+def _multi_engine_synapse(n: int) -> str:
+    """A fixture synapse with `n` unevidenced scored cells — enough findings to COMPRESS.
+
+    The compression half of the annotation budget needs several engines sharing one
+    non-C-1 code; the single-cell default fixture cannot express that, and the live corpus
+    must not be asked to (its finding count is exactly what T7 exists to drive to zero).
+    """
+    rows = [
+        f"""\
+  fixture-gate-{i}:
+    path: data/fixture_gate_{i}.json
+    format: json
+    producer: engine/fixture_gate_{i}.py
+    owner_program: fixture-prog
+    cadence: daily-engine
+    storage: git
+    asof_field: asof
+    freshness_sla_hours: 24
+    schema: fixture
+    tier: scored
+    horizon_role: context
+    consumers: []
+"""
+        for i in range(n)
+    ]
+    return "meta:\n  schema_version: 1\nartifacts:\n" + "".join(rows)
+
+
+def test_annotation_volume_is_budgeted(tmp_path):
     """One annotation per finding would bury the actionable C-1 rows, so every non-C-1 code
     is aggregated to a single annotation with a count and full detail goes to stdout.
 
@@ -199,12 +299,19 @@ def test_annotation_volume_is_budgeted():
     subject is annotation VOLUME. A test that reds when a guard fails closed is a test
     arguing for the guard to fail open, so the fix is here and never on the annotation.
 
+    ON A FIXTURE ROOT with three unevidenced scored cells. `assert warnings` against the
+    live tree was a live NON-EMPTINESS assertion — zero findings, zero violations and
+    complete inputs emit no annotation at all, and that is T7's success condition, not a
+    regression. The budget is a property of the guard's code, so it is provable on inputs
+    this test owns.
+
     ONE SUBPROCESS. Comparing counts across TWO independent guard invocations was a
     cross-invocation equality assertion over a shared checkout — a racy structure, observed
     failing once in 8 runs. Reading both halves out of the SAME stdout removes the race by
     construction.
     """
-    result = _run()
+    root = guard.write_fixture_root(tmp_path / "repo", synapse=_multi_engine_synapse(3))
+    result = _run("--root", str(root))
     lines = result.stdout.splitlines()
     warnings = [line for line in lines if line.startswith("::warning")]
     per_engine = [w for w in warnings if "[AUTHORITY_WITHOUT_EVIDENCE]" in w]
@@ -299,6 +406,12 @@ def test_a_PARTIALLY_unreadable_input_set_names_what_it_missed_and_reds(monkeypa
         report["unreadable_inputs"] = list(report["unreadable_inputs"]) + [
             str(builder.SPECIES_REL)
         ]
+        # data/species/registry.json is PR-plane — 17 commits in its whole history, every
+        # one an adjudication PR — so this is the blindness the lane MAY red on.
+        report["unreadable_by_plane"] = {
+            "pr": list(report["unreadable_by_plane"]["pr"]) + [str(builder.SPECIES_REL)],
+            "data": list(report["unreadable_by_plane"]["data"]),
+        }
         report["inputs_complete"] = False
         return registry, report
 
@@ -318,22 +431,83 @@ def test_a_PARTIALLY_unreadable_input_set_names_what_it_missed_and_reds(monkeypa
         assert "data/species/registry.json" in out.split("intelligence registry:")[-1]
 
 
-def test_a_MALFORMED_store_reds_the_run_with_NO_strict_flag(tmp_path):
-    """B2 + M4 END TO END, over real files. A claim store that OPENS but whose lines do not
-    all parse used to be indistinguishable from one read cleanly with zero desk rows: the
-    reader swallowed the JSONDecodeError, the report said `inputs=complete`, and the run
-    exited 0. Now the count is named on the summary line and the run reds — no flag."""
+def test_a_DATA_PLANE_blind_run_is_REPRESENTED_but_stays_advisory(tmp_path):
+    """B2 + THE JURISDICTION CUT, over real files.
+
+    A claim store that OPENS but whose lines do not all parse used to be indistinguishable
+    from one read cleanly with zero desk rows: the reader swallowed the JSONDecodeError,
+    the report said `inputs=complete`, and the run exited 0 (B2). The first fix made it red
+    unconditionally — which handed the nightly, the store's sole advancer, the power to red
+    every PR in flight over one truncated line of 46,696. So it is REPRESENTED in full and
+    GATED in the strict lane: the count is on the summary, the plane is named, the
+    COULD NOT LOOK annotation fires, and the plain run stays advisory.
+    """
     root = guard.write_fixture_root(
         tmp_path / "repo",
         claims='{"desk": "fixture_desk"}\n{not json\n[1, 2, 3]\n',
     )
     result = _run("--root", str(root))
-    assert result.returncode != 0, result.stdout
     summary = next(
         line for line in result.stdout.splitlines() if line.startswith("intelligence registry:")
     )
     assert "inputs=INCOMPLETE" in summary
+    assert "data-plane:" in summary and "PR-plane:" not in summary
     assert "claims.jsonl (2 unparseable line(s) of 3)" in result.stdout
+    assert any("COULD NOT LOOK" in line for line in result.stdout.splitlines())
+    assert result.returncode == 0, (
+        "a nightly-advanced store must not red the PR lane: " + result.stdout[-1500:]
+    )
+    # BOTH MODES. The two exit codes are computed in two places and the previous shape let
+    # them drift; --json is also what a consumer reads, so the plane must reach it.
+    payload_run = _run("--root", str(root), "--json")
+    payload = json.loads(payload_run.stdout)
+    assert payload_run.returncode == 0
+    assert payload["unreadable_by_plane"]["pr"] == []
+    assert payload["unreadable_by_plane"]["data"] == payload["unreadable_inputs"]
+    assert payload["inputs_complete"] is False
+
+
+def test_the_SAME_data_plane_blindness_reds_under_strict(tmp_path):
+    """The gate is DEFERRED to the strict lane, not deleted.
+
+    ON A HEALED CORPUS, and that is load-bearing. Run against the default fixture this
+    passes for the WRONG REASON: that corpus carries content findings, which --strict reds
+    on by themselves, so the assertion held even with the data-plane term deleted from the
+    exit expression (caught by mutation, 2026-08-14). With zero findings and zero
+    violations, --strict can only red on the blind claim store.
+    """
+    root = guard.write_fixture_root(
+        tmp_path / "repo",
+        synapse=_HEALED_SYNAPSE,
+        claims='{"desk": "fixture_desk"}\n{not json\n',
+    )
+    plain = _run("--root", str(root))
+    assert plain.returncode == 0, plain.stdout
+    assert "0 content finding(s)" in plain.stdout, (
+        "the corpus must be healed, or --strict reds on findings and proves nothing"
+    )
+    assert _run("--root", str(root), "--strict").returncode == 1
+
+
+@pytest.mark.parametrize(
+    "override,why",
+    [
+        ({"species": "{ truncated"}, "species/registry.json moves only by adjudication PR"),
+        ({"overlay": "{unclosed: ["}, "the curated overlay is hand-edited in a PR"),
+        ({"qual_ladder": "- not\n- a mapping"}, "qual_ladder.yml is config"),
+    ],
+)
+def test_a_PR_PLANE_blind_run_reds_without_strict(tmp_path, override, why):
+    """The other side of the jurisdiction. Every one of these inputs moves ONLY through a
+    pull request, so a PR author can cause the blindness and a PR author can fix it — the
+    lane is entitled to red on it with no flag."""
+    root = guard.write_fixture_root(tmp_path / "repo", **override)
+    result = _run("--root", str(root))
+    assert result.returncode == 1, why
+    summary = next(
+        line for line in result.stdout.splitlines() if line.startswith("intelligence registry:")
+    )
+    assert "PR-plane:" in summary, summary
 
 
 def test_a_CLEAN_fixture_root_exits_zero(tmp_path):
@@ -379,6 +553,36 @@ def test_a_synapse_that_READS_but_does_not_PARSE_is_NOT_CHECKED(tmp_path, synaps
         line for line in result.stdout.splitlines() if line.startswith("intelligence registry:")
     )
     assert "NOT CHECKED" in summary and "unreadable or unparseable" in summary
+
+
+def test_an_unrelated_SystemExit_is_not_misattributed_by_the_sentinel_handler(monkeypatch):
+    """The handler caught BARE `SystemExit` and unconditionally printed "config/synapse.yml
+    is unreadable or unparseable" — so a `SystemExit` raised anywhere inside `build()`, at
+    import time in a dependency say, would have produced a confident, specific and WRONG
+    diagnosis. `_article2_modules` catches only `Exception`, so that path was reachable in
+    principle. Keyed on the `SynapseUnavailable` sentinel, an unrelated exit now propagates
+    as the crash it is: an honest crash beats a fluent misdiagnosis.
+    """
+    def exploding(root):
+        raise SystemExit("an unrelated dependency called sys.exit() at import time")
+
+    monkeypatch.setattr(guard, "build", exploding)
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        with pytest.raises(SystemExit) as excinfo:
+            guard.main([])
+    assert "unrelated dependency" in str(excinfo.value)
+    assert "config/synapse.yml is unreadable" not in buf.getvalue(), buf.getvalue()
+
+
+def test_the_SENTINEL_itself_is_still_caught_and_reported(tmp_path):
+    """The positive half: the sentinel path must keep working, or the fix above is just a
+    hole with better manners."""
+    root = guard.write_fixture_root(tmp_path / "repo", synapse="- not a mapping\n")
+    result = _run("--root", str(root))
+    assert result.returncode == 1
+    assert "NOT CHECKED" in result.stdout
+    assert issubclass(guard.builder.SynapseUnavailable, SystemExit)
 
 
 def test_the_summary_line_always_carries_an_inputs_clause():
@@ -508,16 +712,20 @@ _LIVE_INVOKING_ALLOWLIST = frozenset({
     # 2026-08-14, over throwaway fixture roots under the system temp dir.
     "test_selftest_passes_as_shipped",
     "test_selftest_covers_both_directions",
-    # Shape-only: asserts the exit CODE of a healthy run, no count and no name.
+    # Shape-only: the exit code must equal the RULING applied to what this same run
+    # reported about itself. No count, no name, and nothing a nightly append can falsify.
     "test_default_run_is_advisory_for_content_findings",
-    # Shape-only: compares the exit code against the guard's OWN --json payload from the
-    # same tree, so whatever the corpus holds, the two must agree.
+    # Shape-only: same structure under --strict, from ONE invocation.
     "test_strict_escalates_content_findings",
-    # Shape-only: every emitted annotation must START the line. Says nothing about content.
-    "test_annotations_start_the_line_and_are_never_logged",
-    # Shape-only: a RELATIONSHIP between annotation channels (per-engine + aggregated +
-    # blindness == total), never a count.
-    "test_annotation_volume_is_budgeted",
+    # Shape-only: monkeypatches the REPORT before main() ever sees it, so it asserts
+    # nothing whatever about the live tree — but `guard.main(argv)` IS a live entry point
+    # and the detector must see it, so it is listed rather than invisible.
+    "test_a_PARTIALLY_unreadable_input_set_names_what_it_missed_and_reds",
+    # Shape-only, and it never reaches the tree at all: `build` is replaced by a stub that
+    # raises. Listed for the same reason — `guard.main([])` is a live entry point, and an
+    # entry point the detector cannot see is how this allowlist stopped being the set it
+    # claimed to be.
+    "test_an_unrelated_SystemExit_is_not_misattributed_by_the_sentinel_handler",
     # Shape-only: exactly one summary line, and it carries an `inputs=` clause.
     "test_the_summary_line_always_carries_an_inputs_clause",
     # Shape-only: --json emits an object with the two fail-closed keys.
@@ -539,55 +747,169 @@ _LIVE_INVOKING_ALLOWLIST = frozenset({
     # a property of the hand-edited file, not of the corpus it is keyed against.
     "test_the_shipped_overlay_is_structurally_valid_against_the_partition",
     # THE VOLATILITY SIMULATIONS. Each builds the live view TWICE and asserts the two are
-    # equivalent across a synthetic append; the assertion is a DIFFERENCE, so whatever the
-    # live corpus holds cancels out.
+    # equivalent across a synthetic append. Every assertion is a DIFFERENCE between the two
+    # builds — a new desk appeared; the engine set and the finding set did not move — so
+    # whatever the live corpus already holds appears on both sides and cancels. Neither
+    # asserts an ABSOLUTE property of the live tree; the malformed-append case did, and
+    # that is exactly why it moved to a fixture root (a truncated line in the live claim
+    # store must not be able to red a T1 test).
     "test_a_nightly_CLAIM_APPEND_invalidates_nothing",
     "test_a_SIBLING_PR_adding_a_synapse_artifact_invalidates_nothing",
-    "test_a_MALFORMED_claim_append_flips_inputs_complete_to_False",
 })
+
+
+#: Modules whose entry points reach the live tree when handed no explicit root.
+_T1_MODULES = frozenset({
+    "scripts.check_intelligence_registry", "scripts.build_intelligence_registry",
+})
+#: Entry points that DEFAULT to the repo root, so "no --root" means "live".
+_ROOT_DEFAULTING_ENTRIES = frozenset({"main", "_run"})
+#: Entry points that take the root POSITIONALLY, so "an argument mentioning REPO" is live.
+_ROOT_ARGUMENT_ENTRIES = frozenset({"build"})
+#: CLI filenames whose direct `subprocess.run` is a live invocation without `--root`.
+_T1_CLI_BASENAMES = ("check_intelligence_registry.py", "build_intelligence_registry.py")
+
+
+def _t1_aliases(tree: ast.AST) -> tuple[set[str], set[str], set[str]]:
+    """Resolve every local name that can reach a T1 entry point.
+
+    Returns (module aliases, root-defaulting entry aliases, root-argument entry aliases).
+
+    ALIAS RESOLUTION IS THE POINT. Matching two literal names missed
+    ``from … import build as build_view`` — the alias this very file uses — and
+    ``guard.main(...)``, the in-process entry its own fail-closed tests call. Both were
+    LIVE, both invisible, and one was already committed and unlisted. Imports are collected
+    from the WHOLE tree, function bodies included, because these suites import inside test
+    functions; that is over-inclusive by construction, which is the safe direction for a
+    detector whose failure mode is silence.
+    """
+    modules: set[str] = set()
+    defaulting: set[str] = set(_ROOT_DEFAULTING_ENTRIES)
+    positional: set[str] = set(_ROOT_ARGUMENT_ENTRIES)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name in _T1_MODULES:
+                    modules.add(alias.asname or alias.name.rsplit(".", 1)[-1])
+        elif isinstance(node, ast.ImportFrom):
+            if node.module in _T1_MODULES:
+                for alias in node.names:
+                    local = alias.asname or alias.name
+                    if alias.name in _ROOT_DEFAULTING_ENTRIES:
+                        defaulting.add(local)
+                    elif alias.name in _ROOT_ARGUMENT_ENTRIES:
+                        positional.add(local)
+            elif node.module == "scripts":
+                for alias in node.names:
+                    if f"scripts.{alias.name}" in _T1_MODULES:
+                        modules.add(alias.asname or alias.name)
+        elif isinstance(node, ast.Assign) and isinstance(node.value, ast.Name):
+            # `runner = _run` — a rename is an alias too.
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    if node.value.id in defaulting:
+                        defaulting.add(target.id)
+                    elif node.value.id in positional:
+                        positional.add(target.id)
+    return modules, defaulting, positional
+
+
+def _callee_name(func: ast.expr, modules: set[str]) -> str | None:
+    """The entry-point name a call expression resolves to, or None.
+
+    Handles the bare name, the attribute form on a known module alias, and
+    ``getattr(<module alias>, "<entry>")`` — the last because it was demonstrated as an
+    evasion, not because anyone writes it on purpose.
+    """
+    if isinstance(func, ast.Name):
+        return func.id
+    if isinstance(func, ast.Attribute):
+        owner = func.value
+        if isinstance(owner, ast.Name) and owner.id in modules:
+            return func.attr
+        return func.attr
+    if (
+        isinstance(func, ast.Call)
+        and isinstance(func.func, ast.Name)
+        and func.func.id == "getattr"
+        and len(func.args) == 2
+        and isinstance(func.args[0], ast.Name)
+        and func.args[0].id in modules
+        and isinstance(func.args[1], ast.Constant)
+    ):
+        return str(func.args[1].value)
+    return None
+
+
+def _mentions_root_flag(args: list[ast.expr]) -> bool:
+    """True when a ``"--root"`` string constant appears anywhere in the arguments.
+
+    Walks INTO list/tuple literals, because the in-process entry takes an argv LIST. An
+    argv that is not a literal (a parameter, a fixture) yields False and the call counts as
+    LIVE — fail-closed: a detector that guesses "probably rooted" is the one that goes
+    silent.
+    """
+    return any(
+        isinstance(sub, ast.Constant) and sub.value == "--root"
+        for arg in args
+        for sub in ast.walk(arg)
+    )
+
+
+def _is_t1_cli_subprocess(call: ast.Call, name: str | None) -> bool:
+    """A direct ``subprocess.run([... 'check_intelligence_registry.py' ...])``."""
+    if name != "run":
+        return False
+    text = " ".join(
+        str(sub.value)
+        for sub in ast.walk(call)
+        if isinstance(sub, ast.Constant) and isinstance(sub.value, str)
+    )
+    return any(cli in text for cli in _T1_CLI_BASENAMES)
 
 
 def _live_invoking_tests(source: str) -> set[str]:
     """Names of `test_*` functions that reach the live tree, by AST.
 
-    TWO SHAPES, both measured from the real suites:
+    FOUR SHAPES, every one of them measured from a real or demonstrated evasion:
 
-      (a) ``_run(...)`` — the subprocess helper — with no ``"--root"`` among its string
-          arguments. Without ``--root`` the guard defaults to the repo root.
-      (b) ``build(...)`` / ``<mod>.build(...)`` with an argument expression that mentions
-          ``REPO``.
+      (a) a ROOT-DEFAULTING entry — ``_run(...)``, ``main(...)``, ``<guard>.main(...)`` —
+          with no ``"--root"`` string constant among its arguments. These default to the
+          repo root, so the absence of the flag IS the live invocation.
+      (b) a ROOT-ARGUMENT entry — ``build(...)`` / ``<mod>.build(...)`` — with an argument
+          expression that mentions ``REPO``.
+      (c) either of the above reached through an ALIAS: ``import … as``,
+          ``from … import x as y``, a plain rename, or ``getattr(mod, "main")``.
+      (d) a direct ``subprocess.run`` naming either CLI, with no ``"--root"`` constant.
 
-    SCOPE, stated rather than implied: other live reads through builder INTERNALS
+    SCOPE, stated rather than implied: live reads through builder INTERNALS
     (``_scan_producers(REPO, …)``, ``_load_species(REPO)``, ``_tracked_file_exists(REPO,
-    …)``) are not matched. They are shape-only by construction — they assert that a read
-    resolves, never what it returned — and widening the rule to "any call mentioning REPO"
+    …)``) are still not matched. They are shape-only by construction — they assert that a
+    read resolves, never what it returned — and widening to "any call mentioning REPO"
     would swallow ``(REPO / "tests" / name).read_text()`` and turn the allowlist into a
-    list of every test in the file.
+    list of every test in the file. The string-needle layer in the caller covers the
+    remaining shape (a direct read of the corpus path).
     """
+    tree = ast.parse(source)
+    modules, defaulting, positional = _t1_aliases(tree)
     live: set[str] = set()
-    for node in ast.parse(source).body:
+    for node in tree.body:
         if not isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
             continue
         if not node.name.startswith("test_"):
             continue
         for call in (n for n in ast.walk(node) if isinstance(n, ast.Call)):
-            func = call.func
-            name = getattr(func, "attr", None) or getattr(func, "id", None)
+            name = _callee_name(call.func, modules)
             args = [*call.args, *(kw.value for kw in call.keywords)]
-            if name == "_run":
-                if not any(
-                    isinstance(a, ast.Constant) and a.value == "--root" for a in args
-                ):
-                    live.add(node.name)
-            elif name == "build":
-                if any(
-                    any(
-                        isinstance(sub, ast.Name) and sub.id == "REPO"
-                        for sub in ast.walk(arg)
-                    )
-                    for arg in args
-                ):
-                    live.add(node.name)
+            if name in defaulting and not _mentions_root_flag(args):
+                live.add(node.name)
+            elif name in positional and any(
+                any(isinstance(sub, ast.Name) and sub.id == "REPO" for sub in ast.walk(arg))
+                for arg in args
+            ):
+                live.add(node.name)
+            elif _is_t1_cli_subprocess(call, name) and not _mentions_root_flag(args):
+                live.add(node.name)
     return live
 
 
@@ -631,19 +953,94 @@ def test_no_test_in_this_program_asserts_on_live_synapse_contents():
     )
 
 
-def test_the_meta_test_can_actually_see_both_live_call_shapes():
-    """THE CONTROL THAT MATTERS. The rule this replaced was green while blind, so the
-    detector is fed both real shapes and one of each legal counterpart."""
-    seen = _live_invoking_tests(
-        "REPO = 1\n"
-        "def test_bare_run():\n    _run()\n"
-        "def test_json_run():\n    _run('--json')\n"
-        "def test_rooted_run():\n    _run('--root', str(tmp_path))\n"
-        "def test_build_repo():\n    build(REPO)\n"
-        "def test_builder_dot_build_repo():\n    builder.build(REPO)\n"
-        "def test_build_fixture():\n    build(tmp_path / 'repo')\n"
-        "def _helper_is_not_a_test():\n    _run()\n"
+#: ONE CANNED SNIPPET PER EVASIVE SHAPE. Every entry the reviewer demonstrated the old
+#: two-name rule sliding past is here, beside the legal counterpart that must stay clean —
+#: the control is what proves the detector SEES each shape, and a detector without one is
+#: how the previous rule shipped green and blind.
+_DETECTOR_FIXTURE = """\
+import subprocess
+import scripts.check_intelligence_registry as g
+import scripts.build_intelligence_registry as builder
+from scripts.build_intelligence_registry import build as build_view
+from scripts.check_intelligence_registry import main as guard_main
+REPO = 1
+
+def test_bare_run():
+    _run()
+
+def test_json_run():
+    _run('--json')
+
+def test_module_attr_main():
+    g.main(['--json'])
+
+def test_imported_main_alias():
+    guard_main([])
+
+def test_nonconstant_argv():
+    g.main(argv)
+
+def test_build_alias_on_repo():
+    build_view(REPO)
+
+def test_builder_dot_build_repo():
+    builder.build(REPO)
+
+def test_renamed_runner():
+    runner = _run
+    runner()
+
+def test_getattr_evasion():
+    getattr(g, 'main')([])
+
+def test_direct_subprocess():
+    subprocess.run([sys.executable, 'scripts/check_intelligence_registry.py'])
+
+def test_rooted_run():
+    _run('--root', str(tmp_path))
+
+def test_rooted_main():
+    g.main(['--root', str(tmp_path), '--json'])
+
+def test_build_fixture():
+    build(tmp_path / 'repo')
+
+def test_build_alias_fixture():
+    build_view(tmp_path / 'repo')
+
+def test_rooted_subprocess():
+    subprocess.run([sys.executable, 'scripts/check_intelligence_registry.py', '--root', str(p)])
+
+def test_unrelated_subprocess():
+    subprocess.run(['git', 'ls-files', 'data/intelligence_registry.json'])
+
+def _helper_is_not_a_test():
+    _run()
+"""
+
+#: The shapes that MUST be flagged. Everything else in the fixture must stay clean.
+_DETECTOR_EXPECTED = {
+    "test_bare_run",              # (a) root-defaulting helper, no --root
+    "test_json_run",              # (a) …with an unrelated flag
+    "test_module_attr_main",      # (a)+(c) attribute form on a module alias
+    "test_imported_main_alias",   # (c) `from … import main as guard_main`
+    "test_nonconstant_argv",      # (a) non-literal argv is LIVE, fail-closed
+    "test_build_alias_on_repo",   # (c) `build as build_view` — the alias this file uses
+    "test_builder_dot_build_repo",  # (b) attribute form of the root-argument entry
+    "test_renamed_runner",        # (c) plain rename
+    "test_getattr_evasion",       # (c) getattr indirection
+    "test_direct_subprocess",     # (d) the CLI by path, no --root
+}
+
+
+def test_the_meta_test_can_actually_see_every_live_call_shape():
+    """THE CONTROL THAT MATTERS. The rule this replaced was green while blind — it matched
+    two literal names and slid past six real shapes, two of which the surrounding file
+    actively teaches (`build as build_view`, `guard.main(...)`). Each is now a canned
+    snippet here, paired with the `--root`/fixture counterpart that must stay clean, so the
+    detector's coverage is asserted rather than assumed."""
+    seen = _live_invoking_tests(_DETECTOR_FIXTURE)
+    assert seen == _DETECTOR_EXPECTED, (
+        f"missed: {sorted(_DETECTOR_EXPECTED - seen)}; "
+        f"false positives: {sorted(seen - _DETECTOR_EXPECTED)}"
     )
-    assert seen == {
-        "test_bare_run", "test_json_run", "test_build_repo", "test_builder_dot_build_repo"
-    }

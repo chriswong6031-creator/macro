@@ -10,12 +10,30 @@ memory, or read the JSON off stdout.
 
 Two earlier rounds committed a generated ``data/intelligence_registry.json`` plus a
 generated Markdown mirror and pinned them by equality. Both pins were scheduled fleet-wide
-reds, because THERE IS NO STABLE INPUT TO PIN AGAINST on this repo (measured 2026-08-12):
-``config/synapse.yml`` took 26 commits in 14 days; ``data/qledger/claims.jsonl`` 13; and
-``data/species/registry.json``'s single commit is a SHALLOW-CLONE artifact
-(``git rev-parse --is-shallow-repository`` is true, 1126 commits reachable), not evidence
-of stability. With no committed artifact there is no drift, no ``--check`` mode, no stale
-doc and no stable-vs-volatile field split — the split existed only to make a pin safe.
+reds, because THERE IS NO STABLE INPUT TO PIN AGAINST on this repo. Measured on FULL
+HISTORY 2026-08-14 (unshallowed clone, 11,971 commits reachable — the earlier 26/13 figures
+were shallow-clone artifacts and understated the churn by 2.7x and 5.4x):
+
+  ``config/synapse.yml``          69 commits in the trailing 14 days
+  ``data/qledger/claims.jsonl``   70 commits in the trailing 14 days (append-only)
+  ``data/species/registry.json``   1 commit in the trailing 14 days, 17 in its whole
+                                   history, every one an adjudication PR
+
+With no committed artifact there is no drift, no ``--check`` mode, no stale doc and no
+stable-vs-volatile field split — the split existed only to make a pin safe.
+
+TWO PLANES, TWO JURISDICTIONS (ruling 2026-08-14)
+-------------------------------------------------
+The churn figures above are not only an argument against pinning; they are the ownership
+map. Six of this program's seven inputs move ONLY through a pull request — ``synapse.yml``,
+the overlay, ``qual_ladder.yml``, the Article-2 module table, producer SOURCE, and
+``data/species/registry.json`` (17 commits ever, all adjudication PRs, last #4358 on
+2026-08-03). Exactly ONE is advanced by an automated lane: ``data/qledger/claims.jsonl``.
+
+:data:`DATA_PLANE_INPUTS` is that distinction as data rather than as scattered
+conditionals, and ``report['unreadable_by_plane']`` carries it to the caller, which decides
+what each plane is allowed to red. See ``scripts/check_intelligence_registry.py`` §FAIL
+CLOSED for the exit policy that consumes it.
 
 Inputs (each may be unreadable; each unreadable one is NAMED, never silently defaulted)
 --------------------------------------------------------------------------------------
@@ -78,6 +96,42 @@ SYNAPSE_REL = Path("config") / "synapse.yml"
 QUAL_LADDER_REL = Path("config") / "qual_ladder.yml"
 SPECIES_REL = Path("data") / "species" / "registry.json"
 CLAIMS_REL = Path("data") / "qledger" / "claims.jsonl"
+
+ARTICLE2_INPUT = "scripts/check_synapse_reads.py::_ENTRY_ARTICLE2_MODULES"
+
+#: THE ONLY INPUT AN AUTOMATED LANE ADVANCES. Everything else this program reads moves
+#: exclusively through a pull request, so a PR-lane gate may hold a PR author responsible
+#: for it. ``data/qledger/claims.jsonl`` is appended by the nightly (70 commits in the 14
+#: days to 2026-08-14, full history) and no PR author touches it, so its corruption is
+#: REPORTED on every run and GATED only in the strict lane — see the exit policy in
+#: ``scripts/check_intelligence_registry.py``. Membership is by the entry's leading path,
+#: because a partial-blindness entry carries a count suffix.
+DATA_PLANE_INPUTS = frozenset({str(CLAIMS_REL)})
+
+#: Every input this program names, for the jurisdiction test: each must be classified.
+ALL_NAMED_INPUTS = frozenset({
+    str(SYNAPSE_REL), str(OVERLAY_REL), str(QUAL_LADDER_REL), str(SPECIES_REL),
+    str(CLAIMS_REL), ARTICLE2_INPUT,
+})
+
+
+def input_plane(entry: str) -> str:
+    """``'data'`` for a lane-advanced input, ``'pr'`` for everything else.
+
+    Takes the REPORTED entry, count suffix and ``producer:`` prefix included, so the
+    caller never has to strip anything to ask the question.
+    """
+    head = str(entry or "").split(" (", 1)[0]
+    return "data" if head in DATA_PLANE_INPUTS else "pr"
+
+
+class SynapseUnavailable(SystemExit):
+    """``config/synapse.yml`` is unreadable or unparseable — nothing can be derived.
+
+    A ``SystemExit`` subclass so running this module as a script still exits with the
+    message, and a DISTINCT type so a caller's handler cannot misattribute an unrelated
+    ``SystemExit`` — one raised at import time by a dependency, say — to the synapse.
+    """
 
 
 # ---------------------------------------------------------------------------
@@ -359,7 +413,7 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     """
     synapse_text, synapse_source = read_tracked(root, SYNAPSE_REL)
     if synapse_text is None:
-        raise SystemExit(
+        raise SynapseUnavailable(
             f"FATAL: {SYNAPSE_REL} is readable from neither the worktree nor HEAD — "
             f"there is nothing to derive from."
         )
@@ -370,12 +424,12 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
     try:
         synapse = yaml.safe_load(synapse_text)
     except yaml.YAMLError as exc:
-        raise SystemExit(
+        raise SynapseUnavailable(
             f"FATAL: {SYNAPSE_REL} was read from {synapse_source} but does not parse as "
             f"YAML ({type(exc).__name__}) — there is nothing to derive from."
         ) from exc
     if not isinstance(synapse, dict):
-        raise SystemExit(
+        raise SynapseUnavailable(
             f"FATAL: {SYNAPSE_REL} was read from {synapse_source} but parses to "
             f"{type(synapse).__name__}, not a mapping — there is nothing to derive from."
         )
@@ -417,22 +471,39 @@ def build(root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
         (str(OVERLAY_REL), overlay_ok),
         (str(QUAL_LADDER_REL), ladder_keys is not None),
         (str(SPECIES_REL), species is not None),
-        (str(CLAIMS_REL), desk_rows is not None),
-        ("scripts/check_synapse_reads.py::_ENTRY_ARTICLE2_MODULES", article2 is not None),
+        (ARTICLE2_INPUT, article2 is not None),
     ):
         if not ok:
             unreadable_inputs.append(name)
-    # PARTIAL blindness on a store that DID open. The rows that parsed stay in the view —
-    # display-tier accrual continues under disclosed partial blindness — but the run is no
-    # longer entitled to call its inputs complete.
-    if qledger.unparseable:
+    unreadable_inputs += [f"producer:{p}" for p in sorted(unreadable_producers)]
+    # BOTH SHAPES of claim-store blindness: the whole store unreadable, and PARTIAL
+    # blindness on a store that DID open. The rows that parsed stay in the view — the null
+    # law requires the gap be REPRESENTED, not paid for with the readable half — but the
+    # run is no longer entitled to call its inputs complete.
+    if desk_rows is None:
+        unreadable_inputs.append(str(CLAIMS_REL))
+    elif qledger.unparseable:
         unreadable_inputs.append(
             f"{CLAIMS_REL} ({qledger.unparseable} unparseable line(s) of "
             f"{qledger.considered})"
         )
-    unreadable_inputs += [f"producer:{p}" for p in sorted(unreadable_producers)]
+
+    # THE SPLIT IS A LOOKUP ON THE DECLARED TABLE, never a second copy of it. Classifying
+    # inline — appending to two lists as the checks run — makes :data:`DATA_PLANE_INPUTS`
+    # decoration: it can be emptied without changing a single exit code, so nothing can
+    # ever prove it is the thing being obeyed. Routing every entry through
+    # :func:`input_plane` makes the constant load-bearing, which is what lets a mutation of
+    # the table fail a test.
+    pr_plane_blind = [n for n in unreadable_inputs if input_plane(n) == "pr"]
+    data_plane_blind = [n for n in unreadable_inputs if input_plane(n) == "data"]
+    unreadable_inputs = pr_plane_blind + data_plane_blind
 
     report = {
+        # THE JURISDICTION, carried to the caller rather than re-derived by it. Both lists
+        # are also concatenated into `unreadable_inputs`, which stays the single answer to
+        # "what could this run not read" — the split governs what may RED, never what is
+        # REPORTED.
+        "unreadable_by_plane": {"pr": pr_plane_blind, "data": data_plane_blind},
         "sources": {
             str(SYNAPSE_REL): synapse_source,
             str(OVERLAY_REL): overlay_source,

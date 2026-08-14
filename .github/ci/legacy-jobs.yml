@@ -1931,8 +1931,9 @@ jobs:
     # `--check` equality mode and no drift comparison, so this job cannot be reddened by a
     # nightly claim append or by a sibling PR editing config/synapse.yml. Two earlier
     # rounds pinned a generated artifact by equality (against data/qledger/claims.jsonl,
-    # then against config/synapse.yml — 13 and 26 commits in 14 days) and both were
-    # scheduled fleet-wide reds. Do not re-add a regeneration lane or a committed file.
+    # then against config/synapse.yml — 70 and 69 commits in the trailing 14 days, measured
+    # on full history 2026-08-14 after the clone was unshallowed) and both were scheduled
+    # fleet-wide reds. Do not re-add a regeneration lane or a committed file.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -1945,7 +1946,10 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: "intelligence engine registry integrity (Eval OS T1)"
         # The plain run is inherently fail-closed as of 2026-08-14: structural violations
-        # AND an incomplete input set both exit non-zero without any flag.
+        # AND a PR-PLANE blind read (config or code unreadable) exit non-zero with no flag.
+        # Blindness on data/qledger/claims.jsonl — the one input a nightly lane advances —
+        # is REPORTED here and gated only under --strict, so this PR job cannot go red for
+        # a store no PR author touched.
         run: |
           python3 scripts/check_intelligence_registry.py --selftest
           python3 scripts/check_intelligence_registry.py
