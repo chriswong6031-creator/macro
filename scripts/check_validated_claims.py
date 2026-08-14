@@ -207,6 +207,14 @@ _STRUCTURAL_MASKS = [
     # engine-stamped reasoning-trace / scoring field values in generated data + their emitters
     re.compile(r'"tier"\s*:\s*"validated"'),
     re.compile(r'"verdict"\s*:\s*"validated"'),
+    # china_narrative_radar's global-AI confirmer honesty tier (engine/china_narrative_radar.py
+    # _GLOBAL_AI_HONESTY): a per-basket machine token whose 'validated' rung is earned by ONE
+    # basket (ths_cpo — backtest #773, t=3.27, pre-2024 split survives). Same family as "tier"/
+    # "verdict" above. First reached page bytes 2026-08-14 when the nightly embedded a
+    # validated-rung chip into china_stocks.html's board payload; the KEY is cut by
+    # _JSON_KEY_MASK, so without this the VALUE token reads as an unbacked prose claim that no
+    # allowlist phrase (which must include the key to be scoped) can ever match post-masking.
+    re.compile(r'"validated_tag"\s*:\s*"validated"'),
     re.compile(r'"validated"\s*:\s*(?:true|false)'),          # a data field, not a claim
     re.compile(r"'validated'\s*:\s*(?:True|False)"),
     # …and the same field read as an EQUALITY, the shape a pre-registered criterion uses to
