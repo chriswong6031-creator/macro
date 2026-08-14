@@ -32,6 +32,7 @@ waves:
   - id: W1
     title: PR-1 probe universe + candidate enlistment bus
     status: in_progress
+    pr: 5625
     depends_on: [W0]
     next_action: >
       Build in flight (operator CONTINUE directive 2026-08-14): funnel layers A–D +
