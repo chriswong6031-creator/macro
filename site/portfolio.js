@@ -527,6 +527,30 @@
         drawerBody(r) + '</td></tr>' : '');
   }
 
+  /* WHICH oracle produced a name's stretch grade — 'ext' | 'alignment' | null.
+
+     `extGradeOf` answers in ONE vocabulary drawn from TWO sources that do not measure
+     the same thing. US-store names carry `ext`, whose number is literally
+     price/SMA200 − 1, z-scored against the name's own trailing year
+     (engine/extension.py) — a distance-above-the-200-day read, always. Every other
+     market falls back to `ladder.alignment.overextended`, which is a first-true-wins OR
+     of three legs (engine/cycles.py `_overextended`): 3-day or daily StochRSI > 80,
+     daily RSI14 > 62, or +30% over the 200-day. Only the third leg is a distance read,
+     and it is by far the hardest to trip — a name at RSI 63 sitting 2% above its
+     200-day line comes back `true` on the first leg it tests. So `true` here does not
+     imply a statement about distance, and most of the time is not one.
+
+     The distinction is load-bearing only where the COPY makes a claim about how the
+     read was taken: a line that says "elevated" is honest either way, a line that says
+     "measured against its own 200-day path" is honest only for 'ext'. Gate on this,
+     not on the grade word, wherever the sentence promises the method. */
+  function stretchBasis(t, j) {
+    if (isModeled(t) && j && j.ext && j.ext.grade) return 'ext';
+    var al = j && j.ladder && j.ladder.alignment;
+    if (al && al.overextended === true) return 'alignment';
+    return null;
+  }
+
   /* The attention flag on a row is the SAME rule the attention stack sorts by, read
      for one name. Precedence is fixed and stated; there is no score anywhere. */
   function attentionFlag(r, j) {
@@ -535,8 +559,19 @@
     var days = eventDays(j);
     if (isNum(share) && Math.abs(share) >= 0.20) return ['f-warn', 'Biggest risk share', '风险占比最大'];
     if (days != null && days >= 0 && days <= 5) return ['f-warn', 'Event window', '关键窗口'];
+    /* `extGradeOf` speaks the engine's vocabulary (engine/extension.py GRADES:
+       intrend / steady / stretched / parabolic / na) and has never returned anything
+       else. This branch shipped comparing it against 'high' / 'extreme' — words no
+       extension oracle in this repo produces — so from #5496 until now the flag was
+       structurally unreachable and this column simply never said "stretched" about
+       anything. The zh word is the one the chip lane already uses (过度拉伸, see
+       `stretchOf`), NOT the 偏离过大 this branch was written with: the flag takes
+       either oracle (see `stretchBasis` above) and only one of those always measures
+       distance, so a 偏离 (deviation) word here would make a claim the alignment path
+       cannot carry. One word, one column, and it must be true both ways. */
     var g = extGradeOf(t, j);
-    if (g === 'high' || g === 'extreme') return ['f-warn', 'Stretched', '偏离过大'];
+    if (g === 'parabolic') return ['f-warn', 'Parabolic', '抛物线拉伸'];
+    if (g === 'stretched') return ['f-warn', 'Stretched', '过度拉伸'];
     if (!RISK_COVERED[t] && isModeled(t) === false) return ['f-info', 'Outside risk model', '不在风险模型内'];
     return null;
   }
@@ -803,8 +838,11 @@
     byRisk.forEach(function (r) {
       var s = RISK_SHARES[r.ticker];
       if (!isNum(s) || s < 0.18) return;
+      /* Elevated = the engine's two caution grades. Rule 1's copy says only "its
+         checks turned elevated", which BOTH oracles behind `extGradeOf` can back, so
+         this rule takes either one (rule 3 below is the one that cannot). */
       var g = extGradeOf(r.ticker, jsonCache[r.ticker]);
-      if (g !== 'high' && g !== 'extreme') return;
+      if (g !== 'stretched' && g !== 'parabolic') return;
       push(r, 1, 'Your largest risk share, and its checks turned elevated.',
            '它占你账簿的风险最大，指标也转为偏高。', 's-watch',
            'Rule 1 — largest share of book risk, and its own checks are elevated. Source: last night&#39;s close.',
@@ -821,8 +859,15 @@
     });
     // rule 3
     byRisk.forEach(function (r) {
-      var g = extGradeOf(r.ticker, jsonCache[r.ticker]);
-      if (g !== 'high' && g !== 'extreme') return;
+      var j3 = jsonCache[r.ticker];
+      var g = extGradeOf(r.ticker, j3);
+      if (g !== 'stretched' && g !== 'parabolic') return;
+      /* This rule's hover NAMES its method — "measured against its own 200-day path".
+         Only the `ext` oracle takes the read that way, so an alignment-sourced grade
+         may not raise THIS rule: it would print a sentence about a 200-day distance
+         over a number that is not one. Such a name is not silently dropped from the
+         desk — rule 1 above still speaks for it in the words both oracles support. */
+      if (stretchBasis(r.ticker, j3) !== 'ext') return;
       var s = RISK_SHARES[r.ticker];
       if (!isNum(s) || s < 0.08) return;
       push(r, 3, 'Sitting far above its own trend after a long run up.',
