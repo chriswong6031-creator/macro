@@ -319,9 +319,16 @@ class TestFamilyVoteLaw:
         self, frame, registry
     ):
         """Families are the anti-double-count unit; a copy-pasted column is not a
-        second vote. The duplicate is a byte-identical copy of `alpha`, so F2's mean of
-        [pct(alpha), pct(alpha_copy), pct(off_high)] must equal the original mean —
-        which it does only because the vote is taken per FAMILY, never per column."""
+        second vote.
+
+        HONEST SCOPE (review 2026-08-14): this passes because the DUPLICATE-COLLAPSE
+        step keys on the rounded oriented-percentile vector and removes the copy
+        BEFORE any averaging — not because of the family-mean arithmetic (an earlier
+        docstring mis-attributed it). The collapse absorbs exact copies and monotone
+        transforms; a NEAR-duplicate (same evidence + 1e-6·σ noise) is NOT collapsed
+        and re-weights its family from within (measured: max |Δscore| ≈ 0.153). The
+        registry's one-column-one-home law is the real defense against that; this
+        test pins the collapse behaviour it can pin."""
         base = race_mod.build_c1(frame, registry)
 
         work = frame.features.copy()
@@ -446,6 +453,28 @@ class TestCompositeFence:
                 f"origin is a sign read off the outcomes")
             assert sign.sign in (-1, 1)
 
+    def test_registered_signs_golden_values(self):
+        """GOLDEN pin of {column: (family, sign, kind)} — reviewer MAJOR (2026-08-14).
+
+        The structural sign-law test proves rung builders never SEE outcomes, but it
+        cannot see a sign EDIT: flipping alpha to -1 moves C1's P@5 by +9.3pp (the
+        reviewer's single-flip receipt) while every behavioural test stays green.
+        Any sign change must therefore be an explicit, reviewed diff of THIS table.
+        """
+        golden = {
+            "alpha": ("F2_MOMENTUM_EXTENSION", 1, "continuous"),
+            "off_high": ("F2_MOMENTUM_EXTENSION", 1, "continuous"),
+            "tier_cascade": ("F1_TECHNICAL_CONFLUENCE", 1, "ordinal"),
+            "sue_fresh": ("F4_CATALYST_EVENT", 1, "flag"),
+            "smartmoney_add": ("F5_FLOW_POSITIONING", 1, "flag"),
+            "insider_cluster": ("F5_FLOW_POSITIONING", 1, "flag"),
+            "gex_confirm_verdict": ("F5_FLOW_POSITIONING", 1, "categorical"),
+            "news_burst": ("F8_ATTENTION_CROWDING", 1, "flag"),
+        }
+        actual = {c: (s.family, s.sign, s.kind)
+                  for c, s in race_mod.REGISTERED_SIGNS.items()}
+        assert actual == golden
+
 
 # --------------------------------------------------------------------------- #
 # 6. fold refusal (§9.2)
@@ -491,21 +520,61 @@ class TestWordingFence:
     def test_the_doc_carries_the_calibration_sentence_verbatim(self):
         assert CALIBRATION_SENTENCE in DOC_PATH.read_text(encoding="utf-8")
 
-    @pytest.mark.skipif(not DOC_PATH.exists(), reason="doc not committed yet")
-    def test_the_doc_uses_no_promotion_vocabulary(self):
-        """`leads on the replay frame`, never `beats` / `wins` / `validates`."""
-        text = DOC_PATH.read_text(encoding="utf-8").lower()
-        for banned in (" beats ", " wins ", " outperforms ", " validated ",
-                       " proves ", " winner "):
-            assert banned not in text, (
-                f"promotion vocabulary {banned!r} in a non-promotion-bearing artifact")
+    #: Stems, not inflected forms — reviewer MAJOR (2026-08-14): the space-padded
+    #: word list let "beating" / "improvement" / "significance" straight through.
+    #: "validation" (the §9 term and the replay_validation/validation_status keys)
+    #: stays lawful; "validated"/"validates" do not.
+    #: " winner " stays space-padded: "large-winner capture" is a registered §8.3
+    #: metric name and must not trip the fence.
+    BANNED_STEMS = ("beats", "beating", " wins ", " winner ", "outperform",
+                    "validated", "validates", "proves", "improv", "significan")
 
     @pytest.mark.skipif(not DOC_PATH.exists(), reason="doc not committed yet")
-    def test_the_doc_leaves_the_adjudication_section_empty(self):
+    def test_the_doc_uses_no_promotion_vocabulary(self):
+        """`leads on the replay frame`, never beat*/win*/outperform*/improv*."""
+        text = DOC_PATH.read_text(encoding="utf-8").lower()
+        for banned in self.BANNED_STEMS:
+            assert banned not in text, (
+                f"promotion vocabulary stem {banned!r} in a non-promotion-bearing "
+                f"artifact")
+
+    def test_the_report_uses_no_promotion_vocabulary(self, report):
+        """Same fence over the machine artifact — the quotable one."""
+        blob = json.dumps(report).lower()
+        for banned in self.BANNED_STEMS:
+            assert banned not in blob, (
+                f"promotion vocabulary stem {banned!r} in report.json")
+
+    @pytest.mark.skipif(not DOC_PATH.exists(), reason="doc not committed yet")
+    def test_the_doc_carries_a_nonempty_bounded_adjudication(self):
+        """Renamed from `..._leaves_the_adjudication_section_empty`, which asserted
+        only that the heading existed and so could never fail once the section was
+        written (the receipt-cannot-fail trap the reviewer named). Now: the section
+        must exist, be substantive, and carry its own power-bounding sentence."""
         text = DOC_PATH.read_text(encoding="utf-8")
-        assert "## Adjudication (main loop)" in text, (
-            "the commissioning session writes the six answers there; the section must "
-            "exist and must be left for it")
+        marker = "## Adjudication (main loop)"
+        assert marker in text
+        body = text.split(marker, 1)[1]
+        assert len(body.strip()) > 500, "adjudication section is empty or trivial"
+        flat = " ".join(body.split())
+        assert "bounded by" in flat and "power table" in flat, (
+            "the adjudication must open by bounding itself with §10's power table")
+
+    def test_report_carries_the_rank_by_era_split(self, report):
+        """Reviewer BLOCKER (2026-08-14): the frame's own rank_by stratum records a
+        selection-regime break inside the common window; a pooled headline with no
+        era split asserted a single era the artifact itself refutes."""
+        split = report["results"]["rank_by_era_split"]
+        assert split["counterfactual_replay"] is True
+        assert split["non_promotion_bearing"] is True
+        eras = split["eras"]
+        assert eras, "era split emitted no cells"
+        common = set(report["results"]["headline_common_dates"]["common_dates"])
+        union = {d for era in eras.values() for d in era["dates"]}
+        assert union == common, "era cells must partition the common dates exactly"
+        for era in eras.values():
+            assert set(era["table"].keys()) == {"G0", "G0'", "G1", "G2", "G3", "G4",
+                                                "C1"}
 
 
 # --------------------------------------------------------------------------- #

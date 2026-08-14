@@ -49,8 +49,9 @@ apples-to-apples window every rung shares is **15 nights**.
 | Dates | 24 (2026-06-15 → 2026-07-31) |
 | Candidates | 2,251 distinct (date, ticker) |
 | Horizons | 5 (2,251 rows) · 10 (1,382) · 21 (442) · **42 (0)** · **63 (0)** |
-| Population | The admitted board population, unsplit. `universe_tier` is present-but-all-null, so it is NOT called curated — it is reported as unsplit |
-| Disclosed null era | 2026-08-03..08-06 excluded by the labels module, not imputed |
+| Population | The admitted board population, unsplit. `universe_tier` / `signal_class` are **ABSENT from this frame's schema** (the cohort columns are a candidates-store debt), so nothing here is called curated — the labels receipt's `curated_only: true` is a caller default with no tier column to act on, not a measurement |
+| Disclosed null era | 2026-08-01..08-06 lies **outside this frame's window** (last `as_of` 2026-07-31): the exclusion armed but removed **0 rows / 0 dates**, which the labels receipt records |
+| Selection regimes | The frame spans `rank_by` = conviction → bottoming-alignment → confluence (legacy stamps, §4.4); the live `us_prophet_v1/v2` regime (from 08-07) has **no graded rows here** |
 | `price_basis` | POOLED by explicit flag across `<null>` / `unverified_pre_20260806` / `adjusted` / `unadjusted` → the frame is tagged **exploratory** and promotion-barred (§9.4). Splitting 24 dates across four bases leaves no readable cell; the honest cost is the tag, not a hidden split |
 
 **Frame 3 (deep price history) is REFUSED for this race,** and the refusal is a printed
@@ -105,6 +106,12 @@ falls back to the row's embedded `signal` blob because the snapshot carries no s
 signal-gate map. That module's own docstring records the two copies legitimately
 disagreeing (8 of 69 buy rows on 2026-08-12). A residual per-row mismatch on some future
 date would be attributable there first.
+
+**Second known limit, named (review 2026-08-14):** the replay calls the leg functions,
+not `score_rows()`, so the champion's **featured / veto / sector-cap pass is absent
+from every replay rung**. The primaries here are board-order metrics; the featured
+shelf — §8.3's co-primary action surface, a veto-filtered prefix that can differ from
+the top-5 — is not measured in this race and no rung is credited or charged for it.
 
 ---
 
@@ -221,6 +228,42 @@ statistic is the mean per-date difference.
 
 **Every interval includes zero.** §8.1's registered minimum increment (ΔP@5 ≥ +3pp with
 the CI excluding zero) is met by no rung against either anchor.
+
+### 4.4 The selection-regime split — the pooled headline is a TWO-REGIME MIXTURE
+
+*Added by the independent adversarial review (2026-08-14), which caught this document
+asserting a single selection era while the frame's own `rank_by` stratum receipt
+records a break inside the common window. The 15 common dates split 8/7:*
+
+| Rung | bottoming-alignment (n=8, 06-30→07-15) P@5 | top-5 mean | confluence (n=7, 07-17→07-29) P@5 | top-5 mean |
+|---|---|---|---|---|
+| G0 | 0.600 | +1.44pp | 0.371 | −1.52pp |
+| G0′ | **0.650** | +1.72pp | 0.200 | −4.95pp |
+| G1 | 0.575 | +1.33pp | 0.286 | −2.48pp |
+| G2 | 0.575 | +1.21pp | 0.364 | −1.00pp |
+| G3 | 0.600 | +0.54pp | **0.531** | **+2.09pp** |
+| G4 | 0.575 | +0.08pp | **0.543** | −0.39pp |
+| C1 | 0.600 | +1.70pp | 0.286 | −3.04pp |
+
+Machine table: `results.rank_by_era_split` in `report.json`. Three readings, in order
+of importance:
+
+1. **The entire pooled G3/G4 lead lives in the 7-night confluence cell.** On
+   bottoming-alignment, ΔP@5(G3−G0) = +0.000 and the *published order led everything*
+   (G0′ 0.650). On confluence, every alpha-loaded rung cratered — top-5 mean excess
+   flips sign for every rung — while the de-alpha'd G3/G4 held their level
+   (Δ(G3−G0) = +0.160, Δ(G4−G0) = +0.171). The narrow honest claim: *on the one
+   regime cell where the estate broke down, the rungs without the edge leg kept
+   working.*
+2. **Today is in neither cell.** The confluence regime ended 2026-07-31; live boards
+   stamp `us_prophet_v1` from 08-07 and `us_prophet_v2` from 08-12. Per the standing
+   adjudication-coverage gate, the winning cell is not the current regime, and the
+   prospective shadow race is the first observation of these rungs in it.
+3. **Every per-era cell is thinner than the pooled one** (n=8 / n=7 dates) and the
+   pooled CIs already include zero — the split makes nothing readable; it makes the
+   MIXTURE visible. §7's era-hygiene law (strata, with fragmentation as the honest
+   cost) applies to the frame's own selection stamp exactly as it does to
+   `price_basis`, and §10's "second era" line is corrected accordingly.
 
 ---
 
@@ -387,7 +430,21 @@ nothing more**, and any read of C1 that ignores that is reading two different mo
 averaged together.
 
 Duplicate collapse: 0 members collapsed (no two oriented percentile vectors were
-identical).
+identical). **Scope of that guard, named (review 2026-08-14):** the collapse keys on
+rank-identical oriented percentiles, so it absorbs exact copies and monotone
+transforms but a NEAR-duplicate (same evidence plus noise) passes through and
+re-weights its family from within. The registry's one-column-one-home law is the
+real defense; the collapse is best-effort and this gap is recorded rather than
+papered over.
+
+**The coverage floor is a whole-frame statistic, and the frame is a regime mixture
+(review 2026-08-14):** membership was decided on coverage pooled across all 24 dates.
+`tier_cascade` pools to 0.250 (dropped) but sits near 0.51 on the confluence nights
+alone — **F1 would have survived the floor on the very cell where G3/G4 hold up**
+(§4.4). Two consequences carried forward: C1-as-raced is the registered
+construction and is not re-membered after the fact; and any PROSPECTIVE use of C1
+must evaluate the floor as-of each night (a whole-frame floor is not reconstructible
+at a historical as_of — reusing it forward would be a look-ahead).
 
 ### 9.2 Leave-one-family-out (H=10, deployed)
 
@@ -399,7 +456,7 @@ identical).
 | F8 ATTENTION-CROWDING | **+0.000** | [+0.000, +0.000] | +0.00pp |
 
 Read the signs carefully: a **negative** Δ means C1 scored *better without that family*.
-**F2 is the only family whose removal improves C1**, by 4.0pp of P@5 (CI still spanning
+**F2 is the only family whose removal lifts C1**, by 4.0pp of P@5 (CI still spanning
 zero) — the same direction as §6.6's alpha finding and as G1's own position in §4.
 
 **F8's LOFO delta is exactly zero, on every date, with a CI of [0.000, 0.000].** That is
@@ -496,7 +553,7 @@ suite).
 | Primary tuple | P@5 + top-5 mean excess, H=10, deployed composition, classes pooled |
 | FDR axis | model × metric × horizon on the SECONDARY table; primaries exempt by prereg |
 | Slices | exploratory by construction, structurally barred from any §8.6 claim |
-| Date-blocks per rung | G0 17 · G0′ 24 · G1 24 · G2 17 · G3 17 · G4 17 · C1 24 (H=10 measured: 15/17/17/15/15/15/17) |
+| Date-blocks per rung | G0 17 · G0′ 24 · G1 24 · G2 17 · G3 17 · G4 17 · C1 24 (H=10 measured in the DEPLOYED cell — the primary's own composition: 15/17/15/15/15/15/15; the raw-order counts 15/17/17/15/15/15/17 differ for G1/C1, which lose the 7 payload-less dates from the deployed cell) |
 | **Observed date-blocked SE of ΔP@5** | **0.049 – 0.089** across the ten challenger-vs-anchor pairs |
 | **Implied minimum detectable ΔP@5** | **≈ 0.174 (17.4pp)** = 1.96 × the largest observed SE |
 | §8.7 registered expectation | SE ≈ 0.03–0.04, i.e. detect ≈ +10pp and nothing smaller |
@@ -515,9 +572,13 @@ adjudicate. That is the single number a later generation should carry forward.
   dates**, an upper bound of **85 top-5 slots** before episode de-duplication (distinct
   name × admission episode is smaller, often much smaller, because names persist on the
   board night to night).
-- **Need a SECOND graded selection era** for §8.6.3's era-strata condition — there is
-  one. That half of the gate is **unsatisfiable today**, the gate cannot pass before then,
-  and that is the intended reading, not a defect.
+- **Need a SECOND graded PROPHET-SCORED era** for §8.6.3's era-strata condition —
+  there are **zero**: no prophet-scored night has ever been graded (§6.1, N=0). The
+  graded frame does span two LEGACY selection regimes (bottoming-alignment /
+  confluence — the §4.4 split, which is why this document may not call itself
+  single-era), but neither is a prophet era, so §8.6.3's condition remains
+  **unsatisfiable today**, the gate cannot pass before a second prophet-scored era
+  exists, and that is the intended reading, not a defect.
 - **Need H=42/63 rows** for any basing-class claim — there are **none**.
 
 ### The §9.2 fold refusal, verbatim
@@ -698,11 +759,15 @@ Runtime ≈ 8 minutes.
 
 ## Adjudication (main loop)
 
-Written by the commissioning session (Fable main loop) after reading §2–§12. Every
-sentence below is bounded by §10's power table: the smallest readable ΔP@5 on this frame
-is ~17.4pp, every primary CI includes zero, and the frame is a survivorship-flagged
-counterfactual replay of a single selection era. These are architectural triage answers,
-not verdicts.
+Written by the commissioning session (Fable main loop) after reading §2–§12, amended
+after the independent adversarial review (2026-08-14). Every sentence below is bounded
+by §10's power table: the smallest readable ΔP@5 on this frame is ~17.4pp, every
+primary CI includes zero, and the frame is a survivorship-flagged counterfactual
+replay spanning **two legacy selection regimes** (`rank_by` = bottoming-alignment,
+8 common nights 06-30→07-15; confluence, 7 common nights 07-17→07-29 — the §4.4
+era split). **The live board's regime (us_prophet_v1/v2, from 08-07) appears in
+neither cell: today is out-of-sample of every row here.** These are architectural
+triage answers, not verdicts.
 
 **1. Does the current live priority formulation add anything over simpler baselines?**
 Directionally yes over the order users actually saw, and modestly over its own selection
@@ -714,23 +779,35 @@ The champion's machinery is not demonstrably adding anything; it is also not
 demonstrably the problem. The problem has a name (see 2).
 
 **2. Is the alpha/edge leg helping or hurting?** Four constructions that share no
-machinery point the same way at H=10: G3 (sign-flip) leads every top-of-board metric
-(P@1 0.667, P@5 0.568, top-5 +1.26pp, best large-loser 0.303, the only rung whose
-permutation floor approaches significance at p = 0.067); G4 (deletion) is second; G1
-(pure alpha) ties for last; and inside C1 the F2 family is the only one whose
-partial-ρ | G0 CI excludes zero *on the negative side* (−0.083 [−0.154, −0.007]) and the
-only one whose leave-one-out REMOVAL helps (+4.0pp). This replicates §6.6's alpha
-shadow fact through the deployed composition rather than a raw correlation. It is still
-one era, 15 nights, inside the CI — **a hypothesis strengthened, not a finding closed**.
-The correct next act is prospective, not surgical: no production change is authorized or
-proposed here (`DNR:KILL-FUSED-COMPOSITE` amendments and §8.6 both stand).
+machinery point the same way at H=10 on the pooled window: G3 (sign-flip) leads every
+top-of-board metric (P@1 0.667, P@5 0.568, top-5 +1.26pp, best large-loser 0.303); G4
+(deletion) is second; G1 (pure alpha) ties for last; and inside C1 the F2 family is
+the only one whose partial-ρ | G0 CI excludes zero *on the negative side* (−0.083
+[−0.154, −0.007]) and the only one whose leave-one-out REMOVAL lifts C1 (+4.0pp).
+**But the §4.4 era split localizes the entire pooled lead in ONE regime cell:** on
+the 8 bottoming-alignment nights G3−G0 is +0.000 and the *published order led
+everything* (G0′ P@5 0.650); on the 7 confluence nights every alpha-loaded rung
+cratered (G0′ 0.200, G1 0.286, C1 0.286) while the de-alpha'd G3/G4 held (0.531 /
+0.543, G3−G0 +0.160). So the honest statement is narrower than "alpha hurts": *on
+the one 7-night regime cell where the estate broke down, the rungs without the edge
+leg kept working* — and that regime no longer exists. (G3's exploratory
+permutation-floor p of 0.067 is the minimum of 7 unadjusted one-sided values —
+Šidák across 7 ≈ 0.39 — and the report pre-declares that table claimable for
+nothing.) This replicates §6.6's alpha shadow fact through the deployed composition
+rather than a raw correlation. It is one 7-night cell, inside every CI — **a
+hypothesis strengthened, not a finding closed** — and the correct next act is
+prospective, not surgical: no production change is authorized or proposed here
+(`DNR:KILL-FUSED-COMPOSITE` amendments and §8.6 both stand).
 
-**3. Do G3/G4 materially improve the champion construction?** G3 is the strongest thing
-this race produced and the natural first shadow. G4's apparent strength is partly an
-artifact this race caught red-handed: deleting the edge leg collapses score dispersion
-(distinct-score ratio 0.422), and 200 random tie-breaks swing its P@5 across
-[0.520, 0.613] — §7's answer to "how much of the table is the alphabet". G4 still
-earns a shadow slot as the cheaper repair, with its tie-band carried beside it.
+**3. Do G3/G4 materially repair the champion construction?** G3 is the strongest thing
+this race produced and the natural first shadow — with the §4.4 qualification that its
+whole margin sits in the 7-night confluence cell (its top-5 boundary carries zero ties
+on all 15 nights, so none of ITS lead is the alphabet). G4's point estimate is
+UNSTABLE rather than inflated: deleting the edge leg collapses score dispersion
+(distinct-score ratio 0.422), and 200 random tie-breaks put its P@5 anywhere in
+[0.520, 0.613] (mean 0.568 — the alphabet is not flattering it, the number is simply
+loose). G4 still earns a shadow slot as the cheaper repair, with its tie-band carried
+beside it.
 
 **4. Does name_score contain useful ordering information?** At the very top, some: G2
 posts the best non-repair P@1 (0.538) and a positive top-5 mean (+0.18pp) with the
@@ -740,31 +817,40 @@ Spearman is negative, and §12.2's store/published divergence (22–29% agreemen
 G2 in the arena; do not consume it as a feature (it stays a forbidden composite); the
 store divergence goes to the owning lane as its own finding.
 
-**5. Does C1 improve top-of-board selection after anti-double-count controls?** No.
+**5. Does C1 lift top-of-board selection after anti-double-count controls?** No.
 C1 (0.453) trails G0, G3 and G4, and §9 shows why with unusual clarity: of the four
 families that voted, F2 points the wrong way, F4 contributes zero, F8 is
 cross-sectionally degenerate (19 fires in 1,493 rows — presence is not variance), and
 only F5 does distinguishable positive work (+0.074 [+0.017, +0.130] partial | G0).
 Equal-weight breadth over this frame's readable evidence is two voters wide. Per the
-commission: C1 not beating G3/G4 is a valid and useful result — **complexity is not
-escalated on the program's name**; C2's registered question (weights) inherits exactly
-this table.
+commission: C1 not overtaking G3/G4 is a valid and useful result — **complexity is
+not escalated on the program's name**; C2's registered question (weights) inherits
+exactly this table.
 
-**6. Where does any apparent improvement come from?** One family's sign, not breadth
-and not correlated double-counting: cross-family |ρ| ≤ 0.25 (§9.6), so the C1 voters are
-not siblings of each other; the load-bearing redundancy is *within* F2 (alpha ↔ the
-champion's edge leg — the registry's documented 0.984 edge). The improvement G3/G4
-exhibit is entirely the F2 story read through the champion's own composition. F5 is the
-only independent second thread, small and thin.
+**6. Where does any apparent lead come from?** One family's sign, in one regime cell —
+not breadth and not correlated double-counting: cross-family |ρ| ≤ 0.25 (§9.6), so the
+C1 voters are not siblings of each other; the load-bearing redundancy is *within* F2
+(alpha ↔ the champion's edge leg — the registry's documented 0.984 edge). The lead
+G3/G4 exhibit is entirely the F2 story read through the champion's own composition,
+concentrated on the 7 confluence nights (§4.4). F5 is the only independent second
+thread, small and thin.
 
 ### Recommendation — what enters prospective shadow accrual next (PR-3 lane)
 
 Register for nightly shadow scoring against G0/G0′ under the frozen arena, zero
-authority, prereg'd before the first stamped night: **G3** (edge sign-flip; the primary
-hypothesis), **G4** (edge deletion; the cheap repair, tie-band disclosed), **C1 as
-raced** (the breadth control), and **C1−F2** (the ablation §9.2 already prices at
-+4.0pp — registered now so it cannot be accused of being outcome-selected later).
-Nothing else: C2 stays gated behind PR-2's redundancy matrices; no fitted rung is
-lawful on a frame whose fold machinery refuses (§10). The §8.6 gate is untouched; the
-first honest forward read arrives when the §8.7 distance-to-power lines close, on the
-accruing post-PR-1a candidates store.
+authority, prereg'd before the first stamped night: **G3** (edge sign-flip; the
+primary hypothesis), **G4** (edge deletion; the cheap repair, tie-band disclosed),
+**C1 as raced** (the breadth control), and **C1−F2** (selected IN-SAMPLE on this
+frame — §9.2's +4.0pp ablation is a replay observation, nothing more; the
+prospective out-of-sample read is the test, and registering the variant before the
+first stamped night is what makes that test honest). Carried caveats, all from the
+review: the G3/G4 margin is confluence-cell-only (n=7) and **today's live regime is
+in no cell of this race** — the shadow race IS the first observation of these rungs
+in the current regime, not a confirmation of anything seen here; and for
+prospective accrual the C1 membership floor must be evaluated as-of each night
+(this race's whole-frame coverage floor is not reconstructible at a historical
+as_of and would be a look-ahead if reused forward). Nothing else: C2 stays gated
+behind PR-2's redundancy matrices; no fitted rung is lawful on a frame whose fold
+machinery refuses (§10). The §8.6 gate is untouched; the first honest forward read
+arrives when the §8.7 distance-to-power lines close, on the accruing post-PR-1a
+candidates store.

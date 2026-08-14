@@ -96,10 +96,10 @@ PRIMARY_K = 5
 PRIMARY_COMPOSITION = "deployed"
 PRIMARY_TUPLE = (
     "P@5 + top-5 mean excess, H=10 sessions, deployed composition "
-    "(stage_rank, -score, ticker), classes POOLED (the grades store's "
-    "universe_tier/signal_class cohort columns are null by a named sibling-lane debt, "
-    "§7 population-enforcement) — ONE tuple per rung, registered before any outcome "
-    "cell in this file is read."
+    "(stage_rank, -score, ticker), classes POOLED (universe_tier/signal_class are "
+    "ABSENT from this frame's schema — the cohort columns are a named sibling-lane "
+    "debt of the candidates store, §7 population-enforcement) — ONE tuple per rung, "
+    "registered before any outcome cell in this file is read."
 )
 
 HORIZONS = (5, 10, 21)
@@ -2013,7 +2013,7 @@ def power_block(race: RaceFrame, rungs: Sequence[Rung], *,
         "date_blocked_se_observed": observed_se or {},
         "registered_expectation": (
             "§8.7 registered SE(ΔP@5) ≈ 0.03–0.04 on ~24 date-blocks, i.e. roughly a "
-            "+10pp P@5 improvement is the smallest detectable difference and nothing "
+            "+10pp P@5 gain is the smallest detectable difference and nothing "
             "smaller is readable"),
         "distance_to_power": [
             "need >= 60 graded prophet-era dates (minimum-usable-fold, §9.2) — have 24 "
@@ -2170,11 +2170,15 @@ def run_race(*, root: Path | str | None = None,
     results["headline"] = {
         "horizon": PRIMARY_HORIZON, "composition": PRIMARY_COMPOSITION,
         "classes": "POOLED",
+        "counterfactual_replay": True,
+        "non_promotion_bearing": True,
         "population_note": (
-            "§7 population enforcement: the grades store's universe_tier / signal_class "
-            "cohort columns are NULL by a named sibling-lane debt, so class-conditional "
-            "claims are IMPOSSIBLE on this frame and none is made. The frame is the "
-            "admitted board population, unsplit."),
+            "§7 population enforcement: universe_tier / signal_class are ABSENT from "
+            "this frame's schema (the cohort columns are a named sibling-lane debt of "
+            "the candidates store), so class-conditional claims are IMPOSSIBLE on this "
+            "frame and none is made. The frame is the admitted board population, "
+            "unsplit — labels' curated_only flag is a caller default here, not a "
+            "measurement, because there is no tier column to filter on."),
         "h21_thin": ("H=21 carries 442 rows across the whole frame — flagged THIN. Its "
                      "top-5 episode count is far under the §8.6.4 floor of 50."),
         "table": {
@@ -2188,6 +2192,8 @@ def run_race(*, root: Path | str | None = None,
                                 for cell in primary_cells.values()]) \
         if primary_cells else set()
     results["headline_common_dates"] = {
+        "counterfactual_replay": True,
+        "non_promotion_bearing": True,
         "why": ("The rungs do NOT all race the same nights: G0/G2/G3/G4 need a frozen "
                 "board payload and the first 7 graded dates have none. The table above "
                 "gives each rung its own window; this one puts every rung on the "
@@ -2196,6 +2202,43 @@ def run_race(*, root: Path | str | None = None,
         "common_dates": sorted(common),
         "table": {key: restrict_aggregate(cell, common)["aggregate"]
                   for key, cell in primary_cells.items()},
+    }
+
+    # --- §7/§9.4 era hygiene on the frame's OWN selection-regime stratum -----------
+    # The raced frame carries rank_by as a stratum (the labels receipt prints its
+    # counts), and the common dates straddle TWO legacy selection regimes.  A pooled
+    # headline is therefore a REGIME MIXTURE; this split is the read the standing
+    # adjudication-coverage gate requires (motivating exemplars + the current regime),
+    # and the live regime — us_prophet_v1/v2 from 2026-08-07 — is in NEITHER cell.
+    lab_frame = race.labels.frame
+    era_of: dict[str, str] = {}
+    if "rank_by" in lab_frame.columns:
+        era_of = (lab_frame[["date", "rank_by"]].astype(str).drop_duplicates()
+                  .set_index("date")["rank_by"].to_dict())
+    era_dates: dict[str, list[str]] = {}
+    for date in sorted(common):
+        era_dates.setdefault(era_of.get(date, "<no rank_by stratum>"), []).append(date)
+    results["rank_by_era_split"] = {
+        "counterfactual_replay": True,
+        "non_promotion_bearing": True,
+        "why": ("rank_by is a SELECTION-REGIME stamp (legacy eras: conviction -> "
+                "bottoming-alignment -> confluence; live boards stamp "
+                "us_prophet_v1/v2 from 2026-08-07). The pooled headline mixes the "
+                "regimes; every per-era cell below is thin BY CONSTRUCTION and the "
+                "thinness is the honest cost (§7 era hygiene: strata, not features)."),
+        "live_regime_note": ("The live board's regime (us_prophet_v1 from 2026-08-07, "
+                             "us_prophet_v2 from 2026-08-12) appears in NO cell of "
+                             "this race — today is out-of-sample of every row here."),
+        "eras": {
+            era: {
+                "n_dates": len(dates),
+                "date_range": [dates[0], dates[-1]],
+                "dates": dates,
+                "table": {key: restrict_aggregate(cell, set(dates))["aggregate"]
+                          for key, cell in primary_cells.items()},
+            }
+            for era, dates in era_dates.items()
+        },
     }
     report["results"] = results
 
@@ -2300,7 +2343,11 @@ def run_race(*, root: Path | str | None = None,
         "table": secondary,
     }
 
-    report["c1_analysis"] = c1_family_analysis(c1, race, g0, stages=stages)
+    report["c1_analysis"] = {
+        "counterfactual_replay": True,
+        "non_promotion_bearing": True,
+        **c1_family_analysis(c1, race, g0, stages=stages),
+    }
     report["store_deltas"] = store_delta_exhibit(race, snapshots)
     report["exhibits"] = {
         "frame1_candidates_coverage": frame1_coverage_exhibit(root),

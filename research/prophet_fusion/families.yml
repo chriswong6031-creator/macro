@@ -85,11 +85,15 @@ wired_from_stores:
       latest.json, and no derived statutory lag is used as a join key (§9.1).  The
       availability field is therefore the store's OWN publication stamp, `as_of`.
     null_semantics_caveat: >-
-      The chip constructors coerce with `bool(...)`, so on a board whose schema CARRIED
-      the producer, a False is `measured_negative` — while the pre-schema era (boards
-      before 2026-06-30) writes no key at all and reads back NULL.  The two are
-      distinguishable in the parquet (False vs NaN) and the arena reports coverage per
-      date so the era boundary cannot masquerade as a measured null.
+      The chip constructors coerce with `bool(...)`, so a missing KEY on a
+      schema-era board also lands as False — `bool(None)` is False — which means
+      the False-vs-NaN distinction in the parquet is PER-ERA, never per-name: whole
+      pre-schema dates (boards before 2026-06-30) read back NULL, while on any
+      schema-era date every name reads a bool and an individually-absent producer
+      is indistinguishable from measured_negative (verified 2026-08-14: coverage is
+      exactly 0.000 on 06-15..06-24 and exactly 1.000 on all 17 later dates — no
+      intra-date nulls exist anywhere).  The arena reports coverage per date so the
+      era boundary cannot masquerade as a measured null.
 
 # On the row but not evidence: board bookkeeping.  `sector` is identity — the sector
 # EVIDENCE column is `sector__sector_node`, homed in F3.
