@@ -4,11 +4,11 @@
   "sources": {
     "macro": {
       "available": true,
-      "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/strange-burnell-f79f47",
+      "root": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/ds-pr-1-registry",
       "ref": "HEAD",
-      "sha": "e8dfc53d776cecd89a6ac7fe75d8f2c197af4ffd",
+      "sha": "eb37499065ca189bd33a9dd53ca50c3d3a45d894",
       "page_inventory": "git ls-files site/*.html",
-      "tracked_html_pages": 4637,
+      "tracked_html_pages": 4664,
       "write_page_sites": 151,
       "write_page_unresolved": 33,
       "unresolved_write_sites": [
@@ -47,7 +47,7 @@
       "root": "/Users/chriswong/Documents/Cluade/charting-app",
       "ref": "origin/master",
       "available": true,
-      "sha": "b383d8c3579faeca1cdbcd29063535081aabf35b",
+      "sha": "bfc16bd7fc76da2a6be308050c8c0c4bc6fe606d",
       "page_modules": 15
     },
     "mastermind": {
@@ -72,7 +72,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "marketing_landing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is this product and why should I trust it?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -110,7 +113,10 @@
       "access_shell": "unknown",
       "payload_tier": "internal",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -141,7 +147,10 @@
       "access_shell": "unknown",
       "payload_tier": "internal",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -172,7 +181,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "footer.research",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -205,7 +217,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "footer.resources",
-      "archetype": "unclassified",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -246,7 +261,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -267,7 +285,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:4149",
+        "scripts/build_site.py:4195",
         "site/advanced.html",
         "templates/advanced.html.j2"
       ],
@@ -288,7 +306,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -328,7 +349,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -368,7 +392,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -389,7 +416,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3421",
+        "scripts/build_site.py:3450",
         "site/alerts.html",
         "templates/_navlinks.html.j2",
         "templates/alerts.html.j2"
@@ -409,7 +436,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -449,7 +479,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.canada",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -482,7 +515,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -514,7 +550,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.hong_kong",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -549,7 +588,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -590,7 +632,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -628,7 +673,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -661,7 +709,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -691,7 +742,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -721,7 +775,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -751,7 +808,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -783,7 +843,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -822,7 +885,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.canada",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -863,7 +929,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -902,7 +971,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -943,7 +1015,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.hong_kong",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -984,7 +1059,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1023,7 +1101,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1064,7 +1145,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1094,7 +1178,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1127,7 +1214,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.other_assets",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1166,7 +1256,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1206,7 +1299,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1241,7 +1337,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.canada",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1262,7 +1361,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:1141",
+        "scripts/build_canada.py:1523",
         "site/canada.html",
         "templates/_navlinks.html.j2",
         "templates/canada.html.j2"
@@ -1284,7 +1383,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.canada",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1305,7 +1407,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6040",
+        "scripts/build_site.py:6100",
         "site/canada_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -1327,7 +1429,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1348,7 +1453,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:605",
+        "scripts/build_canada.py:613",
         "site/canada_history.html",
         "templates/canada_history.html.j2"
       ],
@@ -1369,7 +1474,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1390,7 +1498,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:1168",
+        "scripts/build_canada.py:1550",
         "site/canada_stock.html",
         "templates/canada_stock.html.j2"
       ],
@@ -1411,7 +1519,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.canada",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1432,7 +1543,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_canada.py:1150",
+        "scripts/build_canada.py:1532",
         "site/canada_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/canada.html.j2"
@@ -1450,7 +1561,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1491,7 +1605,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1534,7 +1651,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is the China regime right now?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1555,7 +1675,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1549",
+        "scripts/build_china.py:1969",
         "site/china.html",
         "templates/_navlinks.html.j2",
         "templates/china.html.j2"
@@ -1575,7 +1695,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1617,7 +1740,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1658,7 +1784,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1677,7 +1806,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6040",
+        "scripts/build_site.py:6100",
         "site/china_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -1699,7 +1828,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1720,7 +1852,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:617",
+        "scripts/build_china.py:618",
         "site/china_history.html",
         "templates/china_history.html.j2"
       ],
@@ -1741,7 +1873,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1782,7 +1917,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1803,7 +1941,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1585",
+        "scripts/build_china.py:2005",
         "site/china_lookup.html",
         "templates/china_lookup.html.j2"
       ],
@@ -1822,7 +1960,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1865,7 +2006,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1886,7 +2030,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1560",
+        "scripts/build_china.py:1980",
         "site/china_news.html",
         "templates/_navlinks.html.j2",
         "templates/china_news.html.j2"
@@ -1906,7 +2050,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1927,7 +2074,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china_policy_watch.py:46",
+        "scripts/build_china_policy_watch.py:48",
         "site/china_policy_watch.html",
         "templates/_navlinks.html.j2",
         "templates/china_policy_watch.html.j2"
@@ -1947,7 +2094,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -1988,7 +2138,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2028,7 +2181,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2067,7 +2223,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2088,7 +2247,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_china.py:1567",
+        "scripts/build_china.py:1987",
         "site/china_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/china.html.j2"
@@ -2106,7 +2265,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -2150,7 +2312,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2191,7 +2356,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2229,7 +2397,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2264,7 +2435,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2285,7 +2459,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6466",
+        "scripts/build_site.py:6526",
         "site/committee.html",
         "templates/committee.html.j2"
       ],
@@ -2304,7 +2478,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.other_assets",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2345,7 +2522,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.other_assets",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2386,7 +2566,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "ranked_decision_board",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "Which names line up across the signal stack today?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2429,7 +2612,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2469,7 +2655,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2510,7 +2699,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2550,7 +2742,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2592,7 +2787,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2633,7 +2831,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2674,7 +2875,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2712,7 +2916,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "footer.legal",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2745,7 +2952,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2785,7 +2995,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2804,7 +3017,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3150",
+        "scripts/build_site.py:3179",
         "site/etfs.html",
         "templates/_navlinks.html.j2",
         "templates/etfs.html.j2"
@@ -2824,7 +3037,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2859,7 +3075,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2880,7 +3099,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:3354",
+        "scripts/build_site.py:3383",
         "site/factors.html",
         "templates/factors.html.j2"
       ],
@@ -2901,7 +3120,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2942,7 +3164,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -2983,7 +3208,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3024,7 +3252,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3065,7 +3296,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.other_assets",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3106,7 +3340,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3141,7 +3378,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3176,7 +3416,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3211,7 +3454,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3246,7 +3492,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3281,7 +3530,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3316,7 +3568,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3351,7 +3606,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3386,7 +3644,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3421,7 +3682,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3456,7 +3720,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3491,7 +3758,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3526,7 +3796,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3561,7 +3834,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3596,7 +3872,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3631,7 +3910,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3666,7 +3948,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3701,7 +3986,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3736,7 +4024,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3771,7 +4062,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3806,7 +4100,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3841,7 +4138,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3876,7 +4176,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3911,7 +4214,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3946,7 +4252,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -3981,7 +4290,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4016,7 +4328,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4051,7 +4366,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4091,7 +4409,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4126,7 +4447,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4161,7 +4485,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4196,7 +4523,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4231,7 +4561,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4266,7 +4599,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4301,7 +4637,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4336,7 +4675,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4371,7 +4713,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4406,7 +4751,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4441,7 +4789,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4476,7 +4827,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4511,7 +4865,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4546,7 +4903,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4581,7 +4941,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4616,7 +4979,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4651,7 +5017,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4686,7 +5055,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4721,7 +5093,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4756,7 +5131,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4791,7 +5169,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4826,7 +5207,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4861,7 +5245,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4896,7 +5283,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4929,7 +5319,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -4972,7 +5365,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5009,7 +5405,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5052,7 +5451,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5073,7 +5475,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6188",
+        "scripts/build_site.py:6248",
         "site/history.html",
         "templates/history.html.j2"
       ],
@@ -5092,7 +5494,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.hong_kong",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is the Hong Kong regime right now?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5113,7 +5518,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_hk.py:1447",
+        "scripts/build_hk.py:1818",
         "site/hk.html",
         "templates/_navlinks.html.j2",
         "templates/hk.html.j2"
@@ -5135,7 +5540,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.hong_kong",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5156,7 +5564,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6040",
+        "scripts/build_site.py:6100",
         "site/hk_heatmap.html",
         "templates/_navlinks.html.j2",
         "templates/market_heatmap.html.j2"
@@ -5178,7 +5586,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5220,7 +5631,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5241,7 +5655,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_hk.py:1475",
+        "scripts/build_hk.py:1846",
         "site/hk_lookup.html",
         "templates/hk_lookup.html.j2"
       ],
@@ -5260,7 +5674,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.hong_kong",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5281,7 +5698,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_hk.py:1457",
+        "scripts/build_hk.py:1828",
         "site/hk_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/hk.html.j2"
@@ -5299,7 +5716,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -5343,7 +5763,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5384,7 +5807,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5419,7 +5845,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5460,7 +5889,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5501,7 +5933,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5543,7 +5978,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5584,7 +6022,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5623,7 +6064,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5663,7 +6107,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5698,7 +6145,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5738,7 +6188,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5770,7 +6223,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5800,7 +6256,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5833,7 +6292,16 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.brand",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false,
+        "governed_regions": [
+          {
+            "region": "body.page-macro",
+            "template": "templates/dashboard.html.j2"
+          }
+        ]
+      },
       "primary_user_question": "What is the macro regime right now?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5853,7 +6321,7 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_site.py:6287",
+        "scripts/build_site.py:6347",
         "site/macro.html",
         "templates/_navlinks.html.j2",
         "templates/dashboard.html.j2"
@@ -5873,7 +6341,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5914,7 +6385,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5935,7 +6409,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:5902",
+        "scripts/build_site.py:5962",
         "site/macro_signals.html",
         "templates/macro_signals.html.j2"
       ],
@@ -5955,7 +6429,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -5975,7 +6452,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_market_memory_page.py:39",
-        "scripts/build_site.py:6550",
+        "scripts/build_site.py:6610",
         "site/market_memory.html",
         "templates/_navlinks.html.j2",
         "templates/market_memory.html.j2"
@@ -5998,7 +6475,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6020,7 +6500,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "scripts/build_market_structure_page.py:121",
-        "scripts/build_site.py:6539",
+        "scripts/build_site.py:6599",
         "site/market_structure.html",
         "templates/_navlinks.html.j2",
         "templates/market_structure.html.j2"
@@ -6042,7 +6522,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6083,7 +6566,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -6126,7 +6612,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6166,7 +6655,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6206,7 +6698,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6244,7 +6739,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6278,7 +6776,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6319,7 +6820,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6340,7 +6844,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6479",
+        "scripts/build_site.py:6539",
         "site/neural_web.html",
         "templates/_navlinks.html.j2",
         "templates/neural_web.html.j2"
@@ -6360,7 +6864,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6381,7 +6888,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:5887",
+        "scripts/build_site.py:5947",
         "site/news.html",
         "templates/_navlinks.html.j2",
         "templates/news.html.j2"
@@ -6403,7 +6910,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6443,7 +6953,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6486,7 +6999,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6528,7 +7044,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "pricing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What do I get, and what does it cost?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6548,8 +7067,8 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_public_pages.py:116",
-        "scripts/build_site.py:3550",
+        "scripts/build_public_pages.py:122",
+        "scripts/build_site.py:3592",
         "site/plans.html",
         "templates/_public_nav.html.j2",
         "templates/plans.html.j2"
@@ -6569,7 +7088,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6610,7 +7132,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "footer.legal",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6641,7 +7166,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6671,7 +7199,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "marketing_landing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What products are there?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6702,7 +7233,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "marketing_landing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What do the dashboards cover?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6735,7 +7269,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "marketing_landing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is the Market Terminal and should I sign up?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6768,7 +7305,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "marketing_landing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What does the AI actually do for me?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6801,7 +7341,10 @@
       "access_shell": "unknown",
       "payload_tier": "internal",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -6843,7 +7386,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -6865,7 +7411,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "lib/seo.py:99",
-        "scripts/build_site.py:3397",
+        "scripts/build_site.py:3426",
         "site/quant_lab.html",
         "templates/quant_lab.html.j2"
       ],
@@ -6886,7 +7432,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6925,7 +7474,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -6965,7 +7517,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7005,7 +7560,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7045,7 +7603,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7085,7 +7646,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7125,7 +7689,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7167,7 +7734,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7208,7 +7778,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7231,7 +7804,7 @@
         "templates/research_report.html.j2"
       ],
       "notes": [
-        "989 committed pages under site/research/"
+        "1016 committed pages under site/research/"
       ]
     },
     {
@@ -7247,7 +7820,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7285,7 +7861,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What has the research desk published?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7328,7 +7907,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7367,7 +7949,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7406,7 +7991,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7446,7 +8034,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7487,7 +8078,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.china",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7528,7 +8122,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7569,7 +8166,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7610,7 +8210,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7631,7 +8234,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6001",
+        "scripts/build_site.py:6061",
         "site/sector_heatmap.html",
         "templates/sector_heatmap.html.j2"
       ],
@@ -7652,7 +8255,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7670,8 +8276,8 @@
       "known_contracts": [],
       "open_prs": [],
       "source_evidence": [
-        "scripts/build_canada.py:652",
-        "scripts/build_china.py:544",
+        "scripts/build_canada.py:660",
+        "scripts/build_china.py:545",
         "scripts/build_hk.py:286",
         "site/sectors/",
         "templates/canada_sector.html.j2"
@@ -7694,7 +8300,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -7716,7 +8325,7 @@
       "source_evidence": [
         "config/site_access.yml:1",
         "lib/seo.py:99",
-        "scripts/build_site.py:3375",
+        "scripts/build_site.py:3404",
         "site/signal_lab.html",
         "templates/signal_lab.html.j2"
       ],
@@ -7737,7 +8346,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7779,7 +8391,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7812,7 +8427,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7853,7 +8471,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.other_assets",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7892,7 +8513,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7934,7 +8558,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -7978,6 +8605,9 @@
       "payload_tier": "public",
       "nav_family": "product_nav.brand",
       "archetype": "command_center",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "Where do I start today?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8014,7 +8644,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8035,7 +8668,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6528",
+        "scripts/build_site.py:6588",
         "scripts/build_state_of_themes.py:1519",
         "site/state_of_themes.html",
         "templates/_navlinks.html.j2",
@@ -8056,7 +8689,10 @@
       "access_shell": "unknown",
       "payload_tier": "internal",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -8090,7 +8726,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8111,7 +8750,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6198",
+        "scripts/build_site.py:6258",
         "site/stock.html",
         "templates/stock.html.j2"
       ],
@@ -8130,7 +8769,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8169,7 +8811,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8202,7 +8847,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8235,7 +8883,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8278,7 +8929,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8325,7 +8979,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8372,7 +9029,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8419,7 +9079,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8466,7 +9129,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8513,7 +9179,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8560,7 +9229,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8607,7 +9279,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8654,7 +9329,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8701,7 +9379,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8748,7 +9429,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8795,7 +9479,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8842,7 +9529,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8889,7 +9579,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8936,7 +9629,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -8984,7 +9680,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9034,7 +9733,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9084,7 +9786,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9133,7 +9838,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9180,7 +9888,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9227,7 +9938,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9274,7 +9988,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9321,7 +10038,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9368,7 +10088,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9415,7 +10138,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9462,7 +10188,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9509,7 +10238,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9556,7 +10288,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9603,7 +10338,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9650,7 +10388,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9697,7 +10438,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9744,7 +10488,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9791,7 +10538,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9839,7 +10589,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9889,7 +10642,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9939,7 +10695,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -9988,7 +10747,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10035,7 +10797,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10082,7 +10847,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10129,7 +10897,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10176,7 +10947,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10223,7 +10997,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10270,7 +11047,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10317,7 +11097,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10364,7 +11147,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10411,7 +11197,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10454,7 +11243,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10484,7 +11276,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10514,7 +11309,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10546,7 +11344,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10566,7 +11367,7 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6057",
+        "scripts/build_site.py:6117",
         "site/subsector_rotation.html",
         "templates/subsector_rotation.html.j2"
       ],
@@ -10585,7 +11386,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10605,8 +11409,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6082",
-        "scripts/build_site.py:6096",
+        "scripts/build_site.py:6142",
+        "scripts/build_site.py:6156",
         "site/subsector_rotation_china.html",
         "templates/subsector_rotation_china.html.j2"
       ],
@@ -10623,7 +11427,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10655,7 +11462,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10695,7 +11505,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10736,7 +11549,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10755,8 +11571,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_public_pages.py:117",
-        "scripts/build_site.py:3570",
+        "scripts/build_public_pages.py:130",
+        "scripts/build_site.py:3616",
         "site/support.html",
         "templates/_public_nav.html.j2",
         "templates/support.html.j2"
@@ -10776,7 +11592,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -10817,7 +11636,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "footer.legal",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10848,7 +11670,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10878,7 +11703,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "public_nav.public",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10911,7 +11739,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10949,7 +11780,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.international",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -10985,7 +11819,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11004,8 +11841,8 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_public_pages.py:121",
-        "scripts/build_site.py:3593",
+        "scripts/build_public_pages.py:134",
+        "scripts/build_site.py:3639",
         "site/unsubscribe.html",
         "templates/unsubscribe.html.j2"
       ],
@@ -11026,7 +11863,16 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "ranked_decision_board",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false,
+        "governed_regions": [
+          {
+            "region": "body.page-stocks",
+            "template": "templates/dashboard.html.j2"
+          }
+        ]
+      },
       "primary_user_question": "Which US stocks are set up right now?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11046,8 +11892,8 @@
       "source_evidence": [
         "config/site_access.yml",
         "config/site_access.yml:1",
-        "scripts/build_site.py:5892",
-        "scripts/build_site.py:6288",
+        "scripts/build_site.py:5952",
+        "scripts/build_site.py:6348",
         "site/us_stocks.html",
         "templates/_navlinks.html.j2",
         "templates/dashboard.html.j2"
@@ -11067,7 +11913,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -11111,7 +11960,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "discovery_board",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "lab",
@@ -11154,7 +12006,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11192,7 +12047,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -11228,7 +12086,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "instrument_analyzer",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11270,7 +12131,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11311,7 +12175,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.research",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11332,13 +12199,14 @@
       "open_prs": [],
       "source_evidence": [
         "config/site_access.yml:1",
-        "scripts/build_site.py:6337",
+        "scripts/build_site.py:6397",
         "site/watchlist.html",
         "templates/_navlinks.html.j2",
         "templates/watchlist.html.j2"
       ],
       "notes": [
-        "excluded from the core sitemap (lib/seo.py _EXCLUDE_NAMES)"
+        "excluded from the core sitemap (lib/seo.py _EXCLUDE_NAMES)",
+        "pending IA §10.4 Sol ruling — archetype may move on the ruling"
       ]
     },
     {
@@ -11352,7 +12220,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "intelligence_desk",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11394,7 +12265,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "product_nav.united_states",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11435,7 +12309,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11467,7 +12344,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -11501,7 +12381,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "internal",
@@ -11536,7 +12419,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "regime_dashboard",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11568,7 +12454,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is the desk holding and why?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11601,7 +12490,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11634,7 +12526,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "unknown",
-      "archetype": "unclassified",
+      "archetype": "monitor",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11667,7 +12562,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "marketing_landing",
+      "archetype": "marketing",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11704,7 +12602,10 @@
       "access_shell": "admin",
       "payload_tier": "unknown",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11742,7 +12643,10 @@
       "access_shell": "signed_in",
       "payload_tier": "unknown",
       "nav_family": "app_nav.rail",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11781,7 +12685,10 @@
       "access_shell": "signed_in",
       "payload_tier": "unknown",
       "nav_family": "app_nav.rail",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11820,7 +12727,10 @@
       "access_shell": "unknown",
       "payload_tier": "unknown",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "dev_only",
@@ -11857,7 +12767,10 @@
       "access_shell": "unknown",
       "payload_tier": "unknown",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "dev_only",
@@ -11894,7 +12807,10 @@
       "access_shell": "signed_in",
       "payload_tier": "unknown",
       "nav_family": "app_nav.rail",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is worth looking at right now?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11933,7 +12849,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -11970,7 +12889,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "editorial",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -12007,7 +12929,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "utility",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -12043,7 +12968,10 @@
       "access_shell": "paid",
       "payload_tier": "premium",
       "nav_family": "app_nav.rail",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "Where is the options market positioned?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -12085,7 +13013,10 @@
       "access_shell": "signed_in",
       "payload_tier": "unknown",
       "nav_family": "app_nav.rail",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "How is my book doing?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -12124,7 +13055,10 @@
       "access_shell": "signed_in",
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "app_nav.rail",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",
@@ -12166,6 +13100,9 @@
       "payload_tier": "public_shell_premium_payload",
       "nav_family": "app_nav.rail",
       "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "What is this instrument doing?",
       "owner": "unowned",
       "lifecycle": "live",
@@ -12204,7 +13141,10 @@
       "access_shell": "anonymous",
       "payload_tier": "public",
       "nav_family": "none",
-      "archetype": "unclassified",
+      "archetype": "chart_workspace",
+      "design_system": {
+        "compliant": false
+      },
       "primary_user_question": "",
       "owner": "unowned",
       "lifecycle": "live",

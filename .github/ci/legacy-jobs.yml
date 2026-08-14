@@ -2709,6 +2709,17 @@ jobs:
         run: python3 scripts/check_validated_claims.py --selftest
       - name: no unearned 'validated' claims in user-facing surfaces
         run: python3 scripts/check_validated_claims.py
+      # design.system_ratchet (R0, REPORT-ONLY — always exits 0). Hosted here and
+      # not in a job of its own for two reasons: a 181st manifest entry reds the
+      # ci_pack narrow-diff ceiling, and this job ALREADY owns templates/** in the
+      # derived scope, so the step costs the selector nothing. The checker is
+      # stdlib-only, hence no pip install. R1 (blocking) is a later PR that flips
+      # the registry severity AND swaps `--mode report` for `--mode enforce
+      # --registry data/...` in lockstep — never one without the other.
+      - name: design-system ratchet selftest (each rule fires on its own fixture)
+        run: python3 scripts/check_design_system.py --self-check
+      - name: design-system ratchet R0 (report-only drift census over templates/)
+        run: python3 scripts/check_design_system.py --mode report
 
   template-site-sync:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
@@ -7628,6 +7639,14 @@ jobs:
         run: pip install pytest pyyaml
       - name: page registry — committed-JSON drift guard + derivation contracts
         run: TZ=UTC python -m pytest tests/test_build_product_page_registry.py -q
+      # DS-PR-1 suites, appended rather than given their own manifest entry: a
+      # 181st job reds tests/test_ci_pack.py's narrow-diff ceiling, and both
+      # suites' scopes (templates/**, the registry builder, the committed JSON)
+      # are already inside this job's honestly-broad derived scope.
+      - name: design-system — registry schema + archetype vocabulary
+        run: TZ=UTC python -m pytest tests/test_page_registry_design_system.py -q
+      - name: design-system — ratchet rules, modes and annotation shape
+        run: TZ=UTC python -m pytest tests/test_check_design_system.py -q
 
   product-experience-capture:
     if: ${{ false }}
