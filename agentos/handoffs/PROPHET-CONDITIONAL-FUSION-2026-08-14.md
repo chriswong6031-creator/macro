@@ -7,7 +7,7 @@ prs:
   - "#5593"
   - "#5602"
   - "#5604"
-  - "#PR1B"
+  - "#5667"
 mission: >
   PR-1b: the frozen, counterfactual-replay-labelled, NON-promotion-bearing baseline
   race — G0/G0'/G1/G2/G3/G4 + C1 on the graded-board frame with the frozen O1-O6
