@@ -691,6 +691,29 @@ def is_base_branch_modified(detail: str) -> bool:
     return "base branch was modified" in " ".join(str(detail or "").lower().split())
 
 
+def is_content_conflict_detail(detail: str) -> bool:
+    """Affirmative conflict language on a merge or update-branch response."""
+    normalized = " ".join(str(detail or "").lower().split())
+    return "merge conflict" in normalized or "merge conflicts" in normalized
+
+
+def is_retryable_base_tick(
+    detail: str, freshness: "ProofFreshness", live_sha: str
+) -> bool:
+    """True when a refused squash is a skip-ci/data tick, not a content conflict.
+
+    Skip-ci wire ticks move main every 15-30 minutes. GitHub then answers 405/409
+    ("not mergeable" / "base branch was modified") on a still-clean tree. Treating
+    that as stale-proof or `merge-blocked` recreates the drain jam: update-branch
+    re-proves the head, the next tick lands, and the queue never empties.
+    """
+    if is_content_conflict_detail(detail):
+        return False
+    if is_base_branch_modified(detail):
+        return True
+    return freshness.sha_is_skip_ci_tick(live_sha)
+
+
 def never_auto_merge_number(number: Any) -> bool:
     try:
         return int(number) in NEVER_AUTO_MERGE_PULLS
@@ -1155,6 +1178,50 @@ class ProofFreshness:
         self.commits.insert(0, {"sha": sha, "message": message})
         self._commit_files[sha] = (list(files or []), False)
         self._proof_bound_sha = None
+
+    def sha_is_skip_ci_tick(self, sha: str) -> bool:
+        """True when ``sha`` itself carries the ``[skip ci]`` marker.
+
+        File-only data/site bakes are intentionally excluded. 82% of main
+        commits are pipeline bakes; treating those as a generic-409 retry
+        would swallow a real content conflict whenever the tip happened to
+        be a render/nightly (the existing conflict fixture). Wire ticks
+        always stamp ``[skip ci]`` in the message.
+        """
+        wanted = str(sha or "").lower()
+        if not wanted:
+            return False
+        for commit in self.commits:
+            if str(commit.get("sha") or "").lower() != wanted:
+                continue
+            return skip_ci_in_message(str(commit.get("message") or ""))
+        # Unknown SHA: only the marker, never a file-only bake. A render tip
+        # that is not in the frozen window must not launder a real 409.
+        tip = self.snapshot_tip
+        if not tip:
+            return False
+        encoded_tip = urllib.parse.quote(tip, safe="")
+        encoded_live = urllib.parse.quote(sha, safe="")
+        try:
+            status, payload = _request(
+                "GET",
+                f"{GITHUB_API}/repos/{self.repo}/compare/"
+                f"{encoded_tip}...{encoded_live}?per_page=100",
+                self.token,
+            )
+        except Exception:
+            return False
+        if status >= 400 or not isinstance(payload, dict):
+            return False
+        commits = payload.get("commits")
+        if not isinstance(commits, list) or not commits:
+            return False
+        return all(
+            skip_ci_in_message(
+                str((((entry or {}).get("commit") or {}).get("message")) or "")
+            )
+            for entry in commits
+        )
 
     def live_sha_is_skip_ci_current(self, live_sha: str) -> bool:
         """True if ``live_sha`` is the snapshot tip or only skip-ci ticks ahead.
@@ -5056,6 +5123,20 @@ def sweep_pull(
             return "lease-rotation-deferred"
         return reprove(repo, pull, reason, read_token, merge_token, budget)
     print(f"PR #{number}: proof still current — {reason}.", flush=True)
+    if MERGE_BLOCKED_LABEL in label_names(pull):
+        # A prior wake stamped merge-blocked (packing-leak inherited red, a
+        # skip-ci-only behind, a since-healed base). Current concluded checks
+        # have no genuine own-red and the proof is still current, so the label
+        # is stale: drop it in this same wake before the squash.
+        clear_blocked(repo, pull, merge_token)
+        pull = {
+            **pull,
+            "labels": [
+                label
+                for label in (pull.get("labels") or [])
+                if str((label or {}).get("name") or "") != MERGE_BLOCKED_LABEL
+            ],
+        }
 
     # THE CLOBBERED-HEAD INVARIANT (the 2026-08-09 phantom merges: #5055 #5061
     # #5078 #5091 — module docstring; #5074 in the same drain was not one).
@@ -5248,14 +5329,21 @@ def sweep_pull(
         return finish_ambiguous_merge(f"HTTP {status}: {message}")
 
     merge_detail = str((body or {}).get("message") or f"HTTP {status}")
-    if status in {405, 409} and is_base_branch_modified(merge_detail):
+    retryable_tick = status in {405, 409} and is_retryable_base_tick(
+        merge_detail, freshness, final_main_sha
+    )
+    if retryable_tick:
         # Data ticks and a sibling squash in this same sweep move main. GitHub
-        # answers 405 "Base branch was modified" while the tree is still clean.
-        # Retry once immediately; a second 405 is not a content conflict.
+        # answers 405 "Base branch was modified" or a generic 409 "not mergeable"
+        # while the tree is still clean (only [skip ci] / data/site since the
+        # proof). Retry once immediately; a second tick-shaped refusal is not a
+        # content conflict and must not force update-branch (that re-proves
+        # forever as the next wire tick lands) or `merge-blocked`.
         _annotate(
             "notice",
             "merge-on-green",
-            f"PR #{number}: squash merge hit 405 base-modified; retrying once.",
+            f"PR #{number}: squash merge hit HTTP {status} on a skip-ci/data "
+            "tick; retrying once.",
         )
         try:
             status, body = put_squash_merge()
@@ -5265,15 +5353,19 @@ def sweep_pull(
             message = str((body or {}).get("message") or f"HTTP {status}")
             return finish_ambiguous_merge(f"HTTP {status} on base-modified retry: {message}")
         merge_detail = str((body or {}).get("message") or f"HTTP {status}")
-        if status in {405, 409} and is_base_branch_modified(merge_detail):
+        live_tip = live_main_sha(repo, read_token) or final_main_sha
+        if status in {405, 409} and is_retryable_base_tick(
+            merge_detail, freshness, live_tip
+        ):
             settled, how = already_settled(repo, number, read_token)
             if settled:
                 return f"already-{how}"
+            clear_blocked(repo, pull, merge_token)
             _annotate(
                 "notice",
                 "merge-on-green",
-                f"PR #{number}: squash still 405 base-modified after one retry; "
-                "leaving it armed and continuing the drain.",
+                f"PR #{number}: squash still HTTP {status} after one skip-ci/data "
+                "retry; leaving it armed (not merge-blocked) and continuing the drain.",
             )
             return "base-modified"
 
