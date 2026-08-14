@@ -60,22 +60,23 @@ could contribute to blocking the fleet would be a bad trade for a few minutes of
 Reproduce it exactly:
 
 ```bash
-python3 scripts/agentos.py brief --now 2026-08-14T19:00:00Z --since 7d --no-remember
+python3 scripts/agentos.py brief --now 2026-08-14T19:00:00Z --since 7d --no-remember \
+  | sed -E 's/[0-9]+ worktrees/<live> worktrees/g'
 ```
 
 ```
 MASTERMIND STATUS — 2026-08-14 19:00 UTC
 since the last 7d (2026-08-07 19:00 UTC, 168h ago)
 
-  9 workstreams:  7 active · 0 awaiting CI · 2 blocked · 7 done this window
-  Inputs: active_builds 16h old · 242 worktrees
+  12 workstreams:  10 active · 0 awaiting CI · 2 blocked · 7 done this window
+  Inputs: active_builds 16h old · <live> worktrees
   ⚠ DEGRADED (3) — this brief is incomplete:
       active_builds.v1 merged window is TRUNCATED — a merged PR may
       read 'unknown'
       mastermind:config/strategic_state.yml absent from the working
       tree — read from local ref origin/HEAD (stale Mastermind
       checkout; p0_active uses the ref copy)
-      uncommitted-work scan skipped over 242 worktrees (one `git
+      uncommitted-work scan skipped over <live> worktrees (one `git
       status` each) — re-run with --scan-uncommitted for stranded
       work
 
@@ -115,11 +116,11 @@ since the last 7d (2026-08-07 19:00 UTC, 168h ago)
 
 ━━ RUNNING (no action needed) ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
- 7 active · 0 awaiting CI · 0 awaiting review · 0 proposed.
+ 10 active · 0 awaiting CI · 0 awaiting review · 0 proposed.
  1 open PR(s) cited by a wave. 0 stale claim(s); 0 claim(s) with no live worktree.
                                      → agentos.py brief --full
 
- 8 hygiene warning(s) — agentos.py brief --full
+ 16 hygiene warning(s) — agentos.py brief --full
 
 ```
 
@@ -131,7 +132,9 @@ that disagrees with the artifact is worse than no example, because it teaches th
 a shape the tool does not produce. Regenerate this block whenever the format changes.
 
 **Current source truth.** This block was regenerated from the Phase 2b worktree and authored
-store on 2026-08-14 by the printed pinned command; it is not a hand-adjusted illustration.
+store on 2026-08-14 by the printed pinned pipeline; it is not a hand-adjusted illustration.
+The pipeline normalizes only the volatile live-worktree census so the promised exact replay
+does not change when an unrelated checkout is added or removed.
 The parent brief's DEGRADED block truthfully records a truncated PR join, P0 read from the
 Mastermind clone's local ref, and the intentionally skipped deep worktree scan. Those auxiliary
 facts do not contaminate the machine-only `readiness.degraded` envelope. Regenerate the whole

@@ -60,13 +60,11 @@ so nothing is lost by regenerating less often except recency, and recency is exa
 thing the artifact prints about itself.
 
 The partition matters here. `generated_at`, `inputs.worktrees`,
-`inputs.active_builds_age_hours` and parent `inputs.degraded` live in an envelope that is
-excluded from the byte-identity comparison; workstream records, `needs_ceo`, warnings,
-and the identity-sorted `agentos.readiness.v1` envelope are the pure part. Readiness
-degradation is pure because it is restricted to invalid workstream authoring, never
-volatile PR/P0/worktree joins. Without that split the test would need a frozen clock to
-say anything at all, and a frozen clock would hide real nondeterminism in the records
-themselves. The former `start_next` surface was retired by Phase 2b.
+`inputs.active_builds_age_hours` and `inputs.degraded` live in an envelope that is
+excluded from the byte-identity comparison; the records, needs_ceo, start_next and
+warnings sections are the pure part. Without that split the test would need a frozen
+clock to say anything at all, and a frozen clock would hide real nondeterminism in the
+records themselves.
 
 ## What would reverse this
 
