@@ -3859,9 +3859,6 @@ owner_program_dispositions:
   standout-accountability:
     disposition: subprogram_of
     program: prophet
-  stock-identity:
-    disposition: subprogram_of
-    program: market-timing-intelligence
   stock-personality:
     disposition: subprogram_of
     program: market-timing-intelligence
