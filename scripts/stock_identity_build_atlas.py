@@ -81,6 +81,9 @@ CALIBRATION_LOOKBACK_SESSIONS = 126
 
 # --- pilot cohort, registration §2 -------------------------------------------
 OPERATOR_CORE = ("KRUS", "MCK", "NVDA", "REGN", "YELP", "KO", "WMT", "MCD", "BABA")
+# SEALED HISTORICAL RECIPE.  Do not replace GOLD with B here: this tuple reproduces
+# PR #5612.  Post-A1 analytical consumers use engine.stock_identity.pilot's validated
+# effective roster; the append-only builder writes B separately and never redraws W1.
 MINER_PROBE = ("NEM", "GOLD", "AEM", "PAAS", "WPM", "AG")
 DISAGREEMENT = ("UEC", "HL")
 STRESSORS = ("MSFT", "META")

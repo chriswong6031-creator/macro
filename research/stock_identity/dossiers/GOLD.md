@@ -2,6 +2,22 @@
 
 Descriptive behavioral read. **Zero authority**: nothing on this page ranks, sizes, gates, originates a signal, or escalates. No expert content exists in W1 by law. Episode *resolutions* use future data by design — they are a research-time labeling instrument, never a live surface.
 
+<!-- SI-W1-A1-GOLD-WRONG-ISSUER:BEGIN -->
+> **Post-seal identity annotation — W1-A1, 2026-08-14.** The sealed figures
+> below describe **Gold.com, Inc.** (fka A-Mark Precious Metals; EDGAR CIK
+> **1591588**), a bullion dealer whose A-Mark tape begins 2014-03-17 and moved
+> from `AMRK` to NYSE `GOLD` on 2025-12-02. They do **not** describe Barrick
+> and are not miner-neighborhood evidence. **Barrick Mining Corporation**
+> (EDGAR CIK **756894**) has traded as NYSE `B` since 2025-05-09; the registered
+> B-only W1-A1 addendum is the effective miner-probe record.
+>
+> Preregistration discipline: the historical `miner neighborhood probe` row
+> and false `continuous Barrick history` hygiene row below remain byte-for-byte
+> as superseded sealed output. No measured GOLD row, value, episode, state,
+> percentile, census cell, or chart was changed. Removing this marked envelope
+> reconstructs the original dossier exactly; `GOLD.svg` is unchanged.
+<!-- SI-W1-A1-GOLD-WRONG-ISSUER:END -->
+
 ## Identity
 
 | field | value |
