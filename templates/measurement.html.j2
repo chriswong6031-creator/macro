@@ -1745,6 +1745,130 @@ body{margin:0;padding-top:24px;background:var(--bg);color:var(--text)}
 
   </section>{# end #eg-section #}
 
+  {# ── ETF BOARD FORWARD WINDOWS (ETF page masterplan §3 W3) ────────────────
+       Below the fold, display tier, context only. Self-defaulting so the panel
+       renders in ANY context: a measurement surface that only appears once it
+       has something flattering to say is not a measurement surface. Windows
+       language throughout — these are projections re-drawn nightly, never a
+       verdict, and the board's own ranking does not read this record. #}
+  {% set etf_board_windows = etf_board_windows | default(none) %}
+  {% set efw = etf_board_windows or {'state': 'collecting', 'benchmark': 'SPY',
+                                     'horizons': [], 'rows': [],
+                                     'n_boards_logged': 0, 'n_graded_total': 0} %}
+  <section class="mh-section" id="efw-section">
+    <div class="mh-sh">
+      <h2><span class="l-en">Fund Flows Board — Forward Windows</span><span class="l-zh">资金流向榜 — 前瞻窗口</span></h2>
+      <span class="mh-sh-sub">
+        <span class="l-en">What the consensus board's names did afterwards, against {{ efw.benchmark }}</span>
+        <span class="l-zh">共识榜个股此后的表现，对比 {{ efw.benchmark }}</span>
+      </span>
+    </div>
+
+    <p class="eg-note">
+      <span class="l-en">Forward windows, re-drawn nightly. Every night the Fund Flows page publishes a
+      consensus board; the nightly ledger writes down exactly what it published, then fills in what those
+      names did once each window closes — outright and against {{ efw.benchmark }}. Windows close 5, 21 and
+      63 trading sessions after a board is logged. <strong>{{ efw.n_boards_logged }}</strong> board date{{ '' if efw.n_boards_logged == 1 else 's' }}
+      logged{% if efw.as_of %} through {{ efw.as_of }}{% endif %}. Context only — the board's ranking does not
+      read this record, and nothing here sizes or gates anything.</span>
+      <span class="l-zh">前瞻窗口，每夜重绘。资金流向页每晚发布一份共识榜；夜间台账原样记录当晚所发布的内容，
+      待每个窗口收官后再补入这些个股的表现——绝对涨跌，以及相对 {{ efw.benchmark }} 的差额。窗口分别在登记后的
+      5、21、63 个交易日收官。已登记 <strong>{{ efw.n_boards_logged }}</strong> 个榜单日期{% if efw.as_of %}，截至 {{ efw.as_of }}{% endif %}。
+      仅作背景参考——榜单排序不读取本记录，此处也不参与任何仓位或门槛。</span>
+    </p>
+
+    {% if efw.state != 'open' %}
+    <div class="eg-accrual-banner">
+      <strong><span class="l-en">Collecting — no window has closed yet.</span><span class="l-zh">积累中——尚无窗口收官。</span></strong>
+      <span class="l-en">The first windows mature 5 trading sessions after the first board is logged; the
+      21- and 63-session windows follow. Until a window closes there is nothing to report, and an empty
+      panel says so rather than filling the space.</span>
+      <span class="l-zh">首批窗口在首个榜单登记后的 5 个交易日成熟，21 与 63 个交易日的窗口随后跟进。
+      窗口收官前无内容可报，空面板如实说明，而非填充版面。</span>
+    </div>
+    {% endif %}
+
+    <div class="mh-metric-grid">
+      {% for h in efw.horizons %}
+      <div class="mh-metric">
+        <div class="mh-metric-label">
+          <span class="l-en">{{ h.label_en }}</span><span class="l-zh">{{ h.label_zh }}</span>
+        </div>
+        {% if h.n_graded %}
+        <div class="mh-metric-val">{{ h.median_excess_str }}</div>
+        <div class="mh-metric-ci">
+          <span class="l-en">median vs {{ efw.benchmark }} · {{ h.n_graded }} graded row{{ '' if h.n_graded == 1 else 's' }} from {{ h.n_boards }} board date{{ '' if h.n_boards == 1 else 's' }}</span>
+          <span class="l-zh">相对 {{ efw.benchmark }} 中位数 · 来自 {{ h.n_boards }} 个榜单日期的 {{ h.n_graded }} 行已打分记录</span>
+        </div>
+        <div class="mh-metric-note">
+          <span class="l-en">{{ h.ahead_str }} ahead of {{ efw.benchmark }} · outright median {{ h.median_ret_str }} · {{ h.n_pending }} window{{ '' if h.n_pending == 1 else 's' }} still open</span>
+          <span class="l-zh">{{ h.ahead_str }} 跑赢 {{ efw.benchmark }} · 绝对中位数 {{ h.median_ret_str }} · 仍有 {{ h.n_pending }} 个窗口未收官</span>
+        </div>
+        {% else %}
+        <div class="mh-metric-val">—</div>
+        <div class="mh-metric-ci">
+          <span class="l-en">collecting — {{ h.n_pending }} window{{ '' if h.n_pending == 1 else 's' }} still open</span>
+          <span class="l-zh">积累中——仍有 {{ h.n_pending }} 个窗口未收官</span>
+        </div>
+        <div class="mh-metric-note">
+          <span class="l-en">A window closes {{ h.horizon }} trading sessions after its board is logged. Nothing to report until one does.</span>
+          <span class="l-zh">窗口在其榜单登记后的 {{ h.horizon }} 个交易日收官，在此之前无内容可报。</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if efw.pooling_note %}
+    <div class="mh-metric-note" style="margin-top:8px">
+      <span class="l-en">{{ efw.pooling_note.en }}</span>
+      <span class="l-zh">{{ efw.pooling_note.zh }}</span>
+    </div>
+    {% endif %}
+
+    {% if efw.rows %}
+    <div class="eg-table-wrap" style="margin-top:16px">
+      <table class="eg-table">
+        <thead>
+          <tr>
+            <th><span class="l-en">Board date</span><span class="l-zh">榜单日期</span></th>
+            <th><span class="l-en">Name</span><span class="l-zh">标的</span></th>
+            <th><span class="l-en">Board rank</span><span class="l-zh">榜单名次</span></th>
+            <th><span class="l-en">Funds adding</span><span class="l-zh">加仓基金数</span></th>
+            <th><span class="l-en">Window</span><span class="l-zh">窗口</span></th>
+            <th><span class="l-en">Move</span><span class="l-zh">涨跌</span></th>
+            <th><span class="l-en">vs {{ efw.benchmark }}</span><span class="l-zh">对比 {{ efw.benchmark }}</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in efw.rows %}
+          <tr>
+            <td class="eg-mono eg-ts">{{ r.as_of }}</td>
+            <td class="eg-mono">{{ r.ticker }}</td>
+            <td class="eg-num">{{ r.rank if r.rank is not none else '—' }}</td>
+            <td class="eg-num">{{ r.n_accum if r.n_accum is not none else '—' }}</td>
+            <td class="eg-num">{{ r.horizon }}d</td>
+            <td class="eg-num">{{ r.ret_str }}</td>
+            <td class="eg-num">{{ r.excess_str }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endif %}
+
+    <div class="eg-footnote">
+      <span class="l-en">Source: <code>site/factordata/etf_board_track.json</code>, written by
+      <code>scripts/grade_etf_board.py</code> on the nightly lane only (nightly is the sole advancer of
+      forward ledgers). Entry is the next session's close after the board date; the benchmark leg prices on
+      the same adjusted-first ladder, so the difference is a like-for-like one. Rows whose window has not
+      closed stay open and unscored — never counted as flat.</span>
+      <span class="l-zh">来源：<code>site/factordata/etf_board_track.json</code>，仅由夜间通道的
+      <code>scripts/grade_etf_board.py</code> 写入（夜间通道是前瞻台账的唯一推进者）。入场价取榜单日期次一交易日收盘价；
+      基准腿使用同一"复权优先"价格阶梯，因此差额为同口径比较。窗口未收官的记录保持未打分状态——绝不计为持平。</span>
+    </div>
+  </section>{# end #efw-section #}
+
   {# ── PROVENANCE FOOTER ────────────────────────────────────────────────── #}
   <div class="mh-provenance">
     <div class="mh-prov-title"><span class="l-en">Provenance</span><span class="l-zh">来源溯源</span></div>
