@@ -2649,6 +2649,34 @@ def test_structural_preflight_refuses_unknown_non_executable_ownership(
     assert result["metrics"]["unowned_non_executable_paths"] == 1
 
 
+def test_structural_preflight_refuses_symlink_inside_established_surface(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    engine = root / "engine"
+    actual = engine / "actual"
+    actual.mkdir(parents=True)
+    (actual / "mod.py").write_text("VALUE = 1\n", encoding="utf-8")
+    link = engine / "future"
+    link.symlink_to("actual")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+
+    result = PREFLIGHT.run_preflight(root, ["engine/future"])
+
+    assert result["status"] == "fail"
+    assert _finding_codes(result) == {"unsupported_tree_entry"}
+    assert result["checks"]["ownership"]["status"] == "fail"
+    assert result["metrics"]["unsupported_tree_entries"] == 1
+
+
 def test_structural_preflight_refuses_unwired_changed_pytest_suite(
     tmp_path: Path,
 ) -> None:
@@ -2738,7 +2766,7 @@ def test_structural_preflight_treats_sparse_symlink_as_executable_indirection(
     result = PREFLIGHT.run_preflight(root, ["newroot/tool"])
 
     assert result["status"] == "fail"
-    assert "unknown_executable_ownership" in _finding_codes(result)
+    assert "unsupported_tree_entry" in _finding_codes(result)
 
 
 def test_structural_preflight_treats_pathspec_magic_as_literal_git_path(
@@ -2821,7 +2849,7 @@ def test_structural_preflight_git_metadata_error_is_not_deletion(
     result = PREFLIGHT.run_preflight(root, ["engine/unreadable.py"])
 
     assert result["status"] == "fail"
-    assert "changed_blob_unreadable" in _finding_codes(result)
+    assert "changed_tree_entry_unreadable" in _finding_codes(result)
 
 
 @pytest.mark.parametrize(

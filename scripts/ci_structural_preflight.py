@@ -602,6 +602,7 @@ def run_preflight(
         "known_executable_paths": 0,
         "manifest_jobs": 0,
         "passive_paths": 0,
+        "unsupported_tree_entries": 0,
         "unowned_non_executable_paths": 0,
         "workflow_files_checked": 0,
     }
@@ -842,6 +843,35 @@ def run_preflight(
                 )
 
     for rel in changed:
+        try:
+            materialized_mode = (root / rel).lstat().st_mode
+        except OSError:
+            materialized_mode = None
+        head_mode = _git_head_mode(root, rel)
+        submitted_mode = head_mode if head_mode is not None else materialized_mode
+        if submitted_mode is None:
+            presence = _git_head_contains(root, rel)
+            if presence is not False:
+                findings.append(
+                    _finding(
+                        "changed_tree_entry_unreadable",
+                        "planner_configuration_failure",
+                        "changed path exists or may exist in HEAD but its tree mode could not be proven",
+                        path=rel,
+                    )
+                )
+                continue
+        elif not stat.S_ISREG(submitted_mode):
+            metrics["unsupported_tree_entries"] += 1
+            findings.append(
+                _finding(
+                    "unsupported_tree_entry",
+                    "planner_configuration_failure",
+                    "changed path is a symlink, gitlink, or other non-regular tree entry",
+                    path=rel,
+                )
+            )
+            continue
         if _matches_any(PASSIVE_UNOWNED_PATTERNS, rel):
             metrics["passive_paths"] += 1
             continue
@@ -928,8 +958,10 @@ def run_preflight(
     }
     test_codes = {"changed_test_unreadable", "unwired_changed_test"}
     ownership_codes = {
+        "changed_tree_entry_unreadable",
         "unknown_executable_ownership",
         "unknown_path_ownership",
+        "unsupported_tree_entry",
     }
     conflict_codes = {"changed_blob_unreadable", "conflict_marker"}
     dependency_signature_codes = {
