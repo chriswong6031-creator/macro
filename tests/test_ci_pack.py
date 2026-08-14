@@ -351,13 +351,16 @@ def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
     pull requests that can break it, and reports green forever.
 
     The roots reach the job on the OPAQUE tier: an `rglob("*.py")` is the
-    textbook `fallback_paths` claim (#5586 split provenance out of `paths`), so
-    what this asserts is the surface `_job_diff_match` actually consults, never
-    one tier of it. Reading `paths` alone reported the tier split ITSELF as the
-    narrowing — after the split that field holds `tests/test_all_exports_resolve.py`
-    and nothing else, which is precisely the scanner suite's own import closure
-    this test is named for. Do not re-narrow it to a single tier: the tier a root
-    lands on is an explanation, and only selection is a contract.
+    textbook `fallback_paths` claim (#5586 split provenance out of `paths`).
+    Reading `paths` alone reported the tier split ITSELF as the narrowing —
+    after the split that field holds `tests/test_all_exports_resolve.py` and
+    nothing else, which is precisely the scanner suite's own import closure
+    this test is named for.
+
+    The tier is also observable behavior, not merely an explanation: owned
+    paths match before passive-file suppression, while fallback paths must not
+    select narrative Markdown. Pin both the executable selection and the
+    passive-file exclusion so a later refactor cannot silently undo #5586.
     """
     scan_dirs = _declared_scan_dirs("tests/test_all_exports_resolve.py")
     assert len(scan_dirs) >= 8, scan_dirs
@@ -374,9 +377,13 @@ def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
     # reads correct and runs never. A NEW module under a scanned root is the
     # case that matters most — that is where an unbound `__all__` name is born.
     for root in scan_dirs:
+        assert f"{root}/**" in export_guard.fallback_paths
         probe = f"{root}/__whole_tree_probe__.py"
+        assert PACK._job_diff_match(export_guard, [probe]) == (probe, "fallback")
         selected, reason = PACK.select_jobs(jobs, [probe])
         assert export_guard in selected, (probe, reason)
+        narrative_probe = f"{root}/__whole_tree_probe__.md"
+        assert PACK._job_diff_match(export_guard, [narrative_probe]) is None
 
     # And the probe that pins non-vacuity: an existing file OUTSIDE the scanner
     # suite's dependency closure, i.e. one the narrowed scope would have lost.
