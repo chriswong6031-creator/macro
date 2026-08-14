@@ -38,11 +38,10 @@ body.estate{
   --rule: var(--hair-strong);                    /* legacy alias — section rules */
   --ms: inset 0 1px 0 0 color-mix(in srgb, var(--text) 9%, transparent),
         0 1px 1px rgba(0,0,0,.28), 0 14px 30px -18px rgba(0,0,0,.55);
-  /* type scale — the macro 10-step scale (estate prose runs a touch larger:
-     --fs-md/15px reading copy since /learn + /blog are long-form) */
-  --fs-display:46px; --fs-num-xl:38px; --fs-h1:28px; --fs-num-lg:22px;
-  --fs-h2:17px; --fs-md:15px; --fs-body:14px; --fs-h3:14px;
-  --fs-sm:12.5px; --fs-label:11px; --fs-micro:10px;
+  /* type scale — the estate's copy of the macro ramp was byte-identical to it,
+     so it now comes from :root in theme.css (design-system packet PR-0(a)).
+     Estate type is unchanged; the seo_* children and /calculators that use
+     var(--fs-*) without declaring it keep resolving exactly as before. */
   /* spacing grid (4px) + radii + eyebrow tracking */
   --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
   --r-sm:8px; --r-md:10px; --r-lg:14px; --trk:.18em;
