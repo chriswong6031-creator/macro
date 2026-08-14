@@ -917,6 +917,8 @@ jobs:
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
           tests/test_private_auth_dict.py -q -rs
+      - name: unarmed sparse selector sealed runtime carrier (disposable proof only)
+        run: python -m pytest tests/test_options_sparse_selector_bootstrap.py -q
       - name: inert sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
         run: >-
           SPARSE_SELECTOR_PERF=1 python -m pytest
