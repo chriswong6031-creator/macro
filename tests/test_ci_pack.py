@@ -10,6 +10,7 @@ from pathlib import Path
 
 import pytest
 
+from scripts import ci_structural_preflight as PREFLIGHT
 from scripts.ci_scope_dependencies import suite_dependency_closure
 import yaml
 
@@ -1969,3 +1970,187 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
         "deeper, inside the engine module the test imports. Fix by adding "
         '- "contracts/government_revenue/**" to that paths list.'
     )
+
+
+# ── metadata-only structural admission ──────────────────────────────────────
+
+
+def _preflight_repo(tmp_path: Path, *, manifest_run: str) -> Path:
+    root = tmp_path / "preflight-repo"
+    (root / ".github" / "ci").mkdir(parents=True)
+    (root / ".github" / "workflows").mkdir(parents=True)
+    (root / "tests").mkdir()
+    (root / ".github" / "ci" / "legacy-jobs.yml").write_text(
+        "jobs:\n"
+        "  unit:\n"
+        "    if: ${{ false }}\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        f"      - run: {manifest_run}\n",
+        encoding="utf-8",
+    )
+    (root / ".github" / "workflows" / "ci.yml").write_text(
+        "on:\n"
+        "  pull_request: {}\n"
+        "jobs:\n"
+        "  ci-plan:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo plan\n"
+        "  ci-pack:\n"
+        "    needs: ci-plan\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo pack\n"
+        "  ci-gate:\n"
+        "    needs: [ci-plan, ci-pack]\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo gate\n",
+        encoding="utf-8",
+    )
+    return root
+
+
+def _finding_codes(result: dict) -> set[str]:
+    return {item["code"] for item in result["findings"]}
+
+
+def test_structural_preflight_passes_wired_suite_and_explicit_passive_doc(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(
+        tmp_path, manifest_run="python -m pytest tests/test_wired.py -q"
+    )
+    (root / "tests" / "test_wired.py").write_text(
+        "def test_wired():\n    assert True\n", encoding="utf-8"
+    )
+    (root / "DESIGN_NOTES.md").write_text("narrative only\n", encoding="utf-8")
+
+    result = PREFLIGHT.run_preflight(
+        root, ["tests/test_wired.py", "DESIGN_NOTES.md"]
+    )
+
+    assert result["status"] == "pass"
+    assert result["classification"] == "clean"
+    assert result["metrics"]["changed_tests_wired"] == 1
+    assert result["metrics"]["passive_paths"] == 1
+
+
+def test_structural_preflight_refuses_unwired_changed_pytest_suite(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(
+        tmp_path, manifest_run="python -m pytest tests/test_wired.py -q"
+    )
+    (root / "tests" / "test_unwired.py").write_text(
+        "def test_unwired():\n    assert True\n", encoding="utf-8"
+    )
+
+    result = PREFLIGHT.run_preflight(root, ["tests/test_unwired.py"])
+
+    assert result["status"] == "fail"
+    assert result["classification"] == "pr_structural_failure"
+    assert _finding_codes(result) == {"unwired_changed_test"}
+
+
+def test_structural_preflight_ignores_test_shaped_non_suite(tmp_path: Path) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo no pytest here")
+    (root / "tests" / "test_probe.py").write_text(
+        "def main():\n    return 0\n", encoding="utf-8"
+    )
+
+    result = PREFLIGHT.run_preflight(root, ["tests/test_probe.py"])
+
+    assert result["status"] == "pass"
+    assert result["metrics"]["changed_tests_examined"] == 0
+
+
+def test_structural_preflight_classifies_manifest_and_workflow_graph_failures(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    (root / ".github" / "ci" / "legacy-jobs.yml").write_text(
+        "jobs:\n"
+        "  unsafe:\n"
+        "    if: true\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo unsafe\n",
+        encoding="utf-8",
+    )
+    (root / ".github" / "workflows" / "cycle.yml").write_text(
+        "on:\n"
+        "  pull_request: {}\n"
+        "jobs:\n"
+        "  a:\n"
+        "    needs: b\n"
+        "    steps: []\n"
+        "  b:\n"
+        "    needs: a\n"
+        "    steps: []\n",
+        encoding="utf-8",
+    )
+
+    result = PREFLIGHT.run_preflight(
+        root,
+        [".github/ci/legacy-jobs.yml", ".github/workflows/cycle.yml"],
+    )
+
+    assert result["status"] == "fail"
+    assert result["classification"] == "planner_configuration_failure"
+    assert {"manifest_invalid", "workflow_dependency_cycle"} <= _finding_codes(result)
+
+
+def test_structural_preflight_refuses_markers_and_unknown_executable_ownership(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    unknown = root / "new_surface" / "tool.py"
+    unknown.parent.mkdir()
+    unknown.write_text(
+        ("<" * 7) + " ours\npass\n" + (">" * 7) + " theirs\n",
+        encoding="utf-8",
+    )
+
+    result = PREFLIGHT.run_preflight(root, ["new_surface/tool.py"])
+
+    assert result["status"] == "fail"
+    assert result["classification"] == "multiple_failures"
+    assert _finding_codes(result) == {
+        "conflict_marker",
+        "unknown_executable_ownership",
+    }
+
+
+def test_structural_preflight_cli_consumes_json_path_artifact(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    paths = tmp_path / "changed-paths.json"
+    paths.write_text('["DESIGN_NOTES.md"]', encoding="utf-8")
+
+    assert PREFLIGHT.main(
+        ["--root", str(root), "--changed-paths-file", str(paths)]
+    ) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["schema"] == PREFLIGHT.SCHEMA
+    assert payload["status"] == "pass"
+
+
+def test_structural_preflight_cli_returns_nonzero_json_refusal(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    (root / "tests" / "test_unwired.py").write_text(
+        "def test_unwired():\n    assert True\n", encoding="utf-8"
+    )
+
+    assert PREFLIGHT.main(
+        ["--root", str(root), "--changed-path", "tests/test_unwired.py"]
+    ) == 1
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["classification"] == "pr_structural_failure"
+    assert _finding_codes(payload) == {"unwired_changed_test"}
