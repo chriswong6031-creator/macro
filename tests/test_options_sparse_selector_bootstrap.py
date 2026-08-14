@@ -22,10 +22,10 @@ EXPECTED_REPO_IMPORT_SOURCE_SHA256 = {
         "55e73e3086de01e3d06204a0638f3665fc2b4fa64e0d00b0c9893886c9cad220"
     ),
     "scripts/run_options_sparse_selector.py": (
-        "9e62b6a528a789dad14c7bc8cd597a5645a343881e9aa167e00d920b812cbd95"
+        "80d43d79a4be45e9dfbb595cb1bb645065743f5c8d33e42ab7e66b126d7c7a12"
     ),
     "ops/launchd/run_options_sparse_selector_verified.py": (
-        "977c4fa783d1cc0a4c630f826dcbccf67e6b1f105a990bd408cfc15ade0ffefa"
+        "0a859a426a3477d45a9dbddd498987d9d855906828d08b75b38f228989d07773"
     ),
 }
 
@@ -48,7 +48,7 @@ def _marked_target(tmp_path: Path) -> Path:
 def _marked_persistent_target(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> Path:
-    target = tmp_path / "options_sparse_selector_runtime_v1"
+    target = tmp_path / "options_sparse_selector_runtime_v2"
     target.mkdir(mode=0o700)
     _write(target / bootstrap.PERSISTENT_MARKER, bootstrap.PERSISTENT_MARKER_BODY)
     (target / bootstrap.PERSISTENT_MARKER).chmod(0o600)
@@ -1042,11 +1042,11 @@ def test_launchd_surface_has_fixed_five_minute_one_shot_boundary() -> None:
     assert "EnvironmentVariables" not in payload
     assert payload["StandardOutPath"] == (
         "/Users/chriswong/.mastermind_private/"
-        "options_sparse_selector_ops_v1/launchd.stdout.log"
+        "options_sparse_selector_ops_v2/launchd.stdout.log"
     )
     assert payload["StandardErrorPath"] == (
         "/Users/chriswong/.mastermind_private/"
-        "options_sparse_selector_ops_v1/launchd.stderr.log"
+        "options_sparse_selector_ops_v2/launchd.stderr.log"
     )
 
     loop = ROOT / "ops/launchd/run_options_sparse_selector_loop.sh"
@@ -1054,7 +1054,7 @@ def test_launchd_surface_has_fixed_five_minute_one_shot_boundary() -> None:
     source = loop.read_text(encoding="utf-8")
     assert (
         'SEALED_PYTHON="/Users/chriswong/.mastermind_private/'
-        'options_sparse_selector_runtime_v1/runtime/bin/python3.12"'
+        'options_sparse_selector_runtime_v2/runtime/bin/python3.12"'
     ) in source
     assert 'REPO_ROOT="/Users/chriswong/options-sparse-selector-ops-wt"' in source
     assert 'exec "$SEALED_PYTHON" -I -S -B "$RUNNER" --run-once' in source

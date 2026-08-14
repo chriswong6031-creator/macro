@@ -92,11 +92,11 @@ RUNTIME_AUXILIARY_PATHS = (
 DISPOSABLE_MARKER = ".options_sparse_selector_disposable_root"
 DISPOSABLE_MARKER_BODY = b"options.sparse_selector.disposable_root/v1\n"
 PERSISTENT_RUNTIME_ROOT = Path(
-    "/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1"
+    "/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2"
 )
 PERSISTENT_REPO_ROOT = Path("/Users/chriswong/options-sparse-selector-ops-wt")
 PERSISTENT_MARKER = ".options_sparse_selector_persistent_runtime_root"
-PERSISTENT_MARKER_BODY = b"options.sparse_selector.persistent_runtime_root/v1\n"
+PERSISTENT_MARKER_BODY = b"options.sparse_selector.persistent_runtime_root/v2\n"
 MANIFEST_NAME = "runtime_closure.json"
 RUNTIME_DIRECTORY = "runtime"
 MANIFEST_SCHEMA = "options.sparse_selector_runtime_carrier/v2"
