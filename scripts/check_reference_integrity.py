@@ -167,6 +167,20 @@ CLOSED_PRE_RIG_REFERENCES = frozenset({
 })
 NAMESPACE_EXEMPT = CLOSED_PRE_RIG_REFERENCES | {"specimen.html"}
 
+# RIG §8 L8: the closed pre-RIG packet list.  L8 was armed on the stated premise
+# "there are no packets on main today, so this rule starts with zero debt and no
+# grandfathering" — that premise was false: MP-1 merged 2026-08-13 (#5505), one
+# day before this gate (#5520), so the rule armed over live debt it could not
+# see.  The debt is therefore NAMED and CLOSED — the same disposition L7 gives
+# the Wave-0 references — rather than silently red on main.  A listed packet is
+# PROVISIONAL: its spawn gates stay closed, and its first consuming build owns
+# adding the `RIG-RECEIPT:` line once its reference approves, at which point the
+# entry MUST leave this list.  The list never grows without the same
+# packet-predates-the-gate justification, and a listed packet that DOES cite a
+# receipt is validated exactly like any other (the exemption covers only the
+# missing-receipt state of the pre-gate debt).
+CLOSED_PRE_RIG_PACKETS = frozenset({"MP-1-prophet-board.md"})
+
 # ── Vocabularies (RIG §1-§7).  Unknown ENUMS fail; unknown top-level KEYS are
 # tolerated on purpose, so a later schema revision can add fields without a flag day. ──
 SCHEMA_IDS = {
@@ -1501,6 +1515,13 @@ def rule_l8(repo_root: Path, status_by_id: dict[str, str]) -> list[Finding]:
             continue
         cited = [m.group(1) for m in _RIG_RECEIPT_RE.finditer(body)]
         if not cited:
+            if packet.name in CLOSED_PRE_RIG_PACKETS:
+                # Pre-gate debt, named and closed (see the list's note): the
+                # packet predates L8 and its reference has not approved yet, so
+                # there is no receipt it could honestly cite.  Exempt ONLY the
+                # missing-receipt state — a listed packet that cites a receipt
+                # falls through to full validation below.
+                continue
             out.append(Finding(
                 "packet-without-rig-receipt", rel,
                 "a migration packet must cite a 'RIG-RECEIPT: <reference-id>' line naming an "
