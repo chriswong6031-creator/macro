@@ -46,8 +46,16 @@ waves:
       start expert replay before it.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
-    status: todo
+    status: done
+    pr: 5643
     depends_on: [W1]
+    next_action: >
+      SHIPPED as PR #5643 (armed 2026-08-14) under the §16.9 W1-return authorization:
+      31,119 era-pinned events / 16 shipping families + 8 Class P zero-row, attribution
+      under frozen P_pre, STARTER trio ruled NOT_PIT_RECONSTRUCTABLE -> Class P with
+      starter_signature Class R, twin parity measured (terminal ~3.7x macro), B/GOLD
+      addendum. W3 needs its OWN operator go (no auto-roll); Dead Instrument Control
+      Set (separately registered) BLOCKS PR-5/Q1.
   - id: W3
     title: Episode ruler engine + estimability census
     status: todo

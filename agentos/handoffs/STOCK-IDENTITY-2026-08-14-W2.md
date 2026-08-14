@@ -69,7 +69,7 @@ do_not_redo:
 danger_areas:
   - "engine/stock_identity/replay/** is the ONLY place protected signal engines may be imported (read-only, enumerated allowlist, test-enforced); the identity layer's total firewall is load-bearing for G-3."
   - "Class P families must never gain rows (no synthetic history) — zero-row test."
-prs: [5612]
+prs: [5612, 5643]
 decisions:
   - DEC:SI-METHOD-LAW-CHANNELS
 ---
