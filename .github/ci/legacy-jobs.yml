@@ -708,8 +708,21 @@ jobs:
       # purity, truncation invariance, state totality, episode segmentation, G-8 import
       # firewall, banned-token/authority artifact walk. Minimal-deps safe (no matplotlib);
       # artifact-dependent tests skip cleanly when data/stock_identity is absent.
+      # P1 unrun backfill 2026-08-14: tests/test_audit_reused_tickers.py joins the
+      # stock-identity family.  It was named by no `run:` step in any workflow, so
+      # scripts/audit_reused_tickers.py — the audit that catches a ticker RE-USED for a
+      # different company, the failure the identity atlas exists to make visible — had
+      # no CI owner while every other identity guard here did.  This job owns the
+      # subject: the partition/fingerprint/state-episode/atlas suites above are the
+      # identity spine the reuse audit reads.  Appended LAST so a partition or
+      # fingerprint regression is the first failure a reader sees rather than the reuse
+      # audit failing for a borrowed reason.  It rides this existing step because a step
+      # is the masking unit (run_ci_pack.py returns on the first non-zero step) while
+      # pytest reports every file inside one step, and adds no job to a manifest at the
+      # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads only
+      # pandas/numpy/pyarrow/pyyaml, exactly this job's install line.
       - name: stock-identity atlas guards
-        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py -q
+        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
         # Registering the trial budget (above) is only half the chain: the number the
         # PAGE shows must equal the number the calibrator produced. The BTC Vector card
@@ -794,11 +807,26 @@ jobs:
         # and a soft/non-directional call is unscored — never counted as a hit or a miss.
         # ai_desk_scorer is load-bearing for three registry keys: radar_scorer reuses its
         # eval + aggregation verbatim for both radar and narrative_brain.
+        #
+        # P1 unrun backfill 2026-08-14: tests/test_desk_thesis_ids.py joins this step.
+        # It was named by no `run:` step in any workflow, so the THESIS-ID contract —
+        # the identity every row above is keyed by, and the thing that decides whether
+        # "already scored" and "dedupe by vintage" can mean anything at all — was dark
+        # while the scorers that depend on it were covered.  This job owns the subject
+        # (engine/ai_desk.py, engine/ai_desk_scorer.py, engine/stock_desk.py,
+        # engine/thematic_desk.py all run here).  Appended LAST so a scorer or ledger
+        # regression is the first failure a reader sees rather than the id contract
+        # failing for a borrowed reason; it rides this existing step because a step is
+        # the masking unit (run_ci_pack.py returns on the first non-zero step) while
+        # pytest reports every file inside one step.  No dependency widened: probed at
+        # RUN time it loads only pandas/numpy/pyarrow/pyyaml — exactly this job's thin
+        # install line — and blocking plotly leaves it 12-passed.
         run: >
           python -m pytest
           tests/test_ai_desk.py tests/test_ai_desk_scorer.py
           tests/test_radar_scorer.py tests/test_narrative_brain.py
-          tests/test_demand_ledger.py tests/test_policy_intent_desk.py -q
+          tests/test_demand_ledger.py tests/test_policy_intent_desk.py
+          tests/test_desk_thesis_ids.py -q
 
   conviction-profile:
     if: ${{ false }}
@@ -1867,8 +1895,24 @@ jobs:
       # already carries the measured import closure (pandas, pyarrow,
       # jsonschema, requests and pyyaml). Lane B imports Lane A's endpoint
       # contract at collection time, so the three suites remain one atomic step.
+      # P1 unrun backfill 2026-08-14: tests/test_tushare_freshness_tripwire.py joins the
+      # TuShare family.  It was named by no `run:` step in any workflow, so
+      # scripts/check_tushare_freshness.py — the tripwire that is supposed to notice
+      # when the TuShare stores stop advancing — had no CI owner.  That is the exact
+      # shape of the failure this lane already carries a comment about: a freshness
+      # check reporting 'ok' for ten nights while every data/tushare store sat frozen.
+      # A dead ingest lane is invisible downstream, so the tripwire is the only thing
+      # that would say so, and it was the one piece with no test running.
+      # Appended LAST, downstream of the spine/manifest and takeover suites that
+      # produce the stores it reads, so a collector regression is the first failure a
+      # reader sees rather than the tripwire failing for a borrowed reason.  It rides an
+      # existing step because a step is the masking unit (run_ci_pack.py returns on the
+      # first non-zero step) while pytest reports every file inside one step, and adds
+      # no job to a manifest at the narrow-diff ceiling.  No dependency widened: probed
+      # at RUN time it loads only pandas/numpy/pyarrow/pyyaml, all covered by this job's
+      # install line (numpy arrives with pandas).
       - name: china tushare takeover suites — addons gate + minutes plane + chips (A/B/C)
-        run: python -m pytest tests/test_tushare_addons.py tests/test_tushare_minutes_plane.py tests/test_tushare_chips_distribution.py -q
+        run: python -m pytest tests/test_tushare_addons.py tests/test_tushare_minutes_plane.py tests/test_tushare_chips_distribution.py tests/test_tushare_freshness_tripwire.py -q
 
   china-board-breadth:
     if: ${{ false }}
@@ -7241,8 +7285,21 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      # P1 unrun backfill 2026-08-14: tests/test_collect_failfast.py joins the step whose
+      # own name is "the collect.py sweeps".  It was named by no `run:` step in any
+      # workflow, so the FAIL-FAST contract on scripts/collect.py — whether a collector
+      # raising mid-sweep stops the sweep or lets it finish and publish a partial store
+      # — was dark, together with collectors/base.py and the canada/intl macro
+      # collectors it covers.  This job owns those subjects.  Appended LAST so a
+      # collector or freshness-tripwire regression is the first failure a reader sees
+      # rather than the fail-fast guard failing for a borrowed reason.  It rides this
+      # existing step because a step is the masking unit (run_ci_pack.py returns on the
+      # first non-zero step, so a later step goes dark behind an earlier red) while
+      # pytest reports every file inside one step, and adds no job to a manifest at the
+      # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads
+      # pandas/numpy/pyarrow/pyyaml/requests, all already on the install line above.
       - name: china/HK collectors and the collect.py sweeps + store-freshness tripwires
-        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_build_earnings_scores_from_history.py tests/test_earnings_qual.py tests/test_earnings_seasons.py tests/test_earnings_w4_feed.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py -q
+        run: python -m pytest tests/test_action_board_lane_split.py tests/test_china_alpha_w3c_infra.py tests/test_china_fundamentals_collector.py tests/test_content_stamp_freshness.py tests/test_data_quality_audit.py tests/test_build_earnings_scores_from_history.py tests/test_earnings_qual.py tests/test_earnings_seasons.py tests/test_earnings_w4_feed.py tests/test_earnings_w5.py tests/test_hk_fundamentals_collector.py tests/test_hk_narrative.py tests/test_hk_track_record_vm.py tests/test_housing_hf.py tests/test_collect_failfast.py -q
 
   unrun-russell-breadth:
     # the Russell-2000 breadth collector — the one P1 suite needing a wheel the shared set lacks.
@@ -7464,8 +7521,20 @@ jobs:
         # test_earnings_api.py exercises the mounted FastAPI route through
         # TestClient; without both wheels pytest importorskips the whole suite.
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+      # P1 unrun backfill 2026-08-14: tests/test_stocks_hub.py joins the step that
+      # already owns scripts/build_ticker_pages.py — its own pipeline subject — via
+      # test_ticker_pages.py and test_ticker_dossier_render_lane.py.  It was named by no
+      # `run:` step in any workflow, so engine/stocks_hub.py and engine/market_heatmap.py,
+      # the hub the ticker pages hang off, were dark while the pages themselves were
+      # covered.  Appended LAST so a ticker-page or publish-transport regression is the
+      # first failure a reader sees rather than the hub failing for a borrowed reason.
+      # It rides this existing step because a step is the masking unit (run_ci_pack.py
+      # returns on the first non-zero step) while pytest reports every file inside one
+      # step, and adds no job to a manifest at the narrow-diff ceiling.  No dependency
+      # widened: probed at RUN time it loads pandas/numpy/pyarrow/pyyaml — all on the
+      # install line above — plus PIL transitively, which blocking leaves 42-passed.
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
-        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_evidence_graph_deps.py tests/test_earnings_private_store.py tests/test_earnings_public_wire.py tests/test_earnings_wire_freshness.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py -q
+        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_evidence_graph_deps.py tests/test_earnings_private_store.py tests/test_earnings_public_wire.py tests/test_earnings_wire_freshness.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py tests/test_stocks_hub.py -q
 
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).
