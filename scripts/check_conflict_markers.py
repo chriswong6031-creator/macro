@@ -29,10 +29,18 @@ Usage:
     python -m scripts.check_conflict_markers --changed-from REV [ROOT]
     python -m scripts.check_conflict_markers --self-test
 
-When ``CI_CHANGED_FILES_JSON`` is set (ci-plan's file list), ``--changed-from``
-scans that list and does not git-diff. Packs checkout fetch-depth:1 after #5564,
-so ``origin/main...HEAD`` is often a bad revision; fail-closed only if the env
-is unset (then git) or malformed.
+When ci-plan published a changed-file list, ``--changed-from`` scans that list
+and does not git-diff. Packs checkout fetch-depth:1 after #5564, so
+``origin/main...HEAD`` is often a bad revision; fail-closed only if no list was
+published (then git) or the published one is malformed.
+
+Two names carry the list, FILE first (2026-08-14, run 31775693780):
+``CI_CHANGED_FILES_FILE`` holds a path to it, ``CI_CHANGED_FILES_JSON`` holds it
+inline. The file exists because the inline form measured 350,264 bytes on
+PR #5578 — past execve's 131,072-byte MAX_ARG_STRLEN — and every pack died at
+launch with "Argument list too long". A configured-but-unreadable or empty file
+is MALFORMED (fail-closed), never "unset": a transport that lost its payload
+must not silently license the git fallback.
 Exit codes: 0 = clean / self-test passed · 1 = marker(s) found / self-test failed.
 """
 from __future__ import annotations
@@ -121,7 +129,7 @@ def _scannable_relpath(path: str) -> bool:
 
 
 def scan_paths(root: str, relpaths: list[str]):
-    """Scan an explicit repo-relative file list (ci-plan / CI_CHANGED_FILES_JSON)."""
+    """Scan an explicit repo-relative file list (ci-plan's published diff)."""
     findings = []
     for rel in sorted(relpaths):
         if not rel or not _scannable_relpath(rel):
@@ -135,8 +143,44 @@ def scan_paths(root: str, relpaths: list[str]):
     return findings
 
 
+def planner_paths_from_environment():
+    """Resolve ci-plan's list from whichever transport is configured.
+
+    FILE FIRST (2026-08-14, run 31775693780). The list moved out of the process
+    environment because 350,264 bytes of paths met execve's 131,072-byte
+    per-string cap and killed all twelve packs at launch on PR #5578. The inline
+    name stays supported for old runners and local reproduction, but a stale
+    inline string must never out-vote the artifact the pack downloaded, so the
+    file wins whenever it is named.
+    """
+    handle = os.environ.get("CI_CHANGED_FILES_FILE")
+    if handle:
+        return planner_changed_paths_from_file(handle)
+    return planner_changed_paths(os.environ.get("CI_CHANGED_FILES_JSON"))
+
+
+def planner_changed_paths_from_file(path: str):
+    """Read the published list from ``path``; same shape as the inline decoder.
+
+    Unreadable and EMPTY both raise: this function is only reached because a
+    handle WAS configured, so "cannot read it" is a broken transport, not an
+    absent one, and returning None there would hand a depth-1 pack back to a
+    git fallback that cannot answer.
+    """
+    try:
+        with open(path, encoding="utf-8") as handle:
+            raw = handle.read()
+    except (OSError, UnicodeDecodeError) as exc:
+        raise RuntimeError(
+            f"CI_CHANGED_FILES_FILE {path!r} is unreadable: {exc}"
+        ) from exc
+    if raw.strip() == "":
+        raise RuntimeError(f"CI_CHANGED_FILES_FILE {path!r} is empty")
+    return planner_changed_paths(raw)
+
+
 def planner_changed_paths(raw: str | None):
-    """Return a determined path list, or None when the env is unset.
+    """Return a determined path list, or None when no list was published.
 
     ``null`` (main dispatch / no diff) is determined-empty, not unset. Malformed
     JSON raises RuntimeError so the CLI can fail-closed without git.
@@ -297,7 +341,7 @@ def main(argv: list[str] | None = None) -> int:
         revision = argv[1]
         root = argv[2] if len(argv) == 3 else "."
         try:
-            planned = planner_changed_paths(os.environ.get("CI_CHANGED_FILES_JSON"))
+            planned = planner_paths_from_environment()
             if planned is not None:
                 findings = scan_paths(root, planned)
                 scope = (
