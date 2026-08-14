@@ -17,8 +17,11 @@ false green available to this build. So the gate asserts BOTH directions:
   * the rich name's drawer must contain AT MOST `RICH_MAX_NA` absent rows, and
   * the sparse name's drawer must contain AT LEAST `SPARSE_MIN_NA` — and some real ones.
 
-Both thresholds are measured, not chosen: AAPL's holdings drawer has 1 coverage gap
-(Events, whose date is past) and RIVN's has 8, out of 15 rows each.
+Both thresholds are measured, not chosen — and the run PRINTS the inventory it measured
+them from (`INVENTORY` lines, first variant only), so the README beside this file quotes
+a number this script emitted rather than a number somebody remembered. The composer
+emits 15 rows; a HOLDINGS drawer adds Stage from `portfolio.js`, so scenes 02/03 are 16
+rows and the watchlist scene 04 is 15.
 
 A run where every row is honest is a run with no data, and it exits non-zero.
 
@@ -98,9 +101,12 @@ SEED_ANON = ("window.__W2.clear();"
 # ownership filings") was falsified by the crop itself: the stub has those KEYS but not
 # the fields the rows read, so both rendered n/a.
 #
-# RIVN is a real 50KB artifact that renders 6 real rows and 8 coverage gaps. AAPL renders
-# 13 real and 1 gap. Both counts are asserted below, and `assert_not_stub_grade` refuses
-# the class of file that made the first attempt meaningless.
+# RIVN is a real 50KB artifact whose holdings drawer renders 7 real rows, 8 coverage gaps
+# and 1 evaluated-negative; AAPL's renders 15 real and 1 gap. Only the GAP counts are
+# asserted (the bounds below); the rest is printed per scene by `print_inventory` so the
+# README beside this file can quote a measurement rather than a memory.
+# `assert_not_stub_grade` refuses the class of file that made the first attempt
+# meaningless.
 #
 # The counts are `.st.na` ONLY — the coverage-gap mark. Since m8 split the three coverage
 # meanings apart, `none` (we looked; the answer is none) and `n/app` (does not apply here)
@@ -297,6 +303,45 @@ def drawer_stats(page):
         " text:(d.innerText||'').slice(0,4000)};}")
 
 
+def drawer_rows(page):
+    """Every row in the open drawer with the mark it carries — label + state class.
+
+    `drawer_stats` above answers the GATE's question (how many gaps?). This answers the
+    README's question (which rows, and what did each one say?), and it exists because
+    three consecutive review rounds passed over README prose whose per-scene row counts
+    were simply wrong: 15 where the holdings drawer renders 16, "8 of 15" for a scene
+    that has 16 rows, sub-counts that drifted every time a row was added. Prose derived
+    from memory rots silently; prose derived from a printed inventory cannot.
+
+    Labels are read with `textContent`, not `innerText`: under `zh` the `.l-en` span is
+    `display:none` and `innerText` would come back empty for every row."""
+    return page.evaluate(
+        "()=>{var d=document.querySelector('tr.row-drawer');"
+        "if(!d)return [];"
+        "return Array.from(d.querySelectorAll('.wri-lrow')).map(function(r){"
+        "var ln=r.querySelector('.ln'), st=r.querySelector('.st');"
+        "var e=ln?ln.querySelector('.l-en'):null;"
+        "var lab=((e?e.textContent:(ln?ln.textContent:''))||'').replace(/\\?$/,'').trim();"
+        "var cls=st?Array.prototype.slice.call(st.classList)"
+        ".filter(function(c){return c!=='st';}).join(' '):'';"
+        "return {label:lab, mark:cls||'real'};});}")
+
+
+def print_inventory(scene, rows):
+    """The receipt. `na` is the COVERAGE-GAP mark and the only one the gate counts;
+    `none` (we looked, the answer is none) and `n/app` (does not apply to this row) are
+    answers and count as real rows."""
+    na = [r for r in rows if r["mark"] == "na"]
+    ev = [r for r in rows if r["mark"] == "none"]
+    napp = [r for r in rows if r["mark"] == "n/app"]
+    real = len(rows) - len(na) - len(ev) - len(napp)
+    print("   INVENTORY %s: %d rows = %d real + %d gap(n/a) + %d evaluated-none + "
+          "%d n/app" % (scene, len(rows), real, len(na), len(ev), len(napp)))
+    for group, label in ((na, "n/a"), (ev, "NONE"), (napp, "—")):
+        if group:
+            print("      %-6s %s" % (label, ", ".join(r["label"] for r in group)))
+
+
 def hscroll(page):
     return page.evaluate("()=>{var d=document.documentElement;return d.scrollWidth-d.clientWidth;}")
 
@@ -343,6 +388,9 @@ def main(argv=None):
 
             for vstem, size, theme, lang in VARIANTS:
                 print(vstem)
+                # the inventory is the same in all five variants (same composer, same
+                # artifacts); printing it once keeps the receipt readable
+                first = vstem == VARIANTS[0][0]
                 prepare(page, size, theme, lang)
 
                 # ---- 01/02 the RICH name, from a HOLDINGS row --------------
@@ -351,6 +399,9 @@ def main(argv=None):
                 if not st["found"]:
                     problems.append((vstem, "rich drawer did not open"))
                 else:
+                    if first:
+                        print_inventory("02 rich holdings (%s)" % RICH[1],
+                                        drawer_rows(page))
                     # the whole drawer: Tier 1 + every Tier-2 section
                     shoot(page, "02_tier2_expanded_%s_%s" % (RICH[1], vstem))
                     # Tier 1 alone — the glance read, which is a different claim
@@ -380,6 +431,9 @@ def main(argv=None):
                 if not st["found"]:
                     problems.append((vstem, "sparse drawer did not open"))
                 else:
+                    if first:
+                        print_inventory("03 sparse holdings (%s)" % SPARSE[1],
+                                        drawer_rows(page))
                     shoot(page, "03_degraded_%s_%s" % (SPARSE[1], vstem))
                     if st["blank"]:
                         problems.append((vstem, "%d sparse rows rendered EMPTY" % st["blank"]))
@@ -404,6 +458,9 @@ def main(argv=None):
                 if not st["found"]:
                     problems.append((vstem, "watchlist drawer did not open"))
                 else:
+                    if first:
+                        print_inventory("04 rich watchlist (%s)" % RICH[1],
+                                        drawer_rows(page))
                     shoot(page, "04_watchlist_mode_%s_%s" % (RICH[1], vstem))
                     if st["rows"] < 12:
                         problems.append((vstem, "watchlist drawer had %d rows" % st["rows"]))

@@ -248,7 +248,8 @@ def test_the_portfolio_role_section_speaks_for_a_watchlist_name():
 
 @needs_node
 def test_the_whole_tier_two_composition_is_never_blank_on_an_empty_payload():
-    """The composition of thirteen honest rows is still thirteen honest rows."""
+    """The composition of fifteen rows is still fifteen rows, thirteen of them carrying
+    the honest-absence mark, when there is nothing behind any of them."""
     out = _wr("OUT({html: WR.intelSections('AAPL', {}, {inBook:true})});")
     html = out["html"]
     assert html.count('class="wri-lrow"') >= 12, html.count('class="wri-lrow"')
@@ -423,22 +424,100 @@ def test_an_overextended_name_is_never_told_nothing_needs_a_decision():
 
 @needs_node
 def test_the_two_stretch_oracles_do_not_contradict_each_other_in_one_vocabulary():
-    """One English word may not name two measurements. The distance row and the stretch
-    lane are different oracles, so the distance row talks about DISTANCE and does not
-    reuse "stretched" — otherwise the drawer renders "Stretched" eight rows above "not
-    stretched", which in ZH was a flat self-negation."""
+    """One English word may not name two measurements. The distance row and the entry
+    stretch lane are different oracles, so the distance row talks about DISTANCE and does
+    not reuse "stretched" — otherwise the drawer renders "Stretched" eight rows above
+    "not stretched", which in ZH was a flat self-negation.
+
+    THE LABELS CARRY THE SAME RULE, and round 3 fixed only the row wording. "Stretch"
+    over an entry-relative read, a few rows from "Distance from trend", is one English
+    word naming two measurements again — so the collision survived a round in the one
+    place a reader meets first. Each label now names its own dimension, and the lane's
+    sentence is phrased against the ENTRY rather than as a bare negation.
+
+    MUTATION CHECKS: (1) put the bare `Stretch`/`拉伸度` labels back in `LANE_LABEL` and
+    the label assertions red; (2) restore `en: 'not stretched'` and the sentence
+    assertions red."""
     rivn = {"tech": {"pct_vs_200dma": 8.9, "above200": True, "above50": True},
             "ladder": {"alignment": {"overextended": True}},
             "entry_signal": {"status": "buy_now"}}
-    out = _wr("OUT({dist: WR.distanceRow(P), lane: WR.laneRead(P).stretch});", {"P": rivn})
+    out = _wr("OUT({dist: WR.distanceRow(P), lane: WR.laneRead(P).stretch,"
+              " rows: WR.laneRows(P)});", {"P": rivn})
     assert "trend" in out["dist"] and "8.9" in out["dist"]
     assert "tretched" not in out["dist"], \
         "the distance row reused the stretch lane's word: %s" % out["dist"]
     assert "\u62c9\u4f38" not in out["dist"], "the ZH half reused 拉伸 too"
     # the lane keeps its own vocabulary, and the two labels name different dimensions
     assert "Distance from trend" in out["dist"]
+    assert "Entry stretch" in out["rows"] and "入场拉伸" in out["rows"], \
+        "the lane label does not name its own dimension"
+    assert ">Stretch<" not in out["rows"] and ">拉伸度<" not in out["rows"], \
+        "the lane label is still the bare word that also names the distance row"
+    # and the lane's sentence names the ENTRY, so it can no longer be read as the
+    # distance row's negation — "not stretched" under "Well above its own trend" was
+    # exactly that, and 未过度拉伸 under 明显高于自身趋势 was its flat ZH form
+    assert "not stretched" not in out["lane"]["en"], \
+        "the lane still answers the distance row's question: %s" % out["lane"]["en"]
+    assert "未过度拉伸" not in out["lane"]["zh"], out["lane"]["zh"]
+    assert "entries here" in out["lane"]["en"] and "入场" in out["lane"]["zh"]
     # this fixture IS the disagreement: the ladder says overextended, the lane says clean
-    assert out["lane"]["state"] == "ok" and "not stretched" in out["lane"]["en"]
+    assert out["lane"]["state"] == "ok"
+
+
+@needs_node
+def test_the_distance_row_never_offers_the_raw_percent_as_the_words_evidence():
+    """The graded word and the printed number are DIFFERENT MEASUREMENTS, and round 3
+    joined them with an em dash: `Well above its own trend — about 8.9% above its
+    200-day line.` reads as "well above, and here is the number that says so".
+
+    It is not that number. `ext.grade` grades `ext_z` — the z-score of that same gap
+    against the name's OWN 252-day history — so the word is volatility-normalised and
+    the number is raw. Measured over the 1,621 artifacts carrying `tech.pct_vs_200dma`,
+    **33.6% of ordered pairs invert**: the name graded further out sits at the SMALLER
+    raw gap. The committed crops are one such pair (AAPL "in line" at +9.0%, RIVN "well
+    above" at +8.9%), so a reader comparing two drawers reads the surface as broken.
+
+    Cure: the number leads as a plain fact of its own, and the word follows behind the
+    yardstick it was actually taken against — which is BRANCH-SPECIFIC, because the two
+    sources are not the same measure. 1,260 of 1,621 names carry `ext.grade`; the other
+    361 fall back to `ladder.alignment.overextended`, which
+    `engine/cycles.py::_overextended` reads off daily/3-day StochRSI + RSI14 overbought
+    or a >=30% gap. Printing "against how far this name usually runs" over THAT would
+    name a measure we did not take — the same defect one rung down.
+
+    MUTATION CHECKS: (1) concatenate word + gap with an em dash again and the ordering
+    assertions red; (2) collapse `basis` to the `byExt` branch only and the
+    ladder-branch assertions red."""
+    # the exact inverting pair the committed crops photograph; neither name carries an
+    # `ext` block, which is why both take the ladder branch
+    aapl = {"tech": {"pct_vs_200dma": 9.0}, "ladder": {"alignment": {"overextended": False}}}
+    rivn = {"tech": {"pct_vs_200dma": 8.9}, "ladder": {"alignment": {"overextended": True}}}
+    graded = {"tech": {"pct_vs_200dma": 8.9}, "ext": {"grade": "stretched"}}
+    out = _wr("OUT({a: WR.distanceRow(A), r: WR.distanceRow(R), g: WR.distanceRow(G)});",
+              {"A": aapl, "R": rivn, "G": graded})
+
+    for key, pct, word in (("a", "9", "in line with its own trend"),
+                           ("r", "8.9", "well above its own trend"),
+                           ("g", "8.9", "well above its own trend")):
+        html = out[key]
+        assert word in html, "%s lost its graded word" % key
+        # the NUMBER leads, in its own terminated sentence; the word comes after it
+        assert html.index("%s%%" % pct) < html.index(word), \
+            "%s still trails the number behind the word: %s" % (key, html)
+        assert "About %s%% " % pct in html, \
+            "%s does not state the gap as a plain fact of its own: %s" % (key, html)
+        assert "%s%% above its 200-day line. " % pct in html, \
+            "%s welded the gap to the word again: %s" % (key, html)
+
+    # the yardstick is named, and it is the RIGHT one for each source
+    assert "Against how far this name usually runs from that line" in out["g"]
+    assert "以这只票惯常偏离该均线的幅度衡量" in out["g"]
+    for key in ("a", "r"):
+        assert "Against how hard it has run lately" in out[key], \
+            "the ladder-sourced word claims a normalisation it does not have: %s" % out[key]
+        assert "usually runs from that line" not in out[key], \
+            "%s names a measure this branch did not take" % key
+        assert "以它近期走势的急缓衡量" in out[key]
 
 
 @needs_node
@@ -660,8 +739,8 @@ def test_the_pinned_alert_note_is_never_quoted_into_a_tooltip():
 
 @needs_node
 def test_no_section_of_a_fully_populated_drawer_carries_a_trade_instruction():
-    """The whole composition, over the realistic payload — Tier 1 and all thirteen
-    Tier-2 rows including every tip attribute."""
+    """The whole composition, over the realistic payload — Tier 1 and all fifteen rows
+    the composer emits, including every tip attribute."""
     out = _wr("OUT({html: WR.intelTier1('AAPL', P) + WR.intelSections('AAPL', P, "
               "{inBook:true, weightPct:16.2})});", {"P": FULL})
     hits = _imperative_hits(out["html"])
@@ -1011,7 +1090,18 @@ files.forEach(function (f) {
   var lead = WR.intelLead(j);
   leads[lead.en + '\\u0001' + lead.zh] = (leads[lead.en + '\\u0001' + lead.zh] || 0) + 1;
   var L = WR.laneRead(j);
-  var s = WR.intelStance(L, WR.roleBadge(L));
+  // THE THIRD ARGUMENT IS NOT OPTIONAL FOR A DRIFT RECEIPT. `intelStance` grew a
+  // `flags` parameter carrying `ladder.alignment.overextended`, and that flag applies
+  // the one-way floor over the all-clear branch — so a 2-arg sweep measures the
+  // PRE-floor stance and prints a distribution the live DOM never renders. Measured on
+  // this library the gap is 48 names at No action against the 16 the drawer actually
+  // paints. `intelTier1HTML` passes exactly this; so does the sweep.
+  //
+  // (This template is interpolated with printf-style formatting, so a literal percent
+  // sign anywhere in it — including in a comment like this one — raises TypeError
+  // before the sweep ever runs. Both tests SKIP in CI for want of the nightly
+  // artifacts, so a local run is the ONLY place that failure can be seen.)
+  var s = WR.intelStance(L, WR.roleBadge(L), {overextended: WR.overextendedFlag(j)});
   stance[s] = (stance[s] || 0) + 1;
 });
 OUT({n: n, leads: Object.keys(leads), stance: stance});

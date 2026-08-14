@@ -25,12 +25,20 @@ nightly artifacts** in `site/`. Nothing is staged: the seed puts a BOOK and a WA
 in `localStorage` — the stores a real visitor's state lives in — and every sentence on
 screen is the page composing over those artifacts.
 
+**The row arithmetic, because every count below rests on it.** `WRI.intelSections` — the
+shared composer — emits **15** rows: the seven lanes, then Distance from trend, Portfolio
+role, Options, Macro sensitivity, Sector & theme, Ownership, Company notes, Transmission.
+A **holdings** drawer adds one more, Stage, from `portfolio.js` (it needs
+`portfolio_ctx.json`, which only the holdings path loads — see §3a), so scenes 02 and 03
+are **16** rows and the watchlist scene 04 is **15**. Earlier versions of this file said
+15 everywhere and were wrong by exactly the Stage row in two of the three scenes.
+
 | # | scene | proves |
 |---|---|---|
 | 01 | Tier 1, alone | the glance read is one plain sentence + one stance word, and nothing else |
-| 02 | Tier 2, expanded (AAPL, holdings) | 15 rows: **13 real**, 1 coverage gap (Events — the date is past), 1 evaluated-negative (Transmission — in no armed chain) |
-| 03 | degraded name (RIVN, holdings) | 15 rows: **6 real**, 8 coverage gaps, 1 evaluated-negative — honest degradation over a real 50KB artifact |
-| 04 | the same name (AAPL) from a WATCHLIST row | 15 rows: **12 real**, 1 gap, 1 evaluated-negative, 1 structural (Portfolio role — "not a position", never an invented weight) |
+| 02 | Tier 2, expanded (AAPL, holdings) | **16 rows: 15 real, 1 coverage gap** (Events — the date is past). No evaluated-negative in this scene: AAPL's Transmission row sits downstream of an armed chain tonight and reads WATCH |
+| 03 | degraded name (RIVN, holdings) | **16 rows: 7 real, 8 coverage gaps, 1 evaluated-negative** (Transmission — in no armed chain) — honest degradation over a real 50KB artifact |
+| 04 | the same name (AAPL) from a WATCHLIST row | **15 rows: 13 real, 1 gap** (Events)**, 1 structural** (Portfolio role — "not a position", never an invented weight). One row fewer than scene 02 because Stage is holdings-only |
 | 05 | the anonymous drawer | a lock shell, zero lane rows, zero gated signal |
 
 ### What the harness asserts rather than leaves to the eye
@@ -45,9 +53,9 @@ than things a reviewer must re-check:
 - **No drawer row renders a blank read.** A `.wri-lrow` with an empty `.rs` is the
   silent-empty failure this whole wave is about.
 - **The rich name's drawer contains at most `RICH_MAX_NA` (3) coverage gaps** — AAPL in
-  scene 02 measures **1**, and
+  scene 02 measures **1 of 16**, and
 - **the sparse name's contains at least `SPARSE_MIN_NA` (5), but not all** — RIVN in
-  scene 03 measures **8 of 15**.
+  scene 03 measures **8 of 16**.
 
   Both counts are `.st.na` — the COVERAGE-GAP mark only. Since m8 the drawer distinguishes
   three coverage meanings (see §3a), so `none` (evaluated, answer is none) and `n/app`
@@ -95,17 +103,38 @@ crop hid a scene with no data in it.
 
 The replacement is chosen by **measuring every artifact in the library** with the same
 composer the DOM gets, not by picking a plausible ticker. Over the 1,613 real-size
-artifacts the absent-section count runs 2..13. **RIVN** is a real 50KB artifact that
-renders 6 real rows and 8 coverage gaps plus 1 evaluated-negative (gaps: Events,
-Estimates, Balance sheet, Who's selling, Rate sensitivity, Options, Macro sensitivity,
-Ownership; evaluated-negative: Transmission). **AAPL** renders 13 real and 1 gap in the
-holdings scene, 12 real in the watchlist scene (where Portfolio role is structurally
-n/app). Every figure here is per-scene and matches the crop named beside it — the first
-version of this README quoted one number against the wrong scene. Both counts are
-asserted, and
-`assert_not_stub_grade()` now refuses the whole class of file that made the first attempt
+artifacts the absent-section count runs 2..13. **RIVN** is a real 50KB artifact whose
+holdings drawer renders **7 real rows, 8 coverage gaps and 1 evaluated-negative** (gaps:
+Events, Estimates, Balance sheet, Who's selling, Rate sensitivity, Options, Macro
+sensitivity, Ownership; evaluated-negative: Transmission). **AAPL** renders **15 real
+and 1 gap** in the holdings scene and **13 real, 1 gap and 1 structural n/app** in the
+watchlist scene, where Portfolio role does not apply and Stage is not loaded.
+`assert_not_stub_grade()` refuses the whole class of file that made the first attempt
 meaningless — size AND field presence, because a file can be big and still not carry what
 a scene claims.
+
+### Which of these figures is machine-derived, and which is not
+
+The previous version of this paragraph ended "every figure here is per-scene and matches
+the crop named beside it" — a sentence that certifies itself, and which then survived
+three review rounds while the counts beside it were wrong. It is replaced by the actual
+division of labour:
+
+- **Asserted mechanically, so a regression fails the run**: the `.st.na` (coverage-gap)
+  counts against `RICH_MAX_NA` / `SPARSE_MIN_NA`, the "not entirely gaps" bound, the
+  total row count against a floor of 12, zero blank reads, exactly one Tier-1 block, the
+  anonymous drawer's zero lane rows and its lock shell, zero page errors, zero
+  page-level horizontal scroll at 390px, and the 100-name list's `100 -> 100` rows /
+  20 opened / 0 surviving close.
+- **Printed by the run, not asserted**: the per-scene `INVENTORY` lines — total rows and
+  the label of every gap, evaluated-negative and n/app row, taken off the live DOM by
+  `drawer_rows()`. Every count in this file's scene table and in the paragraph above is
+  transcribed from those lines. They are machine-derived but not gated, so a future
+  change moves them silently — re-run the harness and re-transcribe rather than
+  reasoning about them.
+- **Hand-written, and therefore the part to distrust**: the *reasons* beside each count
+  ("the date is past", "in no armed chain"), the library-wide distributions quoted in
+  §3a and in the round-3/round-4 sections, and every sentence of prose in this file.
 
 ---
 
@@ -299,6 +328,74 @@ nothing opened" into one boolean, and its selector spanned both tables so the cl
 land on the never-broken watchlist path. Three named outcomes now, scoped per table, with
 the watchlist path asserted separately as a non-regression. It reports
 `clicked-no-open` on the holdings table under production's own scripts.
+
+---
+
+### Round 4 — the sentence that welded two measurements, and the counts that were wrong
+
+**W4-R17 — the distance row offered a RAW number as a NORMALISED word's evidence.**
+`Well above its own trend — about 8.9% above its 200-day line.` reads as one claim with
+its own proof attached. It is two claims: `ext.grade` grades `ext_z`, the z-score of that
+gap against the name's OWN 252-day history, so the word is volatility-normalised and the
+number is not. Measured over the 1,621 artifacts carrying `tech.pct_vs_200dma`, **33.6%
+of ordered pairs invert** — the name graded further out sits at the SMALLER raw gap — and
+the committed crops are exactly such a pair (AAPL "in line" at +9.0%, RIVN "well above"
+at +8.9%). The number now leads as a plain fact of its own and the word follows behind
+the yardstick it was actually taken against.
+
+**And the yardstick clause is branch-specific, because the two sources are not the same
+measure.** `ext.grade` covers 1,260 of the 1,621; the other **361 fall back to
+`ladder.alignment.overextended`**, which `engine/cycles.py::_overextended` reads off
+daily/3-day StochRSI + RSI14 overbought or a >=30% gap — "how hard it has run lately",
+not a normalised distance. **Both crop exemplars are in that 361: neither AAPL nor RIVN
+carries an `ext` block at all.** Printing "against how far this name usually runs" over
+the ladder branch would name a measure we did not take, so it says what it did measure
+instead. (The round-3 review characterised the word as volatility-normalised full stop;
+that is true of 78% of the library and of none of the crops.)
+
+**W4-R18 — the *label* collision outlived the row-wording fix.** Round 3 disambiguated
+the distance row's values and left `Stretch` on the lane, so drawers still rendered
+"Stretch: OK — not stretched" a few rows from "Distance from trend: Well above its own
+trend": one English word naming two measurements, in the place a reader meets first. The
+lane is now **Entry stretch / 入场拉伸** and its sentences are phrased against the ENTRY
+("entries here are not chasing a move that already ran"), so neither row reads as the
+negation of the other. The lane's underlying read is untouched — label and copy only.
+Its `hv20` fallback branch, which has no entry read at all, now says so before reporting
+the swing size rather than filing a volatility answer under an entry label.
+
+**The two rows can still disagree, and that is the disclosed engine state, not a copy
+defect.** RIVN is the shape where the ladder says overextended and the entry status says
+clean; the drawer now shows two rows that each name what they measured, instead of one
+vocabulary contradicting itself. Reconciling the oracles is chipped as its own wave.
+
+**W4-R19 — the row counts in this file were wrong in every scene, for three rounds.**
+The composer emits 15 rows and a holdings drawer 16; this file said 15 everywhere and
+"8 of 15" for a 16-row scene, and the sub-counts had drifted past the distance row and
+past AAPL's Transmission row changing state. The cure is not a corrected number, it is
+`drawer_rows()` + `print_inventory()` in the harness: the run now PRINTS the per-scene
+inventory it measured, and every count in §1 and §2 is transcribed from that output. The
+self-certifying sentence that outlived three reviews ("every figure here is per-scene and
+matches the crop named beside it") is deleted and replaced by §2's explicit split of
+machine-derived from hand-written.
+
+**W4-R20 — the library sweep measured the PRE-floor stance.** `SWEEP_JS` called
+`intelStance(L, roleBadge(L))` with two arguments after the function grew a third; the
+flag argument is what applies the round-3 all-clear floor, so the printed receipt said
+No action **48 (2.9%)** while the DOM rendered **16 (1.0%)**. Both sweeps SKIP in CI for
+want of the nightly artifacts, so a local run is the only place this was visible — and
+the same property means a stray `%` anywhere in that template raises `TypeError` before
+the sweep runs. Both are recorded inline.
+
+**Two nits considered and declined, with reasons.** (1) `In its setup zone now` is the
+Tier-1 lead closest to entry timing, but "now" is doing contrastive work against the
+map's five not-yet states ("no pullback yet", "not confirmed yet", "confirmation not in
+yet") rather than urging anything, and no rewording keeps that contrast without losing
+the state. (2) Scene 04 renders `DAY —` as its sole header metric and it does look like
+an unfinished band — the round-3 brief permits suppressing it there. Declined: that dash
+is a printed null with a tooltip explaining why the figure is absent, and removing a
+disclosure so a screenshot looks tidier is the wrong trade in a codebase whose law is
+nulls printed, not hidden. It is the sole metric only because this seeded row carries no
+`sector` string; the drawer's own Sector & theme row has one.
 
 ---
 
