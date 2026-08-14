@@ -34,6 +34,7 @@ waves:
   - id: W2
     title: Fix wave — B1/B2/B3 + M1-M4 + adversarial review findings + isolated CI job
     status: awaiting_ci
+    pr: 5620
     next_action: "Sweeper merges on green; then verify the intelligence-registry job ran on the merge and read its two step logs."
   - id: W3
     title: output_class bounded adjudication (the curated overlay)

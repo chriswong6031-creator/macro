@@ -99,7 +99,7 @@ danger_areas:
   - "engine/neuralweb/synapse.py 2k2 (scored_path_surfaces value validation) is a values-only hard gate in the always-on synapse validator — reviewed and kept; requiring the key on all artifacts would change every open PR."
   - "The shared clone's origin/main ref advances every few minutes under the wire lanes — diff sanity must run against the merge-base, and any keep-both rebase resolution must be re-proven against pristine main afterward."
 
-prs: []
+prs: [5620]
 decisions:
   - "DEC:EVAL-OS-BLINDNESS-EXITS-BY-PLANE"
 ---
