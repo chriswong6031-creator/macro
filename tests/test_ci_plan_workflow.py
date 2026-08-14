@@ -451,6 +451,18 @@ def test_ci_pack_publishes_one_strict_terminal_record_per_matrix_child() -> None
     assert publish["with"]["retention-days"] == 7
 
 
+def test_ci_pack_reuses_only_pip_downloads_under_a_manifest_bound_key() -> None:
+    """Download reuse is safe; mutable cross-job virtualenv reuse is not."""
+    cache = next(
+        step for step in _job("ci-pack")["steps"]
+        if step.get("name") == "restore deterministic pip download cache"
+    )
+    assert cache["uses"] == "actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830"
+    assert cache["with"]["path"] == "~/.cache/pip"
+    assert "hashFiles('.github/ci/legacy-jobs.yml')" in cache["with"]["key"]
+    assert cache["with"]["restore-keys"].strip().endswith("-py312-ci-pack-pip-")
+
+
 # ─── ci-gate ────────────────────────────────────────────────────────────────────
 
 
