@@ -97,16 +97,23 @@ def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedPro
 # ─── ci-plan ────────────────────────────────────────────────────────────────────
 
 
-def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
+def test_ci_plan_job_exists_and_publishes_all_six_outputs() -> None:
     """`ci-pack` and `ci-gate` read these outputs by name.
 
     Drop or rename one and the consumer expression silently evaluates to the empty
     string: `matrix` breaks `fromJSON` outright, but `has_work` empty means the pack
     gate is never `'true'` so the ENTIRE matrix is skipped on every PR, and
     `plan_sha` empty just unpins the parity check.  Two of those three failures are
-    green-looking. `changed_files` empty makes every pack re-diff a shallow clone
-    and fail-safe-widen to the full suite — the throughput hole this output exists
-    to close.
+    green-looking.
+
+    `changed_files` is NOT among them any more (2026-08-14). Every job output
+    becomes an `env:` string in the consuming job, execve caps a single one at
+    131,072 bytes on Linux (MAX_ARG_STRLEN), and that list measured 350,264
+    bytes on PR #5578 — all twelve packs died at launch with "Argument list too
+    long" before running a test (run 31775693780). The list now travels as the
+    `ci-changed-files` artifact and only its 64-character digest rides here;
+    adding a seventh output that scales with the diff would reopen the hole
+    under a new name.
     """
     job = _job("ci-plan")
     assert job["outputs"] == {
@@ -114,7 +121,8 @@ def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
         "has_work": "${{ steps.plan.outputs.has_work }}",
         "plan_sha": "${{ steps.plan.outputs.plan_sha }}",
         "reason": "${{ steps.plan.outputs.reason }}",
-        "changed_files": "${{ steps.plan.outputs.changed_files }}",
+        "changed_files_sha256": "${{ steps.plan.outputs.changed_files_sha256 }}",
+        "changed_files_count": "${{ steps.plan.outputs.changed_files_count }}",
     }
 
 
@@ -129,7 +137,7 @@ def test_ci_plan_is_fenced_against_closed_events() -> None:
 
 
 def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
-    """`changed_files` diffs against the PR base SHA, which a shallow clone lacks.
+    """The planner diffs against the PR base SHA, which a shallow clone lacks.
 
     Drop `fetch-depth: 0` and the diff fails, the planner widens to the full suite by
     law (fail-SAFE), and every PR runs everything while the plan still reports
@@ -268,10 +276,6 @@ def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> No
         "an empty plan_sha must word-split away, not emit a valueless --expect-plan-sha"
     )
     assert " $PLAN_SHA_ARG " in f" {_pack_step()['run']} ", "the argument must be unquoted so it can vanish"
-    assert env["CI_CHANGED_FILES_JSON"] == "${{ needs.ci-plan.outputs.changed_files }}"
-    assert "CI_CHANGED_FILES_JSON" not in _pack_step()["run"], (
-        "the changed-file list must travel via env, not the folded command line"
-    )
 
 
 def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> None:
@@ -397,3 +401,133 @@ def test_ci_gate_passes_when_the_selected_packs_all_succeeded() -> None:
     """
     proc = _run_gate(plan="success", pack="success", has_work="true")
     assert proc.returncode == 0, f"ci-gate refused a fully green run: {proc.stdout}\n{proc.stderr}"
+
+
+# ─── the 2026-08-14 E2BIG transport (run 31775693780) ───────────────────────────
+
+
+def _artifact_step(job: str, action: str, name: str) -> dict[str, Any]:
+    """The one step in `job` using `action` for the artifact called `name`."""
+    matches = [
+        step
+        for step in _job(job)["steps"]
+        if str(step.get("uses", "")).startswith(action)
+        and str(step.get("with", {}).get("name", "")) == name
+    ]
+    assert len(matches) == 1, (
+        f"{job} must use {action} for {name!r} exactly once, found {len(matches)}"
+    )
+    return matches[0]
+
+
+def test_the_changed_file_list_never_travels_through_the_process_environment() -> None:
+    """The 2026-08-14 E2BIG, pinned as an ABSENCE (run 31775693780).
+
+    PR #5578 carried a handful of files. Every one of its twelve packs died
+    before running a test:
+
+        An error occurred trying to start process '/usr/bin/bash' ...
+        Argument list too long
+
+    The planner had diffed against the PR's opening base SHA while main moved 45
+    commits / 8,581 paths underneath it, attributed the whole drift to the PR,
+    and rode the resulting list into the pack step's `env:` through a job
+    output: 350,264 bytes against execve's 131,072-byte MAX_ARG_STRLEN.
+
+    Two names are therefore forbidden in this file outright. `env:` and
+    `$GITHUB_ENV` are the same hazard — both end up in a later process's
+    environment — so "it is only an env var, not a command line" is not a
+    defence: execve counts them together. What IS allowed to cross is a PATH.
+    """
+    text = WORKFLOW.read_text(encoding="utf-8")
+    assert "CI_CHANGED_FILES_JSON" not in text, (
+        "the inline list must not reappear in ci.yml under any name — it is the "
+        "350,264-byte string that killed all twelve packs at launch"
+    )
+    # Assembled by concatenation, the same idiom `check_conflict_markers` uses
+    # for its own markers: the retired expression must not appear verbatim in
+    # this file either, or a repo-wide `git grep` for it can never come back
+    # clean and the absence stops being checkable from outside this test.
+    retired_output = "outputs." + "changed_files "
+    assert retired_output not in text.replace("}", " "), (
+        "a job output becomes an `env:` string in the consuming job; that is "
+        "exactly how the list reached the pack step's environment"
+    )
+    exports = [
+        line.strip()
+        for line in text.splitlines()
+        if "CI_CHANGED_FILES_FILE=" in line
+    ]
+    assert len(exports) == 1, (
+        f"ci-pack must export the handle exactly once (found {len(exports)}: {exports})"
+    )
+    assert "GITHUB_ENV" in exports[0]
+    assert "changed-files.json" in exports[0], (
+        "the handle must name the downloaded file, so run_ci_pack and every "
+        "child guard resolve the same bytes"
+    )
+
+
+def test_ci_plan_publishes_the_changed_file_list_as_an_artifact() -> None:
+    """The artifact IS the transport, and both ends must fail closed.
+
+    Three regressions this pins, each of which leaves a green-looking workflow:
+
+      * The upload going conditional. `run_ci_pack.py` writes the file on BOTH
+        exits of the plan step — the resolved list on success, `null` on the
+        planner-fallback path that swallows its exception and exits 0 — so
+        "a pack is running" implies "this artifact exists", and that implication
+        is what lets the pack-side download be a hard failure.
+      * `if-no-files-found` drifting off `error`. The default is `warn`: a
+        missing file would publish an empty artifact, every pack would download
+        nothing, and the scope of the run becomes a value nobody chose.
+      * The `--emit-changed-files` flag disappearing from the plan command, or
+        naming a path the upload does not publish.
+    """
+    run = str(_plan_step()["run"])
+    assert (
+        '--emit-changed-files "$RUNNER_TEMP/ci-changed-files/changed-files.json"' in run
+    )
+    upload = _artifact_step("ci-plan", "actions/upload-artifact@", "ci-changed-files")
+    assert "if" not in upload, (
+        "the upload must be unconditional — the planner-fallback path publishes "
+        "no plan sha but its packs still need the list"
+    )
+    assert upload["with"]["path"] == (
+        "${{ runner.temp }}/ci-changed-files/changed-files.json"
+    )
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["retention-days"] == 14
+    steps = _job("ci-plan")["steps"]
+    assert steps.index(upload) > steps.index(_plan_step()), (
+        "the list is written BY the plan step; uploading before it publishes nothing"
+    )
+
+
+def test_ci_pack_downloads_the_list_and_exports_only_its_path() -> None:
+    """A path crosses; the list never does. Order is load-bearing.
+
+    The download and the handle export must both precede the pack command, or
+    `run_ci_pack.py` resolves an absent handle, widens to a `git diff` its
+    fetch-depth-1 checkout cannot answer, and — because `changed_files_sha256`
+    is inside the hashed plan payload — refuses on `--expect-plan-sha` instead
+    of running anything. Failing closed is correct; failing closed on EVERY PR
+    is an outage.
+    """
+    steps = _job("ci-pack")["steps"]
+    download = _artifact_step(
+        "ci-pack", "actions/download-artifact@", "ci-changed-files"
+    )
+    assert download["with"]["path"] == "${{ runner.temp }}/ci-changed-files"
+    assert "if" not in download, (
+        "ci-plan uploads unconditionally, so a missing artifact here is a broken "
+        "control plane, not a case to tolerate"
+    )
+    export = next(
+        step for step in steps if "CI_CHANGED_FILES_FILE=" in str(step.get("run", ""))
+    )
+    assert steps.index(download) < steps.index(export) < steps.index(_pack_step())
+    assert "CI_CHANGED_FILES_FILE" not in _pack_step().get("env", {}), (
+        "the pack step must inherit the handle from $GITHUB_ENV, not re-declare "
+        "it — one writer keeps the two jobs naming the same bytes"
+    )
