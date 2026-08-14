@@ -23,7 +23,7 @@ config/site_access.yml	291	# /live/prophet_live.json (Prophet Live provisional s
 config/site_access.yml	295	# (The armed trigger LEVELS are not in it; they stay in the R2 pack.) It is
 config/site_access.yml	338	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
 config/synapse.yml	5937	Companion per-name payloads at site/flow/<KEY>.json and compact bot context
-config/synapse.yml	6137	
+config/synapse.yml	6141	path: data/options_entry/state.parquet
 config/synapse.yml	11580	safety: the nightly reads LAST NIGHT'S index, and an open plan persists across
 engine/biocatalyst/activation.py	577	"contract_id": "biocatalyst_retention_preflight.v1",
 engine/biocatalyst/prospective.py	509	def build_public_model(
