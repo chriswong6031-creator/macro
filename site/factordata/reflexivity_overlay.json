@@ -2,7 +2,7 @@
   "schema": "reflexivity_overlay.v1",
   "is_context_only": true,
   "as_of": "2026-08-13",
-  "generated_utc": "2026-08-14T04:19:23Z",
+  "generated_utc": "2026-08-14T06:40:19Z",
   "note": "Risk-clustering read: 'is this the same hidden trade?'. NOT an alpha claim. Board-level, held-agnostic (US only, v1). Display-only per R-F / Signal Commons R7.",
   "factor_caveat": "Per-name secondary betas (oil/usd/btc/gold/china) are OOS-unstable and excluded. Similarity uses high-tier factors only (mkt/growth/size/rates, scope=single). Trust the MEMBERSHIP leg more than the factor leg for individual names.",
   "board_concentration": {
@@ -25,90 +25,6 @@
   ],
   "earnings_coverage_frac": 0.0,
   "by_ticker": {
-    "CVCO": {
-      "verdict": "duplicate",
-      "max_similarity": 0.7342,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "AYI",
-          "combined": 0.7342,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.7342,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "JNJ",
-          "combined": 0.4762,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.4762,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "ONTO",
-          "combined": 0.1574,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.1574,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 73%).",
-      "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 73%\uff09\u3002"
-    },
-    "ONTO": {
-      "verdict": "duplicate",
-      "max_similarity": 0.7096,
-      "basis": "membership+high-tier-factor",
-      "nearest": [
-        {
-          "ticker": "AYI",
-          "combined": 0.7096,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.7096,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "CVCO",
-          "combined": 0.1574,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.1574,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        },
-        {
-          "ticker": "JNJ",
-          "combined": 0.0,
-          "membership_jaccard": 0.0,
-          "factor_cosine": 0.0,
-          "factor_basis": "high-tier-factors:4of4",
-          "shared_groups": [],
-          "same_earnings_week": null
-        }
-      ],
-      "earnings_leg": {
-        "next_date": null,
-        "same_week_peers": [],
-        "has_data": false
-      },
-      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
-      "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 71%).",
-      "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 71%\uff09\u3002"
-    },
     "AYI": {
       "verdict": "duplicate",
       "max_similarity": 0.7342,
@@ -150,6 +66,39 @@
       "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
       "why_en": "Same bet as CVCO \u2014 shared factor profile (similarity 73%).",
       "why_zh": "\u4e0e CVCO \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 73%\uff09\u3002"
+    },
+    "CVCO": {
+      "verdict": "duplicate",
+      "max_similarity": 0.7342,
+      "basis": "membership+high-tier-factor",
+      "nearest": [
+        {
+          "ticker": "AYI",
+          "combined": 0.7342,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.7342,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        },
+        {
+          "ticker": "JNJ",
+          "combined": 0.4762,
+          "membership_jaccard": 0.0,
+          "factor_cosine": 0.4762,
+          "factor_basis": "high-tier-factors:4of4",
+          "shared_groups": [],
+          "same_earnings_week": null
+        }
+      ],
+      "earnings_leg": {
+        "next_date": null,
+        "same_week_peers": [],
+        "has_data": false
+      },
+      "earnings_leg_note": "earnings-cluster annotation (W-D): Jaccard-adjacent, display-only. Does not affect similarity matrix, N_eff, or verdicts.",
+      "why_en": "Same bet as AYI \u2014 shared factor profile (similarity 73%).",
+      "why_zh": "\u4e0e AYI \u62bc\u6ce8\u76f8\u540c \u2014 \u5171\u540c\u56e0\u5b50\u655e\u53e3\uff08\u76f8\u4f3c\u5ea6 73%\uff09\u3002"
     },
     "JNJ": {
       "verdict": "partial",
@@ -195,38 +144,10 @@
     }
   },
   "pair_basis": {
-    "CVCO__ONTO": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.1574,
-      "combined": 0.1574,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CVCO__AYI": {
+    "AYI__CVCO": {
       "membership_jaccard": 0.0,
       "factor_cosine": 0.7342,
       "combined": 0.7342,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "CVCO__JNJ": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.4762,
-      "combined": 0.4762,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "ONTO__AYI": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.7096,
-      "combined": 0.7096,
-      "factor_basis": "high-tier-factors:4of4",
-      "shared_groups": []
-    },
-    "ONTO__JNJ": {
-      "membership_jaccard": 0.0,
-      "factor_cosine": 0.0,
-      "combined": 0.0,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     },
@@ -234,6 +155,13 @@
       "membership_jaccard": 0.0,
       "factor_cosine": 0.0,
       "combined": 0.0,
+      "factor_basis": "high-tier-factors:4of4",
+      "shared_groups": []
+    },
+    "CVCO__JNJ": {
+      "membership_jaccard": 0.0,
+      "factor_cosine": 0.4762,
+      "combined": 0.4762,
       "factor_basis": "high-tier-factors:4of4",
       "shared_groups": []
     }
