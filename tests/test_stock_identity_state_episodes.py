@@ -21,6 +21,7 @@ import pandas as pd
 import pytest
 
 from engine.stock_identity import episodes as ep
+from engine.stock_identity import dossier
 from engine.stock_identity import state as st
 
 # Small constants so a synthetic path can be short and still resolve.
@@ -109,6 +110,33 @@ class TestStateTotalityAndExclusivity:
         assert st.state_variables(df, "baskets_ohlcv_v1")["gap_basis"].iloc[0] == st.GAP_BASIS_OPEN
         # the open-less curated plane must use close-to-close even when `open` exists
         assert st.state_variables(df, "stocks_tr_v1")["gap_basis"].iloc[0] == st.GAP_BASIS_CLOSE
+
+    @staticmethod
+    def _render_gap_basis(basis: str) -> str:
+        return dossier.render_markdown(
+            symbol="X",
+            plane_id="test",
+            snapshot_row={"n_rows": 0},
+            hygiene={},
+            raw={},
+            percentiles={},
+            coverage={},
+            unstable={},
+            catalog=pd.DataFrame(),
+            state_shares=pd.DataFrame(),
+            constants_meta={"gap_basis": basis},
+            chart_rel=None,
+        )
+
+    def test_dossier_gap_prose_matches_the_recorded_basis(self):
+        open_text = self._render_gap_basis(st.GAP_BASIS_OPEN)
+        open_line = next(line for line in open_text.splitlines() if "Gap basis" in line)
+        assert "opening print is compared with the previous close" in open_line
+        assert "close-to-close proxy" not in open_line
+
+        close_text = self._render_gap_basis(st.GAP_BASIS_CLOSE)
+        close_line = next(line for line in close_text.splitlines() if "Gap basis" in line)
+        assert "close-to-close proxy" in close_line
 
 
 class TestDurableLowDetection:

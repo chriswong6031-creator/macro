@@ -249,12 +249,25 @@ def render_markdown(
     # ---------------- states ----------------
     L.append("## State shares by year")
     L.append("")
+    gap_basis = constants_meta.get("gap_basis", "n/a")
+    if gap_basis == state_mod.GAP_BASIS_OPEN:
+        gap_caveat = (
+            "the opening print is compared with the previous close, isolating the "
+            "overnight jump when an opening series is available"
+        )
+    elif gap_basis == state_mod.GAP_BASIS_CLOSE:
+        gap_caveat = (
+            "a close-to-close proxy absorbs the whole session's move, not just the "
+            "overnight jump, so cross-plane comparisons of the dislocation share "
+            "carry that caveat"
+        )
+    else:
+        gap_caveat = (
+            "the basis is unavailable, so dislocation-share comparisons are caveated"
+        )
     L.append(
         "Eight mutually-exclusive bars-only states, first-match-wins precedence. "
-        f"Gap basis on this plane: `{constants_meta.get('gap_basis', 'n/a')}` — a "
-        "close-to-close proxy absorbs the whole session's move, not just the "
-        "overnight jump, so cross-plane comparisons of the dislocation share carry "
-        "that caveat."
+        f"Gap basis on this plane: `{gap_basis}` — {gap_caveat}."
     )
     L.append("")
     if state_shares is None or state_shares.empty:

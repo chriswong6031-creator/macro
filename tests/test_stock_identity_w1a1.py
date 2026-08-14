@@ -27,6 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "data" / "stock_identity"
 REGISTRATION = ROOT / "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md"
 RECEIPT = ROOT / amendment_builder.RECEIPT_RELATIVE_PATH
+RESULT_READY = RECEIPT.exists()
+PREREQUISITE_READY = (ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH).exists()
 
 SEALED_SHA256 = {
     "data/stock_identity/partition/partition_manifest_v1.json":
@@ -63,11 +65,9 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-if not RECEIPT.exists():
-    pytest.skip("registered W1-A1 result has not been produced yet", allow_module_level=True)
-
-
 def _receipt() -> dict:
+    if not RESULT_READY:
+        pytest.skip("registered W1-A1 result has not been produced yet")
     return json.loads(RECEIPT.read_text(encoding="utf-8"))
 
 
@@ -77,22 +77,29 @@ def _manifest() -> dict:
     )
 
 
-def test_historical_recipe_and_effective_overlay_are_both_explicit():
+def test_historical_recipe_and_registered_effective_tuple_are_both_explicit():
     assert sealed_builder.MINER_PROBE == ("NEM", "GOLD", "AEM", "PAAS", "WPM", "AG")
     assert sealed_builder.PILOT_ROLES["GOLD"] == "miner neighborhood probe"
     assert pilot.W1_SEALED_MINER_PROBE == sealed_builder.MINER_PROBE
     assert pilot.W1A1_EFFECTIVE_MINER_PROBE == ("NEM", "AEM", "PAAS", "WPM", "AG", "B")
+
+
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
+def test_current_miner_probe_activates_only_after_closed_receipt():
     assert pilot.current_miner_probe(ROOT) == pilot.W1A1_EFFECTIVE_MINER_PROBE
 
 
 def test_registration_append_did_not_move_the_sealed_partition_hash():
-    receipt = _receipt()
     text = REGISTRATION.read_text(encoding="utf-8")
     assert partition_mod.partition_procedure_sha256(REGISTRATION)[0] == _manifest()[
         "partition_procedure_sha256"
     ]
     assert text.index("## Amendment A1") > text.index("## §14. Hashes")
     assert amendment_builder.AMENDMENT_ID in text
+
+
+def test_result_records_the_registration_commits():
+    receipt = _receipt()
     assert receipt["registration_commit"] == amendment_builder.REGISTRATION_COMMIT
     assert receipt["initial_registration_commit"] == amendment_builder.INITIAL_REGISTRATION_COMMIT
 
@@ -105,6 +112,9 @@ def test_b_remains_outside_every_sealed_w1_membership():
     assert "GOLD" in manifest["pilot"]["members"] and "B" not in manifest["pilot"]["members"]
     assert "B" not in manifest["blind_arm"]["members"]
     assert "B" not in manifest["calibration_partition"]["members"]
+
+
+def test_result_keeps_b_design_touched_and_nonconfirmatory():
     treatment = _receipt()["partition_treatment"]
     assert treatment["B_design_touched"] is True
     assert treatment["B_excluded_from_future_blind_extension"] is True
@@ -126,9 +136,13 @@ def test_combined_w1_artifacts_still_contain_gold_and_never_b():
 def test_every_sealed_w1_artifact_is_byte_frozen():
     for relative, expected in SEALED_SHA256.items():
         assert _sha256(ROOT / relative) == expected, relative
+
+
+def test_result_declares_that_no_sealed_measurement_was_mutated():
     assert _receipt()["measured_rows_mutated"] is False
 
 
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
 def test_gold_disclosure_is_reversible_and_names_the_actual_instruments():
     path = ROOT / amendment_builder.DISCLOSURE_ONLY_PATH
     text = path.read_text(encoding="utf-8")
@@ -149,6 +163,7 @@ def test_gold_disclosure_is_reversible_and_names_the_actual_instruments():
     assert disclosure["gold_svg_unchanged"] is True
 
 
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
 def test_gold_is_acked_readable_blind_ineligible_and_not_blocklisted():
     hygiene._load_config.cache_clear()
     assert "GOLD" not in hygiene.COMPUTE_BLOCKLIST
@@ -165,6 +180,7 @@ def test_gold_is_acked_readable_blind_ineligible_and_not_blocklisted():
         assert token in note
 
 
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
 def test_ack_status_tail_records_the_curated_repair():
     config = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8"))
     ack = config["quality"]["reused_ticker_acks"]["GOLD"]
@@ -174,6 +190,7 @@ def test_ack_status_tail_records_the_curated_repair():
     assert "NO store file under 'B'" not in ack
 
 
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
 def test_b_source_is_exactly_the_registered_curated_plane():
     path = ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH
     assert _sha256(path) == amendment_builder.B_SOURCE_SHA256
@@ -185,6 +202,7 @@ def test_b_source_is_exactly_the_registered_curated_plane():
     assert not (DATA / "ohlcv/B.parquet").exists()
 
 
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
 def test_b_addendum_parquets_are_b_only_on_baskets_with_zero_authority():
     paths = (
         DATA / "fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
@@ -212,6 +230,7 @@ def test_b_addendum_parquets_are_b_only_on_baskets_with_zero_authority():
         assert values.between(0.0, 100.0).all()
 
 
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
 def test_b_episode_json_and_governing_receipt_are_zero_authority():
     episode_json = json.loads(
         (DATA / "episodes/amendments/B.json").read_text(encoding="utf-8")
@@ -234,7 +253,7 @@ def test_rank_context_is_frozen_hypothetical_insertion_only():
     assert "no sweep" in _receipt()["trial_budget"]
 
 
-def test_output_allowlist_and_prerequisite_merges_are_exact():
+def test_output_allowlist_is_exact_and_disjoint_from_sealed_artifacts():
     expected = (
         "data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
         "data/stock_identity/fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
@@ -245,24 +264,34 @@ def test_output_allowlist_and_prerequisite_merges_are_exact():
         "research/stock_identity/dossiers/B.svg",
     )
     assert amendment_builder.OUTPUT_PATHS == expected
-    assert tuple(_receipt()["registered_output_paths"]) == expected
     assert set(expected).isdisjoint(SEALED_SHA256)
+
+
+def test_result_records_exact_allowlist_and_prerequisite_merges():
+    assert tuple(_receipt()["registered_output_paths"]) == amendment_builder.OUTPUT_PATHS
     assert _receipt()["prerequisite_merges"] == {
         "pr_5613": amendment_builder.PR_5613_MERGE_SHA,
         "pr_5632": amendment_builder.PR_5632_MERGE_SHA,
     }
 
 
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
 def test_b_dossier_and_svg_disclose_the_2014_floor():
     markdown = (ROOT / "research/stock_identity/dossiers/B.md").read_text(encoding="utf-8")
     for token in (
         "Barrick Mining Corporation", "756894", "W1-A1 addendum", "Zero authority",
         "baskets_ohlcv_v1", "2014-01-02", "no existing rank changed",
+        "only B was ranked and no W1 row was recomputed or rewritten",
     ):
         assert token in markdown
     assert "pre-2014 portion" in markdown
+    gap_line = next(line for line in markdown.splitlines() if "Gap basis" in line)
+    assert "`open_vs_prev_close`" in gap_line
+    assert "opening print is compared with the previous close" in gap_line
+    assert "close-to-close proxy" not in gap_line
     svg = (ROOT / "research/stock_identity/dossiers/B.svg").read_text(encoding="utf-8")
     assert "2014-01-02" in svg
+    assert svg.count("<dc:date>2026-08-14T00:00:00+00:00</dc:date>") == 1
 
 
 def test_pre_registration_exposure_is_disclosed_and_quarantined():

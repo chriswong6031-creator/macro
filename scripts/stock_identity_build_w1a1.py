@@ -15,6 +15,7 @@ staged result, publishes the governing receipt last, and refuses any overwrite.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -45,6 +46,10 @@ from engine.stock_identity.pilot import (  # noqa: E402
     AMENDMENT_ID,
     W1_SEALED_MINER_PROBE,
     W1A1_EFFECTIVE_MINER_PROBE,
+    W1A1_GOLD_ANNOTATION_BEGIN,
+    W1A1_GOLD_ANNOTATION_END,
+    W1A1_GOLD_DISCLOSURE_PATH,
+    W1A1_REGISTERED_OUTPUT_PATHS,
 )
 from engine.stock_identity.plane import (  # noqa: E402
     PLANE_BASKETS,
@@ -64,18 +69,10 @@ MANIFEST_PATH = DATA / "partition" / "partition_manifest_v1.json"
 CONSTANTS_PATH = DATA / "constants" / "si_constants_v1.json"
 B_SOURCE_RELATIVE_PATH = "data/baskets/ohlcv/B.parquet"
 B_SOURCE_PATH = REPO_ROOT / B_SOURCE_RELATIVE_PATH
-DISCLOSURE_ONLY_PATH = "research/stock_identity/dossiers/GOLD.md"
+DISCLOSURE_ONLY_PATH = W1A1_GOLD_DISCLOSURE_PATH
 
 # Machine-checked in tests.  No frozen W1 path belongs here.
-OUTPUT_PATHS: tuple[str, ...] = (
-    "data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
-    "data/stock_identity/fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
-    "data/stock_identity/state/amendments/w1a1_b_state_daily.parquet",
-    "data/stock_identity/episodes/amendments/w1a1_b_episode_catalog_v0.parquet",
-    "data/stock_identity/episodes/amendments/B.json",
-    "research/stock_identity/dossiers/B.md",
-    "research/stock_identity/dossiers/B.svg",
-)
+OUTPUT_PATHS: tuple[str, ...] = W1A1_REGISTERED_OUTPUT_PATHS
 RECEIPT_RELATIVE_PATH = OUTPUT_PATHS[0]
 
 FROZEN_SHA256: dict[str, str] = {
@@ -112,8 +109,8 @@ REFERENCE_SHA256: dict[str, str] = {
 }
 
 B_SOURCE_SHA256 = "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
-GOLD_ANNOTATION_BEGIN = "<!-- SI-W1-A1-GOLD-WRONG-ISSUER:BEGIN -->"
-GOLD_ANNOTATION_END = "<!-- SI-W1-A1-GOLD-WRONG-ISSUER:END -->"
+GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
+GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
 
 GOLD_ANNOTATION = "\n".join(
     (
@@ -366,16 +363,29 @@ def _stamp_frame(frame: pd.DataFrame) -> pd.DataFrame:
 def _assert_zero_authority_frame(frame: pd.DataFrame, label: str) -> None:
     for key in AUTHORITY_KEYS:
         column = f"authority_{key}"
-        if column not in frame.columns or bool(frame[column].any()):
+        if column not in frame.columns:
+            raise SystemExit(f"{label}: {column} is missing")
+        values = frame[column]
+        if values.isna().any() or not pd.api.types.is_bool_dtype(values.dtype):
+            raise SystemExit(f"{label}: {column} must be non-null boolean")
+        if not values.eq(False).all():  # noqa: E712 - identity authority is literal false
             raise SystemExit(f"{label}: {column} is missing or not all-false")
 
 
 def _schema_like(frame: pd.DataFrame, frozen_path: Path, label: str) -> pd.DataFrame:
-    frozen_columns = list(pd.read_parquet(frozen_path).columns)
+    frozen = pd.read_parquet(frozen_path)
+    frozen_columns = list(frozen.columns)
     missing = [c for c in frozen_columns if c not in frame.columns]
     extra = [c for c in frame.columns if c not in frozen_columns]
     if missing or extra:
         raise SystemExit(f"{label} schema drift: missing={missing}, extra={extra}")
+    type_drift = {
+        column: (str(frame[column].dtype), str(frozen[column].dtype))
+        for column in frozen_columns
+        if not pd.api.types.is_dtype_equal(frame[column].dtype, frozen[column].dtype)
+    }
+    if type_drift:
+        raise SystemExit(f"{label} logical-type drift: {type_drift}")
     return frame[frozen_columns]
 
 
@@ -421,13 +431,14 @@ def _render_b_chart(
             "registered B.svg exceeded the renderer limit; no PNG fallback is authorized"
         )
     svg = stage_path.read_text(encoding="utf-8")
-    svg = re.sub(
+    svg, substitutions = re.subn(
         r"<dc:date>.*?</dc:date>",
         "<dc:date>2026-08-14T00:00:00+00:00</dc:date>",
         svg,
-        count=1,
         flags=re.S,
     )
+    if substitutions != 1:
+        raise SystemExit(f"B.svg must carry exactly one normalized dc:date; got {substitutions}")
     if "2014-01-02" not in svg:
         raise SystemExit("B.svg is missing the registered visible tape-floor watermark")
     stage_path.write_text(svg, encoding="utf-8")
@@ -502,6 +513,12 @@ def _build_dossier(
         "# B — Identity Atlas v0 dossier (W1-A1 addendum)",
         1,
     )
+    markdown = markdown.replace(
+        "Percentiles are PIT ranks against the contemporaneous evaluated universe.",
+        "Percentiles are B's hypothetical insertion ranks against the frozen 2,780-name "
+        "W1 reference; only B was ranked and no W1 row was recomputed or rewritten.",
+        1,
+    )
     identity = "\n## Identity"
     if markdown.count(identity) != 1:
         raise SystemExit("B dossier Identity boundary is ambiguous")
@@ -568,17 +585,15 @@ def _build_and_stage(
     missing_reference = [name for name in numeric if name not in raw_reference.columns]
     if missing_reference or len(numeric) != 57:
         raise SystemExit(f"frozen percentile field set drifted: missing={missing_reference}")
-    joint = pd.concat(
-        [raw_reference[numeric], raw_b.reindex(columns=numeric)],
-        axis=0,
+    if len(raw_reference) != 2780 or not raw_reference.index.is_unique:
+        raise SystemExit("frozen percentile reference must contain 2,780 unique rows")
+    percentile_row = fp_mod.candidate_percentiles_against_reference(
+        raw_reference[numeric], raw_b.loc[SYMBOL], numeric
     )
-    if len(joint) != 2781 or not joint.index.is_unique:
-        raise SystemExit("B hypothetical insertion did not produce 2,781 unique rows")
-    percentiles = fp_mod.cross_sectional_percentiles(joint, numeric)
+    percentiles = pd.DataFrame([percentile_row], index=[SYMBOL])
     unstable = fp_mod.unstable_flags(percentiles)
 
     raw_row = raw_b.loc[SYMBOL]
-    percentile_row = percentiles.loc[SYMBOL]
     unstable_row = unstable.loc[SYMBOL]
 
     fingerprint_row: dict[str, Any] = {
@@ -824,6 +839,12 @@ def _validate_staged(stage_root: Path, receipt: dict[str, Any], staged_gold: Pat
         (OUTPUT_PATHS[3], "B episodes"),
     ):
         reopened = pd.read_parquet(stage_root / relative)
+        frozen_path = {
+            OUTPUT_PATHS[1]: DATA / "fingerprints" / "pilot_fingerprint_v0.parquet",
+            OUTPUT_PATHS[2]: DATA / "state" / "pilot_state_daily.parquet",
+            OUTPUT_PATHS[3]: DATA / "episodes" / "pilot_episode_catalog_v0.parquet",
+        }[relative]
+        _schema_like(reopened, frozen_path, label)
         _assert_zero_authority_frame(reopened, label)
         if set(reopened["symbol"].astype(str)) != {SYMBOL}:
             raise SystemExit(f"{label}: serialized rows are not B-only")
@@ -833,32 +854,79 @@ def _validate_staged(stage_root: Path, receipt: dict[str, Any], staged_gold: Pat
             raise SystemExit(f"{label}: serialized price plane drifted")
 
 
-def _publish(stage_root: Path, staged_gold: Path) -> None:
-    _validate_outputs_absent()
-    _validate_frozen_hashes()
-    gold_path = REPO_ROOT / DISCLOSURE_ONLY_PATH
-    original_gold = gold_path.read_bytes()
+def _validate_published(receipt: dict[str, Any]) -> None:
+    _validate_frozen_hashes(skip_gold_markdown=True)
+    for relative, expected in receipt["generated_output_sha256"].items():
+        if _sha256(REPO_ROOT / relative) != expected:
+            raise SystemExit(f"published output hash drift: {relative}")
+    published_receipt = json.loads(
+        (REPO_ROOT / RECEIPT_RELATIVE_PATH).read_text(encoding="utf-8")
+    )
+    if published_receipt != receipt:
+        raise SystemExit("published amendment receipt differs from the staged receipt")
+    published_gold = REPO_ROOT / DISCLOSURE_ONLY_PATH
+    disclosure = receipt["disclosure_only"]
+    if _sha256(published_gold) != disclosure["after_sha256"]:
+        raise SystemExit("published GOLD annotation hash drifted")
+    gold_text = published_gold.read_text(encoding="utf-8")
+    if gold_text.count(GOLD_ANNOTATION_BEGIN) != 1 or gold_text.count(GOLD_ANNOTATION_END) != 1:
+        raise SystemExit("published GOLD annotation markers are absent or ambiguous")
+    restored = gold_text.replace(f"\n\n{GOLD_ANNOTATION}\n\n", "\n\n", 1)
+    if hashlib.sha256(restored.encode("utf-8")).hexdigest() != disclosure["before_sha256"]:
+        raise SystemExit("published GOLD annotation does not restore the sealed dossier")
+
+
+def _publish(stage_root: Path, staged_gold: Path, receipt: dict[str, Any]) -> None:
+    lock_key = hashlib.sha256(str(REPO_ROOT.resolve()).encode("utf-8")).hexdigest()[:16]
+    lock_path = Path(tempfile.gettempdir()) / f"stock-identity-w1a1-{lock_key}.lock"
+    lock_handle = lock_path.open("a+", encoding="utf-8")
+    lock_acquired = False
     try:
-        for relative in OUTPUT_PATHS[1:]:
-            _publish_file(stage_root / relative, REPO_ROOT / relative)
-        _publish_file(staged_gold, gold_path)
-        # Receipt last: its presence means every governed output and disclosure landed.
-        _publish_file(stage_root / RECEIPT_RELATIVE_PATH, REPO_ROOT / RECEIPT_RELATIVE_PATH)
-    except BaseException:
-        # Every registered additive target was absent at preflight, so removing them
-        # is a true rollback, never deletion of a pre-existing user artifact.
-        for relative in OUTPUT_PATHS:
-            (REPO_ROOT / relative).unlink(missing_ok=True)
-            (REPO_ROOT / relative).with_name(
-                (REPO_ROOT / relative).name + ".w1a1.tmp"
-            ).unlink(missing_ok=True)
-        rollback_source = gold_path.with_name("GOLD.md.w1a1.rollback-source")
-        rollback_source.write_bytes(original_gold)
         try:
-            _publish_file(rollback_source, gold_path)
+            fcntl.flock(lock_handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            lock_acquired = True
+        except BlockingIOError as exc:
+            raise SystemExit("another W1-A1 publication is already in progress") from exc
+        lock_handle.seek(0)
+        lock_handle.truncate()
+        lock_handle.write(f"pid={os.getpid()}\nrepo={REPO_ROOT.resolve()}\n")
+        lock_handle.flush()
+
+        _validate_outputs_absent()
+        _validate_frozen_hashes()
+        gold_path = REPO_ROOT / DISCLOSURE_ONLY_PATH
+        original_gold = gold_path.read_bytes()
+        try:
+            for relative in OUTPUT_PATHS[1:]:
+                _publish_file(stage_root / relative, REPO_ROOT / relative)
+            _publish_file(staged_gold, gold_path)
+            # Receipt last: its presence means every governed output and disclosure landed.
+            _publish_file(stage_root / RECEIPT_RELATIVE_PATH, REPO_ROOT / RECEIPT_RELATIVE_PATH)
+            # Closure remains inside the transaction. A failure here rolls everything back.
+            _validate_published(receipt)
+        except BaseException:
+            # Every registered additive target was absent at preflight, so removing them
+            # is a true rollback, never deletion of a pre-existing user artifact.
+            for relative in OUTPUT_PATHS:
+                (REPO_ROOT / relative).unlink(missing_ok=True)
+                (REPO_ROOT / relative).with_name(
+                    (REPO_ROOT / relative).name + ".w1a1.tmp"
+                ).unlink(missing_ok=True)
+            rollback_source = gold_path.with_name("GOLD.md.w1a1.rollback-source")
+            rollback_source.write_bytes(original_gold)
+            try:
+                _publish_file(rollback_source, gold_path)
+            finally:
+                rollback_source.unlink(missing_ok=True)
+            raise
+    finally:
+        try:
+            if lock_acquired:
+                fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
         finally:
-            rollback_source.unlink(missing_ok=True)
-        raise
+            lock_handle.close()
+            if lock_acquired:
+                lock_path.unlink(missing_ok=True)
 
 
 def main() -> int:
@@ -911,27 +979,7 @@ def main() -> int:
         staged_gold = Path(staged_gold_raw)
         _validate_staged(stage_root, receipt, staged_gold)
         _validate_frozen_hashes()
-        _publish(stage_root, staged_gold)
-
-    _validate_frozen_hashes(skip_gold_markdown=True)
-    for relative, expected in receipt["generated_output_sha256"].items():
-        if _sha256(REPO_ROOT / relative) != expected:
-            raise SystemExit(f"published output hash drift: {relative}")
-    published_receipt = json.loads(
-        (REPO_ROOT / RECEIPT_RELATIVE_PATH).read_text(encoding="utf-8")
-    )
-    if published_receipt != receipt:
-        raise SystemExit("published amendment receipt differs from the staged receipt")
-    published_gold = REPO_ROOT / DISCLOSURE_ONLY_PATH
-    disclosure = receipt["disclosure_only"]
-    if _sha256(published_gold) != disclosure["after_sha256"]:
-        raise SystemExit("published GOLD annotation hash drifted")
-    gold_text = published_gold.read_text(encoding="utf-8")
-    if gold_text.count(GOLD_ANNOTATION_BEGIN) != 1 or gold_text.count(GOLD_ANNOTATION_END) != 1:
-        raise SystemExit("published GOLD annotation markers are absent or ambiguous")
-    restored = gold_text.replace(f"\n\n{GOLD_ANNOTATION}\n\n", "\n\n", 1)
-    if hashlib.sha256(restored.encode("utf-8")).hexdigest() != disclosure["before_sha256"]:
-        raise SystemExit("published GOLD annotation does not restore the sealed dossier")
+        _publish(stage_root, staged_gold, receipt)
     print(
         f"[W1-A1] published B-only amendment: {receipt['result_counts']} · "
         "GOLD measured rows unchanged · receipt written last",
