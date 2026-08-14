@@ -14,11 +14,10 @@ conventional — and a convention in a 4,000-line YAML file is not a guard:
     `ci-gate`, or let its no-work branch rot, and a proven-no-work PR reads
     `unproven` and never merges.  Nothing about that failure is visible in a diff.
   * The plan is computed from a diff, so WHICH commit it diffs against is now
-    load-bearing.  `github.event.pull_request.base.sha` is immutable; every branch
-    NAME (`github.head_ref`, `github.base_ref`, `github.ref_name`) resolves at run
-    time, so main moving under a long-running PR would silently change what was
-    selected while the packs kept verifying a plan hash for a diff nobody reviewed.
-    Swapping one for the other is a one-token edit that stays green forever.
+    load-bearing. GitHub can rebuild the immutable PR test-merge on a newer target
+    while `pull_request.base.sha` still names the PR's original base. Parent 1 of
+    that exact merge is the tested base; parent 2 must equal the exact PR head.
+    Branch NAMES still resolve at run time and are never valid proof identities.
 
 The `ci-gate` tests EXECUTE the adjudication script under `bash` rather than reading
 it, because the whole point of that job is its exit code.  A test that only greps for
@@ -39,8 +38,8 @@ ROOT = Path(__file__).resolve().parents[1]
 WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 PACK_COUNT = 12
-IMMUTABLE_BASE = "github.event.pull_request.base.sha"
 IMMUTABLE_MERGE_GROUP_BASE = "github.event.merge_group.base_sha"
+TESTED_BASE_OUTPUT = "needs.ci-plan.outputs.tested_base_sha"
 # Every one of these resolves to a moving branch tip at run time.  They are the
 # plausible-looking substitutions for the immutable base SHA above, which is exactly
 # what makes them dangerous: the workflow keeps running and the plan quietly drifts.
@@ -146,6 +145,7 @@ def test_ci_plan_job_exists_and_publishes_all_required_outputs() -> None:
         "plan_sha": "${{ steps.plan.outputs.plan_sha }}",
         "reason": "${{ steps.plan.outputs.reason }}",
         "changed_files": "${{ steps.plan.outputs.changed_files }}",
+        "tested_base_sha": "${{ steps.changed_paths.outputs.tested_base_sha }}",
         "plan_artifact_name": "${{ steps.plan_artifact.outputs.name }}",
     }
 
@@ -261,8 +261,13 @@ def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() 
     assert 'preflight_payload = "[]" if event == "workflow_dispatch" else payload' in body
     assert "artifact.write_text(preflight_payload" in body
     assert "handle.write(f\"CI_CHANGED_FILES_JSON={payload}" in body
-    assert "PR_BASE_SHA" in materialize["env"]
+    assert materialize["id"] == "changed_paths"
+    assert "PR_EVENT_BASE_SHA" in materialize["env"]
+    assert "PR_HEAD_SHA" in materialize["env"]
     assert "MERGE_GROUP_BASE_SHA" in materialize["env"]
+    assert "pull_request_tested_base" in body
+    assert "CI_SCOPE_ARG=" in body
+    assert "tested_base_sha=" in body
     assert body.count("changed_files(base)") == 2
 
 
@@ -275,19 +280,22 @@ def test_committed_scope_index_is_verified_before_preflight_and_planning() -> No
     assert steps.index(verify) < steps.index(_plan_step())
 
 
-def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
-    """The diff base must be the immutable base SHA, never a branch name.
-
-    `github.head_ref` / `github.base_ref` resolve to a moving tip: main advances
-    under a long-running PR, the selected job set changes without a new commit, and
-    the packs keep verifying a plan hash for a diff no reviewer ever saw.  The
-    workflow stays green through the whole drift, which is why this is a test and not
-    a comment.
-    """
-    scope_arg = _plan_step()["env"]["CI_SCOPE_ARG"]
-    assert IMMUTABLE_BASE in scope_arg
+def test_ci_plan_uses_the_exact_test_merge_parents_not_the_stale_pr_base() -> None:
+    """The immutable merge object, not PR metadata, defines what is tested."""
+    materialize = next(
+        step for step in _job("ci-plan")["steps"]
+        if step.get("id") == "changed_paths"
+    )
+    body = str(materialize["run"])
+    assert "pull_request_tested_base" in body
+    assert 'os.environ.get("GITHUB_SHA"' in body
+    assert 'os.environ.get("PR_HEAD_SHA"' in body
+    assert 'os.environ.get("PR_EVENT_BASE_SHA")' in body
+    assert "base != event_base" in body
+    assert "CI_SCOPE_ARG=" in body
+    assert "github.event.pull_request.base.sha" not in str(_plan_step()["env"])
     for mutable in MUTABLE_REFS:
-        assert mutable not in scope_arg, f"ci-plan's diff base must not depend on {mutable}"
+        assert mutable not in body, f"ci-plan's diff base must not depend on {mutable}"
 
 
 def test_planner_and_pack_checkouts_are_pinned_to_the_event_sha() -> None:
@@ -304,12 +312,39 @@ def test_ci_plan_handles_native_merge_group_with_immutable_base_sha() -> None:
     workflow = _workflow()
     triggers = workflow.get("on") or workflow.get(True)
     assert triggers["merge_group"]["types"] == ["checks_requested"]
-    planner_base = _plan_step()["env"]["CI_SCOPE_ARG"]
+    materialize = next(
+        step for step in _job("ci-plan")["steps"]
+        if step.get("id") == "changed_paths"
+    )
+    planner_body = str(materialize["run"])
     pack_base = _pack_step()["env"]["PLAN_BASE_SHA_ARG"]
-    assert "github.event_name == 'merge_group'" in planner_base
-    assert "github.event_name == 'merge_group'" in pack_base
-    assert IMMUTABLE_MERGE_GROUP_BASE in planner_base
-    assert IMMUTABLE_MERGE_GROUP_BASE in pack_base
+    assert 'event == "merge_group"' in planner_body
+    assert materialize["env"]["MERGE_GROUP_BASE_SHA"] == (
+        "${{ github.event.merge_group.base_sha }}"
+    )
+    assert 'os.environ.get("MERGE_GROUP_BASE_SHA")' in planner_body
+    assert TESTED_BASE_OUTPUT in pack_base
+
+
+def test_tested_base_output_is_the_single_plan_and_pack_base_authority() -> None:
+    """The identity checked once must feed diffing, planning, and consumption."""
+    job = _job("ci-plan")
+    materialize = next(
+        step for step in job["steps"]
+        if step.get("id") == "changed_paths"
+    )
+    body = str(materialize["run"])
+    assert "paths = changed_files(base)" in body
+    assert "--changed-from ' + base" in body
+    assert job["outputs"]["tested_base_sha"] == (
+        "${{ steps.changed_paths.outputs.tested_base_sha }}"
+    )
+
+    pack_base = str(_pack_step()["env"]["PLAN_BASE_SHA_ARG"])
+    assert TESTED_BASE_OUTPUT in pack_base
+    assert "--expect-base-sha" in pack_base
+    assert "pull_request.base.sha" not in pack_base
+    assert "merge_group.base_sha" not in pack_base
 
 
 def test_workflow_dispatch_passes_no_changed_from_so_main_stays_full_suite() -> None:
@@ -321,15 +356,19 @@ def test_workflow_dispatch_passes_no_changed_from_so_main_stays_full_suite() -> 
     """
     planner = _plan_step()
     assert "--changed-from" not in planner["run"]
-    scope_arg = planner["env"]["CI_SCOPE_ARG"]
-    assert "github.event_name == 'pull_request'" in scope_arg
-    assert scope_arg.rstrip().endswith("|| '' }}")
+    materialize = next(
+        step for step in _job("ci-plan")["steps"]
+        if step.get("id") == "changed_paths"
+    )
+    body = str(materialize["run"])
+    assert 'preflight_payload = "[]" if event == "workflow_dispatch" else payload' in body
+    assert "f\"CI_SCOPE_ARG={'--changed-from ' + base if base else ''}" in body
 
     pack = _pack_step()
     assert "--changed-from" not in pack["run"]
     assert "--expect-base-sha" not in pack["run"]
     base_arg = pack["env"]["PLAN_BASE_SHA_ARG"]
-    assert "github.event_name == 'pull_request'" in base_arg
+    assert TESTED_BASE_OUTPUT in base_arg
     assert base_arg.rstrip().endswith("|| '' }}")
 
 

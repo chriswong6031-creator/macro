@@ -581,6 +581,43 @@ def changed_files(base_ref: str) -> list[str] | None:
     return None
 
 
+def pull_request_tested_base(
+    expected_merge_sha: str,
+    expected_head_sha: str,
+) -> str | None:
+    """Return the base actually tested by GitHub's immutable PR merge commit.
+
+    ``pull_request.base.sha`` can remain pinned to the PR's original base even
+    after GitHub rebuilds ``refs/pull/<n>/merge`` against a newer target tip.
+    The merge commit itself is the proof identity: parent 1 is the exact tested
+    base and parent 2 must be the event's exact PR head. Any other shape is
+    unknowable and therefore returns ``None`` for fail-closed preflight.
+    """
+    sha_pattern = r"[0-9a-f]{40}|[0-9a-f]{64}"
+    if not re.fullmatch(sha_pattern, expected_merge_sha) or not re.fullmatch(
+        sha_pattern, expected_head_sha
+    ):
+        return None
+    try:
+        result = subprocess.run(
+            ["git", "rev-list", "--parents", "-n", "1", "HEAD"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (subprocess.CalledProcessError, OSError):
+        return None
+    fields = result.stdout.strip().split()
+    if len(fields) != 3 or not all(
+        re.fullmatch(sha_pattern, field) for field in fields
+    ):
+        return None
+    merge_sha, base_sha, head_sha = fields
+    if merge_sha != expected_merge_sha or head_sha != expected_head_sha:
+        return None
+    return base_sha
+
+
 def _changed_path_is_safe(path: str) -> bool:
     """Whether a Git path can cross the planner's line-oriented boundaries."""
     if not path or path != path.strip() or "\\" in path:

@@ -774,6 +774,93 @@ def test_empty_successful_diff_fails_closed(monkeypatch: pytest.MonkeyPatch) -> 
     assert PACK.changed_files("deadbeef") is None
 
 
+def _git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=check,
+    )
+
+
+def test_pull_request_tested_base_uses_parent_one_in_a_depth_two_checkout(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A stale event base may be absent while the tested merge parents remain."""
+    source = tmp_path / "source"
+    shallow = tmp_path / "shallow"
+    _git(tmp_path, "init", "-b", "main", str(source))
+    _git(source, "config", "user.email", "ci@example.invalid")
+    _git(source, "config", "user.name", "CI fixture")
+
+    (source / "root.txt").write_text("original\n", encoding="utf-8")
+    _git(source, "add", "root.txt")
+    _git(source, "commit", "-m", "original base")
+    stale_event_base = _git(source, "rev-parse", "HEAD").stdout.strip()
+
+    _git(source, "switch", "-c", "pull-request")
+    (source / "candidate.txt").write_text("candidate\n", encoding="utf-8")
+    _git(source, "add", "candidate.txt")
+    _git(source, "commit", "-m", "candidate head")
+    candidate_head = _git(source, "rev-parse", "HEAD").stdout.strip()
+
+    _git(source, "switch", "main")
+    (source / "base-advance.txt").write_text("current base\n", encoding="utf-8")
+    _git(source, "add", "base-advance.txt")
+    _git(source, "commit", "-m", "advance target base")
+    tested_base = _git(source, "rev-parse", "HEAD").stdout.strip()
+    _git(source, "merge", "--no-ff", "pull-request", "-m", "test merge")
+    merge_sha = _git(source, "rev-parse", "HEAD").stdout.strip()
+
+    _git(
+        tmp_path,
+        "clone",
+        "--no-local",
+        "--depth=2",
+        source.as_uri(),
+        str(shallow),
+    )
+    missing_stale_base = _git(
+        shallow,
+        "cat-file",
+        "-e",
+        f"{stale_event_base}^{{commit}}",
+        check=False,
+    )
+    assert missing_stale_base.returncode != 0
+
+    monkeypatch.chdir(shallow)
+    assert PACK.pull_request_tested_base(merge_sha, candidate_head) == tested_base
+    assert PACK.changed_files(tested_base) == ["candidate.txt"]
+
+
+def test_pull_request_tested_base_rejects_wrong_head_and_non_merge(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _git(tmp_path, "init", "-b", "main")
+    _git(tmp_path, "config", "user.email", "ci@example.invalid")
+    _git(tmp_path, "config", "user.name", "CI fixture")
+    (tmp_path / "one.txt").write_text("one\n", encoding="utf-8")
+    _git(tmp_path, "add", "one.txt")
+    _git(tmp_path, "commit", "-m", "one parent")
+    one_parent_sha = _git(tmp_path, "rev-parse", "HEAD").stdout.strip()
+
+    monkeypatch.chdir(tmp_path)
+    assert PACK.pull_request_tested_base(one_parent_sha, one_parent_sha) is None
+    assert PACK.pull_request_tested_base("not-a-sha", one_parent_sha) is None
+
+    fake_merge = SimpleNamespace(
+        stdout=(
+            "a" * 40 + " " + "b" * 40 + " " + "c" * 40 + "\n"
+        )
+    )
+    monkeypatch.setattr(PACK.subprocess, "run", lambda *args, **kwargs: fake_merge)
+    assert PACK.pull_request_tested_base("a" * 40, "d" * 40) is None
+
+
 def test_scope_mode_kill_switch_defaults_and_can_be_disabled(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1081,6 +1168,14 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
     reordered = list(reversed(plan.eligible_job_ids))
     assert (
         PACK._canonical_digest({**payload, "eligible_job_ids": reordered})
+        != plan.plan_sha256
+    )
+
+    # The tested base is an execution identity, not diagnostic prose. Reusing
+    # an otherwise valid artifact after a merge-base rebuild must change the
+    # independent plan receipt.
+    assert (
+        PACK._canonical_digest({**payload, "changed_from": "b" * 40})
         != plan.plan_sha256
     )
 
@@ -1795,6 +1890,34 @@ def test_authoritative_consume_can_pin_the_planner_base(
         )
 
 
+def test_authoritative_consume_accepts_only_the_hash_bound_tested_base(
+    tmp_path: Path,
+) -> None:
+    plan = _full_plan()
+    tested_base = "b" * 40
+    stale_event_base = "a" * 40
+    document = plan.to_dict()
+    document["changed_from"] = tested_base
+    document["plan_sha256"] = _document_plan_sha(document)
+    path = tmp_path / "tested-base.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+
+    consumed = PACK.load_authoritative_plan(
+        MANIFEST,
+        path,
+        expected_plan_sha=document["plan_sha256"],
+        expected_base_sha=tested_base,
+    )
+    assert consumed.changed_from == tested_base
+    with pytest.raises(PACK.ManifestError, match="expect-base-sha"):
+        PACK.load_authoritative_plan(
+            MANIFEST,
+            path,
+            expected_plan_sha=document["plan_sha256"],
+            expected_base_sha=stale_event_base,
+        )
+
+
 def test_consume_cli_requires_external_sha_and_defers_pack_range_to_plan() -> None:
     with pytest.raises(SystemExit):
         PACK.parse_args(
@@ -2067,11 +2190,10 @@ def test_workflow_plans_scoped_events_and_packs_only_consume_the_plan() -> None:
         if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
     )
     base_arg = str(step["env"]["PLAN_BASE_SHA_ARG"])
-    assert "github.event_name == 'pull_request'" in base_arg
-    assert "github.event_name == 'merge_group'" in base_arg
+    assert "needs.ci-plan.outputs.tested_base_sha" in base_arg
     assert "--expect-base-sha" in base_arg
-    assert "pull_request.base.sha" in base_arg
-    assert "merge_group.base_sha" in base_arg
+    assert "pull_request.base.sha" not in base_arg
+    assert "merge_group.base_sha" not in base_arg
     assert "github.base_ref" not in base_arg
     assert "--consume-plan-json" in str(step["run"])
     assert "--changed-from" not in str(step["run"])

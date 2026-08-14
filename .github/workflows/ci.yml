@@ -4153,6 +4153,7 @@ jobs:
       plan_sha: ${{ steps.plan.outputs.plan_sha }}
       reason: ${{ steps.plan.outputs.reason }}
       changed_files: ${{ steps.plan.outputs.changed_files }}
+      tested_base_sha: ${{ steps.changed_paths.outputs.tested_base_sha }}
       plan_artifact_name: ${{ steps.plan_artifact.outputs.name }}
     steps:
       # actions/checkout cannot combine `filter: blob:none` with sparse checkout:
@@ -4194,10 +4195,12 @@ jobs:
           scripts/ci_committed_scope_index.py verify
           --manifest .github/ci/legacy-jobs.yml
           --index .github/ci/scope-index.json
-      - name: materialize immutable changed-path decision
+      - id: changed_paths
+        name: materialize immutable changed-path decision
         env:
           EVENT_NAME: ${{ github.event_name }}
-          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_EVENT_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
         run: |
           "$RUNNER_TEMP/ci-plan-runner/bin/python" - <<'PY'
@@ -4205,11 +4208,21 @@ jobs:
           import os
           from pathlib import Path
 
-          from scripts.run_ci_pack import changed_files
+          from scripts.run_ci_pack import changed_files, pull_request_tested_base
 
           event = os.environ.get("EVENT_NAME", "")
+          base = ""
           if event == "pull_request":
-              base = os.environ.get("PR_BASE_SHA") or ""
+              base = pull_request_tested_base(
+                  os.environ.get("GITHUB_SHA", ""),
+                  os.environ.get("PR_HEAD_SHA", ""),
+              ) or ""
+              event_base = os.environ.get("PR_EVENT_BASE_SHA") or ""
+              if base and event_base and base != event_base:
+                  print(
+                      "::notice title=tested-base::pull_request.base.sha is "
+                      f"{event_base}; immutable merge parent is {base}"
+                  )
               paths = changed_files(base) if base else None
           elif event == "merge_group":
               base = os.environ.get("MERGE_GROUP_BASE_SHA") or ""
@@ -4229,9 +4242,14 @@ jobs:
           with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as handle:
               handle.write(f"CI_CHANGED_FILES_JSON={payload}\n")
               handle.write(f"CI_CHANGED_PATHS_FILE={artifact}\n")
+              handle.write(
+                  f"CI_SCOPE_ARG={'--changed-from ' + base if base else ''}\n"
+              )
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"tested_base_sha={base}\n")
           print(
               f"changed-path metadata: planner={payload} "
-              f"preflight={preflight_payload}"
+              f"preflight={preflight_payload} tested_base={base or 'none'}"
           )
           PY
       - name: fast structural preflight
@@ -4245,11 +4263,11 @@ jobs:
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing
       # so main's baseline and every workflow_dispatch stay full-suite.
       #
-      # The base SHA is `github.event.pull_request.base.sha` — the IMMUTABLE commit
-      # the PR was opened against — never `github.head_ref`, `github.base_ref` or any
-      # other branch NAME. A name is resolved at runtime, so main moving under a
-      # long-running PR would silently change what the plan selected, and the packs
-      # would then verify a plan hash for a diff nobody reviewed.
+      # A pull_request plan uses parent 1 of GitHub's immutable test-merge commit;
+      # parent 2 must equal the exact event PR head. `pull_request.base.sha` can
+      # remain pinned to the PR's original base while GitHub rebuilds the test
+      # merge against newer main, so it is diagnostic only. Merge groups use their
+      # event base SHA. Branch names are never resolved at planner runtime.
       - id: plan
         name: plan the CI packs once
         env:
@@ -4264,7 +4282,6 @@ jobs:
           # therefore still audits the complete manifest.
           CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
           CI_DYNAMIC_MATRIX_MODE: ${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--changed-from {0}', github.event.merge_group.base_sha) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
@@ -4447,7 +4464,7 @@ jobs:
           CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
           EXPECTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
-          PLAN_BASE_SHA_ARG: ${{ github.event_name == 'pull_request' && format('--expect-base-sha {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--expect-base-sha {0}', github.event.merge_group.base_sha) || '' }}
+          PLAN_BASE_SHA_ARG: ${{ needs.ci-plan.outputs.tested_base_sha != '' && format('--expect-base-sha {0}', needs.ci-plan.outputs.tested_base_sha) || '' }}
         shell: bash
         run: |
           set -euo pipefail

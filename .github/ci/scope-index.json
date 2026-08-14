@@ -22313,7 +22313,7 @@
     "python_count": 5577,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "5b3fbc48b1526d40085c02fc5d6c90b5b1a2c36f25bd4b0ea642240c8457c9ce",
+  "index_sha256": "63a25665b88174464e7b4d5fb8ef4fe5710a7e535a5c04a47b147624c64ab0f5",
   "job_count": 192,
   "job_inventory": [
     "inline-js",
@@ -74322,7 +74322,7 @@
   "selector_sources": [
     {
       "path": "scripts/run_ci_pack.py",
-      "sha256": "87a0020bb40f3d1940f1c46e2b5805105cacfc617e3c2478978a27a62db240d8"
+      "sha256": "021c5e39600b5b94cf4fc114bea45d064671473551e196666193b0704f5f6b91"
     },
     {
       "path": "scripts/ci_scope_dependencies.py",
