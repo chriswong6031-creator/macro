@@ -1,0 +1,37 @@
+# RIG manifest (RIG V1 §3) — one per reference, research/reference_integrity/<reference-id>/manifest.yml
+schema: mastermind.rig_manifest.v1
+reference_id: <kebab-case-stable-id>
+scope: full            # full | lightweight (RIG §2; lightweight adds the attestation block below)
+status: draft          # draft | in_review | approved | revise | rejected | superseded
+
+surface:
+  route: <site route, e.g. us_stocks.html>
+  registry_row: <page registry id>
+  archetype: <registry archetype id, e.g. discovery_board>
+
+author:
+  identity: "<who authored the proposed reference — session/agent identity>"
+  role: designer
+
+reference_files:            # the proposed reference artifact, frozen by SHA
+  - path: <mockups/... or committed evidence path>
+    frozen_sha: <40-hex commit that froze the artifact>
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
+  # approval: approval.yml        # exists only when status: approved
+
+# lightweight scope only (RIG §2) — both attestations must be true, and the cited
+# archetype reference must itself be approved:
+# lightweight:
+#   no_capability_change: true
+#   no_hierarchy_change: true
+#   archetype_reference: <approved reference-id this page follows>
+
+# superseded only:
+# successor_reference_id: <reference-id>

@@ -195,6 +195,13 @@ entries:
     section: 1
     section_name: forbidden_by_ruling
 
+  - topic: 'Bounding the options/Market Memory context audit by evicting owners from its published reference set — rolling session windows, newest-anchored budgets, retention rules, freezing scope at the closed v1-era 384-row prefix, or any other scheme that shrinks the audited owner set to fit the pinned 4,096 ceilings'
+    key: KILL-OPTIONS-CONTEXT-AUDIT-OWNER-EVICTION
+    verdict: 'FORBIDDEN — it manufactures nulls inside a live preregistered evidence family. The sparse-selector prereg binds `owner_binding = campaign_v2_final_member_episode/v1` with `publication_binding = authenticated_current_private_head_contains_exact_reference/v1` and `missing_or_absent_action = abstain`, so an evicted owner yields an abstention downstream-indistinguishable from a genuine `exact_requested_as_of_context_absent` null. Measured 2026-08-13: campaign v2 is live (1,146 rows, nightly writer) and every row binds a DISTINCT final-member episode spanning `source_row` 1..1206 — the whole ledger, ~95% of episodes, growing 1:1 — so no window can cover the bound set. Also forbidden: a shadow validator module that leaves the pinned file byte-identical so `--check` stays green while an unreviewed sibling produces the receipt (satisfies the pin''s check, defeats its purpose; reinterprets the registration in place). Ledger rotation/sharding is separately closed by the pinned 384-row activation prefix and campaign v2''s exact byte-prefix + 1-based `source_row` binding. The ONLY lawful fix is a preregistration v2 with a new forward NYSE boundary, sized against the 25,000-row / 48 MiB capacity the repo already gives this same file'
+    source: '`research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md` §4-§5; raised by PR #5524'
+    section: 1
+    section_name: forbidden_by_ruling
+
   - topic: 'Cross-organ flip-counter (conjunction-of-transitions deterioration meter) as a standalone organ'
     key: KILL-FLIP-COUNTER
     verdict: 'KILLED — double-counts the cascade meter''s intl leg, log-birth FP (07-07 artifact), count-conjunction class (RISK_RADAR_TUNING line 93 governs any authority path)'

@@ -21,6 +21,29 @@
      own scope. This :root default keeps the token valid everywhere else (a bare
      `font-family:var(--num)` is otherwise an invalid decl on non-macro pages). */
   --num: var(--font-ui);
+  /* ── type ramp — the SITE type scale (design-system packet PR-0(a)) ─────────
+     11 deliberate steps, promoted VERBATIM out of body.page-macro
+     (dashboard.html.j2) where it was born; body.estate (seo_base) carried a
+     byte-identical copy and leader_radar/intraday_flow carried near-copies.
+     Promotion only — no value was retuned; the pages that differ keep a
+     documented local override rather than being silently re-sized.
+
+     It must live at :root, NOT on a body class. body.page-stocks (the Prophet
+     board) never declared the ramp and inherits it ONLY through :root — a
+     body-class home would leave every Prophet surface off the scale. Same for
+     the calculators and the seo_* estate children, which use var(--fs-*)
+     without declaring it and today resolve it through their base template. */
+  --fs-display:46px;   /* hero verdict word          */
+  --fs-num-xl:38px;    /* the big board scores        */
+  --fs-h1:28px;        /* page / hero title           */
+  --fs-num-lg:22px;    /* secondary big numerals      */
+  --fs-h2:17px;        /* panel section titles        */
+  --fs-md:15px;        /* lead body / strong figures  */
+  --fs-body:14px;      /* base copy                   */
+  --fs-h3:14px;        /* subsection titles           */
+  --fs-sm:12.5px;      /* secondary copy / table body */
+  --fs-label:11px;     /* MONO eyebrows · caps        */
+  --fs-micro:10px;     /* dense ticks · table heads   */
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1;
   /* Estate contrast pass 2026-08-03: #2a2f3a measured 1.13–1.29:1 against the
@@ -152,6 +175,32 @@ html[data-theme="light"][data-lang="zh"] {
   --q1: #c12f2f;
   --q3: #1f8b41;
 }
+/* ---- odo-needle: shared light-mode odometer pointer -------------------------
+   Dark mode's white blade + coloured hub already reads beautifully. The country
+   dashboards used to replace that blade with near-black in light mode, which made
+   the most important mark on the dial look like a stray SVG rule. Keep dark mode
+   byte-untouched; in light, turn the pointer into a two-tone instrument: a crisp
+   state-coloured blade, a softer colour bloom, and a white hub that belongs on the
+   card. --odo-accent is supplied by each gauge from its existing semantic state
+   token, so EN/zh direction swaps remain automatic. */
+html[data-theme="light"] .odo-needle {
+  filter:
+    drop-shadow(0 1px 1px rgba(23,32,55,.16))
+    drop-shadow(0 0 5px color-mix(in srgb,var(--odo-accent,var(--warn)) 22%,transparent));
+}
+html[data-theme="light"] .odo-needle--compact > line {
+  stroke:color-mix(in srgb,var(--odo-accent,var(--warn)) 44%,transparent);
+}
+html[data-theme="light"] .odo-needle--compact > polygon {
+  fill:color-mix(in srgb,var(--odo-accent,var(--warn)) 94%,var(--panel,#fff));
+  opacity:1;
+}
+html[data-theme="light"] .odo-needle--compact > circle:first-of-type {
+  fill:color-mix(in srgb,var(--odo-accent,var(--warn)) 12%,transparent);
+}
+html[data-theme="light"] .odo-needle--compact > .odo-needle-hub {
+  fill:var(--panel,#fff);
+}
 /* ---- Text-grade state INKS (estate pass 2026-08-03; method = SI V2 W3 audit) --
    The state palette is FILL-grade, not TEXT-grade: on light, --up #1f9a55 tops
    out at 3.61:1 on pure white (3.00 on the estate's darkest common surface
@@ -202,6 +251,38 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-orange: color-mix(in srgb, var(--orange) var(--ink-mix-orange), var(--text));
   --ink-link:   color-mix(in srgb, var(--link)   var(--ink-mix-link),   var(--text));
   --ink-info:   color-mix(in srgb, var(--info)   var(--ink-mix-info),   var(--text));
+}
+/* ---- SOLID fills that carry WHITE text --------------------------------------
+   The third grade, and the one the estate was missing. --up/--down/… are FILL
+   grade for TINTS (a 13% wash under ink-grade text, >=3:1 non-text) and --ink-*
+   is TEXT grade. Neither is right for the solid chip — the filled pill, the tier
+   badge, the primary CTA — where the hue IS the background and the label is #fff.
+
+   Measured white-on-raw-token 2026-08-12, and it fails in BOTH themes:
+
+       token    dark   light        token    dark   light
+       --up     2.51   3.61         --act    3.75   5.14
+       --down   3.40   4.71         --link   2.49   5.03
+       --warn   2.27   3.61         --info   2.84   5.03
+       --ok     3.10   4.30         --orange 2.64   3.47
+
+   Reaching for --ink-* here is the trap: --ink-mix-* is 100% on :root, so in DARK
+   the rung IS the raw token and a "fix" that reads correct in light leaves dark
+   exactly as broken (the tier badges and the tier-gate CTA both landed there).
+   Mixing toward black instead is theme-independent by construction — 64% keeps
+   the hue plainly recognisable and lands white at 5.14-10.19:1 across all eight
+   tokens in both themes, worst case --warn/dark. Consumers write
+   var(--fill-x, var(--x)) so a cache-stale theme.css degrades to today's colour. */
+:root {
+  --fill-mix: 64%;
+  --fill-up:     color-mix(in srgb, var(--up)     var(--fill-mix), #000);
+  --fill-down:   color-mix(in srgb, var(--down)   var(--fill-mix), #000);
+  --fill-warn:   color-mix(in srgb, var(--warn)   var(--fill-mix), #000);
+  --fill-ok:     color-mix(in srgb, var(--ok)     var(--fill-mix), #000);
+  --fill-act:    color-mix(in srgb, var(--act)    var(--fill-mix), #000);
+  --fill-orange: color-mix(in srgb, var(--orange) var(--fill-mix), #000);
+  --fill-link:   color-mix(in srgb, var(--link)   var(--fill-mix), #000);
+  --fill-info:   color-mix(in srgb, var(--info)   var(--fill-mix), #000);
 }
 /* prophet-card verb inks. English keeps the original hue calibration; the light+zh
    twin below re-keys the percentages after bullish becomes red and bearish green.
@@ -348,11 +429,11 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
 
 .pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
 .pv-ovl{left:9px}.pv-ovr{right:9px}
-.pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 13%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 40%,transparent)}
+.pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh,var(--muted)) 13%,var(--panel,#fff));color:var(--pvh-ink,var(--pvh,var(--muted)));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh,var(--muted))) 40%,transparent)}
 /* solid Buy chip: ink-grade fill + panel ink — white on the raw hue was 3.61:1
    light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
    audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
-.pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
+.pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh,var(--up)));color:var(--panel,#fff);border-color:transparent}
 .pvcard .pv-quote{display:inline-flex;align-items:baseline;gap:6px;background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;white-space:nowrap}
 .pvcard .nb-px.pv-px,.pvcard .nb-chg.pv-chg{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap;margin:0}
 .pvcard .nb-px.pv-px{color:var(--text)}
@@ -429,7 +510,7 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
 
 .pv-cau-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:264px;max-width:min(264px,78vw);max-height:min(300px,58vh);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px 10px;box-shadow:var(--popover-shadow);white-space:normal;text-align:left}
 .pv-cau:hover .pv-cau-pop,.pv-cau:focus-within .pv-cau-pop{display:block}
-.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-warn, var(--warn))}
 
 .pv-cau-row{position:relative;display:block;padding-left:12px;font-size:10.5px;line-height:1.5;color:var(--text)}
 .pv-cau-row::before{content:"";position:absolute;left:2px;top:6.5px;width:4px;height:4px;border-radius:50%;background:var(--warn);opacity:.7}

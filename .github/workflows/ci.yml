@@ -531,7 +531,9 @@ on:
       # OIP PIT decision/outcome ledger: both the durable R2 source and the
       # nightly consumer/contracts must trigger the exact adversarial suite.
       - "engine/options_signal_episode.py"
+      - "engine/options_episode_coverage.py"
       - "scripts/build_options_signal_episode.py"
+      - "scripts/audit_options_episode_outcome_coverage.py"
       - "scripts/build_polygon_intraday.py"
       - "contracts/options/options.signal_episode.v1.schema.json"
       - "contracts/options/options.signal_episode_outcome.v1.schema.json"
@@ -542,6 +544,7 @@ on:
       - "research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "tests/test_options_signal_episode.py"
+      - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_polygon_intraday.py"
       # Canonical campaign v2: independent immutable revisions, causal outcomes,
       # exact-prefix checkpoint, preregistration, and hostile replay tests.
@@ -1341,6 +1344,12 @@ on:
       # alone; the workflow it schedules is already covered by ".github/workflows/**".
       - "scripts/nightly_backstop.py"
       - "tests/test_nightly_backstop.py"
+      # 2026-08-13 nightly liveness dead-man switch — the other half of the same
+      # incident. The guard and its suite must reach the dag-conformance job when
+      # either is edited alone; the workflow it schedules is already path-covered
+      # by ".github/workflows/**" above.
+      - "scripts/check_nightly_liveness.py"
+      - "tests/test_nightly_liveness.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).
@@ -1414,6 +1423,15 @@ on:
       # without this line an edit to the CONFIG side could not start the pack
       # that runs the guard over it — the #3488 shape.
       - "config/earnings_qual.yml"
+      # The two guards written after the 2026-08-02 ingest outage, same #3488
+      # shape: the lanes they protect are workflow YAML and a scripts/ module, so
+      # without these lines a test-only edit could not start the pack that runs
+      # them. test_earnings_evidence_graph_deps.py derives the pyyaml requirement
+      # from the live import chain; test_earnings_wire_freshness.py pins the
+      # published-vs-upstream lag tripwire.
+      - "tests/test_earnings_evidence_graph_deps.py"
+      - "tests/test_earnings_wire_freshness.py"
+      - "scripts/audit_earnings_wire_freshness.py"
       - "tests/test_china_board_watch_lane.py"
       - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
@@ -1547,6 +1565,11 @@ on:
       - "lib/nyse_calendar.py"
       - "collectors/equity_earnings.py"
       - "scripts/audit_earnings_freshness.py"
+      # Sparse session-worktree profile (job: workflow-yaml, policy R8).
+      # scripts/**, config/** and .claude/** already reach the actor, config and
+      # WorktreeCreate hook; this is the test half so a test-only edit still
+      # starts the job that runs it.
+      - "tests/test_sparse_worktree_profile.py"
       # W0 PR3 synapse read-gate: any change to engine, scripts, collectors, the registry,
       # the gate script, the test, or the baseline must re-run the read-gate + Article-2 check.
       - "config/synapse.yml"
@@ -1741,9 +1764,11 @@ on:
       # is complete and consistent.
       - "config/house_law_checks.yml"
       - "scripts/check_house_law_registry.py"
+      - "scripts/check_append_only_assertions.py"
       - "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
       - "docs/**"
       - "tests/test_house_law_registry.py"
+      - "tests/test_append_only_assertions.py"
       # validated-claims guard: wire as PR gate so unearned 'validated' claims
       # are caught before merge (not just in the nightly calibration run).
       - "scripts/check_validated_claims.py"
@@ -3412,6 +3437,7 @@ on:
       - "tests/test_pick_lab_render.py"
       - "tests/test_pick_lab_runner.py"
       - "tests/test_prophet_card_shared.py"
+      - "tests/test_prophet_board_read.py"
       - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stock_board_v2.py"
       - "tests/test_track_ledger_emitters.py"
