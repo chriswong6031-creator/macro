@@ -1172,7 +1172,11 @@ _PHASE_WORD: dict[str, tuple[str, str]] = {
     "post_t1_failed_hold": ("giveback",    "回吐"),
     "at_t2":               ("at T2",       "已达 T2"),
     "post_t2":             ("past T2",     "T2 之上"),
-    "overtime":            ("overtime",    "超时"),
+    # NOT "overtime/超时" — that reads as "still running, in extra time", and an open
+    # row here is the opposite: its window is gone and only the closing print is
+    # outstanding (ruling §13 — the closure scan grades EXPIRED/NO_ENTRY at
+    # days >= horizon, a day before tau clears 1.0 on the same clock).
+    "overtime":            ("window elapsed", "窗口已到期"),
     "invalidated":         ("invalidated", "已失效"),
 }
 
@@ -1203,7 +1207,7 @@ _HUMAN_STATE_ZH: dict[str, str] = {
     "Deep Giveback — Reassess":  "大幅回吐 — 重新评估",
     "High Conviction":           "高确信",
     "Extended — Watch Giveback": "涨幅拉伸 — 留意回吐",
-    "Overtime Stall":            "超时停滞",
+    "Window Elapsed — Awaiting Close": "窗口已到期 — 待收盘确认",
     "Invalidated":               "已失效",
 }
 
@@ -1269,6 +1273,29 @@ def _age_days(signal_date: str | None, asof: str) -> int | None:
         return None
 
 
+def _clock_age_days(plan: dict[str, Any], asof: str) -> int | None:
+    """Whole days from the plan's HORIZON clock to the index asof.
+
+    This is the age that is commensurable with ``horizon_days`` — and the only one.
+    ``_age_days`` above anchors on ``signal_date``, a formation/event anchor that may
+    precede the plan's own existence by months; τ, the phase, the confidence, the
+    recommended action and the EXPIRED/NO_ENTRY close all anchor on
+    :func:`plan_clock_date` instead.  Quoting the signal-anchored age next to a
+    plan-clock horizon is what made ``PINS-BULL-20260227`` pulse "167d" on a row whose
+    own state said 33.3% of a 45-day window was used (ruling §13, 2026-08-13).
+
+    NOT a second timing engine: it resolves through the same shared
+    :func:`plan_clock_date` the management engine reads, with the same ``max(0, …)``
+    clamp, so it is equal to ``state["days_elapsed"]`` by construction wherever a state
+    exists.  ``tests/test_prophet_overtime_horizon_reconciliation.py`` pins that
+    equality rather than leaving it to the comment.
+
+    Computed from the plan (not read off the state) for the same reason ``_age_days``
+    is: the row must be able to carry it when a management enrichment failed.
+    """
+    return _age_days(plan_clock_date(plan), asof)
+
+
 def _age_bucket(age_days: int | None) -> str:
     """≤7d / 8-21d / >21d, or 'unknown' when the age could not be computed.
 
@@ -1304,8 +1331,10 @@ def _degraded_index_entry(
     signal = plan.get("signal_date")
     age = _age_days(signal or plan.get("observed_date") or formation, asof)
     phase = plan.get("phase") or "pre_trigger"
+    # The pulse speaks the horizon clock, never the signal clock (ruling §13).
+    clock_age = _clock_age_days(plan, asof)
     pulse_en, pulse_zh = _plan_pulse(
-        age, phase, None, closed=closed, outcome=outcome
+        clock_age, phase, None, closed=closed, outcome=outcome
     )
     if closed:
         now_en, now_zh = _closed_state_lines(outcome)
@@ -1346,6 +1375,9 @@ def _degraded_index_entry(
         # unchanged. Stamping an unconditional null here would defeat that.
         "phase": phase,
         "age_days": age,
+        # The only age commensurable with `horizon_days` (ruling §13). `age_days` is
+        # the SIGNAL's age and must never be compared to the horizon.
+        "clock_age_days": clock_age,
         "closed": closed,
         "pulse": pulse_en,
         "pulse_zh": pulse_zh,
@@ -1387,14 +1419,25 @@ def _plan_pulse(
     still gets the legs it does have, and a plan with nothing readable returns ``("", "")``
     rather than a half-built string.  DATA ONLY — W2 owns how (and whether) this renders.
 
+    THE AGE LEG IS THE HORIZON CLOCK (ruling §13, 2026-08-13).  Callers pass
+    :func:`_clock_age_days`, NOT ``age_days``.  The rest of the line — phase,
+    human_state — is computed off ``plan_clock_date``, and so is the plan's
+    ``horizon_days``; ``age_days`` is anchored on ``signal_date``, a formation/event
+    anchor that can precede the plan's own existence by months.  Mixing them made
+    ``PINS-BULL-20260227`` pulse "167d · pre-trigger" on a row whose state said 33.3%
+    of a 45-day window was used, and referred a phantom "16 plans past horizon" defect
+    against a book whose highest τ is 0.82.
+
     CLOSED PLANS (W1 amendment).  ``closed=True`` — the plan has a forward-ledger row —
     returns ``("closed · stopped out", "已结 · 止损离场")`` and reads NEITHER phase nor
     human_state.  Both keep updating for a closed plan (the management engine states
-    every plan in the index), so a closed plan would otherwise pulse "138d · overtime ·
-    overtime stall" as though the thesis were still running.  The age leg is dropped
-    too: ``age_days`` counts from signal_date to TODAY, so on a dead plan it grows
-    forever and reads as duration-still-open.  ``age_days`` stays on the row as raw
-    data; it is only the plain-word line that must not imply life.
+    every plan in the index), so a closed plan would otherwise pulse "46d · window
+    elapsed · window elapsed — awaiting close" as though the thesis were still running.
+    That is not hypothetical: ``overtime`` is reachable on a live-priced plan ONLY after
+    the closure scan has already graded it (§13.3), so suppressing the phase leg here is
+    what keeps a post-closure phase off the surface.  The age leg is dropped too — any
+    age on a dead plan grows forever and reads as duration-still-open.  Both ages stay
+    on the row as raw data; it is only the plain-word line that must not imply life.
     """
     if closed:
         words = _OUTCOME_WORD.get(str(outcome or "").strip().upper())
@@ -1947,8 +1990,13 @@ def main() -> None:
             or plan.get("formation_date"),
             asof,
         )
+        # The pulse's age leg reads the HORIZON clock, not the signal clock (ruling
+        # §13).  It quoted `_age`, so a plan whose signal fired months before the plan
+        # existed pulsed "167d" beside a phase, a confidence and a 45-day window all
+        # computed off day 15 — the incoherence that referred the Overtime question.
+        _clock_age = _clock_age_days(plan, asof)
         _pulse_en, _pulse_zh = _plan_pulse(
-            _age, resolved_phase, state.get("human_state"),
+            _clock_age, resolved_phase, state.get("human_state"),
             closed=_closed, outcome=closed_outcomes.get(plan_id),
         )
         active_entries.append({
@@ -1989,6 +2037,11 @@ def main() -> None:
             # one plain-word line saying where it stands.  Additive: nothing was
             # removed or re-ordered.
             "age_days": _age,
+            # The only age commensurable with `horizon_days` — equal to the state's
+            # `days_elapsed` by construction (ruling §13).  `age_days` is the SIGNAL's
+            # age; comparing THAT to the horizon is what produced the "16 open plans
+            # past horizon" reading against a book whose max τ is 0.82.
+            "clock_age_days": _clock_age,
             "closed": _closed,
             "pulse": _pulse_en,
             "pulse_zh": _pulse_zh,

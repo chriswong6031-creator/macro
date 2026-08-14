@@ -958,8 +958,8 @@ class TestAgeAndPulse:
     def test_an_untranslated_state_drops_from_BOTH_halves(self):
         """A one-sided drop would ship an EN-only chip to a ZH reader."""
         en, zh = bp._plan_pulse(10, "overtime", "Brand New State")
-        assert en == "10d · overtime"
-        assert zh == "10天 · 超时"
+        assert en == "10d · window elapsed"
+        assert zh == "10天 · 窗口已到期"
 
     def test_pulse_degrades_to_empty_rather_than_half_built(self):
         assert bp._plan_pulse(None, None, None) == ("", "")
@@ -972,7 +972,7 @@ class TestAgeAndPulse:
         ("EXPIRED", "closed · timed out", "已结 · 到期未达标"),
     ])
     def test_a_closed_plan_pulses_its_outcome(self, outcome, en, zh):
-        assert bp._plan_pulse(138, "overtime", "Overtime Stall",
+        assert bp._plan_pulse(138, "overtime", "Window Elapsed — Awaiting Close",
                               closed=True, outcome=outcome) == (en, zh)
 
     def test_a_closed_pulse_never_narrates_phase_or_human_state(self):
@@ -989,7 +989,7 @@ class TestAgeAndPulse:
         """age_days counts to TODAY, so on a dead plan it grows forever and would
         read as "still running for 138 days"."""
         assert "138d" not in bp._plan_pulse(
-            138, "overtime", "Overtime Stall", closed=True, outcome="EXPIRED")[0]
+            138, "overtime", "Window Elapsed — Awaiting Close", closed=True, outcome="EXPIRED")[0]
 
     @pytest.mark.parametrize("outcome", [None, "", "SOME_NEW_OUTCOME", "t1_hit "])
     def test_an_unnamed_outcome_still_reads_as_closed(self, outcome):
@@ -1179,9 +1179,14 @@ class TestIndexHygieneEndToEnd:
         assert by_id["AAPL-BULL-20260731"]["age_days"] == 3
         assert by_id["OLDIE-BULL-20260318"]["age_days"] == 138
         for plan in index["plans"]:
-            assert set(plan) >= {"age_days", "phase", "pulse", "pulse_zh"}
+            assert set(plan) >= {"age_days", "clock_age_days", "phase", "pulse",
+                                 "pulse_zh"}
             assert plan["pulse"] and plan["pulse_zh"]
-            assert str(plan["age_days"]) + "d" in plan["pulse"]
+            # The pulse quotes the HORIZON clock, not the signal clock (ruling §13,
+            # 2026-08-13).  `age_days` anchors on signal_date and can precede the
+            # plan's own existence by months; `clock_age_days` is the age that is
+            # commensurable with `horizon_days` and equals the state's days_elapsed.
+            assert str(plan["clock_age_days"]) + "d" in plan["pulse"]
 
     def test_age_buckets_sum_to_active_count(self, tmp_path):
         index = _run_main(

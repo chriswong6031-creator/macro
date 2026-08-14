@@ -165,3 +165,76 @@ def test_a_broken_alert_channel_never_breaks_the_render(tmp_root, monkeypatch, c
         (tmp_root / spec.path).write_text(json.dumps({"as_of": "2026-07-02"}))
     assert sentinel.run(now=REF_NOW, root=tmp_root) == 0, "a dead channel must not fail the sentinel"
     assert "SURFACE STALE" in capsys.readouterr().out, "and the annotations must survive it"
+
+
+# ---------------------------------------------------------------------------
+# US Context Vector store freshness — the differential silent-sibling check
+# (P0 2026-08-14: boards advanced four sessions while append_candidates
+#  stamped nothing; every night printed one WARNING nobody reads).
+# ---------------------------------------------------------------------------
+
+def _board_and_store(tmp_path, board_as_of: str, stamp_dates: list[str] | None):
+    board = tmp_path / "data" / "us_board_ledger" / "snapshots.jsonl"
+    board.parent.mkdir(parents=True, exist_ok=True)
+    board.write_text(json.dumps({"as_of": board_as_of, "buy": []}) + "\n")
+    if stamp_dates is not None:
+        pd = pytest.importorskip("pandas")
+        store = tmp_path / "data" / "us_prophet_rank" / "candidates"
+        store.mkdir(parents=True, exist_ok=True)
+        pd.DataFrame({"stamp_date": stamp_dates,
+                      "ticker": ["T"] * len(stamp_dates)}).to_parquet(
+            store / f"{board_as_of[:7]}.parquet", index=False)
+    return tmp_path
+
+
+def test_candidates_trailing_beyond_threshold_warns_and_pages(tmp_path, _captured_push, capsys):
+    """08-07 stamp vs 08-13 board = 4 sessions — the incident's exact geometry."""
+    pytest.importorskip("pandas")
+    root = _board_and_store(tmp_path, "2026-08-13", ["2026-08-07"])
+    gap = sentinel.check_candidates_freshness(root)
+    assert gap == 4
+    out = capsys.readouterr().out
+    assert any(l.startswith("::warning title=us-context-vector-stale::")
+               for l in out.splitlines()), out
+    assert len(_captured_push) == 1
+    assert _captured_push[0]["type_"] == "us_context_vector_stale"
+
+
+def test_candidates_caught_up_is_silent(tmp_path, _captured_push, capsys):
+    pytest.importorskip("pandas")
+    root = _board_and_store(tmp_path, "2026-08-13", ["2026-08-13"])
+    assert sentinel.check_candidates_freshness(root) == 0
+    assert "us-context-vector-stale" not in capsys.readouterr().out
+    assert _captured_push == []
+
+
+def test_candidates_one_session_behind_does_not_alarm(tmp_path, _captured_push, capsys):
+    """A render that lands either side of a close is routine, not an outage."""
+    pytest.importorskip("pandas")
+    root = _board_and_store(tmp_path, "2026-08-13", ["2026-08-12"])
+    assert sentinel.check_candidates_freshness(root) == 1
+    assert "us-context-vector-stale" not in capsys.readouterr().out
+    assert _captured_push == []
+
+
+def test_candidates_store_missing_with_board_present_alarms(tmp_path, _captured_push, capsys):
+    root = _board_and_store(tmp_path, "2026-08-13", None)
+    gap = sentinel.check_candidates_freshness(root)
+    assert gap and gap > sentinel.CANDIDATES_TRAIL_SESSIONS
+    assert "stamp_date=MISSING" in capsys.readouterr().out
+    assert len(_captured_push) == 1
+
+
+def test_candidates_check_skips_quietly_without_a_board(tmp_path, _captured_push, capsys):
+    """Thin/sparse checkouts have no board — nothing to compare, no noise."""
+    assert sentinel.check_candidates_freshness(tmp_path) is None
+    assert capsys.readouterr().out == ""
+    assert _captured_push == []
+
+
+def test_candidates_check_rides_run_without_breaking_it(tmp_root, monkeypatch):
+    """run() calls the differential check; a blow-up inside it must not cost FT-R8."""
+    def boom(root, now=None):
+        raise RuntimeError("synthetic")
+    monkeypatch.setattr(sentinel, "check_candidates_freshness", boom)
+    assert sentinel.run(now=REF_NOW, root=tmp_root) == 0

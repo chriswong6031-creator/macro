@@ -3177,6 +3177,22 @@ lanes:
           suites without its cache provider, and records an explicit unproven
           warning when the runner cannot acquire the proof dependency.
 
+      - id: prove_government_revenue_candidates
+        module: pytest
+        args:
+          - -p
+          - no:cacheprovider
+          - tests/test_government_revenue_candidates.py
+          - tests/test_government_revenue_candidate_projection.py
+          - tests/test_government_revenue_candidate_fixture.py
+          - -q
+        note: >
+          Conditional, read-only proof over candidate artifacts changed by this run.
+          The workflow may add xdist flags when available, but falls back to the same
+          serial pytest suite when that optional runner dependency is absent. This
+          declaration records the executable module without granting the prover any
+          writer, ranking, sizing, gating, or escalation authority.
+
   # ── filing-forensics-sec.yml / acquire_project_sync ──────────────────────
   - workflow: .github/workflows/filing-forensics-sec.yml
     job: acquire_project_sync

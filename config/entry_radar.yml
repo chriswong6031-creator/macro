@@ -1,0 +1,126 @@
+# config/entry_radar.yml — Live Entry Radar PR-1 knobs (probe universe + bus).
+#
+# EVERY NUMBER IN THIS FILE IS A BUDGET TARGET, NOT A CONSTITUTIONAL NUMBER.
+# Contract §6: "Thresholds are PR-1 budget knobs (measured against compute/data
+# budget), not constitutional numbers."  They answer "how many names can we
+# afford to probe every 5 minutes", never "which names are good".  Nothing here
+# scores, ranks, or expresses an opinion about direction — moving a threshold
+# changes COVERAGE and compute cost, and nothing else.
+#
+# The pre-registered, frozen numbers of this program live in the contract
+# (§10 outcomes, §11 comparison design) and are NOT tunable here.
+
+entry_radar:
+
+  # -- Probe Set envelope (contract §6) -------------------------------------
+  # A SOFT budget.  If 1,700 names deserve probing, 1,700 are probed and the
+  # budget question is escalated — the assembly emits a budget_exceeded note
+  # and truncates NOTHING.  Sizing anchor (contract §7.3): nightly arming
+  # probes ~1,730 names in 420s on 4 cores, so this envelope sits inside a
+  # proven compute envelope rather than at its edge.
+  probe_set:
+    target_min: 500
+    target_max: 1500
+
+  # -- Layer A: broad eligibility ------------------------------------------
+  # Universe sources in priority order (Track C §2).  Read directly — never by
+  # importing scripts/build_stock_library.py, which is a protected consumer
+  # path.  A source that fails to read is reported as unavailable per-source
+  # (the universe_sources() self-audit analog): a group silently dropping
+  # shrinks the universe by O(1000) and is a KNOWN failure mode.
+  layer_a:
+    sources:
+      - {key: deep_history,  path: "data/stocks",                          kind: glob_parquet}
+      - {key: sp500,         path: "data/breadth/constituents.parquet",    kind: constituents}
+      - {key: sp400,         path: "data/midcap_breadth/constituents.parquet",   kind: constituents}
+      - {key: sp600,         path: "data/smallcap_breadth/constituents.parquet", kind: constituents}
+      - {key: russell2000,   path: "data/russell_breadth/constituents.parquet",  kind: constituents}
+    # Fail-closed: a name we cannot classify lands in `unclassified` and stays
+    # VISIBLE.  Never silently dropped, never silently admitted as an operating
+    # company.  Small caps are never excluded for size.
+    #
+    # There is deliberately NO `min_history_sessions` knob.  "Young history is
+    # not low-quality data" (contract §6): a 40-session name is routed to the
+    # young cohort's SEPARATE calibration (§12), never filtered out of the
+    # universe.  A minimum-history gate here would silently delete the IPO lane
+    # that gate P-6 exists to protect.
+
+  # -- Layer B: core --------------------------------------------------------
+  # Index membership + liquid large/mid + operator watchlist.  The liquidity
+  # floor is a compute budget: it decides how much of the S&P 1500 tail we can
+  # afford to carry every pass, not which names are worth owning.
+  layer_b:
+    index_memberships: [sp500, sp400, sp600]
+    dollar_vol_20d_min: 50000000        # $50M/day 20d average
+    supabase:
+      # The operator watchlist/holdings live in Supabase (Track C §2), not in a
+      # data/ artifact — its adapter is a server-side DB read on the VPS lane.
+      # No credentials here: the client is INJECTED, and the adapter reports
+      # `unavailable` (never an empty watchlist) when none is wired.
+      tables: [watchlists, watchlist_symbols, portfolio_positions]
+      enabled: true
+
+  # -- Layer C: dynamic hot -------------------------------------------------
+  # Admission on measured attention.  HOTNESS ADMITS, IT NEVER SCORES
+  # (contract §9): these variables buy a name a look and are forbidden from
+  # entering any Radar score.  Every threshold below is a coverage dial.
+  #
+  # Share turnover is DELIBERATELY ABSENT: no float data exists in the estate
+  # (Track C §2 "Share turnover: not found"), and volume-vs-own-history is not
+  # volume-vs-float.  Declared out until sourced (contract §6).
+  layer_c:
+    enabled: true
+    dollar_vol_rank_max: 300            # top-N by 20d dollar volume
+    rel_volume_min: 2.0                 # engine/stock_technicals.py `rel_volume` (1.0 = normal)
+    rvol_tod_min: 2.5                   # site/live/flow_pulse.json `rvol_tod` (intraday, TOD-adjusted)
+    realized_range_pct_min: 6.0         # unusual realized range, % of price
+    gap_abs_pct_min: 4.0                # |overnight gap| — a NEW Radar construction;
+                                        # engine/entry_primitives.py:651 stays DORMANT and
+                                        # is deliberately NOT resurrected (Track C §3)
+    momentum_20d_abs_pct_min: 20.0      # |20-session move|, absolute (both directions)
+
+  # -- Layer D: lobe nominations -------------------------------------------
+  # Auto-admit ANY valid v1 nomination regardless of rank (contract §6 / §0 P-6:
+  # "IPO/small caps not rejected for index non-membership").  There is no
+  # threshold here on purpose.
+  layer_d:
+    auto_admit: true
+
+  # -- Producer staleness, per artifact cadence (Track C §1) ----------------
+  # A read older than its threshold is `stale` (aged, still usable) rather than
+  # `ok`.  It never becomes an empty list: missing is not negative (§5).
+  producers:
+    stale_after_minutes:
+      "flow_pulse:fastpath": 90         # 30-min lane → 3 missed passes
+      "hot_tape:detect_events": 30      # 5-min lane
+      "hot_tape:outbox": 120
+      "stockdata:master": 2160          # nightly (36h)
+      "factordata:us_standouts": 2160   # nightly
+      "factordata:setups": 2160         # nightly
+      "basketdata:pulse": 2160          # nightly
+      "basketdata:linked_outsiders": 2160
+      "ipo:calendar": 4320              # nightly build, slow-moving content (72h)
+      # Prefix key: `stale_after()` falls back to the longest matching prefix,
+      # so this covers every per-index id (breadth:constituents:sp500, :sp400 …).
+      "breadth:constituents": 10080     # index membership moves quarterly (7d)
+      "supabase:watchlist": 1440        # operator edits are event-driven
+    default_stale_after_minutes: 2160
+
+  # -- Retention when a producer is UNAVAILABLE (contract §5) ---------------
+  # THE RULE (documented in engine/entry_radar/universe.py's docstring):
+  # a name admitted by a producer that is now UNAVAILABLE is RETAINED with its
+  # reason marked stale for this many sessions, then lapses.  A producer that
+  # read fine and simply did not mention the name is a real negative
+  # observation and its reason lapses immediately.  Silence from a broken
+  # producer is not evidence of absence.
+  retention:
+    unavailable_retention_sessions: 3
+
+  # -- Nomination spool (contract §5 ephemeral-producers row) ---------------
+  # R2 when credentials exist, else $ENTRY_RADAR_SPOOL_DIR.  Never data/.
+  spool:
+    prefix: "live_flow/entry_radar_nominations"
+    # No `default_ttl_minutes`: a nomination's TTL is derived per-artifact from
+    # that producer's own `stale_after_minutes` above, so a nightly board's
+    # nomination cannot outlive the next nightly build and a 5-min tape event
+    # cannot outlive the tape.  One global TTL would be wrong for both.

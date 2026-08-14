@@ -2857,6 +2857,8 @@ artifacts:
       - board_ordering
       - top_setups
     consumers:
+      - engine/entry_radar/producers/__init__.py
+      - engine/entry_radar/producers/boards.py
       - engine/intelligence.py
       - engine/risk_brain.py
       - engine/signal_sanity.py
@@ -10978,34 +10980,6 @@ artifacts:
       yet (2026-07-17 audit) — no cortex read tool is wired to this artifact;
       candidate for a read tool if the DT-W1 verdict warrants it.
 
-  # stock-identity program
-  stock-identity-partition-manifest:
-    path: data/stock_identity/partition/partition_manifest_v1.json
-    format: json
-    producer: scripts/stock_identity_build_atlas.py
-    known_extra_writers: []
-    owner_program: stock-identity
-    cadence: on-demand
-    storage: git
-    asof_field: asof
-    freshness_sla_hours: null
-    schema: stock_identity.partition_manifest.v1
-    tier: infrastructure
-    horizon_role: context
-    weights: none
-    scored_path_surfaces: []
-    consumers:
-      - scripts/stock_identity_build_atlas.py
-      - scripts/stock_identity_calibrate.py
-    external_consumers: []
-    qual_ladder_ref: null
-    notes: >
-      W1 Identity Atlas partition receipt. It binds the universe, blind arm,
-      calibration partition, frozen seeds, hygiene exclusions, and fingerprint
-      specification before calibration may run. The committed payload carries a
-      literal all-false authority block: it is research infrastructure only and
-      cannot rank, size, gate, originate, add, or escalate a market signal.
-
   # stock-personality program
   stock-personality-panel:
     path: "data/stock_personality/panel/YYYY-MM/panel.parquet"
@@ -15117,6 +15091,8 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/entry_radar/producers/__init__.py
+      - engine/entry_radar/producers/live_flow.py
       - templates/intraday_flow.html.j2
     external_consumers: []
     notes: >

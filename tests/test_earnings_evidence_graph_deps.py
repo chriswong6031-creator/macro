@@ -26,6 +26,14 @@ workflow job that invokes one of them, and require that job to install the
 yaml dependency.  `test_the_yaml_premise_still_holds` guards the derivation
 itself, so if the import chain is ever refactored this file fails loudly and asks
 to be re-derived instead of silently going vacuous.
+
+THE SECOND INCIDENT (2026-08-14), and why this file grew a second half.  The
+pyyaml heal merged and the lane STILL died, on `No module named 'engine.press'`.
+Installing wheels is only half of "can this job import what it runs": under a
+SPARSE checkout a LOCAL module is on disk only if it is coned in.  The second
+half of this file therefore asks Python rather than parsing YAML — it blocks
+every local module the cone would not check out and imports the entry the lane
+actually runs, which reproduces the production failure instead of modelling it.
 """
 from __future__ import annotations
 
@@ -148,4 +156,223 @@ def test_every_earnings_narrative_job_installs_yaml(workflow_name: str, job_id: 
         f"engine.earnings_narrative but never installs pyyaml. That job will die on "
         f"ModuleNotFoundError: No module named 'yaml' before doing any work — the "
         f"2026-08-02 earnings-evidence-graph outage, repeated."
+    )
+
+
+# --------------------------------------------------------------------------- #
+# The SECOND failure, standing directly behind the first (2026-08-14)
+# --------------------------------------------------------------------------- #
+# The pyyaml heal landed and the lane STILL died, on
+# `ModuleNotFoundError: No module named 'engine.press'`. The audit that shipped
+# with that heal had enumerated third-party WHEELS and treated every `engine.*`
+# import as local-and-therefore-present. Under a SPARSE checkout that is false: a
+# local module is on disk only if it is coned in.
+#
+# And nothing in the three scripts this lane runs names the missing module.
+# `engine/earnings_narrative/{story_packets,admission}.py` import
+# `engine.press.earnings_adapter`, and the package `__init__` re-exports
+# story_packets — so importing `engine.earnings_narrative.contracts` executes the
+# package `__init__` and pulls `engine.press`.
+#
+# WHY THIS IS EXECUTED, NOT PARSED. The first version of this guard walked the
+# import graph with `ast` and flagged four healthy lanes: it counted
+# `engine/__init__.py` as missing (cone mode materializes files sitting directly
+# in ANY ancestor directory, so it is present) and decided
+# earnings-story-press-stage needed `collectors` (it does not — verified by
+# import). A guard that cries wolf on healthy lanes gets deleted, and an
+# approximation of the import system is not the import system. So this asks
+# Python: block every local module whose file the cone would NOT check out, then
+# import the entry the lane actually runs. That reproduces the production failure
+# exactly instead of modelling it.
+_LOCAL_ROOTS = ("engine", "scripts", "lib", "collectors", "app", "tools")
+
+
+def _covered(rel: str, cone: list[str]) -> bool:
+    """Model git CONE mode, which materializes more than the literal patterns.
+
+    `git sparse-checkout set engine/earnings_narrative` writes
+    `/*`, `!/*/`, `/engine/`, `!/engine/*/`, `/engine/earnings_narrative/` — i.e.
+    every file at the repo root, every file DIRECTLY inside each ancestor
+    directory of a coned pattern, and everything under the pattern itself.
+
+    So `engine/__init__.py` is present (direct child of the ancestor `engine/`),
+    and a coned FILE like `scripts/refresh_earnings_evidence_graph.py` works for
+    the same reason — cone mode has no file patterns, it adds `/scripts/` and the
+    script rides in. `engine/press/earnings_adapter.py` is neither: `press` is a
+    SIBLING subdirectory, never an ancestor. That asymmetry is the whole bug.
+    """
+    for pat in cone:
+        clean = pat.rstrip("/")
+        if rel == clean or rel.startswith(clean + "/"):
+            return True
+    parent = str(Path(rel).parent)
+    if parent == ".":
+        return True
+    for pat in cone:
+        node = Path(pat.rstrip("/"))
+        ancestors = {str(a) for a in node.parents if str(a) != "."}
+        ancestors.add(str(node))
+        if parent in ancestors:
+            return True
+    return False
+
+
+_CHILD = '''
+import sys, json
+from pathlib import Path
+from importlib.abc import MetaPathFinder
+
+ROOT = Path.cwd()
+CONE = json.loads({cone!r})
+LOCAL_ROOTS = {roots!r}
+
+def covered(rel):
+    for pat in CONE:
+        clean = pat.rstrip("/")
+        if rel == clean or rel.startswith(clean + "/"):
+            return True
+    parent = str(Path(rel).parent)
+    if parent == ".":
+        return True
+    for pat in CONE:
+        node = Path(pat.rstrip("/"))
+        anc = {{str(a) for a in node.parents if str(a) != "."}}
+        anc.add(str(node))
+        if parent in anc:
+            return True
+    return False
+
+def files_for(name):
+    parts = name.split(".")
+    out = []
+    leaf = ROOT.joinpath(*parts[:-1], parts[-1] + ".py")
+    pkg = ROOT.joinpath(*parts, "__init__.py")
+    for c in (leaf, pkg):
+        if c.is_file():
+            out.append(str(c.relative_to(ROOT)))
+    return out
+
+class ConeBlocker(MetaPathFinder):
+    def find_spec(self, name, path=None, target=None):
+        if name.split(".")[0] not in LOCAL_ROOTS:
+            return None
+        files = files_for(name)
+        if files and not any(covered(f) for f in files):
+            raise ImportError(
+                "SPARSE CONE would not check out %s (%s)" % (name, ", ".join(files))
+            )
+        return None
+
+sys.meta_path.insert(0, ConeBlocker())
+import importlib
+importlib.import_module({entry!r})
+print("CONE_IMPORT_OK")
+'''
+
+
+def _import_under_cone(entry_module: str, cone: list[str]) -> str:
+    """Import `entry_module` with every non-coned local module blocked.
+
+    Runs in a subprocess so one lane's imports cannot leak into the next via
+    sys.modules and quietly satisfy a cone that would really have failed.
+    """
+    import json
+    import subprocess
+    import sys as _sys
+
+    code = _CHILD.format(cone=json.dumps(cone), roots=_LOCAL_ROOTS, entry=entry_module)
+    proc = subprocess.run(
+        [_sys.executable, "-c", code], cwd=str(_ROOT), capture_output=True, text=True, timeout=180
+    )
+    return proc.stdout + proc.stderr
+
+
+def _cone_of(job: dict) -> list[str] | None:
+    for step in job.get("steps") or []:
+        if not isinstance(step, dict):
+            continue
+        if str(step.get("uses", "")).startswith("actions/checkout"):
+            raw = (step.get("with") or {}).get("sparse-checkout")
+            if not isinstance(raw, str):
+                return None  # full checkout — everything is present
+            return [ln.strip() for ln in raw.splitlines() if ln.strip()]
+    return None
+
+
+def _coned_earnings_jobs() -> list[tuple[str, str, list[str], str]]:
+    """(workflow, job id, cone, entry module) for coned jobs running our scripts."""
+    reaching = _scripts_that_reach_earnings_narrative()
+    out = []
+    for path in sorted(_WORKFLOWS.glob("*.yml")):
+        try:
+            workflow = _yaml.safe_load(path.read_text(encoding="utf-8"))
+        except _yaml.YAMLError:
+            continue
+        if not isinstance(workflow, dict):
+            continue
+        for job_id, job in (workflow.get("jobs") or {}).items():
+            if not isinstance(job, dict):
+                continue
+            cone = _cone_of(job)
+            if cone is None:
+                continue
+            blob = "\n".join(
+                s["run"] for s in job.get("steps") or []
+                if isinstance(s, dict) and isinstance(s.get("run"), str)
+            )
+            for name in dict.fromkeys(_MODULE_RUN.findall(blob)):
+                if name in reaching and (_ROOT / f"scripts/{name}.py").is_file():
+                    out.append((path.name, job_id, cone, f"scripts.{name}"))
+    return out
+
+
+def test_a_sparse_cone_never_contains_comment_lines() -> None:
+    """`sparse-checkout` is a literal pattern list, not a commented scalar.
+
+    A `#` line does not document the cone — it becomes a pattern matching
+    nothing, so the reader sees an explanation and git sees junk.
+    """
+    for name, job_id, cone, _ in _coned_earnings_jobs():
+        for pattern in cone:
+            assert not pattern.startswith("#"), (
+                f"{name} job '{job_id}' has a comment line inside sparse-checkout: "
+                f"{pattern!r}. Put the explanation above the step instead."
+            )
+
+
+def test_the_cone_blocker_can_actually_see_the_failure() -> None:
+    """Non-vacuity, as a MUTATION of the real bug.
+
+    Drop `engine/press` from the evidence-graph cone and the entry module must
+    fail exactly the way production did. Without this, a blocker that silently
+    stopped intercepting (the `find_module` -> `find_spec` removal in 3.12 does
+    exactly that) would report every cone healthy forever.
+    """
+    healthy = [
+        "engine/earnings_narrative", "engine/earnings_transcript_intake.py", "engine/press",
+        "scripts/refresh_earnings_evidence_graph.py",
+    ]
+    assert "CONE_IMPORT_OK" in _import_under_cone(
+        "scripts.refresh_earnings_evidence_graph", healthy
+    ), "the real evidence-graph cone should import cleanly"
+
+    mutated = [c for c in healthy if c != "engine/press"]
+    out = _import_under_cone("scripts.refresh_earnings_evidence_graph", mutated)
+    assert "CONE_IMPORT_OK" not in out, (
+        "removing engine/press from the cone no longer breaks the import — the "
+        "blocker has gone inert and every cone assertion below is vacuous"
+    )
+    assert "engine.press" in out, f"expected engine.press to be named; got:\n{out[-800:]}"
+
+
+@pytest.mark.parametrize("workflow_name,job_id,cone,entry", _coned_earnings_jobs(),
+                         ids=lambda v: v if isinstance(v, str) and len(v) < 44 else "")
+def test_a_coned_job_can_import_what_it_runs(
+    workflow_name: str, job_id: str, cone: list[str], entry: str
+) -> None:
+    out = _import_under_cone(entry, cone)
+    assert "CONE_IMPORT_OK" in out, (
+        f"{workflow_name} job '{job_id}' runs `python -m {entry}` but its "
+        f"sparse-checkout cone does not check out everything that importing it "
+        f"touches, so the job dies before doing any work:\n{out[-900:]}"
     )

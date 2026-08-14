@@ -1,16 +1,20 @@
 """Focused contracts for the bounded 13F Census surface and canonical site build."""
 from __future__ import annotations
 
+import calendar
 import json
 import math
 import shutil
 from copy import deepcopy
+from datetime import date
 from pathlib import Path
 
 from jinja2 import Environment, FileSystemLoader
 
+from scripts import build_institutional_13f_census as census_builder
 from scripts import build_site
 from scripts import build_smart_money as desk_builder
+from scripts.build_institutional_13f_census import latest_completed_period
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -252,6 +256,107 @@ def test_census_boundary_rejects_duplicate_json_keys(tmp_path, monkeypatch):
     )
 
     assert desk_builder._load_institutional_census()["reason"] == "source_rejected"
+
+
+# ── frozen-census tripwire ────────────────────────────────────────────────────
+# A missing or malformed source degrades loudly.  A census that simply STOPPED
+# advancing validates perfectly and republishes the same quarter forever — the
+# sec_insider 2026q2 freeze class (#5601).  These pin the watchdog, not scoring.
+
+
+def _period_quarters_back(back: int, *, today: date) -> str:
+    """Quarter-end ISO date `back` quarters before the latest completed period."""
+    latest = latest_completed_period(today)
+    index = latest.year * 4 + (latest.month - 1) // 3 - back
+    year, quarter = index // 4, index % 4
+    month = quarter * 3 + 3
+    return date(year, month, calendar.monthrange(year, month)[1]).isoformat()
+
+
+def _stale_line(captured: str) -> str:
+    return next(
+        (ln for ln in captured.splitlines() if "institutional-13f-census-stale" in ln),
+        "",
+    )
+
+
+def test_frozen_census_emits_a_line_start_warning(tmp_path, monkeypatch, capsys):
+    """A two-quarter lag is dead accrual, and must annotate at column 0."""
+    today = date(2026, 8, 14)
+    payload = _census_payload(1)
+    payload["periods"]["current"] = _period_quarters_back(2, today=today)
+    _write_source(tmp_path, payload)
+    monkeypatch.setattr(desk_builder.config, "ROOT", tmp_path)
+
+    # Wired into the load path (wall clock only moves the lag further out, so
+    # this stays stale on every future run day).
+    census = desk_builder._load_institutional_census()
+    wired = _stale_line(capsys.readouterr().out)
+    # Column 0 or GitHub drops it — a logger prefix would silently kill this.
+    assert wired.startswith("::warning ")
+    assert payload["periods"]["current"] in wired
+
+    # Same watchdog against a pinned clock, so the reported periods are exact.
+    desk_builder._warn_if_census_frozen(census, today=today)
+    line = _stale_line(capsys.readouterr().out)
+    assert line.startswith("::warning ")
+    assert "institutional-13f-census-stale" in line
+    assert payload["periods"]["current"] in line
+    assert latest_completed_period(today).isoformat() in line
+    assert "by 2 quarters" in line
+    # Watchdog only: the census still publishes exactly as it validated.
+    assert census["state"] != "degraded"
+    assert census["periods"]["current"] == payload["periods"]["current"]
+
+
+def test_publication_lag_of_one_quarter_is_quiet(capsys):
+    """The bulk set publishes ~2 weeks AFTER the filing deadline — that lag is
+    the design's steady state, not a fault."""
+    today = date(2026, 8, 14)
+    for back in (0, 1):
+        payload = _census_payload(1)
+        payload["periods"]["current"] = _period_quarters_back(back, today=today)
+        desk_builder._warn_if_census_frozen(payload, today=today)
+
+    assert "::warning" not in capsys.readouterr().out
+
+
+def test_census_ahead_of_the_reference_period_is_quiet(capsys):
+    """A census that LEADS the reference clock is early publication, not a freeze."""
+    payload = _census_payload(1)
+    payload["periods"]["current"] = "2026-06-30"
+
+    desk_builder._warn_if_census_frozen(payload, today=date(2026, 8, 14))
+
+    assert "::warning" not in capsys.readouterr().out
+
+
+def test_degraded_census_does_not_double_report_as_frozen(capsys):
+    """periods.current is None on the degraded summary; the load path already said so."""
+    desk_builder._warn_if_census_frozen(
+        desk_builder._degraded_census("source_missing"), today=date(2026, 8, 14)
+    )
+
+    assert "::warning" not in capsys.readouterr().out
+
+
+def test_frozen_census_watchdog_never_breaks_the_publish(tmp_path, monkeypatch, capsys):
+    """A raising reference clock must cost the annotation, never the census."""
+    payload = _census_payload(1)
+    payload["periods"]["current"] = _period_quarters_back(2, today=date(2026, 8, 14))
+    _write_source(tmp_path, payload)
+    monkeypatch.setattr(desk_builder.config, "ROOT", tmp_path)
+    monkeypatch.setattr(
+        census_builder,
+        "latest_completed_period",
+        lambda today: (_ for _ in ()).throw(RuntimeError("reference clock down")),
+    )
+
+    census = desk_builder._load_institutional_census()
+
+    assert census["state"] != "degraded"
+    assert census["periods"]["current"] == payload["periods"]["current"]
+    assert "::warning" not in capsys.readouterr().out
 
 
 def test_census_render_only_replaces_just_desk_census_and_page(tmp_path, monkeypatch):

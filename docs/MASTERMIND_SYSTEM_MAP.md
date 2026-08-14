@@ -1374,9 +1374,9 @@ Structure tactical setup species, personality, ignition, intraday flow, and lead
 
 **Derived operational footprint**
 
-- Synapse owners: `dannytrades`, `fast-turn`, `ignition-radar`, `ihm`, `intraday-flow-tracker`, `leader-radar`, `mlc`, `personality-timing`, `setup-species`, `stock-identity`, `stock-personality`, `turn-sensitivity`
-- Lobe owners: `dannytrades`, `fast-turn`, `ignition-radar`, `ihm`, `intraday-flow-tracker`, `leader-radar`, `mlc`, `personality-timing`, `setup-species`, `stock-identity`, `stock-personality`, `turn-sensitivity`
-- Synapse artifacts: **43**; tier mix: display=24, infrastructure=9, shadow=10
+- Synapse owners: `dannytrades`, `fast-turn`, `ignition-radar`, `ihm`, `intraday-flow-tracker`, `leader-radar`, `mlc`, `personality-timing`, `setup-species`, `stock-personality`, `turn-sensitivity`
+- Lobe owners: `dannytrades`, `fast-turn`, `ignition-radar`, `ihm`, `intraday-flow-tracker`, `leader-radar`, `mlc`, `personality-timing`, `setup-species`, `stock-personality`, `turn-sensitivity`
+- Synapse artifacts: **42**; tier mix: display=24, infrastructure=8, shadow=10
 - Lobe charters: **1**
 - Information domains: `context`
 
@@ -3508,7 +3508,6 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `signal-commons` | `subprogram_of` | `signal-governance` | 12 | 1 |
 | `macro` | `signal-foundry` | `subprogram_of` | `signal-governance` | 4 | 0 |
 | `macro` | `standout-accountability` | `subprogram_of` | `prophet` | 8 | 0 |
-| `macro` | `stock-identity` | `subprogram_of` | `market-timing-intelligence` | 1 | 0 |
 | `macro` | `stock-personality` | `subprogram_of` | `market-timing-intelligence` | 5 | 0 |
 | `macro` | `tech-internals` | `subprogram_of` | `market-structure-intelligence` | 1 | 0 |
 | `macro` | `thematic-intelligence` | `mapped` | `thematic-intelligence` | 12 | 10 |
@@ -3588,16 +3587,16 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | Source | SHA-256 |
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
-| `config/mastermind_programs.yml` | `cd555d9af89438744d645bdd7ff79dfb5fa066b214444c7650a2f7d3d291a362` |
-| `config/synapse.yml` | `6cfe759fc4c7391672e0fc38d52d61269a0a8a32a4ae191ee1035d6879086c17` |
+| `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
+| `config/synapse.yml` | `a4de7136003662aa6c89c13a8a93d794c35a7c661543e4c9a4b5882d01754f11` |
 
 ### Legacy registry compatibility notes
 
 The curated semantic registry rejects duplicate keys. These pre-existing operational-registry duplicates are nonblocking here so this architecture build does not mutate an unrelated authority source:
 
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 10429, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 10430, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12830, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 12831, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'external_consumers' at line 10431, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'notes' at line 10432, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12804, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'notes' at line 12805, column 5; compatibility load kept the last value
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.

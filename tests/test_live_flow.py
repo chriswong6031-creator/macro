@@ -3071,6 +3071,39 @@ class TestDayStateLearningWal:
             "anchor_strategy": "durable_available_at",
         }
 
+    @staticmethod
+    def _stub_main_prelude(tmp_path, monkeypatch):
+        """Reach the cycle loop without network, host, or publication effects."""
+        import collectors.thetadata as td
+        import scripts.build_flow_archive as flow_archive
+        import scripts.live_flow_poller as poller
+
+        monkeypatch.setattr(poller, "_cfg", lambda: {"retention_hours": 24})
+        monkeypatch.setattr(poller, "_session_date", lambda _override=None: SESSION_DATE)
+        monkeypatch.setattr(poller, "_state_dir", lambda: tmp_path)
+        monkeypatch.setenv("LIVE_FLOW_EVENT_STAGE_DIR", str(tmp_path / "events"))
+        monkeypatch.setattr(
+            poller, "_initialize_options_context_dispatcher", lambda *_args, **_kwargs: None,
+        )
+        monkeypatch.setattr(poller, "_flush_options_context_outbox", lambda: None)
+        monkeypatch.setattr(td, "reachable", lambda **_kwargs: True)
+        monkeypatch.setattr(poller, "_resolve_universe", lambda _cfg: ["SPY"])
+        monkeypatch.setattr(poller, "_probe_delta_mode", lambda _session: "time_window")
+        monkeypatch.setattr(poller, "_load_baselines", lambda: {})
+        monkeypatch.setattr(poller, "_load_unusual_baseline", lambda: {})
+        monkeypatch.setattr(poller, "_r2_client", lambda: None)
+        monkeypatch.setattr(poller, "_prune_day_states", lambda *_args: None)
+        monkeypatch.setattr(flow_archive, "is_market_session", lambda _session: False)
+        monkeypatch.setattr(poller, "_poll_floor_sec", lambda _cfg: 37)
+        monkeypatch.setattr(poller, "_two_tier_enabled", lambda: False)
+        monkeypatch.setattr(poller, "_daily_summary_enabled", lambda: False)
+        monkeypatch.setattr(poller, "_max_concurrent", lambda _cfg: 1)
+        monkeypatch.setattr(
+            poller, "_select_cycle_roots", lambda roots, _cycle, _cfg: (roots, None),
+        )
+        monkeypatch.setattr(poller, "_utc_now_iso", lambda: "2026-07-02T20:06:00Z")
+        return poller
+
     def test_wal_save_precedes_stage_and_survives_stage_failure(
         self, tmp_path, monkeypatch,
     ):
@@ -3288,6 +3321,110 @@ class TestDayStateLearningWal:
         )
         assert payload["KeepAlive"] == {"SuccessfulExit": False}
         assert payload["ThrottleInterval"] == 60
+
+    def test_rth_only_post_close_error_exits_zero_without_publication_or_sleep(
+        self, tmp_path, monkeypatch,
+    ):
+        poller = self._stub_main_prelude(tmp_path, monkeypatch)
+        pending_state = self._state()
+        publication_calls: list[str] = []
+        sleep_calls: list[float] = []
+        prune_calls: list[str] = []
+        rth_checks = iter([True, False])
+
+        def unexpected_sleep(seconds: float):
+            sleep_calls.append(seconds)
+            raise AssertionError("post-close errored cycle must not sleep")
+
+        monkeypatch.setattr(poller, "_within_rth", lambda: next(rth_checks))
+        monkeypatch.setattr(
+            poller,
+            "run_cycle",
+            lambda **_kwargs: (
+                {"events": []},
+                {},
+                {"asof": "2026-07-02T20:05:59Z"},
+                dict(pending_state),
+                {},
+            ),
+        )
+        monkeypatch.setattr(
+            poller,
+            "_drain_pending_learning_events",
+            lambda *_args, **_kwargs: (_ for _ in ()).throw(
+                RuntimeError("injected post-save stage failure")
+            ),
+        )
+        monkeypatch.setattr(
+            poller, "_write_json", lambda name, _payload: publication_calls.append(name),
+        )
+        monkeypatch.setattr(
+            poller, "_upload_r2", lambda *_args, **_kwargs: publication_calls.append("r2"),
+        )
+        monkeypatch.setattr(
+            poller, "_prune_day_states", lambda *_args: prune_calls.append("startup"),
+        )
+        monkeypatch.setattr(poller.time, "sleep", unexpected_sleep)
+
+        assert poller.main(["--rth-only"]) == 0
+        assert publication_calls == []
+        assert sleep_calls == []
+        assert prune_calls == ["startup"]
+        restored = poller._load_day_state(SESSION_DATE)
+        assert restored["pending_learning_events"] == pending_state["pending_learning_events"]
+        assert restored["all_events"] == []
+
+    def test_rth_only_cycle_error_within_rth_sleeps_then_retries(
+        self, tmp_path, monkeypatch,
+    ):
+        poller = self._stub_main_prelude(tmp_path, monkeypatch)
+        attempts: list[int] = []
+        sleep_calls: list[float] = []
+        publication_calls: list[str] = []
+
+        class StopAfterRetry(BaseException):
+            pass
+
+        def fail_then_stop(**_kwargs):
+            attempts.append(len(attempts) + 1)
+            if len(attempts) == 1:
+                raise RuntimeError("injected within-RTH cycle failure")
+            raise StopAfterRetry
+
+        monkeypatch.setattr(poller, "_within_rth", lambda: True)
+        monkeypatch.setattr(poller, "run_cycle", fail_then_stop)
+        monkeypatch.setattr(poller.time, "sleep", sleep_calls.append)
+        monkeypatch.setattr(
+            poller, "_write_json", lambda name, _payload: publication_calls.append(name),
+        )
+
+        with pytest.raises(StopAfterRetry):
+            poller.main(["--rth-only"])
+
+        assert attempts == [1, 2]
+        assert sleep_calls == [37]
+        assert publication_calls == []
+
+    def test_once_cycle_error_remains_nonzero_without_sleep(
+        self, tmp_path, monkeypatch,
+    ):
+        poller = self._stub_main_prelude(tmp_path, monkeypatch)
+        sleep_calls: list[float] = []
+        publication_calls: list[str] = []
+
+        monkeypatch.setattr(
+            poller,
+            "run_cycle",
+            lambda **_kwargs: (_ for _ in ()).throw(RuntimeError("injected once failure")),
+        )
+        monkeypatch.setattr(poller.time, "sleep", sleep_calls.append)
+        monkeypatch.setattr(
+            poller, "_write_json", lambda name, _payload: publication_calls.append(name),
+        )
+
+        assert poller.main(["--once"]) == 1
+        assert sleep_calls == []
+        assert publication_calls == []
 
     def test_missing_version_treated_as_v1(self, tmp_path, monkeypatch, caplog):
         """A day_state with no schema_version key is treated as version 1 → discarded."""

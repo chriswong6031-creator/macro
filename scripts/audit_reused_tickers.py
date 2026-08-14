@@ -53,12 +53,39 @@ WHAT IT CHECKS — every per-ticker parquet in data/stocks/ and data/baskets/ohl
                     in-flight take-private the registry has not caught yet (EA, pinned
                     at ~$209 vs its $210 deal price, 2026-08 specimen) or a deliberate
                     OTC member (ack RHHBY). One summary ::warning for un-acked names.
+  member_identity   (2026-08-14) curated NAME vs the directory's CURRENT issuer for
+                    the same symbol — data/baskets/membership.json rationales written
+                    as 'Company — thesis' and config.yml stock_search.extra_names
+                    labels. A reused symbol that stays LISTED is invisible to every
+                    class above (nothing is dead, nothing is stale, the file simply
+                    belongs to the directory's current issuer): gold_miners carried
+                    'Barrick Mining' on NYSE 'GOLD' for two weeks while the symbol —
+                    and the whole store tape — belonged to Gold.com, a bullion dealer
+                    (#5613; roster repaired the day this class shipped). Matching is
+                    on distinctive name tokens (generic corporate/industry words
+                    dropped) plus directory initialisms and token containment, so
+                    'Newmont' matches 'Newmont Corporation', 'IBM Quantum' matches
+                    'International Business Machines' and 'SpaceX' matches 'Space
+                    Exploration Technologies', while 'Barrick Mining' can never match
+                    'Gold.com, Inc.'. A rationale that leads with a thesis rather
+                    than a name-cased company ('Azure + Copilot — …', 'S&P 500
+                    Materials constituent') makes no name claim and is skipped;
+                    `removed` members are the curator's exit ledger (skipped);
+                    symbols absent from the directory are delisted_printing's beat.
+                    First live sweep (516 names checked): the GOLD defect plus two
+                    stale same-registrant brand names (NXT Nextracker->Nextpower CIK
+                    1852131, QFIN Qifu->Qfin CIK 1741530), zero false positives — all
+                    three fixed at the source in the shipping PR. One summary
+                    ::warning for un-acked names.
 
-ACKS — config.yml `quality.reused_ticker_acks` ({TICKER: identity rationale}) and
-`quality.delisted_printing_acks` ([TICKER, ...]) are operator-ratified identities:
-acked names are still disclosed in the JSON every night (with the rationale echoed)
-but never annotated. The ack text IS the key-migration documentation the house law
-requires (memory: ticker-rename-is-a-key-migration, #4622).
+ACKS — config.yml `quality.reused_ticker_acks` ({TICKER: identity rationale}),
+`quality.delisted_printing_acks` ([TICKER, ...]) and
+`quality.member_identity_acks` ({TICKER: verified-identity rationale, for a curated
+name that legitimately disagrees with the directory}) are operator-ratified
+identities: acked names are still disclosed in the JSON every night (with the
+rationale echoed) but never annotated. The ack text IS the key-migration
+documentation the house law requires (memory: ticker-rename-is-a-key-migration,
+#4622).
 
 EVERYTHING IS A FLAG, NEVER A FAIL (CSP-R1 — staleness/identity is disclosure, not
 fail-dark): findings go through Universe.flag(), n_failed stays 0, and the default
@@ -81,6 +108,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -176,11 +204,145 @@ def _overlap_receipt(store_close: pd.Series, registry_close: pd.Series) -> dict:
     return rec
 
 
-def _acks(cfg_quality: dict | None) -> tuple[dict[str, str], set[str]]:
+def _acks(cfg_quality: dict | None) -> tuple[dict[str, str], set[str], dict[str, str]]:
     q = cfg_quality if cfg_quality is not None else (config.load().get("quality") or {})
     reused = {str(k): str(v) for k, v in (q.get("reused_ticker_acks") or {}).items()}
     delisted = {str(t) for t in (q.get("delisted_printing_acks") or [])}
-    return reused, delisted
+    member = {str(k): str(v) for k, v in (q.get("member_identity_acks") or {}).items()}
+    return reused, delisted, member
+
+
+# ------------------------------------------------------------- member identity (names)
+#: Name tokens too generic to identify a company on their own — legal suffixes,
+#: security-type boilerplate and broad industry words. 'Barrick Mining' must reduce
+#: to {barrick} so it can never ride 'mining' into a match, and 'Gold.com, Inc.
+#: Common Stock' must reduce to {} rather than lending 'gold' to any gold miner.
+_NAME_GENERIC = frozenset("""
+inc incorporated corp corporation company co ltd limited plc llc lp sa nv se ag ab
+adr ads gdr american depositary depository shares share each representing per unit
+units ordinary common stock class capital voting redeemable warrants warrant rights
+right trust the of and de new group groups holdings holding international global
+worldwide com technologies technology tech industries industrial systems solutions
+brands enterprises services ventures partners properties property realty reit fund
+funds etf index mining miners metals gold silver copper platinum resources energy
+oil gas petroleum pharmaceuticals pharma pharmaceutical therapeutics biosciences
+sciences labs laboratories financial financials bancorp bancshares bank banking
+capital markets communications communication media entertainment platforms airlines
+air lines motors motor foods food beverages beverage products product materials
+semiconductor semiconductors software digital data cloud networks network health
+healthcare medical home homes builders usa us na
+""".split())
+
+#: A membership rationale's leading clause is a NAME CLAIM only when it reads like a
+#: proper name. Thesis-first rationales ('Azure + Copilot — …', 'Grid equipment +
+#: gas turbines — …', '[DAT TRADING SLEEVE …') contain connectives/case shapes no
+#: company name has — they make no identity claim, so there is nothing to contradict.
+_CLAIM_DISQUALIFIERS = ("+", "&", " vs ", "[")
+
+
+def _name_tokens(name: str) -> set[str]:
+    toks = re.findall(r"[a-z0-9]+", name.lower())
+    return {w for w in toks if w not in _NAME_GENERIC and not w.isdigit() and len(w) >= 2}
+
+
+def _dir_initialisms(dir_name: str) -> set[str]:
+    """Prefix initialisms of the directory name's leading words — 'International
+    Business Machines Corporation Common Stock' -> {'ib','ibm','ibmc',…} — so a
+    curated 'IBM Quantum' matches the legal name it abbreviates. Boilerplate after
+    a ' - ' separator ('- Class A Common Stock') never contributes initials."""
+    words = re.findall(r"[A-Za-z][\w'.-]*", dir_name.split(" - ")[0])
+    initials = "".join(w[0].lower() for w in words if w[0].isalpha())
+    return {initials[:i] for i in range(2, len(initials) + 1)}
+
+
+def _member_name_claim(rationale: str) -> str | None:
+    """The 'Company' of a 'Company — thesis' rationale, or None when the rationale
+    makes no name claim (no em-dash, thesis-shaped prefix, or a single short token —
+    ticker echoes like 'AIP' identify a product, not an issuer)."""
+    if "—" not in rationale:
+        return None
+    prefix = rationale.split("—", 1)[0].strip()
+    if not prefix or any(d in prefix for d in _CLAIM_DISQUALIFIERS):
+        return None
+    words = prefix.split()
+    if not all(w[0].isupper() or w[0].isdigit() or w[0] == "(" for w in words):
+        return None
+    if len(words) == 1 and len(words[0]) < 5:
+        return None
+    return prefix
+
+
+def _names_match(claim_tokens: set[str], dir_name: str) -> bool:
+    """True when the curated name plausibly names the directory's issuer: shared
+    distinctive token ('Newmont'), the directory initialism ('IBM' vs International
+    Business Machines), or token containment >= 4 chars either way ('SpaceX' ⊇
+    'Space' of Space Exploration Technologies). An empty claim contradicts nothing."""
+    if not claim_tokens:
+        return True
+    dir_tokens = _name_tokens(dir_name)
+    if claim_tokens & dir_tokens:
+        return True
+    if claim_tokens & _dir_initialisms(dir_name):
+        return True
+    for c in claim_tokens:
+        for d in dir_tokens:
+            if (len(d) >= 4 and d in c) or (len(c) >= 4 and c in d):
+                return True
+    return False
+
+
+def _member_identity_rows(data_dir: Path, directory: dict[str, str] | None,
+                          acks: dict[str, str],
+                          stock_search_raw: dict | None) -> tuple[list[dict], list[str]]:
+    """Curated names vs the live directory (the GOLD class). Returns (rows, unacked).
+
+    Sources checked: every ACTIVE data/baskets/membership.json member whose rationale
+    leads with a name claim, and every config.yml stock_search.extra_names label.
+    Symbols absent from the directory are skipped (delisted_printing's beat); a dark
+    directory returns nothing (run() already discloses directory_dark)."""
+    rows: list[dict] = []
+    unacked: list[str] = []
+    if not directory:
+        return rows, unacked
+
+    def _check(ticker: str, where: str, source: str, curated_name: str) -> None:
+        dir_name = directory.get(ticker) or directory.get(ticker.replace("-", "."))
+        if not dir_name:
+            return
+        if _names_match(_name_tokens(curated_name), dir_name):
+            return
+        entry = {"ticker": ticker, "where": where, "source": source,
+                 "curated_name": curated_name.strip()[:80],
+                 "directory_name": str(dir_name).strip(), "acked": ticker in acks}
+        if entry["acked"]:
+            entry["ack"] = acks[ticker]
+        else:
+            unacked.append(f"{where}/{ticker}")
+        rows.append(entry)
+
+    mem_p = data_dir / "baskets" / "membership.json"
+    if mem_p.exists():
+        try:
+            baskets = json.loads(mem_p.read_text()).get("baskets") or {}
+        except Exception as e:  # noqa: BLE001 — a corrupt roster is not this audit's fail
+            log.warning("[reused_tickers] membership.json unreadable (%s)", e)
+            baskets = {}
+        items = baskets.items() if isinstance(baskets, dict) else ((b.get("id"), b) for b in baskets)
+        for bid, b in items:
+            for m in b.get("members") or []:
+                t = m.get("ticker")
+                if not t or m.get("removed"):
+                    continue
+                claim = _member_name_claim(str(m.get("rationale") or ""))
+                if claim:
+                    _check(str(t), str(bid), "membership_rationale", claim)
+
+    ss = stock_search_raw if stock_search_raw is not None else (config.load().get("stock_search") or {})
+    for t, meta in (ss.get("extra_names") or {}).items():
+        nm = str((meta or {}).get("name") or "")
+        if nm:
+            _check(str(t), "stock_search.extra_names", "extra_names", nm)
+    return rows, unacked
 
 
 def _ledger_identity_section(data_dir: Path, quality_raw: dict | None,
@@ -229,20 +391,23 @@ def run(cfg: dict | None = None, now: datetime | None = None,
         out_dir: Path | None = None, data_dir: Path | None = None,
         directory: dict[str, str] | None = None,
         quality_raw: dict | None = None,
-        ledger_path: Path | None = None) -> dict:
+        ledger_path: Path | None = None,
+        stock_search_raw: dict | None = None) -> dict:
     """Audit both per-ticker stores for reused/zombie ticker keys and persist
     data/quality/reused_tickers_audit.json. Never raises for a data issue.
 
     `directory` injects the {symbol: name} listing map (tests); None downloads it.
     `quality_raw` injects the raw config `quality:` block for the ack lists (tests);
-    None reads config.yml. `cfg` is the quality_cfg() threshold view (collect.py
-    passes it); only `stocks_stale_calendar_days` and `reused_grace_days` are read."""
+    None reads config.yml. `stock_search_raw` injects the `stock_search:` block for
+    the member_identity extra_names source (tests); None reads config.yml. `cfg` is
+    the quality_cfg() threshold view (collect.py passes it); only
+    `stocks_stale_calendar_days` and `reused_grace_days` are read."""
     cfg = cfg or ac.quality_cfg()
     data_dir = Path(data_dir) if data_dir is not None else ac.ROOT / "data"
     stale_days = int(cfg.get("stocks_stale_calendar_days", 7))
     grace_days = int(cfg.get("reused_grace_days", 30))
     today = _today_et(now)
-    reused_acks, delisted_acks = _acks(quality_raw)
+    reused_acks, delisted_acks, member_acks = _acks(quality_raw)
 
     # --- dead registry: per-ticker death-era closes -------------------------------
     reg_path = data_dir / "edgar" / "dead_name_prices.parquet"
@@ -263,7 +428,8 @@ def run(cfg: dict | None = None, now: datetime | None = None,
 
     universes: list[ac.Universe] = []
     per_store: list[dict] = []
-    totals = {"zombie": 0, "rebirth": 0, "registry_mismatch": 0, "delisted_printing": 0}
+    totals = {"zombie": 0, "rebirth": 0, "registry_mismatch": 0, "delisted_printing": 0,
+              "member_identity": 0}
     unacked_zombies: list[str] = []
     unacked_delisted: list[str] = []
 
@@ -351,6 +517,10 @@ def run(cfg: dict | None = None, now: datetime | None = None,
         universes.append(uni)
         per_store.append(rec)
 
+    member_rows, unacked_member = _member_identity_rows(
+        data_dir, directory, member_acks, stock_search_raw)
+    totals["member_identity"] = len(member_rows)
+
     ledger_sec = _ledger_identity_section(data_dir, quality_raw, ledger_path)
 
     doc = ac.write_audit("reused_tickers", "stocks", universes, cfg, asof=today, out_dir=out_dir)
@@ -359,8 +529,10 @@ def run(cfg: dict | None = None, now: datetime | None = None,
     doc["stale_calendar_days"] = stale_days
     doc["totals"] = totals
     doc["stores"] = per_store
+    doc["member_identity"] = member_rows
     doc["reused_ticker_acks"] = reused_acks
     doc["delisted_printing_acks"] = sorted(delisted_acks)
+    doc["member_identity_acks"] = member_acks
     if registry_dark:
         doc["registry_dark"] = True
         print("::warning title=reused ticker key::dead-name registry unreadable — the "
@@ -376,6 +548,17 @@ def run(cfg: dict | None = None, now: datetime | None = None,
               f"name(s) have no current NASDAQ/NYSE listing: {shown}{tail} — in-flight "
               "take-private/delisting or vendor remap; verify identity (an acked OTC member "
               "belongs in config.yml quality.delisted_printing_acks)", flush=True)
+    if unacked_member:
+        shown = "; ".join(
+            f"{r['where']}/{r['ticker']}: curated '{r['curated_name']}' vs directory "
+            f"'{r['directory_name']}'" for r in member_rows if not r["acked"])[:600]
+        print(f"::warning title=member identity::{len(unacked_member)} curated name(s) "
+              f"disagree with the symbol's CURRENT issuer in the NASDAQ directory: {shown} "
+              "— a reused symbol stays listed, so no store-level class fires (the "
+              "gold_miners GOLD defect read a bullion dealer as 'Barrick' for two weeks). "
+              "Resolve identity (NASDAQ directory + EDGAR CIK + OpenFIGI): repair the "
+              "roster/label at the source, or ack a verified same-registrant mismatch in "
+              "config.yml quality.member_identity_acks.", flush=True)
     if totals["registry_mismatch"]:
         names = [e["ticker"] for s in per_store for e in s["registry_mismatch"]]
         shown = ", ".join(names[:8])
@@ -409,6 +592,8 @@ def run(cfg: dict | None = None, now: datetime | None = None,
           f"registry_mismatch={totals['registry_mismatch']} "
           f"delisted_printing={totals['delisted_printing']} "
           f"(unacked={len(unacked_delisted)}) "
+          f"member_identity={totals['member_identity']} "
+          f"(unacked={len(unacked_member)}) "
           f"ledger_declared_dupes={len(ledger_sec.get('declared_duplicates', []))} "
           f"ledger_undeclared={len(ledger_sec.get('undeclared_candidates', []))}"
           + (" registry_dark=True" if registry_dark else "")
@@ -416,6 +601,7 @@ def run(cfg: dict | None = None, now: datetime | None = None,
           + (" ledger_dark=True" if ledger_sec.get("ledger_dark") else ""))
     doc["unacked_zombies"] = unacked_zombies
     doc["unacked_delisted_printing"] = unacked_delisted
+    doc["unacked_member_identity"] = unacked_member
     doc["undeclared_ledger_identities"] = [
         "/".join(c["tickers"]) for c in ledger_sec.get("undeclared_candidates", [])
     ]
@@ -426,8 +612,8 @@ def run(cfg: dict | None = None, now: datetime | None = None,
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--strict", action="store_true",
-                    help="exit 3 when any un-acked zombie / delisted_printing name, or any "
-                         "undeclared ledger identity, exists")
+                    help="exit 3 when any un-acked zombie / delisted_printing / "
+                         "member_identity name, or any undeclared ledger identity, exists")
     args = ap.parse_args(argv)
     try:
         doc = run()
@@ -436,6 +622,7 @@ def main(argv: list[str] | None = None) -> int:
         return 2
     if args.strict and (doc.get("unacked_zombies")
                         or doc.get("unacked_delisted_printing")
+                        or doc.get("unacked_member_identity")
                         or doc.get("undeclared_ledger_identities")):
         return 3
     return 0

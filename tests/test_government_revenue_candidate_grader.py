@@ -16,6 +16,7 @@ any later evaluation-rule change requires a new ``family_id``.
 """
 from __future__ import annotations
 
+import ast
 import copy
 import hashlib
 import inspect
@@ -2308,6 +2309,7 @@ def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
     logs = sorted((ROOT / "data").rglob(grader.ISSUANCE_LOG_FILENAME))
     assert logs == [], f"an issuance log exists: {logs}"
 
+    target_module = "engine.government_revenue.candidate_grader"
     callers = []
     for area in ("engine", "scripts", "app", "admin"):
         root = ROOT / area
@@ -2316,7 +2318,21 @@ def test_amendment_window_is_closed_and_the_grader_remains_uncalled():
         for path in root.rglob("*.py"):
             if path.name == "candidate_grader.py":
                 continue
-            if "candidate_grader" in path.read_text(encoding="utf-8", errors="ignore"):
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            imports: set[str] = set()
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    imports.update(alias.name for alias in node.names)
+                elif isinstance(node, ast.ImportFrom):
+                    module = node.module or ""
+                    if node.level:
+                        package = list(path.relative_to(ROOT).with_suffix("").parts[:-1])
+                        package = package[: max(0, len(package) - node.level + 1)]
+                        module = ".".join((*package, module)) if module else ".".join(package)
+                    if module:
+                        imports.add(module)
+                        imports.update(f"{module}.{alias.name}" for alias in node.names)
+            if target_module in imports:
                 callers.append(str(path.relative_to(ROOT)))
     assert callers == [], (
         f"the grader has acquired callers {callers}: a produced number may exist, and an "

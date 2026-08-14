@@ -155,15 +155,18 @@ def test_every_member_has_a_curated_added_stamp(membership) -> None:
 
 def test_the_2026_sleeves_no_longer_claim_a_2023_curation(membership) -> None:
     """The exact defect: gold_miners (created 2026-07-30) and silver_miners
-    (2026-08-05) claiming their members were added on 2023-05-09."""
+    (2026-08-05) claiming their members were added on 2023-05-09. A curation
+    LATER than the basket's creation is legitimate (gold_miners/B, the 2026-08-14
+    wrong-issuer repair, is the first) — what this refuses is any stamp EARLIER
+    than the basket existed, and the seed_date stamp in particular."""
     for bid in ("gold_miners", "silver_miners"):
         b = membership["baskets"][bid]
         created = b["created"]
         assert created.startswith("2026-"), f"{bid} created moved unexpectedly: {created}"
         for m in b["members"]:
-            assert m["curated_added"] == created, (
-                f"{bid}/{m['ticker']} curated_added {m['curated_added']} != the basket's "
-                f"own creation date {created}")
+            assert m["curated_added"] >= created, (
+                f"{bid}/{m['ticker']} curated_added {m['curated_added']} predates the "
+                f"basket's own creation date {created}")
             assert m["curated_added"] != membership["seed_date"]
 
 
@@ -203,6 +206,102 @@ def test_delisted_silver_members_are_stamped_not_silently_carried(
     assert receipt in m["rationale"], "no SEC exchange-delisting receipt in the rationale"
     assert m["removed"] < m["curated_added"], (
         "the whole point of this row is that the delisting predates the curation")
+
+
+def test_gold_miners_wrong_issuer_row_is_removed_not_silently_carried(membership) -> None:
+    """The 2026-08-14 identity repair. NYSE 'GOLD' stopped being Barrick on
+    2025-05-08 (Barrick Mining trades as 'B' since 2025-05-09) and has been
+    Gold.com, Inc. — fka A-Mark Precious Metals, a bullion dealer — since
+    2025-12-02, yet the 2026-07-30 curation keyed the Barrick slot to 'GOLD':
+    a live listing, absent from the dead registry, invisible to every store
+    audit class, reading a DEALER's tape in a producers sleeve. Unlike
+    MAG/GATO the security never stopped existing — the flag for that shape
+    (`delisted_before_curation`) would be false here AND would wrongly drop
+    GOLD from the fetch universe (Gold.com's file is correct as Gold.com).
+    The repair removes GOLD from the roster entirely. A synthetic `removed`
+    date before `added` is not a valid membership interval, and retaining the
+    valid Gold.com instrument as a removed miner row would preserve the wrong
+    issuer label. B inherits the slot's back-projected `added`, so the roster
+    transfer is explicit — no double-count and no silent Gold.com 'Barrick era'."""
+    b = membership["baskets"]["gold_miners"]
+    rows = {m["ticker"]: m for m in b["members"]}
+    assert "GOLD" not in rows, "a Gold.com instrument cannot remain labelled as a miner"
+    disclosure = " ".join(b["omitted"]) + " " + " ".join(
+        row["note"] for row in b["changelog"] if row.get("action") == "remove"
+    )
+    for needle in ("NEVER", "Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09"):
+        assert needle.lower() in disclosure.lower(), f"identity receipt {needle!r} missing"
+    assert _changelog_names(b, "GOLD"), "the removal must be written down in the changelog"
+
+    bar = rows["B"]
+    assert bar["removed"] is None
+    assert bar["added"] == "2023-05-09", (
+        "B must carry the replaced slot's exact back-projected mask")
+    assert bar["curated_added"] == "2026-08-14"
+    live = [m["ticker"] for m in b["members"] if not m.get("removed")]
+    assert "GOLD" not in live and "B" in live and len(live) == 12, live
+
+
+def test_b_curated_tape_is_barrick_and_not_the_goldcom_dealer_tape() -> None:
+    """The replacement slot must be backed by the intended issuer's OHLCV tape.
+
+    Shape checks keep a close-only fallback from masquerading as the curated plane;
+    return correlations prove B agrees with Barrick's long Yahoo store and disagrees
+    with the dealer tape under GOLD.
+    """
+    import pandas as pd
+
+    curated = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "B.parquet")
+    barrick = pd.read_parquet(ROOT / "data" / "yahoo" / "B.parquet")
+    dealer = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "GOLD.parquet")
+
+    assert isinstance(curated.index, pd.DatetimeIndex)
+    assert curated.index.name == "Date"
+    assert curated.index.is_monotonic_increasing and curated.index.is_unique
+    assert list(curated.columns) == ["open", "high", "low", "close", "volume"]
+    # Immutable seed receipt, not a ceiling: the membership collector advances this
+    # curated tape nightly after the PR lands.
+    assert len(curated) >= 3_172
+    assert curated.index.min() == pd.Timestamp("2014-01-02")
+    assert curated.index.max() >= pd.Timestamp("2026-08-13")
+
+    b_pair = pd.concat(
+        [curated["close"].pct_change(), barrick["close"].pct_change()], axis=1, join="inner"
+    ).dropna()
+    dealer_pair = pd.concat(
+        [curated["close"].pct_change(), dealer["close"].pct_change()], axis=1, join="inner"
+    ).dropna()
+    assert b_pair.corr().iloc[0, 1] > 0.999
+    assert dealer_pair.corr().iloc[0, 1] < 0.35
+
+
+def test_gold_masks_to_zero_and_b_owns_the_slot_in_both_read_modes(membership) -> None:
+    """Exercise the actual basket mask, not only the membership prose."""
+    import pandas as pd
+
+    from engine.basket_index import _live_mask
+
+    rows = {
+        row["ticker"]: row for row in membership["baskets"]["gold_miners"]["members"]
+        if row["ticker"] in {"GOLD", "B"}
+    }
+    b = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "B.parquet")["close"]
+    gold = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "GOLD.parquet")["close"]
+    idx = b.index
+    close = pd.concat({"GOLD": gold, "B": b}, axis=1, sort=False).reindex(idx)
+    assert "GOLD" not in rows
+    members = [rows["B"]]
+
+    strict = _live_mask(members, idx, ["GOLD", "B"], pit=True, close=close)
+    deep = _live_mask(members, idx, ["GOLD", "B"], pit=False, close=close)
+    assert int(strict["GOLD"].sum()) == 0
+    assert int(deep["GOLD"].sum()) == 0
+    b_row = rows["B"]
+    strict_expected = idx >= pd.Timestamp(b_row["added"])
+    if b_row.get("removed"):
+        strict_expected &= idx < pd.Timestamp(b_row["removed"])
+    assert int(strict["B"].sum()) == int(strict_expected.sum())
+    assert int(deep["B"].sum()) == len(b)
 
 
 def test_a_delisted_symbol_is_never_requested_nightly() -> None:
