@@ -78,7 +78,8 @@ def test_the_same_island_with_honest_copy_is_clean() -> None:
 STRUCTURAL_LINES = [
     ('"tier":"validated"', 'engine-stamped scoring tier value'),
     ('"verdict":"validated"', 'engine-stamped tripwire verdict value'),
-    ('"validated_tag":"validated"', 'earned per-basket honesty enum value'),
+    ('"validated_tag":"validated"',
+     'earned per-basket global-AI honesty enum, not platform prose'),
     ('{"validated": true, "n": 4}', 'a boolean data field, not a claim'),
     ('"absolute_trend_gate":"validated_risk_control — sized on the gate"',
      'engine gate-status enum value (covered by the validated_risk_control mask)'),
@@ -123,10 +124,14 @@ def test_a_mask_does_not_hide_prose_sharing_its_line() -> None:
     assert "selection edge" in found[0]["text"]
 
 
-def test_validated_tag_mask_does_not_hide_prose_sharing_its_line() -> None:
-    """The earned honesty enum is structural; sibling platform copy is still gated."""
+def test_validated_tag_mask_does_not_hide_sibling_prose() -> None:
+    """The generated China board serializes its rows as one JSON line.
+
+    Mask exactly the earned machine enum pair; a platform claim elsewhere in the same
+    payload must remain visible.
+    """
     line = '{"validated_tag":"validated","blurb":"a validated selection edge"}'
-    found, _ = scan_text("site/x.html", line, NO_ALLOW)
+    found, _ = scan_text("site/china_stocks.html", line, NO_ALLOW)
     assert len(found) == 1, f"expected exactly the blurb to fire, got {found}"
     assert "selection edge" in found[0]["text"]
 
