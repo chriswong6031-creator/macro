@@ -1,47 +1,10 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-14T23:46:38.755313+00:00",
+  "as_of": "2026-08-14T23:47:55.955625+00:00",
   "posts_seen": 12,
   "seen_total": 117,
-  "evaluated": 6,
-  "activated": 4,
+  "evaluated": 0,
+  "activated": 0,
   "provider": "Claude claude-opus-4-8 (subscription)",
-  "gate_scores": [
-    {
-      "id": "wh-2026-08-14-presidential-message-on-the-anniversary-of-winning-world-war-ii",
-      "importance": 2,
-      "activated": false,
-      "degraded_reason": "served_by:codex"
-    },
-    {
-      "id": "wh-2026-08-14-presidential-message-on-the-anniversary-of-the-social-security-act",
-      "importance": 18,
-      "activated": false,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-13-fact-sheet-president-donald-j-trump-rebuilds-the-u-s-navy-and-americas-shipbuild",
-      "importance": 70,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-13-fact-sheet-president-donald-j-trump-bolsters-national-security-and-strengthens-u",
-      "importance": 68,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-13-adjusting-imports-of-unmanned-aircraft-systems-and-unmanned-aircraft-systems-com",
-      "importance": 74,
-      "activated": true,
-      "degraded_reason": null
-    },
-    {
-      "id": "wh-2026-08-13-rebuilding-the-united-states-navy-and-americas-shipbuilding-industrial-base",
-      "importance": 74,
-      "activated": true,
-      "degraded_reason": null
-    }
-  ]
+  "gate_scores": []
 }
