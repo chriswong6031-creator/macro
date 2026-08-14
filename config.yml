@@ -2406,7 +2406,7 @@ stock_search:
     - TAL    # TAL Education
     - WB     # Weibo
     - BZ     # Kanzhun (BOSS Zhipin)
-    - QFIN   # Qifu Technology
+    - QFIN   # Qfin Holdings (fka Qifu Technology; same registrant, EDGAR CIK 1741530)
     - GDS    # GDS Holdings
     - CPNG   # Coupang
     # More recent IPOs / off-index growth
@@ -2849,7 +2849,7 @@ stock_search:
     # Gold Miners detail sleeve — explicit so every holding has a stock profile.
     - NEM    # Newmont
     - AEM    # Agnico Eagle
-    - GOLD   # Barrick Mining
+    - B      # Barrick Mining (NYSE 'B' since 2025-05-09; 'GOLD' now belongs to Gold.com, fka A-Mark — identity repair 2026-08-14, PR #5613 receipts)
     - KGC    # Kinross Gold
     - AU     # AngloGold Ashanti
     - GFI    # Gold Fields
@@ -2928,7 +2928,7 @@ stock_search:
     NBIS: {name: "Nebius Group", sector: "Information Technology"}
     NEM:  {name: "Newmont", sector: "Materials"}
     AEM:  {name: "Agnico Eagle Mines", sector: "Materials"}
-    GOLD: {name: "Barrick Mining", sector: "Materials"}
+    B:    {name: "Barrick Mining", sector: "Materials"}
     KGC:  {name: "Kinross Gold", sector: "Materials"}
     AU:   {name: "AngloGold Ashanti", sector: "Materials"}
     GFI:  {name: "Gold Fields", sector: "Materials"}
@@ -2961,7 +2961,7 @@ stock_search:
     TAL:  {name: "TAL Education (ADR)", sector: "Consumer Discretionary"}
     WB:   {name: "Weibo (ADR)", sector: "Communication Services"}
     BZ:   {name: "Kanzhun / BOSS Zhipin (ADR)", sector: "Communication Services"}
-    QFIN: {name: "Qifu Technology (ADR)", sector: "Financials"}
+    QFIN: {name: "Qfin Holdings (ADR)", sector: "Financials"}
     GDS:  {name: "GDS Holdings (ADR)", sector: "Information Technology"}
     CPNG: {name: "Coupang", sector: "Consumer Discretionary"}
     HOOD: {name: "Robinhood Markets", sector: "Financials"}

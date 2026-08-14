@@ -30,6 +30,24 @@
       "recorded": "2026-08-07",
       "recorded_by": "W1-C miners-universe-parity",
       "row_mutated": false
+    },
+    {
+      "basket_id": "gold_miners",
+      "session": "2026-08-05",
+      "state": "IGNITION",
+      "note": "Wrong-issuer member behind this row: the roster's 'Barrick' slot was keyed to NYSE 'GOLD', a symbol Barrick had left on 2025-05-08 (Barrick Mining trades as NYSE 'B' since 2025-05-09) and that Gold.com, Inc. — fka A-Mark Precious Metals, a bullion DEALER — has held since 2025-12-02. The store tape under GOLD was never Barrick's (data/baskets/ohlcv/GOLD.parquet, born 2026-06-30, holds A-Mark/Gold.com 2014-03-17->), so one of the twelve legs behind k=4 was a dealer's tape in a producers sleeve. Membership repaired 2026-08-14 (GOLD removed at a zero-bar mask, B added; PR #5613 receipts). The row itself is unchanged; forward ledgers advance nightly only.",
+      "recorded": "2026-08-14",
+      "recorded_by": "gold_miners wrong-issuer repair (GOLD->B)",
+      "row_mutated": false
+    },
+    {
+      "basket_id": "gold_miners",
+      "session": "2026-08-07",
+      "state": "IGNITION",
+      "note": "Same wrong-issuer caveat as the 2026-08-05 gold_miners note: the k=3 legs were computed with NYSE 'GOLD' — Gold.com/A-Mark (bullion dealer) tape, not Barrick — as one of the twelve members. Membership repaired 2026-08-14 (GOLD removed at a zero-bar mask, B added; PR #5613 receipts). The row itself is unchanged; forward ledgers advance nightly only.",
+      "recorded": "2026-08-14",
+      "recorded_by": "gold_miners wrong-issuer repair (GOLD->B)",
+      "row_mutated": false
     }
   ]
 }

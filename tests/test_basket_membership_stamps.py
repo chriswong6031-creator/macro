@@ -155,15 +155,18 @@ def test_every_member_has_a_curated_added_stamp(membership) -> None:
 
 def test_the_2026_sleeves_no_longer_claim_a_2023_curation(membership) -> None:
     """The exact defect: gold_miners (created 2026-07-30) and silver_miners
-    (2026-08-05) claiming their members were added on 2023-05-09."""
+    (2026-08-05) claiming their members were added on 2023-05-09. A curation
+    LATER than the basket's creation is legitimate (gold_miners/B, the 2026-08-14
+    wrong-issuer repair, is the first) — what this refuses is any stamp EARLIER
+    than the basket existed, and the seed_date stamp in particular."""
     for bid in ("gold_miners", "silver_miners"):
         b = membership["baskets"][bid]
         created = b["created"]
         assert created.startswith("2026-"), f"{bid} created moved unexpectedly: {created}"
         for m in b["members"]:
-            assert m["curated_added"] == created, (
-                f"{bid}/{m['ticker']} curated_added {m['curated_added']} != the basket's "
-                f"own creation date {created}")
+            assert m["curated_added"] >= created, (
+                f"{bid}/{m['ticker']} curated_added {m['curated_added']} predates the "
+                f"basket's own creation date {created}")
             assert m["curated_added"] != membership["seed_date"]
 
 
@@ -203,6 +206,43 @@ def test_delisted_silver_members_are_stamped_not_silently_carried(
     assert receipt in m["rationale"], "no SEC exchange-delisting receipt in the rationale"
     assert m["removed"] < m["curated_added"], (
         "the whole point of this row is that the delisting predates the curation")
+
+
+def test_gold_miners_wrong_issuer_row_is_stamped_not_silently_carried(membership) -> None:
+    """The 2026-08-14 identity repair. NYSE 'GOLD' stopped being Barrick on
+    2025-05-08 (Barrick Mining trades as 'B' since 2025-05-09) and has been
+    Gold.com, Inc. — fka A-Mark Precious Metals, a bullion dealer — since
+    2025-12-02, yet the 2026-07-30 curation keyed the Barrick slot to 'GOLD':
+    a live listing, absent from the dead registry, invisible to every store
+    audit class, reading a DEALER's tape in a producers sleeve. Unlike
+    MAG/GATO the security never stopped existing — the flag for that shape
+    (`delisted_before_curation`) would be false here AND would wrongly drop
+    GOLD from the fetch universe (Gold.com's file is correct as Gold.com).
+    The repair instead stamps `removed` at the store tape's own FIRST bar so
+    the inclusion interval is empty in BOTH read modes: the strict
+    [added, removed) mask and the deep pit=False read that ignores `added`
+    and gates on the tape's first bar (engine/basket_index._live_mask). B
+    inherits the row's exact back-projected `added`, so the slot transfers
+    wholesale — no gap, no double-count, no silent Gold.com 'Barrick era'."""
+    b = membership["baskets"]["gold_miners"]
+    rows = {m["ticker"]: m for m in b["members"]}
+    g = rows["GOLD"]
+    assert g["removed"] == "2014-03-17", "must equal data/baskets/ohlcv/GOLD.parquet's first bar"
+    assert g["removed"] < g["added"], "the interval must be EMPTY, not merely short"
+    assert not g.get("delisted_before_curation"), (
+        "GOLD is a live listing (Gold.com) — the delisting flag is the wrong shape and "
+        "would drop the correctly-maintained Gold.com file from the fetch universe")
+    for needle in ("NEVER", "Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09"):
+        assert needle in g["rationale"], f"identity receipt {needle!r} missing from the rationale"
+    assert _changelog_names(b, "GOLD"), "the removal must be written down in the changelog"
+
+    bar = rows["B"]
+    assert bar["removed"] is None
+    assert bar["added"] == g["added"] == "2023-05-09", (
+        "the slot transfers wholesale: B must carry the exact back-projected mask GOLD had")
+    assert bar["curated_added"] == "2026-08-14"
+    live = [m["ticker"] for m in b["members"] if not m.get("removed")]
+    assert "GOLD" not in live and "B" in live and len(live) == 12, live
 
 
 def test_a_delisted_symbol_is_never_requested_nightly() -> None:

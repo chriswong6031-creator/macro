@@ -3485,7 +3485,7 @@
           "added": "2023-05-09",
           "curated_added": "2026-06-19",
           "removed": null,
-          "rationale": "Nextracker — solar trackers; powers behind-the-meter/renewable supply feeding data-center load"
+          "rationale": "Nextpower — solar trackers; powers behind-the-meter/renewable supply feeding data-center load. Fka Nextracker: same registrant (EDGAR CIK 1852131), NASDAQ symbol unchanged; stale brand name refreshed 2026-08-14 by the member-identity audit."
         },
         {
           "ticker": "AEIS",
@@ -4171,8 +4171,15 @@
           "ticker": "GOLD",
           "added": "2023-05-09",
           "curated_added": "2026-07-30",
+          "removed": "2014-03-17",
+          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets. REMOVED — WRONG-ISSUER TAPE: NYSE 'GOLD' has not been Barrick since 2025-05-08 — Barrick Mining trades as NYSE 'B' since 2025-05-09 (EDGAR CIK 756894) — and the symbol has belonged to Gold.com, Inc., fka A-Mark Precious Metals, a bullion DEALER, since its 2025-12-02 NASDAQ AMRK->NYSE GOLD transfer (NASDAQ dir 'Gold.com, Inc. Common Stock'; EDGAR CIK 1591588; FIGI BBG005ZVDK48). The store tape under this row was NEVER Barrick: data/baskets/ohlcv/GOLD.parquet was born 2026-06-30, seven months after the reuse, already holding A-Mark/Gold.com's full 2014-03-17-> history, so every bar this row ever contributed to the sleeve was the dealer's. `removed` is deliberately stamped at that tape's own FIRST bar (2014-03-17): it makes the inclusion interval empty in EVERY read — the strict [added, removed) mask and the deep pit=False reads that ignore `added` (engine/basket_index._live_mask) — so no Gold.com bar survives anywhere as a 'Barrick era' and the slot cannot double-count against replacement member 'B', which carries this row's exact back-projected `added`. Receipts: PR #5613; config.yml quality.reused_ticker_acks GOLD."
+        },
+        {
+          "ticker": "B",
+          "added": "2023-05-09",
+          "curated_added": "2026-08-14",
           "removed": null,
-          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets"
+          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets; NYSE 'B' since the 2025-05-09 Barrick Mining rename (EDGAR CIK 756894; previously NYSE 'GOLD' 2019-01-02->2025-05-08 after the Randgold merger, NYSE 'ABX' before that). Replaces the wrong-issuer 'GOLD' row (identity repair 2026-08-14): `added` keeps that row's back-projected 2023-05-09 mask so the equal-weight level regains a real Barrick leg over the whole window with no gap and no double-counted slot. data/yahoo/B.parquet already carries Barrick's continuous entity history (1985->) on basket_index's fallback rung; the deep data/baskets/ohlcv store lands via the nightly membership fetch. Receipts: PR #5613."
         },
         {
           "ticker": "KGC",
@@ -4245,6 +4252,11 @@
           "date": "2026-07-30",
           "action": "create",
           "note": "Added a coherent US-listed gold-producer basket; royalty/streaming and silver-led names explicitly excluded."
+        },
+        {
+          "date": "2026-08-14",
+          "action": "remove",
+          "note": "GOLD removed / B added — wrong-issuer repair, one curated act. The 2026-07-30 curation keyed the Barrick slot to NYSE 'GOLD', but Barrick left that symbol 2025-05-08 (Barrick Mining, NYSE 'B' since 2025-05-09; EDGAR CIK 756894) and Gold.com, Inc. — fka A-Mark Precious Metals, a bullion dealer — has held 'GOLD' since 2025-12-02 (EDGAR CIK 1591588; FIGI BBG005ZVDK48), so the slot read the dealer's tape in a producers basket from curation on, including the fired IGNITION rows of 2026-08-05 and 2026-08-07 (disclosed in data/basket_turn/ledger_meta.json curation_notes; fired forward-ledger rows are never rewritten). GOLD's `removed` is stamped at its store tape's first bar (2014-03-17) so the old row masks to zero bars in every read mode, and B carries the same back-projected `added` (2023-05-09), so the EW level history swaps wholesale to Barrick's continuous tape (data/yahoo/B.parquet, 1985->; deep store via the next nightly membership fetch) with no double-counted slot and no silent Gold.com era. Identity receipts: PR #5613 and config.yml quality.reused_ticker_acks; graph break rows ratified in config/theme_graph_identity_breaks.yml."
         }
       ]
     },

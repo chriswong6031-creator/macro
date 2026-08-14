@@ -60,12 +60,17 @@ COMPUTE_BLOCKLIST: dict[str, str] = {
 #: to it deserves to be told which file is Barrick and which is a stranger.
 HYGIENE_NOTES: dict[str, str] = {
     "GOLD": (
-        "continuous Barrick history under the CURRENT symbol — the pre-2018 rows are the "
-        "ABX era restated, i.e. instrument-level continuity via rename, not a splice. The "
-        "separate data/baskets/ohlcv/ABX.parquet (2020-09 onward) is a DIFFERENT "
-        "instrument on Barrick's retired symbol and is excluded from this program; that "
-        "reuse is unacknowledged in config (reused_ticker_acks / ticker_key_migrations / "
-        "breadth.ticker_fixups all silent on both symbols)"
+        "REUSED SYMBOL, wrong-issuer tape (verified against the stores 2026-08-14): "
+        "Gold.com, Inc. — fka A-Mark Precious Metals, a bullion dealer; EDGAR CIK "
+        "1591588, FIGI BBG005ZVDK48 — has held NYSE 'GOLD' since 2025-12-02. Barrick "
+        "left the symbol 2025-05-08 and trades as NYSE 'B' (Barrick Mining, EDGAR CIK "
+        "756894). Every US store under GOLD holds the DEALER's 2014-03-17-> tape, never "
+        "Barrick (data/yahoo/GOLD.parquet and data/baskets/ohlcv/GOLD.parquet both "
+        "checked; an earlier revision of this note asserted continuous Barrick history "
+        "from the symbol lineage without checking the tape). Barrick's continuous entity "
+        "history lives under 'B' (data/yahoo/B.parquet, 1985->). Ratified break rows: "
+        "config/theme_graph_identity_breaks.yml; acks: config.yml reused_ticker_acks "
+        "(PR #5613)."
     ),
 }
 
