@@ -62,8 +62,7 @@ import numpy as np
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT))
 
 from engine.stock_identity import dossier as dossier_mod  # noqa: E402
 from engine.stock_identity import episodes as ep_mod  # noqa: E402

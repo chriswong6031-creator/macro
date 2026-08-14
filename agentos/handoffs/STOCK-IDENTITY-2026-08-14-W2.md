@@ -2,7 +2,7 @@
 workstream: WS:STOCK-IDENTITY
 session: stock-identity-w2-replay (Claude, same session as W1, worktree vigorous-mirzakhani-3ae795)
 model: fable
-ended_because: merged (terminal CI handoff retired by #5513 mid-session — a session owns its PR through merge)
+ended_because: complete
 mission: >
   W2 / PR-2: Expert Replay + Provenance Pinning under the 2026-08-14 §16.9 operator return
   (W1 ACCEPTED, W2 AUTHORIZED, six binding rulings): era-pinned Class R replay over the pilot,
