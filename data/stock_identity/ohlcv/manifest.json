@@ -1,0 +1,49 @@
+{
+  "adjustment_mode": "auto_adjust=True (dividend/split adjusted total-return)",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "fetch_period": "max",
+  "fetched_at": "2026-08-14T10:52:09.202176+00:00",
+  "fetcher": "collectors._stock_ohlc.fetch_ohlc",
+  "gate": "registration \u00a79: BABA and WPM are absent from both curated TR-adjusted planes; \u00a713's collection clause fires for exactly these two names.",
+  "gate_check": {
+    "BABA": "absent_from_both_curated_planes",
+    "WPM": "absent_from_both_curated_planes"
+  },
+  "price_plane_id": "stock_identity_ohlcv_v1",
+  "schema": "stock_identity.ohlcv_manifest.v1",
+  "source": "yfinance",
+  "symbols": {
+    "BABA": {
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_date": "2014-09-19",
+      "last_date": "2026-08-13",
+      "path": "data/stock_identity/ohlcv/BABA.parquet",
+      "rows": 2992
+    },
+    "WPM": {
+      "columns": [
+        "open",
+        "high",
+        "low",
+        "close",
+        "volume"
+      ],
+      "first_date": "2005-07-06",
+      "last_date": "2026-08-13",
+      "path": "data/stock_identity/ohlcv/WPM.parquet",
+      "rows": 5310
+    }
+  }
+}

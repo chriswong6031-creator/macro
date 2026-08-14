@@ -27,8 +27,23 @@ from scripts.check_self_mod_fence import (
     LOOP_BRANCH_PREFIXES,
     parse_ci_changed_files_json,
     print_planner_files,
+    read_ci_changed_files_file,
 )
 from scripts.run_ci_pack import render_command
+
+
+@pytest.fixture(autouse=True)
+def _isolate_planner_transports(monkeypatch: pytest.MonkeyPatch) -> None:
+    """This suite runs INSIDE a pack, which exports the live PR's diff.
+
+    Both transport names must go, and the FILE one especially: it out-ranks the
+    inline value, so isolating only ``CI_CHANGED_FILES_JSON`` would leave
+    ``print_planner_files`` answering from the hosted runner's own artifact —
+    the #5560 leak class, where a pack's ambient planner state made unrelated
+    PRs red. Tests that need a transport set one explicitly.
+    """
+    for name in ("CI_CHANGED_FILES_FILE", "CI_CHANGED_FILES_JSON"):
+        monkeypatch.delenv(name, raising=False)
 
 
 # ── 1. Loop PR + immutable path → BLOCKED ────────────────────────────────────
@@ -390,9 +405,12 @@ def _run_live_check(
         head_ref=head_ref,
     )
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
-    # Pack jobs export CI_CHANGED_FILES_JSON. These tests seed their own git
-    # history; inheriting the pack runner's list would skip the git fallback
-    # the historical cases pin.
+    # Pack jobs export the planner's list — as a FILE handle since 2026-08-14,
+    # inline before that. These tests seed their own git history; inheriting the
+    # pack runner's list would skip the git fallback the historical cases pin,
+    # and the file name must be popped too or the same leak returns wearing a
+    # different variable.
+    env.pop("CI_CHANGED_FILES_FILE", None)
     env.pop("CI_CHANGED_FILES_JSON", None)
     env["GITHUB_EVENT_NAME"] = event
     env["CI_HEAD_REF"] = head_ref
@@ -540,7 +558,10 @@ def test_packed_live_check_reads_ci_changed_files_json():
     assert "--files " not in body
     assert "${{ github.head_ref }}" not in body
     assert 'BRANCH="${CI_HEAD_REF:-}"' in body
-    assert "CI_CHANGED_FILES_JSON malformed" in body
+    # Both transports by name (2026-08-14): the list moved to a FILE because
+    # the inline form E2BIG'd every pack at launch, and an operator reading
+    # this failure needs to know which of the two to go and look at.
+    assert "CI_CHANGED_FILES_FILE/CI_CHANGED_FILES_JSON malformed" in body
 
 
 @pytest.mark.parametrize(
@@ -571,6 +592,140 @@ def test_print_planner_files_exit_codes(monkeypatch, capsys):
     monkeypatch.setenv("CI_CHANGED_FILES_JSON", '["a.py","b.md"]')
     assert print_planner_files() == 0
     assert capsys.readouterr().out == "a.py\nb.md"
+
+
+def test_print_planner_files_reads_the_file_before_the_env(tmp_path, monkeypatch, capsys):
+    """The 2026-08-14 transport, and its exact exit-code contract.
+
+    The list moved out of the process environment because 350,264 bytes of
+    paths met execve's 131,072-byte MAX_ARG_STRLEN and killed every pack at
+    launch (run 31775693780). Two properties the packed shell depends on:
+
+      * FILE WINS. A pack downloads the artifact and exports the handle; a
+        stale inline string from an older step must not out-vote it, or the
+        fence classifies a diff nobody published.
+      * A configured-but-broken file is exit 2, NEVER exit 3. Exit 3 licenses
+        the shell's git fallback, and answering "no list published" for a
+        transport that lost its payload is precisely the fail-open R-AUT-5
+        forbids — on a depth-1 pack the git fallback then finds nothing and the
+        fence would pass a loop PR it never classified.
+    """
+    monkeypatch.delenv("CI_CHANGED_FILES_JSON", raising=False)
+    handle = tmp_path / "changed-files.json"
+    handle.write_text('[".github/workflows/ci.yml","docs/存档 note.md"]', encoding="utf-8")
+    monkeypatch.setenv("CI_CHANGED_FILES_FILE", str(handle))
+    assert print_planner_files() == 0
+    assert capsys.readouterr().out == ".github/workflows/ci.yml\ndocs/存档 note.md"
+
+    # The file out-ranks a contradicting inline value.
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", '["engine/decoy.py"]')
+    assert print_planner_files() == 0
+    assert capsys.readouterr().out == ".github/workflows/ci.yml\ndocs/存档 note.md"
+
+    handle.write_text("null", encoding="utf-8")
+    assert print_planner_files() == 0
+    assert capsys.readouterr().out == ""
+
+    for broken in ("{nope", "", '"one string"'):
+        handle.write_text(broken, encoding="utf-8")
+        assert print_planner_files() == 2, f"{broken!r} must fail closed, not fall back"
+
+    monkeypatch.setenv("CI_CHANGED_FILES_FILE", str(tmp_path / "never-written.json"))
+    assert print_planner_files() == 2
+
+    # Unset handle: the inline path is untouched, and exit 3 (git fallback)
+    # only when NEITHER transport is configured.
+    monkeypatch.delenv("CI_CHANGED_FILES_FILE")
+    assert print_planner_files() == 0
+    assert capsys.readouterr().out == "engine/decoy.py"
+    monkeypatch.delenv("CI_CHANGED_FILES_JSON")
+    assert print_planner_files() == 3
+
+
+def test_read_ci_changed_files_file_statuses(tmp_path):
+    """The decoder's three statuses, including the one that must not be `unset`."""
+    assert read_ci_changed_files_file(None) == ("unset", [])
+    assert read_ci_changed_files_file("") == ("unset", [])
+    assert read_ci_changed_files_file(str(tmp_path / "absent.json")) == ("malformed", [])
+    path = tmp_path / "changed-files.json"
+    path.write_text('["a.py","b.md"]', encoding="utf-8")
+    assert read_ci_changed_files_file(str(path)) == ("ok", ["a.py", "b.md"])
+    path.write_text('["a.py","","b.md"]', encoding="utf-8")
+    assert read_ci_changed_files_file(str(path)) == ("malformed", [])
+    path.write_text("null", encoding="utf-8")
+    assert read_ci_changed_files_file(str(path)) == ("ok", [])
+    path.write_text("   ", encoding="utf-8")
+    assert read_ci_changed_files_file(str(path)) == ("malformed", []), (
+        "an empty handle is a transport that lost its payload, not an absent one"
+    )
+
+
+def test_live_check_uses_the_planner_file_without_origin_main(tmp_path):
+    """The packed shell end-to-end on the file transport (2026-08-14).
+
+    Same hole #5556/#5519/#5499 opened — fetch-depth:1, `origin/main...HEAD` is
+    a bad revision — now closed by a handle instead of an env string, because
+    the env string could not be delivered at all once a PR's diff grew past
+    execve's per-string cap.
+    """
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "claude/human-docs", cwd=work)
+    (work / "note.md").write_text("docs\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "docs", cwd=work)
+    _git("remote", "remove", "origin", cwd=work)
+    handle = tmp_path / "changed-files.json"
+    handle.write_text('["note.md"]', encoding="utf-8")
+
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="claude/human-docs",
+        extra_env={"CI_CHANGED_FILES_FILE": str(handle)},
+    )
+    assert result.returncode == 0, (
+        "the published FILE must classify a human PR even when origin/main is "
+        f"missing.\nstdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "PASS" in result.stdout
+
+
+def test_live_check_malformed_planner_file_fail_closed(tmp_path):
+    """A broken handle blocks; it must not silently become a git fallback."""
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "claude/human-docs", cwd=work)
+    handle = tmp_path / "changed-files.json"
+    handle.write_text("{nope", encoding="utf-8")
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="claude/human-docs",
+        extra_env={"CI_CHANGED_FILES_FILE": str(handle)},
+    )
+    assert result.returncode == 1
+    assert "malformed" in result.stderr
+
+
+def test_live_check_planner_file_still_blocks_loop_plus_immutable(tmp_path):
+    """The fence's whole job must survive the transport change."""
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "metabolism/self-edit", cwd=work)
+    (work / ".github/workflows").mkdir(parents=True, exist_ok=True)
+    (work / ".github/workflows/ci.yml").write_text("jobs: {}\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "loop edits an immutable path", cwd=work)
+    _git("remote", "remove", "origin", cwd=work)
+    handle = tmp_path / "changed-files.json"
+    handle.write_text('[".github/workflows/ci.yml"]', encoding="utf-8")
+
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="metabolism/self-edit",
+        extra_env={"CI_CHANGED_FILES_FILE": str(handle)},
+    )
+    assert result.returncode != 0
+    assert "BLOCKED" in result.stderr
 
 
 def test_live_check_uses_planner_json_without_origin_main(tmp_path):

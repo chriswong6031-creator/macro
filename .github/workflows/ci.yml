@@ -4173,12 +4173,21 @@ jobs:
     # Planning loads one manifest and diffs one base; 30 minutes is a hang bound,
     # not a budget. `ci-pack` keeps its own 180.
     timeout-minutes: 30
+    # NOTHING UNBOUNDED MAY BE AN OUTPUT (2026-08-14, run 31775693780). A job
+    # output becomes an `env:` string in the consuming job, and execve caps a
+    # single one at 131,072 bytes on Linux; the retired `changed_files` output
+    # measured 350,264 bytes on PR #5578 and killed all twelve packs at launch
+    # with "Argument list too long" before one test ran. Its replacement is the
+    # 64-character digest below, which is also inside the hashed plan payload —
+    # so the list travels as the `ci-changed-files` artifact while its identity
+    # still rides this trusted channel and `--expect-plan-sha` still pins it.
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       has_work: ${{ steps.plan.outputs.has_work }}
       plan_sha: ${{ steps.plan.outputs.plan_sha }}
       reason: ${{ steps.plan.outputs.reason }}
-      changed_files: ${{ steps.plan.outputs.changed_files }}
+      changed_files_sha256: ${{ steps.plan.outputs.changed_files_sha256 }}
+      changed_files_count: ${{ steps.plan.outputs.changed_files_count }}
       tested_base_sha: ${{ steps.changed_paths.outputs.tested_base_sha }}
       plan_artifact_name: ${{ steps.plan_artifact.outputs.name }}
     steps:
@@ -4263,20 +4272,21 @@ jobs:
           # A PR/merge-group null means the immutable diff was unknowable and
           # must remain null so preflight refuses before any scope decision.
           preflight_payload = "[]" if event == "workflow_dispatch" else payload
-          artifact = Path(os.environ["RUNNER_TEMP"]) / "ci-changed-paths.json"
-          artifact.write_text(preflight_payload + "\n", encoding="utf-8")
+          runner_temp = Path(os.environ["RUNNER_TEMP"])
+          artifact = runner_temp / "ci-changed-files" / "changed-files.json"
+          artifact.parent.mkdir(parents=True, exist_ok=True)
+          artifact.write_text(payload + "\n", encoding="utf-8")
+          preflight_artifact = runner_temp / "ci-changed-paths.json"
+          preflight_artifact.write_text(preflight_payload + "\n", encoding="utf-8")
           with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as handle:
-              handle.write(f"CI_CHANGED_FILES_JSON={payload}\n")
-              handle.write(f"CI_CHANGED_PATHS_FILE={artifact}\n")
+              handle.write(f"CI_CHANGED_PATHS_FILE={preflight_artifact}\n")
               handle.write(
                   f"CI_SCOPE_ARG={'--changed-from ' + base if base else ''}\n"
               )
           with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as handle:
               handle.write(f"tested_base_sha={base}\n")
-          print(
-              f"changed-path metadata: planner={payload} "
-              f"preflight={preflight_payload} tested_base={base or 'none'}"
-          )
+          count = len(paths) if paths is not None else 0
+          print(f"changed-path metadata: count={count} tested_base={base or 'none'}")
           PY
       - name: fast structural preflight
         run: >-
@@ -4317,6 +4327,8 @@ jobs:
           --plan-only
           --github-output "$GITHUB_OUTPUT"
           --emit-plan-json "$RUNNER_TEMP/ci-plan.json"
+          --changed-files-file "$RUNNER_TEMP/ci-changed-files/changed-files.json"
+          --emit-changed-files "$RUNNER_TEMP/ci-changed-files/changed-files.json"
           $CI_SCOPE_ARG
       - id: plan_artifact
         name: bind the plan artifact name to this planner attempt
@@ -4330,6 +4342,29 @@ jobs:
           path: ${{ runner.temp }}/ci-plan.json
           if-no-files-found: error
           retention-days: 7
+      # THE CHANGED-FILE LIST'S TRANSPORT (2026-08-14, run 31775693780). An
+      # artifact rather than a job output, because a job output becomes an `env:`
+      # string in the consuming job and execve caps a single one at 131,072
+      # bytes; this list is unbounded by nature — 350,264 bytes on PR #5578,
+      # which killed all twelve packs at launch before one test ran.
+      #
+      # UNCONDITIONAL, deliberately. `run_ci_pack.py` writes the file on BOTH
+      # exits of the plan step: the resolved list on success, the token `null` on
+      # the planner-fallback path where it swallows its exception and exits 0.
+      # Packs launch only when this whole job succeeded, so "a pack is running"
+      # implies "this artifact exists" — which is what lets the pack-side
+      # download be a hard failure instead of a silent widen.
+      #
+      # `if-no-files-found: error` is the fail-closed half: a missing file must
+      # red the planner, not hand twelve packs an empty download and a scope
+      # nobody chose. 14 days outlives any armed PR's useful life.
+      - name: publish the changed-file list
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-changed-files
+          path: ${{ runner.temp }}/ci-changed-files/changed-files.json
+          if-no-files-found: error
+          retention-days: 14
   ci-pack:
     needs: ci-plan
     # A closed PR needs only the workflow-level concurrency side effect above.
@@ -4437,8 +4472,9 @@ jobs:
           # wall-clock: measured PR #5550 / run 31729769728, ci-pack-1 spent
           # 31 minutes in "Checking out the ref" (18:22:54Z–18:54:04Z) while
           # ci-plan, fetching the same history alone, finished in 7 minutes.
-          # No pack resolves a diff or history; it validates the artifact against
-          # this checkout's HEAD, manifest and selector before executing.
+          # No pack resolves a diff or history. It validates the authoritative
+          # plan against this checkout and reads the planner's changed-file
+          # artifact through a bounded file handle.
           filter: blob:none
           fetch-depth: 1
       - uses: actions/setup-python@v5
@@ -4464,11 +4500,34 @@ jobs:
         with:
           name: ${{ needs.ci-plan.outputs.plan_artifact_name }}
           path: ${{ runner.temp }}/ci-pack-plan
+      # THE CHANGED-FILE LIST ARRIVES AS A FILE (2026-08-14, run 31775693780).
+      # ci-plan uploads it; this step downloads it and the next exports only the
+      # PATH. Both halves of that sentence are the repair: the list is what the
+      # legacy guards scope themselves to (conflict-markers, self-mod-fence,
+      # run_ci_pack's own selection), and it is also the one value that grows
+      # with the PR — 350,264 bytes on PR #5578 against execve's 131,072-byte
+      # per-string cap, which is why every pack died before its first test.
+      #
+      # A FAILED DOWNLOAD FAILS THIS JOB, deliberately. ci-plan uploads the list
+      # unconditionally and packs launch only when ci-plan succeeded, so a pack
+      # running without this artifact is not a widen to reason about — it is
+      # evidence that the control plane is broken. And a pack that somehow got
+      # here with the wrong bytes still cannot run: `changed_files_sha256` is
+      # inside the hashed plan payload, so it would recompute a different plan
+      # sha and `--expect-plan-sha` refuses below.
+      - name: download the planner's changed-file list
+        uses: actions/download-artifact@v4
+        with:
+          name: ci-changed-files
+          path: ${{ runner.temp }}/ci-changed-files
+      - name: publish the changed-file handle
+        run: echo "CI_CHANGED_FILES_FILE=$RUNNER_TEMP/ci-changed-files/changed-files.json" >> "$GITHUB_ENV"
       # The planner is the only component allowed to infer scope or partition the
       # manifest. Each pack consumes the exact artifact produced by ci-plan and
       # independently pins it to the plan SHA carried through job outputs. HEAD,
-      # immutable PR/merge-group base, manifest bytes, selector bytes, weights,
-      # inventory and exact-once assignments are all checked before execution.
+      # immutable PR/merge-group base, changed-file digest, manifest bytes,
+      # selector bytes, weights, inventory and exact-once assignments are all
+      # checked before execution.
       #
       # The optional base-pin flag is built in `env`, NOT inline in the folded scalar. A
       # more-indented continuation line inside `>-` keeps its newline instead of
@@ -4487,7 +4546,6 @@ jobs:
         if: needs.ci-plan.outputs.plan_sha != ''
         env:
           CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
-          CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
           EXPECTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
           PLAN_BASE_SHA_ARG: ${{ needs.ci-plan.outputs.tested_base_sha != '' && format('--expect-base-sha {0}', needs.ci-plan.outputs.tested_base_sha) || '' }}
@@ -4506,7 +4564,6 @@ jobs:
         if: needs.ci-plan.outputs.plan_sha == ''
         env:
           CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
-          CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
         shell: bash
         run: |
