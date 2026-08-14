@@ -133,9 +133,10 @@ def test_records_section_is_identical_without_a_frozen_clock(
     assert _status(store, first, "--active-builds", str(builds)).returncode == 0
     assert _status(store, second, "--active-builds", str(builds)).returncode == 0
     one, two = _state(first), _state(second)
-    pure = ("schema", "generator", "workstreams", "needs_ceo", "unblocked", "warnings")
+    pure = ("schema", "generator", "workstreams", "needs_ceo", "warnings")
     for section in pure:
         assert one[section] == two[section], f"{section} is not a pure function of its inputs"
+    assert one["readiness"] == two["readiness"]
 
 
 def test_generated_artifacts_carry_the_do_not_edit_banner(
@@ -165,6 +166,10 @@ def test_absent_active_builds_degrades_and_still_reports(
     assert state["workstreams"], "records must still be reported without PR state"
     assert any("absent" in item for item in state["inputs"]["degraded"])
     assert state["inputs"]["active_builds_age_hours"] is None
+    assert state["readiness"]["records"], "readiness must fail open with the records"
+    assert state["readiness"]["degraded"] == [], (
+        "missing PR state does not make the authored dependency graph incomplete"
+    )
 
 
 def test_brief_renders_without_active_builds(store: Path, tmp_path: Path) -> None:
@@ -186,6 +191,42 @@ def test_absent_sibling_repo_degrades_and_neutralises_p0(
     state = _state(out)
     assert any("p0" in item for item in state["inputs"]["degraded"])
     assert all(row["p0_active"] is None for row in state["workstreams"] if row["p0"])
+    assert state["readiness"]["degraded"] == [], (
+        "P0 is priority context and is deliberately absent from readiness"
+    )
+
+
+def test_auxiliary_truncation_degrades_parent_but_not_readiness(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    payload = json.loads(builds.read_text(encoding="utf-8"))
+    payload["open_prs_truncated"] = True
+    payload["merged_truncated"] = True
+    builds.write_text(json.dumps(payload), encoding="utf-8")
+
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
+    state = _state(out)
+    assert any("TRUNCATED" in item for item in state["inputs"]["degraded"])
+    assert state["readiness"]["degraded"] == []
+
+
+def test_malformed_non_workstream_degrades_parent_only(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """Only authoring that can remove readiness identities belongs in its envelope."""
+    (store / "decisions" / "DEC-NOT-READINESS.md").write_text(
+        "not frontmatter\n", encoding="utf-8"
+    )
+    assert _run("validate", "--root", str(store)).returncode == 1
+
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
+    state = _state(out)
+    assert any("DEC-NOT-READINESS.md" in item for item in state["inputs"]["degraded"])
+    assert state["readiness"]["degraded"] == []
 
 
 def test_unwritable_output_leaves_the_previous_artifact_untouched(
@@ -234,6 +275,135 @@ def test_schema_stays_fail_closed_while_the_view_stays_fail_open(
     state = _state(out)
     assert any("malformed" in item for item in state["inputs"]["degraded"])
     assert [row["key"] for row in state["workstreams"]], "the other records still report"
+    assert any("malformed" in item for item in state["readiness"]["degraded"])
+    assert not any(
+        item["workstream"] == "GMI-THEME-GRAPH"
+        for item in state["readiness"]["records"]
+    ), "a malformed source must not produce a readiness assertion"
+
+
+def test_duplicate_workstream_fails_validation_but_readiness_keeps_one_identity(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """Duplicate authored truth is a hard error; the view stays deterministic and degraded."""
+    original = store / "workstreams" / "WS-GMI-THEME-GRAPH.md"
+    dependent = store / "workstreams" / "WS-WATCHLIST-PORTFOLIO-CEO.md"
+    dependent.write_text(
+        dependent.read_text(encoding="utf-8")
+        .replace("status: active", "status: proposed", 1)
+        .replace(
+            "ambiguity: scoped\nwaves:",
+            "ambiguity: scoped\ndepends_on: [WS:GMI-THEME-GRAPH]\nwaves:",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    # Sort after the canonical file so the loader's deterministic first-record rule is
+    # explicit rather than accidentally exercising a filename-mismatch-first variant.
+    duplicate = store / "workstreams" / "WS-ZZZ-GMI-THEME-GRAPH-COPY.md"
+    duplicate.write_text(original.read_text(encoding="utf-8"), encoding="utf-8")
+
+    validated = _run("validate", "--root", str(store))
+    assert validated.returncode == 1
+    assert "duplicate-key" in validated.stdout
+
+    out = tmp_path / "state.json"
+    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    assert result.returncode == 0
+    readiness = _state(out)["readiness"]
+    assert any("duplicate-key" in item for item in readiness["degraded"])
+    records = {
+        (item["workstream"], item["wave"]): item
+        for item in readiness["records"]
+    }
+    identities = [identity for identity in records if identity[0] == "GMI-THEME-GRAPH"]
+    assert identities.count(("GMI-THEME-GRAPH", None)) == 1
+    assert all(records[identity]["state"] == "unknown" for identity in identities)
+    assert all(records[identity]["reason_code"] == "status_unknown"
+               for identity in identities)
+    for identity in (("WATCHLIST-PORTFOLIO-CEO", None),
+                     ("WATCHLIST-PORTFOLIO-CEO", "W1")):
+        assert records[identity]["state"] == "unknown"
+        assert records[identity]["reason_code"] == "status_unknown"
+        assert "WS:GMI-THEME-GRAPH" in records[identity]["reason"]
+        assert "WS:GMI-THEME-GRAPH" in records[identity]["unmet_dependencies"]
+
+
+def test_malformed_dependency_target_makes_surviving_dependents_unknown(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    target = store / "workstreams" / "WS-GMI-THEME-GRAPH.md"
+    target.write_text(
+        target.read_text(encoding="utf-8").replace(
+            "status: blocked", "status: malformed", 1
+        ),
+        encoding="utf-8",
+    )
+    dependent = store / "workstreams" / "WS-WATCHLIST-PORTFOLIO-CEO.md"
+    dependent.write_text(
+        dependent.read_text(encoding="utf-8")
+        .replace("status: active", "status: proposed", 1)
+        .replace(
+            "ambiguity: scoped\nwaves:",
+            "ambiguity: scoped\ndepends_on: [WS:GMI-THEME-GRAPH]\nwaves:",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    assert _run("validate", "--root", str(store)).returncode == 1
+
+    out = tmp_path / "state.json"
+    status = _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    brief = _run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--active-builds", str(builds),
+    )
+    assert status.returncode == 0
+    assert brief.returncode == 0
+    readiness = _state(out)["readiness"]
+    assert readiness == json.loads(brief.stdout)["readiness"]
+    assert any("WS-GMI-THEME-GRAPH.md" in item
+               for item in readiness["degraded"])
+    records = {
+        (item["workstream"], item["wave"]): item
+        for item in readiness["records"]
+    }
+    assert ("GMI-THEME-GRAPH", None) not in records
+    for identity in (("WATCHLIST-PORTFOLIO-CEO", None),
+                     ("WATCHLIST-PORTFOLIO-CEO", "W1")):
+        item = records[identity]
+        assert item["state"] == "unknown"
+        assert item["reason_code"] == "status_unknown"
+        assert item["unmet_dependencies"] == ["WS:GMI-THEME-GRAPH"]
+        assert "WS:GMI-THEME-GRAPH" in item["reason"]
+
+
+def test_missing_readiness_dependency_fails_closed_but_view_stays_degraded(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    target = store / "workstreams" / "WS-WATCHLIST-PORTFOLIO-CEO.md"
+    target.write_text(
+        target.read_text(encoding="utf-8").replace(
+            "ambiguity: scoped\nwaves:",
+            "ambiguity: scoped\ndepends_on: [WS:DOES-NOT-EXIST]\nwaves:",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    validated = _run("validate", "--root", str(store))
+    assert validated.returncode == 1
+    assert "dangling-ref" in validated.stdout
+
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
+    readiness = _state(out)["readiness"]
+    assert any("dangling-ref" in item for item in readiness["degraded"])
+    assert readiness["records"], "unaffected readiness records must still emit"
+    assert not any(
+        item["workstream"] == "WATCHLIST-PORTFOLIO-CEO"
+        for item in readiness["records"]
+    )
 
 
 # ------------------------------------------------------------- I1: no execution
@@ -365,68 +535,261 @@ def test_staleness_comes_from_git_not_from_a_typed_field(
     assert any(row["updated"] for row in rows), "git dates did not resolve for any record"
 
 
-# ----------------------------------------------------------------- ranking
+# ------------------------------------------------------- non-ranked readiness
 
 
-def test_unblocked_only_offers_waves_whose_dependencies_are_satisfied(
+READINESS_FIELDS = {
+    "workstream", "wave", "state", "reason_code", "reason",
+    "depends_on", "unmet_dependencies", "source",
+}
+READINESS_STATES = {"ready", "blocked", "in_progress", "done", "unknown"}
+READINESS_REASON_CODES = {
+    "dependencies_satisfied", "unmet_dependencies", "status_in_progress",
+    "status_done", "workstream_blocked", "status_unknown",
+}
+
+
+def _identity(item: dict) -> tuple[str, bool, str]:
+    return item["workstream"], item["wave"] is not None, item["wave"] or ""
+
+
+def test_readiness_envelope_is_complete_canonical_and_identity_sorted(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
     out = tmp_path / "state.json"
-    _status(store, out, "--now", FROZEN, "--active-builds", str(builds))
+    assert _status(store, out, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
     state = _state(out)
-    by_key = {row["key"]: row for row in state["workstreams"]}
-    for item in state["unblocked"]:
-        row = by_key[item["workstream"]]
-        wave = next(w for w in row["wave_detail"] if w["id"] == item["wave"])
-        assert wave["status"] == "todo"
-        assert wave["deps_satisfied"], f"{item['workstream']} {item['wave']} is not unblocked"
-        assert row["status"] not in {"blocked", "parked", "killed", "done"}
+    readiness = state["readiness"]
 
-
-def test_unblocked_states_that_it_is_not_the_priority_queue(store: Path) -> None:
-    """P7: two ranked lists that do not say which question they answer is the failure.
-
-    Chairman ruling C3 (2026-08-12) went further than the original design: the agenda is the
-    SOLE canonical queue, this section is readiness only, and it is INTERIM pending
-    integration. Assert that substance, not a phrase — the wording may be improved, the
-    contract may not be weakened.
-    """
-    text = _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember").stdout
-    assert "improvement_agenda.py" in text
-    assert "READINESS, NOT PRIORITY" in text
-    assert "SOLE canonical" in text or "sole canonical" in text
-    assert "UNBLOCKED" in text, "the section must not be labelled as a next-work ranking"
-    assert "START NEXT" not in text, "retired label: it read as a priority order"
-    payload = json.loads(
-        _run("brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json").stdout
+    assert set(readiness) == {"schema", "records", "degraded"}
+    assert readiness["schema"] == "agentos.readiness.v1"
+    assert readiness["degraded"] == [], (
+        "normal auxiliary join warnings must not masquerade as readiness degradation"
     )
-    assert "improvement_agenda.py" in payload["unblocked_scope"]
+    assert readiness["records"] == sorted(readiness["records"], key=_identity)
+
+    expected_identities: list[tuple[str, str | None]] = []
+    by_key = {row["key"]: row for row in state["workstreams"]}
+    for row in state["workstreams"]:
+        expected_identities.append((row["key"], None))
+        expected_identities.extend((row["key"], wave["id"]) for wave in row["wave_detail"])
+    actual_identities = [(item["workstream"], item["wave"])
+                         for item in readiness["records"]]
+    assert actual_identities == sorted(
+        expected_identities,
+        key=lambda identity: (identity[0], identity[1] is not None, identity[1] or ""),
+    )
+
+    for item in readiness["records"]:
+        assert set(item) == READINESS_FIELDS
+        assert item["state"] in READINESS_STATES
+        assert item["reason_code"] in READINESS_REASON_CODES
+        assert item["reason"]
+        assert item["depends_on"] == sorted(set(item["depends_on"]))
+        assert item["unmet_dependencies"] == sorted(set(item["unmet_dependencies"]))
+        assert set(item["unmet_dependencies"]).issubset(item["depends_on"])
+        row = by_key[item["workstream"]]
+        expected = [f"WS:{dep}" for dep in row["depends_on"]]
+        if item["wave"] is not None:
+            wave = next(w for w in row["wave_detail"] if w["id"] == item["wave"])
+            expected += [f"WS:{row['key']}#{dep}" for dep in wave["depends_on"]]
+        assert item["depends_on"] == sorted(set(expected))
+        assert item["source"] == row["source"]
 
 
-def test_unblocked_ranks_active_p0_above_a_bigger_unblock_count(
+def test_readiness_states_explain_graph_and_authored_progress(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
-    """Rank order is P0 alignment FIRST, then unblock count — not the reverse."""
+    out = tmp_path / "state.json"
+    assert _status(store, out, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
+    records = {
+        (item["workstream"], item["wave"]): item
+        for item in _state(out)["readiness"]["records"]
+    }
+
+    ready = records[("WATCHLIST-PORTFOLIO-CEO", "W1")]
+    assert ready["state"] == "ready"
+    assert ready["reason_code"] == "dependencies_satisfied"
+    assert ready["unmet_dependencies"] == []
+
+    waiting = records[("MACRO-CONTEXT-INDEX", "W2")]
+    assert waiting["state"] == "blocked"
+    assert waiting["reason_code"] == "unmet_dependencies"
+    assert waiting["unmet_dependencies"] == ["WS:MACRO-CONTEXT-INDEX#W1"]
+
+    parent_blocked = records[("GMI-THEME-GRAPH", "TRANSMISSION")]
+    assert parent_blocked["state"] == "blocked"
+    assert parent_blocked["reason_code"] == "workstream_blocked"
+    assert parent_blocked["unmet_dependencies"] == []
+
+    assert records[("MACRO-CONTEXT-INDEX", None)]["state"] == "in_progress"
+    assert records[("GMI-THEME-GRAPH", "R1")]["state"] == "done"
+
+
+def test_readiness_ignores_p0_claim_and_non_graph_join_inputs(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """Readiness is graph state, never a disguised priority or liveness ranking."""
+    before = tmp_path / "before.json"
+    assert _status(store, before, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
+
     strategic = tmp_path / "mm" / "config"
     strategic.mkdir(parents=True)
     (strategic / "strategic_state.yml").write_text(
-        "p0:\n  - id: US_PROPHET_ENTRY_TIMING\n    status: active\n", encoding="utf-8")
-    # Unblock W1 of the P0 workstream by finishing its predecessor.
-    record = store / "workstreams" / "WS-PROPHET-US-ENTRY-TIMING.md"
+        "p0:\n  - id: PRODUCT_TRUST_COHERENCE\n    status: active\n", encoding="utf-8")
+    record = store / "workstreams" / "WS-WATCHLIST-PORTFOLIO-CEO.md"
     record.write_text(
         record.read_text(encoding="utf-8").replace(
-            "    title: Verify the 22:30Z bake lands clean after backfill\n    status: in_progress",
-            "    title: Verify the 22:30Z bake lands clean after backfill\n    status: done", 1),
+            "needs_ceo:",
+            "claim:\n  by: claude/readiness-must-ignore-this\n  at: 2026-08-12T10:00:00Z\n"
+            "  expires: 2026-08-15T10:00:00Z\nneeds_ceo:",
+            1,
+        ),
         encoding="utf-8",
     )
-    out = tmp_path / "state.json"
-    result = _status(store, out, "--now", FROZEN, "--active-builds", str(builds),
-                     env={"MACRO_MASTERMIND_REPO": str(tmp_path / "mm")})
-    assert result.returncode == 0, result.stdout
-    ordering = _state(out)["unblocked"]
-    assert ordering, "the P0 wave should now be unblocked"
-    assert ordering[0]["workstream"] == "PROPHET-US-ENTRY-TIMING", ordering
-    assert ordering[0]["p0_active"] is True
+    after = tmp_path / "after.json"
+    assert _status(
+        store, after, "--now", FROZEN, "--active-builds", str(builds),
+        env={"MACRO_MASTERMIND_REPO": str(tmp_path / "mm")},
+    ).returncode == 0
+
+    assert (_state(before)["readiness"]["records"]
+            == _state(after)["readiness"]["records"])
+
+
+def test_readiness_maps_every_authored_status_and_keeps_unknown_fail_soft() -> None:
+    agentos = _load_cli()
+
+    workstream_states = {
+        "proposed": ("ready", "dependencies_satisfied"),
+        "active": ("in_progress", "status_in_progress"),
+        "blocked": ("blocked", "workstream_blocked"),
+        "awaiting_ci": ("in_progress", "status_in_progress"),
+        "awaiting_review": ("in_progress", "status_in_progress"),
+        "done": ("done", "status_done"),
+        "parked": ("blocked", "workstream_blocked"),
+        "killed": ("done", "status_done"),
+    }
+    assert set(workstream_states) == agentos.WORKSTREAM_STATUS
+    for status, (expected_state, expected_reason) in workstream_states.items():
+        envelope = agentos.compute_readiness([{
+            "key": "SAMPLE",
+            "status": status,
+            "depends_on": [],
+            "wave_detail": [],
+            "source": "agentos/workstreams/WS-SAMPLE.md",
+        }])
+        item = envelope["records"][0]
+        assert (item["state"], item["reason_code"]) == (
+            expected_state, expected_reason
+        ), status
+
+    wave_states = {
+        "todo": ("ready", "dependencies_satisfied"),
+        "in_progress": ("in_progress", "status_in_progress"),
+        "awaiting_ci": ("in_progress", "status_in_progress"),
+        "done": ("done", "status_done"),
+        "dropped": ("done", "status_done"),
+    }
+    assert set(wave_states) == agentos.WAVE_STATUS
+    for status, (expected_state, expected_reason) in wave_states.items():
+        envelope = agentos.compute_readiness([{
+            "key": "SAMPLE",
+            "status": "active",
+            "depends_on": [],
+            "wave_detail": [{"id": "W0", "status": status, "depends_on": []}],
+            "source": "agentos/workstreams/WS-SAMPLE.md",
+        }])
+        wave = next(item for item in envelope["records"] if item["wave"] == "W0")
+        assert (wave["state"], wave["reason_code"]) == (
+            expected_state, expected_reason
+        ), status
+
+    for record in (
+        {"key": "SAMPLE", "status": "not-a-schema-status", "depends_on": [],
+         "wave_detail": [], "source": "agentos/workstreams/WS-SAMPLE.md"},
+        {"key": "SAMPLE", "status": "active", "depends_on": [],
+         "wave_detail": [{"id": "W0", "status": "not-a-schema-status",
+                          "depends_on": []}],
+         "source": "agentos/workstreams/WS-SAMPLE.md"},
+    ):
+        unknown = next(
+            item for item in agentos.compute_readiness([record])["records"]
+            if (record["status"] != "active" and item["wave"] is None)
+            or (record["status"] == "active" and item["wave"] == "W0")
+        )
+        assert (unknown["state"], unknown["reason_code"]) == (
+            "unknown", "status_unknown"
+        )
+
+
+def test_terminal_records_keep_dependencies_but_report_no_unmet_dependencies() -> None:
+    agentos = _load_cli()
+    records = [{
+        "key": "UPSTREAM",
+        "status": "active",
+        "depends_on": [],
+        "wave_detail": [{"id": "W0", "status": "todo", "depends_on": []}],
+        "source": "agentos/workstreams/WS-UPSTREAM.md",
+    }, {
+        "key": "TERMINAL",
+        "status": "done",
+        "depends_on": ["UPSTREAM"],
+        "wave_detail": [
+            {"id": "W-DONE", "status": "done", "depends_on": ["W-MISSING"]},
+            {"id": "W-DROPPED", "status": "dropped", "depends_on": ["W-MISSING"]},
+        ],
+        "source": "agentos/workstreams/WS-TERMINAL.md",
+    }, {
+        "key": "KILLED",
+        "status": "killed",
+        "depends_on": ["UPSTREAM"],
+        "wave_detail": [],
+        "source": "agentos/workstreams/WS-KILLED.md",
+    }]
+    terminal = {
+        (item["workstream"], item["wave"]): item
+        for item in agentos.compute_readiness(records)["records"]
+        if item["workstream"] in {"TERMINAL", "KILLED"}
+    }
+
+    for item in terminal.values():
+        assert item["state"] == "done"
+        assert item["reason_code"] == "status_done"
+        assert item["depends_on"], "authored graph provenance must remain visible"
+        assert item["unmet_dependencies"] == []
+    assert "killed" in terminal[("KILLED", None)]["reason"]
+
+
+def test_brief_and_status_retire_every_ranked_readiness_surface(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    status_out = tmp_path / "state.json"
+    assert _status(store, status_out, "--now", FROZEN,
+                   "--active-builds", str(builds)).returncode == 0
+    state = _state(status_out)
+    assert "unblocked" not in state
+    status_markdown = status_out.with_suffix(".md").read_text(encoding="utf-8")
+    assert "## Unblocked work" not in status_markdown
+
+    text = _run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember",
+        "--active-builds", str(builds),
+    ).stdout
+    assert "━━ UNBLOCKED" not in text
+    assert "READY TO START" not in text
+    assert "START NEXT" not in text
+
+    brief = json.loads(_run(
+        "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
+        "--active-builds", str(builds),
+    ).stdout)
+    assert "unblocked" not in brief
+    assert "unblocked_scope" not in brief
+    assert brief["readiness"] == state["readiness"]
 
 
 # ------------------------------------------------- stale sibling checkout (2026-08-13)
@@ -472,7 +835,7 @@ def _stale_mastermind(tmp_path: Path) -> Path:
 def test_stale_mastermind_worktree_reads_p0_from_a_local_ref(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
-    """A checkout parked behind must not neutralise a ranking it can still read.
+    """A checkout parked behind must not discard P0 activity it can still read.
 
     The state is in the clone on a local ref; degrading over which branch that clone
     happens to be sitting on discards a P0 join that costs one fetch-free `git show`.
@@ -487,9 +850,9 @@ def test_stale_mastermind_worktree_reads_p0_from_a_local_ref(
     assert row["p0_active"] is True, "the ref copy marks this objective active"
     degraded = state["inputs"]["degraded"]
     assert any("read from local ref origin/master" in item for item in degraded), degraded
-    assert not any("strategic_state.yml" in item and "P0 ranking neutral" in item
+    assert not any("strategic_state.yml" in item and "p0_active unknown" in item
                    for item in degraded), (
-        "the ranking is NOT neutral once the ref copy is read", degraded)
+        "p0_active is known once the ref copy is read", degraded)
 
 
 def test_strategic_state_absent_from_every_local_ref_neutralises_p0(
@@ -512,7 +875,7 @@ def test_strategic_state_absent_from_every_local_ref_neutralises_p0(
     row = next(r for r in state["workstreams"] if r["p0"] == "US_PROPHET_ENTRY_TIMING")
     assert row["p0_active"] is None
     degraded = state["inputs"]["degraded"]
-    assert any("all local refs" in item and "P0 ranking neutral" in item
+    assert any("all local refs" in item and "p0_active unknown" in item
                for item in degraded), degraded
 
 
@@ -531,7 +894,7 @@ def test_mastermind_dir_without_git_refs_neutralises_p0(
     row = next(r for r in state["workstreams"] if r["p0"] == "US_PROPHET_ENTRY_TIMING")
     assert row["p0_active"] is None
     degraded = state["inputs"]["degraded"]
-    assert any("no readable git refs" in item and "P0 ranking neutral" in item
+    assert any("no readable git refs" in item and "p0_active unknown" in item
                for item in degraded), degraded
 
 
@@ -581,8 +944,11 @@ def test_brief_json_is_the_documented_schema(store: Path, builds: Path) -> None:
     ).stdout)
     assert payload["schema"] == "ceo_brief.v1"
     for field in ("generated_at", "since", "counts", "inputs", "needs_ceo", "blocked",
-                  "finished", "unblocked", "warnings"):
+                  "finished", "readiness", "warnings"):
         assert field in payload, f"ceo_brief.v1 is missing {field}"
+    assert "unblocked" not in payload
+    assert "unblocked_scope" not in payload
+    assert payload["readiness"]["schema"] == "agentos.readiness.v1"
     for field in ("total", "active", "awaiting_ci", "blocked", "done_in_window"):
         assert field in payload["counts"]
 
@@ -691,7 +1057,7 @@ def test_ceo_brief_envelope_keys_match_the_spec(store: Path, builds: Path) -> No
         "brief", "--root", str(store), "--now", FROZEN, "--no-remember", "--json",
         "--active-builds", str(builds),
     ).stdout)
-    for section in ("needs_ceo", "blocked", "finished", "unblocked"):
+    for section in ("needs_ceo", "blocked", "finished"):
         for item in payload[section]:
             assert "workstream" in item, f"{section} item lacks 'workstream': {sorted(item)}"
             assert "key" not in item, f"{section} item still emits legacy 'key': {sorted(item)}"
