@@ -175,8 +175,17 @@ user-facing surface. Internal telemetry is unrestricted.
 
 ## §5 Benchmarks
 
-**§5.1** Every predictive engine grades against a **matched control**, not against zero. Raw
-return is not a result.
+**§5.1** Raw return is not a result. Every predictive engine grades against its **declared
+benchmark** — the universal baseline — and never against zero. A **matched control** is the
+stricter *second* evidence basis, and it is **required exactly where the family's control policy
+says so**: three states (`matched_control_required`, `benchmark_only`, `not_applicable`) held in
+one governed table, changed only by a governed edit with cited evidence
+(`research/PREREG_P0D_MATCHED_CONTROL_CONTRACT.md`; the classification is grounded in
+`research/EVAL_OS_P0D_CONTROL_CENSUS.md` §3–§4). Benchmark-relative evidence is **labelled
+benchmark-relative** and is never presented as matched-control. Where controls are required,
+**control coverage is part of the evidence** — the issued cohort stays in the denominator — and
+the gate **fails closed** without it: no bench record substitutes for missing controls, under any
+data condition.
 
 > **Live defect.** `data/prophet/ledger.jsonl` has no benchmark field. Its schema is
 > `[asof, asset, close_date, days_held, direction, id, option_result_pct, outcome,
@@ -323,7 +332,8 @@ rolldown yet"), not a verdict the instrument cannot support.
 - [ ] Prereg exists, with pre-declared thresholds, and its falsifier can fire (§2.5, §10)
 - [ ] Every applicable leakage class answered in writing (§3)
 - [ ] Verdict read at the declared horizon (§2.4)
-- [ ] Matched control, and a placebo arm (§5)
+- [ ] Evidence basis satisfied per the family's control policy (matched control where required,
+      with coverage), and a placebo arm (§5)
 - [ ] Honest-N ≥ 50 matured episodes at that horizon (§4.4, §4.7)
 - [ ] Uncertainty reported with the estimate (§4.6)
 - [ ] Pre-declared segments, each estimable (§6)

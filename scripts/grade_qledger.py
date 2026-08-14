@@ -185,6 +185,19 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
     if families is None:
         families = _load_qual_ladder_families(root)
 
+    # P0d C5.4/C9 — a `matched_control_required` family is ALWAYS enumerated,
+    # whether or not `config/qual_ladder.yml` lists it yet. The two required
+    # families are prospective-only and carry zero rows today, so without this
+    # union their coverage (and the honest "evidence has not begun accruing"
+    # state) would be invisible in the nightly readiness payload until some
+    # unrelated ladder edit happened to add them. The union is applied to a
+    # CALLER-SUPPLIED list too: `run_readiness_post_step` passes the ladder
+    # families explicitly, so unioning only in the `None` branch would leave the
+    # production path — the one that writes track_record.json — blind.
+    families = sorted(set(families) | {
+        f for f, p in q.FAMILY_CONTROL_POLICY.items()
+        if p == q.CONTROL_POLICY_REQUIRED})
+
     def _readiness_row(pr, fam: str, h: int) -> dict:
         """One readiness row for a single PromotionResult. Factored out (round
         5 / MAJOR 2) so a per-market sub-result gets IDENTICAL treatment to the
@@ -243,13 +256,33 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             "clock_migration": pr.clock_migration,
             "clock_prior_n_dates": pr.clock_prior_n_dates,
             "migration_note": pr.migration_note,
+            # P0d C5.4 — THE EVIDENCE BASIS TRAVELS WITH THE NUMBERS. Without
+            # these, a readiness row stating n_dates and a hit rate says nothing
+            # about WHICH baseline produced them, and "benchmark-relative" and
+            # "matched-control" read as the same sentence (C6.1). For a
+            # matched-control verdict the coverage pair is part of the evidence,
+            # not a diagnostic: n_dates here IS n_controlled_dates, and the
+            # cohort counts disclose what it is a fraction of.
+            "evidence_basis": getattr(pr, "evidence_basis", None),
+            "control_coverage": getattr(pr, "control_coverage", None),
+            "n_cohort_dates": getattr(pr, "n_cohort_dates", None),
+            "n_controlled_dates": getattr(pr, "n_controlled_dates", None),
+            "n_cohort_rows": getattr(pr, "n_cohort_rows", None),
+            "n_controlled_rows": getattr(pr, "n_controlled_rows", None),
+            "control_clock_start": getattr(pr, "control_clock_start", None),
+            "unclassified": getattr(pr, "unclassified", False),
         }
 
     result: dict[str, dict] = {}
     for fam in families:
+        policy, classified = q.family_control_policy(fam)
         fam_res: dict[str, dict] = {}
         for h in q.GRADE_HORIZONS:
-            pr = q.promotion_check(fam, h, root=root, control_only=True)
+            # P0d C5.4: dispatch by the family's governed control policy. The
+            # blanket `control_only=True` call — which evaluated every family
+            # "vs matched control" against a store holding zero control legs —
+            # is gone from production.
+            pr = q.promotion_check_dispatch(fam, h, root=root)
             entry = _readiness_row(pr, fam, h)
             # P0a MAJOR 2 (round 5): `promotion_check`'s pooled default refuses
             # a bi-market family as STATE_MIXED_CLOCK, correctly — but this is
@@ -258,13 +291,25 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             # market even though `clock_basis=...` reaches each one. Nothing
             # is pooled: `by_clock_basis` adds each market's OWN readiness row
             # beside the refused pooled one.
-            per_market = q.promotion_check_by_market(fam, h, pr, root=root,
-                                                      control_only=True)
-            if per_market:
-                entry["by_clock_basis"] = {
-                    b: _readiness_row(mpr, fam, h)
-                    for b, mpr in per_market.items()
+            #
+            # P0d: only a non-required family re-enters here, and it re-enters
+            # on its OWN basis (`control_only=False`) with the same policy label
+            # applied to each sub-result — a per-market cell must not be the one
+            # place an unlabelled (or, for a `not_applicable` family, an
+            # eligible) verdict escapes. A required family's per-basis verdicts
+            # are minted by `matched_control_check(clock_basis=...)` inside
+            # `emit_ladder_states`; readiness reports its refused pooled verdict.
+            if policy != q.CONTROL_POLICY_REQUIRED:
+                per_market = {
+                    b: q._apply_policy_label(mpr, policy, classified)
+                    for b, mpr in q.promotion_check_by_market(
+                        fam, h, pr, root=root, control_only=False).items()
                 }
+                if per_market:
+                    entry["by_clock_basis"] = {
+                        b: _readiness_row(mpr, fam, h)
+                        for b, mpr in per_market.items()
+                    }
             fam_res[str(h)] = entry
         result[fam] = fam_res
 
