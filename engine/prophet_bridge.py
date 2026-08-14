@@ -1947,6 +1947,49 @@ def resolve_entry_basis(
     }
 
 
+def price_frame_freshness(
+    price_history: "pd.DataFrame | None",
+    asof: str,
+) -> dict[str, Any]:
+    """Freshness verdict for a management price frame against the run clock.
+
+    The management engine prices every live plan off ``price_history``'s last
+    close, while the horizon clock advances with ``asof`` regardless of whether
+    the tape kept printing.  A halted or delisted name has NO rows after its
+    last print, so the origination lag measure (:func:`_sessions_between`, which
+    counts rows on the name's own tape) reads 0 forever there — the frame cannot
+    testify about its own staleness.  The market clock is therefore measured
+    with :func:`_business_days_between` (the documented fallback authority,
+    deliberately erring toward "stale" across holiday weeks) against the SAME
+    tolerance origination refuses stale candidates at
+    (:data:`STALE_BASIS_MAX_SESSIONS`) — one constant, one doctrine, no second
+    stale-data detector.
+
+    Vocabulary mirrors :func:`resolve_entry_basis`: ``state`` is ``"current"``
+    or ``"stale"`` with the measured ``lag`` and its basis.  Fail-closed: an
+    empty frame or an unmeasurable lag reads ``"stale"`` with ``lag_basis:
+    "unresolved"`` — action authority never survives a frame that cannot prove
+    its own freshness.
+    """
+    run_asof = str(asof)[:10]
+    last_close_date: str | None = None
+    if price_history is not None and not getattr(price_history, "empty", True):
+        try:
+            last_close_date = pd.Timestamp(price_history.index[-1]).date().isoformat()
+        except Exception:  # noqa: BLE001 — an unresolvable index reads as stale below
+            last_close_date = None
+    lag = _business_days_between(last_close_date, run_asof) if last_close_date else None
+    stale = lag is None or lag > STALE_BASIS_MAX_SESSIONS
+    return {
+        "state": "stale" if stale else "current",
+        "last_close_date": last_close_date,
+        "run_asof": run_asof,
+        "lag": lag,
+        "lag_basis": "business_days" if lag is not None else "unresolved",
+        "max_lag": STALE_BASIS_MAX_SESSIONS,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Structure-anchored entry zones (ANTICIPATION §6.9 R3)
 # ---------------------------------------------------------------------------
