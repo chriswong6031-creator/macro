@@ -297,6 +297,64 @@ def _notify(report: dict) -> None:
         pass
 
 
+def check_disk_headroom(cfg: dict | None = None,
+                        probe_path: str | None = None) -> dict:
+    """Runner-host disk headroom — pages BEFORE the machine hits the wall.
+
+    The Mac Studio has hit literal ENOSPC at least twice with ZERO warning
+    (runner _diag receipts: 2026-07-26 03:19Z, mid-nightly-window, and
+    2026-08-09 18:48Z, where mac-builder-4 crashed unable to write its own log —
+    the same day the whole pool stalled). Measured 2026-08-13: 1.7Ti/1.8Ti used,
+    97GB free, while one nightly cycles ~50GB through four runner work dirs and
+    the session fleet holds ~386GB of worktrees. Nothing watched the disk: every
+    existing tripwire here measures artifacts, and a machine out of space fails
+    them all AT ONCE with the least legible error last.
+
+    Thresholds are config-overridable (`healthcheck.disk`): warn below
+    ``warn_free_gb`` (default 250 — about five nights of churn), fail below
+    ``fail_free_gb`` (default 150 — the Aug-9 crash burned through ~100GB of
+    apparent headroom in a day, so 150 is one bad day, not comfort).
+
+    Measures the filesystem that HOSTS the repo (``config.data_dir()``), which on
+    every deployment shape is the disk the runners fill. A probe error is a
+    warning, never a breach — same blindness discipline as every check above.
+    """
+    import shutil  # noqa: PLC0415 — stdlib, imported where used like os above
+
+    cfg = cfg or {}
+    warn_gb = float(cfg.get("warn_free_gb", 250.0))
+    fail_gb = float(cfg.get("fail_free_gb", 150.0))
+    fail: list[str] = []
+    warn: list[str] = []
+    free_gb = None
+    try:
+        target = probe_path or str(config.data_dir())
+        usage = shutil.disk_usage(target)
+        free_gb = usage.free / 1e9
+        used_pct = 100.0 * (usage.total - usage.free) / usage.total
+        if free_gb < fail_gb:
+            fail.append(
+                f"DISK: {free_gb:.0f}GB free ({used_pct:.0f}% used) — below the "
+                f"{fail_gb:.0f}GB floor. One nightly cycles ~50GB through the "
+                "runner work dirs; at this level the next bake can ENOSPC-crash "
+                "runners with no further warning (it happened 2026-07-26 and "
+                "2026-08-09). Reclaim: arm worktree GC, prune runner _work, "
+                "clear caches."
+            )
+        elif free_gb < warn_gb:
+            warn.append(
+                f"DISK: {free_gb:.0f}GB free ({used_pct:.0f}% used) — below the "
+                f"{warn_gb:.0f}GB comfort line. Trend check: 168 session "
+                "worktrees held ~386GB on 2026-08-13; schedule a reclaim before "
+                "this becomes the hard floor."
+            )
+    except Exception as exc:  # noqa: BLE001 — a blind probe must not fake a breach
+        warn.append(f"disk headroom probe failed ({exc.__class__.__name__}) — "
+                    "guard is blind, not green")
+    return {"ok": not fail, "fail_reasons": fail, "warnings": warn,
+            "free_gb": None if free_gb is None else round(free_gb, 1)}
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Macro Dashboard heartbeat check")
     parser.add_argument(
@@ -353,10 +411,19 @@ def main(argv: list[str] | None = None) -> int:
     report["fail_reasons"] = report["fail_reasons"] + weekly["fail_reasons"]
     report["warnings"] = report["warnings"] + weekly["warnings"]
     report["ok"] = report["ok"] and weekly["ok"]
+    # Host-disk tripwire: every check above measures an ARTIFACT; a machine out of
+    # space fails all of them at once, illegibly, with no prior page (2026-08-09:
+    # runner crashed unable to write its own crash log). This one measures the disk.
+    disk = check_disk_headroom(cfg.get("disk", None))
+    report["fail_reasons"] = report["fail_reasons"] + disk["fail_reasons"]
+    report["warnings"] = report["warnings"] + disk["warnings"]
+    report["ok"] = report["ok"] and disk["ok"]
     print(f"last_run age: {report['age_hours']}h | circuit-broken: {report['tripped'] or 'none'} "
           f"| signals: {'ok' if sanity['ok'] else 'FAIL'} | r2: {'ok' if r2['ok'] else 'FAIL'} "
           f"| data-freeze: {'ok' if freshness['ok'] else 'FAIL'} "
-          f"| weekly-lane: {'ok' if weekly['ok'] else 'FAIL'}")
+          f"| weekly-lane: {'ok' if weekly['ok'] else 'FAIL'} "
+          f"| disk: {disk['free_gb'] if disk['free_gb'] is not None else '?'}GB free "
+          f"{'ok' if disk['ok'] else 'FAIL'}")
     for w in report["warnings"]:
         print(f"::warning::{w}")
     if report["ok"]:
