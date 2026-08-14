@@ -6069,6 +6069,35 @@ def main() -> int:
                       flush=True)
         except Exception as _sg_e:  # noqa: BLE001 — guard must never break the render
             log.debug("signal-gate coherence self-check skipped (%s)", _sg_e)
+        # Stretch-oracle divergence counter + disclosure gate, on the store THIS run just
+        # wrote (docs/site_semantics/stretch_oracles.md). The two "has it already run"
+        # oracles legitimately disagree on ~38% of names, so the number is not an alarm —
+        # but it was last quoted from a local build six weeks stale, on the wrong side of
+        # the two fixes that were supposed to have moved it. Emitting it nightly against
+        # fresh output is the whole point: a stale divergence number can no longer be the
+        # newest one anybody has. Violations of the disclosure contract (a flagged name
+        # with no leg named) warn; like the block above, display-tier and never fatal.
+        # Bare print + flush for the same annotation reason documented above.
+        try:
+            from scripts.check_stretch_oracle_contract import check as _stretch_check
+            _so_code, _so_viol, _so_stats = _stretch_check(outdir)
+            _so_cm = _so_stats["cm"]
+            _so_both = sum(_so_cm.values())
+            _so_dis = _so_cm[(True, False)] + _so_cm[(False, True)]
+            if _so_both:
+                print(f"::notice title=stretch_oracle_divergence::"
+                      f"both_oracles={_so_both} disagree={_so_dis} "
+                      f"({100.0 * _so_dis / _so_both:.1f}%) "
+                      f"o1_only={_so_cm[(True, False)]} o2_only={_so_cm[(False, True)]} "
+                      f"basis_oscillator={_so_stats['basis'].get('oscillator', 0)} "
+                      f"basis_stretch={_so_stats['basis'].get('stretch', 0)} "
+                      f"basis_both={_so_stats['basis'].get('both', 0)}", flush=True)
+            if _so_viol:
+                print(f"::warning title=stretch_oracle_contract::"
+                      f"{len(_so_viol)} disclosure violation(s) in fresh stockdata: "
+                      f"{'; '.join(_so_viol[:5])}", flush=True)
+        except Exception as _so_e:  # noqa: BLE001 — guard must never break the render
+            log.debug("stretch-oracle self-check skipped (%s)", _so_e)
         # forward shadow book — freeze the live score at build time so it can be graded on
         # REALIZED forward returns later (engine/shadow_book; research/MEASUREMENT_FLOOR.md).
         # Additive + display-only + append-only; never fatal.
