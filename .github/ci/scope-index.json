@@ -2671,7 +2671,7 @@
       },
       {
         "path": "engine/demand_ledger.py",
-        "signature_sha256": "fc8ddb8580e60858ace7adc641c753d1b5a85b88b225bf2a8b5bac52e8e8524e"
+        "signature_sha256": "3a15a87f1e2f8eb7e77151ae129c63525ddac364e3738cbb75e609cc991b5703"
       },
       {
         "path": "engine/desk_grader.py",
@@ -5811,7 +5811,7 @@
       },
       {
         "path": "engine/qledger.py",
-        "signature_sha256": "223021ca06f8123b6da001b5963013c52c9c1a4262f04b0cc815f690f68ced5e"
+        "signature_sha256": "12a38b0e560e71e673930811766a34cc1c2851d57c9d329d6736e774d9a31423"
       },
       {
         "path": "engine/qledger_desk_adapter.py",
@@ -6588,6 +6588,10 @@
       {
         "path": "engine/stock_identity/partition.py",
         "signature_sha256": "43b675bd6e295aba1975b4974cf73286900e0fe5df2fb94195831dbcf187d47e"
+      },
+      {
+        "path": "engine/stock_identity/pilot.py",
+        "signature_sha256": "27f9d5faa50cae90fc3adda15ed509ab55cafbd581c8e1dfac06dd91607398e9"
       },
       {
         "path": "engine/stock_identity/plane.py",
@@ -7454,6 +7458,10 @@
         "signature_sha256": "aa8cc8bb552c8b160e1e9d92fa751db638e322a1e6fd4c06f03f8fa8165cd88d"
       },
       {
+        "path": "research/cn_prophet_audit/pb2_precursor_discrimination.py",
+        "signature_sha256": "f435681a217fa62cd4e3e368d6e59ea5b48d85f28a910f34fdbc1b7c1b6051a4"
+      },
+      {
         "path": "research/cn_prophet_audit/pb_case_decomposition.py",
         "signature_sha256": "f6e34a35dc62a9054841378b7c0d95bb818805f2a416aab5d18bcc3acbeddc0d"
       },
@@ -8194,6 +8202,10 @@
         "signature_sha256": "9c4e5ec2dce27f40c649a5a1c9f93ba937c87b801bbd6f4302740bcb1ccc8c8b"
       },
       {
+        "path": "scripts/audit_earnings_score_quality.py",
+        "signature_sha256": "87fdfc18b54a8f3c233f935594e82dcfd4172d70057c830964adfd68280feb6d"
+      },
+      {
         "path": "scripts/audit_earnings_wire_freshness.py",
         "signature_sha256": "5e8cc52667ec18b892a9bfbf2d7ac7ba4aae0861cfe7ae61ba20b1cad77f8754"
       },
@@ -8287,7 +8299,7 @@
       },
       {
         "path": "scripts/audit_unrun_tests.py",
-        "signature_sha256": "3b13c5b99ef655743fda933c7f4f4b18d7d130f14160f407a6b8b50ad2052193"
+        "signature_sha256": "74af8cc95b8a46283382d67a87d334e87f722af39ef93d7a63e75704bc3ca14c"
       },
       {
         "path": "scripts/backfill_8k_counterparty.py",
@@ -10775,7 +10787,7 @@
       },
       {
         "path": "scripts/export_signal_contracts.py",
-        "signature_sha256": "c59bfbb00de8773da9bdd3dccb6be00e95ff87bdb05f7fcf891dc6e97669b34d"
+        "signature_sha256": "fafcf411d2df29a4c1e6997b534aa105568236cf33c5a6ace705b77da297fae5"
       },
       {
         "path": "scripts/export_top_anatomy_library.py",
@@ -11648,6 +11660,10 @@
       {
         "path": "scripts/prophet_fusion_labels.py",
         "signature_sha256": "3833b053c3495fd8fb7501f7d95574109125fe27bbd804b68ff5406e8579988c"
+      },
+      {
+        "path": "scripts/prophet_fusion_race.py",
+        "signature_sha256": "9be17701bd0ab655e3359f7f407dd151644768a8f4789c393d00a9699408946d"
       },
       {
         "path": "scripts/prophet_live_evaluator.py",
@@ -12654,6 +12670,10 @@
         "signature_sha256": "e9ae0034599f7dad984cb67512d888adafb7747a83e8876811f00eae4378ff07"
       },
       {
+        "path": "scripts/stock_identity_build_w1a1.py",
+        "signature_sha256": "42547b32ecaadd9e703f5119b1aa4f8f78b4dff65f56c42d1f5450c0715e9bd2"
+      },
+      {
         "path": "scripts/stock_identity_calibrate.py",
         "signature_sha256": "44e0cd9aa6ab7c279bcddcef2000a81f29784e7871e7398ae425b723a187e86d"
       },
@@ -13403,7 +13423,7 @@
       },
       {
         "path": "tests/test_audit_unrun_tests.py",
-        "signature_sha256": "b237f15414ea27fa864c1d7bb3136b870ef7f9343aeb45197d28c990d05c921a"
+        "signature_sha256": "6fee4e281f618e9de64a05a965dcf82a014cfd28d0c16e9529614d1c47010ce8"
       },
       {
         "path": "tests/test_b3_forex_consumer.py",
@@ -15902,6 +15922,10 @@
         "signature_sha256": "12e397da76f37a13b5ffc0ad5adfaee56765bfff2f1076f504883aa4b38dce89"
       },
       {
+        "path": "tests/test_earnings_prompt_quality.py",
+        "signature_sha256": "4d598043af8b0ee9ba8a21da5551365c240fa62aedd19a61d5a13d427f798d3f"
+      },
+      {
         "path": "tests/test_earnings_public_wire.py",
         "signature_sha256": "a2b99a6c01cd672801c67bd2afc0f58e1c79317e8b503fae6922cd43bce6cae0"
       },
@@ -15912,6 +15936,10 @@
       {
         "path": "tests/test_earnings_release_binding.py",
         "signature_sha256": "d6dcd8e444336674c4024468b2df9ed9d3eb8bec94747a8b5eb08606b1cc6921"
+      },
+      {
+        "path": "tests/test_earnings_score_quality.py",
+        "signature_sha256": "aade5eeaba6d8c9e7562e7515cb9094091f04d11eb1a55883f1486bdcc391823"
       },
       {
         "path": "tests/test_earnings_seasons.py",
@@ -16095,7 +16123,7 @@
       },
       {
         "path": "tests/test_entry_radar_w1.py",
-        "signature_sha256": "3801000d060cde723384a5170b7d97bcd0b1d53c6eeb1539a95b84f6b566fbe9"
+        "signature_sha256": "6bb094dac00962218333dcec94308d1d243081f17b7eca2a543e672fb01883b2"
       },
       {
         "path": "tests/test_entry_signal.py",
@@ -18927,7 +18955,7 @@
       },
       {
         "path": "tests/test_name_score.py",
-        "signature_sha256": "9120f8fecaf3c2e73f41eb7157d70ebb9f35a8c1ad09d85e6480bfa9fab18971"
+        "signature_sha256": "59636cb1e1f8ca6ecde61735263c64c9031cb588bb885a00c16b869354448e49"
       },
       {
         "path": "tests/test_narrative_brain.py",
@@ -19311,7 +19339,7 @@
       },
       {
         "path": "tests/test_options_sparse_selector_bootstrap.py",
-        "signature_sha256": "1b159f3c8a381ec4c1874d1f31c6030e5535f664e71ca3f5b5e1d817d7f5f8b4"
+        "signature_sha256": "ca4bcf1426890c0aa0e2f313a988c12e68f46a97a0095bd390ccc0a1c06a5bab"
       },
       {
         "path": "tests/test_options_sparse_selector_prereg.py",
@@ -19882,6 +19910,10 @@
         "signature_sha256": "053fb38bc0efac6a750c8221a4947c20740a5a119a4ef0fae5a82bf6d3353755"
       },
       {
+        "path": "tests/test_prophet_fusion_race.py",
+        "signature_sha256": "04090527d3e9a012e7de790c985581d4e8a153a2714a203d5d3991d79ee33b3a"
+      },
+      {
         "path": "tests/test_prophet_government_revenue_context.py",
         "signature_sha256": "216ff7de7209e49a72c4ed8323f9743738a30e4a091b0828c1101758e13d9814"
       },
@@ -19892,6 +19924,10 @@
       {
         "path": "tests/test_prophet_integrity.py",
         "signature_sha256": "93b20760e6a1183020243a499803b8d5515c031f88e5a7f4c32f138b2b0906e6"
+      },
+      {
+        "path": "tests/test_prophet_lifecycle_state.py",
+        "signature_sha256": "243b7b4c4e1bfc7e5e5f49e9db883b6f12a933cd30c17b66bcd12056c0b49bb4"
       },
       {
         "path": "tests/test_prophet_live_basis.py",
@@ -20107,7 +20143,7 @@
       },
       {
         "path": "tests/test_qledger_desk_adapter.py",
-        "signature_sha256": "91c1655b8dedb35c0b6c5b33959fef58d7772a1aa0b72e3fd942f1c97092c3c2"
+        "signature_sha256": "65df23c289038f9f4b093a877ccf3de7f10a4a41740c343cb40160eaaad45e4d"
       },
       {
         "path": "tests/test_qledger_evidence_clock.py",
@@ -21279,7 +21315,7 @@
       },
       {
         "path": "tests/test_stock_identity_atlas.py",
-        "signature_sha256": "e0d2783cb01f0aba65e1e64ec39ceef9850a4e749cd2aa298fc3661ea9915ebb"
+        "signature_sha256": "99b7e83e9960ab61237204816f6f1fa3d5f650d0ee3df48233c388aa9d9e3a04"
       },
       {
         "path": "tests/test_stock_identity_fingerprint.py",
@@ -22579,7 +22615,7 @@
       },
       {
         "path": "tools/earnings_worker/prompts.py",
-        "signature_sha256": "44ed4013da6727b51c58c0581dbe9b240d1a9d1a68dfb2e3e277305c8559f38d"
+        "signature_sha256": "8e2e60d4b460cb284c2ac943ee5cfb01dc36649a5dc6d8582a84e068a5bc0e66"
       },
       {
         "path": "tools/earnings_worker/run_worker.py",
@@ -22610,10 +22646,10 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5652,
+    "python_count": 5661,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "b94b2b2c33afca530fa50bc7211c3cfa0a6b931e9b348f7a6d361741a1da5de9",
+  "index_sha256": "997948c044be553a7faf4a108f9c6d8c0d9a778ba9a12a2312d3565f1ed890e2",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -23404,6 +23440,7 @@
         "site/factordata/hk_standouts.json",
         "site/factordata/us_standouts.json",
         "site/hk_regime_timeline.json",
+        "site/prophet/index.json",
         "site/regime_timeline.json",
         "tests/test_early_signal_dates_contract.py",
         "tests/test_entry_radar_producers.py",
@@ -23473,7 +23510,9 @@
         "collectors/openfigi.py",
         "config/ai_pricing.yml",
         "config/capability_manifest.yml",
+        "config/delisted_symbols.yml",
         "config/metabolism_budget.yml",
+        "config/theme_graph_identity_breaks.yml",
         "engine/__init__.py",
         "engine/active_alloc.py",
         "engine/active_commodity.py",
@@ -23695,10 +23734,13 @@
         "engine/spvector_overlay.py",
         "engine/stock_identity/__init__.py",
         "engine/stock_identity/authority.py",
+        "engine/stock_identity/census.py",
+        "engine/stock_identity/dossier.py",
         "engine/stock_identity/episodes.py",
         "engine/stock_identity/fingerprint.py",
         "engine/stock_identity/hygiene.py",
         "engine/stock_identity/partition.py",
+        "engine/stock_identity/pilot.py",
         "engine/stock_identity/plane.py",
         "engine/stock_identity/state.py",
         "engine/stock_score.py",
@@ -23749,6 +23791,10 @@
         "research/INDEX_DIRECTION_PHASE0.md",
         "research/US_BOARD_MEASUREMENT.md",
         "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md",
+        "research/stock_identity/dossiers/B.md",
+        "research/stock_identity/dossiers/B.svg",
+        "research/stock_identity/dossiers/GOLD.md",
+        "research/stock_identity/dossiers/GOLD.svg",
         "scripts/__init__.py",
         "scripts/_active_render.py",
         "scripts/active_commodity_lev_phase0.py",
@@ -23808,6 +23854,8 @@
         "scripts/quad_nfci_phase0.py",
         "scripts/residual_alpha_phase0.py",
         "scripts/stock_conviction_phase0.py",
+        "scripts/stock_identity_build_atlas.py",
+        "scripts/stock_identity_build_w1a1.py",
         "scripts/sue_insider_deep_phase0.py",
         "scripts/thematic_rotation_phase0.py",
         "scripts/top_picks_phase0.py",
@@ -26007,6 +26055,7 @@
         "site/news/by_ticker.json",
         "site/policy_intent.json",
         "site/premiumdata/etfs.json",
+        "site/prophet/index.json",
         "site/qledger/track_record.json",
         "site/risk_state_live.js",
         "site/sectordata/sector_central.json",
@@ -26073,6 +26122,7 @@
         "tests/test_price_basis_flip.py",
         "tests/test_prophet_governor.py",
         "tests/test_prophet_options_context.py",
+        "tests/test_prophet_overtime_horizon_reconciliation.py",
         "tests/test_prophet_showcase.py",
         "tests/test_risk_lead_lag.py",
         "tests/test_risk_radar_dlg_country_wiring.py",
@@ -30329,486 +30379,22 @@
       "job_id": "intelligence-registry",
       "ordinal": 42,
       "paths": [
-        "collectors/__init__.py",
-        "collectors/_drip.py",
-        "collectors/base.py",
-        "collectors/cboe.py",
-        "collectors/china_analyst.py",
-        "collectors/china_credit.py",
-        "collectors/china_news.py",
-        "collectors/edgar.py",
-        "collectors/edgar_13f.py",
-        "collectors/edgar_deadname_prices.py",
-        "collectors/edgar_deadnames.py",
-        "collectors/edgar_delisting.py",
-        "collectors/edgar_eps.py",
-        "collectors/edgar_facts.py",
-        "collectors/edgar_flow_quality.py",
-        "collectors/edgar_headcount.py",
-        "collectors/edgar_rpo.py",
-        "collectors/edgar_share_quality.py",
-        "collectors/edgar_stock_quality.py",
-        "collectors/equity_profile.py",
-        "collectors/equity_revisions.py",
-        "collectors/fda_shortages.py",
-        "collectors/finra.py",
-        "collectors/fred.py",
-        "collectors/holdings.py",
-        "collectors/openfigi.py",
-        "collectors/polygon_options.py",
-        "collectors/sec_document_spine.py",
-        "collectors/sec_insider.py",
-        "collectors/sector_holdings.py",
-        "collectors/sponsors.py",
-        "collectors/treasury.py",
-        "collectors/us_names_zh.py",
-        "config/ai_pricing.yml",
-        "config/capability_manifest.yml",
-        "config/delisted_symbols.yml",
-        "config/earnings_story_promotion.yml",
-        "config/flow_score.yml",
-        "config/fundamental_forensics_disclosure_diff.v1.json",
-        "config/house_law_checks.yml",
-        "config/intelligence_registry_overlay.yml",
-        "config/lobe_charters.yml",
-        "config/metabolism_budget.yml",
-        "config/qual_ladder.yml",
-        "config/sector_legs.json",
-        "config/site_access.yml",
-        "config/sparse_worktree.json",
-        "config/synapse.yml",
-        "config/us_names_zh.json",
-        "config/us_search_aliases_zh.json",
-        "engine/__init__.py",
-        "engine/active_alloc.py",
-        "engine/activist.py",
-        "engine/advanced_breadth.py",
-        "engine/ai_desk.py",
-        "engine/ai_desk_scorer.py",
-        "engine/alert_triage.py",
-        "engine/alerts.py",
-        "engine/altdata_confirmers.py",
-        "engine/altdata_ledger.py",
-        "engine/altdata_models.py",
-        "engine/altdata_picks.py",
-        "engine/altdata_signals.py",
-        "engine/analyst_revisions.py",
-        "engine/anticipation.py",
-        "engine/axes.py",
-        "engine/bar_derive.py",
-        "engine/base_effect.py",
-        "engine/basket_behaves_as.py",
-        "engine/basket_breadth_divergence.py",
-        "engine/basket_index.py",
-        "engine/basket_mtf.py",
-        "engine/basket_score.py",
-        "engine/basket_tape.py",
-        "engine/baskets.py",
-        "engine/baskets_canada.py",
-        "engine/baskets_china.py",
-        "engine/baskets_hk.py",
-        "engine/baskets_intl.py",
-        "engine/baskets_region.py",
-        "engine/beneficial_ownership.py",
-        "engine/bottleneck.py",
-        "engine/bottom_radar.py",
-        "engine/btc_mtf.py",
-        "engine/canon.py",
-        "engine/capital_allocation.py",
-        "engine/catalyst_stock.py",
-        "engine/catalyst_tone.py",
-        "engine/china_altdata.py",
-        "engine/china_basket_spine.py",
-        "engine/china_conviction.py",
-        "engine/china_crowding.py",
-        "engine/china_discovery.py",
-        "engine/china_event_calendar.py",
-        "engine/china_extras.py",
-        "engine/china_intel_bus.py",
-        "engine/china_masterminds.py",
-        "engine/china_news.py",
-        "engine/china_news_intel.py",
-        "engine/china_pboc_stance.py",
-        "engine/china_radar.py",
-        "engine/china_radar_ledger.py",
-        "engine/china_signal_lab.py",
-        "engine/china_strategies.py",
-        "engine/china_validation.py",
-        "engine/close_pass/__init__.py",
-        "engine/close_pass/board.py",
-        "engine/close_pass/reconcile.py",
-        "engine/cn_ai_semis_confirmer.py",
-        "engine/cn_newswires.py",
-        "engine/codex_lane/runner.py",
-        "engine/codex_provider.py",
-        "engine/coiled.py",
-        "engine/composite_score.py",
-        "engine/conditions.py",
-        "engine/confluence_tiers.py",
-        "engine/conviction_accrual.py",
-        "engine/conviction_delta.py",
-        "engine/cross_asset.py",
-        "engine/cross_asset_trend.py",
-        "engine/crowding.py",
-        "engine/cycles.py",
-        "engine/dannytrades.py",
-        "engine/dannytrades_chip.py",
-        "engine/demand_capex.py",
-        "engine/demand_chain.py",
-        "engine/demand_ledger.py",
-        "engine/desk_ledger.py",
-        "engine/desk_scorer.py",
-        "engine/deterioration_cascade.py",
-        "engine/dislocation.py",
-        "engine/dispersion.py",
-        "engine/donor.py",
-        "engine/earnings_blackout.py",
-        "engine/earnings_catalyst.py",
-        "engine/earnings_narrative/context_packets.py",
-        "engine/earnings_narrative/contracts.py",
-        "engine/earnings_narrative/digest.py",
-        "engine/earnings_narrative/private_publication.py",
-        "engine/earnings_narrative/promotion.py",
-        "engine/earnings_narrative/public_wire.py",
-        "engine/earnings_narrative/story.py",
-        "engine/earnings_narrative/story_packets.py",
-        "engine/election_cycle.py",
-        "engine/entity_resolver.py",
-        "engine/entry_primitives.py",
-        "engine/entry_signal.py",
-        "engine/equity_alloc.py",
-        "engine/equity_factors.py",
-        "engine/etf_board.py",
-        "engine/etf_consensus.py",
-        "engine/etf_pulse.py",
-        "engine/etf_registry.py",
-        "engine/event_atlas.py",
-        "engine/event_calendar.py",
-        "engine/event_landmine.py",
-        "engine/event_risk.py",
-        "engine/expectation_state.py",
-        "engine/experiments_registry.py",
-        "engine/extension.py",
-        "engine/factor_exposure.py",
-        "engine/factor_seasonality.py",
-        "engine/fda_scarcity.py",
-        "engine/fear_greed.py",
-        "engine/filing_transition.py",
-        "engine/flip_confirmation.py",
-        "engine/foresight_cascade.py",
-        "engine/foresight_earliness.py",
-        "engine/foresight_enb.py",
-        "engine/foresight_score.py",
-        "engine/foresight_sizing.py",
-        "engine/forward_calendar_context.py",
-        "engine/forward_dist.py",
-        "engine/froth_fragility.py",
-        "engine/fundamental_forensics/context_projection.py",
-        "engine/fundamental_forensics/disclosure_diff.py",
-        "engine/fundamental_forensics/disclosure_projection.py",
-        "engine/fundamental_forensics/models.py",
-        "engine/fundamental_forensics/private_state.py",
-        "engine/fundamental_forensics/sec_document_spine.py",
-        "engine/gdelt_client.py",
-        "engine/gex_confirm.py",
-        "engine/gex_engine.py",
-        "engine/global_liquidity.py",
-        "engine/glut_watch.py",
-        "engine/gov_exposure.py",
-        "engine/government_revenue/federation.py",
-        "engine/government_revenue/freshness.py",
-        "engine/government_revenue/prophet_annotation.py",
-        "engine/grading.py",
-        "engine/greeks.py",
-        "engine/group_flow.py",
-        "engine/guidance_gap.py",
-        "engine/hold.py",
-        "engine/holdings_signals.py",
-        "engine/htf_durability.py",
-        "engine/hysteresis.py",
-        "engine/i18n.py",
-        "engine/ignition_features.py",
-        "engine/index_direction.py",
-        "engine/index_leadership.py",
-        "engine/index_leadership_track.py",
-        "engine/indicators.py",
-        "engine/inputs.py",
-        "engine/intelligence_registry.py",
-        "engine/intl_inputs.py",
-        "engine/intl_market_state.py",
-        "engine/intl_recovery_quality.py",
-        "engine/leadership_crack.py",
-        "engine/ledger_identity.py",
-        "engine/ledger_lane.py",
-        "engine/liquidity_chip.py",
-        "engine/live_overlay.py",
-        "engine/live_quotes.py",
-        "engine/llm_auth.py",
-        "engine/long_hold_clocks.py",
-        "engine/macro_news.py",
-        "engine/macro_surprise.py",
-        "engine/manager_lag.py",
-        "engine/manager_quality.py",
-        "engine/manager_trades.py",
-        "engine/marker_integrity.py",
-        "engine/market_gamma.py",
-        "engine/market_heatmap.py",
-        "engine/market_state.py",
-        "engine/market_state_audit.py",
-        "engine/market_state_tune.py",
-        "engine/master_brain.py",
-        "engine/masterminds.py",
-        "engine/metabolism/__init__.py",
-        "engine/metabolism/budget_gate.py",
-        "engine/moat_falsifiers.py",
-        "engine/momentum_display.py",
-        "engine/mtf_monitor.py",
-        "engine/mtf_upturn.py",
-        "engine/name_direction.py",
-        "engine/name_resolver.py",
-        "engine/name_score.py",
-        "engine/name_score_grader.py",
-        "engine/narrative_regime.py",
-        "engine/narrative_rotation.py",
-        "engine/neuralweb/__init__.py",
-        "engine/neuralweb/brief_context.py",
-        "engine/neuralweb/capability_broker.py",
-        "engine/neuralweb/constitution.py",
-        "engine/neuralweb/context_api.py",
-        "engine/neuralweb/earnings_context_reader.py",
-        "engine/neuralweb/envelope.py",
-        "engine/neuralweb/governance.py",
-        "engine/neuralweb/key_pool.py",
-        "engine/neuralweb/metabolism.py",
-        "engine/neuralweb/read.py",
-        "engine/neuralweb/sector_map.py",
-        "engine/neuralweb/synapse.py",
-        "engine/news_common.py",
-        "engine/news_events.py",
-        "engine/news_flow.py",
-        "engine/news_translate.py",
-        "engine/news_vector.py",
-        "engine/ohlc_reconstruct.py",
-        "engine/ollama_provider.py",
-        "engine/opex.py",
-        "engine/options_dislocation.py",
-        "engine/options_ivspread.py",
-        "engine/options_structure.py",
-        "engine/oracle/__init__.py",
-        "engine/oracle/tilt.py",
-        "engine/oracle/washout_counterread.py",
-        "engine/ownership_event_wire.py",
-        "engine/passport.py",
-        "engine/path_personality.py",
-        "engine/pick_lab/__init__.py",
-        "engine/pick_lab/candidates.py",
-        "engine/pick_lab/registry.py",
-        "engine/pick_lab/signals_1d.py",
-        "engine/pick_lab/snapshot.py",
-        "engine/pit.py",
-        "engine/pit_lag_recorder.py",
-        "engine/playbook.py",
-        "engine/policy_calendar.py",
-        "engine/pooling.py",
-        "engine/portfolio.py",
-        "engine/postcross.py",
-        "engine/prediction_markets.py",
-        "engine/press/earnings_adapter.py",
-        "engine/prophet_bridge.py",
-        "engine/prophet_doors.py",
-        "engine/prophet_integrity.py",
-        "engine/prophet_live/__init__.py",
-        "engine/prophet_live/interval.py",
-        "engine/prophet_live/r2io.py",
-        "engine/prophet_stage_inputs.py",
-        "engine/provenance_sidecar.py",
-        "engine/provider_health.py",
-        "engine/pullback_zone.py",
-        "engine/qbus.py",
-        "engine/qkernel.py",
-        "engine/qledger.py",
-        "engine/qledger_desk_adapter.py",
-        "engine/qledger_evidence_clock.py",
-        "engine/qledger_validity.py",
-        "engine/quant_lab/__init__.py",
-        "engine/quant_lab/legs.py",
-        "engine/quant_lab/page.py",
-        "engine/quant_lab/score.py",
-        "engine/quant_lab/specs.py",
-        "engine/quant_lab/study.py",
-        "engine/rate_inflation_transmission.py",
-        "engine/rebalance_calendar.py",
-        "engine/regime.py",
-        "engine/regime_conditioning_coverage.py",
-        "engine/regime_label.py",
-        "engine/regime_one.py",
-        "engine/regime_snap.py",
-        "engine/regime_snap_veto.py",
-        "engine/regime_vector.py",
-        "engine/research_vault/r2_store.py",
-        "engine/residual_alpha.py",
-        "engine/risk_radar.py",
-        "engine/risk_radar_backtest.py",
-        "engine/risk_radar_intl.py",
-        "engine/risk_radar_intl_audit.py",
-        "engine/risk_radar_market_catalysts.py",
-        "engine/risk_radar_recovery.py",
-        "engine/risk_sizing.py",
-        "engine/risk_state.py",
-        "engine/roc_blowoff.py",
-        "engine/sector_legs.py",
-        "engine/sector_pulse.py",
-        "engine/sector_rate_inflation.py",
-        "engine/sector_signals.py",
-        "engine/session_anchor.py",
-        "engine/setup_tier.py",
-        "engine/setups.py",
-        "engine/shadow_book.py",
-        "engine/short_volume.py",
-        "engine/signal_archive.py",
-        "engine/signal_foundry/results.py",
-        "engine/signal_foundry/spec.py",
-        "engine/signal_foundry/transforms.py",
-        "engine/signal_frontier_docket.py",
-        "engine/signal_gate.py",
-        "engine/signal_lab.py",
-        "engine/signal_quality.py",
-        "engine/signal_stack.py",
-        "engine/smart_money.py",
-        "engine/sp500_heatmap.py",
-        "engine/special_arb.py",
-        "engine/special_situations.py",
-        "engine/species_registry.py",
-        "engine/spine.py",
-        "engine/spotlight.py",
-        "engine/stock_dossier.py",
-        "engine/stock_events.py",
-        "engine/stock_fundamentals.py",
-        "engine/stock_macro_sensitivity.py",
-        "engine/stock_personality.py",
-        "engine/stock_score.py",
-        "engine/stock_technicals.py",
-        "engine/stock_view.py",
-        "engine/strategies.py",
-        "engine/subsector_confluence.py",
-        "engine/subsector_rotation.py",
-        "engine/subsector_rotation_alerts.py",
-        "engine/subsector_rotation_china.py",
-        "engine/subsector_scan.py",
-        "engine/subsector_track_record.py",
-        "engine/subsector_turn.py",
-        "engine/sue.py",
-        "engine/t0_indicator.py",
-        "engine/technicals.py",
-        "engine/theme_crowding.py",
-        "engine/theme_emergence.py",
-        "engine/theme_fingerprint.py",
-        "engine/theme_revisions.py",
-        "engine/theme_scoring.py",
-        "engine/theme_tape.py",
-        "engine/theme_validation.py",
-        "engine/themes_heatmap.py",
-        "engine/thesis_funnel.py",
-        "engine/ticker_alerts.py",
-        "engine/ticker_shape.py",
-        "engine/total_return.py",
-        "engine/track_record.py",
-        "engine/translate.py",
-        "engine/transmission_publish.py",
-        "engine/treasury_watch.py",
-        "engine/trial_ledger.py",
-        "engine/tushare_freshness.py",
-        "engine/universe_history.py",
-        "engine/us_board_rank.py",
-        "engine/us_candidate_lanes.py",
-        "engine/us_context_vector.py",
-        "engine/us_early_turn.py",
-        "engine/validation.py",
-        "engine/valuation.py",
-        "engine/velocity.py",
-        "engine/vol_forecast.py",
-        "engine/vol_regime.py",
-        "engine/vol_shock_scorecard.py",
-        "engine/vol_squeeze.py",
-        "engine/washout_turn.py",
-        "engine/weinstein_stage.py",
-        "engine/whitehouse_brain.py",
-        "engine/whitehouse_feed.py",
-        "lib/__init__.py",
-        "lib/ai_costs.py",
-        "lib/board_state.py",
-        "lib/chat_allowance.py",
-        "lib/closes_panel.py",
-        "lib/cn_calendar.py",
-        "lib/config.py",
-        "lib/delisted_symbols.py",
-        "lib/filing_value_units.py",
-        "lib/forex_link.py",
-        "lib/hk_calendar.py",
-        "lib/nyse_calendar.py",
-        "lib/options_context.py",
-        "lib/pages.py",
-        "lib/seo.py",
-        "lib/site_assets.py",
-        "lib/store.py",
-        "lib/ticker_aliases.py",
-        "lib/ticker_popularity.py",
+        "collectors/*",
+        "config/**",
+        "engine/**",
+        "lib/*",
         "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md",
         "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md",
         "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
-        "scripts/__init__.py",
-        "scripts/build_biocatalyst.py",
-        "scripts/build_capital_structure_page.py",
-        "scripts/build_chart_data.py",
-        "scripts/build_fundamental_forensics.py",
-        "scripts/build_index_leadership.py",
-        "scripts/build_intelligence_registry.py",
-        "scripts/build_live_overlay.py",
-        "scripts/build_market_heatmap.py",
-        "scripts/build_market_memory_page.py",
-        "scripts/build_market_structure_page.py",
-        "scripts/build_rr_banner.py",
-        "scripts/build_site.py",
-        "scripts/build_sp500_heatmap.py",
-        "scripts/build_state_of_themes.py",
-        "scripts/build_stock_library.py",
-        "scripts/build_subsector_confluence.py",
-        "scripts/build_subsector_rotation.py",
-        "scripts/build_subsector_rotation_china.py",
-        "scripts/build_subsector_rotation_china_pages.py",
-        "scripts/build_subsector_rotation_pages.py",
-        "scripts/build_themes_heatmap.py",
-        "scripts/build_whitehouse.py",
-        "scripts/check_board_contradictions.py",
-        "scripts/check_intelligence_registry.py",
-        "scripts/check_signal_gate_coherence.py",
-        "scripts/check_stretch_oracle_contract.py",
-        "scripts/check_synapse_reads.py",
-        "scripts/check_template_site_sync.py",
-        "scripts/close_pass_publish.py",
-        "scripts/close_pass_reconcile.py",
-        "scripts/inject_wh_banner.py",
-        "scripts/notify.py",
-        "scripts/optimize_assets.py",
-        "scripts/regime_reliability_phase0.py",
-        "scripts/thematic_rotation_phase0.py",
-        "scripts/translate_profiles.py",
-        "scripts/validate_regime_fwd.py",
-        "scripts/worktree_sparse.py",
-        "site/basketdata/fear_greed.json",
-        "site/factordata/basket_washout_state.json",
-        "site/factordata/dna_class.json",
-        "site/factordata/reflexivity_overlay.json",
-        "site/factordata/signal_gate.json",
-        "site/factordata/stock_personality.json",
-        "site/factordata/us_standouts.json",
-        "site/factordata/us_standouts_v2.json",
-        "site/flowleaders/leaders.json",
-        "site/leaderradar/radar.json",
+        "scripts/*",
+        "site/basketdata/**",
+        "site/factordata/**",
+        "site/flowleaders/**",
+        "site/leaderradar/**",
         "site/master_brief.json",
-        "site/neuralwebdata/liquidity_plumbing.json",
-        "site/qledger/track_record.json",
+        "site/neuralwebdata/**",
+        "site/qledger/**",
         "tests/test_check_intelligence_registry.py",
         "tests/test_intelligence_registry.py"
       ],
@@ -34116,6 +33702,7 @@
         "site/factordata/hk_standouts.json",
         "site/factordata/us_standouts.json",
         "site/hk_regime_timeline.json",
+        "site/prophet/index.json",
         "site/regime_timeline.json",
         "tests/test_contract_drift.py"
       ],
@@ -34253,6 +33840,8 @@
         "engine/communique_diff.py",
         "engine/conditions.py",
         "engine/cycles.py",
+        "engine/demand_chain.py",
+        "engine/demand_ledger.py",
         "engine/desk_ledger.py",
         "engine/desk_scorer.py",
         "engine/election_cycle.py",
@@ -35386,8 +34975,7 @@
       "ordinal": 68,
       "paths": [
         "scripts/check_vintage_pin_fence.py",
-        "tests/**",
-        "tests/test_vintage_pin_fence.py"
+        "tests/**"
       ],
       "weight": 6
     },
@@ -50631,6 +50219,7 @@
         "site/factordata/us_standouts.json",
         "site/hk_regime_timeline.json",
         "site/macro.html",
+        "site/prophet/index.json",
         "site/regime_timeline.json",
         "site/risk_state_live.js",
         "templates/china.html.j2",
@@ -56460,7 +56049,9 @@
         "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md",
         "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
+        "research/prophet_fusion/PR1B_BASELINE_RACE.md",
         "research/prophet_fusion/families.yml",
+        "research/prophet_fusion/pr1b_baseline_race/report.json",
         "scripts/__init__.py",
         "scripts/_active_render.py",
         "scripts/backtest_ladder_history.py",
@@ -56508,6 +56099,7 @@
         "scripts/notify.py",
         "scripts/prophet_fusion_arena.py",
         "scripts/prophet_fusion_labels.py",
+        "scripts/prophet_fusion_race.py",
         "scripts/publish_earnings_r2.py",
         "scripts/seed_china_ths_baskets.py",
         "scripts/thematic_rotation_phase0.py",
@@ -56519,6 +56111,7 @@
         "site/flowleaders/**",
         "site/leaderradar/**",
         "site/marketdata/**",
+        "site/prophet/**",
         "site/sectordata/**",
         "site/stocktable.js",
         "templates/_prophet_card.html.j2",
@@ -56552,6 +56145,7 @@
         "tests/test_prophet_fusion_arena.py",
         "tests/test_prophet_fusion_families.py",
         "tests/test_prophet_fusion_labels.py",
+        "tests/test_prophet_fusion_race.py",
         "tests/test_prophet_verb_ink_contrast.py",
         "tests/test_stage_analysis.py",
         "tests/test_stock_board_v2.py",
@@ -59596,6 +59190,7 @@
         "tests/test_prophet_bridge_order_invariance.py",
         "tests/test_prophet_durable_checkpoint.py",
         "tests/test_prophet_earnings_split_brain.py",
+        "tests/test_prophet_lifecycle_state.py",
         "tests/test_prophet_overtime_horizon_reconciliation.py",
         "tests/test_prophet_plan_clock.py",
         "tests/test_prophet_stage_shadow.py",
@@ -60241,6 +59836,7 @@
         "scripts/_cycles_payload.py",
         "scripts/_narrative_epoch.py",
         "scripts/_narrative_ttl.py",
+        "scripts/audit_earnings_score_quality.py",
         "scripts/audit_earnings_wire_freshness.py",
         "scripts/audit_r2.py",
         "scripts/backfill_qledger_us.py",
@@ -60356,7 +59952,9 @@
         "tests/test_earnings_api.py",
         "tests/test_earnings_evidence_graph_deps.py",
         "tests/test_earnings_private_store.py",
+        "tests/test_earnings_prompt_quality.py",
         "tests/test_earnings_public_wire.py",
+        "tests/test_earnings_score_quality.py",
         "tests/test_earnings_wire_freshness.py",
         "tests/test_earnings_worker_launchd.py",
         "tests/test_earnings_worker_terminal.py",
@@ -60379,9 +59977,10 @@
         "tests/test_w6b_push_ops.py",
         "tests/test_watchlist_sentinel.py",
         "tests/test_world_state_migrations.py",
+        "tools/earnings_worker/prompts.py",
         "tools/earnings_worker/run_worker.py"
       ],
-      "weight": 61
+      "weight": 65
     },
     {
       "job_id": "unrun-inline-js-guard",
@@ -64352,13 +63951,6 @@
         "lib/__init__.py",
         "lib/config.py",
         "lib/dataos/**",
-        "lib/dataos/__init__.py",
-        "lib/dataos/identity.py",
-        "lib/dataos/nulls.py",
-        "lib/dataos/price.py",
-        "lib/dataos/quality.py",
-        "lib/dataos/registry.py",
-        "lib/dataos/temporal.py",
         "lib/delisted_symbols.py",
         "lib/ticker_aliases.py",
         "scripts/build_security_master.py",
@@ -64463,7 +64055,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "ff1cb0cc8f49b5ed0fbcf96ca4ce25014d84f6a2e9e8d852e56cc7d249d633a5"
+    "sha256": "fbb7c2dbf97b2f75d44feef35a56599cfb9826d10298a6a9cf21d907b6430e48"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
@@ -64477,7 +64069,7 @@
     },
     {
       "path": "scripts/audit_unrun_tests.py",
-      "sha256": "989a9caeae01ed9a6107796d09c21e57ad40427983eecedf17d0d69409d6620d"
+      "sha256": "a23ec6425843cd4551fb59478d631495b5769359b71ae5f82c5f738d78ff022e"
     },
     {
       "path": "scripts/ci_committed_scope_index.py",
@@ -64485,7 +64077,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2266,
+    "candidate_count": 2281,
     "candidates": [
       {
         "path": ".claude",
@@ -68324,6 +67916,10 @@
         "present": true
       },
       {
+        "path": "research/B.md",
+        "present": false
+      },
+      {
         "path": "research/BIOCATALYST_D0A_DESIGN_ADJUDICATION_2026-08-06.md",
         "present": true
       },
@@ -68401,6 +67997,10 @@
       },
       {
         "path": "research/FOO_PROGRAM.md",
+        "present": false
+      },
+      {
+        "path": "research/GOLD.md",
         "present": false
       },
       {
@@ -68798,6 +68398,10 @@
       {
         "path": "research/cn_prophet_audit/onset_forward_ledger.jsonl",
         "present": false
+      },
+      {
+        "path": "research/cn_prophet_audit/pb_case_decomposition.py",
+        "present": true
       },
       {
         "path": "research/cn_prophet_audit/regime_calibration_v2.py",
@@ -69224,7 +68828,19 @@
         "present": false
       },
       {
+        "path": "research/prophet_fusion/PR1B_BASELINE_RACE.md",
+        "present": true
+      },
+      {
         "path": "research/prophet_fusion/families.yml",
+        "present": true
+      },
+      {
+        "path": "research/prophet_fusion/pr1b_baseline_race",
+        "present": false
+      },
+      {
+        "path": "research/prophet_fusion/pr1b_baseline_race/report.json",
         "present": true
       },
       {
@@ -69433,6 +69049,26 @@
       },
       {
         "path": "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md",
+        "present": true
+      },
+      {
+        "path": "research/stock_identity/dossiers/B.md",
+        "present": true
+      },
+      {
+        "path": "research/stock_identity/dossiers/B.png",
+        "present": false
+      },
+      {
+        "path": "research/stock_identity/dossiers/B.svg",
+        "present": true
+      },
+      {
+        "path": "research/stock_identity/dossiers/GOLD.md",
+        "present": true
+      },
+      {
+        "path": "research/stock_identity/dossiers/GOLD.svg",
         "present": true
       },
       {
@@ -70852,6 +70488,10 @@
         "present": true
       },
       {
+        "path": "scripts/prophet_fusion_race.py",
+        "present": true
+      },
+      {
         "path": "scripts/prophet_live_evaluator.py",
         "present": true
       },
@@ -71661,6 +71301,10 @@
       },
       {
         "path": "site/delta.html",
+        "present": false
+      },
+      {
+        "path": "site/entry_radar.html",
         "present": false
       },
       {
@@ -73056,6 +72700,10 @@
         "present": true
       },
       {
+        "path": "templates/entry_radar.html.j2",
+        "present": false
+      },
+      {
         "path": "templates/etfs.html.j2",
         "present": true
       },
@@ -73538,6 +73186,10 @@
       {
         "path": "tools/earnings_worker",
         "present": false
+      },
+      {
+        "path": "tools/earnings_worker/prompts.py",
+        "present": true
       },
       {
         "path": "tools/earnings_worker/run_worker.py",
