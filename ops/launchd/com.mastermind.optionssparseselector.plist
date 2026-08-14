@@ -30,9 +30,9 @@
   <integer>300</integer>
 
   <key>StandardOutPath</key>
-  <string>/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchd.stdout.log</string>
+  <string>/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/launchd.stdout.log</string>
   <key>StandardErrorPath</key>
-  <string>/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchd.stderr.log</string>
+  <string>/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v2/launchd.stderr.log</string>
 
   <key>KeepAlive</key>
   <false/>

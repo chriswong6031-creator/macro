@@ -81,6 +81,17 @@ class FakeInputs:
     lifecycle_root: Path | None = None
 
 
+def test_runtime_v2_marker_body_and_digest_are_exact() -> None:
+    assert runner.RUNTIME_MARKER_BODY == (
+        b"options.sparse_selector.persistent_runtime_root/v2\n"
+    )
+    assert runner.RUNTIME_MARKER_SHA256 == hashlib.sha256(
+        runner.RUNTIME_MARKER_BODY
+    ).hexdigest()
+    assert runner.RUNTIME_ROOT.name == "options_sparse_selector_runtime_v2"
+    assert runner.OPS_ROOT.name == "options_sparse_selector_ops_v2"
+
+
 class FakeCore:
     SELECTOR_RUNTIME_ARMED = True
     SELECTOR_PROPOSALS_ARMED = False
@@ -278,10 +289,12 @@ def _runtime_fixture(
     python = runtime_tree / "bin/python3.12"
     timezone_file = runtime_tree / "share/zoneinfo/America/New_York"
     dependency = runtime_tree / "lib/python3.12/site-packages/dependency.py"
+    readonly_native = runtime_tree / "lib/python3.12/site-packages/libfixture.dylib"
     for path, body, mode in (
         (python, b"sealed-python", 0o555),
         (timezone_file, b"TZif", 0o444),
         (dependency, b"sealed-dependency", 0o444),
+        (readonly_native, b"sealed-native", 0o444),
     ):
         path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
         path.write_bytes(body)
@@ -351,8 +364,11 @@ def _runtime_fixture(
         "files": files,
         "imports": list(runner.EXPECTED_RUNTIME_IMPORTS),
         "native_signature": "adhoc",
-        "native_dyld_loaded": 0,
-        "native_files": ["bin/python3.12"],
+        "native_dyld_loaded": 1,
+        "native_files": [
+            "bin/python3.12",
+            "lib/python3.12/site-packages/libfixture.dylib",
+        ],
         "installation": {
             "kind": "persistent",
             "target_root": str(runtime_root),
@@ -885,11 +901,64 @@ def test_full_runtime_manifest_is_reauthenticated_before_import(
         monkeypatch, tmp_path
     )
     receipt = runner._attest_runtime_carrier(repository)
-    assert receipt["file_count"] == 3
+    assert receipt["file_count"] == 4
+    assert receipt["native_file_count"] == 2
     assert receipt["file_bytes"] > 0
     dependency.chmod(0o644)
     dependency.write_bytes(b"tampered-dependency")
     dependency.chmod(0o444)
+    with pytest.raises(runner.RunnerError, match="full manifest"):
+        runner._attest_runtime_carrier(repository)
+
+
+def test_runtime_native_receipts_reject_unsafe_modes_and_v1_marker(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    repository, _dependency, manifest_path = _runtime_fixture(monkeypatch, tmp_path)
+    manifest = json.loads(manifest_path.read_bytes())
+    native = next(
+        item
+        for item in manifest["files"]
+        if item["path"].endswith("libfixture.dylib")
+    )
+    native["mode"] = 0o644
+    manifest_path.chmod(0o600)
+    manifest_path.write_bytes(runner._canonical_json(manifest))
+    with pytest.raises(runner.RunnerError, match="file receipt fields drifted"):
+        runner._attest_runtime_carrier(repository)
+
+    v1_fixture = tmp_path / "v1"
+    v1_fixture.mkdir()
+    _repository, _dependency, manifest_path = _runtime_fixture(monkeypatch, v1_fixture)
+    runner.RUNTIME_MARKER.write_bytes(
+        b"options.sparse_selector.persistent_runtime_root/v1\n"
+    )
+    with pytest.raises(runner.RunnerError, match="runtime marker drifted"):
+        runner._attest_runtime_carrier(_repository)
+
+
+def test_runtime_native_actual_mode_and_python_execute_mode_are_enforced(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    native_fixture = tmp_path / "native"
+    native_fixture.mkdir()
+    repository, _dependency, _manifest_path = _runtime_fixture(
+        monkeypatch, native_fixture
+    )
+    native = (
+        runner.RUNTIME_ROOT
+        / "runtime/lib/python3.12/site-packages/libfixture.dylib"
+    )
+    native.chmod(0o644)
+    with pytest.raises(runner.RunnerError, match="full manifest"):
+        runner._attest_runtime_carrier(repository)
+
+    python_fixture = tmp_path / "python"
+    python_fixture.mkdir()
+    repository, _dependency, _manifest_path = _runtime_fixture(
+        monkeypatch, python_fixture
+    )
+    runner.RUNTIME_PYTHON.chmod(0o444)
     with pytest.raises(runner.RunnerError, match="full manifest"):
         runner._attest_runtime_carrier(repository)
 
