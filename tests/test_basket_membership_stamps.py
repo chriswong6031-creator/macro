@@ -245,6 +245,61 @@ def test_gold_miners_wrong_issuer_row_is_stamped_not_silently_carried(membership
     assert "GOLD" not in live and "B" in live and len(live) == 12, live
 
 
+def test_b_curated_tape_is_barrick_and_not_the_goldcom_dealer_tape() -> None:
+    """The replacement slot must be backed by the intended issuer's OHLCV tape.
+
+    Shape checks keep a close-only fallback from masquerading as the curated plane;
+    return correlations prove B agrees with Barrick's long Yahoo store and disagrees
+    with the dealer tape under GOLD.
+    """
+    import pandas as pd
+
+    curated = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "B.parquet")
+    barrick = pd.read_parquet(ROOT / "data" / "yahoo" / "B.parquet")
+    dealer = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "GOLD.parquet")
+
+    assert isinstance(curated.index, pd.DatetimeIndex)
+    assert curated.index.name == "Date"
+    assert curated.index.is_monotonic_increasing and curated.index.is_unique
+    assert list(curated.columns) == ["open", "high", "low", "close", "volume"]
+    assert len(curated) == 3_172
+    assert curated.index.min() == pd.Timestamp("2014-01-02")
+    assert curated.index.max() == pd.Timestamp("2026-08-13")
+
+    b_pair = pd.concat(
+        [curated["close"].pct_change(), barrick["close"].pct_change()], axis=1, join="inner"
+    ).dropna()
+    dealer_pair = pd.concat(
+        [curated["close"].pct_change(), dealer["close"].pct_change()], axis=1, join="inner"
+    ).dropna()
+    assert b_pair.corr().iloc[0, 1] > 0.999
+    assert dealer_pair.corr().iloc[0, 1] < 0.35
+
+
+def test_gold_masks_to_zero_and_b_owns_the_slot_in_both_read_modes(membership) -> None:
+    """Exercise the actual basket mask, not only the membership prose."""
+    import pandas as pd
+
+    from engine.basket_index import _live_mask
+
+    rows = {
+        row["ticker"]: row for row in membership["baskets"]["gold_miners"]["members"]
+        if row["ticker"] in {"GOLD", "B"}
+    }
+    b = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "B.parquet")["close"]
+    gold = pd.read_parquet(ROOT / "data" / "baskets" / "ohlcv" / "GOLD.parquet")["close"]
+    idx = b.index.union(gold.index).sort_values()
+    close = pd.concat({"GOLD": gold, "B": b}, axis=1, sort=False).reindex(idx)
+    members = [rows["GOLD"], rows["B"]]
+
+    strict = _live_mask(members, idx, ["GOLD", "B"], pit=True, close=close)
+    deep = _live_mask(members, idx, ["GOLD", "B"], pit=False, close=close)
+    assert int(strict["GOLD"].sum()) == 0
+    assert int(deep["GOLD"].sum()) == 0
+    assert int(strict["B"].sum()) == 819
+    assert int(deep["B"].sum()) == 3_172
+
+
 def test_a_delisted_symbol_is_never_requested_nightly() -> None:
     """collectors/yahoo.py:93 turns stock_search.extra_tickers into the nightly fetch
     list. Listing a security that stopped existing parks a permanent entry in the

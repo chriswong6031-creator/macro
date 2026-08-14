@@ -362,6 +362,38 @@ def test_fiserv_is_carried_with_open_bounds_because_the_date_is_not_citable(
         assert table.resolve("membership", "FI", on) == "SEC:US-XNAS-FISV"
 
 
+def test_b_is_fail_closed_until_identity_scoped_continuation_and_reuse_exist(
+    master: pd.DataFrame, aliases: pd.DataFrame, receipt: dict
+) -> None:
+    """A bare GOLD->B pair would merge Barrick with the later Gold.com reuse.
+
+    NYSE B also had a different prior issuer (Barnes Group), so minting an
+    open-bounded B alias is independently false.  DOS coverage may be incomplete and
+    conspicuous; it may not manufacture a continuous identity to make coverage green.
+    """
+    assert "SEC:US-XNYS-B" not in set(master["security_id"])
+    assert aliases.loc[aliases["vendor_symbol"] == "B"].empty
+    assert "B" in receipt["coverage"]["unresolved_names"]
+    exceptions = {row["key"]: row for row in receipt["identity_exceptions"]}
+    assert set(exceptions) == {"B", "GOLD"}
+    assert exceptions["B"]["status"] == "deferred_no_mint"
+    assert "Barnes Group" in exceptions["B"]["reason"]
+    assert "GOLD->B" in exceptions["B"]["reason"]
+    assert "Gold.com" in exceptions["B"]["reason"]
+    assert "fail-closed" in exceptions["B"]["reason"]
+    assert exceptions["GOLD"]["status"] == "disclosed_existing_alias"
+    assert "not issuer-safe" in exceptions["GOLD"]["reason"]
+    assert "must not be treated as Barrick/miner history" in exceptions["GOLD"]["reason"]
+
+
+def test_resolver_refuses_to_mint_b_even_when_the_current_directory_resolves_it() -> None:
+    universe = {"B": {"first_seen": date(2023, 5, 9)}}
+    [result] = BUILD.resolve_universe(universe, {}, {"B": "N"}, "2026-08-14")
+    assert result.key == "B"
+    assert result.listing_key is None
+    assert result.reason == BUILD.DEFERRED_IDENTITY_KEYS["B"]["reason"]
+
+
 # ── THE MASTER ────────────────────────────────────────────────────────────────
 def test_the_master_mints_on_the_inception_code_not_on_todays_symbol(
     master: pd.DataFrame,

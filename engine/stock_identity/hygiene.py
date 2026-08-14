@@ -20,15 +20,15 @@ A rename and a reuse look identical in a bare price series and are opposite fact
 The rename keeps one instrument's identity; the reuse ends one and starts another.
 This module never resolves one with the other's mechanism.
 
-W1 finding, recorded rather than silently handled: ``data/baskets/ohlcv/ABX.parquet``
-(2020-09-14 onward) sits alongside ``GOLD.parquet`` (2014-03-17 onward). ABX was
-Barrick's retired symbol, renamed to GOLD in 2018; the ABX file is therefore a
-DIFFERENT instrument on the reused symbol. Neither appears in
-``reused_ticker_acks``/``ticker_key_migrations``/``ticker_fixups``, so the reuse is
-**unacknowledged in config** — flagged here, and ABX is excluded from every
-computation this program performs. GOLD.parquet is Barrick's continuous history
-under its current symbol (the pre-2018 rows are the ABX era restated), which is
-instrument-level continuity via rename and is legitimate to read.
+Historical/current split: sealed W1 receipts preserve the original finding and its
+then-current ``unacknowledged`` wording. PR #5613 subsequently acknowledged and
+ratified both recycled symbols. ``data/baskets/ohlcv/ABX.parquet`` is Abacus Global
+Management's 2020-09-14-> tape and contains zero Barrick rows; ABX stays blocked only
+to reproduce the sealed W1 compute population. ``GOLD.parquet`` is readable, continuous
+Gold.com/A-Mark dealer history from 2014-03-17, but it is never Barrick/miner evidence.
+Barrick Mining has traded as NYSE B since 2025-05-09, and PR #5632 seeded its curated
+``data/baskets/ohlcv/B.parquet`` tape. Frozen W1 artifacts are not rewritten by these
+current-code corrections.
 """
 from __future__ import annotations
 
@@ -47,17 +47,19 @@ log = logging.getLogger(__name__)
 #: (censored-never-dropped, registration §1) but is never *consumed*.
 COMPUTE_BLOCKLIST: dict[str, str] = {
     "ABX": (
-        "unacknowledged reused symbol: Barrick retired ABX in the 2018 rename to GOLD; "
-        "the file's 2020-09 onward tape is a different instrument, and the reuse is "
-        "absent from reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups"
+        "verified recycled symbol; data/baskets/ohlcv/ABX.parquet holds Abacus Global "
+        "Management's 2020-09-14-> tape and zero Barrick rows. The reuse is acknowledged "
+        "in config.yml quality.reused_ticker_acks and ratified in "
+        "config/theme_graph_identity_breaks.yml; ABX remains excluded solely to preserve "
+        "the sealed W1 compute population. Any future admission requires a registered "
+        "amendment."
     ),
 }
 
 
 #: Informational annotations — facts a reader of a per-name artifact needs, that are
 #: NOT blocking flags. A note never excludes a name; it explains one. The distinction
-#: matters: GOLD is perfectly readable, but a reader who sees ABX.parquet sitting next
-#: to it deserves to be told which file is Barrick and which is a stranger.
+#: matters: GOLD is readable as Gold.com, but no GOLD tape is Barrick/miner evidence.
 HYGIENE_NOTES: dict[str, str] = {
     "GOLD": (
         "REUSED SYMBOL, wrong-issuer tape (verified against the stores 2026-08-14): "
@@ -68,9 +70,10 @@ HYGIENE_NOTES: dict[str, str] = {
         "Barrick (data/yahoo/GOLD.parquet and data/baskets/ohlcv/GOLD.parquet both "
         "checked; an earlier revision of this note asserted continuous Barrick history "
         "from the symbol lineage without checking the tape). Barrick's continuous entity "
-        "history lives under 'B' (data/yahoo/B.parquet, 1985->). Ratified break rows: "
+        "history lives under 'B' (data/yahoo/B.parquet, 1985->; curated "
+        "data/baskets/ohlcv/B.parquet, 2014->, seeded in PR #5632). Ratified break rows: "
         "config/theme_graph_identity_breaks.yml; acks: config.yml reused_ticker_acks "
-        "(PR #5613)."
+        "(PR #5613); roster/store repair: PR #5632."
     ),
 }
 
@@ -167,8 +170,8 @@ def check_symbol(
             f"reason={row.get('reason')}, last_session={row.get('last_session')}"
         )
     if symbol in COMPUTE_BLOCKLIST:
-        flags.append("reused_ticker_unacked")
-        notes["reused_ticker_unacked"] = COMPUTE_BLOCKLIST[symbol]
+        flags.append("compute_blocklisted")
+        notes["compute_blocklisted"] = COMPUTE_BLOCKLIST[symbol]
     if symbol in HYGIENE_NOTES:
         flags.append("symbol_history_note")
         notes["symbol_history_note"] = HYGIENE_NOTES[symbol]

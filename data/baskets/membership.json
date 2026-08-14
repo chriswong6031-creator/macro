@@ -4179,7 +4179,7 @@
           "added": "2023-05-09",
           "curated_added": "2026-08-14",
           "removed": null,
-          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets; NYSE 'B' since the 2025-05-09 Barrick Mining rename (EDGAR CIK 756894; previously NYSE 'GOLD' 2019-01-02->2025-05-08 after the Randgold merger, NYSE 'ABX' before that). Replaces the wrong-issuer 'GOLD' row (identity repair 2026-08-14): `added` keeps that row's back-projected 2023-05-09 mask so the equal-weight level regains a real Barrick leg over the whole window with no gap and no double-counted slot. data/yahoo/B.parquet already carries Barrick's continuous entity history (1985->) on basket_index's fallback rung; the deep data/baskets/ohlcv store lands via the nightly membership fetch. Receipts: PR #5613."
+          "rationale": "Barrick Mining — global senior producer with large-scale tier-one gold assets; NYSE 'B' since the 2025-05-09 Barrick Mining rename (EDGAR CIK 756894; previously NYSE 'GOLD' 2019-01-02->2025-05-08 after the Randgold merger, NYSE 'ABX' before that). Replaces the wrong-issuer 'GOLD' row (identity repair 2026-08-14): `added` keeps that row's back-projected 2023-05-09 mask so the equal-weight level regains a real Barrick leg over the whole window with no gap and no double-counted slot. Curated data/baskets/ohlcv/B.parquet carries 3,172 OHLCV rows from 2014-01-02 through 2026-08-13; data/yahoo/B.parquet retains Barrick's longer close-history fallback (1985->). Identity evidence: PR #5613; roster/store repair: PR #5632."
         },
         {
           "ticker": "KGC",
@@ -4256,7 +4256,7 @@
         {
           "date": "2026-08-14",
           "action": "remove",
-          "note": "GOLD removed / B added — wrong-issuer repair, one curated act. The 2026-07-30 curation keyed the Barrick slot to NYSE 'GOLD', but Barrick left that symbol 2025-05-08 (Barrick Mining, NYSE 'B' since 2025-05-09; EDGAR CIK 756894) and Gold.com, Inc. — fka A-Mark Precious Metals, a bullion dealer — has held 'GOLD' since 2025-12-02 (EDGAR CIK 1591588; FIGI BBG005ZVDK48), so the slot read the dealer's tape in a producers basket from curation on, including the fired IGNITION rows of 2026-08-05 and 2026-08-07 (disclosed in data/basket_turn/ledger_meta.json curation_notes; fired forward-ledger rows are never rewritten). GOLD's `removed` is stamped at its store tape's first bar (2014-03-17) so the old row masks to zero bars in every read mode, and B carries the same back-projected `added` (2023-05-09), so the EW level history swaps wholesale to Barrick's continuous tape (data/yahoo/B.parquet, 1985->; deep store via the next nightly membership fetch) with no double-counted slot and no silent Gold.com era. Identity receipts: PR #5613 and config.yml quality.reused_ticker_acks; graph break rows ratified in config/theme_graph_identity_breaks.yml."
+          "note": "GOLD removed / B added — wrong-issuer repair, one curated act. The 2026-07-30 curation keyed the Barrick slot to NYSE 'GOLD', but Barrick left that symbol 2025-05-08 (Barrick Mining, NYSE 'B' since 2025-05-09; EDGAR CIK 756894) and Gold.com, Inc. — fka A-Mark Precious Metals, a bullion dealer — has held 'GOLD' since 2025-12-02 (EDGAR CIK 1591588; FIGI BBG005ZVDK48), so the slot read the dealer's tape in a producers basket from curation on, including the fired IGNITION rows of 2026-08-05 and 2026-08-07 (disclosed in data/basket_turn/ledger_meta.json curation_notes; fired forward-ledger rows are never rewritten). GOLD's `removed` is stamped at its store tape's first bar (2014-03-17) so the old row masks to zero bars in every read mode, and B carries the same back-projected `added` (2023-05-09), so the EW level history swaps wholesale to Barrick's curated data/baskets/ohlcv/B.parquet (3,172 rows, 2014-01-02->2026-08-13) with no double-counted slot and no silent Gold.com era. Identity evidence and reuse acknowledgement: PR #5613; roster/store repair: PR #5632; graph break rows ratified in config/theme_graph_identity_breaks.yml."
         }
       ]
     },
@@ -4279,7 +4279,7 @@
       "omitted": [
         "WPM, SLVM-type royalty/streaming vehicles (royalty/streaming economics rather than mine operators — the same exclusion gold_miners applies to FNV/WPM/RGLD)",
         "SLV, PSLV and other physical-metal trusts (bullion vehicles, not operating leverage)",
-        "NEM, AEM, GOLD, KGC, AU, GFI, HMY, AGI, IAG, EQX, EGO, BTG (gold-led producers — held in gold_miners so the two sleeves stay disjoint)",
+        "NEM, AEM, B, KGC, AU, GFI, HMY, AGI, IAG, EQX, EGO, BTG (gold-led producers — held in gold_miners so the two sleeves stay disjoint)",
         "Junior explorers and pre-production developers (financing and single-asset risk dominate metal-cycle timing)"
       ],
       "members": [
