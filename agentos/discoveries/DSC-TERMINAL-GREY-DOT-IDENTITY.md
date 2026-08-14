@@ -15,7 +15,7 @@ falsifier: >
   in that symbol's computed early_dots list (Track A §2.6 fired-date tables), or a second
   grey/muted anticipation marker being found in the Terminal chart layer that the census
   missed. Runnable check: the fired-date tables at
-  research/live_entry_radar/TRACK_A_GREY_DOT_FORENSICS.md:243-247, recomputable via
+  research/live_entry_radar/TRACK_A_GREY_DOT_FORENSICS.md:204-208, recomputable via
   `git show origin/master:signal_layer/confluence_v2.py` (staged with confluence.py to a
   temp dir; run early_dots(compute_signals(close), close) over data/stocks/<SYM>.parquet);
   glyph census receipt terminal/components/ChartPanel.tsx@origin/master:3845-3855.

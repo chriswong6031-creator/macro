@@ -57,12 +57,16 @@ fixtures (`tests/test_append_only_assertions.py`). Legal = MONOTONICITY (`>= flo
 equality/frozen bounds (`== 28`) on a growing store. Radar implication: any future `data/entry_radar/*.jsonl`
 assertion must be monotonic, never exact-count.
 
-**Own-ruler law** (P0b, commit `d4ad4dfcb6c`). `in_scope_horizons(horizon_d)` (`:1213-1224`) always includes the
-claim's own `horizon_d` when at/below the ladder ceiling (`GRADE_HORIZONS=(5,21,63)`, `:113`) — on-rung or off
-(`in_scope_horizons(30)==[5,21,30]`); above ceiling it's never added (`126 -> [5,21,63]` unchanged). Before this
-fix 12 family/horizon pairs (~0.76% of the live corpus) could NEVER grade at their own ruler — a permanent defect,
-not an accrual fact. Radar's §10 H=10 sits below the ceiling, so `horizon_d=10` grades at `[5,10]` automatically —
-a free own-ruler verdict.
+**Own-ruler law** (P0b, commit `d4ad4dfcb6c`). **[CORRECTED by Track F review, verified against code
+2026-08-13 — this section's original claim was wrong.]** `in_scope_horizons(horizon_d)`
+(`engine/qledger.py:1213-1220`) returns every `GRADE_HORIZON` (5/21/63) **at or below** `horizon_d`, and falls
+back to the claim's own horizon **only when that list is empty** (i.e. `horizon_d < 5`). Measured:
+`in_scope_horizons(10) == [5]`, `in_scope_horizons(30) == [5, 21]` — the own horizon is NOT added off-rung
+(`engine/qledger.py:1042-1051` says so explicitly; `tests/test_qledger_horizon_clock.py` pins `(30, False)`,
+`(7, False)` for `check_by_is_a_graded_exit`). P0b's fix was for pairs that could never grade at ANY rung.
+Consequence for Radar: an off-rung `horizon_d=10` claim grades at 5 sessions only — so the contract (§11)
+registers at on-rung `horizon_d=21` (grades at [5, 21]) and computes its H=10 primary read in the PR-5 ruler,
+never presenting H=10 as a qledger graded verdict.
 
 **Mixed-direction family rule** (V1/P1, PR #5519, `qledger_validity.py`). `grades.jsonl` `excess` is RAW
 subject-minus-control return, not signed by direction (`hit == sign(excess)==direction` carries direction instead).

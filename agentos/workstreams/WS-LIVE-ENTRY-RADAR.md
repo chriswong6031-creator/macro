@@ -18,6 +18,7 @@ ambiguity: open
 owns_paths:
   - engine/entry_radar/
   - scripts/entry_radar_
+  - research/LIVE_ENTRY_RADAR_
   - templates/entry_radar.html.j2
   - site/entry_radar.html
   - data/entry_radar/
