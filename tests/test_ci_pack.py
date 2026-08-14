@@ -1849,26 +1849,25 @@ def test_workflow_plans_scoped_events_and_packs_only_consume_the_plan() -> None:
     assert "$PLAN_BASE_SHA_ARG" in str(step["run"])
 
 
-def test_pack_command_folds_to_exactly_one_shell_command() -> None:
-    """A newline in the folded scalar splits one command into two, silently.
+def test_pack_commands_preserve_exit_status_while_recording_terminal_evidence() -> None:
+    """Both authority and fallback executions must reach --execute and fail red.
 
-    Putting the scope expression inline across continuation lines did exactly
-    that: YAML preserves newlines for MORE-indented lines inside `>-`, so
-    `--execute` landed on its own line and the pack ran without it. Same family
-    as the `#`-in-a-folded-scalar trap, and invisible in review.
+    Pack stdout is now a machine-evidence input, so each command is a readable
+    shell block piped through tee. ``pipefail`` is load-bearing: without it a red
+    logical job becomes tee's zero exit and CI reports success.
     """
     pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
-    for step in pack["steps"]:
-        if not isinstance(step, dict) or "run" not in step:
-            continue
-        if not str(step["run"]).lstrip().startswith('"$RUNNER_TEMP'):
-            continue
+    names = {
+        "validate and run legacy CI pack",
+        "fail-safe full suite when no authoritative plan was produced",
+    }
+    steps = [step for step in pack["steps"] if step.get("name") in names]
+    assert {step["name"] for step in steps} == names
+    for step in steps:
         command = str(step["run"])
-        assert "\n" not in command, (
-            "the pack command must fold to ONE line; a newline here silently "
-            f"drops every argument after it: {command!r}"
-        )
-        assert command.rstrip().endswith("--execute")
+        assert "set -euo pipefail" in command
+        assert "--execute 2>&1 | tee" in command
+        assert '"$RUNNER_TEMP/ci-pack.log"' in command
 
 
 def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
@@ -1927,13 +1926,15 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "fail-fast: false" in pack_src
     assert "fail-fast: ${{ github.event_name == 'pull_request' }}" not in pack_src
     assert 'fail-fast: "${{ github.event_name == \'pull_request\' }}"' not in pack_src
-    # PR fanout is bounded independently of main's deliberate full-suite proof.
-    # The previous cap protected a four-slot self-hosted render pool; packs are now
-    # hosted, and this event-conditioned cap is fleet admission under a measured
-    # 53-run/299-job jam rather than runner-pool routing.
+    # PR execution is bounded independently of main's deliberate full-suite proof.
+    # Two hosted packs per PR cap the measured 53-run jam at 106 executing packs;
+    # native merge groups can use four because repository queue build concurrency
+    # serializes groups, while main retains twelve.
     max_parallel = str(pack["strategy"]["max-parallel"])
     assert "github.event_name == 'workflow_dispatch'" in max_parallel
-    assert "&& 12 || 4" in max_parallel
+    assert "github.event_name == 'merge_group'" in max_parallel
+    assert "&& 12 ||" in max_parallel
+    assert "&& 4 || 2" in max_parallel
     # The closed-event fence must LEAD the condition. Wave B appends
     # `&& needs.ci-plan.outputs.has_work == 'true'`; anything that replaces the
     # fence instead of extending it re-allocates a runner for every merged-close.

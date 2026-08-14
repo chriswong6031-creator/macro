@@ -4287,8 +4287,10 @@ jobs:
     # and never merge.
     if: github.event.action != 'closed' && needs.ci-plan.outputs.has_work == 'true'
     # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable source
-    # of truth. Scoped PRs use one to four weight-balanced packs; the deliberate
-    # main workflow_dispatch audit retains twelve. Per-pack names are diagnostics,
+    # of truth. Scoped PRs use one to four weight-balanced packs, but admit only
+    # two concurrently; the deliberate main workflow_dispatch audit retains twelve.
+    # A native merge-group admits four because the queue itself is configured for
+    # one build at a time. Per-pack names are diagnostics,
     # not a required-check set: only `ci-gate` is guaranteed to conclude for every
     # non-closed event and is suitable for branch protection or merge queue rules.
     name: ci-pack-${{ matrix.pack }}
@@ -4313,12 +4315,15 @@ jobs:
       # to the strings "true"/"false"; some Actions parsers treat any non-empty
       # string as true.
       fail-fast: false
-      # Fleet admission, not self-hosted routing. This cap bounds EACH hosted PR
-      # after the 2026-08-14 jam
-      # reached 53 simultaneous PR-CI runs and 299 ci jobs queued/running. Forty PRs
-      # can now request at most 160 pack workers, not 480. A deliberate main baseline
-      # keeps all twelve lanes so recovery evidence is not needlessly serialized.
-      max-parallel: ${{ github.event_name == 'workflow_dispatch' && 12 || 4 }}
+      # Fleet admission, not self-hosted routing. The 2026-08-14 jam reached 53
+      # simultaneous PR-CI runs, including 177 executing pack jobs and 299 CI jobs
+      # queued/running. At two admitted pack runners per PR, that same burst can
+      # execute at most 106 packs, leaving room for planners, fences and unrelated
+      # workflows. Matrix assignment still has up to four shards, so later shards
+      # start as the first two conclude. A native merge group may use all four:
+      # repository merge-queue build concurrency serializes groups globally. Main's
+      # deliberate baseline keeps all twelve lanes.
+      max-parallel: ${{ github.event_name == 'workflow_dispatch' && 12 || github.event_name == 'merge_group' && 4 || 2 }}
       #
       # The planner emits {"include": [{"pack": N}, ...]} for the non-empty indices
       # of its authoritative assignment. Dynamic active PR plans contain at most

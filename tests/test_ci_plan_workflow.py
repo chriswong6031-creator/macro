@@ -181,6 +181,14 @@ def test_ci_plan_caps_dynamic_pr_workers_but_keeps_twelve_as_the_full_suite_ceil
     assert "--scope-index .github/ci/scope-index.json" in run
 
 
+def test_ci_pack_admission_is_two_per_pr_four_per_serial_merge_group() -> None:
+    admission = str(_job("ci-pack")["strategy"]["max-parallel"])
+    assert "github.event_name == 'workflow_dispatch'" in admission
+    assert "github.event_name == 'merge_group'" in admission
+    assert "&& 12 ||" in admission
+    assert "&& 4 || 2" in admission
+
+
 def test_ci_plan_emits_the_plan_file_and_the_github_outputs() -> None:
     """Planning must be plan-only and publish both independent trust channels.
 
