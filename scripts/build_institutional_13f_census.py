@@ -57,7 +57,27 @@ from engine.institutional_census.storage import build_institutional_13f_store  #
 from engine.fund_intelligence import load_classifications  # noqa: E402
 from lib import config  # noqa: E402
 
-SEC_BULK_ROOT = "https://www.sec.gov/files/structureddata/data/form-13f-data-sets"
+# SEC bulk publication homes, newest first.
+#
+# The SEC moved NEW bulk data-set publications out of DERA's
+# ``/files/structureddata/data/...`` tree and into the Office of Data Standards
+# Innovation's ``/files/datastandardsinnovation/data/...`` tree.  First observed
+# on the insider-transactions sets: 2026q2 (published 2026-07-09) serves ONLY
+# from the new home, every earlier quarter serves ONLY from the old one, and
+# NEITHER home redirects to the other.  So a 404 at one home is a LOCATION fact,
+# never a publication fact — which is exactly how the single-URL read froze the
+# sec_insider panel at 2026q1 for five weeks, reading "moved" as "not published".
+#
+# Verified 2026-08-14 for 13F: the listing page's newest set
+# (``01mar2026-31may2026_form13f.zip``) 404s at the new home and serves 200/206
+# from the legacy one, and the listing still carries zero datastandardsinnovation
+# hrefs — so the next set (~Sep 2026, exactly when the days-1-5 reconcile cron
+# retries) may land at either home.  Every filing window is therefore probed at
+# EVERY home before it may be called absent; see ``_acquire_bulk_window``.
+SEC_BULK_ROOT = "https://www.sec.gov/files/datastandardsinnovation/data/form-13f-data-sets"
+SEC_BULK_ROOT_FALLBACKS = (
+    "https://www.sec.gov/files/structureddata/data/form-13f-data-sets",
+)
 MAX_BULK_ZIP_BYTES = 256 * 1024 * 1024
 PRODUCER_VERSION = "institutional-13f-census/1.1.0"
 COMPILATION_INPUTS_SCHEMA = "institutional_13f.compilation_inputs/v1"
@@ -133,10 +153,19 @@ def bulk_window(period: date) -> tuple[date, date]:
     return start, end
 
 
-def bulk_url(period: date) -> str:
+def _bulk_filename(period: date) -> str:
     start, end = bulk_window(period)
-    filename = f"{start:%d%b%Y}-{end:%d%b%Y}_form13f.zip".lower()
-    return f"{SEC_BULK_ROOT}/{filename}"
+    return f"{start:%d%b%Y}-{end:%d%b%Y}_form13f.zip".lower()
+
+
+def bulk_url(period: date) -> str:
+    return f"{SEC_BULK_ROOT}/{_bulk_filename(period)}"
+
+
+def bulk_url_candidates(period: date) -> list[str]:
+    """Candidate bulk URLs for one filing window, current publication home first."""
+    filename = _bulk_filename(period)
+    return [f"{root}/{filename}" for root in (SEC_BULK_ROOT, *SEC_BULK_ROOT_FALLBACKS)]
 
 
 def _user_agent() -> str:
@@ -231,6 +260,52 @@ def _copy_or_download(
         acquisition_mode=acquisition_mode,
         final_url=final_url,
         operator_source=operator_source,
+    )
+
+
+def _acquire_bulk_window(
+    period: date,
+    destination: Path,
+    *,
+    fetch: Any = requests.get,
+) -> tuple[AcquiredBulkSource, str]:
+    """Download one filing window, probing every SEC publication home in turn.
+
+    ONLY a 404 advances the probe.  The SEC serves each window from exactly one
+    home and neither home redirects to the other (see ``SEC_BULK_ROOT``), so a
+    404 says "not at this address" and says nothing at all about whether the
+    window is published.  Every other answer — a 403 throttle, the WAF HTML
+    interstitial, a redirect that escapes sec.gov, a connection failure — raises
+    immediately and keeps its existing fail-loud behaviour: those answers are
+    equally silent about the OTHER home, so advancing on them would let one
+    blocked request masquerade as a whole-of-SEC absence.  A throttle's recovery
+    path is the scheduled days-1-5 reconcile retry, not the next candidate URL.
+
+    Returns the acquired source together with the URL that actually served the
+    bytes, so the descriptor's ``official_reference_url`` names a fetchable
+    location rather than a home that 404s.
+    """
+    missing: list[str] = []
+    for candidate in bulk_url_candidates(period):
+        try:
+            acquired = _copy_or_download(candidate, destination, fetch=fetch)
+        except requests.HTTPError as exc:
+            response = exc.response
+            if response is not None and response.status_code == 404:
+                missing.append(candidate)
+                continue
+            raise
+        return acquired, candidate
+    print(
+        f"::warning title=sec-13f-bulk-window-missing::13F bulk window for "
+        f"period {period.isoformat()} is absent at every SEC publication home "
+        f"({', '.join(missing)}) — not published yet, or the publication path "
+        f"moved again (the 2026-07 structureddata -> datastandardsinnovation "
+        f"migration class)",
+        flush=True,
+    )
+    raise RuntimeError(
+        f"SEC 13F bulk window for {period.isoformat()} absent at every home: {missing}"
     )
 
 
@@ -813,24 +888,34 @@ def build(args: argparse.Namespace) -> dict:
         key: value for key, value in classification_payload.items() if key != "_meta"
     }
 
-    current_source = args.current_source or bulk_url(current_period)
-    baseline_source = args.baseline_source or bulk_url(baseline_period)
-
+    # An operator-supplied source is taken verbatim and referenced against the
+    # current publication home; a probed download reports the home that ACTUALLY
+    # served the bytes, so official_reference_url is never a URL that 404s.
     cache_root = Path(args.cache_dir).expanduser().resolve()
-    current_acquired = _copy_or_download(
-        current_source, cache_root / f"{current_period.isoformat()}.zip"
-    )
-    baseline_acquired = _copy_or_download(
-        baseline_source, cache_root / f"{baseline_period.isoformat()}.zip"
-    )
+    if args.current_source:
+        current_acquired = _copy_or_download(
+            args.current_source, cache_root / f"{current_period.isoformat()}.zip"
+        )
+        current_official_reference = bulk_url(current_period)
+    else:
+        current_acquired, current_official_reference = _acquire_bulk_window(
+            current_period, cache_root / f"{current_period.isoformat()}.zip"
+        )
+    if args.baseline_source:
+        baseline_acquired = _copy_or_download(
+            args.baseline_source, cache_root / f"{baseline_period.isoformat()}.zip"
+        )
+        baseline_official_reference = bulk_url(baseline_period)
+    else:
+        baseline_acquired, baseline_official_reference = _acquire_bulk_window(
+            baseline_period, cache_root / f"{baseline_period.isoformat()}.zip"
+        )
     current_path = current_acquired.path
     baseline_path = baseline_acquired.path
     current_sha = current_acquired.sha256
     baseline_sha = baseline_acquired.sha256
     current_bytes = current_acquired.byte_length
     baseline_bytes = baseline_acquired.byte_length
-    current_official_reference = bulk_url(current_period)
-    baseline_official_reference = bulk_url(baseline_period)
     current_bulk_cutoff = _bulk_source_cutoff(current_period)
     baseline_bulk_cutoff = _bulk_source_cutoff(baseline_period)
     current_expected_sha = _validate_expected_sha256(

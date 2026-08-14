@@ -5,6 +5,7 @@ from types import SimpleNamespace
 
 import pandas as pd
 import pytest
+import requests
 
 from engine.institutional_census.aggregate import (
     CensusAccumulator,
@@ -12,6 +13,9 @@ from engine.institutional_census.aggregate import (
     write_compilation,
 )
 from scripts.build_institutional_13f_census import (
+    SEC_BULK_ROOT,
+    SEC_BULK_ROOT_FALLBACKS,
+    _acquire_bulk_window,
     _bulk_source_cutoff,
     _catalog_has_complete_discovery_coverage,
     _catalog_overlay,
@@ -22,6 +26,7 @@ from scripts.build_institutional_13f_census import (
     _source_descriptor,
     _validate_expected_sha256,
     bulk_url,
+    bulk_url_candidates,
     bulk_window,
     latest_completed_period,
 )
@@ -127,6 +132,55 @@ def _generation(*, duplicate_shares=100):
             _catalog_holding(restatement, 150),
         ),
     )
+
+
+def _zip_response(payload: bytes, url: str):
+    """Streaming response serving ZIP bytes from the URL that was requested."""
+
+    class Response:
+        headers = {"Content-Type": "application/zip"}
+
+        def __init__(self):
+            # The REQUESTED url, so _is_sec_https(final_url) holds and the
+            # acquisition records as "sec_https" rather than an operator copy.
+            self.url = url
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def raise_for_status(self):
+            return None
+
+        def iter_content(self, _size):
+            yield payload
+
+    return Response()
+
+
+def _status_response(status: int):
+    """Response whose raise_for_status raises requests.HTTPError with that status."""
+
+    class Response:
+        headers = {"Content-Type": "application/zip"}
+        status_code = status
+        url = ""
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def raise_for_status(self):
+            raise requests.HTTPError(f"{status} error", response=self)
+
+        def iter_content(self, _size):  # pragma: no cover - never reached
+            yield b""
+
+    return Response()
 
 
 def test_latest_completed_period_stays_on_q1_during_q2_filing_window():
@@ -373,3 +427,82 @@ def test_sec_redirect_must_end_on_https_sec_domain(tmp_path):
             tmp_path / "cached.zip",
             fetch=lambda *_args, **_kwargs: Response(),
         )
+
+
+def test_bulk_url_candidates_probe_every_publication_home_current_first():
+    # The SEC publishes NEW bulk sets under datastandardsinnovation and leaves
+    # older ones under structureddata, with no redirect in either direction.
+    period = date(2026, 3, 31)
+    urls = bulk_url_candidates(period)
+    assert urls[0] == bulk_url(period)
+    assert all(url.endswith("/01mar2026-31may2026_form13f.zip") for url in urls)
+    assert urls[0].startswith("https://www.sec.gov/files/datastandardsinnovation/")
+    assert urls[1].startswith("https://www.sec.gov/files/structureddata/")
+    assert len(urls) == 2
+    assert SEC_BULK_ROOT.startswith("https://www.sec.gov/files/datastandardsinnovation/")
+    assert SEC_BULK_ROOT_FALLBACKS == (
+        "https://www.sec.gov/files/structureddata/data/form-13f-data-sets",
+    )
+
+
+def test_acquire_bulk_window_falls_back_to_legacy_home_on_404(tmp_path):
+    # Every 13F window published before the move serves only from the legacy
+    # home; a 404 at the current home must not retire the window.
+    period = date(2026, 3, 31)
+    primary, legacy = bulk_url_candidates(period)
+    payload = b"PK\x03\x04legacy-home-bytes"
+
+    def fetch(url, **_kwargs):
+        if url == primary:
+            return _status_response(404)
+        assert url == legacy
+        return _zip_response(payload, url)
+
+    destination = tmp_path / f"{period.isoformat()}.zip"
+    acquired, reference = _acquire_bulk_window(period, destination, fetch=fetch)
+
+    # The reference URL names the home that actually served the bytes — a
+    # reference that 404s is a debugging booby trap.
+    assert reference == legacy
+    assert acquired.final_url == legacy
+    assert acquired.sha256 == hashlib.sha256(payload).hexdigest()
+    assert acquired.acquisition_mode == "sec_https"
+    assert destination.is_file()
+    assert destination.read_bytes() == payload
+
+
+def test_acquire_bulk_window_missing_everywhere_warns_and_raises(tmp_path, capsys):
+    period = date(2026, 3, 31)
+    with pytest.raises(RuntimeError, match="absent at every home"):
+        _acquire_bulk_window(
+            period,
+            tmp_path / f"{period.isoformat()}.zip",
+            fetch=lambda *_args, **_kwargs: _status_response(404),
+        )
+    # Asserted through capsys, never caplog: a logger prefixes the line, and
+    # GitHub only parses a workflow command when "::" is at column 0.  The
+    # line-START property is the whole point of the guard.
+    out = capsys.readouterr().out
+    lines = [line for line in out.splitlines() if "sec-13f-bulk-window-missing" in line]
+    assert len(lines) == 1, out
+    assert lines[0].startswith("::warning ")
+    for candidate in bulk_url_candidates(period):
+        assert candidate in lines[0]
+
+
+def test_acquire_bulk_window_does_not_treat_throttle_as_absence(tmp_path):
+    period = date(2026, 3, 31)
+    calls = []
+
+    def fetch(url, **_kwargs):
+        calls.append(url)
+        return _status_response(403)
+
+    with pytest.raises(requests.HTTPError):
+        _acquire_bulk_window(
+            period, tmp_path / f"{period.isoformat()}.zip", fetch=fetch
+        )
+
+    # A throttle says nothing about the OTHER home, so the probe must not
+    # advance — the scheduled retry is the recovery path, not the next URL.
+    assert calls == [bulk_url_candidates(period)[0]]
