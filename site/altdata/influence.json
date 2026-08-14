@@ -1,7 +1,7 @@
 {
   "schema": "influence.graph.v1",
   "as_of": "2026-06-19",
-  "generated_utc": "2026-08-13T23:11:07.018567+00:00",
+  "generated_utc": "2026-08-14T04:07:18.367838+00:00",
   "note": "Curated multi-actor influence graph: important people and the investable names/themes they are affiliated with (control, holdings, public advocacy, partnerships). Public-record only. provenance = FACT (filing/widely-reported structural fact) | DISCLOSED (self-reported trade/holding) | INFERRED (analytical link). The LLM extractor grows candidate edges; a human promotes them here.",
   "n_actors": 22,
   "n_entities": 19,
@@ -749,13 +749,11 @@
       ],
       "n_actors": 6,
       "alt_corroborated": true,
-      "alt_score": 8,
-      "alt_weighted": 2.85,
+      "alt_score": 6,
+      "alt_weighted": 1.9,
       "alt_channels": [
-        "13f_add",
         "affiliation",
         "analyst_upgrade_cluster",
-        "darkpool_accum",
         "github_momentum",
         "patent_cluster",
         "retail_buzz",
@@ -1289,11 +1287,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 2,
-      "alt_weighted": 0.85,
+      "alt_score": 3,
+      "alt_weighted": 1.0,
       "alt_channels": [
         "affiliation",
-        "analyst_upgrade_cluster"
+        "analyst_upgrade_cluster",
+        "stocktwits_bull"
       ],
       "top_holder": {
         "owner": "VANGUARD GROUP INC",
@@ -1361,13 +1360,12 @@
       ],
       "n_actors": 1,
       "alt_corroborated": true,
-      "alt_score": 4,
-      "alt_weighted": 1.25,
+      "alt_score": 3,
+      "alt_weighted": 1.1,
       "alt_channels": [
         "affiliation",
         "app_demand",
-        "special_situation",
-        "stocktwits_bull"
+        "special_situation"
       ],
       "top_holder": {
         "owner": "VOYA INVESTMENT MANAGEMENT LLC",
