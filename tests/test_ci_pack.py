@@ -3808,7 +3808,7 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     Baselines on the pre-curation manifest (PR #5585 planner, 188 jobs):
     templates/index.html 129 jobs / 6,677 weight-seconds; build_free_content.py
     129 / 6,430; engine/prophet/plan_book.py 123 / 6,416. Absolute job ceilings
-    went stale as the manifest grew from 188 to 194 jobs. Compare the curated
+    went stale as the manifest grew from 188 to 195 jobs. Compare the curated
     and non-exclusive forms of the SAME tree instead: unrelated new jobs then
     cancel out, while restoring the fallback tier still loses the measured
     ~1,550 weight-seconds and at least two requested packs per shape.
