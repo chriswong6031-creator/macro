@@ -23,6 +23,9 @@ import sys
 from pathlib import Path
 
 _ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(_ROOT))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
 
 # Desk-brief schemas that carry a directional conviction badge. The passport contract applies
 # to these; other conviction-bearing artifacts (per-name anticipation cones etc.) are governed
@@ -79,10 +82,24 @@ def main(argv=None) -> int:
     if not site_dir.is_absolute():
         site_dir = _ROOT / site_dir
     if not site_dir.exists():
+        # A sparse session worktree omits site/ from the cone, so "absent" here is
+        # indistinguishable from "nothing rendered yet" and the OK below is a vacuous
+        # pass on the ratchet that keeps n=0 conviction badges off the desk cards.
+        refusal = refuse_if_vacuous(0, trees_for(site_dir), "check-badge-passport-vacuous")
+        if refusal:
+            print(f"REFUSED: {refusal}", file=sys.stderr)
+            return 1
         print(f"OK: site dir {site_dir} absent (nothing rendered yet).")
         return 0
 
     briefs, offenders = scan(site_dir)
+    # Same trap one level down: a husk site/ (0-byte dir left by `git reset --hard`)
+    # exists but scans zero briefs, and the ratchet reports green over nothing.
+    refusal = refuse_if_vacuous(len(briefs), trees_for(site_dir), "check-badge-passport-vacuous")
+    if refusal:
+        print(f"REFUSED: {refusal}", file=sys.stderr)
+        return 1
+
     if "--list" in argv:
         print(f"{len(briefs)} desk brief(s); {len(offenders)} without a valid passport:")
         for f in sorted(offenders):
