@@ -34,13 +34,32 @@ changed:
 
 verified:
   - claim: "Outage root causes: 512KB workflow strand (08-11), rogue codex force-cancels ×6 (08-12), runner disk-full (08-13); GitHub platform not implicated"
-    by: "gh run list/view on 31543112462…31753425298; githubstatus.com incidents API Aug-11→14; job annotation 'No space left on device' on run 31671422158 job 94481620700"
+    command: "gh run view 31671422158 --json jobs (disk-full annotation); gh run list --workflow daily.yml --limit 10; curl -s https://www.githubstatus.com/api/v2/incidents.json"
+    result: "Zero Actions-component incidents Aug-11→14; 'No space left on device' on job 94481620700; 10-dispatch thrash timeline reconstructed"
   - claim: "A cancelled bake still delivered: 25 plans recorded_at=2026-08-12 on main"
-    by: "git show origin/main:site/prophet/index.json | python3 recorded_at census (08-12: 25)"
+    command: "git show origin/main:site/prophet/index.json | python3 -c '<recorded_at Counter census>'"
+    result: "cohorts 08-10:25, 08-11:0, 08-12:25, 08-13:0; asof=2026-08-13 source_asof=2026-08-12"
   - claim: "Serve paths healthy — outage was production, not delivery"
-    by: "curl https://www.mastermind-x.com/api/status (site.commit 13 min old); curl pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/index.json (matches main)"
+    command: "curl -s https://www.mastermind-x.com/api/status; curl -s https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/prophet/index.json"
+    result: "VPS site.commit 13 min old at 02:14Z; R2 matches main (source_asof 08-12, 25× 08-12 plans)"
   - claim: "agentos records schema-clean"
-    by: "python3 scripts/agentos.py validate → 0 errors"
+    command: "python3 scripts/agentos.py validate"
+    result: "0 errors (phantom-owns-path warnings resolve when builder files land)"
+
+unverified:
+  - claim: "prophet_rescue implementation satisfies masterplan §0 gates"
+    what_would_verify: "Builder report + main-loop review: pytest tests/test_prophet_rescue.py, mutation-pin table, registered CI job line re-run — recorded here before the PR opens"
+
+unresolved:
+  - "Operator arbitration of codex session rollout-2026-08-11T04-10-51 (six receipted kills) — outstanding since 2026-08-12"
+  - "No codex-side technical enforcement for production-lane cancels exists"
+  - "healthcheck.py's divergent _sessions_stale calendar math vs lib/nyse_calendar — consolidation chip, separate lane"
+
+next_actions:
+  - "Finalize builder-evidence entries in this handoff + PR body; open PR; arm merge-on-green; scripts/ci_handoff.py"
+  - "After merge: verify first scheduled prophet-rescue wake's run summary"
+  - "Operator: run scripts/install_prophet_rescue_launchd.sh once on the Mac Studio (W1)"
+  - "W2 fire-drill week per WS record"
 
 do_not_redo:
   - "GitHub platform incident check for Aug 11–13 (done: zero Actions incidents — self-inflicted outage)."
@@ -52,15 +71,15 @@ danger_areas:
   - "Do not edit daily.yml/build_prophet.py in this lane — availability work must never add bake risk (first-run-bomb law)."
   - "PR #5487 owns .github/ci/legacy-jobs.yml, config/house_law_checks.yml, and dag-conformance ci.yml hunks — colliding hunks will conflict at the sweeper."
 
-next_session_should: >
-  If this PR is merged: verify the first scheduled prophet-rescue wake's run summary,
-  then advance WS W1 (operator installs launchd; arbitration) and W2 (fire drills).
-  If tonight's bake (31753425298) concluded without a recorded_at=2026-08-13 cohort,
-  read the intake receipt before any dispatch — NO_COHORT wedge signatures are
-  code bugs, not staleness, and a re-dispatch cannot fix them.
+decisions: ["DEC:PROPHET-RESCUE-SEPARATE-FROM-LIVENESS"]
+discoveries: ["DSC:PROPHET-ASOF-IS-WALL-CLOCK", "DSC:CANCELLED-DAILY-RUN-CAN-STILL-DELIVER-PROPHET"]
 ---
 
 ## Notes
+
+If tonight's bake (31753425298) concluded without a recorded_at=2026-08-13 cohort,
+read the intake receipt before any dispatch — NO_COHORT wedge signatures are code
+bugs, not staleness, and a re-dispatch cannot fix them.
 
 Session chain context: this session also monitored the in-flight 08-13 bake
 (collect→engine healthy at handoff time) and left the Aug-11 gap explicitly disclosed
