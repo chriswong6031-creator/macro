@@ -321,15 +321,77 @@ today): main still runs the OLD `ci.yml` — this repair is not merged — so th
 is hosted-pool load variance, NOT an effect of this PR. Recorded explicitly so
 nobody later reads it as a win.
 
-## §6 Live probes (post-merge)
+## §6 Live probes
 
-- Probe A — narrow PR (one research `.md`): expect ci-plan ~1–2 min, 3 jobs /
-  1 pack, warm-cache plan, unattended sweeper merge; record green→merge latency.
-- Probe B — deliberately broken structural fixture (new unwired pytest file):
-  expect `ci-plan` red at the unrun-audit preflight in ~2–3 min with
-  `CI_CLASS=structural-preflight` and ZERO packs launched.
+**Probe B — EXECUTED LIVE, 2026-08-14 (run 31788471610).** One commit adding
+`tests/test_ci_probe_b_unwired_suite.py` — a collecting pytest suite named by
+no `run:` step, the exact defect that took **67 minutes** to surface on
+incident run 31763116872 — pushed onto PR #5585's branch (head 185a911f85ab):
+
+| event | time (UTC) |
+|---|---|
+| push | ~09:31:3x |
+| ci-plan starts | 09:32:05 |
+| plan computed + document published | 09:37:07 (checkout-dominated, as measured) |
+| `preflight: no test suite may be named by zero run: steps` **FAILS** | **09:37:27** |
+| ci-gate concludes red | 09:37:38 |
+| packs launched | **ZERO** (`ci-pack-${{ matrix.pack }}` skipped, matrix never expanded) |
+
+**Push→named-defect verdict: ~6 minutes**, against the 67-minute incident
+baseline — and the annotation names the file and the fix on the run page:
+"`tests/test_ci_probe_b_unwired_suite.py` is a collecting pytest suite named
+by no run: step in any workflow — wire it into the job that owns its
+subject…". Classification: the gate script's `plan-red + published-sha ⇒
+CI_CLASS=structural-preflight` branch is pinned by
+`tests/test_ci_plan_workflow.py::test_ci_gate_classifies_every_terminal_shape_exactly_once`,
+which executes the LIVE gate script under bash. The probe commit is reverted
+in the next commit; this section is its receipt.
+
+**Probe A — narrow PR (one research `.md`) off MERGED main: pending the
+merge** (§8). Expected: ci-plan ~1–2 min at warm cache, 3 jobs / 1 pack,
+unattended sweeper merge; records live green→merge latency. Runnable any time
+post-merge via the staged script in the session scratchpad or by hand: one
+markdown file, `merge-on-green` label, watch.
+
+## §8 Incident closure verdict — PARTIAL (structural repair live-proven; drain pending main's heal)
+
+**Verdict: PARTIAL, by the mission's own standard** ("if any acceptance
+criterion is not met, verdict is PARTIAL, not PASS"). The traffic-jam LOOP is
+structurally broken and live-measured; the remaining criteria are blocked
+behind one dependency outside this PR's legitimate scope: main itself is red
+on five product areas from producer bakes (§5b), so the sweeper — correctly —
+will not merge anything, including this repair.
+
+Acceptance list, item by item:
+
+| criterion | state | evidence |
+|---|---|---|
+| causal incident model with run IDs + timings | **MET** | §1 (runs 31763116872, 31767934869, 31768886250, sweeps, backlog census) |
+| ci-plan < 60s p95 service time, queue separated | **MET (live)** | 7s service / 1s diff on run 31777873919; 17s queue; checkout (5m32s) named as the residual, non-planner component |
+| broken structural fixture fails in preflight before packs | **MET (live)** | probe B, run 31788471610: see §6 (plus local 10s exit-1 receipt) |
+| narrow PRs stop fanning to ~156/188 | **MET (local, mechanism live)** | md shape 118→3 jobs measured against the live manifest; the live pipeline runs the same selector (its full-suite runs here were global invalidators BY DESIGN); live narrow-PR receipt = probe A, post-merge |
+| worker count scales with selected work | **MET** | dynamic pack count (1 pack for the md shape, 12 full-suite; fixture-pinned) |
+| obsolete commits cancelled without killing current evidence | **MET (live)** | runs 31777710942 / 31777837412 / 31779434682 cancelled on push; merged-close fence untouched |
+| recovery cannot self-DDoS Enterprise concurrency | **MET (design + caps live)** | refresh ≤8/sweep + in-flight proofs ≤8 (#5580, verified in sweep log); fanout collapse multiplies the headroom |
+| armed PRs progress unattended / backlog drains | **PENDING main's heal** | the drain machinery (base-inherited-red refresh → re-prove → merge) is the very path this PR's own merge will traverse; heal chipped (task_07a351fa) and independently in progress (validated-claims allowlist finding, sibling session) |
+| green→merge near-immediate | **PENDING** | measured 1m45s on #5580 pre-incident-repair; post-repair receipt lands with probe A |
+| fast-moving main stops re-proving unrelated PRs | **MET (code live since #5562 + this PR's wake diet)** | stale_for overlap gate + skip-ci/pipeline exclusions; skipped-conclusion wakes no longer schedule |
+| no lost merge wakes | **MET (design, #5562 groups + this PR)** | fences-main → separate group; skipped fenced out; verified marker writes |
+| main stays green after automated merges | **BLOCKED by pre-existing regression** | main was ALREADY red before any merge here (§5b — baseline 31782771758); nothing this session merged |
+| safety invariants preserved | **MET** | no test weakened, no --admin, no red bypassed; every consume-path refusal is loud exit 2 (review-hardened) |
+| native Merge Queue adopted or rejected on fresh evidence | **MET** | §3 + DEC:CI-NATIVE-MERGE-QUEUE-REJECTED |
+| succinct architecture doc | **MET** | docs/CI_MERGE_ARCHITECTURE.md |
+
+**What completes the PARTIAL → PASS path, in order, none of it requiring a
+babysitting session:** (1) the chipped heal greens main's five red jobs;
+(2) a main baseline postdating this PR's reds lets the sweeper's refresh
+re-prove and merge PR #5585 unattended; (3) probe A (one-md-file PR off merged
+main) records the live narrow-PR numbers and green→merge latency. The armed
+label, the sweeper, and the chips carry all three.
 
 ## §7 Experiment artifact cleanup
 
-`mq-eval-base` branch, ruleset 20833101, merged probe PR #5581, branch
-`mq-eval-pr1` (auto-deleted) — remove after the closure report cites them.
+DONE 2026-08-14 ~09:1xZ: ruleset 20833101 deleted, `mq-eval-base` branch
+deleted (`mq-eval-pr1` auto-deleted on the queue merge). PR #5581 remains as
+the merged receipt on the deleted scratch branch's history; the evidence lives
+in §3 and `DEC:CI-NATIVE-MERGE-QUEUE-REJECTED`.
