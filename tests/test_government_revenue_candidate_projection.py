@@ -26,6 +26,7 @@ from tests.government_revenue_candidate_fixture import (
     canonical_candidate_census,
     canonical_fixture_root,
     canonical_frozen_at,
+    canonical_requested_issuer_tickers,
     rewound,
     shifted,
     utc_date,
@@ -701,10 +702,17 @@ def test_current_fixture_projects_honest_source_queue_and_byte_identical_twins(t
     # byte-identical.
     assert result["status"] == "ok"
     assert result["candidate_count"] == CANONICAL_CENSUS
-    assert result["mapping_backlog_count"] == 21
+    # The backlog census is the curated issuer scope, derived rather than typed:
+    # `== 21` moves the day an issuer is added to or retired from coverage, and
+    # re-typing it would only re-arm the same bomb.  Three independent writers --
+    # the projection result, the queue, and the mapping backlog itself -- must
+    # still agree on one number, which is why sharing a reference value here is
+    # not a tautology.  Candidate-row counts take #5524's receipt-derived
+    # CANONICAL_CENSUS; mapping_needed stays derived from entities.json.
+    assert result["mapping_backlog_count"] == len(canonical_requested_issuer_tickers())
     assert queue["counts"]["total"] == CANONICAL_CENSUS
     assert queue["counts"]["exact_linked"] == CANONICAL_CENSUS
-    assert queue["counts"]["mapping_needed"] == 21
+    assert queue["counts"]["mapping_needed"] == len(canonical_requested_issuer_tickers())
     assert queue_path.read_bytes() == public_path.read_bytes()
     assert len(
         (root / "data/government_revenue/candidate_ledger.jsonl")

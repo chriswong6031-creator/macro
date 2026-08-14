@@ -1,21 +1,20 @@
 {
   "schema": "agent_os_state.v1",
   "generator": "scripts/agentos.py status",
-  "generated_at": "2026-08-13T02:12:31Z",
+  "generated_at": "2026-08-14T03:07:03Z",
   "inputs": {
     "workstreams": 6,
-    "decisions": 9,
-    "discoveries": 3,
-    "handoffs": 0,
-    "active_builds": "data/governance/active_builds.json@2026-08-11T01:48:44.205959+00:00",
-    "active_builds_age_hours": 48.4,
-    "worktrees": 249,
+    "decisions": 19,
+    "discoveries": 5,
+    "handoffs": 1,
+    "active_builds": "data/governance/active_builds.json@2026-08-14T03:07:03.090849+00:00",
+    "active_builds_age_hours": 0.0,
+    "worktrees": 1,
     "uncommitted_worktrees": [],
     "degraded": [
       "active_builds.v1 merged window is TRUNCATED — a merged PR may read 'unknown'",
-      "mastermind:config/strategic_state.yml absent — p0 ids unvalidated, P0 ranking neutral (this Mastermind checkout predates config/strategic_state.yml)",
-      "uncommitted-work scan skipped over 249 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work",
-      "active_builds.v1 is 48h old — PR state predates the last nightly sweep"
+      "Mastermind checkout not found — p0 ids unvalidated, P0 ranking neutral",
+      "uncommitted-work scan skipped over 1 worktrees (one `git status` each) — re-run with --scan-uncommitted for stranded work"
     ]
   },
   "workstreams": [
@@ -32,56 +31,62 @@
       "repos": [
         "macro"
       ],
-      "next_action": "Start Phase 1 (adoption). All five conflicts are ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled. Phase 3 gains the agenda-integration wave that retires the UNBLOCKED list.",
-      "created": "2026-08-12",
-      "updated": "2026-08-12",
-      "stale_days": 1,
+      "next_action": "Close W1's remaining gate: >=3 genuine handoffs from sessions other than the scaffolding sessions, accrued from real work as adopted instructions take effect. Then Phase 3 (compile-context), which gains the agenda-integration wave that retires the UNBLOCKED list. All five conflicts remain ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled.",
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
         "awaiting_ci": 0,
-        "done": 0,
+        "done": 2,
         "dropped": 0,
-        "in_progress": 2,
-        "todo": 3
+        "in_progress": 1,
+        "todo": 2
       },
       "wave_detail": [
         {
           "id": "W0",
           "title": "Architecture + Phase 0 scaffolding (schemas, validator, seeded records)",
-          "status": "in_progress",
+          "status": "done",
           "depends_on": [],
           "deps_satisfied": true,
           "unblocks": 3,
-          "next_action": "Land this PR; then rule on conflicts C1 and C2.",
-          "prs": [],
-          "done_at": null
+          "next_action": null,
+          "prs": [
+            5472
+          ],
+          "done_at": "2026-08-13T14:29:00Z"
         },
         {
           "id": "W1",
           "title": "Phase 1 — adoption: CLAUDE.md/AGENTS.md sections, handoff protocol in use, <=10 backfilled decisions",
-          "status": "todo",
-          "depends_on": [
-            "W0"
-          ],
-          "deps_satisfied": false,
-          "unblocks": 1,
-          "next_action": null,
-          "prs": [],
-          "done_at": null
-        },
-        {
-          "id": "W2",
-          "title": "Phase 2 — status generator + mastermind status CEO brief",
           "status": "in_progress",
           "depends_on": [
             "W0"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "unblocks": 1,
-          "next_action": "Land the status generator and CEO brief; then rule on C3 (START NEXT vs the improvement agenda) alongside C1 and C2.\n",
-          "prs": [],
-          "done_at": null
+          "next_action": "Adoption instructions + backfill are in PR. Gate status: DEC>=10 met (19); DSC>=5 met on the corpus-total reading the Phase 1 commissioning handoff specifies (5 total; 2 postdate Phase 0); UNMET: >=3 handoffs written by sessions other than the scaffolding sessions, from real work — accrues as live workstream sessions stop; do not manufacture records to close it.\n",
+          "prs": [
+            5556
+          ],
+          "done_at": "2026-08-14T00:47:37Z"
+        },
+        {
+          "id": "W2",
+          "title": "Phase 2 — status generator + mastermind status CEO brief",
+          "status": "done",
+          "depends_on": [
+            "W0"
+          ],
+          "deps_satisfied": true,
+          "unblocks": 1,
+          "next_action": null,
+          "prs": [
+            5472
+          ],
+          "done_at": "2026-08-13T14:29:00Z"
         },
         {
           "id": "W3",
@@ -90,7 +95,7 @@
           "depends_on": [
             "W0"
           ],
-          "deps_satisfied": false,
+          "deps_satisfied": true,
           "unblocks": 0,
           "next_action": null,
           "prs": [],
@@ -111,11 +116,32 @@
           "done_at": null
         }
       ],
-      "prs": [],
+      "prs": [
+        {
+          "number": 5472,
+          "state": "merged",
+          "wave": "W0",
+          "merged_at": "2026-08-13T14:29:00Z"
+        },
+        {
+          "number": 5556,
+          "state": "merged",
+          "wave": "W1",
+          "merged_at": "2026-08-14T00:47:37Z"
+        },
+        {
+          "number": 5472,
+          "state": "merged",
+          "wave": "W2",
+          "merged_at": "2026-08-13T14:29:00Z"
+        }
+      ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
-      "warnings": [],
+      "warnings": [
+        "record_disagrees_with_execution: wave W1 is 'in_progress' but PR #5556 is merged"
+      ],
       "source": "agentos/workstreams/WS-AGENT-OS.md"
     },
     {
@@ -132,9 +158,9 @@
         "macro"
       ],
       "next_action": "Hold. P-A1 is armed; P-A2 is accrual-gated.",
-      "created": "2026-08-12",
-      "updated": "2026-08-12",
-      "stale_days": 1,
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
       "depends_on": [],
       "blocked_by": [
         "STOP-SHIP held since 2026-08-10 by operator ruling: grade NEITHER arm, and never cite the pre-charter research waves (see the landmine below for what those are)."
@@ -169,7 +195,7 @@
           "prs": [
             5438
           ],
-          "done_at": null
+          "done_at": "2026-08-12T08:58:58Z"
         },
         {
           "id": "P-A2",
@@ -188,16 +214,16 @@
       "prs": [
         {
           "number": 5438,
-          "state": "unknown",
+          "state": "merged",
           "wave": "P-A1",
-          "merged_at": null
+          "merged_at": "2026-08-12T08:58:58Z"
         }
       ],
       "claim": null,
       "needs_ceo": null,
       "collisions": [],
       "warnings": [
-        "record_disagrees_with_execution: wave P-A1 cites PR #5438, absent from active_builds.v1 (may predate the 14d merged window — fail-open, verify by hand)"
+        "record_disagrees_with_execution: wave P-A1 is 'awaiting_ci' but PR #5438 is merged"
       ],
       "source": "agentos/workstreams/WS-CN-LIMIT-ALPHA.md"
     },
@@ -215,9 +241,9 @@
         "macro"
       ],
       "next_action": "Wait for the 2026-08-15 scrape; then start the transmission layer.",
-      "created": "2026-08-12",
-      "updated": "2026-08-12",
-      "stale_days": 1,
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
       "depends_on": [],
       "blocked_by": [
         "Waiting on the scheduled Saturday 2026-08-15 scrape. External dependency, on time — not stalled."
@@ -252,7 +278,7 @@
           "prs": [
             5402
           ],
-          "done_at": null
+          "done_at": "2026-08-12T23:34:44Z"
         },
         {
           "id": "TRANSMISSION",
@@ -271,9 +297,9 @@
       "prs": [
         {
           "number": 5402,
-          "state": "unknown",
+          "state": "merged",
           "wave": "R1",
-          "merged_at": null
+          "merged_at": "2026-08-12T23:34:44Z"
         }
       ],
       "claim": null,
@@ -298,9 +324,9 @@
         "mastermind"
       ],
       "next_action": "Drive the benchmark gates green (W1).",
-      "created": "2026-08-12",
-      "updated": "2026-08-12",
-      "stale_days": 1,
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -368,9 +394,9 @@
         "macro"
       ],
       "next_action": "Verify the 22:30Z bake (W1).",
-      "created": "2026-08-12",
-      "updated": "2026-08-12",
-      "stale_days": 1,
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -392,7 +418,7 @@
           "prs": [
             5370
           ],
-          "done_at": null
+          "done_at": "2026-08-11T23:52:22Z"
         },
         {
           "id": "W1",
@@ -424,9 +450,9 @@
       "prs": [
         {
           "number": 5370,
-          "state": "unknown",
+          "state": "merged",
           "wave": "W0",
-          "merged_at": null
+          "merged_at": "2026-08-11T23:52:22Z"
         }
       ],
       "claim": null,
@@ -450,9 +476,9 @@
         "terminal"
       ],
       "next_action": "Obtain the persistence-model ruling, then start W1.",
-      "created": "2026-08-12",
-      "updated": "2026-08-12",
-      "stale_days": 1,
+      "created": "2026-08-14",
+      "updated": "2026-08-14",
+      "stale_days": 0,
       "depends_on": [],
       "blocked_by": [],
       "waves": {
@@ -474,7 +500,7 @@
           "prs": [
             5457
           ],
-          "done_at": null
+          "done_at": "2026-08-12T15:10:34Z"
         },
         {
           "id": "P0-HUSK",
@@ -487,7 +513,7 @@
           "prs": [
             5463
           ],
-          "done_at": null
+          "done_at": "2026-08-12T15:54:05Z"
         },
         {
           "id": "W1",
@@ -506,15 +532,15 @@
       "prs": [
         {
           "number": 5457,
-          "state": "unknown",
+          "state": "merged",
           "wave": "W0",
-          "merged_at": null
+          "merged_at": "2026-08-12T15:10:34Z"
         },
         {
           "number": 5463,
-          "state": "unknown",
+          "state": "merged",
           "wave": "P0-HUSK",
-          "merged_at": null
+          "merged_at": "2026-08-12T15:54:05Z"
         }
       ],
       "claim": null,
@@ -549,6 +575,17 @@
   ],
   "unblocked": [
     {
+      "workstream": "AGENT-OS",
+      "wave": "W3",
+      "title": "Phase 3 — compile-context over the existing context index",
+      "p0": "EXECUTIVE_OS",
+      "p0_active": false,
+      "unblocks": 0,
+      "claimed": false,
+      "next_action": "Close W1's remaining gate: >=3 genuine handoffs from sessions other than the scaffolding sessions, accrued from real work as adopted instructions take effect. Then Phase 3 (compile-context), which gains the agenda-integration wave that retires the UNBLOCKED list. All five conflicts remain ruled: C1 no task store, C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12 overruled.",
+      "source": "agentos/workstreams/WS-AGENT-OS.md"
+    },
+    {
       "workstream": "WATCHLIST-PORTFOLIO-CEO",
       "wave": "W1",
       "title": "Persistence model implementation",
@@ -561,6 +598,7 @@
     }
   ],
   "warnings": [
-    "WS:CN-LIMIT-ALPHA — record_disagrees_with_execution: wave P-A1 cites PR #5438, absent from active_builds.v1 (may predate the 14d merged window — fail-open, verify by hand)"
+    "WS:AGENT-OS — record_disagrees_with_execution: wave W1 is 'in_progress' but PR #5556 is merged",
+    "WS:CN-LIMIT-ALPHA — record_disagrees_with_execution: wave P-A1 is 'awaiting_ci' but PR #5438 is merged"
   ]
 }
