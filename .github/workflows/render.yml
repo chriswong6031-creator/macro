@@ -137,6 +137,14 @@ on:
       - "scripts/build_impulse.py"
       - "scripts/build_index_changes.py"
       - "scripts/build_index_leadership.py"
+      # Import-closure entry: render invokes scripts/build_smart_money.py, which
+      # imports latest_completed_period from this module (#5607, the frozen-13F-census
+      # annotation). It is never invoked directly here, so without this line a change
+      # to the census would merge WITHOUT starting render.yml — and the freshness
+      # annotation build_smart_money exists to emit would go stale behind a green run.
+      # tests/test_render_builder_ownership.py::test_direct_and_transitive_render_dependencies_are_owned
+      # is the guard; widening ownership is the direction it prescribes.
+      - "scripts/build_institutional_13f_census.py"
       - "scripts/build_intel_hub.py"
       - "scripts/build_intelligence.py"
       - "scripts/build_intl.py"
