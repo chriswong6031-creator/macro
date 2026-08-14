@@ -528,8 +528,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| intraday-flow-pulse | `site/live/flow_pulse.json` | json | intraday | display | 3 | 0 |
 | intraday-flow-base | `site/flowtracker/base.json` | json | daily-engine | display | 1 | 0 |
-| intraday-flow-pulse | `site/live/flow_pulse.json` | json | intraday | display | 1 | 0 |
 | intraday-flow-ledger | `data/intraday_flow/ledger.parquet` | parquet | daily-engine | display | 0 | 0 |
 
 ### ird
@@ -1258,7 +1258,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
-| site-us-standouts | `site/factordata/us_standouts.json` | json | daily-engine | display | 12 | 4 |
+| site-us-standouts | `site/factordata/us_standouts.json` | json | daily-engine | display | 14 | 4 |
 | site-signal-gate | `site/factordata/signal_gate.json` | json | daily-engine | display | 5 | 0 |
 
 ### whitehouse-desk
@@ -1301,11 +1301,11 @@ flowchart LR
     OVF_breadth_breadth["...+15 more"]
     P_scripts_build_stock_library_py(("scripts/build_stock_library.py"))
     A_site_us_standouts["site-us-standouts"]
+    C_engine_entry_radar_producers___init___py["engine/entry_radar/producers/__init__.py"]
+    C_engine_entry_radar_producers_boards_py["engine/entry_radar/producers/boards.py"]
     C_engine_intelligence_py["engine/intelligence.py"]
     C_engine_risk_brain_py["engine/risk_brain.py"]
-    C_engine_signal_sanity_py["engine/signal_sanity.py"]
-    C_engine_stock_desk_py["engine/stock_desk.py"]
-    OVF_site_us_standouts["...+12 more"]
+    OVF_site_us_standouts["...+14 more"]
     P_engine_altdata_signals_py(("engine/altdata_signals.py"))
     A_altdata_by_ticker["altdata-by-ticker"]
     C_engine_altdata_brain_py["engine/altdata_brain.py"]
@@ -1393,10 +1393,10 @@ flowchart LR
     A_breadth_breadth --> C_engine_neuralweb_world_state_py
     A_breadth_breadth --> OVF_breadth_breadth
     P_scripts_build_stock_library_py --> A_site_us_standouts
+    A_site_us_standouts --> C_engine_entry_radar_producers___init___py
+    A_site_us_standouts --> C_engine_entry_radar_producers_boards_py
     A_site_us_standouts --> C_engine_intelligence_py
     A_site_us_standouts --> C_engine_risk_brain_py
-    A_site_us_standouts --> C_engine_signal_sanity_py
-    A_site_us_standouts --> C_engine_stock_desk_py
     A_site_us_standouts --> OVF_site_us_standouts
     P_engine_altdata_signals_py --> A_altdata_by_ticker
     A_altdata_by_ticker --> C_engine_altdata_brain_py

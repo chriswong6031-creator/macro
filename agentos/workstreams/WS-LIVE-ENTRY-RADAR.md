@@ -27,19 +27,20 @@ owns_paths:
 waves:
   - id: W0
     title: PR-0 archaeology + frozen research contract (Tracks A–E, kill-registry compliance)
-    status: in_progress
+    status: done
     pr: 5578
-    next_action: >
-      Merge the PR-0 contract (research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md) with all
-      PENDING slots resolved except the operator-facing G0-VIS glyph gate.
   - id: W1
     title: PR-1 probe universe + candidate enlistment bus
-    status: todo
+    status: in_progress
+    pr: 5625
     depends_on: [W0]
     next_action: >
-      Build funnel layers A–D + mastermind.entry_probe_nomination.v1 per contract §6 and the
-      Track C producer census. Acceptance: a lobe-nominated small cap outside the hot universe
-      lands in the Probe Set with provenance intact.
+      Build in flight (operator CONTINUE directive 2026-08-14): funnel layers A–D +
+      mastermind.entry_probe_nomination.v1 per contract §6 and the Track C producer census;
+      ephemeral producers spooled prospectively from day one (§5); admission never grants
+      score authority. Acceptance: a lobe-nominated small cap outside the hot universe
+      lands in the Probe Set with provenance/freshness/eligibility intact. PR number added
+      at ship.
   - id: W2
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
     status: todo
