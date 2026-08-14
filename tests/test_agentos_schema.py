@@ -389,11 +389,17 @@ def _write_handoff(store: Path, body: str) -> Path:
 
 
 def test_valid_handoff_is_counted(store: Path) -> None:
-    """Handoffs used not to be validated OR counted — garbage read as an empty store."""
+    """Handoffs used not to be validated OR counted — garbage read as an empty store.
+
+    Asserts baseline+1, not an absolute count: the committed store legitimately
+    accrues real handoffs (Phase 1 adoption), and pinning "1 handoffs" made the
+    first real handoff ever written red this suite fleet-wide.
+    """
+    baseline = len(list((store / "handoffs").glob("*.md")))
     _write_handoff(store, HANDOFF)
     result = _validate(store)
     assert result.returncode == 0, result.stdout
-    assert "1 handoffs" in result.stdout
+    assert f"{baseline + 1} handoffs" in result.stdout
 
 
 def test_garbage_handoff_is_rejected(store: Path) -> None:
