@@ -1793,7 +1793,7 @@ jobs:
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
       # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
       # worker stops. Same subject as the packing step above: the sweeper that step
       # already pins via tests/test_merge_on_green.py is the party that owns the merge
@@ -2895,36 +2895,52 @@ jobs:
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
-          git fetch origin ${{ github.base_ref || 'main' }}
           BRANCH="${{ github.head_ref }}"
-          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
-          if [ -z "$FILES" ]; then
-            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
-               git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
-              # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
-              # `gh workflow run ci.yml --ref main` — hooks #3677): HEAD is main or an
-              # ancestor of it, so the empty three-dot diff is VERIFIED-empty — there is
-              # no PR and no self-modification to classify. R-AUT-5's fail-closed
-              # contract targets UNDETERMINABLE diffs (git errors, shallow clones,
-              # base-ref failures), not this case. Before this arm existed every
-              # dispatch-at-tip run redded here, which made the green-main E1 evidence
-              # unsatisfiable by construction (observed run 30207008917, 2026-07-26).
-              # The ancestor form (not tip-equality) keeps the arm valid when main
-              # advances between dispatch checkout and this step; a dispatched branch
-              # carrying real commits still has a non-empty diff and is classified
-              # by the python fence below as always.
-              echo "self-mod-fence: workflow_dispatch with HEAD on main — zero changes to classify (pass)"
-              exit 0
-            fi
-            # R-AUT-5 fail-closed contract: an empty file list (git diff error, shallow
-            # clone, base-ref resolution failure, or merge-commit HEAD) must BLOCK — not
-            # silently pass.  A fence that errors open is worse than no fence.
-            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-            echo "Possible causes: git diff error, shallow clone, or base_ref resolution failure." >&2
-            echo "Resolve by ensuring fetch-depth: 0 and a valid base_ref before this step." >&2
+          TRAILERS=""
+          FILES=""
+          PARSE_RC=0
+          FILES=$(python3 scripts/check_self_mod_fence.py --print-planner-files) || PARSE_RC=$?
+          if [ "$PARSE_RC" -eq 2 ]; then
+            echo "::error:: self-mod-fence: CI_CHANGED_FILES_JSON malformed — fail-closed (exit 1)." >&2
             exit 1
           fi
+          if [ "$PARSE_RC" -eq 0 ]; then
+            # ci-plan already listed the diff (packs are fetch-depth:1 after #5564;
+            # origin/main...HEAD is often a bad revision — measured #5556/#5519/#5499).
+            if [ -z "$FILES" ]; then
+              echo "self-mod-fence: ci-plan reported no changed files — zero changes to classify (pass)"
+              exit 0
+            fi
+          else
+            # Unset env (local / pre-#5564): fall back to git. Fail-closed only when
+            # that fallback cannot determine files either.
+            git fetch origin ${{ github.base_ref || 'main' }}
+            TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
+            FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+            if [ -z "$FILES" ]; then
+              if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
+                 git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
+                # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
+                # `gh workflow run ci.yml --ref main` — hooks #3677): HEAD is main or an
+                # ancestor of it, so the empty three-dot diff is VERIFIED-empty — there is
+                # no PR and no self-modification to classify. R-AUT-5's fail-closed
+                # contract targets UNDETERMINABLE diffs (git errors, shallow clones,
+                # base-ref failures), not this case. Before this arm existed every
+                # dispatch-at-tip run redded here, which made the green-main E1 evidence
+                # unsatisfiable by construction (observed run 30207008917, 2026-07-26).
+                # The ancestor form (not tip-equality) keeps the arm valid when main
+                # advances between dispatch checkout and this step; a dispatched branch
+                # carrying real commits still has a non-empty diff and is classified
+                # by the python fence below as always.
+                echo "self-mod-fence: workflow_dispatch with HEAD on main — zero changes to classify (pass)"
+                exit 0
+              fi
+              echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
+              echo "Possible causes: CI_CHANGED_FILES_JSON unset/malformed, git diff error, or base_ref resolution failure." >&2
+              exit 1
+            fi
+          fi
+          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
             --files $FILES \
@@ -6772,6 +6788,11 @@ jobs:
         run: python -m pytest tests/test_etf_board_windows_tile.py -q
       - name: etf weighting lens — discount identity, golden default ordering, receipts
         run: python -m pytest tests/test_etf_weighting.py -q
+      # W3 partial-NAV sleeve support: pins the declared nav_equity_frac bounds,
+      # both ranked-consumer call sites, and the conservative sweep/swap filters.
+      # Uses pandas+pyarrow for the on-disk sponsor receipt; both are above.
+      - name: etf partial-NAV sleeve — declared bounds and sweep/swap guards
+        run: python -m pytest tests/test_etf_partial_nav_sleeve.py -q
       - name: sector_central board order — fast-lens rotation rank, failing open to conviction
         run: python -m pytest tests/test_sector_central.py -q
 
