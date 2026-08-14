@@ -2158,6 +2158,51 @@ def _stop_verdict(
     return emitted["reason"].split(":", 1)[0].split()[-1]
 
 
+@pytest.mark.parametrize(
+    "branch",
+    (
+        "codex/feature",
+        "claire/feature",
+        "feature",
+        "claude",
+        "claudeish/feature",
+    ),
+)
+def test_non_claude_branch_is_rejected_before_stand_down_and_github(
+    monkeypatch, tmp_path, capsys, branch
+):
+    repo, state_path = _session_repo(tmp_path)
+    _git(repo, "branch", "-m", branch)
+    monkeypatch.setattr(
+        GUARD,
+        "_fast_forwarded_onto_main",
+        lambda *_a: pytest.fail("a forbidden branch reached the stand-down gate"),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_github_slug",
+        lambda *_a: pytest.fail("a forbidden branch reached GitHub"),
+    )
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    emitted = json.loads(capsys.readouterr().out.strip())
+    assert "SHIP LOOP unsafe_branch" in emitted["reason"]
+    assert "claude/* branch" in emitted["reason"]
+
+
+def test_claude_branch_still_reaches_the_full_delivery_chain(
+    monkeypatch, tmp_path, capsys
+):
+    repo, state_path = _session_repo(tmp_path)
+
+    verdict = _stop_verdict(
+        monkeypatch, capsys, repo, state_path, merged_pr=None
+    )
+
+    assert verdict == "unpushed"
+
+
 _MERGED_PR = {"merged_at": "2026-07-25T22:18:56Z", "head": {"sha": "a" * 40}, "merge_commit_sha": "b" * 40}
 
 

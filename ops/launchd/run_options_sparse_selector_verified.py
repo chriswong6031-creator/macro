@@ -85,7 +85,11 @@ DISPOSABLE_MARKER = ".options_sparse_selector_disposable_root"
 DISPOSABLE_MARKER_BODY = b"options.sparse_selector.disposable_root/v1\n"
 MANIFEST_NAME = "runtime_closure.json"
 RUNTIME_DIRECTORY = "runtime"
-MANIFEST_SCHEMA = "options.sparse_selector_runtime_carrier/v1"
+MANIFEST_SCHEMA = "options.sparse_selector_runtime_carrier/v2"
+REPO_IMPORT_SOURCE_PATHS = (
+    Path("engine/options_sparse_selector.py"),
+    Path("engine/private_auth_dict.py"),
+)
 MAX_FILE_BYTES = 512 * 1024 * 1024
 MAX_FILES = 100_000
 MAX_TREE_BYTES = 8 * 1024 * 1024 * 1024
@@ -963,18 +967,19 @@ def _attest_disposable_root(root: Path) -> None:
 
 def _isolated_import_acceptance(
     *, python: Path, repo_root: Path, site_packages: Path
-) -> None:
+) -> dict[str, str]:
     """Use isolated mode to accept the current selector core/private auth only."""
 
     repo_root = repo_root.resolve(strict=True)
     _lstat_directory(repo_root, label="selector import root")
-    source_paths = (
-        repo_root / "engine/options_sparse_selector.py",
-        repo_root / "engine/private_auth_dict.py",
+    source_paths = tuple(
+        (relative, repo_root / relative) for relative in REPO_IMPORT_SOURCE_PATHS
     )
     before = {
-        str(path): hashlib.sha256(_read_exact(path, label="selector import source")).hexdigest()
-        for path in source_paths
+        relative.as_posix(): hashlib.sha256(
+            _read_exact(path, label=f"selector import source {relative.as_posix()}")
+        ).hexdigest()
+        for relative, path in source_paths
     }
     runtime_root = python.parent.parent.resolve(strict=True)
     site_packages = site_packages.resolve(strict=True)
@@ -1041,11 +1046,14 @@ def _isolated_import_acceptance(
     if result.returncode != 0:
         raise BootstrapError(f"isolated selector import failed: {result.stderr.strip()}")
     after = {
-        str(path): hashlib.sha256(_read_exact(path, label="selector import source")).hexdigest()
-        for path in source_paths
+        relative.as_posix(): hashlib.sha256(
+            _read_exact(path, label=f"selector import source {relative.as_posix()}")
+        ).hexdigest()
+        for relative, path in source_paths
     }
     if before != after:
         raise BootstrapError("selector import sources changed during isolated proof")
+    return before
 
 
 def prove_disposable_target(
@@ -1116,7 +1124,7 @@ def prove_disposable_target(
         )
         files = _seal_tree(runtime_root)
         _attest_sealed_tree(runtime_root, files)
-        _isolated_import_acceptance(
+        repo_import_source_sha256 = _isolated_import_acceptance(
             python=runtime_root / RUNTIME_PYTHON_RELATIVE,
             repo_root=repo_root,
             site_packages=runtime_root / RUNTIME_SITE_PACKAGES_RELATIVE,
@@ -1134,6 +1142,7 @@ def prove_disposable_target(
             "source_runtime": str(source_root),
             "runtime": RUNTIME_DIRECTORY,
             "timezone_database": RUNTIME_TIMEZONE_RELATIVE.as_posix(),
+            "repo_import_source_sha256": repo_import_source_sha256,
             "files": files,
             "imports": list(RUNTIME_REQUIRED_IMPORTS),
             "native_signature": "adhoc",
