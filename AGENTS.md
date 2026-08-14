@@ -27,6 +27,11 @@ This repository is operated by multiple Claude accounts and Codex sessions. Repo
    authority map in this repository** — `duplicate_control_planes` is a standing
    prohibition. See `research/EXECUTIVE_OS_PHASE0_CENSUS.md` (PR #5356) and
    `Mastermind/research/EXECUTIVE_OS_STRATEGIC_STATE_BOOTSTRAP.md`.
+5. **The Mastermind Agent OS knowledge plane lives in this repository at `agentos/`**
+   — workstreams, decisions, discoveries, and handoffs, canonical for all three
+   repos. When a task belongs to an existing workstream, read its `WS-*` record and
+   latest handoff before starting. See § "Agent OS knowledge plane" below and
+   `agentos/README.md`.
 
 ## Navigation source-of-truth
 
@@ -114,6 +119,58 @@ the regenerated `config/compiled_kill_registry.yml` and
 `config/signal_foundry_blocklist.yml` in the same PR (manual heal:
 `python3 scripts/check_blocklist_drift.py --fix`).
 
+## Agent OS knowledge plane
+
+`agentos/` in this repository is the canonical organizational memory shared across
+sessions, models, and accounts — Claude and Codex alike: workstream records
+(`agentos/workstreams/WS-<KEY>.md`), decision records (`agentos/decisions/DEC-<KEY>.md`),
+discovery records (`agentos/discoveries/DSC-<KEY>.md`), and session handoffs
+(`agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md`). Read `agentos/README.md` before writing
+any record; the machine schemas live in `agentos/schema/` and the handoff protocol in
+`research/MASTERMIND_AGENT_HANDOFF_PROTOCOL.md`.
+
+It is a knowledge plane, never a control plane. Nothing under `agentos/` decides
+whether work may run: no gate, no dispatch, no scheduler, no lease with teeth. Execution
+authority stays where it already lives — this repository's hook layer and
+`scripts/ci_handoff.py` for sessions, Mastermind `control_plane/` for worker processes.
+A workstream `claim:` is an advisory author's note in git; never present one as evidence
+that an agent is currently alive or working (`DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY`;
+live occupancy evidence is `git worktree list`). Do not create a second Agent OS store,
+or a local Decision/Discovery mirror, in any other repository —
+`DEC:AGENTOS-HOME-IS-MACRO`; if cross-repo write friction proves real, the route is to
+supersede that decision with evidence, never to mirror silently.
+
+When to read: at task start, if the task belongs to an existing workstream, read its
+`WS-*` record, its most recent handoff, and the decisions/discoveries they cite before
+writing code. `do_not_redo` entries are binding unless refuted with new evidence. The
+records are context, not permission — the Charter, strategic state, authority map,
+`DO_NOT_REBUILD.md`, and the fleet law in this file still govern.
+
+When to write, and only then — this layer must stay low-friction, and a one-file fix
+that merges clean with nothing learned needs no records:
+
+- a **Discovery** (`DSC-*`) when the session verified a durable, non-obvious fact that
+  future sessions materially benefit from and no canonical document already records.
+  Both admission gates are required — a `falsifier` (what would disprove it) and a
+  `so_what` (what a future session does differently). Account-local memory is not
+  company memory; cross-session facts graduate here.
+- a **Decision** (`DEC-*`) when an actual choice with durable consequences was taken:
+  the question, the answer, the rationale, the alternatives rejected, the evidence, and
+  what would cause reconsideration. Decisions are superseded, never deleted.
+- a **Handoff** when the session claimed a workstream, minted records, or leaves work in
+  a state another session must resume. Contract: a competent stranger continues from the
+  text alone; every `verified:` claim names the command that backs it. The natural
+  moment is immediately before `python3 scripts/ci_handoff.py`, in the same PR.
+- a **workstream update** when durable state materially changes — status and
+  `next_action` at wave boundaries, not per commit.
+
+Hygiene: `python3 scripts/agentos.py validate` must exit 0 on any PR touching records
+(schema is fail-closed; cross-store joins fail open). Cite records as `WS:<KEY>`,
+`DEC:<KEY>`, `DSC:<KEY>` — the colon form, never row or line numbers. Never hand-edit
+the generated views `docs/AGENT_OS_STATE.md` and `data/governance/agent_os_state.json`
+— the nightly is their only regenerator — and never author `created`/`updated` fields;
+the generator derives both from git history.
+
 ## Context economy (frontier burn is CONTEXT × TURNS)
 
 Measured 2026-08-06 across 3,043 local transcripts (week of 07-30→08-06): of all
@@ -123,16 +180,16 @@ caching. The cost driver is `context size × turn count`, and the per-turn floor
 is `0.1 × context`: ~15k units/turn at 150k context, ~80k at 800k.
 
 The worst measured session ran 3,539 turns at a median 419k context (max 879k)
-over 43h and 16 branches, costing 11.6% of the week's frontier budget on its
-own. Its turns at ≥400k context were 52% of turns but 67% of its burn. Riding
+over 43h and 16 branches, costing 11.6% of the week's Fable burn on its own
+(Fable was 26% of all model burn that week; Opus 62%). Its turns at ≥400k context were 52% of turns but 67% of its burn. Riding
 context up to auto-compaction is the most expensive possible pattern: compaction
 fires near the ceiling, so every turn on the approach bills at the ceiling rate.
 There is no configurable compaction threshold and a session cannot compact
 itself on demand.
 
-- **Delegate execution; the orchestrator adjudicates.** 76% of that session's
-  main-loop tool calls were `Bash`/`Edit`/`Read`/`Write`, and delegation was
-  2.6%. A subagent's context is discarded on return — only its report lands — so
+- **Delegate execution; the orchestrator adjudicates.** 76% of Fable's
+  main-loop tool calls that week were `Bash`/`Edit`/`Read`/`Write`, and
+  delegation was 2.6%. A subagent's context is discarded on return — only its report lands — so
   delegating keeps tool output out of the orchestrator permanently.
 - **Budget what enters context.** A tool result of size S landing at turn N is
   re-read on every remaining turn. Prefer targeted `grep`/line-ranged reads over
@@ -398,8 +455,9 @@ that shared covering run; do not demand a dedicated successful run for every
 merge SHA.
 
 A **paired plain-copy asset PR needs no render at all.** A non-`.j2` file under
-`templates/` that also ships as `site/<name>` — the 56 pairs
-`scripts/check_template_site_sync.py` enumerates: `theme.js`, `mm_brain.js`,
+`templates/` that also ships as `site/<name>` — the pairs
+`scripts/check_template_site_sync.py` enumerates (a growing set; read the count
+from the script): `theme.js`, `mm_brain.js`,
 `onboard.js`, `index.html`, the `*.css` — has its `site/` copy committed straight
 to main, and the VPS `macro-update` cron pulls main every 3 minutes, so it is live
 within minutes whether render ever completes or not. render.yml produces only two
