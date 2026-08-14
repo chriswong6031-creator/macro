@@ -201,11 +201,20 @@ Every hash above is reproducible from the committed universe snapshot plus the t
 implementation exposure in A1.0 happened before this text was committed and is disclosed
 in full; this amendment does not pretend otherwise.
 **Authority:** descriptive only; the standing all-false authority block remains binding.
-**Prerequisite gate:** the artifact builder refuses until PR #5613 (head receipt
-`b8601a0dc318c20ebf0b3ace198c9b3b1a735624`) and PR #5632 (head receipt
-`42ef1957a85bbdd94d3a2c03a9a5f3dc47b73c0f`) are both actual ancestors of
-`origin/main`, and records their final merge commits in the result receipt. A PR body,
-label, merge ref, or green intention is not a merge receipt.
+**Prerequisite gate:** the pinned source heads identify the reviewed PR tips. Because
+both prerequisites were squash-merged, those source heads are not asserted to be
+ancestors of `main`. PR #5613 reviewed source head
+`b8601a0dc318c20ebf0b3ace198c9b3b1a735624` landed as squash commit
+`666a2efd7aa69881b7d56e2712cc283638ef7b98`; PR #5632 reviewed source head
+`e93ad5343606bda152fd00902f2a6651acffa5d5` landed as squash commit
+`6d04e9b3100af7afaf834ceb2c9c307a48808f0b`. The builder verifies those exact
+GitHub PR source-head/merge pairs and requires only the squash commits to be ancestors
+of `origin/main`. A PR body, label, merge ref, or green intention is not a merge receipt.
+
+`initial_registration_commit=adb6ae2ed744e2f76574cb89b0e106ea402e576a`
+identifies the first post-rebase committed A1 registration. The result receipt separately
+records as `registration_commit` the clean, pushed A1 PR head that authorizes the
+artifact-producing run; that runtime head is intentionally not self-hashed in its source.
 
 ### A1.0 Procedural-deviation ledger — pre-registration implementation exposure
 

@@ -57,6 +57,9 @@ from engine.stock_identity.pilot import (  # noqa: E402
     W1A1_GOLD_ANNOTATION_BEGIN,
     W1A1_GOLD_ANNOTATION_END,
     W1A1_GOLD_DISCLOSURE_PATH,
+    W1A1_INITIAL_REGISTRATION_COMMIT,
+    W1A1_PREREQUISITE_MERGES,
+    W1A1_PREREQUISITE_SOURCE_HEADS,
     W1A1_REGISTERED_OUTPUT_PATHS,
     current_miner_probe,
 )
@@ -288,10 +291,64 @@ def _validate_clean_pushed_registration() -> str:
     return head
 
 
-def _validate_prerequisites(pr_5613_merge: str, pr_5632_merge: str) -> None:
+def _gh_pr_view(number: int) -> dict[str, Any]:
+    gh = shutil.which("gh")
+    if gh is None:
+        raise SystemExit("GitHub provenance gate requires the gh CLI on PATH")
+    proc = subprocess.run(
+        [
+            gh,
+            "pr",
+            "view",
+            str(number),
+            "--repo",
+            "mastermindx-market-intelligence/macro",
+            "--json",
+            (
+                "number,state,baseRefName,headRefName,headRefOid,mergeCommit,"
+                "isCrossRepository,url"
+            ),
+        ],
+        cwd=REPO_ROOT,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode:
+        raise SystemExit(
+            f"GitHub provenance lookup failed for PR #{number}: "
+            f"{proc.stderr.strip() or proc.stdout.strip()}"
+        )
+    try:
+        payload = json.loads(proc.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"GitHub provenance lookup for PR #{number} was not JSON") from exc
+    if not isinstance(payload, dict):
+        raise SystemExit(f"GitHub provenance lookup for PR #{number} was malformed")
+    return payload
+
+
+def _validate_prerequisites() -> None:
     origin_main = _git("rev-parse", "origin/main")
-    _require_ancestor(pr_5613_merge, origin_main, "PR #5613 merge receipt")
-    _require_ancestor(pr_5632_merge, origin_main, "PR #5632 merge receipt")
+    for number, key in ((5613, "pr_5613"), (5632, "pr_5632")):
+        pr = _gh_pr_view(number)
+        merge = pr.get("mergeCommit") or {}
+        expected = {
+            "number": number,
+            "state": "MERGED",
+            "baseRefName": "main",
+            "headRefOid": W1A1_PREREQUISITE_SOURCE_HEADS[key],
+            "isCrossRepository": False,
+        }
+        if any(pr.get(field) != value for field, value in expected.items()):
+            raise SystemExit(f"PR #{number} source-head provenance does not match registration")
+        if merge.get("oid") != W1A1_PREREQUISITE_MERGES[key]:
+            raise SystemExit(f"PR #{number} squash-merge provenance does not match registration")
+        _require_ancestor(
+            W1A1_PREREQUISITE_MERGES[key],
+            origin_main,
+            f"PR #{number} merge receipt",
+        )
 
     if not B_SOURCE_PATH.exists():
         raise SystemExit(f"missing prerequisite B input {B_SOURCE_PATH}")
@@ -693,8 +750,6 @@ def _build_and_stage(
     factor_returns: pd.Series,
     manifest: dict[str, Any],
     registration_commit: str,
-    pr_5613_merge: str,
-    pr_5632_merge: str,
     pull_request: int,
 ) -> tuple[dict[str, Any], str]:
     ec, sc, constants = _load_constants()
@@ -847,11 +902,10 @@ def _build_and_stage(
         "registered_date": BUILD_DATE,
         "asof": str(ASOF.date()),
         "pull_request": pull_request,
+        "initial_registration_commit": W1A1_INITIAL_REGISTRATION_COMMIT,
         "registration_commit": registration_commit,
-        "prerequisite_merges": {
-            "pr_5613": pr_5613_merge,
-            "pr_5632": pr_5632_merge,
-        },
+        "prerequisite_source_heads": W1A1_PREREQUISITE_SOURCE_HEADS,
+        "prerequisite_merges": W1A1_PREREQUISITE_MERGES,
         "identity_receipt": W1A1_IDENTITY_RECEIPT,
         "miner_probe_roster": {
             "sealed_w1": list(W1_SEALED_MINER_PROBE),
@@ -1048,14 +1102,12 @@ def _publish(stage_root: Path, staged_gold: Path, receipt: dict[str, Any]) -> No
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--w1-reference-dir", type=Path, required=True)
-    parser.add_argument("--pr-5613-merge", required=True)
-    parser.add_argument("--pr-5632-merge", required=True)
     parser.add_argument("--pull-request", type=int, required=True)
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
 
     registration_commit = _validate_clean_pushed_registration()
-    _validate_prerequisites(args.pr_5613_merge, args.pr_5632_merge)
+    _validate_prerequisites()
     manifest = _validate_registration()
     _validate_frozen_hashes()
     _validate_outputs_absent()
@@ -1090,8 +1142,6 @@ def main() -> int:
             factor_returns=factor_returns,
             manifest=manifest,
             registration_commit=registration_commit,
-            pr_5613_merge=args.pr_5613_merge,
-            pr_5632_merge=args.pr_5632_merge,
             pull_request=args.pull_request,
         )
         staged_gold = Path(staged_gold_raw)

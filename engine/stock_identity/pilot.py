@@ -20,6 +20,17 @@ from pathlib import Path
 from engine.stock_identity.authority import is_zero_authority
 
 AMENDMENT_ID = "SI-W1-A1-GOLD-WRONG-ISSUER"
+W1A1_INITIAL_REGISTRATION_COMMIT = (
+    "adb6ae2ed744e2f76574cb89b0e106ea402e576a"
+)
+W1A1_PREREQUISITE_SOURCE_HEADS = {
+    "pr_5613": "b8601a0dc318c20ebf0b3ace198c9b3b1a735624",
+    "pr_5632": "e93ad5343606bda152fd00902f2a6651acffa5d5",
+}
+W1A1_PREREQUISITE_MERGES = {
+    "pr_5613": "666a2efd7aa69881b7d56e2712cc283638ef7b98",
+    "pr_5632": "6d04e9b3100af7afaf834ceb2c9c307a48808f0b",
+}
 
 W1A1_REGISTERED_OUTPUT_PATHS: tuple[str, ...] = (
     "data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
@@ -179,6 +190,8 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
         raise ValueError(f"{path}: pull_request receipt is malformed")
     if not re.fullmatch(r"[0-9a-f]{40}", str(payload.get("registration_commit") or "")):
         raise ValueError(f"{path}: registration commit receipt is malformed")
+    if payload.get("initial_registration_commit") != W1A1_INITIAL_REGISTRATION_COMMIT:
+        raise ValueError(f"{path}: initial registration commit drifted")
     if not is_zero_authority(payload):
         raise ValueError(f"{path}: amendment authority is not all-false")
     if payload.get("identity_receipt") != W1A1_IDENTITY_RECEIPT:
@@ -186,12 +199,10 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
     if payload.get("partition_treatment") != W1A1_PARTITION_TREATMENT:
         raise ValueError(f"{path}: B partition quarantine drifted")
 
-    prerequisites = payload.get("prerequisite_merges") or {}
-    if set(prerequisites) != {"pr_5613", "pr_5632"} or any(
-        not re.fullmatch(r"[0-9a-f]{40}", str(value))
-        for value in prerequisites.values()
-    ):
-        raise ValueError(f"{path}: prerequisite merge closure is malformed")
+    if payload.get("prerequisite_source_heads") != W1A1_PREREQUISITE_SOURCE_HEADS:
+        raise ValueError(f"{path}: prerequisite source-head closure drifted")
+    if payload.get("prerequisite_merges") != W1A1_PREREQUISITE_MERGES:
+        raise ValueError(f"{path}: prerequisite merge closure drifted")
 
     if payload.get("procedural_deviation") != W1A1_PROCEDURAL_DEVIATION:
         raise ValueError(f"{path}: preregistration deviation disclosure drifted")

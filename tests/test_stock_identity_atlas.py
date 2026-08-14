@@ -548,8 +548,12 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
         "amendment_id": pilot.AMENDMENT_ID,
         "asof": pilot.W1A1_ASOF,
         "pull_request": 9999,
+        "initial_registration_commit": pilot.W1A1_INITIAL_REGISTRATION_COMMIT,
         "registration_commit": "3" * 40,
-        "prerequisite_merges": {"pr_5613": "1" * 40, "pr_5632": "2" * 40},
+        "prerequisite_source_heads": copy.deepcopy(
+            pilot.W1A1_PREREQUISITE_SOURCE_HEADS
+        ),
+        "prerequisite_merges": copy.deepcopy(pilot.W1A1_PREREQUISITE_MERGES),
         "identity_receipt": copy.deepcopy(pilot.W1A1_IDENTITY_RECEIPT),
         "miner_probe_roster": {
             "sealed_w1": list(pilot.W1_SEALED_MINER_PROBE),
@@ -614,7 +618,9 @@ def test_current_miner_probe_requires_complete_closed_receipt(tmp_path, monkeypa
         (("procedural_deviation", "write_scope"), "erased", "deviation disclosure"),
         (("procedural_deviation", "observed_scope"), "erased", "deviation disclosure"),
         (("trial_budget",), "outcome-selected", "trial-budget"),
-        (("prerequisite_merges", "pr_5632"), "not-a-sha", "prerequisite merge"),
+        (("initial_registration_commit",), "0" * 40, "initial registration commit"),
+        (("prerequisite_source_heads", "pr_5632"), "0" * 40, "source-head"),
+        (("prerequisite_merges", "pr_5632"), "0" * 40, "merge closure"),
         (("rank_context", "w1_percentiles_rewritten"), True, "rank context"),
         (("price_input", "prefix_sha256"), "0" * 64, "price-input"),
         (("sealed_w1_sha256", "data/stock_identity/constants/si_constants_v1.json"),
@@ -1007,9 +1013,9 @@ def test_registration_append_did_not_move_the_sealed_partition_hash():
 
 def test_result_records_the_registration_commits():
     receipt = _receipt()
-    assert receipt["registration_commit"] == amendment_builder.REGISTRATION_COMMIT
+    assert re.fullmatch(r"[0-9a-f]{40}", receipt["registration_commit"])
     assert receipt["initial_registration_commit"] == (
-        amendment_builder.INITIAL_REGISTRATION_COMMIT
+        pilot.W1A1_INITIAL_REGISTRATION_COMMIT
     )
 
 
@@ -1089,7 +1095,7 @@ def test_gold_is_acked_readable_blind_ineligible_and_not_blocklisted():
     assert "symbol_history_note" in verdict["flags"]
     assert "reused_ticker_unacked" not in verdict["flags"]
     note = hygiene.HYGIENE_NOTES["GOLD"]
-    for token in ("Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09"):
+    for token in ("Gold.com", "1591588", "756894", "2025-12-02", "2025-05-08"):
         assert token in note
 
 
@@ -1097,7 +1103,7 @@ def test_gold_is_acked_readable_blind_ineligible_and_not_blocklisted():
 def test_ack_status_tail_records_the_curated_repair():
     config = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8"))
     ack = config["quality"]["reused_ticker_acks"]["GOLD"]
-    for token in ("1591588", "756894", "PR #5632"):
+    for token in ("1591588", "756894", "2025-05-09", "PR #5632"):
         assert token in ack
     assert "KNOWN CONSUMER DEFECT" not in ack
     assert "NO store file under 'B'" not in ack
@@ -1184,10 +1190,10 @@ def test_output_allowlist_is_exact_and_disjoint_from_sealed_artifacts():
 
 def test_result_records_exact_allowlist_and_prerequisite_merges():
     assert tuple(_receipt()["registered_output_paths"]) == amendment_builder.OUTPUT_PATHS
-    assert _receipt()["prerequisite_merges"] == {
-        "pr_5613": amendment_builder.PR_5613_MERGE_SHA,
-        "pr_5632": amendment_builder.PR_5632_MERGE_SHA,
-    }
+    assert _receipt()["prerequisite_source_heads"] == (
+        pilot.W1A1_PREREQUISITE_SOURCE_HEADS
+    )
+    assert _receipt()["prerequisite_merges"] == pilot.W1A1_PREREQUISITE_MERGES
 
 
 @pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
