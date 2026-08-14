@@ -91,12 +91,17 @@ def _step_using(job: dict[str, Any], action: str) -> dict[str, Any]:
 
 
 def _gate_script() -> str:
-    steps = _job("ci-gate")["steps"]
-    assert len(steps) == 1, f"ci-gate should adjudicate in one step, found {len(steps)}"
-    return str(steps[0]["run"])
+    matches = [
+        step for step in _job("ci-gate")["steps"]
+        if step.get("name") == "adjudicate CI result"
+    ]
+    assert len(matches) == 1, f"ci-gate must have one adjudication step, found {len(matches)}"
+    return str(matches[0]["run"])
 
 
-def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedProcess[str]:
+def _run_gate(
+    *, plan: str, pack: str, has_work: str, summary: str = "success"
+) -> subprocess.CompletedProcess[str]:
     """Execute ci-gate's adjudication script with the `needs` context it would see."""
     return subprocess.run(
         ["bash", "-c", _gate_script()],
@@ -104,6 +109,7 @@ def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedPro
             "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
             "PLAN_RESULT": plan,
             "PACK_RESULT": pack,
+            "SUMMARY_RESULT": summary,
             "HAS_WORK": has_work,
             "PLAN_REASON": "pinned by tests/test_ci_plan_workflow.py",
         },
@@ -394,7 +400,7 @@ def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> No
         assert f"'{variable}'" not in run, f"{job_name} quotes {variable}; it must vanish when empty"
 
 
-def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> None:
+def test_plan_command_folds_but_pack_execution_is_pipefail_logged() -> None:
     """The two folded-scalar traps this repo has already been bitten by.
 
     A `#` inside a `run: >-` scalar deletes the rest of the command, and a
@@ -403,14 +409,38 @@ def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> 
     shell line.  Both produce a workflow that parses cleanly and does the wrong
     thing, so the only detector is the folded RESULT: exactly one line, no `#`.
     """
+    plan = str(_plan_step()["run"]).strip()
+    assert "\n" not in plan, f"ci-plan's command did not fold to one line: {plan!r}"
+    assert "#" not in plan, "ci-plan's folded command contains a `#`, which truncates it"
+
     for job_name, step in (
-        ("ci-plan", _plan_step()),
         ("ci-pack", _pack_step()),
         ("ci-pack fallback", _fallback_pack_step()),
     ):
-        run = str(step["run"]).strip()
-        assert "\n" not in run, f"{job_name}'s command did not fold to one line: {run!r}"
-        assert "#" not in run, f"{job_name}'s folded command contains a `#`, which truncates it"
+        run = str(step["run"])
+        assert "set -euo pipefail" in run
+        assert '2>&1 | tee "$RUNNER_TEMP/ci-pack.log"' in run
+
+
+def test_ci_pack_publishes_one_strict_terminal_record_per_matrix_child() -> None:
+    job = _job("ci-pack")
+    collect = next(
+        step for step in job["steps"]
+        if step.get("name") == "materialize this pack's terminal evidence"
+    )
+    publish = next(
+        step for step in job["steps"]
+        if step.get("name") == "publish this pack's terminal evidence"
+    )
+    assert collect["if"] == "always()"
+    assert collect["env"]["PACK_OUTCOME"] == "${{ job.status }}"
+    assert "ci_collect_pack_evidence.py pack" in collect["run"]
+    assert '--log "$RUNNER_TEMP/ci-pack.log"' in collect["run"]
+    assert publish["if"] == "always()"
+    assert publish["uses"].endswith("ea165f8d65b6e75b540449e92b4886f43607fa02")
+    assert publish["with"]["name"] == "ci-pack-evidence-${{ github.run_id }}-${{ matrix.pack }}"
+    assert publish["with"]["overwrite"] is True
+    assert publish["with"]["retention-days"] == 7
 
 
 # ─── ci-gate ────────────────────────────────────────────────────────────────────
@@ -427,6 +457,38 @@ def test_ci_gate_exists_needs_both_jobs_and_always_runs() -> None:
     job = _job("ci-gate")
     assert sorted(job["needs"]) == ["ci-pack", "ci-plan"]
     assert job["if"].startswith("always()")
+
+
+def test_ci_gate_assembles_and_publishes_machine_readable_failure_evidence() -> None:
+    job = _job("ci-gate")
+    download = next(
+        step for step in job["steps"]
+        if step.get("name") == "download terminal pack evidence"
+    )
+    classify = next(step for step in job["steps"] if step.get("id") == "failure_summary")
+    publish = next(
+        step for step in job["steps"]
+        if step.get("name") == "publish machine-readable CI outcome"
+    )
+    assert download["uses"].endswith("d3f86a106a0bac45b974a628896c90dbdf5c8093")
+    assert download["continue-on-error"] is True
+    assert download["with"]["pattern"] == "ci-pack-evidence-${{ github.run_id }}-*"
+    assert download["with"]["merge-multiple"] is True
+    assert "ci_collect_pack_evidence.py run" in classify["run"]
+    assert "ci_failure_summary.py" in classify["run"]
+    assert "needs.ci-plan.result == 'success'" in classify["env"]["EXPECTED_MATRIX_JSON"]
+    assert '{"include":[]}' in classify["env"]["EXPECTED_MATRIX_JSON"]
+    assert publish["uses"].endswith("ea165f8d65b6e75b540449e92b4886f43607fa02")
+    assert publish["with"]["overwrite"] is True
+    assert publish["with"]["retention-days"] == 7
+
+
+def test_ci_gate_fails_when_failure_evidence_cannot_be_classified() -> None:
+    proc = _run_gate(
+        plan="success", pack="success", has_work="true", summary="failure"
+    )
+    assert proc.returncode == 1
+    assert "failure evidence could not be classified" in proc.stdout
 
 
 def test_ci_gate_is_fenced_against_closed_events() -> None:

@@ -4419,26 +4419,52 @@ jobs:
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
           EXPECTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
           PLAN_BASE_SHA_ARG: ${{ github.event_name == 'pull_request' && format('--expect-base-sha {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--expect-base-sha {0}', github.event.merge_group.base_sha) || '' }}
-        run: >-
-          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
-          --workflow .github/ci/legacy-jobs.yml
-          --pack-index ${{ matrix.pack }}
-          --consume-plan-json "$RUNNER_TEMP/ci-pack-plan/ci-plan.json"
-          --expect-plan-sha "$EXPECTED_PLAN_SHA"
-          --expect-head-sha "$GITHUB_SHA"
-          $PLAN_BASE_SHA_ARG
-          --execute
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py \
+            --workflow .github/ci/legacy-jobs.yml \
+            --pack-index ${{ matrix.pack }} \
+            --consume-plan-json "$RUNNER_TEMP/ci-pack-plan/ci-plan.json" \
+            --expect-plan-sha "$EXPECTED_PLAN_SHA" \
+            --expect-head-sha "$GITHUB_SHA" \
+            $PLAN_BASE_SHA_ARG \
+            --execute 2>&1 | tee "$RUNNER_TEMP/ci-pack.log"
       - name: fail-safe full suite when no authoritative plan was produced
         if: needs.ci-plan.outputs.plan_sha == ''
         env:
           CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
-        run: >-
-          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
-          --workflow .github/ci/legacy-jobs.yml
-          --pack-index ${{ matrix.pack }}
-          --pack-count 12
-          --execute
+        shell: bash
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py \
+            --workflow .github/ci/legacy-jobs.yml \
+            --pack-index ${{ matrix.pack }} \
+            --pack-count 12 \
+            --execute 2>&1 | tee "$RUNNER_TEMP/ci-pack.log"
+      - name: materialize this pack's terminal evidence
+        if: always()
+        env:
+          PACK_OUTCOME: ${{ job.status }}
+        run: |
+          python3 scripts/ci_collect_pack_evidence.py pack \
+            --pack-index "${{ matrix.pack }}" \
+            --outcome "$PACK_OUTCOME" \
+            --log "$RUNNER_TEMP/ci-pack.log" \
+            > "$RUNNER_TEMP/ci-pack-${{ matrix.pack }}.json"
+      - name: publish this pack's terminal evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          # Stable per run+pack, not per attempt: a failed-job rerun overwrites
+          # only the packs it re-executes while successful siblings retain their
+          # first-attempt evidence for the aggregate.
+          name: ci-pack-evidence-${{ github.run_id }}-${{ matrix.pack }}
+          path: ${{ runner.temp }}/ci-pack-${{ matrix.pack }}.json
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 7
   # ONE STABLE NAME FOR "CI SAID YES" (Wave B, 2026-08-11). Every other check name
   # in this workflow is now conditional: `ci-pack-N` exists only when the plan
   # selected pack N, and the whole matrix is skipped on a proven no-work PR. That
@@ -4463,6 +4489,71 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          filter: blob:none
+          fetch-depth: 1
+      - name: download terminal pack evidence
+        if: needs.ci-plan.result == 'success' && needs.ci-plan.outputs.has_work == 'true'
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: ci-pack-evidence-${{ github.run_id }}-*
+          path: ${{ runner.temp }}/ci-pack-records
+          merge-multiple: true
+      - id: failure_summary
+        name: classify the complete CI outcome
+        env:
+          PLANNER_OUTCOME: ${{ needs.ci-plan.result }}
+          PLANNER_DETAIL: ${{ needs.ci-plan.outputs.reason }}
+          EXPECTED_MATRIX_JSON: ${{ needs.ci-plan.result == 'success' && needs.ci-plan.outputs.matrix || '{"include":[]}' }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/ci-pack-records"
+          python3 scripts/ci_collect_pack_evidence.py run \
+            --planner-outcome "$PLANNER_OUTCOME" \
+            --planner-detail "$PLANNER_DETAIL" \
+            --expected-matrix-json "$EXPECTED_MATRIX_JSON" \
+            --records-dir "$RUNNER_TEMP/ci-pack-records" \
+            > "$RUNNER_TEMP/ci-failure-evidence.json"
+          python3 scripts/ci_failure_summary.py \
+            --input "$RUNNER_TEMP/ci-failure-evidence.json" \
+            > "$RUNNER_TEMP/ci-failure-summary.json"
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          summary = json.loads(
+              (Path(os.environ["RUNNER_TEMP"]) / "ci-failure-summary.json").read_text()
+          )
+          first = summary.get("first_actionable_failure")
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Packed CI outcome\n\n")
+              out.write(f"- Status: `{summary['status']}`\n")
+              out.write(f"- Primary category: `{summary['primary_category']}`\n")
+              if first:
+                  out.write(
+                      "- First actionable failure: "
+                      f"`{first['logical_job_id']}` in pack `{first['pack']}` "
+                      f"(`{first['category']}`)\n"
+                  )
+              out.write("\n```json\n")
+              out.write(json.dumps(summary, separators=(",", ":")))
+              out.write("\n```\n")
+          PY
+      - name: publish machine-readable CI outcome
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-failure-summary-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/ci-failure-evidence.json
+            ${{ runner.temp }}/ci-failure-summary.json
+          if-no-files-found: warn
+          overwrite: true
+          retention-days: 7
       # Plain `run: |` block, not a folded scalar — shell `if` blocks need their
       # newlines, and the folded-scalar rules above (no `#`, one indent) would
       # forbid this shape outright.
@@ -4470,11 +4561,16 @@ jobs:
         env:
           PLAN_RESULT: ${{ needs.ci-plan.result }}
           PACK_RESULT: ${{ needs.ci-pack.result }}
+          SUMMARY_RESULT: ${{ steps.failure_summary.outcome }}
           HAS_WORK: ${{ needs.ci-plan.outputs.has_work }}
           PLAN_REASON: ${{ needs.ci-plan.outputs.reason }}
         run: |
-          echo "plan=$PLAN_RESULT pack=$PACK_RESULT has_work=$HAS_WORK"
+          echo "plan=$PLAN_RESULT pack=$PACK_RESULT summary=$SUMMARY_RESULT has_work=$HAS_WORK"
           echo "reason: $PLAN_REASON"
+          if [ "$SUMMARY_RESULT" != "success" ]; then
+            echo "::error title=ci-gate::CI failure evidence could not be classified ($SUMMARY_RESULT)"
+            exit 1
+          fi
           if [ "$PLAN_RESULT" != "success" ]; then
             echo "::error title=ci-gate::CI planning did not succeed ($PLAN_RESULT)"
             exit 1
