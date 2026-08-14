@@ -388,6 +388,19 @@
   //  weights by variance) and from ρ≥0.70 twins (names that literally track each
   //  other). Returns [{ key, factor|null, members[], share (|MCTR| summed) }],
   //  sorted by share desc (dominant bet first). Pure — takes a book() result.
+  //
+  //  APPROXIMATION, AND THE DISPLAY OBLIGATION IT CARRIES (W3, unchanged math):
+  //  the per-name dominant factor below is argmax of b_ik² · F_kk — the DIAGONAL
+  //  of F only. Cross-factor terms are dropped, so for a name pulled by two
+  //  correlated forces the runner-up is understated, and the factor this grouping
+  //  files a ticker under can differ from the one the book-level Euler shares
+  //  (factorShare, which uses the FULL F) rank first for the same ticker. That is
+  //  a real, visible disagreement between two panels, so any surface that shows
+  //  this grouping must say so in plain words rather than let the reader discover
+  //  it: templates/watchlist_risk.js `factorsHTML` carries that sentence, and the
+  //  pairing is asserted in tests/test_watchlist_workspace_js.py. Fixing the
+  //  approximation is a MATH change and therefore out of scope here by rule —
+  //  disclosing it is not.
   // =========================================================================
   function factorBets(b, floor) {
     if (!b || !b.ok) return [];

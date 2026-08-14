@@ -76,8 +76,11 @@ ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 #
 # The residual risk is an IMPLICIT dependency: a scoped job whose tests import a
 # module the commands never name. That cannot be caught statically here, so the
-# the full manifest still audits main. That post-merge audit is not a substitute
-# for conservative PR ownership: any ambiguity below widens to a full PR run.
+# the full manifest still audits main. Ordinary PRs do not widen to that audit
+# merely because one changed path has no proven owner — that mapping was the
+# speed hole (PR #5488: `.claude/hooks/gh_quota_guard.py` → all 185/187 jobs).
+# Unowned paths stay on always-on fences + owners of the rest of the diff.
+# Main / CI_SCOPE_MODE=off remains the long fail-fast:false heal pack.
 # ---------------------------------------------------------------------------
 
 # A change to any of these invalidates scoping entirely: they can alter what any
@@ -129,8 +132,8 @@ PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
 # repository surface it could inspect.  This is deliberately broad: it keeps
 # whole-tree guards such as all-exports-resolve selected for every engine/script
 # edit, while still allowing an unrelated narrow owner to skip guards that have
-# no opaque I/O.  A new top-level directory remains unowned and therefore widens
-# the whole PR to a full run.
+# no opaque I/O.  A new top-level directory remains unowned; it does not widen
+# the PR to a full run — it rides always-on fences only.
 OPAQUE_IO_ROOTS = (
     "*",
     "app/**", "admin/**", "collectors/**", "config/**", "content/**", "contracts/**",
@@ -193,9 +196,25 @@ PIP_INSTALL_RE = re.compile(
 # dominate wall time; checkout/setup/install were deliberately excluded because
 # packs share or group that work.  The fallback heuristic handles every other
 # job and any job added later.
+# Hosted ubuntu-latest step times from green PR #5550 / run 31729769728
+# (legacy-job groups only; checkout excluded). Pack 1's 56-minute wall-clock
+# was 31 minutes of fetch-depth:0 stampede plus these underweighted heavies
+# sitting together because the 2026-08-11 local Mac weights were stale.
 OBSERVED_COMMAND_SECONDS = {
-    "engine-render-guards": 481,
+    "engine-render-guards": 1036,
+    "workflow-yaml": 438,
+    "market-memory-contract": 416,
+    "unrun-government-revenue-grader": 322,
+    "biocatalyst-worker": 274,
+    "biocatalyst-serving": 272,
+    "flow-surface": 267,
+    "capital-structure-intelligence": 247,
+    "marketing-engine": 250,
+    "unrun-picks-boards": 245,
+    "biocatalyst-history": 172,
+    "unrun-subsector-themes": 134,
     "inline-js": 124,
+    "unrun-market-plumbing": 114,
     "font-ui-defined": 96,
     "neural-web-core": 89,
     "capability-broker": 74,
@@ -321,6 +340,56 @@ def narrow_to_suffixes(
     return tuple(sorted(narrowed))
 
 
+def exclude_peer_test_ownership(patterns: Iterable[str]) -> tuple[str, ...]:
+    """Drop catch-alls that make every ``tests/*.py`` edit select a named pytest job.
+
+    A job that names ``pytest tests/test_foo.py`` already owns that file plus its
+    import/read closure. Opaque traversals inside the suite used to add ``*``,
+    ``tests/**``, and ``tests/**/*.py``, so a one-file test PR selected 131 of 185
+    scoped jobs (measured PR #5550 / run 31729769728: 133/187 jobs, all twelve
+    packs, slowest pack 56 minutes). Fixture claims under ``tests/`` that are
+    suffix-narrowed to a non-Python kind (``tests/**/*.json``) stay — those can
+    change the named suite without being a peer test file. Unpatterned
+    ``docs/**`` / ``content/**`` are dropped the same way (narrative trees a
+    named pytest job should not rerun for). ``research/**`` stays: it is a
+    code-scan root (``all-exports-resolve`` must own it). Script-invoking jobs
+    keep the unfiltered fallbacks; this filter applies to the final path set of
+    jobs that named specific pytest files.
+    """
+    dropped_roots = {
+        "*",
+        "*.py",
+        "*.py/**",
+        "tests",
+        "tests/",
+        "tests/**",
+        "docs",
+        "docs/",
+        "docs/**",
+        "content",
+        "content/",
+        "content/**",
+    }
+    kept: list[str] = []
+    for pattern in patterns:
+        if pattern in dropped_roots:
+            continue
+        if pattern.startswith("tests/") and _is_peer_python_or_unpatterned_glob(pattern):
+            continue
+        kept.append(pattern)
+    return tuple(dict.fromkeys(kept))
+
+
+def _is_peer_python_or_unpatterned_glob(pattern: str) -> bool:
+    """True for globs that claim every Python test (or the whole tests tree)."""
+    if not any(char in pattern for char in "*?["):
+        return False
+    stem = pattern[: -len("/**")] if pattern.endswith("/**") else pattern
+    if SUFFIX_NARROWED_RE.fullmatch(pattern) or SUFFIX_NARROWED_RE.fullmatch(stem):
+        return stem.endswith(".py")
+    return True
+
+
 def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
     """Can an edit to something ``pattern`` covers start the gating workflow?
 
@@ -407,6 +476,42 @@ def _validate_scope(prefix: str, raw: Any) -> tuple[tuple[str, ...], list[str]]:
             continue
         scope.append(entry)
     return tuple(scope), findings
+
+
+def resolve_changed_files(
+    changed_from: str | None,
+    *,
+    explicit_json: str | None = None,
+) -> list[str] | None:
+    """Prefer the planner's file list so packs can shallow-checkout.
+
+    ``CI_CHANGED_FILES_JSON`` (or ``explicit_json``) is the ci-plan output:
+    a JSON array of paths, or the token ``null`` when there is no diff (main's
+    baseline, planner fallback). Packs must not re-run ``git diff`` against a
+    fetch-depth-1 tree — that miss would fail-safe-widen every PR to the full
+    suite and undo the shallow-checkout saving. An unset/empty value still
+    falls back to ``git diff`` so a local ``--changed-from`` invocation works.
+    Malformed JSON widens (None), never narrows.
+    """
+    raw = explicit_json if explicit_json is not None else os.environ.get(
+        "CI_CHANGED_FILES_JSON"
+    )
+    if raw is not None and raw != "":
+        stripped = raw.strip()
+        if stripped == "null":
+            return None
+        try:
+            parsed = json.loads(stripped)
+        except json.JSONDecodeError:
+            return None
+        if not isinstance(parsed, list) or not all(
+            isinstance(path, str) for path in parsed
+        ):
+            return None
+        return [path for path in parsed if path] or None
+    if changed_from:
+        return changed_files(changed_from)
+    return None
 
 
 def changed_files(base_ref: str) -> list[str] | None:
@@ -515,6 +620,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
         ]
         owned: set[str] = set()
         named_any = False
+        named_pytest = False
         for command in commands:
             if pytest_invocation_ambiguities(command):
                 return None
@@ -532,7 +638,8 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                 if fallbacks is None:
                     return None
                 owned.update(closure.files)
-                owned.update(fallbacks)
+                owned.update(exclude_peer_test_ownership(fallbacks))
+                named_pytest = True
                 named_any = True
 
             for reference in SCOPE_REFERENCE_RE.findall(command):
@@ -549,6 +656,12 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                         return None
                     owned.update(closure.files)
                     owned.update(fallbacks)
+        if named_pytest:
+            # Script-path fallbacks in the same job re-introduced ``*`` / ``tests/**``
+            # after the named-suite filter (marketing-engine still matched a prophet
+            # test via ``tests/**``). Strip catch-alls from the FINAL set whenever
+            # the job named specific pytest files.
+            owned = set(exclude_peer_test_ownership(owned))
         return tuple(sorted(owned)) if named_any and owned else None
 
     inferred: list[LegacyJob] = []
@@ -581,19 +694,23 @@ def select_jobs(
         if not any(_matches_any(job.paths, path) for job in scoped_jobs)
         and not _matches_any(PASSIVE_UNOWNED_PATTERNS, path)
     ]
-    if unowned:
-        return jobs, f"full suite: changed path has no proven owner ({unowned[0]})"
     selected = [
         job
         for job in jobs
         if not job.paths or any(_matches_any(job.paths, path) for path in changed)
     ]
     unscoped = sum(1 for job in jobs if not job.paths)
-    return selected, (
+    reason = (
         f"scoped to {len(changed)} changed file(s): {len(selected)}/{len(jobs)} jobs "
         f"({unscoped} unscoped always-on, "
         f"{len(selected) - unscoped} scoped matches)"
     )
+    if unowned:
+        reason += (
+            f"; {len(unowned)} unowned path(s) did not widen "
+            f"({unowned[0]})"
+        )
+    return selected, reason
 
 
 def _workflow_jobs(path: Path) -> dict[str, dict[str, Any]]:
@@ -742,20 +859,12 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
 # silently disagreeing about what the suite is becomes one loud red instead.
 #
 # What this does NOT buy at this revision, measured 2026-08-11 against the real
-# 180-job manifest: it saves ZERO packs.  Scope inference derives scopes for
-# 179/180 jobs, yet every realistic diff still selects enough of them to fill
-# all twelve packs —
-#
-#     docs-only          120/180 eligible -> 12/12 packs non-empty
-#     one template       130/180          -> 12/12
-#     one engine module  122/180          -> 12/12
-#     test-only          115/180          -> 12/12
-#
-# (pack weights [481, ~250-310 x11]; pack 0 is the indivisible
-# engine-render-guards lane, which alone cannot be split further).  So
-# `nonempty_pack_indices` is [0..11] for every diff shape today and `has_work`
-# is always true.  Do not read the empty-pack machinery as a claim that packs
-# are being skipped now — they are not.
+# 180-job manifest: it saved ZERO packs THEN.  Scope inference derived scopes for
+# 179/180 jobs, yet every realistic diff still selected enough of them to fill
+# all twelve packs because named pytest suites inherited ``tests/**`` and ``*``
+# from opaque traversals inside those suites.  That catch-all is now stripped
+# (``exclude_peer_test_ownership``); a one-test-file PR must no longer emit
+# twelve packs.  The empty-pack machinery is load-bearing for that narrowing.
 #
 # Nor does planning once make the packs cheaper, and the arithmetic runs the
 # OTHER way, so do not write that it does.  `--expect-plan-sha` requires each
@@ -805,6 +914,12 @@ class CIPackPlan:
     # built from the same inputs stay equal and the hash remains the identity.
     scoped_jobs: tuple[LegacyJob, ...] = field(default=(), compare=False, repr=False)
     predicted_job_ids: tuple[str, ...] = field(default=(), compare=False, repr=False)
+    # The resolved diff. Not hashed: eligible_job_ids already captures its
+    # effect. Published via $GITHUB_OUTPUT so packs can shallow-checkout
+    # instead of re-running `git diff` against a fetch-depth-0 history.
+    changed_paths: tuple[str, ...] | None = field(
+        default=None, compare=False, repr=False
+    )
 
     @property
     def pack_count(self) -> int:
@@ -967,6 +1082,7 @@ def build_plan(
         ),
         scoped_jobs=tuple(jobs),
         predicted_job_ids=predicted_job_ids,
+        changed_paths=tuple(changed) if changed is not None else None,
     )
 
 
@@ -979,7 +1095,7 @@ def plan_from_workflow(
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
     legacy = load_legacy_jobs(workflow)
-    changed = changed_files(changed_from) if changed_from else None
+    changed = resolve_changed_files(changed_from)
     return build_plan(
         legacy,
         changed,
@@ -1011,8 +1127,9 @@ def _write_github_output(
     has_work: bool,
     plan_sha: str,
     reason: str,
+    changed_files_json: str = "null",
 ) -> None:
-    """Append the four ci-plan outputs to a `$GITHUB_OUTPUT` file.
+    """Append the ci-plan outputs to a `$GITHUB_OUTPUT` file.
 
     `name=value` cannot carry a newline and `reason` is free prose (a manifest
     error message reaches it verbatim on the fallback path), so every value uses
@@ -1028,9 +1145,10 @@ def _write_github_output(
             ("has_work", "true" if has_work else "false"),
             ("plan_sha", plan_sha),
             ("reason", reason),
+            ("changed_files", changed_files_json),
         )
     )
-    # ONE append, never four: a failure between writes would leave GitHub parsing
+    # ONE append, never five: a failure between writes would leave GitHub parsing
     # a half-declared output, and the fallback path would then append a second,
     # contradicting `matrix` behind it.
     with path.open("a", encoding="utf-8") as handle:
@@ -1068,12 +1186,19 @@ def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
         reason = (
             f"matrix {args.matrix_mode} (all {plan.pack_count} launch): {plan.reason}"
         )
+    if plan.changed_paths is None:
+        changed_files_json = "null"
+    else:
+        changed_files_json = json.dumps(
+            list(plan.changed_paths), separators=(",", ":")
+        )
     _write_github_output(
         args.github_output,
         matrix=matrix,
         has_work=has_work,
         plan_sha=plan.plan_sha256,
         reason=reason,
+        changed_files_json=changed_files_json,
     )
 
 
@@ -1095,6 +1220,7 @@ def _emit_planner_fallback(args: argparse.Namespace, exc: BaseException) -> None
         has_work=True,
         plan_sha="",
         reason=f"full suite: planner error ({exc})",
+        changed_files_json="null",
     )
     # Bare print, never a logger: a prefixing formatter makes GitHub drop the
     # annotation silently (CLAUDE.md — annotations must START the line).

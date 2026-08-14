@@ -3035,7 +3035,7 @@ cross_repo_contracts:
   macro-terminal-portfolio-brief:
     name: Macro portfolio brief to Terminal
     flow_type: presentation
-    purpose: Deliver the fully composed portfolio_brief.v1 into Terminal Conviction Book context.
+    purpose: Deliver the fully composed portfolio_brief.v2 into Terminal portfolio context, carrying the population it describes (positions vs watchlist_union, packet amendment A8).
     participants:
       - repo: macro
         role: producer
