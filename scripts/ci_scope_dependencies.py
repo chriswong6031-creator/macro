@@ -16,7 +16,9 @@ from __future__ import annotations
 
 import ast
 import functools
+import hashlib
 import io
+import json
 import re
 import shlex
 import sys
@@ -89,6 +91,7 @@ SCAN_SUFFIXES = frozenset({
     ".png", ".svg", ".webp", ".woff2", ".gz", ".zip", ".pkl", ".sql", ".xml",
 })
 _SUFFIX_RE = re.compile(r"\.([A-Za-z0-9_]{1,8})$")
+DEPENDENCY_STRUCTURE_SCHEMA = "ci.dependency_structure.v1"
 
 
 @dataclass(frozen=True)
@@ -590,6 +593,118 @@ def _source_ambiguities(path: Path, tree: ast.Module) -> set[str]:
                 kind += f" suffixes={','.join(sorted(suffixes))}"
             findings.add(f"{rel}:{node.lineno}: {kind}")
     return findings
+
+
+def dependency_structure_record(rel: str, source: str) -> dict[str, object]:
+    """Return the canonical dependency semantics consulted by scope inference.
+
+    This is intentionally not a source hash.  It projects a Python blob onto
+    only the constructs that can change selector ownership: imports, repository
+    path reads, and opaque dynamic/process/filesystem edges.  Ordinary function
+    bodies, constants, formatting, comments, and line movement disappear from
+    the record, so they do not require regenerating the committed scope index.
+
+    The projection is independent of worktree materialization.  ``ci-plan`` can
+    therefore compute it from one changed blob obtained through ``git show`` in
+    a blobless sparse checkout.
+    """
+    normalized_rel = Path(rel).as_posix()
+    try:
+        tree = ast.parse(source)
+    except (SyntaxError, ValueError):
+        return {
+            "schema": DEPENDENCY_STRUCTURE_SCHEMA,
+            "parse_status": "syntax_error",
+            "imports": [],
+            "dynamic_imports": [],
+            "path_reads": [],
+            "ambiguities": ["syntax error"],
+        }
+
+    imports: set[str] = set()
+    dynamic_imports: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            imports.update(f"import:{alias.name}" for alias in node.names)
+        elif isinstance(node, ast.ImportFrom):
+            prefix = "." * node.level + (node.module or "")
+            imports.update(
+                f"from:{prefix}:{alias.name}"
+                for alias in node.names
+            )
+
+        if not isinstance(node, ast.Call):
+            continue
+        label = (
+            node.func.attr
+            if isinstance(node.func, ast.Attribute)
+            else getattr(node.func, "id", "")
+        )
+        if label not in {"import_module", "__import__"}:
+            continue
+        first = node.args[0] if node.args else None
+        if isinstance(first, ast.Constant) and isinstance(first.value, str):
+            dynamic_imports.add(f"literal:{first.value}")
+        else:
+            dynamic_imports.add("dynamic")
+
+    docstrings = _docstring_ids(tree)
+    data_lines = _data_lines(source, tree)
+    checkout_bases = _checkout_bases(tree)
+    path_reads: set[str] = set()
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+            and id(node) not in docstrings
+        ):
+            match = _PATH_LITERAL.fullmatch(node.value.strip())
+            if match and node.lineno not in data_lines:
+                path_reads.add(f"literal:{match.group(0).split('#')[0]}")
+
+        if not (isinstance(node, ast.BinOp) and isinstance(node.op, ast.Div)):
+            continue
+        chain = _join_segments(node)
+        if chain is None:
+            continue
+        base, segments = chain
+        rooted = _mentions_file_dunder(base) or (
+            isinstance(base, ast.Name) and base.id in checkout_bases
+        )
+        joined = "/".join(segments)
+        if (
+            rooted
+            and joined.split("/")[0] in LITERAL_DIRS
+            and node.lineno not in data_lines
+        ):
+            path_reads.add(f"join:{joined}")
+
+    ambiguity_prefix = f"{normalized_rel}:"
+    ambiguities: set[str] = set()
+    for finding in _source_ambiguities(ROOT / normalized_rel, tree):
+        remainder = finding.removeprefix(ambiguity_prefix)
+        _line, separator, kind = remainder.partition(": ")
+        ambiguities.add(kind if separator else remainder)
+    return {
+        "schema": DEPENDENCY_STRUCTURE_SCHEMA,
+        "parse_status": "ok",
+        "imports": sorted(imports),
+        "dynamic_imports": sorted(dynamic_imports),
+        "path_reads": sorted(path_reads),
+        "ambiguities": sorted(ambiguities),
+    }
+
+
+def dependency_structure_sha256(rel: str, source: str) -> str:
+    """Hash the canonical dependency projection, never the complete source."""
+    record = dependency_structure_record(rel, source)
+    canonical = json.dumps(
+        record,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        sort_keys=True,
+    ).encode("utf-8")
+    return hashlib.sha256(canonical).hexdigest()
 
 
 @functools.lru_cache(maxsize=None)

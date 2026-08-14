@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
@@ -9,10 +10,17 @@ from types import SimpleNamespace
 import pytest
 
 from scripts import ci_committed_scope_index as scope_index
+from scripts import ci_structural_preflight as structural_preflight
 from scripts import run_ci_pack as ci_pack
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_scope_index_binds_every_authoritative_planner_selector_source() -> None:
+    assert tuple(path.as_posix() for path in scope_index.SELECTOR_SOURCES) == (
+        ci_pack.PLAN_SELECTOR_INPUTS
+    )
 
 
 @pytest.fixture
@@ -38,10 +46,37 @@ jobs:
 """,
         encoding="utf-8",
     )
+    workflow = root / ".github/workflows/ci.yml"
+    workflow.parent.mkdir(parents=True)
+    workflow.write_text(
+        "on:\n"
+        "  pull_request: {}\n"
+        "jobs:\n"
+        "  ci-plan:\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo plan\n"
+        "  ci-pack:\n"
+        "    needs: ci-plan\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo pack\n"
+        "  ci-gate:\n"
+        "    needs: [ci-plan, ci-pack]\n"
+        "    runs-on: ubuntu-latest\n"
+        "    steps:\n"
+        "      - run: echo gate\n",
+        encoding="utf-8",
+    )
     for relative in scope_index.SELECTOR_SOURCES:
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes((REPO_ROOT / relative).read_bytes())
+    (root / "engine").mkdir()
+    (root / "engine" / "helper.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (root / "engine" / "worker.py").write_text(
+        "def calculate():\n    return 1\n", encoding="utf-8"
+    )
     return root
 
 
@@ -106,6 +141,9 @@ def test_generation_is_deterministic_and_load_returns_legacy_job_replacements(
     )
 
     assert receipt.elapsed_seconds < 1.0
+    assert receipt.dependency_signature_count == len(
+        list(tiny_repo.rglob("*.py"))
+    )
     assert all(isinstance(job, ci_pack.LegacyJob) for job in receipt.jobs)
     assert [job.definition for job in receipt.jobs] == [
         job.definition for job in live_jobs
@@ -217,6 +255,161 @@ def test_selector_source_inventory_and_order_are_exact(tiny_repo: Path) -> None:
             repo_root=tiny_repo,
             pack_module=ci_pack,
         )
+
+
+def test_dependency_signature_inventory_is_digest_bound(tiny_repo: Path) -> None:
+    index = _generate(tiny_repo)
+    payload = _read(index)
+    payload["dependency_signatures"]["files"][0]["signature_sha256"] = "0" * 64
+    index.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(scope_index.ScopeIndexError, match="digest mismatch"):
+        scope_index.load_dependency_signature_inventory(index)
+
+
+def test_body_only_python_edit_keeps_dependency_signature_current(
+    tiny_repo: Path,
+) -> None:
+    index = _generate(tiny_repo)
+    inventory = scope_index.load_dependency_signature_inventory(index)
+    worker = tiny_repo / "engine" / "worker.py"
+    worker.write_text(
+        "def calculate():\n    value = 2\n    return value\n",
+        encoding="utf-8",
+    )
+
+    observed = scope_index.verify_changed_python_source(
+        inventory,
+        "engine/worker.py",
+        worker.read_bytes(),
+    )
+    regenerated = _generate(tiny_repo, "body-only-regenerated.json")
+
+    assert observed == inventory["engine/worker.py"]
+    assert regenerated.read_bytes() == index.read_bytes()
+
+
+def test_explicit_data_only_path_edit_does_not_mint_dependency_drift() -> None:
+    from scripts.ci_scope_dependencies import dependency_structure_sha256
+
+    first = "ARTIFACT = 'data/first.json'  # ci-trigger-closure: data\n"
+    second = "ARTIFACT = 'data/second.json'  # ci-trigger-closure: data\n"
+
+    assert dependency_structure_sha256("engine/worker.py", first) == (
+        dependency_structure_sha256("engine/worker.py", second)
+    )
+
+
+def test_ambiguity_line_movement_does_not_mint_dependency_drift() -> None:
+    from scripts.ci_scope_dependencies import dependency_structure_sha256
+
+    first = "import subprocess\nsubprocess.run(['echo', 'probe'])\n"
+    second = "import subprocess\n\n\nsubprocess.run(['echo', 'probe'])\n"
+
+    assert dependency_structure_sha256("engine/worker.py", first) == (
+        dependency_structure_sha256("engine/worker.py", second)
+    )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "import engine.helper\n\ndef calculate():\n    return 1\n",
+        "DEPENDENCY = 'engine/helper.py'\n\ndef calculate():\n    return 1\n",
+        (
+            "import subprocess\n\ndef calculate():\n"
+            "    subprocess.run(['echo', 'probe'], check=True)\n    return 1\n"
+        ),
+    ],
+    ids=["new-import", "new-path-read", "new-subprocess"],
+)
+def test_dependency_semantic_mutations_require_index_regeneration(
+    tiny_repo: Path,
+    mutation: str,
+) -> None:
+    index = _generate(tiny_repo)
+    inventory = scope_index.load_dependency_signature_inventory(index)
+
+    with pytest.raises(scope_index.ScopeIndexError, match="dependency structure drift"):
+        scope_index.verify_changed_python_source(
+            inventory,
+            "engine/worker.py",
+            mutation,
+        )
+
+
+def test_python_addition_and_deletion_require_index_regeneration(
+    tiny_repo: Path,
+) -> None:
+    index = _generate(tiny_repo)
+    inventory = scope_index.load_dependency_signature_inventory(index)
+
+    with pytest.raises(scope_index.ScopeIndexError, match="was added"):
+        scope_index.verify_changed_python_source(
+            inventory,
+            "engine/new_module.py",
+            "VALUE = 1\n",
+        )
+    with pytest.raises(scope_index.ScopeIndexError, match="was deleted"):
+        scope_index.verify_changed_python_source(
+            inventory,
+            "engine/worker.py",
+            None,
+        )
+
+
+@pytest.mark.parametrize(
+    ("submitted", "expected_status"),
+    [
+        (
+            "def calculate():\n    value = 2\n    return value\n",
+            "pass",
+        ),
+        (
+            "import engine.helper\n\ndef calculate():\n    return 1\n",
+            "fail",
+        ),
+    ],
+    ids=["body-only", "dependency-drift"],
+)
+def test_sparse_preflight_reads_only_changed_python_blob_from_head(
+    tiny_repo: Path,
+    submitted: str,
+    expected_status: str,
+) -> None:
+    index = _generate(tiny_repo)
+    subprocess.run(["git", "init", "-q"], cwd=tiny_repo, check=True)
+    subprocess.run(
+        ["git", "config", "user.name", "CI Test"], cwd=tiny_repo, check=True
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=tiny_repo,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=tiny_repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "indexed fixture"], cwd=tiny_repo, check=True)
+
+    worker = tiny_repo / "engine/worker.py"
+    worker.write_text(submitted, encoding="utf-8")
+    subprocess.run(["git", "add", str(worker)], cwd=tiny_repo, check=True)
+    subprocess.run(["git", "commit", "-qm", "submitted change"], cwd=tiny_repo, check=True)
+    worker.unlink()  # Simulate the planner's metadata-only sparse worktree.
+
+    result = structural_preflight.run_preflight(
+        tiny_repo,
+        ["engine/worker.py"],
+        scope_index_path=index,
+    )
+
+    assert result["status"] == expected_status
+    assert result["metrics"]["changed_python_signatures_examined"] == 1
+    stale = [
+        finding
+        for finding in result["findings"]
+        if finding["code"] == "dependency_signature_stale"
+    ]
+    assert bool(stale) is (expected_status == "fail")
 
 
 @pytest.mark.parametrize("defect", ["duplicate", "missing"])

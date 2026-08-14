@@ -4224,6 +4224,7 @@ jobs:
           "$RUNNER_TEMP/ci-plan-runner/bin/python"
           scripts/ci_structural_preflight.py
           --changed-paths-file "$CI_CHANGED_PATHS_FILE"
+          --scope-index .github/ci/scope-index.json
       # Same `env`-built, UNQUOTED shell-argument idiom as the pack step below, and
       # for the same two reasons: a folded `>-` scalar tolerates no `#` and no
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing

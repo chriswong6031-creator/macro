@@ -60,6 +60,7 @@ from scripts.check_conflict_markers import (  # noqa: E402
     scan_file,
 )
 from scripts.check_workflow_yaml import check_file as check_workflow_file  # noqa: E402
+from scripts import ci_committed_scope_index as committed_scope_index  # noqa: E402
 from scripts.run_ci_pack import (  # noqa: E402
     GLOBAL_INVALIDATORS,
     OPAQUE_IO_ROOTS,
@@ -432,7 +433,12 @@ def _status(findings: Iterable[dict[str, str]], codes: set[str]) -> str:
     return "fail" if any(item["code"] in codes for item in findings) else "pass"
 
 
-def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
+def run_preflight(
+    root: Path,
+    changed_paths: Iterable[str],
+    *,
+    scope_index_path: Path | str | None = None,
+) -> dict[str, Any]:
     started = time.perf_counter()
     root = root.resolve()
     changed = _normalize_paths(changed_paths)
@@ -440,6 +446,7 @@ def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
     metrics: dict[str, int] = {
         "changed_tests_examined": 0,
         "changed_tests_wired": 0,
+        "changed_python_signatures_examined": 0,
         "conflict_files_scanned": 0,
         "known_executable_paths": 0,
         "manifest_jobs": 0,
@@ -447,6 +454,74 @@ def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
         "unowned_non_executable_paths": 0,
         "workflow_files_checked": 0,
     }
+
+    dependency_signature_findings: list[dict[str, str]] = []
+    if scope_index_path is not None:
+        index_path = Path(scope_index_path)
+        if not index_path.is_absolute():
+            index_path = root / index_path
+        try:
+            signature_inventory = (
+                committed_scope_index.load_dependency_signature_inventory(index_path)
+            )
+        except (OSError, committed_scope_index.ScopeIndexError) as exc:
+            dependency_signature_findings.append(
+                _finding(
+                    "dependency_signature_index_invalid",
+                    "planner_configuration_failure",
+                    str(exc),
+                    path=index_path.relative_to(root).as_posix()
+                    if index_path.is_relative_to(root)
+                    else str(index_path),
+                )
+            )
+            signature_inventory = None
+
+        if signature_inventory is not None:
+            for rel in sorted(path for path in changed if path.endswith(".py")):
+                with _submitted_file(root, rel) as submitted:
+                    source: bytes | None
+                    if submitted is None:
+                        if _git_head_contains(root, rel) is True:
+                            dependency_signature_findings.append(
+                                _finding(
+                                    "dependency_signature_blob_unreadable",
+                                    "planner_configuration_failure",
+                                    "changed Python file exists in the submitted tree "
+                                    "but its HEAD blob could not be read",
+                                    path=rel,
+                                )
+                            )
+                            continue
+                        source = None
+                    else:
+                        try:
+                            source = submitted.read_bytes()
+                        except OSError as exc:
+                            dependency_signature_findings.append(
+                                _finding(
+                                    "dependency_signature_blob_unreadable",
+                                    "planner_configuration_failure",
+                                    str(exc),
+                                    path=rel,
+                                )
+                            )
+                            continue
+                    metrics["changed_python_signatures_examined"] += 1
+                    try:
+                        committed_scope_index.verify_changed_python_source(
+                            signature_inventory, rel, source
+                        )
+                    except committed_scope_index.ScopeIndexError as exc:
+                        dependency_signature_findings.append(
+                            _finding(
+                                "dependency_signature_stale",
+                                "planner_configuration_failure",
+                                str(exc),
+                                path=rel,
+                            )
+                        )
+    findings.extend(dependency_signature_findings)
 
     manifest_path = root / CI_MANIFEST
     jobs: list[Any] = []
@@ -637,10 +712,18 @@ def run_preflight(root: Path, changed_paths: Iterable[str]) -> dict[str, Any]:
     test_codes = {"changed_test_unreadable", "unwired_changed_test"}
     ownership_codes = {"unknown_executable_ownership"}
     conflict_codes = {"changed_blob_unreadable", "conflict_marker"}
+    dependency_signature_codes = {
+        "dependency_signature_blob_unreadable",
+        "dependency_signature_index_invalid",
+        "dependency_signature_stale",
+    }
     return {
         "checks": {
             "changed_tests": {"status": _status(findings, test_codes)},
             "conflict_markers": {"status": _status(findings, conflict_codes)},
+            "dependency_signatures": {
+                "status": _status(findings, dependency_signature_codes)
+            },
             "manifest_pack_graph": {"status": _status(findings, manifest_codes)},
             "ownership": {"status": _status(findings, ownership_codes)},
             "workflow_graph": {"status": _status(findings, workflow_codes)},
@@ -684,6 +767,10 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--changed-paths-file",
         help="JSON array/object or newline path file; '-' reads stdin",
     )
+    parser.add_argument(
+        "--scope-index",
+        help="committed scope index whose changed-Python signatures must match",
+    )
     parser.add_argument("--root", default=".", help="repository checkout root")
     return parser.parse_args(argv)
 
@@ -696,7 +783,11 @@ def main(argv: list[str] | None = None) -> int:
             raw_paths.extend(_read_paths_file(args.changed_paths_file))
         if not raw_paths and args.changed_paths_file is None:
             raise ValueError("provide --changed-path or --changed-paths-file")
-        result = run_preflight(Path(args.root), raw_paths)
+        result = run_preflight(
+            Path(args.root),
+            raw_paths,
+            scope_index_path=args.scope_index,
+        )
     except (OSError, ValueError) as exc:
         result = _input_failure(str(exc))
         print(json.dumps(result, sort_keys=True, separators=(",", ":")))

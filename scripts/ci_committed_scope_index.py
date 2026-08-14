@@ -21,6 +21,7 @@ import importlib
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import time
@@ -32,11 +33,14 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-SCHEMA = "ci.committed_scope_index.v1"
+SCHEMA = "ci.committed_scope_index.v2"
+DEPENDENCY_SIGNATURE_SCHEMA = "ci.dependency_signature_inventory.v1"
 DEFAULT_MANIFEST = Path(".github/ci/legacy-jobs.yml")
 SELECTOR_SOURCES = (
     Path("scripts/run_ci_pack.py"),
     Path("scripts/ci_scope_dependencies.py"),
+    Path("scripts/audit_unrun_tests.py"),
+    Path("scripts/ci_committed_scope_index.py"),
 )
 SHA256_RE = re.compile(r"[0-9a-f]{64}")
 MAX_INDEX_BYTES = 16 * 1024 * 1024
@@ -44,6 +48,7 @@ TOP_LEVEL_KEYS = {
     "schema",
     "manifest",
     "selector_sources",
+    "dependency_signatures",
     "job_count",
     "job_inventory",
     "jobs",
@@ -62,6 +67,7 @@ class ScopeIndexVerification:
     jobs: tuple[Any, ...]
     index_sha256: str
     manifest_sha256: str
+    dependency_signature_count: int
     elapsed_seconds: float
 
 
@@ -130,6 +136,90 @@ def _selector_receipts(repo_root: Path) -> list[dict[str, str]]:
             }
         )
     return receipts
+
+
+def _tracked_python_paths(repo_root: Path) -> tuple[str, ...]:
+    """Return the deterministic tracked Python inventory for offline indexing.
+
+    Generation runs in a full checkout.  Git owns the production inventory so
+    ignored caches and virtual environments can never enter the committed
+    contract.  The filesystem fallback exists only for hermetic unit fixtures
+    that intentionally are not Git repositories.
+    """
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repo_root), "ls-files", "-z", "--", "*.py"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError):
+        completed = None
+    if completed is not None and completed.returncode == 0:
+        candidates = [
+            item
+            for item in completed.stdout.decode("utf-8", "replace").split("\0")
+            if item
+        ]
+    else:
+        candidates = [
+            path.relative_to(repo_root).as_posix()
+            for path in repo_root.rglob("*.py")
+            if path.is_file()
+        ]
+
+    paths: list[str] = []
+    for candidate in sorted(set(candidates)):
+        path = Path(candidate)
+        if (
+            path.is_absolute()
+            or path.suffix != ".py"
+            or path.as_posix() != candidate
+            or "\\" in candidate
+            or any(part in {"", ".", ".."} for part in path.parts)
+        ):
+            raise ScopeIndexError(
+                f"tracked Python path is not canonical repository-relative POSIX: {candidate!r}"
+            )
+        source, label = _repo_file(
+            repo_root, candidate, label=f"tracked Python source {candidate}"
+        )
+        if label != candidate or source.suffix != ".py":
+            raise ScopeIndexError(f"tracked Python path is not canonical: {candidate!r}")
+        paths.append(candidate)
+    return tuple(paths)
+
+
+def _dependency_signature_receipts(repo_root: Path) -> dict[str, Any]:
+    """Fingerprint dependency structure, never complete Python source bytes."""
+    try:
+        from scripts.ci_scope_dependencies import dependency_structure_sha256
+    except (ImportError, OSError, SyntaxError) as exc:
+        raise ScopeIndexError(f"cannot import dependency signature analyzer: {exc}") from exc
+
+    records: list[dict[str, str]] = []
+    for relative in _tracked_python_paths(repo_root):
+        source, _label = _repo_file(
+            repo_root, relative, label=f"tracked Python source {relative}"
+        )
+        try:
+            text = source.read_text(encoding="utf-8", errors="ignore")
+        except OSError as exc:
+            raise ScopeIndexError(
+                f"cannot read tracked Python source {relative}: {exc}"
+            ) from exc
+        records.append(
+            {
+                "path": relative,
+                "signature_sha256": dependency_structure_sha256(relative, text),
+            }
+        )
+    return {
+        "schema": DEPENDENCY_SIGNATURE_SCHEMA,
+        "python_count": len(records),
+        "files": records,
+    }
 
 
 def _validate_path(path: Any, *, job_id: str, position: int) -> str:
@@ -232,6 +322,132 @@ def _read_index(path: Path) -> dict[str, Any]:
     return _require_exact_keys(payload, TOP_LEVEL_KEYS, label="scope index")
 
 
+def _verify_digest_and_schema(document: Mapping[str, Any]) -> str:
+    digest = _require_sha256(document["index_sha256"], label="index_sha256")
+    core = {key: value for key, value in document.items() if key != "index_sha256"}
+    computed = _sha256_bytes(_canonical_json_bytes(core))
+    if not hmac.compare_digest(digest, computed):
+        raise ScopeIndexError(
+            f"scope index digest mismatch: recorded {digest}, computed {computed}"
+        )
+    if document["schema"] != SCHEMA:
+        raise ScopeIndexError(
+            f"unsupported scope index schema {document['schema']!r}; expected {SCHEMA!r}"
+        )
+    return digest
+
+
+def _dependency_signature_inventory(
+    document: Mapping[str, Any],
+) -> dict[str, str]:
+    raw_inventory = _require_exact_keys(
+        document["dependency_signatures"],
+        {"schema", "python_count", "files"},
+        label="dependency signature inventory",
+    )
+    if raw_inventory["schema"] != DEPENDENCY_SIGNATURE_SCHEMA:
+        raise ScopeIndexError(
+            "unsupported dependency signature schema "
+            f"{raw_inventory['schema']!r}; expected {DEPENDENCY_SIGNATURE_SCHEMA!r}"
+        )
+    count = raw_inventory["python_count"]
+    if type(count) is not int or count < 0:
+        raise ScopeIndexError("dependency signature python_count must be a non-negative integer")
+    files = raw_inventory["files"]
+    if not isinstance(files, list):
+        raise ScopeIndexError("dependency signature files must be an array")
+    if len(files) != count:
+        raise ScopeIndexError(
+            "dependency signature python_count/files length disagree: "
+            f"{count} != {len(files)}"
+        )
+
+    inventory: dict[str, str] = {}
+    observed: list[str] = []
+    for index, raw in enumerate(files):
+        receipt = _require_exact_keys(
+            raw,
+            {"path", "signature_sha256"},
+            label=f"dependency signature record {index}",
+        )
+        path = receipt["path"]
+        if not isinstance(path, str) or not path:
+            raise ScopeIndexError(
+                f"dependency signature record {index} path must be a non-empty string"
+            )
+        candidate = Path(path)
+        if (
+            candidate.is_absolute()
+            or candidate.suffix != ".py"
+            or candidate.as_posix() != path
+            or "\\" in path
+            or any(part in {"", ".", ".."} for part in candidate.parts)
+        ):
+            raise ScopeIndexError(
+                f"dependency signature path must be canonical repo-relative Python: {path!r}"
+            )
+        if path in inventory:
+            raise ScopeIndexError(f"duplicate dependency signature path {path!r}")
+        signature = _require_sha256(
+            receipt["signature_sha256"],
+            label=f"dependency signature for {path}",
+        )
+        inventory[path] = signature
+        observed.append(path)
+    if observed != sorted(observed):
+        raise ScopeIndexError("dependency signature paths must be sorted canonically")
+    return inventory
+
+
+def load_dependency_signature_inventory(index_path: Path | str) -> dict[str, str]:
+    """Load the digest-bound structural inventory without scanning live sources."""
+    document = _read_index(Path(index_path).resolve())
+    _verify_digest_and_schema(document)
+    return _dependency_signature_inventory(document)
+
+
+def verify_changed_python_source(
+    inventory: Mapping[str, str],
+    relative_path: str,
+    source: bytes | str | None,
+) -> str:
+    """Verify one changed HEAD Python blob against its structural receipt.
+
+    ``None`` denotes a deletion.  Adds/deletes are graph-topology mutations and
+    therefore require regeneration even when the new file has no imports: its
+    existence can resolve an import that was previously absent.
+    """
+    if not isinstance(relative_path, str) or not relative_path.endswith(".py"):
+        raise ScopeIndexError(
+            f"changed dependency path must be a repository-relative .py file: {relative_path!r}"
+        )
+    expected = inventory.get(relative_path)
+    if source is None:
+        if expected is None:
+            return "unchanged_absent"
+        raise ScopeIndexError(
+            "dependency signature inventory is stale: tracked Python file "
+            f"{relative_path} was deleted"
+        )
+    if expected is None:
+        raise ScopeIndexError(
+            f"dependency signature inventory is stale: Python file {relative_path} was added"
+        )
+    text = source.decode("utf-8", "ignore") if isinstance(source, bytes) else source
+    try:
+        from scripts.ci_scope_dependencies import dependency_structure_sha256
+    except (ImportError, OSError, SyntaxError) as exc:
+        raise ScopeIndexError(f"cannot import dependency signature analyzer: {exc}") from exc
+    observed = dependency_structure_sha256(relative_path, text)
+    if not hmac.compare_digest(expected, observed):
+        raise ScopeIndexError(
+            "dependency structure drift for "
+            f"{relative_path}: committed {expected}, submitted {observed}; "
+            "regenerate .github/ci/scope-index.json"
+        )
+    return observed
+
+
 def _write_index(path: Path, document: Mapping[str, Any]) -> None:
     rendered = json.dumps(
         document,
@@ -312,6 +528,7 @@ def generate_scope_index(
     )
     manifest_sha = _sha256_file(manifest, label="legacy manifest")
     selector_receipts = _selector_receipts(root)
+    dependency_receipts = _dependency_signature_receipts(root)
     pack = _pack_module(pack_module)
     try:
         live_jobs = list(pack.load_legacy_jobs(manifest))
@@ -358,6 +575,7 @@ def generate_scope_index(
             "sha256": manifest_sha,
         },
         "selector_sources": selector_receipts,
+        "dependency_signatures": dependency_receipts,
         "job_count": len(records),
         "job_inventory": inventory,
         "jobs": records,
@@ -374,18 +592,9 @@ def _verify_document(
     repo_root: Path,
     manifest_path: Path | str,
     pack_module: Any | None,
-) -> tuple[list[Any], str, str]:
-    digest = _require_sha256(document["index_sha256"], label="index_sha256")
-    core = {key: value for key, value in document.items() if key != "index_sha256"}
-    computed = _sha256_bytes(_canonical_json_bytes(core))
-    if not hmac.compare_digest(digest, computed):
-        raise ScopeIndexError(
-            f"scope index digest mismatch: recorded {digest}, computed {computed}"
-        )
-    if document["schema"] != SCHEMA:
-        raise ScopeIndexError(
-            f"unsupported scope index schema {document['schema']!r}; expected {SCHEMA!r}"
-        )
+) -> tuple[list[Any], str, str, int]:
+    digest = _verify_digest_and_schema(document)
+    dependency_inventory = _dependency_signature_inventory(document)
 
     manifest_record = _require_exact_keys(
         document["manifest"], {"path", "sha256"}, label="manifest receipt"
@@ -526,7 +735,7 @@ def _verify_document(
                 f"ordinal/weight=({recorded_ordinal}, {recorded_weight})"
             )
         replacements.append(replace(live_job, paths=paths))
-    return replacements, digest, recorded_manifest_sha
+    return replacements, digest, recorded_manifest_sha, len(dependency_inventory)
 
 
 def verify_scope_index(
@@ -541,7 +750,7 @@ def verify_scope_index(
     started = time.perf_counter()
     root = Path(repo_root).resolve()
     document = _read_index(Path(index_path).resolve())
-    jobs, digest, manifest_sha = _verify_document(
+    jobs, digest, manifest_sha, dependency_signature_count = _verify_document(
         document,
         repo_root=root,
         manifest_path=manifest_path,
@@ -551,6 +760,7 @@ def verify_scope_index(
         jobs=tuple(jobs),
         index_sha256=digest,
         manifest_sha256=manifest_sha,
+        dependency_signature_count=dependency_signature_count,
         elapsed_seconds=time.perf_counter() - started,
     )
 
@@ -616,6 +826,7 @@ def main(
                     {
                         "index": str(args.output),
                         "jobs": document["job_count"],
+                        "dependency_signatures": document["dependency_signatures"]["python_count"],
                         "index_sha256": document["index_sha256"],
                     },
                     sort_keys=True,
@@ -634,8 +845,9 @@ def main(
             + json.dumps(
                 {
                     "index": str(args.index),
-                    "jobs": len(receipt.jobs),
-                    "index_sha256": receipt.index_sha256,
+                        "jobs": len(receipt.jobs),
+                        "dependency_signatures": receipt.dependency_signature_count,
+                        "index_sha256": receipt.index_sha256,
                     "elapsed_seconds": round(receipt.elapsed_seconds, 6),
                 },
                 sort_keys=True,

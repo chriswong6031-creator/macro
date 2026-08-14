@@ -225,6 +225,7 @@ def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() 
     preflight = _preflight_step()
     assert steps.index(preflight) < steps.index(_plan_step())
     assert '--changed-paths-file "$CI_CHANGED_PATHS_FILE"' in preflight["run"]
+    assert "--scope-index .github/ci/scope-index.json" in preflight["run"]
 
     assert not any(
         str(step.get("uses", "")).startswith("actions/github-script@")
