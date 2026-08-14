@@ -53,6 +53,10 @@ _CENSUS_SCHEMA = "institutional_13f.census_public/v1"
 _CENSUS_MAX_RAW_BYTES = 16 * 1024
 _CENSUS_MAX_ROWS = 6
 _CENSUS_RENDER_ARTIFACT_MAX_BYTES = 8 * 1024 * 1024
+# Quarters `periods.current` may legitimately trail latest_completed_period():
+# that reference advances on the 45-day filing deadline, but the SEC bulk set
+# for the quarter publishes only ~2 weeks after it.  See _warn_if_census_frozen.
+_CENSUS_PUBLICATION_LAG_QUARTERS = 1
 _CENSUS_TOP_LEVEL_KEYS = frozenset({
     "schema", "state", "reason", "generated_at", "identity_grain", "periods",
     "coverage", "leaders", "sector_breadth", "freshness", "scope",
@@ -672,7 +676,76 @@ def _validate_census_document(value) -> dict:
     return bounded
 
 
+def _census_quarter_index(value: date) -> int:
+    """Absolute quarter ordinal, so quarter subtraction never mis-crosses a year."""
+    return value.year * 4 + (value.month - 1) // 3
+
+
+def _warn_if_census_frozen(census: dict, *, today: date | None = None) -> None:
+    """Annotate when a VALID census has quietly stopped advancing its period.
+
+    The boundary below fails soft when the source is MISSING or MALFORMED — but
+    a *frozen* census (a well-formed file whose ``periods.current`` stopped
+    advancing) validates perfectly and republishes the same stale quarter
+    forever, leaving no trace anywhere.  That is the same failure class as the
+    sec_insider 2026q2 five-week freeze (#5601): the only signal was a nightly
+    log line nobody reads.
+
+    One quarter of lag is the DESIGN's steady state, not a fault.
+    ``latest_completed_period`` advances the moment a quarter's 45-day filing
+    deadline passes, while the SEC bulk set for that quarter publishes only
+    ~2 weeks later — so the compiler legitimately trails by a quarter inside
+    that publication window.  Two or more means accrual has stopped.
+
+    Watchdog only: never raises, never changes what is published.
+    """
+    try:
+        current = (census.get("periods") or {}).get("current")
+        if not current:
+            return  # degraded/absent — the load path has already said so
+        from scripts.build_institutional_13f_census import latest_completed_period
+
+        reference = today if today is not None else datetime.now(timezone.utc).date()
+        expected = latest_completed_period(reference)
+        lag = _census_quarter_index(expected) - _census_quarter_index(
+            date.fromisoformat(current)
+        )
+        if lag <= _CENSUS_PUBLICATION_LAG_QUARTERS:
+            return
+        print(
+            f"::warning title=institutional-13f-census-stale::"
+            f"data/institutional_13f/public/census_latest.json periods.current "
+            f"{current} trails the latest completed period {expected.isoformat()} "
+            f"by {lag} quarters — the 13F census has stopped advancing (moved SEC "
+            f"bulk URL? compiler lane not firing?) and the Smart-Money desk is "
+            f"publishing a frozen quarter",
+            flush=True,
+        )
+        log.warning(
+            "institutional census stale: periods.current %s vs latest completed "
+            "%s (lag %d quarters)",
+            current,
+            expected.isoformat(),
+            lag,
+        )
+    except Exception as e:  # noqa: BLE001 — a watchdog must never break the build
+        log.debug("institutional census staleness check skipped: %s", e)
+
+
 def _load_institutional_census() -> dict:
+    """Load the bounded census, then watch it for a silent freeze.
+
+    The staleness check sits OUTSIDE the fail-closed boundary in
+    ``_read_institutional_census`` on purpose: a watchdog that could raise
+    inside that ``try`` would turn a perfectly good census into a degraded
+    summary — the watchdog must observe the publish, never alter it.
+    """
+    census = _read_institutional_census()
+    _warn_if_census_frozen(census)
+    return census
+
+
+def _read_institutional_census() -> dict:
     """Load and bound the public census projection; reject everything else.
 
     The private universal holdings plane never crosses this boundary.  Only the
