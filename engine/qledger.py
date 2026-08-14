@@ -4609,7 +4609,8 @@ def _apply_policy_label(pr: "PromotionResult", policy: str,
 
 
 def promotion_check_dispatch(claim_family: str, horizon: int,
-                             root: Path | str | None = None) -> PromotionResult:
+                             root: Path | str | None = None,
+                             today: date | str | None = None) -> PromotionResult:
     """P0d C5 — THE PRODUCTION ENTRY POINT: dispatch by the family's POLICY.
 
     This is what replaces the blanket `promotion_check(control_only=True)` on
@@ -4628,23 +4629,40 @@ def promotion_check_dispatch(claim_family: str, horizon: int,
         computed as description, but eligibility is forced False and the verdict
         says so (C5.3). These are salience/descriptive species; they grade
         magnitude against the placebo tape, not direction against a control.
-    """
+
+    `today` — THE POINT-IN-TIME REFERENCE, threaded rather than re-read (F5).
+    `scripts/grade_qledger.py --today` exists for replay, and it reaches
+    `grade_claim`; it did NOT reach here, so a replay graded against date T while
+    the matched-control gate judged cohort maturity against `date.today()`. The
+    drift was conservative in direction — extra claims looked matured and mostly
+    landed in `matured_awaiting_grading` — but it was a point-in-time
+    inconsistency INSIDE one run, and C4.4's whole premise is that the rowless
+    CLASS is the truth about why a row is missing. Defaults to `date.today()`
+    exactly as before when omitted; nothing about a normal nightly changes."""
     policy, classified = family_control_policy(claim_family)
 
     if policy == CONTROL_POLICY_REQUIRED:
-        return matched_control_check(claim_family, horizon, root=root)
+        return matched_control_check(claim_family, horizon, root=root, today=today)
 
+    # The benchmark arm reads only graded rows, so it has no maturity question to
+    # ask and takes no `today` — deliberately NOT threaded, rather than
+    # threaded-and-ignored.
     pr = promotion_check(claim_family, horizon, root=root, control_only=False)
     return _apply_policy_label(pr, policy, classified)
 
 
 def emit_ladder_states(root: Path | str | None = None,
-                       families: list[str] | None = None) -> dict:
+                       families: list[str] | None = None,
+                       today: date | str | None = None) -> dict:
     """Run promotion_check at every GRADE_HORIZON for each claim_family found in
     claims.jsonl and emit the results into track_record.json under 'ladder_states'.
 
     Called by grade_qledger.py at end-of-collect so the ladder state is always
     current alongside the grade stats. Returns the per-family results dict.
+
+    `today` is the run's point-in-time reference (F5), forwarded to the
+    matched-control gate so a `--today` replay judges cohort maturity on the same
+    date it graded on. Defaults to `date.today()`; a normal nightly is unchanged.
     """
     root = _root(root)
     claims = load_claims(root)
@@ -4671,7 +4689,7 @@ def emit_ladder_states(root: Path | str | None = None,
             # P0d C5.4: the blanket `control_only=True` call is GONE from
             # production. Which basis a family is evaluated on is decided by its
             # governed policy, and the verdict says which basis it used.
-            pr = promotion_check_dispatch(fam, h, root=root)
+            pr = promotion_check_dispatch(fam, h, root=root, today=today)
             entry = pr.as_dict()
             # P0a MAJOR 2 (round 5): the pooled default refuses a bi-market
             # family as STATE_MIXED_CLOCK — correctly, it never pools — but
@@ -4691,7 +4709,8 @@ def emit_ladder_states(root: Path | str | None = None,
             if pr.current_state == STATE_MIXED_CLOCK:
                 if policy == CONTROL_POLICY_REQUIRED:
                     per_market = {
-                        b: matched_control_check(fam, h, root=root, clock_basis=b)
+                        b: matched_control_check(fam, h, root=root, clock_basis=b,
+                                                 today=today)
                         for b in sorted(pr.clock_prior_n_dates or {})
                         if b != CLOCK_LEGACY
                     }

@@ -290,3 +290,55 @@ unpriceable control is indistinguishable from a young claim.
 What a next session should NOT conclude from this: matched-control evidence still does not
 exist. Both required families are wired now; neither has registered a controlled claim yet.
 The clock files remain the only thing allowed to say when that changes.
+
+## ADDENDUM-SHIP (claude/eval-os-p0d-followup, 2026-08-14 ~18:00Z)
+
+The two chipped P0d follow-ups shipped. Provenance: the control-wiring branch
+(`claude/eval-os-p0d-control-wiring`, ADDENDUM-FOLLOWUP above) was adopted
+VERBATIM per the parallel-commission law (build = first claim; this session =
+second = reviewer). An independent Opus adversarial review (13 checks, 5
+mutation controls re-applied and restored sha-identically) confirmed the gate
+arithmetic and found two disclosure-tier defects, both fixed in
+`fix(qledger): P0d review defects 1+2`:
+
+- **D1 — `vocabulary_unmapped` was unreachable in production.** The composed
+  resolver collapsed both refusal causes to None, so an unmapped vocabulary
+  value counted as `sector_absent` and the `::warning`'s offending-value sample
+  never populated (the exact D0-1/D0-2 attribution the counter exists for). Fix:
+  optional `raw_sector_of` twin threaded to the CLASSIFIER only (never
+  make_claim, never the claim row); controls 13/14 re-pinned through the
+  production pair; the end-to-end test that had pinned the mislabel now asserts
+  the true split.
+- **D2 — a CLOSED window with an unpriceable subject read `not_yet_matured`.**
+  Calendar test now precedes the leg probe, so `primary_leg_refused` is
+  reachable for the common delisted/never-collected case and C4.4's own table is
+  true. Plus: `COHORT_ROWLESS_OTHER_BASIS` gained its missing pinning test; C9's
+  duplicated clause repaired (editorial).
+
+F3 (the dark suites) was superseded en route: main now runs
+`tests/test_grade_qledger.py` + `tests/test_w6_readiness_monitor.py` inside the
+qledger P3 step (extended by a sibling with the same rationale; baseline entries
+pruned). This ship instead wired `tests/test_prophet_overtime_horizon_reconciliation.py`
+(#5540 merged it dark during the backlog drain; 23 passed; the always-on unrun
+guard was red on main for it — same defect class, same fix pattern).
+
+Verified at the ship head (all commands re-run post-rebuild onto post-#5609
+main): qledger family + annotation guard **383 passed**; `test_demand_ledger.py`
+9 passed; `agentos.py validate` 0 errors; `run_ci_pack --validate-only` 0;
+`audit_unrun_tests` 0. Sibling-identifier grep after the replay: #5584's
+constant ×5, follow-up identifiers ×11 — nothing dropped.
+
+**Evidence clocks at ship time (git ls-tree origin/main, post-#5609):**
+`data/qledger/control_evidence_clock_start/` does not exist; no P3
+`evidence_clock_start/` files exist either. Honest state: zero matched-control
+evidence anywhere. stock_desk's control clock can first start on the first
+nightly after #5609's merge (TODAY's nightly); demand_chain's on the first
+nightly after THIS PR merges. Nothing was pre-created.
+
+Main-heal context this ship absorbed (for the next archaeologist): #5609 sat
+merge-blocked most of 2026-08-14 behind a fleet-red main — the full census and
+resolution receipts live in PRs #5616/#5622 (closed, superseded), #5657/#5658
+(closed, superseded by the fleet's convergent heals incl. #5655), and the
+merged #5617/#5618/#5623/#5629/#5645/#5648-lineage. The `validated_tag` machine
+token joined `check_validated_claims.py`'s structural-mask family via that
+convergence.

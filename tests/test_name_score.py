@@ -169,6 +169,71 @@ def test_us_emitter_passes_bar_asof():
     assert calls[0]["ticker"] == "T" and calls[0]["score"] == 55
 
 
+# --- store date key = the board's session, never the host clock -------------------
+# DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES: until 2026-08-14 the US append was
+# stamped pd.Timestamp.utcnow().date() at append time. The nightly's library band
+# runs after 00:00 UTC, so session D's calls landed under calendar D+1 (plus Sat/Sun
+# echo stamps from weekend lanes) and the store agreed with the published board on
+# only 22-29% of names same-date — measured board(D) ≡ store(D+1), level match 1.000.
+def test_us_name_score_stamp_is_board_session_not_wall_clock():
+    from scripts import build_stock_library as bsl
+    # the session anchor wins verbatim, regardless of what the host clock says
+    assert bsl._name_score_asof("2026-08-13") == "2026-08-13"
+    # absent/corrupt anchor: loud wall-clock fallback, still an ISO date
+    before = str(pd.Timestamp.utcnow().date())
+    out = bsl._name_score_asof(None)
+    after = str(pd.Timestamp.utcnow().date())
+    assert out in (before, after)
+    assert bsl._name_score_asof("not-a-date") in (before, after)
+
+
+def test_us_store_stamp_wired_to_session_asof():
+    """Wiring pin (mutation-proof): the single call-site line could be reverted to
+    the wall-clock stamp and every behavioral test would stay green while the two
+    memories of name_score diverged again. Pin the source, not just the helper."""
+    from pathlib import Path
+    from scripts import build_stock_library as bsl
+    src = Path(bsl.__file__).read_text()
+    us_append = src.index('append_name_calls(_calls, market="US", asof=_asof)')
+    stamp = src.rindex("_asof = _name_score_asof(alpha_asof)", 0, us_append)
+    # the session stamp is what feeds THIS append (no wall-clock stamp in between)
+    assert "utcnow" not in src[stamp:us_append]
+
+
+def test_sibling_store_stamps_use_session_anchor():
+    """HK/CA/INTL shared the same wall-clock stamp defect; each append now passes
+    its own board/alpha session anchor with utcnow demoted to the loud fallback."""
+    from pathlib import Path
+    import scripts.build_stock_library as bsl
+    root = Path(bsl.__file__).resolve().parent
+    pins = {
+        "build_hk_library.py": 'asof=str(as_of) if as_of else',
+        "build_canada_library.py": 'asof=str(_ca_asof) if _ca_asof else',
+        "build_intl_library.py": 'asof=str(_intl_asof) if _intl_asof else',
+    }
+    for fname, pin in pins.items():
+        src = (root / fname).read_text()
+        assert pin in src, f"{fname}: name-score append lost its session anchor"
+        # no append passes a bare wall-clock stamp any more
+        assert "asof=str(pd.Timestamp.utcnow().date())" not in src, fname
+
+
+def test_producer_relationship_store_row_equals_published_potential(tmp_path, monkeypatch):
+    """The intended end-to-end relationship the divergence receipt asked for: the
+    store row for (session, ticker) carries the SAME score the board publishes,
+    under the SAME date key the snapshot fossil uses (wide["as_of"])."""
+    from scripts import build_stock_library as bsl
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
+    session = "2026-08-13"
+    pot = ns.potential_score(_rec("FRESH BUY"), market="US", edge_z=1.0)
+    rec = {"asof": session, "tech": {"price": 42.5}, "conviction": {"potential": pot}}
+    calls = bsl._collect_potential_calls([("t", rec)])
+    assert gr.append_name_calls(calls, market="US", asof=bsl._name_score_asof(session)) == 1
+    stored = pd.read_parquet(tmp_path / "name_score" / "us_calls.parquet")
+    assert stored["date"].tolist() == [session]          # session key, not run date
+    assert int(stored["score"].iloc[0]) == pot["score"]  # published == stored
+
+
 # --- grade()-side quarantine: pre-gate frozen echoes never reach measurement -----
 def test_grade_quarantines_frozen_echo_runs(tmp_path, monkeypatch):
     """98 fabricated rows (18 buy-tier, e.g. QCOM `setting_up` 63 off a 24d-stale

@@ -602,6 +602,15 @@ jobs:
       # therefore reds current main. It belongs with the Prophet audit guards whose
       # horizon/price-basis contracts it reconciles; the existing dependencies suffice
       # and the focused suite is 23/23 green.
+      # Base-closure 2026-08-14, same shape one commit later: #5506 added the §J.9(c)
+      # lifecycle-projection suite under tests/ and named it in no workflow, so the bare
+      # unrun audit reds current main a second time. It belongs on this line on the
+      # evidence — its subjects are scripts/build_prophet.py and engine/prophet_management.py,
+      # exactly the pair tests/test_prophet_overtime_horizon_reconciliation.py above already
+      # imports, and its import-time third-party closure (pandas, pytest) is identical to
+      # that sibling's, so this step's existing deps suffice. The two modules it reaches
+      # lazily inside test bodies (engine.us_early_turn, engine.prophet_bridge) need only
+      # numpy/pandas, both installed here. Measured: 66 passed, 0 skipped, ~3.8s.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
@@ -609,7 +618,8 @@ jobs:
           research/prophet_us_audit/test_price_ladder.py
           research/prophet_us_audit/test_stop_curvature_study.py
           research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py
-          tests/test_prophet_overtime_horizon_reconciliation.py -q
+          tests/test_prophet_overtime_horizon_reconciliation.py
+          tests/test_prophet_lifecycle_state.py -q
       # P1 unrun backfill 2026-08-14: the DISCLOSURE BUNDLE — the publish-side artifact
       # built on top of the lineage/normalize/detector chain below — joins the step that
       # already owns that chain.  tests/test_fundamental_forensics_disclosure_bundle.py
@@ -1389,6 +1399,7 @@ jobs:
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
+          tests/test_prophet_overtime_horizon_reconciliation.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -3305,6 +3316,7 @@ jobs:
         run: python -m pytest tests/test_evidence_clock.py -q
 
   vintage-pin-fence:
+    scope: exclusive
     if: ${{ false }}
     # Fail-closed: a PR must not equality-pin a live nightly store. Measured
     # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
@@ -7445,6 +7457,14 @@ jobs:
       - "site/flowleaders/**"
       - "site/leaderradar/**"
       - "site/marketdata/**"
+      # Claimed for tests/test_prophet_overtime_horizon_reconciliation.py, wired
+      # into this job with the other prophet board surfaces: its population check
+      # reads the COMMITTED payload — site/prophet/index.json AND the
+      # site/prophet/states/ directory beside it. The closure scanner names only
+      # the index (the states read is a directory traversal), so pinning the one
+      # file would leave the states half unclaimed and this job would not rerun
+      # for an edit to it. `**` matches the sibling biocatalyst-serving claim.
+      - "site/prophet/**"
       - "site/sectordata/**"
       - "site/stocktable.js"
       - "templates/_prophet_card.html.j2"
@@ -7822,6 +7842,15 @@ jobs:
       #     ruling (research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §13), shipped
       #     unwired by #5540.  Appended to the run step above rather than given a step of
       #     its own, for the masking reason recorded at the top of this block.
+      #   * test_prophet_lifecycle_state.py — the SAME ruling's §6/§9 deliverable
+      #     (PR-0(c), #5506), shipped unwired the same way one wave later.  Same owner on
+      #     the same discriminator: it imports scripts/build_prophet.py and
+      #     engine/prophet_management._VALID_PHASES, and of the wired suites importing
+      #     engine.prophet_management this lane still runs every one.  It is the
+      #     NO-DEAD-CELL census — it reds when a cell claims a phase the management
+      #     engine no longer produces — so leaving it dark is precisely the defect the
+      #     ruling exists to close (a vocabulary value with no producer) wearing the
+      #     shape of an unrun guard.  66 tests, ~4s, no network and no data/ read.
       # Owner chosen on subject evidence, not on the family in the filename.  Its import
       # triple is scripts/build_prophet.py + engine/prophet_bridge.py +
       # engine/prophet_management.py, and this lane owns all three: of the 14 WIRED
@@ -7848,7 +7877,7 @@ jobs:
       # committed site/prophet payload and SKIP without it, so a sparse agent worktree
       # scores them 21 passed / 2 skipped — a green that never ran the assertions.
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
-        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py tests/test_prophet_overtime_horizon_reconciliation.py -q
+        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py tests/test_prophet_overtime_horizon_reconciliation.py tests/test_prophet_lifecycle_state.py -q
       # Daily engine setup-race recovery (2026-08-09): GitHub delivered engine and
       # factor_panel to one busy self-hosted runner one second apart; the runner
       # cancelled engine before checkout and the tail kept going.  The two suites
@@ -9098,6 +9127,7 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_capture_page_evidence.py -q
 
   momoedge-browser-observe:
+    scope: exclusive
     # Observe-only authenticated-page companion. Tests are synthetic/static and
     # never contact MomoEdge, inspect browser authentication, or write cohort
     # coverage. Exact source bytes remain host-private outside git.
@@ -9192,6 +9222,7 @@ jobs:
       - name: reference-integrity mutation / anti-vacuity suite
         run: python -m pytest tests/test_check_reference_integrity.py -q
   dataos-foundation:
+    scope: exclusive
     # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
     # temporal, price-basis, null, registry and quality spine every later Data OS wave
     # builds on. WITHOUT THIS JOB the six suites are dead code: there is no broad
@@ -9217,6 +9248,12 @@ jobs:
     # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
+      - config/delisted_symbols.yml
+      - lib/__init__.py
+      - lib/config.py
+      - lib/delisted_symbols.py
+      - lib/ticker_aliases.py
+      - scripts/build_security_master.py
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml

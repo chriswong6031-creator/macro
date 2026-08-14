@@ -268,7 +268,11 @@ def test_census_rows_are_repo_relative_paths(census_rows: list[dict]) -> None:
     """Basenames were ambiguous the moment scope left tests/."""
     assert census_rows
     assert all("/" in row["test"] for row in census_rows)
-    assert all((ROOT / row["test"]).is_file() for row in census_rows)
+    # Resolvable, NOT `is_file()`. A session worktree omits data/, site/, mockups/
+    # and verify_shots/, so on-disk presence is a property of THIS checkout rather
+    # than of the repo; asserting it here would red a sparse tree for a suite that
+    # is perfectly real, which is the same conflation the census itself had.
+    assert all(GUARD.suite_source(row["test"]) is not None for row in census_rows)
 
 
 def test_the_census_reports_the_suites_outside_tests(census_rows: list[dict]) -> None:
@@ -494,3 +498,217 @@ def test_annotations_start_the_line_and_flush() -> None:
                 f"line {node.lineno}: an annotation emitted through a logger is "
                 "prefixed with the level and never parses"
             )
+
+
+# ── 6. sparse checkouts: a smaller tree than CI's must never read as a green one ──
+#
+# Session worktrees omit data/, site/, mockups/ and verify_shots/ by default (policy
+# R8). Discovery used to end at an `is_file()` probe, which cannot tell "git does not
+# track this" from "this checkout did not check it out" — so a candidate under an
+# omitted tree fell out of the suite list AND out of the "not a suite" disclosure, and
+# the gate exited 0 where CI's full checkout would have red.
+#
+# These tests run against a REAL sparse-checkout repo rather than a monkeypatched
+# `missing_dirs`: the bug lived in the seam between git's cone and the filesystem, and
+# a mocked cone cannot fail the way the real one did.
+
+
+def _git(root: Path, *args: str) -> None:
+    subprocess.run(["git", *args], cwd=root, check=True,
+                   capture_output=True, text=True)
+
+
+@pytest.fixture
+def sparse_repo(tmp_path: Path) -> Path:
+    """A genuine cone-mode sparse checkout: `kept/` on disk, `omitted/` tracked only."""
+    root = tmp_path / "repo"
+    root.mkdir()
+    _git(root, "init", "-q", "-b", "main")
+    _git(root, "config", "user.email", "t@example.com")
+    _git(root, "config", "user.name", "t")
+    _git(root, "config", "commit.gpgsign", "false")
+    for rel, body in (
+        ("kept/test_visible.py", _SUITE),
+        ("omitted/test_dark.py", _SUITE),
+        ("omitted/nested/test_dark_class.py", _CLASS_SUITE),
+        ("omitted/test_instrument.py", _INSTRUMENT),
+        ("omitted/keep.txt", "so the tree survives the cone\n"),
+    ):
+        _write(root / rel, body)
+    _git(root, "add", "-A")
+    _git(root, "commit", "-qm", "seed")
+    _git(root, "sparse-checkout", "init", "--cone")
+    _git(root, "sparse-checkout", "set", "kept")
+
+    assert not (root / "omitted").exists(), "the fixture did not actually go sparse"
+    assert (root / "kept" / "test_visible.py").is_file()
+    return root
+
+
+def test_the_fixture_is_the_real_thing(sparse_repo: Path) -> None:
+    """Guard on the guard: a cone that quietly failed to apply proves nothing below."""
+    assert GUARD.sparse_omitted_dirs(sparse_repo) == ("omitted",)
+    assert GUARD.sparse_omitted_dirs(ROOT) == () or set(
+        GUARD.sparse_omitted_dirs(ROOT)) <= {"data", "site", "mockups", "verify_shots"}
+
+
+def test_no_tracked_candidate_is_dropped_by_a_sparse_checkout(sparse_repo: Path) -> None:
+    """THE REGRESSION. Every tracked pytest-shaped path lands in exactly one bucket.
+
+    Before the fix the two omitted suites and the omitted instrument appeared in
+    NEITHER `suites` nor `not_a_suite` — no tier, no disclosure, no exit code. A
+    reader grepping the census for them found nothing at all.
+    """
+    suites, non_suites, unreadable = GUARD._classify(str(sparse_repo))
+    buckets = set(suites) | set(non_suites) | set(unreadable)
+    tracked = {
+        rel for rel in subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", "HEAD"], cwd=sparse_repo,
+            capture_output=True, text=True, check=True,
+        ).stdout.split()
+        if GUARD._SUITE_FILENAME.match(rel.rsplit("/", 1)[-1])
+    }
+    assert tracked, "the fixture seeded no candidates"
+    assert tracked <= buckets, sorted(tracked - buckets)
+
+
+def test_a_suite_under_an_omitted_tree_is_classified_as_a_suite(sparse_repo: Path) -> None:
+    """Read from HEAD, so the verdict matches the full checkout CI runs on."""
+    suites, _, unreadable = GUARD._classify(str(sparse_repo))
+    assert "omitted/test_dark.py" in suites
+    assert "omitted/nested/test_dark_class.py" in suites
+    assert not unreadable
+    # And the on-disk half is unaffected — the recovery must not replace the walk.
+    assert "kept/test_visible.py" in suites
+
+
+def test_an_instrument_under_an_omitted_tree_is_disclosed_not_dropped(
+    sparse_repo: Path,
+) -> None:
+    """No silent caps: it collects nothing, and the reader still gets told why."""
+    suites, non_suites, _ = GUARD._classify(str(sparse_repo))
+    assert "omitted/test_instrument.py" in non_suites
+    assert "omitted/test_instrument.py" not in suites
+
+
+def test_suite_source_prefers_disk_and_falls_back_to_head(sparse_repo: Path) -> None:
+    """Disk first keeps a full checkout on exactly the path it has always taken."""
+    assert GUARD.suite_source("kept/test_visible.py", sparse_repo) == _SUITE
+    assert GUARD.suite_source("omitted/test_dark.py", sparse_repo) == _SUITE
+    # A path that is absent for any reason OTHER than the sparse profile stays absent:
+    # a stale index entry must not be resurrected from HEAD behind the reader's back.
+    assert GUARD.suite_source("kept/test_gone.py", sparse_repo) is None
+
+
+def test_an_unreachable_candidate_is_bucketed_unreadable_not_assumed_clean(
+    sparse_repo: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Fail closed: when git will not hand over the bytes, the answer is not "fine".
+
+    Only `cat-file` is broken here — the cone, the inventory and the walk stay real —
+    so this pins the recovery's failure path rather than a mock of the detector.
+    """
+    real = GUARD._git_stdout
+    monkeypatch.setattr(
+        GUARD, "_git_stdout",
+        lambda root, *args: None if args and args[0] == "cat-file" else real(root, *args),
+    )
+    suites, non_suites, unreadable = GUARD._classify(str(sparse_repo))
+    assert set(unreadable) == {
+        "omitted/test_dark.py",
+        "omitted/nested/test_dark_class.py",
+        "omitted/test_instrument.py",
+    }
+    assert "kept/test_visible.py" in suites          # the readable half still answers
+    assert not set(unreadable) & (set(suites) | set(non_suites))
+
+
+# ── 6b. the reporting contract: the exit code and the words on the way out ───
+
+
+@pytest.fixture
+def quiet_census(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Skip the ~30s whole-tree census; these tests are about main()'s reporting."""
+    monkeypatch.setattr(GUARD, "census", lambda: [])
+    monkeypatch.setattr(GUARD, "discover_suites", lambda: [])
+    monkeypatch.setattr(GUARD, "not_a_suite", lambda: [])
+
+
+def test_main_refuses_when_a_candidate_cannot_be_read(
+    quiet_census: None, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """The check_template_site_sync.py posture: refuse, name it, never exit 0."""
+    monkeypatch.setattr(GUARD, "unreadable_candidates", lambda: ["omitted/test_x.py"])
+    monkeypatch.setattr(GUARD, "sparse_omitted_dirs", lambda root=None: ("mockups",))
+    rc = GUARD.main([])
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "REFUSED" in out
+    assert "omitted/test_x.py" in out
+    assert "python3 scripts/worktree_sparse.py full" in out
+
+
+def test_main_discloses_a_sparse_checkout_above_and_below_the_verdict(
+    quiet_census: None, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """A bare `OK` from a smaller tree than CI's is the whole trap; both ends say so."""
+    monkeypatch.setattr(GUARD, "unreadable_candidates", lambda: [])
+    monkeypatch.setattr(GUARD, "sparse_omitted_dirs",
+                        lambda root=None: ("data", "mockups", "site", "verify_shots"))
+    GUARD.main([])
+    lines = capsys.readouterr().out.splitlines()
+    notes = [i for i, ln in enumerate(lines) if ln.startswith("NOTE:")]
+    assert len(notes) >= 2, f"expected a banner AND a trailing note, got {notes}"
+    assert notes[0] < min(
+        (i for i, ln in enumerate(lines) if ln.startswith("pytest suites")), default=10**6
+    ), "the banner must precede the counts it qualifies"
+    assert notes[-1] == len(lines) - 1, "the trailing note must be the LAST line out"
+    for name in ("data", "mockups", "site", "verify_shots"):
+        assert name in lines[notes[0]]
+    assert "python3 scripts/worktree_sparse.py full" in lines[notes[-1]]
+
+
+def test_a_full_checkout_is_told_nothing_about_sparseness(
+    quiet_census: None, monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture,
+) -> None:
+    """Every CI lane runs full. The disclosure must not become background noise."""
+    monkeypatch.setattr(GUARD, "unreadable_candidates", lambda: [])
+    monkeypatch.setattr(GUARD, "sparse_omitted_dirs", lambda root=None: ())
+    GUARD.main([])
+    out = capsys.readouterr().out
+    assert "NOTE:" not in out
+    assert "sparse" not in out.lower()
+
+
+def test_the_disclosure_is_not_a_github_annotation() -> None:
+    """CI is never sparse, so an ::warning here could only fire where nothing reads it.
+
+    House law also requires annotations to start the line; a disclosure that is
+    neither needed nor line-leading is how the ::-prefix guard gets a false positive.
+    """
+    src = CENSUS.read_text()
+    for marker in ("sparse worktree", "verdict produced in a sparse checkout"):
+        assert marker in src
+    for line in src.splitlines():
+        if "sparse" in line.lower() and "::" in line and "print(" in line:
+            pytest.fail(f"sparse disclosure emitted as an annotation: {line.strip()}")
+
+
+def test_sparseness_is_never_detected_with_is_dir(sparse_repo: Path) -> None:
+    """`data/` survives `git reset --hard` as a 0-byte husk, so `is_dir()` lies.
+
+    Detection must go through `worktree_sparse.missing_dirs`, which answers cone-mode
+    checkouts from git's own include set.
+    """
+    husked = sparse_repo / "omitted"
+    husked.mkdir()
+    try:
+        assert husked.is_dir()
+        assert GUARD.sparse_omitted_dirs(sparse_repo) == ("omitted",), (
+            "an empty husk directory convinced the detector the tree was materialized"
+        )
+    finally:
+        husked.rmdir()
