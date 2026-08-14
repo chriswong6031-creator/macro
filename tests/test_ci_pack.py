@@ -2946,6 +2946,7 @@ def test_structural_preflight_cli_consumes_json_path_artifact(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    (root / "DESIGN_NOTES.md").write_text("narrative only\n", encoding="utf-8")
     paths = tmp_path / "changed-paths.json"
     paths.write_text('["DESIGN_NOTES.md"]', encoding="utf-8")
 
