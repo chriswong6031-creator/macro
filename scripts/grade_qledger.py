@@ -218,6 +218,13 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             "wilson_ci_low": pr.wilson_ci_low,
             "hit_rate": fam_stats.get("hit_rate"),
             "excess_mean": fam_stats.get("excess_mean"),
+            # V1: _aggregate owns the legality gate, so excess_mean is already
+            # None for a mixed-direction family; the basis + magnitude +
+            # per-direction split travel with it so the admin surface can say
+            # WHY rather than dash.
+            "mean_abs_excess": fam_stats.get("mean_abs_excess"),
+            "excess_basis": fam_stats.get("excess_basis"),
+            "excess_mean_by_direction": fam_stats.get("excess_mean_by_direction"),
             "ready": pr.eligible,
             "approaching": approaching,
             "projected_ready_date": proj,
@@ -293,6 +300,13 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
                           and challenger_basis == placebo_basis)
             duel_context[fam] = {
                 "challenger_excess_mean_5d": h5.get("excess_mean"),
+                # The placebo side of this duel has ALWAYS been a |excess|, so for a
+                # mixed-direction family — where the signed mean is now withheld —
+                # the magnitude leg is both the legal reading and the like-for-like
+                # one. `challenger_excess_basis_5d` tells the renderer which side of
+                # the duel it is allowed to print.
+                "challenger_abs_excess_5d": h5.get("mean_abs_excess"),
+                "challenger_excess_basis_5d": h5.get("excess_basis"),
                 "placebo_covered_abs_excess_5d": placebo_covered,
                 "n_dates_5d": h5.get("n_dates", 0),
                 "wilson_ci_low_5d": h5.get("wilson_ci_low"),
