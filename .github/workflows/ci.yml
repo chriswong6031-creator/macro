@@ -1344,6 +1344,12 @@ on:
       # alone; the workflow it schedules is already covered by ".github/workflows/**".
       - "scripts/nightly_backstop.py"
       - "tests/test_nightly_backstop.py"
+      # 2026-08-13 nightly liveness dead-man switch — the other half of the same
+      # incident. The guard and its suite must reach the dag-conformance job when
+      # either is edited alone; the workflow it schedules is already path-covered
+      # by ".github/workflows/**" above.
+      - "scripts/check_nightly_liveness.py"
+      - "tests/test_nightly_liveness.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).

@@ -2895,3 +2895,55 @@ checks:
       job and record the promotion here. Do NOT promote on a nonzero count — the
       previous attempt at this law was promoted to hard while itself violating the law
       it shipped, and was structurally blind to that.
+  - law_id: ops.nightly_liveness
+    summary: >
+      The authoritative US nightly (daily.yml / Build B) must produce a run for every
+      completed NYSE session, that run must conclude success, and the Prophet store
+      must actually advance to that session. All three are separate failures and each
+      is observable on its own.
+    source_ref:
+      - scripts/check_nightly_liveness.py
+      - tests/test_workflow_file_size.py
+    severity: hard
+    check_script: scripts/check_nightly_liveness.py
+    ci_wiring:
+      - workflow: .github/workflows/nightly-liveness.yml
+        job: liveness
+        lane: scheduled
+      - workflow: .github/ci/legacy-jobs.yml
+        job: dag-conformance
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Detection floor is the schedule: 08:00Z and 14:00Z. A bake that dies at 23:00Z
+        is reported the next morning, not within the hour. That is deliberate — the
+        nightly legitimately runs for hours, so a tighter slot could only report
+        INDETERMINATE and would train the operator to ignore the channel.
+      - >-
+        Check C reads the COMMITTED site/prophet/index.json, so it proves the store
+        advanced in git, not that the VPS served it. The 3-min pull and the VPS-side
+        freshness_sentinel own that last hop.
+      - >-
+        Blindness (API error, missing artifact, unparseable stamp) is INDETERMINATE by
+        design and exits 0. A guard that is permanently blind therefore reads green;
+        test_default_repo_matches_the_git_remote pins the one input most likely to
+        cause that silently.
+      - >-
+        Watches Build B only. Build A (closing-bell.yml) ran green through the entire
+        2026-08-11/12 outage while the board it re-rendered still read
+        price_through=2026-08-10, so its health proves nothing about the ledger.
+    owner_program: prophet-us-eyes-open
+    notes: >
+      Registered after the 2026-08-11/12 two-session outage, in which the US nightly
+      went dark and no existing instrument reported it. heartbeat.yml could not:
+      max_age_hours=96 is sized so a Friday bake still looks alive on Monday, and it
+      runs on the same macstudio pool as the lane it watches. freshness_sentinel could
+      not: PROPHET_MAX_SESSIONS_BEHIND=1 is correct (between the close and the bake,
+      one behind IS healthy) and therefore blind for ~24h. Both measure DATA; what
+      broke was the SCHEDULE, after #5362 pushed daily.yml past GitHub's silent
+      ~512,000-byte processing cap. This guard asks GitHub whether a run was created
+      at all, which is the only question that sees a stranded workflow file in hours.
+      Fixture dates in --selftest are constants with no relation to the wall clock.

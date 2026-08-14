@@ -2184,6 +2184,15 @@ jobs:
       # zero jobs, uncancellable. The budget test reds growth before the cap.
       - name: workflow file size stays under GitHub's silent processing cap
         run: python -m pytest tests/test_workflow_file_size.py -q
+      # Same incident, other half. The size guard stops daily.yml being stranded
+      # AGAIN; this one notices when the nightly stops producing runs for ANY
+      # reason — strand, cancellation, or a green run that never advances the
+      # store. The 2026-08-11/12 outage ran two full sessions unreported because
+      # every instrument we had measured DATA staleness on weekend-safe budgets.
+      - name: nightly liveness guard selftest (scripts/check_nightly_liveness.py)
+        run: python3 scripts/check_nightly_liveness.py --selftest
+      - name: nightly liveness dead-man switch (checks + wiring pins)
+        run: python -m pytest tests/test_nightly_liveness.py -q
 
   push-retry-policy:
     if: ${{ false }}
