@@ -7191,8 +7191,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # `yfinance` is load-bearing, not decoration, and it is the dependency trap this
+      # lane's new suite walked into.  tests/test_us_scan_tier.py calls a helper that
+      # does `import collectors.yahoo`, and collectors/yahoo.py imports yfinance
+      # unguarded — a dep NEITHER the suite NOR its declared subjects name.  It is
+      # invisible to a local run (yfinance is installed here) and invisible to a
+      # sys.modules probe against a fixed candidate list, so the first draft of this
+      # PR shipped without it and CI answered precisely: 9 failed, 236 passed,
+      # ModuleNotFoundError: No module named 'yfinance' — and because run_ci_pack.py
+      # returns on the FIRST non-zero step, this job's own later red (the nightly lane
+      # placement step, red on main independently) never even ran.
+      # WIDENING IS LEGAL HERE.  "Never widen the pip line" is scoped to lanes whose
+      # thin env is a DECLARED canary — dataos-foundation's `pytest pyyaml` and the
+      # marketing/chart-render thin lanes, each of which says so in a comment.  This
+      # job declares no such contract and no comment here turns on a dep being absent.
+      # The resulting line is BYTE-IDENTICAL to the one unrun-russell-breadth already
+      # declares — the sibling lane that also owns collectors/yahoo.py — so
+      # run_ci_pack.py reuses that venv and provisions nothing new.
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn yfinance
       # P1 unrun backfill 2026-08-14: tests/test_us_scan_tier.py joins the step that
       # already owns engine/prophet_miss_audit.py and engine/us_context_vector.py — two
       # of its own subjects — plus engine/confluence_tiers.py, the tiering it asserts
@@ -7202,10 +7219,11 @@ jobs:
       # failure a reader sees rather than the scan tier failing for a borrowed reason;
       # it rides this step because a step is the masking unit (run_ci_pack.py returns on
       # the first non-zero step) while pytest reports every file inside one step.
-      # No dependency widened: probed at RUN time the suite loads requests, bs4 and
-      # lxml, but blocking each one individually still leaves it 49-passed — they are
-      # guarded/optional imports, and requests + beautifulsoup4 are on the install line
-      # above regardless.
+      # Dependencies: requests, bs4 and lxml are all loaded but OPTIONAL — blocking each
+      # individually still leaves the suite 49-passed — and requests + beautifulsoup4
+      # are on the install line regardless.  yfinance is the one that is NOT optional;
+      # see the install-line comment above for why it had to join and why that is not a
+      # canary-lane widening.
       - name: US context vector + full-population grades + miss-audit scorecards
         run: python -m pytest tests/test_us_prophet_grades.py tests/test_us_context_vector.py tests/test_prophet_miss_audit.py tests/test_heal_candidates_archetype.py tests/test_us_scan_tier.py -q
       - name: US entry-status full-population remeasurement
