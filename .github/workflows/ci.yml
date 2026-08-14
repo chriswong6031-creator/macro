@@ -1414,6 +1414,15 @@ on:
       # without this line an edit to the CONFIG side could not start the pack
       # that runs the guard over it — the #3488 shape.
       - "config/earnings_qual.yml"
+      # The two guards written after the 2026-08-02 ingest outage, same #3488
+      # shape: the lanes they protect are workflow YAML and a scripts/ module, so
+      # without these lines a test-only edit could not start the pack that runs
+      # them. test_earnings_evidence_graph_deps.py derives the pyyaml requirement
+      # from the live import chain; test_earnings_wire_freshness.py pins the
+      # published-vs-upstream lag tripwire.
+      - "tests/test_earnings_evidence_graph_deps.py"
+      - "tests/test_earnings_wire_freshness.py"
+      - "scripts/audit_earnings_wire_freshness.py"
       - "tests/test_china_board_watch_lane.py"
       - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
