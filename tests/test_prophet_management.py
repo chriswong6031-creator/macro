@@ -756,7 +756,11 @@ class TestHumanState:
         assert _human_state("invalidated", 0.0, False, 0.5) == "Invalidated"
 
     def test_overtime_string(self):
-        assert _human_state("overtime", 0.0, False, 1.2) == "Overtime Stall"
+        # Ruling §13 (2026-08-13): "Overtime Stall" read as "still running, in extra
+        # time".  An open row here is the opposite — its window is gone and only the
+        # closing print is outstanding.  Full pin:
+        # tests/test_prophet_overtime_horizon_reconciliation.py
+        assert _human_state("overtime", 0.0, False, 1.2) == "Window Elapsed — Awaiting Close"
 
     def test_pre_trigger_awaiting(self):
         assert _human_state("pre_trigger", 0.0, False, 0.05) == "Awaiting Trigger"

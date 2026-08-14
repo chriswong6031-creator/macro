@@ -528,7 +528,15 @@ def _detect_phase(
 
     Priority:
     1. invalidated   — stop breached (dist_from_stop <= 0)
-    2. overtime      — tau > 1.0 AND T1 never hit
+    2. overtime      — tau > 1.0 AND T1 never hit.  STRICT ``>`` is correct and load-
+       bearing, NOT an off-by-one (ruling §13, 2026-08-13).  The closure scan retires
+       the plan at ``days >= horizon_days`` on the SAME ``plan_clock_date`` clock
+       (build_prophet.py:893,934), so this arm fires the day AFTER the ledger has
+       already graded the row EXPIRED/NO_ENTRY.  An OPEN row reaching it is one whose
+       price frame stopped printing.  Widening this to ``>=`` would not populate a
+       lifecycle cell — it would only race the closure gate on the same day.
+       "Open beyond the declared horizon" is, under that closure contract, not a
+       lifecycle stage; do not re-derive it from a signal-anchored ``age_days``.
     3. at_t2         — T2 hit (first_t2_ts set, p2 >= 1.0)
     4. post_t1_failed_hold — T1 was hit but p1 < 0.50 (gave back >50% of T1 move)
     5. at_t1 / between_t1_t2 — T1 hit, p1 >= 0.50
@@ -1062,8 +1070,14 @@ def _build_change_reason(
             ("triggered_pre_t1", "between_t1_t2"):     "T1 Target Hit",
             ("at_t1",         "at_t2"):                "T2 Target Hit",
             ("between_t1_t2", "at_t2"):                "T2 Target Hit",
-            ("triggered_pre_t1", "overtime"):           "Overtime — Horizon Exceeded",
-            ("pre_trigger",   "overtime"):              "Overtime — Horizon Exceeded",
+            # Not "Horizon Exceeded": on a plan with live prices the closure scan has
+            # ALREADY graded this row EXPIRED/NO_ENTRY one day before tau clears 1.0
+            # (build_prophet.py:893,934 fire at days >= horizon; :504 needs days >
+            # horizon).  A row still OPEN here is one whose price frame stopped
+            # printing, so what is outstanding is the closing print, not the window.
+            # Ruling: PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §13.
+            ("triggered_pre_t1", "overtime"):           "Window Elapsed — Awaiting Close",
+            ("pre_trigger",   "overtime"):              "Window Elapsed — Awaiting Close",
             ("at_t1",         "post_t1_failed_hold"):  "Giving Back Gains",
             ("between_t1_t2", "post_t1_failed_hold"):  "Giving Back Gains",
             ("triggered_pre_t1", "invalidated"):        "Stop Level Breached",
@@ -1116,13 +1130,23 @@ def _human_state(phase: str, p1: float, trigger_hit: bool, tau: float) -> str:
     at_t1 / between   → "T1 Hit — Holding" / "Advancing to T2" / "Giveback Warning"
     post_t1_failed_hold → (drawdown zone)
     at_t2             → "High Conviction" / "Extended — Watch Giveback"
-    overtime          → "Overtime Stall"
+    overtime          → "Window Elapsed — Awaiting Close"
     invalidated       → "Invalidated"
+
+    OVERTIME IS NOT "STILL RUNNING, IN EXTRA TIME" (ruling §13, 2026-08-13)
+    ----------------------------------------------------------------------
+    oracle_spec ported this phase from a browser tick-state system that has no closure
+    authority, where a plan really does keep running past its horizon.  Prophet closes
+    plans: ``_determine_outcome`` grades EXPIRED/NO_ENTRY on the first bar at
+    ``days >= horizon_days``, one day BEFORE ``tau > 1.0`` can make this phase true on
+    the same clock.  So a row reading ``overtime`` is either already closed (the pulse
+    drops the phase leg there) or its price frame stopped printing — a halted/delisted
+    name whose closing print never arrived.  The words say that, and no more.
     """
     if phase == "invalidated":
         return "Invalidated"
     if phase == "overtime":
-        return "Overtime Stall"
+        return "Window Elapsed — Awaiting Close"
     if phase == "at_t2":
         return "High Conviction" if p1 < 1.5 else "Extended — Watch Giveback"
     if phase == "post_t1_failed_hold":
