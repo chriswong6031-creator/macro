@@ -1,0 +1,113 @@
+# Design-authority verdict packet — r2 cycle (revised Prophet Board, frozen 0fc975a).
+# Issued over the fresh ledgers, both independent critic receipts (two-pass,
+# quarantined incl. the designer's compare set), and spot-verification of the
+# load-bearing claims (double-declared enriched var; stance-blind zone branch;
+# Wait/Entered gloss collision — all confirmed in the frozen code by the authority).
+schema: mastermind.rig_verdict.v1
+reference_id: prophet-board-5514-r2
+
+authority:
+  identity: "Fable main loop — RIG r2 adjudication session (design authority per factory §1)"
+  role: design_authority
+
+packet:
+  materially_improved: >
+    The founding cycle's card conditions are implemented and verified: chart hero
+    restored at shipped height with the spark-recolour law; unconditional live-quote/
+    change slot (100% hydration — the v1 DOM bug found and fixed); one-word stance chip
+    with a RULED producer (engine-bucket projection, drift-pinned) and the restored
+    solid-Buy-only hierarchy; Priority restored per the Priority Engine ruling with the
+    honest tooltip; zone footer restored as the glance abstraction with Entry/T1/Void
+    demoted off the card; prose and day-count gone; hue reconciled (stance channel hued,
+    lifecycle weight-only, zh flip pinned by new verify checks); marks re-sourced from
+    real producers with an honest Imminent zero; the disclosed no-read chip replaces a
+    prior authority violation (guessed Wait from a disclaimed engine); state=today/
+    fallback honesty lenses committed; G-D minted as a hard production data gate and
+    Overtime held open rather than papered over. The v1 architecture strengths all
+    stand.
+  materially_worsened: >
+    Relative to production, the revision introduces new integrity defects the critics
+    verified in the frozen code: the zone footer prints active buy-zone ink on 22 of 33
+    canonical cards carrying Wait/Hold/Avoid stances, most with price already above the
+    zone (production's five-state stance-branched zone semantics lost — the anti-chase
+    encoding); the canonical state=paid view exempts itself from the count law its own
+    page asserts (96-in-Entered over a 22-card grid; 162 headline over 33 SETUPS); the
+    ⚠N risk ledger still has no carrier anywhere while the page carries more
+    instruction; hardcoded regime/posture chips and a fabricated 22-row Groups table
+    with causal sector reads and a "Take profits" lane assert producer-less market
+    calls that survive the empty state; the card is still not a link (with a false
+    hover affordance); the overflow table drops stance/Priority/zone and ships the
+    banned Entry/Void/T1 levels; board-level proof numbers and the degraded-freshness
+    state remain absent; the anon gate promises levels the paid card bans.
+  disappeared: >
+    Still missing versus production, across two revisions: the ⚠N caution popover and
+    every risk fact it carries (never on any drop list); the card-as-link path to any
+    per-name detail; the quantitative accountability strip (59% win · +0.45%/trade,
+    fired outcomes, passed-on counts); the degraded-freshness banner and the
+    verify-before-acting disclosures; Priority's printed coverage nulls and Featured's
+    selection rule; production's live entry reads for names whose stance now renders
+    BLOCKED_DATA (GPCR — filtered out of the canonical view entirely).
+  behavior_harder: >
+    Acting without chasing (zone ink no longer encodes actionability; anti-chase
+    warnings gone); reading risk before acting (no carrier); opening a name (no link);
+    judging the machine anonymously (no numbers); trusting any count in the canonical
+    view (three populations under one headline); knowing the board is behind the tape
+    (single settled-close stamp over two-day-old joins).
+  stronger_claims: >
+    Producer-less regime/posture/Groups assertions in engine grammar, including
+    sell-side instruction ("Take profits — extended, thinning out") that contradicts
+    the artifact's own cited TRIM-does-not-exist ruling; exact execution levels
+    (Entry/Void/T1) shipped in the overflow table after being banned from the card
+    tier; an anon gate copy contract ("entry, target and void levels included") the
+    paid product deliberately does not honour; fabricated per-ticker change values in
+    the frozen reference crops distinguishable only in source.
+  intent_vs_convenience: >
+    Product intent (accept): the entire card restoration; the ruled stance projection
+    and its refusal of the disclaimed engine; the no-read discipline; the state-lens
+    honesty system; G-D and Q2 escalations. Implementation convenience (reject): the
+    stance-blind zone branch (a presence check where production branches five ways);
+    the count-law exemption inside the reference lens; hardcoded Groups/regime content
+    as layout filler asserting market reads; the double-declared coverage variable
+    corrupting G-D's own on-screen numbers; the bare Featured ring reverting a recorded
+    operator correction its rationale quotes only half of.
+  production_preferable_for: >
+    Risk-aware acting (cautions + stance-branched zones), opening a name, anonymous
+    proof, staleness awareness, and count-coherent filtering — production remains
+    preferable for each today. The proposal is preferable for lifecycle truth,
+    population structure, episode identity, absence honesty, and (per Reviewer B) the
+    per-pixel information of the zone-banded spark.
+  strongest_argument_against: >
+    Approving this reference would freeze, as design law, a board whose canonical view
+    contradicts its own count law, whose zone ink invites the exact chase its deleted
+    warnings once prevented, and whose Groups/regime strips originate signals no engine
+    produced — each verified in the frozen code, several contradicting the artifact's
+    own stated rules ("only fabricated numbers", "TRIM does not exist", "outside the
+    enclosure") — while the risk ledger, the card link, and the proof numbers remain
+    missing for the second consecutive revision. A gate that approved this while its
+    own critics hold four verified blockers would be the reference laundering it was
+    built to stop.
+
+blocking_findings:
+  - {finding: PRC-201, resolution: upheld_revise, note: "the ⚠ risk ledger must have a carrier wherever the board instructs; it has never appeared on any revision's drop list — disposition it explicitly or restore it"}
+  - {finding: PRC-202, resolution: upheld_revise, note: "restore stance-branched zone semantics (active ink only where actionable; muted/re-add/stand-aside states); the payload's zstate field is already consulted in the else-branch"}
+  - {finding: PRC-203, resolution: upheld_revise, note: "the canonical view may not exempt itself from the count law — either filtered-view totals reconcile on-face (filtered counts + explicit remainder line) or the reference view is re-specified so every printed integer matches the rendered population"}
+  - {finding: PRC-207, resolution: upheld_revise, note: "no producer-less content in a canonical reference: regime/posture chips, Groups lane counts, causal sector reads and the TRIM lane must be sourced, removed, or unmistakably marked illustrative-fixture-only; the empty state must not assert market reads"}
+
+overrides: []
+
+verdict: REVISE
+conditions:
+  - "Blockers above (PRC-201/202/203/207) resolved by change; receipts re-run against the new frozen SHA."
+  - "Reviewer B's four conditions, of which the first is not waivable (its own operator-note evidence): restore the Featured aura + --pv-buy pin per the recorded operator correction (VTC-204); stance palette values distinct from the direction tokens so a Buy card at a down tape is not two direction inks (VTC-202); fix the light card/canvas inversion with the existing --panel token (VTC-203); one opportunity above the fold at 390w — collapsed mobile ladder or reordering (VTC-206)."
+  - "Card links to the name's detail surface or the hover affordance is removed (PRC-209); the overflow table carries the board's own sort key and stance, and drops the banned Entry/Void/T1 levels or the card-tier ban is re-adjudicated (PRC-211/212)."
+  - "Freshness truth: the as-of stamp reflects the oldest feeding vintage or per-source stamps return; the degraded/behind state has a slot; the card date names its referent (PRC-205). Priority/Featured carry their printed nulls and selection rule (PRC-206)."
+  - "Fix the double-declared enrichment variable and the G-D on-screen arithmetic (PRC-215); reconcile the anon gate copy with what the paid card actually carries (PRC-214); restore a quantitative proof strip or disposition board.track_record_strip explicitly (PRC-213); resolve the Wait-beside-Entered gloss collision with one vocabulary rule on-card (PRC-208); 390w Resolved partition (PRC-216) and the remaining B minors as polish."
+  - "The three critical WORSE tasks in the proposal ledger (risk_before_acting, open_name_detail, staleness_awareness) and the caution_popover disposition gap close with the above."
+  - "Resubmission is a new frozen SHA + fresh critic receipts under a new artifact set or an appended cycle with re-frozen receipts; approval only then."
+preserved_strengths:
+  - "the full card restoration — chart hero, live quote/change, stance chip with ruled producer, Priority with honest gloss, zone abstraction, restrained sourced marks (the founding cycle's conditions, implemented)"
+  - "plan-book Setups with Candidates as a second population; seven-cell ruled lifecycle; ladder-as-filter; Resolved outside the live count on desktop"
+  - "absence discipline extended: em-dash key-absence, disclosed no-read chip that refuses to guess, honest Imminent zero, state=today/fallback honesty lenses committed for review"
+  - "the ruled stance projection that corrects a real authority violation (no more guessed Wait from a disclaimed engine), drift-pinned in the artifact's own tooling"
+  - "G-D minted as a hard production data gate with measured coverage; Overtime held open rather than cured-by-hiding"
+  - "episode identity (N-of-M dated chips, forward links); best-in-class empty-state writing; anon gate that withholds by absence; native zh with the direction flip verified; zone-banded spark (more information per pixel than production)"
