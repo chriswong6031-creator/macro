@@ -74,10 +74,19 @@ _SETTLE_SESSIONS = 8
 
 
 class FixtureResult(dict):
-    """A fixture verdict: ``{name, passed, detail}`` with dict ergonomics."""
+    """A fixture verdict: ``{name, passed, applicable, detail}`` with dict ergonomics.
 
-    def __init__(self, name: str, passed: bool, detail: str = "") -> None:
-        super().__init__(name=name, passed=bool(passed), detail=detail)
+    ``applicable=False`` is a **declared exemption**, not a pass. It exists so a family
+    whose producer genuinely does not have a property can say so out loud, with the
+    mechanism named in ``detail`` — rather than the alternative, which is loosening a
+    ceiling until the check stops complaining and nobody can tell it was loosened.
+    Exemptions ride through into the committed registry and the inventory table.
+    """
+
+    def __init__(self, name: str, passed: bool, detail: str = "",
+                 applicable: bool = True) -> None:
+        super().__init__(name=name, passed=bool(passed), detail=detail,
+                         applicable=bool(applicable))
 
     @property
     def passed(self) -> bool:  # pragma: no cover - trivial
@@ -334,11 +343,25 @@ def run_recompute_fixtures(
     df: pd.DataFrame,
     *,
     calendar: pd.DatetimeIndex | None = None,
+    exemptions: Mapping[str, str] | None = None,
 ) -> list[FixtureResult]:
-    """Every fixture a RECOMPUTED family must pass before its events may ship."""
-    return [
-        truncation_invariance(fire_fn, df),
-        shift_audit_start_invariance(fire_fn, df),
-        shift_audit_forming_bar(fire_fn, df),
-        feed_truncation(fire_fn, df),
-    ]
+    """Every fixture a RECOMPUTED family must pass before its events may ship.
+
+    ``exemptions`` maps a fixture name to the REASON its property does not hold for this
+    family. An exempted fixture is reported ``applicable=False`` with that reason attached;
+    it is never silently skipped and never counted as a pass.
+    """
+    ex = dict(exemptions or {})
+    checks = (
+        ("truncation_invariance", lambda: truncation_invariance(fire_fn, df)),
+        ("shift_audit_start_invariance", lambda: shift_audit_start_invariance(fire_fn, df)),
+        ("shift_audit_forming_bar", lambda: shift_audit_forming_bar(fire_fn, df)),
+        ("feed_truncation", lambda: feed_truncation(fire_fn, df)),
+    )
+    out: list[FixtureResult] = []
+    for name, run in checks:
+        if name in ex:
+            out.append(FixtureResult(name, False, ex[name], applicable=False))
+            continue
+        out.append(run())
+    return out

@@ -21,7 +21,10 @@ the other 21 names are never rewritten)::
     data/stock_identity/state/addendum_b_state.parquet
     data/stock_identity/episodes/addendum_b_catalog.parquet
     data/stock_identity/addendum/pilot_addendum_v1.json     receipts
-    research/stock_identity/dossiers/B.md + B.svg
+    research/stock_identity/dossiers/B.md + chart            .svg, or .png when the chart
+                                                            exceeds the module's 300 KB SVG
+                                                            commit limit (ruling 6 accepts
+                                                            mixed SVG/PNG dossiers)
     research/stock_identity/dossiers/GOLD.md + GOLD.svg     REGENERATED (true identity)
 
 Frozen inputs, read-only: ``partition_manifest_v1.json`` (asof, spec hash, procedure
@@ -74,7 +77,6 @@ from engine.stock_identity.plane import (  # noqa: E402
     PLANE_STOCKS,
     load_symbol,
     plane_dir,
-    primary_planes,
     symbols_on_plane,
 )
 
@@ -473,10 +475,8 @@ def stage_artifacts() -> dict[str, Any]:
     (DATA / "addendum" / "pilot_addendum_v1.json").write_text(
         json.dumps(receipts, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
-    print(
-        f"[artifacts] addendum stores written · fingerprint/state/episodes + receipts",
-        flush=True,
-    )
+    print("[artifacts] addendum stores written · fingerprint/state/episodes + receipts",
+          flush=True)
     return receipts
 
 

@@ -50,6 +50,7 @@ __all__ = [
     "daily_known",
     "period_bars",
     "weekly_completed",
+    "two_week_bars",
 ]
 
 KNOWN_BASIS_DAILY = "daily_close"
@@ -163,3 +164,33 @@ def period_bars(daily_close: pd.Series, rule: str) -> pd.DataFrame:
 def weekly_completed(daily_close: pd.Series) -> pd.DataFrame:
     """Completed W-FRI bars — the grain the weekly washout organ reads."""
     return period_bars(daily_close, "W-FRI")
+
+
+def two_week_bars(daily_close: pd.Series) -> pd.DataFrame:
+    """Completed 2W bars on an ABSOLUTE anchor — never ``resample("2W-FRI")``.
+
+    ``resample("2W-FRI")`` phases its two-week bins from the SERIES' first timestamp, so
+    handing in 37 more leading rows re-pairs every week and moves half the bars by one
+    week (measured on this package's own synthetic tape: 32/104 events relocated). That is
+    the first-bar-ordinal defect the absolute session anchor was adopted to retire, and the
+    Radar contract names it by name — "never calendar-anchored ``resample('2W-FRI')``".
+
+    Instead: take the calendar-anchored weekly bars (whose Friday labels are a function of
+    the date alone) and pair them on an **absolute week index**, ``label.toordinal() // 7``.
+    Which two weeks form a bar is then a function of the calendar, not of where the caller's
+    window happens to begin.
+    """
+    wk = period_bars(daily_close, "W-FRI")
+    if wk.empty:
+        return wk
+    week_idx = pd.DatetimeIndex(wk["label"]).map(lambda d: d.toordinal() // 7)
+    bucket = pd.Series(np.asarray(week_idx) // 2, index=wk.index)
+    agg = wk.groupby(bucket.to_numpy(), sort=True).agg(
+        label=("label", "last"), open=("open", "first"),
+        known=("known", "last"), close=("close", "last"),
+    ).reset_index(drop=True)
+    # The trailing 2W bar is complete only when BOTH of its weeks are present.
+    if len(agg) and int(bucket.iloc[-1]) == int(bucket.iloc[-1]) and \
+            int((bucket == bucket.iloc[-1]).sum()) < 2:
+        agg = agg.iloc[:-1].reset_index(drop=True)
+    return agg

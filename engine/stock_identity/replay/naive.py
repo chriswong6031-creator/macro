@@ -28,7 +28,7 @@ from engine.stock_identity.replay import events as ev
 from engine.stock_identity.replay.grid import (
     KNOWN_BASIS_BUCKET,
     KNOWN_BASIS_DAILY,
-    period_bars,
+    two_week_bars,
 )
 
 __all__ = ["FAMILY_KEYS", "ERA", "constants", "fires"]
@@ -60,7 +60,10 @@ def constants(family_key: str) -> dict[str, Any]:
     elif family_key == "stoch2w_cross":
         base |= {"stoch_len": canon.STOCH_LEN, "smooth_k": canon.SMOOTH_K,
                  "smooth_d": canon.SMOOTH_D, "band": STOCH2W_BAND, "grain": "2W",
-                 "rule": "%K crosses up through %D with both < 20 on the completed 2W bar"}
+                 "rule": "%K crosses up through %D with both < 20 on the completed 2W bar",
+                 "grid_anchor": "absolute week index (label.toordinal() // 7) // 2 over "
+                                "calendar-anchored W-FRI bars — never resample('2W-FRI'), "
+                                "which phases from the series' first row"}
     else:  # pragma: no cover - guarded by the caller
         raise ValueError(f"unknown naive family {family_key!r}")
     return base
@@ -139,7 +142,7 @@ def fires(
         ))
 
     # --- stoch2w_cross -------------------------------------------------------
-    bars = period_bars(close, "2W-FRI")
+    bars = two_week_bars(close)
     if len(bars) >= canon.STOCH_LEN + canon.SMOOTH_K + canon.SMOOTH_D + 2:
         k2, d2 = canon.stoch_rsi_kd(pd.Series(bars["close"].to_numpy(dtype="float64")))
         sel = (

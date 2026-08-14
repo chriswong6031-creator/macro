@@ -710,436 +710,510 @@
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "7 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "12 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "12 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "0 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "1 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "1 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "1 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "confirmed_buy": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "52 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "86 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "88 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "24 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
           "name": "append_only_conformance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "24 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "35 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "38 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "store is empty",
           "name": "append_only_conformance",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "grey_dot": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "110 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "162 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "173 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "53 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "80 event(s) compared after dropping 37 leading session(s); 4 differ (5.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "87 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "naive": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "300 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "429 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "449 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "126 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "170 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "209 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "reclaim_waiver": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "0 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "0 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "no events on this frame",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "0 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "0 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "no events on this frame",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "sea": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "677 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
           "name": "append_only_conformance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "328 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
           "name": "append_only_conformance",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "starter": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "79 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "112 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "120 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "43 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "64 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "71 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "tiers": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "66 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "104 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "111 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "NVDA"
         },
         {
+          "applicable": true,
           "detail": "36 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "53 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
           "name": "shift_audit_start_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "58 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 0
     },
     "washout_turn": {
       "all_passed": true,
       "fixtures": [
         {
+          "applicable": true,
           "detail": "6 event(s) identical on the truncated prefix",
           "name": "truncation_invariance",
           "passed": true,
           "symbol": "AEM"
         },
         {
-          "detail": "10 event(s) compared after dropping 37 leading session(s); 1 differ (10.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "applicable": false,
+          "detail": "NOT APPLICABLE, mechanism named: engine.washout_turn's depth percentile is a declared WHOLE-SAMPLE statistic \u2014 its own _evaluate documents it as 'percent of the FULL weekly line history strictly BELOW bar j'. The reference distribution therefore legitimately depends on how much history exists, so a cross sitting near the 15th-percentile gate flips when leading history is dropped (measured on a synthetic tape: 8/18 events, 44%). This is PAST-data window dependence, not future leakage: the organ's three leak fixtures (truncation invariance, forming bar, feed truncation) are green, and the replay always walks one fixed full per-name prefix chain, so the window is constant across the whole extraction.",
           "name": "shift_audit_start_invariance",
-          "passed": true,
+          "passed": false,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "10 completed event(s) unchanged by an in-progress bar",
           "name": "shift_audit_forming_bar",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
           "name": "feed_truncation",
           "passed": true,
           "symbol": "AEM"
         },
         {
+          "applicable": true,
           "detail": "2 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
           "name": "append_only_conformance",
           "passed": true,
           "symbol": "AEM"
         }
-      ]
+      ],
+      "n_exempt": 1
     }
   },
   "inventory": {
@@ -1399,32 +1473,32 @@
     },
     "stoch2w_cross": {
       "by_field_origin": {
-        "replay_recomputed": 575
+        "replay_recomputed": 593
       },
       "by_symbol": {
         "AEM": 12,
         "AG": 11,
-        "B": 48,
-        "BABA": 11,
+        "B": 52,
+        "BABA": 12,
         "FFAI": 7,
-        "GOLD": 13,
+        "GOLD": 14,
         "HL": 18,
-        "KO": 68,
-        "KRUS": 8,
+        "KO": 72,
+        "KRUS": 7,
         "MCD": 64,
-        "MCK": 28,
-        "META": 13,
-        "MSFT": 40,
+        "MCK": 32,
+        "META": 14,
+        "MSFT": 41,
         "NEM": 55,
         "NVDA": 27,
         "PAAS": 13,
-        "REGN": 40,
+        "REGN": 42,
         "UEC": 15,
         "WMT": 51,
-        "WPM": 21,
+        "WPM": 22,
         "YELP": 12
       },
-      "n_events": 575,
+      "n_events": 593,
       "n_names": 21
     },
     "tier_cascade_t1": {
@@ -1624,8 +1698,8 @@
     {
       "family_key": "stoch2w_cross",
       "n_attributed": 178,
-      "n_events": 575,
-      "n_unattributed": 397
+      "n_events": 593,
+      "n_unattributed": 415
     },
     {
       "family_key": "tier_cascade_t1",
@@ -1656,6 +1730,44 @@
       "n_attributed": 245,
       "n_events": 652,
       "n_unattributed": 407
+    }
+  ],
+  "ledger_coverage": [
+    {
+      "families": [
+        "confirmed_buy",
+        "rebuy"
+      ],
+      "rows_by_ledger_era": {
+        "pre-era-stamp": {
+          "rows": 1043
+        },
+        "sq-abs-session-2026-08-06": {
+          "rows": 117
+        }
+      },
+      "rows_emitted": 454,
+      "rows_in_store": 1160,
+      "store": "data/signal_archive/track_record.parquet",
+      "unresolved_reason": "a \u00a77 marker is labelled with its 3D bucket's OPEN date. Rows minted before the sq-abs-session-2026-08-06 anchor era carry labels from the RETIRED 3B resample, whose synthetic left-edge bins are not labels of the current absolute-anchor grid; signal_quality.marker_last_session refuses them and a guessed known_ts would break the known-ts law, so they are counted here instead of stamped. Measured: 100% of era-stamped rows resolve, 32.3% of pre-era-stamp rows do."
+    },
+    {
+      "families": [
+        "weekly_washout_turn"
+      ],
+      "rows_emitted": 12,
+      "rows_in_store": 13,
+      "store": "data/washout_turn/ledger.jsonl",
+      "unresolved_reason": "the organ's transitions ledger records the full US universe; only pilot names are extracted, and only the two states this family recognises"
+    },
+    {
+      "families": [
+        "sea_event_classes"
+      ],
+      "rows_emitted": 10384,
+      "rows_in_store": 10384,
+      "store": "data/stock_events/events_backfill.parquet \u222a data/stock_events/live",
+      "unresolved_reason": "pure filter, keep-FIRST on the store's own key; a name absent from the SEA universe contributes no rows"
     }
   ],
   "no_ruler_content": "W2 publishes NO ruler metric \u2014 no lead/lag, distance, MAE, capture, recall, precision, composite, fit, rank or best exists as a column, key or identifier in this store. Those are PR-3's object (registration \u00a70.1). The only aggregates published are inventory counts and join-coverage counts.",

@@ -4,7 +4,7 @@ Counts only. **This file publishes no ruler metric** — no lead/lag, distance, 
 
 * pilot cohort: 22 names (`AEM`, `AG`, `B`, `BABA`, `CBRS`, `FFAI`, `GOLD`, `HL`, `KO`, `KRUS`, `MCD`, `MCK`, `META`, `MSFT`, `NEM`, `NVDA`, `PAAS`, `REGN`, `UEC`, `WMT`, `WPM`, `YELP`)
 * universe as-of: 2026-08-13
-* total events: **31,101** · typed edges: **64**
+* total events: **31,119** · typed edges: **64**
 
 ## Family inventory
 
@@ -15,7 +15,7 @@ Counts only. **This file publishes no ruler metric** — no lead/lag, distance, 
 | `confirmed_buy` | R | `sq-abs-session-2026-08-06` | — | 1,839 | 21 | green |
 | `rebuy` | R | `sq-abs-session-2026-08-06` | — | 87 | 9 | green |
 | `reclaim_waiver` | R | `us_prophet_v2` | 2026-08-13 | 0 | 0 | green |
-| `weekly_washout_turn` | R | `washout_turn.v1` | 2026-08-05 | 652 | 20 | green |
+| `weekly_washout_turn` | R | `washout_turn.v1` | 2026-08-05 | 652 | 20 | green (+1 declared exemption) |
 | `sea_event_classes` | R | `pre2010`, `post2010` | — | 10,384 | 15 | green |
 | `bottom_watch_terminal` | B | `gc_v2_wo2` | — | 206 | 20 | green |
 | `starter_signature` | R | `union-admission-v1-2026-08-11` | — | 2,559 | 21 | green |
@@ -25,7 +25,7 @@ Counts only. **This file publishes no ruler metric** — no lead/lag, distance, 
 | `tier_cascade_t4` | B | `abs-session-2026-08-06` | — | 47 | 16 | green |
 | `rsi30_cross` | R | `si-naive-comparators-v0-2026-08-14` | — | 1,480 | 22 | green |
 | `low20d_bounce` | R | `si-naive-comparators-v0-2026-08-14` | — | 7,437 | 22 | green |
-| `stoch2w_cross` | R | `si-naive-comparators-v0-2026-08-14` | — | 575 | 21 | green |
+| `stoch2w_cross` | R | `si-naive-comparators-v0-2026-08-14` | — | 593 | 21 | green |
 | `starter_pending` | P | `union-admission-v1-2026-08-11` | — | 0 | 0 | n/a (zero rows by law) |
 | `starter_failed` | P | `union-admission-v1-2026-08-11` | — | 0 | 0 | n/a (zero rows by law) |
 | `starter_converted` | P | `union-admission-v1-2026-08-11` | — | 0 | 0 | n/a (zero rows by law) |
@@ -49,7 +49,7 @@ Counts only. **This file publishes no ruler metric** — no lead/lag, distance, 
 | `rsi30_cross` | `replay_recomputed` | 1,480 |
 | `sea_event_classes` | `ledger_recorded` | 10,384 |
 | `starter_signature` | `replay_recomputed` | 2,559 |
-| `stoch2w_cross` | `replay_recomputed` | 575 |
+| `stoch2w_cross` | `replay_recomputed` | 593 |
 | `tier_cascade_t1` | `replay_recomputed` | 2,122 |
 | `tier_cascade_t2` | `replay_recomputed` | 236 |
 | `tier_cascade_t3` | `replay_recomputed` | 28 |
@@ -70,7 +70,7 @@ Counts only. **This file publishes no ruler metric** — no lead/lag, distance, 
 | `rsi30_cross` | 646 | 834 |
 | `sea_event_classes` | 5,224 | 5,160 |
 | `starter_signature` | 1,205 | 1,354 |
-| `stoch2w_cross` | 266 | 309 |
+| `stoch2w_cross` | 282 | 311 |
 | `tier_cascade_t1` | 979 | 1,143 |
 | `tier_cascade_t2` | 111 | 125 |
 | `tier_cascade_t3` | 13 | 15 |
@@ -130,7 +130,7 @@ The carve-out is expressed as `promoted_by` edges; **no row is deleted**, so bot
 | `rsi30_cross` | 1,480 | 1,056 | 424 | 71.4% |
 | `sea_event_classes` | 10,384 | 3,037 | 7,347 | 29.2% |
 | `starter_signature` | 2,559 | 1,265 | 1,294 | 49.4% |
-| `stoch2w_cross` | 575 | 178 | 397 | 31.0% |
+| `stoch2w_cross` | 593 | 178 | 415 | 30.0% |
 | `tier_cascade_t1` | 2,122 | 486 | 1,636 | 22.9% |
 | `tier_cascade_t2` | 236 | 69 | 167 | 29.2% |
 | `tier_cascade_t3` | 28 | 8 | 20 | 28.6% |
@@ -183,6 +183,17 @@ A zero here is a **structural absence** — the nightly state artifact is overwr
 | WPM | yes | 2026-08-13 | no | 0 | 0 |
 | YELP | yes | 2026-08-13 | no | 0 | 0 |
 
+## Ledger extraction coverage (counts)
+
+* `data/signal_archive/track_record.parquet` -> `confirmed_buy`, `rebuy`: **454** emitted of **1,160** in store
+  * a §7 marker is labelled with its 3D bucket's OPEN date. Rows minted before the sq-abs-session-2026-08-06 anchor era carry labels from the RETIRED 3B resample, whose synthetic left-edge bins are not labels of the current absolute-anchor grid; signal_quality.marker_last_session refuses them and a guessed known_ts would break the known-ts law, so they are counted here instead of stamped. Measured: 100% of era-stamped rows resolve, 32.3% of pre-era-stamp rows do.
+  * ledger era `pre-era-stamp`: 1,043 row(s)
+  * ledger era `sq-abs-session-2026-08-06`: 117 row(s)
+* `data/washout_turn/ledger.jsonl` -> `weekly_washout_turn`: **12** emitted of **13** in store
+  * the organ's transitions ledger records the full US universe; only pilot names are extracted, and only the two states this family recognises
+* `data/stock_events/events_backfill.parquet ∪ data/stock_events/live` -> `sea_event_classes`: **10,384** emitted of **10,384** in store
+  * pure filter, keep-FIRST on the store's own key; a name absent from the SEA universe contributes no rows
+
 ## Class P families — enumerated with zero rows
 
 Structural absence is never negative evidence. None of these zeros says the family does nothing; each says its history was never recorded or never existed.
@@ -200,7 +211,9 @@ Structural absence is never negative evidence. None of these zeros says the fami
 
 ## Leak fixtures (registration §7)
 
-| family group | fixture | name | passed | detail |
+A row marked **exempt** is a property the producer genuinely does not have, with the mechanism named — never a loosened ceiling. There is exactly one.
+
+| family group | fixture | name | verdict | detail |
 |---|---|---|:--:|---|
 | bottom_watch | `truncation_invariance` | NVDA | yes | 7 event(s) identical on the truncated prefix |
 | bottom_watch | `shift_audit_start_invariance` | NVDA | yes | 12 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) — producer warm-up sensitivity, not a window dependence |
@@ -263,7 +276,7 @@ Structural absence is never negative evidence. None of these zeros says the fami
 | tiers | `shift_audit_forming_bar` | AEM | yes | 58 completed event(s) unchanged by an in-progress bar |
 | tiers | `feed_truncation` | AEM | yes | no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction) |
 | washout_turn | `truncation_invariance` | AEM | yes | 6 event(s) identical on the truncated prefix |
-| washout_turn | `shift_audit_start_invariance` | AEM | yes | 10 event(s) compared after dropping 37 leading session(s); 1 differ (10.00%, ceiling 5% / floor 1) — producer warm-up sensitivity, not a window dependence |
+| washout_turn | `shift_audit_start_invariance` | AEM | **exempt** | NOT APPLICABLE, mechanism named: engine.washout_turn's depth percentile is a declared WHOLE-SAMPLE statistic — its own _evaluate documents it as 'percent of the FULL weekly line history strictly BELOW bar j'. The reference distribution therefore legitimately depends on how much history exists, so a cross sitting near the 15th-percentile gate flips when leading history is dropped (measured on a synthetic tape: 8/18 events, 44%). This is PAST-data window dependence, not future leakage: the organ's three leak fixtures (truncation invariance, forming bar, feed truncation) are green, and the replay always walks one fixed full per-name prefix chain, so the window is constant across the whole extraction. |
 | washout_turn | `shift_audit_forming_bar` | AEM | yes | 10 completed event(s) unchanged by an in-progress bar |
 | washout_turn | `feed_truncation` | AEM | yes | 3 probe event(s) vanished when the feed stopped at their signal_ts |
 | washout_turn | `append_only_conformance` | AEM | yes | 2 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s) |

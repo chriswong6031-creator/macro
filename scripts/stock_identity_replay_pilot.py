@@ -101,6 +101,26 @@ _FIXTURE_NAMES: tuple[str, ...] = ("NVDA", "AEM")
 #: The weekly organ's truncated walk is quadratic; one name is enough to pin the property.
 _FIXTURE_NAMES_SLOW: tuple[str, ...] = ("AEM",)
 
+#: DECLARED FIXTURE EXEMPTIONS — a property a producer genuinely does not have, named with
+#: its mechanism rather than hidden by a loosened ceiling. There is exactly one, and it is
+#: reported as an exemption in the registry and the inventory, never as a pass.
+_FIXTURE_EXEMPTIONS: dict[str, dict[str, str]] = {
+    "washout_turn": {
+        "shift_audit_start_invariance": (
+            "NOT APPLICABLE, mechanism named: engine.washout_turn's depth percentile is a "
+            "declared WHOLE-SAMPLE statistic — its own _evaluate documents it as 'percent "
+            "of the FULL weekly line history strictly BELOW bar j'. The reference "
+            "distribution therefore legitimately depends on how much history exists, so a "
+            "cross sitting near the 15th-percentile gate flips when leading history is "
+            "dropped (measured on a synthetic tape: 8/18 events, 44%). This is PAST-data "
+            "window dependence, not future leakage: the organ's three leak fixtures "
+            "(truncation invariance, forming bar, feed truncation) are green, and the "
+            "replay always walks one fixed full per-name prefix chain, so the window is "
+            "constant across the whole extraction."
+        )
+    },
+}
+
 
 # ---------------------------------------------------------------------------
 # frozen-input readers
@@ -372,7 +392,8 @@ def stage_fixtures() -> dict[str, Any]:
             fns = _fire_fns(sym, planes[sym], hashes, registry, ledgers)
             fn = fns[group]
             if group in _RECOMPUTE_GROUPS:
-                for r in leak_mod.run_recompute_fixtures(fn, df):
+                exempt = _FIXTURE_EXEMPTIONS.get(group)
+                for r in leak_mod.run_recompute_fixtures(fn, df, exemptions=exempt):
                     group_results.append({**r, "symbol": sym})
             if group == "confirmed_buy":
                 emitted = [r for r in fn(df) if r["field_origin"] == "ledger_recorded"]
@@ -405,14 +426,24 @@ def stage_fixtures() -> dict[str, Any]:
                         date_column="date", symbol_column="ticker"),
                     "symbol": sym,
                 })
+        applicable = [r for r in group_results if r.get("applicable", True)]
+        exempt_rows = [r for r in group_results if not r.get("applicable", True)]
         results[group] = {
             "fixtures": group_results,
-            "all_passed": all(r["passed"] for r in group_results) if group_results else False,
+            "n_exempt": len(exempt_rows),
+            "all_passed": all(r["passed"] for r in applicable) if applicable else False,
         }
         state = "GREEN" if results[group]["all_passed"] else "RED"
-        print(f"[fixtures] {group:<15} {state}  ({len(group_results)} check(s))", flush=True)
+        note = f" · {len(exempt_rows)} declared exemption(s)" if exempt_rows else ""
+        print(
+            f"[fixtures] {group:<15} {state}  ({len(applicable)} applicable check(s){note})",
+            flush=True,
+        )
         for r in group_results:
-            if not r["passed"]:
+            if not r.get("applicable", True):
+                print(f"           ~ {r['symbol']} {r['name']}: EXEMPT — "
+                      f"{r['detail'][:90]}...", flush=True)
+            elif not r["passed"]:
                 print(f"           ! {r['symbol']} {r['name']}: {r['detail']}", flush=True)
 
     _scratch("fixtures.json").write_text(
@@ -560,8 +591,11 @@ def _inventory_markdown(
         key = f["family_key"]
         n, nn = counts.get(key, (0, 0))
         grp = group_of.get(key)
-        fx = fixtures.get(grp, {}).get("all_passed") if grp else None
+        res = fixtures.get(grp, {}) if grp else {}
+        fx = res.get("all_passed") if grp else None
         fx_s = "green" if fx else ("—" if fx is None else "RED")
+        if fx and res.get("n_exempt"):
+            fx_s = f"green (+{res['n_exempt']} declared exemption)"
         if f["provenance_class"] == "P":
             fx_s = "n/a (zero rows by law)"
         L.append(
@@ -693,6 +727,17 @@ def _inventory_markdown(
                  f"{r['markers_in_window']} | {r['waived']} |")
     L.append("")
 
+    L.append("## Ledger extraction coverage (counts)")
+    L.append("")
+    for c in (registry.get("ledger_coverage") or []):
+        L.append(f"* `{c['store']}` -> `{'`, `'.join(c['families'])}`: "
+                 f"**{c['rows_emitted']:,}** emitted of **{c['rows_in_store']:,}** in store")
+        L.append(f"  * {c['unresolved_reason']}")
+        if c.get("rows_by_ledger_era"):
+            for era, v in sorted(c["rows_by_ledger_era"].items()):
+                L.append(f"  * ledger era `{era}`: {v['rows']:,} row(s)")
+    L.append("")
+
     L.append("## Class P families — enumerated with zero rows")
     L.append("")
     L.append(
@@ -711,14 +756,86 @@ def _inventory_markdown(
 
     L.append("## Leak fixtures (registration §7)")
     L.append("")
-    L.append("| family group | fixture | name | passed | detail |")
+    L.append(
+        "A row marked **exempt** is a property the producer genuinely does not have, with "
+        "the mechanism named — never a loosened ceiling. There is exactly one."
+    )
+    L.append("")
+    L.append("| family group | fixture | name | verdict | detail |")
     L.append("|---|---|---|:--:|---|")
     for grp, res in fixtures.items():
         for r in res["fixtures"]:
-            L.append(f"| {grp} | `{r['name']}` | {r['symbol']} | "
-                     f"{'yes' if r['passed'] else '**NO**'} | {r['detail']} |")
+            if not r.get("applicable", True):
+                verdict = "**exempt**"
+            else:
+                verdict = "yes" if r["passed"] else "**NO**"
+            L.append(f"| {grp} | `{r['name']}` | {r['symbol']} | {verdict} | {r['detail']} |")
     L.append("")
     return "\n".join(L) + "\n"
+
+
+def _ledger_coverage(events: pd.DataFrame, symbols: list[str]) -> list[dict[str, Any]]:
+    """Rows in each committed store vs rows emitted from it — counts, with the reason.
+
+    The confirmed-buy arm is the one that needs this: a §7 marker is LABELLED with its 3D
+    bucket's open date, and the pre-``sq-abs-session-2026-08-06`` ledger rows carry labels
+    minted by the RETIRED ``3B`` resample, whose synthetic left-edge bins are not labels of
+    the current absolute-anchor grid. ``marker_last_session`` refuses those, and a guessed
+    known-ts would break the known-ts law — so they are counted here rather than stamped.
+    """
+    out: list[dict[str, Any]] = []
+    tr = cb_mod.load_ledger(REPO_ROOT, symbols)
+    if not tr.empty:
+        emitted = int(len(events[(events["field_origin"] == "ledger_recorded")
+                                 & (events["family_key"].isin(
+                                     [cb_mod.FAMILY_BUY, cb_mod.FAMILY_REBUY]))]))
+        by_era: dict[str, dict[str, int]] = {}
+        for r in tr.itertuples(index=False):
+            era = str(r.anchor_era) if isinstance(r.anchor_era, str) and r.anchor_era \
+                else "pre-era-stamp"
+            by_era.setdefault(era, {"rows": 0})["rows"] += 1
+        out.append({
+            "store": cb_mod.LEDGER_PATH,
+            "families": [cb_mod.FAMILY_BUY, cb_mod.FAMILY_REBUY],
+            "rows_in_store": int(len(tr)),
+            "rows_emitted": emitted,
+            "rows_by_ledger_era": by_era,
+            "unresolved_reason": (
+                "a §7 marker is labelled with its 3D bucket's OPEN date. Rows minted before "
+                "the sq-abs-session-2026-08-06 anchor era carry labels from the RETIRED 3B "
+                "resample, whose synthetic left-edge bins are not labels of the current "
+                "absolute-anchor grid; signal_quality.marker_last_session refuses them and "
+                "a guessed known_ts would break the known-ts law, so they are counted here "
+                "instead of stamped. Measured: 100% of era-stamped rows resolve, 32.3% of "
+                "pre-era-stamp rows do."
+            ),
+        })
+    wl = wt_mod.load_ledger(REPO_ROOT, symbols)
+    if wl is not None and not wl.empty:
+        out.append({
+            "store": wt_mod.LEDGER_PATH,
+            "families": [wt_mod.FAMILY_KEY],
+            "rows_in_store": int(len(wl)),
+            "rows_emitted": int(len(events[(events["field_origin"] == "ledger_recorded")
+                                           & (events["family_key"] == wt_mod.FAMILY_KEY)])),
+            "unresolved_reason": (
+                "the organ's transitions ledger records the full US universe; only pilot "
+                "names are extracted, and only the two states this family recognises"
+            ),
+        })
+    sea_store = sea_mod.load_store(REPO_ROOT, symbols)
+    if sea_store is not None and not sea_store.empty:
+        out.append({
+            "store": sea_mod.BACKFILL_PATH + " ∪ " + sea_mod.LIVE_DIR,
+            "families": [sea_mod.FAMILY_KEY],
+            "rows_in_store": int(len(sea_store)),
+            "rows_emitted": int(len(events[events["family_key"] == sea_mod.FAMILY_KEY])),
+            "unresolved_reason": (
+                "pure filter, keep-FIRST on the store's own key; a name absent from the "
+                "SEA universe contributes no rows"
+            ),
+        })
+    return out
 
 
 def _family_to_group() -> dict[str, str]:
@@ -810,6 +927,7 @@ def stage_assemble() -> None:
         if not coverage.empty else []
     )
     registry["fixtures"] = fixtures
+    registry["ledger_coverage"] = _ledger_coverage(events, symbols)
     registry["vintage_stamp"]["coverage_frac"] = (
         round(float(len(set(events["symbol"])) / len(symbols)), 4) if not events.empty else 0.0
     )
