@@ -4046,6 +4046,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   # A newer commit on the same PR makes every older result obsolete.  Cancelling
@@ -4155,6 +4156,25 @@ jobs:
       reason: ${{ steps.plan.outputs.reason }}
       changed_files: ${{ steps.plan.outputs.changed_files }}
     steps:
+      - id: pr_files
+        name: read immutable PR file metadata
+        uses: actions/github-script@v7
+        with:
+          result-encoding: json
+          script: |
+            if (context.eventName !== 'pull_request') return null;
+            const files = await github.paginate(github.rest.pulls.listFiles, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number,
+              per_page: 100,
+            });
+            const paths = [];
+            for (const file of files) {
+              if (file.previous_filename) paths.push(file.previous_filename);
+              paths.push(file.filename);
+            }
+            return [...new Set(paths)];
       # NO sparse-clear step and NO setup-node here, unlike `ci-pack` below. Both of
       # those exist for conditions this job cannot meet: the sparse-clear guards a
       # SHARED self-hosted workspace, and this job is hosted-only (one `runs-on`, no
@@ -4178,6 +4198,46 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-plan-runner"
           "$RUNNER_TEMP/ci-plan-runner/bin/pip" install pyyaml
+      - name: materialize immutable changed-path decision
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PR_FILES_JSON: ${{ steps.pr_files.outputs.result }}
+          MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
+        run: |
+          "$RUNNER_TEMP/ci-plan-runner/bin/python" - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          from scripts.run_ci_pack import changed_files
+
+          event = os.environ.get("EVENT_NAME", "")
+          if event == "pull_request":
+              try:
+                  paths = json.loads(os.environ.get("PR_FILES_JSON") or "null")
+              except json.JSONDecodeError:
+                  paths = None
+              if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
+                  paths = None
+          elif event == "merge_group":
+              base = os.environ.get("MERGE_GROUP_BASE_SHA") or ""
+              paths = changed_files(base) if base else None
+          else:
+              paths = None
+
+          payload = "null" if paths is None else json.dumps(paths, separators=(",", ":"))
+          artifact = Path(os.environ["RUNNER_TEMP"]) / "ci-changed-paths.json"
+          artifact.write_text(payload + "\n", encoding="utf-8")
+          with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as handle:
+              handle.write(f"CI_CHANGED_FILES_JSON={payload}\n")
+              handle.write(f"CI_CHANGED_PATHS_FILE={artifact}\n")
+          print(f"changed-path metadata: {payload}")
+          PY
+      - name: fast structural preflight
+        run: >-
+          "$RUNNER_TEMP/ci-plan-runner/bin/python"
+          scripts/ci_structural_preflight.py
+          --changed-paths-file "$CI_CHANGED_PATHS_FILE"
       # Same `env`-built, UNQUOTED shell-argument idiom as the pack step below, and
       # for the same two reasons: a folded `>-` scalar tolerates no `#` and no
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing

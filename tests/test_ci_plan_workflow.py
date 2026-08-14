@@ -71,6 +71,10 @@ def _pack_step() -> dict[str, Any]:
     return _step_running(_job("ci-pack"), "--execute")
 
 
+def _preflight_step() -> dict[str, Any]:
+    return _step_running(_job("ci-plan"), "ci_structural_preflight.py")
+
+
 def _gate_script() -> str:
     steps = _job("ci-gate")["steps"]
     assert len(steps) == 1, f"ci-gate should adjudicate in one step, found {len(steps)}"
@@ -164,6 +168,30 @@ def test_ci_plan_emits_the_plan_and_the_github_outputs() -> None:
     assert '--github-output "$GITHUB_OUTPUT"' in run
     assert "--emit-plan-json -" in run
     assert "--execute" not in run, "the planning job must never execute legacy jobs"
+
+
+def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() -> None:
+    job = _job("ci-plan")
+    steps = job["steps"]
+    preflight = _preflight_step()
+    assert steps.index(preflight) < steps.index(_plan_step())
+    assert '--changed-paths-file "$CI_CHANGED_PATHS_FILE"' in preflight["run"]
+
+    api_step = next(step for step in steps if step.get("id") == "pr_files")
+    assert api_step["uses"].startswith("actions/github-script@")
+    script = api_step["with"]["script"]
+    assert "github.paginate" in script and "pulls.listFiles" in script
+    assert "previous_filename" in script, "renames must preserve old and new ownership"
+
+    materialize = next(
+        step
+        for step in steps
+        if step.get("name") == "materialize immutable changed-path decision"
+    )
+    body = str(materialize["run"])
+    assert "CI_CHANGED_FILES_JSON" in body
+    assert "MERGE_GROUP_BASE_SHA" in materialize["env"]
+    assert "changed_files(base)" in body
 
 
 def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
