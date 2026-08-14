@@ -25,6 +25,7 @@ owns_paths:
   - tests/test_prophet_rescue.py
   - scripts/prophet_rescue_launchd.py
   - scripts/install_prophet_rescue_launchd.sh
+  - scripts/prophet_rescue.launchd.plist
 waves:
   - id: W0
     title: Response + resilience layers (rescue lane, hook protection, launchd pack, laws)

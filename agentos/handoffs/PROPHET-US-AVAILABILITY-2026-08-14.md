@@ -29,8 +29,16 @@ changed:
     what: "Architecture decision: response organ separate from detection, bounded self-heal semantics, five alternatives rejected with receipts."
   - path: agentos/workstreams/WS-PROPHET-US-AVAILABILITY.md
     what: "New workstream: W0 rescue lane (this PR), W1 operator acts (launchd install + codex arbitration), W2 fire-drill week."
-  - path: scripts/prophet_rescue.py + .github/workflows/prophet-rescue.yml + tests/test_prophet_rescue.py + .claude/hooks/gh_quota_guard.py + launchd installer pack + AGENTS.md/CLAUDE.md deltas
-    what: "BUILDER EVIDENCE PENDING — opus builder implementing per masterplan §0 gates; this entry is finalized with the verified file list before the PR opens."
+  - path: scripts/prophet_rescue.py (1214) + tests/test_prophet_rescue.py (73 tests) + .github/workflows/prophet-rescue.yml
+    what: "Responder lane: pure decide() core, DST-stable deadline ladder, four mutation-pinned dispatch-safety invariants, two-pass reads (3 healthy / 5 alarm, AST-pinned), issue-receipt attempt ledger, verdict-set alert dedup, hourly ubuntu workflow. Opus-built, red-teamed (six required amendments all landed), 187 green across the dark-guards battery."
+  - path: scripts/prophet_rescue_launchd.py + install_prophet_rescue_launchd.sh + prophet_rescue.launchd.plist
+    what: "Host twin on the canonical GC-installer pattern (re-extracts from origin/main; token via chmod-600 env file or gh auth token; --disk-path measures the runner volume). Operator-installed only."
+  - path: .claude/hooks/gh_quota_guard.py + tests/test_gh_quota_guard.py
+    what: "PROTECTED_LANES += prophet-rescue.yml, nightly-liveness.yml; first-ever shape-6 test coverage (104 tests)."
+  - path: .github/ci/legacy-jobs.yml + .github/workflows/ci.yml
+    what: "Suite registered in the existing unrun-dark-guards job (importlib path-literal family; no new job, 188 total); path triggers for both halves. Disjoint from PR #5487's hunks (~2100/~1336 vs ~6922/~3890) — verified merges clean."
+  - path: AGENTS.md + CLAUDE.md
+    what: "Recovery etiquette in both registers: rescue lane is the ONLY auto-redispatcher of daily.yml; read the prophet-outage issue before manual dispatch; never dispatch over a live run."
 
 verified:
   - claim: "Outage root causes: 512KB workflow strand (08-11), rogue codex force-cancels ×6 (08-12), runner disk-full (08-13); GitHub platform not implicated"
@@ -47,8 +55,10 @@ verified:
     result: "0 errors (phantom-owns-path warnings resolve when builder files land)"
 
 unverified:
-  - claim: "prophet_rescue implementation satisfies masterplan §0 gates"
-    what_would_verify: "Builder report + main-loop review: pytest tests/test_prophet_rescue.py, mutation-pin table, registered CI job line re-run — recorded here before the PR opens"
+  - claim: "The dispatch / issue-upsert / webhook write paths behave correctly against a REAL alarm (unit-tested with mocks; live dry-run exercised only the healthy/WAIT path)"
+    what_would_verify: "First real outage, or a supervised drill: gh workflow run prophet-rescue.yml on a synthetic stale fixture (WS W2 fire-drill week)"
+  - claim: "The prophet-outage label + issue flow works with the workflow's issues:write grant"
+    what_would_verify: "First alarm wake creates label+issue; degraded path is annotated ::warning prophet-rescue-ledger-blind"
 
 unresolved:
   - "Operator arbitration of codex session rollout-2026-08-11T04-10-51 (six receipted kills) — outstanding since 2026-08-12"
