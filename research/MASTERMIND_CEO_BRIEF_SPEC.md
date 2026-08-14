@@ -116,7 +116,7 @@ since the last 7d (2026-08-07 19:00 UTC, 168h ago)
  1 open PR(s) cited by a wave. 0 stale claim(s); 0 claim(s) with no live worktree.
                                      → agentos.py brief --full
 
- 10 hygiene warning(s) — agentos.py brief --full
+ 12 hygiene warning(s) — agentos.py brief --full
 
 ```
 
@@ -127,8 +127,8 @@ the column, and `blocks_waves: 2` against a single real queued wave. A worked ex
 that disagrees with the artifact is worse than no example, because it teaches the reader
 a shape the tool does not produce. Regenerate this block whenever the format changes.
 
-**Current source truth.** This block was regenerated from the Phase 2b worktree and authored
-store on 2026-08-14 by the printed pinned pipeline; it is not a hand-adjusted illustration.
+**Current source truth.** This block was regenerated from the Phase 2b closeout worktree and
+authored store on 2026-08-14 by the printed pinned pipeline; it is not a hand-adjusted illustration.
 The pipeline normalizes only the volatile live-worktree census so the promised exact replay
 does not change when an unrelated checkout is added or removed.
 The parent brief's DEGRADED block truthfully records a truncated PR join, P0 read from the
