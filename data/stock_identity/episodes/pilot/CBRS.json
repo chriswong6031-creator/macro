@@ -1,0 +1,40 @@
+{
+  "asof": "2026-08-13",
+  "atr_basis": "wilder_atr14_at_prior_confirmed_close",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "constants_values": {
+    "D1": 65,
+    "D2": 35,
+    "E": 5,
+    "J": 40.0,
+    "M": 63,
+    "N": 42,
+    "P_pre": 5,
+    "R": 126,
+    "S_reclaim": 5,
+    "V": 21,
+    "X": 5.0,
+    "Y": 0.15,
+    "delta": 0.75,
+    "g": 2.0,
+    "k": 0.5,
+    "m": 10,
+    "theta_bd": 0.23,
+    "theta_dw": 0.45,
+    "theta_fs": 3.75,
+    "theta_pb": 0.06,
+    "theta_up": 0.0,
+    "w": 15,
+    "z": 0.03
+  },
+  "episodes": [],
+  "labeling_note": "episode resolution labels use future data by design \u2014 a research-time labeling instrument, never a live signal",
+  "schema": "stock_identity.episode_catalog.v0",
+  "symbol": "CBRS"
+}

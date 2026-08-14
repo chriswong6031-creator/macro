@@ -46,8 +46,17 @@ Usage:
 Exit codes:
     0   OK (human PR, or loop PR touching no immutable path)
     1   BLOCKED (loop PR touching immutable path, or unclassifiable input)
-    2   --print-planner-files: CI_CHANGED_FILES_JSON is malformed
-    3   --print-planner-files: CI_CHANGED_FILES_JSON is unset
+    2   --print-planner-files: the planner's list is malformed
+    3   --print-planner-files: the planner published no list at all
+
+--print-planner-files reads TWO sources, file first (2026-08-14, run
+31775693780): ``CI_CHANGED_FILES_FILE`` names a file holding the list, and
+``CI_CHANGED_FILES_JSON`` carries it inline. The file exists because the inline
+form measured 350,264 bytes on PR #5578, past execve's 131,072-byte
+MAX_ARG_STRLEN, and killed every pack at launch. Set-but-unreadable and empty
+files are MALFORMED (exit 2), not unset: a transport that lost its payload must
+fail closed, exactly like a truncated env string. Exit 3 means neither source is
+configured, and only then may the caller fall back to git.
 """
 from __future__ import annotations
 
@@ -425,11 +434,46 @@ def parse_ci_changed_files_json(raw: str | None) -> tuple[str, list[str]]:
     return "ok", [path for path in parsed if path]
 
 
+def read_ci_changed_files_file(path: str | None) -> tuple[str, list[str]]:
+    """Decode the planner's changed-file list from a FILE, same three statuses.
+
+    The file is the production transport since 2026-08-14 (run 31775693780):
+    the same list rode a job output into every pack step's environment at
+    350,264 bytes, and execve refuses a single env string past 131,072 bytes on
+    Linux, so all twelve packs died before running a test. The bytes are
+    identical to the env form — this only changes where they are read from.
+
+    A configured-but-unreadable or EMPTY file returns ``malformed``, never
+    ``unset``: ``unset`` licenses the caller's git fallback, and answering "no
+    transport configured" for a transport that lost its payload is precisely
+    the fail-open this fence's contract forbids.
+    """
+    if not path:
+        return "unset", []
+    try:
+        raw = Path(path).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "malformed", []
+    status, paths = parse_ci_changed_files_json(raw)
+    return ("malformed", []) if status == "unset" else (status, paths)
+
+
 def print_planner_files(raw: str | None = None) -> int:
-    """CLI for the packed live-check shell. See module docstring for exit codes."""
-    status, paths = parse_ci_changed_files_json(
-        os.environ.get("CI_CHANGED_FILES_JSON") if raw is None else raw
-    )
+    """CLI for the packed live-check shell. See module docstring for exit codes.
+
+    Source order is file, then inline env: ci-plan publishes both names, and a
+    stale inline string must never out-vote the artifact the packs downloaded.
+    """
+    if raw is not None:
+        status, paths = parse_ci_changed_files_json(raw)
+    elif os.environ.get("CI_CHANGED_FILES_FILE"):
+        status, paths = read_ci_changed_files_file(
+            os.environ.get("CI_CHANGED_FILES_FILE")
+        )
+    else:
+        status, paths = parse_ci_changed_files_json(
+            os.environ.get("CI_CHANGED_FILES_JSON")
+        )
     if status == "unset":
         return 3
     if status == "malformed":
@@ -469,8 +513,9 @@ def main(argv: list[str] | None = None) -> int:
         "--print-planner-files",
         action="store_true",
         help=(
-            "Print CI_CHANGED_FILES_JSON paths (one per line). "
-            "Exit 0 if well-formed, 2 if malformed, 3 if unset."
+            "Print ci-plan's changed paths (one per line), read from "
+            "CI_CHANGED_FILES_FILE if set, else CI_CHANGED_FILES_JSON. "
+            "Exit 0 if well-formed, 2 if malformed, 3 if neither is set."
         ),
     )
     args = ap.parse_args(argv)
