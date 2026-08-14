@@ -62,8 +62,7 @@ import pandas as pd
 import yaml
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
-if str(_REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(_REPO_ROOT))
+sys.path.insert(0, str(_REPO_ROOT))
 
 from scripts.prophet_fusion_labels import (  # noqa: E402
     FRAME_BOARD_LEDGER, FRAME_PROPHET_RANK, TAIL_LOSS,
