@@ -18,6 +18,19 @@ Until then it stays display/context-only (conviction starts 'low', never sized).
 Only SCORABLE names are logged: the ticker AND SPY must have a price series. Thin /
 private vehicles (ABTC, WLFI, …) are recorded in by_ticker but never scored.
 
+LANE GATE (HOUSE-U5 — nightly is the sole advancer of forward ledgers).
+Every `data/altdata/` write above is gated on
+``engine.ledger_lane.nightly_advance_enabled()`` (COLLECT_LANE=nightly, set at the
+job level by daily.yml's `engine` job). `scripts.build_alt_data` — the only caller —
+also runs in closing-bell.yml, earlyclose.yml, render.yml and engine-render.yml,
+none of which set COLLECT_LANE; those lanes commit `git add site/` only and discard
+unstaged `data/` writes, so an ungated append merely SURVIVED by their cleanup
+rather than by design. closing-bell.yml's header states the premise outright ("every
+engine ledger writer self-gates on it") — this module was the exception, so any lane
+that stopped discarding would have double-advanced the ledger. The `site/altdata/
+track_record.json` copy stays UNGATED: it is the render output every one of those
+lanes exists to refresh, computed from the COMMITTED ledger.
+
 Per-channel claim families (ALTDATA_REBOOT W2, active 2026-07-12):
   Each thesis is tagged with a claim_family based on the HIGHEST-WEIGHT channel present.
   This routes to pre-registered horizon rulers in the qledger. See research/ALTDATA_REBOOT.md.
@@ -32,6 +45,7 @@ from pathlib import Path
 from lib import config
 from engine import ai_desk as _desk
 from engine import ai_desk_scorer as _scorer
+from engine.ledger_lane import nightly_advance_enabled as _ledger_advance_enabled
 
 log = logging.getLogger(__name__)
 
@@ -309,13 +323,20 @@ def build_theses(by_ticker: dict, root=None, today=None) -> list:
             "status": "open", "scored_at": None, "outcome": None, "realized": None,
         })
     if new:
-        path = _p(root, _LEDGER)
-        path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, "a") as fh:
-            for r in new:
-                fh.write(json.dumps(r, default=str) + "\n")
-        log.info("altdata ledger: logged %d new thesis(es): %s",
-                 len(new), ", ".join(r["ticker"] for r in new))
+        # HOUSE-U5: only the nightly lane advances the forward ledger. Off-lane the
+        # theses are still COMPUTED and returned (the caller renders from them), they
+        # just do not persist — same shape as engine.demand_ledger.emit.
+        if _ledger_advance_enabled():
+            path = _p(root, _LEDGER)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with open(path, "a") as fh:
+                for r in new:
+                    fh.write(json.dumps(r, default=str) + "\n")
+            log.info("altdata ledger: logged %d new thesis(es): %s",
+                     len(new), ", ".join(r["ticker"] for r in new))
+        else:
+            log.debug("altdata_ledger.build_theses: theses.jsonl write skipped for %d "
+                      "computed thesis(es) (COLLECT_LANE != nightly)", len(new))
     return new
 
 
@@ -338,19 +359,29 @@ def score(root=None, today=None) -> dict | None:
         track["note"] = ("Alt-data convergence theses graded vs SPY. Context-only — the signal "
                          "earns a scored vote only once this track record shows forward edge.")
 
-        sp = _p(root, _SCORED)
-        sp.parent.mkdir(parents=True, exist_ok=True)
-        if new_rows:
-            with open(sp, "a") as fh:
-                for r in new_rows:
-                    fh.write(json.dumps(r, default=str) + "\n")
-        _p(root, _TRACK).write_text(json.dumps(track, indent=2, default=str))
-        # derive from root (== config.ROOT in prod) so root=tmp_path tests
-        # don't overwrite the tracked site/altdata/track_record.json
+        # HOUSE-U5: both data/altdata writes are nightly-only. The grade itself is
+        # deterministic from committed prices, so a render lane recomputing `track`
+        # in memory loses nothing — it just may not ADVANCE the stored record.
+        advance = _ledger_advance_enabled()
+        if advance:
+            sp = _p(root, _SCORED)
+            sp.parent.mkdir(parents=True, exist_ok=True)
+            if new_rows:
+                with open(sp, "a") as fh:
+                    for r in new_rows:
+                        fh.write(json.dumps(r, default=str) + "\n")
+            _p(root, _TRACK).write_text(json.dumps(track, indent=2, default=str))
+        else:
+            log.debug("altdata_ledger.score: data/altdata scored.jsonl + track_record.json "
+                      "writes skipped (COLLECT_LANE != nightly)")
+        # The site/ copy is the RENDER output — deliberately UNGATED, because
+        # re-rendering it from the committed ledger is exactly what the express lanes
+        # are for. Derived from root (== config.ROOT in prod) so root=tmp_path tests
+        # don't overwrite the tracked site/altdata/track_record.json.
         site = root / "site" / "altdata"
         site.mkdir(parents=True, exist_ok=True)
         (site / "track_record.json").write_text(json.dumps(track, indent=2, default=str))
-        if new_rows:
+        if new_rows and advance:
             log.info("altdata ledger: scored %d (%s)", len(new_rows),
                      ", ".join(f"{r['id']}:{r['outcome']}" for r in new_rows))
         return track

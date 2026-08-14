@@ -3029,8 +3029,17 @@ jobs:
       # after the horizon-clock step it is a direct consequence of.
       - name: communique_diff phrase-book + qledger registration contract
         run: python -m pytest tests/test_communique_diff.py -q
-      - name: altdata reboot W2 — per-channel family routing + placebo tests
-        run: python -m pytest tests/test_altdata_reboot_families.py -q
+      # test_altdata_ledger_lane_gate.py rides THIS step rather than a new one: it pins
+      # the same module (engine/altdata_ledger.py) the family suite already owns, and a
+      # single pytest invocation reports every file in one place — extending the list
+      # adds coverage without adding a job to a manifest at the narrow-diff ceiling, and
+      # without adding a later step that could go dark behind an earlier red one. The
+      # sibling altdata suite (tests/test_altdata.py) is grandfathered UNRUN in
+      # config/unrun_test_baseline.json, so the gate contract had to land somewhere CI
+      # actually executes or it would have shipped dark — which is the exact class of
+      # defect it exists to catch.
+      - name: altdata reboot W2 — per-channel family routing + placebo tests + HOUSE-U5 ledger lane gate
+        run: python -m pytest tests/test_altdata_reboot_families.py tests/test_altdata_ledger_lane_gate.py -q
       # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
       # is RAW, not direction-signed, so a pooled signed excess_mean over a
       # mixed-direction family measures universe drift rather than skill; a salience
