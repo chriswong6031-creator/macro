@@ -38,7 +38,12 @@ entry_radar:
     # Fail-closed: a name we cannot classify lands in `unclassified` and stays
     # VISIBLE.  Never silently dropped, never silently admitted as an operating
     # company.  Small caps are never excluded for size.
-    min_history_sessions: 0
+    #
+    # There is deliberately NO `min_history_sessions` knob.  "Young history is
+    # not low-quality data" (contract §6): a 40-session name is routed to the
+    # young cohort's SEPARATE calibration (§12), never filtered out of the
+    # universe.  A minimum-history gate here would silently delete the IPO lane
+    # that gate P-6 exists to protect.
 
   # -- Layer B: core --------------------------------------------------------
   # Index membership + liquid large/mid + operator watchlist.  The liquidity
@@ -90,11 +95,13 @@ entry_radar:
       "hot_tape:detect_events": 30      # 5-min lane
       "hot_tape:outbox": 120
       "stockdata:master": 2160          # nightly (36h)
-      "standouts:us_standouts": 2160    # nightly
-      "standouts:setups": 2160          # nightly
+      "factordata:us_standouts": 2160   # nightly
+      "factordata:setups": 2160         # nightly
       "basketdata:pulse": 2160          # nightly
       "basketdata:linked_outsiders": 2160
       "ipo:calendar": 4320              # nightly build, slow-moving content (72h)
+      # Prefix key: `stale_after()` falls back to the longest matching prefix,
+      # so this covers every per-index id (breadth:constituents:sp500, :sp400 …).
       "breadth:constituents": 10080     # index membership moves quarterly (7d)
       "supabase:watchlist": 1440        # operator edits are event-driven
     default_stale_after_minutes: 2160
@@ -113,4 +120,7 @@ entry_radar:
   # R2 when credentials exist, else $ENTRY_RADAR_SPOOL_DIR.  Never data/.
   spool:
     prefix: "live_flow/entry_radar_nominations"
-    default_ttl_minutes: 1440           # nomination TTL when a producer sets none
+    # No `default_ttl_minutes`: a nomination's TTL is derived per-artifact from
+    # that producer's own `stale_after_minutes` above, so a nightly board's
+    # nomination cannot outlive the next nightly build and a 5-min tape event
+    # cannot outlive the tape.  One global TTL would be wrong for both.

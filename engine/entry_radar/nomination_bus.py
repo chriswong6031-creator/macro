@@ -6,11 +6,17 @@ deliberately nothing else:
 1. **Ingest** producer reads, preserving the availability tri-state.  A read is
    never unwrapped into a bare list — ``unavailable`` has to survive the door,
    because downstream retention branches on it (contract §5).
-2. **Dedup on identity ``(source_id, ticker, source_asof)``** — and on nothing
-   else.  One ticker may carry many nominations from many producers and every
-   one is kept: collapsing them is the §16 A1 no-flattening violation.  Only a
-   re-read of the SAME producer at the SAME artifact vintage is a duplicate,
-   and that one is idempotent rather than additive.
+2. **Dedup on identity ``(source_id, ticker, source_asof, reason_code,
+   evidence_ref)``.**  A duplicate is an idempotent re-read — the same producer,
+   the same vintage, the same fact about the same evidence.  Everything else is
+   kept: one ticker may carry many nominations from many producers AND several
+   from one producer (a board lists a name in two lanes; a basket names it as
+   both leader and strongest), and collapsing any of them is the §16 A1
+   no-flattening violation.
+
+   The invariant that makes this checkable: **what the spool holds and what the
+   Probe Set publishes must agree.**  A narrower identity broke it silently —
+   two events spooled, one record published, zero refusals counted.
 3. **Expire** on ``ttl_until``.  Expiry removes a nomination from the ACTIVE
    set; it never deletes the spooled event (no silent signal deletion, §16).
 4. **Disclose correlated families** by ``source_id`` prefix, so a downstream
@@ -86,6 +92,11 @@ class NominationBus:
         """Ingest a whole pass: spool first, then admit what the spool accepted."""
         stamp = now or utcnow()
         fresh: list[Nomination] = []
+        # Within-pass identities count too.  Checking only the committed map let
+        # same-pass siblings BOTH reach `fresh`, spool, and then overwrite each
+        # other on commit — two durable events, one published record, and
+        # `duplicates_dropped` reporting zero because nothing was ever refused.
+        seen: set[tuple[str, str, str, str, str]] = set()
         for read in reads:
             prior = self._reads.get(read.source_id)
             # An unavailable read must never overwrite a usable one from the same
@@ -93,9 +104,10 @@ class NominationBus:
             if prior is None or prior.status == "unavailable" or read.usable:
                 self._reads[read.source_id] = read
             for nom in read.nominations:
-                if nom.identity in self._by_identity:
+                if nom.identity in self._by_identity or nom.identity in seen:
                     self.duplicates_dropped += 1
                     continue
+                seen.add(nom.identity)
                 fresh.append(nom)
 
         if not fresh:

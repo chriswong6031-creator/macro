@@ -50,6 +50,9 @@ from pathlib import Path
 from typing import Any
 
 from engine.entry_radar.universe import (
+    MEMBERSHIP_KEYS as _MEMBERSHIP_KEYS,
+)
+from engine.entry_radar.universe import (
     UniverseSourceRead,
     read_constituents,
     read_deep_history,
@@ -67,11 +70,37 @@ DEFAULT_SOURCES: tuple[tuple[str, str, str], ...] = (
 )
 
 #: Which source keys are index memberships for Layer B (deep-history is not one).
-MEMBERSHIP_KEYS: frozenset[str] = frozenset({"sp500", "sp400", "sp600", "russell2000"})
+#: Defined in ``universe`` so the outage id and the Layer-B reason id are minted
+#: from ONE list — see ``universe.universe_source_id``.
+MEMBERSHIP_KEYS = _MEMBERSHIP_KEYS
+
+
+def sources_from_config(cfg: Mapping[str, Any] | None
+                        ) -> tuple[tuple[str, str, str], ...]:
+    """``layer_a.sources`` from ``config/entry_radar.yml``, else the defaults.
+
+    Wires the config block that would otherwise bind nothing: an operator can
+    add or drop a universe source (a new index file, say) without a code change,
+    and a malformed row degrades to the defaults rather than silently shrinking
+    the universe by O(1000).
+    """
+    rows = ((cfg or {}).get("layer_a") or {}).get("sources") or []
+    out: list[tuple[str, str, str]] = []
+    for row in rows:
+        if not isinstance(row, Mapping):
+            continue
+        key, path, kind = row.get("key"), row.get("path"), row.get("kind")
+        if key and path and kind:
+            out.append((str(key), str(path), str(kind)))
+    if rows and not out:
+        print("::warning title=entry-radar::layer_a.sources is malformed — falling back "
+              "to the built-in universe source list", flush=True)
+    return tuple(out) or DEFAULT_SOURCES
 
 
 def read_universe_sources(root: Path, *,
-                          sources: Sequence[tuple[str, str, str]] = DEFAULT_SOURCES,
+                          sources: Sequence[tuple[str, str, str]] | None = None,
+                          cfg: Mapping[str, Any] | None = None,
                           loader: Any = None) -> list[UniverseSourceRead]:
     """Read every Layer-A source, each with its own availability verdict.
 
@@ -80,7 +109,7 @@ def read_universe_sources(root: Path, *,
     dead market from a checkout.
     """
     out: list[UniverseSourceRead] = []
-    for key, rel, kind in sources:
+    for key, rel, kind in (sources if sources is not None else sources_from_config(cfg)):
         path = root / rel
         if kind == "glob_parquet":
             out.append(read_deep_history(path, key=key))

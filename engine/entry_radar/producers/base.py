@@ -154,14 +154,42 @@ def grade_staleness(asof: datetime | None, *, now: datetime,
 
 
 def stale_after(cfg: Mapping[str, Any] | None, source_id: str) -> float:
-    """Per-artifact staleness budget from ``config/entry_radar.yml``."""
+    """Per-artifact staleness budget from ``config/entry_radar.yml``.
+
+    Exact id first, then the LONGEST matching prefix — so one
+    ``breadth:constituents`` entry covers every per-index id
+    (``breadth:constituents:sp500``, ``:sp400`` …) without the config having to
+    enumerate them, and a config key can never bind nothing.
+    """
     block = dict((cfg or {}).get("producers") or {})
     table = dict(block.get("stale_after_minutes") or {})
+    got = table.get(source_id)
+    if got is None:
+        prefixes = [k for k in table if source_id.startswith(f"{k}:")]
+        if prefixes:
+            got = table[max(prefixes, key=len)]
+    if got is None:
+        got = block.get("default_stale_after_minutes", DEFAULT_STALE_AFTER_MIN)
     try:
-        return float(table.get(source_id, block.get("default_stale_after_minutes",
-                                                    DEFAULT_STALE_AFTER_MIN)))
+        return float(got)
     except (TypeError, ValueError):
         return DEFAULT_STALE_AFTER_MIN
+
+
+def clamp_asof(asof: datetime | None, now: datetime) -> tuple[datetime | None, bool]:
+    """``(asof, clamped)`` — never let a FUTURE vintage pass silently.
+
+    An artifact stamped ahead of the clock cannot be construction-checked by the
+    §5 postdate law (``observed_at >= source_asof``) without clamping, but a
+    SILENT clamp makes that law trivially satisfiable: any vintage, however
+    wrong, is rewritten to now and then passes.  So every clamp is recorded —
+    callers mark ``data_quality="degraded"`` and refuse to grade the read
+    ``ok`` — which keeps the check meaningful and surfaces a clock skew or a
+    mis-stamped producer instead of burying it.
+    """
+    if asof is None:
+        return None, False
+    return (now, True) if asof > now else (asof, False)
 
 
 def build_read(source_id: str, *, payload: Any, reason: str, path: Path | None,
@@ -179,14 +207,18 @@ def build_read(source_id: str, *, payload: Any, reason: str, path: Path | None,
                             detail=reason or "artifact unavailable")
 
     asof, quality = artifact_asof(payload, path)
+    safe_asof, clamped = clamp_asof(asof, now)
     status, age = grade_staleness(asof, now=now,
                                   stale_after_minutes=stale_after(cfg, source_id))
+    if clamped:
+        # A future vintage is not a fresh one.  Grading it `ok` would let a
+        # mis-stamped producer look like the healthiest source we have.
+        status = "stale"
+        quality = "degraded"
     ctx = {
         "source_id": source_id,
         "observed_at": now,
-        # Clamp: an artifact stamped in the future must not create a nomination
-        # that fails the PIT check at construction (§5 postdate law).
-        "source_asof": min(asof, now) if asof is not None else now,
+        "source_asof": safe_asof if safe_asof is not None else now,
         "data_quality": quality if quality != "unknown" else "degraded",
         "ttl_until": now + timedelta(minutes=max(1.0, ttl_minutes)),
     }
@@ -202,7 +234,8 @@ def build_read(source_id: str, *, payload: Any, reason: str, path: Path | None,
     return ProducerRead(source_id=source_id, status=status, nominations=tuple(noms),
                         source_asof=asof, observed_at=now, age_seconds=age,
                         stale_after_seconds=stale_after(cfg, source_id) * 60.0,
-                        detail=f"{len(noms)} nomination(s); vintage={quality}")
+                        detail=f"{len(noms)} nomination(s); vintage={quality}"
+                               + (" (FUTURE vintage clamped)" if clamped else ""))
 
 
 def unavailable(source_id: str, detail: str, *, now: datetime | None = None) -> ProducerRead:

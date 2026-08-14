@@ -173,7 +173,7 @@ def test_ACCEPTANCE_nomination_for_a_name_layer_a_never_heard_of(tmp_path):
                                                           reason_code="ipo.recent_listing"),),
                                  source_asof=YESTERDAY, observed_at=NOW), now=NOW)
     probe_set = assemble_probe_set(layer_a=_layer_a({"AAPL": "Apple Inc."}), bus=bus,
-                                   cfg=_cfg(), now=NOW)
+                                   cfg=_cfg(), market_session="2026-08-14", now=NOW)
     record = probe_set.by_ticker()["NEWCO"]
     assert record.admission_layers == ("D",)
     assert record.eligibility == "unclassified"
@@ -226,7 +226,8 @@ def test_unspooled_nomination_is_refused_admission(tmp_path):
     assert bus.active(now=NOW) == []
     assert [n.ticker for n in bus.refused_unspooled] == ["ZZTOP"]
 
-    probe_set = assemble_probe_set(layer_a=_layer_a({}), bus=bus, cfg=_cfg(), now=NOW)
+    probe_set = assemble_probe_set(layer_a=_layer_a({}), bus=bus, cfg=_cfg(),
+                                   market_session="2026-08-14", now=NOW)
     assert "ZZTOP" not in probe_set.by_ticker()
 
 
@@ -253,7 +254,8 @@ def test_two_families_for_one_ticker_stay_two_records(tmp_path):
     assert {n.reason_code for n in kept} == {"board.buy", "ipo.recent_listing"}
 
     probe_set = assemble_probe_set(layer_a=_layer_a({"ZZTOP": "ZZ Top Industries Inc."}),
-                                   bus=bus, cfg=_cfg(), now=NOW)
+                                   bus=bus, cfg=_cfg(), market_session="2026-08-14",
+                                   now=NOW)
     record = probe_set.by_ticker()["ZZTOP"]
     assert len(record.nominations) == 2, "nominations must never collapse to a count"
     rows = record.to_dict()["nominations"]
@@ -332,7 +334,8 @@ def test_unavailable_producer_retains_prior_members(tmp_path):
                           reason_code="flow_pulse.rvol_tod")
         bus1.ingest_read(ProducerRead(source_id=source_id, status="ok", nominations=(nom,),
                                       source_asof=YESTERDAY, observed_at=NOW), now=NOW)
-    first = assemble_probe_set(layer_a=layer_a, bus=bus1, cfg=cfg, now=NOW)
+    first = assemble_probe_set(layer_a=layer_a, bus=bus1, cfg=cfg,
+                               market_session="2026-08-14", now=NOW)
     assert {"HELD", "DROPPED"} <= set(first.by_ticker())
 
     # Pass 2 (next session): flow_pulse is UNAVAILABLE (outage);
@@ -346,7 +349,7 @@ def test_unavailable_producer_retains_prior_members(tmp_path):
                      source_asof=later, observed_at=later),
     ], now=later)
     second = assemble_probe_set(layer_a=layer_a, bus=bus2, cfg=cfg,
-                                previous=first, now=later)
+                                previous=first, market_session="2026-08-15", now=later)
 
     held = second.by_ticker()["HELD"]
     retained = [r for r in held.admission_reasons if r.retained_stale]
@@ -356,11 +359,9 @@ def test_unavailable_producer_retains_prior_members(tmp_path):
     assert held.freshness["retained_stale"] is True
     assert held.data_quality == "degraded"
 
-    dropped = second.by_ticker()["DROPPED"]
-    assert not any(r.retained_stale for r in dropped.admission_reasons), \
-        "a producer that read OK and said nothing is a real negative observation"
-    assert not any(r.source_id == "factordata:us_standouts"
-                   for r in dropped.admission_reasons)
+    assert "DROPPED" not in second.by_ticker(), \
+        "a producer that read OK and said nothing is a real negative observation — " \
+        "its only door closed, so the name leaves the set"
 
 
 def test_retention_lapses_after_the_budget(tmp_path):
@@ -372,17 +373,17 @@ def test_retention_lapses_after_the_budget(tmp_path):
                       reason_code="flow_pulse.rvol_tod")
     bus1.ingest_read(ProducerRead(source_id="flow_pulse:fastpath", status="ok",
                                   nominations=(nom,), observed_at=NOW), now=NOW)
-    first = assemble_probe_set(layer_a=layer_a, bus=bus1, cfg=cfg, now=NOW)
+    first = assemble_probe_set(layer_a=layer_a, bus=bus1, cfg=cfg,
+                               market_session="2026-08-14", now=NOW)
 
     much_later = NOW + timedelta(days=30)   # far past 3 retention sessions
     bus2 = NominationBus(spool=_spool(tmp_path / "b"))
     bus2.ingest_read(ProducerRead(source_id="flow_pulse:fastpath", status="unavailable",
                                   observed_at=much_later), now=much_later)
     second = assemble_probe_set(layer_a=layer_a, bus=bus2, cfg=cfg, previous=first,
-                                now=much_later)
-    held = second.by_ticker()["HELD"]
-    assert not any(r.retained_stale for r in held.admission_reasons)
-    assert held.admission_layers == ("A",), "only broad eligibility should remain"
+                                market_session="2026-09-14", now=much_later)
+    assert "HELD" not in second.by_ticker(), \
+        "retention is bounded — an outage cannot pin a name in the set forever"
 
 
 def test_supabase_watchlist_absent_client_is_unavailable_not_empty():
@@ -466,8 +467,11 @@ def test_leveraged_etf_is_excluded_with_classification_not_silently(tmp_path):
                       reason_code="flow_pulse.rvol_tod")
     bus.ingest_read(ProducerRead(source_id=nom.source_id, status="ok", nominations=(nom,),
                                  observed_at=NOW), now=NOW)
-    probe_set = assemble_probe_set(layer_a=layer_a, bus=bus, cfg=_cfg(), now=NOW)
+    probe_set = assemble_probe_set(layer_a=layer_a, bus=bus, cfg=_cfg(),
+                                   memberships={"sp500": ["AAPL", "TQQQ"]},
+                                   market_session="2026-08-14", now=NOW)
 
+    assert "AAPL" in probe_set.by_ticker(), "the operating equity is admitted"
     assert "TQQQ" not in probe_set.by_ticker(), "a leveraged wrapper is not probed"
     note = next(n for n in probe_set.to_dict()["notes"] if n["code"] == "wrapper_excluded")
     assert "TQQQ" in note["tickers"], "the exclusion is CLASSIFIED, never silent"
@@ -479,7 +483,9 @@ def test_unclassified_is_probed_and_flagged_never_dropped(tmp_path):
     src = UniverseSourceRead(key="sp500", status="ok", tickers=("NONAME",), meta={},
                              detail="synthetic")
     layer_a = build_layer_a([src], curated=frozenset())
-    probe_set = assemble_probe_set(layer_a=layer_a, bus=NominationBus(), cfg=_cfg(), now=NOW)
+    probe_set = assemble_probe_set(layer_a=layer_a, bus=NominationBus(), cfg=_cfg(),
+                                   memberships={"sp500": ["NONAME"]},
+                                   market_session="2026-08-14", now=NOW)
     record = probe_set.by_ticker()["NONAME"]
     assert record.eligibility == "unclassified"
     assert record.data_quality == "degraded"
@@ -571,7 +577,8 @@ def test_ttl_expiry_removes_from_active_but_never_deletes(tmp_path):
     assert [n.ticker for n in bus.expired(now=later)] == ["ZZTOP"], \
         "expiry removes from ACTIVE; it never deletes the record (no silent deletion)"
 
-    probe_set = assemble_probe_set(layer_a=_layer_a({}), bus=bus, cfg=_cfg(), now=later)
+    probe_set = assemble_probe_set(layer_a=_layer_a({}), bus=bus, cfg=_cfg(),
+                                   market_session="2026-08-14", now=later)
     assert "ZZTOP" not in probe_set.by_ticker()
 
 
@@ -606,8 +613,10 @@ def test_budget_exceeded_emits_a_note_and_truncates_nothing(tmp_path, capsys):
     """1,700 names deserve probing ⇒ 1,700 are probed and the budget escalates."""
     names = {f"T{i:04d}": f"Synthetic Corp {i}" for i in range(1700)}
     layer_a = _layer_a(names)
+    # Admitted through Layer B (index membership) — Layer A admits nobody.
     probe_set = assemble_probe_set(layer_a=layer_a, bus=NominationBus(), cfg=_cfg(),
-                                   now=NOW)
+                                   memberships={"sp500": sorted(names)},
+                                   market_session="2026-08-14", now=NOW)
 
     assert len(probe_set) == 1700, "nothing may be truncated"
     assert probe_set.budget["state"] == "exceeded"
@@ -759,3 +768,304 @@ def test_radar_owns_only_its_declared_paths():
                         "agentos/")
     strays = [p for p in changed if not p.startswith(allowed_prefixes)]
     assert not strays, f"PR-1 touched paths outside the Radar-owned set: {strays}"
+
+
+# ---------------------------------------------------------------------------
+# B1 REGRESSION — one producer, one vintage, several distinct facts
+# ---------------------------------------------------------------------------
+
+def _board_nom(ticker: str, code: str, *, source_id="factordata:us_standouts",
+               lane: str = "") -> Nomination:
+    return Nomination(
+        ticker=ticker, source_id=source_id, source_family="market_price",
+        reason_code=code, reason_text=f"{ticker} on {code}",
+        observed_at=NOW, source_asof=YESTERDAY,
+        evidence_ref=f"us_standouts.json#{lane or code}/{ticker}")
+
+
+def test_one_board_listing_a_ticker_in_two_lanes_keeps_both(tmp_path):
+    """B1: same source_id, same ticker, same vintage — DIFFERENT lanes.
+
+    The dedup identity must not collapse ``board.buy`` and ``board.leader`` for
+    NVDA into one record.  It did: 2 ingested, 1 kept, duplicates_dropped 0.
+    """
+    bus = NominationBus(spool=_spool(tmp_path))
+    buy = _board_nom("NVDA", "board.buy", lane="buy")
+    leader = _board_nom("NVDA", "board.leader", lane="leaders")
+    assert buy.identity != leader.identity, "distinct facts need distinct identities"
+
+    admitted = bus.ingest_read(ProducerRead(
+        source_id="factordata:us_standouts", status="ok", nominations=(buy, leader),
+        source_asof=YESTERDAY, observed_at=NOW), now=NOW)
+
+    assert admitted == 2
+    kept = bus.for_ticker("NVDA", now=NOW)
+    assert len(kept) == 2
+    assert {n.reason_code for n in kept} == {"board.buy", "board.leader"}
+    assert bus.duplicates_dropped == 0
+
+
+def test_one_basket_file_naming_a_ticker_in_several_slots_keeps_all(tmp_path):
+    """B1, second shape: AAPL as leader+strongest of one basket AND leader of another."""
+    bus = NominationBus(spool=_spool(tmp_path))
+
+    def pulse(basket: str, slot: str) -> Nomination:
+        return Nomination(
+            ticker="AAPL", source_id="basketdata:pulse",
+            source_family="membership_expansion",
+            reason_code=f"membership_expansion.basket_{slot}",
+            reason_text=f"AAPL {slot} of {basket}", observed_at=NOW,
+            source_asof=YESTERDAY,
+            evidence_ref=f"pulse.json#{basket}/direction/{slot}")
+
+    noms = (pulse("megacap", "leader"), pulse("megacap", "strongest"),
+            pulse("hardware", "leader"), pulse("hardware", "weakest"))
+    admitted = bus.ingest_read(ProducerRead(
+        source_id="basketdata:pulse", status="ok", nominations=noms,
+        source_asof=YESTERDAY, observed_at=NOW), now=NOW)
+
+    assert admitted == 4
+    assert len(bus.for_ticker("AAPL", now=NOW)) == 4, \
+        "four distinct basket facts must not collapse to one"
+    assert bus.duplicates_dropped == 0
+    refs = {n.evidence_ref for n in bus.for_ticker("AAPL", now=NOW)}
+    assert len(refs) == 4, "each keeps its own evidence pointer"
+
+
+def test_spool_and_published_probe_set_never_disagree(tmp_path):
+    """The invariant B1 broke: what the spool holds is what the artifact shows."""
+    bus = NominationBus(spool=_spool(tmp_path))
+    noms = (_board_nom("NVDA", "board.buy", lane="buy"),
+            _board_nom("NVDA", "board.leader", lane="leaders"),
+            _board_nom("KRUS", "board.buy", lane="buy"))
+    bus.ingest_read(ProducerRead(source_id="factordata:us_standouts", status="ok",
+                                 nominations=noms, source_asof=YESTERDAY,
+                                 observed_at=NOW), now=NOW)
+
+    spooled = json.loads((tmp_path / "spool" / bus.spool_keys[0]).read_text(encoding="utf-8"))
+    probe_set = assemble_probe_set(
+        layer_a=_layer_a({"NVDA": "NVIDIA Corp", "KRUS": "Kura Sushi USA Inc"}),
+        bus=bus, cfg=_cfg(), market_session="2026-08-14", now=NOW)
+    published = [n for rec in probe_set.records for n in rec.nominations]
+
+    assert spooled["n_nominations"] == len(published) == 3
+    assert ({(n["ticker"], n["reason_code"]) for n in spooled["nominations"]}
+            == {(n.ticker, n.reason_code) for n in published})
+
+
+def test_genuine_reread_is_still_idempotent_and_counted(tmp_path):
+    """Widening identity must not stop the bus deduping a true re-read."""
+    bus = NominationBus(spool=_spool(tmp_path))
+    nom = _board_nom("NVDA", "board.buy", lane="buy")
+    for _ in range(3):
+        bus.ingest_read(ProducerRead(source_id=nom.source_id, status="ok",
+                                     nominations=(nom,), observed_at=NOW), now=NOW)
+    assert len(bus.for_ticker("NVDA", now=NOW)) == 1
+    assert bus.duplicates_dropped == 2
+
+
+def test_same_pass_duplicates_are_counted_not_silently_overwritten(tmp_path):
+    """A within-pass repeat is a REFUSAL, and refusals are counted."""
+    bus = NominationBus(spool=_spool(tmp_path))
+    nom = _board_nom("NVDA", "board.buy", lane="buy")
+    admitted = bus.ingest_read(ProducerRead(
+        source_id=nom.source_id, status="ok", nominations=(nom, nom),
+        observed_at=NOW), now=NOW)
+    assert admitted == 1
+    assert bus.duplicates_dropped == 1
+
+
+# ---------------------------------------------------------------------------
+# B2 REGRESSION — Layer A is a lens, membership is B ∪ C ∪ D
+# ---------------------------------------------------------------------------
+
+def test_layer_a_admits_nobody_on_its_own(tmp_path):
+    """B2: 800 eligible names with no B/C/D reason ⇒ an EMPTY probe set."""
+    names = {f"T{i:04d}": f"Synthetic Corp {i}" for i in range(800)}
+    probe_set = assemble_probe_set(layer_a=_layer_a(names), bus=NominationBus(),
+                                   cfg=_cfg(), market_session="2026-08-14", now=NOW)
+    assert len(probe_set) == 0, "eligibility is not admission"
+    assert probe_set.universe["eligible"] == 800
+    assert probe_set.layer_counts["A"] == 0
+
+
+def test_probe_set_narrows_to_the_union_of_the_real_doors(tmp_path):
+    """A large eligible universe narrows to B ∪ C ∪ D, inside the budget."""
+    names = {f"T{i:04d}": f"Synthetic Corp {i}" for i in range(2966)}
+    layer_a = _layer_a(names)
+
+    memberships = {"sp500": [f"T{i:04d}" for i in range(500)]}          # Layer B
+    liquidity = {f"T{i:04d}": {"dollar_vol_20d": 9e9} for i in range(500)}
+    hot = {f"T{i:04d}": {"rel_volume": 5.0} for i in range(500, 620)}   # Layer C
+    bus = NominationBus(spool=_spool(tmp_path))
+    lobe = _nomination("T2900", source_id="ipo:calendar",
+                       reason_code="ipo.recent_listing")               # Layer D
+    bus.ingest_read(ProducerRead(source_id="ipo:calendar", status="ok",
+                                 nominations=(lobe,), source_asof=YESTERDAY,
+                                 observed_at=NOW), now=NOW)
+
+    probe_set = assemble_probe_set(layer_a=layer_a, bus=bus, cfg=_cfg(),
+                                   memberships=memberships, liquidity=liquidity,
+                                   hot_features=hot, market_session="2026-08-14", now=NOW)
+
+    assert len(probe_set) == 621, "500 core + 120 hot + 1 lobe"
+    assert probe_set.universe["eligible"] == 2966
+    assert probe_set.budget["state"] == "within", \
+        "the budget must be answerable, not exceeded on every pass by construction"
+    assert probe_set.layer_counts["B"] == 500
+    assert probe_set.layer_counts["C"] == 120
+    assert probe_set.layer_counts["D"] == 1
+    assert probe_set.layer_counts["A"] == 621, "A counts probed names it vouches for"
+    assert not any(n["code"] == "budget_exceeded" for n in probe_set.to_dict()["notes"])
+
+
+def test_budget_warning_does_not_fire_on_a_normal_pass(tmp_path, capsys):
+    """The escalation must be an event, not the weather."""
+    names = {f"T{i:04d}": f"Synthetic Corp {i}" for i in range(2966)}
+    capsys.readouterr()
+    assemble_probe_set(layer_a=_layer_a(names), bus=NominationBus(), cfg=_cfg(),
+                       memberships={"sp500": [f"T{i:04d}" for i in range(900)]},
+                       market_session="2026-08-14", now=NOW)
+    assert "entry-radar-budget" not in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# B3 REGRESSION — a universe-source outage must not empty the probe set
+# ---------------------------------------------------------------------------
+
+def test_universe_source_outage_retains_prior_members(tmp_path):
+    """B3: an index read failing evicted every name it had admitted (800 → 0)."""
+    names = {f"T{i:04d}": f"Synthetic Corp {i}" for i in range(800)}
+    members = sorted(names)
+
+    healthy = _layer_a(names)
+    first = assemble_probe_set(layer_a=healthy, bus=NominationBus(), cfg=_cfg(),
+                               memberships={"sp500": members},
+                               market_session="2026-08-14", now=NOW)
+    assert len(first) == 800
+
+    later = NOW + timedelta(days=1)
+    dead = UniverseSourceRead(key="sp500", status="unavailable", detail="read failed")
+    second = assemble_probe_set(layer_a=build_layer_a([dead], curated=frozenset()),
+                                bus=NominationBus(), cfg=_cfg(), memberships={},
+                                previous=first, market_session="2026-08-15", now=later)
+
+    assert len(second) == 800, "a reader crash is not a market event"
+    note = next(n for n in second.to_dict()["notes"] if n["code"] == "producers_unavailable")
+    assert note["retained_names"] == 800
+    assert "breadth:constituents:sp500" in note["sources"]
+
+    sample = second.by_ticker()["T0000"]
+    retained = [r for r in sample.admission_reasons if r.retained_stale]
+    assert retained and retained[0].source_status == "unavailable"
+    assert retained[0].source_id == "breadth:constituents:sp500"
+    assert sample.data_quality == "degraded"
+
+
+def test_universe_source_id_matches_the_layer_b_reason_id():
+    """The mismatch that silently disabled retention, pinned directly."""
+    from engine.entry_radar.universe import layer_b_admissions, universe_source_id
+
+    reasons = layer_b_admissions(_cfg(), memberships={"sp500": ["AAPL"]}, now=NOW)
+    assert reasons["AAPL"][0].source_id == universe_source_id("sp500")
+    assert universe_source_id("deep_history") == "universe:deep_history"
+
+
+# ---------------------------------------------------------------------------
+# improvements
+# ---------------------------------------------------------------------------
+
+def test_dollar_vol_rank_is_derived_at_assembly(tmp_path):
+    """The knob had no feeder upstream; the rank is computed from dollar_vol_20d."""
+    from engine.entry_radar.universe import _with_dollar_vol_rank
+
+    ranked = _with_dollar_vol_rank({"BIG": {"dollar_vol_20d": 9e9},
+                                    "MID": {"dollar_vol_20d": 5e8},
+                                    "SML": {"dollar_vol_20d": 1e6}})
+    assert [ranked[s]["dollar_vol_rank"] for s in ("BIG", "MID", "SML")] == [1, 2, 3]
+
+    features = {f"T{i:04d}": {"dollar_vol_20d": float(10_000 - i)} for i in range(400)}
+    probe_set = assemble_probe_set(layer_a=_layer_a({s: f"Corp {s}" for s in features}),
+                                   bus=NominationBus(), cfg=_cfg(),
+                                   hot_features=features, market_session="2026-08-14",
+                                   now=NOW)
+    assert len(probe_set) == 300, "top-300 by the dollar_vol_rank_max knob"
+    reason = probe_set.by_ticker()["T0000"].admission_reasons[0]
+    assert reason.reason_code == "hot.dollar_vol_rank"
+    assert reason.detail["value"] == 1
+
+
+def test_future_vintage_is_clamped_but_never_silently(tmp_path):
+    """A clamp is recorded, and a clamped read is never graded ``ok``."""
+    from engine.entry_radar.producers import read_flow_pulse
+    from engine.entry_radar.producers.base import clamp_asof
+
+    assert clamp_asof(NOW + timedelta(hours=5), NOW) == (NOW, True)
+    assert clamp_asof(YESTERDAY, NOW) == (YESTERDAY, False)
+
+    path = tmp_path / "flow_pulse.json"
+    path.write_text(json.dumps({
+        "schema": "flow_pulse.v1", "as_of": "2026-08-20T00:00:00Z", "stale": False,
+        "tickers": [{"ticker": "ZZTOP", "rvol_tod": 9.0}]}), encoding="utf-8")
+    got = read_flow_pulse(path, now=NOW, cfg=_cfg())
+    assert got.read.status == "stale", "a future vintage is not a fresh one"
+    assert got.read.nominations[0].data_quality == "degraded"
+    assert got.read.nominations[0].source_asof <= NOW
+    assert "clamped" in got.read.detail
+
+
+def test_spool_keys_do_not_collide_within_one_second(tmp_path):
+    """Two lanes spooling in the same second must not overwrite each other."""
+    from engine.entry_radar.spool import spool_key
+
+    a = spool_key("2026-08-14", "143000", pass_id="nightly")
+    b = spool_key("2026-08-14", "143000", pass_id="hot_tape")
+    assert a != b and a.endswith("-nightly.json") and b.endswith("-hot_tape.json")
+
+    spool = _spool(tmp_path)
+    nom = _nomination("ZZTOP")
+    assert spool.append([nom], now=NOW, pass_id="nightly")
+    assert spool.append([_nomination("KRUS")], now=NOW, pass_id="hot_tape")
+    assert len(sorted((tmp_path / "spool").rglob("*.json"))) == 2, "no silent overwrite"
+
+
+def test_missing_market_session_warns_rather_than_mis_stamping(capsys):
+    assemble_probe_set(layer_a=_layer_a({}), bus=NominationBus(), cfg=_cfg(), now=NOW)
+    out = capsys.readouterr().out
+    line = next(ln for ln in out.splitlines() if "market_session" in ln)
+    assert line.startswith("::warning")
+
+
+def test_every_config_key_binds_something():
+    """A config key that binds nothing is a lie — pin the ones we ship."""
+    import yaml
+    from engine.entry_radar.producers import stale_after
+    from engine.entry_radar.producers.constituents import sources_from_config
+
+    raw = yaml.safe_load((ROOT / "config" / "entry_radar.yml").read_text())["entry_radar"]
+    cfg = _cfg()
+
+    # producers.stale_after_minutes ids must be REAL source ids.
+    from engine.entry_radar.producers import (
+        FLOW_PULSE_SOURCE_ID, IPO_SOURCE_ID, LINKED_OUTSIDERS_SOURCE_ID,
+        PULSE_SOURCE_ID, SETUPS_SOURCE_ID, STANDOUTS_SOURCE_ID,
+        STOCK_LIBRARY_SOURCE_ID)
+    from engine.entry_radar.spool import HOT_TAPE_SOURCE_ID
+    from engine.entry_radar.universe import SupabaseWatchlistAdapter, universe_source_id
+    real = {FLOW_PULSE_SOURCE_ID, IPO_SOURCE_ID, LINKED_OUTSIDERS_SOURCE_ID,
+            PULSE_SOURCE_ID, SETUPS_SOURCE_ID, STANDOUTS_SOURCE_ID,
+            STOCK_LIBRARY_SOURCE_ID, HOT_TAPE_SOURCE_ID, "hot_tape:outbox",
+            SupabaseWatchlistAdapter.SOURCE_ID, "breadth:constituents"}
+    declared = set(raw["producers"]["stale_after_minutes"])
+    assert declared <= real, f"config names non-existent producers: {declared - real}"
+
+    # the prefix key really does cover the per-index ids
+    assert stale_after(cfg, universe_source_id("sp500")) == 10080
+
+    # layer_a.sources is consumed
+    assert [k for k, _, _ in sources_from_config(cfg)] == [
+        s["key"] for s in raw["layer_a"]["sources"]]
+
+    # the keys we deleted stay deleted
+    assert "min_history_sessions" not in raw["layer_a"]
+    assert "default_ttl_minutes" not in raw["spool"]

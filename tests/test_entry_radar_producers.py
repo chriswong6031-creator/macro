@@ -395,3 +395,116 @@ def test_staleness_budgets_track_artifact_cadence(source_id, expected_max_minute
     """Staleness is per-artifact cadence, never one global number."""
     from engine.entry_radar.producers import stale_after
     assert stale_after(_cfg(), source_id) == expected_max_minutes
+
+
+# ---------------------------------------------------------------------------
+# review fixes — vintage honesty, silent-pass exit, the real nightly gate
+# ---------------------------------------------------------------------------
+
+def test_linked_outsiders_source_asof_is_the_artifact_vintage_not_the_filing(tmp_path):
+    """A filing date is when the EVENT happened; the vintage is when we LOOKED.
+
+    Using ``last_filed_at`` as ``source_asof`` made the §5 postdate check
+    trivially satisfiable — a months-old 8-K always precedes now — so a badly
+    stale artifact looked perfectly fresh.  The filing date belongs in the
+    evidence, not in the vintage.
+    """
+    from engine.entry_radar.producers import read_linked_outsiders
+
+    path = tmp_path / "linked_outsiders.json"
+    path.write_text(json.dumps({
+        "semis": {"basket_id": "semis", "as_of": "2026-08-14T02:10:00Z",
+                  "outsiders": [{"ticker": "ZZTOP", "edge_n": 2,
+                                 "last_filed_at": "2025-03-04T00:00:00Z",
+                                 "linked_members": [{"member": "NVDA",
+                                                     "accession": "0001"}]}]}}),
+        encoding="utf-8")
+    got = read_linked_outsiders(path, now=NOW, cfg=_cfg())
+    row = got.nominations[0]
+
+    assert row.source_asof == datetime(2026, 8, 14, 2, 10, tzinfo=timezone.utc), \
+        "source_asof must be the basket record's as_of"
+    assert row.source_asof.year == 2026, "not the 2025 filing date"
+    assert "filed=2025-03-04" in (row.evidence_ref or "")
+    assert row.source_horizon == "event@2025-03-04"
+
+
+def test_stale_artifact_with_a_recent_filing_still_grades_stale(tmp_path):
+    """The staleness the old behaviour hid: old artifact, fresh-looking filing."""
+    from engine.entry_radar.producers import read_linked_outsiders
+
+    path = tmp_path / "linked_outsiders.json"
+    path.write_text(json.dumps({
+        "semis": {"basket_id": "semis", "as_of": "2026-06-01T00:00:00Z",
+                  "outsiders": [{"ticker": "ZZTOP",
+                                 "last_filed_at": "2026-08-14T00:00:00Z",
+                                 "linked_members": [{"member": "NVDA"}]}]}}),
+        encoding="utf-8")
+    got = read_linked_outsiders(path, now=NOW, cfg=_cfg())
+    assert got.status == "stale", "a 10-week-old artifact is stale whatever it contains"
+    assert got.nominations[0].source_asof < NOW - timedelta(days=60)
+
+
+def test_pass_that_publishes_nothing_exits_non_zero(tmp_path, monkeypatch, capsys):
+    """Silence is the estate's default failure mode — it must not exit 0."""
+    import scripts.entry_radar_universe as entry
+
+    (tmp_path / "data").mkdir()
+    monkeypatch.delenv("MACRO_LIVE_DIR", raising=False)
+    # No live dir on this host and no spool sink configured ⇒ nothing lands.
+    rc = entry.main(["--root", str(tmp_path), "--live-dir", str(tmp_path / "absent")])
+    assert rc == 3
+    line = next(ln for ln in capsys.readouterr().out.splitlines()
+                if "produced NO output" in ln)
+    assert line.startswith("::warning")
+
+
+def test_nightly_gate_is_actually_called(tmp_path, monkeypatch, capsys):
+    """The single-advancer gate must execute, not merely be documented."""
+    import scripts.entry_radar_universe as entry
+
+    _synthetic_repo(tmp_path)
+    monkeypatch.delenv("MACRO_LIVE_DIR", raising=False)
+    monkeypatch.delenv("COLLECT_LANE", raising=False)
+    monkeypatch.delenv("US_LANE", raising=False)
+
+    rc = entry.main(["--root", str(tmp_path), "--live-dir", str(tmp_path / "site" / "live"),
+                     "--spool-dir", str(tmp_path / "spool"), "--nightly"])
+    assert rc == 0
+    out = capsys.readouterr().out
+    assert "nightly_advance_enabled()=False" in out, "the gate ran and reported"
+
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    entry.main(["--root", str(tmp_path), "--live-dir", str(tmp_path / "site" / "live"),
+                "--spool-dir", str(tmp_path / "spool"), "--nightly"])
+    assert "nightly_advance_enabled()=True" in capsys.readouterr().out
+    assert entry.DURABLE_WRITES == (), "W1 declares no durable writes"
+    assert _data_tree(tmp_path) == []
+
+
+def test_read_universe_sources_actually_consumes_the_config(tmp_path):
+    """``layer_a.sources`` must reach the reader, not just parse.
+
+    The defaults and the shipped config list the same five sources, so a test
+    that only compares them cannot tell a wired config from an ignored one.
+    This one supplies a config that DIFFERS from ``DEFAULT_SOURCES`` and checks
+    the reader followed it.
+    """
+    from engine.entry_radar.producers import DEFAULT_SOURCES, read_universe_sources
+
+    cfg = {"layer_a": {"sources": [
+        {"key": "sp500", "path": "data/breadth/constituents.parquet",
+         "kind": "constituents"},
+        {"key": "custom_index", "path": "data/custom/constituents.parquet",
+         "kind": "constituents"},
+    ]}}
+    assert {k for k, _, _ in DEFAULT_SOURCES} != {"sp500", "custom_index"}
+
+    frames = {"breadth": {"AAPL": {"name": "Apple Inc."}},
+              "custom": {"ZZTOP": {"name": "ZZ Top Industries Inc."}}}
+    sources = read_universe_sources(tmp_path, cfg=cfg, loader=_fake_loader(frames))
+
+    assert [s.key for s in sources] == ["sp500", "custom_index"], \
+        "the reader must follow the config, not the built-in defaults"
+    assert dict(sources[1].meta)["ZZTOP"]["name"] == "ZZ Top Industries Inc."
+    assert "russell2000" not in {s.key for s in sources}

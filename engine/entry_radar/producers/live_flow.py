@@ -48,6 +48,7 @@ from typing import Any
 from engine.entry_radar.contracts import Nomination, NominationError, ProducerRead, parse_ts, utcnow
 from engine.entry_radar.producers.base import (
     AdapterResult,
+    clamp_asof,
     grade_staleness,
     read_json,
     stale_after,
@@ -94,7 +95,8 @@ def read_flow_pulse(path: Path, *, now: datetime | None = None,
 
     stale_min = stale_after(cfg, FLOW_PULSE_SOURCE_ID)
     status, age = grade_staleness(asof, now=stamp, stale_after_minutes=stale_min)
-    self_declared_stale = bool(payload.get("stale")) or lastgood
+    safe_asof, clamped = clamp_asof(asof, stamp)
+    self_declared_stale = bool(payload.get("stale")) or lastgood or clamped
     if self_declared_stale:
         status = "stale"
 
@@ -107,7 +109,7 @@ def read_flow_pulse(path: Path, *, now: datetime | None = None,
             knob = _DEFAULT_RVOL_MIN
 
     quality = "ok" if asof is not None else "degraded"
-    if self_declared_stale:
+    if self_declared_stale or clamped:
         quality = "degraded"
     ttl = stamp + timedelta(minutes=max(1.0, stale_min))
     noms: list[Nomination] = []
@@ -142,7 +144,7 @@ def read_flow_pulse(path: Path, *, now: datetime | None = None,
                 reason_code="flow_pulse.rvol_tod",
                 reason_text=text,
                 observed_at=stamp,
-                source_asof=min(asof, stamp) if asof is not None else stamp,
+                source_asof=safe_asof if safe_asof is not None else stamp,
                 source_value=rvol, source_horizon="intraday", ttl_until=ttl,
                 evidence_ref=f"flow_pulse.json#{sym}", data_quality=quality,
             ))
@@ -154,5 +156,6 @@ def read_flow_pulse(path: Path, *, now: datetime | None = None,
                         age_seconds=age, stale_after_seconds=stale_min * 60.0,
                         detail=f"{len(noms)} nomination(s) from {len(rows)} row(s); "
                                f"vintage={quality}"
-                               + ("; producer self-declared stale" if self_declared_stale else ""))
+                               + ("; producer self-declared stale" if self_declared_stale else "")
+                               + ("; FUTURE vintage clamped" if clamped else ""))
     return AdapterResult(read, features=features)

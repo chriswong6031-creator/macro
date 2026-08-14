@@ -154,11 +154,24 @@ def collect(root: Path, cfg: dict[str, Any], *, bus: NominationBus,
     site = root / "site"
     data = root / "data"
 
-    sources = read_universe_sources(root)
+    sources = read_universe_sources(root, cfg=cfg)
     stock = read_stock_library(stockdata_dir=site / "stockdata", cfg=cfg, now=now)
     flow = read_flow_pulse(site / "live" / "flow_pulse.json", cfg=cfg, now=now)
     ipo = read_ipo_calendar(data / "ipo" / "calendar.parquet", cfg=cfg, now=now)
-    watchlist = SupabaseWatchlistAdapter(supabase_client).read(now=now)
+
+    # The operator-watchlist block is a real switch: `enabled: false` disables
+    # the lane outright rather than leaving a permanently-unavailable producer
+    # in the availability report, and `tables` is the adapter's actual read list.
+    sb_cfg = dict((cfg.get("layer_b") or {}).get("supabase") or {})
+    if sb_cfg.get("enabled", True):
+        watchlist = SupabaseWatchlistAdapter(
+            supabase_client,
+            tables=tuple(sb_cfg.get("tables") or ("watchlists", "watchlist_symbols",
+                                                  "portfolio_positions"))).read(now=now)
+    else:
+        watchlist = ProducerRead(source_id=SupabaseWatchlistAdapter.SOURCE_ID,
+                                 status="unavailable", observed_at=now,
+                                 detail="disabled via config layer_b.supabase.enabled")
 
     reads: list[ProducerRead] = [
         read_us_standouts(site / "factordata" / "us_standouts.json", cfg=cfg, now=now),
@@ -210,9 +223,18 @@ def main(argv: list[str] | None = None) -> int:
     now = utcnow()
     cfg = load_config(root)
 
-    if args.nightly and DURABLE_WRITES:
+    if args.nightly:
+        # The gate is CALLED unconditionally, not guarded behind a set that is
+        # currently empty — a single-advancer law that never executes is
+        # documentation, and documentation does not fail closed.  It is a no-op
+        # on writes today (DURABLE_WRITES is empty by design) but it is
+        # exercised, logged and testable, so PR-5 inherits a live gate rather
+        # than a comment.
         from engine.ledger_lane import nightly_advance_enabled  # noqa: PLC0415
-        if not nightly_advance_enabled():
+        gate = nightly_advance_enabled()
+        print(f"entry-radar nightly gate: nightly_advance_enabled()={gate} "
+              f"durable_writes={list(DURABLE_WRITES)}", flush=True)
+        if DURABLE_WRITES and not gate:
             print("::warning title=entry-radar::--nightly requested outside the nightly "
                   "lane (COLLECT_LANE!=nightly) — durable writes refused", flush=True)
             return 2
@@ -248,7 +270,17 @@ def main(argv: list[str] | None = None) -> int:
 
     payload = probe_set.to_dict()
     payload["lane"] = {"nightly": bool(args.nightly), "durable_writes": list(DURABLE_WRITES)}
-    write_artifact(out_dir / ARTIFACT_NAME, payload)
+    served = write_artifact(out_dir / ARTIFACT_NAME, payload)
+    spooled = bool(bus.spool_keys)
+    if not served and not spooled:
+        # Silence is this estate's default failure mode: a pass that published
+        # nothing and exited 0 is indistinguishable from a healthy pass to every
+        # instrument we own, and no staleness monitor can see a bake that never
+        # landed.  Exit non-zero so the lane's own status carries the fact.
+        print("::warning title=entry-radar::pass produced NO output — neither the live "
+              f"artifact ({out_dir / ARTIFACT_NAME}) nor a spool object was written; "
+              "the probe set on disk is whatever the previous pass left", flush=True)
+        return 3
     return 0
 
 

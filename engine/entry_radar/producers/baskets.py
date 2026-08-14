@@ -55,7 +55,13 @@ from pathlib import Path
 from typing import Any
 
 from engine.entry_radar.contracts import Nomination, NominationError, ProducerRead, parse_ts, utcnow
-from engine.entry_radar.producers.base import grade_staleness, read_json, stale_after, unavailable
+from engine.entry_radar.producers.base import (
+    clamp_asof,
+    grade_staleness,
+    read_json,
+    stale_after,
+    unavailable,
+)
 
 log = logging.getLogger(__name__)
 
@@ -136,6 +142,8 @@ def read_group_pulse(path: Path, *, now: datetime | None = None,
                 value = float(value) if value is not None else None
             except (TypeError, ValueError):
                 value = None
+            safe_asof, clamped = clamp_asof(basket_asof, stamp)
+            row_q = row_quality if quality != "unknown" else "degraded"
             try:
                 noms.append(Nomination(
                     ticker=sym, source_id=PULSE_SOURCE_ID,
@@ -143,10 +151,10 @@ def read_group_pulse(path: Path, *, now: datetime | None = None,
                     reason_code=f"membership_expansion.{suffix}",
                     reason_text=f"{sym} " + phrasing.format(basket=basket_id) +
                                 " — a fact about the basket, not about the company",
-                    observed_at=stamp, source_asof=min(basket_asof, stamp),
+                    observed_at=stamp, source_asof=safe_asof or stamp,
                     source_value=value, source_horizon="nightly", ttl_until=ttl,
                     evidence_ref=f"pulse.json#{basket_id}/direction/{slot}",
-                    data_quality=row_quality if quality != "unknown" else "degraded",
+                    data_quality="degraded" if clamped else row_q,
                 ))
             except NominationError as exc:
                 log.warning("entry_radar.producers.baskets: pulse row dropped (%s)", exc)
@@ -207,6 +215,14 @@ def read_linked_outsiders(path: Path, *, now: datetime | None = None,
                     f"{members or 'a ' + basket_id + ' member'}")
             if relationship:
                 text += f" ({relationship})"
+            # source_asof is the ARTIFACT VINTAGE, never the filing timestamp.
+            # A filing date is when the event happened; the vintage is when this
+            # producer last looked.  Using the filing date made the §5 postdate
+            # check trivially satisfiable (a months-old 8-K always precedes now)
+            # and hid a stale artifact behind a fresh-looking event.  The filing
+            # date rides in evidence_ref/source_horizon where it belongs.
+            filed = parse_ts(row.get("last_filed_at"))
+            safe_asof, clamped = clamp_asof(basket_asof, stamp)
             try:
                 noms.append(Nomination(
                     ticker=sym, source_id=LINKED_OUTSIDERS_SOURCE_ID,
@@ -214,13 +230,15 @@ def read_linked_outsiders(path: Path, *, now: datetime | None = None,
                     reason_code="filing.linked_counterparty",
                     reason_text=text,
                     observed_at=stamp,
-                    source_asof=min(parse_ts(row.get("last_filed_at")) or basket_asof, stamp),
+                    source_asof=safe_asof or stamp,
                     source_value=float(edge_n) if edge_n is not None else None,
-                    source_horizon="event",
+                    source_horizon=("event" if filed is None
+                                    else f"event@{filed.date().isoformat()}"),
                     ttl_until=ttl,
                     evidence_ref=(f"linked_outsiders.json#{basket_id}/{sym}"
-                                  + (f"?accession={accession}" if accession else "")),
-                    data_quality="ok" if parse_ts(row.get("last_filed_at")) else "degraded",
+                                  + (f"?accession={accession}" if accession else "")
+                                  + (f"&filed={filed.date().isoformat()}" if filed else "")),
+                    data_quality="degraded" if (clamped or filed is None) else "ok",
                 ))
             except NominationError as exc:
                 log.warning("entry_radar.producers.baskets: outsider row dropped (%s)", exc)

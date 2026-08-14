@@ -2,10 +2,9 @@
 
 THE FUNNEL (contract §6)
 ------------------------
-  Layer A  broad eligibility — every supported tradable U.S. operating equity or
-           ADR with sufficient data, plus the WRAPPER CLASSIFIER that separates
-           leveraged/inverse ETFs, ETNs, warrants, rights and units out.  Small
-           caps are never excluded for size.
+  Layer A  broad eligibility — a LENS, not a door.  It classifies every
+           supported tradable U.S. name (operating equity / ADR / wrapper /
+           unclassified) and excludes wrappers.  It admits NOBODY.
   Layer B  core — index membership (S&P 1500), liquid large/mids, and the
            operator watchlist/holdings.
   Layer C  dynamic hot — admission on measured attention (dollar-volume rank,
@@ -14,9 +13,18 @@ THE FUNNEL (contract §6)
   Layer D  lobe nominations — ANY valid v1 nomination auto-admits, regardless of
            rank, index membership or size (contract §0 P-6).
 
-The Probe Set is the UNION.  A name in one layer is probed exactly as hard as a
-name in four; ``admission_layers`` records which doors it came through, and
-that is provenance, not a score.
+**Membership is B ∪ C ∪ D, filtered through the Layer-A lens.**  An eligible
+name with no B/C/D reason is NOT probed — otherwise the Probe Set would simply
+BE the broad universe (~2,966 names), B/C/D would contribute nothing, the
+500–1,500 budget would be exceeded on every pass, and the escalation warning
+would fire unconditionally.  An alarm that is always on is not an alarm.
+
+A name in one layer is probed exactly as hard as a name in three;
+``admission_layers`` records which doors it came through, and that is
+provenance, not a score.  ``layer_counts["A"]`` is therefore NOT an admission
+count — it reports how many probed names the eligibility universe vouches for,
+and the gap to ``n_probed`` is the lobe-nominated tail Layer A never heard of
+(gate P-6's whole population).
 
 THE UNIVERSE IS READ, NOT REBUILT (Track C §2)
 ----------------------------------------------
@@ -103,7 +111,8 @@ _CONFIG_REL = "config/entry_radar.yml"
 
 DEFAULTS: dict[str, Any] = {
     "probe_set": {"target_min": 500, "target_max": 1500},
-    "layer_a": {"min_history_sessions": 0},
+    # No min_history_sessions: young history is first-class (contract §6/§12).
+    "layer_a": {"sources": []},
     "layer_b": {"index_memberships": ["sp500", "sp400", "sp600"],
                 "dollar_vol_20d_min": 50_000_000},
     "layer_c": {"enabled": True, "dollar_vol_rank_max": 300, "rel_volume_min": 2.0,
@@ -112,7 +121,8 @@ DEFAULTS: dict[str, Any] = {
     "layer_d": {"auto_admit": True},
     "producers": {"stale_after_minutes": {}, "default_stale_after_minutes": 2160},
     "retention": {"unavailable_retention_sessions": 3},
-    "spool": {"prefix": "live_flow/entry_radar_nominations", "default_ttl_minutes": 1440},
+    # No default_ttl_minutes: TTL derives per-artifact from stale_after_minutes.
+    "spool": {"prefix": "live_flow/entry_radar_nominations"},
 }
 
 
@@ -482,6 +492,8 @@ class SupabaseWatchlistAdapter:
                                 observed_at=stamp, detail=f"Supabase read failed: {exc}")
 
         asof = newest or stamp
+        clamped = asof > stamp
+        asof = min(asof, stamp)
         noms: list[Nomination] = []
         seen: set[str] = set()
         from datetime import timedelta  # noqa: PLC0415
@@ -497,13 +509,55 @@ class SupabaseWatchlistAdapter:
                 reason_code=code,
                 reason_text=("Held in the operator portfolio" if held
                              else "On an operator watchlist"),
-                observed_at=stamp, source_asof=min(asof, stamp),
+                observed_at=stamp, source_asof=asof,
                 ttl_until=stamp + timedelta(minutes=ttl_minutes),
                 evidence_ref="supabase:watchlists/watchlist_symbols/portfolio_positions",
+                data_quality="degraded" if clamped else "ok",
             ))
-        return ProducerRead(source_id=self.SOURCE_ID, status="ok", nominations=tuple(noms),
+        return ProducerRead(source_id=self.SOURCE_ID,
+                            status="stale" if clamped else "ok", nominations=tuple(noms),
                             source_asof=asof, observed_at=stamp,
                             detail=f"{len(noms)} operator symbol(s) from {len(rows)} row(s)")
+
+
+#: Universe source keys that are INDEX MEMBERSHIPS (deep-history is not one).
+MEMBERSHIP_KEYS: frozenset[str] = frozenset({"sp500", "sp400", "sp600", "russell2000"})
+
+
+def universe_source_id(key: str) -> str:
+    """The ``source_id`` a universe source publishes under.
+
+    Membership sources share the id their Layer-B admission reasons carry
+    (``breadth:constituents:<key>``) so that an outage on ``sp500`` matches the
+    reasons ``sp500`` created.  Retention keys off ``source_id``, so a mismatch
+    here silently disables it: the names an index admitted would be evicted the
+    moment that index failed to read, turning a reader crash into a market
+    event.
+    """
+    return f"breadth:constituents:{key}" if key in MEMBERSHIP_KEYS else f"universe:{key}"
+
+
+def _with_dollar_vol_rank(features: Mapping[str, Mapping[str, Any]] | None
+                          ) -> dict[str, dict[str, Any]]:
+    """Derive ``dollar_vol_rank`` from ``dollar_vol_20d`` across the snapshot.
+
+    No producer in the estate publishes a dollar-volume RANK (Track C lists
+    ``dollar_vol_20d`` and ``rel_volume`` only), so the knob had no feeder and
+    the rule never fired.  The rank is cheap and honest to compute here: sort
+    the names we actually hold by 20d dollar volume, 1 = largest.
+
+    It is a rank WITHIN THE SNAPSHOT WE READ, not within the market — a partial
+    stock-library read makes it optimistic.  That is why it admits and never
+    scores, and why the reason text records the value it matched.
+    """
+    out = {sym: dict(row) for sym, row in (features or {}).items()}
+    ranked = sorted(
+        ((sym, float(row["dollar_vol_20d"])) for sym, row in out.items()
+         if row.get("dollar_vol_20d") is not None),
+        key=lambda kv: kv[1], reverse=True)
+    for pos, (sym, _dv) in enumerate(ranked, start=1):
+        out[sym].setdefault("dollar_vol_rank", pos)
+    return out
 
 
 def layer_b_admissions(cfg: Mapping[str, Any], *,
@@ -663,6 +717,7 @@ class ProbeSet:
     layer_counts: dict[str, int] = field(default_factory=dict)
     eligibility_counts: dict[str, int] = field(default_factory=dict)
     nomination_summary: dict[str, Any] = field(default_factory=dict)
+    universe: dict[str, Any] = field(default_factory=dict)
 
     def __len__(self) -> int:
         return len(self.records)
@@ -681,6 +736,7 @@ class ProbeSet:
             "notes": [dict(n) for n in self.notes],
             "layer_counts": dict(self.layer_counts),
             "eligibility_counts": dict(self.eligibility_counts),
+            "universe": dict(self.universe),
             "availability": dict(self.availability),
             "nomination_summary": dict(self.nomination_summary),
             "probes": [r.to_dict() for r in self.records],
@@ -691,7 +747,9 @@ class ProbeSet:
         layers = " ".join(f"{k}={self.layer_counts.get(k, 0)}" for k in ADMISSION_LAYERS)
         lines = [
             f"probe set        {len(self.records)} names   session={self.market_session}",
-            f"admission layers {layers}",
+            f"eligible universe {self.universe.get('eligible', 0)} names "
+            f"(Layer A is a LENS — it classifies, it never admits)",
+            f"admission layers {layers}   [A = probed names Layer A vouches for]",
             "eligibility      " + " ".join(f"{k}={v}" for k, v in
                                            sorted(self.eligibility_counts.items())),
             f"budget           {self.budget.get('state')} "
@@ -796,17 +854,18 @@ def assemble_probe_set(*, layer_a: LayerAResult,
         for sym, rows in block.items():
             reasons.setdefault(sym, []).extend(rows)
 
+    # LAYER A IS A LENS, NOT A DOOR.  It classifies eligibility and excludes
+    # wrappers; it does not admit.  Admitting every eligible name would make the
+    # Probe Set identical to the broad universe (~2,966 in production), leave
+    # B/C/D contributing nothing, blow the 500-1500 budget on every single pass,
+    # and fire the escalation warning unconditionally — an alarm that is always
+    # on is not an alarm.  Membership is B ∪ C ∪ D.
     eligible = set(layer_a.probeable())
-    for sym in eligible:
-        reasons.setdefault(sym, []).append(AdmissionReason(
-            layer="A", source_id="universe:layer_a", reason_code="eligible.broad_universe",
-            reason_text="Tradable U.S. equity in the broad eligibility universe",
-            observed_at=stamp,
-            detail=layer_a.eligibility[sym].to_dict()))
 
     _merge(layer_b_admissions(cfg, memberships=memberships, liquidity=liquidity,
                               watchlist=watchlist, now=stamp))
-    _merge(layer_c_admissions(cfg, features=hot_features, source_id=hot_source_id,
+    _merge(layer_c_admissions(cfg, features=_with_dollar_vol_rank(hot_features),
+                              source_id=hot_source_id,
                               source_status=(hot_read.status if hot_read else "ok"),
                               source_asof=(hot_read.source_asof if hot_read else None),
                               now=stamp))
@@ -818,7 +877,11 @@ def assemble_probe_set(*, layer_a: LayerAResult,
         unavailable.add(watchlist.source_id)
     for src in layer_a.sources:
         if src.status != "ok":
-            unavailable.add(f"universe:{src.key}")
+            # The outage key MUST equal the source_id the reasons that source
+            # created carry, or retention can never match it and a single failed
+            # index read EMPTIES the probe set — the O(1000)-shrink incident this
+            # module's docstring cites, reproduced exactly.
+            unavailable.add(universe_source_id(src.key))
 
     prior = _prior_records(previous)
     retained_names: list[str] = []
@@ -844,12 +907,18 @@ def assemble_probe_set(*, layer_a: LayerAResult,
 
     noms_by_ticker = bus.by_ticker(now=stamp)
     records: list[ProbeRecord] = []
+    # ``A`` is NOT an admission count — Layer A admits nobody.  It reports how
+    # many PROBED names the broad-eligibility universe actually vouches for; the
+    # gap between it and n_probed is the lobe-nominated tail Layer A never heard
+    # of, which is precisely the population gate P-6 exists to protect.
     layer_counts: dict[str, int] = {k: 0 for k in ADMISSION_LAYERS}
     for sym in sorted(reasons):
         rows = reasons[sym]
         layers = tuple(sorted({r.layer for r in rows}))
         for layer in layers:
             layer_counts[layer] = layer_counts.get(layer, 0) + 1
+        if sym in eligible:
+            layer_counts["A"] = layer_counts.get("A", 0) + 1
         verdict = layer_a.eligibility.get(sym) or classify_eligibility(sym)
         prior_row = prior.get(sym) or {}
         first_at = parse_ts(prior_row.get("first_admitted_at")) or stamp
@@ -921,6 +990,11 @@ def assemble_probe_set(*, layer_a: LayerAResult,
                               "probed WITH a fail-closed 'unclassified' flag.",
                       "tickers": unclassified[:50]})
 
+    if not market_session:
+        print("::warning title=entry-radar::no market_session supplied — stamping the "
+              "artifact with the UTC date, which is NOT the NYSE session for an "
+              "after-hours or holiday caller; pass one from lib.nyse_calendar",
+              flush=True)
     return ProbeSet(
         records=tuple(records),
         assembled_at=stamp,
@@ -937,6 +1011,13 @@ def assemble_probe_set(*, layer_a: LayerAResult,
         layer_counts=layer_counts,
         eligibility_counts=layer_a.counts(),
         nomination_summary=bus.summary(now=stamp),
+        universe={
+            "eligible": len(eligible),
+            "probed_outside_eligible": sorted(set(reasons) - eligible)[:50],
+            "n_probed_outside_eligible": len(set(reasons) - eligible),
+            "note": "membership is B∪C∪D; Layer A classifies eligibility and "
+                    "excludes wrappers, it does not admit",
+        },
     )
 
 

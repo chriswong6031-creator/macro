@@ -64,6 +64,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 from collections.abc import Iterable, Sequence
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -93,9 +94,20 @@ def _no_publish() -> bool:
     return os.environ.get(_NO_PUBLISH_ENV, "").strip() not in ("", "0", "false")
 
 
-def spool_key(session: str, stamp: str, *, prefix: str = SPOOL_PREFIX) -> str:
-    """``<prefix>/<YYYY-MM-DD>/<HHMMSS>.json`` — one object per pass."""
-    return f"{prefix}/{session}/{stamp}.json"
+def spool_key(session: str, stamp: str, *, prefix: str = SPOOL_PREFIX,
+              pass_id: str = "") -> str:
+    """``<prefix>/<YYYY-MM-DD>/<HHMMSS>-<pass_id>.json`` — one object per pass.
+
+    ``pass_id`` is part of the key because two lanes can spool inside the same
+    SECOND (the nightly assembly and a hot_tape tap, say), and a bare HHMMSS key
+    would have the second write silently overwrite the first — losing durable
+    nomination events with no error anywhere.  Object-per-pass only protects the
+    record if the object name is actually unique per pass.
+    """
+    # Underscores survive: they are filename-safe and keep the key readable as
+    # the producer id it came from (``hot_tape``, not ``hot-tape``).
+    slug = re.sub(r"[^a-z0-9_]+", "-", str(pass_id or "pass").lower()).strip("-_") or "pass"
+    return f"{prefix}/{session}/{stamp}-{slug}.json"
 
 
 def _bucket() -> str:
@@ -189,9 +201,15 @@ class NominationSpool:
                       f"({exc}) — nomination events NOT durable", flush=True)
                 return False
 
-        print("::warning title=entry-radar-spool::no R2 credentials and no "
-              f"${_SPOOL_DIR_ENV} — {key} NOT spooled; ephemeral-producer nominations "
-              "from this pass are unreconstructible", flush=True)
+        # Distinguish "never had a sink" from "the sink we had rejected the write":
+        # the second is an incident, and reporting it as missing credentials would
+        # send the operator to the wrong place.
+        why = ("the R2 PUT failed and no local fallback is configured"
+               if (self._s3 is not None or _r2_client() is not None)
+               else f"no R2 credentials and no ${_SPOOL_DIR_ENV}")
+        print(f"::warning title=entry-radar-spool::{why} — {key} NOT spooled; "
+              "ephemeral-producer nominations from this pass are unreconstructible",
+              flush=True)
         return False
 
     # -- api --------------------------------------------------------------
@@ -217,7 +235,7 @@ class NominationSpool:
 
         session = stamp_at.astimezone(timezone.utc).date().isoformat()
         stamp = stamp_at.astimezone(timezone.utc).strftime("%H%M%S")
-        key = spool_key(session, stamp, prefix=self.prefix)
+        key = spool_key(session, stamp, prefix=self.prefix, pass_id=pass_id)
         payload = {
             "schema": SPOOL_SCHEMA,
             "nomination_schema": NOMINATION_SCHEMA,
@@ -258,7 +276,9 @@ def tap_hot_tape_events(events: Iterable[Any], *,
     """
     stamp = now or utcnow()
     asof = source_asof or stamp
-    quality = "ok" if source_asof is not None else "degraded"
+    clamped = asof > stamp
+    asof = min(asof, stamp)
+    quality = "ok" if (source_asof is not None and not clamped) else "degraded"
     ttl = stamp + timedelta(minutes=max(1.0, ttl_minutes))
     out: list[Nomination] = []
     for ev in events or ():
@@ -280,7 +300,7 @@ def tap_hot_tape_events(events: Iterable[Any], *,
                 reason_code=f"hot_tape.{kind}",
                 reason_text=f"Hot Tape 5-min detector flagged {str(sym).upper()} ({kind})",
                 observed_at=stamp,
-                source_asof=min(asof, stamp),
+                source_asof=asof,
                 source_value=value,
                 source_horizon="intraday",
                 ttl_until=ttl,
@@ -353,6 +373,8 @@ def tail_outbox_events(outbox_dir: Path, *, since: datetime | None = None,
                     reason_text=f"{str(sym).upper()} named in a published Hot Tape post",
                     observed_at=stamp,
                     source_asof=min(asof, stamp),
+                    source_horizon=("intraday" if asof <= stamp
+                                    else "intraday(future-vintage-clamped)"),
                     ttl_until=stamp + timedelta(minutes=_HOT_TAPE_TTL_MIN),
                     evidence_ref=f"outbox:{path.name}",
                     data_quality="degraded",

@@ -255,14 +255,25 @@ class Nomination:
 
     # -- identity ---------------------------------------------------------
     @property
-    def identity(self) -> tuple[str, str, str]:
-        """Dedup identity: ``(source_id, ticker, source_asof)``.
+    def identity(self) -> tuple[str, str, str, str, str]:
+        """Dedup identity: ``(source_id, ticker, source_asof, reason_code, evidence_ref)``.
 
-        Deliberately NOT ``(ticker,)``.  One ticker may carry many nominations
-        and every one is kept; only a re-read of the SAME producer at the SAME
-        artifact vintage is a duplicate.
+        A duplicate is the same producer, at the same artifact vintage, saying
+        the SAME THING about the same evidence — i.e. an idempotent re-read.
+        Anything else is a distinct fact and is kept.
+
+        The narrower ``(source_id, ticker, source_asof)`` triple is WRONG and was
+        a real flattening bug: one board legitimately lists a ticker in two lanes
+        (``board.buy`` and ``board.leader``), and one basket file legitimately
+        names a ticker as both leader and strongest — same producer, same
+        vintage, different facts.  Under the triple the second silently replaced
+        the first, so the durable spool held two events while the published
+        artifact showed one, with ``duplicates_dropped`` reporting zero.  A
+        published artifact that disagrees with its own spool is exactly the
+        flattening §16 A1.2 forbids.
         """
-        return (self.source_id, self.ticker, iso(self.source_asof) or "")
+        return (self.source_id, self.ticker, iso(self.source_asof) or "",
+                self.reason_code, self.evidence_ref or "")
 
     @property
     def source_prefix(self) -> str:
