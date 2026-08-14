@@ -1026,6 +1026,49 @@ def load_active_builds(degraded: Degraded, path: Path | None = None) -> dict[str
     return data
 
 
+def _strategic_state_from_refs(
+    root: Path, degraded: Degraded, label: str
+) -> tuple[str, str] | None:
+    """``(file text, ref name)`` read out of the sibling's LOCAL refs, or None.
+
+    A checkout parked on a branch that predates the file still CARRIES it on
+    `refs/remotes/origin/*` — the CLONE is current, only the working tree is behind
+    (measured 2026-08-13: Mastermind's `master` sat 43 commits back, and the brief
+    neutralised its P0 ranking over a file the clone had all along).  The ref copy is
+    already on disk, so reading it stays inside the zero-network contract; the
+    alternative is discarding a join over which branch a sibling happens to be on.
+    Both misses degrade, and they degrade DIFFERENTLY: a checkout with no readable
+    refs is a different fact from a clone that genuinely predates the file.
+    """
+    walk = _git("for-each-ref", "--sort=-committerdate", "--count=25",
+                "--format=%(refname:short)", "refs/heads", "refs/remotes", cwd=root)
+    if walk is None:
+        degraded.add(
+            f"{label} absent — p0 ids unvalidated, P0 ranking neutral (not found in the "
+            "Mastermind working tree, and the checkout has no readable git refs to fall "
+            "back to)"
+        )
+        return None
+    candidates: list[str] = []
+    for ref in ("origin/HEAD", "origin/master", "origin/main", "master", "main",
+                *(line.strip() for line in walk.splitlines())):
+        if ref and ref not in candidates:
+            candidates.append(ref)
+    for ref in candidates:
+        text = _git("show", f"{ref}:{_STRATEGIC_STATE_REL.as_posix()}", cwd=root)
+        if text is not None:
+            degraded.add(
+                f"{label} absent from the working tree — read from local ref {ref} "
+                "(stale Mastermind checkout; P0 ranking uses the ref copy)"
+            )
+            return text, ref
+    degraded.add(
+        f"{label} absent from the working tree and all local refs — p0 ids unvalidated, "
+        "P0 ranking neutral (this Mastermind clone predates config/strategic_state.yml)"
+    )
+    return None
+
+
 def load_p0(degraded: Degraded) -> dict[str, str] | None:
     """Active P0 objective ids from the Mastermind strategic state, or None if absent.
 
@@ -1041,20 +1084,28 @@ def load_p0(degraded: Degraded) -> dict[str, str] | None:
     # Host paths are never printed into a COMMITTED artifact — the message names the
     # repo-relative file, so the generated view is the same sentence on every machine.
     label = f"mastermind:{_STRATEGIC_STATE_REL.as_posix()}"
-    if not target.exists():
-        degraded.add(
-            f"{label} absent — p0 ids unvalidated, P0 ranking neutral "
-            "(this Mastermind checkout predates config/strategic_state.yml)"
-        )
-        return None
+    source = ""  # ` (from <ref>)`, so a ref-sourced degrade never reads as the worktree copy
+    if target.exists():
+        try:
+            text = target.read_text(encoding="utf-8")
+        except OSError as exc:
+            degraded.add(f"{label} unreadable ({exc.__class__.__name__}) — p0 ids unvalidated")
+            return None
+    else:
+        found = _strategic_state_from_refs(root, degraded, label)
+        if found is None:
+            return None
+        text, ref = found
+        source = f" (from {ref})"
     try:
-        doc = yaml.safe_load(target.read_text(encoding="utf-8"))
-    except (OSError, yaml.YAMLError) as exc:
-        degraded.add(f"{label} unreadable ({exc.__class__.__name__}) — p0 ids unvalidated")
+        doc = yaml.safe_load(text)
+    except yaml.YAMLError as exc:
+        degraded.add(
+            f"{label}{source} unreadable ({exc.__class__.__name__}) — p0 ids unvalidated")
         return None
     rows = doc.get("p0") if isinstance(doc, dict) else None
     if not isinstance(rows, list):
-        degraded.add(f"{label} has no 'p0' list — p0 ids unvalidated")
+        degraded.add(f"{label}{source} has no 'p0' list — p0 ids unvalidated")
         return None
     out: dict[str, str] = {}
     for row in rows:

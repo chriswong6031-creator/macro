@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prophet card — three-way adjudication (production · #5514 v1 · revised)</title>
+<!--
+  Side-by-side adjudication artifact for the G-C revision (handoff §12).
+  One real plan row (FTI — TechnipFMC) rendered three ways, from the SAME
+  committed payload, so the comparison is about design and not about data.
+
+  ?theme=dark|light   ?lang=en|zh
+-->
+<link rel="stylesheet" href="board.css">
+<style>
+  .cmp-wrap { max-width: 1180px; margin: 0 auto; padding: 26px 22px 70px; }
+  .cmp-h1 { font-size: 21px; font-weight: 800; letter-spacing: -.02em; margin: 0 0 6px; }
+  .cmp-lede { font-size: 13px; color: var(--muted); line-height: 1.55; max-width: 78ch; margin: 0 0 24px; }
+  .cmp-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: start; }
+  @media (max-width: 900px) { .cmp-grid { grid-template-columns: 1fr; } }
+  .cmp-col { min-width: 0; }
+  .cmp-hd { padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 14px; }
+  .cmp-tag {
+    display: inline-block; font-size: 9px; font-weight: 800; letter-spacing: .09em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 4px; margin-bottom: 6px;
+  }
+  .cmp-tag--prod { color: var(--muted); background: color-mix(in srgb, var(--muted) 13%, transparent); }
+  .cmp-tag--v1   { color: var(--ink-warn); background: color-mix(in srgb, var(--warn) 13%, transparent); }
+  .cmp-tag--v2   { color: var(--ink-up); background: color-mix(in srgb, var(--up) 13%, transparent); }
+  .cmp-name { font-size: 14px; font-weight: 750; margin: 0; }
+  .cmp-sub { font-size: 11.5px; color: var(--muted); margin: 3px 0 0; line-height: 1.45; }
+  .cmp-card { max-width: 268px; }
+  .cmp-notes { margin: 16px 0 0; font-size: 11.5px; line-height: 1.6; }
+  .cmp-notes b { display: block; font-size: 9px; letter-spacing: .08em; text-transform: uppercase;
+                 color: var(--muted); margin: 12px 0 5px; }
+  .cmp-notes ul { margin: 0; padding-left: 16px; }
+  .cmp-notes li { margin: 2px 0; color: color-mix(in srgb, var(--text) 82%, var(--muted)); }
+  .cmp-keep li::marker { color: var(--ink-up); }
+  .cmp-drop li::marker { color: var(--ink-down); }
+
+  /* ─────────── variant: PRODUCTION (shipped today) ───────────
+     The distinguishing rules are lifted verbatim from pv_css() in
+     templates/_prophet_card.html.j2 — the verb accent bar, the four-dot rail,
+     the Edge slot. Everything else is the shared card base. */
+  .cmp-prod .pvcard::before {
+    content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 3;
+    pointer-events: none; border-radius: 12px 12px 0 0;
+    background: linear-gradient(90deg, var(--pvh), color-mix(in srgb, var(--pvh) 12%, transparent) 90%);
+    box-shadow: 0 1px 8px color-mix(in srgb, var(--pvh) 45%, transparent);
+  }
+  .cmp-prod .pvcard { border-color: color-mix(in srgb, var(--pvh) 30%, var(--line)); }
+  .cmp-prod .pv-stp { display: flex; align-items: center; margin: 7px 1px 0; }
+  .cmp-prod .pv-dot { width: 6.5px; height: 6.5px; border-radius: 50%; background: var(--line); flex: none; }
+  .cmp-prod .pv-seg { flex: 1; height: 2px; background: var(--line); opacity: .75; }
+  .cmp-prod .pv-dot.on { background: var(--pvh); box-shadow: 0 0 0 3px color-mix(in srgb, var(--pvh) 18%, transparent); }
+  .cmp-prod .pv-stl { display: flex; justify-content: space-between; gap: 3px; margin-top: 3px; min-width: 0; }
+  .cmp-prod .pv-stl span { font-size: 9.5px; color: var(--muted); opacity: .7; white-space: nowrap; }
+  .cmp-prod .pv-stl span.on { color: var(--pvh); opacity: 1; font-weight: 700; }
+  .cmp-prod .pv-edge { display: flex; align-items: baseline; gap: 4px; flex: none; }
+  .cmp-prod .pv-edl { font-size: 8px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  .cmp-prod .pv-edn { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--pvh-ink, var(--pvh)); line-height: 1; }
+
+  /* ─────────── variant: #5514 v1 (the over-corrected card) ───────────
+     Reproduced here so the adjudication has all three designs in one frame.
+     These rules were deleted from board.css when the card was revised. */
+  .cmp-v1 .pv-chart { display: none; }
+  .cmp-v1 .mx-cap { position: absolute; top: 0; left: 0; right: 0; height: 3px; color: var(--text); }
+  .cmp-v1 .pv-bd { padding: 12px 11px 10px; gap: 5px; }
+  .cmp-v1 .pv-win { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; flex: none; }
+  .cmp-v1 .pv-lifegloss { font-size: 10.5px; color: var(--muted); }
+  .cmp-v1 .pv-do {
+    font-size: 11px; line-height: 1.45; color: color-mix(in srgb, var(--text) 78%, var(--muted));
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .cmp-v1 .pv-zi { display: flex; align-items: baseline; gap: 4px; }
+  .cmp-v1 .pv-zi--void { margin-left: auto; }
+  .cmp-v1 .pv-znl { color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="cmp-wrap">
+    <h1 class="cmp-h1">Prophet card — three-way adjudication</h1>
+    <p class="cmp-lede">
+      One real plan row (<b>FTI · TechnipFMC</b>, entered 2026-08-10) rendered three ways from the same
+      committed payload, so what differs is design and not data. The revision keeps the shipped card's
+      chart-first trading DNA and the ruled lifecycle semantics, and drops what each side got wrong.
+    </p>
+    <div class="cmp-grid" id="cmp"></div>
+  </div>
+  <script src="board-data.js"></script>
+  <script>
+  (function () {
+    var qs = new URLSearchParams(location.search);
+    var theme = qs.get("theme") || "dark", lang = qs.get("lang") || "en";
+    var root = document.documentElement;
+    root.setAttribute("data-theme", theme);
+    root.setAttribute("data-lang", lang);
+    root.lang = lang === "zh" ? "zh-CN" : "en";
+
+    var R = window.BOARD.rows.filter(function (x) { return x.tk === "FTI"; })[0];
+    function t(en, zh) { return '<span class="l-en">' + en + '</span><span class="l-zh">' + (zh || en) + "</span>"; }
+    function money(v) { return v == null ? "—" : "$" + Number(v).toFixed(2); }
+    var PX = money(R.px), CHG = "+0.7%";
+
+    /* ── 1. PRODUCTION — as shipped today (four-dot rail, Edge slot) ─────── */
+    var prod =
+      '<article class="pvcard pv-hold">' +
+        '<div class="pv-chart">' + R.spark +
+          '<span class="pv-ov pv-ovl"><span class="pv-chip">' + t("Hold", "持有") + '</span>' +
+          '<span class="pv-trg">&#9889; ' + t("Triggered", "已触发") + '</span></span>' +
+          '<span class="pv-ov pv-ovr"><span class="pv-quote"><span class="pv-px">' + PX + '</span>' +
+          '<span class="pv-chg pv-chg--up">' + CHG + '</span></span></span>' +
+        '</div>' +
+        '<div class="pv-bd">' +
+          '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">FTI</span>' +
+            '<span class="pv-nm">TechnipFMC</span></span>' +
+            '<span class="pv-edge"><span class="pv-edl">' + t("Edge", "优势") + '</span>' +
+            '<span class="pv-edn">2.1</span></span></div>' +
+          '<div class="pv-ind">' + t("Energy", "能源") + '</div>' +
+          '<div class="pv-mk"><span class="pv-mk-i">' + t("Bottoming", "筑底") + '</span></div>' +
+          '<div class="pv-stp"><span class="pv-dot on"></span><span class="pv-seg"></span>' +
+            '<span class="pv-dot"></span><span class="pv-seg"></span><span class="pv-dot"></span>' +
+            '<span class="pv-seg"></span><span class="pv-dot"></span></div>' +
+          '<div class="pv-stl"><span class="on">' + t("Bottoming", "筑底") + '</span><span>' +
+            t("Turning", "转向") + '</span><span>' + t("Ready", "就绪") + '</span><span>' +
+            t("Trend", "趋势") + '</span></div>' +
+        '</div>' +
+        '<div class="pv-zn"><span class="pv-znl">' + t("Zone", "买区") + '</span>' +
+          '<span class="pv-znr fig">' + money(R.zlo) + "&ndash;" + money(R.zhi) + '</span>' +
+          '<span class="pv-dt">' + t("Aug 10", "8月10日") + '</span></div>' +
+      '</article>';
+
+    /* ── 2. #5514 v1 — the over-corrected card ───────────────────────────── */
+    var v1 =
+      '<article class="pvcard" data-life="entered">' +
+        '<span class="mx-cap mx-cap--entered"></span>' +
+        '<div class="pv-chart"></div>' +
+        '<div class="pv-bd">' +
+          '<div class="pv-hd"><span class="pv-tk">FTI</span>' +
+            '<span class="pv-win fig">' + t("day 2 of 45", "第 2 天 / 共 45 天") + '</span></div>' +
+          '<div class="pv-nm">TechnipFMC &middot; ' + t("Energy", "能源") + '</div>' +
+          '<div class="pv-life"><span class="mx-mark mx-mark--entered"></span>' +
+            '<span class="pv-life-w">' + t("Entered", "入场") + '</span>' +
+            '<span class="pv-lifegloss">' + t("in the entry window", "处于入场窗口内") + '</span></div>' +
+          '<div class="pv-mk"><span class="pv-mk-i">' + t("Bottoming entry", "底部入场") + '</span></div>' +
+          '<div class="pv-do">' + t(R["do"], R.do_zh) + '</div>' +
+        '</div>' +
+        '<div class="pv-zn">' +
+          '<span class="pv-zi"><span class="pv-znl">' + t("Entry", "入场") + '</span>' +
+            '<span class="pv-znr fig">' + money(R.entry) + '</span></span>' +
+          '<span class="pv-zi"><span class="pv-znl">T1</span>' +
+            '<span class="pv-znr fig">' + money(R.t1) + '</span></span>' +
+          '<span class="pv-zi pv-zi--void"><span class="pv-znl">' + t("Void", "失效") + '</span>' +
+            '<span class="pv-znr fig">' + money(R.inval) + '</span></span></div>' +
+      '</article>';
+
+    /* ── 3. REVISED — the amalgamation ──────────────────────────────────── */
+    var v2 =
+      '<article class="pvcard pv-hold" data-life="entered">' +
+        '<div class="pv-chart">' + R.spark +
+          '<span class="pv-ov pv-ovl"><span class="pv-chip">' + t("Hold", "持有") + '</span>' +
+          '<span class="pv-trg">&#9889; ' + t("Triggered", "已触发") + '</span></span>' +
+          '<span class="pv-ov pv-ovr"><span class="pv-quote"><span class="pv-px">' + PX + '</span>' +
+          '<span class="pv-chg pv-chg--up">' + CHG + '</span></span></span>' +
+        '</div>' +
+        '<div class="pv-bd">' +
+          '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">FTI</span>' +
+            '<span class="pv-nm">TechnipFMC</span></span>' +
+            '<span class="pv-pri"><span class="pv-pril">' + t("Priority", "优先级") + '</span>' +
+            '<span class="pv-prin fig">89</span></span></div>' +
+          '<div class="pv-ind">' + t("Energy", "能源") + '</div>' +
+          '<div class="pv-mk"><span class="pv-mk-i pv-mk-lane">' + t("Bottoming entry", "底部入场") + '</span></div>' +
+          '<div class="pv-life"><span class="mx-mark mx-mark--entered"></span>' +
+            '<span class="pv-life-w">' + t("Entered", "入场") + '</span></div>' +
+        '</div>' +
+        '<div class="pv-zn"><span class="pv-znl">' + t("Zone", "买区") + '</span>' +
+          '<span class="pv-znr fig">' + money(R.zlo) + "&ndash;" + money(R.zhi) + '</span>' +
+          '<span class="pv-dt">' + t("Aug 10", "8月10日") + '</span></div>' +
+      '</article>';
+
+    function col(cls, tag, tagCls, name, sub, card, notes) {
+      return '<div class="cmp-col ' + cls + '">' +
+        '<div class="cmp-hd"><span class="cmp-tag ' + tagCls + '">' + tag + '</span>' +
+        '<p class="cmp-name">' + name + '</p><p class="cmp-sub">' + sub + '</p></div>' +
+        '<div class="cmp-card">' + card + '</div>' +
+        '<div class="cmp-notes">' + notes + '</div></div>';
+    }
+
+    document.getElementById("cmp").innerHTML =
+      col("cmp-prod", "shipped today", "cmp-tag--prod",
+          "Production Prophet card",
+          "Operator-ratified over many iterations. Chart-first, one-second read — but its four-dot rail asserts a journey the engine never computes, and two of its four steps are structurally unreachable.",
+          prod,
+          '<b>What it gets right</b><ul class="cmp-keep">' +
+          '<li>Chart hero — denser than any prose</li>' +
+          '<li>Live quote and change, overlaid</li>' +
+          '<li>One-word stance, read instantly</li>' +
+          '<li>Compact ticker / name / sector</li>' +
+          '<li>Zone, not an execution order</li></ul>' +
+          '<b>What must go</b><ul class="cmp-drop">' +
+          '<li>The four-dot Bottoming→Trend rail</li>' +
+          '<li>Two rail steps that can never light</li>' +
+          '<li>Full-card verb wash and accent bar</li></ul>') +
+      col("cmp-v1", "#5514 v1", "cmp-tag--v1",
+          "First G-C mockup",
+          "Fixed the lifecycle semantics, but rebuilt the card around only the fields the plan book carries on every row — letting a data-join gap redefine the flagship UX.",
+          v1,
+          '<b>What it gets right</b><ul class="cmp-keep">' +
+          '<li>Ruled hue-neutral lifecycle mark</li>' +
+          '<li>Rail retired, no fake progression</li>' +
+          '<li>Episode chips for repeat names</li></ul>' +
+          '<b>What must go</b><ul class="cmp-drop">' +
+          '<li>No chart — the biggest regression</li>' +
+          '<li>No quote, no change, no name/sector</li>' +
+          '<li>Plan-clock telemetry (“day 2 of 45”)</li>' +
+          '<li>Paragraph instructions in a grid</li>' +
+          '<li>Entry / T1 / Void reads as an order</li>' +
+          '<li>Grayscale — no stance at a glance</li></ul>') +
+      col("cmp-v2", "revised", "cmp-tag--v2",
+          "Revised amalgamation",
+          "The shipped card's trading DNA, with the rail replaced by the ruled lifecycle mark and Priority restored. Institutional, but alive.",
+          v2,
+          '<b>Kept from production</b><ul class="cmp-keep">' +
+          '<li>Chart hero at its shipped height</li>' +
+          '<li>Live quote + change (direction ink, zh-flipping)</li>' +
+          '<li>One-word stance chip</li>' +
+          '<li>Ticker / name / sector geometry</li>' +
+          '<li>Zone footer with the date pinned right</li>' +
+          '<li>⚡ trigger and restrained marks</li></ul>' +
+          '<b>Kept from #5514</b><ul class="cmp-keep">' +
+          '<li>Lifecycle mark + word, hue-neutral</li>' +
+          '<li>One card per plan id; episode chips</li>' +
+          '<li>No “stage” vocabulary anywhere</li></ul>' +
+          '<b>Dropped from both</b><ul class="cmp-drop">' +
+          '<li>The four-dot rail (production)</li>' +
+          '<li>Plan clock, paragraph, Entry/T1/Void (v1)</li>' +
+          '<li>Full-card green wash (production)</li></ul>' +
+          '<b>Added</b><ul class="cmp-keep">' +
+          '<li>Priority score — readiness rank, quiet and never hued</li></ul>');
+  })();
+  </script>
+</body>
+</html>

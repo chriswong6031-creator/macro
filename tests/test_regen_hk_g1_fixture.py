@@ -38,6 +38,7 @@ identical content is still a write, and this suite must be able to tell them apa
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
@@ -597,3 +598,149 @@ class TestTheWindowIsPerTickerNotACount:
         assert "NO-OP" in capsys.readouterr().out
         assert bed.state() == (before_bytes, before_mtime)
         assert {len(v["dates"]) for v in bed.payload()["closes"].values()} == {TAIL}
+
+
+# --------------------------------------------------------------------------- #
+# The marker prune's reviewed allowlist (2026-08-13)
+# --------------------------------------------------------------------------- #
+class TestTheMarkerPruneAllowlist:
+    """The widening warning has to be able to stay QUIET, or it announces nothing.
+
+    ``prune_verdict`` drops every marker key outside the era-stamped four and warns
+    that it did.  By 2026-08-13 the upstream marker had widened three times — ``reasons``
+    (#4583), ``signal_date`` (#5071) and ``confirmed_date`` (#5258) — so the warning
+    fired on 157 of 157 markers, i.e. on every marker in the file.  A warning with no
+    silent state cannot distinguish a FOURTH key from a Tuesday; it was off in the only
+    sense that matters.
+
+    The fix is a reviewed allowlist, and these tests exist to stop it from becoming a
+    rubber stamp.  Two properties carry that weight: the allowlist is CLOSED against the
+    published marker schema, so a key added upstream reds here instead of being
+    swallowed; and the silence is caused BY the allowlist, proven by a seeded mutant that
+    removes one entry and gets the warning back.  Without that second test, "no warning"
+    would also pass if the warning were simply broken.
+    """
+
+    #: A live 2026-08 buy marker: the four stored keys plus every reviewed widening.
+    WIDENED = {"date": "2026-07-06", "type": "buy", "quality": "block",
+               "reason": "counter-trend, no 200-reclaim/hold",
+               "reasons": ["counter-trend, no 200-reclaim/hold", "bearish divergence"],
+               "signal_date": "2026-07-08", "confirmed_date": "2026-07-16"}
+
+    def test_the_allowlist_and_the_stored_four_close_the_published_schema(self):
+        """stored | allowlisted == every marker property the cross-repo contract declares.
+
+        This is what keeps the allowlist honest: it can only ever be as wide as the
+        schema it was reviewed against, and a NEW upstream key has nowhere to hide.
+        """
+        schema = json.loads(
+            (regen.REPO_ROOT / "research" / "signal_engine" / "SCHEMA.json").read_text())
+        marker = schema["$defs"]["marker"]
+        assert marker.get("additionalProperties") is False, (
+            "the closure below is only meaningful while the schema is closed")
+
+        declared = set(marker["properties"])
+        stored, allowed = set(regen.MARKER_KEYS), set(regen.MARKER_DROPPED_KEYS)
+        assert not stored & allowed, "a key cannot be both stored and dropped"
+        assert stored | allowed == declared, (
+            f"marker schema drifted from the prune's review: "
+            f"unreviewed={sorted(declared - stored - allowed)} "
+            f"stale={sorted(stored | allowed - declared)} — adjudicate the key into "
+            f"MARKER_DROPPED_KEYS (with its provenance) or widen MARKER_KEYS and re-pin")
+
+    def test_every_allowlisted_key_names_where_it_came_from(self):
+        """'Reviewed' means someone recorded the source, not that someone typed the key."""
+        for key, note in regen.MARKER_DROPPED_KEYS.items():
+            assert isinstance(note, str), key
+            assert re.search(r"#\d{3,}|engine/[\w.]+|SCHEMA\.json", note), (
+                f"{key}: allowlist entry names no PR or module — an unsourced entry is "
+                f"an assertion, not a review")
+
+    def test_a_reviewed_widening_drops_quietly_and_is_disclosed_to_the_caller(self, capsys):
+        dropped: dict = {}
+        out = regen.prune_verdict("0005.HK", {"last": dict(self.WIDENED)}, dropped)
+
+        assert "WARNING" not in capsys.readouterr().out
+        assert out["last"] == {"date": "2026-07-06", "type": "buy", "quality": "block",
+                               "reason": "counter-trend, no 200-reclaim/hold"}
+        assert dropped == {"confirmed_date": ["0005.HK"], "reasons": ["0005.HK"],
+                           "signal_date": ["0005.HK"]}, (
+            "a quiet drop must still be a DISCLOSED drop — silence is not the same "
+            "as hiding it")
+
+    def test_an_unreviewed_widening_still_warns_per_ticker(self, capsys):
+        marker = dict(self.WIDENED, waiver_notch=0.2)
+        regen.prune_verdict("0005.HK", {"last": marker}, {})
+
+        printed = capsys.readouterr().out
+        assert "WARNING 0005.HK" in printed
+        assert "waiver_notch" in printed and "UNREVIEWED" in printed
+        for reviewed in ("reasons", "signal_date", "confirmed_date"):
+            assert reviewed not in printed, (
+                f"{reviewed} is adjudicated and must not ride along in the warning — "
+                f"the point is that the named key is the NEW one")
+
+    def test_the_silence_is_caused_by_the_allowlist(self, capsys, monkeypatch):
+        """Seeded mutant: pull one entry and its warning comes back.
+
+        Without this, ``test_a_reviewed_widening_drops_quietly`` would pass just as
+        happily against a warning that no longer fires at all.
+        """
+        monkeypatch.setattr(regen, "MARKER_DROPPED_KEYS",
+                            {k: v for k, v in regen.MARKER_DROPPED_KEYS.items()
+                             if k != "signal_date"})
+        regen.prune_verdict("0005.HK", {"last": dict(self.WIDENED)}, {})
+
+        printed = capsys.readouterr().out
+        assert "WARNING 0005.HK" in printed and "signal_date" in printed
+
+    def test_the_stored_shape_survives_any_widening(self):
+        """Whatever arrives, the fixture stores the four — null-filled, in order."""
+        for extra in ({}, {"signal_date": "2026-07-08"}, {"moon_phase": "waxing"}):
+            out = regen.prune_verdict(
+                "0001.HK", {"last": {"date": "2026-07-06", "type": "sell", **extra}}, {})
+            assert list(out["last"]) == list(regen.MARKER_KEYS)
+            assert out["last"]["quality"] is None and out["last"]["reason"] is None
+
+    def test_a_missing_marker_is_still_a_null_not_a_dropped_key(self):
+        assert regen.prune_verdict("0001.HK", {"last": None}, {})["last"] is None
+        assert regen.prune_verdict("0001.HK", {}, {})["last"] is None
+
+    def test_the_drops_are_disclosed_once_through_the_real_loop(self, bed, capsys,
+                                                                monkeypatch):
+        """End to end: ONE summary line, zero per-ticker warnings.
+
+        The direct pin on the 157-line noise, and on the wiring behind it.  Patched at
+        the seam the script itself calls, so the collector is exercised through the real
+        ``build_payload`` loop — a regression that stopped THREADING it would leave this
+        test silent where an isolated unit test on ``prune_verdict`` would still pass.
+
+        The bed's own monotone panel fires no markers at all, so the marker is
+        synthesised; that also moves the verdicts against unchanged closes, so the run
+        REFUSES and writes nothing.  Deliberate: the drop must be disclosed even on a
+        run whose outcome is a refusal, because that is exactly the run a human reads.
+        """
+        real_compact = regen.signal_gate.compact
+
+        def widened(verdict):
+            out = dict(real_compact(verdict))
+            out["last"] = {"date": "2026-07-06", "type": "buy", "quality": "block",
+                           "reason": "counter-trend, no 200-reclaim/hold",
+                           "reasons": ["counter-trend, no 200-reclaim/hold", "bear div"],
+                           "signal_date": "2026-07-08", "confirmed_date": "2026-07-16"}
+            return out
+
+        before = bed.state()
+        monkeypatch.setattr(regen.signal_gate, "compact", widened)
+
+        assert bed.run() == 2
+        out = capsys.readouterr().out
+
+        assert bed.state() == before, "a refusal writes nothing"
+        assert "WARNING" not in out
+        summary = [line for line in out.splitlines()
+                   if line.startswith("marker keys dropped")]
+        assert len(summary) == 1, "disclosed once per RUN, never once per ticker"
+        for key in ("confirmed_date", "reasons", "signal_date"):
+            assert f"{key} x{len(TICKERS)}" in summary[0], (
+                f"{key} dropped on every ticker but not counted in the disclosure")

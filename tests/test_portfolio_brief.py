@@ -32,7 +32,7 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from engine.portfolio_brief import compose_brief  # noqa: E402
+from engine.portfolio_brief import NOT_COMPUTED_KEYS, compose_brief  # noqa: E402
 
 GOLDEN_DIR = ROOT / "tests" / "golden" / "portfolio_brief"
 TODAY = "2026-07-23"          # a Thursday — fixed so golden output is deterministic
@@ -175,8 +175,20 @@ BOOKS = {
 }
 
 
+# The population each book actually came from (A8). The two cost-basis books are
+# position books; diversified-defensive is the watchlist-union shape (no shares/entry on
+# any row), so the goldens lock the disclosure on BOTH paths rather than only the one the
+# happy path happens to take.
+BOOK_POPULATION = {
+    "concentrated-semis": "positions",
+    "diversified-defensive": "watchlist_union",
+    "single-name": "positions",
+}
+
+
 def _compose(book_key: str) -> dict:
-    return compose_brief(_ctx(), BOOKS[book_key], TODAY, GENERATED_AT)
+    return compose_brief(_ctx(), BOOKS[book_key], TODAY, GENERATED_AT,
+                         population=BOOK_POPULATION[book_key])
 
 
 def _all_lines(brief: dict) -> list[dict]:
@@ -427,6 +439,208 @@ def test_sector_no_read_when_no_block_match():
     assert "no desk read" in exp["lines"][0]["en"].lower()
 
 
+# ── v2 is ADDITIVE: the v1 contract both live clients read is intact ─────────
+
+def test_v2_keeps_every_v1_key_the_live_clients_read():
+    """v2 may only ADD. The terminal's PortfolioBriefPanel (via lib/portfolioBrief.ts)
+    reads asof / generated_at / stale / weighting{mode,label_en,label_zh} /
+    book{n,covered,uncovered} / headline{en,zh} / sections[{key,title_en,title_zh,
+    lines[{en,zh}]}], and the Brain tool get_portfolio_brief returns the same payload
+    verbatim. Dropping or retyping any of these breaks a shipped client, so the shape is
+    pinned here rather than trusted to review."""
+    for book in BOOKS:
+        b = _compose(book)
+        assert isinstance(b["asof"], str)
+        assert isinstance(b["generated_at"], str)
+        assert isinstance(b["stale"], bool)
+        for k in ("mode", "label_en", "label_zh"):
+            assert isinstance(b["weighting"][k], str)
+        assert isinstance(b["book"]["n"], int)
+        assert isinstance(b["book"]["covered"], int)
+        assert isinstance(b["book"]["uncovered"], list)
+        assert isinstance(b["headline"]["en"], str) and isinstance(b["headline"]["zh"], str)
+        for s in b["sections"]:
+            assert isinstance(s["key"], str)
+            assert isinstance(s["title_en"], str) and isinstance(s["title_zh"], str)
+            for ln in s["lines"]:
+                assert isinstance(ln["en"], str) and isinstance(ln["zh"], str)
+
+
+def test_v1_section_keys_are_unchanged():
+    """The terminal re-asserts a canonical SECTION_ORDER over these keys; a renamed key
+    would fall to the end of its panel instead of its designed slot."""
+    seen = {s["key"] for book in BOOKS for s in _compose(book)["sections"]}
+    assert seen <= {"exposure", "lanes", "signals", "regime", "earnings", "filings"}
+
+
+def test_since_section_is_opt_in_so_live_clients_are_unaffected():
+    """The `since` section only appears when a caller passes a prior digest. Neither live
+    consumer does, so neither sees a section its SECTION_ORDER does not know."""
+    from engine.portfolio_changes import snapshot_state  # noqa: PLC0415
+    b = _compose("concentrated-semis")
+    assert not any(s["key"] == "since" for s in b["sections"])
+    prev = snapshot_state(_ctx(), ["NVDA"])
+    with_prev = compose_brief(_ctx(), BOOKS["concentrated-semis"], TODAY, GENERATED_AT,
+                              population="positions", previous=prev)
+    assert with_prev["sections"][0]["key"] == "since"
+
+
+# ── A8: population disclosure (W6) ───────────────────────────────────────────
+# The program's founding defect was a surface describing one population while showing
+# another. These pin the fix at the composer: the population is a first-class field, it
+# is never guessed, and the prose agrees with it.
+
+def test_population_is_a_first_class_field():
+    b = _compose("concentrated-semis")
+    pop = b["population"]
+    assert pop["mode"] == "positions"
+    assert pop["n"] == 4
+    assert pop["label_en"] and pop["label_zh"]
+    assert pop["disclosure_en"] and pop["disclosure_zh"]
+    assert b["data"]["book"]["population"] == "positions"
+
+
+def test_watchlist_population_uses_a8s_exact_label():
+    """A8 mandates the wording for equal-weighted watchlist analysis, verbatim."""
+    b = _compose("diversified-defensive")
+    assert b["population"]["mode"] == "watchlist_union"
+    assert b["population"]["label_en"] == "Watchlist structure — equal weighted"
+    assert b["population"]["label_zh"] == "观察列表结构 — 等权"
+
+
+def test_an_undeclared_population_says_so_rather_than_assuming_positions():
+    """The whole point of A8: silence must be visible, not resolved to a default. A
+    caller that forgets gets `unspecified` and a line that admits it — never a brief
+    that calls an unknown set "your book"."""
+    b = compose_brief(_ctx(), BOOKS["concentrated-semis"], TODAY, GENERATED_AT)
+    assert b["population"]["mode"] == "unspecified"
+    assert "not declared" in b["population"]["disclosure_en"]
+    assert "your book" not in b["headline"]["en"].lower()
+
+
+def test_summarizing_prose_never_calls_a_watchlist_a_book():
+    """Every EN sentence that summarizes the set names the set. A watchlist population
+    must not produce the phrase "your book" anywhere in the payload."""
+    b = _compose("diversified-defensive")
+    blob = json.dumps(b, ensure_ascii=False).lower()
+    assert "your book" not in blob
+    assert "你的持仓" not in json.dumps(b, ensure_ascii=False)
+    # ...and the positive form is present.
+    assert "your watchlist" in blob
+
+
+def test_positions_book_still_reads_as_a_book():
+    b = _compose("concentrated-semis")
+    assert "your book" in b["headline"]["en"].lower()
+    exp = next(s for s in b["sections"] if s["key"] == "exposure")
+    assert "of your book is" in exp["lines"][0]["en"]
+
+
+def test_every_in_repo_call_site_declares_its_population():
+    """`unspecified` is the honest fallback for a caller who cannot know — it is NOT a
+    licence for our own call sites to skip the argument. Every compose_brief( call in
+    engine/ app/ scripts/ must pass population= explicitly. Derived by walking the tree,
+    so a NEW call site is covered the day it lands rather than when someone remembers to
+    update a list."""
+    import ast as _ast  # noqa: PLC0415
+
+    offenders: list[str] = []
+    for base in ("engine", "app", "scripts"):
+        for path in (ROOT / base).rglob("*.py"):
+            try:
+                tree = _ast.parse(path.read_text(encoding="utf-8"))
+            except (SyntaxError, UnicodeDecodeError):
+                continue
+            for node in _ast.walk(tree):
+                if not isinstance(node, _ast.Call):
+                    continue
+                fname = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+                if fname != "compose_brief":
+                    continue
+                if not any(kw.arg == "population" for kw in node.keywords):
+                    offenders.append(f"{path.relative_to(ROOT)}:{node.lineno}")
+    assert not offenders, (
+        "these compose_brief call sites do not declare a population (A8) — the brief "
+        "would ship saying `unspecified`: %s" % offenders)
+
+
+def test_population_and_weighting_are_independent_axes():
+    """A positions population weighted equally (positions carrying no cost basis) must
+    report population=positions AND weighting=equal — conflating the two axes is how the
+    original confusion started."""
+    holdings = [{"ticker": "NVDA", "shares": None, "entry_price": None},
+                {"ticker": "XOM", "shares": None, "entry_price": None}]
+    b = compose_brief(_ctx(), holdings, TODAY, GENERATED_AT, population="positions")
+    assert b["population"]["mode"] == "positions"
+    assert b["weighting"]["mode"] == "equal"
+
+
+# ── v2 `data` block ──────────────────────────────────────────────────────────
+
+def test_data_block_concentration_is_plain_arithmetic():
+    b = _compose("concentrated-semis")
+    conc = b["data"]["concentration"]
+    # NVDA 12000, AVGO 12000, SMCI 1200, XOM 2200 → total 27400.
+    assert conc["top_name_pct"] == 44          # 12000/27400
+    assert conc["top3_pct"] == 96              # (12000+12000+2200)/27400
+    assert 0 < conc["hhi"] <= 1
+    assert conc["sectors"][0]["name"] == "Technology"
+
+
+def test_data_block_omits_legs_it_cannot_see_rather_than_nulling_them():
+    """PSI §5.2's posture/correlation/options/score legs need machinery this composer
+    does not have. A null would read as "the desk abstained"; absence is the honest
+    encoding, and the follow-up is named in the PR."""
+    data = _compose("concentrated-semis")["data"]
+    for absent in ("posture", "correlation", "options", "score", "tape"):
+        assert absent not in data
+
+
+def test_omission_is_declared_not_merely_silent():
+    """Reviewer: omission-over-null is right, but invisible. Without `not_computed` a
+    machine consumer cannot tell "this composer does not compute posture" from "posture
+    computed empty" from "a proxy dropped the key"."""
+    data = _compose("concentrated-semis")["data"]
+    nc = data["not_computed"]
+    assert set(nc["keys"]) == set(NOT_COMPUTED_KEYS)
+    assert nc["reason_en"].strip() and nc["reason_zh"].strip()
+    # The declared-absent keys really are absent — the disclosure cannot drift from fact.
+    for key in nc["keys"]:
+        assert key not in data
+
+
+def test_concentration_declares_its_two_denominators():
+    """G1. Sector shares partition the covered book and total 100; theme shares are over
+    the THEMED part and a name in two themes counts in both, so they routinely exceed 100
+    (the single-name golden reaches 200). A client that assumed one basis would render a
+    144% stacked bar. Stating the basis is A8's own law one layer down."""
+    conc = _compose("concentrated-semis")["data"]["concentration"]
+    basis = conc["basis"]
+    for k in ("sectors_en", "sectors_zh", "themes_en", "themes_zh"):
+        assert basis[k].strip()
+    assert sum(s["pct"] for s in conc["sectors"]) == 100
+    # The over-100 case is real, and declared rather than "fixed" into a false 100.
+    single = _compose("single-name")["data"]["concentration"]
+    assert sum(t["pct"] for t in single["themes"]) > 100
+    assert "need not total 100" in single["basis"]["themes_en"]
+
+
+def test_cursor_scope_is_disclosed_on_the_brief_too():
+    """B4 — the per-device limitation rides the payload, not just the PR body."""
+    for book in BOOKS:
+        cur = _compose(book)["data"]["cursor"]
+        assert cur["scope"] == "device"
+        assert cur["note_en"].strip() and cur["note_zh"].strip()
+
+
+def test_every_response_carries_a_state_digest_even_on_a_degenerate_book():
+    """A client stores the digest each visit; losing the cursor on an empty night would
+    silently reset "since your last visit"."""
+    for holdings in ([], [{"ticker": "ZZZZ"}]):
+        b = compose_brief(_ctx(), holdings, TODAY, GENERATED_AT, population="positions")
+        assert b["data"]["state_digest"]["schema"] == "portfolio_state_digest.v1"
+
+
 # ── ADVERSARIAL: advice filter + validated ───────────────────────────────────
 
 def test_no_line_matches_advice_filter():
@@ -468,7 +682,7 @@ def test_no_imperative_you_should():
 # ── endpoint smoke (guarded: skips when fastapi/httpx unavailable) ────────────
 
 def _load_app_client(monkeypatch, tmp_path, *, tier="pro", status="active",
-                     holdings=None, ctx=None):
+                     holdings=None, ctx=None, population="positions"):
     """Import app.main with a monkeypatched auth/tier/holdings/ctx and return a
     TestClient. Skips the test cleanly if fastapi/httpx aren't installed."""
     pytest.importorskip("fastapi")
@@ -492,9 +706,11 @@ def _load_app_client(monkeypatch, tmp_path, *, tier="pro", status="active",
     # Bypass Supabase auth: require_user returns a fixed user.
     m.app.dependency_overrides[m.require_user] = lambda: {"id": "u-test", "email": "t@x.co"}
 
-    # Stub tier + holdings loaders on the module.
+    # Stub tier + holdings loaders on the module. The holdings loader returns
+    # (rows, population) since W6 — the population is the loader's to report (A8).
     monkeypatch.setattr(m, "_portfolio_resolve_tier", lambda uid: {"tier": tier, "status": status})
-    monkeypatch.setattr(m, "_portfolio_load_holdings", lambda uid: (holdings or []))
+    monkeypatch.setattr(m, "_portfolio_load_holdings",
+                        lambda uid: ((holdings or []), population))
 
     client = TestClient(m.app)
     return m, client
@@ -508,9 +724,32 @@ def test_endpoint_200_pro(monkeypatch, tmp_path):
     r = client.get("/api/portfolio/brief", headers={"Authorization": "Bearer x"})
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["schema"] == "portfolio_brief.v1"
+    assert body["schema"] == "portfolio_brief.v2"
     assert body["book"]["n"] == 1
+    # A8: the endpoint states the population it read, and it is the loader's answer.
+    assert body["population"]["mode"] == "positions"
+    assert body["data"]["book"]["population"] == "positions"
     assert r.headers.get("Cache-Control") == "private, no-store"
+    m.app.dependency_overrides.clear()
+
+
+def test_endpoint_reports_watchlist_population_when_that_is_what_it_read(monkeypatch, tmp_path):
+    """The founding defect, pinned at the endpoint: a book loaded from WATCHLISTS must
+    not come back describing positions. The loader reports `watchlist_union` and every
+    summarizing string on the way out says so."""
+    ctx = _ctx()
+    holdings = [{"ticker": "NVDA", "shares": None, "entry_price": None},
+                {"ticker": "XOM", "shares": None, "entry_price": None}]
+    m, client = _load_app_client(monkeypatch, tmp_path, tier="pro", status="active",
+                                 holdings=holdings, ctx=ctx,
+                                 population="watchlist_union")
+    r = client.get("/api/portfolio/brief", headers={"Authorization": "Bearer x"})
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["population"]["mode"] == "watchlist_union"
+    assert body["population"]["label_en"] == "Watchlist structure — equal weighted"
+    assert "watchlist" in body["headline"]["en"].lower()
+    assert "your book" not in body["headline"]["en"].lower()
     m.app.dependency_overrides.clear()
 
 

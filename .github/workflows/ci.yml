@@ -4010,6 +4010,26 @@ on:
       - "tests/test_dataos_nulls.py"
       - "tests/test_dataos_registry.py"
       - "tests/test_dataos_quality.py"
+      # Job: dataos-identity-seams (.github/ci/legacy-jobs.yml). DOS-1.2. Both halves
+      # again: the suite AND the surfaces it measures. config/** and lib/** catch-alls
+      # would cover most of these, but a catch-all is provenance by accident — an edit
+      # to a surface must demonstrably be able to start the guard that reads it.
+      - "config/identity_seams.yml"
+      - "config/share_class_equiv.yml"
+      - "tests/test_identity_seam_agreement.py"
+      - "data/reference/**"
+      # ── Data OS security master + vendor aliases (DOS-1.1, 2026-08-13) ──────
+      # Job: house-law-registry (.github/ci/legacy-jobs.yml) — folded into that job
+      # rather than dataos-foundation, which installs pytest+pyyaml only so that a
+      # pandas import creeping into lib/dataos/ reds THERE first. Both halves again:
+      # the suite, the producer it imports, and the ARTIFACTS it reads. The artifacts
+      # are the load-bearing entry — the suite's whole subject is what those two
+      # parquets answer on either side of 2026-01-14 and 2026-06-24, so a hand-edit or
+      # a regenerated artifact that could not START ci.yml would be the darkness the
+      # closure guard exists to end. data/** is NOT a catch-all in this filter.
+      - "tests/test_dataos_security_master.py"
+      - "scripts/build_security_master.py"
+      - "data/reference/**"
   workflow_dispatch:
 
 permissions:
@@ -4081,20 +4101,18 @@ jobs:
   #
   # THIS JOB COSTS TIME TODAY. Do not read a saving into it, in either direction:
   #
-  #   * It saves ZERO pack launches. Scope inference derives scopes for 179 of 180
-  #     jobs, but those scopes are conservatively broad, so every realistic diff
-  #     still selects 115-130 jobs — and `partition_jobs` is a greedy min-weight
-  #     fill, so any selected set of >= 12 jobs puts a job in EVERY pack. Measured
-  #     2026-08-11: `nonempty_pack_indices` is [0..11] for a docs-only diff (120
-  #     eligible), one template (130), one engine module (122) and a test-only diff
-  #     (115). Pack 0 carries weight 481 — the deliberately indivisible
-  #     engine-render-guards lane — against ~250-310 for the rest, so it sets the
-  #     critical path either way. That is Wave C's subject, not this job's.
+  #   * It used to save ZERO pack launches: scope inference derived scopes for
+  #     179 of 180 jobs, but those scopes inherited `tests/**` and `*` from
+  #     opaque traversals inside named pytest suites, so every realistic diff
+  #     still selected 115-130 jobs and filled all 12 packs (measured 2026-08-11;
+  #     still true on PR #5550 / run 31729769728: one test file → 133/187 jobs,
+  #     12/12 packs, slowest pack 56 min of which 31 min was fetch-depth:0).
+  #     `exclude_peer_test_ownership` strips those catch-alls from named pytest
+  #     jobs; the dynamic matrix then emits only the packs that still carry work.
   #   * It saves ZERO planning passes. `--expect-plan-sha` REQUIRES each pack to
   #     recompute the plan, and a pack has always had to derive the partition to
-  #     know its own jobs, so all twelve passes remain and this job is a
-  #     THIRTEENTH, serialised ahead of the whole matrix. Measured on the real
-  #     manifest: `infer_job_scopes` 106.5s, `load_legacy_jobs` + partition 0.2s.
+  #     know its own jobs, so all selected packs still re-infer. Measured on the
+  #     real manifest: `infer_job_scopes` 106.5s, `load_legacy_jobs` + partition 0.2s.
   #     With checkout and setup, Wave B adds roughly one pack startup — about 4-5
   #     minutes — to the critical path of every pull request.
   #
@@ -4120,6 +4138,7 @@ jobs:
       has_work: ${{ steps.plan.outputs.has_work }}
       plan_sha: ${{ steps.plan.outputs.plan_sha }}
       reason: ${{ steps.plan.outputs.reason }}
+      changed_files: ${{ steps.plan.outputs.changed_files }}
     steps:
       # NO sparse-clear step and NO setup-node here, unlike `ci-pack` below. Both of
       # those exist for conditions this job cannot meet: the sparse-clear guards a
@@ -4133,7 +4152,8 @@ jobs:
           # against the immutable PR base SHA, and a shallow clone does not contain
           # that commit — the diff would fail, the planner would widen to the full
           # suite by law, and the plan would be meaningless on every PR. The
-          # blob:none filter keeps full history cheap, same reasoning as `ci-pack`.
+          # blob:none filter keeps full history cheap. Packs do NOT repeat this
+          # fetch: they consume `changed_files` and shallow-checkout.
           filter: blob:none
           fetch-depth: 0
       - uses: actions/setup-python@v5
@@ -4255,20 +4275,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
-      # PR fail-fast / main heal-slow. A pull_request pack aborts on the first
-      # real red so the remaining jobs in that pack do not keep burning hosted
-      # minutes (and keep the sweeper staring at a still-running check) after
-      # the diagnosis is already in. workflow_dispatch — main's full-suite
-      # heal — keeps fail-fast false so one red job cannot hide the rest of
-      # the pack. Do not reintroduce a hardcoded `false` here: that is how
-      # the 2026-08-13 traffic jam kept twelve packs running to completion
-      # after govrev had already failed. Do not add max-parallel (#5465).
+      # Sibling packs must FINISH so their proofs survive a single red. A
+      # pull_request fail-fast (2026-08-13) cancelled the other eleven the
+      # moment one pack died; ci-gate then went red on `cancelled`/`failure`,
+      # the sweeper had nothing to merge, and a heal had to rerun every pack
+      # from zero. execute_pack already continues after a red INSIDE a pack
+      # so one run reports every legacy failure; the matrix must do the same
+      # BETWEEN packs. A real red still fails ci-gate (`PACK_RESULT != success`)
+      # and still blocks merge. workflow_dispatch (main's heal) was already
+      # fail-fast:false. Do not add max-parallel (#5465).
       #
-      # BOOLEAN expression, not a quoted string. `fail-fast: "${{ ... }}"`
-      # evaluates to the strings "true"/"false"; some Actions parsers treat
-      # any non-empty string as true, so main's heal-slow path would still
-      # cancel sibling packs. Keep this unquoted.
-      fail-fast: ${{ github.event_name == 'pull_request' }}
+      # Literal boolean, not an expression. `fail-fast: "${{ ... }}"` evaluates
+      # to the strings "true"/"false"; some Actions parsers treat any non-empty
+      # string as true.
+      fail-fast: false
       # NO `max-parallel`. It existed only to stop main's four packs from taking all
       # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
       # on that pool. With both control/proof lanes hosted there is no shared pool to
@@ -4327,14 +4347,15 @@ jobs:
           fi
       - uses: actions/checkout@v4
         with:
-          # Keep the complete current working tree because legacy suites inspect
-          # committed site/ artifacts, but do not transfer every historical site/
-          # blob. The four #4053 pack checkouts took 6m45s-14m39s with fetch-depth: 0
-          # alone. checkout@v4 maps sparse/partial settings onto `git fetch
-          # --filter=blob:none`; full history/merge-base semantics remain available
-          # while checkout lazily downloads only blobs needed by the current tree.
+          # Packs consume ci-plan's changed-file list and only need the current
+          # tree. fetch-depth: 0 on all twelve packs at once was the 56-minute
+          # wall-clock: measured PR #5550 / run 31729769728, ci-pack-1 spent
+          # 31 minutes in "Checking out the ref" (18:22:54Z–18:54:04Z) while
+          # ci-plan, fetching the same history alone, finished in 7 minutes.
+          # A missed diff here would fail-safe-widen every PR; CI_CHANGED_FILES_JSON
+          # is the substitute, and an unset/malformed value still widens.
           filter: blob:none
-          fetch-depth: 0
+          fetch-depth: 1
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -4383,6 +4404,7 @@ jobs:
           CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
           CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
           PLAN_SHA_ARG: ${{ needs.ci-plan.outputs.plan_sha && format('--expect-plan-sha {0}', needs.ci-plan.outputs.plan_sha) || '' }}
+          CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
@@ -4435,6 +4457,9 @@ jobs:
             echo "::notice title=ci-gate::planner proved no pack work is required"
             exit 0
           fi
+          # cancelled here is a workflow cancel (new SHA / operator), not
+          # fail-fast sibling-cancel: the pack matrix is fail-fast:false so
+          # one red pack cannot wipe the other eleven proofs.
           if [ "$PACK_RESULT" != "success" ]; then
             echo "::error title=ci-gate::one or more selected CI packs did not succeed ($PACK_RESULT)"
             exit 1

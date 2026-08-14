@@ -1,8 +1,8 @@
 {
   "schema": "altdata.by_ticker.v2",
   "as_of": "2026-08-13",
-  "generated_utc": "2026-08-13T13:59:19.086326+00:00",
-  "n_tickers": 2598,
+  "generated_utc": "2026-08-13T23:11:04.464281+00:00",
+  "n_tickers": 2600,
   "n_dropped_invalid": 0,
   "dropped_invalid_examples": [],
   "note": "Per-ticker weighted alt-data rollup. convergence_score = distinct independent channels (count); weighted_score ranks by channel quality. Donors / position-size recorded as context, never a voting channel.",
@@ -24207,6 +24207,16 @@
       "trump_linked": false,
       "affiliated": false
     },
+    "GTLS": {
+      "ticker": "GTLS",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
     "NNUP": {
       "ticker": "NNUP",
       "channels": [
@@ -24219,6 +24229,16 @@
     },
     "TRNZ": {
       "ticker": "TRNZ",
+      "channels": [
+        "special_situation"
+      ],
+      "weighted_score": 0.2,
+      "convergence_score": 1,
+      "trump_linked": false,
+      "affiliated": false
+    },
+    "NFBK": {
+      "ticker": "NFBK",
       "channels": [
         "special_situation"
       ],

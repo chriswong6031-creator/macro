@@ -234,9 +234,55 @@ def test_backdrop_tile_carries_the_bilingual_risk_label() -> None:
     assert tile["k"] == {"en": "Market backdrop", "zh": "市场环境"}
     assert tile["v"] == {"en": "RISK-ON", "zh": "风险偏好"}
     assert tile["v"] == board["rotation"]["risk"]["label"]
-    # zh degrades to the en word only when the pulse carries no translation
-    bare = eb.board_context([], [], [], [], [], {})
-    assert bare["tiles"][-1]["v"] == {"en": "NEUTRAL", "zh": "NEUTRAL"}
+
+
+def test_the_backdrop_tile_is_translated_when_the_pulse_carries_no_zh() -> None:
+    """The NEUTRAL branch. `_rotation` used to fall back to `label_en` whenever the
+    pulse had no `label_zh` — and it has none at all when the pulse is missing or
+    stale, which is the state a macro-only render leaves it in (etf_pulse.json is
+    rebuilt under scope `baskets`). So the default path on a page Google indexes
+    printed a bare "NEUTRAL" in the zh hero. "Or the English word" is not a
+    translation."""
+    for pulse in ({}, {"risk": {}}, {"risk": {"label_en": "NEUTRAL", "tilt": 0.0}}):
+        board = eb.board_context([], [], [], [], [], pulse)
+        assert board["tiles"][-1]["v"] == {"en": "NEUTRAL", "zh": "中性"}, pulse
+    # …and the other two labels translate on the same path
+    off = eb.board_context([], [], [], [], [],
+                           {"risk": {"label_en": "RISK-OFF", "tilt": -0.4}})
+    assert off["tiles"][-1]["v"] == {"en": "RISK-OFF", "zh": "风险规避"}
+    on = eb.board_context([], [], [], [], [],
+                          {"risk": {"label_en": "RISK-ON", "tilt": 0.4}})
+    assert on["tiles"][-1]["v"] == {"en": "RISK-ON", "zh": "风险偏好"}
+
+
+def test_the_backdrop_zh_words_are_the_pulses_own() -> None:
+    """Mutation control: the fallback map is only safe while it is verbatim the
+    words engine.etf_pulse mints. Two surfaces inventing their own zh for the same
+    label is the drift this map exists to prevent."""
+    import inspect
+
+    from engine import etf_pulse
+    src = inspect.getsource(etf_pulse._risk_leg)
+    for en, zh in eb._RISK_LABEL_ZH.items():
+        assert f'"{en}", "{zh}"' in src, (
+            f"{en}/{zh} is not the pair engine.etf_pulse mints")
+
+
+def test_the_hero_tile_never_says_contested() -> None:
+    """Designer flag: "contested" is our word for the state, not the reader's, and
+    a Tier-1 hero tile has no room to teach a term. Same fact, said in plain words
+    in both languages."""
+    favored = [_fav("SPCX", "Space", 5, 29.6, contested=True)]
+    tile = eb.board_context(favored[:], [], [], favored, [], _PULSE)["tiles"][0]
+    assert "contested" not in tile["m"]["en"].lower()
+    assert "有分歧" not in tile["m"]["zh"]
+    assert tile["m"]["en"] == "5 funds building · managers disagree"
+    assert tile["m"]["zh"] == "5 只基金增持 · 经理人意见不一"
+    # an uncontested top row carries no modifier at all
+    calm = [_fav("SPCX", "Space", 5, 29.6)]
+    quiet = eb.board_context(calm[:], [], [], calm, [], _PULSE)["tiles"][0]
+    assert quiet["m"]["en"] == "5 funds building"
+    assert quiet["m"]["zh"] == "5 只基金增持"
 
 
 def test_rotation_carries_the_pulse_as_of() -> None:
@@ -292,6 +338,9 @@ if __name__ == "__main__":
         test_board_context_fresh_groups_new_positions_by_ticker,
         test_board_context_survives_empty_pulse,
         test_backdrop_tile_carries_the_bilingual_risk_label,
+        test_the_backdrop_tile_is_translated_when_the_pulse_carries_no_zh,
+        test_the_backdrop_zh_words_are_the_pulses_own,
+        test_the_hero_tile_never_says_contested,
         test_rotation_carries_the_pulse_as_of,
         test_zh_view_renders_the_translated_backdrop_label,
     ]
