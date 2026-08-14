@@ -110,6 +110,8 @@ CORE_SYMBOLS = (US_INDEXES + US_FUTURES + INTL_INDEXES + CORE_ETFS
 # Action (nights/weekends/Sunday Globex reopen) and the 30-min intraday-fastpath
 # tick (US RTH + HKEX windows). Keep in sync with the data-sym tiles the templates
 # emit — a symbol displayed but absent here keeps its baked value forever.
+# This list is the TILE half of the display universe; display_universe() appends the
+# scraped board leg (DISPLAY_BOARD_PAGES) and is what --display actually fetches.
 DISPLAY_SYMBOLS = [
     "SPY", "QQQ", "^DJI", "^RUT",            # macro market strip (DJI/RUT tiles carry data-sym ^DJI/^RUT)
     *TAPE_SYMBOLS,                            # six-instrument macro tape
@@ -124,6 +126,26 @@ DISPLAY_SYMBOLS = [
     "USDCNH=X", "USDCHF=X", "USDMXN=X", "USDBRL=X",
     "^N225", "^KS11", "^TWII",                        # macro overnight/Asia strip
 ]
+
+# BOARD leg of the display universe (2026-08-13). The Prophet act-now cards render
+# a price + a `.nb-chg` percentage pill per card (show_change=true, pinned by
+# tests/test_prophet_card_live_change.py) — but DISPLAY_SYMBOLS above is a hand-kept
+# list of macro TILE symbols only, so every single-name card asked live.js for a
+# symbol this snapshot never fetched: `pick()` returned an empty reading,
+# patchChgNode() bailed on `chg == null`, and all 133 A-share pills on
+# china_stocks.html held their baked "—" through an entire live A-share session.
+# The board's names are re-picked nightly, so this leg is SCRAPED from the built
+# page rather than hard-listed — same contract as the full-universe scrape below
+# ("whatever the page renders goes live"), just narrowed to the board pages so the
+# once-a-minute same-origin snapshot stays small.
+# CHINA ONLY, deliberately: .SS/.SZ names route to the keyless Yahoo leg (measured
+# 2026-08-13: 133 symbols resolve in seconds, +~25 KB on a 6.7 KB file), whereas the
+# US board's names would route the every-60s lane through the Polygon leg. The other
+# three boards (dashboard/hk/canada .j2 also pass show_change — us_stocks.html emits
+# 70 data-sym, hk_stocks.html 11, canada.html 6) carry the SAME dead pill and want
+# their own measured decision; adding a page here is the whole change.
+DISPLAY_BOARD_PAGES = ("china_stocks.html",)
+DISPLAY_BOARD_CAP = 240
 
 
 def scrape_site_symbols(site_dir: Path) -> list[str]:
@@ -143,6 +165,56 @@ def scrape_site_symbols(site_dir: Path) -> list[str]:
             if _SYMBOL_RE.match(s):
                 found.add(s)
     return sorted(found)
+
+
+def board_display_symbols(site_dir: Path,
+                          pages: tuple[str, ...] = DISPLAY_BOARD_PAGES,
+                          cap: int = DISPLAY_BOARD_CAP) -> list[str]:
+    """Every distinct ``data-sym`` the named BOARD pages emit — the single-name
+    cards whose price/percentage pills live.js patches from this snapshot.
+
+    A missing page is logged and skipped, never fatal: the snapshot then simply
+    carries the macro tiles it always did and the board keeps its baked numbers
+    (the pre-2026-08-13 behaviour), rather than the whole once-a-minute lane
+    failing. The log line is the tell — a silently empty board leg looks exactly
+    like the bug this leg fixes."""
+    found: set[str] = set()
+    for name in pages:
+        path = Path(site_dir) / name
+        try:
+            text = path.read_text(errors="ignore")
+        except OSError:
+            log.warning("live display board page unreadable: %s — its cards keep "
+                        "their baked price/percentage", path)
+            continue
+        page_syms: set[str] = set()
+        for raw in _DATA_SYM_RE.findall(text):
+            s = raw.strip().upper()
+            if _SYMBOL_RE.match(s):
+                page_syms.add(s)
+        if not page_syms:
+            log.warning("live display board page emits no data-sym: %s", path)
+        found |= page_syms
+    out = sorted(found)
+    if len(out) > cap:
+        log.warning("live display board universe %d exceeds cap %d — truncating "
+                    "(macro tiles are ordered first, never dropped)", len(out), cap)
+    return out[:cap]
+
+
+def display_universe(site_dir: Path) -> list[str]:
+    """The same-origin ``site/live/quotes.json`` universe: the hand-kept macro
+    tiles FIRST (so a cap squeeze or a board-page surprise can never cost the
+    market strips their feed), then the scraped board leg. De-duped and
+    charset-validated exactly like build_universe()."""
+    ordered: list[str] = []
+    seen: set[str] = set()
+    for s in list(DISPLAY_SYMBOLS) + board_display_symbols(site_dir):
+        s = str(s).strip().upper()
+        if s and s not in seen and _SYMBOL_RE.match(s):
+            seen.add(s)
+            ordered.append(s)
+    return ordered
 
 
 def basket_member_symbols() -> list[str]:
@@ -329,8 +401,10 @@ def main() -> None:
                          "e.g. 'BTC-USD' for the hourly crypto-only snapshot")
     ap.add_argument("--display", action="store_true",
                     help="EXACT universe = DISPLAY_SYMBOLS (the site's glance-tier live "
-                         "tiles) — the same-origin site/live/quotes.json producer preset "
-                         "used by btc-live (hourly 24/7) and intraday-fastpath (30-min)")
+                         "tiles) + the board leg scraped from DISPLAY_BOARD_PAGES — the "
+                         "same-origin site/live/quotes.json producer preset used by the "
+                         "VPS fast lane (60s), btc-live (hourly 24/7) and "
+                         "intraday-fastpath (30-min)")
     args = ap.parse_args()
 
     site_dir = (Path(args.site) if args.site
@@ -338,7 +412,10 @@ def main() -> None:
     extra = list((config.load().get("live") or {}).get("snapshot_extra") or [])
     symbols = [s for s in (args.symbols or "").split(",") if s.strip()] or None
     if args.display:
-        symbols = list(DISPLAY_SYMBOLS)
+        symbols = display_universe(site_dir)
+        log.info("display universe: %d tiles + %d board symbols from %s",
+                 len(DISPLAY_SYMBOLS), len(symbols) - len(DISPLAY_SYMBOLS),
+                 ", ".join(DISPLAY_BOARD_PAGES))
     snap = build(site_dir, offline=args.offline, extra=extra, cap=args.max,
                  symbols=symbols)
 

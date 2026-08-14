@@ -94,6 +94,11 @@ PROOF_WORKFLOWS = ("ci.yml", "fences.yml", "integration-baseline.yml")
 #: advance data or publish the site: killing one costs a session of ledger the next
 #: night cannot re-derive, and the loss is invisible to every staleness instrument
 #: because a cancelled run looks exactly like a bake that never fired.
+#: The second family (2026-08-14) is the WATCHDOGS over those lanes. They advance
+#: no data, so the first rationale does not reach them — but killing one is strictly
+#: worse than killing a bake: it removes the only thing that would have noticed. A
+#: silenced alarm and a healthy night are the same trace, which is the exact
+#: equivalence that let Prophet US serve Aug-10 picks for two sessions.
 PROTECTED_LANES = frozenset({
     "daily.yml",            # Build B — the sole authoritative, ledger-advancing bake
     "closing-bell.yml",     # Build A — the provisional close render
@@ -101,6 +106,8 @@ PROTECTED_LANES = frozenset({
     "render.yml",
     "engine-render.yml",
     "weekly.yml",
+    "nightly-liveness.yml",  # dead-man switch over daily.yml (detects)
+    "prophet-rescue.yml",    # bounded self-heal over daily.yml (responds)
 })
 
 REMEDY = (

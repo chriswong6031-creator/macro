@@ -54,6 +54,7 @@ import logging
 import math
 import os
 import sys
+from collections.abc import Iterable
 from datetime import date, datetime
 from pathlib import Path
 from typing import Any
@@ -1102,7 +1103,11 @@ def _load_existing_state(plan_id: str) -> dict | None:
     return _read_json(state_path)
 
 
-def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
+def open_plan_keys(
+    plans: dict[str, dict],
+    closed_ids: set[str],
+    quarantined_ids: Iterable[str] = (),
+) -> set[str]:
     """``<TICKER>-<DIRECTION>`` keys that still have an OPEN plan (W1 intake repair).
 
     "Closed" is exactly what the forward ledger already says: ``advance_ledger`` appends
@@ -1110,6 +1115,17 @@ def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
     ``_load_closed_ids`` reads that file back.  No new store is introduced — this reads
     the plans dict and the ledger this pipeline already loads, and a plan that closes
     frees its ticker+direction slot for a fresh origination.
+
+    "Open" is not "present in the plans dict" either: an audit-quarantined plan
+    (``integrity_status == "quarantined"`` in the append-only correction overlay) is
+    withdrawn from display and, in the published index's own words, cannot emit live
+    instructions or ledger rows — so it does not hold a ticker+direction slot, and a
+    later bake may lawfully re-originate the name.  The exclusion lives HERE, not in a
+    caller, because this is the one definition of "open" that both the originator and
+    the duplicate-open-key census must read; when the caller owned it they drifted, and
+    the census read three lawfully re-originated pairs (FCX / HEI / MDB, freed by the
+    2026-08-08 chronology audit) as duplicates.  Same-ID suppression is untouched, so
+    identity never forks.
 
     Timing (deliberate, one-night lag): origination runs BEFORE this run's
     ``advance_ledger`` call, so a plan whose exit is being written tonight still blocks
@@ -1121,9 +1137,10 @@ def open_plan_keys(plans: dict[str, dict], closed_ids: set[str]) -> set[str]:
     ledger is a sufficient closure authority here and a second, divergeable one is not
     introduced.
     """
+    quarantined = set(quarantined_ids or ())
     keys: set[str] = set()
     for plan_id, plan in plans.items():
-        if plan_id in closed_ids:
+        if plan_id in closed_ids or plan_id in quarantined:
             continue
         asset = plan.get("asset")
         direction = plan.get("direction")
@@ -1210,6 +1227,31 @@ def _closed_state_lines(outcome: str | None) -> tuple[list[str], list[str]]:
                 ["该计划已结束。无需操作 — 保留以供记录。"])
     return ([f"This plan is closed — {words[0]}. Nothing to do; kept here for the record."],
             [f"该计划已结束 — {words[1]}。无需操作；保留以供记录。"])
+
+
+def _stale_frame_lines(
+    price_frame: dict[str, Any] | None,
+) -> tuple[list[str], list[str]]:
+    """(EN, ZH) ``what_to_do_now`` for a plan whose price frame went stale.
+
+    The phase templates in ``_build_what_to_do_now`` read as CURRENT guidance
+    ("Trim position…", "Buy above…"), and with no closing print behind them that
+    is an instruction derived from a tape that stopped answering — the same
+    hazard ``_closed_state_lines`` exists for, one state earlier.  These lines
+    state the fact and ask for nothing; the management engine has already
+    withheld ``recommended_action`` for the same reason.  Both halves ship
+    together so the bilingual pair can never desync.
+    """
+    d = (price_frame or {}).get("last_close_date")
+    since_en = f" since {d}" if d else ""
+    since_zh = f"（自 {d} 起）" if d else ""
+    return (
+        [f"No closing price has printed{since_en} — this name's tape is not updating.",
+         ("Action guidance is paused until a fresh closing price arrives;"
+          " levels shown are as of the last print.")],
+        [f"该标的暂无新的收盘价{since_zh} — 行情未在更新。",
+         "在收到新的收盘价之前，操作指引暂停；所示价位以最后一次成交为准。"],
+    )
 
 
 def _age_days(signal_date: str | None, asof: str) -> int | None:
@@ -1584,13 +1626,8 @@ def main() -> None:
     # needs the outcome word for each closed plan's `closed` flag and pulse.
     closed_outcomes = _load_closed_outcomes()
     closed_ids = set(closed_outcomes)
-    # An audit-quarantined plan is not actionable and must not monopolise the ticker's
-    # future opportunity slot.  Same-ID suppression remains, so identity never forks.
-    actionable_existing = {
-        plan_id: plan for plan_id, plan in existing_plans.items()
-        if plan_id not in plan_quarantined_ids
-    }
-    active_keys = open_plan_keys(actionable_existing, closed_ids)
+    active_keys = open_plan_keys(
+        existing_plans, closed_ids, quarantined_ids=plan_quarantined_ids)
     log.info(
         "build_prophet: %d existing plans loaded (%d closed in the ledger; "
         "%d open ticker+direction keys blocking re-origination)",
@@ -1849,6 +1886,12 @@ def main() -> None:
         # states it (it is still in all_plans), so without this flag the row is
         # indistinguishable from a live one and its pulse would narrate a dead thesis.
         # closed_ids is the same set the re-origination block uses — one ledger read.
+        # Stale-frame action safety — the ENGINE's verdict, mirrored here (never a
+        # detector of this loop's own): compute_management_state stamps price_frame
+        # only when the frame's last close failed the origination freshness
+        # tolerance, and it has already withheld recommended_action in that case.
+        _pf = state.get("price_frame")
+        _frame_stale = isinstance(_pf, dict) and _pf.get("state") != "current"
         if _closed:
             # P5: a closed plan must not ship live instructions. It kept shipping
             # "buy above <trigger>, stop at <invalidation>" for a position that was
@@ -1856,6 +1899,11 @@ def main() -> None:
             what_to_do_now, what_to_do_now_zh = _closed_state_lines(
                 closed_outcomes.get(plan_id)
             )
+        elif _frame_stale:
+            # No closing print since price_frame.last_close_date: the phase
+            # instruction templates would read as current guidance off a tape that
+            # stopped answering.  The prose surface pauses with the action.
+            what_to_do_now, what_to_do_now_zh = _stale_frame_lines(_pf)
         else:
             what_to_do_now = _build_what_to_do_now(
                 phase=resolved_phase,
@@ -1952,6 +2000,11 @@ def main() -> None:
             # The Terminal's GAINERS sort and T1-progress/P&L bars render only
             # when last_price is present.
             "last_price": round(_last_close, 4) if _last_close is not None else None,
+            # Stale-frame disclosure (conditional stamp, house precedent: degraded
+            # rows disclose while a clean population stays byte-for-byte
+            # unchanged).  When present, last_price is the LAST REAL close — its
+            # vintage is price_frame.last_close_date, not this run's asof.
+            **({"price_frame": dict(_pf)} if _frame_stale else {}),
             # R0.7 — nested state block. The Terminal reads components /
             # geometry / change_reason via plan.state (SignalCard PlanSummary
             # nested shape), so these ride under "state", not top-level. The
@@ -1963,6 +2016,7 @@ def main() -> None:
                 "components": state.get("components"),
                 "geometry": state.get("geometry"),
                 "change_reason": state.get("change_reason"),
+                **({"price_frame": dict(_pf)} if _frame_stale else {}),
             },
             # ── Content blocks (W2 — deterministic, no LLM) ───────────────────
             # A CLOSED plan ships a closed-state line here, never live instructions

@@ -11,20 +11,20 @@
   "human_state": "Advancing to T2",
   "components": {
     "validity": 100.0,
-    "progress": 87.9,
+    "progress": 86.1,
     "pace": 100.0,
-    "retention": 100.0,
-    "overlay": 64.0
+    "retention": 96.2,
+    "overlay": 61.0
   },
   "geometry": {
-    "dist_to_stop_r": 3.873,
-    "dist_to_t1_r": -1.373,
-    "dist_to_t2_r": 0.127,
+    "dist_to_stop_r": 3.764,
+    "dist_to_t1_r": -1.264,
+    "dist_to_t2_r": 0.236,
     "horizon_pct_used": 64.4,
-    "p1": 1.9155,
-    "p2": 0.9577,
+    "p1": 1.8427,
+    "p2": 0.9214,
     "p3": null,
-    "move_r": 2.873,
+    "move_r": 2.764,
     "mfe_r": 2.873,
     "mae_r": -0.0
   },

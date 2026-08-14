@@ -65,6 +65,22 @@ SHOTS = [
     ("71-compare-light-en",       DESKTOP, "PAGE:compare.html?theme=light&lang=en"),
     ("72-compare-dark-zh",        DESKTOP, "PAGE:compare.html?theme=dark&lang=zh"),
     ("73-compare-light-zh",       DESKTOP, "PAGE:compare.html?theme=light&lang=zh"),
+    # ── R4: the behind-the-tape state (PRC-305). Production ships this banner
+    #    today; the R3 reference had no stale path at all, which is why it needs
+    #    its own committed evidence in both languages.
+    ("80-stale-dark-en",          DESKTOP, "theme=dark&lang=en&state=stale"),
+    ("81-stale-light-zh",         DESKTOP, "theme=light&lang=zh&state=stale"),
+    ("82-stale-390-dark-en",      MOBILE,  "theme=dark&lang=en&state=stale"),
+]
+
+# ── R4: states that only exist AFTER an interaction. PRC-306's expansion cannot
+#    be evidenced by a URL, so the shot is defined by the control it clicks.
+#    Without this the reference would ship a capability with no picture of it.
+CLICK_SHOTS = [
+    ("90-expanded-dark-en",  DESKTOP, "theme=dark&lang=en&state=paid",
+     ".sm-bar .sm-btn.sm-ghost"),
+    ("91-expanded-light-zh", DESKTOP, "theme=light&lang=zh&state=paid",
+     ".sm-bar .sm-btn.sm-ghost"),
 ]
 
 
@@ -108,6 +124,31 @@ def main():
                 n_files += 1
             made.append(f"{name}  {w}x{h}  sw={over['sw']} cw={over['cw']}{flag}")
             page.close()
+
+        # post-interaction states (PRC-306): click, then shoot
+        for name, (w, h), q, sel in CLICK_SHOTS:
+            page = browser.new_page(viewport={"width": w, "height": h},
+                                    device_scale_factor=1)
+            page.goto(f"{BASE}/?{q}&chrome=0", wait_until="networkidle")
+            page.wait_for_timeout(220)
+            el = page.query_selector(sel)
+            if el is None:
+                # FAIL LOUD. A missing control must not quietly yield a crop of
+                # the un-expanded grid that photographs as though it worked.
+                raise SystemExit(
+                    f"::error title=capture::{name}: control {sel} not found — "
+                    "refusing to emit a crop that would misrepresent the state")
+            el.click()
+            page.wait_for_timeout(500)
+            vis = page.evaluate(
+                "() => [...document.querySelectorAll('.pvcard')]"
+                ".filter(c => c.offsetParent !== null).length")
+            page.screenshot(path=str(OUT / f"{name}.png"))
+            page.screenshot(path=str(OUT / f"{name}--full.png"), full_page=True)
+            n_files += 2
+            made.append(f"{name}  {w}x{h}  after click {sel} -> {vis} visible cards")
+            page.close()
+
         browser.close()
     print("\n".join(made))
     print(f"\n{len(made)} views -> {n_files} files in {OUT}/")

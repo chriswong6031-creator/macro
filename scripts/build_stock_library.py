@@ -5788,6 +5788,7 @@ def main() -> int:
         except Exception as _uni_e:  # noqa: BLE001 — disclosure is additive, never fatal
             log.warning("universe_sources: failed (%s) — block absent from artifact", _uni_e)
 
+        _n_expired = 0
         try:
             _buy_after, _watch_passthrough, _n_expired = _expire_pending_buys(
                 wide.get("buy", []), wide.get("watch", []), wide.get("as_of"))
@@ -5797,9 +5798,12 @@ def main() -> int:
                 # wide["watch"] is a separate data-plane the standout board template never
                 # iterates, so we intentionally do NOT assign it here.
                 wide["buy"] = _buy_after
-                wide["pending_expired_count"] = _n_expired
         except Exception as _exp_e:  # noqa: BLE001
             log.warning("CSP-W5 pending expiry: failed (%s) — no rows demoted", _exp_e)
+            _n_expired = 0
+        # Always emit: 0 is a valid count. Emitting only when >0 dropped the
+        # required contract field on quiet nights and reddened main 2026-08-14.
+        wide["pending_expired_count"] = _n_expired
 
         # B4 Conviction Delta — load prev artifact BEFORE overwriting, diff dossier keys,
         # embed compact delta block into wide.  Fail-open: any error leaves delta absent.

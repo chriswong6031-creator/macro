@@ -1107,6 +1107,112 @@ def test_index_json_has_required_keys(tmp_path):
         bp.write_showcase = orig_write_showcase
 
 
+def test_stale_frame_row_pauses_instructions_fresh_row_unchanged(tmp_path):
+    """Publisher mirror of stale-frame action safety, fresh row as control.
+
+    One run, two plans: MSFT's management state arrives stamped stale (the
+    ENGINE's verdict — this loop owns no detector), AAPL's arrives fresh.  The
+    stale row must ship no current-looking instruction anywhere (action null,
+    ``what_to_do_now`` paused, both languages) plus the ``price_frame``
+    disclosure; the fresh row must be byte-shaped exactly as before (trim
+    action, overtime instruction prose, no ``price_frame`` key).
+    """
+    import scripts.build_prophet as bp  # noqa: PLC0415
+
+    buys = [
+        _make_buy("AAPL", score=70, act_level=3, spot=150.0),
+        _make_buy("MSFT", score=68, act_level=3, spot=150.0),
+    ]
+    standouts = _make_standouts(gate_go=False, buys=buys)
+    standouts_path = tmp_path / "us_standouts.json"
+    standouts_path.write_text(json.dumps(standouts))
+
+    orig_standouts = bp.STANDOUTS_PATH
+    orig_site = bp.SITE_PROPHET
+    orig_plans = bp.PLANS_DIR
+    orig_states = bp.STATES_DIR
+    orig_index = bp.INDEX_PATH
+    orig_ledger_path = bp.LEDGER_PATH
+    orig_ledger_dir = bp.LEDGER_DIR
+    orig_write_showcase = bp.write_showcase
+
+    def _mgmt_side_effect(**kw):
+        plan = kw["plan"]
+        state = {
+            "schema": "prophet.management_state/v1",
+            "id": plan["id"],
+            "asof": kw["asof"],
+            "phase": "overtime",
+            "management_confidence": 41.0,
+            "raw_confidence": 41.0,
+            "recommended_action": "trim",
+            "components": {},
+            "geometry": {},
+            "change_reason": "",
+        }
+        if plan.get("asset") == "MSFT":
+            state["recommended_action"] = None
+            state["price_frame"] = {
+                "state": "stale", "last_close_date": "2026-06-10",
+                "run_asof": kw["asof"], "lag": 15,
+                "lag_basis": "business_days", "max_lag": 3,
+            }
+        return state
+
+    try:
+        bp.STANDOUTS_PATH = standouts_path
+        bp.SITE_PROPHET = tmp_path / "site" / "prophet"
+        bp.PLANS_DIR = bp.SITE_PROPHET / "plans"
+        bp.STATES_DIR = bp.SITE_PROPHET / "states"
+        bp.INDEX_PATH = bp.SITE_PROPHET / "index.json"
+        bp.LEDGER_PATH = tmp_path / "data" / "prophet" / "ledger.jsonl"
+        bp.LEDGER_DIR = tmp_path / "data" / "prophet"
+        bp.write_showcase = lambda: orig_write_showcase(
+            out_path=tmp_path / "showcase.json")
+
+        import sys as _sys  # noqa: PLC0415
+        with patch.object(_sys, "argv", ["build_prophet", "--date", "2026-07-02"]):
+            # Patch the BUILDER's namespace, not engine.prophet_management:
+            # build_prophet binds the function at import time, so a source-module
+            # patch is an orphan the loop never calls.
+            with patch("scripts.build_prophet.compute_management_state") as mock_mgmt:
+                mock_mgmt.side_effect = _mgmt_side_effect
+                with patch("scripts.build_prophet._load_price_history_for_management") as mock_ph:
+                    mock_ph.return_value = _make_price_history(150.0, 30)
+                    bp.main()
+
+        idx = json.loads(bp.INDEX_PATH.read_text())
+        rows = {r.get("asset"): r for r in idx["plans"]}
+        assert {"AAPL", "MSFT"} <= set(rows), f"missing rows: {sorted(rows)}"
+
+        stale_row = rows["MSFT"]
+        assert stale_row["recommended_action"] is None
+        assert stale_row["state"]["recommended_action"] is None
+        assert stale_row["price_frame"]["state"] == "stale"
+        assert stale_row["state"]["price_frame"]["state"] == "stale"
+        assert stale_row["management_status"] == "available"
+        en = " ".join(stale_row["what_to_do_now"])
+        zh = " ".join(stale_row["what_to_do_now_zh"])
+        assert "paused" in en and "2026-06-10" in en
+        assert "Trim" not in en and "trim" not in en
+        assert "暂停" in zh and "减仓" not in zh
+
+        fresh_row = rows["AAPL"]
+        assert fresh_row["recommended_action"] == "trim"
+        assert "price_frame" not in fresh_row
+        assert "price_frame" not in fresh_row["state"]
+        assert any("Trim position" in line for line in fresh_row["what_to_do_now"])
+    finally:
+        bp.STANDOUTS_PATH = orig_standouts
+        bp.SITE_PROPHET = orig_site
+        bp.PLANS_DIR = orig_plans
+        bp.STATES_DIR = orig_states
+        bp.INDEX_PATH = orig_index
+        bp.LEDGER_PATH = orig_ledger_path
+        bp.LEDGER_DIR = orig_ledger_dir
+        bp.write_showcase = orig_write_showcase
+
+
 def test_effective_index_excludes_both_plan_and_ledger_quarantines():
     """A late terminal quarantine cannot persist through the prebuilt index list."""
     import scripts.build_prophet as bp  # noqa: PLC0415
@@ -1981,3 +2087,63 @@ def test_direct_builder_publish_is_disabled_before_any_r2_call(monkeypatch):
             bp.main()
     assert exc.value.code == 2
     assert touched["r2"] is False
+
+
+# ---------------------------------------------------------------------------
+# price_frame_freshness — the management frame's staleness authority
+# ---------------------------------------------------------------------------
+
+class TestPriceFrameFreshness:
+    def _frame(self, start: str, n: int) -> pd.DataFrame:
+        idx = pd.bdate_range(start=start, periods=n)
+        return pd.DataFrame({"close": [100.0] * n}, index=idx)
+
+    def test_frame_ending_on_asof_is_current(self):
+        from engine.prophet_bridge import price_frame_freshness
+        fr = self._frame("2026-03-02", 5)  # ends Fri 2026-03-06
+        out = price_frame_freshness(fr, "2026-03-06")
+        assert out["state"] == "current"
+        assert out["lag"] == 0
+        assert out["last_close_date"] == "2026-03-06"
+        assert out["run_asof"] == "2026-03-06"
+
+    def test_three_sessions_current_four_stale(self):
+        from engine.prophet_bridge import price_frame_freshness
+        fr = self._frame("2026-02-16", 11)  # ends Mon 2026-03-02
+        assert price_frame_freshness(fr, "2026-03-05")["state"] == "current"
+        out = price_frame_freshness(fr, "2026-03-06")
+        assert out["state"] == "stale"
+        assert out["lag"] == 4
+        assert out["lag_basis"] == "business_days"
+
+    def test_weekend_is_free(self):
+        from engine.prophet_bridge import price_frame_freshness
+        fr = self._frame("2026-03-02", 5)  # ends Fri 2026-03-06
+        assert price_frame_freshness(fr, "2026-03-08")["state"] == "current"
+
+    def test_missing_or_empty_frame_fails_closed(self):
+        from engine.prophet_bridge import price_frame_freshness
+        for frame in (None, pd.DataFrame({"close": []})):
+            out = price_frame_freshness(frame, "2026-03-06")
+            assert out["state"] == "stale"
+            assert out["lag"] is None
+            assert out["lag_basis"] == "unresolved"
+            assert out["last_close_date"] is None
+
+    def test_future_dated_frame_fails_closed(self):
+        from engine.prophet_bridge import price_frame_freshness
+        fr = self._frame("2026-03-09", 3)  # starts after asof
+        out = price_frame_freshness(fr, "2026-03-06")
+        assert out["state"] == "stale"
+        assert out["lag_basis"] == "unresolved"
+
+    def test_tolerance_is_the_origination_constant(self):
+        # ONE staleness tolerance in Prophet: the same constant origination
+        # refuses stale candidates at.  A forked threshold dies here.
+        from engine.prophet_bridge import (
+            STALE_BASIS_MAX_SESSIONS,
+            price_frame_freshness,
+        )
+        fr = self._frame("2026-02-16", 11)
+        out = price_frame_freshness(fr, "2026-03-06")
+        assert out["max_lag"] == STALE_BASIS_MAX_SESSIONS == 3
