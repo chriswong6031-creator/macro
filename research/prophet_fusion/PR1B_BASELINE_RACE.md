@@ -698,6 +698,73 @@ Runtime ≈ 8 minutes.
 
 ## Adjudication (main loop)
 
-*Left empty for the commissioning session.*
+Written by the commissioning session (Fable main loop) after reading §2–§12. Every
+sentence below is bounded by §10's power table: the smallest readable ΔP@5 on this frame
+is ~17.4pp, every primary CI includes zero, and the frame is a survivorship-flagged
+counterfactual replay of a single selection era. These are architectural triage answers,
+not verdicts.
 
-<!-- The six answers go here. -->
+**1. Does the current live priority formulation add anything over simpler baselines?**
+Directionally yes over the order users actually saw, and modestly over its own selection
+axis — the replayed champion (G0: P@5 0.493, top-5 +0.06pp) sits above the published
+order (G0′: 0.440, −1.39pp) and pure alpha (G1: 0.440, −0.45pp) on every point estimate —
+but no delta clears its CI, and the most damning read is G0′'s permutation floor:
+**the order users saw is indistinguishable from a within-night shuffle (p = 0.974)**.
+The champion's machinery is not demonstrably adding anything; it is also not
+demonstrably the problem. The problem has a name (see 2).
+
+**2. Is the alpha/edge leg helping or hurting?** Four constructions that share no
+machinery point the same way at H=10: G3 (sign-flip) leads every top-of-board metric
+(P@1 0.667, P@5 0.568, top-5 +1.26pp, best large-loser 0.303, the only rung whose
+permutation floor approaches significance at p = 0.067); G4 (deletion) is second; G1
+(pure alpha) ties for last; and inside C1 the F2 family is the only one whose
+partial-ρ | G0 CI excludes zero *on the negative side* (−0.083 [−0.154, −0.007]) and the
+only one whose leave-one-out REMOVAL helps (+4.0pp). This replicates §6.6's alpha
+shadow fact through the deployed composition rather than a raw correlation. It is still
+one era, 15 nights, inside the CI — **a hypothesis strengthened, not a finding closed**.
+The correct next act is prospective, not surgical: no production change is authorized or
+proposed here (`DNR:KILL-FUSED-COMPOSITE` amendments and §8.6 both stand).
+
+**3. Do G3/G4 materially improve the champion construction?** G3 is the strongest thing
+this race produced and the natural first shadow. G4's apparent strength is partly an
+artifact this race caught red-handed: deleting the edge leg collapses score dispersion
+(distinct-score ratio 0.422), and 200 random tie-breaks swing its P@5 across
+[0.520, 0.613] — §7's answer to "how much of the table is the alphabet". G4 still
+earns a shadow slot as the cheaper repair, with its tie-band carried beside it.
+
+**4. Does name_score contain useful ordering information?** At the very top, some: G2
+posts the best non-repair P@1 (0.538) and a positive top-5 mean (+0.18pp) with the
+board's own composite — consistent with its funnel role — but it decays by P@5, its
+Spearman is negative, and §12.2's store/published divergence (22–29% agreement) means
+"name_score" is currently two different quantities depending on where you read it. Keep
+G2 in the arena; do not consume it as a feature (it stays a forbidden composite); the
+store divergence goes to the owning lane as its own finding.
+
+**5. Does C1 improve top-of-board selection after anti-double-count controls?** No.
+C1 (0.453) trails G0, G3 and G4, and §9 shows why with unusual clarity: of the four
+families that voted, F2 points the wrong way, F4 contributes zero, F8 is
+cross-sectionally degenerate (19 fires in 1,493 rows — presence is not variance), and
+only F5 does distinguishable positive work (+0.074 [+0.017, +0.130] partial | G0).
+Equal-weight breadth over this frame's readable evidence is two voters wide. Per the
+commission: C1 not beating G3/G4 is a valid and useful result — **complexity is not
+escalated on the program's name**; C2's registered question (weights) inherits exactly
+this table.
+
+**6. Where does any apparent improvement come from?** One family's sign, not breadth
+and not correlated double-counting: cross-family |ρ| ≤ 0.25 (§9.6), so the C1 voters are
+not siblings of each other; the load-bearing redundancy is *within* F2 (alpha ↔ the
+champion's edge leg — the registry's documented 0.984 edge). The improvement G3/G4
+exhibit is entirely the F2 story read through the champion's own composition. F5 is the
+only independent second thread, small and thin.
+
+### Recommendation — what enters prospective shadow accrual next (PR-3 lane)
+
+Register for nightly shadow scoring against G0/G0′ under the frozen arena, zero
+authority, prereg'd before the first stamped night: **G3** (edge sign-flip; the primary
+hypothesis), **G4** (edge deletion; the cheap repair, tie-band disclosed), **C1 as
+raced** (the breadth control), and **C1−F2** (the ablation §9.2 already prices at
++4.0pp — registered now so it cannot be accused of being outcome-selected later).
+Nothing else: C2 stays gated behind PR-2's redundancy matrices; no fitted rung is
+lawful on a frame whose fold machinery refuses (§10). The §8.6 gate is untouched; the
+first honest forward read arrives when the §8.7 distance-to-power lines close, on the
+accruing post-PR-1a candidates store.
