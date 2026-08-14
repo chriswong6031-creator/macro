@@ -29,6 +29,7 @@ Phase 0  (scaffolding + seed)          ← THIS PR, blocking
     │
     ├──► Phase 1  (adoption: DEC/DSC/handoffs written by live sessions)
     ├──► Phase 2  (status generator + CEO brief)
+    │         └──► Phase 2b (readiness envelope → canonical improvement agenda)
     └──► Phase 3  (context compiler extension)
                         │
                         └──► Phase 4  (hook auto-capture)
@@ -139,23 +140,36 @@ filter instead of a reading exercise.
 
 ---
 
-## Phase 2b — Retire the UNBLOCKED list into the agenda *(new, from Chairman ruling C3)*
+## Phase 2b — Publish readiness to the canonical agenda *(IMPLEMENTED; awaiting cross-repo CI)*
 
 **Objective.** `brain/improvement_agenda.py` is the sole canonical "what should we do next?"
-queue. Agent OS contributes dependency/readiness as an INPUT, and the independent UNBLOCKED
-section is deleted — not deprecated.
+queue. Agent OS contributes dependency/readiness as an input, and the human CEO brief carries
+no competing next-work list.
 
 **Dependencies.** Phase 2 (the readiness computation exists).
 
-**Work.** Expose readiness in a form the agenda consumes; render it as an agenda column; delete
-the UNBLOCKED section from the brief and its `unblocked` key from `ceo_brief.v1`.
+**Work.** `agent_os_state.v1` and `ceo_brief.v1` expose an identical
+`agentos.readiness.v1` envelope with exactly `schema`, identity-sorted `records`, and
+`degraded`. Each workstream (`wave: null`) and wave record carries a five-state readiness
+value, a stable reason code and human reason, canonical authored `depends_on` and
+`unmet_dependencies`, and its source. The records contain no P0, unblock-count, claim,
+next-action, or priority fields. A wave's effective dependency set is the union of parent
+workstream edges and authored local wave edges. Readiness degradation is restricted to invalid
+workstream authoring; auxiliary PR/P0/worktree degradation remains in the parent view only.
+The human brief renders no readiness list. Mastermind consumes the envelope and renders
+readiness inside the improvement agenda.
 
 **Landmine.** Read the agenda from its authoritative source (VPS / the app's API), never from
 the local `data/agenda/` checkout — that path is gitignored, VPS-authoritative, and measured
 ~3.5 weeks stale in this repo.
 
-**Validation.** The brief renders no ranked next-work list of its own; the agenda shows a
-readiness column; `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA` closed.
+**Validation.** Producer tests prove identity order, dependency canonicalization, all authored
+status mappings plus fail-soft `unknown`, absence of ranking inputs, auxiliary-join isolation,
+malformed/duplicate readiness-source degradation alongside fail-closed validation, terminal
+dependency cleanup, UNKNOWN propagation from excluded/duplicate dependencies, zero network,
+and no
+legacy list keys or human section. The cross-repo producer/consumer E2E must prove the agenda
+column before W2B moves from `awaiting_ci` to `done`; W4 remains untouched and `todo`.
 
 ---
 

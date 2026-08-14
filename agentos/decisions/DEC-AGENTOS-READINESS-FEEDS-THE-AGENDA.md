@@ -1,13 +1,13 @@
 ---
 key: AGENTOS-READINESS-FEEDS-THE-AGENDA
 question: >
-  The CEO brief computes a next-work list, and brain/improvement_agenda.py already produces
-  a ranked weekly queue. Which is canonical, and should both exist?
+  The CEO brief historically computed a next-work list, while brain/improvement_agenda.py
+  already produced a ranked weekly queue. Which is canonical, and should both exist?
 answer: >
   improvement_agenda.py is the SOLE canonical answer to "what should we do next?". Agent OS
-  owns dependency/readiness computation ONLY. Readiness is to be fed into the agenda as an
-  input, and the independent list retired once that integration lands. Until then the section
-  is renamed to mean UNBLOCKED/READY, never priority.
+  owns dependency/readiness computation ONLY. Agent OS now publishes the non-ranked
+  agentos.readiness.v1 input, and the independent human list is retired. The historical
+  UNBLOCKED/READY rename below records the interim implementation; it is not current behavior.
 rationale: >
   Chairman ruling C3, 2026-08-12: "CHANGE". This supersedes DEC:AGENTOS-START-NEXT-VS-AGENDA,
   which proposed keeping both lists side by side and distinguishing them by prose. The ruling
@@ -21,7 +21,7 @@ alternatives:
     why_not: >
       Two ranked-looking lists in one organization. The prose note is read once and the list
       is read every day.
-  - option: Retire the readiness list immediately, before the integration exists
+  - option: Retire the readiness list immediately, before the integration existed (historical)
     why_not: >
       Would delete a working signal with nothing to receive it yet. The interim rename keeps
       the value while removing the priority connotation.
@@ -35,6 +35,8 @@ evidence:
   - "Mastermind config/strategic_state.yml:16 — 'brain/improvement_agenda.py owns the ranked work queue'"
   - "research/EXECUTIVE_OS_PHASE0_CENSUS.md §5.3 — the only ranked, evidence-cited priority engine in the org"
   - "research/MASTERMIND_CHARTER_V2.md P7 — one source of truth per concept"
+  - "scripts/agentos.py compute_readiness — current identity-sorted agentos.readiness.v1 producer"
+  - "tests/test_agentos_status.py — current absence of human/ranked readiness surfaces"
 supersedes: [DEC:AGENTOS-START-NEXT-VS-AGENDA]
 affects: ["WS:AGENT-OS", "scripts/agentos.py", "research/MASTERMIND_CEO_BRIEF_SPEC.md"]
 confidence: high
@@ -43,7 +45,11 @@ decided_by: chairman
 decided_at: 2026-08-12
 ---
 
-## What changed in the artifact, now
+## Historical interim implementation (2026-08-12; retired)
+
+Before Phase 2b existed, the first implementation preserved the signal as a visibly scoped
+interim list. These bullets are retained as the exact historical sequence, not as a description
+of the current artifact:
 
 - Section header `START NEXT` → `UNBLOCKED — READY TO START`.
 - `ceo_brief.v1` / `agent_os_state.v1` key `start_next` → `unblocked`; `start_next_scope` →
@@ -54,11 +60,22 @@ decided_at: 2026-08-12
 - The test asserts that substance rather than a phrase, and asserts the retired label does
   not reappear.
 
+## Current implementation (Phase 2b, 2026-08-14)
+
+- `agent_os_state.v1` and `ceo_brief.v1` carry the same non-ranked
+  `agentos.readiness.v1` envelope.
+- Records are sorted only by identity and contain the authored dependency graph, readiness
+  state/reason, and source. They contain no P0, claim, unblock-count, next-action, or rank.
+- The status markdown and human CEO brief render no readiness list. The historical
+  `UNBLOCKED`/`READY TO START` keys and section are deleted.
+- The Macro producer and Mastermind consumer implementations exist. `WS:AGENT-OS#W2B`
+  remains `awaiting_ci` until their cross-repo E2E is green.
+
 ## What still has to happen
 
-The integration itself is not built. Agent OS must expose readiness in a form the agenda can
-consume, and the agenda must render it as a column. When that lands, the UNBLOCKED section is
-deleted — not deprecated. Tracked as a wave on `WS:AGENT-OS`.
+Run the cross-repo producer/consumer E2E and required CI, then move
+`WS:AGENT-OS#W2B` from `awaiting_ci` to `done`. This is validation of an implemented
+integration, not an unbuilt integration or a reason to restore the retired human list.
 
 **Read the agenda from its authoritative source, not a local checkout.** `data/agenda/` is
 gitignored and VPS-authoritative; the copy in this repo measured ~3.5 weeks stale.

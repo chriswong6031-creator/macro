@@ -116,7 +116,32 @@ network calls**: PR state comes only
 from the local `data/governance/active_builds.json` written by the nightly ABM sweep. The
 5,000/hr REST bucket is shared with `ship_loop_guard.py`, which fails CLOSED when it is
 exhausted, so a status command that burned quota could block the Stop it was reporting on.
-Anything unreadable lands in `degraded` and is printed, never suppressed.
+Anything unreadable still lands in the parent view's `inputs.degraded` and is printed,
+never suppressed. The narrower readiness envelope does not inherit unrelated join health.
+
+Both machine views carry the same non-ranked `readiness` envelope:
+
+```json
+{"schema": "agentos.readiness.v1", "records": [...], "degraded": [...]}
+```
+
+It emits one identity-sorted record for each workstream (`wave: null`) and each wave.
+Records contain only `state`, `reason_code`/`reason`, canonical authored dependency refs,
+unmet refs, and `source`; they contain no P0, claim, unblock-count, next-action, or ranking
+field. Workstream dependencies are `WS:<KEY>` and local wave dependencies are
+`WS:<CURRENT>#<WAVE>`; a wave's effective `depends_on` is the union of its parent
+workstream edges and its authored local wave edges. Terminal workstreams (`done` or `killed`)
+and terminal waves (`done` or `dropped`) report state `done` and no unmet dependencies while
+retaining those authored edges as provenance. The envelope's `degraded` names only invalid
+or ambiguous workstream authoring that removes or invalidates a readiness identity.
+Missing/truncated PR state, P0 context, and worktree occupancy remain visible in parent
+`inputs.degraded` but cannot make the graph-only feed look incomplete. An excluded or duplicate
+dependency source is not confidently "unmet":
+its own retained identity (if any), its waves, and surviving proposed/todo dependents emit
+`unknown` / `status_unknown` with the unavailable canonical dependency named. The human brief
+deliberately renders no readiness list. Mastermind's
+improvement agenda consumes the envelope and remains the sole ranked queue
+(`DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`).
 
 ---
 
@@ -167,5 +192,5 @@ free. That is why `expires` defaults to +12h rather than +72h, and why `status` 
 | `docs/ACTIVE_BUILD_MAP.md` / `active_builds.v1` | open PRs, collisions, merges | **imported** — joined at generation; Agent OS never polls GitHub |
 | `research/*MASTERPLAN*` / `*HANDOFF*` | deep prose | **pointed at** via `artifacts:` — never migrated |
 | Account-local Claude memory | how *you* work | stays local; cross-session facts graduate to `DSC-*` |
-| Mastermind `brain/improvement_agenda.py` | **the** ranked "what should we do next?" queue | **canonical for priority** — Agent OS computes readiness only and feeds it in; the brief's UNBLOCKED section is interim and gets retired (`DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`) |
+| Mastermind `brain/improvement_agenda.py` | **the** ranked "what should we do next?" queue | **canonical for priority** — Agent OS feeds it the non-ranked `agentos.readiness.v1` envelope; the human brief renders no competing list (`DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`) |
 | Mastermind `control_plane/` | live worker/job state, leases, heartbeats | **canonical for liveness** — display it, never re-derive it (`DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY`) |
