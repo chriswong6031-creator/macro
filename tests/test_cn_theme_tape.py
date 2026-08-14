@@ -503,7 +503,7 @@ def test_the_2026_08_04_incident_is_narrated_on_the_real_artifacts():
     # Silence is the only failure, so the assertion is the whole basket, not one bucket.
     placed = {m["t"] for group in gold["members"].values() for m in group}
     assert not gold["quiet_more"], "the quiet sample must not elide a name on a 6-name basket"
-    accounted = placed | set(gold["quiet_sample"])
+    accounted = placed | {m["t"] for m in gold["quiet_sample"]}
     assert accounted == set(real_members), (
         "every Gold Miners name must land in exactly one bucket; unaccounted: "
         f"{sorted(set(real_members) - accounted)}")
