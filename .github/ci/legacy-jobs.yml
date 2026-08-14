@@ -7351,8 +7351,20 @@ jobs:
       #     This lane is their home because engine/prophet_management.py — a subject of
       #     the plan-clock suite — is owned by NO other job, and this same lane already
       #     owns prophet_bridge, prophet_arena and build_prophet.
-      # No dependency widened: measured per-suite at RUN time, all three load only
-      # pandas/numpy/pyarrow/pyyaml, every one of which is on the install line above.
+      # No dependency widened — measured per suite at RUN time, and measured twice.
+      # The first pass probed sys.modules against a FIXED candidate list, which cannot
+      # report a dep it was never asked about; it was replaced by an enumeration of
+      # every loaded pip distribution (importlib.metadata.packages_distributions) plus
+      # a control-tested import blocker (MetaPathFinder.find_spec — the find_module
+      # protocol it replaced was REMOVED in 3.12 and silently blocked nothing).
+      # Result: the two prophet clock suites need only pandas/numpy/pyarrow/pyyaml, and
+      # test_chain_session_hole_disclosure additionally REQUIRES requests — blocking it
+      # gives 3 failed, 7 passed.  requests is already on the install line above, so
+      # nothing here changes; the distinction is recorded because "needs only pandas"
+      # is exactly the kind of claim a future thinning of this lane would trust.
+      # This is the same class of trap that cost prophet-us-context-and-grades a red in
+      # the sibling PR of this batch: collectors/yahoo.py imports yfinance unguarded,
+      # so a suite that merely touches it needs a dep neither it nor its subject names.
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
         run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py -q
       # Daily engine setup-race recovery (2026-08-09): GitHub delivered engine and
