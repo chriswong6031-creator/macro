@@ -15,9 +15,11 @@ get freshly recreated virtual environments; only jobs whose install commands
 are byte-identical share an environment.
 
 Which jobs land in which pack is decided ONCE, by ``build_plan``, and published
-as a hashed ``CIPackPlan`` (``--plan-only``).  Each pack recomputes the same
-pure function and refuses to run when its hash disagrees (``--expect-plan-sha``),
-so twelve runners can never quietly disagree about what the suite is.
+as a hashed ``CIPackPlan`` (``--plan-only``).  The compatibility path still lets
+each pack recompute that plan.  ``--consume-plan-json`` instead treats the
+planner's document as the authoritative assignment: it verifies the externally
+pinned plan hash plus the checkout, manifest, and selector identities before it
+loads the named jobs, without re-running scope inference or partitioning.
 
 The validator is intentionally fail-closed.  A future job using services,
 containers, per-step conditions/environments, or an unfamiliar action must
@@ -850,13 +852,13 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
 # ---------------------------------------------------------------------------
 # Plan once, execute many (2026-08-11)
 #
-# Every pack used to re-derive the entire selection for itself: twelve runners
-# each loading the manifest, each running infer_job_scopes over 180 jobs, each
-# re-deciding the same partition from the same inputs.  That decision is a pure
-# function of (manifest, changed set, scope mode, pack count), so it is now
-# computed ONCE by `build_plan`, published by `ci-plan` as a hashed document,
-# and merely CHECKED by each pack (`--expect-plan-sha`).  Twelve runners
-# silently disagreeing about what the suite is becomes one loud red instead.
+# Every pack originally re-derived the entire selection for itself: twelve
+# runners each loaded the manifest, ran infer_job_scopes over 180 jobs, and
+# rebuilt the same partition. The compatibility path remains available while
+# the workflow migrates. The authoritative path computes once in `ci-plan`,
+# publishes the hashed JSON, and has each pack consume those exact assignments.
+# A pack still validates the current manifest definitions, but it never infers
+# ownership or partitions work again.
 #
 # What this does NOT buy at this revision, measured 2026-08-11 against the real
 # 180-job manifest: it saved ZERO packs THEN.  Scope inference derived scopes for
@@ -866,27 +868,52 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
 # (``exclude_peer_test_ownership``); a one-test-file PR must no longer emit
 # twelve packs.  The empty-pack machinery is load-bearing for that narrowing.
 #
-# Nor does planning once make the packs cheaper, and the arithmetic runs the
-# OTHER way, so do not write that it does.  `--expect-plan-sha` requires each
-# pack to RECOMPUTE the plan (a pack that trusted a handed-down partition would
-# prove nothing), and a pack has always had to derive the partition anyway to
-# know which jobs are its own.  So the twelve inference passes did not go away:
-# ci-plan adds a THIRTEENTH, and unlike the other twelve it is serialised ahead
-# of the whole matrix.  On a pull request that pass costs ~106 s locally over the
-# 180-job manifest (measured 2026-08-11; scope inference is the expensive half of
-# a plan, everything else is ~0.2 s).
-#
-# What plan-once buys at this revision is therefore exactly two things, both
-# correctness rather than speed: twelve runners can no longer silently disagree
-# about what the suite IS — a divergence is one loud red at pack N instead of a
-# green check name covering a partition nobody published — and there is a single
-# stable aggregate (`ci-gate`) for branch protection to name now that a PR may
-# legitimately publish a subset of ci-pack-0..11.  The saving arrives only when
-# selection narrows enough to empty a pack.
+# Trust does not come from the artifact's self-reported hash. Consume mode also
+# requires the independently published plan sha and verifies the checkout HEAD,
+# changed-from/base, raw manifest bytes, selector bytes, complete inventory,
+# weights, and exact-once assignment before resolving one pack. That removes the
+# twelve redundant inference/partition passes without turning an edited or stale
+# artifact into executable authority.
 # ---------------------------------------------------------------------------
 
-PLAN_SCHEMA = "ci.pack_plan.v1"
+PLAN_SCHEMA = "ci.pack_plan.v2"
 PLAN_MARKER = "CI_PACK_PLAN="
+FULL_SUITE_PACK_COUNT = 12
+# Fleet containment: at the observed 53 concurrent PR runs, a four-worker cap
+# bounds demand to 212 pack requests instead of 318 at six. Main retains twelve.
+DEFAULT_MAX_PR_PACK_COUNT = 4
+TARGET_PACK_WEIGHT = 900
+TARGET_JOBS_PER_PACK = 24
+PLAN_SELECTOR_INPUTS = (
+    "scripts/run_ci_pack.py",
+    "scripts/ci_scope_dependencies.py",
+    "scripts/audit_unrun_tests.py",
+)
+PLAN_DOCUMENT_KEYS = frozenset(
+    {
+        "schema",
+        "head_sha",
+        "changed_from",
+        "scope_mode",
+        "worker_policy",
+        "manifest_sha256",
+        "selector_sha256",
+        "reason",
+        "scope_summary",
+        "legacy_job_count",
+        "eligible_job_count",
+        "eligible_jobs",
+        "predicted_job_count",
+        "predicted_jobs",
+        "skipped_job_count",
+        "skipped_jobs",
+        "packs",
+        "nonempty_pack_indices",
+        "matrix",
+        "has_work",
+        "plan_sha256",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -894,8 +921,12 @@ class CIPackPlan:
     """One immutable CI decision, shared verbatim by ci-plan and every pack."""
 
     schema: str
+    head_sha: str
     changed_from: str | None
     scope_mode: str
+    worker_policy: str
+    manifest_sha256: str
+    selector_sha256: str
     reason: str
     scope_summary: str
     legacy_job_count: int
@@ -905,15 +936,14 @@ class CIPackPlan:
     pack_weights: tuple[int, ...]
     nonempty_pack_indices: tuple[int, ...]
     plan_sha256: str
-    # Neither serialised nor hashed.  `scoped_jobs` carries the RESOLVED jobs so
-    # main() executes the very objects the plan partitioned instead of inferring
-    # scopes a second time and hoping the second pass agrees.  `predicted_job_ids`
-    # carries what select_jobs chose BEFORE a shadow/off override widened
-    # `eligible_job_ids` back to the full manifest — that difference is the
-    # entire output of the shadow lane.  Both are compare=False so two plans
-    # built from the same inputs stay equal and the hash remains the identity.
+    # `scoped_jobs` is neither serialised nor hashed.  It carries the RESOLVED
+    # jobs so main() executes the very objects the plan partitioned instead of
+    # inferring scopes a second time and hoping the second pass agrees.
     scoped_jobs: tuple[LegacyJob, ...] = field(default=(), compare=False, repr=False)
-    predicted_job_ids: tuple[str, ...] = field(default=(), compare=False, repr=False)
+    # What select_jobs chose BEFORE shadow/off widened eligible_job_ids back to
+    # the full manifest. It is serialised and hashed because shadow execution
+    # emits one result per predicted assignment.
+    predicted_job_ids: tuple[str, ...] = field(default=(), repr=False)
     # The resolved diff. Not hashed: eligible_job_ids already captures its
     # effect. Published via $GITHUB_OUTPUT so packs can shallow-checkout
     # instead of re-running `git diff` against a fetch-depth-0 history.
@@ -936,19 +966,25 @@ class CIPackPlan:
     def to_dict(self) -> dict[str, Any]:
         """The published plan document.
 
-        `scoped_jobs` and `predicted_job_ids` are deliberately absent: this
-        document is a contract between two runners, and a LegacyJob's definition
-        mapping is neither stable nor meaningful across that boundary.
+        `scoped_jobs` is deliberately absent: this document is a contract
+        between two runners, and a LegacyJob's definition mapping is neither
+        stable nor meaningful across that boundary.
         """
         return {
             "schema": self.schema,
+            "head_sha": self.head_sha,
             "changed_from": self.changed_from,
             "scope_mode": self.scope_mode,
+            "worker_policy": self.worker_policy,
+            "manifest_sha256": self.manifest_sha256,
+            "selector_sha256": self.selector_sha256,
             "reason": self.reason,
             "scope_summary": self.scope_summary,
             "legacy_job_count": self.legacy_job_count,
             "eligible_job_count": len(self.eligible_job_ids),
             "eligible_jobs": list(self.eligible_job_ids),
+            "predicted_job_count": len(self.predicted_job_ids),
+            "predicted_jobs": list(self.predicted_job_ids),
             "skipped_job_count": len(self.skipped_job_ids),
             "skipped_jobs": list(self.skipped_job_ids),
             "packs": [
@@ -968,10 +1004,15 @@ class CIPackPlan:
 
 def plan_hash_payload(
     *,
+    head_sha: str,
     changed_from: str | None,
     scope_mode: str,
+    worker_policy: str,
+    manifest_sha256: str,
+    selector_sha256: str,
     pack_count: int,
     eligible_job_ids: Iterable[str],
+    predicted_job_ids: Iterable[str],
     pack_jobs: Iterable[Iterable[str]],
     pack_weights: Iterable[int],
 ) -> dict[str, Any]:
@@ -987,12 +1028,17 @@ def plan_hash_payload(
     """
     return {
         "schema": PLAN_SCHEMA,
+        "head_sha": head_sha,
         "changed_from": changed_from,
         "scope_mode": scope_mode,
+        "worker_policy": worker_policy,
+        "manifest_sha256": manifest_sha256,
+        "selector_sha256": selector_sha256,
         "pack_count": pack_count,
         # PLAN order, never sorted: partition_jobs is greedy over
         # (-weight, ordinal), so the sequence itself is load-bearing.
         "eligible_job_ids": list(eligible_job_ids),
+        "predicted_job_ids": list(predicted_job_ids),
         "pack_jobs": [list(jobs) for jobs in pack_jobs],
         "pack_weights": list(pack_weights),
     }
@@ -1004,6 +1050,103 @@ def _canonical_digest(payload: dict[str, Any]) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
+def _file_sha256(path: Path) -> str:
+    try:
+        content = path.read_bytes()
+    except OSError as exc:
+        raise ManifestError(f"cannot hash {path}: {exc}") from exc
+    return hashlib.sha256(content).hexdigest()
+
+
+def _repository_root(path: Path) -> Path:
+    """Resolve the checkout that owns ``path`` without trusting process cwd."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(path.resolve().parent), "rev-parse", "--show-toplevel"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ManifestError(f"cannot resolve repository for {path}: {exc}") from exc
+    root = Path(result.stdout.strip()).resolve()
+    if not root.is_dir():
+        raise ManifestError(
+            f"git returned a missing repository root for {path}: {root}"
+        )
+    return root
+
+
+def _checkout_head_sha(repository_root: Path) -> str:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repository_root), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ManifestError(f"cannot resolve checkout HEAD: {exc}") from exc
+    head_sha = result.stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", head_sha):
+        raise ManifestError(f"git returned an invalid HEAD sha: {head_sha!r}")
+    return head_sha
+
+
+def _selector_sha256(repository_root: Path) -> str:
+    """Commit the repository-owned code that decides selection and coverage."""
+    return _canonical_digest(
+        {
+            "files": {
+                relative: _file_sha256(repository_root / relative)
+                for relative in PLAN_SELECTOR_INPUTS
+            }
+        }
+    )
+
+
+def choose_worker_count(
+    jobs: Iterable[LegacyJob],
+    *,
+    full_suite: bool,
+    full_suite_pack_count: int = FULL_SUITE_PACK_COUNT,
+    max_pr_pack_count: int = DEFAULT_MAX_PR_PACK_COUNT,
+    target_pack_weight: int = TARGET_PACK_WEIGHT,
+    target_jobs_per_pack: int = TARGET_JOBS_PER_PACK,
+) -> int:
+    """Size a PR matrix from both estimated duration and per-job overhead.
+
+    Main and an explicit full-suite mode retain the established twelve-worker
+    audit.  A scoped PR can grow only to ``max_pr_pack_count``; within that cap,
+    either enough predicted runtime OR enough individual jobs adds a worker.
+    One logical pack represents an affirmative no-work plan, whose emitted
+    matrix is still empty because the pack itself carries no jobs.
+    """
+    if min(
+        full_suite_pack_count,
+        max_pr_pack_count,
+        target_pack_weight,
+        target_jobs_per_pack,
+    ) < 1:
+        raise ValueError("worker-count policy values must be positive")
+    if full_suite:
+        return full_suite_pack_count
+    selected = list(jobs)
+    if not selected:
+        return 1
+    weight_workers = (
+        sum(job.weight for job in selected) + target_pack_weight - 1
+    ) // target_pack_weight
+    job_workers = (
+        len(selected) + target_jobs_per_pack - 1
+    ) // target_jobs_per_pack
+    return min(
+        max_pr_pack_count,
+        len(selected),
+        max(1, weight_workers, job_workers),
+    )
+
+
 def build_plan(
     jobs: Iterable[LegacyJob],
     changed: list[str] | None,
@@ -1011,6 +1154,11 @@ def build_plan(
     changed_from: str | None,
     scope_mode: str,
     pack_count: int = 12,
+    dynamic_pack_count: bool = False,
+    max_pr_pack_count: int = DEFAULT_MAX_PR_PACK_COUNT,
+    head_sha: str = "",
+    manifest_sha256: str = "",
+    selector_sha256: str = "",
 ) -> CIPackPlan:
     """Decide, once, what this CI run executes.
 
@@ -1046,20 +1194,40 @@ def build_plan(
             f"{reason}"
         )
 
+    worker_policy = "dynamic" if dynamic_pack_count else "fixed"
+    if dynamic_pack_count:
+        pack_count = choose_worker_count(
+            eligible,
+            full_suite=(changed_from is None or scope_mode in {"off", "shadow"}),
+            full_suite_pack_count=pack_count,
+            max_pr_pack_count=max_pr_pack_count,
+        )
+
     # Balance across the SELECTED set, not the full manifest — otherwise a
     # scoped run would leave whole packs empty while one pack carried it all.
     packs = partition_jobs(eligible, pack_count)
     pack_jobs = tuple(tuple(job.job_id for job in pack) for pack in packs)
     pack_weights = tuple(sum(job.weight for job in pack) for pack in packs)
     eligible_job_ids = tuple(job.job_id for job in eligible)
+    flattened_job_ids = tuple(job_id for pack in pack_jobs for job_id in pack)
+    if (
+        len(flattened_job_ids) != len(set(flattened_job_ids))
+        or len(flattened_job_ids) != len(eligible_job_ids)
+        or set(flattened_job_ids) != set(eligible_job_ids)
+    ):
+        raise ManifestError("planner did not assign every eligible job exactly once")
     selected_ids = set(eligible_job_ids)
     skipped_job_ids = tuple(
         job.job_id for job in jobs if job.job_id not in selected_ids
     )
     return CIPackPlan(
         schema=PLAN_SCHEMA,
+        head_sha=head_sha,
         changed_from=changed_from,
         scope_mode=scope_mode,
+        worker_policy=worker_policy,
+        manifest_sha256=manifest_sha256,
+        selector_sha256=selector_sha256,
         reason=reason,
         scope_summary=scope_summary,
         legacy_job_count=len(jobs),
@@ -1072,10 +1240,15 @@ def build_plan(
         ),
         plan_sha256=_canonical_digest(
             plan_hash_payload(
+                head_sha=head_sha,
                 changed_from=changed_from,
                 scope_mode=scope_mode,
+                worker_policy=worker_policy,
+                manifest_sha256=manifest_sha256,
+                selector_sha256=selector_sha256,
                 pack_count=pack_count,
                 eligible_job_ids=eligible_job_ids,
+                predicted_job_ids=predicted_job_ids,
                 pack_jobs=pack_jobs,
                 pack_weights=pack_weights,
             )
@@ -1092,8 +1265,11 @@ def plan_from_workflow(
     changed_from: str | None,
     scope_mode: str,
     pack_count: int = 12,
+    dynamic_pack_count: bool = False,
+    max_pr_pack_count: int = DEFAULT_MAX_PR_PACK_COUNT,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
+    repository_root = _repository_root(workflow)
     legacy = load_legacy_jobs(workflow)
     changed = resolve_changed_files(changed_from)
     return build_plan(
@@ -1102,6 +1278,341 @@ def plan_from_workflow(
         changed_from=changed_from,
         scope_mode=scope_mode,
         pack_count=pack_count,
+        dynamic_pack_count=dynamic_pack_count,
+        max_pr_pack_count=max_pr_pack_count,
+        head_sha=_checkout_head_sha(repository_root),
+        manifest_sha256=_file_sha256(workflow),
+        selector_sha256=_selector_sha256(repository_root),
+    )
+
+
+def _document_string(document: dict[str, Any], key: str) -> str:
+    value = document.get(key)
+    if type(value) is not str:
+        raise ManifestError(f"authoritative plan field {key!r} must be a string")
+    return value
+
+
+def _document_int(document: dict[str, Any], key: str) -> int:
+    value = document.get(key)
+    if type(value) is not int or value < 0:
+        raise ManifestError(
+            f"authoritative plan field {key!r} must be a non-negative integer"
+        )
+    return value
+
+
+def _document_string_list(document: dict[str, Any], key: str) -> tuple[str, ...]:
+    value = document.get(key)
+    if not isinstance(value, list) or any(type(item) is not str for item in value):
+        raise ManifestError(
+            f"authoritative plan field {key!r} must be a list of strings"
+        )
+    return tuple(value)
+
+
+def _validated_hex(value: str, *, label: str, lengths: tuple[int, ...]) -> str:
+    if len(value) not in lengths or not re.fullmatch(r"[0-9a-f]+", value):
+        expected = " or ".join(str(length) for length in lengths)
+        raise ManifestError(
+            f"{label} must be a lowercase {expected}-character hex digest"
+        )
+    return value
+
+
+def load_authoritative_plan(
+    workflow: Path,
+    plan_path: Path,
+    *,
+    expected_plan_sha: str,
+    expected_head_sha: str | None = None,
+    expected_base_sha: str | None = None,
+) -> CIPackPlan:
+    """Verify and materialise a planner-emitted assignment without replanning.
+
+    The caller-supplied plan sha is an independent trust anchor: an artifact
+    editor cannot change assignments and simply recompute the document's own
+    hash.  Checkout/manifest/selector identities then make a valid old artifact
+    unusable against a different tree.  Only after those gates pass are job ids
+    mapped back to their current, validated manifest definitions.
+    """
+    try:
+        document = json.loads(plan_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ManifestError(
+            f"cannot load authoritative plan {plan_path}: {exc}"
+        ) from exc
+    if not isinstance(document, dict):
+        raise ManifestError("authoritative plan must be a JSON object")
+    keys = frozenset(document)
+    if keys != PLAN_DOCUMENT_KEYS:
+        missing = sorted(PLAN_DOCUMENT_KEYS - keys)
+        unexpected = sorted(keys - PLAN_DOCUMENT_KEYS)
+        details: list[str] = []
+        if missing:
+            details.append("missing " + ", ".join(missing))
+        if unexpected:
+            details.append("unexpected " + ", ".join(unexpected))
+        raise ManifestError(
+            "authoritative plan fields are invalid: " + "; ".join(details)
+        )
+
+    schema = _document_string(document, "schema")
+    if schema != PLAN_SCHEMA:
+        raise ManifestError(
+            f"unsupported authoritative plan schema {schema!r}; "
+            f"expected {PLAN_SCHEMA!r}"
+        )
+    published_plan_sha = _validated_hex(
+        _document_string(document, "plan_sha256"),
+        label="authoritative plan sha",
+        lengths=(64,),
+    )
+    expected_plan_sha = _validated_hex(
+        expected_plan_sha, label="expected plan sha", lengths=(64,)
+    )
+    if published_plan_sha != expected_plan_sha:
+        raise ManifestError(
+            "authoritative plan sha does not match the independently published sha "
+            f"({published_plan_sha} != {expected_plan_sha})"
+        )
+
+    head_sha = _validated_hex(
+        _document_string(document, "head_sha"),
+        label="authoritative plan head sha",
+        lengths=(40, 64),
+    )
+    changed_from = document.get("changed_from")
+    if changed_from is not None and type(changed_from) is not str:
+        raise ManifestError(
+            "authoritative plan field 'changed_from' must be a string or null"
+        )
+    scope_mode = _document_string(document, "scope_mode")
+    if scope_mode not in {"active", "shadow", "off"}:
+        raise ManifestError(f"authoritative plan has invalid scope mode {scope_mode!r}")
+    worker_policy = _document_string(document, "worker_policy")
+    if worker_policy not in {"fixed", "dynamic"}:
+        raise ManifestError(
+            f"authoritative plan has invalid worker policy {worker_policy!r}"
+        )
+    manifest_sha256 = _validated_hex(
+        _document_string(document, "manifest_sha256"),
+        label="authoritative manifest sha",
+        lengths=(64,),
+    )
+    selector_sha256 = _validated_hex(
+        _document_string(document, "selector_sha256"),
+        label="authoritative selector sha",
+        lengths=(64,),
+    )
+
+    repository_root = _repository_root(workflow)
+    actual_head_sha = _checkout_head_sha(repository_root)
+    if head_sha != actual_head_sha:
+        raise ManifestError(
+            "authoritative plan is stale for checkout HEAD "
+            f"({head_sha} != {actual_head_sha})"
+        )
+    if expected_head_sha is not None and expected_head_sha != actual_head_sha:
+        raise ManifestError(
+            "checkout HEAD does not match --expect-head-sha "
+            f"({actual_head_sha} != {expected_head_sha})"
+        )
+    if expected_base_sha is not None and changed_from != expected_base_sha:
+        raise ManifestError(
+            "authoritative plan base does not match --expect-base-sha "
+            f"({changed_from!r} != {expected_base_sha!r})"
+        )
+    actual_manifest_sha = _file_sha256(workflow)
+    if manifest_sha256 != actual_manifest_sha:
+        raise ManifestError(
+            "authoritative plan manifest hash is stale or tampered "
+            f"({manifest_sha256} != {actual_manifest_sha})"
+        )
+    actual_selector_sha = _selector_sha256(repository_root)
+    if selector_sha256 != actual_selector_sha:
+        raise ManifestError(
+            "authoritative plan selector hash is stale or tampered "
+            f"({selector_sha256} != {actual_selector_sha})"
+        )
+
+    reason = _document_string(document, "reason")
+    scope_summary = _document_string(document, "scope_summary")
+    legacy_job_count = _document_int(document, "legacy_job_count")
+    eligible_job_ids = _document_string_list(document, "eligible_jobs")
+    predicted_job_ids = _document_string_list(document, "predicted_jobs")
+    skipped_job_ids = _document_string_list(document, "skipped_jobs")
+    if _document_int(document, "eligible_job_count") != len(eligible_job_ids):
+        raise ManifestError("authoritative plan eligible job count is inconsistent")
+    if _document_int(document, "predicted_job_count") != len(predicted_job_ids):
+        raise ManifestError("authoritative plan predicted job count is inconsistent")
+    if _document_int(document, "skipped_job_count") != len(skipped_job_ids):
+        raise ManifestError("authoritative plan skipped job count is inconsistent")
+
+    jobs = load_legacy_jobs(workflow)
+    manifest_ids = tuple(job.job_id for job in jobs)
+    if legacy_job_count != len(manifest_ids):
+        raise ManifestError(
+            "authoritative plan legacy job count does not match the current manifest"
+        )
+    for label, values in (
+        ("eligible", eligible_job_ids),
+        ("predicted", predicted_job_ids),
+        ("skipped", skipped_job_ids),
+    ):
+        if len(values) != len(set(values)):
+            raise ManifestError(
+                f"authoritative plan contains duplicate {label} job ids"
+            )
+        unknown = sorted(set(values) - set(manifest_ids))
+        if unknown:
+            raise ManifestError(
+                f"authoritative plan contains unknown {label} job ids: "
+                + ", ".join(unknown)
+            )
+    eligible_set = set(eligible_job_ids)
+    expected_eligible_order = tuple(
+        job_id for job_id in manifest_ids if job_id in eligible_set
+    )
+    expected_skipped = tuple(
+        job_id for job_id in manifest_ids if job_id not in eligible_set
+    )
+    if eligible_job_ids != expected_eligible_order:
+        raise ManifestError(
+            "authoritative plan eligible jobs are not in manifest order"
+        )
+    if skipped_job_ids != expected_skipped:
+        raise ManifestError(
+            "authoritative plan skipped jobs are not the exact manifest complement"
+        )
+    predicted_set = set(predicted_job_ids)
+    if predicted_job_ids != tuple(
+        job_id for job_id in manifest_ids if job_id in predicted_set
+    ):
+        raise ManifestError(
+            "authoritative plan predicted jobs are not in manifest order"
+        )
+    if scope_mode == "active" and predicted_job_ids != eligible_job_ids:
+        raise ManifestError(
+            "active authoritative plan prediction must equal its eligible assignment"
+        )
+
+    raw_packs = document.get("packs")
+    if not isinstance(raw_packs, list) or not raw_packs:
+        raise ManifestError("authoritative plan field 'packs' must be a non-empty list")
+    pack_jobs_list: list[tuple[str, ...]] = []
+    pack_weights_list: list[int] = []
+    by_id = {job.job_id: job for job in jobs}
+    for expected_index, raw_pack in enumerate(raw_packs):
+        if not isinstance(raw_pack, dict) or set(raw_pack) != {
+            "index",
+            "weight",
+            "jobs",
+        }:
+            raise ManifestError(
+                f"authoritative plan pack {expected_index} must contain "
+                "index, weight, jobs"
+            )
+        if type(raw_pack["index"]) is not int or raw_pack["index"] != expected_index:
+            raise ManifestError(
+                "authoritative plan pack indices must be contiguous from zero"
+            )
+        if type(raw_pack["weight"]) is not int or raw_pack["weight"] < 0:
+            raise ManifestError(
+                f"authoritative plan pack {expected_index} weight must be non-negative"
+            )
+        raw_job_ids = raw_pack["jobs"]
+        if not isinstance(raw_job_ids, list) or any(
+            type(job_id) is not str for job_id in raw_job_ids
+        ):
+            raise ManifestError(
+                f"authoritative plan pack {expected_index} jobs must be strings"
+            )
+        pack_job_ids = tuple(raw_job_ids)
+        unknown = sorted(set(pack_job_ids) - set(by_id))
+        if unknown:
+            raise ManifestError(
+                f"authoritative plan pack {expected_index} contains unknown jobs: "
+                + ", ".join(unknown)
+            )
+        calculated_weight = sum(by_id[job_id].weight for job_id in pack_job_ids)
+        if raw_pack["weight"] != calculated_weight:
+            raise ManifestError(
+                f"authoritative plan pack {expected_index} weight is inconsistent"
+            )
+        pack_jobs_list.append(pack_job_ids)
+        pack_weights_list.append(raw_pack["weight"])
+
+    pack_jobs = tuple(pack_jobs_list)
+    pack_weights = tuple(pack_weights_list)
+    flattened = tuple(job_id for pack in pack_jobs for job_id in pack)
+    if len(flattened) != len(set(flattened)):
+        raise ManifestError("authoritative plan assigns a selected job more than once")
+    if len(flattened) != len(eligible_job_ids) or set(flattened) != eligible_set:
+        raise ManifestError(
+            "authoritative plan packs do not assign every eligible job exactly once"
+        )
+    nonempty_pack_indices = tuple(
+        index for index, pack in enumerate(pack_jobs) if pack
+    )
+    raw_nonempty = document.get("nonempty_pack_indices")
+    if not isinstance(raw_nonempty, list) or any(
+        type(index) is not int for index in raw_nonempty
+    ):
+        raise ManifestError(
+            "authoritative plan nonempty_pack_indices must be a list of integers"
+        )
+    if tuple(raw_nonempty) != nonempty_pack_indices:
+        raise ManifestError("authoritative plan nonempty pack indices are inconsistent")
+    expected_matrix = {
+        "include": [{"pack": index} for index in nonempty_pack_indices]
+    }
+    if document.get("matrix") != expected_matrix:
+        raise ManifestError("authoritative plan matrix is inconsistent")
+    if type(document.get("has_work")) is not bool:
+        raise ManifestError("authoritative plan has_work must be a boolean")
+    if document["has_work"] != bool(nonempty_pack_indices):
+        raise ManifestError("authoritative plan has_work is inconsistent")
+
+    calculated_plan_sha = _canonical_digest(
+        plan_hash_payload(
+            head_sha=head_sha,
+            changed_from=changed_from,
+            scope_mode=scope_mode,
+            worker_policy=worker_policy,
+            manifest_sha256=manifest_sha256,
+            selector_sha256=selector_sha256,
+            pack_count=len(pack_jobs),
+            eligible_job_ids=eligible_job_ids,
+            predicted_job_ids=predicted_job_ids,
+            pack_jobs=pack_jobs,
+            pack_weights=pack_weights,
+        )
+    )
+    if calculated_plan_sha != published_plan_sha:
+        raise ManifestError(
+            "authoritative plan contents do not match its sha "
+            f"({calculated_plan_sha} != {published_plan_sha})"
+        )
+    return CIPackPlan(
+        schema=schema,
+        head_sha=head_sha,
+        changed_from=changed_from,
+        scope_mode=scope_mode,
+        worker_policy=worker_policy,
+        manifest_sha256=manifest_sha256,
+        selector_sha256=selector_sha256,
+        reason=reason,
+        scope_summary=scope_summary,
+        legacy_job_count=legacy_job_count,
+        eligible_job_ids=eligible_job_ids,
+        skipped_job_ids=skipped_job_ids,
+        pack_jobs=pack_jobs,
+        pack_weights=pack_weights,
+        nonempty_pack_indices=nonempty_pack_indices,
+        plan_sha256=published_plan_sha,
+        scoped_jobs=tuple(jobs),
+        predicted_job_ids=predicted_job_ids,
     )
 
 
@@ -1446,6 +1957,20 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--workflow", type=Path, required=True)
     parser.add_argument("--pack-index", type=int, default=0)
     parser.add_argument("--pack-count", type=int, default=2)
+    parser.add_argument(
+        "--dynamic-pack-count",
+        action="store_true",
+        help=(
+            "size a scoped PR matrix from selected weight/job count; main and "
+            "explicit full-suite modes retain --pack-count"
+        ),
+    )
+    parser.add_argument(
+        "--max-pr-pack-count",
+        type=int,
+        default=DEFAULT_MAX_PR_PACK_COUNT,
+        help="hard worker cap for a dynamically sized pull-request plan",
+    )
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     # Absent = run the full suite. main's baseline and workflow_dispatch pass
@@ -1475,9 +2000,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--consume-plan-json",
+        type=Path,
+        default=None,
+        metavar="PATH",
+        help=(
+            "execute the assignments in a planner-emitted document after "
+            "verifying its immutable identities; never infer or repartition"
+        ),
+    )
+    parser.add_argument(
         "--expect-plan-sha",
         default=None,
-        help="refuse to execute unless the recomputed plan hashes to this sha256",
+        help=(
+            "refuse to execute unless the recomputed or consumed plan hashes "
+            "to this independently published sha256"
+        ),
+    )
+    parser.add_argument(
+        "--expect-head-sha",
+        default=None,
+        help="with --consume-plan-json, pin the expected checkout HEAD",
+    )
+    parser.add_argument(
+        "--expect-base-sha",
+        default=None,
+        help="with --consume-plan-json, pin the expected changed-from/base sha",
     )
     parser.add_argument(
         "--github-output",
@@ -1503,7 +2051,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--execute and --validate-only are mutually exclusive")
     if args.execute and args.plan_only:
         parser.error("--execute and --plan-only are mutually exclusive")
-    if not 0 <= args.pack_index < args.pack_count:
+    if args.pack_count < 1:
+        parser.error("--pack-count must be positive")
+    if args.max_pr_pack_count < 1:
+        parser.error("--max-pr-pack-count must be positive")
+    if args.consume_plan_json is not None:
+        if not args.expect_plan_sha:
+            parser.error("--consume-plan-json requires --expect-plan-sha")
+        conflicts = []
+        if args.plan_only:
+            conflicts.append("--plan-only")
+        if args.changed_from is not None:
+            conflicts.append("--changed-from")
+        if args.emit_plan_json is not None:
+            conflicts.append("--emit-plan-json")
+        if args.github_output is not None:
+            conflicts.append("--github-output")
+        if args.dynamic_pack_count:
+            conflicts.append("--dynamic-pack-count")
+        if conflicts:
+            parser.error(
+                "--consume-plan-json is mutually exclusive with "
+                + ", ".join(conflicts)
+            )
+    elif args.expect_head_sha is not None or args.expect_base_sha is not None:
+        parser.error("--expect-head-sha/--expect-base-sha require --consume-plan-json")
+    elif not 0 <= args.pack_index < args.pack_count:
         parser.error("--pack-index must be between 0 and pack-count - 1")
     return args
 
@@ -1511,20 +2084,32 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        plan = plan_from_workflow(
-            args.workflow,
-            changed_from=args.changed_from,
-            scope_mode=args.scope_mode,
-            pack_count=args.pack_count,
-        )
-        shadow = args.scope_mode == "shadow" and args.changed_from
+        consuming_plan = args.consume_plan_json is not None
+        if consuming_plan:
+            plan = load_authoritative_plan(
+                args.workflow,
+                args.consume_plan_json,
+                expected_plan_sha=args.expect_plan_sha,
+                expected_head_sha=args.expect_head_sha,
+                expected_base_sha=args.expect_base_sha,
+            )
+        else:
+            plan = plan_from_workflow(
+                args.workflow,
+                changed_from=args.changed_from,
+                scope_mode=args.scope_mode,
+                pack_count=args.pack_count,
+                dynamic_pack_count=args.dynamic_pack_count,
+                max_pr_pack_count=args.max_pr_pack_count,
+            )
+        shadow = plan.scope_mode == "shadow" and plan.changed_from
         if shadow:
             predicted_ids = frozenset(plan.predicted_job_ids)
             print(
                 "CI_SCOPE_SHADOW_PLAN="
                 + json.dumps(
                     {
-                        "changed_from": args.changed_from,
+                        "changed_from": plan.changed_from,
                         "predicted_selected": sorted(predicted_ids),
                         "predicted_skipped": sorted(
                             job.job_id
@@ -1559,11 +2144,20 @@ def main(argv: list[str] | None = None) -> int:
                 f"{list(plan.nonempty_pack_indices)}; plan sha256={plan.plan_sha256}."
             )
             return 0
+        if not 0 <= args.pack_index < plan.pack_count:
+            raise ManifestError(
+                f"--pack-index {args.pack_index} is outside authoritative "
+                f"plan range 0..{plan.pack_count - 1}"
+            )
         # A pack whose recomputed plan differs from the published one would run a
         # DIFFERENT suite under a check name the sweeper reads as proof of this
         # one. Refuse here, before a single legacy step runs, and name both
         # hashes so the divergence is diagnosable rather than merely red.
-        if args.expect_plan_sha and args.expect_plan_sha != plan.plan_sha256:
+        if (
+            not consuming_plan
+            and args.expect_plan_sha
+            and args.expect_plan_sha != plan.plan_sha256
+        ):
             print(
                 "::error title=ci-plan-parity::pack "
                 f"{args.pack_index} recomputed plan {plan.plan_sha256} but ci-plan "

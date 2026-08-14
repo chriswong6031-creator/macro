@@ -933,6 +933,31 @@ def _full_plan() -> object:
     )
 
 
+def _write_plan(path: Path, plan: object) -> Path:
+    path.write_text(json.dumps(plan.to_dict(), indent=2) + "\n")
+    return path
+
+
+def _document_plan_sha(document: dict[str, object]) -> str:
+    packs = document["packs"]
+    assert isinstance(packs, list)
+    return PACK._canonical_digest(
+        PACK.plan_hash_payload(
+            head_sha=document["head_sha"],
+            changed_from=document["changed_from"],
+            scope_mode=document["scope_mode"],
+            worker_policy=document["worker_policy"],
+            manifest_sha256=document["manifest_sha256"],
+            selector_sha256=document["selector_sha256"],
+            pack_count=len(packs),
+            eligible_job_ids=document["eligible_jobs"],
+            predicted_job_ids=document["predicted_jobs"],
+            pack_jobs=[entry["jobs"] for entry in packs],
+            pack_weights=[entry["weight"] for entry in packs],
+        )
+    )
+
+
 def _never_execute(*args: object, **kwargs: object) -> int:
     raise AssertionError("execute_pack must not be reached on this path")
 
@@ -950,10 +975,15 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
     """The hash is what makes twelve independent derivations one decision."""
     plan = _full_plan()
     payload = PACK.plan_hash_payload(
+        head_sha=plan.head_sha,
         changed_from=plan.changed_from,
         scope_mode=plan.scope_mode,
+        worker_policy=plan.worker_policy,
+        manifest_sha256=plan.manifest_sha256,
+        selector_sha256=plan.selector_sha256,
         pack_count=plan.pack_count,
         eligible_job_ids=plan.eligible_job_ids,
+        predicted_job_ids=plan.predicted_job_ids,
         pack_jobs=plan.pack_jobs,
         pack_weights=plan.pack_weights,
     )
@@ -1010,6 +1040,79 @@ def test_full_suite_plan_emits_all_twelve_packs() -> None:
     assert plan.has_work is True
     assert plan.matrix() == {"include": [{"pack": index} for index in range(12)]}
     assert plan.skipped_job_ids == ()
+
+
+def test_dynamic_worker_policy_uses_weight_and_job_count_with_a_pr_cap() -> None:
+    weighted = [_plan_job(f"weighted-{index}", index, weight=10) for index in range(3)]
+    assert PACK.choose_worker_count(
+        weighted,
+        full_suite=False,
+        target_pack_weight=15,
+        target_jobs_per_pack=100,
+    ) == 2
+
+    numerous = [_plan_job(f"small-{index}", index, weight=1) for index in range(5)]
+    assert PACK.choose_worker_count(
+        numerous,
+        full_suite=False,
+        target_pack_weight=10_000,
+        target_jobs_per_pack=2,
+    ) == 3
+    assert PACK.choose_worker_count(
+        numerous,
+        full_suite=False,
+        max_pr_pack_count=2,
+        target_pack_weight=1,
+        target_jobs_per_pack=1,
+    ) == 2
+    assert PACK.choose_worker_count(numerous, full_suite=True) == 12
+    assert PACK.choose_worker_count([], full_suite=False) == 1
+
+
+def test_dynamic_pr_plan_is_bounded_and_assigns_every_selected_id_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job(f"owner-{index}", index, weight=1, paths=("engine/**",))
+        for index in range(50)
+    ]
+    plan = PACK.build_plan(
+        jobs,
+        ["engine/example.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+        dynamic_pack_count=True,
+    )
+    assert plan.worker_policy == "dynamic"
+    assert plan.pack_count == 3
+    assert plan.pack_count <= PACK.DEFAULT_MAX_PR_PACK_COUNT == 4
+    flattened = [job_id for pack in plan.pack_jobs for job_id in pack]
+    assert flattened
+    assert len(flattened) == len(set(flattened)) == len(plan.eligible_job_ids)
+    assert set(flattened) == set(plan.eligible_job_ids)
+
+    main_plan = PACK.build_plan(
+        jobs,
+        None,
+        changed_from=None,
+        scope_mode="active",
+        pack_count=12,
+        dynamic_pack_count=True,
+    )
+    assert main_plan.worker_policy == "dynamic"
+    assert main_plan.pack_count == 12
+
+    explicit_full_plan = PACK.build_plan(
+        jobs,
+        ["engine/example.py"],
+        changed_from="base-sha",
+        scope_mode="off",
+        pack_count=12,
+        dynamic_pack_count=True,
+    )
+    assert explicit_full_plan.pack_count == 12
 
 
 def test_only_non_empty_pack_indices_reach_the_matrix(
@@ -1310,6 +1413,133 @@ def test_plan_and_execution_select_the_exact_same_jobs(
     assert sorted(seen) == sorted(plan.eligible_job_ids)
 
 
+def test_authoritative_consume_executes_assignment_without_replanning(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _full_plan()
+    plan_path = _write_plan(tmp_path / "plan.json", plan)
+
+    def forbidden(*args: object, **kwargs: object) -> object:
+        raise AssertionError("authoritative consumption attempted to replan")
+
+    monkeypatch.setattr(PACK, "infer_job_scopes", forbidden)
+    monkeypatch.setattr(PACK, "partition_jobs", forbidden)
+    monkeypatch.setattr(PACK, "resolve_changed_files", forbidden)
+    captured: list[str] = []
+
+    def capture(jobs: list[object], **kwargs: object) -> int:
+        captured.extend(job.job_id for job in jobs)
+        return 0
+
+    monkeypatch.setattr(PACK, "execute_pack", capture)
+    # No --pack-count: consume mode validates the index against the document,
+    # not the compatibility-path default of two.
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-index", "11",
+                "--execute",
+                "--consume-plan-json", str(plan_path),
+                "--expect-plan-sha", plan.plan_sha256,
+                "--expect-head-sha", plan.head_sha,
+            ]
+        )
+        == 0
+    )
+    assert tuple(captured) == plan.pack_jobs[11]
+
+
+def test_authoritative_consume_rejects_duplicate_assignment(
+    tmp_path: Path,
+) -> None:
+    plan = _full_plan()
+    document = plan.to_dict()
+    duplicate_id = document["packs"][0]["jobs"][0]
+    duplicate_weight = next(
+        job.weight for job in plan.scoped_jobs if job.job_id == duplicate_id
+    )
+    document["packs"][1]["jobs"].append(duplicate_id)
+    document["packs"][1]["weight"] += duplicate_weight
+    path = tmp_path / "duplicate.json"
+    path.write_text(json.dumps(document))
+    with pytest.raises(PACK.ManifestError, match="more than once"):
+        PACK.load_authoritative_plan(
+            MANIFEST, path, expected_plan_sha=plan.plan_sha256
+        )
+
+
+def test_authoritative_consume_external_sha_blocks_rehashed_tamper(
+    tmp_path: Path,
+) -> None:
+    plan = _full_plan()
+    document = plan.to_dict()
+    document["worker_policy"] = "dynamic"
+    document["plan_sha256"] = _document_plan_sha(document)
+    assert document["plan_sha256"] != plan.plan_sha256
+    path = tmp_path / "rehashed.json"
+    path.write_text(json.dumps(document))
+    with pytest.raises(PACK.ManifestError, match="independently published sha"):
+        PACK.load_authoritative_plan(
+            MANIFEST, path, expected_plan_sha=plan.plan_sha256
+        )
+
+
+@pytest.mark.parametrize(
+    ("field", "message"),
+    [
+        ("head_sha", "stale for checkout HEAD"),
+        ("manifest_sha256", "manifest hash is stale or tampered"),
+        ("selector_sha256", "selector hash is stale or tampered"),
+    ],
+)
+def test_authoritative_consume_rejects_stale_identity(
+    tmp_path: Path,
+    field: str,
+    message: str,
+) -> None:
+    plan = _full_plan()
+    document = plan.to_dict()
+    document[field] = "0" * len(document[field])
+    path = tmp_path / f"stale-{field}.json"
+    path.write_text(json.dumps(document))
+    with pytest.raises(PACK.ManifestError, match=message):
+        PACK.load_authoritative_plan(
+            MANIFEST, path, expected_plan_sha=plan.plan_sha256
+        )
+
+
+def test_authoritative_consume_can_pin_the_planner_base(
+    tmp_path: Path,
+) -> None:
+    plan = _full_plan()
+    path = _write_plan(tmp_path / "plan.json", plan)
+    with pytest.raises(PACK.ManifestError, match="expect-base-sha"):
+        PACK.load_authoritative_plan(
+            MANIFEST,
+            path,
+            expected_plan_sha=plan.plan_sha256,
+            expected_base_sha="unexpected-base",
+        )
+
+
+def test_consume_cli_requires_external_sha_and_defers_pack_range_to_plan() -> None:
+    with pytest.raises(SystemExit):
+        PACK.parse_args(
+            ["--workflow", str(MANIFEST), "--consume-plan-json", "plan.json"]
+        )
+    args = PACK.parse_args(
+        [
+            "--workflow", str(MANIFEST),
+            "--pack-index", "11",
+            "--consume-plan-json", "plan.json",
+            "--expect-plan-sha", "0" * 64,
+        ]
+    )
+    assert args.pack_index == 11
+
+
 def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> None:
     first, second = tmp_path / "one", tmp_path / "two"
     for path in (first, second):
@@ -1435,13 +1665,12 @@ def test_emit_plan_json_prints_exactly_one_machine_line(
     ]
     assert len(markers) == 1
     document = json.loads(markers[0][len(PACK.PLAN_MARKER):])
-    assert set(document) == {
-        "schema", "changed_from", "scope_mode", "reason", "scope_summary",
-        "legacy_job_count", "eligible_job_count", "eligible_jobs",
-        "skipped_job_count", "skipped_jobs", "packs", "nonempty_pack_indices",
-        "matrix", "has_work", "plan_sha256",
-    }
-    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v1"
+    assert set(document) == PACK.PLAN_DOCUMENT_KEYS
+    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v2"
+    assert len(document["head_sha"]) in {40, 64}
+    assert len(document["manifest_sha256"]) == 64
+    assert len(document["selector_sha256"]) == 64
+    assert document["worker_policy"] == "fixed"
     assert [entry["index"] for entry in document["packs"]] == list(range(12))
 
     # A path gets the same document, indented, and no marker line on stdout.
