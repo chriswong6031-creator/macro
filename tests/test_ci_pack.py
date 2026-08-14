@@ -2455,6 +2455,7 @@ CURATED_EXCLUSIVE = {
     "unrun-subsector-themes",
     "inline-js",
     "unrun-picks-boards",
+    "intelligence-registry",
 }
 
 
@@ -2535,7 +2536,7 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     templates/index.html 129 jobs / 6,677 weight-seconds; build_free_content.py
     129 / 6,430; engine/prophet/plan_book.py 123 / 6,416. Bounds below carry
     headroom so an unrelated job gaining or losing a scope does not red this,
-    while a regression that gives the fallback tier back to the curated eight
+    while a regression that gives the fallback tier back to the curated nine
     (~1,550 weight-seconds and three of twelve packs per shape) does.
 
     The templates/index.html job ceiling is 128 rather than 126 because
@@ -2543,7 +2544,10 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     sweep still owned-matches this probe, and the two sibling lanes
     (`express-render-guards`, `attested-history-guards`) still fallback-match
     it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
-    a return of the curated eight. Weight and pack ceilings are unchanged.
+    a return of the curated nine. `intelligence-registry` is the ninth
+    exclusive: it only fallback-matched this probe, so curating it keeps the
+    ceiling at 128 rather than raising it. Weight and pack ceilings are
+    unchanged.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
