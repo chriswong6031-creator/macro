@@ -145,6 +145,12 @@ MUTATIONS: list[tuple[str, str, str, str]] = [
         "alternatives: []\nunused_alternatives:",
     ),
     (
+        "bad-wave",
+        "workstreams/WS-AGENT-OS.md",
+        "  - id: W4",
+        "  - id: 4",
+    ),
+    (
         "dangling-wave-dep",
         "workstreams/WS-PROPHET-US-ENTRY-TIMING.md",
         "    depends_on: [W1]",
@@ -153,8 +159,8 @@ MUTATIONS: list[tuple[str, str, str, str]] = [
     (
         "wave-cycle",
         "workstreams/WS-AGENT-OS.md",
-        "    depends_on: [W1, W2]",
-        "    depends_on: [W1, W2]\n"
+        "    depends_on: [W1, W2, W2B]",
+        "    depends_on: [W1, W2, W2B]\n"
         "  - id: WX\n    title: cycle a\n    status: todo\n    depends_on: [WY]\n"
         "  - id: WY\n    title: cycle b\n    status: todo\n    depends_on: [WX]",
     ),

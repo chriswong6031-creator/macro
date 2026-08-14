@@ -556,8 +556,15 @@ def check_workstream(rec: dict[str, Any], path: Path, programs: set[str] | None)
                 out.append(Problem(path, "bad-wave", f"{where} must be a mapping", hard=True))
                 continue
             wid = wave.get("id")
-            if not wid:
-                out.append(Problem(path, "bad-wave", f"{where} missing 'id'", hard=True))
+            if not isinstance(wid, str) or not wid.strip() or wid != wid.strip():
+                out.append(
+                    Problem(
+                        path,
+                        "bad-wave",
+                        f"{where} 'id' must be a non-empty string without surrounding whitespace",
+                        hard=True,
+                    )
+                )
                 continue
             if not wave.get("title"):
                 out.append(Problem(path, "bad-wave", f"{where} ({wid}) missing 'title'", hard=True))
