@@ -159,8 +159,8 @@ MUTATIONS: list[tuple[str, str, str, str]] = [
     (
         "wave-cycle",
         "workstreams/WS-AGENT-OS.md",
-        "    depends_on: [W1, W2, W2B]",
-        "    depends_on: [W1, W2, W2B]\n"
+        "    depends_on: [W1, W2]",
+        "    depends_on: [W1, W2]\n"
         "  - id: WX\n    title: cycle a\n    status: todo\n    depends_on: [WY]\n"
         "  - id: WY\n    title: cycle b\n    status: todo\n    depends_on: [WX]",
     ),
