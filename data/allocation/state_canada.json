@@ -8,6 +8,7 @@
     "ca_consumer",
     "ca_gold",
     "ca_insurers",
+    "ca_materials",
     "ca_oil_gas",
     "ca_pipelines",
     "ca_rails_ind",
@@ -18,9 +19,9 @@
   ],
   "held": [
     "ca_banks",
-    "ca_base_metals",
     "ca_gold",
-    "ca_pipelines"
+    "ca_base_metals",
+    "ca_tech"
   ],
   "leader": "ca_banks",
   "names": {

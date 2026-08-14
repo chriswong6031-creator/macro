@@ -7,7 +7,7 @@
     "nfp_change_lag3": 265.0,
     "claims_survey_week_icsa": null,
     "claims_survey_week_ccsa": null,
-    "withheld_tax_yoy": -3.379402749481486,
+    "withheld_tax_yoy": 0.7396802672393177,
     "awhman_mom": 0.0,
     "adp_change": null
   },
@@ -21,5 +21,5 @@
     "nfp_change_lag3": "present",
     "withheld_tax_yoy": "unrevised"
   },
-  "inputs_hash": "9c3747d473f9936c4ecc1f0954719275194f93873d4f9fa30ab685513460beec"
+  "inputs_hash": "983fee8af3db4fb11513f28895da1a0aa15f32e0e5bc067c2f75b4f916cb310a"
 }

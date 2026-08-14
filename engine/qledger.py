@@ -763,28 +763,38 @@ def _ticker_market(ticker: Any, provenance: str | None = None) -> tuple[str | No
          like `CN_CENSORSHIP_RISK`, never a real subject) -> contributes NO
          market information, same as an absent leg (`MARKET_UNDETERMINED_NO_LEG`
          — `resolve_claim_market` skips it and lets another leg decide)
-      6. NO suffix, ticker-SHAPED, and the claim's OWN provenance
-         (`_provenance_market`, desk/claim_family) names a market -> THAT
-         market. Provenance is the claim's own construction, not an inference
-         from the string — this is the round-5 fix.
-      7. NO suffix, ticker-SHAPED, no provenance, but `valid_us_ticker`
-         accepts it -> US (the only shape-only inference left, and it is
-         corroborated: it holds for every real US ticker with no suffix,
-         AAPL/SPY/MSFT included, and it EXCLUDES every bare digit-first or
-         symbol-first code — `600519`, `000001`, `0700`, `^HSI` all fail this
-         gate, so none of them can reach US by shape alone any more)
+      6. NO suffix, ticker-SHAPED, and `valid_us_ticker` accepts it -> US, but
+         as an INFERENCE, not a fact — so it goes through `_corroborate` with
+         `shape_is_decisive=False` and a disagreeing provenance REFUSES it
+         (`AAPL` on a CN desk is a contradiction). The gate is bounded on both
+         sides: the enumeration above has taken every known exchange suffix,
+         and `valid_us_ticker` must accept the whole symbol, so no bare
+         digit-first or symbol-first code — `600519`, `000001`, `0700` — can
+         reach US by shape alone.
+      7. NO suffix, ticker-SHAPED, shape SILENT, and the claim's OWN provenance
+         (`_provenance_market`) names a market -> THAT market, but ONLY where
+         `_shape_admits_market` agrees the string could be one (a CN desk's
+         6-digit `600519` is admitted; a US desk's is not, because
+         `valid_us_ticker` positively excludes a digit-first root). Provenance
+         corroborates a silent shape; it never overrides a speaking one.
       8. anything else                               -> REFUSED
          (`MARKET_UNDETERMINED_NO_PROVENANCE`) — a ticker-shaped leg with no
          suffix, no provenance and no US shape has nothing to determine its
          market from, and this clock fails closed rather than guess.
 
-    Rules 6-8 are the round-5 repair: the OLD rule 3 ("no suffix -> US") is
-    gone. Provenance (6) is tried BEFORE the shape fallback (7) — a claim
-    whose desk/family names a market is not asking this function to guess —
-    and the shape fallback is bounded on both sides exactly as rule 4 always
-    was: the enumeration above it has taken every known exchange suffix, and
-    `valid_us_ticker` has to accept the whole symbol, so no bare numeric code
-    can pass it.
+    ORDER MATTERS AND IS NOT THE ROUND-5 ORDER. Round 5 tried provenance BEFORE
+    the shape fallback, which is how the string `SPY` itself resolved CN under a
+    CN desk. The shape is now read FIRST, and provenance is reached only where
+    the shape says nothing. P0a-2's rule, stated once:
+
+        a HARD exchange fact in the string (rules 1, 4, and the `^` index table)
+        WINS outright — provenance may not veto it;
+        an INFERRED shape reading (rule 6) must AGREE with a speaking provenance;
+        a SILENT shape (rule 7) lets provenance decide, if the shape admits it.
+
+    A claim whose legs then straddle two markets is refused one level up, by
+    `resolve_claim_market`, as MIXED — which is a fact about the claim, not a
+    disagreement between two classifiers.
 
     Rule 2 is not hypothetical: four live `china_special_sits` claims are priced
     on `920007.BJ`-style Beijing Stock Exchange tickers, a suffix `MARKET_SUFFIX`
@@ -893,36 +903,62 @@ def _corroborate(ticker: str, shape_market: str, provenance: str | None,
     to be sufficient. A US desk claiming `600519` is not a market to guess. It
     is a CONTRADICTION, and the only safe answer is refusal.
 
-    `shape_is_decisive` distinguishes the two strengths of shape evidence:
+    BUT "NEITHER IS AUTHORITATIVE ALONE" IS A RULE ABOUT INFERENCES, NOT ABOUT
+    FACTS, and `shape_is_decisive` is where that distinction lives:
 
-      * True  — a hard exchange fact is in the string itself (a mapped suffix
-        `.SS`/`.SZ`/`.HK`, an enumerated `^` index, a share-class suffix on a
-        symbol the house US gate accepts). Where provenance disagrees this is a
-        contradiction; where provenance is silent the string stands alone,
-        because an exchange suffix is not an inference.
-      * False — the shape reading is itself an inference (a bare symbol
-        `valid_us_ticker` happens to accept). It still contradicts a disagreeing
-        provenance, and it still stands when provenance is silent, but it is
-        recorded as the weaker reading so the distinction stays in the code
-        rather than in a comment.
+      * True — A HARD EXCHANGE FACT IS IN THE STRING ITSELF: a mapped suffix
+        (`.SS`/`.SZ`/`.HK`), an enumerated `^` index, or a share-class suffix on
+        a symbol the house US gate accepts. **The shape WINS; provenance may not
+        veto it.** `0700.HK` names the Hong Kong exchange in the ticker. That is
+        DIRECT evidence about the INSTRUMENT. `DESK_MARKET` is indirect evidence
+        about the PRODUCER — a summary of what a desk has typically priced, not
+        a promise that it can never price anything else. Letting the weaker,
+        indirect signal veto the stronger, direct one is the same "one source is
+        sufficient" error the history above is made of, merely inverted.
+      * False — THE SHAPE READING IS ITSELF AN INFERENCE: a bare symbol that
+        `valid_us_ticker` happens to accept. Here the two signals are of
+        comparable strength, so the agree-or-refuse rule binds: a disagreeing
+        provenance makes it a CONTRADICTION and the leg is refused.
 
-    Both arms currently behave the same when provenance is silent. That is not
-    an oversight and the parameter is not dead: it is the seam a future rule
-    ("a WEAK shape reading must be corroborated, a hard suffix need not be")
-    would turn on, and it makes the strength of each call site explicit at the
-    call site. `test_corroborate_records_the_strength_of_every_call_site` pins
-    every caller's value so the distinction cannot silently rot.
+    THE DEFECT THIS REPAIRS — AND IT WAS THIS FUNCTION'S OWN. The first cut of
+    P0a-2 documented exactly the distinction above, threaded `shape_is_decisive`
+    through all four call sites, added a test pinning every call site's value…
+    and then **never read the parameter in the body**. Every caller therefore
+    got the agree-or-refuse arm, so a hard suffix WAS vetoed by provenance:
+
+        {'desk': 'china_news', 'scope': {'key': '0700.HK'}, 'bench': '2800.HK'}
+            -> (None, 'shape_provenance_contradiction:HK!=CN')
+
+    while the SAME claim on the unlisted desk `altdata` resolved `('HK', '')`.
+    Admissibility depended on whether a claim's desk happened to be enumerated,
+    which is backwards; and since `DESK_MARKET` carries no HK entry at all while
+    HK is a first-class market in `CLOCK_CALENDARS`, **no enumerated desk could
+    ever claim a Hong Kong security.** The pinning test could not catch it: it
+    asserts the parameter's value at each call site, not its effect, so it is a
+    guard that cannot fail on the defect it exists to gate. It is now paired with
+    `test_a_hard_exchange_suffix_is_never_vetoed_by_provenance`, which asserts
+    the BEHAVIOUR.
+
+    A genuinely cross-market claim is still refused — just for the honest reason.
+    `600519.SS` under a US desk resolves CN on its own leg, and
+    `resolve_claim_market` then sees {CN: 600519.SS, US: SPY} and refuses as
+    MIXED, because those two legs have no single session ruler. Nothing is
+    graded on the wrong calendar in either design; the difference is that this
+    one does not also refuse the well-formed single-market claims.
     """
-    if provenance is None:
+    if provenance is None or provenance == shape_market:
         return shape_market, ""
-    if provenance == shape_market:
+    if shape_is_decisive:
+        # A hard exchange fact outranks a desk-level generalisation. The leg
+        # stands; a claim whose OTHER legs sit in another market is still caught
+        # one level up, by `resolve_claim_market`'s MIXED refusal.
         return shape_market, ""
     return None, (f"{MARKET_UNDETERMINED_CONTRADICTION}"
                   f":{shape_market}!={provenance}"
-                  f"{CLOCK_REASON_SEP}{ticker} reads as {shape_market} from its "
-                  f"symbol but the claim's own provenance names {provenance}; "
-                  f"neither signal is authoritative alone, so this is refused "
-                  f"rather than resolved on whichever source wins the tie")
+                  f"{CLOCK_REASON_SEP}{ticker} reads as {shape_market} only by "
+                  f"shape INFERENCE while the claim's own provenance names "
+                  f"{provenance}; two signals of equal strength disagree, so "
+                  f"this is refused rather than resolved on whichever wins the tie")
 
 
 def clock_reason_head(reason: Any) -> str:
@@ -1039,18 +1075,18 @@ def check_by_is_a_graded_exit(horizon_d: int) -> bool:
 
     THE SCOPE OF THE HEADLINE GUARANTEE, MADE EXECUTABLE rather than asserted in
     prose. `check_by` is resolved at the claim's OWN `horizon_d`; the grader
-    grades at `in_scope_horizons(horizon_d)`, which is every GRADE_HORIZON
-    (5/21/63) at or below it. Those coincide only when `horizon_d` is itself one
-    of the graded rungs — or is below the smallest one, where `in_scope_horizons`
-    falls back to the claim's own number.
+    grades at `in_scope_horizons(horizon_d)`. As of P0b that list now includes
+    the claim's own ruler whenever it sits at or below the ladder's ceiling
+    (`GRADE_HORIZONS[-1]`, 63 today) — so this predicate is True for EVERY
+    horizon_d <= 63 (on-rung, off-rung, or below the smallest rung — 7, 30, 60
+    all now hold), not only the exact rungs 5/21/63.
 
-    So for horizon_d = 7, 126 or any other off-rung value the deadline a human
-    reads is a REAL resolved exchange exit under the declared unit, but it is not
-    a date any grade row is measured to: the 126-trading-day policy claim is
-    graded at 5, 21 and 63 sessions and its check_by sits at session 126.
-    Aligning them would mean changing `in_scope_horizons` / `GRADE_HORIZONS`,
-    which is P0b and explicitly out of scope here. This predicate is exported so
-    a caller (and a test) can ask the question instead of trusting a docstring.
+    It is False only above that ceiling: a 126-trading-day policy claim still
+    grades at 5, 21 and 63 sessions while its check_by sits at session 126, and
+    that gap is intentional, not a bug — extending `GRADE_HORIZONS` /
+    `in_scope_horizons` past 63d in the live nightly grader is forbidden by
+    ruling LH-U6 (`config/ruling_graph.yml`). This predicate is exported so a
+    caller (and a test) can ask the question instead of trusting a docstring.
     """
     try:
         h = int(horizon_d)
@@ -1212,11 +1248,43 @@ def body_hash(body: str) -> str:
 
 def in_scope_horizons(horizon_d: int) -> list[int]:
     """The horizons a claim of this horizon_d grades at: every GRADE_HORIZON
-    ≤ horizon_d, and always at least the claim's own horizon (so a horizon_d < 5
-    claim still grades once, at its own clock)."""
+    <= horizon_d, PLUS the claim's own declared ruler (P0b) — but only while
+    that ruler sits AT OR BELOW the ladder's existing ceiling.
+
+    THE DEFECT THIS REPAIRS. The docstring here used to promise "always at
+    least the claim's own horizon", but the code only delivered that when the
+    ladder came back EMPTY (horizon_d < 5). For every other value a claim was
+    read at its own declared ruler only if that ruler happened to land exactly
+    on 5, 21 or 63 — so a policy claim at horizon_d=30 graded at [5, 21] and
+    NEVER at 30, forever, no matter how much time passed. That is not an
+    accrual fact (more data would not have fixed it); it is a construction
+    defect, and on the live corpus it made 9 family/horizon pairs (`policy`
+    @ 30/42/45/60, `narrative_source_call` @ 26/27/28, `whitehouse` @ 6/7)
+    permanently unreachable at their own ruler.
+
+    THE RULE (CEO 2026-08-13 §6, P0b). `GRADE_HORIZONS` itself is UNCHANGED —
+    still exactly (5, 21, 63); this function never adds a rung to the ladder,
+    it only ever adds ONE extra element to a single claim's own grade list.
+      * declared ruler <= the ladder's ceiling (`GRADE_HORIZONS[-1]`, 63 today)
+        -> the ruler is included, even when off-rung (7 -> [5, 7]; 30 ->
+        [5, 21, 30]).
+      * declared ruler > the ceiling -> NOT added here. `policy` claims at
+        84/90/126 stay off-render / research scope, exactly as before — see
+        `config/ruling_graph.yml` ruling LH-U6, which forbids extending
+        GRADE_HORIZONS (or what feeds the live nightly grader) past 63d. This
+        function's own-ruler addition never crosses that ceiling, so it
+        cannot violate LH-U6 by construction: nothing above `GRADE_HORIZONS[-1]`
+        is ever appended.
+      * a horizon_d below the smallest rung (< 5) still falls through the
+        empty-ladder branch unchanged and grades once, at its own clock — the
+        pre-P0b behaviour for that case is preserved exactly.
+    """
     hs = [h for h in GRADE_HORIZONS if h <= horizon_d]
     if not hs:
-        hs = [horizon_d]
+        return [horizon_d]
+    ceiling = GRADE_HORIZONS[-1]
+    if horizon_d <= ceiling and horizon_d not in hs:
+        hs = hs + [horizon_d]
     return hs
 
 
@@ -1637,17 +1705,19 @@ def make_claim(*, desk: str, asof: str, scope_type: str, scope_key: str,
       EXACTLY WHAT THAT GUARANTEES, AND WHERE IT STOPS. `check_by` is resolved at
       the claim's OWN `horizon_d`; the grader grades at
       `in_scope_horizons(horizon_d)`. Those are the SAME date — check_by IS a
-      graded exit, equal to some row's `clock_exit_date` — only when
-      `check_by_is_a_graded_exit(horizon_d)` holds, i.e. when horizon_d is one of
-      the GRADE_HORIZONS (5/21/63) or below the smallest of them. For an off-rung
-      horizon it is NOT: a 126-trading-day policy claim grades at 5, 21 and 63
-      sessions while its check_by sits at session 126, and a 7-calendar-day
-      whitehouse claim grades at 5 while its check_by sits at day 7. The deadline
-      is still a real, correctly resolved exchange exit under the declared unit —
-      it is simply the claim's own horizon rather than a graded rung. Closing
-      that gap means changing `in_scope_horizons`/`GRADE_HORIZONS`, which is P0b
-      and out of scope here; the predicate is exported so the scope is checkable
-      instead of merely stated.
+      graded exit, equal to some row's `clock_exit_date` — whenever
+      `check_by_is_a_graded_exit(horizon_d)` holds, which as of P0b is every
+      horizon_d at or below the ladder's ceiling (`GRADE_HORIZONS[-1]`, 63
+      today): `in_scope_horizons` now always includes the claim's own ruler
+      there, on-rung or off. It is NOT the same date only ABOVE that ceiling: a
+      126-trading-day policy claim still grades at 5, 21 and 63 sessions while
+      its check_by sits at session 126. The deadline is still a real, correctly
+      resolved exchange exit under the declared unit — it is simply the
+      claim's own horizon rather than a graded rung. Closing that remaining gap
+      would mean extending `GRADE_HORIZONS` itself past 63d in the live nightly
+      grader, which ruling LH-U6 (`config/ruling_graph.yml`) forbids; the
+      predicate is exported so the scope is checkable instead of merely
+      stated.
 
       A CALLER-SUPPLIED `check_by` DOES NOT OVERRIDE THE CLOCK. On a claim that
       DECLARES a unit, the resolver's exit always wins and the supplied value is
@@ -3023,21 +3093,66 @@ def promotion_check(claim_family: str, horizon: int,
         dates.add(_date_cluster(c.get("asof", "")))
 
         hit = g.get("hit")
-        if hit is not None:
+        if hit is None:
+            continue
+
+        if control_only:
+            # P0c-1 (research/PREREG_P0C1_DIRECTION_CORRECT_CONTROL_HITS.md).
+            # THE DEFECT this replaces: `if ctrl_excess > 0: hits += 1` never
+            # read the claim's `direction`, so a direction=-1 (bearish) call
+            # that correctly called subject_ret < control_ret scored a MISS,
+            # and a WRONG bearish call scored a HIT — an inverted hit series
+            # for every family holding short claims. The §3 Wilson bound (the
+            # promotion gate) was therefore computed on inverted arithmetic
+            # for any family holding short claims.
+            #
+            # `bench_ret` used to be read AND GATED ON here but never used in
+            # the comparison — the gate is dropped (not the field's meaning
+            # elsewhere): it is not part of the control leg, and gating on it
+            # only caused a row with a valid control leg but a null bench to
+            # wrongly fall through to the primary-hit fallback below.
+            ctrl = g.get("control_ret")
+            subj = g.get("subject_ret")
+            if ctrl is None or subj is None:
+                # Missing control leg: this row CANNOT be scored on the
+                # control leg. Prereg §2/§3 — EXCLUDED from numerator AND
+                # denominator, never converted into a miss, and never
+                # silently rescored on the primary (bench-relative) `hit` the
+                # way the old `elif hit: hits += 1` fallback did (that
+                # fallback is exactly what let a control-only reading mix in
+                # bench-relative outcomes). Skip both `graded_hits` and `hits`
+                # for this row — it contributes to neither the numerator nor
+                # the denominator of the control-only hit rate. (n_dates is
+                # unaffected: it is computed above, over the whole grade set,
+                # unconditionally — this fix changes how a row's hit counts,
+                # never which claims are eligible.)
+                continue
+
+            direction = c.get("direction")
+            if not direction:
+                # direction == 0 (salience) or absent: "salience-only claims
+                # have no direction to be right about" (prereg §2). No
+                # directional hit, AND excluded from the denominator so a
+                # salience-dominated family cannot inflate its control-only
+                # hit rate's base via rows it has nothing to say about
+                # (prereg §6.3). In production these rows already carry
+                # hit=None (grade_claim() salience path, prereg §5) and never
+                # reach this branch at all — this check makes that invariant
+                # explicit rather than assumed, so this function's
+                # control-only semantics do not silently depend on an
+                # upstream contract it cannot see.
+                continue
+
             graded_hits += 1
-            # Use control_ret leg when control_only=True; fall back to primary leg
-            if control_only:
-                ctrl = g.get("control_ret")
-                subj = g.get("subject_ret")
-                bench = g.get("bench_ret")
-                if ctrl is not None and subj is not None and bench is not None:
-                    # excess vs control = subject_ret - control_ret
-                    ctrl_excess = subj - ctrl
-                    if ctrl_excess > 0:
-                        hits += 1
-                elif hit:
-                    hits += 1   # fall back to primary hit when control unavailable
-            elif hit:
+            raw_control_excess = subj - ctrl
+            # direction * raw_control_excess > 0  <=>  (direction==+1 and
+            # excess>0) or (direction==-1 and excess<0) — the mirrored rule,
+            # prereg §2. Strict `>` so an exact-zero excess is NOT a hit.
+            if direction * raw_control_excess > 0:
+                hits += 1
+        else:
+            graded_hits += 1
+            if hit:
                 hits += 1
 
     n_dates = len(dates)

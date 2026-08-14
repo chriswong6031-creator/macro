@@ -508,7 +508,8 @@ def is_postable_signal(plan: dict, *, today: str | None = None) -> bool:
     """True only if *plan* is a live, healthy, fresh, confident signal worth posting.
 
     Rejects: invalidated / stopped-out / expired / trimming plans, low-confidence
-    plans, and stale signals. This is the gate the QCOM failed signal skipped.
+    plans, stale signals, and stale-price-frame rows (no current closing print).
+    This is the gate the QCOM failed signal skipped.
     """
     if not isinstance(plan, dict):
         return False
@@ -517,6 +518,17 @@ def is_postable_signal(plan: dict, *, today: str | None = None) -> bool:
     phase = str(plan.get("phase", "")).lower()
     action = str(plan.get("recommended_action", "")).lower()
     if phase in _DEAD_PHASES or action in _DEAD_ACTIONS:
+        return False
+    # Stale-frame action safety: a row stamped with a price_frame that is not
+    # proven current has no current closing print behind it (halt, delisting,
+    # feed gap) — never marketable as a live signal, whatever its phase says.
+    nested = plan.get("state")
+    frame = plan.get("price_frame") or (
+        nested.get("price_frame") if isinstance(nested, dict) else None
+    )
+    if frame is not None and not (
+        isinstance(frame, dict) and frame.get("state") == "current"
+    ):
         return False
     if _LIVE_PHASES and phase and phase not in _LIVE_PHASES:
         return False

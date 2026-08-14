@@ -2,6 +2,35 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-14",
+      "tickers": [
+        "ADAM",
+        "AGNT",
+        "AMRC",
+        "BKSY",
+        "BWA",
+        "CAVA",
+        "CB",
+        "DFH",
+        "ESS",
+        "FSLR",
+        "FTI",
+        "GTES",
+        "IREN",
+        "MBC",
+        "META",
+        "NVR",
+        "OZK",
+        "PTEN",
+        "QBTS",
+        "QUBT",
+        "RKLB",
+        "TMUS",
+        "TTC",
+        "XRN"
+      ]
+    },
+    {
       "as_of": "2026-08-13",
       "tickers": [
         "AMRC",
@@ -88,21 +117,6 @@
         "APH",
         "PI",
         "UTI"
-      ]
-    },
-    {
-      "as_of": "2026-08-06",
-      "tickers": [
-        "ARES",
-        "CDW",
-        "CUBI",
-        "CWK",
-        "FCX",
-        "GE",
-        "HII",
-        "LPG",
-        "SSPC",
-        "XIIIU"
       ]
     }
   ]

@@ -573,7 +573,9 @@ def test_overrides_merge_onto_the_derived_row():
     errors = reg.apply_overrides(rows, {
         "macro:alpha": {
             "priority": "P0",
-            "archetype": "ranked_decision_board",
+            # DS-PR-1 re-key: `ranked_decision_board` became `discovery_board`
+            # when the archetype vocabulary closed (reg.ARCHETYPES).
+            "archetype": "discovery_board",
             "primary_user_question": "Which names are set up?",
             "evidence": ["docs/x.md"],
             "note": "seeded by hand",
@@ -581,7 +583,7 @@ def test_overrides_merge_onto_the_derived_row():
     }, source_name="test.yml")
     assert errors == []
     assert rows[0]["priority"] == "P0"
-    assert rows[0]["archetype"] == "ranked_decision_board"
+    assert rows[0]["archetype"] == "discovery_board"
     assert "docs/x.md" in rows[0]["source_evidence"]
     assert "seeded by hand" in rows[0]["notes"]
 

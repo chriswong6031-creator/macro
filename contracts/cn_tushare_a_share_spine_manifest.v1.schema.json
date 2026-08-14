@@ -20,6 +20,7 @@
     "complete",
     "reference",
     "endpoints",
+    "range_campaigns",
     "pit_lifecycle_reconciliation",
     "canonical_event_substrate",
     "daily_security_coverage",
@@ -37,6 +38,7 @@
     "deployment_status": {
       "enum": [
         "foundation_only_no_live_entitlement_or_scalable_backfill",
+        "foundation_only_range_shards_synthetic_no_live_canary",
         "operational_backfill_gate_code_reviewed"
       ]
     },
@@ -75,6 +77,7 @@
         "stock_st": {"$ref": "#/$defs/endpointReceipt"}
       }
     },
+    "range_campaigns": {"$ref": "#/$defs/rangeCampaigns"},
     "pit_lifecycle_reconciliation": {"$ref": "#/$defs/pitLifecycleReconciliation"},
     "canonical_event_substrate": {"$ref": "#/$defs/eventSubstrate"},
     "daily_security_coverage": {"$ref": "#/$defs/dailySecurityCoverage"},
@@ -102,7 +105,7 @@
         "point_in_time_universe": {"type": "object", "minProperties": 1},
         "source_row_accounting": {"type": "object", "minProperties": 1},
         "authorization": {"type": "object", "minProperties": 1},
-        "cap_fallback": {"type": "object", "minProperties": 1},
+        "cap_fallback": {"$ref": "#/$defs/capFallbackContract"},
         "price_basis": {"type": "object", "minProperties": 1},
         "price_limit": {"type": "object", "minProperties": 1}
       }
@@ -509,6 +512,200 @@
         "max_date": {"type": ["string", "null"], "format": "date"},
         "positive_volume_rows": {"type": ["integer", "null"], "minimum": 0},
         "semantic_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "rangeCampaigns": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["daily", "daily_basic", "stk_limit"],
+      "properties": {
+        "daily": {"$ref": "#/$defs/rangeCampaignSummaryOrNull"},
+        "daily_basic": {"$ref": "#/$defs/rangeCampaignSummaryOrNull"},
+        "stk_limit": {"$ref": "#/$defs/rangeCampaignSummaryOrNull"}
+      }
+    },
+    "rangeCampaignSummaryOrNull": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/rangeCampaignSummary"}]
+    },
+    "rangeCampaignSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "endpoint",
+        "campaign_id",
+        "status",
+        "requested_range_matches_manifest",
+        "start_date",
+        "end_date",
+        "trigger_unit",
+        "source_row_cap",
+        "split_width_sessions",
+        "split_rule",
+        "session_count",
+        "session_sha256",
+        "query_identity_count",
+        "query_identity_sha256",
+        "reference_generation_id",
+        "reference_generation_semantic_sha256",
+        "universe_witness_sha256",
+        "planned_leaf_count",
+        "unattempted_leaf_count",
+        "retryable_leaf_count",
+        "failed_leaf_count",
+        "completed_leaf_count",
+        "physical_attempt_count",
+        "retry_attempt_count",
+        "plan_receipt",
+        "cap_probe_count",
+        "cap_probe_receipt",
+        "terminal_campaign_receipt",
+        "observed_response_row_count",
+        "authoritative_row_count",
+        "duplicate_alias_observation_row_count",
+        "conflicting_alias_row_count",
+        "source_accounting_complete",
+        "transposed_session_count",
+        "all_day_receipts_bound"
+      ],
+      "properties": {
+        "endpoint": {"enum": ["daily", "daily_basic", "stk_limit"]},
+        "campaign_id": {"type": "string", "minLength": 1},
+        "status": {"enum": ["collecting", "complete", "failed"]},
+        "requested_range_matches_manifest": {"type": "boolean"},
+        "start_date": {"type": "string", "format": "date"},
+        "end_date": {"type": "string", "format": "date"},
+        "trigger_unit": {"type": "string", "minLength": 1},
+        "source_row_cap": {"type": "integer", "minimum": 2},
+        "split_width_sessions": {"type": "integer", "minimum": 1},
+        "split_rule": {
+          "const": "deterministic_contiguous_market_session_chunks_cap_minus_one_v1"
+        },
+        "session_count": {"$ref": "#/$defs/counter"},
+        "session_sha256": {"$ref": "#/$defs/sha256"},
+        "query_identity_count": {"$ref": "#/$defs/counter"},
+        "query_identity_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_generation_id": {"type": "string", "minLength": 1},
+        "reference_generation_semantic_sha256": {"$ref": "#/$defs/sha256"},
+        "universe_witness_sha256": {"$ref": "#/$defs/sha256"},
+        "planned_leaf_count": {"$ref": "#/$defs/counter"},
+        "unattempted_leaf_count": {"$ref": "#/$defs/counter"},
+        "retryable_leaf_count": {"$ref": "#/$defs/counter"},
+        "failed_leaf_count": {"$ref": "#/$defs/counter"},
+        "completed_leaf_count": {"$ref": "#/$defs/counter"},
+        "physical_attempt_count": {"$ref": "#/$defs/counter"},
+        "retry_attempt_count": {"$ref": "#/$defs/counter"},
+        "plan_receipt": {"$ref": "#/$defs/jsonFileReceipt"},
+        "cap_probe_count": {"const": 1},
+        "cap_probe_receipt": {"$ref": "#/$defs/capProbeReceipt"},
+        "terminal_campaign_receipt": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/terminalCampaignReceipt"}]
+        },
+        "observed_response_row_count": {"type": ["integer", "null"], "minimum": 0},
+        "authoritative_row_count": {"type": ["integer", "null"], "minimum": 0},
+        "duplicate_alias_observation_row_count": {
+          "type": ["integer", "null"], "minimum": 0
+        },
+        "conflicting_alias_row_count": {"type": ["integer", "null"], "minimum": 0},
+        "source_accounting_complete": {"type": "boolean"},
+        "transposed_session_count": {"$ref": "#/$defs/counter"},
+        "all_day_receipts_bound": {"type": "boolean"}
+      }
+    },
+    "capProbeReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256",
+        "bytes",
+        "request_id",
+        "response_row_count",
+        "response_status"
+      ],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"$ref": "#/$defs/counter"},
+        "request_id": {"$ref": "#/$defs/sha256"},
+        "response_row_count": {"$ref": "#/$defs/counter"},
+        "response_status": {"const": "non_authoritative_cap_probe"}
+      }
+    },
+    "terminalCampaignReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "path",
+        "byte_sha256",
+        "status",
+        "authoritative_row_count",
+        "duplicate_alias_observation_row_count"
+      ],
+      "properties": {
+        "campaign_id": {"type": "string", "minLength": 1},
+        "path": {"type": "string", "minLength": 1},
+        "byte_sha256": {"$ref": "#/$defs/sha256"},
+        "status": {"enum": ["complete", "alias_conflict"]},
+        "authoritative_row_count": {"$ref": "#/$defs/counter"},
+        "duplicate_alias_observation_row_count": {"$ref": "#/$defs/counter"}
+      }
+    },
+    "capFallbackContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "endpoints",
+        "whole_market_fast_path",
+        "cap_trigger_policy",
+        "method",
+        "split_rule",
+        "leaf_state_model",
+        "attempt_receipt_model",
+        "retry_priority",
+        "bse_alias_resolution",
+        "transposition_rule",
+        "request_estimate_formula",
+        "range_shard_implemented",
+        "synthetic_verification_complete",
+        "licensed_live_canary_complete",
+        "live_canary_required_for_promotion"
+      ],
+      "properties": {
+        "endpoints": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["daily", "daily_basic", "stk_limit"]}
+        },
+        "whole_market_fast_path": {
+          "const": "exact_trade_date_until_first_documented_cap"
+        },
+        "cap_trigger_policy": {
+          "const": "discard_probe_and_switch_entire_endpoint_requested_interval"
+        },
+        "method": {"const": "immutable_per_ticker_date_range_campaign"},
+        "split_rule": {
+          "const": "deterministic_contiguous_market_session_chunks_cap_minus_one_v1"
+        },
+        "leaf_state_model": {"const": "separate_atomic_json_per_leaf"},
+        "attempt_receipt_model": {
+          "const": "immutable_numbered_receipt_per_physical_request"
+        },
+        "retry_priority": {"const": "unattempted_then_fewest_attempts"},
+        "bse_alias_resolution": {
+          "const": "canonical_preferred_when_equal_conflicting_rows_retained_and_block"
+        },
+        "transposition_rule": {
+          "const": "terminal_campaign_then_exact_day_normalize_replace_and_receipt_bind"
+        },
+        "request_estimate_formula": {
+          "const": "H_e + I_e * ceil(S/(C_e-1)) + R_e"
+        },
+        "range_shard_implemented": {"type": "boolean"},
+        "synthetic_verification_complete": {"type": "boolean"},
+        "licensed_live_canary_complete": {"type": "boolean"},
+        "live_canary_required_for_promotion": {"type": "boolean"}
       }
     },
     "eventSubstrate": {

@@ -1,0 +1,259 @@
+{
+  "as_of": "2026-08-14",
+  "coverage": {
+    "end": "2026-08-13",
+    "note": "daily rollup covers 10 session-date(s) from 2026-08-03 to 2026-08-13; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
+    "start": "2026-08-03"
+  },
+  "schema": "chronicle.rollup.daily/v1",
+  "sessions": [
+    {
+      "date": "2026-08-13",
+      "events": [
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-2f224a033fcb",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-i3beom5skfx-38d370",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM International Market Intell | Morning Briefing Aug 13",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-7df46c597a12",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-97w8woj8a3k-626676",
+          "tickers": [],
+          "title": "Goldman Sachs: GS TMT SPEC SALES – Adyen topline good enough",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-13",
+          "id": "cev-research_vault-d9c35d7bc86d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ecx3kynusdj-b16e59",
+          "tickers": [],
+          "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-12",
+      "events": []
+    },
+    {
+      "date": "2026-08-11",
+      "events": [
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-2b1f0ed9a35c",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vko7e4zekvn-09bb9d",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Morning Briefing Aug 11",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-9bcacbdd5d30",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-nal7r2gm25q-0e6c2a",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intelligence Afternoon Briefing Aug 10",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-11",
+          "id": "cev-research_vault-de5823d063e8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-gbjaregqbxy-f1fd18",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM Europe Equity Research | Today’s Morning Meeting",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-10",
+      "events": [
+        {
+          "date": "2026-08-10",
+          "id": "cev-regime_flip-3df289330159",
+          "kind": "state_flip",
+          "source": "regime_flip",
+          "source_ref": "state_log#2026-08-10#regime_china",
+          "tickers": [],
+          "title": "CHINA regime: Q3 Stagflation → Q4 Growth-scare",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-10",
+          "id": "cev-research_vault-0589c0b9136b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-bofolrubwr5-0a382a",
+          "tickers": [],
+          "title": "Other: TDAGeneric NAM",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-10",
+          "id": "cev-research_vault-b2e3d2c73fe8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-iabsklnuj34-921c53",
+          "tickers": [],
+          "title": "Nomura: Charlie McElligott Equities Update",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-10",
+          "id": "cev-research_vault-bc00499ab68b",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ozycb5rdqy2-4f6534",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing 2026 08 10",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-09",
+      "events": [
+        {
+          "date": "2026-08-09",
+          "id": "cev-research_vault-6172555846c3",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-qizqgapurqm-a2313f",
+          "tickers": [],
+          "title": "Other: MRB Asset Allocation The Beginning Of The End August 7 2026",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-09",
+          "id": "cev-research_vault-cd5880e886d4",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-rijqwshec0p-9a8050",
+          "tickers": [],
+          "title": "Other: Investment Traffic Lights EN",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-07",
+      "events": []
+    },
+    {
+      "date": "2026-08-06",
+      "events": [
+        {
+          "date": "2026-08-06",
+          "id": "cev-research_vault-2fe6ddd4e3c8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-eglyaiphi8v-4403b5",
+          "tickers": [],
+          "title": "Goldman Sachs: Expedia Group (EXPE) Q2'26 Earnings Review Strong Execution and B2B Momentum Drive Beat and Raise Quarter",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-05",
+      "events": [
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-3dd0e2f4cf3d",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-tghtfv5ime3-1cfbdb",
+          "tickers": [],
+          "title": "UBS: Daily Asia",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-868333f1e226",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-vv4eaqbkwkj-879842",
+          "tickers": [],
+          "title": "Societe Generale: 4 Aug 2026 US Equity Strategy",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-dd581dc09dca",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-kvatyrzolpx-174a39",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-05",
+          "id": "cev-research_vault-ffe76dfaa1d8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-dmwuxfa2jd2-659cd1",
+          "tickers": [],
+          "title": "Societe Generale: Earnings Wrap Up 2Q26 reporting season Focus shifts to cash flows from capex",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-04",
+      "events": [
+        {
+          "date": "2026-08-04",
+          "id": "cev-research_vault-e2fa00b042dc",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-w1tihsut8gt-a94dcf",
+          "tickers": [],
+          "title": "J.P. Morgan: JPM JPM US Market Intell",
+          "weight_hint": 3
+        }
+      ]
+    },
+    {
+      "date": "2026-08-03",
+      "events": [
+        {
+          "date": "2026-08-03",
+          "id": "cev-research_vault-df7884c1dd18",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-ovegn6rwo5n-3ac8f3",
+          "tickers": [],
+          "title": "UBS: Daily US",
+          "weight_hint": 3
+        },
+        {
+          "date": "2026-08-03",
+          "id": "cev-research_vault-e857795ddfd8",
+          "kind": "report",
+          "source": "research_vault",
+          "source_ref": "marketdesk-wktopv06ueh-3ff2bc",
+          "tickers": [],
+          "title": "Other: VON32623269",
+          "weight_hint": 2
+        }
+      ]
+    }
+  ]
+}

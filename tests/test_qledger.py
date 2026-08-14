@@ -323,6 +323,180 @@ def test_promotion_gate_still_needs_the_date_floor(tmp_path):
 
 
 # --------------------------------------------------------------------------- #
+# P0c-1 — control_only hit counting must be DIRECTION-CORRECT
+# research/PREREG_P0C1_DIRECTION_CORRECT_CONTROL_HITS.md
+#
+# THE DEFECT: `if ctrl_excess > 0: hits += 1` never read the claim's own
+# `direction`, so a direction=-1 (bearish) call that correctly called
+# subject_ret < control_ret scored subj-ctrl<0 -> a MISS, and a WRONG bearish
+# call scored a HIT — an inverted hit series for any family holding short
+# claims. Fixed to `direction * (subject_ret - control_ret) > 0`. A second,
+# smaller fault in the same branch: `bench_ret` was gated on but never used,
+# so a row with a valid control leg but a null bench silently fell through to
+# the primary-hit fallback instead of being scored on the control leg.
+# --------------------------------------------------------------------------- #
+def _seed_control_rows(tmp_path, rows, *, family: str = "ctrlfam",
+                       horizon: int = 21) -> None:
+    """Write claims + grades directly for control_only=True fixtures — no price
+    layer needed, promotion_check reads only the two store files. `rows` is a
+    list of per-claim dicts; each may set `family` (default the `family` kwarg),
+    `claim_id`, `asof` (default one distinct date per row, 7 days apart),
+    `direction` (default 1), `subject_ret`, `control_ret`, `bench_ret` (default
+    0.01), and `hit` (the PRIMARY, bench-relative hit stored on the row —
+    defaults to True so the outer `if hit is not None` gate in promotion_check
+    does not itself exclude the row; these fixtures exist to exercise the
+    control-LEG logic specifically, not the primary-hit gate)."""
+    d = tmp_path / "data" / "qledger"
+    d.mkdir(parents=True, exist_ok=True)
+    claims, grades = [], []
+    for i, r in enumerate(rows):
+        fam = r.get("family", family)
+        cid = r.get("claim_id") or f"{fam}_{i:04d}"
+        asof = r.get("asof") or (
+            pd.Timestamp("2026-01-05") + pd.Timedelta(days=7 * i)
+        ).date().isoformat()
+        claims.append({"claim_id": cid, "desk": fam, "asof": asof,
+                       "scope": {"type": "entity", "key": "SUBJ"},
+                       "direction": r.get("direction", 1),
+                       "horizon_d": horizon, "bench": "SPY", "control": "CTRL",
+                       "timestamp_quality": "CRAWL_BOUNDED", "is_placebo": False,
+                       "status": "open", "claim_family": fam,
+                       "timestamp": "2026-01-01T00:00:00+00:00"})
+        grades.append({"claim_id": cid, "horizon_d": horizon,
+                       "graded_at": "2026-06-01T00:00:00+00:00",
+                       "subject_ret": r.get("subject_ret"),
+                       "bench_ret": r.get("bench_ret", 0.01),
+                       "control_ret": r.get("control_ret"),
+                       "excess": r.get("excess", 0.0),
+                       "hit": r.get("hit", True),
+                       "embargo_applied": False})
+    (d / "claims.jsonl").write_text("".join(json.dumps(x) + "\n" for x in claims))
+    (d / "grades.jsonl").write_text("".join(json.dumps(x) + "\n" for x in grades))
+
+
+def test_p0c1_mirrored_bullish_and_bearish_produce_the_same_control_only_hit_rate(
+        tmp_path):
+    """Mechanical acceptance #1/#2 (prereg §6). Same magnitudes: a direction=+1
+    family whose subject beats control by 0.05, and a direction=-1 family whose
+    subject TRAILS control by the same 0.05, are both 30/30 CORRECT calls and
+    must produce the SAME control-only hit rate — proven via an identical
+    Wilson CI lower bound at identical n_dates. Before the fix the bearish
+    family scored 0/30 (raw ctrl_excess = subj-ctrl = -0.05, and the old
+    `if ctrl_excess > 0` never read direction), inverted."""
+    rows = (
+        [{"family": "bull", "direction": 1, "subject_ret": 0.06,
+         "control_ret": 0.01} for _ in range(30)] +
+        [{"family": "bear", "direction": -1, "subject_ret": 0.01,
+         "control_ret": 0.06} for _ in range(30)]
+    )
+    _seed_control_rows(tmp_path, rows)
+
+    r_bull = q.promotion_check("bull", 21, root=tmp_path, control_only=True)
+    r_bear = q.promotion_check("bear", 21, root=tmp_path, control_only=True)
+
+    assert r_bull.n_dates == r_bear.n_dates == 30
+    assert r_bull.eligible is True and r_bear.eligible is True, (
+        r_bull.reason, r_bear.reason)
+    assert r_bull.wilson_ci_low == pytest.approx(r_bear.wilson_ci_low)
+    # mechanical acceptance #2: the bearish family of CORRECT calls reads as a
+    # near-1.0 hit rate, not 0.0 — this is the inversion, caught.
+    assert r_bear.wilson_ci_low == pytest.approx(q.wilson_ci_low(30, 30))
+
+
+def test_p0c1_salience_direction_zero_family_yields_no_directional_hits_and_no_denominator_inflation(  # noqa: E501
+        tmp_path):
+    """Mechanical acceptance #3: a direction=0 (salience) family must contribute
+    NO directional hit and must NOT inflate the control-only denominator, even
+    when the row's primary `hit` field is not None (defensive: in production
+    grade_claim() already stores hit=None for direction=0 salience claims, but
+    this function's control-only semantics must not silently depend on that
+    upstream invariant — prereg §2/§5)."""
+    rows = [{"direction": 0, "subject_ret": 0.06, "control_ret": 0.01, "hit": True}
+           for _ in range(30)]
+    _seed_control_rows(tmp_path, rows, family="salience")
+    r = q.promotion_check("salience", 21, root=tmp_path, control_only=True)
+
+    assert r.n_dates == 30            # n_dates is untouched — same claim set
+    assert r.wilson_ci_low is None    # no directional hits recorded
+    assert r.eligible is False
+    assert "no directional hits" in r.reason
+    assert "graded_hits=0" in r.reason
+
+
+def test_p0c1_missing_control_leg_changes_neither_numerator_nor_denominator(
+        tmp_path):
+    """Mechanical acceptance #4. A null `control_ret` row must not move the
+    control-only hit rate at all — proven by adding such rows on the SAME date
+    clusters an already-scored family holds (so n_dates cannot move either) and
+    checking the Wilson CI lower bound is unchanged. Before the fix these rows
+    fell back to the primary `hit` field (`elif hit: hits += 1`), silently
+    mixing bench-relative outcomes into the control-only rate."""
+    dates = [(pd.Timestamp("2026-01-05") + pd.Timedelta(days=7 * i)).date().isoformat()
+            for i in range(25)]
+    base_rows = [{"family": "base", "direction": 1, "subject_ret": 0.06,
+                 "control_ret": 0.01, "asof": d, "claim_id": f"base_{i}"}
+                for i, d in enumerate(dates)]
+    plus_rows = [{"family": "plus", "direction": 1, "subject_ret": 0.06,
+                 "control_ret": 0.01, "asof": d, "claim_id": f"plus_{i}"}
+                for i, d in enumerate(dates)]
+    # extra null-control rows, reusing the FIRST 10 dates already counted above
+    # — under the pre-fix fallback these would have counted as hits (hit=True).
+    extra_null_rows = [{"family": "plus", "direction": 1, "subject_ret": 0.06,
+                        "control_ret": None, "hit": True,
+                        "asof": dates[i], "claim_id": f"plusnull_{i}"}
+                       for i in range(10)]
+    _seed_control_rows(tmp_path, base_rows + plus_rows + extra_null_rows)
+
+    baseline = q.promotion_check("base", 21, root=tmp_path, control_only=True)
+    plus = q.promotion_check("plus", 21, root=tmp_path, control_only=True)
+
+    assert plus.n_dates == baseline.n_dates == 25, (
+        "the extra null-control rows reuse EXISTING dates — n_dates must not "
+        "move because of them")
+    assert plus.wilson_ci_low == baseline.wilson_ci_low, (
+        "a null control_ret row must change neither the numerator nor the "
+        "denominator of the control-only hit rate")
+
+
+def test_p0c1_exact_zero_control_excess_is_not_a_hit(tmp_path):
+    """Mechanical acceptance #5. `raw_control_excess == 0` exactly is NOT a hit
+    (strict inequality, prereg §2/§5) — but the row IS scoreable (a valid
+    control leg), so it still counts in the denominator, driving the hit rate
+    down rather than being silently dropped."""
+    rows = [{"direction": 1, "subject_ret": 0.03, "control_ret": 0.03}
+           for _ in range(25)]
+    _seed_control_rows(tmp_path, rows, family="zero")
+    r = q.promotion_check("zero", 21, root=tmp_path, control_only=True)
+
+    assert r.n_dates == 25
+    assert r.wilson_ci_low is not None          # rows WERE scoreable...
+    assert r.wilson_ci_low == q.wilson_ci_low(0, 25)   # ...but zero hits
+    assert r.eligible is False
+
+
+def test_p0c1_null_bench_ret_does_not_block_a_control_leg_scored_row(tmp_path):
+    """The second fault named in the prereg: `bench_ret` used to be gated on but
+    never used in the comparison, so a row with a VALID control leg but a NULL
+    bench silently fell through to the `elif hit: hits += 1` fallback. `hit`
+    (the PRIMARY, bench-relative outcome) is deliberately set to a MISS here
+    while the control-leg call is a correct HIT — a coincidental match on the
+    same value would prove nothing. The row must now be scored on the control
+    leg, exactly like any other row, regardless of bench_ret."""
+    rows = [{"direction": 1, "subject_ret": 0.06, "control_ret": 0.01,
+            "bench_ret": None, "hit": False}
+           for _ in range(25)]
+    _seed_control_rows(tmp_path, rows, family="nullbench")
+    r = q.promotion_check("nullbench", 21, root=tmp_path, control_only=True)
+
+    assert r.n_dates == 25
+    assert r.eligible is True, (
+        "a valid control leg with a null bench must be scored on the control "
+        f"leg, not fall back to the primary (bench-relative) hit. "
+        f"reason={r.reason}")
+    assert r.wilson_ci_low == pytest.approx(q.wilson_ci_low(25, 25))
+
+
+# --------------------------------------------------------------------------- #
 # state derivation
 # --------------------------------------------------------------------------- #
 def test_derive_state():

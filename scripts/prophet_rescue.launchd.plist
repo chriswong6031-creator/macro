@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Template for the per-host Prophet US rescue agent.
+  Installed by scripts/install_prophet_rescue_launchd.sh, which substitutes
+  __REPO_ROOT__, __HOME__ and __SUPPORT_DIR__.
+
+  launchd rather than a repo workflow ON PURPOSE, and it is the mirror image of
+  the hosted lane's reason: prophet-rescue.yml is GitHub-hosted so it survives the
+  Mac Studio dying; this one runs on the Mac Studio so it survives GitHub's
+  scheduler dying. Neither is redundant with the other, and a disk-full host takes
+  its own runners offline (M1, 2026-08-04) — which only a host lane can see.
+
+  Twice daily, deliberately offset from the hosted lane's :40 crons so the two do
+  not wake into the same minute and spend two dispatch budgets on one outage:
+    19:10 local — after the evening close pass, before the nightly fires
+    05:10 local — after the nightly should have finished
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.prophet-rescue</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__SUPPORT_DIR__/prophet_rescue_launchd.py</string>
+  </array>
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Hour</key>
+      <integer>19</integer>
+      <key>Minute</key>
+      <integer>10</integer>
+    </dict>
+    <dict>
+      <key>Hour</key>
+      <integer>5</integer>
+      <key>Minute</key>
+      <integer>10</integer>
+    </dict>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <false/>
+  <key>Nice</key>
+  <integer>10</integer>
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/macro_prophet_rescue/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/macro_prophet_rescue/launchd.err.log</string>
+</dict>
+</plist>

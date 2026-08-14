@@ -54,6 +54,7 @@ python3 -m pip install playwright && python3 -m playwright install chromium
 | `--timeout-s` | `30` | per-navigation timeout |
 | `--as-of` | now (UTC) | pins `generated_at`; makes a run byte-reproducible |
 | `--observer-config` | built-in | JSON overriding panel selectors, probes, caps |
+| `--force-state` | — | repeatable `NAME:TARGET`; one extra shot per cell with a class/attribute forced on `<body>` (see §2) |
 | `--headed` / `--self-check` | off | |
 
 Exit codes: `0` captured · `2` usage or registry error · `3` some page captured no
@@ -86,6 +87,7 @@ Per page, only where the registry says the axis is supported:
 | locale | `en` · `zh` | `data-lang` on `<html>` (see below) |
 | theme | `light` · `dark` | `data-theme` on `<html>` (see below) |
 | access | **anonymous only** | no session, ever |
+| forced state | opt-in, none by default | a class/attribute on `<body>` per `--force-state` (see below) |
 
 A registry row that declares `themes: ["dark"]` produces **no light cell** — the
 excluded axis is written into that page's `gaps` with the reason, rather than
@@ -132,6 +134,65 @@ Whatever `<html>` actually settled on is written back per state as `applied_them
 > matching `applied_theme` proves the state was accepted, never that the pixels
 > changed. Compare the screenshots for that.
 
+### Forced-state capture (`--force-state`)
+
+Migration packets must ship loading / empty / stale / error shots (design-migration
+factory §0.4). Against a static build the **data** path cannot be driven — but the
+**presentation** usually can, because the estate keys those states off a class or a
+data-attribute. `--force-state` toggles that hook and captures an extra shot.
+
+```bash
+python3 scripts/capture_page_evidence.py --site-dir site --routes /macro.html \
+  --viewports desktop --locales en --themes dark \
+  --force-state "empty:.is-empty" \
+  --force-state "error:[data-state=error]" \
+  --force-state "locked:[data-locked]"
+```
+
+`NAME:TARGET`, repeatable. `NAME` is a lowercase slug (it becomes the file-name
+suffix; a mixed-case name is lower-cased so one spelling is one file, and the same
+name twice is a usage error rather than a silent overwrite). `TARGET` is either a
+class (`.is-empty` or `is-empty`) or an attribute selector (`[data-locked]`,
+`[data-state=error]`, `[data-state="error"]`). A bare attribute is set to `""`,
+which is how a boolean HTML attribute is spelled.
+
+What it does, precisely:
+
+- **Adds cells, never replaces them.** Each viewport/locale/theme yields the page at
+  rest **plus** one cell per forced state. With no flag the matrix is exactly what it
+  always was.
+- **Applies after theme/locale**, through one `classList.add` or `setAttribute` on
+  `<body>`, then settles again before the observer and the shot. It never deletes
+  nodes or fakes a fetch — that would be the tool synthesizing content, which it
+  does not do.
+- **Names the state in the file:** `<sha256[:16]>--<name>.png`. Rest shots keep the
+  unsuffixed name, so a reviewer can tell the four state shots apart in a directory
+  listing without opening the manifest.
+- **Discloses a hook that did not take.** The driver reads the class/attribute back
+  off the element; if it cannot confirm it, the state row carries
+  `applied_force_state: null` and the page gains a `force_state_application` gap.
+  The file name never asserts a state nobody saw.
+- **Never moves the census numbers.** Metrics (and `screenshot_completion`) are
+  measured on the rest cells only — a forced-empty page would otherwise drag
+  `visible_word_count` and `section_count` away from what the page renders. Forced
+  shots are evidence, not measurements.
+
+**What it is not.** A forced shot shows that state's *styling*, not data the page
+returned. Where a fixture payload exists, the fixture is the stronger evidence. The
+manifest says this in three places rather than letting the file name imply more than
+happened: the `honesty.force_states` line, the state row's `applied_force_state`, and
+the page-state gap row — which **stays in the ledger** and flips to
+`captured: true` with the forcing named:
+
+```json
+{"dimension": "page_state", "value": "empty", "captured": true,
+ "reason": "captured by forced presentation; the page's own data path was not
+            exercised, ... (--force-state empty:.is-empty)"}
+```
+
+A forced name that is not one of the four synthesizable states (`hover`, `locked`, …)
+invents no `page_state` row — it is simply an extra shot.
+
 ---
 
 ## 3. Honesty rules
@@ -147,9 +208,13 @@ These are the point of the tool, not decoration.
 2. **Premium payload cannot leak.** Because every load is anonymous, the artifacts
    contain only what a logged-out visitor is served. Nothing gated can enter a
    screenshot, a metric, or the manifest by construction — not by policy.
-3. **Loading / empty / stale / error are gaps in v1**, reason `"state not
+3. **Loading / empty / stale / error are gaps by default**, reason `"state not
    synthesizable against static output"`. Faking them against a static build would
-   produce a screenshot of a state the product never shows.
+   produce a screenshot of a state the product never shows. `--force-state` (§2) is
+   the one sanctioned exception and is not an escape from this rule: it toggles the
+   page's own presentation hook, keeps the gap row in the ledger, and labels the
+   result a forced presentation whose data path never ran. A state nobody asked to
+   force stays a gap with the reason above.
 4. **A missing capture is written down, never omitted.** A 404, a timeout, or a
    driver error is `captured: false` with the error text; the run continues. A page
    that captured nothing still carries every metric key, all null, and
