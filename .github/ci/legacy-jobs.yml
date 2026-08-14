@@ -6540,6 +6540,42 @@ jobs:
       # every other suite in the job passes is not wired, it is merely present.
       - name: massive advanced tick-plane entitlement probe (TP-0)
         run: python -m pytest tests/test_massive_entitlement_probe.py -q
+      # Unrun backfill 2026-08-14: the whole 13F SMART-MONEY DESK — engine contracts,
+      # the nightly builder, and the census surface it publishes — was named by no
+      # `run:` step anywhere. Three suites, 85 tests, dark since #5103 built the
+      # autonomous institutional 13F census.
+      #
+      # WHY THIS LANE OWNS IT. `scripts/build_smart_money.py` IS a store/ops builder
+      # behind a nightly data lane: render.yml, closing-bell.yml and earlyclose.yml
+      # each invoke it as `run_py "13F smart-money tracker (build_smart_money)"`, and
+      # the engine modules the other two suites pin (smart_money, ownership_flow,
+      # ownership_crowding, fund_intelligence, fund_followability, insider_intel,
+      # filing_transition, ownership_event_wire) are that builder's inputs. Its
+      # regulatory-disclosure sibling test_finra_short_interest_pit.py already runs in
+      # the sweep below. NO lane owned this subject before today — the desk is not a
+      # census suite looking for the nearest unrun-* lane, it is a producer whose lane
+      # is this one. Deliberately NOT split engine-side/surface-side across two jobs:
+      # a builder whose engine contract and whose published page disagree is exactly
+      # the break that survives a split, and the suites cost 5.7s together.
+      #
+      # ORDERED BEFORE the ~40-file sweep for the reason stated one step up:
+      # run_ci_pack.py abandons a job's remaining steps at the first non-zero exit, so
+      # a step behind that sweep would be present rather than wired.
+      #
+      # Adds NO wheel and NO job: jinja2 (census surface renders templates/), pandas
+      # and pytest are already on the install line above; nothing else is imported at
+      # module scope. Hermetic — every site/ path the surface suite writes is under
+      # pytest's tmp_path, and it reads only committed templates/, so its verdict
+      # cannot move with the market. Measured on a full checkout: 24 + 51 + 10 = 85
+      # tests in 5.7s, inside this job's 8-minute budget. The census-surface count
+      # becomes 15 when #5607 (frozen-census freeze annotation) lands; that PR touches
+      # only the builder and its suite, so it inherits this wiring with no edit here.
+      - name: 13F smart-money desk — engine contracts, nightly builder, census surface
+        run: >
+          python -m pytest
+          tests/test_smart_money.py
+          tests/test_smart_money_v3.py
+          tests/test_smart_money_census_surface.py -q
       - name: store/ops builders behind the nightly data lanes
         run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_ei_f1d_shadow.py tests/test_freshness_sentinel.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
       # Tech-Lab parity fixtures: the ~24 STRUCTURAL checks (fields, warmup
