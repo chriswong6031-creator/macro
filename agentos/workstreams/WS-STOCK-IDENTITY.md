@@ -27,22 +27,23 @@ decisions:
 waves:
   - id: W0
     title: PR-0 archaeology + frozen research contract (docs only)
-    status: in_progress
+    status: done
     pr: 5583
     next_action: >
-      §16 rulings RATIFIED by CEO/operator 2026-08-14 (overall PROCEED; folded into the
-      contract as §16/§16.9 on this PR). Merge via merge-on-green sweeper.
+      DONE — merged 2026-08-14T10:02Z (merge 29d89724c8) with all §16 rulings ratified
+      in-PR and §16.9 execution authorization present on main.
   - id: W1
     title: Identity Atlas v0 — fingerprints, state tagger, episode catalog, pilot dossiers
-    status: todo
+    status: done
+    pr: 5612
     depends_on: [W0]
     next_action: >
-      AUTHORIZED (§16.9): launch after #5583 merges, exactly as masterplan §14 PR-1 —
-      descriptive/measurement-first; NO expert-fit result in W1; sealed calibration
-      partition drawn+hashed; stock-identity registry row minted (§16.7); v0 scope
-      US-listed incl. ADRs/dual-listed miners where data quality qualifies (§16.8);
-      large artifacts to R2/store-host, manifests in-repo (§16.3); return to operator
-      with the Atlas + dossiers before any expert replay/fit.
+      SHIPPED as PR #5612 (armed merge-on-green 2026-08-14) per masterplan §14 PR-1 +
+      §16.9: SI-SEALED-CAL-P1 (759 names) + blind arm (229) drawn/hashed before any
+      constant; constants frozen w/ receipts; 21 pilot dossiers; census v0 (134,207
+      episodes, survivor-only stamped); registry row minted. NEXT: the §16.9 OPERATOR
+      RETURN (Atlas + dossiers review; dead-name source decision) gates W2 — do not
+      start expert replay before it.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
     status: todo

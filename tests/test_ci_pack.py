@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import errno
 import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
@@ -407,6 +409,237 @@ def test_resolve_changed_files_prefers_planner_json(
     monkeypatch.setattr(PACK, "changed_files", lambda base: ["from-git.py"])
     assert PACK.resolve_changed_files("abc123") == ["from-git.py"]
     assert PACK.resolve_changed_files(None) is None
+
+
+# ─── The 2026-08-14 E2BIG transport regression (run 31775693780) ──────────────
+#
+# PR #5578 carried a handful of files, and every one of its twelve packs died
+# before executing a single test:
+#
+#     An error occurred trying to start process '/usr/bin/bash' ...
+#     Argument list too long
+#
+# The chain: ci-plan diffed against the PR's opening base SHA; by run time main
+# had advanced 45 commits and 8,581 distinct paths through the nightly bake
+# window; the whole drift was attributed to the PR; and the resulting list rode
+# a job output into the pack step's `env:` as CI_CHANGED_FILES_JSON — 350,264
+# measured bytes against Linux's 131,072-byte MAX_ARG_STRLEN, the per-STRING cap
+# execve applies before any program runs.
+#
+# These tests pin the TRANSPORT — the property that the list's size stops
+# mattering — and the first one is the mutation proof: it fires a real execve at
+# a population no environment can hold.
+
+_E2BIG_MIN_JSON_BYTES = 2_000_000
+
+# The child proves three things at once, in one real process: the giant env
+# string did not follow it through execve, the file transport did, and the paths
+# survived byte-exact across the boundary.
+_E2BIG_CHILD = """
+import json, os, sys
+assert "CI_CHANGED_FILES_JSON" not in os.environ, "the inline list reached a child"
+with open(os.environ["CI_CHANGED_FILES_FILE"], encoding="utf-8") as handle:
+    paths = json.load(handle)
+assert len(paths) == int(sys.argv[1]), (len(paths), sys.argv[1])
+assert paths[7] == sys.argv[2], (paths[7], sys.argv[2])
+"""
+
+
+def _e2big_population() -> list[str]:
+    """A changed-file list no process environment can carry.
+
+    Deliberately unpleasant, because the transport has to be indifferent to it:
+    spaces, an em dash, Han characters and a Greek letter — the shapes a naive
+    shell round-trip mangles — over enough volume to clear BOTH caps this suite
+    fires against (Linux's 131,072-byte per-string MAX_ARG_STRLEN and macOS's
+    ~1 MiB total ARG_MAX). The incident itself needed only 350,264 bytes; the
+    margin keeps the proof honest on either kernel.
+    """
+    return [
+        f"data/研究/{index:05d}/sector-rotation-quarterly-snapshot/"
+        f"季度报告 {index} α — final draft.parquet"
+        for index in range(18_000)
+    ]
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="execve argument caps are POSIX")
+def test_a_large_changed_file_list_cannot_cross_a_process_environment() -> None:
+    """The launch failure itself, reproduced — this is what must never be wired.
+
+    Not a hypothetical: it is `subprocess.run` refusing to start a process that
+    does nothing, purely because one environment string is too long. Every
+    legacy step in a pack is exactly this call shape (`bash -eo pipefail -c`),
+    which is why all twelve packs reported a bash startup error rather than a
+    test failure.
+    """
+    population = _e2big_population()
+    assert len(population) >= 12_000
+    giant = json.dumps(population, separators=(",", ":"))
+    assert len(giant.encode("utf-8")) > _E2BIG_MIN_JSON_BYTES
+    with pytest.raises(OSError) as caught:
+        subprocess.run(
+            [sys.executable, "-c", "pass"],
+            env={**os.environ, "CI_CHANGED_FILES_JSON": giant},
+            check=True,
+        )
+    assert caught.value.errno == errno.E2BIG, (
+        f"expected E2BIG, got errno {caught.value.errno}: {caught.value}"
+    )
+
+
+@pytest.mark.skipif(sys.platform == "win32", reason="execve argument caps are POSIX")
+def test_the_file_transport_carries_the_list_that_e2bigs_the_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Same population, same paths, byte for byte — and a child that launches.
+
+    Three legs, in the order the production chain runs them: the planner
+    resolving from a file must reach the identical plan it would reach from an
+    in-memory list; `--emit-changed-files` must round-trip the array back out
+    byte-exact; and a real child spawned through `_dependency_environment` must
+    START, with the inline name absent from its environ and the file carrying
+    the full count.
+
+    The last leg is the mutation detector for `_child_environment`: the inline
+    string is planted in `os.environ` at a size no execve accepts, so a child
+    spawned from an environment that still forwards it CANNOT start. Drop the
+    pop and this test does not merely fail an equality check — it reproduces the
+    incident.
+    """
+    population = _e2big_population()
+    handle = tmp_path / "changed-files.json"
+    handle.write_text(
+        json.dumps(population, separators=(",", ":")), encoding="utf-8"
+    )
+    monkeypatch.setenv("CI_CHANGED_FILES_FILE", str(handle))
+    resolved = PACK.resolve_changed_files("stale-base-sha")
+    assert resolved == population, "the file transport must not reshape the list"
+
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("data-owner", 0, paths=("data/**",)),
+        _plan_job("engine-owner", 1, paths=("engine/**",)),
+    ]
+    from_file = PACK.build_plan(
+        jobs, resolved, changed_from="stale-base-sha", scope_mode="active",
+        pack_count=12,
+    )
+    in_memory = PACK.build_plan(
+        jobs, population, changed_from="stale-base-sha", scope_mode="active",
+        pack_count=12,
+    )
+    assert from_file.plan_sha256 == in_memory.plan_sha256
+    assert from_file.changed_files_sha256 == in_memory.changed_files_sha256
+    assert from_file.changed_files_count == len(population)
+    assert from_file.eligible_job_ids == in_memory.eligible_job_ids
+
+    # The artifact this planner publishes must be readable back as the same
+    # list — a reshaped array would hash to something else and refuse the plan.
+    republished = tmp_path / "published" / "changed-files.json"
+    PACK._write_changed_files_artifact(republished, from_file.changed_paths)
+    assert json.loads(republished.read_text(encoding="utf-8")) == population
+
+    monkeypatch.setenv(
+        "CI_CHANGED_FILES_JSON", json.dumps(population, separators=(",", ":"))
+    )
+    command_env = PACK._dependency_environment(None)
+    assert "CI_CHANGED_FILES_JSON" not in command_env
+    assert command_env["CI_CHANGED_FILES_FILE"] == str(handle)
+    completed = subprocess.run(
+        [sys.executable, "-c", _E2BIG_CHILD, str(len(population)), population[7]],
+        env=command_env,
+        capture_output=True,
+        text=True,
+    )
+    assert completed.returncode == 0, (
+        f"a legacy step could not launch with the list present as a file: "
+        f"{completed.stderr}"
+    )
+
+
+def test_a_stale_comparison_base_never_smears_mains_paths_into_scope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The other half of the 2026-08-14 chain: git must not be consulted at all.
+
+    PR #5578's planner diffed an immutable base SHA that main had left 45
+    commits behind, so `git diff` answered with 8,581 paths of somebody else's
+    nightly bake. The published list is the ONLY authority — when a handle is
+    configured, a stale `--changed-from` must not reach git even as a fallback,
+    because the answer it would give is the incident.
+    """
+    handle = tmp_path / "changed-files.json"
+    handle.write_text('["engine/example.py","tests/test_foo.py"]', encoding="utf-8")
+    monkeypatch.setenv("CI_CHANGED_FILES_FILE", str(handle))
+    monkeypatch.setattr(
+        PACK,
+        "changed_files",
+        lambda base: (_ for _ in ()).throw(AssertionError(f"git diff {base}")),
+    )
+    assert PACK.resolve_changed_files("2ca4718") == [
+        "engine/example.py", "tests/test_foo.py"
+    ]
+    # The file also out-ranks a contradicting inline string, so a stale env value
+    # cannot out-vote the artifact the pack downloaded.
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", '["site/decoy.html"]')
+    assert PACK.resolve_changed_files("2ca4718") == [
+        "engine/example.py", "tests/test_foo.py"
+    ]
+    # An unreadable handle widens; it must NOT fall through to that same git.
+    monkeypatch.setenv("CI_CHANGED_FILES_FILE", str(tmp_path / "never-written.json"))
+    assert PACK.resolve_changed_files("2ca4718") is None
+    # And the explicit flag out-ranks both names, so a local reproduction can
+    # replay a published list without touching the ambient environment.
+    assert PACK.resolve_changed_files("2ca4718", explicit_file=handle) == [
+        "engine/example.py", "tests/test_foo.py"
+    ]
+
+
+def test_changed_files_digest_is_an_affirmative_no_list_or_an_ordered_hash() -> None:
+    """"" is not a hash — it is the encoding of "the planner had no list".
+
+    That distinction is the whole reason a pack can tell "planned the full
+    suite" from "planned this exact diff" without a second flag, and order is
+    load-bearing because two transports that sorted differently would hash the
+    same list to two values and refuse every plan.
+    """
+    assert PACK.changed_files_digest(None) == ""
+    ordered = PACK.changed_files_digest(["b.py", "a.py"])
+    assert len(ordered) == 64 and ordered != ""
+    assert PACK.changed_files_digest(["a.py", "b.py"]) != ordered
+    assert PACK.changed_files_digest(("b.py", "a.py")) == ordered
+
+
+@pytest.mark.parametrize(
+    ("body", "state", "count"),
+    [
+        ('["a.py","b.md"]', "list", 2),
+        ("null", "null", 0),
+        ('["", ""]', "null", 0),
+        ("{nope", "malformed", 0),
+        ("", "malformed", 0),
+        ('"one string"', "malformed", 0),
+        ("[1]", "malformed", 0),
+    ],
+)
+def test_changed_files_handle_states_are_named_not_merely_falsy(
+    tmp_path: Path, body: str, state: str, count: int
+) -> None:
+    """A pack that refuses has to say WHICH way the handle was wrong.
+
+    `resolve_changed_files` only widens, which is right for the decision and
+    useless for the diagnosis: since 2026-08-14 the most likely cause of a
+    plan-sha parity failure is this file, not the manifest, so the annotation
+    that accompanies the refusal names the state.
+    """
+    handle = tmp_path / "changed-files.json"
+    handle.write_text(body, encoding="utf-8")
+    got_state, paths = PACK._read_changed_files_handle(str(handle))
+    assert (got_state, len(paths)) == (state, count)
+    assert PACK._read_changed_files_handle(None) == ("absent", [])
+    assert PACK._read_changed_files_handle(str(tmp_path / "gone.json")) == (
+        "unreadable", []
+    )
 
 
 def test_plan_publishes_changed_paths_for_pack_shallow_checkout(
@@ -824,8 +1057,15 @@ def _isolate_pack_runner_planner_env(monkeypatch: pytest.MonkeyPatch) -> None:
     ``CI_CHANGED_FILES_JSON``. On main the value was ``null`` (full suite); on
     #5560 it was the live 81-file PR list. Tests expecting an unscoped/full
     fixture plan then asserted against the hosted runner's diff.
+
+    ``CI_CHANGED_FILES_FILE`` joined the list on 2026-08-14 and is now the one
+    that matters: it is what every pack exports after downloading the
+    changed-file artifact, and it OUT-RANKS the inline form, so leaving it
+    ambient would leak the live PR diff into these fixtures exactly as #5560's
+    inline value did.
     """
     for name in (
+        "CI_CHANGED_FILES_FILE",
         "CI_CHANGED_FILES_JSON",
         "CI_SCOPE_MODE",
         "CI_DYNAMIC_MATRIX_MODE",
@@ -840,7 +1080,9 @@ def _stub_planner_paths(
     monkeypatch.setattr(
         PACK,
         "resolve_changed_files",
-        lambda changed_from, explicit_json=None, _paths=paths: _paths,
+        lambda changed_from, explicit_json=None, explicit_file=None, _paths=paths: (
+            _paths
+        ),
     )
 
 
@@ -937,12 +1179,25 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
     payload = PACK.plan_hash_payload(
         changed_from=plan.changed_from,
         scope_mode=plan.scope_mode,
+        changed_files_sha256=plan.changed_files_sha256,
         pack_count=plan.pack_count,
         eligible_job_ids=plan.eligible_job_ids,
         pack_jobs=plan.pack_jobs,
         pack_weights=plan.pack_weights,
     )
     assert PACK._canonical_digest(payload) == plan.plan_sha256
+
+    # WHICH DIFF, not merely which jobs (2026-08-14). The list left the job
+    # outputs for an artifact nothing else hashes, so its digest has to be part
+    # of the decision identity: a pack that downloaded the wrong file recomputes
+    # a different plan sha and the parity check below refuses it. Without this
+    # key that pack would pass parity and scope its guards to somebody else's
+    # diff — see `test_a_pack_refuses_a_changed_file_list_it_cannot_prove`.
+    assert payload["changed_files_sha256"] == plan.changed_files_sha256
+    assert (
+        PACK._canonical_digest({**payload, "changed_files_sha256": "f" * 64})
+        != plan.plan_sha256
+    )
 
     # Move ONE job to a different pack: same jobs, same membership, new plan.
     moved = [list(pack) for pack in plan.pack_jobs]
@@ -1189,7 +1444,12 @@ def test_planner_failure_never_emits_no_work(
     assert outputs["has_work"] == "true"
     assert outputs["plan_sha"] == ""
     assert outputs["reason"].startswith("full suite: planner error")
-    assert outputs["changed_files"] == "null"
+    # The list itself is no longer an output (2026-08-14); the widened plan
+    # publishes the affirmative "no list" digest instead, and the artifact this
+    # path writes carries the token `null`.
+    assert "changed_files" not in outputs
+    assert outputs["changed_files_sha256"] == ""
+    assert outputs["changed_files_count"] == "0"
     warning = next(
         line
         for line in capsys.readouterr().out.splitlines()
@@ -1256,6 +1516,131 @@ def test_expect_plan_sha_mismatch_refuses_before_any_job_runs(
     assert "0" * 64 in error
 
 
+def test_a_pack_refuses_a_changed_file_list_it_cannot_prove(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The list left the job outputs on 2026-08-14; this is what replaced it.
+
+    Moving it to an artifact (run 31775693780: 350,264 bytes of `env:` against
+    execve's 131,072-byte cap, twelve packs dead at launch) put it OUTSIDE every
+    channel the packs already trust. That matters because the list is not
+    decoration — the guards inside a pack scope THEMSELVES to it
+    (conflict-markers, self-mod-fence, the selection itself), so a stale,
+    swapped or truncated artifact shrinks what a green pack actually proved,
+    silently.
+
+    The repair needs no new gate: `changed_files_sha256` went into
+    `plan_hash_payload`, so a pack that recomputes from the wrong file
+    recomputes a different plan sha and the EXISTING `--expect-plan-sha` parity
+    check refuses before a single legacy step runs. Every shape below is one
+    that used to pass parity and run the wrong suite under a check name the
+    sweeper reads as proof.
+    """
+    handle = tmp_path / "changed-files.json"
+    listed = ["engine/example.py", "docs/存档 note.md"]
+    handle.write_text(json.dumps(listed, separators=(",", ":")), encoding="utf-8")
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("engine-owner", 0, paths=("engine/**",)),
+        _plan_job("site-owner", 1, paths=("site/**",)),
+    ]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    plan = PACK.plan_from_workflow(
+        MANIFEST,
+        changed_from="basesha",
+        scope_mode="active",
+        pack_count=2,
+        changed_files_file=handle,
+    )
+    assert plan.changed_files_count == 2
+    assert plan.changed_files_sha256 == PACK.changed_files_digest(listed)
+
+    reached: list[int] = []
+    monkeypatch.setattr(
+        PACK, "execute_pack", lambda jobs, **kwargs: reached.append(len(jobs)) or 0
+    )
+
+    def run(handle_path: Path | None, *, expect: str | None = None) -> int:
+        argv = [
+            "--workflow", str(MANIFEST),
+            "--pack-index", "0", "--pack-count", "2",
+            "--changed-from", "basesha",
+            "--execute",
+            "--expect-plan-sha", expect or plan.plan_sha256,
+        ]
+        if handle_path is not None:
+            argv += ["--changed-files-file", str(handle_path)]
+        return PACK.main(argv)
+
+    # A positive control FIRST, or every refusal below could be passing for a
+    # reason that has nothing to do with the changed-file list.
+    assert run(handle) == 0
+    assert reached, "the unmutated fixture must reach execution"
+
+    def refusal(handle_path: Path | None, needle: str) -> None:
+        assert run(handle_path) == 2
+        lines = capsys.readouterr().out.splitlines()
+        diagnosis = next(
+            line for line in lines
+            if line.startswith("::error title=ci-changed-files::")
+        )
+        assert needle in diagnosis, diagnosis
+        assert any(
+            line.startswith("::error title=ci-plan-parity::") for line in lines
+        ), "the parity check is the gate; the diagnosis alone must not be it"
+
+    # (i) A well-formed list that is simply not THIS plan's list — the swapped
+    # or stale artifact, and the only shape no structural check can catch.
+    other = tmp_path / "other.json"
+    other.write_text('["engine/example.py"]', encoding="utf-8")
+    refusal(other, "read as list")
+
+    # (ii) The artifact landed truncated / corrupt. Never widen here: a pack
+    # that quietly ran the full suite under a pinned plan's check name reports
+    # green for a suite the published plan does not describe.
+    corrupt = tmp_path / "corrupt.json"
+    corrupt.write_text('["engine/example.py", "docs/', encoding="utf-8")
+    refusal(corrupt, "read as malformed")
+
+    # (iii) The download never landed.
+    refusal(tmp_path / "missing.json", "read as unreadable")
+
+    # (iv) No handle configured at all. `--changed-from` is still on the command
+    # line, so without the file-first order this would silently git-diff a
+    # depth-1 tree and widen — which is exactly the miss the pin now catches.
+    monkeypatch.delenv("CI_CHANGED_FILES_FILE", raising=False)
+    monkeypatch.setattr(
+        PACK, "changed_files", lambda base: (_ for _ in ()).throw(RuntimeError(base))
+    )
+    assert run(None) == 2
+
+    # (v) THE MIRROR IMAGE, and the one the old `changed_files` output could not
+    # express: the plan recorded NO list (full suite, digest "") while the
+    # handle carries a real one. Two channels describing different runs.
+    widened = PACK.plan_from_workflow(
+        MANIFEST, changed_from=None, scope_mode="active", pack_count=2
+    )
+    assert widened.changed_files_sha256 == ""
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--pack-index", "0", "--pack-count", "2",
+                "--changed-from", "basesha",
+                "--execute",
+                "--expect-plan-sha", widened.plan_sha256,
+                "--changed-files-file", str(handle),
+            ]
+        )
+        == 2
+    )
+
+    # Non-vacuity: exactly one of the six runs reached execution.
+    assert len(reached) == 1
+
+
 def test_plan_and_execution_select_the_exact_same_jobs(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1312,13 +1697,22 @@ def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> N
         )
     assert first.read_text() == second.read_text()
     outputs = _parse_github_output(first.read_text())
-    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason", "changed_files"}
+    # EXACTLY these six, and none of them scales with the size of the diff. A
+    # job output becomes an `env:` string in the consuming job and execve caps
+    # one at 131,072 bytes; the retired `changed_files` output measured 350,264
+    # on PR #5578 and killed all twelve packs at launch (run 31775693780). A
+    # seventh, unbounded output added here would reopen exactly that.
+    assert set(outputs) == {
+        "matrix", "has_work", "plan_sha", "reason",
+        "changed_files_sha256", "changed_files_count",
+    }
     assert json.loads(outputs["matrix"]) == {
         "include": [{"pack": index} for index in range(12)]
     }
     assert outputs["has_work"] == "true"
     assert len(outputs["plan_sha"]) == 64
-    assert outputs["changed_files"] == "null"
+    assert outputs["changed_files_sha256"] == ""
+    assert outputs["changed_files_count"] == "0"
 
 
 def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
@@ -1420,12 +1814,22 @@ def test_emit_plan_json_prints_exactly_one_machine_line(
     ]
     assert len(markers) == 1
     document = json.loads(markers[0][len(PACK.PLAN_MARKER):])
+    # The DIGEST and the COUNT joined this document on 2026-08-14, never the
+    # list: it is printed as one machine line in the planner's log, so an
+    # unbounded array here would only move the 350,264 bytes out of the pack
+    # step's `env:` and into a log line nobody can read (run 31775693780).
     assert set(document) == {
         "schema", "changed_from", "scope_mode", "reason", "scope_summary",
         "legacy_job_count", "eligible_job_count", "eligible_jobs",
         "skipped_job_count", "skipped_jobs", "packs", "nonempty_pack_indices",
         "matrix", "has_work", "plan_sha256",
+        "changed_files_sha256", "changed_files_count",
     }
+    # The full-suite baseline carries the affirmative "no list" encoding, which
+    # is what lets a pack tell "planned everything" from "planned this exact
+    # diff" without a second flag.
+    assert document["changed_files_sha256"] == ""
+    assert document["changed_files_count"] == 0
     assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v1"
     assert [entry["index"] for entry in document["packs"]] == list(range(12))
 
@@ -2061,10 +2465,17 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     headroom so an unrelated job gaining or losing a scope does not red this,
     while a regression that gives the fallback tier back to the curated eight
     (~1,550 weight-seconds and three of twelve packs per shape) does.
+
+    The templates/index.html job ceiling is 128 rather than 126 because
+    `engine-render-guards` split into three lanes (#5587 on top of #5586): the
+    sweep still owned-matches this probe, and the two sibling lanes
+    (`express-render-guards`, `attested-history-guards`) still fallback-match
+    it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
+    a return of the curated eight. Weight and pack ceilings are unchanged.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 126, 5_800),
+        ("templates/index.html", 128, 5_800),
         ("scripts/build_free_content.py", 126, 5_600),
         ("engine/prophet/plan_book.py", 120, 5_600),
     ):
