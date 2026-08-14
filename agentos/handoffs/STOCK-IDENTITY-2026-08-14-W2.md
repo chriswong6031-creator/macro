@@ -2,7 +2,7 @@
 workstream: WS:STOCK-IDENTITY
 session: stock-identity-w2-replay (Claude, same session as W1, worktree vigorous-mirzakhani-3ae795)
 model: fable
-ended_because: ci_handoff
+ended_because: merged (terminal CI handoff retired by #5513 mid-session — a session owns its PR through merge)
 mission: >
   W2 / PR-2: Expert Replay + Provenance Pinning under the 2026-08-14 §16.9 operator return
   (W1 ACCEPTED, W2 AUTHORIZED, six binding rulings): era-pinned Class R replay over the pilot,
@@ -80,5 +80,6 @@ W2 executed under the 2026-08-14 §16.9 return: 31,119 era-pinned events across 
 family keys (8 more enumerated Class P at zero rows), attribution joined under frozen W1
 constants, every fixture green or exemption-declared-with-canary, GOLD's identity corrected
 and Barrick B added without touching a sealed object. No ruler number exists in the wave.
-The session ends at scripts/ci_handoff.py with the W2 PR armed; W3 is NOT started — the
-operator owns the next go.
+Mid-session law change honored: #5513 retired the terminal CI handoff, so this session
+owns PR #5643 through concluded-green merge + live verification (merge-on-green armed as
+the performing backstop). W3 is NOT started — the operator owns the next go.
