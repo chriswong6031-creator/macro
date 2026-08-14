@@ -38,12 +38,15 @@ waves:
     pr: 5612
     depends_on: [W0]
     next_action: >
-      SHIPPED as PR #5612 (armed merge-on-green 2026-08-14) per masterplan §14 PR-1 +
+      SEALED HISTORICAL W1 receipt: PR #5612 per masterplan §14 PR-1 +
       §16.9: SI-SEALED-CAL-P1 (759 names) + blind arm (229) drawn/hashed before any
       constant; constants frozen w/ receipts; 21 pilot dossiers; census v0 (134,207
-      episodes, survivor-only stamped); registry row minted. NEXT: the §16.9 OPERATOR
-      RETURN (Atlas + dossiers review; dead-name source decision) gates W2 — do not
-      start expert replay before it.
+      episodes, survivor-only stamped); registry row minted. W1-A1 is now the registered
+      effective-roster overlay: the sealed GOLD row is Gold.com/A-Mark dealer behavior,
+      its miner interpretation is withdrawn, and a B-only Barrick addendum must land
+      without changing any W1 measurement. NEXT: finish and merge W1-A1, then the §16.9
+      OPERATOR RETURN (Atlas + dossiers review; dead-name source decision) gates W2 —
+      do not start expert replay before it.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
     status: todo
@@ -73,6 +76,7 @@ landmines:
   - "Live Entry Radar PR-0 (#5578) is UNMERGED — its contract and entry_event.v1 schema are proposed, not ratified; revalidate at W1/W2 before consuming."
   - "data/massive_stock_day is RAW (splits uncorrected) and ~2021+ only — prohibited for any behavioral math until its adjustment transform is traced."
   - "Reused-ticker splices put a different company's history in a per-ticker file 'born clean' (ECHO/SATS class) — run identity hygiene checks before trusting any joined history."
+  - "W1-A1 identity overlay: PR #5612's GOLD measurements are the Gold.com/A-Mark DEALER tape, never Barrick/miner evidence. Preserve the sealed tuple for reproduction; every current miner consumer must call engine.stock_identity.pilot.current_miner_probe() and receive NEM/AEM/PAAS/WPM/AG/B."
   - "amber-EARLY family has zero history before Terminal 935389d4 (2026-08-11); Door R forbids backfill by charter — Class P families accrue prospectively only, never backfilled."
 do_not_redo:
   - "Do not re-test per-name outcome audition under any ruler (DNR:KILL-OUTCOME-AUDITION; PTT W1a killed two-ruler)."
