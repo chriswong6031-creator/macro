@@ -93,6 +93,30 @@ def test_every_record_type_is_present() -> None:
     assert list((STORE / "discoveries").glob("DSC-*.md"))
 
 
+def test_phase2b_records_pin_retired_queue_and_untouched_phase4() -> None:
+    """Post-heal edits must not reopen C3 or silently resequence Phase 4."""
+    workstream = (STORE / "workstreams" / "WS-AGENT-OS.md").read_text(encoding="utf-8")
+    w4 = workstream.split("  - id: W4", 1)[1].split("decisions:", 1)[0]
+    assert "    depends_on: [W1, W2]\n" in w4
+    assert "W2B" not in w4
+
+    current = (
+        STORE / "decisions" / "DEC-AGENTOS-READINESS-FEEDS-THE-AGENDA.md"
+    ).read_text(encoding="utf-8")
+    historical = (
+        STORE / "decisions" / "DEC-AGENTOS-START-NEXT-VS-AGENDA.md"
+    ).read_text(encoding="utf-8")
+    nightly = (
+        STORE / "decisions" / "DEC-AGENTOS-NIGHTLY-IS-THE-ONLY-REGENERATOR.md"
+    ).read_text(encoding="utf-8")
+
+    assert "Agent OS now publishes the non-ranked" in current
+    assert "independent human list is retired" in current
+    assert "The integration itself is not built" not in current
+    assert "HISTORICAL DESIGN, NOW RETIRED" in historical
+    assert "former `start_next` surface was retired by Phase 2b" in nightly
+
+
 # --------------------------------------------------- mutation proofs (hard)
 
 
@@ -159,8 +183,8 @@ MUTATIONS: list[tuple[str, str, str, str]] = [
     (
         "wave-cycle",
         "workstreams/WS-AGENT-OS.md",
-        "    depends_on: [W1, W2, W2B]",
-        "    depends_on: [W1, W2, W2B]\n"
+        "    depends_on: [W1, W2]",
+        "    depends_on: [W1, W2]\n"
         "  - id: WX\n    title: cycle a\n    status: todo\n    depends_on: [WY]\n"
         "  - id: WY\n    title: cycle b\n    status: todo\n    depends_on: [WX]",
     ),
