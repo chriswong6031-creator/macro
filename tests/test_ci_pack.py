@@ -2544,16 +2544,41 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     sweep still owned-matches this probe, and the two sibling lanes
     (`express-render-guards`, `attested-history-guards`) still fallback-match
     it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
-    a return of the curated nine. `intelligence-registry` is the ninth
-    exclusive: it only fallback-matched this probe, so curating it keeps the
-    ceiling at 128 rather than raising it. Weight and pack ceilings are
-    unchanged.
+    a return of the curated eight. Weight and pack ceilings are unchanged.
+
+    JOB COUNTS RE-BASED +1 (129/127/121) for #5620, which added ONE new job,
+    `intelligence-registry` (Eval OS T1). Measured against the pre-#5620
+    manifest, it is the sole newcomer on all three probes and the ONLY delta:
+
+        templates/index.html          128 -> 129 jobs, 5,253 -> 5,266 weight
+        scripts/build_free_content.py 126 -> 127 jobs, 5,016 -> 5,029 weight
+        engine/prophet/plan_book.py   120 -> 121 jobs, 5,002 -> 5,015 weight
+
+    +13 weight-seconds per probe. The WEIGHT and PACK ceilings are deliberately
+    NOT moved: they are what bound the incident this wave exists to prevent, and
+    a regression that gave the fallback tier back to the curated eight would be
+    ~1,550 weight-seconds and three of twelve packs — two orders of magnitude
+    above this, so it still reds here. What moved is only the job count, and only
+    because the previous bounds carried zero headroom on that axis: 128/126/120
+    were the exact pre-#5620 measurements, so the very first honest new job
+    breached all three. The docstring above promises headroom "so an unrelated
+    job gaining or losing a scope does not red this"; `intelligence-registry` is
+    exactly such a job, and that promise was not funded. Re-based to the new
+    measurement rather than padded, so the next new job is again a visible event.
+
+    This re-base is the same change carried by PR #5669 (authored there first).
+    It is duplicated here because both fixes land in the SAME `workflow-yaml`
+    job: run_ci_pack abandons a job's remaining steps on the first non-zero
+    exit, so this assertion (step 5) masks `audit_unrun_tests.py` (step 12).
+    A PR that healed only one of the two would leave `ci-pack-1` red and neither
+    PR could ever merge — the two-partial-heals deadlock. Whichever lands second
+    resolves to an identical tree.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 128, 5_800),
-        ("scripts/build_free_content.py", 126, 5_600),
-        ("engine/prophet/plan_book.py", 120, 5_600),
+        ("templates/index.html", 129, 5_800),
+        ("scripts/build_free_content.py", 127, 5_600),
+        ("engine/prophet/plan_book.py", 121, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
