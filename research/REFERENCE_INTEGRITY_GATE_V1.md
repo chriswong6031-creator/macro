@@ -278,6 +278,17 @@ through the existing house-law check path, no new CI topology) validates:
 - **L8 packet coupling** — every `research/migration_packets/MP-*.md` cites a
   `RIG-RECEIPT:` line naming an `approved` reference (there are no packets on main today,
   so this rule starts with zero debt and no grandfathering).
+
+  > **AMENDED 2026-08-14 (correction of fact, disposition follows L7's precedent).** The
+  > zero-debt premise was false when written: `MP-1-prophet-board.md` merged 2026-08-13
+  > (#5505), one day before this gate (#5520), so L8 armed over live debt it did not see
+  > and redded main's own baseline. The debt is now NAMED and CLOSED —
+  > `CLOSED_PRE_RIG_PACKETS` in the guard, exactly the disposition L7 gives the Wave-0
+  > references: a listed packet is provisional, exempt only in its missing-receipt state,
+  > and its first consuming build owns adding the `RIG-RECEIPT:` line once its reference
+  > approves, at which point the entry leaves the list. The list never grows without the
+  > same packet-predates-the-gate justification. The rule itself is unchanged for every
+  > packet authored after the gate.
 - **L9 registry coupling** — no page-registry row (overrides or compiled registry) carries
   `design_system.compliant: true` for a route whose RIG reference is missing or not
   `approved` (starts with zero debt: no compliant rows exist today).
