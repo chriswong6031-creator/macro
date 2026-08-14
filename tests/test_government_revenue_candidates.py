@@ -21,7 +21,13 @@ from engine.government_revenue.candidates import (
     load_candidate_issuance_correction_manifest,
 )
 from scripts.build_government_revenue import build_payload
-from tests.government_revenue_candidate_fixture import canonical_candidate_census
+from tests.government_revenue_candidate_fixture import (
+    canonical_candidate_census,
+    canonical_mapping_backlog_states,
+    canonical_requested_issuer_tickers,
+    canonical_reviewed_issuer_tickers,
+    canonical_unreviewed_issuer_tickers,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -251,38 +257,61 @@ def test_current_source_truth_reconciles_against_the_ledger_and_the_correction()
     }
     assert sum(queue["counts"]["by_family"].values()) == queue["counts"]["total"]
     assert all(count > 0 for count in queue["counts"]["by_family"].values())
-    assert queue["counts"]["mapping_needed"] == 21
+    # The backlog is a census of the REQUESTED issuer scope -- one row per
+    # curated company -- so `== 21` was that scope's cardinality transcribed by
+    # hand, not a contract.  Derived from `entities.json` (bound against the
+    # payload it builds) so adding or retiring an issuer moves it by itself.
+    # Keep #5518's derive-from-receipt approach over #5524's re-typed literal.
+    assert queue["counts"]["mapping_needed"] == len(canonical_requested_issuer_tickers())
 
 
-    assert len(queue["mapping_backlog"]) == 21
+    assert len(queue["mapping_backlog"]) == len(canonical_requested_issuer_tickers())
+    # Stronger than the count and equally derived: the backlog must cover the
+    # curated scope exactly -- no issuer dropped, none invented.
+    assert [row["ticker"] for row in queue["mapping_backlog"]] == list(
+        canonical_requested_issuer_tickers()
+    )
     # The award-event rail activated on 2026-08-08T18:30Z (activation_state=live)
     # after days of reporting unavailable, and Wave 9D published the reviewed
     # defense19 graph the same day. Current truth, re-verified empirically at this
     # merge (2026-08-09): the rail is read (award_events_status ok), ~500
-    # award-change events are visible, all 19 defense19 issuers are reviewed --
-    # and eight exact snapshot rows now meet source eligibility. They remain
-    # context-only and are quarantined by the separately reviewed publication
-    # correction; this pure-engine tripwire must never pretend the facts vanished.
+    # award-change events are visible, every issuer the reviewed graph declares
+    # is resolvable -- and eight exact snapshot rows now meet source eligibility.
+    # They remain context-only and are quarantined by the separately reviewed
+    # publication correction; this pure-engine tripwire must never pretend the
+    # facts vanished.
     assert queue["freshness"]["award_events_status"] == "ok"
     assert queue["freshness"]["exact_candidate_availability"] == "available"
     assert queue["freshness"]["recipient_graph_status"] == "ready"
-    assert queue["coverage"]["reviewed_issuer_company_count"] == 19
-    assert queue["coverage"]["reviewed_issuer_tickers"] == [
-        "AVAV", "BA", "CW", "GD", "HEI", "HII", "HWM", "IRDM", "KTOS", "LDOS",
-        "LHX", "LMT", "NOC", "PLTR", "RTX", "TDG", "TDY", "TXT", "VSAT",
-    ]
+    # Coverage is a census of the published reviewed graph, so `== 19` and its
+    # nineteen hand-listed tickers described exactly one vintage
+    # (`recipient-graph:reviewed:2026-08-08:defense19-v1`) and would have to be
+    # re-typed on every republish.  Derived from the graph's own declared roster
+    # instead: this still pins the engine's resolved set ticker-for-ticker, but
+    # now it pins it to what the graph publishes rather than to what a human
+    # remembered.  A graph that declares an issuer reviewed while shipping no
+    # reachable exact path for it still fails here -- that is the state BWXT was
+    # in before its exact edges were reviewed.
+    assert queue["coverage"]["reviewed_issuer_company_count"] == len(
+        canonical_reviewed_issuer_tickers()
+    )
+    assert queue["coverage"]["reviewed_issuer_tickers"] == list(
+        canonical_reviewed_issuer_tickers()
+    )
     # The coverage frontier: every reviewed issuer is identifier-linked but its
-    # discovery scope is incomplete, and exactly two requested issuers carry no
-    # reviewed mapping at all -- GE (no_exact_match) and BWXT
-    # (no_collected_recipients), both finished answers rather than open tasks.
-    assert Counter(row["mapping_state"] for row in queue["mapping_backlog"]) == {
-        "partial_identifier_coverage": 19,
-        "mapping_needed": 2,
-    }
+    # discovery scope is incomplete, and the requested issuers carrying no
+    # reviewed mapping at all -- GE (no_exact_match) and, on this vintage, BWXT
+    # (no_collected_recipients) -- are finished answers rather than open tasks.
+    # Derived as the set difference `requested - reviewed`, so an issuer that
+    # gains reviewed exact edges crosses between the two states with no edit.
+    assert (
+        Counter(row["mapping_state"] for row in queue["mapping_backlog"])
+        == canonical_mapping_backlog_states()
+    )
     assert sorted(
         row["ticker"] for row in queue["mapping_backlog"]
         if row["mapping_state"] == "mapping_needed"
-    ) == ["BWXT", "GE"]
+    ) == list(canonical_unreviewed_issuer_tickers())
     assert all(row["issuer_attribution"] == "not_asserted" for row in queue["mapping_backlog"])
     assert is_valid_candidate_queue(queue)
 
