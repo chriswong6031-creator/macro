@@ -1045,6 +1045,7 @@ jobs:
       - "config/**"
       - "contracts/**"
       - "data/**"
+      - "docs/runbooks/OPTIONS_SPARSE_SELECTOR.md"
       - "engine/*"
       - "engine/biocatalyst/**"
       - "engine/capital_structure/**"
@@ -1068,6 +1069,7 @@ jobs:
       - "ops/launchd/com.mastermind.chainsnapshots.plist"
       - "ops/launchd/com.mastermind.liveflow.plist"
       - "ops/launchd/com.mastermind.prophetmarks.plist"
+      - "ops/launchd/run_options_sparse_selector_verified.py"
       - "ops/launchd/run_prophet_marks_loop.sh"
       - "research/DO_NOT_REBUILD.md"
       - "research/momoedge/completion_benchmark_prereg_v1.json"
@@ -1138,6 +1140,7 @@ jobs:
       - "tests/test_options_signal_campaign.py"
       - "tests/test_options_signal_episode.py"
       - "tests/test_options_sparse_selector_prereg.py"
+      - "tests/test_options_sparse_selector_bootstrap.py"
       - "tests/test_options_sparse_selector_runtime.py"
       - "tests/test_options_structure_intraday.py"
       - "tests/test_private_auth_dict.py"
@@ -1184,6 +1187,8 @@ jobs:
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
           tests/test_private_auth_dict.py -q -rs
+      - name: unarmed sparse selector sealed runtime carrier (disposable proof only)
+        run: python -m pytest tests/test_options_sparse_selector_bootstrap.py -q
       - name: inert sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
         run: >-
           SPARSE_SELECTOR_PERF=1 python -m pytest
