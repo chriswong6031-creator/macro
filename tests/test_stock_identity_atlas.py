@@ -547,7 +547,15 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
         "schema": pilot.W1A1_RECEIPT_SCHEMA,
         "amendment_id": pilot.AMENDMENT_ID,
         "asof": pilot.W1A1_ASOF,
-        "pull_request": 9999,
+        "pull_request": pilot.W1A1_PULL_REQUEST,
+        "pull_request_context": {
+            "repository": pilot.W1A1_GITHUB_REPOSITORY,
+            "base_ref": pilot.W1A1_PR_BASE_REF,
+            "head_ref": pilot.W1A1_PR_HEAD_REF,
+            "head_oid_at_run": "3" * 40,
+            "url": pilot.W1A1_PR_URL,
+            "draft_at_run": True,
+        },
         "initial_registration_commit": pilot.W1A1_INITIAL_REGISTRATION_COMMIT,
         "registration_commit": "3" * 40,
         "prerequisite_source_heads": copy.deepcopy(
@@ -618,6 +626,10 @@ def test_current_miner_probe_requires_complete_closed_receipt(tmp_path, monkeypa
         (("procedural_deviation", "write_scope"), "erased", "deviation disclosure"),
         (("procedural_deviation", "observed_scope"), "erased", "deviation disclosure"),
         (("trial_budget",), "outcome-selected", "trial-budget"),
+        (("pull_request",), 9999, "pull_request receipt"),
+        (("pull_request_context", "base_ref"), "master", "pull-request context"),
+        (("pull_request_context", "head_ref"), "wrong", "pull-request context"),
+        (("pull_request_context", "head_oid_at_run"), "0" * 40, "pull-request head"),
         (("initial_registration_commit",), "0" * 40, "initial registration commit"),
         (("prerequisite_source_heads", "pr_5632"), "0" * 40, "source-head"),
         (("prerequisite_merges", "pr_5632"), "0" * 40, "merge closure"),
@@ -746,6 +758,111 @@ def test_b_compute_hygiene_fails_before_history_is_consumed(monkeypatch):
     )
     with pytest.raises(SystemExit, match="pre-read compute hygiene gate"):
         amendment_builder._validate_compute_hygiene("B", pd.Timestamp("2014-01-02"))
+
+
+def _pr_payload(number: int, key: str) -> dict:
+    return {
+        "number": number,
+        "state": "MERGED",
+        "baseRefName": "main",
+        "headRefName": f"source-{number}",
+        "headRefOid": pilot.W1A1_PREREQUISITE_SOURCE_HEADS[key],
+        "mergeCommit": {"oid": pilot.W1A1_PREREQUISITE_MERGES[key]},
+        "isCrossRepository": False,
+        "isDraft": False,
+        "url": f"https://github.com/mastermindx-market-intelligence/macro/pull/{number}",
+    }
+
+
+def test_prerequisite_gate_checks_exact_pr_pairs_and_only_merge_ancestry(monkeypatch):
+    payloads = {
+        5613: _pr_payload(5613, "pr_5613"),
+        5632: _pr_payload(5632, "pr_5632"),
+    }
+    ancestry: list[tuple[str, str, str]] = []
+    monkeypatch.setattr(amendment_builder, "_gh_pr_view", payloads.__getitem__)
+    monkeypatch.setattr(amendment_builder, "_git", lambda *args: "f" * 40)
+    monkeypatch.setattr(
+        amendment_builder,
+        "_require_ancestor",
+        lambda ancestor, descendant, label: ancestry.append((ancestor, descendant, label)),
+    )
+    amendment_builder._validate_prerequisites()
+    assert [row[0] for row in ancestry] == list(
+        pilot.W1A1_PREREQUISITE_MERGES.values()
+    )
+    assert not set(row[0] for row in ancestry) & set(
+        pilot.W1A1_PREREQUISITE_SOURCE_HEADS.values()
+    )
+
+
+def test_prerequisite_gate_rejects_a_valid_but_wrong_source_head(monkeypatch):
+    payloads = {
+        5613: _pr_payload(5613, "pr_5613"),
+        5632: _pr_payload(5632, "pr_5632"),
+    }
+    payloads[5632]["headRefOid"] = "0" * 40
+    monkeypatch.setattr(amendment_builder, "_gh_pr_view", payloads.__getitem__)
+    monkeypatch.setattr(amendment_builder, "_git", lambda *args: "f" * 40)
+    monkeypatch.setattr(amendment_builder, "_require_ancestor", lambda *args: None)
+    with pytest.raises(SystemExit, match="source-head provenance"):
+        amendment_builder._validate_prerequisites()
+
+
+def _current_pr_payload(registration_commit: str) -> dict:
+    return {
+        "number": pilot.W1A1_PULL_REQUEST,
+        "state": "OPEN",
+        "baseRefName": pilot.W1A1_PR_BASE_REF,
+        "headRefName": pilot.W1A1_PR_HEAD_REF,
+        "headRefOid": registration_commit,
+        "mergeCommit": None,
+        "isCrossRepository": False,
+        "isDraft": True,
+        "url": pilot.W1A1_PR_URL,
+    }
+
+
+def test_current_pr_gate_binds_the_clean_pushed_registration_head(monkeypatch):
+    registration = "a" * 40
+    monkeypatch.setattr(
+        amendment_builder,
+        "_git",
+        lambda *args: pilot.W1A1_PR_HEAD_REF if args == ("branch", "--show-current") else "",
+    )
+    monkeypatch.setattr(
+        amendment_builder, "_gh_pr_view", lambda number: _current_pr_payload(registration)
+    )
+    context = amendment_builder._validate_current_pull_request(registration)
+    assert context["head_oid_at_run"] == registration
+    assert context["draft_at_run"] is True
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    (
+        ("number", 9999),
+        ("state", "MERGED"),
+        ("baseRefName", "master"),
+        ("headRefName", "wrong"),
+        ("headRefOid", "0" * 40),
+        ("isCrossRepository", True),
+        ("isDraft", False),
+        ("url", "https://example.invalid/pr/5660"),
+    ),
+)
+def test_current_pr_gate_rejects_metadata_drift(monkeypatch, field, value):
+    registration = "a" * 40
+    payload = _current_pr_payload(registration)
+    payload[field] = value
+    monkeypatch.setattr(
+        amendment_builder,
+        "_git",
+        lambda *args: pilot.W1A1_PR_HEAD_REF if args == ("branch", "--show-current") else "",
+    )
+    monkeypatch.setattr(amendment_builder, "_gh_pr_view", lambda number: payload)
+    with pytest.raises(SystemExit, match="pull-request provenance"):
+        amendment_builder._validate_current_pull_request(registration)
 
 
 def test_b_logical_prefix_digest_ignores_later_appends_but_detects_revisions():
@@ -1009,6 +1126,14 @@ def test_registration_append_did_not_move_the_sealed_partition_hash():
     )
     assert text.index("## Amendment A1") > text.index("## §14. Hashes")
     assert amendment_builder.AMENDMENT_ID in text
+    for sha in (
+        *pilot.W1A1_PREREQUISITE_SOURCE_HEADS.values(),
+        *pilot.W1A1_PREREQUISITE_MERGES.values(),
+        pilot.W1A1_INITIAL_REGISTRATION_COMMIT,
+    ):
+        assert sha in text
+    assert f"PR #{pilot.W1A1_PULL_REQUEST}" in text
+    assert pilot.W1A1_PR_HEAD_REF in text
 
 
 def test_result_records_the_registration_commits():
@@ -1016,6 +1141,10 @@ def test_result_records_the_registration_commits():
     assert re.fullmatch(r"[0-9a-f]{40}", receipt["registration_commit"])
     assert receipt["initial_registration_commit"] == (
         pilot.W1A1_INITIAL_REGISTRATION_COMMIT
+    )
+    assert receipt["pull_request"] == pilot.W1A1_PULL_REQUEST
+    assert receipt["pull_request_context"]["head_oid_at_run"] == (
+        receipt["registration_commit"]
     )
 
 

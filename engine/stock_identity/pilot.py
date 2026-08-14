@@ -31,6 +31,13 @@ W1A1_PREREQUISITE_MERGES = {
     "pr_5613": "666a2efd7aa69881b7d56e2712cc283638ef7b98",
     "pr_5632": "6d04e9b3100af7afaf834ceb2c9c307a48808f0b",
 }
+W1A1_GITHUB_REPOSITORY = "mastermindx-market-intelligence/macro"
+W1A1_PULL_REQUEST = 5660
+W1A1_PR_BASE_REF = "main"
+W1A1_PR_HEAD_REF = "codex/stock-identity-gold-w1-amendment-20260814"
+W1A1_PR_URL = (
+    "https://github.com/mastermindx-market-intelligence/macro/pull/5660"
+)
 
 W1A1_REGISTERED_OUTPUT_PATHS: tuple[str, ...] = (
     "data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
@@ -186,8 +193,8 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
         raise ValueError(f"{path}: unexpected amendment_id")
     if payload.get("asof") != W1A1_ASOF:
         raise ValueError(f"{path}: amendment asof drifted")
-    if not isinstance(payload.get("pull_request"), int) or payload["pull_request"] <= 0:
-        raise ValueError(f"{path}: pull_request receipt is malformed")
+    if payload.get("pull_request") != W1A1_PULL_REQUEST:
+        raise ValueError(f"{path}: pull_request receipt drifted")
     if not re.fullmatch(r"[0-9a-f]{40}", str(payload.get("registration_commit") or "")):
         raise ValueError(f"{path}: registration commit receipt is malformed")
     if payload.get("initial_registration_commit") != W1A1_INITIAL_REGISTRATION_COMMIT:
@@ -203,6 +210,19 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
         raise ValueError(f"{path}: prerequisite source-head closure drifted")
     if payload.get("prerequisite_merges") != W1A1_PREREQUISITE_MERGES:
         raise ValueError(f"{path}: prerequisite merge closure drifted")
+
+    pr_context = payload.get("pull_request_context") or {}
+    static_pr_context = {
+        "repository": W1A1_GITHUB_REPOSITORY,
+        "base_ref": W1A1_PR_BASE_REF,
+        "head_ref": W1A1_PR_HEAD_REF,
+        "url": W1A1_PR_URL,
+        "draft_at_run": True,
+    }
+    if any(pr_context.get(key) != value for key, value in static_pr_context.items()):
+        raise ValueError(f"{path}: pull-request context drifted")
+    if pr_context.get("head_oid_at_run") != payload["registration_commit"]:
+        raise ValueError(f"{path}: pull-request head does not bind the registration commit")
 
     if payload.get("procedural_deviation") != W1A1_PROCEDURAL_DEVIATION:
         raise ValueError(f"{path}: preregistration deviation disclosure drifted")

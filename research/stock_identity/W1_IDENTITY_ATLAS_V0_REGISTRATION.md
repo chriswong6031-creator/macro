@@ -215,6 +215,12 @@ of `origin/main`. A PR body, label, merge ref, or green intention is not a merge
 identifies the first post-rebase committed A1 registration. The result receipt separately
 records as `registration_commit` the clean, pushed A1 PR head that authorizes the
 artifact-producing run; that runtime head is intentionally not self-hashed in its source.
+The governing review object is draft PR #5660 in
+`mastermindx-market-intelligence/macro`, base `main`, head
+`codex/stock-identity-gold-w1-amendment-20260814`. Before reading B for the registered
+run, the builder requires GitHub to report that exact open draft PR and requires its
+live `headRefOid` to equal the clean pushed local `HEAD`; the receipt preserves that
+PR context and head OID.
 
 ### A1.0 Procedural-deviation ledger — pre-registration implementation exposure
 

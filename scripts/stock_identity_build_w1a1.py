@@ -57,9 +57,14 @@ from engine.stock_identity.pilot import (  # noqa: E402
     W1A1_GOLD_ANNOTATION_BEGIN,
     W1A1_GOLD_ANNOTATION_END,
     W1A1_GOLD_DISCLOSURE_PATH,
+    W1A1_GITHUB_REPOSITORY,
     W1A1_INITIAL_REGISTRATION_COMMIT,
+    W1A1_PR_BASE_REF,
+    W1A1_PR_HEAD_REF,
+    W1A1_PR_URL,
     W1A1_PREREQUISITE_MERGES,
     W1A1_PREREQUISITE_SOURCE_HEADS,
+    W1A1_PULL_REQUEST,
     W1A1_REGISTERED_OUTPUT_PATHS,
     current_miner_probe,
 )
@@ -302,11 +307,11 @@ def _gh_pr_view(number: int) -> dict[str, Any]:
             "view",
             str(number),
             "--repo",
-            "mastermindx-market-intelligence/macro",
+            W1A1_GITHUB_REPOSITORY,
             "--json",
             (
                 "number,state,baseRefName,headRefName,headRefOid,mergeCommit,"
-                "isCrossRepository,url"
+                "isCrossRepository,isDraft,url"
             ),
         ],
         cwd=REPO_ROOT,
@@ -366,6 +371,35 @@ def _validate_prerequisites() -> None:
     rows = [r for r in breaks.get("breaks", []) if r.get("symbol") == "GOLD"]
     if len(rows) != 1 or "1591588" not in str(rows[0]) or "756894" not in str(rows[0]):
         raise SystemExit("ratified GOLD identity-break receipt is missing or ambiguous")
+
+
+def _validate_current_pull_request(registration_commit: str) -> dict[str, Any]:
+    branch = _git("branch", "--show-current")
+    if branch != W1A1_PR_HEAD_REF:
+        raise SystemExit(
+            f"A1 run branch is {branch!r}; expected exact PR head {W1A1_PR_HEAD_REF!r}"
+        )
+    pr = _gh_pr_view(W1A1_PULL_REQUEST)
+    expected = {
+        "number": W1A1_PULL_REQUEST,
+        "state": "OPEN",
+        "baseRefName": W1A1_PR_BASE_REF,
+        "headRefName": W1A1_PR_HEAD_REF,
+        "headRefOid": registration_commit,
+        "isCrossRepository": False,
+        "isDraft": True,
+        "url": W1A1_PR_URL,
+    }
+    if any(pr.get(field) != value for field, value in expected.items()):
+        raise SystemExit("A1 pull-request provenance does not match the registration")
+    return {
+        "repository": W1A1_GITHUB_REPOSITORY,
+        "base_ref": W1A1_PR_BASE_REF,
+        "head_ref": W1A1_PR_HEAD_REF,
+        "head_oid_at_run": registration_commit,
+        "url": W1A1_PR_URL,
+        "draft_at_run": True,
+    }
 
 
 def _validate_registration() -> dict[str, Any]:
@@ -750,7 +784,7 @@ def _build_and_stage(
     factor_returns: pd.Series,
     manifest: dict[str, Any],
     registration_commit: str,
-    pull_request: int,
+    pull_request_context: dict[str, Any],
 ) -> tuple[dict[str, Any], str]:
     ec, sc, constants = _load_constants()
     states = state_mod.tag_states(frame, PRICE_PLANE_ID, sc)
@@ -901,7 +935,8 @@ def _build_and_stage(
         "amendment_id": AMENDMENT_ID,
         "registered_date": BUILD_DATE,
         "asof": str(ASOF.date()),
-        "pull_request": pull_request,
+        "pull_request": W1A1_PULL_REQUEST,
+        "pull_request_context": pull_request_context,
         "initial_registration_commit": W1A1_INITIAL_REGISTRATION_COMMIT,
         "registration_commit": registration_commit,
         "prerequisite_source_heads": W1A1_PREREQUISITE_SOURCE_HEADS,
@@ -1102,11 +1137,11 @@ def _publish(stage_root: Path, staged_gold: Path, receipt: dict[str, Any]) -> No
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--w1-reference-dir", type=Path, required=True)
-    parser.add_argument("--pull-request", type=int, required=True)
     parser.add_argument("--validate-only", action="store_true")
     args = parser.parse_args()
 
     registration_commit = _validate_clean_pushed_registration()
+    pull_request_context = _validate_current_pull_request(registration_commit)
     _validate_prerequisites()
     manifest = _validate_registration()
     _validate_frozen_hashes()
@@ -1142,7 +1177,7 @@ def main() -> int:
             factor_returns=factor_returns,
             manifest=manifest,
             registration_commit=registration_commit,
-            pull_request=args.pull_request,
+            pull_request_context=pull_request_context,
         )
         staged_gold = Path(staged_gold_raw)
         _validate_staged(stage_root, receipt, staged_gold)
