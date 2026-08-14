@@ -1,12 +1,13 @@
 {
   "authority": "display_only \u2014 DOS-1.1 materializes the spine; nothing reads it as authority yet",
-  "code_version": "81039c77e7a1221c7bbed88c78efe1c361ecc862",
+  "code_version": "6e1c320dd04ae26dc2e4e9beffb935275ba1662c",
   "coverage": {
-    "resolved": 704,
+    "resolved": 703,
     "total": 712,
-    "unresolved": 8,
+    "unresolved": 9,
     "unresolved_names": [
       "ANGPY",
+      "B",
       "BLD",
       "CBOE",
       "EA",
@@ -20,11 +21,25 @@
     "reference.security_master",
     "reference.vendor_aliases"
   ],
-  "generated_at": "2026-08-14T15:26:55",
+  "generated_at": "2026-08-14T15:51:42",
+  "identity_exceptions": [
+    {
+      "evidence": "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer announcement; config/theme_graph_identity_breaks.yml GOLD",
+      "key": "B",
+      "reason": "verified identity-scoped event required: NYSE B belonged to Barnes Group through 2025-01-27; Barrick Mining changed NYSE GOLD->B effective 2025-05-09; Gold.com then reused NYSE GOLD effective 2025-12-02. A bare RenameEvent would collapse different issuers, so B is fail-closed pending a registered identity-scoped continuation+reuse amendment",
+      "status": "deferred_no_mint"
+    },
+    {
+      "evidence": "config/theme_graph_identity_breaks.yml GOLD; config.yml quality.reused_ticker_acks.GOLD",
+      "key": "GOLD",
+      "reason": "existing historical alias is not issuer-safe across 2025-12-02: the open GOLD row predates the ratified Gold.com reuse break and must not be treated as Barrick/miner history; replacement requires the same registered identity-scoped continuation+reuse amendment",
+      "status": "disclosed_existing_alias"
+    }
+  ],
   "inputs": {
-    "config.yml": "b34e8890bb4ba06ee40431e9ac79653810341678c8028e3b1dc1ad1b73d870e2",
+    "config.yml": "43b21e2c46dad3d3cb495275c44c94a987c1acd7521004eef047fc41aff640f4",
     "config/delisted_symbols.yml": "d5e656970865d77f6681afe281a86a7aa57098481e4e62a0b5b94e3a0d5cd894",
-    "data/baskets/membership.json": "ee68e6481467f17de324892504dce65bc7f66215f31256e800cfb899d597ffe9",
+    "data/baskets/membership.json": "0afa3469962a059add57067a7cf4831d99ba58dc80b4d14ca62a249537c86e1c",
     "data/breadth/constituents.parquet": "a0bad230bfdf0052743d27d74c972f1a0be17ee6ddc732ac26db8086b7b98711",
     "data/symbol_directory/snapshots/2026-08-10.parquet": "f082a2bee3171061b1f61b4b38bba98a2bceccb0a49425a62def9dca9d1eb370",
     "lib/ticker_aliases.py": "e61756c5c1dda0b4f0a3fd06ce532e868adb91b9c38948b7e6cab00dd3893011"
@@ -54,9 +69,9 @@
     }
   ],
   "row_counts": {
-    "security_master": 704,
-    "vendor_alias_rows_readable": 2821,
-    "vendor_aliases": 2821
+    "security_master": 703,
+    "vendor_alias_rows_readable": 2817,
+    "vendor_aliases": 2817
   },
   "seed_counts": {
     "delisted_keys": 2,
