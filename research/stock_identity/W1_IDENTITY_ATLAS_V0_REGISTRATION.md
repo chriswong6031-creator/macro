@@ -373,3 +373,16 @@ right; its observations are quarantined as stated in A1.0.
 
 The B dossier must watermark the curated history floor: 2014-01-02 is not Barrick's issuer
 or listing birth, and this tape cannot cover the pre-2014 portion of the 2011-2015 gold bear.
+
+### A1.5 Post-registration execution log
+
+The first registered builder invocation ran at pushed draft-PR head
+`f25f53dd02c65f01d2d007edafede2acd26fb582` after every preflight passed. It computed
+only inside the operating-system staging directory, then stopped before publication
+with `B dossier Identity boundary is ambiguous`: the implementation matched the prefix
+`## Identity`, which also matched the later `## Identity-episode catalog` heading. No B
+metric or count was printed, no registered output existed afterward, `git status --short`
+was clean, and the pinned GOLD markdown/SVG hashes remained exact. The retry changes only
+that syntactic insertion boundary to the complete `## Identity\n` heading. It changes no
+source, cohort, constant, rank method, output path, acceptance rule, or interpretation;
+this log is committed and pushed before the retry.

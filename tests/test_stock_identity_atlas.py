@@ -951,6 +951,29 @@ def test_b_only_dossier_overrides_disclose_rank_and_open_gap_semantics():
     assert "close-to-close proxy" not in amended
 
 
+def test_b_dossier_prologue_uses_the_complete_identity_heading_boundary():
+    markdown = "\n".join(
+        (
+            "# B — Identity Atlas v0 dossier (W1-A1 addendum)",
+            "",
+            "## Identity",
+            "",
+            "identity body",
+            "",
+            "## Identity-episode catalog",
+        )
+    )
+    boundary = "\n## Identity\n"
+    assert markdown.count(boundary) == 1
+    inserted = markdown.replace(
+        boundary,
+        f"\n{amendment_builder.B_DOSSIER_PROLOGUE}\n{boundary}",
+        1,
+    )
+    assert inserted.count(amendment_builder.B_DOSSIER_PROLOGUE) == 1
+    assert "## Identity-episode catalog" in inserted
+
+
 def test_post_publish_validation_failure_rolls_back_the_whole_amendment(
     tmp_path, monkeypatch
 ):

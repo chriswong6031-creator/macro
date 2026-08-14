@@ -746,7 +746,9 @@ def _build_dossier(
         ),
     )
     markdown = _apply_b_dossier_disclosures(markdown)
-    identity = "\n## Identity"
+    # Match the complete heading, not its prefix: the generic dossier also contains
+    # ``## Identity-episode catalog`` later in the document.
+    identity = "\n## Identity\n"
     if markdown.count(identity) != 1:
         raise SystemExit("B dossier Identity boundary is ambiguous")
     return markdown.replace(identity, f"\n{B_DOSSIER_PROLOGUE}\n{identity}", 1)
