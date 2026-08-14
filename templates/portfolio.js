@@ -316,6 +316,17 @@
     if (al && al.overextended === true) return 'stretched';
     return 'intrend';
   }
+  /* The elevated half of that vocabulary, named ONCE. The engine emits exactly five
+     words (engine/extension.py GRADES: intrend / steady / stretched / parabolic / na)
+     and flags two of them is_caution=True — the same two watchlist_sentinel.py vetoes
+     on (_BLOCKED_GRADES) and the same two stretchOf() above puts a chip on.
+
+     It is named once because it was not: three readers each carried their own
+     `g === 'high' || g === 'extreme'` — words this engine has never emitted in any
+     version — so the "Stretched" row flag and stack rules 1 and 3 were dead from the
+     day they shipped, silently, on 467 of the 1630 modeled names (28.6%) carrying an
+     elevated grade. Three copies of a comparison drift as one; one copy cannot. */
+  function isElevatedGrade(g) { return g === 'stretched' || g === 'parabolic'; }
 
   function roleOf(t, j) {
     if (!j || !window.WRI || !window.WRI.laneRead || !window.WRI.roleBadge) return null;
@@ -565,13 +576,15 @@
        extension oracle in this repo produces — so from #5496 until now the flag was
        structurally unreachable and this column simply never said "stretched" about
        anything. The zh word is the one the chip lane already uses (过度拉伸, see
-       `stretchOf`), NOT the 偏离过大 this branch was written with: the flag takes
+       `stretchOf`), NOT the 偏离过大 an earlier draft used: the flag takes
        either oracle (see `stretchBasis` above) and only one of those always measures
        distance, so a 偏离 (deviation) word here would make a claim the alignment path
-       cannot carry. One word, one column, and it must be true both ways. */
+       cannot carry. One word, one column, and it must be true both ways.
+       Elevated is named once (`isElevatedGrade`); the two caution grades then split
+       their copy so parabolic is not silently folded into "Stretched". */
     var g = extGradeOf(t, j);
-    if (g === 'parabolic') return ['f-warn', 'Parabolic', '抛物线拉伸'];
-    if (g === 'stretched') return ['f-warn', 'Stretched', '过度拉伸'];
+    if (isElevatedGrade(g) && g === 'parabolic') return ['f-warn', 'Parabolic', '抛物线拉伸'];
+    if (isElevatedGrade(g) && g === 'stretched') return ['f-warn', 'Stretched', '过度拉伸'];
     if (!RISK_COVERED[t] && isModeled(t) === false) return ['f-info', 'Outside risk model', '不在风险模型内'];
     return null;
   }
@@ -842,7 +855,7 @@
          checks turned elevated", which BOTH oracles behind `extGradeOf` can back, so
          this rule takes either one (rule 3 below is the one that cannot). */
       var g = extGradeOf(r.ticker, jsonCache[r.ticker]);
-      if (g !== 'stretched' && g !== 'parabolic') return;
+      if (!isElevatedGrade(g)) return;
       push(r, 1, 'Your largest risk share, and its checks turned elevated.',
            '它占你账簿的风险最大，指标也转为偏高。', 's-watch',
            'Rule 1 — largest share of book risk, and its own checks are elevated. Source: last night&#39;s close.',
@@ -861,7 +874,7 @@
     byRisk.forEach(function (r) {
       var j3 = jsonCache[r.ticker];
       var g = extGradeOf(r.ticker, j3);
-      if (g !== 'stretched' && g !== 'parabolic') return;
+      if (!isElevatedGrade(g)) return;
       /* This rule's hover NAMES its method — "measured against its own 200-day path".
          Only the `ext` oracle takes the read that way, so an alignment-sourced grade
          may not raise THIS rule: it would print a sentence about a 200-day distance
