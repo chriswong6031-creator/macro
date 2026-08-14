@@ -73,11 +73,25 @@ two roots or back into the mutable source environment. It resets stdlib
 Conda prefix.
 
 The import check binds and hashes `engine/options_sparse_selector.py` and
-`engine/private_auth_dict.py` across that check. It is **not** a Git/release
-provenance verifier: production checkout/release authentication remains a
-separate, later reviewed installation slice.
+`engine/private_auth_dict.py` across that check. The v2 manifest persists those
+exact bytes under `repo_import_source_sha256`; at this revision the expected
+mapping is:
 
-## Disposable Mac13,1 proof — 2026-08-14
+- `engine/options_sparse_selector.py`:
+  `f535bf10c651a1817efa6100c4b46dcff677d4e6a255fa08174981f115a825f6`;
+- `engine/private_auth_dict.py`:
+  `55e73e3086de01e3d06204a0638f3665fc2b4fa64e0d00b0c9893886c9cad220`.
+
+These byte hashes make a receipt self-binding to the imported sources, but they
+do **not** prove Git/release provenance. Production checkout/release
+authentication remains a separate, later reviewed installation slice.
+
+## Historical v1 disposable Mac13,1 proof — 2026-08-14
+
+The proof below used the v1 manifest. It transiently checked that the two repo
+sources did not change across the isolated import, but discarded their hashes
+instead of persisting them. It is retained as historical closure evidence only
+and does not satisfy the v2 source-binding gate for a future arm review.
 
 The exact carrier SHA-256
 `ae187f271985c8c1d37aa7ed60bf6c542c2b34d5dbbbdbfb8c13866dab7acd33`
@@ -87,7 +101,7 @@ Theta reachable. The command exited `0` with zero stderr. Its canonical
 `6bae097c5d7d841379c3e3d2e50896bc7d09c919777beeb653c0ee8e3cd06dfa`;
 the printed JSON is the identical object plus its terminal newline.
 
-The receipt binds 8,007 files / 294,750,046 bytes, 197 strictly verified
+The historical receipt binds 8,007 files / 294,750,046 bytes, 197 strictly verified
 ad-hoc-signed native objects, 196 successful in-carrier dyld loads, all 14
 declared isolated dependency imports, the sealed timezone database, and exact
 `authority=false` / `training=false`. Independent post-proof inspection found
@@ -96,7 +110,7 @@ native ID, dependency, or `LC_RPATH`. The copied runtime was then removed to
 restore host disk; the stdout and manifest receipts were retained under the
 caller-owned disposable proof parent.
 
-This is prospective carrier evidence only. It is not a production install,
+This is historical carrier evidence only. It is not a production install,
 release-provenance receipt, selector cycle, producer invocation, or activation
 gate, and it does not change the code-unarmed state.
 
@@ -136,7 +150,8 @@ over or deletes a caller-provided directory.
 
 Before any future arm review, all of the following remain required:
 
-1. independent audit of this carrier and its target-host proof;
+1. independent audit of the v2 carrier and a new target-host proof (the
+   historical v1 receipt does not satisfy this gate);
 2. exact clean-checkout/release provenance and a separately reviewed private
    runtime installation (without producer advance);
 3. authenticated producer adapter and restricted W1A-export proof;

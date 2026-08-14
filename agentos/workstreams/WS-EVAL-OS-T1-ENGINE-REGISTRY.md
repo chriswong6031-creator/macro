@@ -9,7 +9,7 @@ objective: >
   can never render "could not look" as "0 violations", enforced in an isolated CI job that
   cannot mask sibling suites. Done when the fix-wave PR is merged and the guard runs green
   in its own legacy job on main.
-status: awaiting_ci
+status: active
 program: qualitative-intelligence
 repos:
   - macro
@@ -33,9 +33,9 @@ waves:
     next_action: "None — parked with research/EVAL_OS_T1_CONTINUATION_HANDOFF_2026-08-12.md; recovered verbatim 2026-08-14."
   - id: W2
     title: Fix wave — B1/B2/B3 + M1-M4 + adversarial review findings + isolated CI job
-    status: awaiting_ci
+    status: done
     pr: 5620
-    next_action: "Sweeper merges on green; then verify the intelligence-registry job ran on the merge and read its two step logs."
+    next_action: "None — merged d13259abc51c 2026-08-14T17:31Z; ci-pack-7 (the pack carrying intelligence-registry) was green on the PR's own proof run; merged files byte-verified on main. The head run keeps a permanent frozen-vintage ci-pack-8 red (govrev dag drift #5516, healed on main by #5655 AFTER this merge; a rerun re-executes the pre-heal merge commit and cannot green) — disposition recorded in the 2026-08-14 handoff."
   - id: W3
     title: output_class bounded adjudication (the curated overlay)
     status: todo

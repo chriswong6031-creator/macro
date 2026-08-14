@@ -753,7 +753,13 @@ def _row_features(r: dict) -> dict:
         "hold_inv":       _num(_dig(r, ("hold", "invalidation"), default=None)),
         "hold_anchor_src": _dig(r, ("hold", "anchor_src"), default=None),
         # W8 dual-lane fields (forward-ledger strata; None pre-schema)
-        "lane":         r.get("lane"),              # 'trend' | 'recovery' | None
+        # Real live domain: 'bottoming' | 'continuation' | 'watch' | 'leader' | 'ran' |
+        # None.  ('trend' and 'recovery' were the W8 design names and have NEVER been
+        # written — no code path assigns them, and zero rows carry them across the full
+        # ledger history; see PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §1.1.  'ran' is
+        # written by engine/us_board_rank.py.)  Fossil rows keep whatever they were
+        # written with — this comment describes the producer, not the history.
+        "lane":         r.get("lane"),
         "arbiter_note": r.get("arbiter_note"),      # downgrade reason from W8 arbiter | None
         # W8-B postcross lifecycle (display-only; None pre-schema)
         "postcross_based":  bool((r.get("postcross") or {}).get("based")),

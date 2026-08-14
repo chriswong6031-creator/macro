@@ -3728,6 +3728,7 @@ CURATED_EXCLUSIVE = {
     "unrun-subsector-themes",
     "inline-js",
     "unrun-picks-boards",
+    "intelligence-registry",
 }
 
 

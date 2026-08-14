@@ -1442,6 +1442,15 @@ on:
       # published-vs-upstream lag tripwire.
       - "tests/test_earnings_evidence_graph_deps.py"
       - "tests/test_earnings_wire_freshness.py"
+      # The prompt/scorer-quality guards (2026-08-14). The prompt now lives in
+      # engine/earnings_qual.py and the worker re-exports it, so an edit to
+      # either side — or to the config bound they are gated against — must start
+      # the pack that runs them.
+      - "tests/test_earnings_prompt_quality.py"
+      - "tests/test_earnings_score_quality.py"
+      - "scripts/audit_earnings_score_quality.py"
+      - "tools/earnings_worker/prompts.py"
+      - "config/earnings_qual.yml"
       - "scripts/audit_earnings_wire_freshness.py"
       - "tests/test_china_board_watch_lane.py"
       - "tests/test_risk_state_live_session_floor.py"

@@ -2441,7 +2441,7 @@ def _branch_was_pushed(root: Path, branch: str) -> bool:
 def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     """Judge the completion chain, in the order the cheapest evidence answers it.
 
-    Dirty tree -> no-op/stand-down exemptions -> branch -> pushed -> merged pull
+    Dirty tree -> no-op exemption -> branch -> stand-down -> pushed -> merged pull
     request -> CI -> origin/main -> render -> live. Each gate blocks with a code
     `_block` can count, and every gate that proved something durable stores a
     proof so a later Stop turn does not re-poll GitHub for it.
@@ -2476,8 +2476,15 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
 
     branch = _run(root, "git", "branch", "--show-current")
-    if not branch or branch in {"main", "master"}:
-        _block(path, state, payload, "unsafe_branch", f"Work is on {branch or 'detached HEAD'}.")
+    if not branch.startswith("claude/"):
+        location = branch or "detached HEAD"
+        _block(
+            path,
+            state,
+            payload,
+            "unsafe_branch",
+            f"Work is on {location}; project work must use a claude/* branch.",
+        )
         return
 
     # A stand-down session may stop — but only one that never pushed anything.

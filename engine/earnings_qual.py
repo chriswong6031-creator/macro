@@ -94,10 +94,13 @@ TAG_TAXONOMY: tuple[str, ...] = (
 _TAG_SET = frozenset(TAG_TAXONOMY)
 
 # Allowed tone words (kept small + plain so the page reads with zero jargon).
-_TONE_WORDS: frozenset[str] = frozenset({
+# Ordered tuple is the canonical form — the prompt names these words and
+# tools/earnings_worker/prompts.py re-exports them, so there is one list.
+TONE_WORDS: tuple[str, ...] = (
     "confident", "upbeat", "steady", "cautious", "defensive",
     "mixed", "guarded", "downbeat", "reassuring", "uncertain",
-})
+)
+_TONE_WORDS: frozenset[str] = frozenset(TONE_WORDS)
 
 # --------------------------------------------------------------------------- #
 # Trading-verb post-filter (SGA-R5).  These verbs must never reach a highlight.
@@ -154,10 +157,10 @@ _DEFAULT_CFG: dict[str, Any] = {
         "max_tokens": 1200,
     },
     "daily_cap": 64,
-    "max_chars": 24000,
-    "tail_chars": 8000,
+    "max_chars": 48000,
+    "tail_chars": 16000,
     "retry_on_bad_json": 1,
-    "prompt_version": "equal-v2",
+    "prompt_version": "equal-v3",
     "analysis_schema_version": "earnings-qual/v2",
     "usage_lane": "earnings_qual",
 }
@@ -187,37 +190,148 @@ def load_config(root: Path | None = None) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------- #
-# The scoring system prompt.  The definitive copy lives in
-# tools/earnings_worker/prompts.py (the product surface); this is a compact,
-# self-contained mirror so the engine works even when the worker package is not
-# importable (e.g. cloud-fallback lane on the Mac runner).
+# THE scoring system prompt.  Not a mirror — the only copy.
+#
+# Until 2026-08-14 this block called itself "a compact, self-contained mirror" of
+# `tools/earnings_worker/prompts.py`, which called ITSELF "the definitive copy"
+# and "the product".  Neither statement was true of the running system: nothing
+# imported `prompts.py`.  `grep -rn "earnings_worker.prompts"` returned only the
+# file's own docstring, so every score ever produced came from the mirror, and
+# the carefully-written original — the one with the calibration anchors — had
+# never executed.  Two copies with a "keep them in sync" comment is a drift bug
+# with a schedule; the engine is the importable library, so the engine holds the
+# prompt and `prompts.py` re-exports it.  There is now nothing to keep in sync.
+#
+# WHAT THE MIRROR DROPPED, and what it cost.  The original anchored the full
+# performance scale (10 = clean broad beat with a raised guide, 5 = in-line,
+# 0 = bad miss with a cut) and stated plainly that tone must not inflate
+# performance.  The mirror kept only "10 = blowout".  Measured over the 64 calls
+# scored on 2026-08-14 through the local Qwen rung: 34.4% of quarters scored >= 9
+# (the metered rungs on the same schema: 8.4%), 45 of 64 sentiment values landed
+# on just TWO numbers (0.85 and -0.15), and the ten-word tone vocabulary
+# collapsed to two — `confident` (42) and `cautious` (22).  A scale anchored only
+# at the top is a scale everything drifts to the top of, and a 9B model under-
+# constrained on a bounded vocabulary picks a couple of habitual tokens.  The
+# anchors below are restored and extended for exactly those three failures.
 # --------------------------------------------------------------------------- #
-_SYSTEM_PROMPT = """You are an equity-research analyst reading an earnings call \
-(or an earnings press release). Read the NUMBERS FIRST — revenue, EPS, margins, \
-segment growth, guidance versus prior guidance and versus consensus. THEN read \
-tone and forward guidance. Ground every judgement in the text. Do not invent \
-figures. You describe what management reported and how it reads. You do NOT give \
-investment advice, price targets, or trade calls of any kind.
+_SYSTEM_PROMPT = """You are a disciplined equity-research analyst. You read ONE \
+earnings call transcript (or an earnings press release / 8-K Item 2.02) and \
+return a compact structured read for a research dashboard.
 
-Return ONE JSON object and nothing else — no prose, no markdown fences. Schema:
+HOW TO READ IT
+1. NUMBERS FIRST. Extract the hard results before forming any view: revenue and \
+its YoY/QoQ growth, EPS (GAAP and adjusted), gross/operating/net margins and \
+their direction, segment growth, cash flow, buybacks/dividends. Compare guidance \
+to the PRIOR guidance and to consensus where the text states them.
+2. THEN TONE. Read management's forward language: demand confidence, pricing \
+power, cost trajectory, competitive position, and any hedging or walk-back. \
+Tone shapes SENTIMENT. Tone must NOT inflate PERFORMANCE — a weak quarter \
+narrated confidently is still a weak quarter, and this is the single most \
+common way this read goes wrong.
+3. GROUND EVERYTHING. Never invent a figure. If the text does not state it, do \
+not report it.
+
+SCORING — use the WHOLE range. Most quarters are ordinary; a scale is useless if \
+everything lands near the top. Do not gravitate to a few habitual values.
+
+performance (0-10) — the quarter as REPORTED, numbers first:
+  10  clean broad beat AND raised guidance
+  7.5 solid beat, guidance intact
+  5   in-line: met expectations, guidance unchanged  <- the DEFAULT for an
+      unremarkable quarter, and most quarters are unremarkable
+  2.5 miss on revenue or EPS, or a soft guide
+  0   bad miss WITH a guidance cut
+Reserve 9-10 for a quarter that genuinely beat on the numbers AND raised. If you \
+cannot name the specific beat and the specific raise from the text, it is not a 9.
+
+sentiment (-1 to 1) — net read of tone AND forward guidance:
+  +1.0 strongly positive and improving      +0.5 modestly positive
+   0.0 genuinely neutral or mixed           -0.5 modestly negative
+  -1.0 strongly negative and deteriorating
+Mixed signals belong near 0, not at an extreme. A quarter with a real positive \
+and a real negative is a 0, and saying so is more useful than a confident guess.
+
+confidence (0-1) — how well the TEXT supports your read, not how upbeat \
+management sounded and not how sure you feel:
+  0.9+ full transcript, explicit figures, explicit guidance
+  0.7  most figures present, some inference needed
+  0.5  partial text, prepared remarks only, or guidance absent
+  0.3  terse release, few figures
+Thin text means LOW confidence — never a refusal.
+
+tone_word — exactly one, and pick the most SPECIFIC fit from all ten: \
+confident, upbeat, steady, cautious, defensive, mixed, guarded, downbeat, \
+reassuring, uncertain. `confident` and `cautious` are the two most over-used; \
+choose them only when no other word fits better. `steady` fits an ordinary \
+in-line quarter; `mixed` fits genuinely two-sided commentary; `guarded` fits \
+management withholding detail; `defensive` fits management answering criticism.
+
+summary — 2-4 factual sentences: the reported numbers, the forward guidance, and \
+the most important change versus the prior period. Lead with figures. No advice, \
+no valuation claims.
+
+positive_highlights / negative_highlights — up to 3 each, the STRONGEST \
+positives and the CLEAREST concerns. Each must carry a concrete figure or a \
+specific named fact from the text ("gross margin expanded 180 bps to 46.2%", \
+"backlog fell for a third consecutive quarter"), never generic praise or worry \
+("strong execution", "macro uncertainty"). If the text supports fewer than three, \
+return fewer — a padded list is worse than a short one.
+
+tags — only those the text SUPPORTS, from this fixed list: guidance_raised, \
+guidance_lowered, beat_and_raise, miss_and_cut, margin_expansion, \
+margin_contraction, demand_acceleration, demand_slowdown, supply_constraint, \
+new_product, buyback_or_dividend, regulatory_headwind, competitor_threat, \
+macro_sensitivity. Omit any you cannot support. Contradictory pairs \
+(guidance_raised with guidance_lowered, beat_and_raise with miss_and_cut) must \
+never both appear.
+
+HARD RULES
+- Output ONE JSON object and nothing else. No prose before or after. No markdown \
+code fences.
+- NEVER give investment advice, recommendations, ratings, price targets, or trade \
+instructions (no "buy", "sell", "accumulate", "add", "trim", "overweight"). You \
+describe what was reported and how it reads. Trade calls are rejected downstream.
+- If the text is too thin to score well, STILL return the JSON with your best \
+low-confidence read — never refuse, never apologize.
+
+JSON schema:
 {
-  "sentiment": <float -1..1>,          // net tone+guidance read; +1 very positive
-  "performance": <float 0..10>,        // numbers-first quarter quality; 10 = blowout
-  "confidence": <float 0..1>,          // your confidence given the text provided
-  "tone_word": "<one of: confident, upbeat, steady, cautious, defensive, mixed, \
-guarded, downbeat, reassuring, uncertain>",
+  "sentiment": <float -1..1>,
+  "performance": <float 0..10>,
+  "confidence": <float 0..1>,
+  "tone_word": "<one tone word>",
   "summary": "<2-4 factual sentences: numbers, guidance, key change; no advice>",
-  "positive_highlights": ["<=3 short evidence phrases, each grounded in the text"],
-  "negative_highlights": ["<=3 short evidence phrases, each grounded in the text"],
-  "tags": ["subset of: guidance_raised, guidance_lowered, beat_and_raise, \
-miss_and_cut, margin_expansion, margin_contraction, demand_acceleration, \
-demand_slowdown, supply_constraint, new_product, buyback_or_dividend, \
-regulatory_headwind, competitor_threat, macro_sensitivity"]
-}
-Highlights are factual observations ("revenue up 22% YoY, above the high end of \
-guidance"), never trade instructions. Use ONLY tags from the list; omit tags you \
-cannot support. If the text is too thin to score, still return the JSON with your \
-best low-confidence read."""
+  "positive_highlights": ["...", "..."],
+  "negative_highlights": ["...", "..."],
+  "tags": ["...", "..."]
+}"""
+
+
+def prompt_fingerprint(system_prompt: str = _SYSTEM_PROMPT) -> str:
+    """First 8 hex of the SHA-256 of the prompt text that actually runs.
+
+    `prompt_version` used to be `str(cfg.get("prompt_version"))` — a hand-typed
+    config string with no connection to the prompt.  Every one of the 1,234 rows
+    stamped `equal-v2` was scored by the engine mirror, while the file that
+    defined `PROMPT_VERSION = "equal-v2"` was imported by nothing.  The stamp
+    named text that had never executed, so the one question the field exists to
+    answer — "did this score change because the prompt changed?" — could not be
+    answered from the store, in either direction: editing the prompt would not
+    move the stamp, and moving the stamp would not imply an edit.
+
+    Appending this fingerprint makes that impossible.  The label stays
+    human-chosen (`equal-v3`); the suffix is derived from the bytes sent to the
+    model, so a prompt edit that forgets to bump the label still produces a new,
+    attributable version string.
+    """
+    return hashlib.sha256(system_prompt.encode("utf-8")).hexdigest()[:8]
+
+
+def resolve_prompt_version(cfg: dict[str, Any], system_prompt: str = _SYSTEM_PROMPT) -> str:
+    """`<config label>+<fingerprint>`, e.g. ``equal-v3+1a2b3c4d``."""
+    label = str((cfg or {}).get("prompt_version") or "").strip()
+    fp = prompt_fingerprint(system_prompt)
+    return f"{label}+{fp}" if label else fp
 
 _RETRY_SUFFIX = (
     "\n\nYour previous reply was not valid JSON. Return ONLY the JSON object, "
@@ -684,7 +798,7 @@ def score_text(
         "source_updated_at": source_updated_at or None,
         "source_url": source_url or None,
         "source_revision_sha256": source_revision_sha256 or None,
-        "prompt_version": str(cfg.get("prompt_version") or ""),
+        "prompt_version": resolve_prompt_version(cfg),
         "analysis_schema_version": str(cfg.get("analysis_schema_version") or ""),
         "summary": None,           # SGA W5: call_summary from the model (optional)
         "is_context_only": True,   # SGA-R5 — ALWAYS context-only
@@ -863,8 +977,8 @@ def _rung_text_bounds(
     global budget — measured at 8,797 prompt_tokens on prose and 14,156 on
     token-dense numeric text, both ``finish_reason`` stop with usable JSON.
     """
-    global_max = _int_or(cfg.get("max_chars"), 24000)
-    global_tail = _int_or(cfg.get("tail_chars"), 8000)
+    global_max = _int_or(cfg.get("max_chars"), 48000)
+    global_tail = _int_or(cfg.get("tail_chars"), 16000)
     block: dict[str, Any] = {}
     base_block = cfg.get(provider_name)
     if isinstance(base_block, dict):

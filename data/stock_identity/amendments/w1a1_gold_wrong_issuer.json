@@ -1,0 +1,156 @@
+{
+  "amendment_id": "SI-W1-A1-GOLD-WRONG-ISSUER",
+  "asof": "2026-08-13",
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "disclosure_only": {
+    "after_sha256": "b6d9895d1f22b9f1b5b0aa00df442acf577be91f41b36f168120638fe23c5e58",
+    "before_sha256": "2675b5be60cc09a37324e697bb62c20679b8f21cfe4d268f5082ce0730861558",
+    "gold_svg_unchanged": true,
+    "marker_begin": "<!-- SI-W1-A1-GOLD-WRONG-ISSUER:BEGIN -->",
+    "marker_end": "<!-- SI-W1-A1-GOLD-WRONG-ISSUER:END -->",
+    "path": "research/stock_identity/dossiers/GOLD.md",
+    "restores_original_when_removed": true
+  },
+  "generated_output_sha256": {
+    "data/stock_identity/episodes/amendments/B.json": "15890f61328578c96863a257d34c4b661710cfc46b2c6f8169c8cc5b2f53b60c",
+    "data/stock_identity/episodes/amendments/w1a1_b_episode_catalog_v0.parquet": "7efd7a1e859d4c098de3b0b0ecdf445e54bd3107a88a2fb1403d384ce71e930f",
+    "data/stock_identity/fingerprints/amendments/w1a1_b_fingerprint_v0.parquet": "6b18ee71d341e7d5674154aa631a053370109fa9639fa7f0064fe97d1807e594",
+    "data/stock_identity/state/amendments/w1a1_b_state_daily.parquet": "2934f5bb1ef96e47d2ca46714df7bd0f9ae19655e3e81198f814335d58a0b5d8",
+    "research/stock_identity/dossiers/B.md": "8d26fe53eed78d0700a9346b647c201354827323ad352813c0f8060008889230",
+    "research/stock_identity/dossiers/B.svg": "679e6d289d678d9f2a105c2a778e0f7af3e412726359b424ea526265d678dedd"
+  },
+  "identity_receipt": {
+    "B": {
+      "curated_tape_floor": "2014-01-02",
+      "edgar_cik": "756894",
+      "effective_symbol_date": "2025-05-09",
+      "issuer": "Barrick Mining Corporation",
+      "role": "design-touched W1-A1 miner-probe addendum"
+    },
+    "GOLD": {
+      "edgar_cik": "1591588",
+      "effective_symbol_date": "2025-12-02",
+      "issuer": "Gold.com, Inc. (fka A-Mark Precious Metals)",
+      "role": "bullion dealer instrument; frozen W1 miner interpretation withdrawn",
+      "store_first_print": "2014-03-17"
+    }
+  },
+  "initial_registration_commit": "adb6ae2ed744e2f76574cb89b0e106ea402e576a",
+  "measured_rows_mutated": false,
+  "miner_probe_roster": {
+    "effective_w1a1": [
+      "NEM",
+      "AEM",
+      "PAAS",
+      "WPM",
+      "AG",
+      "B"
+    ],
+    "sealed_w1": [
+      "NEM",
+      "GOLD",
+      "AEM",
+      "PAAS",
+      "WPM",
+      "AG"
+    ]
+  },
+  "partition_treatment": {
+    "B_absent_from_w1_pilot": true,
+    "B_absent_from_w1_universe": true,
+    "B_design_touched": true,
+    "B_excluded_from_blind": true,
+    "B_excluded_from_calibration": true,
+    "B_excluded_from_confirmatory_grading": true,
+    "B_excluded_from_future_blind_extension": true
+  },
+  "prerequisite_merges": {
+    "pr_5613": "666a2efd7aa69881b7d56e2712cc283638ef7b98",
+    "pr_5632": "6d04e9b3100af7afaf834ceb2c9c307a48808f0b"
+  },
+  "prerequisite_source_heads": {
+    "pr_5613": "b8601a0dc318c20ebf0b3ace198c9b3b1a735624",
+    "pr_5632": "e93ad5343606bda152fd00902f2a6651acffa5d5"
+  },
+  "price_input": {
+    "file_last_date_at_run": "2026-08-13",
+    "file_rows_at_run": 3172,
+    "file_sha256_at_run": "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f",
+    "first_date": "2014-01-02",
+    "history_caveat": "2014-01-02 is a curated data floor, not issuer/listing birth; no pre-2014 portion of the 2011-2015 gold bear is covered",
+    "last_date_used": "2026-08-13",
+    "path": "data/baskets/ohlcv/B.parquet",
+    "prefix_asof": "2026-08-13",
+    "prefix_sha256": "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db",
+    "price_plane_id": "baskets_ohlcv_v1",
+    "rows_used": 3172,
+    "seed_container_sha256": "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
+  },
+  "procedural_deviation": {
+    "consequence": "observations cannot choose outputs, thresholds, constants, acceptance rules or interpretations; B is permanently design-touched",
+    "observed_scope": "B tape shape/edge rows plus in-memory state, episode, fingerprint, percentile and instability outputs were printed before registration",
+    "status": "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE",
+    "write_scope": "no repository artifacts written; independent git status/diff clean"
+  },
+  "pull_request": 5660,
+  "pull_request_context": {
+    "base_ref": "main",
+    "draft_at_run": true,
+    "head_oid_at_run": "5117ae19ba239a10933ec0600200b4ed500b7186",
+    "head_ref": "codex/stock-identity-gold-w1-amendment-20260814",
+    "repository": "mastermindx-market-intelligence/macro",
+    "url": "https://github.com/mastermindx-market-intelligence/macro/pull/5660"
+  },
+  "rank_context": {
+    "dealer_context_disclosure": "frozen UNIV_EW and ranks include GOLD dealer context as one small component; retained for comparability, never miner evidence",
+    "frozen_reference_rows": 2780,
+    "hypothetical_joint_rows": 2781,
+    "method": "B-only hypothetical insertion into the frozen W1 raw reference; pandas average-tie empirical ranks over each field's non-null denominator",
+    "only_B_persisted": true,
+    "reference_sha256": {
+      "raw_all.parquet": "ca9c5e5ac78c9a1913a145f8763a2bea84cd80a4a10d6fd2f4d095377f021a08",
+      "strata.parquet": "67ae54370dfd2279583f99a16475865796542b786cd983a1e94da27edb33f769",
+      "univ_ew.parquet": "80f5ab3c80aa44da26e17ca58d8a14db930e5d3c03e45031c4c9505c3edba70a"
+    },
+    "univ_ew_recomputed": false,
+    "w1_percentiles_rewritten": false
+  },
+  "registered_date": "2026-08-14",
+  "registered_output_paths": [
+    "data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
+    "data/stock_identity/fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
+    "data/stock_identity/state/amendments/w1a1_b_state_daily.parquet",
+    "data/stock_identity/episodes/amendments/w1a1_b_episode_catalog_v0.parquet",
+    "data/stock_identity/episodes/amendments/B.json",
+    "research/stock_identity/dossiers/B.md",
+    "research/stock_identity/dossiers/B.svg"
+  ],
+  "registration_commit": "5117ae19ba239a10933ec0600200b4ed500b7186",
+  "result_counts": {
+    "episode_rows": 66,
+    "fingerprint_rows": 1,
+    "state_rows": 3172
+  },
+  "schema": "stock_identity.w1_amendment.v1",
+  "sealed_w1_sha256": {
+    "data/stock_identity/census/coverage_census_v0.md": "cf1a818749802bf6143656cfc06efa8ad95d3e87570a011726766c461bf371bb",
+    "data/stock_identity/census/coverage_census_v0.parquet": "d64d37c0ab8e0729aa732f2a68a183dd08e0ca3336e9a4a71975772f28c0b4cd",
+    "data/stock_identity/constants/si_constants_v1.json": "276d4ad267ab8711942943e306e844bfdff1f17a051bd17a9d460c1e428fc648",
+    "data/stock_identity/episodes/pilot/GOLD.json": "be8a1d053c6fc9f639017abb4cf7f3063e7bde8229d9a1622dedd38a02ff16d1",
+    "data/stock_identity/episodes/pilot_episode_catalog_v0.parquet": "3216f6cbbf539584dba31caf30e09b6e76e0297ca34698fcb0235cf6e0d6bc0f",
+    "data/stock_identity/fingerprints/fingerprint_spec.json": "bbefcd5b72915435acb8714d7892b79e010cb49d394b3222d89575c7b022dee0",
+    "data/stock_identity/fingerprints/pilot_fingerprint_v0.parquet": "2bdef8763b0c73a6df3f27e8307246887b7b9dc982f66331ba4d96ff09d72ba3",
+    "data/stock_identity/partition/partition_manifest_v1.json": "b1f82f842350e39ac7a73214fd8ebd58b175b52fdf42b3a0fb5a2d03143a5d48",
+    "data/stock_identity/partition/universe_snapshot_v1.parquet": "9f22807e7cb6ba570f1963de945b7be77461a1788608754e25db6235f4fe3730",
+    "data/stock_identity/state/pilot_state_daily.parquet": "e2c43f8761431c62506311e61fa387c70433f82bde8143b564fdf87da7ee485e",
+    "research/stock_identity/dossiers/GOLD.md": "2675b5be60cc09a37324e697bb62c20679b8f21cfe4d268f5082ce0730861558",
+    "research/stock_identity/dossiers/GOLD.svg": "e4e6466f2b4535b97d2fae4eb3eb7e39c1a40600343d955f0e0fe843d7df49db"
+  },
+  "trial_budget": "not applicable: one deterministic descriptive configuration, no sweep, outcome attachment, graded question, or result-contingent choice"
+}

@@ -175,6 +175,25 @@ class TestCrossSectionAndInstability:
         assert pd.isna(pct.loc["C", "f1_kaufman_er_63"])
         assert pct.loc["D", "f1_kaufman_er_63"] > pct.loc["A", "f1_kaufman_er_63"]
 
+    def test_candidate_only_rank_matches_joint_rank_with_ties_and_nulls(self):
+        names = ["tie", "candidate_null", "reference_null"]
+        reference = pd.DataFrame(
+            {
+                "tie": [1.0, 2.0, 2.0, 4.0, None],
+                "candidate_null": [1.0, 2.0, 3.0, 4.0, 5.0],
+                "reference_null": [None, None, None, None, None],
+            },
+            index=list("ACDEF"),
+        )
+        candidate = pd.Series(
+            {"tie": 2.0, "candidate_null": None, "reference_null": 7.0},
+            name="B",
+        )
+        got = fp.candidate_percentiles_against_reference(reference, candidate, names)
+        joint = pd.concat([reference, candidate.to_frame().T])
+        expected = fp.cross_sectional_percentiles(joint, names).loc["B"]
+        pd.testing.assert_series_equal(got, expected, check_names=False)
+
     def test_adjacent_window_quartile_jump_flags_both_members(self):
         pct = pd.DataFrame(
             {"f1_kaufman_er_63": [5.0, 50.0], "f1_kaufman_er_126": [95.0, 55.0]},

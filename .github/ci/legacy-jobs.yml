@@ -597,13 +597,19 @@ jobs:
       # than a stuck switch. Synthetic frames only; its one real-store receipt is
       # skipif'd on the absence of data/ and has a never-skipping synthetic twin, same
       # pattern as the price ladder above. Measured: 22 tests, ~0.7s.
+      # Base-closure 2026-08-14: #5540 added the Overtime horizon-reconciliation
+      # acceptance suite under tests/ but named it in no workflow. The bare unrun audit
+      # therefore reds current main. It belongs with the Prophet audit guards whose
+      # horizon/price-basis contracts it reconciles; the existing dependencies suffice
+      # and the focused suite is 23/23 green.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
           research/prophet_us_audit/test_post_board_trajectory.py
           research/prophet_us_audit/test_price_ladder.py
           research/prophet_us_audit/test_stop_curvature_study.py
-          research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py -q
+          research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py
+          tests/test_prophet_overtime_horizon_reconciliation.py -q
       # P1 unrun backfill 2026-08-14: the DISCLOSURE BUNDLE — the publish-side artifact
       # built on top of the lineage/normalize/detector chain below — joins the step that
       # already owns that chain.  tests/test_fundamental_forensics_disclosure_bundle.py
@@ -1498,15 +1504,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
       - name: stretch-oracle cause disclosure contract
-        run: |
-          python -m pytest tests/test_stretch_oracle_contract.py -q
-          rc=0
-          python3 scripts/check_stretch_oracle_contract.py --quiet || rc=$?
-          if [ "$rc" -eq 2 ]; then
-            echo "::notice title=stretch-oracle-contract::committed checkout has no stockdata store; fixture contract passed"
-            exit 0
-          fi
-          exit "$rc"
+        run: python -m pytest tests/test_stretch_oracle_contract.py -q
       - name: international render, library, and engine regression contracts
         run: >
           python -m pytest
@@ -2051,6 +2049,35 @@ jobs:
     # then against config/synapse.yml — 70 and 69 commits in the trailing 14 days, measured
     # on full history 2026-08-14 after the clone was unshallowed) and both were scheduled
     # fleet-wide reds. Do not re-add a regeneration lane or a committed file.
+    #
+    # CURATED SCOPE (2026-08-14 fleet heal). `scope: exclusive` makes the paths
+    # below REPLACE inference. This job's inferred fallback tier claimed
+    # whole-tree `templates/**` (and docs/research/site) from a subprocess or
+    # traversal inside the engine import closure. Measured after #5587: that
+    # smear was the +1 that pushed templates/index.html from the pinned 128
+    # jobs to 129. The job does not read the landing page; it only
+    # fallback-matched it. The declaration is the owned import closure,
+    # compacted to directory globs. Do not add templates/**.
+    scope: exclusive
+    paths:
+      - "collectors/*"
+      - "config/**"
+      - "engine/**"
+      - "lib/*"
+      - "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/*"
+      - "site/basketdata/**"
+      - "site/factordata/**"
+      - "site/flowleaders/**"
+      - "site/leaderradar/**"
+      - "site/master_brief.json"
+      - "site/neuralwebdata/**"
+      - "site/qledger/**"
+      - "tests/test_check_intelligence_registry.py"
+      - "tests/test_intelligence_registry.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -3414,6 +3441,20 @@ jobs:
 
   self-mod-fence:
     if: ${{ false }}
+    # The Stop hook is itself a release-control subject. Scope inference sees the
+    # test imports but not a hook reached by subprocess/path, so an edit under
+    # .claude/hooks/ could otherwise skip the job that owns its contract.
+    paths:
+      - ".claude/hooks/**"
+      - scripts/agentos.py
+      - scripts/check_self_mod_fence.py
+      - tests/test_agent_worktree_roots.py
+      - tests/test_agentos_compile.py
+      - tests/test_agentos_schema.py
+      - tests/test_agentos_status.py
+      - tests/test_self_mod_fence.py
+      - tests/test_ship_loop_guard.py
+      - tests/test_sparse_worktree_profile.py
     # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
     # Hard-fails any PR whose branch name or commit trailers carry the loop
     # namespace (metabolism/* or claude/loop-*, or 'Loop-Authored:' trailer)
@@ -3431,11 +3472,13 @@ jobs:
         run: pip install pytest pyyaml
       - name: self-mod-fence selftest (all four cases proven)
         run: python3 scripts/check_self_mod_fence.py --selftest
-      - name: ship-loop guard contract (baseline dirt, render precondition scoping)
+      - name: ship-loop guard contract (dirt, branch namespace, render scoping)
         # The Stop hook that enforces commit->merge->render->live had NO CI at all,
         # which is how its render precondition shipped scoped to the whole session
         # range: on a shared main that sweeps in concurrent sessions' templates/
         # merges and demands a render on a merge commit that can never have one.
+        # It also owns the exact claude/* delivery-branch prefix: a look-alike or
+        # codex/* branch must fail before stand-down or GitHub probes can release it.
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
@@ -4717,6 +4760,10 @@ jobs:
       - "scripts/build_themes_heatmap.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      # Import-closure entry: scripts/build_stock_library.py lazy-imports
+      # scripts/check_stretch_oracle_contract.py, so exclusive scope must name
+      # it or this job silently stops running when the checker changes.
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/close_pass_publish.py"
       - "scripts/close_pass_reconcile.py"
       - "scripts/notify.py"
@@ -7219,7 +7266,9 @@ jobs:
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
+      - "research/prophet_fusion/PR1B_BASELINE_RACE.md"
       - "research/prophet_fusion/families.yml"
+      - "research/prophet_fusion/pr1b_baseline_race/report.json"
       - "scripts/__init__.py"
       - "scripts/_active_render.py"
       - "scripts/backtest_ladder_history.py"
@@ -7255,6 +7304,9 @@ jobs:
       - "scripts/build_vector.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      # Import-closure entry: scripts/build_stock_library.py lazy-imports
+      # scripts/check_stretch_oracle_contract.py, so exclusive scope must name
+      # it or this job silently stops running when the checker changes.
       - "scripts/check_stretch_oracle_contract.py"
       - "scripts/check_title_i18n.py"
       # Import-closure entry for tests/test_us_board_grader_honesty.py, wired into this
@@ -7275,6 +7327,7 @@ jobs:
       - "scripts/notify.py"
       - "scripts/prophet_fusion_arena.py"
       - "scripts/prophet_fusion_labels.py"
+      - "scripts/prophet_fusion_race.py"
       - "scripts/publish_earnings_r2.py"
       - "scripts/seed_china_ths_baskets.py"
       - "scripts/thematic_rotation_phase0.py"
@@ -7319,6 +7372,7 @@ jobs:
       - "tests/test_prophet_fusion_arena.py"
       - "tests/test_prophet_fusion_families.py"
       - "tests/test_prophet_fusion_labels.py"
+      - "tests/test_prophet_fusion_race.py"
       - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stage_analysis.py"
       - "tests/test_stock_board_v2.py"
@@ -7360,8 +7414,12 @@ jobs:
       # harness gets its own step below — research-tier scaffolding, zero authority,
       # every suite named because this repo has no catch-all pytest collector and
       # audit_unrun_tests reds any suite no run: step names.
-      - name: prophet conditional-fusion arena harness + evidence-family registry (PR-1a)
-        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py -q
+      # PR-1b (WS:PROPHET-CONDITIONAL-FUSION): the baseline-race suite joins the PR-1a
+      # step rather than opening a new one — same store cluster, same registry, and the
+      # race suite's own fixtures import the PR-1a harness, so a registry edit that reds
+      # one should red them together in ONE check rather than in two that can disagree.
+      - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race (PR-1a/PR-1b)
+        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py -q
       # G-D plan-book board read (#5541). Landed as a collecting suite named by
       # no run: step, so audit_unrun_tests.py painted pack-1 red on every PR.
       # It belongs in THIS job with the other prophet/board surfaces: the join
@@ -7632,9 +7690,8 @@ jobs:
       #     downstream of test_cboe_chain_coverage.py, and of test_validate_gex.py for
       #     the salvage path (scripts/ci/chain_snapshot_salvage.py is owned by no other
       #     job in this manifest).
-      #   * test_prophet_arena_clock_parity.py / test_prophet_plan_clock.py /
-      #     test_prophet_overtime_horizon_reconciliation.py — the arena, plan, and
-      #     Overtime CLOCKS over engine/prophet_bridge.py, so all three land downstream
+      #   * test_prophet_arena_clock_parity.py / test_prophet_plan_clock.py — the arena
+      #     and plan CLOCKS over engine/prophet_bridge.py, so both land downstream
       #     of test_prophet_bridge.py and test_prophet_bridge_order_invariance.py above.
       #     This lane is their home because engine/prophet_management.py — a subject of
       #     the plan-clock suite — is owned by NO other job, and this same lane already
@@ -7654,7 +7711,7 @@ jobs:
       # the sibling PR of this batch: collectors/yahoo.py imports yfinance unguarded,
       # so a suite that merely touches it needs a dep neither it nor its subject names.
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
-        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py tests/test_prophet_overtime_horizon_reconciliation.py -q
+        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py -q
       # Daily engine setup-race recovery (2026-08-09): GitHub delivered engine and
       # factor_panel to one busy self-hosted runner one second apart; the runner
       # cancelled engine before checkout and the tail kept going.  The two suites
@@ -7803,7 +7860,7 @@ jobs:
       # widened: probed at RUN time it loads pandas/numpy/pyarrow/pyyaml — all on the
       # install line above — plus PIL transitively, which blocking leaves 42-passed.
       - name: publish/transport, asset pipeline, ticker pages and the nightly ops tripwires
-        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_evidence_graph_deps.py tests/test_earnings_private_store.py tests/test_earnings_public_wire.py tests/test_earnings_wire_freshness.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py tests/test_stocks_hub.py -q
+        run: python -m pytest tests/test_backfill_qledger_us.py tests/test_check_price_store_freshness.py tests/test_demand_chain_phase0.py tests/test_earnings_api.py tests/test_earnings_evidence_graph_deps.py tests/test_earnings_private_store.py tests/test_earnings_prompt_quality.py tests/test_earnings_score_quality.py tests/test_earnings_public_wire.py tests/test_earnings_wire_freshness.py tests/test_earnings_worker_launchd.py tests/test_earnings_worker_terminal.py tests/test_envelope_conformance.py tests/test_importance_v0.py tests/test_oracle_contract.py tests/test_publish_r2.py tests/test_public_chrome.py tests/test_radar_single_writer.py tests/test_refresh_regime_if_stale.py tests/test_research_factory_monitor.py tests/test_seo_foundation.py tests/test_signal_contracts_wiring.py tests/test_signal_sanity.py tests/test_ticker_dossier_render_lane.py tests/test_ticker_pages.py tests/test_ts_u1_session_date.py tests/test_w4_pit_fixes.py tests/test_w6b_push_ops.py tests/test_watchlist_sentinel.py tests/test_world_state_migrations.py tests/test_stocks_hub.py -q
 
   unrun-inline-js-guard:
     # the inline-JS deploy guard's own unit tests (node --check round-trips; ~3.5 min alone).

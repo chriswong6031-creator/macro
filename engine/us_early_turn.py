@@ -954,11 +954,15 @@ GEOMETRY_STOP_K: float = 0.99
 #: Radius of the confirmed swing low the stop-structure flag reads.
 PIVOT_RADIUS_R3: int = 3
 
-#: The stage a row is at.  A FACT column, never a score and never blended into one: the
-#: early lane's geometry score and the confirmed lane's own score stay two numbers.
+#: The admission lane a row reads from.  A FACT column, never a score and never blended
+#: into one: the early lane's geometry score and the confirmed lane's own score stay two
+#: numbers.  EARLY is the only value — a confirmed-lane row carries no stage at all
+#: (`prophet_bridge` documents that absence-as-design).  The CONFIRMING/CONFIRMED
+#: constants that used to sit here were deleted by the §J.9(c) ruling
+#: (research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §2.4): they were defined and never
+#: assigned, and a vocabulary value with no producer is how the estate got an unlightable
+#: rail dot.  The public lifecycle vocabulary is `lifecycle_state` (§6), not this column.
 STAGE_EARLY = "EARLY"
-STAGE_CONFIRMING = "CONFIRMING"
-STAGE_CONFIRMED = "CONFIRMED"
 
 
 def _confirmed_pivot_low(low: "np.ndarray", end: int) -> tuple[float | None, int | None]:

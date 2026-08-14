@@ -145,6 +145,12 @@ MUTATIONS: list[tuple[str, str, str, str]] = [
         "alternatives: []\nunused_alternatives:",
     ),
     (
+        "bad-wave",
+        "workstreams/WS-AGENT-OS.md",
+        "  - id: W4",
+        "  - id: 4",
+    ),
+    (
         "dangling-wave-dep",
         "workstreams/WS-PROPHET-US-ENTRY-TIMING.md",
         "    depends_on: [W1]",
@@ -153,8 +159,8 @@ MUTATIONS: list[tuple[str, str, str, str]] = [
     (
         "wave-cycle",
         "workstreams/WS-AGENT-OS.md",
-        "    depends_on: [W1, W2]",
-        "    depends_on: [W1, W2]\n"
+        "    depends_on: [W1, W2, W2B]",
+        "    depends_on: [W1, W2, W2B]\n"
         "  - id: WX\n    title: cycle a\n    status: todo\n    depends_on: [WY]\n"
         "  - id: WY\n    title: cycle b\n    status: todo\n    depends_on: [WX]",
     ),
@@ -298,17 +304,23 @@ STATE_RULES_ARE_WARNINGS: list[tuple[str, str, str, str]] = [
         '    title: "Add agentos/** as a corpus (Agent OS Phase 3 dependency)"\n'
         "    status: dropped",
     ),
+    # These two anchor on WS-CN-LIMIT-ALPHA's LIVE top-level state and must CREATE
+    # the inconsistent state from it (2026-08-14: the record moved blocked->active
+    # with no blocked_by, which silently broke the previous anchors — a mutation
+    # that only works while a real program stays blocked is a fixture landmine).
+    # If the record's top-level status changes again, update the anchors so the
+    # replacement still manufactures the rule's inconsistency by itself.
     (
         "blocked-without-cause",
         "workstreams/WS-CN-LIMIT-ALPHA.md",
-        "blocked_by:",
-        "blocked_by: []\nunused_blocked_by:",
+        "status: active",
+        "status: blocked",
     ),
     (
         "cause-without-blocked",
         "workstreams/WS-CN-LIMIT-ALPHA.md",
-        "status: blocked",
         "status: active",
+        "status: active\nblocked_by:\n  - schema-probe cause (test-injected)",
     ),
 ]
 

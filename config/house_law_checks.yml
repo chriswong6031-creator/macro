@@ -1115,39 +1115,6 @@ checks:
       check_script is null because enforcement is via gen_ontology_js --check
       (a generator in diff/check mode), not a dedicated check_*.py script.
 
-  - law_id: cycles.stretch_oracle_disclosure
-    summary: >
-      Every overextension brake must disclose the exact oscillator and/or
-      200-day-distance leg that fired, and its basis must be derived from those
-      legs. The distinct entry-status bucket is not an extension measurement
-      and must never be silently substituted for this cause evidence.
-    source_ref:
-      - scripts/check_stretch_oracle_contract.py
-      - tests/test_stretch_oracle_contract.py
-      - docs/site_semantics/stretch_oracles.md
-      - "PR #5574"
-    severity: hard
-    check_script: scripts/check_stretch_oracle_contract.py
-    ci_wiring:
-      - workflow: .github/workflows/ci.yml
-        job: engine-render-international-guards
-        lane: pr_ci
-    selftest: false
-    selftest_exempt_reason: >
-      The checker has no selftest flag; tests/test_stretch_oracle_contract.py
-      supplies deterministic violating rows, boundary mutations, and CLI
-      coverage in the same logical CI job.
-    allowlist: null
-    ratchet: null
-    known_limits:
-      - The committed checkout has no site/stockdata tree, so the direct checker reports nothing-to-check there; fixture tests still enforce every hard invariant, while store-bearing nightly invocations emit the live divergence counter.
-      - The checker proves disclosure consistency, not whether the underlying oscillator and distance thresholds should carry decision authority.
-    owner_program: cycle-intelligence
-    notes: >
-      The CI step runs the fixture contract first, then invokes the checker
-      directly. Exit 2 is accepted only for the structurally absent committed
-      stockdata store; any observed contract violation remains exit 1.
-
   # ── Authority guards ───────────────────────────────────────────────────────
 
   - law_id: authority.cycle_pattern
@@ -1471,6 +1438,48 @@ checks:
     owner_program: qualitative-intelligence-masterplan
     notes: >
       Manual run required at each LLM model upgrade. Gate threshold: field_agree_rate >= 0.85.
+
+  - law_id: site.stretch_oracle_disclosure
+    summary: >
+      The per-ticker drawer renders TWO independent answers to "has this name
+      already run" — ladder.alignment.overextended (a 4-leg, oscillator-dominant
+      entry-timing brake) and entry_signal.status == "extended" (a relabel of
+      ladder.entry.urgency == "caution"). They disagree on roughly 38% of names
+      and that divergence is LEGITIMATE (a measurement versus a bucket label), so
+      this guard does not force them equal. What it enforces is that the
+      divergence stays DISCLOSED: every flagged name must carry the leg that
+      actually fired, so no consumer has to guess a cause. HARD invariants:
+      overextended=True implies a non-empty overextended_legs; overextended=False
+      implies an empty one; overextended_basis equals
+      overextension_basis(overextended_legs); and an oscillator-only basis may not
+      coexist with a qualifying distance reading (producer and disclosure computed
+      from different inputs).
+    source_ref:
+      - scripts/check_stretch_oracle_contract.py
+      - docs/site_semantics/stretch_oracles.md
+    severity: manual
+    check_script: scripts/check_stretch_oracle_contract.py
+    ci_wiring: []
+    selftest: false
+    selftest_exempt_reason: >
+      The script takes a built store directory as its argument and has no
+      synthetic self-test mode; its invariants are exercised instead by
+      tests/test_stretch_oracle_contract.py, which the engine-render-guards job
+      runs on every PR.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Needs a BUILT stock store to read; it cannot run against a bare checkout,
+        which is why it carries no ci_wiring entry of its own.
+      - The O1 x O2 confusion counters are annotation-only and never fatal; only
+        the four disclosure invariants exit 1.
+    owner_program: per-ticker-stock-intelligence
+    notes: >
+      Enforced at BUILD time rather than as a CI step: scripts/build_stock_library.py
+      lazy-imports `check` and runs it over the store it just wrote, so a violation
+      fails the producer. Registered here per the census rule after the script
+      shipped unregistered in #5574, which reddened the house-law meta-guard on main
+      and every PR branched from it.
 
   - law_id: ops.live_worker
     summary: >
@@ -3294,3 +3303,55 @@ checks:
       config/synapse.yml — it repairs the canonical source rather than papering over the
       gap in a side file. T1 deliberately did NOT invent those citations: a prereg pointer
       that does not exist is worse than a null one.
+
+  - law_id: cycles.stretch_oracle_disclosure
+    summary: >
+      The two stretch/extension oracles (O1 ladder.alignment.overextended, the
+      oscillator-dominant 4-leg brake; O2 entry_signal.status == "extended", a
+      relabel of urgency=="caution") legitimately disagree on ~38% of names, so the
+      contract is DISCLOSURE, not agreement: every flagged name must carry the leg
+      that actually fired (invariants I1-I4 in the checker; contract doc
+      docs/site_semantics/stretch_oracles.md), and the divergence counter is
+      re-emitted nightly against the store the render just wrote, so a stale
+      divergence number can never again be the newest one anybody has.
+    source_ref:
+      - scripts/check_stretch_oracle_contract.py
+      - docs/site_semantics/stretch_oracles.md
+      - tests/test_stretch_oracle_contract.py
+      - "PR #5574 (feat(cycles): disclose which leg fires the overextension brake)"
+    severity: warn
+    check_script: scripts/check_stretch_oracle_contract.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: hook
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: hook
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; the invariant battery (I1-I4 plus the confusion-matrix
+      shape) lives in tests/test_stretch_oracle_contract.py against synthetic
+      stores, run in pr_ci by engine-render-international-guards, and the live
+      gate is the warn-only in-process self-check at the end of
+      scripts/build_stock_library.py's stockdata render.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - site/stockdata is nightly-render output and is NOT committed, so no pr_ci
+        lane can run the checker against a real store (CLI exits 2 "nothing to
+        check" in a plain checkout); PR-tier coverage is the synthetic-store pytest
+        suite only.
+      - The in-process nightly invocation is display-tier and never fatal (the
+        guard must never break the render); violations surface as line-start
+        ::warning annotations, never exit codes — lane=hook mirrors the
+        surface_freshness precedent for builder-embedded gates.
+    owner_program: cycles
+    notes: >
+      Invoked in-process (lazy import, never a workflow run: body) by
+      `scripts/build_stock_library.py` after the stockdata render in the daily and
+      engine-render lanes. Operator CLI:
+      `python3 scripts/check_stretch_oracle_contract.py site/stockdata`.
+      Registered 2026-08-14 by the PR-1b fusion session healing the
+      house-law-registry census red that #5574 left (checker shipped without an
+      entry; every full-suite ci-pack run since was red on this job).

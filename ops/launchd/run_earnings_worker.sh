@@ -357,4 +357,22 @@ fi
 
 echo "[$(ts)] earnings worker start provider_order=$PROVIDER_ORDER"
 "$PYTHON" "${args[@]}"
+
+# Grade the OUTPUT, not just the run. `attempted=64 succeeded=64` plus a clean R2
+# promotion is exactly what a perfect run looks like AND exactly what the run
+# looked like on 2026-08-14, when the corpus it produced used 2 of 10 tone words,
+# put 70% of sentiment on two values, and called 34% of quarters near-blowouts.
+# No liveness check we own can see that, so it is measured here, in the log the
+# operator actually reads. Advisory by construction: a narrowed distribution is
+# never a reason to fail a run that already published, so this never changes the
+# runner's exit status.
+# Invoked by ABSOLUTE PATH, not `-m`: launchd does not guarantee a working
+# directory, and the script bootstraps its own sys.path from __file__.
+if [ -f "$OPS_ROOT/scripts/audit_earnings_score_quality.py" ]; then
+  "$PYTHON" "$OPS_ROOT/scripts/audit_earnings_score_quality.py" \
+    --scores "$OPS_ROOT/data/earnings_calls/scores.parquet" \
+    --window-days 7 \
+    || echo "[$(ts)] score-quality audit unavailable (non-fatal)"
+fi
+
 echo "[$(ts)] earnings worker complete"

@@ -56,9 +56,14 @@ waves:
   - id: w1
     depends_on: [w0]
     title: "PR-1a — accrual restoration + telemetry columns + families.yml + arena harness skeleton"
+    status: done
+    pr: "#5604"
+  - id: w1b
+    depends_on: [w1]
+    title: "PR-1b — frozen baseline race G0/G0'/G1/G2/G3/G4+C1, counterfactual_replay, non-promotion-bearing"
     status: awaiting_ci
   - id: w2
-    depends_on: [w1]
+    depends_on: [w1b]
     title: "PR-2 — C2 regularized family stack + redundancy matrices + incremental harness"
     status: todo
   - id: w3
@@ -82,9 +87,14 @@ waves:
     title: "PR-7 — promotion prereg + DNR amendments + operator/CEO adjudication"
     status: todo
 next_action: >
-  Land PR-1a via merge-on-green; verify tonight's nightly stamps a fresh context-vector
-  date with the fixed producer (the first true forward proof); then PR-1b (baseline
-  race, counterfactual-replay-labelled, non-promotion-bearing) per masterplan §14.
+  Land PR-1b via merge-on-green. STILL OPEN from w1: the §13.0 live closure — no
+  post-#5604-merge nightly had completed as of 2026-08-14 ~20Z (daily.yml runs queued
+  with pre-merge heads; last curated candidates stamp 2026-08-07, the 08-12 stamp is
+  scan-tier-heal only) — the first post-merge nightly must show a fresh curated
+  stamp_date with quiet staleness warnings, prior rows immutable, and the Aug 8-13 gap
+  NOT backfilled. Then PR-2 (C2 + redundancy matrices) per masterplan §14; the PR-1b
+  report's shadow-accrual recommendation (G3, G4, C1, C1-minus-F2) feeds PR-3's
+  prereg, not production.
 ---
 
 ## Context
