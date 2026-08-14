@@ -1136,9 +1136,7 @@ jobs:
       # `veto` to `flat: cut`, and the case turned out to pin the night's verdict
       # rather than the accounting. It was rewritten to the charter before wiring, per the
       # standing rule that a previously-unrun suite goes green BEFORE it is armed.
-      # This job, not a new one: the manifest sits at the narrow-diff ceiling, where a
-      # 186th job reds test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs
-      # on arithmetic alone. It is also the right home — the china render family
+      # This job, not a new one: it is the right home — the china render family
       # (test_china_stocks_w1c_render, test_china_act_now, the delayed-board disclosure)
       # already lives in the sweep below, and the minimal deps above carry the exact set
       # this suite needs: pandas + pyarrow to read the two parquet ledgers, jinja2 to
@@ -1147,50 +1145,6 @@ jobs:
       # only when every other guard passes is not a guard.
       - name: CN Theme Tape — theme/member accounting + the 2026-08-04 narration case
         run: python -m pytest tests/test_cn_theme_tape.py -q
-      # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
-      # pinned SEC source objects into filing packages, Company Facts ledgers,
-      # and deterministic B4 binding plans. Keep these security/provenance
-      # contracts ahead of the broad sweep so an unrelated red guard cannot
-      # leave the new materialization boundary dark.
-      - name: B4D-A offline materialization foundation
-        run: >-
-          python -m pytest
-          tests/test_sec_document_spine.py
-          tests/test_fundamental_forensics_attestation.py
-          tests/test_fundamental_forensics_filing_package_materializer.py
-          tests/test_fundamental_forensics_companyfacts_pinned_loader.py
-          tests/test_fundamental_forensics_attested_history_materializer.py -q
-      - name: read-only attested-history operator foundation
-        run: >-
-          python -m pytest
-          tests/test_fundamental_forensics_attested_history_operator.py -q
-      # Wave 0A: the production receipt API's DEDICATED reader. This suite is the
-      # only proof that the API addresses the dedicated attested-history bucket
-      # rather than the generic Research Vault one, that the read-only store is
-      # structurally excluded from every StrictConditionalWriteStore write gate,
-      # that the renewal lock is not held across the network GET, and that the
-      # VPS delivery workflow carries the read-only half and never a seed writer.
-      # It is named explicitly and placed ahead of the broad sweep for the same
-      # reason as the boundaries above: an unrelated red guard must not be able
-      # to leave the serving boundary unexecuted. deploy-api-secrets.yml's own
-      # comment cites this suite as the protection on its credential contract,
-      # so that citation must stay true.
-      - name: Wave 0A dedicated attested-history serving boundary
-        run: >-
-          python -m pytest
-          tests/test_fundamental_forensics_attested_history_api_store.py -q
-      # B4F is deliberately run before the large render-contract sweep. The
-      # initial issuer seed is allowed to construct only a governed base and
-      # a redacted review-only receipt; these tests pin the no-network selection,
-      # one-shot credential boundary, storage-control probe, and isolated
-      # dimensions-unknown evidence bridge. An unrelated render guard must not
-      # be able to leave this immutable-publication boundary unexecuted.
-      - name: B4F controlled AAPL pilot and seed safety contracts
-        run: >-
-          python -m pytest
-          tests/test_fundamental_forensics_attested_history_pilot.py
-          tests/test_fundamental_forensics_attested_history_seed.py
-          tests/test_fundamental_forensics_attested_occurrence_governance.py -q
       # NEVER put a `#` comment inside the folded `run: >` scalar below. YAML folds it
       # onto ONE shell line, where `#` starts a SHELL comment — everything after it,
       # including every remaining test path and the trailing `-q`, silently vanishes

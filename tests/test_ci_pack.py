@@ -61,7 +61,7 @@ def test_engine_render_outlier_is_partitioned_without_coverage_loss() -> None:
     """The 1,036-second mega-step must stay schedulable as measured shards."""
     jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
     expected = {
-        "engine-render-risk-guards": (420, 72),
+        "engine-render-risk-guards": (420, 73),
         "engine-render-claims-guards": (419, 7),
         "engine-render-forensics-guards": (152, 31),
         "engine-render-international-guards": (114, 36),
@@ -87,18 +87,18 @@ def test_engine_render_outlier_is_partitioned_without_coverage_loss() -> None:
         assert len(paths) == len(set(paths)), f"duplicate suite in {job_id}"
         all_paths.extend(paths)
 
-    assert len(all_paths) == 151
+    assert len(all_paths) == 152
     assert len(all_paths) == len(set(all_paths)), "suite duplicated across shards"
     assert len(installs) == 1, "split shards must retain one dependency contract"
 
     packs = PACK.partition_jobs(list(jobs.values()), 12)
     pack_weights = [sum(job.weight for job in pack) for pack in packs]
     assert max(job.weight for job in jobs.values()) == 438
-    # The integrated 192-job manifest weighs 7,300 units (609 is the arithmetic
+    # The integrated 194-job manifest weighs 7,325 units (611 is the arithmetic
     # lower bound across twelve bins); the deterministic greedy partition is
     # within one unit of that bound while keeping the former 1,036-unit tail gone.
-    assert sum(pack_weights) == 7_300
-    assert max(pack_weights) <= 610
+    assert sum(pack_weights) == 7_325
+    assert max(pack_weights) <= 612
 
 
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:

@@ -11,7 +11,7 @@
       },
       {
         "path": ".claude/hooks/gh_quota_guard.py",
-        "signature_sha256": "568e62ff65d144002df348aaf050c7bcb2507b823deda01c4184b980ef0049a2"
+        "signature_sha256": "ca6f662b1d1a22181ae952080a406c7099d07514c11d78cdc8d0d14a87e5a520"
       },
       {
         "path": ".claude/hooks/model_routing_guard.py",
@@ -19,7 +19,11 @@
       },
       {
         "path": ".claude/hooks/ship_loop_guard.py",
-        "signature_sha256": "4740438ef023d9dd3d76a4fc860e9e5f47f0d41e46caf165b9e7117acf2aca91"
+        "signature_sha256": "5d071953e98e7b3b43e19f7e72e3f4866de2963934c6cf1921b2aeabb8e50467"
+      },
+      {
+        "path": ".claude/hooks/worktree_create_sparse.py",
+        "signature_sha256": "c353e846257b68139c6fb7ce1328f7768e871f85b957efdd8465c47d1bc9bd33"
       },
       {
         "path": "admin/__init__.py",
@@ -2667,7 +2671,7 @@
       },
       {
         "path": "engine/demand_ledger.py",
-        "signature_sha256": "a439befe005a8e99f11a378ab413fa40d2aeb2d8291110c77534fa0a9f6da71c"
+        "signature_sha256": "fc8ddb8580e60858ace7adc641c753d1b5a85b88b225bf2a8b5bac52e8e8524e"
       },
       {
         "path": "engine/desk_grader.py",
@@ -4283,7 +4287,7 @@
       },
       {
         "path": "engine/marketing/press_lane.py",
-        "signature_sha256": "018763de0964e81b8d6b139d12afb6ade34d55587d51efd18d1a45b7f6ef823d"
+        "signature_sha256": "9191d5010c7065bdcb2c07491c0f45112fc383137ae9899638cea2d335da05e3"
       },
       {
         "path": "engine/marketing/press_providers.py",
@@ -5170,6 +5174,10 @@
         "signature_sha256": "62db7a05438e0cd07cd414cb2b2fc6dc2de0cfd206a83d02d2f83f27e3e65a36"
       },
       {
+        "path": "engine/options_episode_coverage.py",
+        "signature_sha256": "a4cdf5835e4b9e523b261f35d286ae8799201e4de6281fcdaf9d67324f52cc9c"
+      },
+      {
         "path": "engine/options_flow.py",
         "signature_sha256": "fe2cc8261a834687f39f1e3a97b2a5ad6a1d45c9e693c5efa3e9f8bf15731624"
       },
@@ -5670,6 +5678,10 @@
         "signature_sha256": "b576167febe2f0b62b069fe8ebdbaebff4f011d3b801fb47a63047521c81b092"
       },
       {
+        "path": "engine/prophet_board_read.py",
+        "signature_sha256": "59612884babdbb79e65566b4d1e96afa082a83ba26848f61d527029658bb21f2"
+      },
+      {
         "path": "engine/prophet_bridge.py",
         "signature_sha256": "ac6a547777256d9a2ad7f35924cb7f54172e1d2c166f4ba49aa3e3f7a9773839"
       },
@@ -5748,6 +5760,14 @@
       {
         "path": "engine/qledger.py",
         "signature_sha256": "b19ae336d1bba0e1aa4670cf363a22a035935846c25c4bdbd9445b79eaba2c3a"
+      },
+      {
+        "path": "engine/qledger_desk_adapter.py",
+        "signature_sha256": "26097892dbac39bb6f5f98ccb6813ecfe2ee1a6a614ad19de36674dba7383bbc"
+      },
+      {
+        "path": "engine/qledger_evidence_clock.py",
+        "signature_sha256": "d706509b535cb5afa268d68d5acf57f7371039e5478c7be53b8815da56f82f7e"
       },
       {
         "path": "engine/qledger_falsifier.py",
@@ -6471,7 +6491,7 @@
       },
       {
         "path": "engine/stock_desk.py",
-        "signature_sha256": "51c1c34704ed085fff51653371627cf8a78abe59dc3850a2f6eeda051b9573af"
+        "signature_sha256": "605b4ac1b30bf5dbfbf58cde912f225d0df2f771ede9458a09cf3cfd0859a9bb"
       },
       {
         "path": "engine/stock_dossier.py",
@@ -6607,7 +6627,7 @@
       },
       {
         "path": "engine/thematic_desk.py",
-        "signature_sha256": "0e81d27d544d49f67409979e4a4ab502b7aad52518a1297eacfeda6ea5f30498"
+        "signature_sha256": "b64b99a19daa849eff1c954ed7fb2f2652ee429be72a77be65d32709dfc817d9"
       },
       {
         "path": "engine/theme_activity.py",
@@ -8070,6 +8090,10 @@
         "signature_sha256": "9c4e5ec2dce27f40c649a5a1c9f93ba937c87b801bbd6f4302740bcb1ccc8c8b"
       },
       {
+        "path": "scripts/audit_earnings_wire_freshness.py",
+        "signature_sha256": "5e8cc52667ec18b892a9bfbf2d7ac7ba4aae0861cfe7ae61ba20b1cad77f8754"
+      },
+      {
         "path": "scripts/audit_fred_groups.py",
         "signature_sha256": "2f0d21606895b7f69e3df7dbc9eee860f28bdcc6cb154e63422dd4bf38866a64"
       },
@@ -8096,6 +8120,10 @@
       {
         "path": "scripts/audit_options_entry_coverage.py",
         "signature_sha256": "9f8c839268ae57d67f3e649d5d8ed5b611836367f907d8791896f2d016700813"
+      },
+      {
+        "path": "scripts/audit_options_episode_outcome_coverage.py",
+        "signature_sha256": "25daa317281f13422083f5227f9e85d3b27fd6705e2d6d706d677709817c6abe"
       },
       {
         "path": "scripts/audit_options_market_memory_context.py",
@@ -8791,7 +8819,7 @@
       },
       {
         "path": "scripts/build_discovery.py",
-        "signature_sha256": "8b5490fe29106ed399692c729ee08a165de21feeb0bb84a567c870d090741dd0"
+        "signature_sha256": "341dfb330cffebe35cd2791e91d2274461a24d4c129a9d872a696e5be8323fc2"
       },
       {
         "path": "scripts/build_discovery_confluence.py",
@@ -9347,7 +9375,7 @@
       },
       {
         "path": "scripts/build_prophet.py",
-        "signature_sha256": "6ba19fe021c30b5a99b789bb62e33ae2ad048f500bd2fefe2a46d70b93c2572e"
+        "signature_sha256": "79fc1e435bfd99e8992f01ad2dbf705ad58704ab9fcced839affacb5fa85c67e"
       },
       {
         "path": "scripts/build_prophet_live_pack.py",
@@ -9559,7 +9587,7 @@
       },
       {
         "path": "scripts/build_stock_library.py",
-        "signature_sha256": "6d7b47309e0b78fa5b531d8038a1beb6207083efdb87a5c13006305c029078d9"
+        "signature_sha256": "744ba751e780f54d3c26666594c7ee5ac92a7624837a48ef3430a20aa6bdbfc5"
       },
       {
         "path": "scripts/build_stock_personality.py",
@@ -9647,7 +9675,7 @@
       },
       {
         "path": "scripts/build_theme_proxy_map.py",
-        "signature_sha256": "3c59617321053f13c99c517e881b16115f09b72eeb96e0471e165def20240ee5"
+        "signature_sha256": "e338ae96406f3382b52a309aa23206e4a6cc4e6320bf917f614bde5eeee81710"
       },
       {
         "path": "scripts/build_themes_heatmap.py",
@@ -9950,6 +9978,10 @@
         "signature_sha256": "40ef9636fa5bf11f61bb0527cdabf347937cac000580b32f013bc72ee1b210ce"
       },
       {
+        "path": "scripts/check_append_only_assertions.py",
+        "signature_sha256": "2f45bf8dd57ce0eab652a35ec3922682f860ac873d6bf6bafc9f0555f5b4fdb1"
+      },
+      {
         "path": "scripts/check_badge_passport.py",
         "signature_sha256": "08e440a99108a0d11b4dcdd88b3e021f2cc1057cf36a0c539041178b2f0872fb"
       },
@@ -10102,6 +10134,10 @@
         "signature_sha256": "286e7e05256ced14d2b9485773f62f5e38202c7ddbed8a85e1670dfb4d7bf1c0"
       },
       {
+        "path": "scripts/check_reference_integrity.py",
+        "signature_sha256": "07e226a8aa7588a46ee07f7d62d22ca473ad5f4db3daa6cf7d0b22abf8a1a201"
+      },
+      {
         "path": "scripts/check_reliability_contract.py",
         "signature_sha256": "d5b011bda723e6a6ca8a71dbc2c394fad33425fb3a7a677c4817e2eaa7a564df"
       },
@@ -10116,6 +10152,10 @@
       {
         "path": "scripts/check_self_mod_fence.py",
         "signature_sha256": "1dba53aa44659752eee1c8ee1403a3300dc4355ed22eca7224a852f3d73b0389"
+      },
+      {
+        "path": "scripts/check_signal_gate_coherence.py",
+        "signature_sha256": "4feb1807f84febffc5a1db3e56d0bd42e15a71ba52025ad4015e773fd6455438"
       },
       {
         "path": "scripts/check_site_asset_refs.py",
@@ -10155,7 +10195,7 @@
       },
       {
         "path": "scripts/check_template_site_sync.py",
-        "signature_sha256": "abbf9febea398b9997d69d712e0ac23774bed1576c19e77c61547b32520b2907"
+        "signature_sha256": "ec2ef3f15990d5cd0d4f5095b667edb2e4f8dc2ac56fb9fd402e10e658b9952f"
       },
       {
         "path": "scripts/check_theme_graph_contracts.py",
@@ -10292,14 +10332,6 @@
       {
         "path": "scripts/ci_failure_summary.py",
         "signature_sha256": "95e93f09830420ff05620fea2abce5e5fbfa669dbe7b6b1f337e623a71e7990e"
-      },
-      {
-        "path": "scripts/ci_handoff.py",
-        "signature_sha256": "2251ed969829baa22fd2896415783a6759474001447efc7f44cff4691d0c4d30"
-      },
-      {
-        "path": "scripts/ci_handoff_contract.py",
-        "signature_sha256": "f70d7bacc991db2a5d566b27dac92f9d95622851946380ce669b0209ed8f3c8c"
       },
       {
         "path": "scripts/ci_scope_dependencies.py",
@@ -12319,7 +12351,7 @@
       },
       {
         "path": "scripts/run_watchlist_sentinel.py",
-        "signature_sha256": "3147452bcc38c6297cbc48c9264fa866d1f4d0455af2a399ff6d45a991ac3c41"
+        "signature_sha256": "832a0ad5394d7e2d9f420c324fe62d822de650d68e9219b0479ee86e7e67fbbe"
       },
       {
         "path": "scripts/s11_buyback_floor_phase0.py",
@@ -12783,7 +12815,7 @@
       },
       {
         "path": "tests/conftest.py",
-        "signature_sha256": "e014a2573b55ef6d258609519a0bbc6a019af029bfb6a0dc5dd41ac02e6b8856"
+        "signature_sha256": "cb4c6a0abf5a16f9993a4e49956087341fea28e9e3083a80498cfcbd80248791"
       },
       {
         "path": "tests/fixtures/prophet_live/import_probe.py",
@@ -13156,6 +13188,10 @@
       {
         "path": "tests/test_api_paywall.py",
         "signature_sha256": "8ea2e21a7c9a8284ef1ec5796861605f279b5ce9340a45161102bec5c2d37203"
+      },
+      {
+        "path": "tests/test_append_only_assertions.py",
+        "signature_sha256": "c3718d6e6e8aec916b883bbcbe8969a281305562e31406224ea0e9e696649d5f"
       },
       {
         "path": "tests/test_append_sync_gauge.py",
@@ -14378,6 +14414,10 @@
         "signature_sha256": "16447522294872d388019fb919badc1f4776407975cb6bb45265aba676caa18f"
       },
       {
+        "path": "tests/test_check_reference_integrity.py",
+        "signature_sha256": "337488d6c46ea0d555a9572479b37b81f9282039b9bb981f9d31145a417f226c"
+      },
+      {
         "path": "tests/test_check_script_import_pinning.py",
         "signature_sha256": "c37e8b8afcbc4ad75320bd0dd611852ec7c3c99ed96030d8271ca892d0046e1b"
       },
@@ -14836,10 +14876,6 @@
       {
         "path": "tests/test_ci_failure_summary.py",
         "signature_sha256": "bcee6e526ed20706331d37c8fdbb86da37a027ab92449c7fabaf6ce6cf6c9101"
-      },
-      {
-        "path": "tests/test_ci_handoff.py",
-        "signature_sha256": "21a1f237f6d6006d1b79ef855cca767a0c17ed72c9932f4be28c7678c612f667"
       },
       {
         "path": "tests/test_ci_pack.py",
@@ -15702,6 +15738,10 @@
         "signature_sha256": "030abc21d1ccf55a12fcae25e4fc4a85899e1241ab1704a1cd7d1dfbd1a952ca"
       },
       {
+        "path": "tests/test_earnings_evidence_graph_deps.py",
+        "signature_sha256": "e56101ad03e0d1162293155bf932055a0cae50d91eb51b1dc0bfd11011fb795a"
+      },
+      {
         "path": "tests/test_earnings_private_store.py",
         "signature_sha256": "12e397da76f37a13b5ffc0ad5adfaee56765bfff2f1076f504883aa4b38dce89"
       },
@@ -15760,6 +15800,10 @@
       {
         "path": "tests/test_earnings_w5.py",
         "signature_sha256": "1e13cab3f10333006c4fef1ae9709040b5cac577a068b02e1309781e483a0902"
+      },
+      {
+        "path": "tests/test_earnings_wire_freshness.py",
+        "signature_sha256": "645089b8f5649811f10b430952c5a3996e3f79673f444706e55906444e710313"
       },
       {
         "path": "tests/test_earnings_worker_launchd.py",
@@ -16639,7 +16683,7 @@
       },
       {
         "path": "tests/test_gh_quota_guard.py",
-        "signature_sha256": "fcd8ddfe18ac3577b3af8f3ee567b367f07c4679d895d57e167e1527b079385c"
+        "signature_sha256": "70b0475f849330685350b449475632e3298865411e490e93c5f3d97439370ce4"
       },
       {
         "path": "tests/test_global_liquidity.py",
@@ -16775,7 +16819,7 @@
       },
       {
         "path": "tests/test_government_revenue_ui.py",
-        "signature_sha256": "c5c8672802aadbad32eb6a1653cbb9d5bcdb84b4a0d3f7eb0261b3c15a2ad3b8"
+        "signature_sha256": "61b9a14df7a736f82db94cb47d498a0ac35a7a1c6f7b9332b801ec584175122c"
       },
       {
         "path": "tests/test_government_revenue_wave8_api.py",
@@ -17935,7 +17979,7 @@
       },
       {
         "path": "tests/test_market_memory_trusted.py",
-        "signature_sha256": "82adcee2c39c4b1a637c78c37f4eebfe13b6fd572f1f250cbe08bf1a9c1ea249"
+        "signature_sha256": "ce0cd71676fa9aa338407850248bc71c418c6ef9487a874298c3f9ccce52ad0c"
       },
       {
         "path": "tests/test_market_packet.py",
@@ -18224,6 +18268,10 @@
       {
         "path": "tests/test_marketing_press_feeds.py",
         "signature_sha256": "8a6812aebbc77596d722113c079dc795ab99103ef8c08ff5e5672a66f70ee663"
+      },
+      {
+        "path": "tests/test_marketing_press_relay_quality.py",
+        "signature_sha256": "a02457f7479c3f6d46cbcd057bb362ce27d5d2ff1b70fd40e65007567e10bc46"
       },
       {
         "path": "tests/test_marketing_press_stream.py",
@@ -18986,6 +19034,10 @@
         "signature_sha256": "9d037be9d000385cce7b54a5a8d396771ffe1928529b9ad5706f9ac2d77af25c"
       },
       {
+        "path": "tests/test_options_episode_outcome_coverage.py",
+        "signature_sha256": "9c2304eb8fd34b146d87f3aebe9e4cbb3947a5fdc65b31762d90469f7e706728"
+      },
+      {
         "path": "tests/test_options_estate_redirect_stubs.py",
         "signature_sha256": "b7e7bdf2a609e11a67b5f72636ae6294dc1461f3b8c3befbd624459cf47779ac"
       },
@@ -19606,6 +19658,10 @@
         "signature_sha256": "19c4c29e9e5820a3472fd31fc46a82ad4f12c5070a5626a82b55caae89dcc4e4"
       },
       {
+        "path": "tests/test_prophet_board_read.py",
+        "signature_sha256": "60d7828057847aa49910170c5e645090d9ed83e97b525509a61a5d202ffdd6d9"
+      },
+      {
         "path": "tests/test_prophet_bridge.py",
         "signature_sha256": "2306920bfad8620508fed9fc6fa6d1336d29104b6bb755fbdc21062fe711a781"
       },
@@ -19850,12 +19906,20 @@
         "signature_sha256": "25b86fdd2542a9bbd614279311582831d58635a892b79a2edce030e57b91f338"
       },
       {
+        "path": "tests/test_qledger_desk_adapter.py",
+        "signature_sha256": "91c1655b8dedb35c0b6c5b33959fef58d7772a1aa0b72e3fd942f1c97092c3c2"
+      },
+      {
+        "path": "tests/test_qledger_evidence_clock.py",
+        "signature_sha256": "eb7d1ca368c0ea7dc9aff4f20d5d638a4e105a5e2913e18a5cc72150464b25b3"
+      },
+      {
         "path": "tests/test_qledger_excess_legality.py",
         "signature_sha256": "e5b5e247645b94bb45a6333ea23c03cf3b96033a3f4c417d89fe3b444a648c8a"
       },
       {
         "path": "tests/test_qledger_horizon_clock.py",
-        "signature_sha256": "cc10cbe869373be13adb587fbad2ce829f47542d61ec785e3903a83d8726647b"
+        "signature_sha256": "b7a72ba7f69efdc2e34345a7aed5d7c3677ef76bff3e19cbd3d5e410ed8ec093"
       },
       {
         "path": "tests/test_qledger_ui.py",
@@ -20707,7 +20771,7 @@
       },
       {
         "path": "tests/test_ship_loop_guard.py",
-        "signature_sha256": "57a30e6e9a312480e5c599637435d783273b4495a593fa8702173bddccc8e1fd"
+        "signature_sha256": "b264fb6b9411eeb9a6bb47f85357da0bcae82d3f52984bb19ad1ae683b19ca62"
       },
       {
         "path": "tests/test_shock_deescalation.py",
@@ -20756,6 +20820,10 @@
       {
         "path": "tests/test_signal_gate.py",
         "signature_sha256": "10a72b8d8f87a888833ffcd87e7847e1da908ac48c5656f7eff1b56f7c12d051"
+      },
+      {
+        "path": "tests/test_signal_gate_coherence.py",
+        "signature_sha256": "8f2575ffbd1234b8ea642a98610a637dbece2fc7899c4b7a5e8c9f6baec44241"
       },
       {
         "path": "tests/test_signal_governor.py",
@@ -20868,6 +20936,10 @@
       {
         "path": "tests/test_sparse_guard_refusals.py",
         "signature_sha256": "271af214d28cc5802234a639b98c2ab6aa099075ca4a884231619fe9bf76bead"
+      },
+      {
+        "path": "tests/test_sparse_worktree_profile.py",
+        "signature_sha256": "af1c968ba4fe0cbf8046c3a2649ea48826dec029302ed004de850011e0146891"
       },
       {
         "path": "tests/test_special_arb.py",
@@ -21899,7 +21971,7 @@
       },
       {
         "path": "tests/test_validated_claims_surfaces.py",
-        "signature_sha256": "3c2f8699b7d7e1805fe37d807103e376df22f8b68465ab1c588874645f58fd84"
+        "signature_sha256": "a0a18662d4750ef109bb67883f723bd9c83409b948b7b23b893bb052b1aceded"
       },
       {
         "path": "tests/test_validated_claims_thirdparty.py",
@@ -22310,17 +22382,18 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5577,
+    "python_count": 5595,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "63a25665b88174464e7b4d5fb8ef4fe5710a7e535a5c04a47b147624c64ab0f5",
-  "job_count": 192,
+  "index_sha256": "5f7d3fcc7543218d8cb90108a0cac4bf69dc728bf80496a12279d23bbc32b08e",
+  "job_count": 194,
   "job_inventory": [
     "inline-js",
     "nav-gap",
     "nav-mega",
     "crypto-shelves",
     "board-contradictions",
+    "signal-gate-pair-coherence",
     "ms-board-coherence",
     "gh-annotation-line-start",
     "all-exports-resolve",
@@ -22506,6 +22579,7 @@
     "product-experience-capture",
     "momoedge-browser-observe",
     "mastermindx-selector-capture-attestation",
+    "reference-integrity",
     "dataos-foundation",
     "dataos-identity-seams"
   ],
@@ -22515,6 +22589,7 @@
       "ordinal": 0,
       "paths": [
         "config/**",
+        "config/sparse_worktree.json",
         "data/**",
         "scripts/check_inline_js.py",
         "scripts/check_site_js.py",
@@ -22529,6 +22604,7 @@
       "ordinal": 1,
       "paths": [
         "config/**",
+        "config/sparse_worktree.json",
         "data/**",
         "scripts/check_nav_gap.py",
         "scripts/sparse_guard.py",
@@ -22542,6 +22618,7 @@
       "ordinal": 2,
       "paths": [
         "config/**",
+        "config/sparse_worktree.json",
         "data/**",
         "scripts/check_nav_mega.py",
         "scripts/sparse_guard.py",
@@ -22572,10 +22649,70 @@
       "weight": 1
     },
     {
-      "job_id": "ms-board-coherence",
+      "job_id": "signal-gate-pair-coherence",
       "ordinal": 5,
       "paths": [
+        "collectors/edgar.py",
+        "collectors/edgar_deadname_prices.py",
+        "collectors/edgar_deadnames.py",
+        "collectors/edgar_delisting.py",
+        "collectors/edgar_eps.py",
+        "collectors/edgar_flow_quality.py",
+        "collectors/edgar_share_quality.py",
+        "collectors/edgar_stock_quality.py",
+        "data/**/*.parquet",
+        "data/**/*.parquet/**",
+        "engine/__init__.py",
+        "engine/canon.py",
+        "engine/conditions.py",
+        "engine/confluence_tiers.py",
+        "engine/earnings_blackout.py",
+        "engine/equity_factors.py",
+        "engine/extension.py",
+        "engine/grading.py",
+        "engine/hysteresis.py",
+        "engine/i18n.py",
+        "engine/indicators.py",
+        "engine/name_score_grader.py",
+        "engine/session_anchor.py",
+        "engine/setups.py",
+        "engine/signal_gate.py",
+        "engine/signal_quality.py",
+        "engine/sue.py",
+        "engine/technicals.py",
+        "engine/top_picks.py",
+        "engine/universe_history.py",
+        "engine/watchlist_sentinel.py",
+        "lib/__init__.py",
+        "lib/closes_panel.py",
+        "lib/config.py",
+        "lib/nyse_calendar.py",
+        "lib/pages.py",
+        "lib/store.py",
+        "lib/ticker_aliases.py",
+        "scripts/__init__.py",
+        "scripts/build_discovery.py",
+        "scripts/check_signal_gate_coherence.py",
+        "scripts/run_watchlist_sentinel.py",
+        "site/**",
+        "site/**/*.html",
+        "site/**/*.html/**",
+        "site/factordata/basket_washout_state.json",
+        "site/factordata/signal_gate.json",
+        "site/factordata/us_standouts.json",
+        "templates/**",
+        "templates/**/*.html",
+        "templates/**/*.html/**",
+        "tests/test_signal_gate_coherence.py"
+      ],
+      "weight": 6
+    },
+    {
+      "job_id": "ms-board-coherence",
+      "ordinal": 6,
+      "paths": [
         "config/**",
+        "config/sparse_worktree.json",
         "data/**",
         "scripts/__init__.py",
         "scripts/check_ms_board_coherence.py",
@@ -22590,7 +22727,7 @@
     },
     {
       "job_id": "gh-annotation-line-start",
-      "ordinal": 6,
+      "ordinal": 7,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -22853,7 +22990,7 @@
     },
     {
       "job_id": "all-exports-resolve",
-      "ordinal": 7,
+      "ordinal": 8,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -22885,7 +23022,7 @@
     },
     {
       "job_id": "no-module-leak",
-      "ordinal": 8,
+      "ordinal": 9,
       "paths": [
         "admin/**",
         "app/**",
@@ -22912,6 +23049,7 @@
         "config/ai_pricing.yml",
         "config/capability_manifest.yml",
         "config/metabolism_budget.yml",
+        "config/sparse_worktree.json",
         "contracts/**",
         "data/**",
         "data/**/*.jsonl",
@@ -23015,6 +23153,7 @@
         "lib/ticker_aliases.py",
         "research/**",
         "scripts/**",
+        "scripts/worktree_sparse.py",
         "site/**",
         "templates/**",
         "tests/conftest.py",
@@ -23026,7 +23165,7 @@
     },
     {
       "job_id": "admin-js-no-undef",
-      "ordinal": 9,
+      "ordinal": 10,
       "paths": [
         "admin/**",
         "admin/**/*.js",
@@ -23040,7 +23179,7 @@
     },
     {
       "job_id": "path-prune-lint",
-      "ordinal": 10,
+      "ordinal": 11,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -23072,7 +23211,7 @@
     },
     {
       "job_id": "rebase-css-autoresolve",
-      "ordinal": 11,
+      "ordinal": 12,
       "paths": [
         "config/**",
         "data/**",
@@ -23100,7 +23239,7 @@
     },
     {
       "job_id": "conflict-markers",
-      "ordinal": 12,
+      "ordinal": 13,
       "paths": [
         "config/**",
         "engine/**",
@@ -23113,7 +23252,7 @@
     },
     {
       "job_id": "title-i18n",
-      "ordinal": 13,
+      "ordinal": 14,
       "paths": [
         "scripts/check_title_i18n.py",
         "site/**",
@@ -23123,7 +23262,7 @@
     },
     {
       "job_id": "signal-contract",
-      "ordinal": 14,
+      "ordinal": 15,
       "paths": [
         "admin/**",
         "app/**",
@@ -23237,7 +23376,7 @@
     },
     {
       "job_id": "session-anchor-era",
-      "ordinal": 15,
+      "ordinal": 16,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -23261,7 +23400,7 @@
     },
     {
       "job_id": "trial-budgets",
-      "ordinal": 16,
+      "ordinal": 17,
       "paths": [
         "admin/**",
         "app/**",
@@ -23684,7 +23823,7 @@
     },
     {
       "job_id": "breakdown-control-seed-determinism",
-      "ordinal": 17,
+      "ordinal": 18,
       "paths": [
         "admin/**",
         "app/**",
@@ -23738,7 +23877,7 @@
     },
     {
       "job_id": "outcome-spine",
-      "ordinal": 18,
+      "ordinal": 19,
       "paths": [
         "admin/**",
         "app/**",
@@ -23770,6 +23909,7 @@
         "config/ai_pricing.yml",
         "config/capability_manifest.yml",
         "config/metabolism_budget.yml",
+        "config/sparse_worktree.json",
         "content/**/*.parquet",
         "content/**/*.parquet/**",
         "contracts/**",
@@ -23873,6 +24013,10 @@
         "engine/provider_health.py",
         "engine/qbus.py",
         "engine/qkernel.py",
+        "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
+        "engine/qledger_validity.py",
         "engine/radar_scorer.py",
         "engine/rebalance_calendar.py",
         "engine/regime.py",
@@ -23906,8 +24050,10 @@
         "lib/__init__.py",
         "lib/ai_costs.py",
         "lib/closes_panel.py",
+        "lib/cn_calendar.py",
         "lib/config.py",
         "lib/filing_value_units.py",
+        "lib/hk_calendar.py",
         "lib/nyse_calendar.py",
         "lib/pages.py",
         "lib/store.py",
@@ -23955,7 +24101,7 @@
     },
     {
       "job_id": "conviction-profile",
-      "ordinal": 19,
+      "ordinal": 20,
       "paths": [
         "engine/__init__.py",
         "engine/i18n.py",
@@ -23972,7 +24118,7 @@
     },
     {
       "job_id": "chronicle-suite",
-      "ordinal": 20,
+      "ordinal": 21,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -24221,13 +24367,13 @@
     },
     {
       "job_id": "cycle-ontology-js",
-      "ordinal": 21,
+      "ordinal": 22,
       "paths": [],
       "weight": 2
     },
     {
       "job_id": "cycle-forward-log",
-      "ordinal": 22,
+      "ordinal": 23,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -24335,7 +24481,7 @@
     },
     {
       "job_id": "tier-gate",
-      "ordinal": 23,
+      "ordinal": 24,
       "paths": [
         "admin/**",
         "admin/uptime_board.py",
@@ -25016,6 +25162,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -25050,6 +25197,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_events/NVDA.json",
         "site/factordata/tech_lab.json",
@@ -25114,7 +25262,7 @@
     },
     {
       "job_id": "cycles-payload-split",
-      "ordinal": 24,
+      "ordinal": 25,
       "paths": [
         "scripts/_cycles_payload.py",
         "tests/test_cycles_payload_split.py"
@@ -25123,7 +25271,7 @@
     },
     {
       "job_id": "flow-surface",
-      "ordinal": 25,
+      "ordinal": 26,
       "paths": [
         "admin/**",
         "app/**",
@@ -25463,6 +25611,7 @@
         "engine/news_translate.py",
         "engine/ollama_provider.py",
         "engine/opex.py",
+        "engine/options_episode_coverage.py",
         "engine/options_focused_quote.py",
         "engine/options_issue_desk.py",
         "engine/options_ivspread.py",
@@ -25580,6 +25729,7 @@
         "scripts/**/*.jsonl",
         "scripts/**/*.jsonl/**",
         "scripts/__init__.py",
+        "scripts/audit_options_episode_outcome_coverage.py",
         "scripts/audit_options_market_memory_context.py",
         "scripts/build_chain_heat.py",
         "scripts/build_flow_archive.py",
@@ -25662,6 +25812,7 @@
         "tests/test_live_flow.py",
         "tests/test_mirror_terminal_context.py",
         "tests/test_momoedge_oracle_history_replay.py",
+        "tests/test_options_episode_outcome_coverage.py",
         "tests/test_options_focused_quote.py",
         "tests/test_options_issue_desk.py",
         "tests/test_options_issue_desk_api.py",
@@ -25680,7 +25831,7 @@
     },
     {
       "job_id": "cycle-grading-stats",
-      "ordinal": 26,
+      "ordinal": 27,
       "paths": [
         "admin/**",
         "app/**",
@@ -25752,7 +25903,7 @@
     },
     {
       "job_id": "engine-render-risk-guards",
-      "ordinal": 27,
+      "ordinal": 28,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -25833,6 +25984,7 @@
         "config/metabolism_budget.yml",
         "config/sector_legs.json",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
@@ -26303,6 +26455,7 @@
         "engine/press/earnings_adapter.py",
         "engine/price_ladder.py",
         "engine/prophet_arena.py",
+        "engine/prophet_board_read.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
@@ -26577,6 +26730,7 @@
         "scripts/build_whitehouse.py",
         "scripts/calibrate_risk_radar_intl.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_statement_tape.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
@@ -26599,6 +26753,7 @@
         "scripts/translate_profiles.py",
         "scripts/validate_options_entry.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -26688,6 +26843,7 @@
         "tests/test_china_connect_leaderboard_render.py",
         "tests/test_china_lens_hub.py",
         "tests/test_china_policy_watch.py",
+        "tests/test_cn_theme_tape.py",
         "tests/test_cohort_flow_chips.py",
         "tests/test_commodity_confluence.py",
         "tests/test_commodity_cycle_state.py",
@@ -26756,7 +26912,7 @@
     },
     {
       "job_id": "engine-render-forensics-guards",
-      "ordinal": 28,
+      "ordinal": 29,
       "paths": [
         "admin/**",
         "app/**",
@@ -27207,7 +27363,7 @@
     },
     {
       "job_id": "engine-render-international-guards",
-      "ordinal": 29,
+      "ordinal": 30,
       "paths": [
         "admin/**",
         "app/**",
@@ -27681,6 +27837,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/quad_vector.py",
         "engine/radar.py",
@@ -27871,6 +28029,7 @@
         "scripts/build_track_record_page.py",
         "scripts/build_vector.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_surface_freshness.py",
         "scripts/check_validated_claims.py",
         "scripts/freshness_sentinel.py",
@@ -27905,6 +28064,7 @@
         "site/factordata/dna_class.json",
         "site/factordata/hk_standouts.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_board_outcomes.json",
         "site/factordata/us_board_track.json",
@@ -27990,7 +28150,7 @@
     },
     {
       "job_id": "engine-render-claims-guards",
-      "ordinal": 30,
+      "ordinal": 31,
       "paths": [
         "admin/**",
         "app/**",
@@ -28133,7 +28293,7 @@
     },
     {
       "job_id": "engine-render-prophet-guards",
-      "ordinal": 31,
+      "ordinal": 32,
       "paths": [
         "admin/**",
         "app/**",
@@ -28164,6 +28324,7 @@
         "collectors/equity_profile.py",
         "collectors/equity_revisions.py",
         "collectors/fred.py",
+        "collectors/holdings.py",
         "collectors/openfigi.py",
         "collectors/us_names_zh.py",
         "config/**",
@@ -28184,9 +28345,13 @@
         "config/us_search_aliases_zh.json",
         "content/**/*.json",
         "content/**/*.json/**",
+        "content/**/*.parquet",
+        "content/**/*.parquet/**",
         "contracts/**",
         "contracts/**/*.json",
         "contracts/**/*.json/**",
+        "contracts/**/*.parquet",
+        "contracts/**/*.parquet/**",
         "data/**",
         "data/**/*.json",
         "data/**/*.json/**",
@@ -28196,6 +28361,8 @@
         "data/**/*.parquet/**",
         "docs/**/*.json",
         "docs/**/*.json/**",
+        "docs/**/*.parquet",
+        "docs/**/*.parquet/**",
         "engine/**",
         "engine/**/*.parquet",
         "engine/**/*.parquet/**",
@@ -28448,6 +28615,8 @@
         "ops/**",
         "ops/**/*.json",
         "ops/**/*.json/**",
+        "ops/**/*.parquet",
+        "ops/**/*.parquet/**",
         "research/**",
         "research/**/*.json",
         "research/**/*.json/**",
@@ -28460,6 +28629,7 @@
         "scripts/build_prophet_live_pack.py",
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/prophet_live_evaluator.py",
         "scripts/reconcile_prophet_live.py",
         "scripts/thematic_rotation_phase0.py",
@@ -28472,6 +28642,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -28480,6 +28651,8 @@
         "templates/**",
         "templates/**/*.json",
         "templates/**/*.json/**",
+        "templates/**/*.parquet",
+        "templates/**/*.parquet/**",
         "tests/test_prophet_live_basis.py",
         "tests/test_prophet_live_evaluator.py",
         "tests/test_prophet_live_pack.py",
@@ -28492,7 +28665,7 @@
     },
     {
       "job_id": "collector-registry",
-      "ordinal": 32,
+      "ordinal": 33,
       "paths": [
         "admin/**",
         "app/**",
@@ -28879,7 +29052,7 @@
     },
     {
       "job_id": "capital-structure-intelligence",
-      "ordinal": 33,
+      "ordinal": 34,
       "paths": [
         "admin/**",
         "app/**",
@@ -29672,6 +29845,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/ci/push_retry.sh",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -29738,6 +29912,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_board_outcomes.json",
         "site/factordata/us_board_track.json",
@@ -29803,7 +29978,7 @@
     },
     {
       "job_id": "stock-seasonality",
-      "ordinal": 34,
+      "ordinal": 35,
       "paths": [
         "admin/**",
         "app/**",
@@ -30074,7 +30249,7 @@
     },
     {
       "job_id": "china-native-collectors",
-      "ordinal": 35,
+      "ordinal": 36,
       "paths": [
         "admin/**",
         "app/**",
@@ -30498,7 +30673,7 @@
     },
     {
       "job_id": "china-board-breadth",
-      "ordinal": 36,
+      "ordinal": 37,
       "paths": [
         "admin/**",
         "app/**",
@@ -30876,7 +31051,7 @@
     },
     {
       "job_id": "china-search-universe",
-      "ordinal": 37,
+      "ordinal": 38,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -30896,9 +31071,10 @@
     },
     {
       "job_id": "cycle-consistency",
-      "ordinal": 38,
+      "ordinal": 39,
       "paths": [
         "config/**",
+        "config/sparse_worktree.json",
         "data/**",
         "engine/__init__.py",
         "engine/canon.py",
@@ -30926,7 +31102,7 @@
     },
     {
       "job_id": "synapse-read-gate",
-      "ordinal": 39,
+      "ordinal": 40,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -31634,6 +31810,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_evidence_clock.py",
         "scripts/check_factor_boundaries.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_synapse_reads.py",
         "scripts/check_synapse_registry.py",
         "scripts/close_pass_publish.py",
@@ -31694,6 +31871,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_board_outcomes.json",
         "site/factordata/us_board_track.json",
@@ -31742,7 +31920,7 @@
     },
     {
       "job_id": "neural-web",
-      "ordinal": 40,
+      "ordinal": 41,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -31899,6 +32077,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -32425,6 +32604,7 @@
         "scripts/research/ptt_w1_persistence_of_fit.py",
         "scripts/thematic_rotation_phase0.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -32491,7 +32671,7 @@
     },
     {
       "job_id": "neural-web-core",
-      "ordinal": 41,
+      "ordinal": 42,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -32644,6 +32824,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -33117,6 +33298,7 @@
         "scripts/replay_standout_books.py",
         "scripts/run_brain_eval.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -33222,7 +33404,7 @@
     },
     {
       "job_id": "cn-standout-audit",
-      "ordinal": 42,
+      "ordinal": 43,
       "paths": [
         "admin/**",
         "app/**",
@@ -33395,7 +33577,7 @@
     },
     {
       "job_id": "workflow-yaml",
-      "ordinal": 43,
+      "ordinal": 44,
       "paths": [
         ".claude/hooks/gh_quota_guard.py",
         ".claude/hooks/model_routing_guard.py",
@@ -33540,6 +33722,7 @@
         "config/seasonality_universe.yml",
         "config/sector_legs.json",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/standout_review.yml",
         "config/synapse.yml",
         "config/trade_flow_codes.yml",
@@ -34230,8 +34413,6 @@
         "research/winners/FINGERPRINT_CONTROLS_W4.md",
         "research/winners/cases/NVDA_2023.md",
         "scripts/**",
-        "scripts/**/*.json",
-        "scripts/**/*.json/**",
         "scripts/**/*.parquet",
         "scripts/**/*.parquet/**",
         "scripts/**/*.py",
@@ -34308,6 +34489,7 @@
         "scripts/check_nav_mega.py",
         "scripts/check_ohlc_basis_coherence.py",
         "scripts/check_self_mod_fence.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_site_js.py",
         "scripts/check_skip_only_suites.py",
         "scripts/check_workflow_yaml.py",
@@ -34317,8 +34499,6 @@
         "scripts/ci_collect_pack_evidence.py",
         "scripts/ci_committed_scope_index.py",
         "scripts/ci_failure_summary.py",
-        "scripts/ci_handoff.py",
-        "scripts/ci_handoff_contract.py",
         "scripts/ci_scope_dependencies.py",
         "scripts/ci_structural_preflight.py",
         "scripts/close_pass_publish.py",
@@ -34366,6 +34546,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -34416,7 +34597,6 @@
         "tests/test_ci_collect_pack_evidence.py",
         "tests/test_ci_committed_scope_index.py",
         "tests/test_ci_failure_summary.py",
-        "tests/test_ci_handoff.py",
         "tests/test_ci_pack.py",
         "tests/test_ci_plan_workflow.py",
         "tests/test_ci_trigger_closure.py",
@@ -34445,7 +34625,7 @@
     },
     {
       "job_id": "causal-factory",
-      "ordinal": 44,
+      "ordinal": 45,
       "paths": [
         "admin/**",
         "admin/causal_lab.py",
@@ -34715,7 +34895,7 @@
     },
     {
       "job_id": "rlt-rebalance-calendar-pulse",
-      "ordinal": 45,
+      "ordinal": 46,
       "paths": [
         "engine/opex.py",
         "engine/rebalance_calendar.py",
@@ -34729,7 +34909,7 @@
     },
     {
       "job_id": "nyse-calendar-freshness",
-      "ordinal": 46,
+      "ordinal": 47,
       "paths": [
         "admin/**",
         "app/**",
@@ -34750,7 +34930,7 @@
     },
     {
       "job_id": "dag-conformance",
-      "ordinal": 47,
+      "ordinal": 48,
       "paths": [
         "admin/**",
         "app/**",
@@ -35059,6 +35239,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/radar.py",
         "engine/rebalance_calendar.py",
@@ -35300,7 +35482,7 @@
     },
     {
       "job_id": "push-retry-policy",
-      "ordinal": 48,
+      "ordinal": 49,
       "paths": [
         "config/**",
         "config/**/*.yml",
@@ -35326,7 +35508,7 @@
     },
     {
       "job_id": "transmission-chains",
-      "ordinal": 49,
+      "ordinal": 50,
       "paths": [
         "config/causal_llm.yml",
         "config/transmission_proposals.yml",
@@ -35395,7 +35577,7 @@
     },
     {
       "job_id": "research-factory-authority",
-      "ordinal": 50,
+      "ordinal": 51,
       "paths": [
         "admin/**",
         "app/**",
@@ -35920,6 +36102,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_research_factory_authority.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -35940,6 +36123,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -35966,7 +36150,7 @@
     },
     {
       "job_id": "cycle-pattern-authority",
-      "ordinal": 51,
+      "ordinal": 52,
       "paths": [
         "admin/**",
         "app/**",
@@ -36348,6 +36532,7 @@
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_cycle_pattern_authority.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/fit_cycle_hazard.py",
         "scripts/notify.py",
         "scripts/run_falsosc_trial_v1.py",
@@ -36366,6 +36551,7 @@
         "site/factordata/dna_class.json",
         "site/factordata/etf_board_track.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -36389,7 +36575,7 @@
     },
     {
       "job_id": "private-boundary",
-      "ordinal": 52,
+      "ordinal": 53,
       "paths": [
         "data/**",
         "scripts/**",
@@ -36403,7 +36589,7 @@
     },
     {
       "job_id": "ruling-graph",
-      "ordinal": 53,
+      "ordinal": 54,
       "paths": [
         ".claude/hooks/model_routing_guard.py",
         "admin/**",
@@ -36431,7 +36617,7 @@
     },
     {
       "job_id": "contract-drift",
-      "ordinal": 54,
+      "ordinal": 55,
       "paths": [
         "contracts/**/*.json",
         "contracts/**/*.json/**",
@@ -36456,7 +36642,7 @@
     },
     {
       "job_id": "flow-cohorts",
-      "ordinal": 55,
+      "ordinal": 56,
       "paths": [
         "data/**",
         "data/**/*.parquet",
@@ -36478,7 +36664,7 @@
     },
     {
       "job_id": "flow-signals-ledger",
-      "ordinal": 56,
+      "ordinal": 57,
       "paths": [
         "admin/**",
         "app/**",
@@ -36515,7 +36701,7 @@
     },
     {
       "job_id": "flow-signal-cohorts",
-      "ordinal": 57,
+      "ordinal": 58,
       "paths": [
         "admin/**",
         "app/**",
@@ -36564,7 +36750,7 @@
     },
     {
       "job_id": "broad-etf-flows",
-      "ordinal": 58,
+      "ordinal": 59,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -36583,7 +36769,7 @@
     },
     {
       "job_id": "qledger-cluster-honest-ci",
-      "ordinal": 59,
+      "ordinal": 60,
       "paths": [
         "admin/**",
         "app/**",
@@ -36612,6 +36798,7 @@
         "config/ai_pricing.yml",
         "config/capability_manifest.yml",
         "config/metabolism_budget.yml",
+        "config/qual_ladder.yml",
         "content/**/*.parquet",
         "content/**/*.parquet/**",
         "contracts/**",
@@ -36704,6 +36891,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/rebalance_calendar.py",
         "engine/regime.py",
@@ -36737,6 +36926,7 @@
         "lib/nyse_calendar.py",
         "lib/store.py",
         "lib/ticker_aliases.py",
+        "ops/**",
         "ops/**/*.parquet",
         "ops/**/*.parquet/**",
         "research/**",
@@ -36760,17 +36950,19 @@
         "tests/test_communique_diff.py",
         "tests/test_qledger.py",
         "tests/test_qledger_cluster_honest_ci.py",
+        "tests/test_qledger_desk_adapter.py",
+        "tests/test_qledger_evidence_clock.py",
         "tests/test_qledger_excess_legality.py",
         "tests/test_qledger_horizon_clock.py",
         "tests/test_qledger_validity.py",
         "tools/**",
         "worker/**"
       ],
-      "weight": 23
+      "weight": 28
     },
     {
       "job_id": "altdata-new-sources",
-      "ordinal": 60,
+      "ordinal": 61,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -36791,7 +36983,7 @@
     },
     {
       "job_id": "china-native-w2",
-      "ordinal": 61,
+      "ordinal": 62,
       "paths": [
         "admin/**",
         "app/**",
@@ -37172,7 +37364,7 @@
     },
     {
       "job_id": "wri-risk-core",
-      "ordinal": 62,
+      "ordinal": 63,
       "paths": [
         "admin/**",
         "app/**",
@@ -37664,6 +37856,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -37682,6 +37875,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -37723,7 +37917,7 @@
     },
     {
       "job_id": "house-law-registry",
-      "ordinal": 63,
+      "ordinal": 64,
       "paths": [
         "admin/**",
         "app/**",
@@ -37763,6 +37957,8 @@
         "data/**/*.jsonl/**",
         "data/**/*.parquet",
         "data/**/*.parquet/**",
+        "data/**/*.py",
+        "data/**/*.py/**",
         "docs/**/*.py",
         "docs/**/*.py/**",
         "docs/HOUSE_LAW_CI_GUARD_SUITE.md",
@@ -37861,6 +38057,7 @@
         "scripts/**/*.py/**",
         "scripts/__init__.py",
         "scripts/build_security_master.py",
+        "scripts/check_append_only_assertions.py",
         "scripts/check_claim_passport.py",
         "scripts/check_house_law_registry.py",
         "scripts/check_symbol_rename_drift.py",
@@ -37868,17 +38065,18 @@
         "scripts/workflow_run_source.py",
         "site/**",
         "templates/**",
+        "tests/test_append_only_assertions.py",
         "tests/test_dataos_security_master.py",
         "tests/test_house_law_registry.py",
         "tests/test_ticker_alias_boundary.py",
         "tools/**",
         "worker/**"
       ],
-      "weight": 14
+      "weight": 18
     },
     {
       "job_id": "leader-radar-unit",
-      "ordinal": 64,
+      "ordinal": 65,
       "paths": [
         "engine/__init__.py",
         "engine/analyst_revisions.py",
@@ -37918,7 +38116,7 @@
     },
     {
       "job_id": "evidence-clock",
-      "ordinal": 65,
+      "ordinal": 66,
       "paths": [
         "config/evidence_clock.yml",
         "engine/neuralweb/evidence_clock.py",
@@ -37930,7 +38128,7 @@
     },
     {
       "job_id": "vintage-pin-fence",
-      "ordinal": 66,
+      "ordinal": 67,
       "paths": [
         "data/**",
         "data/**/*.py",
@@ -37947,7 +38145,7 @@
     },
     {
       "job_id": "validated-claims",
-      "ordinal": 67,
+      "ordinal": 68,
       "paths": [
         "data/**",
         "engine/**",
@@ -37980,7 +38178,7 @@
     },
     {
       "job_id": "template-site-sync",
-      "ordinal": 68,
+      "ordinal": 69,
       "paths": [
         "config/**",
         "config/**/*.css",
@@ -37990,8 +38188,10 @@
         "config/**/*.js",
         "config/**/*.js/**",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.md",
         "content/**/*.md/**",
+        "data/**",
         "data/**/*.html",
         "data/**/*.html/**",
         "data/**/*.yml",
@@ -38023,6 +38223,7 @@
         "scripts/inject_wh_banner.py",
         "scripts/optimize_assets.py",
         "scripts/sync_chat_nav.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.css",
         "site/**/*.css/**",
@@ -38076,7 +38277,7 @@
     },
     {
       "job_id": "data-base-shim",
-      "ordinal": 69,
+      "ordinal": 70,
       "paths": [
         "admin/**",
         "app/**",
@@ -38107,7 +38308,7 @@
     },
     {
       "job_id": "grader-manifest",
-      "ordinal": 70,
+      "ordinal": 71,
       "paths": [
         "config/grader_manifest.yml",
         "engine/__init__.py",
@@ -38129,13 +38330,13 @@
     },
     {
       "job_id": "self-mod-fence",
-      "ordinal": 71,
+      "ordinal": 72,
       "paths": [],
       "weight": 22
     },
     {
       "job_id": "capability-broker",
-      "ordinal": 72,
+      "ordinal": 73,
       "paths": [
         ".claude/hooks/model_routing_guard.py",
         ".claude/settings.json",
@@ -38197,6 +38398,7 @@
         "config/press.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/standout_review.yml",
         "config/synapse.yml",
         "config/ux_simplicity_rules.yml",
@@ -38569,6 +38771,7 @@
         "scripts/preflight_claude_auth.py",
         "scripts/replay_standout_books.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -38675,7 +38878,7 @@
     },
     {
       "job_id": "hub-a11y",
-      "ordinal": 73,
+      "ordinal": 74,
       "paths": [
         "scripts/check_hub_a11y.py",
         "site/**",
@@ -38688,7 +38891,7 @@
     },
     {
       "job_id": "font-ui-defined",
-      "ordinal": 74,
+      "ordinal": 75,
       "paths": [
         "scripts/check_font_ui_defined.py",
         "site/index.html",
@@ -38705,7 +38908,7 @@
     },
     {
       "job_id": "ratio-lens",
-      "ordinal": 75,
+      "ordinal": 76,
       "paths": [
         "engine/oracle/ratio_lens.py",
         "lib/__init__.py",
@@ -38720,7 +38923,7 @@
     },
     {
       "job_id": "hk-confirming-turn",
-      "ordinal": 76,
+      "ordinal": 77,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -38742,7 +38945,7 @@
     },
     {
       "job_id": "hk-cycle-ontology",
-      "ordinal": 77,
+      "ordinal": 78,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -38765,7 +38968,7 @@
     },
     {
       "job_id": "hk-leadership",
-      "ordinal": 78,
+      "ordinal": 79,
       "paths": [
         "data/**",
         "engine/hk_leadership.py",
@@ -38780,7 +38983,7 @@
     },
     {
       "job_id": "hk-context-chips",
-      "ordinal": 79,
+      "ordinal": 80,
       "paths": [
         "engine/__init__.py",
         "engine/hk_context_chips.py",
@@ -38794,7 +38997,7 @@
     },
     {
       "job_id": "hk-robustness-w5",
-      "ordinal": 80,
+      "ordinal": 81,
       "paths": [
         "admin/**",
         "app/**",
@@ -39092,7 +39295,7 @@
     },
     {
       "job_id": "hk-integration-seams",
-      "ordinal": 81,
+      "ordinal": 82,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -39114,7 +39317,7 @@
     },
     {
       "job_id": "hkrv-w3-banner",
-      "ordinal": 82,
+      "ordinal": 83,
       "paths": [
         "engine/__init__.py",
         "engine/i18n.py",
@@ -39125,7 +39328,7 @@
     },
     {
       "job_id": "regen-hk-g1-fixture-guard",
-      "ordinal": 83,
+      "ordinal": 84,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -39150,7 +39353,7 @@
     },
     {
       "job_id": "basket-staleness-warn",
-      "ordinal": 84,
+      "ordinal": 85,
       "paths": [
         "admin/**",
         "app/**",
@@ -39344,11 +39547,16 @@
         "engine/provider_health.py",
         "engine/qbus.py",
         "engine/qkernel.py",
+        "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
+        "engine/qledger_validity.py",
         "engine/radar.py",
         "engine/rebalance_calendar.py",
         "engine/regime.py",
         "engine/regime_label.py",
         "engine/regime_one.py",
+        "engine/regime_vector.py",
         "engine/residual_alpha.py",
         "engine/risk_radar.py",
         "engine/risk_radar_backtest.py",
@@ -39399,8 +39607,10 @@
         "lib/__init__.py",
         "lib/ai_costs.py",
         "lib/closes_panel.py",
+        "lib/cn_calendar.py",
         "lib/config.py",
         "lib/filing_value_units.py",
+        "lib/hk_calendar.py",
         "lib/nyse_calendar.py",
         "lib/pages.py",
         "lib/store.py",
@@ -39454,7 +39664,7 @@
     },
     {
       "job_id": "ftr-tape-surfaces",
-      "ordinal": 85,
+      "ordinal": 86,
       "paths": [
         "tests/test_ftr_w1_template_markup.py",
         "tests/test_ftr_w3_ui.py"
@@ -39463,7 +39673,7 @@
     },
     {
       "job_id": "live-flow-ops",
-      "ordinal": 86,
+      "ordinal": 87,
       "paths": [
         "admin/**",
         "app/**",
@@ -39556,7 +39766,7 @@
     },
     {
       "job_id": "ird-substrate-engines",
-      "ordinal": 87,
+      "ordinal": 88,
       "paths": [
         "admin/**",
         "app/**",
@@ -39836,7 +40046,7 @@
     },
     {
       "job_id": "itr-turn-rotation",
-      "ordinal": 88,
+      "ordinal": 89,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -39857,7 +40067,7 @@
     },
     {
       "job_id": "altdata-brain-govern",
-      "ordinal": 89,
+      "ordinal": 90,
       "paths": [
         "admin/**",
         "app/**",
@@ -40012,7 +40222,7 @@
     },
     {
       "job_id": "nw-lobe-unfreeze",
-      "ordinal": 90,
+      "ordinal": 91,
       "paths": [
         "data/**/*.json",
         "data/**/*.json/**",
@@ -40038,7 +40248,7 @@
     },
     {
       "job_id": "sa-w4-improvement-lanes",
-      "ordinal": 91,
+      "ordinal": 92,
       "paths": [
         "admin/**",
         "app/**",
@@ -40139,7 +40349,7 @@
     },
     {
       "job_id": "rc-r14-china-rotation-events",
-      "ordinal": 92,
+      "ordinal": 93,
       "paths": [
         "config/sector_legs.json",
         "config/sector_legs_china.json",
@@ -40166,7 +40376,7 @@
     },
     {
       "job_id": "codex-research-engine",
-      "ordinal": 93,
+      "ordinal": 94,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -40316,6 +40526,7 @@
         "config/ruling_graph.yml",
         "config/signal_foundry.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.csv",
         "content/**/*.csv/**",
@@ -40716,6 +40927,7 @@
         "scripts/marketing_publisher.py",
         "scripts/optimize_assets.py",
         "scripts/run_signal_foundry_brainstorm.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -40766,7 +40978,7 @@
     },
     {
       "job_id": "metab-throttle-ux",
-      "ordinal": 94,
+      "ordinal": 95,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -40913,6 +41125,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -41288,6 +41501,7 @@
         "scripts/metabolism_dispatch.py",
         "scripts/metabolism_guard.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -41338,7 +41552,7 @@
     },
     {
       "job_id": "admin-live-runs",
-      "ordinal": 95,
+      "ordinal": 96,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -41484,6 +41698,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -41857,6 +42072,7 @@
         "scripts/marketing_media_backfill.py",
         "scripts/marketing_publisher.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -41905,7 +42121,7 @@
     },
     {
       "job_id": "cbf-regime",
-      "ordinal": 96,
+      "ordinal": 97,
       "paths": [
         "engine/flow_regime.py",
         "engine/ird_velocity.py",
@@ -41918,7 +42134,7 @@
     },
     {
       "job_id": "ccw-w1-data-spine",
-      "ordinal": 97,
+      "ordinal": 98,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -41958,7 +42174,7 @@
     },
     {
       "job_id": "ccw-w2-gspread-engine",
-      "ordinal": 98,
+      "ordinal": 99,
       "paths": [
         "data/**",
         "data/**/*.parquet",
@@ -41975,7 +42191,7 @@
     },
     {
       "job_id": "ccw-w3-credit-momentum",
-      "ordinal": 99,
+      "ordinal": 100,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -42021,7 +42237,7 @@
     },
     {
       "job_id": "ccw-w4-credit-desk",
-      "ordinal": 100,
+      "ordinal": 101,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -42070,7 +42286,7 @@
     },
     {
       "job_id": "ccw-w6-study-s1",
-      "ordinal": 101,
+      "ordinal": 102,
       "paths": [
         "lib/__init__.py",
         "lib/config.py",
@@ -42082,7 +42298,7 @@
     },
     {
       "job_id": "support-email-spine",
-      "ordinal": 102,
+      "ordinal": 103,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -42252,6 +42468,7 @@
         "config/ruling_graph.yml",
         "config/sector_legs.json",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
@@ -42915,6 +43132,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -42928,6 +43146,7 @@
         "scripts/thematic_rotation_phase0.py",
         "scripts/translate_profiles.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -42951,6 +43170,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_confluence.json",
         "site/factordata/us_standouts.json",
@@ -43000,7 +43220,7 @@
     },
     {
       "job_id": "billing-emails",
-      "ordinal": 103,
+      "ordinal": 104,
       "paths": [
         "admin/**",
         "app/**",
@@ -43369,7 +43589,7 @@
     },
     {
       "job_id": "billing-offers",
-      "ordinal": 104,
+      "ordinal": 105,
       "paths": [
         "admin/**",
         "app/**",
@@ -43740,7 +43960,7 @@
     },
     {
       "job_id": "site-gate",
-      "ordinal": 105,
+      "ordinal": 106,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -43886,6 +44106,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -44259,6 +44480,7 @@
         "scripts/marketing_media_backfill.py",
         "scripts/marketing_publisher.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -44308,7 +44530,7 @@
     },
     {
       "job_id": "pick-lab-liquidity",
-      "ordinal": 106,
+      "ordinal": 107,
       "paths": [
         "data/**/*.parquet",
         "data/**/*.parquet/**",
@@ -44358,7 +44580,7 @@
     },
     {
       "job_id": "ric-w2-surface",
-      "ordinal": 107,
+      "ordinal": 108,
       "paths": [
         "data/**",
         "data/**/*.parquet",
@@ -44375,7 +44597,7 @@
     },
     {
       "job_id": "collect-identity",
-      "ordinal": 108,
+      "ordinal": 109,
       "paths": [
         "admin/**",
         "app/**",
@@ -44742,7 +44964,7 @@
     },
     {
       "job_id": "research-vault",
-      "ordinal": 109,
+      "ordinal": 110,
       "paths": [
         "admin/**",
         "app/**",
@@ -44799,7 +45021,7 @@
     },
     {
       "job_id": "research-vault-api",
-      "ordinal": 110,
+      "ordinal": 111,
       "paths": [
         "admin/**",
         "app/**",
@@ -45168,7 +45390,7 @@
     },
     {
       "job_id": "biocatalyst-serving",
-      "ordinal": 111,
+      "ordinal": 112,
       "paths": [
         "admin/**",
         "app/**",
@@ -45847,6 +46069,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -45875,6 +46098,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -45911,7 +46135,7 @@
     },
     {
       "job_id": "biocatalyst-evidence",
-      "ordinal": 112,
+      "ordinal": 113,
       "paths": [
         "admin/**",
         "app/**",
@@ -46302,7 +46526,7 @@
     },
     {
       "job_id": "biocatalyst-worker",
-      "ordinal": 113,
+      "ordinal": 114,
       "paths": [
         "admin/**",
         "app/**",
@@ -46387,7 +46611,7 @@
     },
     {
       "job_id": "biocatalyst-history",
-      "ordinal": 114,
+      "ordinal": 115,
       "paths": [
         "admin/**",
         "app/**",
@@ -46760,7 +46984,7 @@
     },
     {
       "job_id": "biocatalyst-contracts",
-      "ordinal": 115,
+      "ordinal": 116,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -47218,7 +47442,7 @@
     },
     {
       "job_id": "biocatalyst-deploy-integration",
-      "ordinal": 116,
+      "ordinal": 117,
       "paths": [
         "admin/**",
         "admin/**/*.json",
@@ -47405,6 +47629,7 @@
         "config/ruling_graph.yml",
         "config/sector_legs.json",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
@@ -48127,6 +48352,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -48142,6 +48368,7 @@
         "scripts/translate_profiles.py",
         "scripts/validate_regime_fwd.py",
         "scripts/vps_live_orchestrator.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -48167,6 +48394,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_confluence.json",
         "site/factordata/us_standouts.json",
@@ -48207,7 +48435,7 @@
     },
     {
       "job_id": "biocatalyst-regulatory",
-      "ordinal": 117,
+      "ordinal": 118,
       "paths": [
         "collectors/biocatalyst/drugs_at_fda.py",
         "config/**",
@@ -48269,7 +48497,7 @@
     },
     {
       "job_id": "marketing-social-publisher",
-      "ordinal": 118,
+      "ordinal": 119,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -48323,6 +48551,7 @@
         "config/press.yml",
         "config/reply_targets.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
@@ -48619,6 +48848,7 @@
         "scripts/marketing_publisher.py",
         "scripts/marketing_stale_purge.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -48673,7 +48903,7 @@
     },
     {
       "job_id": "marketing-media-pipeline",
-      "ordinal": 119,
+      "ordinal": 120,
       "paths": [
         "admin/**",
         "app/**",
@@ -48712,6 +48942,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
@@ -48943,6 +49174,7 @@
         "scripts/externalize_css.py",
         "scripts/inject_data_base.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -48980,7 +49212,7 @@
     },
     {
       "job_id": "marketing-engine",
-      "ordinal": 120,
+      "ordinal": 121,
       "paths": [
         "admin/**",
         "admin/**/*.json",
@@ -49153,6 +49385,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -49630,6 +49863,7 @@
         "scripts/marketing_recall.py",
         "scripts/optimize_assets.py",
         "scripts/vps_live_orchestrator.py",
+        "scripts/worktree_sparse.py",
         "scripts/x_intel_harvest.py",
         "site/**",
         "site/**/*.html",
@@ -49737,6 +49971,7 @@
         "tests/test_marketing_personas.py",
         "tests/test_marketing_press_copy.py",
         "tests/test_marketing_press_feeds.py",
+        "tests/test_marketing_press_relay_quality.py",
         "tests/test_marketing_press_stream.py",
         "tests/test_marketing_press_wire.py",
         "tests/test_marketing_publisher_names.py",
@@ -49789,7 +50024,7 @@
     },
     {
       "job_id": "marketing-scoring-optional",
-      "ordinal": 121,
+      "ordinal": 122,
       "paths": [
         "admin/**",
         "app/**",
@@ -49828,6 +50063,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
@@ -50071,6 +50307,7 @@
         "scripts/externalize_css.py",
         "scripts/inject_data_base.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -50106,7 +50343,7 @@
     },
     {
       "job_id": "marketing-data",
-      "ordinal": 122,
+      "ordinal": 123,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -50138,6 +50375,7 @@
         "collectors/edgar_share_quality.py",
         "collectors/edgar_stock_quality.py",
         "collectors/fred.py",
+        "collectors/holdings.py",
         "collectors/openfigi.py",
         "config/**",
         "config/**/*.html",
@@ -50164,10 +50402,13 @@
         "config/press.yml",
         "config/reply_targets.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
         "content/**/*.md/**",
+        "content/**/*.parquet",
+        "content/**/*.parquet/**",
         "contracts/**",
         "contracts/**/*.json",
         "contracts/**/*.json/**",
@@ -50194,6 +50435,8 @@
         "docs/**/*.json/**",
         "docs/**/*.md",
         "docs/**/*.md/**",
+        "docs/**/*.parquet",
+        "docs/**/*.parquet/**",
         "engine/**",
         "engine/**/*.parquet",
         "engine/**/*.parquet/**",
@@ -50460,6 +50703,8 @@
         "ops/**/*.json/**",
         "ops/**/*.md",
         "ops/**/*.md/**",
+        "ops/**/*.parquet",
+        "ops/**/*.parquet/**",
         "research/**",
         "research/**/*.html",
         "research/**/*.html/**",
@@ -50467,6 +50712,8 @@
         "research/**/*.json/**",
         "research/**/*.md",
         "research/**/*.md/**",
+        "research/**/*.parquet",
+        "research/**/*.parquet/**",
         "scripts/**",
         "scripts/**/*.parquet",
         "scripts/**/*.parquet/**",
@@ -50484,6 +50731,7 @@
         "scripts/marketing_publisher.py",
         "scripts/optimize_assets.py",
         "scripts/thematic_rotation_phase0.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -50508,6 +50756,8 @@
         "templates/**/*.json/**",
         "templates/**/*.md",
         "templates/**/*.md/**",
+        "templates/**/*.parquet",
+        "templates/**/*.parquet/**",
         "tests/test_chart_director.py",
         "tests/test_chart_facts.py",
         "tests/test_confluence_honesty.py",
@@ -50537,7 +50787,7 @@
     },
     {
       "job_id": "publish-r2-client",
-      "ordinal": 123,
+      "ordinal": 124,
       "paths": [
         "admin/**",
         "app/**",
@@ -50578,6 +50828,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/theme_crosswalk.yml",
         "content/**/*.css",
         "content/**/*.css/**",
@@ -50856,6 +51107,7 @@
         "scripts/research/build_company_intelligence_golden_corpus.py",
         "scripts/run_press.py",
         "scripts/stage_earnings_story_press.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.css",
         "site/**/*.css/**",
@@ -50913,316 +51165,6 @@
     },
     {
       "job_id": "chart-render",
-      "ordinal": 124,
-      "paths": [
-        "admin/**",
-        "app/**",
-        "collectors/**",
-        "collectors/**/*.parquet",
-        "collectors/**/*.parquet/**",
-        "collectors/__init__.py",
-        "collectors/_drip.py",
-        "collectors/base.py",
-        "collectors/china_analyst.py",
-        "collectors/china_news.py",
-        "collectors/edgar.py",
-        "collectors/edgar_13f.py",
-        "collectors/edgar_flow_quality.py",
-        "collectors/edgar_share_quality.py",
-        "collectors/edgar_stock_quality.py",
-        "collectors/fred.py",
-        "collectors/openfigi.py",
-        "config/**",
-        "config/**/*.html",
-        "config/**/*.html/**",
-        "config/**/*.json",
-        "config/**/*.json/**",
-        "config/**/*.jsonl",
-        "config/**/*.jsonl/**",
-        "config/**/*.md",
-        "config/**/*.md/**",
-        "config/**/*.parquet",
-        "config/**/*.parquet/**",
-        "config/**/*.yml",
-        "config/**/*.yml/**",
-        "config/ai_pricing.yml",
-        "config/capability_manifest.yml",
-        "config/earnings_story_promotion.yml",
-        "config/marketing_competitor_cadence.yml",
-        "config/metabolism_budget.yml",
-        "config/press.yml",
-        "config/site_access.yml",
-        "content/**/*.json",
-        "content/**/*.json/**",
-        "content/**/*.md",
-        "content/**/*.md/**",
-        "contracts/**",
-        "contracts/**/*.json",
-        "contracts/**/*.json/**",
-        "contracts/**/*.md",
-        "contracts/**/*.md/**",
-        "contracts/**/*.parquet",
-        "contracts/**/*.parquet/**",
-        "data/**",
-        "data/**/*.json",
-        "data/**/*.json/**",
-        "data/**/*.jsonl",
-        "data/**/*.jsonl/**",
-        "data/**/*.md",
-        "data/**/*.md/**",
-        "data/**/*.parquet",
-        "data/**/*.parquet/**",
-        "data/**/*.yml",
-        "data/**/*.yml/**",
-        "docs/**/*.json",
-        "docs/**/*.json/**",
-        "docs/**/*.md",
-        "docs/**/*.md/**",
-        "engine/**",
-        "engine/**/*.yml",
-        "engine/**/*.yml/**",
-        "engine/__init__.py",
-        "engine/_text_scrub.py",
-        "engine/ai_desk.py",
-        "engine/ai_desk_scorer.py",
-        "engine/altdata_ledger.py",
-        "engine/altdata_models.py",
-        "engine/altdata_picks.py",
-        "engine/altdata_signals.py",
-        "engine/canon.py",
-        "engine/catalyst_tone.py",
-        "engine/china_altdata.py",
-        "engine/china_basket_spine.py",
-        "engine/china_conviction.py",
-        "engine/china_crowding.py",
-        "engine/china_discovery.py",
-        "engine/china_event_calendar.py",
-        "engine/china_extras.py",
-        "engine/china_intel_bus.py",
-        "engine/china_news.py",
-        "engine/china_news_intel.py",
-        "engine/china_radar.py",
-        "engine/china_radar_ledger.py",
-        "engine/china_regime_store.py",
-        "engine/china_signal_lab.py",
-        "engine/china_standout_track.py",
-        "engine/china_validation.py",
-        "engine/chronicle/__init__.py",
-        "engine/chronicle/context_pack.py",
-        "engine/chronicle/earnings_calls.py",
-        "engine/chronicle/schema.py",
-        "engine/cn_newswires.py",
-        "engine/codex_lane/runner.py",
-        "engine/codex_provider.py",
-        "engine/company_intelligence/contracts.py",
-        "engine/desk_ledger.py",
-        "engine/desk_scorer.py",
-        "engine/earnings_narrative/context_packets.py",
-        "engine/earnings_narrative/contracts.py",
-        "engine/earnings_narrative/digest.py",
-        "engine/earnings_narrative/private_publication.py",
-        "engine/earnings_narrative/promotion.py",
-        "engine/earnings_narrative/public_wire.py",
-        "engine/earnings_narrative/story.py",
-        "engine/earnings_narrative/story_packets.py",
-        "engine/earnings_qual.py",
-        "engine/entity_resolver.py",
-        "engine/event_calendar.py",
-        "engine/forward_calendar_context.py",
-        "engine/gdelt_client.py",
-        "engine/grading.py",
-        "engine/indicators_m2.py",
-        "engine/llm_auth.py",
-        "engine/macro_surprise.py",
-        "engine/manager_lag.py",
-        "engine/manager_quality.py",
-        "engine/manager_trades.py",
-        "engine/marketing/__init__.py",
-        "engine/marketing/accounts.py",
-        "engine/marketing/attention_source.py",
-        "engine/marketing/authority.py",
-        "engine/marketing/breaking_summary.py",
-        "engine/marketing/cadence_resolver.py",
-        "engine/marketing/campaign_compiler.py",
-        "engine/marketing/chart_director.py",
-        "engine/marketing/chart_facts.py",
-        "engine/marketing/chart_followups.py",
-        "engine/marketing/chart_render.py",
-        "engine/marketing/charter.py",
-        "engine/marketing/claims.py",
-        "engine/marketing/cmo.py",
-        "engine/marketing/confluence_source.py",
-        "engine/marketing/congress_feed.py",
-        "engine/marketing/content_studio.py",
-        "engine/marketing/copy_auditor.py",
-        "engine/marketing/copy_critic.py",
-        "engine/marketing/copy_review.py",
-        "engine/marketing/copywriter.py",
-        "engine/marketing/departments.py",
-        "engine/marketing/economics.py",
-        "engine/marketing/events.py",
-        "engine/marketing/exemplar_store.py",
-        "engine/marketing/expression_dial.py",
-        "engine/marketing/garbage_gate.py",
-        "engine/marketing/hot_tape_llm.py",
-        "engine/marketing/house_picks.py",
-        "engine/marketing/insider_feed.py",
-        "engine/marketing/learned_rules.py",
-        "engine/marketing/ledgers.py",
-        "engine/marketing/links.py",
-        "engine/marketing/logo_cache.py",
-        "engine/marketing/market_clock.py",
-        "engine/marketing/market_facts.py",
-        "engine/marketing/media_publish.py",
-        "engine/marketing/movers_source.py",
-        "engine/marketing/opportunity_bus.py",
-        "engine/marketing/outbox.py",
-        "engine/marketing/persona_memory.py",
-        "engine/marketing/personas.py",
-        "engine/marketing/publication.py",
-        "engine/marketing/radar_internal.py",
-        "engine/marketing/receipt_source.py",
-        "engine/marketing/rejections.py",
-        "engine/marketing/relay_hygiene.py",
-        "engine/marketing/sentinel.py",
-        "engine/marketing/share_cards.py",
-        "engine/marketing/signal_features.py",
-        "engine/marketing/social_publisher.py",
-        "engine/marketing/source_authority.py",
-        "engine/marketing/state.py",
-        "engine/marketing/story_spine.py",
-        "engine/marketing/ticker_allocator.py",
-        "engine/marketing/value_gate.py",
-        "engine/marketing/weekend_levels.py",
-        "engine/marketing/wire_format.py",
-        "engine/marketing/wire_voice.py",
-        "engine/marketing/x_intel.py",
-        "engine/master_brain.py",
-        "engine/metabolism/__init__.py",
-        "engine/metabolism/budget_gate.py",
-        "engine/name_resolver.py",
-        "engine/neuralweb/__init__.py",
-        "engine/neuralweb/analyst_doctrine.py",
-        "engine/neuralweb/ask_brain.py",
-        "engine/neuralweb/brief_context.py",
-        "engine/neuralweb/capability_broker.py",
-        "engine/neuralweb/chat_plain_words.py",
-        "engine/neuralweb/company_intelligence_reader.py",
-        "engine/neuralweb/constitution.py",
-        "engine/neuralweb/cortex.py",
-        "engine/neuralweb/doctrine.py",
-        "engine/neuralweb/earnings_context_reader.py",
-        "engine/neuralweb/envelope.py",
-        "engine/neuralweb/governance.py",
-        "engine/neuralweb/key_pool.py",
-        "engine/neuralweb/metabolism.py",
-        "engine/neuralweb/query.py",
-        "engine/neuralweb/read.py",
-        "engine/neuralweb/reflexes.py",
-        "engine/neuralweb/synapse.py",
-        "engine/news_common.py",
-        "engine/news_translate.py",
-        "engine/ollama_provider.py",
-        "engine/opex.py",
-        "engine/passport.py",
-        "engine/pooling.py",
-        "engine/press/__init__.py",
-        "engine/press/desk_planner.py",
-        "engine/press/earnings_adapter.py",
-        "engine/press/research_triage.py",
-        "engine/press/validators.py",
-        "engine/prophet_integrity.py",
-        "engine/provider_health.py",
-        "engine/qbus.py",
-        "engine/qkernel.py",
-        "engine/qledger.py",
-        "engine/qledger_validity.py",
-        "engine/rebalance_calendar.py",
-        "engine/regime_label.py",
-        "engine/regime_vector.py",
-        "engine/research_vault/__init__.py",
-        "engine/research_vault/r2_store.py",
-        "engine/research_vault/sidecar.py",
-        "engine/research_vault/slugs.py",
-        "engine/seasonality/contracts.py",
-        "engine/session_anchor.py",
-        "engine/smart_money.py",
-        "engine/spine.py",
-        "engine/ticker_shape.py",
-        "engine/translate.py",
-        "engine/trial_ledger.py",
-        "engine/tushare_freshness.py",
-        "engine/universe_history.py",
-        "engine/validation.py",
-        "lib/**",
-        "lib/__init__.py",
-        "lib/ai_costs.py",
-        "lib/closes_panel.py",
-        "lib/cn_calendar.py",
-        "lib/config.py",
-        "lib/filing_value_units.py",
-        "lib/hk_calendar.py",
-        "lib/nyse_calendar.py",
-        "lib/pages.py",
-        "lib/seo.py",
-        "lib/site_assets.py",
-        "lib/store.py",
-        "lib/ticker_aliases.py",
-        "ops/**",
-        "ops/**/*.json",
-        "ops/**/*.json/**",
-        "ops/**/*.md",
-        "ops/**/*.md/**",
-        "research/**",
-        "research/**/*.html",
-        "research/**/*.html/**",
-        "research/**/*.json",
-        "research/**/*.json/**",
-        "research/**/*.md",
-        "research/**/*.md/**",
-        "scripts/**",
-        "scripts/build_free_content.py",
-        "scripts/check_template_site_sync.py",
-        "scripts/externalize_css.py",
-        "scripts/inject_data_base.py",
-        "scripts/optimize_assets.py",
-        "site/**",
-        "site/**/*.html",
-        "site/**/*.html/**",
-        "site/**/*.json",
-        "site/**/*.json/**",
-        "site/**/*.md",
-        "site/**/*.md/**",
-        "site/**/*.parquet",
-        "site/**/*.parquet/**",
-        "site/basketdata/breadth_split.json",
-        "site/basketdata/fear_greed.json",
-        "site/factordata/attention.json",
-        "site/factordata/tech_confluence.json",
-        "site/marketdata/sp500_heatmap.json",
-        "site/prophet/index.json",
-        "templates/**",
-        "templates/**/*.html",
-        "templates/**/*.html/**",
-        "templates/**/*.json",
-        "templates/**/*.json/**",
-        "templates/**/*.md",
-        "templates/**/*.md/**",
-        "tests/test_chart_render_grammar.py",
-        "tests/test_chart_render_inline.py",
-        "tests/test_chart_render_m2.py",
-        "tests/test_marketing_card_parity.py",
-        "tools/**",
-        "tools/**/*.html",
-        "tools/**/*.html/**",
-        "tools/**/*.md",
-        "tools/**/*.md/**",
-        "worker/**"
-      ],
-      "weight": 10
-    },
-    {
-      "job_id": "chart-render-data",
       "ordinal": 125,
       "paths": [
         "admin/**",
@@ -51262,6 +51204,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
@@ -51496,6 +51439,319 @@
         "scripts/externalize_css.py",
         "scripts/inject_data_base.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
+        "site/**",
+        "site/**/*.html",
+        "site/**/*.html/**",
+        "site/**/*.json",
+        "site/**/*.json/**",
+        "site/**/*.md",
+        "site/**/*.md/**",
+        "site/**/*.parquet",
+        "site/**/*.parquet/**",
+        "site/basketdata/breadth_split.json",
+        "site/basketdata/fear_greed.json",
+        "site/factordata/attention.json",
+        "site/factordata/tech_confluence.json",
+        "site/marketdata/sp500_heatmap.json",
+        "site/prophet/index.json",
+        "templates/**",
+        "templates/**/*.html",
+        "templates/**/*.html/**",
+        "templates/**/*.json",
+        "templates/**/*.json/**",
+        "templates/**/*.md",
+        "templates/**/*.md/**",
+        "tests/test_chart_render_grammar.py",
+        "tests/test_chart_render_inline.py",
+        "tests/test_chart_render_m2.py",
+        "tests/test_marketing_card_parity.py",
+        "tools/**",
+        "tools/**/*.html",
+        "tools/**/*.html/**",
+        "tools/**/*.md",
+        "tools/**/*.md/**",
+        "worker/**"
+      ],
+      "weight": 10
+    },
+    {
+      "job_id": "chart-render-data",
+      "ordinal": 126,
+      "paths": [
+        "admin/**",
+        "app/**",
+        "collectors/**",
+        "collectors/**/*.parquet",
+        "collectors/**/*.parquet/**",
+        "collectors/__init__.py",
+        "collectors/_drip.py",
+        "collectors/base.py",
+        "collectors/china_analyst.py",
+        "collectors/china_news.py",
+        "collectors/edgar.py",
+        "collectors/edgar_13f.py",
+        "collectors/edgar_flow_quality.py",
+        "collectors/edgar_share_quality.py",
+        "collectors/edgar_stock_quality.py",
+        "collectors/fred.py",
+        "collectors/openfigi.py",
+        "config/**",
+        "config/**/*.html",
+        "config/**/*.html/**",
+        "config/**/*.json",
+        "config/**/*.json/**",
+        "config/**/*.jsonl",
+        "config/**/*.jsonl/**",
+        "config/**/*.md",
+        "config/**/*.md/**",
+        "config/**/*.parquet",
+        "config/**/*.parquet/**",
+        "config/**/*.yml",
+        "config/**/*.yml/**",
+        "config/ai_pricing.yml",
+        "config/capability_manifest.yml",
+        "config/earnings_story_promotion.yml",
+        "config/marketing_competitor_cadence.yml",
+        "config/metabolism_budget.yml",
+        "config/press.yml",
+        "config/site_access.yml",
+        "config/sparse_worktree.json",
+        "content/**/*.json",
+        "content/**/*.json/**",
+        "content/**/*.md",
+        "content/**/*.md/**",
+        "contracts/**",
+        "contracts/**/*.json",
+        "contracts/**/*.json/**",
+        "contracts/**/*.md",
+        "contracts/**/*.md/**",
+        "contracts/**/*.parquet",
+        "contracts/**/*.parquet/**",
+        "data/**",
+        "data/**/*.json",
+        "data/**/*.json/**",
+        "data/**/*.jsonl",
+        "data/**/*.jsonl/**",
+        "data/**/*.md",
+        "data/**/*.md/**",
+        "data/**/*.parquet",
+        "data/**/*.parquet/**",
+        "data/**/*.yml",
+        "data/**/*.yml/**",
+        "docs/**/*.json",
+        "docs/**/*.json/**",
+        "docs/**/*.md",
+        "docs/**/*.md/**",
+        "engine/**",
+        "engine/**/*.yml",
+        "engine/**/*.yml/**",
+        "engine/__init__.py",
+        "engine/_text_scrub.py",
+        "engine/ai_desk.py",
+        "engine/ai_desk_scorer.py",
+        "engine/altdata_ledger.py",
+        "engine/altdata_models.py",
+        "engine/altdata_picks.py",
+        "engine/altdata_signals.py",
+        "engine/canon.py",
+        "engine/catalyst_tone.py",
+        "engine/china_altdata.py",
+        "engine/china_basket_spine.py",
+        "engine/china_conviction.py",
+        "engine/china_crowding.py",
+        "engine/china_discovery.py",
+        "engine/china_event_calendar.py",
+        "engine/china_extras.py",
+        "engine/china_intel_bus.py",
+        "engine/china_news.py",
+        "engine/china_news_intel.py",
+        "engine/china_radar.py",
+        "engine/china_radar_ledger.py",
+        "engine/china_regime_store.py",
+        "engine/china_signal_lab.py",
+        "engine/china_standout_track.py",
+        "engine/china_validation.py",
+        "engine/chronicle/__init__.py",
+        "engine/chronicle/context_pack.py",
+        "engine/chronicle/earnings_calls.py",
+        "engine/chronicle/schema.py",
+        "engine/cn_newswires.py",
+        "engine/codex_lane/runner.py",
+        "engine/codex_provider.py",
+        "engine/company_intelligence/contracts.py",
+        "engine/desk_ledger.py",
+        "engine/desk_scorer.py",
+        "engine/earnings_narrative/context_packets.py",
+        "engine/earnings_narrative/contracts.py",
+        "engine/earnings_narrative/digest.py",
+        "engine/earnings_narrative/private_publication.py",
+        "engine/earnings_narrative/promotion.py",
+        "engine/earnings_narrative/public_wire.py",
+        "engine/earnings_narrative/story.py",
+        "engine/earnings_narrative/story_packets.py",
+        "engine/earnings_qual.py",
+        "engine/entity_resolver.py",
+        "engine/event_calendar.py",
+        "engine/forward_calendar_context.py",
+        "engine/gdelt_client.py",
+        "engine/grading.py",
+        "engine/indicators_m2.py",
+        "engine/llm_auth.py",
+        "engine/macro_surprise.py",
+        "engine/manager_lag.py",
+        "engine/manager_quality.py",
+        "engine/manager_trades.py",
+        "engine/marketing/__init__.py",
+        "engine/marketing/accounts.py",
+        "engine/marketing/attention_source.py",
+        "engine/marketing/authority.py",
+        "engine/marketing/breaking_summary.py",
+        "engine/marketing/cadence_resolver.py",
+        "engine/marketing/campaign_compiler.py",
+        "engine/marketing/chart_director.py",
+        "engine/marketing/chart_facts.py",
+        "engine/marketing/chart_followups.py",
+        "engine/marketing/chart_render.py",
+        "engine/marketing/charter.py",
+        "engine/marketing/claims.py",
+        "engine/marketing/cmo.py",
+        "engine/marketing/confluence_source.py",
+        "engine/marketing/congress_feed.py",
+        "engine/marketing/content_studio.py",
+        "engine/marketing/copy_auditor.py",
+        "engine/marketing/copy_critic.py",
+        "engine/marketing/copy_review.py",
+        "engine/marketing/copywriter.py",
+        "engine/marketing/departments.py",
+        "engine/marketing/economics.py",
+        "engine/marketing/events.py",
+        "engine/marketing/exemplar_store.py",
+        "engine/marketing/expression_dial.py",
+        "engine/marketing/garbage_gate.py",
+        "engine/marketing/hot_tape_llm.py",
+        "engine/marketing/house_picks.py",
+        "engine/marketing/insider_feed.py",
+        "engine/marketing/learned_rules.py",
+        "engine/marketing/ledgers.py",
+        "engine/marketing/links.py",
+        "engine/marketing/logo_cache.py",
+        "engine/marketing/market_clock.py",
+        "engine/marketing/market_facts.py",
+        "engine/marketing/media_publish.py",
+        "engine/marketing/movers_source.py",
+        "engine/marketing/opportunity_bus.py",
+        "engine/marketing/outbox.py",
+        "engine/marketing/persona_memory.py",
+        "engine/marketing/personas.py",
+        "engine/marketing/publication.py",
+        "engine/marketing/radar_internal.py",
+        "engine/marketing/receipt_source.py",
+        "engine/marketing/rejections.py",
+        "engine/marketing/relay_hygiene.py",
+        "engine/marketing/sentinel.py",
+        "engine/marketing/share_cards.py",
+        "engine/marketing/signal_features.py",
+        "engine/marketing/social_publisher.py",
+        "engine/marketing/source_authority.py",
+        "engine/marketing/state.py",
+        "engine/marketing/story_spine.py",
+        "engine/marketing/ticker_allocator.py",
+        "engine/marketing/value_gate.py",
+        "engine/marketing/weekend_levels.py",
+        "engine/marketing/wire_format.py",
+        "engine/marketing/wire_voice.py",
+        "engine/marketing/x_intel.py",
+        "engine/master_brain.py",
+        "engine/metabolism/__init__.py",
+        "engine/metabolism/budget_gate.py",
+        "engine/name_resolver.py",
+        "engine/neuralweb/__init__.py",
+        "engine/neuralweb/analyst_doctrine.py",
+        "engine/neuralweb/ask_brain.py",
+        "engine/neuralweb/brief_context.py",
+        "engine/neuralweb/capability_broker.py",
+        "engine/neuralweb/chat_plain_words.py",
+        "engine/neuralweb/company_intelligence_reader.py",
+        "engine/neuralweb/constitution.py",
+        "engine/neuralweb/cortex.py",
+        "engine/neuralweb/doctrine.py",
+        "engine/neuralweb/earnings_context_reader.py",
+        "engine/neuralweb/envelope.py",
+        "engine/neuralweb/governance.py",
+        "engine/neuralweb/key_pool.py",
+        "engine/neuralweb/metabolism.py",
+        "engine/neuralweb/query.py",
+        "engine/neuralweb/read.py",
+        "engine/neuralweb/reflexes.py",
+        "engine/neuralweb/synapse.py",
+        "engine/news_common.py",
+        "engine/news_translate.py",
+        "engine/ollama_provider.py",
+        "engine/opex.py",
+        "engine/passport.py",
+        "engine/pooling.py",
+        "engine/press/__init__.py",
+        "engine/press/desk_planner.py",
+        "engine/press/earnings_adapter.py",
+        "engine/press/research_triage.py",
+        "engine/press/validators.py",
+        "engine/prophet_integrity.py",
+        "engine/provider_health.py",
+        "engine/qbus.py",
+        "engine/qkernel.py",
+        "engine/qledger.py",
+        "engine/qledger_validity.py",
+        "engine/rebalance_calendar.py",
+        "engine/regime_label.py",
+        "engine/regime_vector.py",
+        "engine/research_vault/__init__.py",
+        "engine/research_vault/r2_store.py",
+        "engine/research_vault/sidecar.py",
+        "engine/research_vault/slugs.py",
+        "engine/seasonality/contracts.py",
+        "engine/session_anchor.py",
+        "engine/smart_money.py",
+        "engine/spine.py",
+        "engine/ticker_shape.py",
+        "engine/translate.py",
+        "engine/trial_ledger.py",
+        "engine/tushare_freshness.py",
+        "engine/universe_history.py",
+        "engine/validation.py",
+        "lib/**",
+        "lib/__init__.py",
+        "lib/ai_costs.py",
+        "lib/closes_panel.py",
+        "lib/cn_calendar.py",
+        "lib/config.py",
+        "lib/filing_value_units.py",
+        "lib/hk_calendar.py",
+        "lib/nyse_calendar.py",
+        "lib/pages.py",
+        "lib/seo.py",
+        "lib/site_assets.py",
+        "lib/store.py",
+        "lib/ticker_aliases.py",
+        "ops/**",
+        "ops/**/*.json",
+        "ops/**/*.json/**",
+        "ops/**/*.md",
+        "ops/**/*.md/**",
+        "research/**",
+        "research/**/*.html",
+        "research/**/*.html/**",
+        "research/**/*.json",
+        "research/**/*.json/**",
+        "research/**/*.md",
+        "research/**/*.md/**",
+        "scripts/**",
+        "scripts/build_free_content.py",
+        "scripts/check_template_site_sync.py",
+        "scripts/externalize_css.py",
+        "scripts/inject_data_base.py",
+        "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -51533,7 +51789,7 @@
     },
     {
       "job_id": "portfolio-ctx",
-      "ordinal": 126,
+      "ordinal": 127,
       "paths": [
         "admin/**",
         "app/**",
@@ -51615,6 +51871,7 @@
         "config/ruling_graph.yml",
         "config/sector_legs.json",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/theme_crosswalk.yml",
         "content/**/*.json",
@@ -51922,6 +52179,7 @@
         "scripts/build_portfolio_ctx.py",
         "scripts/build_state_of_themes.py",
         "scripts/check_template_site_sync.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -51970,7 +52228,7 @@
     },
     {
       "job_id": "options-estate-guards",
-      "ordinal": 127,
+      "ordinal": 128,
       "paths": [
         "config/**",
         "config/**/*.html",
@@ -52084,7 +52342,7 @@
     },
     {
       "job_id": "prelaunch-hardening",
-      "ordinal": 128,
+      "ordinal": 129,
       "paths": [
         "admin/**",
         "app/**",
@@ -52457,7 +52715,7 @@
     },
     {
       "job_id": "free-content-estate",
-      "ordinal": 129,
+      "ordinal": 130,
       "paths": [
         "config/**",
         "config/**/*.css",
@@ -52467,10 +52725,12 @@
         "config/**/*.js",
         "config/**/*.js/**",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.html",
         "content/**/*.html/**",
         "content/**/*.md",
         "content/**/*.md/**",
+        "data/**",
         "lib/__init__.py",
         "lib/config.py",
         "lib/pages.py",
@@ -52484,6 +52744,7 @@
         "scripts/externalize_css.py",
         "scripts/inject_data_base.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.css",
         "site/**/*.css/**",
@@ -52524,7 +52785,7 @@
     },
     {
       "job_id": "public-render-fastlane",
-      "ordinal": 130,
+      "ordinal": 131,
       "paths": [
         "config/**/*.html",
         "config/**/*.html/**",
@@ -52564,7 +52825,7 @@
     },
     {
       "job_id": "press-lane",
-      "ordinal": 131,
+      "ordinal": 132,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -52620,6 +52881,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.css",
         "content/**/*.css/**",
         "content/**/*.html",
@@ -52896,6 +53158,7 @@
         "scripts/optimize_assets.py",
         "scripts/run_press.py",
         "scripts/run_research_triage.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.css",
         "site/**/*.css/**",
@@ -52955,7 +53218,7 @@
     },
     {
       "job_id": "unrun-vector-dsr",
-      "ordinal": 132,
+      "ordinal": 133,
       "paths": [
         "admin/**",
         "app/**",
@@ -53352,7 +53615,7 @@
     },
     {
       "job_id": "unrun-oracle-desk",
-      "ordinal": 133,
+      "ordinal": 134,
       "paths": [
         "admin/**",
         "app/**",
@@ -53550,7 +53813,7 @@
     },
     {
       "job_id": "unrun-marketing-desk",
-      "ordinal": 134,
+      "ordinal": 135,
       "paths": [
         "admin/**",
         "app/**",
@@ -53593,6 +53856,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
@@ -53871,6 +54135,7 @@
         "scripts/optimize_assets.py",
         "scripts/vps_live_orchestrator.py",
         "scripts/workflow_run_source.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -53912,7 +54177,7 @@
     },
     {
       "job_id": "unrun-grading-board",
-      "ordinal": 135,
+      "ordinal": 136,
       "paths": [
         "admin/**",
         "app/**",
@@ -53940,6 +54205,7 @@
         "collectors/equity_profile.py",
         "collectors/equity_revisions.py",
         "collectors/fred.py",
+        "collectors/holdings.py",
         "collectors/openfigi.py",
         "collectors/us_names_zh.py",
         "config/**",
@@ -53959,9 +54225,13 @@
         "config/us_search_aliases_zh.json",
         "content/**/*.json",
         "content/**/*.json/**",
+        "content/**/*.parquet",
+        "content/**/*.parquet/**",
         "contracts/**",
         "contracts/**/*.json",
         "contracts/**/*.json/**",
+        "contracts/**/*.parquet",
+        "contracts/**/*.parquet/**",
         "data/**",
         "data/**/*.json",
         "data/**/*.json/**",
@@ -53971,6 +54241,8 @@
         "data/**/*.parquet/**",
         "docs/**/*.json",
         "docs/**/*.json/**",
+        "docs/**/*.parquet",
+        "docs/**/*.parquet/**",
         "engine/**",
         "engine/**/*.parquet",
         "engine/**/*.parquet/**",
@@ -54208,6 +54480,8 @@
         "ops/**",
         "ops/**/*.json",
         "ops/**/*.json/**",
+        "ops/**/*.parquet",
+        "ops/**/*.parquet/**",
         "research/**",
         "research/**/*.json",
         "research/**/*.json/**",
@@ -54221,6 +54495,7 @@
         "scripts/audit_claim_accountability.py",
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/grade_us_board.py",
         "scripts/thematic_rotation_phase0.py",
         "site/**",
@@ -54232,6 +54507,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_board_outcomes.json",
         "site/factordata/us_board_track.json",
@@ -54244,6 +54520,8 @@
         "templates/**",
         "templates/**/*.json",
         "templates/**/*.json/**",
+        "templates/**/*.parquet",
+        "templates/**/*.parquet/**",
         "templates/_track_record_dlg.html.j2",
         "templates/index.html",
         "templates/onboard.js",
@@ -54266,7 +54544,7 @@
     },
     {
       "job_id": "unrun-intl-libraries",
-      "ordinal": 136,
+      "ordinal": 137,
       "paths": [
         "admin/**",
         "app/**",
@@ -54633,6 +54911,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/radar.py",
         "engine/rate_inflation_transmission.py",
@@ -54848,7 +55128,7 @@
     },
     {
       "job_id": "unrun-data-plane",
-      "ordinal": 137,
+      "ordinal": 138,
       "paths": [
         "admin/**",
         "app/**",
@@ -55201,6 +55481,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_builder_failstreaks.py",
         "scripts/check_ledger_advance.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_surface_freshness.py",
         "scripts/fetch_finviz_themes.py",
         "scripts/fetch_r2.py",
@@ -55225,6 +55506,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -55261,7 +55543,7 @@
     },
     {
       "job_id": "unrun-government-revenue",
-      "ordinal": 138,
+      "ordinal": 139,
       "paths": [
         "admin/**",
         "app/**",
@@ -55366,6 +55648,7 @@
         "config/plans.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/theme_crosswalk.yml",
         "config/trade_flow_codes.yml",
@@ -55736,6 +56019,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/radar.py",
         "engine/rebalance_calendar.py",
@@ -55938,6 +56223,7 @@
         "scripts/thematic_rotation_phase0.py",
         "scripts/validate_regime_fwd.py",
         "scripts/w2044_warn_ticker_map.csv",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -56051,7 +56337,7 @@
     },
     {
       "job_id": "unrun-government-revenue-candidate-projection",
-      "ordinal": 139,
+      "ordinal": 140,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -56132,7 +56418,7 @@
     },
     {
       "job_id": "unrun-factor-research",
-      "ordinal": 140,
+      "ordinal": 141,
       "paths": [
         "admin/**",
         "app/**",
@@ -56418,7 +56704,7 @@
     },
     {
       "job_id": "unrun-serving-admin",
-      "ordinal": 141,
+      "ordinal": 142,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -56567,6 +56853,7 @@
         "config/reply_targets.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -56942,6 +57229,7 @@
         "scripts/marketing_media_backfill.py",
         "scripts/marketing_publisher.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -57000,7 +57288,7 @@
     },
     {
       "job_id": "unrun-ops-workers",
-      "ordinal": 142,
+      "ordinal": 143,
       "paths": [
         "admin/**",
         "admin/static/app.js",
@@ -57523,7 +57811,7 @@
     },
     {
       "job_id": "unrun-builders-render",
-      "ordinal": 143,
+      "ordinal": 144,
       "paths": [
         "admin/**",
         "app/**",
@@ -57565,6 +57853,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
@@ -57814,6 +58103,7 @@
         "scripts/externalize_css.py",
         "scripts/inject_data_base.py",
         "scripts/optimize_assets.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -57882,7 +58172,7 @@
     },
     {
       "job_id": "unrun-nav-chrome",
-      "ordinal": 144,
+      "ordinal": 145,
       "paths": [
         "admin/**",
         "app/**",
@@ -58467,6 +58757,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/build_vector.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_start_runtime.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -58488,6 +58779,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -58559,7 +58851,7 @@
     },
     {
       "job_id": "unrun-builders-stores",
-      "ordinal": 145,
+      "ordinal": 146,
       "paths": [
         "admin/**",
         "admin/**/*.json",
@@ -58761,6 +59053,7 @@
         "config/sector_legs.json",
         "config/signal_foundry.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
@@ -59365,6 +59658,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/quant_lab/__init__.py",
         "engine/quant_lab/legs.py",
@@ -59633,6 +59928,7 @@
         "scripts/calibrate_stage_vs_equitydesk.py",
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/check_vps_live_health.py",
         "scripts/close_pass_mirror.py",
@@ -59676,6 +59972,7 @@
         "scripts/vps_live_orchestrator.py",
         "scripts/watch_release_publications.py",
         "scripts/workflow_run_source.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -59705,6 +60002,7 @@
         "site/factordata/impulse.json",
         "site/factordata/m2_profiles.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_confluence.json",
         "site/factordata/us_standouts.json",
@@ -59792,7 +60090,7 @@
     },
     {
       "job_id": "unrun-site-surfaces",
-      "ordinal": 146,
+      "ordinal": 147,
       "paths": [
         "admin/**",
         "app/**",
@@ -60291,6 +60589,7 @@
         "scripts/c4_cnh_basis.py",
         "scripts/c4_reer_value.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_title_i18n.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -60310,6 +60609,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -60356,7 +60656,7 @@
     },
     {
       "job_id": "unrun-release-forecast",
-      "ordinal": 147,
+      "ordinal": 148,
       "paths": [
         "admin/**",
         "app/**",
@@ -60650,7 +60950,7 @@
     },
     {
       "job_id": "unrun-brain-desks",
-      "ordinal": 148,
+      "ordinal": 149,
       "paths": [
         "admin/**",
         "app/**",
@@ -60887,7 +61187,7 @@
     },
     {
       "job_id": "unrun-register-honesty",
-      "ordinal": 149,
+      "ordinal": 150,
       "paths": [
         "admin/**",
         "app/**",
@@ -61269,6 +61569,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/rate_inflation_transmission.py",
         "engine/rebalance_calendar.py",
@@ -61468,7 +61770,7 @@
     },
     {
       "job_id": "unrun-neuralweb-cortex",
-      "ordinal": 150,
+      "ordinal": 151,
       "paths": [
         "admin/**",
         "admin/__init__.py",
@@ -61895,7 +62197,7 @@
     },
     {
       "job_id": "unrun-vector-baskets",
-      "ordinal": 151,
+      "ordinal": 152,
       "paths": [
         "admin/**",
         "app/**",
@@ -62290,7 +62592,7 @@
     },
     {
       "job_id": "washout-turn-organ",
-      "ordinal": 152,
+      "ordinal": 153,
       "paths": [
         "admin/**",
         "app/**",
@@ -62318,6 +62620,7 @@
         "collectors/equity_profile.py",
         "collectors/equity_revisions.py",
         "collectors/fred.py",
+        "collectors/holdings.py",
         "collectors/openfigi.py",
         "collectors/us_names_zh.py",
         "config/**",
@@ -62337,9 +62640,13 @@
         "config/us_search_aliases_zh.json",
         "content/**/*.json",
         "content/**/*.json/**",
+        "content/**/*.parquet",
+        "content/**/*.parquet/**",
         "contracts/**",
         "contracts/**/*.json",
         "contracts/**/*.json/**",
+        "contracts/**/*.parquet",
+        "contracts/**/*.parquet/**",
         "data/**",
         "data/**/*.json",
         "data/**/*.json/**",
@@ -62349,6 +62656,8 @@
         "data/**/*.parquet/**",
         "docs/**/*.json",
         "docs/**/*.json/**",
+        "docs/**/*.parquet",
+        "docs/**/*.parquet/**",
         "engine/**",
         "engine/**/*.parquet",
         "engine/**/*.parquet/**",
@@ -62522,6 +62831,7 @@
         "engine/postcross.py",
         "engine/press/earnings_adapter.py",
         "engine/prophet_arena.py",
+        "engine/prophet_board_read.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
@@ -62617,6 +62927,8 @@
         "ops/**",
         "ops/**/*.json",
         "ops/**/*.json/**",
+        "ops/**/*.parquet",
+        "ops/**/*.parquet/**",
         "research/**",
         "research/**/*.json",
         "research/**/*.json/**",
@@ -62636,6 +62948,7 @@
         "scripts/build_prophet.py",
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/grade_prophet_doors.py",
         "scripts/notify_turn_events.py",
         "scripts/oracle_nightly.py",
@@ -62656,6 +62969,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -62665,6 +62979,8 @@
         "templates/**",
         "templates/**/*.json",
         "templates/**/*.json/**",
+        "templates/**/*.parquet",
+        "templates/**/*.parquet/**",
         "tests/test_event_atlas.py",
         "tests/test_gate_crash_failopen.py",
         "tests/test_mtf_upturn.py",
@@ -62684,7 +63000,7 @@
     },
     {
       "job_id": "prophet-anticipation-intake",
-      "ordinal": 153,
+      "ordinal": 154,
       "paths": [
         "admin/**",
         "app/**",
@@ -62750,6 +63066,7 @@
         "config/ruling_graph.yml",
         "config/sector_legs.json",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
@@ -63121,6 +63438,7 @@
         "engine/press/research_triage.py",
         "engine/press/validators.py",
         "engine/prophet_arena.py",
+        "engine/prophet_board_read.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
@@ -63323,6 +63641,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -63334,6 +63653,7 @@
         "scripts/thematic_rotation_phase0.py",
         "scripts/translate_profiles.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -63356,6 +63676,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_confluence.json",
         "site/factordata/us_standouts.json",
@@ -63396,7 +63717,7 @@
     },
     {
       "job_id": "coiled-mtf-anchor-era",
-      "ordinal": 154,
+      "ordinal": 155,
       "paths": [
         "admin/**",
         "app/**",
@@ -63561,7 +63882,7 @@
     },
     {
       "job_id": "unrun-page-guards",
-      "ordinal": 155,
+      "ordinal": 156,
       "paths": [
         "admin/**",
         "app/**",
@@ -64232,7 +64553,7 @@
     },
     {
       "job_id": "unrun-picks-boards",
-      "ordinal": 156,
+      "ordinal": 157,
       "paths": [
         "admin/**",
         "app/**",
@@ -64591,6 +64912,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_validity.py",
         "engine/rate_inflation_transmission.py",
         "engine/rebalance_calendar.py",
@@ -64753,6 +65076,7 @@
         "scripts/build_theme_detail.py",
         "scripts/build_vector.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_title_i18n.py",
         "scripts/freshness_sentinel.py",
         "scripts/grade_bottom_calls.py",
@@ -64779,6 +65103,7 @@
         "site/factordata/china_standouts.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_board_outcomes.json",
         "site/factordata/us_board_track.json",
@@ -64848,7 +65173,7 @@
     },
     {
       "job_id": "prophet-us-context-and-grades",
-      "ordinal": 157,
+      "ordinal": 158,
       "paths": [
         "admin/**",
         "admin/**/*.parquet",
@@ -64894,6 +65219,7 @@
         "collectors/equity_profile.py",
         "collectors/equity_revisions.py",
         "collectors/fred.py",
+        "collectors/holdings.py",
         "collectors/openfigi.py",
         "collectors/us_names_zh.py",
         "collectors/yahoo.py",
@@ -64925,12 +65251,15 @@
         "config/press.yml",
         "config/reply_targets.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.md",
         "content/**/*.md/**",
+        "content/**/*.parquet",
+        "content/**/*.parquet/**",
         "contracts/**",
         "contracts/**/*.json",
         "contracts/**/*.json/**",
@@ -64955,6 +65284,8 @@
         "docs/**/*.json/**",
         "docs/**/*.md",
         "docs/**/*.md/**",
+        "docs/**/*.parquet",
+        "docs/**/*.parquet/**",
         "engine/**",
         "engine/**/*.parquet",
         "engine/**/*.parquet/**",
@@ -65332,6 +65663,8 @@
         "ops/**/*.json/**",
         "ops/**/*.md",
         "ops/**/*.md/**",
+        "ops/**/*.parquet",
+        "ops/**/*.parquet/**",
         "research/**",
         "research/**/*.html",
         "research/**/*.html/**",
@@ -65354,6 +65687,7 @@
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_dag_conformance.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/export_signal_contracts.py",
         "scripts/externalize_css.py",
@@ -65369,6 +65703,7 @@
         "scripts/run_us_scan_tier.py",
         "scripts/thematic_rotation_phase0.py",
         "scripts/workflow_run_source.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -65391,6 +65726,7 @@
         "site/factordata/dna_class.json",
         "site/factordata/hk_standouts.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_confluence.json",
         "site/factordata/us_board_outcomes.json",
@@ -65413,6 +65749,8 @@
         "templates/**/*.json/**",
         "templates/**/*.md",
         "templates/**/*.md/**",
+        "templates/**/*.parquet",
+        "templates/**/*.parquet/**",
         "tests/**/*.parquet",
         "tests/**/*.parquet/**",
         "tests/test_earnings_blackout_board_anchor.py",
@@ -65437,7 +65775,7 @@
     },
     {
       "job_id": "unrun-prophet-learning-loop",
-      "ordinal": 158,
+      "ordinal": 159,
       "paths": [
         "admin/**",
         "app/**",
@@ -65640,7 +65978,7 @@
     },
     {
       "job_id": "unrun-intl-collectors",
-      "ordinal": 159,
+      "ordinal": 160,
       "paths": [
         "admin/**",
         "app/**",
@@ -65722,6 +66060,7 @@
         "config/metabolism_budget.yml",
         "config/press.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
         "content/**/*.json",
@@ -66391,6 +66730,7 @@
         "scripts/build_vector.py",
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/collect.py",
         "scripts/collect_nyfed_cmdi.py",
@@ -66434,6 +66774,7 @@
         "scripts/shadow_importance_v0_pit.py",
         "scripts/thematic_rotation_phase0.py",
         "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -66455,6 +66796,7 @@
         "site/factordata/dna_class.json",
         "site/factordata/hk_standouts.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/tech_confluence.json",
         "site/factordata/us_board_outcomes.json",
@@ -66511,7 +66853,7 @@
     },
     {
       "job_id": "unrun-russell-breadth",
-      "ordinal": 160,
+      "ordinal": 161,
       "paths": [
         "admin/**",
         "app/**",
@@ -66889,7 +67231,7 @@
     },
     {
       "job_id": "unrun-brain-gateway",
-      "ordinal": 161,
+      "ordinal": 162,
       "paths": [
         "admin/**",
         "app/**",
@@ -67263,7 +67605,7 @@
     },
     {
       "job_id": "unrun-macro-panels",
-      "ordinal": 162,
+      "ordinal": 163,
       "paths": [
         "admin/**",
         "app/**",
@@ -67300,6 +67642,7 @@
         "config/ai_pricing.yml",
         "config/capability_manifest.yml",
         "config/metabolism_budget.yml",
+        "config/sparse_worktree.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "contracts/**",
@@ -67519,6 +67862,7 @@
         "scripts/inject_wh_banner.py",
         "scripts/optimize_assets.py",
         "scripts/thematic_rotation_phase0.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -67574,7 +67918,7 @@
     },
     {
       "job_id": "unrun-market-plumbing",
-      "ordinal": 163,
+      "ordinal": 164,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -67610,8 +67954,12 @@
         "collectors/edgar_flow_quality.py",
         "collectors/edgar_fts.py",
         "collectors/edgar_guidance.py",
+        "collectors/edgar_headcount.py",
+        "collectors/edgar_rpo.py",
         "collectors/edgar_share_quality.py",
         "collectors/edgar_stock_quality.py",
+        "collectors/equity_profile.py",
+        "collectors/equity_revisions.py",
         "collectors/fda_shortages.py",
         "collectors/fred.py",
         "collectors/holdings.py",
@@ -67625,6 +67973,7 @@
         "collectors/special_situations.py",
         "collectors/sponsors.py",
         "collectors/thetadata.py",
+        "collectors/us_names_zh.py",
         "config/**",
         "config/**/*.json",
         "config/**/*.json/**",
@@ -67637,12 +67986,16 @@
         "config/capability_manifest.yml",
         "config/clinical_modalities.yml",
         "config/dag.yml",
+        "config/delisted_symbols.yml",
         "config/earnings_story_promotion.yml",
+        "config/flow_score.yml",
         "config/metabolism_budget.yml",
         "config/reflexes.yml",
         "config/synapse.yml",
         "config/theme_crosswalk.yml",
         "config/trade_flow_codes.yml",
+        "config/us_names_zh.json",
+        "config/us_search_aliases_zh.json",
         "content/**/*.json",
         "content/**/*.json/**",
         "content/**/*.parquet",
@@ -67714,6 +68067,7 @@
         "engine/baskets_hk.py",
         "engine/baskets_intl.py",
         "engine/baskets_region.py",
+        "engine/beneficial_ownership.py",
         "engine/biocatalyst/discovery.py",
         "engine/biocatalyst/endpoint_alignment.py",
         "engine/biocatalyst/fixed_cohort.py",
@@ -67755,6 +68109,7 @@
         "engine/canada_regime.py",
         "engine/canada_run.py",
         "engine/canon.py",
+        "engine/capital_allocation.py",
         "engine/catalyst_tone.py",
         "engine/china_allocation.py",
         "engine/china_altdata.py",
@@ -67783,13 +68138,16 @@
         "engine/cn_newswires.py",
         "engine/codex_lane/runner.py",
         "engine/codex_provider.py",
+        "engine/coiled.py",
         "engine/commodity_alerts.py",
         "engine/commodity_inputs.py",
         "engine/commodity_signals.py",
         "engine/commodity_strategies.py",
+        "engine/composite_score.py",
         "engine/conditions.py",
         "engine/confluence_tiers.py",
         "engine/conviction_accrual.py",
+        "engine/conviction_delta.py",
         "engine/cross_asset.py",
         "engine/cross_asset_confirm.py",
         "engine/cross_asset_trend.py",
@@ -67805,6 +68163,9 @@
         "engine/deterioration_cascade.py",
         "engine/dislocation.py",
         "engine/dispersion.py",
+        "engine/donor.py",
+        "engine/earnings_blackout.py",
+        "engine/earnings_catalyst.py",
         "engine/earnings_narrative/biocatalyst_transcript_adapter.py",
         "engine/earnings_narrative/context_packets.py",
         "engine/earnings_narrative/contracts.py",
@@ -67819,13 +68180,16 @@
         "engine/election_cycle.py",
         "engine/emergence_alerts.py",
         "engine/entity_resolver.py",
+        "engine/entry_primitives.py",
         "engine/entry_signal.py",
         "engine/equity_alloc.py",
         "engine/equity_factors.py",
         "engine/etf_flows.py",
         "engine/event_atlas.py",
         "engine/event_calendar.py",
+        "engine/event_landmine.py",
         "engine/event_risk.py",
+        "engine/expectation_state.py",
         "engine/exposure_math.py",
         "engine/extension.py",
         "engine/falsifier_tripwires.py",
@@ -67849,6 +68213,8 @@
         "engine/forward_calendar_context.py",
         "engine/forward_dist.py",
         "engine/froth_fragility.py",
+        "engine/fundamental_forensics/context_projection.py",
+        "engine/fundamental_forensics/private_state.py",
         "engine/gdelt_client.py",
         "engine/gex_confirm.py",
         "engine/gex_engine.py",
@@ -67856,6 +68222,7 @@
         "engine/gex_state.py",
         "engine/global_liquidity.py",
         "engine/glut_watch.py",
+        "engine/gov_exposure.py",
         "engine/government_revenue/federation.py",
         "engine/government_revenue/freshness.py",
         "engine/government_revenue/prophet_annotation.py",
@@ -67889,14 +68256,17 @@
         "engine/json_strict.py",
         "engine/lab.py",
         "engine/leadership_crack.py",
+        "engine/ledger_identity.py",
         "engine/ledger_lane.py",
         "engine/levels_engine.py",
         "engine/levels_grade.py",
         "engine/levels_publish.py",
+        "engine/liquidity_chip.py",
         "engine/live_flow.py",
         "engine/live_overlay.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
+        "engine/long_hold_clocks.py",
         "engine/macro_surprise.py",
         "engine/mag7_regime.py",
         "engine/mag7_washout.py",
@@ -67912,6 +68282,7 @@
         "engine/masterminds.py",
         "engine/metabolism/__init__.py",
         "engine/metabolism/budget_gate.py",
+        "engine/moat_falsifiers.py",
         "engine/moves_engine.py",
         "engine/mtf_monitor.py",
         "engine/mtf_upturn.py",
@@ -67927,12 +68298,14 @@
         "engine/neuralweb/brief_context.py",
         "engine/neuralweb/capability_broker.py",
         "engine/neuralweb/constitution.py",
+        "engine/neuralweb/context_api.py",
         "engine/neuralweb/earnings_context_reader.py",
         "engine/neuralweb/envelope.py",
         "engine/neuralweb/governance.py",
         "engine/neuralweb/key_pool.py",
         "engine/neuralweb/read.py",
         "engine/neuralweb/reflexes.py",
+        "engine/neuralweb/sector_map.py",
         "engine/neuralweb/synapse.py",
         "engine/neuralweb/thematic_state.py",
         "engine/news_common.py",
@@ -67944,12 +68317,15 @@
         "engine/opex.py",
         "engine/options_entry_state.py",
         "engine/options_hub.py",
+        "engine/options_ivspread.py",
         "engine/options_stamp.py",
         "engine/options_structure.py",
         "engine/options_universe.py",
         "engine/oracle/__init__.py",
+        "engine/oracle/tilt.py",
         "engine/oracle/washout_counterread.py",
         "engine/passport.py",
+        "engine/path_personality.py",
         "engine/personality_challenge_resilience.py",
         "engine/personality_crowding_hazard.py",
         "engine/personality_flow_absorption.py",
@@ -67957,6 +68333,11 @@
         "engine/personality_gate_shadow.py",
         "engine/personality_relief_hazard.py",
         "engine/personality_terminality_shadow.py",
+        "engine/pick_lab/__init__.py",
+        "engine/pick_lab/candidates.py",
+        "engine/pick_lab/registry.py",
+        "engine/pick_lab/signals_1d.py",
+        "engine/pick_lab/snapshot.py",
         "engine/pit.py",
         "engine/pit_lag_recorder.py",
         "engine/playbook.py",
@@ -67965,17 +68346,21 @@
         "engine/pooling.py",
         "engine/portfolio.py",
         "engine/positioning_persistence.py",
+        "engine/postcross.py",
         "engine/power_scarcity.py",
         "engine/predictive_signals.py",
         "engine/press/earnings_adapter.py",
         "engine/prophet_arena.py",
+        "engine/prophet_board_read.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
+        "engine/prophet_live/interval.py",
         "engine/prophet_management.py",
         "engine/prophet_stage_fusion.py",
         "engine/prophet_stage_inputs.py",
         "engine/prophet_stage_shadow.py",
+        "engine/provenance_sidecar.py",
         "engine/provider_health.py",
         "engine/pullback_zone.py",
         "engine/qbus.py",
@@ -68009,6 +68394,7 @@
         "engine/risk_radar_scorecard.py",
         "engine/risk_sizing.py",
         "engine/risk_state.py",
+        "engine/roc_blowoff.py",
         "engine/run.py",
         "engine/sector_central.py",
         "engine/sector_central_grader.py",
@@ -68022,7 +68408,10 @@
         "engine/sectors.py",
         "engine/session_anchor.py",
         "engine/session_digest.py",
+        "engine/setup_tier.py",
         "engine/setups.py",
+        "engine/shadow_book.py",
+        "engine/short_volume.py",
         "engine/signal_archive.py",
         "engine/signal_foundry/results.py",
         "engine/signal_foundry/spec.py",
@@ -68038,7 +68427,11 @@
         "engine/spine.py",
         "engine/spotlight.py",
         "engine/spvector_overlay.py",
+        "engine/stock_dossier.py",
         "engine/stock_events.py",
+        "engine/stock_fundamentals.py",
+        "engine/stock_macro_sensitivity.py",
+        "engine/stock_personality.py",
         "engine/stock_score.py",
         "engine/stock_technicals.py",
         "engine/stock_view.py",
@@ -68047,6 +68440,7 @@
         "engine/strategy_signals.py",
         "engine/subsector_scan.py",
         "engine/sue.py",
+        "engine/t0_indicator.py",
         "engine/tape_flow.py",
         "engine/tape_flow_stamp.py",
         "engine/tech_catalog.py",
@@ -68069,18 +68463,24 @@
         "engine/theme_trade_flows.py",
         "engine/theme_validation.py",
         "engine/theme_warn.py",
+        "engine/thesis_funnel.py",
         "engine/thesis_monitor.py",
         "engine/thetadata_store.py",
+        "engine/ticker_alerts.py",
         "engine/ticker_shape.py",
         "engine/total_return.py",
         "engine/track_era.py",
         "engine/track_ledger.py",
+        "engine/track_record.py",
         "engine/transition.py",
         "engine/translate.py",
         "engine/trial_ledger.py",
         "engine/turning_point.py",
         "engine/tushare_freshness.py",
         "engine/universe_history.py",
+        "engine/us_board_rank.py",
+        "engine/us_candidate_lanes.py",
+        "engine/us_context_vector.py",
         "engine/us_early_turn.py",
         "engine/validation.py",
         "engine/valuation.py",
@@ -68101,6 +68501,7 @@
         "lib/closes_panel.py",
         "lib/cn_calendar.py",
         "lib/config.py",
+        "lib/delisted_symbols.py",
         "lib/desk_guard.py",
         "lib/filing_value_units.py",
         "lib/forex_link.py",
@@ -68136,6 +68537,7 @@
         "research/PROPHET_STAGE_FUSION_PREREG.md",
         "research/PROPHET_STAGE_QUALITY_PREREG.md",
         "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md",
+        "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
         "research/prophet_us_audit/OUTAGE_PLAN_CHRONOLOGY_2026-08-08.json",
         "research/reports/PROPHET_STAGE_FUSION_RESULTS.md",
@@ -68188,6 +68590,7 @@
         "scripts/build_session_digest.py",
         "scripts/build_special_situations.py",
         "scripts/build_spvector.py",
+        "scripts/build_stock_library.py",
         "scripts/build_strategies.py",
         "scripts/build_tape_flow.py",
         "scripts/build_tape_flow_daily.py",
@@ -68195,6 +68598,8 @@
         "scripts/build_thematic_state.py",
         "scripts/build_theme_detail.py",
         "scripts/build_vector.py",
+        "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_synapse_registry.py",
         "scripts/ci/retry_daily_engine_setup_cancel.py",
         "scripts/complete_polygon_gex_session_stamps.py",
@@ -68232,7 +68637,14 @@
         "site/btc_strategy.html",
         "site/committee.html",
         "site/factordata/basket_washout_state.json",
+        "site/factordata/dna_class.json",
+        "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
+        "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
+        "site/factordata/us_standouts_v2.json",
+        "site/flowleaders/leaders.json",
+        "site/leaderradar/radar.json",
         "site/marketdata/subsector_rotation.json",
         "site/neuralwebdata/confluence_graph.json",
         "site/neuralwebdata/health.json",
@@ -68306,7 +68718,7 @@
     },
     {
       "job_id": "unrun-publish-ops",
-      "ordinal": 164,
+      "ordinal": 165,
       "paths": [
         "admin/**",
         "app/**",
@@ -68404,6 +68816,7 @@
         "config/plans.yml",
         "config/ruling_graph.yml",
         "config/site_access.yml",
+        "config/sparse_worktree.json",
         "config/synapse.yml",
         "config/us_names_zh.json",
         "config/us_search_aliases_zh.json",
@@ -68454,6 +68867,10 @@
         "engine/**/*.jsonl/**",
         "engine/**/*.parquet",
         "engine/**/*.parquet/**",
+        "engine/**/*.py",
+        "engine/**/*.py/**",
+        "engine/**/*.yml",
+        "engine/**/*.yml/**",
         "engine/__init__.py",
         "engine/_text_scrub.py",
         "engine/activist.py",
@@ -68998,10 +69415,15 @@
         "research/US_BOARD_MEASUREMENT.md",
         "research/signal_engine/confluence.py",
         "scripts/**",
+        "scripts/**/*.py",
+        "scripts/**/*.py/**",
+        "scripts/**/*.yml",
+        "scripts/**/*.yml/**",
         "scripts/__init__.py",
         "scripts/_cycles_payload.py",
         "scripts/_narrative_epoch.py",
         "scripts/_narrative_ttl.py",
+        "scripts/audit_earnings_wire_freshness.py",
         "scripts/audit_r2.py",
         "scripts/backfill_qledger_us.py",
         "scripts/build_earnings_public_wire.py",
@@ -69016,6 +69438,7 @@
         "scripts/build_ticker_pages.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_price_store_freshness.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/check_template_site_sync.py",
         "scripts/demand_chain_phase0.py",
         "scripts/export_signal_contracts.py",
@@ -69048,6 +69471,7 @@
         "scripts/thematic_rotation_phase0.py",
         "scripts/validate_regime_fwd.py",
         "scripts/workflow_run_source.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -69083,6 +69507,7 @@
         "site/factordata/hk_standouts.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -69099,6 +69524,7 @@
         "site/sitemap.xml",
         "site/start.html",
         "site/stocks/earnings/assets/earnings-wire.css",
+        "site/stocks/earnings/route-catalog.json",
         "site/vol/regime.json",
         "templates/**",
         "templates/**/*.html",
@@ -69127,8 +69553,10 @@
         "tests/test_check_price_store_freshness.py",
         "tests/test_demand_chain_phase0.py",
         "tests/test_earnings_api.py",
+        "tests/test_earnings_evidence_graph_deps.py",
         "tests/test_earnings_private_store.py",
         "tests/test_earnings_public_wire.py",
+        "tests/test_earnings_wire_freshness.py",
         "tests/test_earnings_worker_launchd.py",
         "tests/test_earnings_worker_terminal.py",
         "tests/test_envelope_conformance.py",
@@ -69157,11 +69585,11 @@
         "tools/earnings_worker/run_worker.py",
         "worker/**"
       ],
-      "weight": 55
+      "weight": 59
     },
     {
       "job_id": "unrun-inline-js-guard",
-      "ordinal": 165,
+      "ordinal": 166,
       "paths": [
         "scripts/__init__.py",
         "scripts/check_inline_js.py",
@@ -69172,7 +69600,7 @@
     },
     {
       "job_id": "unrun-import-hygiene",
-      "ordinal": 166,
+      "ordinal": 167,
       "paths": [
         "admin/**",
         "app/**",
@@ -69463,7 +69891,7 @@
     },
     {
       "job_id": "price-basis-census",
-      "ordinal": 167,
+      "ordinal": 168,
       "paths": [
         "admin/**",
         "app/**",
@@ -69802,6 +70230,7 @@
         "engine/press/earnings_adapter.py",
         "engine/price_ladder.py",
         "engine/prophet_arena.py",
+        "engine/prophet_board_read.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
@@ -69815,6 +70244,8 @@
         "engine/qbus.py",
         "engine/qkernel.py",
         "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
         "engine/qledger_falsifier.py",
         "engine/qledger_validity.py",
         "engine/quant_lab/specs.py",
@@ -69961,6 +70392,7 @@
         "scripts/build_stock_library.py",
         "scripts/calibrate_bottom_radar.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/fetch_basket_extras.py",
         "scripts/fund_crowding_phase0.py",
         "scripts/grade_us_board.py",
@@ -69990,6 +70422,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_board_outcomes.json",
         "site/factordata/us_board_track.json",
@@ -70016,7 +70449,7 @@
     },
     {
       "job_id": "unrun-scoring-engine",
-      "ordinal": 168,
+      "ordinal": 169,
       "paths": [
         "admin/**",
         "app/**",
@@ -70527,6 +70960,7 @@
         "scripts/build_subsector_rotation_pages.py",
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -70546,6 +70980,7 @@
         "site/factordata/dna_class.json",
         "site/factordata/etf_board_track.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -70584,7 +71019,7 @@
     },
     {
       "job_id": "unrun-template-chips",
-      "ordinal": 169,
+      "ordinal": 170,
       "paths": [
         "admin/**",
         "app/**",
@@ -70992,7 +71427,7 @@
     },
     {
       "job_id": "unrun-pit-probes",
-      "ordinal": 170,
+      "ordinal": 171,
       "paths": [
         "admin/**",
         "app/**",
@@ -71402,6 +71837,7 @@
         "scripts/**",
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/research/freeze_pss_followon_gates.py",
         "scripts/research/pss_sr3_participation_feasibility.py",
         "scripts/research/ptt_w1_persistence_of_fit.py",
@@ -71416,6 +71852,7 @@
         "site/factordata/basket_washout_state.json",
         "site/factordata/dna_class.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -71437,31 +71874,35 @@
     },
     {
       "job_id": "unrun-dark-guards",
-      "ordinal": 171,
+      "ordinal": 172,
       "paths": [
         ".claude/hooks/gh_quota_guard.py",
         "admin/**",
         "app/**",
         "collectors/**",
         "config/**",
+        "contracts/**",
         "engine/**",
         "lib/**",
         "lib/nyse_calendar.py",
+        "research/**",
         "scripts/**",
-        "scripts/ci_handoff_contract.py",
         "scripts/prophet_rescue.py",
         "scripts/prophet_rescue_launchd.py",
         "site/**",
+        "templates/**",
         "templates/onboard.js",
         "tests/test_gh_quota_guard.py",
         "tests/test_prophet_rescue.py",
-        "tests/test_signup_email_validation.py"
+        "tests/test_signup_email_validation.py",
+        "tools/**",
+        "worker/**"
       ],
       "weight": 10
     },
     {
       "job_id": "unrun-hk-board",
-      "ordinal": 172,
+      "ordinal": 173,
       "paths": [
         "admin/**",
         "app/**",
@@ -71760,7 +72201,7 @@
     },
     {
       "job_id": "unrun-subsector-themes",
-      "ordinal": 173,
+      "ordinal": 174,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -71768,6 +72209,7 @@
         "collectors/fda_shortages.py",
         "config/**",
         "config/sector_legs.json",
+        "config/sparse_worktree.json",
         "config/theme_crosswalk.yml",
         "data/**",
         "data/**/*.parquet",
@@ -71821,6 +72263,7 @@
         "lib/store.py",
         "scripts/build_state_of_themes.py",
         "scripts/check_template_site_sync.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -71845,9 +72288,10 @@
     },
     {
       "job_id": "ohlc-basis-coherence",
-      "ordinal": 174,
+      "ordinal": 175,
       "paths": [
         "config/**",
+        "config/sparse_worktree.json",
         "data/**",
         "scripts/**",
         "scripts/check_ohlc_basis_coherence.py",
@@ -71860,7 +72304,7 @@
     },
     {
       "job_id": "unrun-government-revenue-grader",
-      "ordinal": 175,
+      "ordinal": 176,
       "paths": [
         "admin/**",
         "admin/**/*.py",
@@ -72254,7 +72698,7 @@
     },
     {
       "job_id": "research-price-panel",
-      "ordinal": 176,
+      "ordinal": 177,
       "paths": [
         "data/**",
         "data/**/*.parquet",
@@ -72270,7 +72714,7 @@
     },
     {
       "job_id": "zh-filing-term",
-      "ordinal": 177,
+      "ordinal": 178,
       "paths": [
         "collectors/bls_work_stoppages.py",
         "config/**",
@@ -72297,7 +72741,7 @@
     },
     {
       "job_id": "earnings-release-identity",
-      "ordinal": 178,
+      "ordinal": 179,
       "paths": [
         "collectors/edgar_earnings_8k.py",
         "config/fundamental_forensics_disclosure_diff.v1.json",
@@ -72336,7 +72780,7 @@
     },
     {
       "job_id": "market-memory-contract",
-      "ordinal": 179,
+      "ordinal": 180,
       "paths": [
         "admin/**",
         "app/**",
@@ -73155,6 +73599,7 @@
         "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
         "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md",
+        "research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md",
         "scripts/**",
         "scripts/**/*.json",
         "scripts/**/*.json/**",
@@ -73196,6 +73641,7 @@
         "scripts/capture_market_memory_options_episodes.py",
         "scripts/capture_market_memory_technicals.py",
         "scripts/check_board_contradictions.py",
+        "scripts/check_signal_gate_coherence.py",
         "scripts/ci/options_signal_nightly.sh",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -73236,6 +73682,7 @@
         "site/factordata/factors.json",
         "site/factordata/impulse.json",
         "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
         "site/factordata/stock_personality.json",
         "site/factordata/us_standouts.json",
         "site/factordata/us_standouts_v2.json",
@@ -73311,7 +73758,7 @@
     },
     {
       "job_id": "group-pulse",
-      "ordinal": 180,
+      "ordinal": 181,
       "paths": [
         "collectors/edgar.py",
         "collectors/edgar_deadname_prices.py",
@@ -73364,7 +73811,7 @@
     },
     {
       "job_id": "group-read-surface",
-      "ordinal": 181,
+      "ordinal": 182,
       "paths": [
         "collectors/edgar.py",
         "collectors/edgar_deadname_prices.py",
@@ -73419,7 +73866,7 @@
     },
     {
       "job_id": "group-earnings-pulse",
-      "ordinal": 182,
+      "ordinal": 183,
       "paths": [
         "collectors/edgar.py",
         "collectors/edgar_deadname_prices.py",
@@ -73456,7 +73903,7 @@
     },
     {
       "job_id": "group-linked-outsiders",
-      "ordinal": 183,
+      "ordinal": 184,
       "paths": [
         "collectors/**/*.parquet",
         "collectors/**/*.parquet/**",
@@ -73525,7 +73972,7 @@
     },
     {
       "job_id": "falsifier-tripwires",
-      "ordinal": 184,
+      "ordinal": 185,
       "paths": [
         "admin/**",
         "app/**",
@@ -73960,7 +74407,7 @@
     },
     {
       "job_id": "options-nbbo-cohort",
-      "ordinal": 185,
+      "ordinal": 186,
       "paths": [
         "config/dag.yml",
         "contracts/**",
@@ -73983,7 +74430,7 @@
     },
     {
       "job_id": "product-experience-registry",
-      "ordinal": 186,
+      "ordinal": 187,
       "paths": [
         "admin/**",
         "admin/**/*.html",
@@ -74001,6 +74448,7 @@
         "config/**/*.py",
         "config/**/*.py/**",
         "config/product_experience/page_registry_overrides.yml",
+        "config/sparse_worktree.json",
         "data/**",
         "data/**/*.html",
         "data/**/*.html/**",
@@ -74023,6 +74471,7 @@
         "scripts/build_product_page_registry.py",
         "scripts/check_design_system.py",
         "scripts/check_template_site_sync.py",
+        "scripts/worktree_sparse.py",
         "site/**",
         "site/**/*.html",
         "site/**/*.html/**",
@@ -74055,7 +74504,7 @@
     },
     {
       "job_id": "product-experience-capture",
-      "ordinal": 187,
+      "ordinal": 188,
       "paths": [
         "scripts/**",
         "scripts/**/*.png",
@@ -74070,7 +74519,7 @@
     },
     {
       "job_id": "momoedge-browser-observe",
-      "ordinal": 188,
+      "ordinal": 189,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -74114,7 +74563,7 @@
     },
     {
       "job_id": "mastermindx-selector-capture-attestation",
-      "ordinal": 189,
+      "ordinal": 190,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -74136,8 +74585,39 @@
       "weight": 4
     },
     {
+      "job_id": "reference-integrity",
+      "ordinal": 191,
+      "paths": [
+        "config/**",
+        "config/**/*.html",
+        "config/**/*.html/**",
+        "config/**/*.md",
+        "config/**/*.md/**",
+        "config/product_experience/page_registry_overrides.yml",
+        "data/**",
+        "data/**/*.html",
+        "data/**/*.html/**",
+        "data/**/*.md",
+        "data/**/*.md/**",
+        "research/**",
+        "research/**/*.html",
+        "research/**/*.html/**",
+        "research/**/*.md",
+        "research/**/*.md/**",
+        "research/reference_integrity/prophet-board-5514-r3/continuity.yml",
+        "scripts/check_reference_integrity.py",
+        "templates/**",
+        "templates/**/*.html",
+        "templates/**/*.html/**",
+        "templates/**/*.md",
+        "templates/**/*.md/**",
+        "tests/test_check_reference_integrity.py"
+      ],
+      "weight": 6
+    },
+    {
       "job_id": "dataos-foundation",
-      "ordinal": 190,
+      "ordinal": 192,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -74182,7 +74662,7 @@
     },
     {
       "job_id": "dataos-identity-seams",
-      "ordinal": 191,
+      "ordinal": 193,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -74316,7 +74796,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "7ab69f2ce969e6b418020973efdd497d64364fd1703d4ab6ae449cf4a968970c"
+    "sha256": "b6e4d4008ed53ccd15d3ced6fa7d570bd94482451b2ae93e564339631caedac2"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
@@ -74338,7 +74818,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2194,
+    "candidate_count": 2205,
     "candidates": [
       {
         "path": ".claude",
@@ -74361,15 +74841,15 @@
         "present": true
       },
       {
+        "path": ".claude/hooks/worktree_create_sparse.py",
+        "present": true
+      },
+      {
         "path": ".claude/settings.json",
         "present": true
       },
       {
         "path": ".claude/settings.local.json",
-        "present": false
-      },
-      {
-        "path": ".claude/worktrees/other-session/scratch.txt",
         "present": false
       },
       {
@@ -75246,7 +75726,7 @@
       },
       {
         "path": "config/sparse_worktree.json",
-        "present": false
+        "present": true
       },
       {
         "path": "config/standout_review.yml",
@@ -78829,6 +79309,10 @@
         "present": false
       },
       {
+        "path": "research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md",
+        "present": true
+      },
+      {
         "path": "research/options_estate/sparse_selector_preregistration_receipt_v1.json",
         "present": true
       },
@@ -79011,6 +79495,18 @@
       {
         "path": "research/rates.md",
         "present": false
+      },
+      {
+        "path": "research/reference_integrity",
+        "present": false
+      },
+      {
+        "path": "research/reference_integrity/prophet-board-5514-r3",
+        "present": false
+      },
+      {
+        "path": "research/reference_integrity/prophet-board-5514-r3/continuity.yml",
+        "present": true
       },
       {
         "path": "research/release_forecast",
@@ -79677,6 +80173,10 @@
         "present": true
       },
       {
+        "path": "scripts/build_x.py",
+        "present": false
+      },
+      {
         "path": "scripts/c6_asia_semi_readthrough.py",
         "present": true
       },
@@ -79753,6 +80253,10 @@
         "present": true
       },
       {
+        "path": "scripts/check_append_only_assertions.py",
+        "present": true
+      },
+      {
         "path": "scripts/check_board_contradictions.py",
         "present": true
       },
@@ -79813,6 +80317,10 @@
         "present": true
       },
       {
+        "path": "scripts/check_reference_integrity.py",
+        "present": true
+      },
+      {
         "path": "scripts/check_registered.py",
         "present": false
       },
@@ -79867,6 +80375,10 @@
       {
         "path": "scripts/check_workflow_yaml.py",
         "present": true
+      },
+      {
+        "path": "scripts/check_x.py",
+        "present": false
       },
       {
         "path": "scripts/check_zh_filing_term.py",
@@ -79974,14 +80486,6 @@
       },
       {
         "path": "scripts/ci_failure_summary.py",
-        "present": true
-      },
-      {
-        "path": "scripts/ci_handoff.py",
-        "present": true
-      },
-      {
-        "path": "scripts/ci_handoff_contract.py",
         "present": true
       },
       {
@@ -80959,6 +81463,10 @@
       {
         "path": "site/altdata/mastermind.json",
         "present": true
+      },
+      {
+        "path": "site/asset.js",
+        "present": false
       },
       {
         "path": "site/assets",
@@ -82257,6 +82765,10 @@
         "present": false
       },
       {
+        "path": "site/stocks",
+        "present": false
+      },
+      {
         "path": "site/stocks/AAPL.html",
         "present": true
       },
@@ -82269,7 +82781,15 @@
         "present": false
       },
       {
+        "path": "site/stocks/earnings",
+        "present": false
+      },
+      {
         "path": "site/stocks/earnings/assets/earnings-wire.css",
+        "present": true
+      },
+      {
+        "path": "site/stocks/earnings/route-catalog.json",
         "present": true
       },
       {
@@ -82511,6 +83031,10 @@
       {
         "path": "templates/baskets_desk.js",
         "present": true
+      },
+      {
+        "path": "templates/board.html.j2",
+        "present": false
       },
       {
         "path": "templates/brand-facts.json",
