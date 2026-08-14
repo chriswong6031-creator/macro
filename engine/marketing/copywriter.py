@@ -4519,9 +4519,28 @@ def voice_v5_violations(text: str, ctx: dict | None = None) -> list[str]:
                 f"first person '{hit.group(0)}': the subject of the sentence is "
                 f"the market, not the author. State what the tape did"
             )
-        if "?" in raw:
-            out.append("question mark: the post states, it does not ask. "
-                       "End on the fact")
+    # ── THE ?-BAN IS TOTAL, INCLUDING THE WIRE (W2E, 2026-08-11) ─────────────
+    # IT USED TO SIT INSIDE `if not is_wire`, and that is how this shipped to the
+    # flagship account on 2026-08-11:
+    #
+    #   "US Economy Loses 23,000 Jobs, Gold Jumps 3%: What Do Prediction Markets
+    #    Say About Rate Hikes?"
+    #
+    # The screen RAN on it — kind="breaking" reaches this function on every send
+    # — and passed it, because `breaking` is in WIRE_KINDS and the interrogative
+    # test was one of the two rules the wire exemption covered. The exemption's
+    # reasoning was "a relay may carry a source's pronoun and a source's question
+    # mark". The pronoun half stands: a quote is the source speaking. The
+    # question half does not, and v5 says so outright ("NO question marks. Not as
+    # a hook, not as a tail, not as reply-bait") — a headline that asks a question
+    # is not a fact being relayed, it is engagement bait being laundered through
+    # a relay. The press lane now refuses the same shape at ADMISSION
+    # (relay_hygiene.headline_is_non_news, family `meta_clickbait`); this is the
+    # send-time half, and it also covers the queue vintage the admission screen
+    # can never reach — the items already sitting in the outbox.
+    if "?" in raw:
+        out.append("question mark: the post states, it does not ask. "
+                   "End on the fact")
 
     for label, pattern in _V5_BANNED_CLOSERS:
         if re.search(pattern, raw, re.IGNORECASE):

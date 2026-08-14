@@ -1,0 +1,54 @@
+# Proposal ledger (RIG V1 §5-§6) — dispositions, task matrix, authority delta, info-economics.
+schema: mastermind.rig_proposal.v1
+reference_id: <same as manifest>
+
+proposed_artifact:
+  frozen_sha: <40-hex — receipts bind to this; moving it stales every receipt>
+  paths:
+    - <the artifact files at that SHA>
+  screenshots:
+    - {path: <committed crop>, viewport: desktop, theme: dark, locale: en}
+
+# EVERY baseline capability id appears exactly once. No implicit deletion.
+dispositions:
+  - id: <baseline capability id>
+    disposition: RETAIN      # RETAIN | IMPROVE | RELOCATE | REMOVE | BLOCKED_DATA
+    target: <where it lives in the proposal>                  # RETAIN/IMPROVE
+    rationale: <required for IMPROVE/REMOVE>
+    # REMOVE additionally requires:
+    # user_job_impact: <what the user loses>
+    # superiority_case: <why removal beats retention/improvement>
+    # approval_ref: <receipt — verdict finding id / operator ruling>
+    # RELOCATE additionally requires:
+    # destination: <exact destination>
+    # reachability: <proof the user can still reach it appropriately>
+    # BLOCKED_DATA additionally requires (never silently becomes REMOVE):
+    # dependency: <the insufficient data contract, named>
+    # escalation: <where the dependency was escalated — program/owner/issue>
+    # interim: <what the UI does meanwhile, stated>
+
+additions: []                # new on-card/on-page behaviors (feed the authority audit)
+
+user_tasks:                  # every primary/high-frequency task, production vs proposal
+  - id: task.<name>
+    task: <what the user is trying to do>
+    critical: true           # a WORSE on critical:true blocks until adjudicated
+    production: <how production serves it>
+    proposal: <how the proposal serves it>
+    verdict: UNKNOWN         # BETTER | EQUIVALENT | WORSE | UNKNOWN
+    notes: <no fake precision — no stopwatch numbers unless real>
+
+authority_delta:             # does the proposal claim MORE than production?
+  - id: auth.<name>
+    production_claim: <what production asserts>
+    proposal_claim: <what the proposal asserts>
+    direction: equal         # stronger | equal | weaker
+    warranted: true          # does the engine/evidence back the stronger wording?
+    evidence: <cite>
+
+information_economics:       # compression audit — visual compression is a capability
+  words_per_card: {production: "<estimate + basis>", proposal: "<estimate + basis>"}
+  findings:
+    - <charts→prose swaps, redundancy, glance→read conversions, dashboard→report drift>
+  preserved:
+    - <where the proposal compresses well — record fairly>

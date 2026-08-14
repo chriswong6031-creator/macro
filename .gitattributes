@@ -5,6 +5,24 @@
 # concurrent push.
 data/whitehouse/alerts.jsonl merge=union
 
+# The Universal Scoreboard claim + grade ledgers (engine/qledger.py) are
+# append-only JSONL, deduped on read by claim_id (register()/register_batch()
+# `dedupe=True` — a duplicated line is inert). Multiple lanes append here on
+# the same night: asia-close.yml + daily.yml both run scripts/backfill_qledger_
+# {us,cn,intel_hub}.py, whitehouse-sentinel.yml appends alert claims hourly,
+# and Eval OS P3 (engine/qledger_desk_adapter.py) adds three more nightly
+# writers (stock_desk, thematic_desk, demand_ledger). None of these lanes'
+# pushes carried merge=union before P3 (B4 in the P3 brief) — a real rebase
+# conflict in the shared push-retry loop (scripts/ci/push_retry.sh's
+# `git pull --rebase --autostash -X theirs`) resolves in favour of the LOCAL
+# replayed commit and silently drops the conflicting hunk from whatever was
+# already pushed upstream, i.e. a genuine, already-registered forward claim
+# can vanish with no error anywhere. A dropped row here is not an inert
+# duplicate like the id-deduped stores above; it is DATA LOSS on the one
+# record this program's forward-evidence claim depends on never losing.
+data/qledger/claims.jsonl merge=union
+data/qledger/grades.jsonl merge=union
+
 # Causal hypothesis factory ledgers are append-only JSONL files.  The trial
 # ledger (trial_ledger.jsonl) is written by BOTH the cortex nightly job and the
 # new CHF causal job on the same night; a rebase conflict in the push-retry loop

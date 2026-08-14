@@ -1668,6 +1668,213 @@ def test_options_context_audit_seals_sorted_owners_generations_and_closed_counts
         options_context.canonical_reference_set_bytes(references)
 
 
+# The two pinned ceilings this suite is an early warning for. Both live in
+# `engine/options_market_memory_context.py::_source_artifact`, which is byte-frozen
+# by the sparse-selector preregistration receipt, so neither can be moved from
+# outside a preregistration v2.
+_PINNED_OWNER_REFERENCE_CEILING = 4_096
+_PINNED_SOURCE_ARTIFACT_BYTE_CEILING = 8 * 1024 * 1024
+
+# Mean per-session mint over the three sessions the ledger has been written for
+# (384 / 307 / 515 episodes). Used only to translate headroom into lead time, and
+# deliberately a mean rather than a max: 2026-08-12 minted 515 episodes from just
+# 31 tickers, so a volatile week compresses the countdown well below this.
+_OBSERVED_EPISODES_PER_SESSION = 402
+
+# Two tiers, because the right signal depends on how much runway is left.
+#
+# WARN (~3 sessions out) does NOT fail. A red test on main is a fleet-wide block
+# that would stop every unrelated PR in the repo for a week over a deadline that
+# has not arrived; an Actions annotation costs nobody anything and is visible on
+# every run.
+_OWNER_LEDGER_WARN_ROWS = 2_600
+# FAIL (~1 session out) asserts. Here a fleet-wide red is proportionate, and the
+# point is that it fires BEFORE the nightly `macro-market-memory-context` unit
+# starts crashing -- `scripts/project_market_memory_context.py` calls
+# `publish_live_audit` with no `try`/`except`, so the estate's alternative first
+# notice is a broken nightly on an unannounced date with zero lead time.
+_OWNER_LEDGER_FAIL_ROWS = 3_600
+# The byte dimension carries the same lead time as the row dimension, and it is
+# not decoration: `outcomes_h60.jsonl` runs ~1,985 B/row, so 4,096 rows is ~8.13
+# MiB and its 8 MiB byte cap binds BEFORE its row cap does. A rows-only tripwire
+# would let that ledger walk through the wall it was built to watch.
+_OWNER_LEDGER_WARN_BYTES = (
+    _PINNED_SOURCE_ARTIFACT_BYTE_CEILING
+    * _OWNER_LEDGER_WARN_ROWS
+    // _PINNED_OWNER_REFERENCE_CEILING
+)
+_OWNER_LEDGER_FAIL_BYTES = (
+    _PINNED_SOURCE_ARTIFACT_BYTE_CEILING
+    * _OWNER_LEDGER_FAIL_ROWS
+    // _PINNED_OWNER_REFERENCE_CEILING
+)
+_OWNER_LEDGER_BOUND_ADJUDICATION = (
+    "research/options_estate/"
+    "OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md"
+)
+_AUDITED_OWNER_LEDGERS = (
+    "data/options_signal_episode/episodes.jsonl",
+    "data/options_signal_episode/outcomes_h60.jsonl",
+)
+
+
+def _pinned_source_artifact_probe(**overrides: object) -> dict:
+    """One `_source_artifact` row, so the ceiling probes below assert on BEHAVIOUR."""
+
+    row = {
+        "path": "data/options_signal_episode/episodes.jsonl",
+        "sha256": "0" * 64,
+        "bytes": 1,
+        "record_count": 1,
+    }
+    row.update(overrides)
+    return options_context._source_artifact(row)
+
+
+def test_options_owner_ledgers_stay_clear_of_the_pinned_reference_ceiling(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Warn three sessions out, fail one session out, never learn it from a crash.
+
+    `data/options_signal_episode/episodes.jsonl` grows every nightly checkpoint and
+    is never pruned, while `engine/options_market_memory_context.py` caps every
+    bound source artifact at 4,096 `record_count` and 8 MiB. That engine file is
+    byte-pinned by `research/options_estate/
+    sparse_selector_preregistration_receipt_v1.json`, so the ceiling cannot be
+    raised as a buffer change -- it needs a preregistration v2, which is days of
+    chartered work. Without this test the estate's first notice is
+    `scripts/project_market_memory_context.py` calling `publish_live_audit` with no
+    `try`/`except`: the nightly `macro-market-memory-context` unit dies, main reds
+    fleet-wide, on an unannounced date, with a lead time of zero.
+
+    Both tiers are tripwires, not limits. Crossing one is not a defect in the
+    ledger -- the ledger is behaving correctly -- it is the signal that the v2
+    charter has to start. Raising a threshold to buy quiet buys nothing: 4,096 does
+    not move with it, and the only thing a higher tripwire changes is how little
+    warning the estate gets.
+    """
+
+    repository_root = Path(__file__).resolve().parents[1]
+
+    # Pin both ceilings BEHAVIOURALLY rather than by reading back the same literals
+    # this test reports with. A renamed constant, a widened bound, or a deleted
+    # check would otherwise leave this suite green forever while it measures
+    # headroom against a wall that moved -- a guard that has silently stopped
+    # guarding is worse than no guard, because it is still trusted.
+    assert options_context._MAX_REFERENCES == _PINNED_OWNER_REFERENCE_CEILING
+    assert (
+        _pinned_source_artifact_probe(
+            record_count=_PINNED_OWNER_REFERENCE_CEILING,
+            bytes=_PINNED_SOURCE_ARTIFACT_BYTE_CEILING,
+        )["record_count"]
+        == _PINNED_OWNER_REFERENCE_CEILING
+    )
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError,
+        match="source artifact record count is invalid",
+    ):
+        _pinned_source_artifact_probe(
+            record_count=_PINNED_OWNER_REFERENCE_CEILING + 1
+        )
+    with pytest.raises(
+        options_context.OptionsMarketMemoryContextError,
+        match="source artifact byte count is invalid",
+    ):
+        _pinned_source_artifact_probe(
+            bytes=_PINNED_SOURCE_ARTIFACT_BYTE_CEILING + 1
+        )
+
+    measured = []
+    for relative in _AUDITED_OWNER_LEDGERS:
+        path = repository_root / relative
+        body = path.read_bytes()
+        measured.append(
+            (
+                relative,
+                len(options_signal_episode._decode_jsonl(body, path)),
+                len(body),
+            )
+        )
+
+    # WARN tier first, and for EVERY ledger, before any assertion can end the test:
+    # a run that is about to go red is exactly the run whose annotation the estate
+    # most wants in the Actions summary.
+    annotations = []
+    for relative, rows, size in measured:
+        if rows < _OWNER_LEDGER_WARN_ROWS and size < _OWNER_LEDGER_WARN_BYTES:
+            continue
+        sessions = (_PINNED_OWNER_REFERENCE_CEILING - rows) / (
+            _OBSERVED_EPISODES_PER_SESSION
+        )
+        annotations.append(
+            f"::warning title=options-owner-ledger-nears-pinned-ceiling::"
+            f"{relative} holds {rows} rows / {size} bytes. The pinned ceilings in "
+            f"engine/options_market_memory_context.py are "
+            f"{_PINNED_OWNER_REFERENCE_CEILING} rows and "
+            f"{_PINNED_SOURCE_ARTIFACT_BYTE_CEILING} bytes, leaving "
+            f"{_PINNED_OWNER_REFERENCE_CEILING - rows} rows "
+            f"(~{sessions:.1f} sessions at the observed "
+            f"{_OBSERVED_EPISODES_PER_SESSION}/session mint) and "
+            f"{_PINNED_SOURCE_ARTIFACT_BYTE_CEILING - size} bytes of headroom. "
+            f"This suite fails hard at {_OWNER_LEDGER_FAIL_ROWS} rows / "
+            f"{_OWNER_LEDGER_FAIL_BYTES} bytes. The ceilings are byte-frozen by the "
+            "sparse-selector preregistration and can only be moved by a "
+            f"preregistration v2: see {_OWNER_LEDGER_BOUND_ADJUDICATION} section 7."
+        )
+    for line in annotations:
+        # A bare print that STARTS the line, per CLAUDE.md and
+        # tests/test_gh_annotation_line_start.py -- through a logger GitHub drops it
+        # silently. `flush` is load-bearing: stdout is block-buffered when piped.
+        print(line, flush=True)
+
+    # Round-trip the emitted bytes through the captured stream. This is the same
+    # defect class the house guard exists for: an annotation that does not reach
+    # stdout as the first thing on its line is decoration, and the only way to know
+    # is to read back what was actually written.
+    emitted = [line for line in capsys.readouterr().out.splitlines() if line]
+    assert len(emitted) == len(annotations)
+    assert all(line.startswith("::") for line in emitted)
+    # pytest discards captured stdout for passing tests, so re-emit outside the
+    # capture or the warning tier would be a signal nobody ever sees -- which is
+    # precisely the failure mode it was built to prevent.
+    with capsys.disabled():
+        for line in emitted:
+            print(line, flush=True)
+
+    # FAIL tier.
+    for relative, rows, size in measured:
+        sessions = (_PINNED_OWNER_REFERENCE_CEILING - rows) / (
+            _OBSERVED_EPISODES_PER_SESSION
+        )
+        detail = (
+            f"The pinned ceilings are {_PINNED_OWNER_REFERENCE_CEILING} rows and "
+            f"{_PINNED_SOURCE_ARTIFACT_BYTE_CEILING} bytes in "
+            "engine/options_market_memory_context.py, leaving "
+            f"{_PINNED_OWNER_REFERENCE_CEILING - rows} rows "
+            f"(~{sessions:.1f} "
+            f"sessions at the observed {_OBSERVED_EPISODES_PER_SESSION}/session "
+            f"mint) and {_PINNED_SOURCE_ARTIFACT_BYTE_CEILING - size} bytes of "
+            "headroom. When they are crossed, "
+            "scripts/audit_options_market_memory_context.py fails, the nightly "
+            "macro-market-memory-context unit fails with it, and main goes red. "
+            "Raising this threshold does NOT buy headroom -- the pinned engine is "
+            "byte-frozen by research/options_estate/"
+            "sparse_selector_preregistration_receipt_v1.json, so lifting 4,096 is a "
+            "preregistration act, not a buffer change. The owning decision, "
+            "including why windowing the audited owner set is forbidden "
+            "(DNR:KILL-OPTIONS-CONTEXT-AUDIT-OWNER-EVICTION) and what a v2 has to "
+            f"charter, is {_OWNER_LEDGER_BOUND_ADJUDICATION} section 7."
+        )
+        assert rows < _OWNER_LEDGER_FAIL_ROWS, (
+            f"{relative} holds {rows} rows and has crossed the "
+            f"{_OWNER_LEDGER_FAIL_ROWS}-row hard tripwire. {detail}"
+        )
+        assert size < _OWNER_LEDGER_FAIL_BYTES, (
+            f"{relative} holds {size} bytes and has crossed the "
+            f"{_OWNER_LEDGER_FAIL_BYTES}-byte hard tripwire. {detail}"
+        )
+
+
 def test_options_context_live_audit_replays_the_frozen_repository_corpus(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,

@@ -1418,8 +1418,15 @@ def _deep_ownership(blob: dict) -> dict | None:
         if d not in _DIR:
             continue  # unknown engine vocab: omit rather than leak EN into ZH
         d_en, d_zh = _DIR[d]
+        _split = bool(f.get("split_adjusted"))
+        if _split:
+            # Positively identified re-denomination: the share count moved because
+            # the shares were re-cut, so it renders as the corporate action it is
+            # — never as a direction verb, and never in a directional colour.
+            d_en, d_zh = "share split — not a trade", "拆股——非交易"
         frows.append({"k_en": _clean_str(f.get("fund_name") or f.get("fund")), "k_zh": _clean_str(f.get("fund_name") or f.get("fund")),
-                      "v": "", "v_en": d_en, "v_zh": d_zh, "cls": "pos" if d in ("in", "buy", "accumulating", "adding", "new") else ("neg" if d in ("out", "sell", "trimming", "exiting") else "")})
+                      "v": "", "v_en": d_en, "v_zh": d_zh,
+                      "cls": "" if _split else ("pos" if d in ("in", "buy", "accumulating", "adding", "new") else ("neg" if d in ("out", "sell", "trimming", "exiting") else ""))})
     if frows:
         panels.append({"kind": "kv", "title_en": "Recent fund flows", "title_zh": "近期基金流向", "rows": frows})
 

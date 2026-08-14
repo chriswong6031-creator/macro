@@ -13,7 +13,7 @@ Test list:
 10. sector_facts no indicator vocab in any fact text
 11. breadth_facts returns {facts, numbers_whitelist} shape
 12. breadth_facts fails soft on empty root
-13. breadth_facts from real data produces at least one fact with a digit
+13. breadth_facts live-data active count obeys its own vacuity gate
 14. breadth_facts numbers_whitelist covers every number in fact texts
 15. breadth_facts no indicator vocab in any fact text
 16. event_facts returns {facts, numbers_whitelist} shape
@@ -215,15 +215,14 @@ def test_breadth_facts_failsoft_missing_root(tmp_path):
     assert fd["facts"] == [], f"Expected empty facts for missing root, got: {fd['facts']}"
 
 
-def test_breadth_facts_real_data_has_digit():
-    """Live tape: a digit when the screen is a real fraction; empty when saturated.
+def test_breadth_facts_live_data_active_count_obeys_its_own_vacuity_gate():
+    """Live tape: saturation governs ``breadth_active``, not every fact.
 
-    Overnight 2026-08-14 the committed confluence file sat at 239/239 active —
-    structurally saturated, so the producer correctly dropped every breadth
-    fact and this pin (written as "real data always has a digit") took main
-    red. The rule under test is the producer's drop law, not a data-day
-    count. Saturated → empty facts is the correct output; a non-saturated
-    tape must still ship a digit. Fixture tests pin both arms independently.
+    Overnight 2026-08-14 the committed confluence file sat at 239/239 active.
+    That makes the aggregate active count structurally saturated, but it says
+    nothing about the independently counted most-common setup. The smoke pin
+    therefore checks only the fact governed by ``active / universe``; the
+    deterministic fixture below proves the other gate can still emit.
     """
     tc_path = ROOT / "site" / "factordata" / "tech_confluence.json"
     if not tc_path.exists():
@@ -234,16 +233,14 @@ def test_breadth_facts_real_data_has_digit():
     active = len([t for t, v in now.items() if isinstance(v, list) and v])
     universe = int(raw.get("universe_n") or 0)
     fd = breadth_facts(ROOT)
-    texts = " ".join(f.get("text", "") for f in fd["facts"])
-    if _is_vacuous_count(active, universe):
-        assert fd["facts"] == [], (
-            f"saturated tape ({active} of {universe}) still shipped breadth facts: "
-            f"{[f['text'] for f in fd['facts']]}"
-        )
-        return
-    assert re.search(r"\d", texts), (
-        f"No digit in any breadth fact. Facts: {[f['text'] for f in fd['facts']]}"
+    facts_by_id = {f["id"]: f for f in fd["facts"]}
+    should_ship_active = not _is_vacuous_count(active, universe)
+    assert ("breadth_active" in facts_by_id) is should_ship_active, (
+        f"{active} of {universe}: breadth_active disagrees with its vacuity "
+        f"gate; emitted ids={sorted(facts_by_id)}"
     )
+    if should_ship_active:
+        assert re.search(r"\d", facts_by_id["breadth_active"].get("text", ""))
 
 
 def test_breadth_facts_whitelist_covers_fact_numbers():
@@ -704,6 +701,38 @@ def _write_confluence(tmp_path, *, n_active, universe_n, n_names=None):
 def _breadth_ids(tmp_path):
     from engine.marketing.market_facts import breadth_facts
     return [f["id"] for f in breadth_facts(tmp_path)["facts"]]
+
+
+def test_saturated_active_count_does_not_silence_top_setup_breadth(tmp_path):
+    """10/10 active can coexist with a non-vacuous 5/10 top setup.
+
+    This is the counterexample to treating aggregate saturation as a reason to
+    empty the entire breadth fact set: all ten names fire, split evenly across
+    two combos, so only ``breadth_active`` is vacuous.
+    """
+    now = {
+        f"T{i:02d}": [0] if i < 5 else [1]
+        for i in range(10)
+    }
+    factordata = tmp_path / "site" / "factordata"
+    factordata.mkdir(parents=True)
+    (factordata / "tech_confluence.json").write_text(
+        json.dumps({
+            "universe_n": 10,
+            "now": now,
+            "combos": {"long": [{"id": "c0"}, {"id": "c1"}]},
+        }),
+        encoding="utf-8",
+    )
+
+    from engine.marketing.market_facts import breadth_facts
+    facts_by_id = {f["id"]: f for f in breadth_facts(tmp_path)["facts"]}
+    assert "breadth_active" not in facts_by_id, facts_by_id
+    assert facts_by_id["top_setup_breadth"]["count"] == {
+        "n_moving": 5,
+        "n_tracked": 10,
+        "noun": "names",
+    }
 
 
 class TestVacuousDenominatorsNeverShip:

@@ -241,3 +241,36 @@ def test_every_scored_verdict_has_a_plain_english_gloss():
         "engine/stock_view.py._VERDICT_GLOSS (EN, ZH) — and when you reword a "
         "verdict, reword its gloss key in the same commit."
     )
+
+
+def test_split_adjusted_legs_are_not_counted_as_fund_decisions():
+    """A re-denomination is not a manager decision, so it is not one of the
+    "N active funds" the ownership evidence line counts.
+
+    The decomposition guard positively identifies a split and keeps the leg as a
+    Tier-2 receipt (`fund_flows[].split_adjusted`); every RANKED reading drops
+    it. This is the last consumer of that verdict — before this, a 3:1 split
+    published as one more fund "accumulating".
+    """
+    rec = _profiled("US")
+    rec["fund_flows"] = [
+        {"fund": "ARKW", "direction": "accumulating", "conviction_pp": 1.63,
+         "split_adjusted": True},
+        {"fund": "ARKK", "direction": "accumulating", "conviction_pp": 0.42},
+    ]
+    ev = sv.build_view(rec, "US")["evidence"].get("ownership")
+    assert ev, "ownership evidence line missing"
+    assert "1 active funds" in ev["value"], ev["value"]     # the split leg excluded
+    assert "2 active funds" not in ev["value"], ev["value"]
+
+    # absent flag => counted, so the read is inert until the flag ships
+    rec["fund_flows"] = [{"fund": "ARKW", "direction": "accumulating"},
+                         {"fund": "ARKK", "direction": "accumulating"}]
+    ev2 = sv.build_view(rec, "US")["evidence"].get("ownership")
+    assert "2 active funds" in ev2["value"], ev2["value"]
+
+    # a leg that is ONLY a split leaves no fund-decision count at all
+    rec["fund_flows"] = [{"fund": "ARKW", "direction": "accumulating",
+                          "split_adjusted": True}]
+    ev3 = sv.build_view(rec, "US")["evidence"].get("ownership")
+    assert ev3 is None or "active funds" not in (ev3 or {}).get("value", "")

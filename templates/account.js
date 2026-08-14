@@ -662,7 +662,7 @@
   var CSS =
   '.mmacc-trigger{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;padding:0;border-radius:50%;' +
     'border:1px solid var(--line,var(--grid));background:var(--panel2,var(--card));color:var(--muted,var(--ink-3));cursor:pointer;' +
-    'font:600 12px/1 Inter,system-ui,sans-serif;flex:none;transition:border-color .16s,color .16s,transform .16s,box-shadow .16s;-webkit-tap-highlight-color:transparent}' +
+    'font:600 12px/1 var(--font-ui,Inter,system-ui,sans-serif);flex:none;transition:border-color .16s,color .16s,transform .16s,box-shadow .16s;-webkit-tap-highlight-color:transparent}' +
   '.mmacc-trigger:hover{color:var(--text,var(--ink));border-color:var(--link,var(--blue));transform:translateY(-1px)}' +
   '.mmacc-trigger-on{color:#fff;border-color:transparent;background:linear-gradient(135deg,#3b82f6,#7c5cff);box-shadow:0 2px 10px -3px rgba(90,80,255,.6)}' +
   '.mmacc-trigger-ini{letter-spacing:.3px}' +
@@ -675,7 +675,7 @@
   '@supports ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.mmacc{background:color-mix(in srgb,var(--panel,var(--card)) 80%,transparent);-webkit-backdrop-filter:blur(26px) saturate(1.5);backdrop-filter:blur(26px) saturate(1.5)}}' +
   '.mmacc-head{display:flex;align-items:center;gap:11px;padding:15px 15px 13px;border-bottom:1px solid var(--line,var(--grid));flex:none}' +
   '.mmacc-head-out{align-items:flex-start}' +
-  '.mmacc-ava{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font:700 15px/1 Inter,system-ui,sans-serif;color:#fff;letter-spacing:.3px;background:linear-gradient(135deg,#3b82f6,#7c5cff);box-shadow:0 3px 12px -4px rgba(90,80,255,.7)}' +
+  '.mmacc-ava{width:40px;height:40px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font:700 15px/1 var(--font-ui,Inter,system-ui,sans-serif);color:#fff;letter-spacing:.3px;background:linear-gradient(135deg,#3b82f6,#7c5cff);box-shadow:0 3px 12px -4px rgba(90,80,255,.7)}' +
   '.mmacc-idbox{flex:1;min-width:0}' +
   '.mmacc-name{font-size:14px;font-weight:700;color:var(--text,var(--ink));white-space:nowrap;overflow:hidden;text-overflow:ellipsis}' +
   '.mmacc-sub{font-size:11.5px;color:var(--muted,var(--ink-3));margin-top:2px;line-height:1.35}' +
@@ -704,7 +704,7 @@
   '.mmacc-input:focus{border-color:var(--link,var(--blue));box-shadow:0 0 0 3px color-mix(in srgb,var(--link,var(--blue)) 22%,transparent)}' +
   '.mmacc-btnrow{display:flex;gap:8px;justify-content:flex-end}' +
   '.mmacc-btnrow-wide{margin-top:12px}' +
-  '.mmacc-btn{font:600 12.5px/1 Inter,system-ui,sans-serif;padding:8px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line,var(--grid));transition:all .15s;flex:none}' +
+  '.mmacc-btn{font:600 12.5px/1 var(--font-ui,Inter,system-ui,sans-serif);padding:8px 14px;border-radius:9px;cursor:pointer;border:1px solid var(--line,var(--grid));transition:all .15s;flex:none}' +
   '.mmacc-btn:disabled{opacity:.55;cursor:default}' +
   '.mmacc-primary{background:var(--link,var(--blue));border-color:var(--link,var(--blue));color:#fff}' +
   '.mmacc-primary:hover:not(:disabled){filter:brightness(1.08);transform:translateY(-1px)}' +
@@ -764,7 +764,7 @@
     var s = document.createElement('script');
     // nav_market.js owns the runtime menu composition, so it must never inherit
     // a stale year-cached response after a navigation release.
-    s.src = pfx + 'nav_market.js?v=20260812-ui-audit-ink-grades';
+    s.src = pfx + 'nav_market.js?v=20260814-sf-inter-font-upgrade';
     s.async = true;
     (document.head || document.documentElement).appendChild(s);
   })();

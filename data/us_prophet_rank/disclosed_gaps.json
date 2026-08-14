@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0.0",
+  "purpose": "Windows where the US CONTEXT VECTOR store (candidates/) did not accrue while the board itself published. A gap here is a disclosed null era for CONTEXT/FEATURE coverage, not missing data to repair: the store forbids retroactive backfill (only same-night values are ever stamped), so these nights have honest board outcomes with NO point-in-time context rows. Consumers joining features from this store MUST treat these dates as context-absent-by-outage (coverage accounting, never imputation), and MUST NOT exclude the dates' board OUTCOMES on this file's account - the outcomes are valid; only the context join is empty. That is why this file is a SIBLING of data/us_board_ledger/disclosed_gaps.json rather than an entry in it: that file's gradeable:false semantics excludes outcome rows, which would wrongly discard the healthy 08-12/08-13 boards.",
+  "why_a_file_and_not_a_comment": "An undocumented context hole is indistinguishable from sparse coverage, and the obvious fix - backfill the missing stamps - is forbidden by the store's own law (no retroactive backfill; a stamp is what was knowable THAT night). This file is what a future backfill attempt is meant to trip over, and it is machine-readable so coverage tooling can name the window instead of silently narrowing.",
+  "gaps": [
+    {
+      "id": "us-context-vector-accrual-2026-08",
+      "market": "US",
+      "store": "data/us_prophet_rank/candidates/",
+      "window": {
+        "from": "2026-08-08",
+        "to": "2026-08-13"
+      },
+      "missing_trading_days": [
+        "2026-08-10",
+        "2026-08-11",
+        "2026-08-12",
+        "2026-08-13"
+      ],
+      "context_rows": "absent",
+      "board_outcomes": "valid (boards published 2026-08-12/13 post-heal; 08-10/11 were the separate Prophet availability outage)",
+      "backfillable": false,
+      "headline": "The nightly board ran while the context-vector append silently threw every night.",
+      "reason": "engine/neuralweb/context_api.py::_regime_dim's both-sources merge path (regime_history.parquet current AND regime/latest.json current - a data condition first true ~2026-08-08) returned nested dicts, flattened into dict-valued regime__live/regime__history columns. The store's schema-union reindex filled prior rows of the new columns with float NaN, and pyarrow refused to unify struct values with non-null NaN: 'cannot mix struct and non-struct, non-null values'. append_candidates' fail-soft caught the exception, logged via a prefixing logger that GitHub annotations never surface, and returned 0 inside a green engine job, every night.",
+      "evidence": {
+        "run_log": "daily.yml run 31671422158 (2026-08-13), engine job 94437306171: 'WARNING us_context_vector append failed: (cannot mix struct and non-struct, non-null values, Conversion failed for column regime__live with type object)'",
+        "store_state": "candidates/2026-08.parquet max(stamp_date)=2026-08-07 on origin/main while data/us_board_ledger/snapshots.jsonl advanced through as_of 2026-08-13",
+        "scan_lane": "scan-tier appends (run_us_scan_tier) hit the same writer and the same wall; the us_scan_tier job's separate 08-13 red was a runner-infrastructure failure (job failed with zero failing steps)"
+      },
+      "fix": "PR-1a (WS:PROPHET-CONDITIONAL-FUSION): _regime_dim merge path emits scalars only; store boundary quarantines unclassified non-scalar columns with a line-start ::warning instead of dying; append failure, empty-input, no-records, quiet-append, and staleness paths all annotate loudly. Root cause pinned by tests/test_us_context_vector_accrual.py.",
+      "adjudication": "Recorded by the PR-1a session 2026-08-14 under DEC:PROPHET-ZERO-AUTHORITY-SUPERSEDED-BY-EARNED-CONDITIONAL-AUTHORITY's program (masterplan section 4.0 / section 13.0). Backfill refused per store law; the hole is honest history."
+    }
+  ]
+}
