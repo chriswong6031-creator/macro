@@ -2512,6 +2512,23 @@ jobs:
       # downstream adapter failing for a borrowed reason.
       - name: qledger forward-only desk adapters + evidence clock (P3)
         run: python -m pytest tests/test_qledger_desk_adapter.py tests/test_qledger_evidence_clock.py -q
+      # THE NIGHTLY CONSUMER SIDE, previously DARK. Neither of these two files was
+      # named by a `run:` step in ANY pack, so every change to the nightly grader
+      # and to the W6 readiness monitor shipped unproven — and test_w6_readiness_
+      # monitor.py was FAILING on main for a week without anything going red,
+      # because a failing test that nothing runs is indistinguishable from a
+      # passing one. They belong in THIS job rather than a generic pack: their
+      # subject is `scripts/grade_qledger.compute_promotion_readiness`, the
+      # production consumer of `promotion_check_dispatch` / `matched_control_check`
+      # that the steps above prove — so a P0d contract change and the payload it
+      # feeds now red the same check instead of drifting apart. Placed LAST of the
+      # qledger steps deliberately (run_ci_pack.py returns on the FIRST non-zero
+      # step): a regression in the substrate must surface as the substrate's own
+      # failure, not as a downstream readiness row failing for a borrowed reason.
+      # Both are hermetic — tmp_path stores plus a monkeypatched price layer, no
+      # data/** reads.
+      - name: qledger nightly grader + W6 readiness monitor suites (previously dark — P0d follow-up)
+        run: python -m pytest tests/test_grade_qledger.py tests/test_w6_readiness_monitor.py -q
       # round 5 MINOR: this file was owned by NO legacy job, so
       # test_register_claims_are_salience_only_macro — which asserts on
       # register_claims()'s "returns the count REGISTERED OPEN" semantics
