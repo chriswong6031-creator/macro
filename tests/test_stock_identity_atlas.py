@@ -21,18 +21,30 @@ no network, no universe sweep.
 from __future__ import annotations
 
 import ast
+import copy
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 
 import pandas as pd
 import pytest
 import yaml
 
 from engine.stock_identity import fingerprint as fp
-from engine.stock_identity.authority import AUTHORITY_KEYS, is_zero_authority
+from engine.stock_identity import hygiene
+from engine.stock_identity import partition as partition_mod
+from engine.stock_identity import pilot
+from engine.stock_identity.authority import (
+    AUTHORITY_KEYS,
+    authority_block,
+    is_zero_authority,
+)
 from engine.stock_identity.hygiene import COMPUTE_BLOCKLIST, check_symbol
+from engine.stock_identity.plane import PLANE_BASKETS, primary_planes
 from scripts import audit_reused_tickers as reused_audit
+from scripts import stock_identity_build_atlas as sealed_builder
+from scripts import stock_identity_build_w1a1 as amendment_builder
 
 ROOT = Path(__file__).resolve().parents[1]
 PKG = ROOT / "engine" / "stock_identity"
@@ -483,3 +495,723 @@ class TestCurrentTickerHygiene:
         assert not strict["GOLD"].any() and not deep["GOLD"].any()
         assert int(strict["B"].sum()) == int((idx >= pd.Timestamp(b_row["added"])).sum())
         assert int(deep["B"].sum()) == len(curated)
+
+
+# ── W1-A1 append-only overlay: fail-closed consumer and publisher guards ─────
+
+def _pilot_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _write_receipt(root: Path, payload: dict) -> None:
+    path = root / pilot.RECEIPT_RELATIVE_PATH
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
+    generated: dict[str, str] = {}
+    for relative in pilot.W1A1_GENERATED_OUTPUT_PATHS:
+        path = root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(f"governed:{relative}".encode("utf-8"))
+        generated[relative] = _pilot_sha256(path)
+
+    sealed: dict[str, str] = {}
+    for relative in pilot.W1A1_SEALED_W1_SHA256:
+        if relative == pilot.W1A1_GOLD_DISCLOSURE_PATH:
+            continue
+        frozen = root / relative
+        frozen.parent.mkdir(parents=True, exist_ok=True)
+        frozen.write_bytes(f"sealed:{relative}".encode("utf-8"))
+        sealed[relative] = _pilot_sha256(frozen)
+
+    original = "# sealed GOLD dossier\n\nstanding authority\n\n## Identity\n"
+    before_sha = hashlib.sha256(original.encode("utf-8")).hexdigest()
+    monkeypatch.setattr(pilot, "W1A1_GOLD_MD_BEFORE_SHA256", before_sha)
+    sealed[pilot.W1A1_GOLD_DISCLOSURE_PATH] = before_sha
+    monkeypatch.setattr(pilot, "W1A1_SEALED_W1_SHA256", sealed)
+    block = "\n".join(
+        (
+            pilot.W1A1_GOLD_ANNOTATION_BEGIN,
+            "> additive wrong-issuer disclosure",
+            pilot.W1A1_GOLD_ANNOTATION_END,
+        )
+    )
+    annotated = original.replace("\n\n## Identity", f"\n\n{block}\n\n## Identity")
+    gold = root / pilot.W1A1_GOLD_DISCLOSURE_PATH
+    gold.parent.mkdir(parents=True, exist_ok=True)
+    gold.write_text(annotated, encoding="utf-8")
+
+    payload = {
+        "schema": pilot.W1A1_RECEIPT_SCHEMA,
+        "amendment_id": pilot.AMENDMENT_ID,
+        "asof": pilot.W1A1_ASOF,
+        "pull_request": 9999,
+        "registration_commit": "3" * 40,
+        "prerequisite_merges": {"pr_5613": "1" * 40, "pr_5632": "2" * 40},
+        "identity_receipt": copy.deepcopy(pilot.W1A1_IDENTITY_RECEIPT),
+        "miner_probe_roster": {
+            "sealed_w1": list(pilot.W1_SEALED_MINER_PROBE),
+            "effective_w1a1": list(pilot.W1A1_EFFECTIVE_MINER_PROBE),
+        },
+        "partition_treatment": copy.deepcopy(pilot.W1A1_PARTITION_TREATMENT),
+        "procedural_deviation": copy.deepcopy(pilot.W1A1_PROCEDURAL_DEVIATION),
+        "rank_context": {
+            "method": "B-only hypothetical insertion",
+            "frozen_reference_rows": 2780,
+            "hypothetical_joint_rows": 2781,
+            "only_B_persisted": True,
+            "w1_percentiles_rewritten": False,
+            "univ_ew_recomputed": False,
+            "dealer_context_disclosure": "frozen ranks retain GOLD dealer context",
+            "reference_sha256": copy.deepcopy(pilot.W1A1_REFERENCE_SHA256),
+        },
+        "price_input": {
+            "path": "data/baskets/ohlcv/B.parquet",
+            "price_plane_id": "baskets_ohlcv_v1",
+            "prefix_asof": pilot.W1A1_ASOF,
+            "prefix_sha256": "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db",
+            "seed_container_sha256": "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f",
+            "file_sha256_at_run": "4" * 64,
+            "file_rows_at_run": 3172,
+            "file_last_date_at_run": pilot.W1A1_ASOF,
+            "rows_used": 3172,
+            "first_date": "2014-01-02",
+            "last_date_used": pilot.W1A1_ASOF,
+        },
+        "sealed_w1_sha256": copy.deepcopy(sealed),
+        "registered_output_paths": list(pilot.W1A1_REGISTERED_OUTPUT_PATHS),
+        "generated_output_sha256": generated,
+        "disclosure_only": {
+            "path": pilot.W1A1_GOLD_DISCLOSURE_PATH,
+            "before_sha256": before_sha,
+            "after_sha256": _pilot_sha256(gold),
+            "marker_begin": pilot.W1A1_GOLD_ANNOTATION_BEGIN,
+            "marker_end": pilot.W1A1_GOLD_ANNOTATION_END,
+            "restores_original_when_removed": True,
+            "gold_svg_unchanged": True,
+        },
+        "measured_rows_mutated": False,
+        "trial_budget": pilot.W1A1_TRIAL_BUDGET,
+        "authority": authority_block(),
+    }
+    _write_receipt(root, payload)
+    return payload
+
+
+def test_current_miner_probe_requires_complete_closed_receipt(tmp_path, monkeypatch):
+    _closed_fixture(tmp_path, monkeypatch)
+    assert pilot.current_miner_probe(tmp_path) == pilot.W1A1_EFFECTIVE_MINER_PROBE
+
+
+@pytest.mark.parametrize(
+    "keys,value,match",
+    (
+        (("schema",), "wrong", "receipt schema"),
+        (("identity_receipt", "B", "edgar_cik"), "1591588", "identity receipt"),
+        (("partition_treatment", "B_design_touched"), False, "partition quarantine"),
+        (("procedural_deviation", "write_scope"), "erased", "deviation disclosure"),
+        (("procedural_deviation", "observed_scope"), "erased", "deviation disclosure"),
+        (("trial_budget",), "outcome-selected", "trial-budget"),
+        (("prerequisite_merges", "pr_5632"), "not-a-sha", "prerequisite merge"),
+        (("rank_context", "w1_percentiles_rewritten"), True, "rank context"),
+        (("price_input", "prefix_sha256"), "0" * 64, "price-input"),
+        (("sealed_w1_sha256", "data/stock_identity/constants/si_constants_v1.json"),
+         "0" * 64, "sealed W1 hash receipt"),
+    ),
+)
+def test_current_miner_probe_rejects_governance_tampering(
+    tmp_path, monkeypatch, keys, value, match
+):
+    payload = copy.deepcopy(_closed_fixture(tmp_path, monkeypatch))
+    target = payload
+    for key in keys[:-1]:
+        target = target[key]
+    target[keys[-1]] = value
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match=match):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_current_miner_probe_rejects_actual_sealed_artifact_drift(tmp_path, monkeypatch):
+    _closed_fixture(tmp_path, monkeypatch)
+    frozen = tmp_path / "data/stock_identity/constants/si_constants_v1.json"
+    frozen.write_text("tampered", encoding="utf-8")
+    with pytest.raises(ValueError, match="sealed W1 artifact drifted"):
+        pilot.current_miner_probe(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "key,match",
+    (("procedural_deviation", "deviation disclosure"), ("trial_budget", "trial-budget")),
+)
+def test_current_miner_probe_rejects_omitted_exposure_governance(
+    tmp_path, monkeypatch, key, match
+):
+    payload = copy.deepcopy(_closed_fixture(tmp_path, monkeypatch))
+    payload.pop(key)
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match=match):
+        pilot.current_miner_probe(tmp_path)
+
+
+@pytest.mark.parametrize("value", ("zzzz", "2026-8-14", "2026-08-13T00:00:00"))
+def test_current_miner_probe_rejects_noncanonical_run_last_date(
+    tmp_path, monkeypatch, value
+):
+    payload = copy.deepcopy(_closed_fixture(tmp_path, monkeypatch))
+    payload["price_input"]["file_last_date_at_run"] = value
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match="last date is not canonical ISO"):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_current_miner_probe_rejects_omitted_governed_output(tmp_path, monkeypatch):
+    payload = _closed_fixture(tmp_path, monkeypatch)
+    payload = copy.deepcopy(payload)
+    payload["generated_output_sha256"].pop(pilot.W1A1_GENERATED_OUTPUT_PATHS[-1])
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match="hash closure is incomplete"):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_current_miner_probe_rejects_path_traversal_key(tmp_path, monkeypatch):
+    payload = _closed_fixture(tmp_path, monkeypatch)
+    payload = copy.deepcopy(payload)
+    payload["generated_output_sha256"]["../escape"] = "0" * 64
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match="hash closure is incomplete"):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_current_miner_probe_rejects_substituted_disclosure_path(tmp_path, monkeypatch):
+    payload = _closed_fixture(tmp_path, monkeypatch)
+    payload = copy.deepcopy(payload)
+    payload["disclosure_only"]["path"] = "research/stock_identity/dossiers/B.md"
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match="disclosure path drifted"):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_current_miner_probe_rejects_nonreversible_disclosure(tmp_path, monkeypatch):
+    payload = _closed_fixture(tmp_path, monkeypatch)
+    payload = copy.deepcopy(payload)
+    gold = tmp_path / pilot.W1A1_GOLD_DISCLOSURE_PATH
+    gold.write_text(
+        "tampered outside marker\n" + gold.read_text(encoding="utf-8"),
+        encoding="utf-8",
+    )
+    payload["disclosure_only"]["after_sha256"] = _pilot_sha256(gold)
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match="does not restore the sealed dossier"):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_authority_frame_rejects_nulls_and_integer_zero():
+    columns = {
+        f"authority_{key}": pd.Series([False], dtype=bool)
+        for key in authority_block()
+    }
+    valid = pd.DataFrame(columns)
+    amendment_builder._assert_zero_authority_frame(valid, "valid")
+
+    nullish = valid.astype(object)
+    nullish.loc[0, "authority_can_rank"] = None
+    with pytest.raises(SystemExit, match="non-null boolean"):
+        amendment_builder._assert_zero_authority_frame(nullish, "nullish")
+
+    integer_zero = valid.copy()
+    integer_zero["authority_can_rank"] = 0
+    with pytest.raises(SystemExit, match="non-null boolean"):
+        amendment_builder._assert_zero_authority_frame(integer_zero, "integer")
+
+
+def test_b_compute_hygiene_fails_before_history_is_consumed(monkeypatch):
+    monkeypatch.setattr(amendment_builder.hyg_mod, "COMPUTE_BLOCKLIST", {"B": "verified block"})
+    monkeypatch.setattr(
+        amendment_builder.hyg_mod,
+        "check_symbol",
+        lambda *args, **kwargs: {
+            "flags": ["compute_blocklisted"],
+            "notes": {"compute_blocklisted": "verified block"},
+            "compute_eligible": False,
+        },
+    )
+    with pytest.raises(SystemExit, match="pre-read compute hygiene gate"):
+        amendment_builder._validate_compute_hygiene("B", pd.Timestamp("2014-01-02"))
+
+
+def test_b_logical_prefix_digest_ignores_later_appends_but_detects_revisions():
+    columns = ["open", "high", "low", "close", "volume"]
+    prefix = pd.DataFrame(
+        [[1.0, 2.0, 0.5, 1.5, 100.0], [1.5, 2.5, 1.0, 2.0, 120.0]],
+        index=pd.DatetimeIndex(["2026-08-12", "2026-08-13"], name="Date"),
+        columns=columns,
+    )
+    appended = pd.concat(
+        [
+            prefix,
+            pd.DataFrame(
+                [[2.0, 3.0, 1.5, 2.5, 140.0]],
+                index=pd.DatetimeIndex(["2026-08-14"], name="Date"),
+                columns=columns,
+            ),
+        ]
+    )
+    assert amendment_builder._ohlcv_prefix_sha256(appended.loc[:"2026-08-13"]) == (
+        amendment_builder._ohlcv_prefix_sha256(prefix)
+    )
+    revised = prefix.copy()
+    revised.loc[pd.Timestamp("2026-08-12"), "close"] = 1.5000001
+    assert amendment_builder._ohlcv_prefix_sha256(revised) != (
+        amendment_builder._ohlcv_prefix_sha256(prefix)
+    )
+
+
+def test_additive_schema_is_normalized_then_reopened_exactly(tmp_path):
+    frozen = pd.DataFrame(
+        {
+            "when": pd.Series([pd.Timestamp("2020-01-01")], dtype="datetime64[us]"),
+            "label": pd.Series(["sealed"], dtype="str"),
+            "note": pd.Series([None], dtype=object),
+            "authority_can_rank": pd.Series([False], dtype=bool),
+        }
+    )
+    frozen_path = tmp_path / "frozen.parquet"
+    # Reproduce the sealed episode artifact's accidental physical RangeIndex. The
+    # consumer-visible pandas schema excludes it, and an additive index=False file is
+    # still logically schema-compatible.
+    frozen.to_parquet(frozen_path, index=True)
+    candidate = pd.DataFrame(
+        {
+            "when": pd.Series([pd.Timestamp("2026-08-13")], dtype="datetime64[ms]"),
+            "label": ["B"],
+            "note": [None],
+            "authority_can_rank": [False],
+        }
+    )
+    normalized = amendment_builder._schema_like(candidate, frozen_path, "candidate")
+    amendment_builder._validate_schema_like(
+        normalized, pd.read_parquet(frozen_path), "candidate"
+    )
+
+    written = tmp_path / "candidate.parquet"
+    normalized.to_parquet(written, index=False)
+    amendment_builder._validate_parquet_schema_like(written, frozen_path, "candidate")
+
+    import pyarrow.parquet as pq
+
+    assert "__index_level_0__" in pq.read_schema(frozen_path).names
+    assert "__index_level_0__" not in pq.read_schema(written).names
+
+    wrong = normalized.copy()
+    wrong["authority_can_rank"] = 0
+    wrong_path = tmp_path / "wrong.parquet"
+    wrong.to_parquet(wrong_path, index=False)
+    with pytest.raises(SystemExit, match="logical-type drift"):
+        amendment_builder._validate_parquet_schema_like(wrong_path, frozen_path, "wrong")
+
+
+def test_b_only_dossier_overrides_disclose_rank_and_open_gap_semantics():
+    generic = "\n".join(
+        (
+            "# B — Identity Atlas v0 dossier",
+            amendment_builder._GENERIC_PERCENTILE_PROSE,
+            amendment_builder._GENERIC_B_GAP_PROSE,
+        )
+    )
+    amended = amendment_builder._apply_b_dossier_disclosures(generic)
+    assert "W1-A1 addendum" in amended
+    assert "only B was ranked and no W1 row was recomputed or rewritten" in amended
+    assert "opening print is compared with the previous close" in amended
+    assert "close-to-close proxy" not in amended
+
+
+def test_post_publish_validation_failure_rolls_back_the_whole_amendment(
+    tmp_path, monkeypatch
+):
+    outputs = (
+        "data/receipt.json",
+        "data/B.parquet",
+        "research/B.md",
+    )
+    disclosure = "research/GOLD.md"
+    stage = tmp_path / "stage"
+    repo = tmp_path / "repo"
+    for relative in outputs:
+        path = stage / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"staged:{relative}", encoding="utf-8")
+    staged_gold = stage / "GOLD.annotated.md"
+    staged_gold.write_text("annotated", encoding="utf-8")
+    original_gold = repo / disclosure
+    original_gold.parent.mkdir(parents=True, exist_ok=True)
+    original_gold.write_text("sealed", encoding="utf-8")
+
+    monkeypatch.setattr(amendment_builder, "REPO_ROOT", repo)
+    monkeypatch.setattr(amendment_builder, "OUTPUT_PATHS", outputs)
+    monkeypatch.setattr(amendment_builder, "RECEIPT_RELATIVE_PATH", outputs[0])
+    monkeypatch.setattr(amendment_builder, "DISCLOSURE_ONLY_PATH", disclosure)
+    monkeypatch.setattr(amendment_builder, "_validate_outputs_absent", lambda: None)
+    monkeypatch.setattr(
+        amendment_builder, "_validate_frozen_hashes", lambda **kwargs: None
+    )
+
+    def fail_closure(_receipt):
+        raise SystemExit("forced post-publish closure failure")
+
+    monkeypatch.setattr(amendment_builder, "_validate_published", fail_closure)
+    with pytest.raises(SystemExit, match="forced post-publish"):
+        amendment_builder._publish(stage, staged_gold, {"test": True})
+
+    assert original_gold.read_text(encoding="utf-8") == "sealed"
+    assert all(not (repo / relative).exists() for relative in outputs)
+    lock_key = hashlib.sha256(str(repo.resolve()).encode("utf-8")).hexdigest()[:16]
+    assert (
+        Path(tempfile.gettempdir()) / f"stock-identity-w1a1-{lock_key}.lock"
+    ).exists()
+
+
+def test_consumer_rejected_receipt_rolls_back_the_whole_amendment(
+    tmp_path, monkeypatch
+):
+    receipt_relative = "data/receipt.json"
+    disclosure_relative = "research/GOLD.md"
+    stage = tmp_path / "stage"
+    repo = tmp_path / "repo"
+    original = "# sealed GOLD dossier\n\n## Identity\n"
+    annotated = original.replace(
+        "\n\n## Identity", f"\n\n{amendment_builder.GOLD_ANNOTATION}\n\n## Identity", 1
+    )
+    staged_gold = stage / "GOLD.annotated.md"
+    staged_gold.parent.mkdir(parents=True, exist_ok=True)
+    staged_gold.write_text(annotated, encoding="utf-8")
+    receipt = {
+        "generated_output_sha256": {},
+        "disclosure_only": {
+            "after_sha256": hashlib.sha256(annotated.encode("utf-8")).hexdigest(),
+            "before_sha256": hashlib.sha256(original.encode("utf-8")).hexdigest(),
+        },
+        # This is the governing field the real consumer validates exactly.
+        "trial_budget": "erased after staging",
+    }
+    staged_receipt = stage / receipt_relative
+    staged_receipt.parent.mkdir(parents=True, exist_ok=True)
+    staged_receipt.write_text(json.dumps(receipt), encoding="utf-8")
+    original_gold = repo / disclosure_relative
+    original_gold.parent.mkdir(parents=True, exist_ok=True)
+    original_gold.write_text(original, encoding="utf-8")
+
+    monkeypatch.setattr(amendment_builder, "REPO_ROOT", repo)
+    monkeypatch.setattr(amendment_builder, "OUTPUT_PATHS", (receipt_relative,))
+    monkeypatch.setattr(amendment_builder, "RECEIPT_RELATIVE_PATH", receipt_relative)
+    monkeypatch.setattr(amendment_builder, "DISCLOSURE_ONLY_PATH", disclosure_relative)
+    monkeypatch.setattr(amendment_builder, "_validate_outputs_absent", lambda: None)
+    monkeypatch.setattr(
+        amendment_builder, "_validate_frozen_hashes", lambda **kwargs: None
+    )
+
+    def reject_tampered_trial_budget(root):
+        published = json.loads((root / receipt_relative).read_text(encoding="utf-8"))
+        if published.get("trial_budget") != pilot.W1A1_TRIAL_BUDGET:
+            raise ValueError("no-sweep trial-budget receipt drifted")
+        return pilot.W1A1_EFFECTIVE_MINER_PROBE
+
+    monkeypatch.setattr(
+        amendment_builder, "current_miner_probe", reject_tampered_trial_budget
+    )
+    with pytest.raises(SystemExit, match="consumer closure failed.*trial-budget"):
+        amendment_builder._publish(stage, staged_gold, receipt)
+
+    assert original_gold.read_text(encoding="utf-8") == original
+    assert not (repo / receipt_relative).exists()
+
+
+# ── W1-A1 append-only overlay: committed result and freeze guards ────────────
+
+REGISTRATION = ROOT / "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md"
+RECEIPT = ROOT / amendment_builder.RECEIPT_RELATIVE_PATH
+RESULT_READY = RECEIPT.exists()
+PREREQUISITE_READY = (ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH).exists()
+
+SEALED_SHA256 = {
+    "data/stock_identity/partition/partition_manifest_v1.json":
+        "b1f82f842350e39ac7a73214fd8ebd58b175b52fdf42b3a0fb5a2d03143a5d48",
+    "data/stock_identity/partition/universe_snapshot_v1.parquet":
+        "9f22807e7cb6ba570f1963de945b7be77461a1788608754e25db6235f4fe3730",
+    "data/stock_identity/constants/si_constants_v1.json":
+        "276d4ad267ab8711942943e306e844bfdff1f17a051bd17a9d460c1e428fc648",
+    "data/stock_identity/fingerprints/fingerprint_spec.json":
+        "bbefcd5b72915435acb8714d7892b79e010cb49d394b3222d89575c7b022dee0",
+    "data/stock_identity/fingerprints/pilot_fingerprint_v0.parquet":
+        "2bdef8763b0c73a6df3f27e8307246887b7b9dc982f66331ba4d96ff09d72ba3",
+    "data/stock_identity/state/pilot_state_daily.parquet":
+        "e2c43f8761431c62506311e61fa387c70433f82bde8143b564fdf87da7ee485e",
+    "data/stock_identity/episodes/pilot_episode_catalog_v0.parquet":
+        "3216f6cbbf539584dba31caf30e09b6e76e0297ca34698fcb0235cf6e0d6bc0f",
+    "data/stock_identity/episodes/pilot/GOLD.json":
+        "be8a1d053c6fc9f639017abb4cf7f3063e7bde8229d9a1622dedd38a02ff16d1",
+    "data/stock_identity/census/coverage_census_v0.parquet":
+        "d64d37c0ab8e0729aa732f2a68a183dd08e0ca3336e9a4a71975772f28c0b4cd",
+    "data/stock_identity/census/coverage_census_v0.md":
+        "cf1a818749802bf6143656cfc06efa8ad95d3e87570a011726766c461bf371bb",
+    "research/stock_identity/dossiers/GOLD.svg":
+        "e4e6466f2b4535b97d2fae4eb3eb7e39c1a40600343d955f0e0fe843d7df49db",
+}
+ORIGINAL_GOLD_MD_SHA256 = (
+    "2675b5be60cc09a37324e697bb62c20679b8f21cfe4d268f5082ce0730861558"
+)
+
+
+def _w1a1_sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1024 * 1024), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _receipt() -> dict:
+    if not RESULT_READY:
+        pytest.skip("registered W1-A1 result has not been produced yet")
+    return json.loads(RECEIPT.read_text(encoding="utf-8"))
+
+
+def _w1a1_manifest() -> dict:
+    return json.loads(
+        (DATA / "partition/partition_manifest_v1.json").read_text(encoding="utf-8")
+    )
+
+
+def test_historical_recipe_and_registered_effective_tuple_are_both_explicit():
+    assert sealed_builder.MINER_PROBE == ("NEM", "GOLD", "AEM", "PAAS", "WPM", "AG")
+    assert sealed_builder.PILOT_ROLES["GOLD"] == "miner neighborhood probe"
+    assert pilot.W1_SEALED_MINER_PROBE == sealed_builder.MINER_PROBE
+    assert pilot.W1A1_EFFECTIVE_MINER_PROBE == ("NEM", "AEM", "PAAS", "WPM", "AG", "B")
+
+
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
+def test_current_miner_probe_activates_only_after_closed_receipt():
+    assert pilot.current_miner_probe(ROOT) == pilot.W1A1_EFFECTIVE_MINER_PROBE
+
+
+def test_registration_append_did_not_move_the_sealed_partition_hash():
+    text = REGISTRATION.read_text(encoding="utf-8")
+    assert partition_mod.partition_procedure_sha256(REGISTRATION)[0] == (
+        _w1a1_manifest()["partition_procedure_sha256"]
+    )
+    assert text.index("## Amendment A1") > text.index("## §14. Hashes")
+    assert amendment_builder.AMENDMENT_ID in text
+
+
+def test_result_records_the_registration_commits():
+    receipt = _receipt()
+    assert receipt["registration_commit"] == amendment_builder.REGISTRATION_COMMIT
+    assert receipt["initial_registration_commit"] == (
+        amendment_builder.INITIAL_REGISTRATION_COMMIT
+    )
+
+
+def test_b_remains_outside_every_sealed_w1_membership():
+    manifest = _w1a1_manifest()
+    snapshot = pd.read_parquet(DATA / "partition/universe_snapshot_v1.parquet")
+    symbols = set(snapshot["symbol"].astype(str))
+    assert "GOLD" in symbols and "B" not in symbols
+    assert "GOLD" in manifest["pilot"]["members"] and "B" not in manifest["pilot"]["members"]
+    assert "B" not in manifest["blind_arm"]["members"]
+    assert "B" not in manifest["calibration_partition"]["members"]
+
+
+def test_result_keeps_b_design_touched_and_nonconfirmatory():
+    treatment = _receipt()["partition_treatment"]
+    assert treatment["B_design_touched"] is True
+    assert treatment["B_excluded_from_future_blind_extension"] is True
+    assert treatment["B_excluded_from_confirmatory_grading"] is True
+
+
+def test_combined_w1_artifacts_still_contain_gold_and_never_b():
+    for relative in (
+        "fingerprints/pilot_fingerprint_v0.parquet",
+        "state/pilot_state_daily.parquet",
+        "episodes/pilot_episode_catalog_v0.parquet",
+    ):
+        frame = pd.read_parquet(DATA / relative)
+        symbols = set(frame["symbol"].astype(str))
+        assert "GOLD" in symbols, relative
+        assert "B" not in symbols, relative
+
+
+def test_every_sealed_w1_artifact_is_byte_frozen():
+    for relative, expected in SEALED_SHA256.items():
+        assert _w1a1_sha256(ROOT / relative) == expected, relative
+
+
+def test_result_declares_that_no_sealed_measurement_was_mutated():
+    assert _receipt()["measured_rows_mutated"] is False
+
+
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
+def test_gold_disclosure_is_reversible_and_names_the_actual_instruments():
+    path = ROOT / amendment_builder.DISCLOSURE_ONLY_PATH
+    dossier_text = path.read_text(encoding="utf-8")
+    begin = amendment_builder.GOLD_ANNOTATION_BEGIN
+    end = amendment_builder.GOLD_ANNOTATION_END
+    assert dossier_text.count(begin) == dossier_text.count(end) == 1
+    assert dossier_text.index(begin) < dossier_text.index("## Identity")
+    block = dossier_text[
+        dossier_text.index(begin): dossier_text.index(end) + len(end)
+    ]
+    for token in (
+        "Gold.com", "A-Mark", "bullion dealer", "1591588", "756894",
+        "2025-12-02", "2025-05-09", "not miner-neighborhood evidence",
+    ):
+        assert token in block
+    restored = dossier_text.replace(f"\n\n{block}\n\n", "\n\n", 1)
+    assert hashlib.sha256(restored.encode("utf-8")).hexdigest() == (
+        ORIGINAL_GOLD_MD_SHA256
+    )
+    disclosure = _receipt()["disclosure_only"]
+    assert _w1a1_sha256(path) == disclosure["after_sha256"]
+    assert disclosure["gold_svg_unchanged"] is True
+
+
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+def test_gold_is_acked_readable_blind_ineligible_and_not_blocklisted():
+    hygiene._load_config.cache_clear()
+    assert "GOLD" not in hygiene.COMPUTE_BLOCKLIST
+    verdict = hygiene.check_symbol(
+        "GOLD", repo_root=ROOT, first_date=pd.Timestamp("2014-03-17")
+    )
+    assert verdict["compute_eligible"] is True
+    assert verdict["blind_eligible"] is False
+    assert "reused_ticker_acked" in verdict["flags"]
+    assert "symbol_history_note" in verdict["flags"]
+    assert "reused_ticker_unacked" not in verdict["flags"]
+    note = hygiene.HYGIENE_NOTES["GOLD"]
+    for token in ("Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09"):
+        assert token in note
+
+
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+def test_ack_status_tail_records_the_curated_repair():
+    config = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8"))
+    ack = config["quality"]["reused_ticker_acks"]["GOLD"]
+    for token in ("1591588", "756894", "PR #5632"):
+        assert token in ack
+    assert "KNOWN CONSUMER DEFECT" not in ack
+    assert "NO store file under 'B'" not in ack
+
+
+@pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
+def test_b_source_is_exactly_the_registered_curated_plane():
+    path = ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH
+    frame = amendment_builder._validate_b_source()
+    assert amendment_builder._ohlcv_prefix_sha256(frame) == (
+        amendment_builder.B_SOURCE_PREFIX_SHA256
+    )
+    assert len(frame) == 3172
+    assert frame.index.min() == pd.Timestamp("2014-01-02")
+    assert frame.index.max() == pd.Timestamp("2026-08-13")
+    assert primary_planes(ROOT)["B"] == PLANE_BASKETS
+    assert not (DATA / "ohlcv/B.parquet").exists()
+
+
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
+def test_b_addendum_parquets_are_b_only_on_baskets_with_zero_authority():
+    paths = (
+        DATA / "fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
+        DATA / "state/amendments/w1a1_b_state_daily.parquet",
+        DATA / "episodes/amendments/w1a1_b_episode_catalog_v0.parquet",
+    )
+    for path in paths:
+        frame = pd.read_parquet(path)
+        assert set(frame["symbol"].astype(str)) == {"B"}
+        assert set(frame["price_plane_id"].astype(str)) == {PLANE_BASKETS}
+        for key in AUTHORITY_KEYS:
+            assert f"authority_{key}" in frame.columns
+            assert not frame[f"authority_{key}"].any()
+    states = pd.read_parquet(paths[1])
+    episodes = pd.read_parquet(paths[2])
+    assert pd.to_datetime(states["date"]).max() <= pd.Timestamp("2026-08-13")
+    for column in ("start_date", "anchor_date", "end_date", "resolution_known_date"):
+        assert pd.to_datetime(episodes[column]).max() <= pd.Timestamp("2026-08-13")
+
+    fingerprint = pd.read_parquet(paths[0])
+    assert len(fingerprint) == 1
+    pct_columns = [c for c in fingerprint.columns if c.endswith("__pct")]
+    for column in pct_columns:
+        values = fingerprint[column].dropna()
+        assert values.between(0.0, 100.0).all()
+
+
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
+def test_b_episode_json_and_governing_receipt_are_zero_authority():
+    episode_json = json.loads(
+        (DATA / "episodes/amendments/B.json").read_text(encoding="utf-8")
+    )
+    assert is_zero_authority(episode_json)
+    assert episode_json["symbol"] == "B"
+    assert all(row["symbol"] == "B" for row in episode_json["episodes"])
+    assert is_zero_authority(_receipt())
+
+
+def test_rank_context_is_frozen_hypothetical_insertion_only():
+    context = _receipt()["rank_context"]
+    assert context["frozen_reference_rows"] == 2780
+    assert context["hypothetical_joint_rows"] == 2781
+    assert context["only_B_persisted"] is True
+    assert context["w1_percentiles_rewritten"] is False
+    assert context["univ_ew_recomputed"] is False
+    assert "GOLD dealer context" in context["dealer_context_disclosure"]
+    assert context["reference_sha256"] == amendment_builder.REFERENCE_SHA256
+    assert "no sweep" in _receipt()["trial_budget"]
+
+
+def test_output_allowlist_is_exact_and_disjoint_from_sealed_artifacts():
+    expected = (
+        "data/stock_identity/amendments/w1a1_gold_wrong_issuer.json",
+        "data/stock_identity/fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
+        "data/stock_identity/state/amendments/w1a1_b_state_daily.parquet",
+        "data/stock_identity/episodes/amendments/w1a1_b_episode_catalog_v0.parquet",
+        "data/stock_identity/episodes/amendments/B.json",
+        "research/stock_identity/dossiers/B.md",
+        "research/stock_identity/dossiers/B.svg",
+    )
+    assert amendment_builder.OUTPUT_PATHS == expected
+    assert set(expected).isdisjoint(SEALED_SHA256)
+
+
+def test_result_records_exact_allowlist_and_prerequisite_merges():
+    assert tuple(_receipt()["registered_output_paths"]) == amendment_builder.OUTPUT_PATHS
+    assert _receipt()["prerequisite_merges"] == {
+        "pr_5613": amendment_builder.PR_5613_MERGE_SHA,
+        "pr_5632": amendment_builder.PR_5632_MERGE_SHA,
+    }
+
+
+@pytest.mark.skipif(not RESULT_READY, reason="registered W1-A1 result not produced")
+def test_b_dossier_and_svg_disclose_the_2014_floor():
+    markdown = (
+        ROOT / "research/stock_identity/dossiers/B.md"
+    ).read_text(encoding="utf-8")
+    for token in (
+        "Barrick Mining Corporation", "756894", "W1-A1 addendum", "Zero authority",
+        "baskets_ohlcv_v1", "2014-01-02", "no existing rank changed",
+        "only B was ranked and no W1 row was recomputed or rewritten",
+    ):
+        assert token in markdown
+    assert "pre-2014 portion" in markdown
+    gap_line = next(line for line in markdown.splitlines() if "Gap basis" in line)
+    assert "`open_vs_prev_close`" in gap_line
+    assert "opening print is compared with the previous close" in gap_line
+    assert "close-to-close proxy" not in gap_line
+    svg = (ROOT / "research/stock_identity/dossiers/B.svg").read_text(encoding="utf-8")
+    assert "2014-01-02" in svg
+    assert svg.count("<dc:date>2026-08-14T00:00:00+00:00</dc:date>") == 1
+
+
+def test_pre_registration_exposure_is_disclosed_and_quarantined():
+    deviation = _receipt()["procedural_deviation"]
+    assert deviation == pilot.W1A1_PROCEDURAL_DEVIATION
+    assert _receipt()["trial_budget"] == pilot.W1A1_TRIAL_BUDGET
