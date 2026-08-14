@@ -1,21 +1,18 @@
 name: fences
-# ALWAYS-ON metabolism cage fences — the three check contexts the arming runbook
-# (docs/METABOLISM_ARMING_CHECKLIST.md, Act 2) makes REQUIRED on main.
+# ALWAYS-ON metabolism cage fences behind one stable `fence-pack` aggregate.
 #
 # WHY A SEPARATE WORKFLOW: the same three guards also live in ci.yml, but ci.yml
 # is `on: pull_request` with a large `paths:` filter — it does NOT run on a PR
 # that touches only, say, site/ or engine/. A branch-protection rule that
 # REQUIRES a path-gated check blocks every PR that does not trigger it (the
 # required context never reports → "Expected — Waiting for status"). This
-# workflow has NO paths filter, so the three required contexts report on EVERY
-# PR and every push to main.
+# workflow has NO paths filter, so the aggregate reports on EVERY PR and every
+# push to main.
 #
-# One runner executes all three guards, then publishes the exact historical
-# check-run contexts (self-mod-fence / capability-broker / grader-manifest).
-# Previously GitHub provisioned three VMs, each repeating checkout, Python setup,
-# and pip install. GITHUB_TOKEN creates these check runs as the GitHub Actions
-# app (integration 15368), so the existing ruleset contract and immune-lane
-# classification stay intact while runner allocation falls from three to one.
+# One read-only runner executes the guards. A second checkout-free job publishes
+# the stable `fence-pack` result from the first job's native conclusion. Candidate
+# tests/templates therefore never share a runner or environment with the required
+# aggregate, and no pull-request code receives check-writing authority.
 on:
   pull_request:
     branches: [main, codex/merge-queue-pilot]
@@ -26,7 +23,6 @@ on:
 
 permissions:
   contents: read
-  checks: write
 
 concurrency:
   # Only the newest commit on a PR (or newest descendant on main) needs to prove
@@ -62,12 +58,10 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
-  fence-pack:
-    name: fence-pack
-    # This stable aggregate must execute for forks too: native rulesets require
-    # `fence-pack`, and a skipped aggregate would not prove chat-nav. A fork token
-    # cannot publish the three historical compatibility contexts, so only that
-    # publication step is skipped; the read-only guards and aggregate still run.
+  fence-evaluation:
+    name: fence-evaluation
+    # This read-only evaluation executes for forks too. The required aggregate is
+    # a separate job below and consumes only this job's native conclusion.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -89,11 +83,9 @@ jobs:
 
       - name: self-mod-fence selftest (all four cases proven)
         id: self_mod_selftest
-        continue-on-error: true
         run: python3 scripts/check_self_mod_fence.py --selftest
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         id: self_mod_live
-        continue-on-error: true
         # Main pushes carry no review diff. Pull requests and native merge groups
         # do; the latter must prove the queued latest-main synthetic commit too.
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
@@ -108,27 +100,18 @@ jobs:
             --branch "$BRANCH" \
             --base-sha "$BASE_SHA" \
             --trailers "$TRAILERS"
-      - name: self-mod-fence test suite
-        id: self_mod_tests
-        continue-on-error: true
-        run: python -m pytest tests/test_self_mod_fence.py -q
-
       - name: capability-redline selftest (planted secret caught; clean real files pass)
         id: capability_selftest
-        continue-on-error: true
         run: python3 scripts/check_capability_redline.py --selftest
       - name: capability-redline live scan (hard fail on secret values or value-capture)
         id: capability_live
-        continue-on-error: true
         run: python3 scripts/check_capability_redline.py
 
       - name: grader-manifest selftest (drift detection + fail-closed proof)
         id: grader_selftest
-        continue-on-error: true
         run: python3 scripts/check_grader_manifest.py --selftest
       - name: grader-manifest live check (hash drift is a hard failure)
         id: grader_live
-        continue-on-error: true
         run: python3 scripts/check_grader_manifest.py
 
       # chat-nav drift: HERE because the ci-pack copy is too SLOW, not missing.
@@ -147,108 +130,41 @@ jobs:
       # strings, ~1s), so the red now arrives while the PR is still open. The
       # ci-pack copy stays as defence in depth; it costs nothing there.
       #
-      # NOTE: these deliberately do NOT feed the publish step below. The three
-      # published contexts are the branch-protection ruleset's contract; adding a
-      # fourth, or folding chat-nav into one of the three, is an operator
-      # decision. They gate the fence-pack JOB check instead, via the aggregation
-      # step at the bottom.
+      # These feed the native job conclusion, which the isolated fence-pack job
+      # below turns into the single ruleset context.
       - name: chat-nav selftest (gate fires on a hand-edited header; --fix keeps ?v=/defer)
         id: chat_nav_selftest
-        continue-on-error: true
         run: python3 scripts/sync_chat_nav.py --selftest
       - name: chat.html's header must match _site_nav.html.j2
         id: chat_nav_live
-        continue-on-error: true
         run: python3 scripts/sync_chat_nav.py
 
-      - name: publish required fence contexts
-        id: publish
-        if: >-
-          always() &&
-          (github.event_name != 'pull_request' ||
-          github.event.pull_request.head.repo.full_name == github.repository)
-        uses: actions/github-script@v7
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          SELF_MOD_SELFTEST: ${{ steps.self_mod_selftest.outcome }}
-          SELF_MOD_LIVE: ${{ steps.self_mod_live.outcome }}
-          SELF_MOD_TESTS: ${{ steps.self_mod_tests.outcome }}
-          CAPABILITY_SELFTEST: ${{ steps.capability_selftest.outcome }}
-          CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
-          GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
-          GRADER_LIVE: ${{ steps.grader_live.outcome }}
-        with:
-          script: |
-            const pass = values => values.every(value => ['success', 'skipped'].includes(value));
-            const checks = [
-              {
-                name: 'self-mod-fence',
-                values: [
-                  process.env.SELF_MOD_SELFTEST,
-                  process.env.SELF_MOD_LIVE,
-                  process.env.SELF_MOD_TESTS,
-                ],
-              },
-              {
-                name: 'capability-broker',
-                values: [
-                  process.env.CAPABILITY_SELFTEST,
-                  process.env.CAPABILITY_LIVE,
-                ],
-              },
-              {
-                name: 'grader-manifest',
-                values: [
-                  process.env.GRADER_SELFTEST,
-                  process.env.GRADER_LIVE,
-                ],
-              },
-            ];
-            for (const check of checks) {
-              const ok = pass(check.values);
-              await github.rest.checks.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                name: check.name,
-                head_sha: process.env.HEAD_SHA,
-                status: 'completed',
-                conclusion: ok ? 'success' : 'failure',
-                output: {
-                  title: `${check.name}: ${ok ? 'passed' : 'failed'}`,
-                  summary: check.values.join(', '),
-                },
-              });
-            }
+      # Candidate-owned pytest code runs last. Even if it writes runner command
+      # files, no later security check or required aggregate shares this job.
+      - name: self-mod-fence test suite
+        id: self_mod_tests
+        run: python -m pytest tests/test_self_mod_fence.py -q
 
-      - name: fail pack when any fence failed
-        if: always()
+  fence-pack:
+    name: fence-pack
+    if: always()
+    needs: [fence-evaluation]
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - name: require the isolated fence evaluation
         env:
-          SELF_MOD_SELFTEST: ${{ steps.self_mod_selftest.outcome }}
-          SELF_MOD_LIVE: ${{ steps.self_mod_live.outcome }}
-          SELF_MOD_TESTS: ${{ steps.self_mod_tests.outcome }}
-          CAPABILITY_SELFTEST: ${{ steps.capability_selftest.outcome }}
-          CAPABILITY_LIVE: ${{ steps.capability_live.outcome }}
-          GRADER_SELFTEST: ${{ steps.grader_selftest.outcome }}
-          GRADER_LIVE: ${{ steps.grader_live.outcome }}
-          CHAT_NAV_SELFTEST: ${{ steps.chat_nav_selftest.outcome }}
-          CHAT_NAV_LIVE: ${{ steps.chat_nav_live.outcome }}
-          PUBLISH: ${{ steps.publish.outcome }}
+          FENCE_EVALUATION: ${{ needs.fence-evaluation.result }}
         run: |
           set -euo pipefail
-          for outcome in \
-            "$SELF_MOD_SELFTEST" "$SELF_MOD_LIVE" "$SELF_MOD_TESTS" \
-            "$CAPABILITY_SELFTEST" "$CAPABILITY_LIVE" \
-            "$GRADER_SELFTEST" "$GRADER_LIVE" \
-            "$CHAT_NAV_SELFTEST" "$CHAT_NAV_LIVE" "$PUBLISH"; do
-            case "$outcome" in
-              success|skipped) ;;
-              *) echo "::error::fence pack failed ($outcome)"; exit 1 ;;
-            esac
-          done
+          if [ "$FENCE_EVALUATION" != success ]; then
+            echo "::error::isolated fence evaluation ended $FENCE_EVALUATION"
+            exit 1
+          fi
 
   # Fork fallback: GitHub itself creates these named job check runs, so no
-  # checks:write token is needed. The high-volume same-repository path above
-  # remains one runner; public contributors retain the original fail-closed
+  # checks:write token is needed. Public contributors retain the historical
+  # compatibility contexts while the stable aggregate remains fail closed.
   # behavior instead of being stuck on missing required contexts.
   fork-self-mod-fence:
     name: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'self-mod-fence' || 'fork-self-mod-fence-unused' }}

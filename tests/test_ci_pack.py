@@ -2316,35 +2316,39 @@ def test_ci_pack_and_plan_avoid_historical_site_blobs() -> None:
     assert 'origin "$GITHUB_REF"' not in plan_checkout["run"]
 
 
-def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
+def test_fence_pack_is_checkout_free_and_isolated_from_candidate_code() -> None:
     workflow = _yaml(FENCES)
-    assert workflow["permissions"]["checks"] == "write"
+    assert workflow["permissions"] == {"contents": "read"}
     jobs = workflow["jobs"]
     assert set(jobs) == {
+        "fence-evaluation",
         "fence-pack",
         "fork-self-mod-fence",
         "fork-capability-broker",
         "fork-grader-manifest",
     }
-    pack = jobs["fence-pack"]
-    assert pack["runs-on"] == "ubuntu-latest"
-    assert "if" not in pack, "the required aggregate must execute for fork PRs too"
+    evaluation = jobs["fence-evaluation"]
+    assert evaluation["runs-on"] == "ubuntu-latest"
     checkout = next(
         step
-        for step in pack["steps"]
+        for step in evaluation["steps"]
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert checkout["with"]["filter"] == "blob:none"
     assert checkout["with"]["fetch-depth"] == 0
+    assert all("continue-on-error" not in step for step in evaluation["steps"])
+    assert evaluation["steps"][-1]["id"] == "self_mod_tests"
+    assert not any("github.rest.checks.create" in str(step) for step in evaluation["steps"])
 
-    publish = next(step for step in pack["steps"] if step.get("id") == "publish")
-    assert "always()" in publish["if"]
-    assert "head.repo.full_name == github.repository" in publish["if"]
-    assert publish["uses"].startswith("actions/github-script@")
-    script = publish["with"]["script"]
-    for context in ("self-mod-fence", "capability-broker", "grader-manifest"):
-        assert f"name: '{context}'" in script
-    assert "github.rest.checks.create" in script
+    pack = jobs["fence-pack"]
+    assert pack["runs-on"] == "ubuntu-latest"
+    assert pack["if"] == "always()"
+    assert pack["needs"] == ["fence-evaluation"]
+    assert pack["permissions"] == {}
+    assert not any("uses" in step for step in pack["steps"])
+    aggregate = "\n".join(str(step.get("run", "")) for step in pack["steps"])
+    assert "FENCE_EVALUATION" in aggregate
+    assert "!= success" in aggregate
 
     # Fork tokens cannot write check runs. Their compatibility jobs retain the
     # exact contexts only when the PR truly comes from a fork; on the high-volume

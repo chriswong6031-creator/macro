@@ -315,7 +315,11 @@ def _fence_step_run(workflow_relpath: str, step_name: str) -> dict:
     reducing them to a no-op — the guard has to fail when its subject vanishes.
     """
     payload = yaml.safe_load((REPO_ROOT / workflow_relpath).read_text())
-    job_id = "fence-pack" if workflow_relpath.endswith("/fences.yml") else "self-mod-fence"
+    job_id = (
+        "fence-evaluation"
+        if workflow_relpath.endswith("/fences.yml")
+        else "self-mod-fence"
+    )
     steps = payload["jobs"][job_id]["steps"]
     for step in steps:
         if str(step.get("name", "")) == step_name:
