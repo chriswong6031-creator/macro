@@ -2161,6 +2161,35 @@ jobs:
     # then against config/synapse.yml — 70 and 69 commits in the trailing 14 days, measured
     # on full history 2026-08-14 after the clone was unshallowed) and both were scheduled
     # fleet-wide reds. Do not re-add a regeneration lane or a committed file.
+    #
+    # CURATED SCOPE (2026-08-14 fleet heal). `scope: exclusive` makes the paths
+    # below REPLACE inference. This job's inferred fallback tier claimed
+    # whole-tree `templates/**` (and docs/research/site) from a subprocess or
+    # traversal inside the engine import closure. Measured after #5587: that
+    # smear was the +1 that pushed templates/index.html from the pinned 128
+    # jobs to 129. The job does not read the landing page; it only
+    # fallback-matched it. The declaration is the owned import closure,
+    # compacted to directory globs. Do not add templates/**.
+    scope: exclusive
+    paths:
+      - "collectors/*"
+      - "config/**"
+      - "engine/**"
+      - "lib/*"
+      - "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md"
+      - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
+      - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/*"
+      - "site/basketdata/**"
+      - "site/factordata/**"
+      - "site/flowleaders/**"
+      - "site/leaderradar/**"
+      - "site/master_brief.json"
+      - "site/neuralwebdata/**"
+      - "site/qledger/**"
+      - "tests/test_check_intelligence_registry.py"
+      - "tests/test_intelligence_registry.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -4815,6 +4844,10 @@ jobs:
       - "scripts/build_themes_heatmap.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      # Import-closure entry: scripts/build_stock_library.py lazy-imports
+      # scripts/check_stretch_oracle_contract.py, so exclusive scope must name
+      # it or this job silently stops running when the checker changes.
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/close_pass_publish.py"
       - "scripts/close_pass_reconcile.py"
       - "scripts/notify.py"
@@ -7353,6 +7386,10 @@ jobs:
       - "scripts/build_vector.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      # Import-closure entry: scripts/build_stock_library.py lazy-imports
+      # scripts/check_stretch_oracle_contract.py, so exclusive scope must name
+      # it or this job silently stops running when the checker changes.
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/check_title_i18n.py"
       # Import-closure entry for tests/test_us_board_grader_honesty.py, wired into this
       # job below.  That suite READS scripts/exit_policy_study.py's source directly to
