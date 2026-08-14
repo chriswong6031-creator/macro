@@ -4558,6 +4558,11 @@ jobs:
           summary = json.loads(
               (Path(os.environ["RUNNER_TEMP"]) / "ci-failure-summary.json").read_text()
           )
+          status = summary.get("status")
+          if status not in {"clear", "failure"}:
+              raise ValueError(f"unsupported CI failure-summary status: {status!r}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open("a", encoding="utf-8") as out:
+              out.write(f"status={status}\n")
           first = summary.get("first_actionable_failure")
           with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
               out.write("## Packed CI outcome\n\n")
@@ -4592,10 +4597,11 @@ jobs:
           PLAN_RESULT: ${{ needs.ci-plan.result }}
           PACK_RESULT: ${{ needs.ci-pack.result }}
           SUMMARY_RESULT: ${{ steps.failure_summary.outcome }}
+          SUMMARY_STATUS: ${{ steps.failure_summary.outputs.status }}
           HAS_WORK: ${{ needs.ci-plan.outputs.has_work }}
           PLAN_REASON: ${{ needs.ci-plan.outputs.reason }}
         run: |
-          echo "plan=$PLAN_RESULT pack=$PACK_RESULT summary=$SUMMARY_RESULT has_work=$HAS_WORK"
+          echo "plan=$PLAN_RESULT pack=$PACK_RESULT summary=$SUMMARY_RESULT summary_status=$SUMMARY_STATUS has_work=$HAS_WORK"
           echo "reason: $PLAN_REASON"
           if [ "$SUMMARY_RESULT" != "success" ]; then
             echo "::error title=ci-gate::CI failure evidence could not be classified ($SUMMARY_RESULT)"
@@ -4603,6 +4609,10 @@ jobs:
           fi
           if [ "$PLAN_RESULT" != "success" ]; then
             echo "::error title=ci-gate::CI planning did not succeed ($PLAN_RESULT)"
+            exit 1
+          fi
+          if [ "$SUMMARY_STATUS" != "clear" ]; then
+            echo "::error title=ci-gate::CI failure evidence is not clear ($SUMMARY_STATUS)"
             exit 1
           fi
           if [ "$HAS_WORK" = "false" ]; then

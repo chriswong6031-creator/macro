@@ -100,7 +100,12 @@ def _gate_script() -> str:
 
 
 def _run_gate(
-    *, plan: str, pack: str, has_work: str, summary: str = "success"
+    *,
+    plan: str,
+    pack: str,
+    has_work: str,
+    summary: str = "success",
+    summary_status: str = "clear",
 ) -> subprocess.CompletedProcess[str]:
     """Execute ci-gate's adjudication script with the `needs` context it would see."""
     return subprocess.run(
@@ -110,6 +115,7 @@ def _run_gate(
             "PLAN_RESULT": plan,
             "PACK_RESULT": pack,
             "SUMMARY_RESULT": summary,
+            "SUMMARY_STATUS": summary_status,
             "HAS_WORK": has_work,
             "PLAN_REASON": "pinned by tests/test_ci_plan_workflow.py",
         },
@@ -516,6 +522,12 @@ def test_ci_gate_assembles_and_publishes_machine_readable_failure_evidence() -> 
     assert download["with"]["merge-multiple"] is True
     assert "ci_collect_pack_evidence.py run" in classify["run"]
     assert "ci_failure_summary.py" in classify["run"]
+    assert 'out.write(f"status={status}\\n")' in classify["run"]
+    adjudicate = next(
+        step for step in job["steps"]
+        if step.get("name") == "adjudicate CI result"
+    )
+    assert adjudicate["env"]["SUMMARY_STATUS"] == "${{ steps.failure_summary.outputs.status }}"
     assert "needs.ci-plan.result == 'success'" in classify["env"]["EXPECTED_MATRIX_JSON"]
     assert '{"include":[]}' in classify["env"]["EXPECTED_MATRIX_JSON"]
     assert publish["uses"].endswith("ea165f8d65b6e75b540449e92b4886f43607fa02")
@@ -529,6 +541,17 @@ def test_ci_gate_fails_when_failure_evidence_cannot_be_classified() -> None:
     )
     assert proc.returncode == 1
     assert "failure evidence could not be classified" in proc.stdout
+
+
+def test_ci_gate_fails_when_classified_failure_evidence_is_not_clear() -> None:
+    proc = _run_gate(
+        plan="success",
+        pack="success",
+        has_work="true",
+        summary_status="failure",
+    )
+    assert proc.returncode == 1
+    assert "failure evidence is not clear" in proc.stdout
 
 
 def test_ci_gate_is_fenced_against_closed_events() -> None:
