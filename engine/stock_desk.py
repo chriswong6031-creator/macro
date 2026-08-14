@@ -420,7 +420,12 @@ def _ledger_path(root) -> Path:
     return d / "theses.jsonl"
 
 
-def _append_ledger(notes: list, asof, root) -> None:
+def _append_ledger(notes: list, asof, root) -> list:
+    """Append this run's leans to the desk ledger. Returns exactly the rows that
+    SURVIVED the id-immutability gate — i.e. the rows actually written this
+    run — so the caller (T9/P3 qledger registration) mirrors THOSE and nothing
+    else into the Universal Scoreboard. Never the full committed ledger: a row
+    already on disk before this call is history, not this run's output."""
     lp = _ledger_path(root)
     now = datetime.now(timezone.utc).isoformat()
     rows = []
@@ -441,6 +446,31 @@ def _append_ledger(notes: list, asof, root) -> None:
     with lp.open("a") as f:
         for row in rows:
             f.write(json.dumps(row, default=str) + "\n")
+    return rows
+
+
+def _register_qledger_claims(written: list, picks: list, root) -> dict | None:
+    """Mirror THIS RUN's leans into the Universal Scoreboard (Eval OS P3).
+
+    FORWARD-ONLY (engine.qledger_desk_adapter.register_prospective): only rows
+    whose graded window has not started yet as of today register; a lean whose
+    state_asof turns out to already be stale is refused and counted, never
+    filed. `written` is exactly this run's `_append_ledger` output — never a
+    re-read of the committed ledger. Never raises; additive like everything
+    else on this desk's build path."""
+    try:
+        from engine import qledger_desk_adapter as _qadapt
+        from engine import qledger_evidence_clock as _qclock
+    except Exception as exc:  # noqa: BLE001
+        log.warning("stock_desk: qledger adapter import failed: %s", exc)
+        return None
+    sector_by_ticker = {}
+    for p in (picks or []):
+        if isinstance(p, dict) and p.get("ticker"):
+            sector_by_ticker[p["ticker"]] = (p.get("identity") or {}).get("sector")
+    return _qadapt.register_prospective(
+        written, family="stock_desk", timestamp_quality="CRAWL_BOUNDED",
+        root=root, sector_of=sector_by_ticker.get, git_sha=_qclock.git_sha(root))
 
 
 # --------------------------------------------------------------------------- #
@@ -696,7 +726,9 @@ def run(persist: bool = True, root=None, force: bool = False, call=None) -> dict
         pub_path.parent.mkdir(parents=True, exist_ok=True)
         pub_path.write_text(json.dumps({"as_of": asof, "by_ticker": by_t,
                                         "disclaimer": out["disclaimer"]}, default=str))
-        _append_ledger(notes, asof, root)
+        written = _append_ledger(notes, asof, root)
+        if written:
+            _register_qledger_claims(written, state["picks"], root)
         score_ledger(root=root)                 # re-score so the new open leans show
     log.info("stock_desk: %d notes (%s)", len(notes), syn.get("degraded") or "ok")
     return out
