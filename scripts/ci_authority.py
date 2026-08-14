@@ -107,9 +107,13 @@ def _event_target(payload: object, expected_repository: str) -> dict[str, object
         raise AuthorityContractError("event must be an object")
     repository = _mapping(event.get("repository"))
     pull = _mapping(event.get("pull_request"))
-    if repository is None or pull is None:
-        raise AuthorityContractError("event requires repository and pull_request")
-    if event.get("action") not in {"opened", "synchronize", "reopened"}:
+    sender = _mapping(event.get("sender"))
+    action = event.get("action")
+    if repository is None or pull is None or sender is None:
+        raise AuthorityContractError(
+            "event requires repository, pull_request, and sender"
+        )
+    if action not in {"opened", "synchronize", "reopened"}:
         raise AuthorityContractError("unsupported pull_request_target action")
     trusted_repository = _repository(expected_repository)
     if trusted_repository is None or repository.get("full_name") != trusted_repository:
@@ -122,14 +126,23 @@ def _event_target(payload: object, expected_repository: str) -> dict[str, object
     head_sha = None if head is None else _sha(head.get("sha"))
     head_repository = None if head_repo is None else _repository(head_repo.get("full_name"))
     author = None if user is None else _safe_login(user.get("login"))
-    if number is None or head_sha is None or head_repository is None or author is None:
+    actor = _safe_login(sender.get("login"))
+    if (
+        number is None
+        or head_sha is None
+        or head_repository is None
+        or author is None
+        or actor is None
+    ):
         raise AuthorityContractError("event PR identity is missing or malformed")
     return {
         "repository": trusted_repository,
         "pull_request_number": number,
+        "event_action": action,
         "head_sha": head_sha,
         "head_repository": head_repository,
         "author": author,
+        "actor": actor,
     }
 
 
@@ -141,6 +154,8 @@ def _base_decision(target: Mapping[str, object]) -> dict[str, object]:
         "changed_file_count": None,
         "authority_hit_count": 0,
         "authority_hits": [],
+        "author_admin_verified": False,
+        "actor_admin_verified": False,
         "admin_verified": False,
         "allowed": False,
         "reason": "unproven",
@@ -236,6 +251,17 @@ def _identity_still_matches(
     )
 
 
+def _permission_proves_admin(response: object, login: str) -> bool:
+    permission = _mapping(response)
+    permission_user = None if permission is None else _mapping(permission.get("user"))
+    return bool(
+        permission is not None
+        and permission.get("permission") == "admin"
+        and permission_user is not None
+        and permission_user.get("login") == login
+    )
+
+
 def _receipt_path(path: str) -> str:
     """Keep the check summary bounded without losing long-path identity."""
     if len(path) <= MAX_RECEIPT_PATH_CHARS:
@@ -307,21 +333,32 @@ def evaluate_pull_request_target(
         return _reject(decision, "fork_cannot_change_ci_authority")
 
     try:
-        permission_response = api.get_collaborator_permission(
+        author_permission = api.get_collaborator_permission(
             repository, str(target["author"])
         )
     except Exception:
-        return _reject(decision, "admin_permission_api_unavailable")
-    permission = _mapping(permission_response)
-    permission_user = None if permission is None else _mapping(permission.get("user"))
-    if (
-        permission is None
-        or permission.get("permission") != "admin"
-        or permission_user is None
-        or permission_user.get("login") != target["author"]
-    ):
+        return _reject(decision, "author_admin_permission_api_unavailable")
+    if not _permission_proves_admin(author_permission, str(target["author"])):
         return _reject(decision, "same_repo_author_is_not_admin")
+    decision["author_admin_verified"] = True
 
+    # PR authorship is stable across synchronize events and therefore cannot
+    # identify who pushed the exact head being evaluated. Bind the signed event
+    # sender and re-check that actor's live repository permission too. Reuse the
+    # author result only when GitHub identifies the same login in both fields.
+    if target["actor"] == target["author"]:
+        actor_permission = author_permission
+    else:
+        try:
+            actor_permission = api.get_collaborator_permission(
+                repository, str(target["actor"])
+            )
+        except Exception:
+            return _reject(decision, "actor_admin_permission_api_unavailable")
+    if not _permission_proves_admin(actor_permission, str(target["actor"])):
+        return _reject(decision, "current_head_actor_is_not_admin")
+
+    decision["actor_admin_verified"] = True
     decision["admin_verified"] = True
     decision["allowed"] = True
     decision["reason"] = "same_repo_admin_authority_change"

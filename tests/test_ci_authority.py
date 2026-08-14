@@ -29,10 +29,17 @@ NEW_HEAD = "b" * 40
 BASE = "c" * 40
 
 
-def _event(*, head_repository: str = REPOSITORY, author: str = "operator") -> dict:
+def _event(
+    *,
+    head_repository: str = REPOSITORY,
+    author: str = "operator",
+    actor: str | None = None,
+) -> dict:
+    sender = author if actor is None else actor
     return {
         "action": "synchronize",
         "repository": {"full_name": REPOSITORY, "default_branch": "main"},
+        "sender": {"login": sender},
         "pull_request": {
             "number": PR_NUMBER,
             "head": {"sha": HEAD, "repo": {"full_name": head_repository}},
@@ -68,6 +75,7 @@ class FakeApi:
         head_repository: str = REPOSITORY,
         author: str = "operator",
         permission: str = "admin",
+        permissions: dict[str, str] | None = None,
         fail: str = "",
     ) -> None:
         self.files = files
@@ -79,6 +87,7 @@ class FakeApi:
         )
         self.author = author
         self.permission = permission
+        self.permissions = permissions or {}
         self.fail = fail
         self.calls: list[tuple[Any, ...]] = []
         self.checks: list[dict[str, object]] = []
@@ -101,7 +110,10 @@ class FakeApi:
         self.calls.append(("permission", repository, login))
         if self.fail == "permission":
             raise RuntimeError("private API response")
-        return {"permission": self.permission, "user": {"login": self.author}}
+        return {
+            "permission": self.permissions.get(login, self.permission),
+            "user": {"login": login},
+        }
 
     def create_check(self, repository: str, payload: dict[str, object]) -> object:
         self.calls.append(("check", repository))
@@ -194,9 +206,53 @@ def test_same_repo_admin_authority_change_passes() -> None:
 
     assert code == 0
     assert decision["reason"] == "same_repo_admin_authority_change"
+    assert decision["author_admin_verified"] is True
+    assert decision["actor_admin_verified"] is True
     assert decision["admin_verified"] is True
     assert check["conclusion"] == "success"
     assert check["details_url"] == "https://github.com/o/r/actions/runs/9"
+
+
+def test_admin_authored_pr_with_non_admin_synchronize_sender_is_rejected() -> None:
+    api = FakeApi(
+        [_file("scripts/run_ci_pack.py")],
+        author="operator",
+        permissions={"operator": "admin", "collaborator": "write"},
+    )
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(author="operator", actor="collaborator"), REPOSITORY, api
+    )
+
+    assert code == 1
+    assert decision["author"] == "operator"
+    assert decision["actor"] == "collaborator"
+    assert decision["author_admin_verified"] is True
+    assert decision["actor_admin_verified"] is False
+    assert decision["admin_verified"] is False
+    assert decision["reason"] == "current_head_actor_is_not_admin"
+    assert check["conclusion"] == "failure"
+    assert [call for call in api.calls if call[0] == "permission"] == [
+        ("permission", REPOSITORY, "operator"),
+        ("permission", REPOSITORY, "collaborator"),
+    ]
+
+
+def test_admin_authored_pr_with_admin_synchronize_sender_passes() -> None:
+    api = FakeApi(
+        [_file("scripts/run_ci_pack.py")],
+        author="operator",
+        permissions={"operator": "admin", "release-admin": "admin"},
+    )
+    code, decision, check = AUTHORITY.run_pull_request_target(
+        _event(author="operator", actor="release-admin"), REPOSITORY, api
+    )
+
+    assert code == 0
+    assert decision["author_admin_verified"] is True
+    assert decision["actor_admin_verified"] is True
+    assert decision["admin_verified"] is True
+    assert decision["reason"] == "same_repo_admin_authority_change"
+    assert check["conclusion"] == "success"
 
 
 def test_stale_event_head_fails_closed_before_files_or_permission() -> None:
@@ -234,7 +290,7 @@ def test_head_changing_during_file_pagination_fails_closed() -> None:
     [
         ("pull", "current_pull_api_unavailable"),
         ("files", "changed_files_api_unavailable"),
-        ("permission", "admin_permission_api_unavailable"),
+        ("permission", "author_admin_permission_api_unavailable"),
     ],
 )
 def test_read_api_failure_is_red_but_still_gets_a_terminal_check(
