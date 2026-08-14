@@ -204,7 +204,14 @@ PIP_INSTALL_RE = re.compile(
 # was 31 minutes of fetch-depth:0 stampede plus these underweighted heavies
 # sitting together because the 2026-08-11 local Mac weights were stale.
 OBSERVED_COMMAND_SECONDS = {
-    "engine-render-guards": 1036,
+    # The former engine-render-guards serialized 1,170 command-seconds. These
+    # shard weights preserve that measured total; the 1,036-second mega-step was
+    # apportioned by clean-checkout timings of the exact file partitions.
+    "engine-render-risk-guards": 420,
+    "engine-render-claims-guards": 419,
+    "engine-render-forensics-guards": 152,
+    "engine-render-international-guards": 114,
+    "engine-render-prophet-guards": 65,
     "workflow-yaml": 438,
     "market-memory-contract": 416,
     "unrun-government-revenue-grader": 322,

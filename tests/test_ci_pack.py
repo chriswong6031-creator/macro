@@ -56,6 +56,46 @@ def test_all_legacy_jobs_are_disabled_and_packable() -> None:
     assert all(job.definition["if"] == PACK.DISABLED_IF for job in jobs)
 
 
+def test_engine_render_outlier_is_partitioned_without_coverage_loss() -> None:
+    """The 1,036-second mega-step must stay schedulable as measured shards."""
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+    expected = {
+        "engine-render-risk-guards": (420, 72),
+        "engine-render-claims-guards": (419, 7),
+        "engine-render-forensics-guards": (152, 31),
+        "engine-render-international-guards": (114, 36),
+        "engine-render-prophet-guards": (65, 5),
+    }
+    assert "engine-render-guards" not in jobs
+    assert {job_id: jobs[job_id].weight for job_id in expected} == {
+        job_id: receipt[0] for job_id, receipt in expected.items()
+    }
+
+    all_paths: list[str] = []
+    installs: set[str | None] = set()
+    for job_id, (_weight, expected_path_count) in expected.items():
+        job = jobs[job_id]
+        installs.add(PACK.dependency_command(job))
+        command_text = "\n".join(
+            str(step.get("run", "")) for step in job.definition["steps"]
+        )
+        paths = re.findall(
+            r"tests/[A-Za-z0-9_][A-Za-z0-9_./-]*\.py", command_text
+        )
+        assert len(paths) == expected_path_count, job_id
+        assert len(paths) == len(set(paths)), f"duplicate suite in {job_id}"
+        all_paths.extend(paths)
+
+    assert len(all_paths) == 151
+    assert len(all_paths) == len(set(all_paths)), "suite duplicated across shards"
+    assert len(installs) == 1, "split shards must retain one dependency contract"
+
+    packs = PACK.partition_jobs(list(jobs.values()), 12)
+    pack_weights = [sum(job.weight for job in pack) for pack in packs]
+    assert max(job.weight for job in jobs.values()) == 438
+    assert max(pack_weights) <= 608
+
+
 def test_two_packs_are_complete_disjoint_and_balanced() -> None:
     jobs = PACK.load_legacy_jobs(MANIFEST)
     packs = PACK.partition_jobs(jobs, 2)

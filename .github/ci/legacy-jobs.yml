@@ -978,7 +978,7 @@ jobs:
       - name: grading_stats library tests (wilson_ci, fdr_bh, cone_coverage, china regression)
         run: python -m pytest tests/test_grading_stats.py -q
 
-  engine-render-guards:
+  engine-render-risk-guards:
     if: ${{ false }}
     # 2026-07-02 rot sweep: these test files silently broke on main because ci.yml only
     # ran a targeted subset. They cover the template render guards (canada / fear↔euphoria /
@@ -1076,50 +1076,6 @@ jobs:
       # --site-only builder boundary.
       - name: China Policy Watch express-render ownership + data-pristine mode
         run: python -m pytest tests/test_china_policy_watch.py -q
-      # Wired 2026-08-02: Wave 3B-B4D-A adds the three offline seams that turn
-      # pinned SEC source objects into filing packages, Company Facts ledgers,
-      # and deterministic B4 binding plans. Keep these security/provenance
-      # contracts ahead of the broad sweep so an unrelated red guard cannot
-      # leave the new materialization boundary dark.
-      - name: B4D-A offline materialization foundation
-        run: >-
-          python -m pytest
-          tests/test_sec_document_spine.py
-          tests/test_fundamental_forensics_attestation.py
-          tests/test_fundamental_forensics_filing_package_materializer.py
-          tests/test_fundamental_forensics_companyfacts_pinned_loader.py
-          tests/test_fundamental_forensics_attested_history_materializer.py -q
-      - name: read-only attested-history operator foundation
-        run: >-
-          python -m pytest
-          tests/test_fundamental_forensics_attested_history_operator.py -q
-      # Wave 0A: the production receipt API's DEDICATED reader. This suite is the
-      # only proof that the API addresses the dedicated attested-history bucket
-      # rather than the generic Research Vault one, that the read-only store is
-      # structurally excluded from every StrictConditionalWriteStore write gate,
-      # that the renewal lock is not held across the network GET, and that the
-      # VPS delivery workflow carries the read-only half and never a seed writer.
-      # It is named explicitly and placed ahead of the broad sweep for the same
-      # reason as the boundaries above: an unrelated red guard must not be able
-      # to leave the serving boundary unexecuted. deploy-api-secrets.yml's own
-      # comment cites this suite as the protection on its credential contract,
-      # so that citation must stay true.
-      - name: Wave 0A dedicated attested-history serving boundary
-        run: >-
-          python -m pytest
-          tests/test_fundamental_forensics_attested_history_api_store.py -q
-      # B4F is deliberately run before the large render-contract sweep. The
-      # initial issuer seed is allowed to construct only a governed base and
-      # a redacted review-only receipt; these tests pin the no-network selection,
-      # one-shot credential boundary, storage-control probe, and isolated
-      # dimensions-unknown evidence bridge. An unrelated render guard must not
-      # be able to leave this immutable-publication boundary unexecuted.
-      - name: B4F controlled AAPL pilot and seed safety contracts
-        run: >-
-          python -m pytest
-          tests/test_fundamental_forensics_attested_history_pilot.py
-          tests/test_fundamental_forensics_attested_history_seed.py
-          tests/test_fundamental_forensics_attested_occurrence_governance.py -q
       # NEVER put a `#` comment inside the folded `run: >` scalar below. YAML folds it
       # onto ONE shell line, where `#` starts a SHELL comment — everything after it,
       # including every remaining test path and the trailing `-q`, silently vanishes
@@ -1127,24 +1083,10 @@ jobs:
       # suites (caught 2026-08-07: a 5-line note added mid-list dropped 24 suites plus
       # the two being added). Annotate the list here, above `- name:`, where YAML
       # comments are real comments.
-      #
-      # Includes the china delayed-board disclosure + the A-share session calendar
-      # behind it: the disclosure suite renders the real china.html.j2 end to end
-      # (jinja2) and imports build_china_library (pandas/pyarrow), and it is the only
-      # guard tying the template's English wording to the regex
-      # scripts/freshness_sentinel.py parses.
-      #
-      # Also the two Act-Now hover-card icon suites (doctrine §5.8, emoji are not UI
-      # icons). test_intl_act_now_board_icons.py renders the China partial, canada.html.j2
-      # and hk.html.j2 through the harnesses already in this step
-      # (test_china_stocks_w1c_render, test_canada_build) plus test_hk_board_ui, so this
-      # is its natural home. test_act_now_board_icons.py — the US original it is modelled
-      # on — was referenced NOWHERE under .github/ and had never been run by CI; it is
-      # wired here in the same edit, since there is no tests/-wide sweep in this repo.
       # The Stock Connect leaderboard shape/render contract also lives here: it imports
       # scripts/build_china.py and renders the real China template, using the pandas /
       # pyarrow / jinja2 dependency set this job already owns.
-      - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
+      - name: risk, board, and signal render contracts
         run: >
           python -m pytest
           tests/test_canada_build.py tests/test_commodity_signals.py
@@ -1197,7 +1139,42 @@ jobs:
           tests/test_statement_tape.py
           tests/test_backfill_options_flow.py
           tests/test_rlt_sector_stance_enrich.py
-          tests/test_stock_personality_w4_surfaces.py
+          tests/test_stock_personality_w4_surfaces.py -q
+
+  engine-render-forensics-guards:
+    if: ${{ false }}
+    # The SEC/attested-history stack is an independent pytest boundary. Keeping it
+    # separate prevents a render assertion from hiding the receipt/store contracts
+    # and lets the pack planner schedule this measured shard independently.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
+      - name: B4D-A offline materialization foundation
+        run: >-
+          python -m pytest
+          tests/test_sec_document_spine.py
+          tests/test_fundamental_forensics_attestation.py
+          tests/test_fundamental_forensics_filing_package_materializer.py
+          tests/test_fundamental_forensics_companyfacts_pinned_loader.py
+          tests/test_fundamental_forensics_attested_history_materializer.py -q
+      - name: read-only attested-history operator foundation
+        run: python -m pytest tests/test_fundamental_forensics_attested_history_operator.py -q
+      - name: Wave 0A dedicated attested-history serving boundary
+        run: python -m pytest tests/test_fundamental_forensics_attested_history_api_store.py -q
+      - name: B4F controlled AAPL pilot and seed safety contracts
+        run: >-
+          python -m pytest
+          tests/test_fundamental_forensics_attested_history_pilot.py
+          tests/test_fundamental_forensics_attested_history_seed.py
+          tests/test_fundamental_forensics_attested_occurrence_governance.py -q
+      - name: filing, ledger, query, API, and collector contracts
+        run: >
+          python -m pytest
           tests/test_fundamental_forensics_page.py
           tests/test_fundamental_forensics_private_state.py
           tests/test_fundamental_forensics_ui.py
@@ -1205,7 +1182,6 @@ jobs:
           tests/test_fundamental_forensics_disclosure_diff.py
           tests/test_fundamental_forensics_disclosure_projection.py
           tests/test_fundamental_forensics_source_sync.py
-          tests/test_fundamental_forensics_attestation.py
           tests/test_fundamental_forensics_wave2_operator.py
           tests/test_fundamental_forensics_companyfacts.py
           tests/test_fundamental_forensics_companyfacts_ledger.py
@@ -1216,11 +1192,26 @@ jobs:
           tests/test_fundamental_forensics_query_snapshots.py
           tests/test_fundamental_forensics_attested_query_snapshots.py
           tests/test_fundamental_forensics_attested_history_reader.py
-          tests/test_sec_document_spine.py
           tests/test_fundamental_forensics_filing_package.py
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
-          tests/test_context_api.py
+          tests/test_context_api.py -q
+
+  engine-render-international-guards:
+    if: ${{ false }}
+    # International render/library and final engine-regression contracts are
+    # file-isolated from the risk and forensics shards.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
+      - name: international render, library, and engine regression contracts
+        run: >
+          python -m pytest
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
@@ -1248,13 +1239,6 @@ jobs:
           tests/test_intl_library_limited.py
           tests/test_library_chg_1d.py
           tests/test_stock_technicals.py
-          tests/test_aibrief_page.py
-          tests/test_aibrief_w4_panels.py
-          tests/test_validated_claims_thirdparty.py
-          tests/test_validated_claims_engine.py
-          tests/test_validated_claims_surfaces.py
-          tests/test_validated_claims_registry_source.py
-          tests/test_validated_claims_structural_scope.py
           tests/test_intl_recovery_quality.py
           tests/test_sa_w5_v2_grader_hook.py
           tests/test_w8b_macro_prior_entries.py
@@ -1264,30 +1248,45 @@ jobs:
           tests/test_opex_risk.py
           tests/test_seo_meta_rollout.py
           tests/test_cycles_anchor_invariance.py -q
-      # house-law registry census (post-#2297 fix): run the statement-tape schema
-      # guard itself against the committed registry, not just its pytest coverage.
+
+  engine-render-claims-guards:
+    if: ${{ false }}
+    # The live-tree claim scanners account for roughly two thirds of the former
+    # international tail and scan disjoint surfaces, so they are a dedicated shard.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
+      - name: AI brief and validated-claim render contracts
+        run: >
+          python -m pytest
+          tests/test_aibrief_page.py
+          tests/test_aibrief_w4_panels.py
+          tests/test_validated_claims_thirdparty.py
+          tests/test_validated_claims_engine.py
+          tests/test_validated_claims_surfaces.py
+          tests/test_validated_claims_registry_source.py
+          tests/test_validated_claims_structural_scope.py -q
+
+  engine-render-prophet-guards:
+    if: ${{ false }}
+    # Prophet Live and statement-tape are already separate commands with no
+    # state handoff from the render sweep; a distinct job preserves both gates
+    # after any sibling shard fails.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly pillow requests beautifulsoup4 fastapi httpx jsonschema boto3
       - name: statement-tape schema guard (FL-E / FC-R9)
         run: python -m scripts.check_statement_tape
-      # PROPHET LIVE P0 gates. This job, not a new one: the parity suite drives the
-      # REAL engine.signal_gate over seeded close series, so it needs pandas + numpy
-      # (present in this job's install line above) and pyarrow for the reconciler's
-      # parquet round-trip. Any importorskip here would be a disarmed test — the deps
-      # are provably installed, so there is none.
-      #   G0.1 parity  tests/test_prophet_live_pack.py       (~25s, real gate calls)
-      #   G0.2/3/5/6   tests/test_prophet_live_evaluator.py
-      #   ledger law   tests/test_prophet_live_reconcile.py
-      #   VPS lane     tests/test_prophet_live_vps_lane.py — quote source, the atomic
-      #                served write, the serving gate (/live/prophet_live.json is NOT
-      #                public), the systemd unit/timer, macro-update's reconciliation
-      #                and the workflow's self-disabling backstop gate (§4.2a/§4.4a).
-      #                Stdlib + pyyaml only, so it rides in this job rather than
-      #                needing one of its own.
-      #   one basis    tests/test_prophet_live_basis.py — W-L0 gate 3, the CROSS-MODULE
-      #                half: the adjustment vocabulary against engine.price_ladder's,
-      #                the pack's own basis stamp, and the per-pass pack-vs-feed audit.
-      #                The lane behaviour it feeds is pinned in the evaluator and
-      #                reconciler files above. LISTED HERE ON PURPOSE — this job
-      #                enumerates its files, so an unlisted new suite never runs.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
         run: >
           python -m pytest
