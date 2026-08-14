@@ -6,8 +6,13 @@
 # LADDER STATES (§3):
 #   DISPLAY    — rendered, salience-eligible, NO arithmetic on traded pages
 #   SHADOW     — computed + claim-registered + graded nightly; never rendered as conviction
-#   CONFIRMER  — passed §3 gate: n_dates>=25, wilson_ci_low>0 vs matched control,
-#                incremental info over price+VIX, block-bootstrap stable
+#   CONFIRMER  — passed §3 gate on the family's own EVIDENCE BASIS, dispatched by
+#                its control policy (matched control where required — with control
+#                coverage — benchmark-relative otherwise; the governed table is
+#                engine/qledger.FAMILY_CONTROL_POLICY, the contract is
+#                research/PREREG_P0D_MATCHED_CONTROL_CONTRACT.md):
+#                n_dates>=25, wilson_ci_low>0.5, incremental info over price+VIX,
+#                block-bootstrap stable
 #   SCORED     — composite-level re-validation + 63d OOS accrual
 #
 # AUTO-DEMOTION: rolling-window CI falls below zero → back one rung, pinned with

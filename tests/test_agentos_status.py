@@ -425,7 +425,25 @@ def test_unblocked_ranks_active_p0_above_a_bigger_unblock_count(
     assert result.returncode == 0, result.stdout
     ordering = _state(out)["unblocked"]
     assert ordering, "the P0 wave should now be unblocked"
-    assert ordering[0]["workstream"] == "PROPHET-US-ENTRY-TIMING", ordering
+    # Same-P0 siblings may lead Prophet by unblock-count (STOCK-IDENTITY W2
+    # unblocks W3 once W1 shipped in #5612; LIVE-ENTRY-RADAR W2 unblocks the
+    # W3–W9 chain once #5625 marked W0 done). The pin is the active-P0 prefix,
+    # not a single first name — do not demote Prophet; do not drop the pin.
+    PINNED_ACTIVE_P0 = frozenset({
+        "PROPHET-US-ENTRY-TIMING",
+        "STOCK-IDENTITY",
+        "LIVE-ENTRY-RADAR",
+    })
+    p0_prefix = []
+    for item in ordering:
+        if not item["p0_active"]:
+            break
+        p0_prefix.append(item["workstream"])
+    assert p0_prefix, ordering
+    assert set(p0_prefix) <= PINNED_ACTIVE_P0, ordering
+    assert "PROPHET-US-ENTRY-TIMING" in p0_prefix, ordering
+    assert "STOCK-IDENTITY" in p0_prefix, ordering
+    assert "LIVE-ENTRY-RADAR" in p0_prefix, ordering
     assert ordering[0]["p0_active"] is True
 
 

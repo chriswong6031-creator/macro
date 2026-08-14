@@ -49,5 +49,23 @@
 # W1b ships the scaffold with zero rows: every node is epoch 1. That is a statement
 # about ratifications, not about the world — reused tickers exist; none has been
 # ratified as a graph identity break yet.
+#
+# 2026-08-14: the first two ratified rows (ABX, GOLD — both retired Barrick symbols
+# reused in Dec 2025) land ahead of any epoch-2 node: the enforcement direction is
+# node => row, so a ratified break may exist before a builder ever mints the epoch.
 
-breaks: []
+breaks:
+  - symbol: "ABX"
+    market: us
+    break_date: "2025-12-30"
+    prior_node_retired_as: "co:us:ABX"
+    new_epoch: 2
+    evidence: "NASDAQ ABL->NYSE ABX transfer effective 2025-12-30: Abacus Global Management (fka Abacus Life; born East Resources Acquisition SPAC 2020) — EDGAR CIK 1814287; FIGI BBG00VY1KB95; NASDAQ dir 'Abacus Global Management, Inc. Class A'. Prior holder of NYSE 'ABX': Barrick Gold, era ended 2019-01-02 (ABX->GOLD at the Randgold merger). Store receipt: data/baskets/ohlcv/ABX.parquet holds Abacus's full history only (2020-09-14->, SPAC trust era flat ~$9.5 through 2022, zero Barrick rows). TSX 'ABX' is still Barrick and is NOT covered by this row (market: us). Identity audit + reused_ticker_acks: PR #5613, 2026-08-14."
+    ratified_by: "operator-delegated curation session 2026-08-14 (gold_miners wrong-issuer roster repair; ack receipts in PR #5613)"
+  - symbol: "GOLD"
+    market: us
+    break_date: "2025-12-02"
+    prior_node_retired_as: "co:us:GOLD"
+    new_epoch: 2
+    evidence: "NASDAQ AMRK->NYSE GOLD transfer effective 2025-12-02: Gold.com, Inc. (fka A-Mark Precious Metals) — EDGAR CIK 1591588; FIGI BBG005ZVDK48 (A-Mark's original composite FIGI, entity continuity); NASDAQ dir 'Gold.com, Inc. Common Stock'. Prior holders of the symbol: Barrick, NYSE 'GOLD' 2019-01-02 -> 2025-05-08 (renamed Barrick Mining, NYSE 'B' since 2025-05-09, EDGAR CIK 756894); Randgold Resources on NASDAQ before the 2019-01-01 Barrick merger. Store receipt: data/baskets/ohlcv/GOLD.parquet born 2026-06-30 already holding A-Mark/Gold.com's full 2014-03-17-> history — never Barrick. Identity audit + reused_ticker_acks: PR #5613; gold_miners roster repaired (GOLD removed / B added) in the same PR as this row, 2026-08-14."
+    ratified_by: "operator-delegated curation session 2026-08-14 (gold_miners wrong-issuer roster repair; ack receipts in PR #5613)"

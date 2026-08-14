@@ -97,13 +97,20 @@ overrides: []
 
 verdict: REVISE
 conditions:
-  - "Blockers above (PRC-201/202/203/207) resolved by change; receipts re-run against the new frozen SHA."
-  - "Reviewer B's four conditions, of which the first is not waivable (its own operator-note evidence): restore the Featured aura + --pv-buy pin per the recorded operator correction (VTC-204); stance palette values distinct from the direction tokens so a Buy card at a down tape is not two direction inks (VTC-202); fix the light card/canvas inversion with the existing --panel token (VTC-203); one opportunity above the fold at 390w — collapsed mobile ladder or reordering (VTC-206)."
-  - "Card links to the name's detail surface or the hover affordance is removed (PRC-209); the overflow table carries the board's own sort key and stance, and drops the banned Entry/Void/T1 levels or the card-tier ban is re-adjudicated (PRC-211/212)."
-  - "Freshness truth: the as-of stamp reflects the oldest feeding vintage or per-source stamps return; the degraded/behind state has a slot; the card date names its referent (PRC-205). Priority/Featured carry their printed nulls and selection rule (PRC-206)."
-  - "Fix the double-declared enrichment variable and the G-D on-screen arithmetic (PRC-215); reconcile the anon gate copy with what the paid card actually carries (PRC-214); restore a quantitative proof strip or disposition board.track_record_strip explicitly (PRC-213); resolve the Wait-beside-Entered gloss collision with one vocabulary rule on-card (PRC-208); 390w Resolved partition (PRC-216) and the remaining B minors as polish."
-  - "The three critical WORSE tasks in the proposal ledger (risk_before_acting, open_name_detail, staleness_awareness) and the caution_popover disposition gap close with the above."
-  - "Resubmission is a new frozen SHA + fresh critic receipts under a new artifact set or an appended cycle with re-frozen receipts; approval only then."
+  - id: COND-R2-01
+    text: "Blockers above (PRC-201/202/203/207) resolved by change; receipts re-run against the new frozen SHA."
+  - id: COND-R2-02
+    text: "Reviewer B's four conditions, of which the first is not waivable (its own operator-note evidence): restore the Featured aura + --pv-buy pin per the recorded operator correction (VTC-204); stance palette values distinct from the direction tokens so a Buy card at a down tape is not two direction inks (VTC-202); fix the light card/canvas inversion with the existing --panel token (VTC-203); one opportunity above the fold at 390w — collapsed mobile ladder or reordering (VTC-206)."
+  - id: COND-R2-03
+    text: "Card links to the name's detail surface or the hover affordance is removed (PRC-209); the overflow table carries the board's own sort key and stance, and drops the banned Entry/Void/T1 levels or the card-tier ban is re-adjudicated (PRC-211/212)."
+  - id: COND-R2-04
+    text: "Freshness truth: the as-of stamp reflects the oldest feeding vintage or per-source stamps return; the degraded/behind state has a slot; the card date names its referent (PRC-205). Priority/Featured carry their printed nulls and selection rule (PRC-206)."
+  - id: COND-R2-05
+    text: "Fix the double-declared enrichment variable and the G-D on-screen arithmetic (PRC-215); reconcile the anon gate copy with what the paid card actually carries (PRC-214); restore a quantitative proof strip or disposition board.track_record_strip explicitly (PRC-213); resolve the Wait-beside-Entered gloss collision with one vocabulary rule on-card (PRC-208); 390w Resolved partition (PRC-216) and the remaining B minors as polish."
+  - id: COND-R2-06
+    text: "The three critical WORSE tasks in the proposal ledger (risk_before_acting, open_name_detail, staleness_awareness) and the caution_popover disposition gap close with the above."
+  - id: COND-R2-07
+    text: "Resubmission is a new frozen SHA + fresh critic receipts under a new artifact set or an appended cycle with re-frozen receipts; approval only then."
 preserved_strengths:
   - "the full card restoration — chart hero, live quote/change, stance chip with ruled producer, Priority with honest gloss, zone abstraction, restrained sourced marks (the founding cycle's conditions, implemented)"
   - "plan-book Setups with Candidates as a second population; seven-cell ruled lifecycle; ladder-as-filter; Resolved outside the live count on desktop"

@@ -2857,6 +2857,8 @@ artifacts:
       - board_ordering
       - top_setups
     consumers:
+      - engine/entry_radar/producers/__init__.py
+      - engine/entry_radar/producers/boards.py
       - engine/intelligence.py
       - engine/risk_brain.py
       - engine/signal_sanity.py
@@ -15089,6 +15091,8 @@ artifacts:
     weights: none
     scored_path_surfaces: []
     consumers:
+      - engine/entry_radar/producers/__init__.py
+      - engine/entry_radar/producers/live_flow.py
       - templates/intraday_flow.html.j2
     external_consumers: []
     notes: >

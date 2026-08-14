@@ -1,1 +1,1 @@
-{"status":"ok","violations":[],"collector_checked":"2026-08-13","latest_filing_date":"2026-08-13","expected_period":"2026-06-30","canonical_period":"2026-03-31","filed_count":7,"active_count":50,"receipt_count":3340,"generated_at":"2026-08-14T09:19:08.243723+00:00"}
+{"status":"warning","violations":["deadline passed with 43 unresolved funds"],"collector_checked":"2026-08-13","latest_filing_date":"2026-08-13","expected_period":"2026-06-30","canonical_period":"2026-03-31","filed_count":7,"active_count":50,"receipt_count":3340,"generated_at":"2026-08-14T18:10:19.454233+00:00"}

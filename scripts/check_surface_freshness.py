@@ -117,9 +117,114 @@ def _escalate(stale: list[tuple[str, str]], worst: int, expected: str) -> None:
         log.warning("surface-freshness escalation failed (%s) — annotations still stand", e)
 
 
+#: Sessions the US Context Vector store may trail the board's own as_of before it
+#: alarms. The comparison is DIFFERENTIAL on purpose — candidates vs the board the
+#: same bake writes, not vs the calendar — so it fires precisely on the
+#: silent-sibling shape: boards advancing nightly while append_candidates returns
+#: 0 into a log line nobody reads (P0 2026-08-14: four sessions dark while
+#: snapshots.jsonl advanced every night). A whole-nightly outage keeps board and
+#: candidates stale TOGETHER; that incident belongs to the board's own sentinels
+#: above, not this one.
+CANDIDATES_TRAIL_SESSIONS = 2
+
+
+def check_candidates_freshness(root: Path, now: datetime | None = None) -> int | None:
+    """US Context Vector store freshness vs the board ledger. Returns the gap in
+    sessions (None = not measurable in this checkout). Warn-only, never raises.
+
+    MISSING parts while the board exists count as maximally behind — a store
+    that is not there stamped nothing.
+    """
+    del now  # differential check — wall clock does not enter the comparison
+    board_path = root / "data" / "us_board_ledger" / "snapshots.jsonl"
+    store = root / "data" / "us_prophet_rank" / "candidates"
+    if not board_path.exists():
+        return None   # thin/sparse checkout, or no board yet — nothing to compare
+    board_as_of: date | None = None
+    try:
+        for line in board_path.read_text(encoding="utf-8").splitlines()[::-1]:
+            line = line.strip()
+            if not line:
+                continue
+            val = json.loads(line).get("as_of")
+            if val:
+                board_as_of = date.fromisoformat(str(val))
+                break
+    except Exception as e:  # noqa: BLE001 — an unreadable ledger is another sentinel's subject
+        log.debug("candidates freshness: board ledger unreadable (%s)", e)
+    if board_as_of is None:
+        return None
+
+    newest: date | None = None
+    parts = sorted(store.glob("*.parquet")) if store.is_dir() else []
+    if parts:
+        try:
+            import pandas as pd
+        except Exception:  # noqa: BLE001 — minimal-deps lane
+            return None
+        for part in parts[-2:]:   # stamps are appended to the newest monthly parts
+            try:
+                stamps = pd.read_parquet(part, columns=["stamp_date"])["stamp_date"].dropna()
+            except Exception as e:  # noqa: BLE001
+                log.debug("candidates freshness: %s unreadable (%s)", part.name, e)
+                continue
+            for value in stamps.unique():
+                try:
+                    d = date.fromisoformat(str(value))
+                except ValueError:
+                    continue
+                if newest is None or d > newest:
+                    newest = d
+
+    if newest is None:
+        gap = 99   # board exists, store has no readable stamp at all
+        actual = "MISSING"
+    elif newest >= board_as_of:
+        return 0
+    else:
+        from datetime import timedelta
+        gap = len(nyse_calendar.sessions_between(newest + timedelta(days=1), board_as_of))
+        actual = str(newest)
+    if gap > CANDIDATES_TRAIL_SESSIONS:
+        print("::warning title=us-context-vector-stale::US Context Vector store "
+              f"newest stamp_date={actual} trails board as_of={board_as_of} by "
+              f"{gap} session(s) — boards are advancing while append_candidates "
+              "stamps nothing (silent-sibling shape); read the engine job's "
+              "us-context-vector-quiet annotations for the per-night reason",
+              flush=True)
+        log.warning("US Context Vector store stale: newest=%s board=%s gap=%d",
+                    actual, board_as_of, gap)
+        try:
+            from engine.alert_triage import push_ops_alert
+
+            push_ops_alert(
+                source="surface_freshness",
+                type_="us_context_vector_stale",
+                message=(
+                    f"US Context Vector candidates store newest stamp_date={actual} "
+                    f"trails board as_of={board_as_of} by {gap} sessions. The board "
+                    "is advancing while the PIT context store stamps nothing — "
+                    "check the engine job's us-context-vector-quiet annotations."
+                ),
+                severity="major",
+                lane="us_context_vector_freshness",
+                window_hours=20,
+            )
+        except Exception as e:  # noqa: BLE001 — a sentinel must never break the render
+            log.warning("candidates-freshness escalation failed (%s) — annotation stands", e)
+    else:
+        log.info("US Context Vector store: newest=%s board=%s gap=%d (<= %d) — ok",
+                 actual, board_as_of, gap, CANDIDATES_TRAIL_SESSIONS)
+    return gap
+
+
 def run(now: datetime | None = None, root: Path | None = None) -> int:
     """Check all artifacts; print ::warning:: for each stale one.  Always exits 0."""
     root = root or config.ROOT
+    try:
+        check_candidates_freshness(root, now)
+    except Exception as e:  # noqa: BLE001 — the sentinel never breaks the render
+        log.warning("candidates freshness check failed (%s)", e)
     expected_date = nyse_calendar.expected_last_session(now)
     expected = str(expected_date)
     stale: list[tuple[str, str]] = []

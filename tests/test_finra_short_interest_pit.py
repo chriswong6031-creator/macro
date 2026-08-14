@@ -205,6 +205,38 @@ class TestCaptureDate:
         assert result.iloc[0]["days_to_cover"] == pytest.approx(3.0)
 
 
+class TestAccrualWiredInsideFetch:
+    """_accrue() above is a COPY of the production block, so every test that uses
+    it stays green even if the block is deleted from fetch_short_interest().  This
+    one calls the real collector with its network seams stubbed, so it fails the
+    moment the accrual stops living inside the production path."""
+
+    def test_fetch_writes_both_snapshot_and_history(self, tmp_path, monkeypatch):
+        import collectors.finra as finra
+
+        data_root = tmp_path / "data"
+        # config.data_dir is resolved through the module object at call time.
+        monkeypatch.setattr("lib.config.data_dir", lambda: data_root)
+        # Every network-touching seam is replaced: no HTTP is reachable from here.
+        monkeypatch.setattr("collectors.finra._latest_settlement", lambda: "2026-07-31")
+        monkeypatch.setattr("collectors.finra._snapshot",
+                            lambda s: _make_snap(["AAPL"], s))
+        # Empty universe skips the closes-cache filter (those files do not exist here).
+        monkeypatch.setattr("collectors.finra._universe_tickers", lambda: set())
+
+        finra.fetch_short_interest(force=True)
+
+        snap_p = data_root / "finra" / "short_interest.parquet"
+        hist_p = data_root / "finra" / "short_interest_history.parquet"
+        assert snap_p.exists()
+        assert hist_p.exists()
+
+        hist = pd.read_parquet(hist_p)
+        row = hist[(hist["ticker"] == "AAPL") & (hist["settlement_date"] == "2026-07-31")]
+        assert len(row) == 1
+        assert pd.notna(row.iloc[0]["capture_date"])
+
+
 class TestEmptySnapshotHandling:
     """The accrual block is only reached with non-empty snaps (fetch_short_interest
     returns early on empty snapshots).  Verify no crash on degenerate inputs."""

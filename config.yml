@@ -1394,7 +1394,16 @@ finra:
 # panel on the factors page (latest COMPLETED quarter — the bulk set is published
 # quarterly, so it is a slow conviction read, not real-time). Fetched from build_factors.
 sec_insider:
-  zip_url: https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{q}_form345.zip
+  # SEC moved NEW quarterly sets to /files/datastandardsinnovation/ starting with
+  # 2026q2 (published 2026-07-09; the DERA -> Office of Data Standards Innovation
+  # reorg). Neither home redirects to the other — old quarters serve ONLY from
+  # /files/structureddata/ and 2026q2+ ONLY from the new path — so the collector
+  # probes zip_url first, then each zip_url_fallbacks entry, and treats a quarter
+  # as unpublished only when EVERY home 404s. The old single-URL read swallowed
+  # the 404 as "not published" and froze the panel at 2026q1 for five weeks.
+  zip_url: https://www.sec.gov/files/datastandardsinnovation/data/insider-transactions-data-sets/{q}_form345.zip
+  zip_url_fallbacks:
+    - https://www.sec.gov/files/structureddata/data/insider-transactions-data-sets/{q}_form345.zip
   # SEC's WAF 403s any User-Agent containing 'github.com' (scraper heuristic) and
   # rejects non-contactable addresses, so the committed default is an example.com
   # placeholder that passes. SEC fair-access asks for a REAL contact — set
@@ -2406,7 +2415,7 @@ stock_search:
     - TAL    # TAL Education
     - WB     # Weibo
     - BZ     # Kanzhun (BOSS Zhipin)
-    - QFIN   # Qifu Technology
+    - QFIN   # Qfin Holdings (fka Qifu Technology; same registrant, EDGAR CIK 1741530)
     - GDS    # GDS Holdings
     - CPNG   # Coupang
     # More recent IPOs / off-index growth
@@ -2849,7 +2858,7 @@ stock_search:
     # Gold Miners detail sleeve — explicit so every holding has a stock profile.
     - NEM    # Newmont
     - AEM    # Agnico Eagle
-    - GOLD   # Barrick Mining
+    - B      # Barrick Mining (NYSE 'B' since 2025-05-09; 'GOLD' now belongs to Gold.com, fka A-Mark — identity repair 2026-08-14, PR #5613 receipts)
     - KGC    # Kinross Gold
     - AU     # AngloGold Ashanti
     - GFI    # Gold Fields
@@ -2928,7 +2937,7 @@ stock_search:
     NBIS: {name: "Nebius Group", sector: "Information Technology"}
     NEM:  {name: "Newmont", sector: "Materials"}
     AEM:  {name: "Agnico Eagle Mines", sector: "Materials"}
-    GOLD: {name: "Barrick Mining", sector: "Materials"}
+    B:    {name: "Barrick Mining", sector: "Materials"}
     KGC:  {name: "Kinross Gold", sector: "Materials"}
     AU:   {name: "AngloGold Ashanti", sector: "Materials"}
     GFI:  {name: "Gold Fields", sector: "Materials"}
@@ -2961,7 +2970,7 @@ stock_search:
     TAL:  {name: "TAL Education (ADR)", sector: "Consumer Discretionary"}
     WB:   {name: "Weibo (ADR)", sector: "Communication Services"}
     BZ:   {name: "Kanzhun / BOSS Zhipin (ADR)", sector: "Communication Services"}
-    QFIN: {name: "Qifu Technology (ADR)", sector: "Financials"}
+    QFIN: {name: "Qfin Holdings (ADR)", sector: "Financials"}
     GDS:  {name: "GDS Holdings (ADR)", sector: "Information Technology"}
     CPNG: {name: "Coupang", sector: "Consumer Discretionary"}
     HOOD: {name: "Robinhood Markets", sector: "Financials"}
@@ -3846,6 +3855,8 @@ quality:
     RPT: "Rithm Property Trust took RPT in 2024 after RPT Realty merged into Kimco 2024-01 — store rows spanning the corpse era are Rithm's spliced tape (overlap corr ~0.22)."
     FI: "Membership key FI = Fiserv, deliberately fetched via the FISV vendor alias (lib/ticker_aliases; Fiserv left NYSE 'FI' ~2025-11, NASDAQ lists FISV). The registry's FI rows are foreign tape — registry-side contamination, not a store defect."
     AHRT: "Same instrument as its registry rows on the 16-day overlap (ret corr 1.00, constant 0.954 adjustment ratio; overlap just under the 20-row receipt bar) — registry-side contamination (live 'AH Realty Trust' tape under a dead-name resolution), not a store zombie."
+    ABX: "Abacus Global Management (NASDAQ dir 'Abacus Global Management, Inc. Class A'; EDGAR CIK 1814287; FIGI BBG00VY1KB95) under its 2025-12-30 NASDAQ ABL->NYSE ABX transfer (fka Abacus Life; born East Resources Acquisition SPAC 2020) — store holds Abacus's full history (2020-09-14->, SPAC trust era flat ~$9.5 through 2022), zero Barrick rows. Prior holder Barrick Gold left NYSE 'ABX' 2019-01-02 (ABX->GOLD after the Randgold merger), so any pre-2019 'ABX' reference joins Abacus tape; TSX 'ABX' is STILL Barrick — the canada lane's ABX.TO fetch is correct as-is."
+    GOLD: "Gold.com, Inc. (NASDAQ dir 'Gold.com, Inc. Common Stock'; EDGAR CIK 1591588; FIGI BBG005ZVDK48; fka A-Mark Precious Metals) under its 2025-12-02 NASDAQ AMRK->NYSE GOLD transfer — store holds A-Mark/Gold.com's full history (2014-03-17->, its spinoff listing) and NEVER held Barrick: the file was born 2026-06-30, after the reuse. Prior symbol holders: Barrick (NYSE GOLD 2019-01-02 -> 2025-05-08; renamed Barrick Mining, NYSE 'B' since 2025-05-09); Randgold Resources (NASDAQ GOLD until the 2019-01-01 Barrick merger). CONSUMER DEFECT REPAIRED (PR #5632): gold_miners removes the Barrick-labelled GOLD row entirely, carries Barrick Mining (EDGAR CIK 756894) under NYSE 'B', and seeds curated data/baskets/ohlcv/B.parquet. GOLD remains a valid Gold.com instrument; this was a consumer-label repair, not a store quarantine."
   delisted_printing_acks:
     - RHHBY                      # OTC ADR (Roche) — never in the NASDAQ/NYSE listing directory by design
   # --- ticker key migrations (engine/ledger_identity) ---

@@ -405,6 +405,42 @@ def test_guidance_score_sign_and_magnitude():
     assert tf._guidance_score("其他", 10, 20) is None         # unmapped/neutral type
 
 
+def test_report_rc_accrues_across_windows(monkeypatch, tmp_path):
+    """report_rc history is the point (module docstring): a later trailing-30d fetch must APPEND
+    to the store, not overwrite it — rows collected by earlier runs survive, and a re-fetched
+    report keeps its first-seen row. REGRESSION: a bare rc.to_parquet(OUT_RC) fails this."""
+    from collectors import tushare_forecast as tf
+    monkeypatch.setattr(tf, "OUT", tmp_path / "forecast.parquet")
+    monkeypatch.setattr(tf, "OUT_HIST", tmp_path / "forecast_hist.parquet")
+    monkeypatch.setattr(tf, "OUT_RC", tmp_path / "report_rc.parquet")
+    monkeypatch.setattr(tf.tc, "enabled", lambda: True)
+
+    def rc_row(code, rdate, eps):
+        return {"ts_code": code, "report_date": rdate, "org_name": "中金公司",
+                "author_name": "王明", "quarter": "2026Q4", "report_title": "深度报告",
+                "eps": eps, "rating": "买入"}
+
+    windows = iter([
+        pd.DataFrame([rc_row("600519.SH", "20260601", 10.0),
+                      rc_row("000001.SZ", "20260620", 1.2)]),
+        # shifted window: 600519's June report has scrolled out of the trailing 30d; 000001's row
+        # is re-fetched with a revised eps (same identity key); one brand-new July row appears
+        pd.DataFrame([rc_row("000001.SZ", "20260620", 9.9),
+                      rc_row("300750.SZ", "20260715", 3.3)]),
+    ])
+    monkeypatch.setattr(tf.tc, "query",
+                        lambda api, *a, **kw: next(windows) if api == "report_rc" else None)
+
+    tf.refresh()
+    assert len(pd.read_parquet(tf.OUT_RC)) == 2
+    tf.refresh()
+    got = pd.read_parquet(tf.OUT_RC)
+    # window-1 rows survived the window-2 write; the new row appended; the overlap didn't double
+    assert set(got["ticker"]) == {"600519.SH", "000001.SZ", "300750.SZ"} and len(got) == 3
+    # keep-first: the re-fetched overlapping report kept its first-seen payload
+    assert got.loc[got["ticker"] == "000001.SZ", "eps"].item() == 1.2
+
+
 def test_forecast_guidance_parser(monkeypatch, tmp_path):
     from engine import china_extras as ce
     monkeypatch.setattr(ce.config, "data_dir", lambda: tmp_path)

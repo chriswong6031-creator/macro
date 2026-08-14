@@ -97,7 +97,18 @@ class TestLoadQualLadderFamilies:
 
 def _seed_grades(tmp_path: Path, family: str, n_dates: int,
                  horizon: int = 5, hit: bool = True) -> None:
-    """Register n_dates independent claims and grade each at `horizon`d."""
+    """Register n_dates independent claims and grade each at `horizon`d.
+
+    Seeds are stamped on the EXPLICIT clock (trading_days / explicit_unit_v1 /
+    US) deliberately. These tests pin the first-cross alert machinery, which
+    needs `ready=True` to be REACHABLE — and after P0c-1 (a control-less row
+    cannot score on the control arm), P0c-2 (a legacy-only basis reaching
+    GRADED is LEGACY_NOT_AUTHORITY_ELIGIBLE, never eligible) and P0d (a
+    benchmark_only family like the `altdata` used here evaluates the BENCH
+    basis via `promotion_check_dispatch`), an unstamped legacy seed can never
+    cross the gate no matter how many hits it carries. The legacy-unreachable
+    behaviour itself is pinned where it belongs: tests/test_qledger_horizon_clock.py
+    (P0c-2) and tests/test_qledger_control_policy.py (P0d)."""
     grades_p = tmp_path / "data" / "qledger" / "grades.jsonl"
     claims_p = tmp_path / "data" / "qledger" / "claims.jsonl"
     for i in range(n_dates):
@@ -106,6 +117,7 @@ def _seed_grades(tmp_path: Path, family: str, n_dates: int,
             desk=family, asof=asof, scope_type="entity",
             scope_key="SPY", direction=1, horizon_d=horizon,
             timestamp_quality="CRAWL_BOUNDED", claim_family=family,
+            horizon_unit=q.HORIZON_UNIT_TRADING,
         )
         stored = q.register(c, root=tmp_path)
         grade_row = {
@@ -118,6 +130,11 @@ def _seed_grades(tmp_path: Path, family: str, n_dates: int,
             "excess": 0.005 if hit else -0.005,
             "hit": hit,
             "embargo_applied": False,
+            # Explicit-clock stamps, the same triple grade_claim() writes —
+            # grade_clock_basis() reads exactly these three.
+            "horizon_unit": q.HORIZON_UNIT_TRADING,
+            "clock_version": q.CLOCK_V1,
+            "clock_market": q.MARKET_US,
         }
         with grades_p.open("a", encoding="utf-8") as fh:
             fh.write(json.dumps(grade_row) + "\n")

@@ -33,6 +33,26 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
+      # `engine/press` below is NOT optional and is named by no import line in
+      # the three scripts this lane runs:
+      # engine/earnings_narrative/{story_packets,admission}.py do
+      # `from engine.press.earnings_adapter import story_to_press_slot`, and the
+      # package __init__ re-exports story_packets — so merely importing
+      # `engine.earnings_narrative.contracts` executes the package __init__ and
+      # pulls engine.press. Without it the lane dies on
+      # `ModuleNotFoundError: No module named 'engine.press'` before fetching a
+      # body, which is exactly what it did for the three runs AFTER the pyyaml
+      # heal (#5595) on 2026-08-14 — a second missing import standing directly
+      # behind the first.
+      #
+      # The general rule this lane keeps re-learning: in a SPARSE checkout a
+      # LOCAL module is only present if it is coned in. "It is in the repo" is
+      # not "it is on disk in this job", and a dependency audit that only checks
+      # third-party wheels cannot see this class at all. Pinned by
+      # tests/test_earnings_evidence_graph_deps.py, which walks the real import
+      # graph — including parent-package __init__ execution — instead of
+      # trusting this list. Comments must stay OUT of the block below: the
+      # sparse-checkout input is a literal pattern list, not a commented scalar.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -40,6 +60,7 @@ jobs:
           sparse-checkout: |
             engine/earnings_narrative
             engine/earnings_transcript_intake.py
+            engine/press
             scripts/build_earnings_evidence_graph.py
             scripts/refresh_earnings_evidence_graph.py
             scripts/publish_earnings_evidence_graph_r2.py

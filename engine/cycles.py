@@ -2228,6 +2228,70 @@ def _three_day_fresh(t3: dict) -> str | None:
     return None
 
 
+# The NAMED legs of the overextension brake, in evaluation order. Emitted onto the
+# alignment dict as `overextended_legs` so a consumer can narrate the leg that actually
+# fired instead of guessing a cause. Cross-ref docs/site_semantics/stretch_oracles.md.
+OVEREXTENSION_LEG_STOCH_D = "daily_stochrsi_overbought"
+OVEREXTENSION_LEG_STOCH_3D = "three_day_stochrsi_overbought"
+OVEREXTENSION_LEG_RSI_D = "daily_rsi14_hot"
+OVEREXTENSION_LEG_STRETCH = "stretch_vs_200dma"
+#: Legs that are momentum reads (fast oscillators) rather than distance-above-trend.
+OVEREXTENSION_OSCILLATOR_LEGS = frozenset(
+    (OVEREXTENSION_LEG_STOCH_D, OVEREXTENSION_LEG_STOCH_3D, OVEREXTENSION_LEG_RSI_D)
+)
+
+
+def _overextension_legs(mtf: dict, ext_pct: float | None = None) -> list[str]:
+    """The NAMED legs behind :func:`_overextended` — the single source of truth for both.
+
+    Returns the legs that fired, in evaluation order; an empty list means not
+    overextended. :func:`_overextended` is literally ``bool()`` of this, so the boolean
+    and the disclosed cause can never disagree (the failure mode this replaced: a
+    consumer that had only the boolean narrated a cause it had not measured — see
+    docs/site_semantics/stretch_oracles.md, defect D2).
+
+    NOTE the leg mix: THREE of the four legs are fast-oscillator reads and only
+    ``stretch_vs_200dma`` is a distance-above-trend read, so this brake is
+    oscillator-DOMINANT. Measured on the 2026-07-02 US store, 660/999 flagged names
+    fired on oscillator legs alone with no stretch leg at all. A consumer that renders
+    this flag as "X% above its 200-day line" is asserting a cause that usually did not
+    fire; render from ``overextended_basis`` instead."""
+    d = mtf.get("D") or {}
+    legs: list[str] = []
+    # oscillator legs are suppressed when price is far below the 200dma (range-compression
+    # saturation); the stretch leg is structurally unreachable there and is unaffected.
+    osc_exempt = ext_pct is not None and ext_pct <= _EG_OSC_EXEMPT_BELOW
+    if not osc_exempt:
+        st_d = d.get("stoch")
+        if st_d is not None and st_d > _EG_STOCH_OB:
+            legs.append(OVEREXTENSION_LEG_STOCH_D)
+        st_3d = (mtf.get("3D") or {}).get("stoch")
+        if st_3d is not None and st_3d > _EG_STOCH_OB:
+            legs.append(OVEREXTENSION_LEG_STOCH_3D)
+        rsi = d.get("rsi14")
+        if rsi is not None and rsi > _EG_DAILY_RSI_MAX:
+            legs.append(OVEREXTENSION_LEG_RSI_D)
+    if ext_pct is not None and ext_pct >= _EG_STRETCH_BLOCK:
+        legs.append(OVEREXTENSION_LEG_STRETCH)
+    return legs
+
+
+def overextension_basis(legs) -> str | None:
+    """Coarse cause word for a leg list: ``oscillator`` / ``stretch`` / ``both`` / None.
+
+    This is the field a renderer should branch on. ``oscillator`` means "momentum is
+    hot", NOT "far above its 200-day line" — the two are different measurements and
+    only ``stretch``/``both`` licenses 200-day-distance prose."""
+    legs = set(legs or ())
+    if not legs:
+        return None
+    osc = bool(legs & OVEREXTENSION_OSCILLATOR_LEGS)
+    stretch = OVEREXTENSION_LEG_STRETCH in legs
+    if osc and stretch:
+        return "both"
+    return "stretch" if stretch else "oscillator"
+
+
 def _overextended(mtf: dict, ext_pct: float | None = None) -> bool:
     """True when the move has ALREADY run — the "awful entry" the board must exclude:
     3-day OR daily StochRSI overbought (> stoch_overbought), daily RSI14 hotter than the
@@ -2243,20 +2307,11 @@ def _overextended(mtf: dict, ext_pct: float | None = None) -> bool:
     −12.5 → misfired as "extended → entry_confirm × 0.50". The stretch leg
     (ext_pct >= +30%) is unreachable when price is deep below the 200dma and is unchanged.
     When ext_pct is None (close-only callers: ladder_state's de-escalation gate at
-    line 1400), behavior is UNCHANGED — osc legs fire as before."""
-    d = mtf.get("D") or {}
-    # oscillator legs are suppressed when price is far below the 200dma (range-compression
-    # saturation); the stretch leg is structurally unreachable there and is unaffected.
-    osc_exempt = ext_pct is not None and ext_pct <= _EG_OSC_EXEMPT_BELOW
-    if not osc_exempt:
-        for tf in (d, mtf.get("3D") or {}):
-            st = tf.get("stoch")
-            if st is not None and st > _EG_STOCH_OB:
-                return True
-        rsi = d.get("rsi14")
-        if rsi is not None and rsi > _EG_DAILY_RSI_MAX:
-            return True
-    return bool(ext_pct is not None and ext_pct >= _EG_STRETCH_BLOCK)
+    line 1400), behavior is UNCHANGED — osc legs fire as before.
+
+    Value-identical to ``bool(_overextension_legs(...))`` BY CONSTRUCTION — it delegates,
+    so the brake and its disclosed cause cannot drift apart."""
+    return bool(_overextension_legs(mtf, ext_pct))
 
 
 def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
@@ -2287,7 +2342,10 @@ def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
     trigger = _daily_trigger(D)
     daily_ok = trigger is not None
     weekly_ok = wph in _WEEKLY_OK
-    over = _overextended(mtf, ext_pct)
+    # legs first, boolean derived — so `overextended` and the disclosed cause are the
+    # same evaluation, never two reads that can drift (docs/site_semantics/stretch_oracles.md).
+    over_legs = _overextension_legs(mtf, ext_pct)
+    over = bool(over_legs)
 
     knife = float((wo or {}).get("knife", 0.0))
     state = (lad or {}).get("state")
@@ -2355,6 +2413,14 @@ def mtf_alignment(mtf: dict, cyc: dict | None = None, lad: dict | None = None,
         "weekly": wph, "three_day": t3ph, "daily": dph,
         "weekly_ok": weekly_ok, "three_day_ok": t3_fresh, "three_day_trigger": t3_trig,
         "daily_ok": daily_ok, "daily_trigger": trigger, "overextended": over,
+        # DISPLAY-TIER disclosure of WHICH leg fired. Additive: `overextended` itself is
+        # unchanged, so nothing that ranks/gates on it moves. `overextended_basis` is
+        # what a renderer must branch on — "oscillator" does NOT license 200-day-distance
+        # prose. `ext_pct_used` records the distance the brake actually saw (None when the
+        # caller passed none, which makes the stretch leg unreachable for that call).
+        "overextended_legs": list(over_legs),
+        "overextended_basis": overextension_basis(over_legs),
+        "ext_pct_used": round(ext_pct, 2) if ext_pct is not None else None,
         "days_to_cross": D.get("macd_days_to_cross"),
         "knife": round(knife, 2), "have_tf": have_tf, "blocked": blocked,
         "line": line, "line_zh": line_zh,

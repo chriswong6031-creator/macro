@@ -1,0 +1,485 @@
+"""Stock Identity W1 — the exclusion laws, mechanically (registration §13).
+
+Four things this program promised that a reader should not have to take on trust:
+
+1. **No expert-fit content anywhere in W1** (masterplan §16.9). No expert identifier,
+   fit metric, ordering, or "best" field exists as a key, column, or code identifier.
+2. **Zero authority on every artifact.** Every JSON under ``data/stock_identity/``
+   carries a complete all-false authority block; every parquet carries the same as
+   columns.
+3. **No per-name blind-arm row.** Blind names exist in the partition manifest's
+   membership list and as anonymous denominators — nowhere else.
+4. **No G-8 import.** ``engine/stock_identity/**`` imports no gate-chain, signal, or
+   ranking module, and never imports from ``scripts/``.
+
+Plus the hashes: the constants file recomputes its own fingerprint spec hash and
+carries every rule it claims to.
+
+Offline; reads committed artifacts and walks source with ``ast``. No plotting stack,
+no network, no universe sweep.
+"""
+from __future__ import annotations
+
+import ast
+import hashlib
+import json
+from pathlib import Path
+
+import pandas as pd
+import pytest
+import yaml
+
+from engine.stock_identity import fingerprint as fp
+from engine.stock_identity.authority import AUTHORITY_KEYS, is_zero_authority
+from engine.stock_identity.hygiene import COMPUTE_BLOCKLIST, check_symbol
+from scripts import audit_reused_tickers as reused_audit
+
+ROOT = Path(__file__).resolve().parents[1]
+PKG = ROOT / "engine" / "stock_identity"
+DATA = ROOT / "data" / "stock_identity"
+MANIFEST = DATA / "partition" / "partition_manifest_v1.json"
+CONSTANTS = DATA / "constants" / "si_constants_v1.json"
+
+#: Field/identifier tokens that would mean W1 had grown an expert-fit result.
+#: Matched against KEYS, COLUMN NAMES and CODE IDENTIFIERS only — never against prose,
+#: because the census and the dossiers must be free to say "no expert data exists in
+#: W1 by law", and a test that punished honest wording would push the docs to lie.
+BANNED_TOKENS = ("expert", "fit_score", "expert_rank", "best_")
+
+#: Modules the Identity Atlas must never import (the G-8 protected set).
+FORBIDDEN_IMPORTS = (
+    "engine.entry_signal",
+    "engine.signal_gate",
+    "engine.confluence_tiers",
+    "engine.signal_quality",
+    "engine.washout_turn",
+    "engine.mtf_upturn",
+    "engine.stock_personality",
+    "engine.oracle.personality_context",
+    "engine.entry_radar",
+)
+FORBIDDEN_PREFIXES = ("engine.prophet_", "engine.prophet.", "scripts.", "scripts")
+
+
+def _json_files() -> list[Path]:
+    return sorted(DATA.rglob("*.json")) if DATA.exists() else []
+
+
+def _parquet_files() -> list[Path]:
+    return sorted(DATA.rglob("*.parquet")) if DATA.exists() else []
+
+
+def _walk_keys(obj, out: list[str]) -> None:
+    if isinstance(obj, dict):
+        for k, v in obj.items():
+            out.append(str(k))
+            _walk_keys(v, out)
+    elif isinstance(obj, list):
+        for v in obj:
+            _walk_keys(v, out)
+
+
+def _manifest() -> dict:
+    if not MANIFEST.exists():
+        pytest.skip("partition manifest not present in this checkout")
+    return json.loads(MANIFEST.read_text(encoding="utf-8"))
+
+
+def _constants() -> dict:
+    if not CONSTANTS.exists():
+        pytest.skip("constants file not present in this checkout")
+    return json.loads(CONSTANTS.read_text(encoding="utf-8"))
+
+
+class TestNoExpertFitContent:
+    def test_no_banned_token_appears_as_a_json_key(self):
+        files = _json_files()
+        if not files:
+            pytest.skip("no artifacts in this checkout")
+        for p in files:
+            keys: list[str] = []
+            _walk_keys(json.loads(p.read_text(encoding="utf-8")), keys)
+            for k in keys:
+                low = k.lower()
+                for token in BANNED_TOKENS:
+                    assert token not in low, f"{p.name}: key {k!r} carries {token!r}"
+
+    def test_no_banned_token_appears_as_a_parquet_column(self):
+        files = _parquet_files()
+        if not files:
+            pytest.skip("no artifacts in this checkout")
+        for p in files:
+            cols = list(pd.read_parquet(p).columns)
+            for c in cols:
+                low = str(c).lower()
+                for token in BANNED_TOKENS:
+                    assert token not in low, f"{p.name}: column {c!r} carries {token!r}"
+
+    def test_no_banned_token_appears_as_a_code_identifier(self):
+        for src in sorted(PKG.glob("*.py")):
+            tree = ast.parse(src.read_text(encoding="utf-8"), filename=str(src))
+            names: list[str] = []
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Name):
+                    names.append(node.id)
+                elif isinstance(node, ast.Attribute):
+                    names.append(node.attr)
+                elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)):
+                    names.append(node.name)
+                elif isinstance(node, ast.arg):
+                    names.append(node.arg)
+            for n in names:
+                low = n.lower()
+                for token in BANNED_TOKENS:
+                    assert token not in low, f"{src.name}: identifier {n!r} carries {token!r}"
+
+    def test_fingerprint_spec_declares_no_expert_feature(self):
+        for f in fp.ALL_FEATURES:
+            low = f["name"].lower()
+            for token in BANNED_TOKENS:
+                assert token not in low
+
+
+class TestZeroAuthority:
+    def test_every_json_artifact_carries_an_all_false_authority_block(self):
+        files = _json_files()
+        if not files:
+            pytest.skip("no artifacts in this checkout")
+        for p in files:
+            payload = json.loads(p.read_text(encoding="utf-8"))
+            assert isinstance(payload, dict), p.name
+            assert is_zero_authority(payload), f"{p.name} lacks a complete all-false block"
+
+    def test_every_parquet_artifact_carries_authority_columns(self):
+        files = [p for p in _parquet_files() if p.parent.name != "ohlcv"]
+        if not files:
+            pytest.skip("no artifacts in this checkout")
+        for p in files:
+            df = pd.read_parquet(p)
+            for key in AUTHORITY_KEYS:
+                col = f"authority_{key}"
+                assert col in df.columns, f"{p.name} missing {col}"
+                assert not df[col].any(), f"{p.name}: {col} is not all-false"
+
+    def test_the_ohlcv_store_declares_authority_in_its_manifest(self):
+        # The collected price parquets are raw history, so the block rides on the
+        # store's manifest rather than on every price row.
+        m = DATA / "ohlcv" / "manifest.json"
+        if not m.exists():
+            pytest.skip("program-owned ohlcv store not present")
+        assert is_zero_authority(json.loads(m.read_text(encoding="utf-8")))
+
+
+class TestBlindArmIsInvisible:
+    """Blind names may appear in the membership list and in rank denominators only."""
+
+    def _derived_artifacts(self) -> list[Path]:
+        return [
+            DATA / "fingerprints" / "pilot_fingerprint_v0.parquet",
+            DATA / "episodes" / "pilot_episode_catalog_v0.parquet",
+            DATA / "state" / "pilot_state_daily.parquet",
+            DATA / "census" / "coverage_census_v0.parquet",
+        ]
+
+    def test_no_blind_name_has_a_row_in_any_derived_artifact(self):
+        m = _manifest()
+        blind = set(m["blind_arm"]["members"])
+        assert blind
+        checked = 0
+        for p in self._derived_artifacts():
+            if not p.exists():
+                continue
+            df = pd.read_parquet(p)
+            if "symbol" not in df.columns:
+                continue
+            leaked = blind & set(df["symbol"].astype(str))
+            assert not leaked, f"{p.name} carries blind rows: {sorted(leaked)[:5]}"
+            checked += 1
+        if checked == 0:
+            pytest.skip("no derived artifacts in this checkout")
+
+    def test_no_per_name_blind_episode_json_exists(self):
+        m = _manifest()
+        blind = set(m["blind_arm"]["members"])
+        pilot_dir = DATA / "episodes" / "pilot"
+        if not pilot_dir.exists():
+            pytest.skip("pilot episode directory not present")
+        for p in pilot_dir.glob("*.json"):
+            assert p.stem not in blind, f"blind name {p.stem} has a per-name artifact"
+
+    def test_the_census_states_how_many_names_it_excluded_as_blind(self):
+        md = DATA / "census" / "coverage_census_v0.md"
+        if not md.exists():
+            pytest.skip("census markdown not present")
+        text = md.read_text(encoding="utf-8")
+        m = _manifest()
+        assert "Excluded as blind evaluation arm" in text
+        assert str(len(m["blind_arm"]["members"])) in text
+
+
+class TestImportDiscipline:
+    def test_package_imports_no_protected_module(self):
+        for src in sorted(PKG.glob("*.py")):
+            tree = ast.parse(src.read_text(encoding="utf-8"), filename=str(src))
+            mods: list[str] = []
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    mods.extend(a.name for a in node.names)
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    mods.append(node.module)
+            for mod in mods:
+                assert mod not in FORBIDDEN_IMPORTS, f"{src.name} imports {mod}"
+                for prefix in FORBIDDEN_PREFIXES:
+                    assert not mod.startswith(prefix), f"{src.name} imports {mod}"
+
+    def test_package_imports_nothing_from_scripts(self):
+        for src in sorted(PKG.glob("*.py")):
+            text = src.read_text(encoding="utf-8")
+            assert "from scripts" not in text, src.name
+            assert "import scripts" not in text, src.name
+
+    def test_matplotlib_is_not_imported_at_module_level(self):
+        # The dossier module must stay importable where no plotting stack exists.
+        src = PKG / "dossier.py"
+        tree = ast.parse(src.read_text(encoding="utf-8"), filename=str(src))
+        for node in tree.body:
+            if isinstance(node, (ast.Import, ast.ImportFrom)):
+                mod = (
+                    node.module if isinstance(node, ast.ImportFrom)
+                    else node.names[0].name
+                )
+                assert not str(mod).startswith("matplotlib"), "matplotlib imported eagerly"
+
+
+class TestConstantsFile:
+    REQUIRED = (
+        "X", "Y", "N", "k", "z", "M", "m", "D1", "D2", "theta_dw", "theta_bd",
+        "theta_pb", "theta_up", "J", "V", "E", "R", "g", "w", "delta", "theta_fs",
+        "P_pre", "S_reclaim",
+    )
+
+    def test_every_declared_constant_is_present_with_a_value_and_a_rule(self):
+        c = _constants()
+        for key in self.REQUIRED:
+            assert key in c["values"], f"missing value {key}"
+            assert key in c["rules"], f"missing rule text for {key}"
+            assert key in c["receipts"], f"missing receipt for {key}"
+            assert c["receipts"][key]["value"] == c["values"][key]
+
+    def test_declared_constants_are_marked_as_declared_in_their_receipts(self):
+        c = _constants()
+        for key, r in c["receipts"].items():
+            if r.get("declared"):
+                assert "declared, not partition-computed" in r.get("note", ""), key
+                assert "declared, not partition-computed" in c["rules"][key], key
+
+    def test_partition_computed_constants_record_their_raw_statistic(self):
+        c = _constants()
+        for key, r in c["receipts"].items():
+            if r.get("declared"):
+                continue
+            has_raw = ("raw" in r) or ("raw_pct" in r) or ("grid" in r)
+            assert has_raw, f"{key} claims to be partition-computed but shows no statistic"
+
+    def test_constants_recompute_the_fingerprint_spec_hash(self):
+        c = _constants()
+        assert c["fingerprint_spec_hash"] == fp.spec_hash()
+
+    def test_constants_recompute_their_own_spec_hash(self):
+        # The constants' spec hash must cover the frozen DECISIONS (version, values, rule
+        # text) and nothing that moves on a re-read: a hash that folded in the receipts'
+        # sample counts would change without any constant changing, which would make
+        # "constants never change after sealing" unverifiable.
+        c = _constants()
+        payload = {
+            "version": c["version"],
+            "partition_name": c["partition_name"],
+            "values": c["values"],
+            "rules": c["rules"],
+        }
+        recomputed = hashlib.sha256(
+            json.dumps(payload, sort_keys=True, separators=(",", ":"), default=str).encode()
+        ).hexdigest()
+        assert recomputed == c["si_constants_spec_hash"]
+
+    def test_constants_pin_the_partition_hashes(self):
+        c, m = _constants(), _manifest()
+        assert c["partition_procedure_sha256"] == m["partition_procedure_sha256"]
+        assert c["calibration_sha256"] == m["calibration_partition"]["calibration_sha256"]
+        assert c["blind_sha256"] == m["blind_arm"]["blind_sha256"]
+        assert c["universe_sha256"] == m["universe"]["universe_sha256"]
+
+    def test_the_sensitivity_grid_is_registered_and_diagnostic_only(self):
+        c = _constants()
+        grid = c["sensitivity_grid"]
+        assert grid["trial_family"] == "stock_identity_w1_calibration"
+        assert "BEFORE running" in grid["status"]
+        assert "diagnostic only" in grid["status"]
+        assert set(grid["keys"]) == {"X", "N", "k", "z", "theta_dw", "g"}
+
+    def test_calibration_history_stops_short_of_asof(self):
+        c = _constants()
+        assert pd.Timestamp(c["calibration_history_cutoff"]) < pd.Timestamp(c["asof"])
+
+
+class TestManifestHashes:
+    def test_manifest_pins_the_live_fingerprint_spec_hash(self):
+        assert _manifest()["fingerprint_spec_hash"] == fp.spec_hash()
+
+    def test_manifest_records_the_hygiene_exclusions_it_applied(self):
+        m = _manifest()
+        assert "hygiene_excluded_from_compute" in m
+
+    def test_pilot_receipts_carry_the_rule_that_chose_each_pick(self):
+        m = _manifest()
+        r = m["pilot"]["receipts"]
+        for key in ("recent_ipo", "secular_decliner", "dead_names"):
+            assert key in r, key
+        assert "rule" in r["recent_ipo"] and r["recent_ipo"]["pick"]
+        assert "rule" in r["secular_decliner"] and r["secular_decliner"]["pick"]
+
+    def test_dead_name_shortfall_is_disclosed_rather_than_filled(self):
+        # W1's measured position: the allowed planes retain no ceased tapes. If that is
+        # ever fixed the status flips to SATISFIED, but it must never be quietly
+        # populated from a prohibited plane or by relabeling a live name.
+        r = _manifest()["pilot"]["receipts"]["dead_names"]
+        if r["members"]:
+            assert r["status"] == "SATISFIED"
+        else:
+            assert r["status"].startswith("BLOCKED")
+            assert "sources_checked" in r and "consequence" in r
+
+
+class TestCurrentTickerHygiene:
+    """Post-seal identity repairs must stay coherent with the frozen W1 record."""
+
+    def test_gold_is_acked_readable_dealer_tape_not_a_compute_block(self):
+        verdict = check_symbol("GOLD", repo_root=ROOT)
+        assert "GOLD" not in COMPUTE_BLOCKLIST
+        assert verdict["compute_eligible"] is True
+        assert verdict["blind_eligible"] is False
+        assert set(verdict["flags"]) == {"reused_ticker_acked", "symbol_history_note"}
+        note = verdict["notes"]["symbol_history_note"]
+        for needle in (
+            "Gold.com", "dealer", "1591588", "Barrick", "756894", "B.parquet", "PR #5632",
+        ):
+            assert needle.lower() in note.lower()
+
+    def test_abx_block_is_acked_and_only_preserves_the_sealed_w1_population(self):
+        verdict = check_symbol("ABX", repo_root=ROOT)
+        assert "ABX" in COMPUTE_BLOCKLIST
+        assert verdict["compute_eligible"] is False
+        assert verdict["blind_eligible"] is False
+        assert set(verdict["flags"]) == {"reused_ticker_acked", "compute_blocklisted"}
+        reason = verdict["notes"]["compute_blocklisted"]
+        for needle in ("acknowledged", "sealed W1", "registered amendment", "Abacus"):
+            assert needle in reason
+        assert "unacknowledged" not in reason.lower()
+        assert "absent from reused_ticker_acks" not in reason
+
+    def test_gold_ack_records_the_repaired_consumer_without_quarantining_store(self):
+        cfg = yaml.safe_load((ROOT / "config.yml").read_text(encoding="utf-8"))
+        text = cfg["quality"]["reused_ticker_acks"]["GOLD"]
+        for needle in (
+            "CONSUMER DEFECT REPAIRED", "PR #5632", "B.parquet", "valid Gold.com instrument",
+        ):
+            assert needle in text
+        for stale in ("KNOWN CONSUMER DEFECT", "NO store file under 'B'", "separate curated act"):
+            assert stale not in text
+
+    def test_member_identity_detector_catches_the_exact_gold_wrong_issuer(self, tmp_path):
+        membership = tmp_path / "baskets" / "membership.json"
+        membership.parent.mkdir(parents=True)
+        membership.write_text(
+            json.dumps(
+                {
+                    "baskets": {
+                        "gold_miners": {
+                            "members": [
+                                {
+                                    "ticker": "GOLD",
+                                    "removed": None,
+                                    "rationale": "Barrick Mining — global senior producer",
+                                }
+                            ]
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        rows, unacked = reused_audit._member_identity_rows(
+            tmp_path,
+            {"GOLD": "Gold.com, Inc. Common Stock"},
+            {},
+            {"extra_names": {}},
+        )
+        assert unacked == ["gold_miners/GOLD"]
+        assert rows == [
+            {
+                "ticker": "GOLD",
+                "where": "gold_miners",
+                "source": "membership_rationale",
+                "curated_name": "Barrick Mining",
+                "directory_name": "Gold.com, Inc. Common Stock",
+                "acked": False,
+            }
+        ]
+
+    def test_gold_is_absent_and_b_alone_owns_the_current_miner_slot(self):
+        membership = json.loads(
+            (ROOT / "data/baskets/membership.json").read_text(encoding="utf-8")
+        )
+        basket = membership["baskets"]["gold_miners"]
+        rows = {row["ticker"]: row for row in basket["members"]}
+        assert "GOLD" not in rows
+        assert rows["B"]["added"] == "2023-05-09"
+        assert rows["B"]["curated_added"] == "2026-08-14"
+        assert rows["B"]["removed"] is None
+        assert len([row for row in basket["members"] if not row.get("removed")]) == 12
+        disclosure = " ".join(basket["omitted"]) + " " + " ".join(
+            row["note"] for row in basket["changelog"]
+        )
+        for token in ("Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09"):
+            assert token in disclosure
+
+    def test_b_tape_is_barrick_and_gold_stays_zero_in_both_mask_modes(self):
+        from engine.basket_index import _live_mask
+
+        membership = json.loads(
+            (ROOT / "data/baskets/membership.json").read_text(encoding="utf-8")
+        )
+        members = membership["baskets"]["gold_miners"]["members"]
+        b_row = next(row for row in members if row["ticker"] == "B")
+        assert all(row["ticker"] != "GOLD" for row in members)
+
+        curated = pd.read_parquet(ROOT / "data/baskets/ohlcv/B.parquet")
+        barrick = pd.read_parquet(ROOT / "data/yahoo/B.parquet")
+        dealer = pd.read_parquet(ROOT / "data/baskets/ohlcv/GOLD.parquet")
+        assert list(curated.columns) == ["open", "high", "low", "close", "volume"]
+        assert len(curated) >= 3_172
+        assert curated.index.min() == pd.Timestamp("2014-01-02")
+        assert curated.index.max() >= pd.Timestamp("2026-08-13")
+
+        b_pair = pd.concat(
+            [curated["close"].pct_change(), barrick["close"].pct_change()],
+            axis=1,
+            join="inner",
+        ).dropna()
+        dealer_pair = pd.concat(
+            [curated["close"].pct_change(), dealer["close"].pct_change()],
+            axis=1,
+            join="inner",
+        ).dropna()
+        assert b_pair.corr().iloc[0, 1] > 0.999
+        assert dealer_pair.corr().iloc[0, 1] < 0.35
+
+        idx = curated.index
+        close = pd.concat(
+            {"GOLD": dealer["close"], "B": curated["close"]}, axis=1, sort=False
+        ).reindex(idx)
+        strict = _live_mask([b_row], idx, ["GOLD", "B"], pit=True, close=close)
+        deep = _live_mask([b_row], idx, ["GOLD", "B"], pit=False, close=close)
+        assert not strict["GOLD"].any() and not deep["GOLD"].any()
+        assert int(strict["B"].sum()) == int((idx >= pd.Timestamp(b_row["added"])).sum())
+        assert int(deep["B"].sum()) == len(curated)

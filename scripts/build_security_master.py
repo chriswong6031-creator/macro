@@ -295,6 +295,55 @@ UNDATED_RENAMES: tuple[tuple[str, str, str], ...] = (
     ),
 )
 
+#: Identity cases whose current symbol is verified but whose historical alias cannot be
+#: represented by the builder's symbol-pair-only ``RenameEvent`` yet.  Fail closed:
+#: minting an open-bounded row would answer a known prior issuer as the current one.
+#:
+#: ``B`` is not a plain ``GOLD -> B`` rename.  Barrick changed NYSE GOLD to B on
+#: 2025-05-09, while Gold.com (formerly NASDAQ AMRK) reused NYSE GOLD on 2025-12-02.
+#: A global GOLD/B pair would therefore collapse Barrick and Gold.com into one security.
+#: Moreover, Barnes Group was the prior NYSE B holder until its 2025-01-27 delisting, so
+#: an open historical B alias is independently false.  The full repair needs one
+#: identity-scoped continuation plus one ratified reuse break; until that registered DOS
+#: amendment exists, B remains named in coverage as unresolved and mints no row.
+DEFERRED_IDENTITY_KEYS: dict[str, dict[str, str]] = {
+    "B": {
+        "reason": (
+            "verified identity-scoped event required: NYSE B belonged to Barnes Group "
+            "through 2025-01-27; Barrick Mining changed NYSE GOLD->B effective "
+            "2025-05-09; Gold.com then reused NYSE GOLD effective 2025-12-02. A bare "
+            "RenameEvent would collapse different issuers, so B is fail-closed pending "
+            "a registered identity-scoped continuation+reuse amendment"
+        ),
+        "evidence": (
+            "SEC Barnes Group 2025-01-27 8-K/Form 25; Barrick Mining 2025-05-07 "
+            "Form 6-K Exhibit 99.2; Gold.com 2025-11-12 AMRK->NYSE GOLD transfer "
+            "announcement; config/theme_graph_identity_breaks.yml GOLD"
+        ),
+    },
+}
+
+#: Already-materialized exception that this narrow roster repair only discloses.  The
+#: committed GOLD alias predates the ratified break and is open-bounded across it.  The
+#: append-only alias builder cannot close that row without producing an overlap, so the
+#: same future identity-scoped DOS amendment must supersede it atomically.  Keeping this
+#: in the receipt prevents a consumer from mistaking current coverage for temporal
+#: authority in the interim.
+DISCLOSED_IDENTITY_EXCEPTIONS: dict[str, dict[str, str]] = {
+    "GOLD": {
+        "reason": (
+            "existing historical alias is not issuer-safe across 2025-12-02: the "
+            "open GOLD row predates the ratified Gold.com reuse break and must not be "
+            "treated as Barrick/miner history; replacement requires the same registered "
+            "identity-scoped continuation+reuse amendment"
+        ),
+        "evidence": (
+            "config/theme_graph_identity_breaks.yml GOLD; config.yml "
+            "quality.reused_ticker_acks.GOLD"
+        ),
+    },
+}
+
 
 # ── Small helpers ─────────────────────────────────────────────────────────────
 def unmodelled_renames(fixups: dict[str, str], migrations: dict[str, str]) -> list[str]:
@@ -569,6 +618,21 @@ def resolve_universe(
         delisted_row = delisted.get(key)
         universe_row = universe.get(key)
         effective = _effective_at(universe_row, delisted_row, snapshot_date)
+
+        deferred = DEFERRED_IDENTITY_KEYS.get(key)
+        if deferred is not None:
+            out.append(
+                Resolution(
+                    key,
+                    None,
+                    None,
+                    None,
+                    "operator-ratified fail-closed identity exception",
+                    effective,
+                    deferred["reason"],
+                )
+            )
+            continue
 
         mic: str | None = None
         venue_source: str | None = None
@@ -968,6 +1032,21 @@ def build(out_dir: Path, dry_run: bool = False) -> dict:
         ],
         "undated_renames": [
             {"old": old, "new": new, "evidence": why} for old, new, why in UNDATED_RENAMES
+        ],
+        "identity_exceptions": [
+            {
+                "key": key,
+                "status": "deferred_no_mint",
+                **DEFERRED_IDENTITY_KEYS[key],
+            }
+            for key in sorted(DEFERRED_IDENTITY_KEYS)
+        ] + [
+            {
+                "key": key,
+                "status": "disclosed_existing_alias",
+                **DISCLOSED_IDENTITY_EXCEPTIONS[key],
+            }
+            for key in sorted(DISCLOSED_IDENTITY_EXCEPTIONS)
         ],
         "notes": seed_notes + notes,
         "authority": "display_only — DOS-1.1 materializes the spine; nothing reads it as authority yet",

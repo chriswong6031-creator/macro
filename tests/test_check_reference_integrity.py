@@ -790,6 +790,40 @@ def test_a_packet_without_a_rig_receipt_fires(tmp_path, capsys):
     assert "packet-without-rig-receipt" in fired, sorted(fired)
 
 
+def test_a_closed_pre_rig_packet_without_a_receipt_does_not_fire(tmp_path, capsys):
+    """L8 amendment 2026-08-14: MP-1 predates the gate (#5505 < #5520), so its
+    missing-receipt state is named, closed debt — not a finding. The exemption
+    is keyed to the exact filename in CLOSED_PRE_RIG_PACKETS; the sibling test
+    above proves an UNLISTED packet still fires, which is what keeps the list
+    closed rather than a wildcard."""
+    write_set(tmp_path, "synthetic-ref", valid_docs("synthetic-ref"))
+    packets = tmp_path / "research" / "migration_packets"
+    packets.mkdir(parents=True, exist_ok=True)
+    (packets / "MP-1-prophet-board.md").write_text(
+        "# Migration packet\n\nNo receipt yet: reference not approved.\n", encoding="utf-8"
+    )
+    fired = _cli_codes(tmp_path, capsys)
+    assert "packet-without-rig-receipt" not in fired, sorted(fired)
+
+
+def test_a_closed_pre_rig_packet_citing_a_receipt_is_validated_normally(tmp_path, capsys):
+    """The exemption covers ONLY the missing-receipt state: the moment the listed
+    packet cites a reference, the citation is validated like any other — an
+    unapproved reference still fires (mutation control for the carve-out's
+    scope)."""
+    docs = valid_docs("synthetic-ref")
+    docs["manifest.yml"]["status"] = "in_review"
+    docs["approval.yml"] = None
+    write_set(tmp_path, "synthetic-ref", docs)
+    packets = tmp_path / "research" / "migration_packets"
+    packets.mkdir(parents=True, exist_ok=True)
+    (packets / "MP-1-prophet-board.md").write_text(
+        "RIG-RECEIPT: synthetic-ref\n", encoding="utf-8"
+    )
+    fired = _cli_codes(tmp_path, capsys)
+    assert "packet-cites-unapproved-reference" in fired, sorted(fired)
+
+
 def test_a_packet_citing_an_approved_reference_passes(tmp_path, capsys):
     write_set(tmp_path, "synthetic-ref", valid_docs("synthetic-ref"))
     packets = tmp_path / "research" / "migration_packets"
