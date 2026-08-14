@@ -7,12 +7,14 @@ import ipaddress
 import json
 import os
 import socket
+import threading
 import time
 import urllib.parse
 from collections import deque
 from collections.abc import Awaitable, Callable, Mapping
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
+from contextlib import suppress
 from pathlib import Path
 from threading import BoundedSemaphore, Lock
 from typing import Any
@@ -57,6 +59,9 @@ _SYMBOL_FETCH_CALLER_GRACE_SECONDS = 0.25
 _SYMBOL_FETCH_MAX_INFLIGHT = 6
 _SYMBOL_FETCH_BUSY_RETRY_SECONDS = 2
 _SYMBOL_FETCH_USER_AGENT = "MastermindMarketMemory/1.0"
+_SYMBOL_RESOLVE_TIMEOUT_SECONDS = 2.0
+_SYMBOL_RESOLVE_THREAD_CAP = 12
+_SYMBOL_FETCH_STRANDED_AFTER_SECONDS = 30.0
 _PLAYBACK_USER_LIMIT = 6
 _PLAYBACK_PEER_LIMIT = 30
 _PLAYBACK_MAX_INFLIGHT = 2
@@ -68,14 +73,26 @@ _symbol_data_cache: dict[
     tuple[str, str], tuple[float, dict[str, Any]]
 ] = {}
 _symbol_negative_cache: dict[tuple[str, str], tuple[float, bool]] = {}
-_symbol_fetch_inflight: dict[tuple[str, str], Future[dict[str, Any]]] = {}
+_symbol_fetch_inflight: dict[tuple[str, str], _InflightFetch] = {}
 _symbol_base_cache: dict[tuple[str, str, int, int], str] = {}
 _symbol_fetch_slots = BoundedSemaphore(_SYMBOL_FETCH_MAX_INFLIGHT)
+_symbol_resolve_tokens = BoundedSemaphore(_SYMBOL_RESOLVE_THREAD_CAP)
 _playback_slots = BoundedSemaphore(_PLAYBACK_MAX_INFLIGHT)
 _symbol_fetch_executor = ThreadPoolExecutor(
     max_workers=_SYMBOL_FETCH_MAX_INFLIGHT,
     thread_name_prefix="market-memory-stockdata",
 )
+
+
+def _shutdown_symbol_fetch_executor() -> None:
+    # threading._register_atexit runs LIFO before concurrent.futures'
+    # _python_exit (registered earlier, at import), so queued fetches are
+    # cancelled here instead of executing during interpreter shutdown.
+    with suppress(Exception):
+        _symbol_fetch_executor.shutdown(wait=False, cancel_futures=True)
+
+
+threading._register_atexit(_shutdown_symbol_fetch_executor)
 
 
 class _PrivateMarketMemoryRoute(APIRoute):
@@ -274,6 +291,38 @@ def _is_public_address(address: str) -> bool:
         return False
 
 
+def _resolve_stream_records(normalized: str, timeout: float) -> list[Any]:
+    # getaddrinfo takes no timeout parameter; a wedged resolver must cost one
+    # capped daemon thread, never the calling fetch worker.
+    tokens = _symbol_resolve_tokens
+    if not tokens.acquire(blocking=False):
+        raise _SymbolDataError("stockdata origin resolution is saturated")
+    outcome: dict[str, Any] = {}
+    done = threading.Event()
+
+    def _resolve() -> None:
+        try:
+            try:
+                outcome["records"] = socket.getaddrinfo(
+                    normalized, None, type=socket.SOCK_STREAM
+                )
+            except OSError as exc:
+                outcome["error"] = exc
+        finally:
+            tokens.release()
+            done.set()
+
+    threading.Thread(
+        target=_resolve, name="market-memory-resolve", daemon=True
+    ).start()
+    if not done.wait(timeout):
+        raise _SymbolDataError("stockdata origin resolution timed out")
+    error = outcome.get("error")
+    if error is not None:
+        raise _SymbolDataError("stockdata origin cannot be resolved") from error
+    return list(outcome.get("records") or [])
+
+
 def _require_public_hostname(host: str) -> None:
     normalized = host.rstrip(".").lower()
     if normalized in {"localhost", "localhost.localdomain"} or normalized.endswith(
@@ -288,10 +337,7 @@ def _require_public_hostname(host: str) -> None:
         if not literal.is_global:
             raise _SymbolDataError("stockdata origin must not be private")
         return
-    try:
-        records = socket.getaddrinfo(normalized, None, type=socket.SOCK_STREAM)
-    except OSError as exc:
-        raise _SymbolDataError("stockdata origin cannot be resolved") from exc
+    records = _resolve_stream_records(normalized, _SYMBOL_RESOLVE_TIMEOUT_SECONDS)
     addresses = {
         str(record[4][0])
         for record in records
@@ -375,6 +421,8 @@ def _fetch_stock_record(base: str, symbol: str) -> dict[str, Any]:
     url = _stockdata_url(base, symbol)
     expected_origin = _origin_tuple(urllib.parse.urlsplit(url))
     _require_public_hostname(expected_origin[1])
+    if time.monotonic() > deadline:
+        raise _SymbolDataError("stockdata fetch exceeded its total deadline")
     try:
         response = http.get(
             url,
@@ -459,6 +507,35 @@ def _fetch_projected_symbol(root: Path, base: str, symbol: str) -> dict[str, Any
     return market_memory.symbol_context(root, symbol, stock_record=record)
 
 
+class _SlotLease:
+    """Exactly-once return of one fetch-lane permit."""
+
+    __slots__ = ("_lock", "_semaphore", "_released")
+
+    def __init__(self, semaphore: BoundedSemaphore) -> None:
+        self._lock = Lock()
+        self._semaphore = semaphore
+        self._released = False
+
+    def release(self) -> None:
+        with self._lock:
+            if self._released:
+                return
+            self._released = True
+        self._semaphore.release()
+
+
+class _InflightFetch:
+    __slots__ = ("future", "lease", "started")
+
+    def __init__(
+        self, future: Future[dict[str, Any]], lease: _SlotLease, started: float
+    ) -> None:
+        self.future = future
+        self.lease = lease
+        self.started = started
+
+
 def _prune_symbol_caches_locked(now: float) -> None:
     for key in [key for key, value in _symbol_data_cache.items() if value[0] <= now]:
         _symbol_data_cache.pop(key, None)
@@ -481,14 +558,33 @@ def _cache_symbol_payload_locked(
     )
 
 
-def _finish_symbol_fetch(
-    cache_key: tuple[str, str], future: Future[dict[str, Any]]
+def _reap_stranded_symbol_fetches_locked(now: float) -> None:
+    stranded = [
+        key
+        for key, entry in _symbol_fetch_inflight.items()
+        if now - entry.started > _SYMBOL_FETCH_STRANDED_AFTER_SECONDS
+    ]
+    for key in stranded:
+        entry = _symbol_fetch_inflight.pop(key)
+        entry.future.cancel()
+        entry.lease.release()
+
+
+def _conclude_symbol_fetch(
+    cache_key: tuple[str, str],
+    future: Future[dict[str, Any]],
+    lease: _SlotLease,
 ) -> None:
     payload: dict[str, Any] | None = None
     not_found = False
     failed = future.cancelled()
     if not failed:
-        exception = future.exception()
+        try:
+            exception = future.exception(timeout=0)
+        except FutureTimeoutError:
+            # Raced a non-completion path: the permit stays with the work item
+            # until whoever really concludes it returns the lease.
+            return
         if exception is None:
             payload = future.result()
         else:
@@ -497,17 +593,18 @@ def _finish_symbol_fetch(
     now = time.monotonic()
     try:
         with _symbol_data_lock:
-            if _symbol_fetch_inflight.get(cache_key) is future:
+            entry = _symbol_fetch_inflight.get(cache_key)
+            if entry is not None and entry.future is future:
                 _symbol_fetch_inflight.pop(cache_key, None)
-            if payload is not None:
-                _cache_symbol_payload_locked(cache_key, payload, now)
-            elif failed:
-                _symbol_negative_cache[cache_key] = (
-                    now + _SYMBOL_FETCH_NEGATIVE_TTL_SECONDS,
-                    not_found,
-                )
+                if payload is not None:
+                    _cache_symbol_payload_locked(cache_key, payload, now)
+                elif failed:
+                    _symbol_negative_cache[cache_key] = (
+                        now + _SYMBOL_FETCH_NEGATIVE_TTL_SECONDS,
+                        not_found,
+                    )
     finally:
-        _symbol_fetch_slots.release()
+        lease.release()
 
 
 def _load_symbol_context(root: Path, symbol: str) -> dict[str, Any]:
@@ -516,6 +613,7 @@ def _load_symbol_context(root: Path, symbol: str) -> dict[str, Any]:
     now = time.monotonic()
     with _symbol_data_lock:
         _prune_symbol_caches_locked(now)
+        _reap_stranded_symbol_fetches_locked(now)
         cached = _symbol_data_cache.get(cache_key)
         if cached is not None and cached[0] > now:
             return copy.deepcopy(cached[1])
@@ -526,18 +624,22 @@ def _load_symbol_context(root: Path, symbol: str) -> dict[str, Any]:
             raise _SymbolDataBusy("stockdata source is temporarily unavailable")
         if cache_key in _symbol_fetch_inflight:
             raise _SymbolDataBusy("stockdata fetch is already in progress")
-        if not _symbol_fetch_slots.acquire(blocking=False):
+        slots = _symbol_fetch_slots
+        if not slots.acquire(blocking=False):
             raise _SymbolDataBusy("stockdata fetch lane is saturated")
+        lease = _SlotLease(slots)
         try:
             future = _symbol_fetch_executor.submit(
                 _fetch_projected_symbol, root, base, symbol
             )
         except RuntimeError:
-            _symbol_fetch_slots.release()
+            lease.release()
             raise _SymbolDataBusy("stockdata fetch lane could not accept work") from None
-        _symbol_fetch_inflight[cache_key] = future
+        _symbol_fetch_inflight[cache_key] = _InflightFetch(future, lease, now)
     future.add_done_callback(
-        lambda completed, key=cache_key: _finish_symbol_fetch(key, completed)
+        lambda completed, key=cache_key, held=lease: _conclude_symbol_fetch(
+            key, completed, held
+        )
     )
     try:
         payload = future.result(
@@ -547,6 +649,7 @@ def _load_symbol_context(root: Path, symbol: str) -> dict[str, Any]:
             )
         )
     except FutureTimeoutError:
+        future.cancel()
         raise _SymbolDataBusy("stockdata fetch exceeded its caller deadline") from None
     except _SymbolDataNotFound:
         raise
@@ -554,6 +657,12 @@ def _load_symbol_context(root: Path, symbol: str) -> dict[str, Any]:
         raise
     except CancelledError:
         raise _SymbolDataBusy("stockdata fetch was cancelled") from None
+    finally:
+        # A Future notifies its waiters BEFORE running done-callbacks, so the
+        # waiter concludes the fetch itself: an immediate second call must not
+        # see an in-flight entry the callback has not popped yet.
+        if future.done():
+            _conclude_symbol_fetch(cache_key, future, lease)
     return copy.deepcopy(payload)
 
 

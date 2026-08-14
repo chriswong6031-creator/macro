@@ -662,7 +662,7 @@ def test_w1a_initializer_rejects_unowned_namespace_hardlinks_and_mode_drift(
     capsys.readouterr()
     (orphan_root / "HEAD.json").unlink()
     orphan = orphan_root / "generations" / "ff" / f"mmgeneration_{'f' * 64}.json"
-    orphan.parent.mkdir(mode=0o700)
+    pit._mkdir_durable(orphan.parent)
     orphan.write_bytes(b"{}")
     orphan.chmod(0o600)
     before_orphan = orphan.read_bytes()
