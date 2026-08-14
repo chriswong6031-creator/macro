@@ -1804,12 +1804,22 @@
       '</th><th' + R + '>' + lz('weight', '权重') + '</th></tr>';
     var rows = moves.map(function (m) {
       var acc = m.direction === 'accumulating';
-      var col = ' style="color:var(' + (acc ? '--up' : '--down') + ')"';
-      var colR = ' style="text-align:right;color:var(' + (acc ? '--up' : '--down') + ')"';
-      var dirTxt = m.is_new ? lz('★ initiated', '★ 新建仓')
+      // A leg the split guard positively identified is a RE-DENOMINATION, not a
+      // manager decision: the share count moved because the shares were re-cut.
+      // It stays on the page (it is a Tier-2 receipt, and dropping it would
+      // silently shrink the fund count) but it must never render as a decision —
+      // no direction verb, no conviction number, no up/down hue. Same rule the
+      // engine applies to every ranked input; this is the last consumer of it.
+      var isSplit = !!m.split_adjusted;
+      var col = isSplit ? ' class="muted"'
+        : ' style="color:var(' + (acc ? '--up' : '--down') + ')"';
+      var colR = isSplit ? ' class="muted" style="text-align:right"'
+        : ' style="text-align:right;color:var(' + (acc ? '--up' : '--down') + ')"';
+      var dirTxt = isSplit ? lz('share split — not a trade', '拆股——非交易')
+        : m.is_new ? lz('★ initiated', '★ 新建仓')
         : m.is_exit ? lz('✕ exited', '✕ 清仓')
         : acc ? lz('▲ buying', '▲ 买入') : lz('▼ trimming', '▼ 减持');
-      var conv = (m.conviction_pp == null) ? '—'
+      var conv = (isSplit || m.conviction_pp == null) ? '—'
         : (m.conviction_pp >= 0 ? '+' : '') + Number(m.conviction_pp).toFixed(2) + 'pp';
       var w = (m.weight_pct == null) ? '—' : Number(m.weight_pct).toFixed(2) + '%';
       var kind = m.is_active ? lz('active manager', '主动经理') : lz('curated basket', '精选篮子');
@@ -3230,7 +3240,7 @@
   window.addEventListener('hashchange',load); load();
 })();
 </script>
-<p class="muted" style="font-size:12px">Generated 2026-08-14 11:25 UTC · charts rendered in-house with
+<p class="muted" style="font-size:12px">Generated 2026-08-14 12:38 UTC · charts rendered in-house with
 Lightweight Charts™ on our own price data · methodology &amp; caveats: see any sector page footer.</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
