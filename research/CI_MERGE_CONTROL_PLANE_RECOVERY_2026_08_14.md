@@ -220,12 +220,49 @@ the controller small instead of growing it:
   sweeper's ci-pack-0..11 main-proof anchor preserved). Code-file fanout
   awaits the curated `scope: exclusive` tier for the heavy tail.
 
-## §5 Live evidence targets (to fill in during verification)
+## §5 Live evidence (PR #5585, run 31777873919, 2026-08-14)
 
-- Before/after ci-plan service time, ordinary-PR wall clock, selected-job counts,
-  green→merge latency, backlog drain without manual merges — with run IDs.
+The repair PR edits `.github/workflows/**` and the manifest — a GLOBAL
+INVALIDATOR — so its own run is a full-suite (188-job, 12-pack) proof of the
+new pipeline. Step-level receipts:
 
-## §6 Experiment artifact cleanup
+| phase | incident run 31763116872 | repair run 31777873919 |
+|---|---|---|
+| ci-plan queue delay | 17m08s | **17s** |
+| ci-plan checkout | (fetch-depth:0, inside 7m52s exec) | 5m32s (depth-1, 64k files) |
+| diff resolution | git diff vs base (needed full history) | **1s** (PR files API) |
+| planner service (diff→plan→artifact) | — | **7s** (06:59:10→06:59:17) |
+| preflight, 4 structural guards | did not exist | **42s** (yaml 1s, unrun-audit 13s, trigger-closure 28s, conflict 0s) |
+| ci-plan total | 25m00s (queue+exec) | **6m42s** |
+| pack queue delay | 5m58s – 19m09s | **2–3s** (all 12 launched 07:00:04–05) |
+| pack plan materialization | ~106s re-inference ×12 | **instant** (document consumed) |
+| first green pack | — | ci-pack-2 16m23s (5m23s checkout + 10m37s tests) |
+
+Honest scoping of these numbers:
+* **Planner service time is 7s**, far inside the <60s p95 target. The remaining
+  ci-plan cost is CHECKOUT (5m32s) — file materialization of ~64k files, not
+  history. That is the next bottleneck and is NOT irreducible; a sparse
+  checkout is blocked today because `audit_unrun_tests` discovers suites across
+  the whole tree. Recorded as a known bottleneck, not as a win.
+* This run did NOT exercise cold scope inference: a global invalidator skips
+  inference by design ("scope inference not needed"), so the 1s plan step here
+  is the invalidator path. The cache path is measured locally (122s cold → ~1s
+  warm) and will be measured live on the first narrow PR (probe A).
+* Three packs (0/3/4) died in 5–13s on a GitHub-side transient —
+  `actions/checkout` archive 404 from codeload — the exact `infra` class the new
+  taxonomy names. Nine packs passed the consume gate and executed, which is
+  itself the proof that plan consumption works: a parity failure refuses in
+  seconds, and nine did not.
+
+## §6 Live probes (post-merge)
+
+- Probe A — narrow PR (one research `.md`): expect ci-plan ~1–2 min, 3 jobs /
+  1 pack, warm-cache plan, unattended sweeper merge; record green→merge latency.
+- Probe B — deliberately broken structural fixture (new unwired pytest file):
+  expect `ci-plan` red at the unrun-audit preflight in ~2–3 min with
+  `CI_CLASS=structural-preflight` and ZERO packs launched.
+
+## §7 Experiment artifact cleanup
 
 `mq-eval-base` branch, ruleset 20833101, merged probe PR #5581, branch
 `mq-eval-pr1` (auto-deleted) — remove after the closure report cites them.
