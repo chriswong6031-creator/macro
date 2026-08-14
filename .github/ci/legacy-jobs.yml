@@ -2961,6 +2961,16 @@ jobs:
       # docstrings in scripts/externalize_css.py.
       - name: inline-CSS externalization units + pair-skip guards
         run: python -m pytest tests/test_externalize_css.py -q
+      # design-system packet PR-0(a)(b): the site --fs-* type ramp at :root and the
+      # three shared .mx-* primitives. Same job because it is the same file — a
+      # templates/theme.css edit is what breaks all of it, and this job is already the
+      # theme.css integrity lane (interfonts sync + plain-copy byte-match above).
+      # Browser-free BY DESIGN: the packs install minimal deps, so the language-toggle
+      # check resolves the cascade in stdlib rather than importorskip-ing playwright
+      # and reporting green while proving nothing. Deps are the set installed above
+      # (pytest is the whole closure here — the suite imports only re/pathlib).
+      - name: design-system foundations (site type ramp at :root + shared .mx-* primitives)
+        run: python -m pytest tests/test_design_system_foundations.py -q
 
   data-base-shim:
     if: ${{ false }}

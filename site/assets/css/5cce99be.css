@@ -1,79 +1,4 @@
-{#=============================================================================
-  seo_base.html.j2 — shared chrome for the Mastermind Free Estate
-  (/tools/, /learn/, /blog/ + plain pages). Design system: MACRO TERMINAL —
-  ported from body.page-macro / mx5 (the macro.html Bloomberg-grade dialect).
 
-  DESIGN NOTES (for anyone touching an estate surface — read once):
-  · Identity = Inter UI (house --font-ui, self-hosted) prose + a terminal MONO
-    numeral face (--num, SF Mono system stack). Every figure, formula, eyebrow
-    and data cell is mono-tabular; reading copy is Inter. "Figures wear the
-    terminal face." NO web-font request (Newsreader serif is retired).
-  · Palette = house theme.css vars only (dark/light/zh aware) + a deep terminal
-    canvas (--bg/--panel/--panel2) and an ink ramp (--ink-1/2/3) SCOPED to
-    body.estate so the rest of the site is byte-untouched. theme.css is never
-    edited. Colour routes through house vars → dark/light + zh red/green at paint.
-  · Signature = the REGIME RAIL section-header system: a 3px gradient bar + a
-    strong sentence-case title + a hairline rule to the edge, with a mono
-    eyebrow. It unifies hub, calculator and article (it replaces the old
-    plotted-line underline, now retired). Draw-on ink survives only in the
-    per-calculator glyph family (.egl, see _estate_glyphs.html.j2), which
-    respects prefers-reduced-motion.
-
-  CONTEXT CONTRACT (builder → template, per CONTRACT.md §5):
-    rel   — asset prefix to site root ("../", "../../"); use for theme.css etc.
-    page  — {slug, family, title, description, canonical, url_path, published,
-             updated, breadcrumbs:[{label, href}] (last = current, no href)}
-    site  — {base}
-    jsonld_extra — (optional) raw JSON-LD string injected by the builder for
-             blog/lesson Article markup; rendered verbatim if present.
-
-  Chrome copy is bilingual via the house .l-en/.l-zh dual-span pattern; body
-  copy arrives EN-only (W1 language ruling — chrome parity only).
-=============================================================================#}
-{%- macro t(en, zh='') -%}
-<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
-{%- endmacro -%}
-{%- set rel = rel if (rel is defined and rel) else '' -%}
-{%- set brand = site.brand | default('MastermindX') -%}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block seo_title %}{{ page.title }} — {{ brand }}{% endblock %}</title>
-{# theme + language bootstrap: paint the stored / auto-detected mode before first
-   layout so there is no flash. zh auto-detect mirrors the ticker dossier idiom. #}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
-
-{#-- SEO head (subdir-safe; mirrors _seo_head.html.j2 but uses page.canonical) --#}
-<meta name="description" content="{{ page.description }}">
-<link rel="canonical" href="{{ page.canonical }}">
-<meta property="og:type" content="{% block og_type %}website{% endblock %}">
-<meta property="og:site_name" content="{{ brand }}">
-<meta property="og:title" content="{{ page.title }}">
-<meta property="og:description" content="{{ page.description }}">
-<meta property="og:url" content="{{ page.canonical }}">
-<meta property="og:image" content="{{ site.base }}apple-touch-icon.png">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="{{ page.title }}">
-<meta name="twitter:description" content="{{ page.description }}">
-<meta name="twitter:image" content="{{ site.base }}apple-touch-icon.png">
-<link rel="icon" href="{{ rel }}favicon.svg" type="image/svg+xml">
-<link rel="icon" href="{{ rel }}favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="{{ rel }}apple-touch-icon.png">
-
-{#-- Type is the house UI stack (Inter, self-hosted via theme.css) + a terminal
-    mono for numerals. Do not include _interfonts here: its document-relative
-    fonts/ URLs are for root pages and generate guaranteed 404s below /products,
-    /blog, /learn, and /tools. The linked stylesheet owns the working faces. --#}
-<link rel="stylesheet" href="{{ rel }}theme.css">
-
-{#-- BreadcrumbList JSON-LD (every page) --#}
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{% for c in page.breadcrumbs %}{"@type":"ListItem","position":{{ loop.index }},"name":{{ c.label|tojson }}{% if c.href %},"item":"{{ site.base }}{{ c.href.lstrip('/') }}"{% endif %}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
-{#-- overridable extra JSON-LD (Article markup injected by the builder for blog/lesson) --#}
-{% block jsonld %}{% if jsonld_extra %}<script type="application/ld+json">{{ jsonld_extra|safe }}</script>{% endif %}{% endblock %}
-
-<style>
 /* ══════════════════════════════════════════════════════════════════════════
    FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
    The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
@@ -455,46 +380,67 @@ html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
   .est-dek{font-size:var(--fs-md);}
   .est-cta-block{padding:18px; gap:14px;}
 }
-{% block estate_css %}{% endblock %}
-</style>
-{% include "_public_chrome_css.html.j2" %}
-{% block head_extra %}{% endblock %}
-</head>
-<body class="estate public-page {% block body_class %}{% endblock %}">
 
-{% include "_public_nav.html.j2" %}
-
-{% block breadcrumb %}
-<nav class="est-crumb" aria-label="Breadcrumb">
-  <ol>
-    {% for c in page.breadcrumbs %}
-    <li{% if loop.last %} aria-current="page"{% endif %}>
-      {% if c.href %}<a href="{{ rel }}{{ c.href.lstrip('/') }}">{{ c.label }}</a>{% else %}{{ c.label }}{% endif %}
-    </li>
-    {% if not loop.last %}<li class="sep" aria-hidden="true">/</li>{% endif %}
-    {% endfor %}
-  </ol>
-</nav>
-{% endblock %}
-
-<main id="main">
-{% block main %}{% endblock %}
-</main>
-
-{% include "_public_footer.html.j2" %}
-
-{% block body_scripts %}{% endblock %}
-{# theme.js historically discovers these shared components with
-   document-relative URLs. Nested acquisition pages load them explicitly from
-   the known root depth, then set the account idempotency flag so theme.js does
-   not request duplicate /products/*.js paths. Defer preserves source order:
-   Supabase -> account -> brain -> theme. #}
-<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
-<script src="{{ rel }}supabase.js"></script>
-<script src="{{ rel }}account.js"></script>
-<script src="{{ rel }}mm_brain.js"></script>
-<script src="{{ rel }}theme.js"></script>
-{% include "_public_chrome_js.html.j2" %}
-<script src="{{ rel }}onboard.js" defer></script>
-</body>
-</html>
+  .prod-hero{max-width:1120px; margin:24px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:minmax(0,1.35fr) minmax(280px,.65fr);
+    gap:34px; align-items:stretch;}
+  .prod-copy{border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    padding:clamp(24px,4vw,46px); background:
+      radial-gradient(110% 130% at 0% 0%,color-mix(in srgb,var(--link) 12%,transparent),transparent 58%),
+      var(--panel); box-shadow:var(--ms);}
+  .prod-copy .est-kicker{margin-bottom:16px;}
+  .prod-copy .est-title{max-width:16ch;}
+  .prod-copy .est-dek{max-width:58ch;}
+  .prod-cta{margin-top:25px;}
+  .prod-cta .gbtn{min-height:46px; padding-inline:20px;}
+  .prod-workflow{border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    padding:22px; background:var(--panel2); box-shadow:var(--ms);}
+  .prod-workflow .pw-k{font-family:var(--num); font-size:var(--fs-label);
+    letter-spacing:.12em; text-transform:uppercase; color:var(--link);}
+  .prod-workflow ol{list-style:none; margin:18px 0 0; padding:0; counter-reset:step;}
+  .prod-workflow li{counter-increment:step; display:grid; grid-template-columns:32px 1fr;
+    gap:11px; align-items:start; padding:15px 0; border-top:1px solid var(--hair);
+    color:var(--ink-1); font-size:var(--fs-body); line-height:1.45;}
+  .prod-workflow li:first-child{border-top:0; padding-top:0;}
+  .prod-workflow li::before{content:"0" counter(step); font-family:var(--num);
+    font-size:var(--fs-label); font-weight:700; color:var(--link);
+    border:1px solid color-mix(in srgb,var(--link) 34%,var(--hair-strong));
+    border-radius:7px; padding:4px 5px; text-align:center;}
+  .prod-layout{max-width:1120px; margin:38px auto 0; padding:0 24px;
+    display:grid; grid-template-columns:210px minmax(0,1fr); gap:44px; align-items:start;}
+  .prod-toc{position:sticky; top:78px; border-left:1px solid var(--hair-strong);
+    padding-left:15px;}
+  .prod-toc .toc-h{font-family:var(--num); font-size:var(--fs-label);
+    letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3); margin:0 0 9px;}
+  .prod-toc a{display:block; margin-left:-16px; padding:6px 0 6px 14px;
+    border-left:2px solid transparent; color:var(--ink-2); font-size:var(--fs-sm);
+    line-height:1.35;}
+  .prod-toc a:hover,.prod-toc a.active{border-left-color:var(--link);
+    color:var(--ink-1); text-decoration:none;}
+  .prod-main{min-width:0;}
+  .prod-related{margin:36px 0 0; padding-top:22px; border-top:1px solid var(--hair-strong);}
+  .prod-related h2{font-size:var(--fs-h2); margin:0 0 14px;}
+  .prod-rel-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px;}
+  .prod-rel{display:flex; flex-direction:column; min-height:116px; padding:16px;
+    border:1px solid var(--hair-strong); border-radius:var(--r-md); background:var(--panel);
+    color:var(--ink-1); text-decoration:none; transition:transform .18s,border-color .18s;}
+  .prod-rel:hover{transform:translateY(-2px); border-color:var(--link); text-decoration:none;}
+  .prod-rel .kind{font-family:var(--num); font-size:var(--fs-label);
+    letter-spacing:.08em; text-transform:uppercase; color:var(--link);}
+  .prod-rel .name{font-weight:700; margin-top:8px; line-height:1.35;}
+  .prod-rel .go{margin-top:auto; padding-top:10px; color:var(--ink-3); font-size:var(--fs-sm);}
+  @media (max-width:860px){
+    .prod-hero,.prod-layout{grid-template-columns:1fr;}
+    .prod-workflow ol{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+    .prod-workflow li{display:block; border:1px solid var(--hair); border-radius:var(--r-sm); padding:13px;}
+    .prod-workflow li::before{display:block; width:max-content; margin-bottom:10px;}
+    .prod-toc{position:static; display:flex; flex-wrap:wrap; gap:7px; border:0; padding:0;}
+    .prod-toc .toc-h{flex-basis:100%;}
+    .prod-toc a{margin:0; padding:6px 10px; border:1px solid var(--hair);
+      border-radius:999px;}
+  }
+  @media (max-width:600px){
+    .prod-hero,.prod-layout{padding-inline:16px;}
+    .prod-copy{padding:24px 20px;}
+    .prod-workflow ol{grid-template-columns:1fr;}
+  }

@@ -1,0 +1,304 @@
+"""tests/test_design_system_foundations.py — design-system packet PR-0(a)(b).
+
+Guards the two foundations every later migration builds on:
+
+  * **(a) the site type ramp.** The 11-step ``--fs-*`` scale was invented inside
+    ``body.page-macro`` (dashboard.html.j2) and hand-copied into three more page
+    templates. PR-0 promotes it VERBATIM to ``:root`` in theme.css. It must live at
+    ``:root`` and not on a body class: ``body.page-stocks`` (the Prophet board), the
+    ``seo_*`` estate children and ``/calculators`` all consume ``var(--fs-*)`` without
+    ever declaring it, so a body-scoped home silently drops them off the scale.
+  * **(b) the three shared primitives** (``.mx-ladder`` / ``.mx-chg-row`` /
+    ``.mx-empty``), so ``build_site.py`` and ``build_vector.py`` templates consume one
+    definition instead of re-inventing a local family each.
+
+WHY THIS SUITE IS BROWSER-FREE. The CI packs install a minimal dependency set, not
+``requirements.txt`` — a ``pytest.importorskip("playwright")`` here would SKIP in CI and
+report green while proving nothing (house trap: ci-packs-install-minimal-deps-not-requirements).
+So the language-toggle check below does not measure a browser: it RESOLVES THE CASCADE
+against the shipped theme.css with a small matcher (stdlib only), which is the property
+that actually broke. The browser measurement that confirms it — ``getComputedStyle`` in
+both locales — is run by hand and pasted into the PR body.
+
+THE DEFECT THIS PINS. ``.mx-ladder .mx-lad-total small { display:block }`` and theme.css's
+own ``html[data-lang="zh"] .l-en { display:none }`` both land at specificity (0,2,1). The
+toggle is declared EARLIER in the file, so source order hands the tie to the ``display:block``
+rule and BOTH language labels print in the total cell under zh ("47 setups 形态"). The
+restoring rule is what makes exactly one label paint, and deleting it is the mutation this
+suite must fail on.
+"""
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).resolve().parents[1]
+THEME = ROOT / "templates" / "theme.css"
+
+# The promoted ramp, value-for-value as it left body.page-macro. A change here is a
+# RETUNE of the whole site and must be a deliberate, reviewed act — not a side effect.
+SITE_RAMP = {
+    "--fs-display": "46px",
+    "--fs-num-xl": "38px",
+    "--fs-h1": "28px",
+    "--fs-num-lg": "22px",
+    "--fs-h2": "17px",
+    "--fs-md": "15px",
+    "--fs-body": "14px",
+    "--fs-h3": "14px",
+    "--fs-sm": "12.5px",
+    "--fs-label": "11px",
+    "--fs-micro": "10px",
+}
+
+# Page-local ramp declarations that are allowed to survive the promotion, because their
+# value genuinely DIFFERS from the site ramp. PR-0 promotes; it does not retune. Each is
+# a design decision owned by that page's own lane.
+DOCUMENTED_OVERRIDES = {
+    "templates/leader_radar.html.j2": {"--fs-display": "44px", "--fs-h1": "27px", "--fs-h2": "16px"},
+    "templates/intraday_flow.html.j2": {"--fs-display": "44px", "--fs-h1": "27px"},
+}
+
+
+def _strip_comments(css: str) -> str:
+    return re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+
+
+@pytest.fixture(scope="module")
+def theme() -> str:
+    return THEME.read_text(encoding="utf-8")
+
+
+# ── (a) the ramp ────────────────────────────────────────────────────────────────────
+
+def test_the_site_type_ramp_is_declared_at_root(theme):
+    """All 11 steps, at :root, with the exact promoted values."""
+    body = _root_block(theme)
+    for token, value in SITE_RAMP.items():
+        m = re.search(rf"{re.escape(token)}\s*:\s*([^;]+);", body)
+        assert m, f"{token} is not declared in theme.css's :root block"
+        assert m.group(1).strip() == value, (
+            f"{token} is {m.group(1).strip()!r}, expected {value!r} — PR-0 promoted the ramp "
+            f"verbatim; changing a value here re-sizes every page at once."
+        )
+
+
+def _root_block(theme: str) -> str:
+    """The first top-level ``:root { … }`` block of theme.css."""
+    css = _strip_comments(theme)
+    i = css.index(":root")
+    depth, start = 0, css.index("{", i)
+    for j in range(start, len(css)):
+        if css[j] == "{":
+            depth += 1
+        elif css[j] == "}":
+            depth -= 1
+            if depth == 0:
+                return css[start : j + 1]
+    raise AssertionError("unterminated :root block in theme.css")
+
+
+def test_the_ramp_is_not_scoped_to_a_body_class(theme):
+    """body.page-stocks (Prophet) never declares the ramp and inherits ONLY via :root."""
+    block = _root_block(theme)
+    assert all(t in block for t in SITE_RAMP), "the ramp must be in the :root block itself"
+
+
+def test_no_page_template_shadows_the_ramp_except_documented_overrides():
+    """Every surviving page-local --fs-* declaration must be a KNOWN, differing override."""
+    offenders: list[str] = []
+    for path in sorted((ROOT / "templates").rglob("*.j2")):
+        rel = path.relative_to(ROOT).as_posix()
+        allowed = DOCUMENTED_OVERRIDES.get(rel, {})
+        for token, value in re.findall(r"(--fs-[a-z0-9-]+)\s*:\s*([^;]+);", _strip_comments(path.read_text(encoding="utf-8"))):
+            if token not in SITE_RAMP:
+                continue  # not a ramp step (e.g. bonds' --fs-hero) — out of scope
+            value = value.strip()
+            if token not in allowed:
+                offenders.append(f"{rel}: {token}:{value} shadows the site ramp — remove it")
+            elif allowed[token] != value:
+                offenders.append(f"{rel}: {token}:{value} != documented override {allowed[token]}")
+    assert not offenders, "page-local ramp shadows found:\n  " + "\n  ".join(offenders)
+
+
+def test_documented_overrides_actually_differ_from_the_site_ramp():
+    """An 'override' equal to the ramp is a leftover shadow, not a decision."""
+    for rel, tokens in DOCUMENTED_OVERRIDES.items():
+        for token, value in tokens.items():
+            assert value != SITE_RAMP[token], (
+                f"{rel} {token}:{value} equals the site ramp — delete it and inherit instead"
+            )
+
+
+# ── (b) the primitives ──────────────────────────────────────────────────────────────
+
+@pytest.mark.parametrize("selector", [".mx-ladder", ".mx-chg-row", ".mx-empty"])
+def test_the_shared_primitive_is_defined_in_theme_css(theme, selector):
+    assert re.search(rf"^{re.escape(selector)}\s*\{{", _strip_comments(theme), re.M), (
+        f"{selector} must be defined in theme.css so both builders consume one definition"
+    )
+
+
+def test_mx_empty_why_ships_with_mx_empty(theme):
+    """Doctrine: a null is disclosed in plain words, so the empty state carries its reason."""
+    css = _strip_comments(theme)
+    assert ".mx-empty" in css and re.search(r"^\.mx-empty-why\s*\{", css, re.M), (
+        ".mx-empty-why is REQUIRED alongside .mx-empty — an empty state without its why "
+        "is a bare blank, which the doctrine forbids"
+    )
+
+
+def test_the_ladder_carries_sol_scoping_rider(theme):
+    """Sol §J.9 (2026-08-12): .mx-ladder is scoped to Prophet/lifecycle-derived surfaces."""
+    m = re.search(r"/\*[^*]*(?:\*(?!/)[^*]*)*\*/\s*\.mx-ladder\s*\{", theme)
+    assert m, ".mx-ladder must carry a comment immediately above its rule"
+    comment = m.group(0)
+    assert "J.9" in comment and "MUST NOT proliferate" in comment, (
+        "the comment above .mx-ladder must record Sol's binding §J.9 scope rider"
+    )
+
+
+# ── the language toggle, resolved through the real cascade ──────────────────────────
+
+_ATTR = re.compile(r"\[([a-zA-Z0-9_-]+)(?:([~|^$*]?=)\"?([^\]\"]*)\"?)?\]")
+
+
+def _parse_compound(sel: str) -> dict:
+    """A single compound selector -> {tag, classes, attrs, negations}."""
+    negations = []
+    while True:
+        m = re.search(r":not\(([^()]*)\)", sel)
+        if not m:
+            break
+        negations.append(_parse_compound(m.group(1)))
+        sel = sel[: m.start()] + sel[m.end() :]
+    classes = set(re.findall(r"\.([a-zA-Z0-9_-]+)", sel))
+    attrs = [(a, op, v) for a, op, v in _ATTR.findall(sel)]
+    tag = re.match(r"^([a-zA-Z][a-zA-Z0-9]*)", sel)
+    return {"tag": tag.group(1) if tag else None, "classes": classes,
+            "attrs": attrs, "negations": negations}
+
+
+def _matches(compound: dict, el: dict) -> bool:
+    if compound["tag"] and compound["tag"] != el["tag"]:
+        return False
+    if not compound["classes"] <= el["classes"]:
+        return False
+    for name, op, value in compound["attrs"]:
+        if name not in el["attrs"]:
+            return False
+        if op and el["attrs"][name] != value:
+            return False
+    return not any(_matches(n, el) for n in compound["negations"])
+
+
+def _specificity(selector: str) -> tuple[int, int, int]:
+    flat = re.sub(r":not\(([^()]*)\)", r" \1 ", selector)
+    ids = len(re.findall(r"#[a-zA-Z0-9_-]+", flat))
+    classes = len(re.findall(r"\.[a-zA-Z0-9_-]+", flat)) + len(_ATTR.findall(flat))
+    elements = len(re.findall(r"(?:^|[\s>+~])([a-zA-Z][a-zA-Z0-9]*)", flat))
+    return ids, classes, elements
+
+
+def _selector_matches_chain(selector: str, chain: list[dict]) -> bool:
+    """Descendant-combinator matching, right to left, against an ancestor chain."""
+    compounds = [_parse_compound(p) for p in selector.split() if p.strip()]
+    if not compounds or not _matches(compounds[-1], chain[-1]):
+        return False
+    i = len(chain) - 2
+    for compound in reversed(compounds[:-1]):
+        while i >= 0 and not _matches(compound, chain[i]):
+            i -= 1
+        if i < 0:
+            return False
+        i -= 1
+    return True
+
+
+def _top_level_rules(css: str):
+    """(selector_list, declarations, order) for every rule OUTSIDE an at-block.
+
+    At-blocks are skipped deliberately: moving the restoring rule into a @media would
+    change when it applies, and this resolver should notice rather than absorb it.
+    """
+    css = _strip_comments(css)
+    out, i, order = [], 0, 0
+    while i < len(css):
+        brace = css.find("{", i)
+        if brace < 0:
+            break
+        prelude = css[i:brace].strip()
+        depth, j = 1, brace + 1
+        while j < len(css) and depth:
+            if css[j] == "{":
+                depth += 1
+            elif css[j] == "}":
+                depth -= 1
+            j += 1
+        if not prelude.startswith("@"):
+            out.append((prelude, css[brace + 1 : j - 1], order))
+            order += 1
+        i = j
+    return out
+
+
+def _resolve_display(css: str, chain: list[dict]) -> str:
+    """The winning `display` for chain[-1]: max by (!important, specificity, source order)."""
+    best, winner = None, "inline"  # <small> initial display
+    for prelude, decls, order in _top_level_rules(css):
+        m = re.search(r"(?:^|;)\s*display\s*:\s*([^;]+)", decls)
+        if not m:
+            continue
+        value = m.group(1).strip()
+        important = value.endswith("!important")
+        value = value.replace("!important", "").strip()
+        for selector in prelude.split(","):
+            selector = selector.strip()
+            if not selector or not _selector_matches_chain(selector, chain):
+                continue
+            key = (important, _specificity(selector), order)
+            if best is None or key > best:
+                best, winner = key, value
+    return winner
+
+
+def _ladder_label_chain(lang: str, label_class: str) -> list[dict]:
+    return [
+        {"tag": "html", "classes": set(), "attrs": {"data-lang": lang}},
+        {"tag": "body", "classes": set(), "attrs": {}},
+        {"tag": "div", "classes": {"mx-ladder"}, "attrs": {}},
+        {"tag": "div", "classes": {"mx-lad-total"}, "attrs": {}},
+        {"tag": "small", "classes": {label_class}, "attrs": {}},
+    ]
+
+
+def test_the_language_toggle_resolver_agrees_with_theme_css_on_a_plain_label(theme):
+    """Sanity-check the resolver itself against the toggle's uncontested behaviour."""
+    plain = [
+        {"tag": "html", "classes": set(), "attrs": {"data-lang": "zh"}},
+        {"tag": "span", "classes": {"l-en"}, "attrs": {}},
+    ]
+    assert _resolve_display(theme, plain) == "none", "resolver disagrees with the base toggle"
+
+
+@pytest.mark.parametrize(
+    "lang,visible,hidden",
+    [("en", "l-en", "l-zh"), ("zh", "l-zh", "l-en")],
+)
+def test_ladder_total_prints_exactly_one_language_label(theme, lang, visible, hidden):
+    """The regression: theme.css must not out-specify its own language toggle.
+
+    Under zh the total cell read "47 setups 形态" — both labels — because
+    `.mx-ladder .mx-lad-total small { display:block }` ties the toggle on specificity
+    (0,2,1) and wins on source order. Deleting the restoring rule fails this test.
+    """
+    shown = _resolve_display(theme, _ladder_label_chain(lang, visible))
+    gone = _resolve_display(theme, _ladder_label_chain(lang, hidden))
+    assert shown != "none", f"[{lang}] .{visible} is hidden — the ladder total has no label"
+    assert gone == "none", (
+        f"[{lang}] .{hidden} resolves to {gone!r}, not 'none' — BOTH language labels paint "
+        f"in the ladder total. theme.css is out-specifying its own language toggle; keep the "
+        f"restoring rule below .mx-ladder .mx-lad-total small."
+    )

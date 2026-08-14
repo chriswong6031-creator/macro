@@ -1,79 +1,4 @@
-{#=============================================================================
-  seo_base.html.j2 — shared chrome for the Mastermind Free Estate
-  (/tools/, /learn/, /blog/ + plain pages). Design system: MACRO TERMINAL —
-  ported from body.page-macro / mx5 (the macro.html Bloomberg-grade dialect).
 
-  DESIGN NOTES (for anyone touching an estate surface — read once):
-  · Identity = Inter UI (house --font-ui, self-hosted) prose + a terminal MONO
-    numeral face (--num, SF Mono system stack). Every figure, formula, eyebrow
-    and data cell is mono-tabular; reading copy is Inter. "Figures wear the
-    terminal face." NO web-font request (Newsreader serif is retired).
-  · Palette = house theme.css vars only (dark/light/zh aware) + a deep terminal
-    canvas (--bg/--panel/--panel2) and an ink ramp (--ink-1/2/3) SCOPED to
-    body.estate so the rest of the site is byte-untouched. theme.css is never
-    edited. Colour routes through house vars → dark/light + zh red/green at paint.
-  · Signature = the REGIME RAIL section-header system: a 3px gradient bar + a
-    strong sentence-case title + a hairline rule to the edge, with a mono
-    eyebrow. It unifies hub, calculator and article (it replaces the old
-    plotted-line underline, now retired). Draw-on ink survives only in the
-    per-calculator glyph family (.egl, see _estate_glyphs.html.j2), which
-    respects prefers-reduced-motion.
-
-  CONTEXT CONTRACT (builder → template, per CONTRACT.md §5):
-    rel   — asset prefix to site root ("../", "../../"); use for theme.css etc.
-    page  — {slug, family, title, description, canonical, url_path, published,
-             updated, breadcrumbs:[{label, href}] (last = current, no href)}
-    site  — {base}
-    jsonld_extra — (optional) raw JSON-LD string injected by the builder for
-             blog/lesson Article markup; rendered verbatim if present.
-
-  Chrome copy is bilingual via the house .l-en/.l-zh dual-span pattern; body
-  copy arrives EN-only (W1 language ruling — chrome parity only).
-=============================================================================#}
-{%- macro t(en, zh='') -%}
-<span class="l-en">{{ en|safe }}</span><span class="l-zh">{{ (zh if zh else en)|safe }}</span>
-{%- endmacro -%}
-{%- set rel = rel if (rel is defined and rel) else '' -%}
-{%- set brand = site.brand | default('MastermindX') -%}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block seo_title %}{{ page.title }} — {{ brand }}{% endblock %}</title>
-{# theme + language bootstrap: paint the stored / auto-detected mode before first
-   layout so there is no flash. zh auto-detect mirrors the ticker dossier idiom. #}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);document.documentElement.classList.add('has-js');}catch(e){}</script>
-
-{#-- SEO head (subdir-safe; mirrors _seo_head.html.j2 but uses page.canonical) --#}
-<meta name="description" content="{{ page.description }}">
-<link rel="canonical" href="{{ page.canonical }}">
-<meta property="og:type" content="{% block og_type %}website{% endblock %}">
-<meta property="og:site_name" content="{{ brand }}">
-<meta property="og:title" content="{{ page.title }}">
-<meta property="og:description" content="{{ page.description }}">
-<meta property="og:url" content="{{ page.canonical }}">
-<meta property="og:image" content="{{ site.base }}apple-touch-icon.png">
-<meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="{{ page.title }}">
-<meta name="twitter:description" content="{{ page.description }}">
-<meta name="twitter:image" content="{{ site.base }}apple-touch-icon.png">
-<link rel="icon" href="{{ rel }}favicon.svg" type="image/svg+xml">
-<link rel="icon" href="{{ rel }}favicon.ico" sizes="any">
-<link rel="apple-touch-icon" href="{{ rel }}apple-touch-icon.png">
-
-{#-- Type is the house UI stack (Inter, self-hosted via theme.css) + a terminal
-    mono for numerals. Do not include _interfonts here: its document-relative
-    fonts/ URLs are for root pages and generate guaranteed 404s below /products,
-    /blog, /learn, and /tools. The linked stylesheet owns the working faces. --#}
-<link rel="stylesheet" href="{{ rel }}theme.css">
-
-{#-- BreadcrumbList JSON-LD (every page) --#}
-<script type="application/ld+json">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[{% for c in page.breadcrumbs %}{"@type":"ListItem","position":{{ loop.index }},"name":{{ c.label|tojson }}{% if c.href %},"item":"{{ site.base }}{{ c.href.lstrip('/') }}"{% endif %}}{% if not loop.last %},{% endif %}{% endfor %}]}</script>
-{#-- overridable extra JSON-LD (Article markup injected by the builder for blog/lesson) --#}
-{% block jsonld %}{% if jsonld_extra %}<script type="application/ld+json">{{ jsonld_extra|safe }}</script>{% endif %}{% endblock %}
-
-<style>
 /* ══════════════════════════════════════════════════════════════════════════
    FREE ESTATE — macro terminal language (ported from body.page-macro / mx5)
    The estate speaks the same Bloomberg-grade terminal dialect as macro.html:
@@ -455,46 +380,63 @@ html[data-lang="zh"] .est-title{letter-spacing:-.01em;}
   .est-dek{font-size:var(--fs-md);}
   .est-cta-block{padding:18px; gap:14px;}
 }
-{% block estate_css %}{% endblock %}
-</style>
-{% include "_public_chrome_css.html.j2" %}
-{% block head_extra %}{% endblock %}
-</head>
-<body class="estate public-page {% block body_class %}{% endblock %}">
 
-{% include "_public_nav.html.j2" %}
+  .th-hero{max-width:1120px; margin:22px auto 0; padding:0 24px;}
+  .th-tools{max-width:1120px; margin:30px auto 0; padding:0 24px;}
 
-{% block breadcrumb %}
-<nav class="est-crumb" aria-label="Breadcrumb">
-  <ol>
-    {% for c in page.breadcrumbs %}
-    <li{% if loop.last %} aria-current="page"{% endif %}>
-      {% if c.href %}<a href="{{ rel }}{{ c.href.lstrip('/') }}">{{ c.label }}</a>{% else %}{{ c.label }}{% endif %}
-    </li>
-    {% if not loop.last %}<li class="sep" aria-hidden="true">/</li>{% endif %}
-    {% endfor %}
-  </ol>
-</nav>
-{% endblock %}
+  /* ── regime-rail section header (the estate signature) ─────────────────────── */
+  .th-sech{display:flex; align-items:center; gap:11px; margin:0 0 16px;
+    padding:0 0 var(--sp-3); border-bottom:1px solid var(--hair-strong);}
+  .th-sech::before{content:""; flex:none; align-self:center; width:3px; height:18px; border-radius:2px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 35%,transparent));}
+  .th-sech .sh-n{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-label);
+    font-weight:700; letter-spacing:.06em; color:var(--ink-3);}
+  .th-sech .sh-t{font-family:var(--font-ui); font-size:calc(var(--fs-h2) + 1px); font-weight:700;
+    letter-spacing:-.01em; color:var(--ink-1);}
+  html[data-lang="zh"] .th-sech .sh-t{letter-spacing:0;}
+  .th-sech .sh-count{margin-left:auto; font-family:var(--num); font-variant-numeric:tabular-nums;
+    font-size:var(--fs-label); font-weight:700; letter-spacing:.06em; color:var(--ink-3);
+    text-transform:uppercase;}
 
-<main id="main">
-{% block main %}{% endblock %}
-</main>
+  /* ── calculator cards — machined hairline panels, one glyph each ──────────── */
+  .th-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(288px,1fr)); gap:16px;}
+  .th-card{display:flex; flex-direction:column; border:1px solid var(--hair-strong); border-radius:var(--r-lg);
+    padding:18px 20px 18px; background:var(--panel); box-shadow:var(--ms); text-decoration:none;
+    position:relative; overflow:hidden; transition:transform .2s cubic-bezier(.2,.7,.3,1),border-color .2s,box-shadow .2s;}
+  .th-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px;
+    background:linear-gradient(180deg, var(--rail), color-mix(in srgb,var(--rail) 22%,transparent));
+    opacity:0; transition:opacity .2s;}
+  .th-card:hover{transform:translateY(-3px); border-color:color-mix(in srgb,var(--link) 46%,var(--hair-strong));
+    box-shadow:0 18px 38px -20px color-mix(in srgb,var(--link) 42%,transparent); text-decoration:none;}
+  .th-card:hover::before{opacity:1;}
+  .th-card .tc-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .th-card .tc-glyph{flex:none; width:56px; height:36px; margin:-1px -2px 0 0;}
+  .th-card .tc-title{font-family:var(--font-ui); font-size:calc(var(--fs-md) + 3px); font-weight:700;
+    color:var(--ink-1); line-height:1.24; letter-spacing:-.01em; margin:0;}
+  html[data-lang="zh"] .th-card .tc-title{letter-spacing:0;}
+  .th-card .tc-blurb{font-family:var(--font-ui); font-size:var(--fs-body); line-height:1.5;
+    color:var(--ink-2); margin:8px 0 0;}
+  .th-card .tc-go{font-family:var(--num); font-variant-numeric:tabular-nums; font-size:var(--fs-sm);
+    letter-spacing:.02em; color:var(--link); margin:16px 0 0 0; display:inline-flex; align-items:center; gap:6px;
+    padding-top:12px; border-top:1px solid var(--hair);}
+  .th-card .tc-go .arw{transition:transform .2s;}
+  .th-card:hover .tc-go .arw{transform:translateX(3px);}
 
-{% include "_public_footer.html.j2" %}
+  /* ── featured spreadsheet — a wider machined panel with accent edge ───────── */
+  .th-feat{display:grid; grid-template-columns:1fr auto; align-items:center; gap:22px;
+    border:1px solid color-mix(in srgb,var(--link) 26%,var(--hair-strong)); border-radius:var(--r-lg);
+    border-left:3px solid var(--rail); padding:22px 24px; box-shadow:var(--ms); background:
+      radial-gradient(130% 150% at 100% 0%, color-mix(in srgb,var(--link) 9%,transparent), transparent 58%),
+      var(--panel);
+    text-decoration:none; transition:transform .2s,border-color .2s,box-shadow .2s;}
+  .th-feat:hover{transform:translateY(-2px); border-color:var(--link);
+    box-shadow:0 18px 40px -22px color-mix(in srgb,var(--link) 45%,transparent); text-decoration:none;}
+  .th-feat .ft-k{font-family:var(--num); font-size:var(--fs-label); letter-spacing:.07em;
+    text-transform:uppercase; color:var(--link);}
+  .th-feat .ft-t{font-family:var(--font-ui); font-size:calc(var(--fs-num-lg) + 1px); font-weight:800;
+    color:var(--ink-1); margin:5px 0 0; line-height:1.18; letter-spacing:-.015em;}
+  html[data-lang="zh"] .th-feat .ft-t{letter-spacing:0;}
+  .th-feat .ft-d{font-family:var(--font-ui); font-size:var(--fs-md); color:var(--ink-2); margin:9px 0 0; max-width:62ch;}
+  .th-feat .ft-btn{flex:none; font-family:var(--font-ui);}
+  @media (max-width:640px){ .th-feat{grid-template-columns:1fr;} .th-feat .ft-btn{justify-self:start;} }
 
-{% block body_scripts %}{% endblock %}
-{# theme.js historically discovers these shared components with
-   document-relative URLs. Nested acquisition pages load them explicitly from
-   the known root depth, then set the account idempotency flag so theme.js does
-   not request duplicate /products/*.js paths. Defer preserves source order:
-   Supabase -> account -> brain -> theme. #}
-<script>window.MM_API=window.MM_API||'https://app.mastermind-x.com';window.__mmAccountLoading=true;</script>
-<script src="{{ rel }}supabase.js"></script>
-<script src="{{ rel }}account.js"></script>
-<script src="{{ rel }}mm_brain.js"></script>
-<script src="{{ rel }}theme.js"></script>
-{% include "_public_chrome_js.html.j2" %}
-<script src="{{ rel }}onboard.js" defer></script>
-</body>
-</html>
