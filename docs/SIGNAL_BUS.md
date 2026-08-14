@@ -96,6 +96,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | signal-commons | 12 |
 | signal-foundry | 4 |
 | standout-accountability | 8 |
+| stock-identity | 1 |
 | stock-personality | 5 |
 | tech-internals | 1 |
 | thematic-intelligence | 12 |
@@ -115,7 +116,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | tier | count |
 |---|---|
 | display | 374 |
-| infrastructure | 162 |
+| infrastructure | 163 |
 | scored | 5 |
 | shadow | 101 |
 
@@ -123,7 +124,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 602 |
+| git | 603 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 18 |
@@ -1165,6 +1166,12 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | us-audit-scoreboard | `site/factordata/us_audit_scoreboard.json` | json | daily-engine | display | 0 | 0 |
 | us-board-track-v2 | `site/factordata/us_board_track_v2.json` | json | daily-engine | shadow | 0 | 0 |
 | us-standout-audit-state | `data/standout_audit/us_audit_state.json` | json | daily-engine | infrastructure | 0 | 0 |
+
+### stock-identity
+
+| id | path | format | cadence | tier | consumers | external consumers |
+|---|---|---|---|---|---|---|
+| stock-identity-partition-manifest | `data/stock_identity/partition/partition_manifest_v1.json` | json | on-demand | infrastructure | 2 | 0 |
 
 ### stock-personality
 
