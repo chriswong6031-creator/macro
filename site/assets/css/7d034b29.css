@@ -1834,18 +1834,9 @@
        every module shares one scale, one rhythm, one material language. */
     /* deepened terminal canvas — richer "screen" black, scoped to this page */
     --bg:#0a0c11; --panel:#14171e; --panel2:#1b1f28;
-    /* type scale — 10 deliberate steps replace the ad-hoc soup */
-    --fs-display:46px;   /* hero verdict word          */
-    --fs-num-xl:38px;    /* the big board scores        */
-    --fs-h1:28px;        /* page / hero title           */
-    --fs-num-lg:22px;    /* secondary big numerals      */
-    --fs-h2:17px;        /* panel section titles        */
-    --fs-md:15px;        /* lead body / strong figures  */
-    --fs-body:14px;      /* base copy                   */
-    --fs-h3:14px;        /* subsection titles           */
-    --fs-sm:12.5px;      /* secondary copy / table body */
-    --fs-label:11px;     /* MONO eyebrows · caps        */
-    --fs-micro:10px;     /* dense ticks · table heads   */
+    /* type scale — the 11-step ramp this page invented is now the SITE ramp and
+       lives at :root in theme.css (design-system packet PR-0(a)). Promoted
+       verbatim, so this page's type is byte-unchanged; it now inherits it. */
     /* spacing grid (4px base) — kill the 7/9/11/13/17/19px grab-bag */
     --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px; --sp-6:24px; --sp-8:32px;
     /* radii + the eyebrow tracking constant */
