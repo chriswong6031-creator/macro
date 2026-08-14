@@ -1,6 +1,6 @@
 {
   "schema": "neuralweb.health.v1",
-  "produced_at": "2026-08-14T05:49:25.185386+00:00",
+  "produced_at": "2026-08-14T06:13:15.841472+00:00",
   "as_of": "2026-08-13",
   "overall_status": "warn",
   "lobes": [
@@ -2841,8 +2841,8 @@
     }
   ],
   "cortex": {
-    "cortex_source": "previous_run",
-    "memo_as_of": "2026-08-13T20:46:38+00:00",
+    "cortex_source": "current_run",
+    "memo_as_of": "2026-08-14T06:11:20+00:00",
     "run_status": {
       "status": "ok",
       "degraded": false,
@@ -2850,36 +2850,28 @@
       "model_used": "claude-opus-4-8",
       "provider_attempts": [
         {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
+          "provider": "codex",
+          "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ce1QKMaqAoArPYCMfbWhz'}"
+          "ok": true,
+          "error_type": null,
+          "error_message": null
         },
         {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
+          "provider": "codex",
+          "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ce1QLezNJTkFyGMMREoez'}"
+          "ok": true,
+          "error_type": null,
+          "error_message": null
         },
         {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
+          "provider": "codex",
+          "model": "gpt-5.6-sol",
           "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ce1QRGwSzTUiB52UKUK4H'}"
-        },
-        {
-          "provider": "oauth",
-          "model": "claude-opus-4-8",
-          "attempted": true,
-          "ok": false,
-          "error_type": "rate_limit",
-          "error_message": "Error code: 429 - {'type': 'error', 'error': {'type': 'rate_limit_error', 'message': 'Error'}, 'request_id': 'req_011Ce1QejSkjrmZ2MziW8S6a'}"
+          "ok": true,
+          "error_type": null,
+          "error_message": null
         },
         {
           "provider": "codex",
@@ -2906,11 +2898,11 @@
           "error_message": null
         }
       ],
-      "tool_call_batches": 2,
-      "individual_tool_calls": 7,
+      "tool_call_batches": 5,
+      "individual_tool_calls": 11,
       "expected_min_tool_calls": 1,
       "context_stale": false,
-      "context_as_of": "2026-08-13T14:09:36Z"
+      "context_as_of": "2026-08-14T05:46:20Z"
     },
     "probation": {
       "granted": false,
