@@ -104,10 +104,47 @@ backlog and promoting that law to `hard --strict` is **T7's** work.
 Two further properties worth carrying forward: `authority` and `evidence_ref` are
 **derived, not curated** (a hand-typed `authority:` key in `synapse.yml` would be
 unenforced free text, since `_REQUIRED_ARTIFACT_KEYS` is a required-key set, not an
-exact-key set — reproducing the C-1/C-2 defect class one field later); and the HARD drift
-law compares a **structural projection**, because `data/qledger/claims.jsonl` is
-append-only and pinning corpus-sourced fields by byte equality would be a scheduled
-fleet-wide red.
+exact-key set — reproducing the C-1/C-2 defect class one field later); and **there is no
+drift law at all** — the registry is a derived on-demand view, nothing generated is
+committed, and there is no `--check` equality mode, because `data/qledger/claims.jsonl` is
+append-only and `config/synapse.yml` took 26 commits in 14 days, so every candidate pin was
+a scheduled fleet-wide red.
+
+#### T1a / T1b / T1c — the 2026-08-14 fix wave
+
+**T1a — the ledger waterfall now earns what it publishes.** Rule 4 adopted any
+grader-shaped consumer's ledger, "even cross-program". Measured 2026-08-14: 7 engines
+resolved by rule 4 and **6 of the 7 hops crossed a program boundary and were wrong or
+unearned** — `engine/run.py::engine-fix`, the nightly orchestrator, was "graded by"
+hk-canada's `data/board_ledger/ca_board.parquet`, and
+`scripts/build_stock_library.py::us-stocks-prebreakout` resolved through
+`scripts/grade_us_board.py`, a producer owning two cells with different ledgers, so the
+hop index made an arbitrary pick. Rule 4 is now same-program only, keyed by
+`(producer, owner_program)`: rule-4 count 7 → 1, `graded_by_design: yes` 106 → 100, content
+findings 222 → 212, **engine count unchanged at 378** — this deletes unearned semantics,
+never a row. Separately, the `weak_filename_heuristic` label was measurably wrong: 5 of the
+35 rule-1 matches carry `ledger` only in a **directory** component and all five are real
+grading stores, so basename-tightening was measured and **rejected** and the value is now
+`weak_path_heuristic`.
+
+**T1b — fail-closed is unconditional (M4 ruling, 2026-08-14).** An incomplete read is a
+RUN-level defect — the guard failed to do its job — not a corpus condition, so it exits
+non-zero on **every** run in both plain and `--json` mode. `--strict` retains only its own
+meaning (content findings also red), reserved for T7's promotion era. "Incomplete" now
+includes **partial**: a claim store that opens but whose lines do not all parse is named
+with its count while the rows that did parse stay in the view. The live-corpus assertions
+moved onto a fixture root — asserting the C-1 backlog is non-empty would have reddened this
+lane the day T7 drained it.
+
+**T1c — the guard runs in its OWN legacy job, `intelligence-registry` (CEO ruling
+2026-08-14).** This supersedes the earlier front-of-`neural-web` placement. `run_ci_pack.py`
+returns on the first non-zero step, so inside a shared job there is no safe position: first
+masks the nine sibling suites behind it, last goes dark behind any of them (#4779 — an
+absence of red is not a pass), and a step-level `if: always()` is unavailable because
+`ALLOWED_STEP_KEYS` is `{name, run, uses, with}`. 188 jobs were measured for consolidation
+first; zero exact-duplicate signatures and no safe merge existed, so the one-off pack
+rebalance is the cheaper cost. The job passes no `--strict`: with ~200 pre-existing content
+findings that would be a scheduled red on arrival.
 
 ---
 

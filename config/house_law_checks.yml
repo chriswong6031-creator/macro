@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-13"
+updated: "2026-08-14"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -2940,7 +2940,7 @@ checks:
     check_script: scripts/check_intelligence_registry.py
     ci_wiring:
       - workflow: .github/ci/legacy-jobs.yml
-        job: neural-web
+        job: intelligence-registry
         lane: pr_ci
     selftest: true
     allowlist: config/intelligence_registry_overlay.yml
@@ -3032,11 +3032,14 @@ checks:
       Registered at `warn` rather than `hard` per the second known_limit: the argument for
       `hard` here ("green by construction, every input is PR-caused") is verbatim the
       argument that justified the drift pin in rounds 1 and 2, and it was wrong both times,
-      so the severity waits on evidence rather than on reasoning. Extends the existing
-      neural-web legacy job rather than adding a new one (run_ci_pack.py balances 185 jobs
-      by weight, so a new job rebalances every pack), and its steps run FIRST in that job —
-      run_ci_pack.py::_run_job returns on the first non-zero step, so an appended step goes
-      dark behind any earlier red.
+      so the severity waits on evidence rather than on reasoning. Wired as its OWN legacy
+      job `intelligence-registry` (CEO ruling 2026-08-14), not folded into neural-web:
+      run_ci_pack.py::_run_job RETURNS on the first non-zero step, so inside a shared job
+      there is no safe position — first MASKS the nine sibling suites behind it, last goes
+      DARK behind any of them (#4779, an absence of red is not a pass) — and a step-level
+      `if: always()` is unavailable because ALLOWED_STEP_KEYS is {name, run, uses, with}.
+      188 jobs were measured for consolidation first; zero exact-duplicate signatures and
+      no safe merge existed, so the one-off pack rebalance is the cheaper cost.
 
   - law_id: epistemics.engine_authority_evidence
     summary: >
@@ -3068,7 +3071,7 @@ checks:
     check_script: scripts/check_intelligence_registry.py
     ci_wiring:
       - workflow: .github/ci/legacy-jobs.yml
-        job: neural-web
+        job: intelligence-registry
         lane: pr_ci
     selftest: true
     allowlist: null
