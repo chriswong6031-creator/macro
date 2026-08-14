@@ -9,7 +9,7 @@
 set -u
 umask 077
 
-SEALED_PYTHON="/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1/runtime/bin/python3.12"
+SEALED_PYTHON="/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v2/runtime/bin/python3.12"
 REPO_ROOT="/Users/chriswong/options-sparse-selector-ops-wt"
 RUNNER="/Users/chriswong/options-sparse-selector-ops-wt/scripts/run_options_sparse_selector.py"
 
