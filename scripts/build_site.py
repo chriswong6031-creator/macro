@@ -6483,11 +6483,19 @@ def main() -> int:
                     }
             except Exception as _wrie:  # noqa: BLE001 — additive; rail just stays hidden
                 log.warning("WRI regime rail input skipped (%s)", _wrie)
+            # The workspace paints every row CLIENT-side from stockdata/index.json,
+            # whose `s` (sector) is one raw English string per ticker — so it cannot
+            # reach the td()/tr() globals a baked page uses, and its sector names sat
+            # in English under data-lang="zh" while every label around them switched.
+            # Same remedy the Options desk already ships (`OEW_SECTOR_ZH`): hand the
+            # page the glossary's answers as a literal map. A name the glossary does
+            # not know is absent from the map and the JS keeps its English.
             write_page(site / "watchlist.html",
                 env.get_template("watchlist.html.j2").render(
                     generated_utc=generated, state_display_json=sd_json,
                     supabase_cfg_json=site_assets.supabase_cfg_json(),
                     wri_regime_json=_json.dumps(_wri_regime),
+                    sector_zh_json=_json.dumps(i18n.sector_lexicon(), ensure_ascii=False),
                     starters_json=_json.dumps(wl.get("suggested", []))))
             _tmark("watchlist")
             log.info("wrote %s", site / "watchlist.html")

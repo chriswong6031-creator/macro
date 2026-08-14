@@ -2515,7 +2515,11 @@ jobs:
       - name: install minimal deps
         # pyyaml: engine.factor_exposure loads the W6.1 factor-model charter (YAML) at
         # import, so the test modules need it at collection time (was ModuleNotFoundError).
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # markupsafe: engine.i18n imports Markup at module scope, and the sector-i18n
+        # suite below imports engine.i18n for the glossary half. jinja2: that same suite
+        # renders the ONE shipped template line that publishes window.WL_SECTOR_ZH, to
+        # prove an undefined context still emits `{}` rather than a bare `=`.
+        run: pip install pytest pandas numpy pyarrow pyyaml markupsafe jinja2
       - name: risk_core.js math — §7 sanity anchors + structural invariants
         run: python -m pytest tests/test_risk_core_js.py -q
       - name: watchlist_risk.js chain lane — node-shelled helper tests (TXI W4)
@@ -2537,6 +2541,15 @@ jobs:
       # read-side guard that stops a focus refetch from reverting a just-made edit.
       - name: watchlist workspace — entry parser, stage map, focus-refetch guard (W2)
         run: python -m pytest tests/test_watchlist_workspace_js.py -q
+      # Sector names are the one label on this page with no zh twin in the source:
+      # they arrive as raw English on stockdata/index.json and are painted
+      # client-side, so they rendered in English under data-lang="zh" while
+      # everything around them switched. Nothing raises when that regresses — an
+      # untranslated name renders perfectly — so the guard covers all four ways it
+      # goes quiet: a taxonomy the glossary has gone blind to, the build not
+      # handing the map over, the lookup itself, and a print site that bypasses it.
+      - name: watchlist sector names — glossary, build wiring, print sites (zh)
+        run: python -m pytest tests/test_watchlist_sector_i18n.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 

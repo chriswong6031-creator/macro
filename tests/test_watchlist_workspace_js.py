@@ -482,9 +482,13 @@ TEMPLATE = ROOT / "templates" / "watchlist.html.j2"
 PORTFOLIO = ROOT / "templates" / "portfolio.js"
 
 # The pack's install line for the job that runs this file (.github/ci/legacy-jobs.yml,
-# `wri-risk-core`): `pip install pytest pandas numpy pyarrow pyyaml`. NOTHING in this
-# file may import outside that set — see test_this_suite_imports_nothing_the_pack_lacks.
-PACK_DEPS = {"pytest", "pandas", "numpy", "pyarrow", "yaml"}
+# `wri-risk-core`): `pip install pytest pandas numpy pyarrow pyyaml markupsafe jinja2`.
+# NOTHING in this file may import outside that set — see
+# test_this_suite_imports_nothing_the_pack_lacks. markupsafe/jinja2 joined the line for
+# a SIBLING suite in the same job (test_watchlist_sector_i18n.py, which imports
+# engine.i18n and renders one template line); this file still needs neither, and the
+# import guard above is what keeps that true.
+PACK_DEPS = {"pytest", "pandas", "numpy", "pyarrow", "yaml", "markupsafe", "jinja2"}
 
 
 @pytest.fixture(scope="module")
