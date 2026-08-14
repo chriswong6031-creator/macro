@@ -13,6 +13,7 @@ logger; tests that assert via caplog are vacuous against that defect class).
 """
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -61,9 +62,16 @@ def _dead_era(end: str = "2026-01-15", n: int = 40) -> pd.DatetimeIndex:
 
 def _run(tmp_path, **kw):
     defaults = dict(cfg=CFG, now=NOW, out_dir=tmp_path / "quality",
-                    data_dir=tmp_path / "data", directory={}, quality_raw={})
+                    data_dir=tmp_path / "data", directory={}, quality_raw={},
+                    stock_search_raw={})
     defaults.update(kw)
     return art.run(**defaults)
+
+
+def _write_membership(data_dir: Path, baskets: dict) -> None:
+    p = data_dir / "baskets"
+    p.mkdir(parents=True, exist_ok=True)
+    (p / "membership.json").write_text(json.dumps({"baskets": baskets}))
 
 
 def _lines(capsys, prefix: str) -> list[str]:
@@ -153,7 +161,7 @@ def test_post_death_start_is_rebirth_and_quiet(tmp_path, capsys):
                  _alternating(reborn, 10.0, 0.01, -0.005))
     doc = _run(tmp_path)
     assert doc["totals"] == {"zombie": 0, "rebirth": 1, "registry_mismatch": 0,
-                             "delisted_printing": 0}
+                             "delisted_printing": 0, "member_identity": 0}
     assert [ln for ln in capsys.readouterr().out.splitlines()
             if ln.startswith("::warning")] == []
 
@@ -165,7 +173,7 @@ def test_frozen_at_death_is_not_flagged(tmp_path):
     _write_store(tmp_path / "data", "stocks", "DEAD", series)  # tip == registry last
     doc = _run(tmp_path)
     assert doc["totals"] == {"zombie": 0, "rebirth": 0, "registry_mismatch": 0,
-                             "delisted_printing": 0}
+                             "delisted_printing": 0, "member_identity": 0}
 
 
 # --------------------------------------------------------------------------- #
@@ -243,7 +251,7 @@ def test_absent_stores_skip_and_findings_never_fail(tmp_path, capsys):
     assert doc["n_failed"] == 0
     # both cohorts skipped: an absent store is a CI-lite checkout, never an abort
     assert doc["totals"] == {"zombie": 0, "rebirth": 0, "registry_mismatch": 0,
-                             "delisted_printing": 0}
+                             "delisted_printing": 0, "member_identity": 0}
 
 
 def test_zombie_is_a_flag_never_a_fail(tmp_path):
@@ -341,3 +349,104 @@ def test_unreadable_ledger_darkens_loudly(tmp_path, capsys):
     doc = _run(tmp_path, ledger_path=bad)
     assert doc["ledger_identity"]["ledger_dark"] is True
     assert len(_lines(capsys, "::warning title=ledger identity::")) == 1
+
+
+# --------------------------------------------------------------------------- #
+# member_identity: curated name vs the directory's CURRENT issuer (GOLD class)
+# --------------------------------------------------------------------------- #
+
+def test_member_identity_wrong_issuer_is_flagged_and_warned(tmp_path, capsys):
+    """The exact 2026-08-14 defect: gold_miners' 'Barrick Mining' rationale keyed to
+    NYSE 'GOLD' while the directory's current issuer is Gold.com (fka A-Mark) — a
+    live listing, absent from the dead registry, fresh every night, invisible to
+    every store-level class. The name contradiction is the ONLY observable."""
+    _write_membership(tmp_path / "data", {"gold_miners": {"members": [
+        {"ticker": "GOLD", "removed": None,
+         "rationale": "Barrick Mining — global senior producer"}]}})
+    doc = _run(tmp_path, directory={"GOLD": "Gold.com, Inc. Common Stock"})
+    assert doc["totals"]["member_identity"] == 1
+    [entry] = doc["member_identity"]
+    assert entry["ticker"] == "GOLD" and entry["where"] == "gold_miners"
+    assert entry["source"] == "membership_rationale" and entry["acked"] is False
+    assert entry["curated_name"] == "Barrick Mining"
+    assert doc["unacked_member_identity"] == ["gold_miners/GOLD"]
+    warns = _lines(capsys, "::warning title=member identity::")
+    assert len(warns) == 1 and "gold_miners/GOLD" in warns[0] and "Gold.com" in warns[0]
+
+
+def test_member_identity_matching_and_claimless_shapes_stay_quiet(tmp_path, capsys):
+    """Every legitimate shape must pass without a flag: shared distinctive token
+    (Newmont), directory-initialism (IBM Quantum), token containment (SpaceX vs
+    Space Exploration Technologies), thesis-first prefixes and role rationales
+    (no name claim), short ticker-echo prefixes (AIP), `removed` members (the
+    curator's exit ledger), and symbols absent from the directory."""
+    _write_membership(tmp_path / "data", {"basket": {"members": [
+        {"ticker": "NEM", "removed": None,
+         "rationale": "Newmont — largest diversified listed gold producer"},
+        {"ticker": "IBM", "removed": None,
+         "rationale": "IBM Quantum — quantum-stack leadership"},
+        {"ticker": "SPCX", "removed": None,
+         "rationale": "SpaceX — launch-cadence monopoly"},
+        {"ticker": "MSFT", "removed": None,
+         "rationale": "Azure + Copilot — hyperscaler AI attach"},
+        {"ticker": "PLTR", "removed": None, "rationale": "AIP — ontology moat"},
+        {"ticker": "APD", "removed": None, "rationale": "S&P 500 Materials constituent"},
+        {"ticker": "GOLD", "removed": "2014-03-17",
+         "rationale": "Barrick Mining — wrong-issuer row already stamped removed"},
+        {"ticker": "GHOST", "removed": None, "rationale": "Ghost Corp — not listed"},
+    ]}})
+    doc = _run(tmp_path, directory={
+        "NEM": "Newmont Corporation",
+        "IBM": "International Business Machines Corporation Common Stock",
+        "SPCX": "Space Exploration Technologies Corp. - Class A Common Stock",
+        "MSFT": "Microsoft Corporation - Common Stock",
+        "PLTR": "Palantir Technologies Inc. - Class A Common Stock",
+        "APD": "Air Products and Chemicals, Inc. Common Stock",
+        "GOLD": "Gold.com, Inc. Common Stock",
+    })
+    assert doc["totals"]["member_identity"] == 0, doc["member_identity"]
+    assert _lines(capsys, "::warning title=member identity::") == []
+
+
+def test_member_identity_covers_extra_names_labels(tmp_path, capsys):
+    """The same defect lived in config.yml stock_search.extra_names ('GOLD: Barrick
+    Mining') — the structured curated-name map is checked with no prose parsing.
+    QFIN is the live specimen the first sweep caught: label 'Qifu Technology' vs
+    directory 'Qfin Holdings' (same registrant, stale brand name)."""
+    doc = _run(tmp_path,
+               directory={"QFIN": "Qfin Holdings, Inc.  - American Depositary Shares"},
+               stock_search_raw={"extra_names": {"QFIN": {"name": "Qifu Technology (ADR)"}}})
+    assert doc["totals"]["member_identity"] == 1
+    [entry] = doc["member_identity"]
+    assert entry["where"] == "stock_search.extra_names" and entry["source"] == "extra_names"
+    assert doc["unacked_member_identity"] == ["stock_search.extra_names/QFIN"]
+    assert len(_lines(capsys, "::warning title=member identity::")) == 1
+
+
+def test_member_identity_ack_discloses_but_quiets(tmp_path, capsys):
+    """Same ack discipline as every other class: the finding stays in the JSON with
+    the rationale echoed, the annotation goes quiet, strict-mode input clears."""
+    _write_membership(tmp_path / "data", {"gold_miners": {"members": [
+        {"ticker": "GOLD", "removed": None,
+         "rationale": "Barrick Mining — global senior producer"}]}})
+    doc = _run(tmp_path, directory={"GOLD": "Gold.com, Inc. Common Stock"},
+               quality_raw={"member_identity_acks": {"GOLD": "verified mismatch, documented"}})
+    assert doc["totals"]["member_identity"] == 1
+    [entry] = doc["member_identity"]
+    assert entry["acked"] is True and entry["ack"] == "verified mismatch, documented"
+    assert doc["unacked_member_identity"] == []
+    assert doc["member_identity_acks"] == {"GOLD": "verified mismatch, documented"}
+    assert _lines(capsys, "::warning title=member identity::") == []
+
+
+def test_member_identity_is_dark_without_a_directory(tmp_path, capsys, monkeypatch):
+    """No directory, no identity read: the class yields nothing (directory_dark is
+    already disclosed by the delisted_printing machinery) rather than guessing."""
+    _write_membership(tmp_path / "data", {"gold_miners": {"members": [
+        {"ticker": "GOLD", "removed": None,
+         "rationale": "Barrick Mining — global senior producer"}]}})
+    monkeypatch.setattr(art, "fetch_directory", lambda *a, **k: None)
+    doc = _run(tmp_path, directory=None)
+    assert doc.get("directory_dark") is True
+    assert doc["totals"]["member_identity"] == 0
+    assert _lines(capsys, "::warning title=member identity::") == []
