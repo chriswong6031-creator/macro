@@ -2658,8 +2658,8 @@ jobs:
       # is hermetic (tmp_path store + monkeypatched price layer, no data/** reads).
       - name: qledger contract regression suite
         run: python -m pytest tests/test_qledger.py -q
-      - name: qledger explicit horizon-clock contract (P0a)
-        run: python -m pytest tests/test_qledger_horizon_clock.py -q
+      - name: qledger explicit horizon-clock (P0a) + matched-control policy (P0d) contracts
+        run: python -m pytest tests/test_qledger_horizon_clock.py tests/test_qledger_control_policy.py -q
       # P3 — the forward-only desk adapters and the evidence-clock writer. These
       # sit in the qledger job because their subject IS the claim substrate: the
       # adapter's forward-only gate calls `qledger.claim_window` (the same

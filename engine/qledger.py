@@ -31,6 +31,7 @@ import hashlib
 import json
 import logging
 import math
+import os
 import re
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
@@ -1326,6 +1327,352 @@ def control_for_sector(sector_name: str | None) -> str | None:
 
 
 # --------------------------------------------------------------------------- #
+# P0d — THE MATCHED-CONTROL EVIDENCE CONTRACT
+# research/PREREG_P0D_MATCHED_CONTROL_CONTRACT.md (the binding clauses C1-C9)
+# research/EVAL_OS_P0D_CONTROL_CENSUS.md (the grounding measurement)
+#
+# THE RULING THIS EXECUTES (CEO P0d): the BENCHMARK is the universal baseline;
+# a MATCHED CONTROL is a stricter SECOND evidence basis, required exactly where a
+# defensible matched counterfactual exists and is constructible at registration.
+# No family is forced to invent a control; no family may claim matched-control
+# evaluation without prospectively accrued, control-carrying claims.
+#
+# THE DEFECT THIS REPAIRS. `promotion_check(control_only=True)` was the blanket
+# production call: every family was evaluated "vs matched control" while the
+# store held 46,695 claims and ZERO control legs (census §0). With coverage
+# exactly zero the control arm produced `ci_low=None` everywhere, so the gate
+# was neither passing nor failing on the basis it named — it was silent, and the
+# architecture doc meanwhile described a "matched-control grading substrate" as a
+# live capability. Whether an evaluation is matched-control is now POLICY, read
+# from one governed table, never inferred from which rows happen to carry data.
+# --------------------------------------------------------------------------- #
+CONTROL_POLICY_REQUIRED = "matched_control_required"
+CONTROL_POLICY_BENCHMARK_ONLY = "benchmark_only"
+CONTROL_POLICY_NOT_APPLICABLE = "not_applicable"
+
+#: C4.2 — ONE global coverage floor, pre-registered. Tolerates a rare metadata
+#: failure (the census's ADR tail) without permitting subset selection: at the
+#: gate's own 25-date floor a family may carry at most one uncovered date.
+#: DELIBERATELY NOT per-family-tunable — a per-family knob is subset selection
+#: with a config file.
+CONTROL_COVERAGE_MIN = 0.95
+
+#: The evidence basis a verdict was reached on (C5.4). Every emitted verdict
+#: carries exactly one of these, so "benchmark-relative" and "matched-control"
+#: can never be read as the same sentence by a downstream surface (C6.1).
+EVIDENCE_BASIS_MATCHED_CONTROL = "matched_control"
+EVIDENCE_BASIS_BENCHMARK = "benchmark"
+EVIDENCE_BASIS_NOT_APPLICABLE = "not_applicable"
+
+# --------------------------------------------------------------------------- #
+# THE GOVERNED CLASSIFICATION TABLE (C1.1/C1.2) — census §4, verbatim.
+#
+# CHANGING A FAMILY'S POLICY IS A GOVERNED ACT, never a drive-by: it requires
+# (1) this table edited, (2) the exact-content pinning test in
+# tests/test_qledger_control_policy.py updated in the SAME change, and (3) cited
+# evidence in the PR (for a benchmark_only -> matched_control_required move, the
+# census §5 condition: a registration-time control source covering >=95% of the
+# family's real flow). This is the same governed-table pattern as `DESK_MARKET`.
+#
+# WHY IT IS NOT DERIVED. Policy is not a derivable fact. `config/qual_ladder.yml`
+# is FIELD-keyed (one family appears under many fields), so a per-family policy
+# there would be duplicated state; and deriving policy from row contents — "this
+# family's rows carry controls, so evaluate it on controls" — is precisely the
+# data-conditioned evaluation the ruling forbids (C1.4, adversarial control #7).
+#
+# A family ABSENT from this table is `unclassified` (C1.3): benchmark mechanics,
+# labelled `unclassified`, and STRUCTURALLY INELIGIBLE for matched-control
+# authority. Matched-control authority is opt-in by table edit only.
+# --------------------------------------------------------------------------- #
+FAMILY_CONTROL_POLICY: dict[str, str] = {
+    # --- matched_control_required -------------------------------------------
+    # The only two families where the counterfactual is BOTH economically
+    # defensible AND constructible >=95% from an existing canonical source at
+    # registration (census §3). Both are prospective-only families, so their
+    # matched-control record is born clean — no historical rows exist to tempt a
+    # backfill (C3.3).
+    "stock_desk": CONTROL_POLICY_REQUIRED,
+    "demand_chain": CONTROL_POLICY_REQUIRED,
+    # --- benchmark_only ------------------------------------------------------
+    # Legitimate benchmark-relative evidence, labelled as such, never marketed as
+    # matched-control. For radar/policy/thematic_desk this is the PERMANENTLY
+    # correct economics (the subject IS the theme's proxy, so a sector control
+    # nets the claim against itself), not a data gap; for intel_hub (72%) and
+    # altdata* (89%) it is a coverage condition with a named re-classification
+    # path (census §5).
+    "intel_hub": CONTROL_POLICY_BENCHMARK_ONLY,
+    "altdata": CONTROL_POLICY_BENCHMARK_ONLY,
+    "altdata_event": CONTROL_POLICY_BENCHMARK_ONLY,
+    "altdata_flow": CONTROL_POLICY_BENCHMARK_ONLY,
+    "altdata_mid": CONTROL_POLICY_BENCHMARK_ONLY,
+    "altdata_slow": CONTROL_POLICY_BENCHMARK_ONLY,
+    "radar": CONTROL_POLICY_BENCHMARK_ONLY,
+    "policy": CONTROL_POLICY_BENCHMARK_ONLY,
+    "whitehouse": CONTROL_POLICY_BENCHMARK_ONLY,
+    "thematic_desk": CONTROL_POLICY_BENCHMARK_ONLY,
+    "basket_turn.v1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "flip_confirmation.v1": CONTROL_POLICY_BENCHMARK_ONLY,
+    # --- not_applicable ------------------------------------------------------
+    # Salience/descriptive species: no directional skill proposition exists, so
+    # no directional matched-control contract can apply. They grade MAGNITUDE
+    # against the placebo tape (standards §4.2). `placebo` is itself the control
+    # arm.
+    "china_news": CONTROL_POLICY_NOT_APPLICABLE,
+    "cn_importance_v0": CONTROL_POLICY_NOT_APPLICABLE,
+    "cn_importance_v0_pit": CONTROL_POLICY_NOT_APPLICABLE,
+    "us_importance_v0": CONTROL_POLICY_NOT_APPLICABLE,
+    "us_importance_v0_pit": CONTROL_POLICY_NOT_APPLICABLE,
+    "cn_special_sits": CONTROL_POLICY_NOT_APPLICABLE,
+    "narrative_source_call": CONTROL_POLICY_NOT_APPLICABLE,
+    "narrative_flare_state": CONTROL_POLICY_NOT_APPLICABLE,
+    "communique_diff": CONTROL_POLICY_NOT_APPLICABLE,
+    "missing_tape": CONTROL_POLICY_NOT_APPLICABLE,
+    "extraction_8k": CONTROL_POLICY_NOT_APPLICABLE,
+    "placebo": CONTROL_POLICY_NOT_APPLICABLE,
+}
+
+
+def family_control_policy(family: str | None) -> tuple[str, bool]:
+    """(policy, classified) for a claim family — C1.3.
+
+    `classified` is False for a family absent from `FAMILY_CONTROL_POLICY`; such
+    a family runs BENCHMARK mechanics and is labelled `unclassified`, and it can
+    never reach matched-control authority (that requires a table edit, never a
+    row-level field). Row contents NEVER influence the answer."""
+    policy = FAMILY_CONTROL_POLICY.get(str(family or ""))
+    if policy is None:
+        return CONTROL_POLICY_BENCHMARK_ONLY, False
+    return policy, True
+
+
+# --------------------------------------------------------------------------- #
+# CONTROL CONSTRUCTION (C2.3) — existing primitives only, no new engine
+# --------------------------------------------------------------------------- #
+#: Census D0-2 — `data/universe/membership.parquet`, the only broad
+#: ticker->sector source in the repo, speaks TWO sector vocabularies: GICS names
+#: ("Information Technology") mixed with Yahoo-style ones ("Technology"). A naive
+#: join through `control_for_sector` silently nulls on roughly half the universe,
+#: which is D0-1's defect class one file over: intel_hub's control wiring was
+#: dead for four months because a lookup that returned None was a legal state and
+#: nothing alarmed. The normalisation is therefore EXPLICIT and the refusals are
+#: countable — never a silent None from a vocabulary mismatch.
+_SECTOR_ALIASES: dict[str, str] = {
+    "Technology": "Information Technology",
+    "Healthcare": "Health Care",
+    "Financial": "Financials",
+    "Consumer Cyclical": "Consumer Discretionary",
+    "Basic Materials": "Materials",
+    "Consumer Defensive": "Consumer Staples",
+}
+
+
+def sector_gics_etf(sector: str | None) -> str | None:
+    """Sector name -> GICS sector ETF, through the explicit alias normalisation
+    (D0-2). None for an empty, unknown or unmapped vocabulary value — the CALLER
+    counts that refusal (C2.4: `vocabulary_unmapped` vs `sector_absent`).
+
+    NOT a ticker map. An ETF ticker is not a sector name: `sector_gics_etf("QQQ")`
+    is None, because answering it would re-create D0-1 in reverse — a producer
+    handing this function its own ETF stamps and getting a plausible-looking
+    control back.
+
+    `control_for_sector()` above is deliberately left byte-identical: display-tier
+    callers depend on its exact null-tolerant behaviour."""
+    key = str(sector or "").strip()
+    if not key:
+        return None
+    return _GICS_ETF.get(_SECTOR_ALIASES.get(key, key))
+
+
+#: {resolved-root -> {UPPERCASE ticker -> raw sector name}}. Lazily built, one
+#: parquet read per root per process. `None` marks a root whose membership file
+#: is absent/unreadable, so a missing file costs one failed read, not one per
+#: lookup.
+_MEMBERSHIP_SECTORS: dict[str, dict[str, str] | None] = {}
+_MEMBERSHIP_FILE = ("data", "universe", "membership.parquet")
+
+
+def sector_of_ticker(ticker: str | None, root: Path | str | None = None) -> str | None:
+    """The RAW sector name `data/universe/membership.parquet` records for a
+    ticker, or None when the file or the ticker is absent.
+
+    THE CANONICAL CONSTRUCTION for `demand_chain`'s control leg (C2.3): the
+    control is `sector_gics_etf(sector_of_ticker(subject))`, resolved at
+    REGISTRATION from registration-time metadata only. It returns the raw
+    vocabulary value rather than the ETF so a caller can tell the two refusal
+    classes apart — `None` here is `sector_absent`, `sector_gics_etf(...) is None`
+    on a non-empty sector is `vocabulary_unmapped` (C2.4).
+
+    FAIL-OPEN on a missing/unreadable file (a null control is a legal state and
+    this is not a gate) — but the absence is logged once per root, because
+    silence is exactly how D0-1 stayed dead for four months."""
+    key = str(ticker or "").strip().upper()
+    if not key:
+        return None
+    root_p = _root(root)
+    cache_key = str(root_p)
+    if cache_key not in _MEMBERSHIP_SECTORS:
+        mapping: dict[str, str] | None = None
+        path = root_p.joinpath(*_MEMBERSHIP_FILE)
+        try:
+            df = pd.read_parquet(path, columns=["ticker", "sector"])
+            mapping = {}
+            for t, s in zip(df["ticker"], df["sector"]):
+                tk = str(t or "").strip().upper()
+                sec = str(s or "").strip()
+                if tk and sec and sec.lower() != "nan":
+                    mapping.setdefault(tk, sec)   # keep-FIRST, deterministic
+        except Exception as exc:  # noqa: BLE001 — fail open, but say so once
+            log.debug("sector_of_ticker: no usable membership store at %s (%s)",
+                      path, exc)
+            mapping = None
+        _MEMBERSHIP_SECTORS[cache_key] = mapping
+    mapping = _MEMBERSHIP_SECTORS[cache_key]
+    if not mapping:
+        return None
+    return mapping.get(key)
+
+
+def control_leg_is_valid(claim: dict) -> bool:
+    """C2.2 — is this claim's control leg a VALID matched control?
+
+    A valid control is a non-null ticker with `control != scope.key` and
+    `control != bench`. A control equal to the subject nets the claim against
+    itself; a control equal to the bench relabels the baseline as a stricter
+    basis. Both are MISSING-CONTROL: the row still registers, and the absence is
+    COUNTED into coverage (C4) rather than quietly passing as evidence.
+
+    Compared case-insensitively: `xlk` and `XLK` are one instrument, and a
+    casing difference must not be able to launder a self-netted claim."""
+    if not isinstance(claim, dict):
+        return False
+    control = str(claim.get("control") or "").strip().upper()
+    if not control:
+        return False
+    scope = claim.get("scope") if isinstance(claim.get("scope"), dict) else {}
+    subject = str(scope.get("key") or "").strip().upper()
+    bench = str(claim.get("bench") or "").strip().upper()
+    return control != subject and control != bench
+
+
+# --------------------------------------------------------------------------- #
+# THE CONTROL EVIDENCE CLOCK (C3.1/C3.4) — write-once, registrar-written
+# --------------------------------------------------------------------------- #
+#: One file per required family. NOTHING PRE-CREATES THESE: a timestamp written
+#: by hand is the retrospective stamping this design forbids, and this PR ships
+#: with zero of them and reports that fact rather than a placeholder (C3.4/C9).
+_CONTROL_CLOCK_DIR = ("data", "qledger", "control_evidence_clock_start")
+
+
+def _clock_family_slug(family: str) -> str:
+    """Filename-safe slug for a family key. Family names are house literals
+    (`basket_turn.v1`), but a slug keeps a future key with a slash or a space
+    from escaping the directory."""
+    return re.sub(r"[^A-Za-z0-9._-]", "_", str(family or "")).strip("._-") or "_"
+
+
+def _control_clock_path(family: str, root: Path | str | None = None) -> Path:
+    return _root(root).joinpath(*_CONTROL_CLOCK_DIR, f"{_clock_family_slug(family)}.json")
+
+
+def read_control_clock_start(family: str, root: Path | str | None = None) -> dict | None:
+    """The family's recorded control-evidence clock start, or None when it has
+    NOT started. None is the honest answer for every family today (C9) and is
+    never a miss, a zero, or a placeholder. Never raises."""
+    try:
+        path = _control_clock_path(family, root)
+        if not path.exists():
+            return None
+        rec = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(rec, dict) and rec.get("first_controlled_prospective_registration_utc"):
+            return rec
+        return None
+    except Exception as exc:  # noqa: BLE001
+        log.error("read_control_clock_start(%s): unreadable clock record: %s",
+                  family, exc)
+        return None
+
+
+def record_control_clock_start(family: str, *, horizon_d: Any,
+                               horizon_unit: Any, control: Any,
+                               git_sha: str | None = None,
+                               root: Path | str | None = None,
+                               now: str | None = None) -> dict:
+    """WRITE-ONCE record of when a family's matched-control evidence began (C3.1).
+
+    Written by the REGISTRAR — never by a producer — so no producer wiring can be
+    bypassed around it, and it records the triggering claim's own declared
+    horizon and control (C3.4).
+
+    WRITE-ONCE IS THE WHOLE POINT. An existing record is returned UNCHANGED and
+    every argument is ignored: a clock that can be moved is a clock that can be
+    moved backwards, and a start date chosen after seeing the results is the
+    retrospective stamping this contract exists to make impossible.
+
+    Atomic tmp+replace so a reader never sees a partial record, guarded by an
+    existence re-check so a concurrent second writer loses rather than clobbers.
+    (The nightly registrar is single-writer; the guard closes the window to the
+    `os.replace` itself, and the record is re-read from disk before returning, so
+    the value a caller gets is always the value that actually persisted.)
+    Never raises — a clock-write failure must not take down a registration."""
+    existing = read_control_clock_start(family, root)
+    if existing is not None:
+        return existing
+    rec = {
+        "claim_family": str(family),
+        "first_controlled_prospective_registration_utc": now or _now_iso(),
+        "declared_horizon_d": horizon_d,
+        "horizon_unit": horizon_unit,
+        "control": control,
+        "git_sha": git_sha,
+    }
+    try:
+        path = _control_clock_path(family, root)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.parent / f"{path.name}.tmp"
+        tmp.write_text(json.dumps(rec, ensure_ascii=False, indent=2,
+                                  default=_json_default) + "\n", encoding="utf-8")
+        if path.exists():                      # a concurrent writer won the race
+            tmp.unlink(missing_ok=True)
+            return read_control_clock_start(family, root) or rec
+        tmp.replace(path)
+        return read_control_clock_start(family, root) or rec
+    except Exception as exc:  # noqa: BLE001
+        log.error("record_control_clock_start(%s): clock write failed: %s",
+                  family, exc)
+        return rec
+
+
+def _cohort_prospective(claim: dict, ref_date: date) -> bool:
+    """C3.2(e) — is this claim PROSPECTIVE as of `ref_date`?
+
+    True iff the claim declares an explicit `horizon_unit`, its window RESOLVES
+    through `claim_window` (the one clock predicate — never a second
+    implementation), and that window's `fill_date` is STRICTLY after `ref_date`.
+    Unresolvable input is False: FAIL-CLOSED, and the caller counts it.
+
+    THE TWO CALLERS PASS DIFFERENT REFERENCE DATES, and that is the design:
+      * the REGISTRAR passes today (the registration date), so the clock starts
+        only on a claim that was forward-looking when it was made;
+      * the GATE passes `date(claim["timestamp"])` — the claim's own registration
+        stamp — so a LATER import of old-asof rows can never join the cohort. A
+        claim registered after its window had already begun fails this forever
+        (adversarial control #5: historical backfill cannot mint authority).
+    Passing "today" at gate time would have let exactly that import in, because
+    every old row's window is in the past relative to nothing in particular."""
+    try:
+        if claim_horizon_unit(claim) is None:
+            return False
+        horizon_d = int(claim.get("horizon_d"))
+        window = claim_window(claim, horizon_d)
+        if window is None:
+            return False
+        return window.fill_date > _as_date(ref_date)
+    except Exception:  # noqa: BLE001 — fail closed, never a member on a guess
+        return False
+
+
+# --------------------------------------------------------------------------- #
 # CLAIM SCHEMA + registrar
 # --------------------------------------------------------------------------- #
 def _validate_claim(claim: dict) -> tuple[bool, str]:
@@ -1521,6 +1868,68 @@ def _prepare_claim(claim: dict) -> dict:
     return stored
 
 
+def _start_control_clocks_for(new_rows: Iterable[dict],
+                              root: Path | str | None = None,
+                              today: date | None = None) -> None:
+    """P0d C3.1 — THE REGISTRAR HOOK. Start a required family's matched-control
+    evidence clock at the first claim that is cohort-eligible AND control-carrying.
+
+    Placed in the REGISTRAR, not in any producer, for one reason: a producer-side
+    clock can be bypassed by wiring a second producer, and the whole contract
+    rests on the clock being unbypassable. It runs over the NEWLY APPENDED rows
+    only — never the whole store — so the cost is O(batch), not O(ledger).
+
+    Every guard here is also a GATE-side cohort condition (C3.2), so the clock
+    can never start on a claim the gate would refuse to count: family policy is
+    `matched_control_required`, the row is live/open, directional, carries an
+    explicit horizon unit and a VALID control leg (C2.2), and is prospective at
+    registration. `benchmark_only` and `not_applicable` families never start a
+    clock, whatever their rows carry (C1.4).
+
+    NEVER RAISES INTO REGISTRATION. A ledger write that a clock bookkeeping
+    failure could abort would be a worse defect than the one this closes."""
+    try:
+        ref = today or date.today()
+        git_sha = os.environ.get("GITHUB_SHA") or None
+        started: dict[str, bool] = {}
+        for stored in new_rows:
+            if not isinstance(stored, dict):
+                continue
+            if stored.get("status") != STATUS_OPEN or stored.get("is_placebo"):
+                continue
+            if stored.get("direction") not in (1, -1):
+                continue
+            fam = _family_key(stored, "family")
+            if not fam:
+                continue
+            policy, _classified = family_control_policy(fam)
+            if policy != CONTROL_POLICY_REQUIRED:
+                continue
+            if not control_leg_is_valid(stored):
+                continue
+            if claim_horizon_unit(stored) is None:
+                continue
+            if not _cohort_prospective(stored, ref):
+                continue
+            if fam not in started:          # ONE store read per family per batch
+                started[fam] = read_control_clock_start(fam, root) is not None
+            if started[fam]:
+                continue
+            rec = record_control_clock_start(
+                fam, horizon_d=stored.get("horizon_d"),
+                horizon_unit=stored.get("horizon_unit"),
+                control=stored.get("control"), git_sha=git_sha, root=root)
+            started[fam] = True
+            log.info("control evidence clock STARTED for claim_family=%s at %s "
+                     "(control=%s, horizon_d=%s %s)", fam,
+                     rec.get("first_controlled_prospective_registration_utc"),
+                     rec.get("control"), rec.get("declared_horizon_d"),
+                     rec.get("horizon_unit"))
+    except Exception as exc:  # noqa: BLE001 — registration must never fail here
+        log.error("control evidence clock hook failed (registration unaffected): %s",
+                  exc)
+
+
 def register(claim: dict, root: Path | str | None = None,
              *, dedupe: bool = True) -> dict:
     """Register ONE claim. Validates against the schema, stamps `claim_id`,
@@ -1552,6 +1961,10 @@ def register(claim: dict, root: Path | str | None = None,
 
     with p.open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(stored, ensure_ascii=False, default=_json_default) + "\n")
+    # P0d C3.1: the control evidence clock starts HERE, on the newly stored row
+    # only — a dedupe hit above returns before this, so re-registering a claim can
+    # never restart or re-stamp a clock.
+    _start_control_clocks_for([stored], root)
     return stored
 
 
@@ -1604,6 +2017,9 @@ def register_batch(claims: Iterable[dict], root: Path | str | None = None,
         with p.open("a", encoding="utf-8") as fh:  # ONE write for the batch
             for row in new_rows:
                 fh.write(json.dumps(row, ensure_ascii=False, default=_json_default) + "\n")
+        # P0d C3.1: NEW rows only. A batch that deduped entirely against the
+        # store appends nothing and starts nothing.
+        _start_control_clocks_for(new_rows, root)
     return results
 
 
@@ -2926,10 +3342,31 @@ class PromotionResult:
     reader — or the admin Experiments tab, or a readiness alert — cannot tell
     that apart from a family whose evidence evaporated. The numbers stay exactly
     as the ruling requires; what is added is the reason they moved.
+
+    P0d — THE EVIDENCE BASIS TRAVELS WITH THE VERDICT (C5.4). Four concepts stay
+    separate on every rendered surface (C6.1): benchmark-relative evidence,
+    matched-control evidence, control coverage, and authority eligibility. So a
+    verdict now says which basis produced it (`evidence_basis` ∈ matched_control
+    | benchmark | not_applicable, plus the `unclassified` flag for a family
+    absent from the governed policy table), and a matched-control verdict carries
+    the coverage accounting it was reached under: `n_cohort_dates` (independent
+    date clusters over ALL prospective cohort members at this horizon/basis),
+    `n_controlled_dates` (the same count over members carrying a valid control),
+    `control_coverage` (their ratio), the row-count pair `n_cohort_rows` /
+    `n_controlled_rows`, and `control_clock_start` (when this family's
+    matched-control evidence began accruing — None while it has not). The
+    headline `n_dates` of a matched-control verdict IS `n_controlled_dates`: the
+    Wilson interval is projected onto the controlled count only (C4.3), never
+    onto the full family's, so a rate measured on 37 rows can never be stated at
+    a 100-row N. Every field defaults to None/False, so a benchmark verdict is
+    unchanged in shape and no consumer has to know about P0d to keep working.
     """
     __slots__ = ("eligible", "reason", "n_dates", "wilson_ci_low",
                  "current_state", "demote", "pinned_reason", "clock_basis",
-                 "clock_migration", "clock_prior_n_dates", "migration_note")
+                 "clock_migration", "clock_prior_n_dates", "migration_note",
+                 "evidence_basis", "control_coverage", "n_cohort_dates",
+                 "n_controlled_dates", "n_cohort_rows", "n_controlled_rows",
+                 "control_clock_start", "unclassified")
 
     def __init__(self, eligible: bool, reason: str, n_dates: int,
                  ci_low: float | None, current_state: str,
@@ -2937,7 +3374,15 @@ class PromotionResult:
                  clock_basis: str | None = None,
                  clock_migration: bool = False,
                  clock_prior_n_dates: dict | None = None,
-                 migration_note: str = "") -> None:
+                 migration_note: str = "",
+                 evidence_basis: str | None = None,
+                 control_coverage: float | None = None,
+                 n_cohort_dates: int | None = None,
+                 n_controlled_dates: int | None = None,
+                 n_cohort_rows: int | None = None,
+                 n_controlled_rows: int | None = None,
+                 control_clock_start: str | None = None,
+                 unclassified: bool = False) -> None:
         self.eligible = eligible
         self.reason = reason
         self.n_dates = n_dates
@@ -2949,6 +3394,16 @@ class PromotionResult:
         self.clock_migration = clock_migration
         self.clock_prior_n_dates = dict(clock_prior_n_dates or {})
         self.migration_note = migration_note
+        # P0d (C5.4) — all default-safe: an untouched benchmark verdict keeps its
+        # exact previous shape plus a label.
+        self.evidence_basis = evidence_basis
+        self.control_coverage = control_coverage
+        self.n_cohort_dates = n_cohort_dates
+        self.n_controlled_dates = n_controlled_dates
+        self.n_cohort_rows = n_cohort_rows
+        self.n_controlled_rows = n_controlled_rows
+        self.control_clock_start = control_clock_start
+        self.unclassified = unclassified
 
     def as_dict(self) -> dict:
         return {
@@ -2963,6 +3418,14 @@ class PromotionResult:
             "clock_migration": self.clock_migration,
             "clock_prior_n_dates": self.clock_prior_n_dates,
             "migration_note": self.migration_note,
+            "evidence_basis": self.evidence_basis,
+            "control_coverage": self.control_coverage,
+            "n_cohort_dates": self.n_cohort_dates,
+            "n_controlled_dates": self.n_controlled_dates,
+            "n_cohort_rows": self.n_cohort_rows,
+            "n_controlled_rows": self.n_controlled_rows,
+            "control_clock_start": self.control_clock_start,
+            "unclassified": self.unclassified,
         }
 
 
@@ -3387,6 +3850,342 @@ def promotion_check_by_market(claim_family: str, horizon: int,
     }
 
 
+def matched_control_check(claim_family: str, horizon: int,
+                          root: Path | str | None = None,
+                          clock_basis: str | None = None) -> PromotionResult:
+    """P0d C5.1 — THE MATCHED-CONTROL GATE for a `matched_control_required` family.
+
+    Such a family's AUTHORITY BASIS IS THE MATCHED CONTROL. This returns
+    eligible=True only when ALL of the following hold on ONE explicit clock basis:
+      * the family's control evidence clock has started (C3.1);
+      * `control_coverage >= CONTROL_COVERAGE_MIN` (0.95) — C4.2;
+      * `n_controlled_dates >= PROMOTION_MIN_DATES` (25) — C4.1/C5.1;
+      * Wilson `ci_low > PROMOTION_MIN_CI_LOW` (0.5) on CONTROLLED rows only,
+        direction-correct per P0c-1's rule (strict inequality; `direction=0` and
+        missing legs excluded from numerator AND denominator).
+
+    THERE IS NO BENCH FALLBACK, UNDER ANY DATA CONDITION (adversarial control
+    #1). A required family whose bench-relative record would sail past the bar
+    still refuses while its controls are missing — that is the entire point of
+    the classification. Its benchmark-relative statistics remain computed and
+    published as the labelled BASELINE by the track-record/readiness paths; they
+    simply can never produce `ready=True` for it.
+
+    TWO THINGS THIS FIXES THAT `promotion_check(control_only=True)` GOT WRONG:
+
+    1. THE DENOMINATOR (census D0-3). The old path computed the control-only hit
+       RATE over rows carrying control legs and then projected it onto `n_dates`
+       counted over the WHOLE family — stating a Wilson interval at full-cohort N
+       for a rate measured on a subset. With 37 controlled rows in a 100-row
+       cohort it published an n=100 interval. Here the projection is onto
+       `n_controlled_dates` and nothing else (C4.3), and the issued cohort stays
+       VISIBLE: missing-control rows can never leave the denominator of coverage
+       (adversarial control #6).
+
+    2. THE COHORT (C3.2/C3.3). Evidence is PROSPECTIVE-ONLY. A claim joins the
+       cohort only if it is directional, declares an explicit horizon unit, was
+       registered at or after the clock start, and was forward-looking AT ITS OWN
+       REGISTRATION STAMP (`_cohort_prospective`). So a later import of old-asof
+       rows — even perfectly controlled ones — can never join the cohort, start
+       the clock, or enter the N. Historical rows are untouched, never
+       backfilled, never combined with cohort evidence.
+
+    Refusals NAME their failing clause and print both date counts and the
+    coverage. `clock_basis` names ONE basis explicitly (the per-market escape
+    hatch, mirroring `promotion_check`'s parameter of the same name).
+    """
+    root = _root(root)
+    clock = read_control_clock_start(claim_family, root)
+    if clock is None:
+        # C5.1 first refusal — and it is NEVER a miss, a zero, or a bench
+        # substitute. "Has not begun" is the honest state of every required
+        # family at the moment this contract registers (C9).
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: "
+                    f"matched-control evidence has not begun accruing for this "
+                    f"family — the control evidence clock has not started; no "
+                    f"bench substitute is evaluated (contract C5.1). The clock "
+                    f"starts at the first prospective, control-carrying "
+                    f"registration (C3.1)."),
+            n_dates=0, ci_low=None,
+            current_state=STATE_UNGRADED,
+            evidence_basis=EVIDENCE_BASIS_MATCHED_CONTROL,
+        )
+
+    clock_start = str(clock.get("first_controlled_prospective_registration_utc") or "")
+    try:
+        clock_start_dt = datetime.fromisoformat(clock_start)
+    except Exception:  # noqa: BLE001 — an unparseable clock admits NOBODY
+        clock_start_dt = None
+
+    claims = load_claims(root)
+    cohort: dict[str, dict] = {}
+    excluded_unresolvable = 0
+    for c in claims:
+        cid = c.get("claim_id")
+        if not cid or c.get("is_placebo"):
+            continue
+        if _family_key(c, "family") != claim_family:
+            continue
+        if c.get("direction") not in (1, -1):        # C3.2(b) — directional only
+            continue
+        if claim_horizon_unit(c) is None:            # C3.2(c) — explicit clock only
+            continue
+        try:                                          # C3.2(d) — at/after the clock
+            ts = datetime.fromisoformat(str(c.get("timestamp")))
+        except Exception:  # noqa: BLE001
+            excluded_unresolvable += 1
+            continue
+        if clock_start_dt is None or ts < clock_start_dt:
+            continue
+        # C3.2(e) — prospective AT ITS OWN REGISTRATION STAMP, never at "today".
+        if not _cohort_prospective(c, ts.date()):
+            excluded_unresolvable += 1
+            continue
+        cohort[str(cid)] = c
+
+    grades = load_grades(root)
+    rows = [g for g in grades
+            if int(g.get("horizon_d", -1)) == horizon
+            and str(g.get("claim_id")) in cohort]
+
+    bases = sorted({grade_clock_basis(g) for g in rows})
+    n_dates_by_basis: dict[str, int] = {
+        b: len({_date_cluster(str(cohort[str(g.get("claim_id"))].get("asof", "")))
+                for g in rows if grade_clock_basis(g) == b})
+        for b in bases
+    }
+    basis = clock_basis or _authority_clock_basis(bases)
+    if basis is None and bases:
+        # Mirrors `promotion_check`'s refusal semantics exactly: a family
+        # straddling two EXPLICIT bases has no non-arbitrary basis to promote on.
+        # Reachable per basis by name (`clock_basis=...`), which is what
+        # `emit_ladder_states` does with this result's `clock_prior_n_dates`.
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: the "
+                    f"matched-control cohort straddles {len(bases)} "
+                    f"grading-clock bases ({', '.join(bases)}) with no single "
+                    f"explicit clock to promote on — refusing to pool. Evaluate "
+                    f"ONE basis by name (clock_basis=...) to promote per market."),
+            n_dates=0, ci_low=None,
+            current_state=STATE_MIXED_CLOCK,
+            clock_basis=None,
+            clock_prior_n_dates=n_dates_by_basis,
+            evidence_basis=EVIDENCE_BASIS_MATCHED_CONTROL,
+            control_clock_start=clock_start,
+        )
+
+    rows = [g for g in rows if grade_clock_basis(g) == basis]
+    prior_n_dates = {b: n for b, n in n_dates_by_basis.items() if b != basis}
+
+    # C4.1 — the issued cohort is the denominator, ALWAYS. Missing-control rows
+    # stay in it; that is what coverage measures.
+    n_cohort_rows = len(rows)
+    n_cohort_dates = len({
+        _date_cluster(str(cohort[str(g.get("claim_id"))].get("asof", ""))) for g in rows})
+    controlled = [g for g in rows
+                  if g.get("control_ret") is not None
+                  and control_leg_is_valid(cohort[str(g.get("claim_id"))])]
+    n_controlled_rows = len(controlled)
+    n_controlled_dates = len({
+        _date_cluster(str(cohort[str(g.get("claim_id"))].get("asof", "")))
+        for g in controlled})
+
+    unresolvable_note = (f" {excluded_unresolvable} claim(s) excluded as "
+                         f"unresolvable (fail-closed, C3.2)."
+                         if excluded_unresolvable else "")
+    basis_note = (f" Evaluated on clock basis {basis!r}."
+                  f" Cohort: {n_cohort_rows} row(s) / {n_cohort_dates} date(s);"
+                  f" controlled: {n_controlled_rows} row(s) /"
+                  f" {n_controlled_dates} date(s).{unresolvable_note}")
+    common = {
+        "evidence_basis": EVIDENCE_BASIS_MATCHED_CONTROL,
+        "n_cohort_dates": n_cohort_dates,
+        "n_controlled_dates": n_controlled_dates,
+        "n_cohort_rows": n_cohort_rows,
+        "n_controlled_rows": n_controlled_rows,
+        "control_clock_start": clock_start,
+        "clock_basis": basis,
+        "clock_prior_n_dates": prior_n_dates,
+    }
+
+    if n_cohort_dates == 0:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: the "
+                    f"matched-control cohort is EMPTY at this horizon/basis — "
+                    f"accruing since {clock_start} (contract C5.1). No verdict, "
+                    f"and no bench substitute.{basis_note}"),
+            n_dates=0, ci_low=None,
+            current_state=STATE_UNGRADED,
+            control_coverage=None,
+            **common,
+        )
+
+    coverage = round(n_controlled_dates / n_cohort_dates, 6)
+    common["control_coverage"] = coverage
+
+    # THE HIT ARITHMETIC — P0c-1's rule, verbatim, over CONTROLLED rows only.
+    hits = 0
+    graded = 0
+    for g in controlled:
+        if g.get("hit") is None:
+            continue
+        ctrl = g.get("control_ret")
+        subj = g.get("subject_ret")
+        if ctrl is None or subj is None:
+            # A row that cannot be scored on the control leg is excluded from
+            # numerator AND denominator — never converted into a miss and never
+            # silently rescored on the bench-relative `hit` (P0c-1 §2/§3).
+            continue
+        direction = cohort[str(g.get("claim_id"))].get("direction")
+        if not direction:
+            # direction == 0 (salience): nothing to be right about. Excluded from
+            # both, so a salience row can never manufacture a control hit
+            # (adversarial control #3). Cohort membership already excludes these;
+            # the check makes the invariant explicit rather than assumed.
+            continue
+        graded += 1
+        # direction * (subject_ret - control_ret) > 0 — the mirrored rule, strict
+        # so an exact-zero control excess is NOT a hit (adversarial control #2).
+        if direction * (subj - ctrl) > 0:
+            hits += 1
+
+    # C4.3 — the interval is projected onto `n_controlled_dates` ONLY. Projecting
+    # onto the full cohort's date count is census defect D0-3.
+    if graded and n_controlled_dates:
+        cluster_hits = int(round(hits / graded * n_controlled_dates))
+        ci_low = wilson_ci_low(cluster_hits, n_controlled_dates)
+    else:
+        ci_low = None
+
+    current_state = derive_state(n_controlled_dates)
+    headline = {"n_dates": n_controlled_dates, "ci_low": ci_low,
+                "current_state": current_state}
+
+    if coverage < CONTROL_COVERAGE_MIN:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"accruing_with_missing_control: claim_family={claim_family!r} "
+                    f"horizon={horizon}d has control_coverage={coverage} < "
+                    f"{CONTROL_COVERAGE_MIN} required (contract C4.2) — "
+                    f"{n_controlled_dates} controlled date(s) of {n_cohort_dates} "
+                    f"cohort date(s). The uncovered cohort NEVER leaves the "
+                    f"denominator, and no benchmark-relative record substitutes "
+                    f"for the missing controls (C5.1).{basis_note}"),
+            **headline, **common,
+        )
+
+    if n_controlled_dates < PROMOTION_MIN_DATES:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"accruing: claim_family={claim_family!r} horizon={horizon}d "
+                    f"has n_controlled_dates={n_controlled_dates} < "
+                    f"{PROMOTION_MIN_DATES} required (contract C5.1) at "
+                    f"control_coverage={coverage} over {n_cohort_dates} cohort "
+                    f"date(s). Need "
+                    f"{PROMOTION_MIN_DATES - n_controlled_dates} more independent "
+                    f"controlled date cluster(s).{basis_note}"),
+            **headline, **common,
+        )
+
+    if ci_low is None:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: "
+                    f"n_controlled_dates={n_controlled_dates} and "
+                    f"control_coverage={coverage} clear their bars, but no "
+                    f"directional control-leg hits were scorable (graded={graded}) "
+                    f"— cannot compute a Wilson CI on the matched-control basis "
+                    f"(contract C5.1).{basis_note}"),
+            **headline, **common,
+        )
+
+    if ci_low <= PROMOTION_MIN_CI_LOW:
+        pinned_reason = (
+            f"claim_family={claim_family!r} horizon={horizon}d: matched-control "
+            f"Wilson CI lower bound={ci_low:.4f} <= {PROMOTION_MIN_CI_LOW} "
+            f"(coin-flip null) at n_controlled_dates={n_controlled_dates}. "
+            f"Auto-demote one rung. Pinned as of {_now_iso()[:10]}.")
+        return PromotionResult(
+            eligible=False,
+            reason=(f"matched-control Wilson CI lower bound {ci_low:.4f} <= "
+                    f"{PROMOTION_MIN_CI_LOW} — the control-relative hit-rate "
+                    f"interval does not clear a coin flip. AUTO-DEMOTE warranted. "
+                    f"{pinned_reason}{basis_note}"),
+            demote=True, pinned_reason=pinned_reason,
+            **headline, **common,
+        )
+
+    return PromotionResult(
+        eligible=True,
+        reason=(f"MATCHED-CONTROL gate PASS at horizon={horizon}d: "
+                f"n_controlled_dates={n_controlled_dates} >= {PROMOTION_MIN_DATES}, "
+                f"control_coverage={coverage} >= {CONTROL_COVERAGE_MIN}, "
+                f"Wilson CI lower bound={ci_low:.4f} > {PROMOTION_MIN_CI_LOW} on "
+                f"controlled rows only (contract C5.1). Evidence accruing since "
+                f"{clock_start}.{basis_note}"),
+        **headline, **common,
+    )
+
+
+def _apply_policy_label(pr: "PromotionResult", policy: str,
+                        classified: bool) -> "PromotionResult":
+    """Stamp a BENCH-basis `PromotionResult` with its family's policy label.
+
+    ONE implementation, shared by `promotion_check_dispatch` and every per-market
+    sub-result the production paths publish beside it — an unlabelled sub-result
+    under `by_clock_basis` is exactly the kind of side door through which a
+    `not_applicable` family could publish an `eligible=True` cell (C5.3), or a
+    benchmark verdict could be read as matched-control (C6.1).
+
+    Mutates and returns `pr` (always a freshly-built object from
+    `promotion_check`, never shared)."""
+    if policy == CONTROL_POLICY_NOT_APPLICABLE:
+        pr.eligible = False
+        pr.demote = False
+        pr.evidence_basis = EVIDENCE_BASIS_NOT_APPLICABLE
+        pr.reason = ("not_applicable family (salience/descriptive) — no "
+                     "directional promotion basis exists; magnitude grades vs "
+                     "the placebo tape; " + pr.reason)
+        return pr
+    pr.evidence_basis = EVIDENCE_BASIS_BENCHMARK
+    pr.unclassified = not classified
+    return pr
+
+
+def promotion_check_dispatch(claim_family: str, horizon: int,
+                             root: Path | str | None = None) -> PromotionResult:
+    """P0d C5 — THE PRODUCTION ENTRY POINT: dispatch by the family's POLICY.
+
+    This is what replaces the blanket `promotion_check(control_only=True)` on
+    every production path (C5.4). The basis is decided by the governed
+    classification table alone and NEVER by data availability (C1.4): a
+    `benchmark_only` family whose rows all happen to carry controls still
+    evaluates benchmark-relative, and a `matched_control_required` family with
+    zero controls still evaluates matched-control and fails closed. There is no
+    "optional control" state to drift into.
+
+      * `matched_control_required` -> `matched_control_check` (C5.1).
+      * `benchmark_only` / unclassified -> today's `promotion_check(control_only=
+        False)`, labelled `evidence_basis="benchmark"` (+ `unclassified`). P0c-2's
+        legacy-cannot-originate-authority rule applies unchanged inside it (C5.2).
+      * `not_applicable` -> no directional gate: the bench statistics are still
+        computed as description, but eligibility is forced False and the verdict
+        says so (C5.3). These are salience/descriptive species; they grade
+        magnitude against the placebo tape, not direction against a control.
+    """
+    policy, classified = family_control_policy(claim_family)
+
+    if policy == CONTROL_POLICY_REQUIRED:
+        return matched_control_check(claim_family, horizon, root=root)
+
+    pr = promotion_check(claim_family, horizon, root=root, control_only=False)
+    return _apply_policy_label(pr, policy, classified)
+
+
 def emit_ladder_states(root: Path | str | None = None,
                        families: list[str] | None = None) -> dict:
     """Run promotion_check at every GRADE_HORIZON for each claim_family found in
@@ -3405,9 +4204,13 @@ def emit_ladder_states(root: Path | str | None = None,
 
     results: dict[str, dict] = {}
     for fam in sorted(all_families):
+        policy, classified = family_control_policy(fam)
         fam_res: dict[str, dict] = {}
         for h in GRADE_HORIZONS:
-            pr = promotion_check(fam, h, root=root, control_only=True)
+            # P0d C5.4: the blanket `control_only=True` call is GONE from
+            # production. Which basis a family is evaluated on is decided by its
+            # governed policy, and the verdict says which basis it used.
+            pr = promotion_check_dispatch(fam, h, root=root)
             entry = pr.as_dict()
             # P0a MAJOR 2 (round 5): the pooled default refuses a bi-market
             # family as STATE_MIXED_CLOCK — correctly, it never pools — but
@@ -3416,11 +4219,30 @@ def emit_ladder_states(root: Path | str | None = None,
             # `by_clock_basis` adds each market's own verdict beside the
             # refused pooled one; nothing here is summed, and a family with a
             # single basis (today, every live family) carries no extra key.
-            per_market = promotion_check_by_market(fam, h, pr, root=root,
-                                                   control_only=True)
-            if per_market:
-                entry["by_clock_basis"] = {b: r.as_dict()
-                                           for b, r in per_market.items()}
+            #
+            # P0d: the per-market escape hatch keeps the family's OWN evidence
+            # basis. A benchmark-basis family re-enters through
+            # `promotion_check_by_market` (now `control_only=False` — production
+            # no longer evaluates a control arm for a family whose policy is not
+            # matched-control); a required family re-enters through
+            # `matched_control_check(clock_basis=...)`, so nothing can slip back
+            # onto a bench basis by taking the per-market route.
+            if pr.current_state == STATE_MIXED_CLOCK:
+                if policy == CONTROL_POLICY_REQUIRED:
+                    per_market = {
+                        b: matched_control_check(fam, h, root=root, clock_basis=b)
+                        for b in sorted(pr.clock_prior_n_dates or {})
+                        if b != CLOCK_LEGACY
+                    }
+                else:
+                    per_market = {
+                        b: _apply_policy_label(r, policy, classified)
+                        for b, r in promotion_check_by_market(
+                            fam, h, pr, root=root, control_only=False).items()
+                    }
+                if per_market:
+                    entry["by_clock_basis"] = {b: r.as_dict()
+                                               for b, r in per_market.items()}
             fam_res[str(h)] = entry
         results[fam] = fam_res
 
