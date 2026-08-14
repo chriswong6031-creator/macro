@@ -441,8 +441,8 @@ def test_rename_without_previous_name_is_rejected_not_treated_as_ordinary() -> N
     [
         "/scripts/run_ci_pack.py",
         "./scripts/run_ci_pack.py",
-        "scripts//run_ci_pack.py",
-        "scripts/../scripts/run_ci_pack.py",
+        "/".join(("scripts", "", "run_ci_pack.py")),
+        "/".join(("scripts", "..", "scripts", "run_ci_pack.py")),
         "scripts\\run_ci_pack.py",
         "scripts/run_ci_pack.py\nforged",
         "scripts/\u202egreen.py",
