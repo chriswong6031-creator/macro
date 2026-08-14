@@ -43,8 +43,7 @@ from pathlib import Path
 import pandas as pd
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-if str(REPO_ROOT) not in sys.path:
-    sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT))
 
 from engine.stock_identity.authority import authority_block  # noqa: E402
 from engine.stock_identity.plane import (  # noqa: E402

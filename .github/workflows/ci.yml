@@ -712,7 +712,9 @@ on:
       # `grep -rn test_group_flow .github/` returned nothing, so when #3282's
       # Rotation Map revamp rebuilt the "Flow lens" card into the Money-flow tile
       # (2026-07-24) the suite's literal `{% if flow %}` source slice started raising
-      # ValueError and stayed red on main unseen.  Now carried by engine-render-guards.
+      # ValueError and stayed red on main unseen. It now rides the
+      # engine-render-risk-guards shard after the five-way render/engine split
+      # on 2026-08-14.
       # The template half of the trigger is already covered twice — "templates/**"
       # and an explicit "templates/baskets.html.j2" above — so only the test file
       # needs a new entry here; both halves do trigger the job (#3488).

@@ -1,6 +1,7 @@
 # `engine-render-guards` timing receipt — Wave C §7.1
 
 **Status:** measurement only. No lane is split by this document.
+**Outcome (2026-08-14):** the split happened inside the giant sweep, where this receipt said the mass lived, as five independently schedulable shards: `engine-render-risk-guards`, `engine-render-claims-guards`, `engine-render-forensics-guards`, `engine-render-international-guards`, and `engine-render-prophet-guards`. The 420 / 419 / 152 / 114 / 65 weights in `OBSERVED_COMMAND_SECONDS` preserve the former lane's 1,170 measured command-seconds while partitioning the 1,036-second mega-step by clean-checkout timings of the exact file sets. §4's "independent timeout — absent" is still absent, and every shard still inherits the pack's 180.
 **Measured:** 2026-08-12 against `origin/main` @ `68942ccc514` (Wave A #5385 and Wave B #5394 both merged).
 **Why it exists:** Wave C §7.1 requires a timing receipt *before* any split, and §10 lists "split the giant render lane before timing it" as an explicit non-goal. The measurement below says the split axis §7.2 proposed is the wrong one, which is exactly what a receipt is for.
 
