@@ -7,6 +7,13 @@ name: ci-authority
 # the exact, API-reverified PR head as diagnostic evidence only. That custom
 # check must never be the sole required authority: the organization
 # required-workflow rule remains mandatory.
+#
+# Base-specific exact-head contexts are complementary: `ci-authority/main` and
+# `ci-authority/codex/merge-queue-pilot`. Each PR run fails the inactive context
+# so an edited retarget cannot reuse a success earned against another base.
+# Required-workflow event filters do not treat `edited` as a fresh authority
+# run, so these contexts close that metadata-only retarget seam; they do not
+# replace the mandatory organization required workflow.
 on:
   pull_request_target:
     types: [opened, synchronize, reopened, edited]
@@ -48,4 +55,6 @@ jobs:
       # executable comes from the explicit default-branch checkout above.
       - name: validate trusted merge-group envelope
         if: ${{ github.event_name == 'merge_group' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python3 scripts/ci_authority.py --event "$GITHUB_EVENT_PATH"

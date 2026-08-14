@@ -4,9 +4,11 @@
 ``pull_request_target`` runs this controller from the default branch.  It never
 checks out or executes pull-request code.  The event identifies the proposed
 head and base, then read-only API calls re-prove the current PR identity and
-enumerate its exact changed files.  A completed ``ci-authority`` check is
-written to that exact head as diagnostic evidence.  It must never be the sole
-required authority; the organization required-workflow rule is mandatory.
+enumerate its exact changed files.  Complementary base-specific checks are
+written to that exact head: the current-base verdict and a terminal failure for
+the other supported base.  They must never be the sole required authority; the
+organization required-workflow rule and its stable ``ci-authority`` job remain
+mandatory.
 """
 
 from __future__ import annotations
@@ -40,6 +42,7 @@ except ModuleNotFoundError:  # Direct ``python scripts/ci_authority.py``.
 
 SCHEMA = "ci.authority.v1"
 CHECK_NAME = "ci-authority"
+SUPPORTED_BASE_REFS = ("main", "codex/merge-queue-pilot")
 MAX_CHANGED_FILES = 3000  # GitHub's pull-files API hard ceiling.
 MAX_AUTHORITY_PATHS_IN_RECEIPT = 20
 MAX_RECEIPT_PATH_CHARS = 160
@@ -404,25 +407,31 @@ def evaluate_pull_request_target(
     return decision
 
 
-def check_payload(
-    decision: Mapping[str, object], *, details_url: str = ""
+def _completed_check_payload(
+    receipt: Mapping[str, object],
+    *,
+    name: str,
+    head_sha: str,
+    external_id: str,
+    allowed: bool,
+    details_url: str = "",
 ) -> dict[str, object]:
-    """Build diagnostic evidence; never use this as the sole required authority."""
-    head_sha = _sha(decision.get("head_sha"))
-    number = _positive_int(decision.get("pull_request_number"))
-    repository = _repository(decision.get("repository"))
-    allowed = decision.get("allowed") is True
-    if head_sha is None or number is None or repository is None:
-        raise AuthorityContractError("decision cannot identify an exact PR head")
-    summary = json.dumps(decision, ensure_ascii=True, separators=(",", ":"))
+    """Build complementary evidence; never the sole required authority."""
+    if _sha(head_sha) is None or not name.startswith(CHECK_NAME + "/"):
+        raise AuthorityContractError("check cannot identify an exact supported context")
+    summary = json.dumps(receipt, ensure_ascii=True, separators=(",", ":"))
     payload: dict[str, object] = {
-        "name": CHECK_NAME,
+        "name": name,
         "head_sha": head_sha,
         "status": "completed",
         "conclusion": "success" if allowed else "failure",
-        "external_id": f"{SCHEMA}:{repository}:{number}:{head_sha}",
+        "external_id": external_id,
         "output": {
-            "title": "CI authority accepted" if allowed else "CI authority rejected",
+            "title": (
+                "CI authority context accepted"
+                if allowed
+                else "CI authority context rejected"
+            ),
             "summary": summary,
         },
     }
@@ -433,6 +442,53 @@ def check_payload(
     return payload
 
 
+def _base_context_receipt(
+    decision: Mapping[str, object], context_base_ref: str
+) -> tuple[dict[str, object], bool]:
+    active = decision.get("base_ref") == context_base_ref
+    allowed = active and decision.get("allowed") is True
+    receipt = dict(decision)
+    receipt.update(
+        {
+            "check_context": f"{CHECK_NAME}/{context_base_ref}",
+            "context_base_ref": context_base_ref,
+            "context_active": active,
+            "context_allowed": allowed,
+            "context_reason": (
+                decision.get("reason") if active else "inactive_base_context"
+            ),
+        }
+    )
+    return receipt, allowed
+
+
+def check_payload(
+    decision: Mapping[str, object],
+    context_base_ref: str,
+    *,
+    details_url: str = "",
+) -> dict[str, object]:
+    """Build one PR base-context check on the exact proposed head."""
+    if context_base_ref not in SUPPORTED_BASE_REFS:
+        raise AuthorityContractError("unsupported base-specific authority context")
+    head_sha = _sha(decision.get("head_sha"))
+    number = _positive_int(decision.get("pull_request_number"))
+    repository = _repository(decision.get("repository"))
+    if head_sha is None or number is None or repository is None:
+        raise AuthorityContractError("decision cannot identify an exact PR head")
+    receipt, allowed = _base_context_receipt(decision, context_base_ref)
+    return _completed_check_payload(
+        receipt,
+        name=f"{CHECK_NAME}/{context_base_ref}",
+        head_sha=head_sha,
+        external_id=(
+            f"{SCHEMA}:{repository}:{number}:{head_sha}:{context_base_ref}"
+        ),
+        allowed=allowed,
+        details_url=details_url,
+    )
+
+
 def run_pull_request_target(
     payload: object,
     expected_repository: str,
@@ -440,14 +496,36 @@ def run_pull_request_target(
     *,
     details_url: str = "",
 ) -> tuple[int, dict[str, object], dict[str, object]]:
-    """Evaluate, publish one terminal exact-head check, and return its exit code."""
+    """Publish current-base verdict plus terminal invalidation of the other base."""
     decision = evaluate_pull_request_target(payload, expected_repository, api)
-    check = check_payload(decision, details_url=details_url)
-    try:
-        api.create_check(expected_repository, check)
-    except Exception as exc:
-        raise GitHubApiError("completed ci-authority check could not be created") from exc
-    return (0 if decision["allowed"] is True else 1), decision, check
+    current_base = decision.get("base_ref")
+    if current_base in SUPPORTED_BASE_REFS:
+        ordered_bases = tuple(
+            base_ref
+            for base_ref in SUPPORTED_BASE_REFS
+            if base_ref != current_base
+        ) + (str(current_base),)
+    else:
+        decision = _reject(decision, "unsupported_base_ref")
+        ordered_bases = SUPPORTED_BASE_REFS
+    # Invalidate the inactive context first. If publication later fails, the
+    # organization required workflow is red and no stale cross-base success can
+    # be treated as current by the complementary branch rule.
+    checks: list[dict[str, object]] = []
+    for base_ref in ordered_bases:
+        check = check_payload(decision, base_ref, details_url=details_url)
+        try:
+            api.create_check(expected_repository, check)
+        except Exception as exc:
+            raise GitHubApiError(
+                "completed base-specific ci-authority check could not be created"
+            ) from exc
+        checks.append(check)
+    active_check = next(
+        (check for check in checks if check["name"] == f"{CHECK_NAME}/{current_base}"),
+        checks[-1],
+    )
+    return (0 if decision["allowed"] is True else 1), decision, active_check
 
 
 def evaluate_merge_group(payload: object, expected_repository: str) -> dict[str, object]:
@@ -455,6 +533,13 @@ def evaluate_merge_group(payload: object, expected_repository: str) -> dict[str,
     event = _mapping(payload)
     repository = None if event is None else _mapping(event.get("repository"))
     group = None if event is None else _mapping(event.get("merge_group"))
+    raw_base_ref = None if group is None else group.get("base_ref")
+    prefix = "refs/heads/"
+    base_ref = (
+        _safe_ref(raw_base_ref[len(prefix) :])
+        if type(raw_base_ref) is str and raw_base_ref.startswith(prefix)
+        else None
+    )
     if (
         event is None
         or event.get("action") != "checks_requested"
@@ -463,6 +548,7 @@ def evaluate_merge_group(payload: object, expected_repository: str) -> dict[str,
         or group is None
         or _sha(group.get("head_sha")) is None
         or _sha(group.get("base_sha")) is None
+        or base_ref not in SUPPORTED_BASE_REFS
     ):
         raise AuthorityContractError("merge_group event identity is missing or malformed")
     return {
@@ -471,9 +557,42 @@ def evaluate_merge_group(payload: object, expected_repository: str) -> dict[str,
         "repository": expected_repository,
         "head_sha": group["head_sha"],
         "base_sha": group["base_sha"],
+        "base_ref": base_ref,
+        "base_repository": expected_repository,
         "allowed": True,
         "reason": "trusted_default_branch_merge_group",
     }
+
+
+def run_merge_group(
+    payload: object,
+    expected_repository: str,
+    api: AuthorityApi,
+    *,
+    details_url: str = "",
+) -> tuple[int, dict[str, object], dict[str, object]]:
+    """Publish the matching base-specific context on the synthetic queue head."""
+    decision = evaluate_merge_group(payload, expected_repository)
+    head_sha = str(decision["head_sha"])
+    base_ref = str(decision["base_ref"])
+    receipt, allowed = _base_context_receipt(decision, base_ref)
+    check = _completed_check_payload(
+        receipt,
+        name=f"{CHECK_NAME}/{base_ref}",
+        head_sha=head_sha,
+        external_id=(
+            f"{SCHEMA}:{expected_repository}:merge_group:{head_sha}:{base_ref}"
+        ),
+        allowed=allowed,
+        details_url=details_url,
+    )
+    try:
+        api.create_check(expected_repository, check)
+    except Exception as exc:
+        raise GitHubApiError(
+            "completed merge-group ci-authority check could not be created"
+        ) from exc
+    return 0, decision, check
 
 
 class GitHubApi:
@@ -621,14 +740,18 @@ def main(argv: list[str] | None = None) -> int:
     try:
         payload = _read_json(args.event)
         event = _mapping(payload)
+        api = GitHubApi(
+            os.environ.get("GITHUB_API_URL", "https://api.github.com"),
+            os.environ.get("GITHUB_TOKEN", ""),
+        )
         if event is not None and event.get("merge_group") is not None:
-            decision = evaluate_merge_group(payload, repository)
-            exit_code = 0
-        else:
-            api = GitHubApi(
-                os.environ.get("GITHUB_API_URL", "https://api.github.com"),
-                os.environ.get("GITHUB_TOKEN", ""),
+            exit_code, decision, _check = run_merge_group(
+                payload,
+                repository,
+                api,
+                details_url=_details_url(),
             )
+        else:
             exit_code, decision, _check = run_pull_request_target(
                 payload,
                 repository,

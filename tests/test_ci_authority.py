@@ -166,7 +166,12 @@ def test_fork_authority_change_fails_and_publishes_failure_on_exact_head() -> No
     assert not any(call[0] == "permission" for call in api.calls)
     assert check["head_sha"] == HEAD
     assert check["conclusion"] == "failure"
-    assert api.checks == [check]
+    assert [item["name"] for item in api.checks] == [
+        "ci-authority/codex/merge-queue-pilot",
+        "ci-authority/main",
+    ]
+    assert api.checks[-1] == check
+    assert all(item["conclusion"] == "failure" for item in api.checks)
 
 
 @pytest.mark.parametrize("shadow", ["scripts/argparse.py", "scripts/yaml.py"])
@@ -244,6 +249,54 @@ def test_edited_event_rechecks_the_same_head_and_base_identity() -> None:
     assert decision["base_sha"] == BASE
     assert decision["base_ref"] == BASE_REF
     assert check["conclusion"] == "success"
+
+
+def test_main_and_pilot_retargets_invalidate_the_old_context_on_reused_head() -> None:
+    files = [_file("docs/ordinary-note.md")]
+    api = FakeApi(files)
+
+    main_event = _event()
+    main_event["action"] = "edited"
+    code, _decision, check = AUTHORITY.run_pull_request_target(
+        main_event, REPOSITORY, api
+    )
+    assert code == 0
+    assert check["name"] == "ci-authority/main"
+
+    api.pull = _pull(
+        files,
+        base_sha=OTHER_BASE,
+        base_ref="codex/merge-queue-pilot",
+    )
+    pilot_event = _event(
+        base_sha=OTHER_BASE,
+        base_ref="codex/merge-queue-pilot",
+    )
+    pilot_event["action"] = "edited"
+    code, _decision, check = AUTHORITY.run_pull_request_target(
+        pilot_event, REPOSITORY, api
+    )
+    assert code == 0
+    assert check["name"] == "ci-authority/codex/merge-queue-pilot"
+
+    api.pull = _pull(files)
+    code, _decision, check = AUTHORITY.run_pull_request_target(
+        main_event, REPOSITORY, api
+    )
+    assert code == 0
+    assert check["name"] == "ci-authority/main"
+
+    assert [
+        (item["name"], item["conclusion"])
+        for item in api.checks
+    ] == [
+        ("ci-authority/codex/merge-queue-pilot", "failure"),
+        ("ci-authority/main", "success"),
+        ("ci-authority/main", "failure"),
+        ("ci-authority/codex/merge-queue-pilot", "success"),
+        ("ci-authority/codex/merge-queue-pilot", "failure"),
+        ("ci-authority/main", "success"),
+    ]
 
 
 def test_same_repo_non_admin_authority_change_fails() -> None:
@@ -324,7 +377,7 @@ def test_stale_event_head_fails_closed_before_files_or_permission() -> None:
     assert code == 1
     assert decision["reason"] == "event_head_base_or_author_drift"
     assert check["head_sha"] == HEAD
-    assert [call[0] for call in api.calls] == ["pull", "check"]
+    assert [call[0] for call in api.calls] == ["pull", "check", "check"]
 
 
 def test_head_changing_during_file_pagination_fails_closed() -> None:
@@ -342,7 +395,9 @@ def test_head_changing_during_file_pagination_fails_closed() -> None:
     assert code == 1
     assert decision["reason"] == "event_head_base_or_files_drift"
     assert check["head_sha"] == HEAD
-    assert [call[0] for call in api.calls] == ["pull", "files", "pull", "check"]
+    assert [call[0] for call in api.calls] == [
+        "pull", "files", "pull", "check", "check"
+    ]
 
 
 def test_base_retarget_with_reused_head_fails_before_files() -> None:
@@ -361,7 +416,7 @@ def test_base_retarget_with_reused_head_fails_before_files() -> None:
     assert decision["base_ref"] == BASE_REF
     assert decision["reason"] == "event_head_base_or_author_drift"
     assert check["conclusion"] == "failure"
-    assert [call[0] for call in api.calls] == ["pull", "check"]
+    assert [call[0] for call in api.calls] == ["pull", "check", "check"]
 
 
 def test_reused_head_cannot_hide_base_drift_during_files_query() -> None:
@@ -385,7 +440,9 @@ def test_reused_head_cannot_hide_base_drift_during_files_query() -> None:
     assert decision["head_sha"] == HEAD
     assert decision["reason"] == "event_head_base_or_files_drift"
     assert check["conclusion"] == "failure"
-    assert [call[0] for call in api.calls] == ["pull", "files", "pull", "check"]
+    assert [call[0] for call in api.calls] == [
+        "pull", "files", "pull", "check", "check"
+    ]
 
 
 @pytest.mark.parametrize(
@@ -408,7 +465,9 @@ def test_read_api_failure_is_red_but_still_gets_a_terminal_check(
     assert decision["reason"] == reason
     assert check["status"] == "completed"
     assert check["conclusion"] == "failure"
-    assert api.checks == [check]
+    assert api.checks[-1] == check
+    assert len(api.checks) == 2
+    assert all(item["conclusion"] == "failure" for item in api.checks)
 
 
 def test_check_creation_failure_is_a_controller_error() -> None:
@@ -424,19 +483,33 @@ def test_exact_check_payload_binds_name_head_verdict_and_provenance() -> None:
     )
 
     assert code == 0
+    receipt = dict(decision)
+    receipt.update(
+        {
+            "check_context": "ci-authority/main",
+            "context_base_ref": "main",
+            "context_active": True,
+            "context_allowed": True,
+            "context_reason": "ordinary_change",
+        }
+    )
     assert check == {
-        "name": "ci-authority",
+        "name": "ci-authority/main",
         "head_sha": HEAD,
         "status": "completed",
         "conclusion": "success",
-        "external_id": f"ci.authority.v1:{REPOSITORY}:{PR_NUMBER}:{HEAD}",
+        "external_id": (
+            f"ci.authority.v1:{REPOSITORY}:{PR_NUMBER}:{HEAD}:main"
+        ),
         "output": {
-            "title": "CI authority accepted",
+            "title": "CI authority context accepted",
             "summary": json.dumps(
-                decision, ensure_ascii=True, separators=(",", ":")
+                receipt, ensure_ascii=True, separators=(",", ":")
             ),
         },
     }
+    assert api.checks[0]["name"] == "ci-authority/codex/merge-queue-pilot"
+    assert api.checks[0]["conclusion"] == "failure"
 
 
 def test_renaming_authority_away_is_still_an_authority_change() -> None:
@@ -542,7 +615,11 @@ def test_merge_group_envelope_produces_stable_trusted_verdict() -> None:
     event = {
         "action": "checks_requested",
         "repository": {"full_name": REPOSITORY},
-        "merge_group": {"head_sha": HEAD, "base_sha": BASE},
+        "merge_group": {
+            "head_sha": HEAD,
+            "base_sha": BASE,
+            "base_ref": "refs/heads/main",
+        },
     }
     assert AUTHORITY.evaluate_merge_group(event, REPOSITORY) == {
         "schema": AUTHORITY.SCHEMA,
@@ -550,9 +627,46 @@ def test_merge_group_envelope_produces_stable_trusted_verdict() -> None:
         "repository": REPOSITORY,
         "head_sha": HEAD,
         "base_sha": BASE,
+        "base_ref": "main",
+        "base_repository": REPOSITORY,
         "allowed": True,
         "reason": "trusted_default_branch_merge_group",
     }
+
+
+@pytest.mark.parametrize(
+    "base_ref,base_sha,expected_name",
+    [
+        ("main", BASE, "ci-authority/main"),
+        (
+            "codex/merge-queue-pilot",
+            OTHER_BASE,
+            "ci-authority/codex/merge-queue-pilot",
+        ),
+    ],
+)
+def test_merge_group_publishes_matching_base_context_on_synthetic_head(
+    base_ref: str, base_sha: str, expected_name: str
+) -> None:
+    event = {
+        "action": "checks_requested",
+        "repository": {"full_name": REPOSITORY},
+        "merge_group": {
+            "head_sha": HEAD,
+            "base_sha": base_sha,
+            "base_ref": f"refs/heads/{base_ref}",
+        },
+    }
+    api = FakeApi([])
+    code, decision, check = AUTHORITY.run_merge_group(event, REPOSITORY, api)
+
+    assert code == 0
+    assert decision["base_ref"] == base_ref
+    assert check["name"] == expected_name
+    assert check["head_sha"] == HEAD
+    assert check["status"] == "completed"
+    assert check["conclusion"] == "success"
+    assert api.checks == [check]
 
 
 def test_workflow_is_required_workflow_shaped_and_never_executes_candidate() -> None:
@@ -587,9 +701,15 @@ def test_workflow_is_required_workflow_shaped_and_never_executes_candidate() -> 
     assert "github.sha" not in json.dumps(checkout)
     assert pull_step["if"] == "${{ github.event_name == 'pull_request_target' }}"
     assert merge_group_step["if"] == "${{ github.event_name == 'merge_group' }}"
+    assert merge_group_step["env"] == {
+        "GITHUB_TOKEN": "${{ secrets.GITHUB_TOKEN }}"
+    }
     assert pull_step["run"] == merge_group_step["run"]
     assert pull_step["run"].startswith("python3 scripts/ci_authority.py")
     assert "subprocess" not in (ROOT / "scripts/ci_authority.py").read_text()
     assert "diagnostic evidence only" in source
     assert "must never be the sole required authority" in source
     assert "required-workflow rule remains mandatory" in source
+    assert "ci-authority/main" in source
+    assert "ci-authority/codex/merge-queue-pilot" in source
+    assert "metadata-only retarget seam" in source
