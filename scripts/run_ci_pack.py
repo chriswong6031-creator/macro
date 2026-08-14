@@ -52,7 +52,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
-ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "steps", "timeout-minutes"}
+ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
 ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
 
 # ---------------------------------------------------------------------------
@@ -128,6 +128,11 @@ GLOBAL_INVALIDATORS = (
 # 180 jobs merely because it carries its handoff/provenance note.
 PASSIVE_UNOWNED_PATTERNS = ("**/*.md",)
 
+# Bounded `.md` mention in a job command. A substring test also fires on
+# `.mdx` / `.mdown` / `.mdc` and incidental `.md` inside a URL, which would
+# promote every opaque fallback of those jobs back into the owned tier.
+MD_COMMAND_RE = re.compile(r"\.md(?![A-Za-z0-9])")
+
 # A statically opaque subprocess or tree traversal must own every established
 # repository surface it could inspect.  This is deliberately broad: it keeps
 # whole-tree guards such as all-exports-resolve selected for every engine/script
@@ -200,6 +205,7 @@ PIP_INSTALL_RE = re.compile(
 # (legacy-job groups only; checkout excluded). Pack 1's 56-minute wall-clock
 # was 31 minutes of fetch-depth:0 stampede plus these underweighted heavies
 # sitting together because the 2026-08-11 local Mac weights were stale.
+PACK_TARGET_SECONDS = 600
 OBSERVED_COMMAND_SECONDS = {
     "engine-render-guards": 1036,
     "workflow-yaml": 438,
@@ -239,6 +245,20 @@ class LegacyJob:
     # Empty means UNSCOPED — the job runs on every pull request. Declaring a
     # scope is opt-in, so adding one can only ever remove work, never add it.
     paths: tuple[str, ...] = ()
+    # Patterns whose provenance is an OPAQUE fallback: a subprocess call or
+    # filesystem traversal somewhere in the job's closure widened it to whole
+    # scan roots. They still select the job for code/data edits, but a
+    # narrative file (`**/*.md`) never matches this tier.
+    fallback_paths: tuple[str, ...] = ()
+    # True when the manifest declares `scope: exclusive` — the declared
+    # `paths:` then REPLACE inference instead of being unioned under it, and
+    # the declaration is coverage-audited fatally at load time.
+    exclusive: bool = False
+
+    @property
+    def is_scoped(self) -> bool:
+        """Whether ANY tier can narrow this job off a diff."""
+        return bool(self.paths or self.fallback_paths)
 
 
 @functools.lru_cache(maxsize=None)
@@ -414,6 +434,13 @@ def scope_pattern_is_startable(pattern: str, triggers: Iterable[str]) -> bool:
         if pattern in triggers:
             return True
     if not pattern.endswith("/**"):
+        # `app/*` is a single-level subset of `app/**`. Any edit it covers
+        # also matches that ancestor trigger, so the run starts. Exclusive
+        # declarations use this form on purpose (`*` does not cross `/`).
+        if pattern.endswith("/*"):
+            parent = pattern[: -len("/*")]
+            if f"{parent}/**" in triggers:
+                return True
         return False
     # A subtree scope is startable when an ANCESTOR subtree is a trigger, for the
     # same reason: `data/smart_money/**` matches a subset of `data/**`.
@@ -478,37 +505,131 @@ def _validate_scope(prefix: str, raw: Any) -> tuple[tuple[str, ...], list[str]]:
     return tuple(scope), findings
 
 
+def _decode_changed_files(raw: str | None) -> list[str] | None:
+    """The ONE decoder both transports share: file bytes and env string alike.
+
+    Two readers that agree today drift tomorrow, and a drift here is silent by
+    construction — a list decoded one way and hashed the other simply refuses
+    every plan.  Semantics: the token ``null`` and every malformed shape widen
+    to ``None``; a JSON array of strings narrows to exactly its non-empty
+    entries, in the ORDER the planner resolved them (never sorted — the hash in
+    ``changed_files_digest`` pins that order).
+    """
+    if raw is None:
+        return None
+    stripped = raw.strip()
+    if not stripped or stripped == "null":
+        return None
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(parsed, list) or not all(
+        isinstance(path, str) for path in parsed
+    ):
+        return None
+    return [path for path in parsed if path] or None
+
+
+def changed_files_digest(changed: Iterable[str] | None) -> str:
+    """sha256 of a resolved changed-file list, or "" when there is no list.
+
+    The empty string is the affirmative encoding of "the planner had no list"
+    (main's baseline, every widen) and is NOT a hash of anything, so a pack can
+    tell "planned full suite" apart from "planned this exact diff" without a
+    second flag.  Compact separators and the RESOLVED order — sorting here would
+    make two different lists hash the same and defeat the drift gate the digest
+    exists to arm.
+    """
+    if changed is None:
+        return ""
+    payload = json.dumps(list(changed), separators=(",", ":"))
+    return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
+def _read_changed_files_handle(handle: str | None) -> tuple[str, list[str]]:
+    """Classify the published changed-files FILE without deciding anything.
+
+    Five states, because a pack about to refuse a plan needs to NAME the reason
+    where ``resolve_changed_files`` deliberately only widens: ``absent``
+    (nothing configured), ``unreadable`` (configured, but the artifact never
+    landed or is not text), ``malformed`` (present and not a changed-file
+    handle), ``null`` (the planner's affirmative "no list"), and ``list``
+    (paths).  Normalisation is ``_decode_changed_files``'s, exactly — an array
+    that survives to nothing is reported as ``null``, because that is what the
+    planner hashed it to, and two readers that normalise differently would
+    refuse every plan.
+    """
+    if not handle:
+        return "absent", []
+    try:
+        raw = Path(handle).read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return "unreadable", []
+    stripped = raw.strip()
+    if not stripped:
+        return "malformed", []
+    if stripped == "null":
+        return "null", []
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return "malformed", []
+    if not isinstance(parsed, list) or not all(
+        isinstance(path, str) for path in parsed
+    ):
+        return "malformed", []
+    paths = [path for path in parsed if path]
+    return ("list", paths) if paths else ("null", [])
+
+
 def resolve_changed_files(
     changed_from: str | None,
     *,
     explicit_json: str | None = None,
+    explicit_file: str | Path | None = None,
 ) -> list[str] | None:
     """Prefer the planner's file list so packs can shallow-checkout.
 
-    ``CI_CHANGED_FILES_JSON`` (or ``explicit_json``) is the ci-plan output:
-    a JSON array of paths, or the token ``null`` when there is no diff (main's
-    baseline, planner fallback). Packs must not re-run ``git diff`` against a
-    fetch-depth-1 tree — that miss would fail-safe-widen every PR to the full
-    suite and undo the shallow-checkout saving. An unset/empty value still
-    falls back to ``git diff`` so a local ``--changed-from`` invocation works.
-    Malformed JSON widens (None), never narrows.
+    Source order, most authoritative first: ``explicit_file`` →
+    ``CI_CHANGED_FILES_FILE`` → ``explicit_json`` → ``CI_CHANGED_FILES_JSON`` →
+    ``git diff``.  The FILE is the production transport (2026-08-14, run
+    31775693780): the same list rode a job output into every pack step's
+    ``env:`` at 350,264 bytes, past Linux's 131,072-byte MAX_ARG_STRLEN, and
+    every pack died at launch with "Argument list too long" before a single test
+    ran.  A path is a few dozen bytes whatever the diff's size; the list it names
+    is an artifact.  The env string stays supported so an old runner, a local
+    reproduction, or a hand-driven invocation keeps working.
+
+    Packs must not re-run ``git diff`` against a fetch-depth-1 tree — that miss
+    would fail-safe-widen every PR to the full suite and undo the
+    shallow-checkout saving.  An unset/empty value still falls back to ``git
+    diff`` so a local ``--changed-from`` invocation works.
+
+    Malformed input widens (None), never narrows — for BOTH transports, and a
+    configured-but-unreadable file included: an unreadable handle is exactly the
+    doubt this law is written for, and falling through to git behind it would
+    answer a stale question (the base SHA a pack is handed can be many hours and
+    thousands of paths behind main).  A pack that was PINNED to a published plan
+    does not merely widen on that doubt, it refuses: the widened list hashes to
+    something else, so ``--expect-plan-sha`` fires.  See ``main``.
     """
+    handle = (
+        explicit_file
+        if explicit_file is not None
+        else os.environ.get("CI_CHANGED_FILES_FILE")
+    )
+    if handle:
+        try:
+            raw_file = Path(handle).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            return None
+        return _decode_changed_files(raw_file)
     raw = explicit_json if explicit_json is not None else os.environ.get(
         "CI_CHANGED_FILES_JSON"
     )
     if raw is not None and raw != "":
-        stripped = raw.strip()
-        if stripped == "null":
-            return None
-        try:
-            parsed = json.loads(stripped)
-        except json.JSONDecodeError:
-            return None
-        if not isinstance(parsed, list) or not all(
-            isinstance(path, str) for path in parsed
-        ):
-            return None
-        return [path for path in parsed if path] or None
+        return _decode_changed_files(raw)
     if changed_from:
         return changed_files(changed_from)
     return None
@@ -610,7 +731,17 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             fallbacks.update(narrow_to_suffixes(roots, suffixes))
         return tuple(sorted(fallbacks))
 
-    def infer_job_paths(definition: dict[str, Any]) -> tuple[str, ...] | None:
+    def infer_job_paths(
+        definition: dict[str, Any],
+    ) -> tuple[set[str], set[str]] | None:
+        """(owned, fallback) or None when the job cannot be scoped at all.
+
+        ``owned`` carries NAMED evidence: closure files, literal references,
+        and any fallback of a job whose commands demonstrably mention
+        markdown. ``fallback`` carries OPAQUE widening only — subprocess and
+        traversal root claims — and is the tier a narrative file can never
+        select (see ``LegacyJob.fallback_paths``).
+        """
         commands = [
             str(step["run"])
             for step in definition.get("steps", [])
@@ -619,6 +750,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             and "pip install" not in str(step["run"])
         ]
         owned: set[str] = set()
+        fallback: set[str] = set()
         named_any = False
         named_pytest = False
         for command in commands:
@@ -638,7 +770,7 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                 if fallbacks is None:
                     return None
                 owned.update(closure.files)
-                owned.update(exclude_peer_test_ownership(fallbacks))
+                fallback.update(exclude_peer_test_ownership(fallbacks))
                 named_pytest = True
                 named_any = True
 
@@ -655,27 +787,72 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
                     if fallbacks is None:
                         return None
                     owned.update(closure.files)
-                    owned.update(fallbacks)
+                    fallback.update(fallbacks)
+        if not named_any:
+            return None
         if named_pytest:
             # Script-path fallbacks in the same job re-introduced ``*`` / ``tests/**``
             # after the named-suite filter (marketing-engine still matched a prophet
             # test via ``tests/**``). Strip catch-alls from the FINAL set whenever
             # the job named specific pytest files.
-            owned = set(exclude_peer_test_ownership(owned))
-        return tuple(sorted(owned)) if named_any and owned else None
+            fallback = set(exclude_peer_test_ownership(fallback))
+        # A job whose commands mention markdown reads narrative files on
+        # purpose (doc linters, handoff censuses). ALL its opaque claims keep
+        # matching `.md` edits via the owned tier.
+        if MD_COMMAND_RE.search("\n".join(commands)):
+            owned.update(fallback)
+            fallback = set()
+        fallback -= owned
+        return (owned, fallback) if owned else None
 
     inferred: list[LegacyJob] = []
     scoped = 0
+    declared = 0
     for job in jobs:
-        paths = infer_job_paths(job.definition)
-        if paths:
+        if job.exclusive:
+            # The curated tier: the manifest's own coverage-audited `paths:`
+            # ARE the scope. Inference is skipped entirely, so fallback smear
+            # from an opaque edge deep in a suite's closure cannot re-widen a
+            # job the operator deliberately narrowed.
+            inferred.append(replace(job, fallback_paths=()))
+            declared += 1
+            continue
+        result = infer_job_paths(job.definition)
+        if result:
+            owned, fallback = result
             inferred.append(
-                replace(job, paths=tuple(sorted(set(job.paths) | set(paths))))
+                replace(
+                    job,
+                    paths=tuple(sorted(set(job.paths) | owned)),
+                    fallback_paths=tuple(sorted(fallback)),
+                )
             )
             scoped += 1
         else:
-            inferred.append(replace(job, paths=()))
-    return inferred, f"derived scopes for {scoped}/{len(inferred)} jobs"
+            inferred.append(replace(job, paths=(), fallback_paths=()))
+    summary = f"derived scopes for {scoped}/{len(inferred)} jobs"
+    if declared:
+        summary += f"; {declared} declared exclusive"
+    return inferred, summary
+
+
+def _job_diff_match(job: LegacyJob, changed: Iterable[str]) -> tuple[str, str] | None:
+    """The first (changed path, tier) that selects this job, or None.
+
+    Tier order is deliberate: a NAMED owner (`declared` for exclusive jobs,
+    `owned` for closure/literal evidence) always outranks an opaque `fallback`
+    claim in the explanation, and the fallback tier never fires for a
+    narrative file.
+    """
+    for path in changed:
+        if _matches_any(job.paths, path):
+            return path, ("declared" if job.exclusive else "owned")
+    for path in changed:
+        if _matches_any(PASSIVE_UNOWNED_PATTERNS, path):
+            continue
+        if _matches_any(job.fallback_paths, path):
+            return path, "fallback"
+    return None
 
 
 def select_jobs(
@@ -688,18 +865,18 @@ def select_jobs(
     invalidators = [path for path in changed if _matches_any(GLOBAL_INVALIDATORS, path)]
     if invalidators:
         return jobs, f"full suite: global invalidator changed ({invalidators[0]})"
-    scoped_jobs = [job for job in jobs if job.paths]
+    scoped_jobs = [job for job in jobs if job.is_scoped]
     unowned = [
         path for path in changed
-        if not any(_matches_any(job.paths, path) for job in scoped_jobs)
+        if not any(_job_diff_match(job, [path]) for job in scoped_jobs)
         and not _matches_any(PASSIVE_UNOWNED_PATTERNS, path)
     ]
     selected = [
         job
         for job in jobs
-        if not job.paths or any(_matches_any(job.paths, path) for path in changed)
+        if not job.is_scoped or _job_diff_match(job, changed)
     ]
-    unscoped = sum(1 for job in jobs if not job.paths)
+    unscoped = sum(1 for job in jobs if not job.is_scoped)
     reason = (
         f"scoped to {len(changed)} changed file(s): {len(selected)}/{len(jobs)} jobs "
         f"({unscoped} unscoped always-on, "
@@ -815,6 +992,26 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 _scope_coverage_findings(str(job_id), raw_definition, scope)
             )
 
+        # `scope: exclusive` is the CURATED tier: the declared `paths:` above
+        # REPLACE inference for this job instead of being unioned under it.
+        # The coverage audit just ran and is FATAL here like any other finding,
+        # so an exclusive job that fails to cover a file its own commands name
+        # cannot load — mis-declaring narrow is a loud manifest error, not a
+        # silent false green. An exclusive job with no paths would be a job
+        # that never runs on any pull request; refuse that outright.
+        raw_scope_mode = raw_definition.get("scope")
+        if raw_scope_mode not in (None, "exclusive"):
+            findings.append(
+                f"{prefix} scope must be the literal 'exclusive' when present"
+            )
+        exclusive = raw_scope_mode == "exclusive"
+        if exclusive and not scope:
+            findings.append(
+                f"{prefix} declares scope: exclusive but no paths — an "
+                "exclusive job with no declared surface would never run on "
+                "any pull request"
+            )
+
         legacy.append(
             LegacyJob(
                 job_id=str(job_id),
@@ -822,6 +1019,7 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 ordinal=ordinal,
                 weight=_job_weight(str(job_id), raw_definition),
                 paths=scope,
+                exclusive=exclusive,
             )
         )
 
@@ -914,12 +1112,25 @@ class CIPackPlan:
     # built from the same inputs stay equal and the hash remains the identity.
     scoped_jobs: tuple[LegacyJob, ...] = field(default=(), compare=False, repr=False)
     predicted_job_ids: tuple[str, ...] = field(default=(), compare=False, repr=False)
-    # The resolved diff. Not hashed: eligible_job_ids already captures its
-    # effect. Published via $GITHUB_OUTPUT so packs can shallow-checkout
-    # instead of re-running `git diff` against a fetch-depth-0 history.
+    # The resolved diff. Packs receive it so they can shallow-checkout instead of
+    # re-running `git diff` against a fetch-depth-0 history. As a run ARTIFACT
+    # since 2026-08-14, never a job output: an output becomes an `env:` string in
+    # the consuming job, and PR #5578's 350,264-byte list met execve's
+    # 131,072-byte MAX_ARG_STRLEN and killed all twelve packs at launch (run
+    # 31775693780).
     changed_paths: tuple[str, ...] | None = field(
         default=None, compare=False, repr=False
     )
+    # sha256 of the RESOLVED list (see `changed_files_digest`) and its length.
+    # `compare=False` because `changed_paths` already is; the digest is a
+    # function of it and adds no distinguishing power to plan EQUALITY. It DOES
+    # enter `plan_hash_payload`, and that is the whole repair: the list now
+    # travels out of band, so without a bounded pin inside the decision identity
+    # a swapped or truncated artifact would silently re-scope the guards that
+    # read it. A pack recomputing from the wrong file recomputes a different
+    # plan sha, and the existing --expect-plan-sha parity check refuses.
+    changed_files_sha256: str = field(default="", compare=False, repr=False)
+    changed_files_count: int = field(default=0, compare=False, repr=False)
 
     @property
     def pack_count(self) -> int:
@@ -963,6 +1174,13 @@ class CIPackPlan:
             "matrix": self.matrix(),
             "has_work": self.has_work,
             "plan_sha256": self.plan_sha256,
+            # The DIGEST and the COUNT, never the list. This document is printed
+            # as one machine line in the planner's log, so an unbounded array
+            # here would simply move the 350,264 bytes from the pack step's
+            # `env:` into a log line nobody can read. The list itself is the
+            # `ci-changed-files` artifact.
+            "changed_files_sha256": self.changed_files_sha256,
+            "changed_files_count": self.changed_files_count,
         }
 
 
@@ -970,6 +1188,7 @@ def plan_hash_payload(
     *,
     changed_from: str | None,
     scope_mode: str,
+    changed_files_sha256: str,
     pack_count: int,
     eligible_job_ids: Iterable[str],
     pack_jobs: Iterable[Iterable[str]],
@@ -984,11 +1203,23 @@ def plan_hash_payload(
     adds ways for two identical decisions to disagree.  The matrix MODE is
     excluded too: it is an emission policy, so ci-plan and ci-pack agree on the
     hash whether or not every pack was launched.
+
+    `changed_files_sha256` is IN, next to `changed_from` and for the same reason
+    (2026-08-14, run 31775693780): the base pins which commit the diff was taken
+    against, this pins the diff itself.  It is what makes the out-of-band
+    transport safe.  The list left the job outputs because a 350,264-byte
+    `env:` string cannot cross execve, and an artifact is reachable by anything
+    that can write a file — so a pack recomputing from a swapped, truncated or
+    missing artifact recomputes a DIFFERENT plan sha, and the existing
+    `--expect-plan-sha` parity check refuses before a single legacy step runs.
+    Without this key that same pack would compute the published hash, pass
+    parity, and quietly run its guards over somebody else's diff.
     """
     return {
         "schema": PLAN_SCHEMA,
         "changed_from": changed_from,
         "scope_mode": scope_mode,
+        "changed_files_sha256": changed_files_sha256,
         "pack_count": pack_count,
         # PLAN order, never sorted: partition_jobs is greedy over
         # (-weight, ordinal), so the sequence itself is load-bearing.
@@ -1056,6 +1287,11 @@ def build_plan(
     skipped_job_ids = tuple(
         job.job_id for job in jobs if job.job_id not in selected_ids
     )
+    # Hashed from the list the plan was actually built on, so the pin and the
+    # decision cannot describe different diffs. `changed is None` is the
+    # full-suite case and hashes to "" — an affirmative "no list", not a hash of
+    # the empty list.
+    changed_files_sha256 = changed_files_digest(changed)
     return CIPackPlan(
         schema=PLAN_SCHEMA,
         changed_from=changed_from,
@@ -1074,6 +1310,7 @@ def build_plan(
             plan_hash_payload(
                 changed_from=changed_from,
                 scope_mode=scope_mode,
+                changed_files_sha256=changed_files_sha256,
                 pack_count=pack_count,
                 eligible_job_ids=eligible_job_ids,
                 pack_jobs=pack_jobs,
@@ -1083,6 +1320,8 @@ def build_plan(
         scoped_jobs=tuple(jobs),
         predicted_job_ids=predicted_job_ids,
         changed_paths=tuple(changed) if changed is not None else None,
+        changed_files_sha256=changed_files_sha256,
+        changed_files_count=len(changed) if changed is not None else 0,
     )
 
 
@@ -1092,10 +1331,11 @@ def plan_from_workflow(
     changed_from: str | None,
     scope_mode: str,
     pack_count: int = 12,
+    changed_files_file: str | Path | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
     legacy = load_legacy_jobs(workflow)
-    changed = resolve_changed_files(changed_from)
+    changed = resolve_changed_files(changed_from, explicit_file=changed_files_file)
     return build_plan(
         legacy,
         changed,
@@ -1127,7 +1367,8 @@ def _write_github_output(
     has_work: bool,
     plan_sha: str,
     reason: str,
-    changed_files_json: str = "null",
+    changed_files_sha256: str = "",
+    changed_files_count: int = 0,
 ) -> None:
     """Append the ci-plan outputs to a `$GITHUB_OUTPUT` file.
 
@@ -1136,6 +1377,16 @@ def _write_github_output(
     the heredoc form.  The delimiter is derived from the plan hash: it cannot
     appear in compact JSON, in "true"/"false", in a hexdigest, or in prose about
     job counts and paths.
+
+    NO OUTPUT HERE MAY BE UNBOUNDED (2026-08-14, run 31775693780).  A job output
+    becomes an `env:` string in the consuming job, and Linux caps a SINGLE env
+    string at MAX_ARG_STRLEN = 131,072 bytes; the retired `changed_files` output
+    measured 350,264 bytes on PR #5578 and killed all twelve packs at launch
+    with "Argument list too long" before one test ran.  Its replacement is the
+    64-character digest below — the same value `plan_hash_payload` hashes, so
+    the list travels as an artifact while its identity still rides the trusted
+    output channel.  Everything else is a matrix over twelve indices, a boolean,
+    a hexdigest, a decimal count, or one line of prose.
     """
     delimiter = "ci_plan_" + (plan_sha[:32] or "planner_fallback")
     payload = "".join(
@@ -1145,7 +1396,8 @@ def _write_github_output(
             ("has_work", "true" if has_work else "false"),
             ("plan_sha", plan_sha),
             ("reason", reason),
-            ("changed_files", changed_files_json),
+            ("changed_files_sha256", changed_files_sha256),
+            ("changed_files_count", str(changed_files_count)),
         )
     )
     # ONE append, never five: a failure between writes would leave GitHub parsing
@@ -1155,8 +1407,47 @@ def _write_github_output(
         handle.write(payload)
 
 
+def _write_changed_files_artifact(
+    destination: str | Path, changed: Iterable[str] | None
+) -> Path:
+    """Write the resolved list where the packs will download it from.
+
+    THIS FILE IS THE TRANSPORT (2026-08-14, run 31775693780). The same list rode
+    a job output into every pack step's `env:` at 350,264 bytes, past execve's
+    131,072-byte MAX_ARG_STRLEN, and all twelve packs died at launch before one
+    test ran. A path is a few dozen bytes however large the diff.
+
+    The token `null` is written for a full-suite plan rather than nothing at all:
+    an affirmative "no list" is what stops a pack's children falling back to
+    `git diff` against a fetch-depth-1 tree that cannot see `origin/main...HEAD`
+    (#5556/#5519/#5499). Parent directories are created here so the ci.yml step
+    stays a single folded scalar — a `#`-free, uniform-indent `>-` block is a
+    law in this workflow (see the pack step's comment), and prefixing a `mkdir`
+    would force it into a multi-line literal.
+    """
+    path = Path(destination)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = (
+        "null" if changed is None else json.dumps(list(changed), separators=(",", ":"))
+    )
+    path.write_text(payload + "\n", encoding="utf-8")
+    return path
+
+
 def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
     """Publish the plan in whichever forms the caller asked for."""
+    if args.emit_changed_files:
+        handle = _write_changed_files_artifact(
+            args.emit_changed_files, plan.changed_paths
+        )
+        # Bounded by construction: a count, a digest prefix, and a path. Printing
+        # the payload here would put a third unbounded copy of the diff in the
+        # Actions log, which is the habit that made the env string look harmless.
+        print(
+            f"changed-file list: {plan.changed_files_count} path(s) "
+            f"sha256={plan.changed_files_sha256[:16] or '(no list)'} -> {handle}",
+            flush=True,
+        )
     if args.emit_plan_json:
         document = plan.to_dict()
         if str(args.emit_plan_json) == "-":
@@ -1186,19 +1477,14 @@ def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
         reason = (
             f"matrix {args.matrix_mode} (all {plan.pack_count} launch): {plan.reason}"
         )
-    if plan.changed_paths is None:
-        changed_files_json = "null"
-    else:
-        changed_files_json = json.dumps(
-            list(plan.changed_paths), separators=(",", ":")
-        )
     _write_github_output(
         args.github_output,
         matrix=matrix,
         has_work=has_work,
         plan_sha=plan.plan_sha256,
         reason=reason,
-        changed_files_json=changed_files_json,
+        changed_files_sha256=plan.changed_files_sha256,
+        changed_files_count=plan.changed_files_count,
     )
 
 
@@ -1213,14 +1499,25 @@ def _emit_planner_fallback(args: argparse.Namespace, exc: BaseException) -> None
     This is not a hole: every pack runs this same script, so a genuine
     ManifestError still fails all twelve packs red.  Refusing to plan must never
     be able to skip a test.
+
+    The changed-files artifact is written HERE TOO, holding the token `null`.
+    ci.yml uploads it unconditionally and `if-no-files-found: error`, so a
+    planner that failed before writing it would red the planner itself rather
+    than the manifest defect it was trying to report — and the packs would then
+    download nothing and hand their child guards an absent handle, which
+    licenses a `git diff` a depth-1 pack cannot answer. `null` is the honest
+    value: this path widened to the full suite, so there is no list.
     """
+    if args.emit_changed_files:
+        _write_changed_files_artifact(args.emit_changed_files, None)
     _write_github_output(
         args.github_output,
         matrix=_full_matrix(args.pack_count),
         has_work=True,
         plan_sha="",
         reason=f"full suite: planner error ({exc})",
-        changed_files_json="null",
+        changed_files_sha256="",
+        changed_files_count=0,
     )
     # Bare print, never a logger: a prefixing formatter makes GitHub drop the
     # annotation silently (CLAUDE.md — annotations must START the line).
@@ -1336,11 +1633,33 @@ def _run_job(
     return None
 
 
+def _child_environment() -> dict[str, str]:
+    """The base environment every legacy step inherits — file in, list out.
+
+    ONE SOURCE FOR THE CHILDREN, AND IT IS THE FILE (2026-08-14, run
+    31775693780).  Every legacy step is a fresh `bash -eo pipefail -c` — an
+    execve — and Linux caps a SINGLE env string at MAX_ARG_STRLEN = 131,072
+    bytes.  The measured list was 350,264 bytes, so a child inheriting it dies
+    with "Argument list too long" before its first line runs; that is what killed
+    all twelve packs on PR #5578.  Forwarding both transports would also let a
+    stale env string out-vote the artifact in whichever child happens to read it
+    first, so when the handle is configured the inline string is REMOVED rather
+    than merely ignored.
+    """
+    command_env = os.environ.copy()
+    if command_env.get("CI_CHANGED_FILES_FILE"):
+        command_env.pop("CI_CHANGED_FILES_JSON", None)
+    return command_env
+
+
 def _dependency_environment(
     install_command: str | None,
 ) -> dict[str, str]:
     """Build a clean, single-use dependency environment for a job group."""
-    command_env = os.environ.copy()
+    # `_child_environment`, never a bare `os.environ.copy()`: this is one of the
+    # two places a legacy step's environment is assembled, and the E2BIG repair
+    # lives there.
+    command_env = _child_environment()
     if install_command is None:
         return command_env
 
@@ -1376,7 +1695,7 @@ def execute_pack(
     head_ref = os.environ.get("CI_HEAD_REF", "")
     failures: list[str] = []
     current_dependency: object = object()
-    command_env = os.environ.copy()
+    command_env = _child_environment()
     try:
         # Adjacent jobs with an identical declared dependency set share that
         # exact environment.  A different set recreates the venv from scratch,
@@ -1466,6 +1785,27 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--emit-changed-files",
+        default=None,
+        metavar="PATH",
+        help=(
+            "write the resolved changed-file list to this path as compact JSON, "
+            "or the token 'null' when there is no list; parent directories are "
+            "created. This file is the packs' transport — the list left the job "
+            "outputs on 2026-08-14 because a 350,264-byte value exceeds execve's "
+            "131,072-byte per-string cap"
+        ),
+    )
+    parser.add_argument(
+        "--changed-files-file",
+        default=None,
+        metavar="PATH",
+        help=(
+            "read the planner's changed-file list from this file instead of the "
+            "process environment; defaults to $CI_CHANGED_FILES_FILE"
+        ),
+    )
+    parser.add_argument(
         "--expect-plan-sha",
         default=None,
         help="refuse to execute unless the recomputed plan hashes to this sha256",
@@ -1507,6 +1847,7 @@ def main(argv: list[str] | None = None) -> int:
             changed_from=args.changed_from,
             scope_mode=args.scope_mode,
             pack_count=args.pack_count,
+            changed_files_file=args.changed_files_file,
         )
         shadow = args.scope_mode == "shadow" and args.changed_from
         if shadow:
@@ -1555,6 +1896,26 @@ def main(argv: list[str] | None = None) -> int:
         # one. Refuse here, before a single legacy step runs, and name both
         # hashes so the divergence is diagnosable rather than merely red.
         if args.expect_plan_sha and args.expect_plan_sha != plan.plan_sha256:
+            # NAME THE CHANGED-FILE HANDLE FIRST (2026-08-14). Since
+            # `changed_files_sha256` entered the hashed payload, the most likely
+            # cause of a parity failure is no longer a manifest that drifted
+            # between two runners — it is the `ci-changed-files` artifact that
+            # failed to download, landed truncated, or was swapped. The parity
+            # check is the GATE; this line is the diagnosis, because "recomputed
+            # X but ci-plan published Y" alone sends an operator hunting through
+            # a 192-job manifest for a difference that is in a file.
+            handle = args.changed_files_file or os.environ.get(
+                "CI_CHANGED_FILES_FILE"
+            )
+            state, paths = _read_changed_files_handle(handle)
+            print(
+                f"::error title=ci-changed-files::pack {args.pack_index} planned "
+                f"from {plan.changed_files_count} changed path(s) "
+                f"({plan.changed_files_sha256[:16] or 'no list'}) read as {state} "
+                f"from {handle or '$CI_CHANGED_FILES_FILE (unset)'}"
+                + (f" carrying {len(paths)} path(s)" if state == "list" else ""),
+                flush=True,
+            )
             print(
                 "::error title=ci-plan-parity::pack "
                 f"{args.pack_index} recomputed plan {plan.plan_sha256} but ci-plan "
