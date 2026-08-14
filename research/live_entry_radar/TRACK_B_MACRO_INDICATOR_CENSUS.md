@@ -132,16 +132,10 @@ leading drop moves a cascade field on **12.83%** of data/stocks cases through th
 
 **What Prophet consumes:** `engine/prophet_doors.py:565-570` — `door_t_fires(v)`, "the incumbent
 VALIDATED construction, **byte-unmodified**", returning
-`bool(v) and bool(v.get("eligible")) and signal_gate.is_buyable(v)`.
-
-```
-daily close ─► confluence_tiers._tf_bars (2D/3D, absolute anchor)
-            ─► _stoch_rsi_kd + _rsi_macd   (RSI family R-B)
-            ─► signal_gate.gate() → verdict {eligible, tier_cascade, …}
-            ─► signal_gate.is_buyable() → bool
-            ─► prophet_doors.door_t_fires()       ← Prophet
-               entry_signal.assess(buyable=…)     ← display / price plan
-```
+`bool(v) and bool(v.get("eligible")) and signal_gate.is_buyable(v)`. Full chain:
+`daily close → confluence_tiers._tf_bars (2D/3D, absolute anchor) → _stoch_rsi_kd + _rsi_macd (RSI
+family R-B) → signal_gate.gate() → verdict{eligible, tier_cascade} → signal_gate.is_buyable() →`
+**`prophet_doors.door_t_fires()`** (Prophet) and `entry_signal.assess(buyable=…)` (display).
 
 **Non-interference is mechanical.** Live Entry Radar is provably clear iff it (a) adds no import
 into `entry_signal.py`, `signal_gate.py`, `confluence_tiers.py`, `signal_quality.py`,
@@ -174,21 +168,18 @@ level … **but never adjudicated on the gate-fire tape itself**." Those figures
 *The "2W operator seed"* was the operator's literal proposal — a **2-week / 1-month StochRSI
 washout**, i.e. deep HTF oversold *position*, used **in interaction with a turn**, layered on gate
 fires; `research/ENTRY_STACK_EXPANSION_AMENDMENT3_BY_FABLE.md:271-272` names it "The operator's
-literal **'2W/1M StochRSI washout' seed**".
-
-*What killed it:* family `esx_washout_x_turn` (arm C), `…:259` — "**KILLED** | The operator's
-literal 2W-washout × turn seed adds NEGATIVE marginal value once proximity is removed: nc2 kills
-contrast-i (−0.29pp CI incl 0) and the marginality interaction is adverse (+0.014 baskets / +0.024
-deep). Re-confirms the H1 depth kill fire-conditionally." The killing instrument is the **NC-2
-proximity de-confound**, mandatory per RUL-28 (`…:65-68`): "The 63-bar close-min NC-2-PROXY band-FE
-arm is **mandatory in every A3 primary read as a KILL-ARM**: an effect that dies under proxy-FE is
-a proximity shadow — buried." The seed's apparent edge was mostly *proximity to a recent low*.
-
-*Scope* (`…:271-276`): dead in its **position form** and its **interaction form** (C KILLED; A3m
-monthly NULL-by-non-replication; A2 2W NULL) — but the **motion form survives** on the broad
-universe (A1 weekly turn, baskets-only, DISPLAY-CANDIDATE-CAVEATED, ~⅔ proximity, thin −0.83pp
-residual after nc2 FE; `…:255`). Sector-level standalone washout→turn triggers are NULL per Oracle
-P8 P-W1/S-W3 (`…:20-23`).
+literal **'2W/1M StochRSI washout' seed**". *What killed it:* family `esx_washout_x_turn` (arm C),
+`…:259` — "**KILLED** | The operator's literal 2W-washout × turn seed adds NEGATIVE marginal value
+once proximity is removed: nc2 kills contrast-i (−0.29pp CI incl 0) and the marginality interaction
+is adverse (+0.014 baskets / +0.024 deep). Re-confirms the H1 depth kill fire-conditionally." The
+killing instrument is the **NC-2 proximity de-confound**, mandatory per RUL-28 (`…:65-68`): "The
+63-bar close-min NC-2-PROXY band-FE arm is **mandatory in every A3 primary read as a KILL-ARM**: an
+effect that dies under proxy-FE is a proximity shadow — buried." The seed's apparent edge was mostly
+*proximity to a recent low*. *Scope* (`…:271-276`): dead in its **position form** and its
+**interaction form** (C KILLED; A3m monthly NULL-by-non-replication; A2 2W NULL) — but the **motion
+form survives** on the broad universe (A1 weekly turn, baskets-only, DISPLAY-CANDIDATE-CAVEATED, ~⅔
+proximity, thin −0.83pp residual after nc2 FE; `…:255`). Sector-level standalone washout→turn
+triggers are NULL per Oracle P8 P-W1/S-W3 (`…:20-23`).
 
 **The house template for distinguishing a new construction** —
 `research/TURN_SENSITIVITY_UPGRADE_MASTERPLAN_BY_FABLE.md:46` (TS-R3): "This is NOT a revival of
