@@ -1,0 +1,87 @@
+name: prophet-rescue
+# Bounded self-heal for the authoritative US nightly (daily.yml / Build B).
+#
+# DIVISION OF LABOUR.  nightly-liveness.yml DETECTS — a twice-daily red check with
+# no side effects.  This lane RESPONDS: it re-arms a stranded nightly within a hard
+# budget, files a public receipt, pushes to the ops channel, and additionally covers
+# two shapes the detector does not model (a serve split between main and the edges,
+# and the zero-origination wedge).  Full rationale, including why the small overlap
+# in staleness arithmetic is deliberate rather than sloppy: scripts/prophet_rescue.py.
+#
+# WHY ubuntu-latest AND NOT macstudio.  Independence from the Mac Studio is the whole
+# point.  heartbeat.yml runs on the same self-hosted pool as the lane it watches, so
+# a pool outage silences the alarm and its subject together — and on 2026-08-13 that
+# pool's actions-runner-2 filled its disk and took two jobs of the recovery bake with
+# it.  A responder that shares fate with its subject is decoration.  The repo is
+# public, so the hosted runner is free (CI self-hosted migration Wave 1, #5465).
+#
+# WHY IT CAN DISPATCH AT ALL.  Events raised with the repository GITHUB_TOKEN do not
+# normally schedule new workflow runs (GitHub's recursion fence) — `workflow_dispatch`
+# and `repository_dispatch` are the two documented exceptions, which is exactly why
+# the re-arm is a dispatch and not a push.
+#
+# WHAT IT CAN NEVER DO.  Stop a run.  There is no such code path in
+# scripts/prophet_rescue.py and tests/test_prophet_rescue.py fails the build if one
+# appears; `.claude/hooks/gh_quota_guard.py` additionally denies fleet sessions from
+# stopping this lane's own runs.  On 2026-08-12 a live session force-cancelled the
+# nightly's recovery dispatches six times and Prophet US served Aug-10 picks for two
+# sessions; a kill is invisible to every staleness instrument we own, because a
+# killed bake and a bake that never fired leave the same trace.
+on:
+  schedule:
+    # The nightly fires 22:30Z (EDT) / 23:30Z (EST) and legitimately runs for hours.
+    # Hourly at :40 from 23:40Z through 13:40Z is the watch window; the deadline
+    # ladder inside the script (STRAND from 01:40Z, STALE from 09:40Z, alert-only
+    # from 13:40Z) is anchored to the NYSE calendar rather than to these crons, so
+    # weekends and market holidays cannot manufacture a breach and there is no
+    # weekday filter here to drift out of sync.
+    - cron: "40 23 * * *"
+    - cron: "40 0-13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read          # read main's site/prophet/index.json via the contents API
+  actions: write          # re-arm daily.yml (dispatch only — never a stop)
+  issues: write           # upsert the one `prophet-outage` issue per stranded session
+
+concurrency:
+  # Its own group, and NEVER cancel-in-progress: a responder that a sibling wake can
+  # kill mid-dispatch is not a responder. It also must never share a group with the
+  # lanes it watches.
+  group: prophet-rescue
+  cancel-in-progress: false
+
+jobs:
+  rescue:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Only what the responder imports. It reads the prophet index over the
+          # contents API rather than from the checkout on purpose — a checkout
+          # answers for the SHA this run started at, while the question is what
+          # main's head says right now — so site/ is not needed here at all.
+          filter: blob:none
+          sparse-checkout: |
+            lib
+            scripts
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: prophet rescue (re-arms a stranded nightly, alerts on everything else)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same push spine heartbeat.yml passes to scripts/healthcheck.py, so the
+          # secrets already provisioned on this account reach a phone with no new
+          # setup. DISCORD_WEBHOOK_WATCHLIST is the fallback transport that is
+          # actually wired; the script prefers DISCORD_WEBHOOK_URL when present.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+        # No venv and no pip: the responder is stdlib-only plus lib.nyse_calendar,
+        # so an install step is one more thing that can fail between the outage and
+        # the alarm. Exit 0 = nothing owed; nonzero = it alerted or acted, and the
+        # red run is itself part of the signal.
+        run: python3 scripts/prophet_rescue.py --lane actions
