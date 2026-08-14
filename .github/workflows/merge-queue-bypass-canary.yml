@@ -2,16 +2,14 @@ name: merge-queue bypass canary
 
 # Temporary, deliberately inert proof that repository-owned producers can still
 # advance a queue-protected branch through the explicit GitHub Actions App bypass.
-# The workflow exists only for the native-queue canary and is removed after the
-# pilot receipt. It can run only from trusted main and can push only the fixed
-# pilot branch; no input can select a ref or executable payload.
+# `repository_dispatch` runs the workflow version at the default-branch tip; a
+# candidate branch therefore cannot replace this write-capable definition. The
+# workflow exists only for the native-queue canary and is removed after the pilot
+# receipt. It accepts only one named operator and can push only the fixed pilot
+# branch; no payload can select the checkout, destination ref, or executable code.
 on:
-  workflow_dispatch:
-    inputs:
-      nonce:
-        description: "Short audit label for this one pilot receipt"
-        required: true
-        type: string
+  repository_dispatch:
+    types: [merge_queue_bypass_canary]
 
 permissions:
   contents: write
@@ -22,7 +20,10 @@ concurrency:
 
 jobs:
   push-pilot-receipt:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      github.actor == 'chriswong6031-creator' &&
+      github.event.client_payload.target_ref == 'refs/heads/codex/merge-queue-pilot'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -32,7 +33,7 @@ jobs:
           fetch-depth: 1
       - name: commit one inert receipt to the fixed pilot branch
         env:
-          NONCE: ${{ inputs.nonce }}
+          NONCE: ${{ github.event.client_payload.nonce }}
         shell: bash
         run: |
           set -euo pipefail
