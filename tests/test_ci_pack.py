@@ -3266,26 +3266,39 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
 
     Baselines on the pre-curation manifest (PR #5585 planner, 188 jobs):
     templates/index.html 129 jobs / 6,677 weight-seconds; build_free_content.py
-    129 / 6,430; engine/prophet/plan_book.py 123 / 6,416. Bounds below carry
-    headroom so an unrelated job gaining or losing a scope does not red this,
-    while a regression that gives the fallback tier back to the curated eight
-    (~1,550 weight-seconds and three of twelve packs per shape) does.
+    129 / 6,430; engine/prophet/plan_book.py 123 / 6,416. Absolute job ceilings
+    went stale as the manifest grew from 188 to 194 jobs. Compare the curated
+    and non-exclusive forms of the SAME tree instead: unrelated new jobs then
+    cancel out, while restoring the fallback tier still loses the measured
+    ~1,550 weight-seconds and at least two requested packs per shape.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
-    for probe, max_jobs, max_weight in (
-        ("templates/index.html", 126, 5_800),
-        ("scripts/build_free_content.py", 126, 5_600),
-        ("engine/prophet/plan_book.py", 120, 5_600),
+    without_exclusive = list(_inferred_as_if_not_exclusive().values())
+    for probe in (
+        "templates/index.html",
+        "scripts/build_free_content.py",
+        "engine/prophet/plan_book.py",
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
+        baseline, baseline_reason = PACK.select_jobs(without_exclusive, [probe])
         weight = sum(job.weight for job in selected)
-        assert len(selected) <= max_jobs, (probe, len(selected), reason)
-        assert weight <= max_weight, (probe, weight, reason)
+        baseline_weight = sum(job.weight for job in baseline)
+        assert len(baseline) - len(selected) >= 6, (
+            probe, len(baseline), len(selected), baseline_reason, reason
+        )
+        assert baseline_weight - weight >= 1_500, (
+            probe, baseline_weight, weight, baseline_reason, reason
+        )
         # Runners are what the incident actually spends: build_plan derives the
-        # pack count from the SELECTED weight, so the weight cut above is a
-        # runner cut. Twelve packs per shape was the pre-curation measurement.
+        # pack count from selected weight, so compare that operational output too.
         packs = max(1, min(12, -(-weight // PACK.PACK_TARGET_SECONDS)))
+        baseline_packs = max(
+            1, min(12, -(-baseline_weight // PACK.PACK_TARGET_SECONDS))
+        )
         assert packs <= 10, (probe, packs, weight, reason)
+        assert baseline_packs - packs >= 2, (
+            probe, baseline_packs, packs, baseline_weight, weight
+        )
 
 
 def test_inline_js_owns_the_rendered_tree_it_lints() -> None:
