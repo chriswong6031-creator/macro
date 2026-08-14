@@ -538,6 +538,142 @@ def test_the_cash_sleeve_predicate_leaves_real_tickers_alone() -> None:
         assert not ch.is_non_equity_holding(tk, ""), tk
 
 
+# --- guard: the index-futures overlay (masterplan §6c) -----------------------
+#
+# A fund equitizes uninvested cash with index futures, and the sponsor files that
+# overlay as a HOLDING beside the equities. Its "shares" are a CONTRACT COUNT, so
+# it is not a position anybody can act on — and unlike the cash sleeve, the harm
+# does not arrive through the denominator. It arrives on the LIFECYCLE path: the
+# contract rolls every quarter, and a ticker that vanishes while another appears
+# is exactly the shape of a full exit plus a brand-new position, the two
+# strongest signals the board publishes.
+#
+# Live, in the shipped universe, on 2026-08-12: BOTZ filed "NQM6 Index / NASDAQ
+# 100 E-MINI JUN26" through 2026-06-15 and "NQU6 Index / … SEP26" from 06-16, at
+# 0.43% and 0.44% of the fund — both above min_position_pct. Between rolls the
+# count moves too (28 -> 25 contracts on 2026-06-26), which publishes as a
+# -10.7% "manager trim" of a futures overlay.
+
+FUT0, FUT1 = "NQM6 Index", "NQU6 Index"          # JUN26 rolls to SEP26
+FUT_NAMES = {FUT0: "NASDAQ 100 E-MINI JUN26", FUT1: "NASDAQ 100 E-MINI SEP26"}
+# The overlay's contract count is tiny against the equity book (28 contracts
+# against ~3,200 shares) while its notional is ~0.45% of the fund — BOTZ's real
+# proportions, and above min_position_pct, so an unguarded leg does publish.
+FUT_MV = 145.0
+
+
+def _fut_weights(pick_shares: float) -> pd.Series:
+    """Real share of market value INCLUDING the overlay leg, with BOTH roll legs
+    carrying it, so the same numbers can be handed to the with- and without-
+    overlay funds alike. Pinning them is what makes the two funds comparable: the
+    overlay's notional dilutes every other weight by ~0.45%, and conviction_pp is
+    denominated in fund weight, so letting `_write` derive weights per fund would
+    compare the guard against a weight-normalization artifact."""
+    mv = {t: v * PRICE for t, v in BALLAST.items()}
+    mv["PICK"] = pick_shares * PRICE
+    total = sum(mv.values()) + FUT_MV            # exactly one leg is ever filed
+    w = {t: 100.0 * v / total for t, v in mv.items()}
+    w[FUT0] = w[FUT1] = 100.0 * FUT_MV / total
+    return pd.Series(w)
+
+
+_FW0, _FW1 = _fut_weights(100.0), _fut_weights(150.0)
+
+
+def _futures_fund(tmp_path, name: str, *, roll: bool, hold: bool = False) -> Path:
+    """One fund, twice over: the manager takes PICK from 100 to 150 shares while
+    the equity book is otherwise flat. `roll` adds the sponsor's futures overlay
+    and rolls it JUN26 -> SEP26 across the pair; `hold` keeps ONE contract line on
+    both dates and resizes it 28 -> 25, the between-rolls case."""
+    parent = tmp_path / name
+    d = parent / name
+    mv = {t: v * PRICE for t, v in BALLAST.items()}
+    f0 = {FUT0: 28.0} if (roll or hold) else {}
+    f1 = ({FUT1: 25.0} if roll else {FUT0: 25.0}) if (roll or hold) else {}
+    s0 = pd.Series({**BALLAST, "PICK": 100.0, **f0})
+    s1 = pd.Series({**BALLAST, "PICK": 150.0, **f1})
+    _write(d, "2026-06-01", s0, names=FUT_NAMES, weights=_FW0,
+           mv=pd.Series({**mv, "PICK": 100.0 * PRICE, **{t: FUT_MV for t in f0}}))
+    _write(d, "2026-06-11", s1, names=FUT_NAMES, weights=_FW1,
+           mv=pd.Series({**mv, "PICK": 150.0 * PRICE, **{t: FUT_MV for t in f1}}))
+    return parent
+
+
+def _futures_rows(tmp_path, name: str, **kw) -> dict:
+    parent = _futures_fund(tmp_path, name, **kw)
+    rows = hs.etf_signals(name, base_dir=parent, meta={"name": name},
+                          fleet_latest="2026-06-11")
+    return {r["ticker"]: r for r in rows}
+
+
+def test_a_futures_overlay_never_reaches_the_published_book(tmp_path) -> None:
+    """§6c. Neither leg of the roll may be published, and the fund must read
+    exactly as it does when the sponsor never filed the overlay at all."""
+    rolled = _futures_rows(tmp_path, "ROLL", roll=True)
+    truth = _futures_rows(tmp_path, "CLEAN", roll=False)
+    assert FUT0 not in rolled and FUT1 not in rolled, "a futures leg was published"
+    assert set(rolled) == set(truth) == {"PICK"}, (
+        "a flat ballast book must publish nothing; anything else is phantom")
+    for field in ("conviction_pp", "active_chg_pct", "weight_pct",
+                  "flow_pp", "selection_pp", "total_pp"):
+        assert rolled["PICK"][field] == pytest.approx(truth["PICK"][field]), field
+
+
+def test_the_futures_guard_is_what_removes_the_phantom_roll(tmp_path, monkeypatch) -> None:
+    """Mutation control. Blind BOTH rules and the live BOTZ defect comes straight
+    back: the expiring contract prints a full EXIT — the strongest negative signal
+    the board has — and the incoming one prints a brand-new position, off a
+    rollover that moved no money and changed no exposure."""
+    monkeypatch.setattr(ch, "_FUTURES_TICKER_RE", re.compile(r"(?!x)x"))
+    monkeypatch.setattr(ch, "_FUTURES_NAME_RE", re.compile(r"(?!x)x"))
+    broken = _futures_rows(tmp_path, "ROLL", roll=True)
+    assert FUT0 in broken and FUT1 in broken, "the mutation must reproduce the defect"
+    assert broken[FUT0]["is_exit"] is True
+    assert broken[FUT0]["direction"] == "trimming"
+    assert broken[FUT0]["conviction_pp"] < 0          # a sell-out that never happened
+    assert broken[FUT1]["is_new"] is True
+    assert broken[FUT1]["direction"] == "accumulating"
+
+
+def test_a_contract_count_change_is_not_a_manager_decision(tmp_path) -> None:
+    """Between rolls the ticker is stable and only the count moves (BOTZ 28 -> 25).
+    That is the overlay resizing with the cash sleeve, not a conviction trim, so
+    it must not publish — and the mutation control proves the guard is what stops
+    it rather than the weight or alert-% gates."""
+    held = _futures_rows(tmp_path, "HOLD", roll=False, hold=True)
+    assert FUT0 not in held and set(held) == {"PICK"}
+
+
+def test_the_futures_guard_is_what_removes_the_phantom_trim(tmp_path, monkeypatch) -> None:
+    monkeypatch.setattr(ch, "_FUTURES_TICKER_RE", re.compile(r"(?!x)x"))
+    monkeypatch.setattr(ch, "_FUTURES_NAME_RE", re.compile(r"(?!x)x"))
+    broken = _futures_rows(tmp_path, "HOLD", roll=False, hold=True)
+    assert FUT0 in broken, "the mutation must reproduce the defect"
+    assert broken[FUT0]["active_chg_pct"] < -5        # clears the alert threshold
+    assert broken[FUT0]["is_exit"] is False           # a plain phantom "trim"
+
+
+def test_the_futures_predicate_leaves_real_issuers_alone() -> None:
+    """Conservatism. A wrongly-dropped equity leaves no trace in any output — a
+    strictly worse failure than a surviving futures line. The rules never key on
+    a bare "future"/"option" substring, never on the singular "future" (Future
+    plc is listed), and never on the CME root+month+year SHAPE, which
+    Latin-American local tickers share (CMIG4, BRKM5 are letters + a CME month
+    code + a digit)."""
+    for tk, nm in [("NQM6", "CME E-Mini NASDAQ 100 Index Future"),
+                   ("LWEM6", "E-mini S&amp;P 500 Equal Weight Futures"),
+                   ("IXPM6", "XAE ENERGY        JUN26"),
+                   ("NQZ6 Index", "")]:
+        assert ch.is_non_equity_holding(tk, nm), tk
+    for tk, nm in [("FF", "FutureFuel Corp"), ("OPCH", "Option Care Health Inc"),
+                   ("FUTR", "Future plc"), ("FUTU", "Futu Holdings Ltd"),
+                   ("MINI", "Mobile Mini Inc"), ("NICE", "NICE Ltd"),
+                   ("CMIG4", "Cia Energetica de Minas Gerais"),
+                   ("BRKM5", "Braskem SA"), ("PETR4", "Petroleo Brasileiro SA"),
+                   ("1211 HK", "BYD CO LTD"), ("NVDA", "NVIDIA CORP")]:
+        assert not ch.is_non_equity_holding(tk, nm), f"{tk} / {nm}"
+
+
 # --- integration: the shipped signal rows -----------------------------------
 
 def _fixture_fund(tmp_path, name: str = "FUND") -> Path:
