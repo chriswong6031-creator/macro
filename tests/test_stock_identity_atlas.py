@@ -32,6 +32,7 @@ import yaml
 from engine.stock_identity import fingerprint as fp
 from engine.stock_identity.authority import AUTHORITY_KEYS, is_zero_authority
 from engine.stock_identity.hygiene import COMPUTE_BLOCKLIST, check_symbol
+from scripts import audit_reused_tickers as reused_audit
 
 ROOT = Path(__file__).resolve().parents[1]
 PKG = ROOT / "engine" / "stock_identity"
@@ -385,3 +386,100 @@ class TestCurrentTickerHygiene:
             assert needle in text
         for stale in ("KNOWN CONSUMER DEFECT", "NO store file under 'B'", "separate curated act"):
             assert stale not in text
+
+    def test_member_identity_detector_catches_the_exact_gold_wrong_issuer(self, tmp_path):
+        membership = tmp_path / "baskets" / "membership.json"
+        membership.parent.mkdir(parents=True)
+        membership.write_text(
+            json.dumps(
+                {
+                    "baskets": {
+                        "gold_miners": {
+                            "members": [
+                                {
+                                    "ticker": "GOLD",
+                                    "removed": None,
+                                    "rationale": "Barrick Mining — global senior producer",
+                                }
+                            ]
+                        }
+                    }
+                }
+            ),
+            encoding="utf-8",
+        )
+        rows, unacked = reused_audit._member_identity_rows(
+            tmp_path,
+            {"GOLD": "Gold.com, Inc. Common Stock"},
+            {},
+            {"extra_names": {}},
+        )
+        assert unacked == ["gold_miners/GOLD"]
+        assert rows == [
+            {
+                "ticker": "GOLD",
+                "where": "gold_miners",
+                "source": "membership_rationale",
+                "curated_name": "Barrick Mining",
+                "directory_name": "Gold.com, Inc. Common Stock",
+                "acked": False,
+            }
+        ]
+
+    def test_gold_is_absent_and_b_alone_owns_the_current_miner_slot(self):
+        membership = json.loads(
+            (ROOT / "data/baskets/membership.json").read_text(encoding="utf-8")
+        )
+        basket = membership["baskets"]["gold_miners"]
+        rows = {row["ticker"]: row for row in basket["members"]}
+        assert "GOLD" not in rows
+        assert rows["B"]["added"] == "2023-05-09"
+        assert rows["B"]["curated_added"] == "2026-08-14"
+        assert rows["B"]["removed"] is None
+        assert len([row for row in basket["members"] if not row.get("removed")]) == 12
+        disclosure = " ".join(basket["omitted"]) + " " + " ".join(
+            row["note"] for row in basket["changelog"]
+        )
+        for token in ("Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09"):
+            assert token in disclosure
+
+    def test_b_tape_is_barrick_and_gold_stays_zero_in_both_mask_modes(self):
+        from engine.basket_index import _live_mask
+
+        membership = json.loads(
+            (ROOT / "data/baskets/membership.json").read_text(encoding="utf-8")
+        )
+        members = membership["baskets"]["gold_miners"]["members"]
+        b_row = next(row for row in members if row["ticker"] == "B")
+        assert all(row["ticker"] != "GOLD" for row in members)
+
+        curated = pd.read_parquet(ROOT / "data/baskets/ohlcv/B.parquet")
+        barrick = pd.read_parquet(ROOT / "data/yahoo/B.parquet")
+        dealer = pd.read_parquet(ROOT / "data/baskets/ohlcv/GOLD.parquet")
+        assert list(curated.columns) == ["open", "high", "low", "close", "volume"]
+        assert len(curated) >= 3_172
+        assert curated.index.min() == pd.Timestamp("2014-01-02")
+        assert curated.index.max() >= pd.Timestamp("2026-08-13")
+
+        b_pair = pd.concat(
+            [curated["close"].pct_change(), barrick["close"].pct_change()],
+            axis=1,
+            join="inner",
+        ).dropna()
+        dealer_pair = pd.concat(
+            [curated["close"].pct_change(), dealer["close"].pct_change()],
+            axis=1,
+            join="inner",
+        ).dropna()
+        assert b_pair.corr().iloc[0, 1] > 0.999
+        assert dealer_pair.corr().iloc[0, 1] < 0.35
+
+        idx = curated.index
+        close = pd.concat(
+            {"GOLD": dealer["close"], "B": curated["close"]}, axis=1, sort=False
+        ).reindex(idx)
+        strict = _live_mask([b_row], idx, ["GOLD", "B"], pit=True, close=close)
+        deep = _live_mask([b_row], idx, ["GOLD", "B"], pit=False, close=close)
+        assert not strict["GOLD"].any() and not deep["GOLD"].any()
+        assert int(strict["B"].sum()) == int((idx >= pd.Timestamp(b_row["added"])).sum())
+        assert int(deep["B"].sum()) == len(curated)
