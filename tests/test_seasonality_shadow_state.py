@@ -546,6 +546,21 @@ class TestLedger:
         assert row["outcome_up"] is False
         assert row["brier"] == pytest.approx(round(0.7 ** 2, 6))
 
+    def test_the_close_out_branch_carries_the_shadow_tier_too(self):
+        """`grade_rows` has TWO exits, and only one of them is covered upstream.
+
+        The graded branch is pinned in test_grade_computes_the_realized_log_return.
+        The ungradable close-out — a symbol that left the price store — is a separate
+        dict literal, so a tier stamped on one says nothing about the other: this is
+        exactly how the field went missing in the first place (register_rows carried
+        it, grade_rows did not, and nothing noticed until the first window matured on
+        2026-08-13 and the ledger-wide tier check reduced to a bare KeyError).
+        """
+        stale = _register(occurrence_end_date="2026-05-01", key="TST:2026b:100-130")
+        closed_out = season_state.grade_rows([stale], {}, _ASOF)[0]
+        assert closed_out["grade_status"] == "ungradable_missing_prices"
+        assert closed_out["tier"] == "shadow"
+
     def test_unmatured_occurrence_is_not_graded(self):
         future = _register(occurrence_end_date="2026-12-10", key="TST:2026:100-130")
         closes = [(date(2026, 7, 30), 100.0)]

@@ -518,8 +518,36 @@ _NEG_ZH = re.compile(r"(?:没有|尚未|缺乏|[无非未不])[一-鿿\s]{0,12}$
 
 
 def _load_allowlist() -> list[dict]:
+    """Load the justification register. A MISSING file is an INFRASTRUCTURE fault, and
+    saying so is the whole job — it is never the same fact as "nothing is allowed".
+
+    This used to `return []`, which is the loudest possible WRONG answer: with no
+    register every justified claim on the estate turns unearned at once, so a partial
+    checkout — a sparse workspace whose ci-pack sparse-clear step only warned, an agent
+    worktree on the sparse profile — reports ~650 violations across templates this repo
+    has backed for months. Measured 2026-08-14 on a clean tree: allowlist present -> 1
+    violation; allowlist absent -> 649. The avalanche reads exactly like a catastrophic
+    content regression, it buries the one genuinely new claim, and it sends the reader
+    to rewrite copy that was never wrong. (It is how run 31780141959's annotations came
+    to name templates/china.html.j2 and baskets_china_factorwatch.html.j2 — both
+    allowlisted, neither at fault.) Name the real fault instead.
+    """
     if not ALLOWLIST.exists():
-        return []
+        # Repo-relative when it can be (the normal case); never let the display path
+        # itself raise and turn a clear diagnosis back into a traceback.
+        try:
+            shown = ALLOWLIST.relative_to(ROOT)
+        except ValueError:
+            shown = ALLOWLIST
+        print(
+            "::error title=allowlist-missing::"
+            f"{shown} is absent — this checkout cannot answer which "
+            "'validated' claims are backed. That is a CHECKOUT fault (partial/sparse tree), "
+            "NOT a wave of new unearned claims: restore the file, do not rewrite the copy "
+            "a full-tree run would report.",
+            flush=True,
+        )
+        raise SystemExit(1)
     d = json.loads(ALLOWLIST.read_text(encoding="utf-8"))
     return d.get("allow", [])
 
