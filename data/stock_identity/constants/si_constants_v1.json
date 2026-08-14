@@ -11,7 +11,7 @@
   "calibration_history_cutoff": "2026-02-11",
   "calibration_material": "component (i) of \u00a74 only \u2014 the drawn names' own history. The permitted pre-boundary history of undrawn pool names was NOT consumed; using less than the permitted material is strictly conservative and is recorded here.",
   "calibration_sha256": "77e111c11672524c826948455a8c2ea5b812cdddb3f0d9dac1807b253604e9d0",
-  "fingerprint_spec_hash": "dc36a6052ec57fd928f4279778f9890f125744947df30ab09a6a05ffde7fb7a8",
+  "fingerprint_spec_hash": "0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187",
   "n_calibration_names_drawn": 759,
   "n_calibration_names_read": 734,
   "partition_name": "SI-SEALED-CAL-P1",
@@ -348,6 +348,7 @@
     "trial_family": "stock_identity_w1_calibration",
     "trial_grid_sha256": "ba2b29b445c50c674775c8c0a24a319dbb4e033dd8fb8a402cef553471353c32"
   },
+  "si_constants_spec_hash": "9c27994aa757a39ae3e2e7b2ec781ff94365581d60e827354662a8347a761d03",
   "skipped_on_hygiene": {
     "ABX": "unacknowledged reused symbol: Barrick retired ABX in the 2018 rename to GOLD; the file's 2020-09 onward tape is a different instrument, and the reuse is absent from reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups"
   },

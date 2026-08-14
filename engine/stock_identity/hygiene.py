@@ -54,6 +54,22 @@ COMPUTE_BLOCKLIST: dict[str, str] = {
 }
 
 
+#: Informational annotations — facts a reader of a per-name artifact needs, that are
+#: NOT blocking flags. A note never excludes a name; it explains one. The distinction
+#: matters: GOLD is perfectly readable, but a reader who sees ABX.parquet sitting next
+#: to it deserves to be told which file is Barrick and which is a stranger.
+HYGIENE_NOTES: dict[str, str] = {
+    "GOLD": (
+        "continuous Barrick history under the CURRENT symbol — the pre-2018 rows are the "
+        "ABX era restated, i.e. instrument-level continuity via rename, not a splice. The "
+        "separate data/baskets/ohlcv/ABX.parquet (2020-09 onward) is a DIFFERENT "
+        "instrument on Barrick's retired symbol and is excluded from this program; that "
+        "reuse is unacknowledged in config (reused_ticker_acks / ticker_key_migrations / "
+        "breadth.ticker_fixups all silent on both symbols)"
+    ),
+}
+
+
 @lru_cache(maxsize=4)
 def _load_config(repo_root: str) -> dict[str, Any]:
     p = Path(repo_root) / "config.yml"
@@ -148,6 +164,9 @@ def check_symbol(
     if symbol in COMPUTE_BLOCKLIST:
         flags.append("reused_ticker_unacked")
         notes["reused_ticker_unacked"] = COMPUTE_BLOCKLIST[symbol]
+    if symbol in HYGIENE_NOTES:
+        flags.append("symbol_history_note")
+        notes["symbol_history_note"] = HYGIENE_NOTES[symbol]
 
     sanity, sanity_note = _first_print_sanity(symbol, root, first_date)
 

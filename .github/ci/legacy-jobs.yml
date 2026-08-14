@@ -633,6 +633,12 @@ jobs:
         run: python -m pytest tests/test_ledger_identity.py -q
       - name: grading rebuild + trial ledger tests
         run: python -m pytest tests/test_grading.py tests/test_trial_ledger.py tests/test_trial_registration_lint.py tests/test_no_literal_ntrials.py tests/test_universe_history.py -q
+      # Stock Identity W1 (WS:STOCK-IDENTITY): partition seal/reproducibility, metric-block
+      # purity, truncation invariance, state totality, episode segmentation, G-8 import
+      # firewall, banned-token/authority artifact walk. Minimal-deps safe (no matplotlib);
+      # artifact-dependent tests skip cleanly when data/stock_identity is absent.
+      - name: stock-identity atlas guards
+        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
         # Registering the trial budget (above) is only half the chain: the number the
         # PAGE shows must equal the number the calibrator produced. The BTC Vector card

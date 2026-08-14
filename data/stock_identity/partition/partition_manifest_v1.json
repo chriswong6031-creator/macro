@@ -6370,7 +6370,7 @@
     "manifest_hashes_written",
     "constants_calibrated"
   ],
-  "fingerprint_spec_hash": "dc36a6052ec57fd928f4279778f9890f125744947df30ab09a6a05ffde7fb7a8",
+  "fingerprint_spec_hash": "0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187",
   "hygiene_excluded_from_compute": {
     "ABX": "unacknowledged reused symbol: Barrick retired ABX in the 2018 rename to GOLD; the file's 2020-09 onward tape is a different instrument, and the reuse is absent from reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups"
   },

@@ -576,7 +576,21 @@ def main() -> int:
 
     # ---- write ------------------------------------------------------------
     spec_obj = fp_spec()
+    # The constants' OWN spec hash covers the frozen decisions (version, values, rule
+    # text) and deliberately NOT the receipts, whose sample counts would change the
+    # hash on any re-read of the same sealed partition without any constant moving.
+    constants_spec = {
+        "version": "v1",
+        "partition_name": cal["name"],
+        "values": values,
+        "rules": RULES,
+    }
+    si_constants_spec_hash = __import__("hashlib").sha256(
+        json.dumps(constants_spec, sort_keys=True, separators=(",", ":"),
+                   default=str).encode("utf-8")
+    ).hexdigest()
     payload = {
+        "si_constants_spec_hash": si_constants_spec_hash,
         "schema": "stock_identity.constants.v1",
         "version": "v1",
         "partition_name": cal["name"],
@@ -619,7 +633,8 @@ def main() -> int:
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUT_PATH.write_text(json.dumps(payload, indent=2, sort_keys=True, default=str) + "\n",
                         encoding="utf-8")
-    print(f"\n[write] {OUT_PATH}", flush=True)
+    print(f"\n[hash] si_constants_spec_hash={si_constants_spec_hash}", flush=True)
+    print(f"[write] {OUT_PATH}", flush=True)
     return 0
 
 

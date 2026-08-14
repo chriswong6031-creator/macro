@@ -13,7 +13,7 @@ Descriptive coverage only. Zero authority: nothing here ranks, sizes, gates, ori
 - **Episodes catalogued**: 134207
 - **Censored share**: 0.007 — censored episodes are kept, never dropped (a decline that never prints a durable low is exactly the case that would otherwise turn recall into a survivorship filter).
 - **Constants**: a546c64983431f0afca01cfd9aacc230ef3bed875520c44898090520cf98164a
-- **fingerprint_spec_hash**: dc36a6052ec57fd928f4279778f9890f125744947df30ab09a6a05ffde7fb7a8
+- **fingerprint_spec_hash**: 0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187
 
 Cluster rule (frozen v0): anchor dates pooled across names, single-linkage components at a 126-session gap, global cluster ids. The P90-episode-duration linkage refinement is a named PR-3 candidate.
 
@@ -123,6 +123,7 @@ A cell whose episodes sit in one cluster has an honest N of one market event reg
 | f8_detrended_acf_peak_lag_1260 | 0.860 | 1.000 | 0.986 |
 | f8_detrended_acf_peak_sharpness_1260 | 0.860 | 1.000 | 0.986 |
 | f8_swing_period_median_1260 | 0.860 | 1.000 | 0.986 |
+| f8_swing_period_median_756 | 0.909 | 1.000 | 0.920 |
 | f9_beta_univ_ew_252 | 0.976 | 1.000 | 1.000 |
 | f9_beta_univ_ew_756 | 0.922 | 1.000 | 0.991 |
 | f9_idio_share_252 | 0.976 | 1.000 | 1.000 |

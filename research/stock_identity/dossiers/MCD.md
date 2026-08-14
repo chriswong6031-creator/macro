@@ -78,6 +78,7 @@ The only block any future distance or map may read. Label-free by construction: 
 | `f8_detrended_acf_peak_1260` | F8 | 0.3536 | 78.0 | yes |  |
 | `f8_detrended_acf_peak_lag_1260` | F8 | 518.0000 | 75.7 | yes |  |
 | `f8_detrended_acf_peak_sharpness_1260` | F8 | 2.4499 | 64.7 | yes |  |
+| `f8_swing_period_median_756` | F8 | 117.0000 | 94.2 | yes |  |
 | `f8_swing_period_median_1260` | F8 | 104.0000 | 95.7 | yes |  |
 | `f9_beta_univ_ew_252` | F9 | 0.1014 | 5.1 | yes |  |
 | `f9_beta_univ_ew_756` | F9 | 0.1628 | 1.7 | yes |  |
@@ -380,8 +381,8 @@ Eight mutually-exclusive bars-only states, first-match-wins precedence. Gap basi
 
 ![MCD episode map](MCD.png)
 
-Log price with the 200DMA, episode spans shaded by type, durable lows marked, and the daily state strip beneath.
+Log price with the 200DMA, episode spans shaded by type, durable lows marked, and the daily state strip beneath. On histories longer than 5,000 sessions the two price LINES are drawn at weekly resolution for legibility and file size; spans, markers and the state strip stay daily.
 
 ---
 
-Constants: `77e111c11672524c826948455a8c2ea5b812cdddb3f0d9dac1807b253604e9d0` · fingerprint spec: `dc36a6052ec57fd928f4279778f9890f125744947df30ab09a6a05ffde7fb7a8` · partition: `a546c64983431f0afca01cfd9aacc230ef3bed875520c44898090520cf98164a` · asof 2026-08-13
+Constants: `77e111c11672524c826948455a8c2ea5b812cdddb3f0d9dac1807b253604e9d0` · fingerprint spec: `0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187` · partition: `a546c64983431f0afca01cfd9aacc230ef3bed875520c44898090520cf98164a` · asof 2026-08-13

@@ -190,6 +190,12 @@ METRIC_FEATURES: tuple[dict[str, Any], ...] = (
        "lag in sessions of that maximum"),
     _f("f8_detrended_acf_peak_sharpness_1260", "F8", "metric", [1260],
        "(peak - band mean)/band std"),
+    # Registration §5 pins 1260 for the ACF-peak members and leaves the swing-period
+    # stat's window to the builder; 756 is pinned alongside 1260 so F8 satisfies the
+    # family-level ">=2 windows" law and so the pair doubles as a plateau check on a
+    # name's cycle length.
+    _f("f8_swing_period_median_756", "F8", "metric", [756],
+       "median sessions between alternating 15% ZigZag swing extremes"),
     _f("f8_swing_period_median_1260", "F8", "metric", [1260],
        "median sessions between alternating 15% ZigZag swing extremes"),
     # --- F9 factor / idiosyncratic ---------------------------------------
@@ -261,6 +267,7 @@ ADJACENT_WINDOW_PAIRS: tuple[tuple[str, str], ...] = (
     ("f9_beta_univ_ew_252", "f9_beta_univ_ew_756"),
     ("f9_idio_share_252", "f9_idio_share_756"),
     ("f10_dollar_adv_63", "f10_dollar_adv_252"),
+    ("f8_swing_period_median_756", "f8_swing_period_median_1260"),
 )
 
 #: Feature families whose members are structurally unavailable on an open-less plane.
@@ -759,6 +766,7 @@ def compute_raw(
     out["f8_detrended_acf_peak_1260"] = peak
     out["f8_detrended_acf_peak_lag_1260"] = lag
     out["f8_detrended_acf_peak_sharpness_1260"] = sharp
+    out["f8_swing_period_median_756"] = _swing_period_median(close_v, 756)
     out["f8_swing_period_median_1260"] = _swing_period_median(close_v, 1260)
 
     # --- F9 --------------------------------------------------------------

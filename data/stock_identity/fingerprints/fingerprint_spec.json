@@ -43,6 +43,10 @@
     [
       "f10_dollar_adv_63",
       "f10_dollar_adv_252"
+    ],
+    [
+      "f8_swing_period_median_756",
+      "f8_swing_period_median_1260"
     ]
   ],
   "authority": {
@@ -558,6 +562,18 @@
     {
       "block": "metric",
       "family": "F8",
+      "name": "f8_swing_period_median_756",
+      "needs": [
+        "close"
+      ],
+      "stat": "median sessions between alternating 15% ZigZag swing extremes",
+      "windows": [
+        756
+      ]
+    },
+    {
+      "block": "metric",
+      "family": "F8",
       "name": "f8_swing_period_median_1260",
       "needs": [
         "close"
@@ -799,7 +815,7 @@
       ]
     }
   ],
-  "fingerprint_spec_hash": "dc36a6052ec57fd928f4279778f9890f125744947df30ab09a6a05ffde7fb7a8",
+  "fingerprint_spec_hash": "0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187",
   "min_sessions": 252,
   "plane_gated_families_excluded_from_metric_block": [
     "F6"

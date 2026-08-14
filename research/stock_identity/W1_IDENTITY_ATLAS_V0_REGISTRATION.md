@@ -23,8 +23,8 @@ Fixed §13 membership plus the two PR-1 choices, chosen by rule:
 - Miner probe: NEM GOLD AEM PAAS WPM AG.
 - Disagreement set: UEC HL (NEM already present).
 - Stressors: MSFT (steady-trender control), META (known epoch-changer), plus
-  - **Recent IPO** (chosen at PR-1 by rule): the baskets-plane name with the most recent first_date having ≥60 and <252 sessions and no hygiene flags. → `TODO-BUILDER: name + receipt`.
-  - **Secular decliner beyond YELP** (chosen at PR-1 by rule): among ceased-tape names (§13-dead-pool below) with ≥1,000 sessions, the one with the deepest close-to-close max drawdown over its final 1,260 sessions (damaged-cohort rule; membership choice is design-touched and never evidence). → `TODO-BUILDER: name + receipt`.
+  - **Recent IPO** (chosen at PR-1 by rule): the baskets-plane name with the most recent first_date having ≥60 and <252 sessions and no hygiene flags. → **CBRS**, first print 2026-05-14, 63 sessions, `open` available, no hygiene flags, first-print sanity `OK` (within 0d of the Nasdaq deal calendar's priced date). Pool = 52 qualifying names; runners-up by first_date: AVLN (2026-04-30, 73), SBMT (2026-04-30, 73), ELMT (2026-04-23, 78). At 63 sessions CBRS is below the 252-session fingerprint floor, so it is coverage-masked on **every** metric-block feature and catalogues **0** episodes — which is precisely the warm-up/abstention path this stressor was added to exercise, not a defect. Receipt: partition manifest `pilot.receipts.recent_ipo`.
+  - **Secular decliner beyond YELP** (chosen at PR-1 by rule): among ceased-tape names (§13-dead-pool below) with ≥1,000 sessions, the one with the deepest close-to-close max drawdown over its final 1,260 sessions (damaged-cohort rule; membership choice is design-touched and never evidence). → **FFAI** (Faraday Future), max drawdown over its final 1,260 sessions = **−99.99992%**; 1,476 sessions, baskets plane, 23 episodes. **Logged substitution:** the ceased-tape pool this clause names is empty (see the dead-names row below), so the pick was taken from the **damaged** half of masterplan §13's own "delisted/**damaged** cohort … subject to data" disjunction, under the identical depth rule and over a 2,532-name pool. Runners-up: TNXP (−99.9985%), GDC (−99.990%), HURA (−99.987%) — the near-ties are all reverse-split-adjusted collapses, so the pick is a coin-flip among a damaged class rather than a distinctive finding, and nothing about it is evidence. Receipt: partition manifest `pilot.receipts.secular_decliner`.
 - **Dead names (≥5, §13) — MEASURED IMPOSSIBLE on the allowed planes; W1 ships survivor-only (adjudicated at W1, operator decision requested):** the masterplan draws these from `config/delisted_symbols.yml`, but that ledger holds exactly **2 rows** (CTRA, TPH — both acquired, Form 25-NSE), and **neither has a price file on either allowed plane** (verified directly). The registered substitution rule (baskets-plane names whose tape ended ≥126td before asof with ≥756 sessions) returned **ZERO candidates**: the largest tape-end lag anywhere in the 2,781-name universe is **32 sessions** (a shared refresh artifact on names like CRTO/NIO/SONY, not deaths) — the allowed planes structurally do not retain ceased tapes. No substitute was invented ("a live name relabeled 'dead' would corrupt every survivorship read this cohort exists to enable" — builder receipt, adopted). Consequences, binding on W1 artifacts: (i) every cohort-level statement in this wave is **survivor-only and stamped so** (census header + dossiers); (ii) the S&P1500 PIT-membership survivorship stratification substrate is unaffected and still used; (iii) supplying dead names needs an **operator decision at the §16.9 return** — extend `config/delisted_symbols.yml`, or admit a close-only plane for *census-only* dead-name rows under a fresh registration (the §9.7 plane law bars it from catalogs/fingerprints: no high/low → no A0/ATR). Receipt: partition manifest `pilot.receipts.dead_names`.
 - §9.6 ticker-identity hygiene is run on EVERY pilot name (reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups / delisted_symbols cross-check + first-print sanity vs listing history); results per name in §9 below.
 
@@ -57,7 +57,10 @@ Fixed §13 membership plus the two PR-1 choices, chosen by rule:
 - **F6 law applied (§4 law vi):** `data/stocks` has no `open` (archaeology §6.1) → F6 is structurally unavailable on the primary plane for ~240 curated names and fails the ≥95% availability bar → **excluded from the metric block entirely**; shipped as diagnostic-block features where available.
 - Substrate reuse (§14 PR-1 row): `engine/path_personality.py` (`features()`/`feature_series()` and its internal stats), `engine/path_risk_signals.py` (Ulcer/NATR/HVR), `engine/entry_primitives.py` (Amihud, Corwin-Schultz), canon MA math — wrapped, never reimplemented, in `engine/stock_identity/fingerprint.py`.
 - All features causal/PIT at their stamp (truncation-invariance tested); no minute data; volume descriptors display-tier only (`KILL-VOLUME-FINGERPRINTS`).
-- `fingerprint_spec_hash` = SHA256 over the canonical spec JSON (ordered feature names, windows, block assignment, version) — recorded in constants file, every artifact, and the PR body. → `TODO-BUILDER: hash`.
+- `fingerprint_spec_hash` = SHA256 over the canonical spec JSON (ordered feature names, windows, block assignment, version) — recorded in constants file, every artifact, and the PR body. → **`0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187`** (52 metric-block + 11 diagnostic-block features; spec at `data/stock_identity/fingerprints/fingerprint_spec.json`).
+- **Builder-pinned windows, recorded (not a widening of the enumeration).** §5 above names the window for most members; where it names a statistic without one, the window is pinned in the spec JSON — which is what the hash covers — rather than left to the implementation. Pinned this way: F4 AR(1) daily 252 / weekly 756, variance ratio k∈{5,20} at 756, MR half-life 252 (cap 252), oscillator dwell 252; F5 vol-of-vol 252, ACF(|r|) 252, nATR spread 252; F7 crossing frequency 252, dwell-run 252, 50DMA bounce rate 756; F9 β and 1−R² at 252 and 756; F10 turnover proxy 252. **F8's swing-period stat is pinned at BOTH 756 and 1260** so the family carries ≥2 windows (§4's form law) and the pair doubles as a plateau check on cycle length; the F8 ACF-peak members stay at §5's declared 1260.
+- **The ">=2 windows" law is read at FAMILY level**, which is the reading under which §5's own enumeration (several single-window members, e.g. time-under-water 756, Amihud 252, Corwin-Schultz 252) is internally consistent with masterplan §4. The reading is recorded in the spec JSON as `window_law_reading` rather than left implicit. F3 is the one family with no window: it is derived from the episode catalog, so it is masked for names with no catalogued episode.
+- **F7's "dwell-above shares" is implemented as a mean RUN LENGTH**, not a share, because §5 already carries the share form in F1 (`%days>50/200DMA 252`) and two identical columns under different names would be a fake second measurement.
 
 ## §6. State tagger v0 (frozen at PR-1; §7.1)
 
@@ -92,7 +95,39 @@ Totality + mutual exclusivity are test-enforced. State is a covariate, not a fit
 
 ## §9. Pilot data gates (§13 / §14 PR-1 row) — results
 
-→ `TODO-BUILDER: fill per-name table` — for each pilot name: primary plane, first/last date, n_rows, `open` availability, hygiene flags + resolutions, first-print sanity result. Gate verdicts established at W1 adjudication (main-loop probe, 2026-08-14):
+**Pilot cohort as built (n = 21).** Episode counts are at the frozen constants; hygiene flags resolve below the table.
+
+| name | role | plane | first | last | rows | `open` | hygiene flags | first-print sanity | episodes |
+|---|---|---|---|---|---:|:--:|---|---|---:|
+| **AEM** | miner neighborhood probe | `baskets_ohlcv_v1` | 2014-01-02 | 2026-08-13 | 3172 | Y | — | `PREDATES_CALENDAR` | 49 |
+| **AG** | miner neighborhood probe | `baskets_ohlcv_v1` | 2014-01-02 | 2026-08-13 | 3172 | Y | — | `PREDATES_CALENDAR` | 65 |
+| **BABA** | operator core | `stock_identity_ohlcv_v1` | 2014-09-19 | 2026-08-13 | 2992 | Y | — | `PREDATES_CALENDAR` | 49 |
+| **CBRS** | stressor — recent IPO (rule-chosen at PR-1) | `baskets_ohlcv_v1` | 2026-05-14 | 2026-08-13 | 63 | Y | — | `OK` | 0 |
+| **FFAI** | stressor — secular decliner (rule-chosen at PR-1, damaged cohort) | `baskets_ohlcv_v1` | 2020-09-02 | 2026-07-21 | 1476 | Y | — | `PREDATES_CALENDAR` | 23 |
+| **GOLD** | miner neighborhood probe | `baskets_ohlcv_v1` | 2014-03-17 | 2026-08-13 | 3122 | Y | `symbol_history_note` | `PREDATES_CALENDAR` | 59 |
+| **HL** | disagreement set | `baskets_ohlcv_v1` | 2014-01-02 | 2026-08-13 | 3172 | Y | — | `PREDATES_CALENDAR` | 61 |
+| **KO** | operator core | `stocks_tr_v1` | 1962-01-02 | 2026-08-13 | 16262 | N | — | `PREDATES_CALENDAR` | 208 |
+| **KRUS** | operator core | `baskets_ohlcv_v1` | 2019-08-01 | 2026-08-13 | 1768 | Y | — | `PREDATES_CALENDAR` | 33 |
+| **MCD** | operator core | `stocks_tr_v1` | 1966-07-05 | 2026-08-13 | 15127 | N | — | `PREDATES_CALENDAR` | 192 |
+| **MCK** | operator core | `stocks_tr_v1` | 1994-11-10 | 2026-08-13 | 7991 | N | — | `PREDATES_CALENDAR` | 105 |
+| **META** | stressor — known epoch-changer | `stocks_tr_v1` | 2012-05-18 | 2026-08-13 | 3579 | N | — | `PREDATES_CALENDAR` | 55 |
+| **MSFT** | stressor — steady-trender control | `stocks_tr_v1` | 1986-03-13 | 2026-08-13 | 10183 | N | — | `PREDATES_CALENDAR` | 143 |
+| **NEM** | miner neighborhood probe + disagreement set | `stocks_tr_v1` | 1980-03-17 | 2026-08-13 | 11697 | N | — | `PREDATES_CALENDAR` | 238 |
+| **NVDA** | operator core | `stocks_tr_v1` | 1999-01-22 | 2026-08-13 | 6932 | N | — | `PREDATES_CALENDAR` | 112 |
+| **PAAS** | miner neighborhood probe | `baskets_ohlcv_v1` | 2014-01-02 | 2026-08-13 | 3172 | Y | — | `PREDATES_CALENDAR` | 68 |
+| **REGN** | operator core | `stocks_tr_v1` | 1991-04-02 | 2026-08-13 | 8906 | N | — | `PREDATES_CALENDAR` | 183 |
+| **UEC** | disagreement set | `baskets_ohlcv_v1` | 2014-01-02 | 2026-08-13 | 3172 | Y | — | `PREDATES_CALENDAR` | 56 |
+| **WMT** | operator core | `stocks_tr_v1` | 1972-08-25 | 2026-08-13 | 13603 | N | — | `PREDATES_CALENDAR` | 180 |
+| **WPM** | miner neighborhood probe | `stock_identity_ohlcv_v1` | 2005-07-06 | 2026-08-13 | 5310 | Y | — | `PREDATES_CALENDAR` | 93 |
+| **YELP** | operator core | `baskets_ohlcv_v1` | 2014-01-02 | 2026-08-13 | 3172 | Y | — | `PREDATES_CALENDAR` | 52 |
+
+**Hygiene resolutions.** Only one pilot name carries a flag. **GOLD → `symbol_history_note` (informational, not blocking):** `GOLD.parquet` is Barrick's continuous history under its *current* symbol — the pre-2018 rows are the ABX era restated, i.e. instrument-level continuity via rename, not a splice, so it is legitimate to read. A **separate** `data/baskets/ohlcv/ABX.parquet` (2020-09-14 →, 1,486 rows) exists in the universe and is a **different instrument on Barrick's retired symbol**; that reuse appears in **none** of `quality.reused_ticker_acks`, `quality.ticker_key_migrations`, or `breadth.ticker_fixups`, so it is **unacknowledged in config** — a W1 discovery, flagged upstream for the config owners, and ABX is excluded from every computation this program performs (it still appears in the universe snapshot: censored-never-dropped). No other pilot name matched a reused-ticker, rename, fixup, or delisting record.
+
+**First-print sanity.** CBRS is the only pilot name inside the Nasdaq deal calendar's coverage (earliest priced date 2024-12-03) and it verifies `OK` at 0 days. The other 20 return `PREDATES_CALENDAR` — an out-of-range reading, **not** a pass and **not** a failure; the deal reference simply does not reach back to a 1962 or 2014 first print.
+
+**Plane split.** 10 names on `stocks_tr_v1` (no `open` → close-to-close gap basis), 9 on `baskets_ohlcv_v1`, 2 (BABA, WPM) on the program-owned `stock_identity_ohlcv_v1`. Both open-carrying planes use the overnight gap basis; the asymmetry is recorded on every state row.
+
+Gate verdicts established at W1 adjudication (main-loop probe, 2026-08-14), all confirmed by the build:
 - **BABA / AEM / PAAS / WPM / AG deep TR-adjusted presence** (archaeology §6.2 left unverified): **BABA ABSENT from both planes; WPM ABSENT from both planes** → the §13-permitted collection step runs for exactly these two (into the program-owned store, §11). **AEM, PAAS, AG present** on the baskets plane (2014-01-02 → asof, ~3,170 rows each, `open` available) — present, so no collection per the contract's "if absent" clause; the baskets plane's 2014 inception bounds miner history and is recorded in the census (a PR-2+ deepening decision if the miner-emergence test needs the 2011-2015 gold bear, named here, not silently done).
 - **Archaeology correction (recorded):** GOLD sits on the **baskets plane only** (2014-03-17→asof), not in `data/stocks` as archaeology §6.2 stated; NEM is in `data/stocks` (1980→). The archaeology's as-of predates this checkout; the census carries the corrected fact.
 - **KRUS depth check: PASSES** — full IPO-era history on the baskets plane (2019-08-01 → asof, 1,768 rows, `open` available).
@@ -116,7 +151,25 @@ Resolved at W1 adjudication (the stock library's `site/stockdata/` output is a g
 
 ## §12. Registered look budget (G-7)
 
-→ `TODO-BUILDER: TrialLedger registration ids` — the calibration sensitivity grid and any exploratory sweep register BEFORE running, labeled exploratory/diagnostic; no confirmatory question is registered or graded in W1 (Q1's prereg is a PR-5 act on the §8.5 power gate).
+The calibration sensitivity grid and any exploratory sweep register BEFORE running, labeled exploratory/diagnostic; no confirmatory question is registered or graded in W1 (Q1's prereg is a PR-5 act on the §8.5 power gate).
+
+**Registered (the only W1 look-budget entry):**
+
+| field | value |
+|---|---|
+| family | `stock_identity_w1_calibration` |
+| ledger | `data/trial_ledger.jsonl` (the shared house ledger) |
+| registration mechanism | `@register_trials(family, budget=13, basis="itemized", reason=…)` on `scripts/stock_identity_calibrate.py::main`, plus `TrialLedger.log_grid` of the itemized configs |
+| declared budget | 13 = 1 base + 2 directions × 6 perturbed constants |
+| grid sha256 | `ba2b29b445c50c674775c8c0a24a319dbb4e033dd8fb8a402cef553471353c32` |
+| effective_n | 13 |
+| perturbed constants | X, N, k, z, θ_dw, g at ±20% |
+| label | exploratory / diagnostic — **never used to re-pick a value** |
+| info_cutoff stamped | 2026-02-11 (the calibration history cutoff) |
+
+The registration is **idempotent**: a re-run of the calibrator logs 0 newly-distinct configs (dedup by content hash), so re-deriving the same constants from the same sealed partition does not inflate the budget. The grid sha256 and `effective_n` are copied into `si_constants_v1.json` under `sensitivity_grid`.
+
+**Sensitivity result (diagnostic).** Over a seeded 40-name calibration subsample: episode counts move −59 to +26 against a 1,920-episode base (worst case ~3%), and the largest state-share shift is 0.061 (θ_dw −20%). X and θ_dw carry essentially all of the sensitivity; k and z move nothing at these values, because at k = 0.5·A0 and z = 3% the durable-low gate is dominated by the N-session survival requirement rather than by the rebound size. This is a plateau, not a needle — reported, and not acted on.
 
 ## §13. W1 exclusion self-audit (§16.9 mechanical)
 
@@ -126,4 +179,15 @@ Resolved at W1 adjudication (the stock library's `site/stockdata/` output is a g
 
 ## §14. Hashes (PR-body copies)
 
-→ `TODO-BUILDER: universe_sha256, blind_sha256, calibration_sha256, partition_procedure_sha256, fingerprint_spec_hash, si_constants_spec_hash`.
+| hash | value |
+|---|---|
+| `universe_sha256` | `841ed5461c159c2c9964da1f3b2ce99edb3176b037fc8d07d7c03d0e13f8c659` |
+| `blind_sha256` | `88e2b0d86eaa2e031841de28a10bdae4f4c798395dd1726f39e3feb3773291bd` |
+| `calibration_sha256` | `77e111c11672524c826948455a8c2ea5b812cdddb3f0d9dac1807b253604e9d0` |
+| `partition_procedure_sha256` | `a546c64983431f0afca01cfd9aacc230ef3bed875520c44898090520cf98164a` |
+| `fingerprint_spec_hash` | `0e3457b11f41452e1c3efac3858196f5f42b573d1961b798ea581e1590b33187` |
+| `si_constants_spec_hash` | `9c27994aa757a39ae3e2e7b2ec781ff94365581d60e827354662a8347a761d03` |
+
+**asof = 2026-08-13** (the last trading date common to all three planes). Universe 2,781 names · pilot 21 · blind arm 229 across 87 non-empty strata (94 strata total; 1,573 names in the `UNKNOWN` sector stratum) · sealed calibration partition **SI-SEALED-CAL-P1** 759 names drawn from a 2,531-name pool, 758 readable (ABX skipped on hygiene, see §9), calibration history cutoff **2026-02-11**.
+
+Every hash above is reproducible from the committed universe snapshot plus the three verbatim seed strings — `tests/test_stock_identity_partition.py` re-runs both draws and demands identical member lists **and** identical hashes, and re-derives `universe_sha256` and `partition_procedure_sha256` from their sources. `si_constants_spec_hash` covers the frozen decisions (version, values, rule text) and deliberately **not** the receipts, whose sample counts would otherwise move the hash without any constant moving.

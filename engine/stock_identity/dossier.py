@@ -56,6 +56,20 @@ _STATE_COLORS = {
 }
 
 _SVG_SIZE_LIMIT_BYTES = 300_000
+#: Above this many sessions the chart's price/200DMA LINES drop to weekly resolution.
+_LINE_DAILY_MAX = 5_000
+
+
+def _line_series(
+    close: pd.Series, sma200: pd.Series
+) -> tuple[pd.Series, pd.Series, bool]:
+    if len(close) <= _LINE_DAILY_MAX:
+        return close, sma200, False
+    return (
+        close.resample("W-FRI").last().dropna(),
+        sma200.resample("W-FRI").last().dropna(),
+        True,
+    )
 
 
 def _fmt(v: Any, nd: int = 4) -> str:
@@ -263,7 +277,9 @@ def render_markdown(
         L.append("")
         L.append(
             "Log price with the 200DMA, episode spans shaded by type, durable lows "
-            "marked, and the daily state strip beneath."
+            "marked, and the daily state strip beneath. On histories longer than "
+            "5,000 sessions the two price LINES are drawn at weekly resolution for "
+            "legibility and file size; spans, markers and the state strip stay daily."
         )
         L.append("")
 
@@ -322,11 +338,16 @@ def render_chart(
             linewidth=0, zorder=0,
         )
 
-    ax.plot(close.index, close.to_numpy(), color="#1b1b1b", linewidth=0.9, zorder=3, label="close")
-    ax.plot(
-        sma200.index, sma200.to_numpy(), color="#2f6f9f", linewidth=1.0,
-        zorder=2, label="200DMA",
-    )
+    # A 60-year daily path serializes ~16,000 vertices per line, which alone pushes the
+    # vector past the commit limit. Above _LINE_DAILY_MAX the two LINES are drawn at
+    # weekly resolution — visually identical on a multi-decade log axis. Episode spans,
+    # durable-low markers and the state strip stay at daily precision, and the caption
+    # says so rather than letting the reader assume daily.
+    line_close, line_sma, weekly = _line_series(close, sma200)
+    ax.plot(line_close.index, line_close.to_numpy(), color="#1b1b1b", linewidth=0.9,
+            zorder=3, label="close" + (" (weekly)" if weekly else ""))
+    ax.plot(line_sma.index, line_sma.to_numpy(), color="#2f6f9f", linewidth=1.0,
+            zorder=2, label="200DMA" + (" (weekly)" if weekly else ""))
     ax.set_yscale("log")
 
     if catalog is not None and not catalog.empty:
@@ -418,6 +439,7 @@ def _render_raster(
 
     close = df["close"].astype(float)
     sma200 = close.rolling(200, min_periods=200).mean()
+    line_close, line_sma, weekly = _line_series(close, sma200)
     fig, ax = plt.subplots(figsize=(12.0, 5.4))
     for r in catalog.itertuples(index=False) if catalog is not None and not catalog.empty else []:
         ax.axvspan(
@@ -425,8 +447,8 @@ def _render_raster(
             color=_SPAN_COLORS.get(r.episode_type, "#dddddd"),
             alpha=0.55 if not bool(r.censored) else 0.28, linewidth=0, zorder=0,
         )
-    ax.plot(close.index, close.to_numpy(), color="#1b1b1b", linewidth=0.9, zorder=3)
-    ax.plot(sma200.index, sma200.to_numpy(), color="#2f6f9f", linewidth=1.0, zorder=2)
+    ax.plot(line_close.index, line_close.to_numpy(), color="#1b1b1b", linewidth=0.9, zorder=3)
+    ax.plot(line_sma.index, line_sma.to_numpy(), color="#2f6f9f", linewidth=1.0, zorder=2)
     ax.set_yscale("log")
     ax.set_title(f"{symbol} — identity-episode map", fontsize=11, loc="left")
     ax.legend(
