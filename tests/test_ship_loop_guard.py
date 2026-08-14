@@ -442,8 +442,15 @@ def test_the_page_rewriting_sweeps_require_a_render(tmp_path):
         assert GUARD._needs_render(repo, sha, start_head, sha) is True, rel
 
 
+@pytest.mark.needs_full_checkout("site")
 def test_the_pair_list_is_the_ci_gate_s_own_enumeration(tmp_path):
-    """One definition, so the exemption and ui.template_site_sync cannot drift."""
+    """One definition, so the exemption and ui.template_site_sync cannot drift.
+
+    Marked: it asserts the pair list is NON-EMPTY, and `find_pairs` builds that
+    list by walking `site/` — which a sparse session worktree omits (policy R8).
+    Without the marker it fails with a bare `assert set()` that reads like a real
+    regression in the exemption logic.
+    """
     import scripts.check_template_site_sync as sync
 
     expected = {name for name, _t, _s in sync.find_pairs(ROOT)}

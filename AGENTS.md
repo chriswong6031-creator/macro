@@ -82,6 +82,43 @@ that believes the packet is wrong stops and escalates.
   sweeper honors `git worktree lock`, live process cwds, uncommitted/unpushed
   work, open PRs, and <7-day activity. To park a checkout long-term, lock it:
   `git worktree lock --reason "<why>" <path>`.
+- **Session worktrees are SPARSE by default** (`research/WORKTREE_GC_POLICY.md`
+  §0 R8). `.claude/hooks/worktree_create_sparse.py` mints every new worktree off
+  fresh `origin/main` with each tracked top-level directory EXCEPT the heavy
+  generated ones listed in `config/sparse_worktree.json` — `data/`, `site/`,
+  `mockups/`, `verify_shots/` — because those are 87 % of a 3.8 GiB checkout
+  (measured 2026-08-13: data 2.3 + site 0.73 + mockups 0.23 + verify_shots 0.05
+  GiB) and a typical session never reads them. A tree costs ~0.35-0.57 GiB
+  instead of 3.8. This is the other half of the 2026-08-13 disk-pressure
+  incident: the Studio sat at 1.7 Ti / 1.8 Ti (~100 GiB free) after two
+  receipted runner ENOSPC crashes, and arming the GC (#5502) only drains
+  FINISHED trees — at ~40 new worktrees/day the ~330 GiB active window is
+  structurally out of the sweeper's reach, so only a thinner per-tree footprint
+  shrinks it. **Opt in whenever you need those trees** — any render, `site/`,
+  paired plain-copy asset, or `data/` task — with `python3
+  scripts/worktree_sparse.py full` (worktree-scoped; siblings are untouched), or
+  take one tree with `python3 scripts/worktree_sparse.py add site`. `python3
+  scripts/worktree_sparse.py status` says what is missing. Nothing is hidden by
+  this: omitted paths stay tracked, `git status` stays clean, and a write into
+  an omitted path is still reported — so `ship_loop_guard.py`'s dirty snapshot
+  keeps working. **A write into an omitted tree TRUNCATES the committed
+  artifact**, because the real content was never on disk for the writer to
+  extend: measured 2026-08-13, a test run with the `MM_DATA_GUARD` tripwire
+  disabled left `data/hk_southbound/holdings.parquet` at 45,157 bytes against
+  7,295,941 committed, and `data/trial_ledger.jsonl` short by 1,411 lines. Never
+  `git add -A` a diff you did not expect under `data/` or `site/`; run `python3
+  scripts/worktree_sparse.py clean` (report-first; `--force` deletes) to put the
+  omitted trees back. Nothing is silently greened either:
+  `scripts/check_template_site_sync.py` REFUSES on a sparse tree rather than
+  reporting "sync OK (0 pairs checked)", and pytest prints the omitted trees and
+  the opt-in command, skipping only tests explicitly marked
+  `needs_full_checkout`. **Do not run the full test suite in a sparse worktree** —
+  measured 2026-08-13 it produces 1,281 failures and 419 errors across 247 files
+  (against 68,776 passes) purely as artifacts of the missing trees. Opt into a
+  full checkout first; marking all 247 files was considered and rejected because
+  it would permanently mask real regressions in a tenth of the suite. Do not detect sparseness with `Path.is_dir()` — `data/`
+  survives `git reset --hard` as a 0-byte husk; ask
+  `scripts/worktree_sparse.missing_dirs()`.
 
 ## Signal-state interpretation (operator 2026-08-09)
 
