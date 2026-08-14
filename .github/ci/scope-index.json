@@ -10287,7 +10287,7 @@
       },
       {
         "path": "scripts/ci_committed_scope_index.py",
-        "signature_sha256": "542b655f536126c7d758769fd3ca3ca0abc52f925932286967acd89b40b19d71"
+        "signature_sha256": "f7d1e761f5759c18c19197ff5867d0f02dbd5830fb87eb5af5a680aa2e04d736"
       },
       {
         "path": "scripts/ci_failure_summary.py",
@@ -10303,11 +10303,11 @@
       },
       {
         "path": "scripts/ci_scope_dependencies.py",
-        "signature_sha256": "b4d2a87e9ccce1a51e1b1287f89489658555bc4d9ef0bb1fbf1837b771527766"
+        "signature_sha256": "0fd6704a7cdd75b7c22a9602cd2c1aa6bba9374d73060445ca8d858c39a91e78"
       },
       {
         "path": "scripts/ci_structural_preflight.py",
-        "signature_sha256": "5447a86fdb62b0bb4e81d0bf84809fd7398942e696adb0e09532eddbb0c5fe74"
+        "signature_sha256": "6e9a20bdd4bb7ea15af63a56cb4ed415c2d84618b8123180804f68ae3beee06f"
       },
       {
         "path": "scripts/close_pass_mirror.py",
@@ -14831,7 +14831,7 @@
       },
       {
         "path": "tests/test_ci_committed_scope_index.py",
-        "signature_sha256": "41c0ba64104b7390228938cb5d5e451ae5de98b4f47957cc24ff9a6509622932"
+        "signature_sha256": "2dfdc3a2a0bcc17e1c9eefe5ed6855ea5bd83ee3244531def84f116ab18d519d"
       },
       {
         "path": "tests/test_ci_failure_summary.py",
@@ -22313,7 +22313,7 @@
     "python_count": 5577,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "38d61b74ec6d2211dc199d2d3c4037aee8c38edd1b33b0cbd675cf21b99e8f27",
+  "index_sha256": "af77973e4dfbef95e02060a119c3954d68a366dc4721d0664317e71cf0f1b8cb",
   "job_count": 192,
   "job_inventory": [
     "inline-js",
@@ -34209,6 +34209,8 @@
         "research/**/*.md/**",
         "research/**/*.parquet",
         "research/**/*.parquet/**",
+        "research/**/*.py",
+        "research/**/*.py/**",
         "research/**/*.yml",
         "research/**/*.yml/**",
         "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
@@ -34226,6 +34228,7 @@
         "research/signal_engine/test_buy_filters.py",
         "research/signal_engine/test_buyfilter.py",
         "research/winners/FINGERPRINT_CONTROLS_W4.md",
+        "research/winners/cases/NVDA_2023.md",
         "scripts/**",
         "scripts/**/*.json",
         "scripts/**/*.json/**",
@@ -40701,7 +40704,6 @@
         "research/DO_NOT_REBUILD.md",
         "research/winners/CODEX_WINNER_CASE_PROMPT.md",
         "research/winners/cases/NVDA_2023.md",
-        "research/winners/cases/nvda_2023.md",
         "scripts/**",
         "scripts/build_free_content.py",
         "scripts/check_template_site_sync.py",
@@ -74324,7 +74326,7 @@
     },
     {
       "path": "scripts/ci_scope_dependencies.py",
-      "sha256": "9509fa94ce2dcc2e229d0087a91b2e379fe066e14ec15dbd083423cf628fce17"
+      "sha256": "c4bcce08819a17c8f5ad9be80e50323041dbdbadc87b3b37235ed3733afaec77"
     },
     {
       "path": "scripts/audit_unrun_tests.py",
@@ -74332,11 +74334,11 @@
     },
     {
       "path": "scripts/ci_committed_scope_index.py",
-      "sha256": "ca8c2e9ced955fb434d22fb95200d9ed9a664292357ca09d8ff93f972b351d6c"
+      "sha256": "58abd4002fa8477d1a8e4b732349dd94a7f552647f7a2ce6e4ce08e27c487650"
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2192,
+    "candidate_count": 2194,
     "candidates": [
       {
         "path": ".claude",
@@ -75040,6 +75042,10 @@
       },
       {
         "path": "config/link.yml",
+        "present": false
+      },
+      {
+        "path": "config/link/value.yml",
         "present": false
       },
       {
@@ -79167,8 +79173,12 @@
         "present": true
       },
       {
+        "path": "research/winners/cases/case-rename.tmp",
+        "present": false
+      },
+      {
         "path": "research/winners/cases/nvda_2023.md",
-        "present": true
+        "present": false
       },
       {
         "path": "scripts",
