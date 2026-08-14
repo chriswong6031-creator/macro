@@ -23,19 +23,24 @@ owns_paths:
 waves:
   - id: W0
     title: Architecture + Phase 0 scaffolding (schemas, validator, seeded records)
-    status: in_progress
-    next_action: Land this PR; then rule on conflicts C1 and C2.
+    status: done
+    pr: 5472
   - id: W1
     title: "Phase 1 — adoption: CLAUDE.md/AGENTS.md sections, handoff protocol in use, <=10 backfilled decisions"
-    status: todo
-    depends_on: [W0]
-  - id: W2
-    title: "Phase 2 — status generator + mastermind status CEO brief"
     status: in_progress
+    pr: 5556
     depends_on: [W0]
     next_action: >
-      Land the status generator and CEO brief; then rule on C3 (START NEXT vs the
-      improvement agenda) alongside C1 and C2.
+      Adoption instructions + backfill are in PR. Gate status: DEC>=10 met (19);
+      DSC>=5 met on the corpus-total reading the Phase 1 commissioning handoff
+      specifies (5 total; 2 postdate Phase 0); UNMET: >=3 handoffs written by
+      sessions other than the scaffolding sessions, from real work — accrues as
+      live workstream sessions stop; do not manufacture records to close it.
+  - id: W2
+    title: "Phase 2 — status generator + mastermind status CEO brief"
+    status: done
+    pr: 5472
+    depends_on: [W0]
   - id: W3
     title: "Phase 3 — compile-context over the existing context index"
     status: todo
@@ -72,9 +77,12 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Start Phase 1 (adoption). All five conflicts are ruled: C1 no task store, C2 claims
-  advisory-only, C3 readiness feeds the agenda, C4 stores stay separate, C5 CXI-R12
-  overruled. Phase 3 gains the agenda-integration wave that retires the UNBLOCKED list.
+  Close W1's remaining gate: >=3 genuine handoffs from sessions other than the
+  scaffolding sessions, accrued from real work as adopted instructions take effect.
+  Then Phase 3 (compile-context), which gains the agenda-integration wave that
+  retires the UNBLOCKED list. All five conflicts remain ruled: C1 no task store,
+  C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate,
+  C5 CXI-R12 overruled.
 ---
 
 ## Context
