@@ -5,10 +5,13 @@ import hashlib
 import json
 import os
 import resource
+import shutil
+import stat
 import sys
 import time
-from contextlib import nullcontext
-from datetime import datetime, timedelta, timezone
+from contextlib import contextmanager, nullcontext
+from dataclasses import replace
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -381,9 +384,13 @@ def _last_cycle(root: Path, head: dict) -> dict:
 
 
 def _decision_rows(
-    root: Path, evidence_inputs: selector.EvidenceInputs | None = None
+    root: Path,
+    *,
+    evidence_inputs: selector.EvidenceInputs | None = None,
 ) -> list[dict]:
-    return selector.authenticate_store(root, evidence_inputs=evidence_inputs)[1]
+    return selector.authenticate_store(
+        root, evidence_inputs=evidence_inputs
+    )[1]
 
 
 def _cycle_rows(root: Path, head: dict) -> list[dict]:
@@ -690,7 +697,9 @@ def _passing_evidence(
     monkeypatch.setattr(
         selector,
         "_build_evidence_snapshot",
-        lambda inputs: snapshot if inputs.w1a_receipt_root == w1a_root else pytest.fail(
+        lambda inputs, **_scope: snapshot
+        if inputs.w1a_receipt_root == w1a_root
+        else pytest.fail(
             "passing evidence inputs changed"
         ),
     )
@@ -875,6 +884,103 @@ def test_w1a_receipt_root_replaces_caller_export_and_preserves_clock_causality(
     assert reasons == ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
 
 
+def test_episode_owned_w1a_phase_is_authoritative_and_can_propose(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source([[_episode("w1a-owner-phase", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "selector"
+    head = _commit_first(root, source)
+    real_reference_for_candidate = selector._reference_for_candidate
+    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
+    monkeypatch.setattr(
+        selector, "_reference_for_candidate", real_reference_for_candidate
+    )
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, head),
+        evidence_inputs=evidence_inputs,
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    decision = next(
+        item.value
+        for item in plan.objects
+        if item.value.get("schema") == "options.sparse_selector_decision/v1"
+    )
+    assert decision["action"] == "propose", decision["reason_codes"]
+    assert decision["reason_codes"] == []
+
+    snapshot = selector._build_evidence_snapshot(evidence_inputs)
+    wrong_reference = copy.deepcopy(snapshot.w1a_references[0])
+    wrong_reference["owner"]["evidence_phase"] = (
+        "prospective_after_rule_freeze"
+    )
+    with pytest.raises(
+        selector.context_bridge.OptionsMarketMemoryContextError,
+        match="evidence phase",
+    ):
+        selector.context_bridge.validate_context_reference(wrong_reference)
+    episode_id = source.episodes_raw.splitlines()[0]
+    owner_id = json.loads(episode_id)["episode_id"]
+    wrong_snapshot = replace(
+        snapshot,
+        w1a_references=(wrong_reference,),
+        w1a_by_episode={owner_id: (wrong_reference,)},
+    )
+    evidence, reasons = real_reference_for_candidate(
+        selector._load_pointer(
+            root, head["last_candidate"], label="W1A owner-phase candidate"
+        ),
+        wrong_snapshot,
+        evidence_available_at=datetime(
+            2026, 8, 12, 14, 5, 0, tzinfo=timezone.utc
+        ),
+    )
+    assert evidence is None
+    assert reasons == ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
+
+
+def test_producer_rfc3339_offsets_preserve_mark_causality_and_proposal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source([[_episode("producer-offset", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "selector"
+    head = _commit_first(root, source)
+    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
+    snapshot = selector._build_evidence_snapshot(evidence_inputs)
+    for _pointer, observation, row in snapshot.mark_rows_by_plan_session.values():
+        observation["observed_at_utc"] = selector.mark_chain._source_utc_iso(
+            datetime(2026, 8, 12, 14, 4, 59, tzinfo=timezone.utc)
+        )
+        row["quote"]["quote_ts_utc"] = "2026-08-12T10:04:58-04:00"
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, head),
+        evidence_inputs=evidence_inputs,
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    decision = next(
+        item.value
+        for item in plan.objects
+        if item.value.get("schema") == "options.sparse_selector_decision/v1"
+    )
+    assert decision["action"] == "propose"
+    assert selector._source_rfc3339(
+        "2026-08-12T14:04:58.000000+00:00", label="producer UTC"
+    ) == selector._source_rfc3339(
+        "2026-08-12T10:04:58-04:00", label="producer offset"
+    )
+    with pytest.raises(selector.SparseSelectorError, match="RFC3339"):
+        selector._source_rfc3339("nonsense", label="producer nonsense")
+    with pytest.raises(selector.SparseSelectorError, match="RFC3339"):
+        selector._source_rfc3339(
+            "2026-08-12T14:04:58+24:00", label="producer bad offset"
+        )
+
+
 def test_w1a_compact_source_reauthenticates_after_current_head_advances(
     tmp_path: Path,
 ) -> None:
@@ -934,6 +1040,54 @@ def test_w1a_compact_source_reauthenticates_after_current_head_advances(
         label="historical W1A source receipt",
     )
     assert historical_source["head"] == publication_a["head"]
+
+
+def test_status_recovers_durable_w1a_intent_only_with_trusted_inputs(
+    tmp_path: Path,
+) -> None:
+    episode = _episode("status-w1a-intent", "2026-08-12T13:31:00Z")
+    source = _source([[episode]])
+    reference = _bound_w1a_reference(
+        owner_id=episode["episode_id"],
+        record_sha256=hashlib.sha256(
+            source.episodes_raw.splitlines()[0]
+        ).hexdigest(),
+    )
+    w1a_root = tmp_path / "status-w1a-receipts"
+    _publish_w1a(w1a_root, [reference])
+    root = tmp_path / "status-selector"
+    head = _commit_first(root, source)
+    inputs = selector.EvidenceInputs(w1a_receipt_root=w1a_root)
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+
+    def crash(point: str) -> None:
+        if point == "after_intent":
+            raise RuntimeError("status W1A intent crash")
+
+    with pytest.raises(RuntimeError, match="status W1A intent crash"):
+        selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=crash)
+    assert (root / selector.INTENT_FILE).is_file()
+    with pytest.raises(
+        selector.SparseSelectorError,
+        match="trusted.*W1A|trusted source root|trusted receipt root",
+    ):
+        selector.status(root)
+    report = selector.status(root, evidence_inputs=inputs)
+    assert report == {
+        "runtime_armed": True,
+        "initialized": True,
+        "head": head,
+        "recovery_intent": True,
+        "intent_next_head_id": plan.head["head_id"],
+    }
+    assert selector.commit_cycle(root, None, evidence_inputs=inputs) == plan.head
 
 
 def test_w1a_exact_asof_absence_is_evidence_while_missing_owner_is_not(
@@ -1481,6 +1635,188 @@ def test_deleted_non_tail_candidate_index_path_refuses_conflicting_readmission(
     # unchanged sources do not need a candidate membership query.
 
 
+def test_authenticate_store_rejects_rehashed_non_tail_candidate_index_misbinding(
+    tmp_path: Path,
+) -> None:
+    source = _source(
+        [
+            [_episode("index-chain-a", "2026-08-12T13:31:00Z", strike=700.0)],
+            [_episode("index-chain-b", "2026-08-12T13:31:01Z", strike=701.0)],
+        ]
+    )
+    root = tmp_path / "candidate-index-chain"
+    head = _commit_first(root, source)
+    receipts = selector._walk_candidate_chain_receipts(
+        root,
+        tail=head["last_candidate"],
+        count=head["candidate_count"],
+    )
+    first, tail = receipts[0], receipts[-1]
+    forged_root, nodes = selector.private_auth_dict.sharded_insert_many(
+        head["candidate_index"],
+        [
+            (
+                selector._candidate_index_key(first["campaign_id"]),
+                {
+                    "campaign_id": first["campaign_id"],
+                    "candidate_id": tail["candidate_id"],
+                    "candidate": tail["pointer"],
+                },
+            )
+        ],
+        domain=selector.CANDIDATE_INDEX_DOMAIN,
+        load_node=lambda pointer: selector._load_candidate_index_node(root, pointer),
+        replace_existing=True,
+    )
+    for node in nodes:
+        path = selector._object_path(
+            root,
+            f"{selector.private_auth_dict.NAMESPACE}/{node['node_id']}.json",
+        )
+        path.write_bytes(selector.canonical_bytes(node))
+        path.chmod(0o600)
+    corrupted = copy.deepcopy(head)
+    corrupted["candidate_index"] = forged_root
+    corrupted["head_id"] = selector._content_id(
+        "ossh_", corrupted, field="head_id"
+    )
+    (root / selector.HEAD_FILE).write_bytes(selector.canonical_bytes(corrupted))
+    with pytest.raises(selector.SparseSelectorError, match="complete chain"):
+        selector.authenticate_store(root)
+
+
+def test_authenticate_store_rejects_rehashed_proposal_session_counter(
+    tmp_path: Path,
+) -> None:
+    source = _source([[_episode("proposal-head", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "proposal-head"
+    head = _commit_first(root, source)
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, head),
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    settled = selector.commit_cycle(root, plan)
+    assert settled["proposal_session_date"] == "2026-08-12"
+    assert settled["proposal_session_count"] == 0
+    corrupted = copy.deepcopy(settled)
+    corrupted["proposal_session_date"] = None
+    corrupted["head_id"] = selector._content_id(
+        "ossh_", corrupted, field="head_id"
+    )
+    (root / selector.HEAD_FILE).write_bytes(selector.canonical_bytes(corrupted))
+    with pytest.raises(selector.SparseSelectorError, match="proposal session state"):
+        selector.authenticate_store(root)
+
+
+@pytest.mark.parametrize("offset_delta", [-1, 1])
+def test_source_recovery_rejects_rehashed_noncontiguous_episode_byte_offsets(
+    tmp_path: Path, offset_delta: int
+) -> None:
+    source = _source([[_episode("episode-offset", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / f"episode-offset-{offset_delta}"
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+    forged = copy.deepcopy(plan.intent)
+    original = next(
+        item
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_episode_chunk/v1"
+    )
+    chunk = copy.deepcopy(original.value)
+    chunk["rows"][0]["end_byte"] += offset_delta
+    chunk["last_byte"] += offset_delta
+    chunk["chunk_id"] = selector._episode_chunk_id(chunk)
+    replacement = selector.PlannedObject(
+        key=f"{selector.SOURCE_PROJECTION_NAMESPACE}/{chunk['chunk_id']}.json",
+        value=chunk,
+    )
+    forged["objects"] = sorted(
+        [
+            replacement.receipt if receipt == original.receipt else receipt
+            for receipt in forged["objects"]
+        ],
+        key=lambda receipt: receipt["key"],
+    )
+    forged["source_window"]["chunk"] = replacement.pointer
+    forged["intent_sha256"] = selector._content_id(
+        "", forged, field="intent_sha256"
+    )
+    with selector._store_lock(root):
+        for item in (*plan.objects, replacement):
+            selector._prestage_immutable(
+                selector._object_path(root, item.key), item.body, root=root
+            )
+        with pytest.raises(selector.SparseSelectorError, match="chunk row binding"):
+            selector._plan_from_intent(root, forged)
+
+
+def test_advance_recovery_rejects_rehashed_shortened_and_zero_ready_prefixes(
+    tmp_path: Path,
+) -> None:
+    source = _many_candidate_source(129)
+    for admission_cap in (64, 0):
+        root = tmp_path / f"shortened-ready-prefix-{admission_cap}"
+        head: dict | None = None
+        for _ in range(16):
+            audit_plan = selector.plan_cycle(
+                root=root,
+                source=source,
+                evidence_inputs=selector.EvidenceInputs(),
+                scheduled_at="2026-08-12T14:00:00Z",
+                clock=_clock(),
+                runtime_armed=True,
+            )
+            head = selector.commit_cycle(root, audit_plan)
+            if head["source_phase"] == "READY" and head["cycle_count"] == 0:
+                break
+        assert head is not None
+        assert head["source_phase"] == "READY"
+        assert head["cycle_count"] == 0
+        pinned = _pinned_source(source, head)
+        shortened = selector._plan_cycle_once(
+            root=root,
+            source=pinned,
+            evidence_inputs=selector.EvidenceInputs(),
+            scheduled_at="2026-08-12T14:00:00Z",
+            clock=_clock(),
+            runtime_armed=True,
+            admission_cap=admission_cap,
+            settlement_cache={},
+        )
+        cycle = next(
+            item.value
+            for item in shortened.objects
+            if item.value.get("schema")
+            == "options.sparse_selector_cycle_receipt/v1"
+        )
+        assert len(cycle["candidate_pointers"]) == admission_cap
+        with selector._store_lock(root):
+            for item in shortened.objects:
+                selector._prestage_immutable(
+                    selector._object_path(root, item.key), item.body, root=root
+                )
+            with pytest.raises(
+                selector.SparseSelectorError,
+                match="exact parent replay|authenticated clocks",
+            ):
+                selector._plan_from_intent(
+                    root,
+                    shortened.intent,
+                    evidence_inputs=selector.EvidenceInputs(),
+                )
+
+
 def test_late_candidate_waits_for_the_following_cycle(
     tmp_path: Path,
 ) -> None:
@@ -1504,8 +1840,8 @@ def test_late_candidate_waits_for_the_following_cycle(
         root=root,
         source=source_ab,
         evidence_inputs=selector.EvidenceInputs(),
-        scheduled_at="2026-08-12T14:15:00Z",
-        clock=_clock("2026-08-12T14:15:00Z"),
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
         runtime_armed=True,
     )
     selector.commit_cycle(root, third_plan)
@@ -1635,19 +1971,25 @@ def test_passing_order_applies_three_proposal_cap_without_ranking(
         for strike in (700, 701, 702, 703)
     ]
     source = _source(groups)
-    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
     root = tmp_path / "selector"
-    _commit_first(root, source)
+    runtime_head = _commit_first(root, source)
+    evidence_inputs, complete_head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
     plan = selector.plan_cycle(
         root=root,
-        source=source,
+        source=_pinned_source(source, complete_head),
         evidence_inputs=evidence_inputs,
-        scheduled_at="2026-08-12T14:05:00Z",
-        clock=_clock("2026-08-12T14:05:00Z"),
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
         runtime_armed=True,
     )
     selector.commit_cycle(root, plan)
-    rows = _decision_rows(root, evidence_inputs)
+    rows = _decision_rows(root, evidence_inputs=evidence_inputs)
     assert [row["action"] for row in rows] == [
         "propose",
         "propose",
@@ -1663,6 +2005,276 @@ def test_passing_order_applies_three_proposal_cap_without_ranking(
             for row in rows
         }
     ) == 1
+
+
+def test_authenticate_store_caches_generation_and_w1a_by_full_pointer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _source(
+        [
+            [_episode(f"cache-{strike}", "2026-08-12T13:31:00Z", strike=strike)]
+            for strike in (700.0, 701.0, 702.0, 703.0)
+        ]
+    )
+    root = tmp_path / "generation-cache"
+    runtime_head = _commit_first(root, source)
+    inputs, complete_head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, complete_head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
+        runtime_armed=True,
+    )
+    committed = selector.commit_cycle(root, plan, evidence_inputs=inputs)
+    planned_decisions = sorted(
+        (
+            item.value
+            for item in plan.objects
+            if item.value.get("schema")
+            == "options.sparse_selector_decision/v1"
+        ),
+        key=lambda row: row["ordinal"],
+    )
+    assert len(planned_decisions) == 4
+    unique_generations = {
+        selector.canonical_bytes(row["evidence"]["generation"])
+        for row in planned_decisions
+    }
+    unique_sources = {
+        selector.canonical_bytes(
+            next(
+                item.value["w1a_source_receipt"]
+                for item in plan.objects
+                if item.value.get("schema")
+                == "options.sparse_selector_evidence_generation/v1"
+            )
+        )
+    }
+    unique_manifests = {
+        selector.canonical_bytes(item.value["settled_manifest"])
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_generation/v1"
+    }
+    real_load_pointer = selector._load_pointer
+    real_validate_runtime_object = selector.validate_runtime_object
+    real_w1a_auth = selector._authenticate_historical_w1a_source
+    loads = {
+        "generation": 0,
+        "generation_validation": 0,
+        "manifest": 0,
+        "source": 0,
+        "w1a": 0,
+    }
+
+    def counted_load_pointer(
+        current_root: Path,
+        pointer: dict,
+        *,
+        label: str,
+    ) -> dict:
+        if label in {
+            "authenticated evidence generation",
+            "decision evidence generation",
+        }:
+            loads["generation"] += 1
+        if label in {
+            "captured selector W1A source receipt",
+            "decision W1A source receipt",
+            "authenticated selector W1A source receipt",
+        }:
+            loads["source"] += 1
+        if selector.canonical_bytes(pointer) in unique_manifests:
+            loads["manifest"] += 1
+        return real_load_pointer(current_root, pointer, label=label)
+
+    def counted_validate_runtime_object(value: dict, *, label: str) -> dict:
+        if (
+            value.get("schema")
+            == "options.sparse_selector_evidence_generation/v1"
+        ):
+            loads["generation_validation"] += 1
+        return real_validate_runtime_object(value, label=label)
+
+    def counted_w1a_auth(*args, **kwargs):
+        loads["w1a"] += 1
+        return real_w1a_auth(*args, **kwargs)
+
+    monkeypatch.setattr(selector, "_load_pointer", counted_load_pointer)
+    monkeypatch.setattr(
+        selector, "validate_runtime_object", counted_validate_runtime_object
+    )
+    monkeypatch.setattr(
+        selector, "_authenticate_historical_w1a_source", counted_w1a_auth
+    )
+    for call in (1, 2):
+        authenticated, decisions, _body = selector.authenticate_store(
+            root, evidence_inputs=inputs
+        )
+        assert authenticated == committed
+        assert len(decisions) == 4
+        assert loads == {
+            "generation": call * len(unique_generations),
+            "generation_validation": call * len(unique_generations),
+            "manifest": call * len(unique_manifests),
+            "source": call * len(unique_sources),
+            "w1a": call * len(unique_generations),
+        }
+
+    decision = planned_decisions[0]
+    candidate = real_load_pointer(
+        root, decision["candidate"], label="cached-pointer candidate"
+    )
+    for field, forged_value in (
+        ("key", f"evidence/{'0' * 64}.json"),
+        ("sha256", "0" * 64),
+        ("bytes", decision["evidence"]["generation"]["bytes"] + 1),
+    ):
+        generation_cache: selector._PointerObjectCache = {}
+        source_cache: selector._PointerObjectCache = {}
+        w1a_cache: selector._W1APublicationCache = {}
+        selector._validate_decision_evidence_objects(
+            root,
+            decision,
+            candidate=candidate,
+            evidence_inputs=inputs,
+            generation_cache=generation_cache,
+            source_cache=source_cache,
+            w1a_cache=w1a_cache,
+        )
+        forged = copy.deepcopy(decision)
+        forged["evidence"]["generation"][field] = forged_value
+        with pytest.raises(
+            selector.SparseSelectorError,
+            match="cached full pointer drifted",
+        ):
+            selector._validate_decision_evidence_objects(
+                root,
+                forged,
+                candidate=candidate,
+                evidence_inputs=inputs,
+                generation_cache=generation_cache,
+                source_cache=source_cache,
+                w1a_cache=w1a_cache,
+            )
+
+
+def test_authenticate_store_caches_settled_manifest_by_full_pointer(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _source(
+        [
+            [_episode(f"manifest-cache-{strike}", "2026-08-12T13:31:00Z", strike=strike)]
+            for strike in (700.0, 701.0, 702.0, 703.0)
+        ]
+    )
+    root = tmp_path / "manifest-cache"
+    first_head = _commit_first(root, source)
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, first_head),
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    committed = selector.commit_cycle(root, plan)
+    decisions = sorted(
+        (
+            item.value
+            for item in plan.objects
+            if item.value.get("schema")
+            == "options.sparse_selector_decision/v1"
+        ),
+        key=lambda row: row["ordinal"],
+    )
+    generations = [
+        item
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_generation/v1"
+    ]
+    assert len(decisions) == 4
+    assert len(generations) == 1
+    manifest_pointers = {
+        selector.canonical_bytes(item.value["settled_manifest"])
+        for item in generations
+    }
+    real_load_pointer = selector._load_pointer
+    manifest_loads = 0
+
+    def counted_load_pointer(
+        current_root: Path,
+        pointer: dict,
+        *,
+        label: str,
+    ) -> dict:
+        nonlocal manifest_loads
+        if selector.canonical_bytes(pointer) in manifest_pointers:
+            manifest_loads += 1
+        return real_load_pointer(current_root, pointer, label=label)
+
+    monkeypatch.setattr(selector, "_load_pointer", counted_load_pointer)
+    authenticated, authenticated_decisions, _body = selector.authenticate_store(root)
+    assert authenticated == committed
+    assert len(authenticated_decisions) == len(decisions)
+    assert manifest_loads == len(manifest_pointers)
+
+    decision = decisions[0]
+    generation = generations[0]
+    candidate = real_load_pointer(
+        root, decision["candidate"], label="manifest-cache candidate"
+    )
+    manifest_cache: selector._PointerObjectCache = {}
+    selector._validate_decision_evidence_objects(
+        root,
+        decision,
+        candidate=candidate,
+        evidence_inputs=selector.EvidenceInputs(),
+        generation_cache={},
+        manifest_cache=manifest_cache,
+    )
+    for field, forged_value in (
+        ("key", f"manifests/ossm_{'0' * 64}.json"),
+        ("sha256", "0" * 64),
+        ("bytes", generation.value["settled_manifest"]["bytes"] + 1),
+    ):
+        forged_generation = copy.deepcopy(generation.value)
+        forged_generation["settled_manifest"][field] = forged_value
+        forged_generation["generation_id"] = selector._content_id(
+            "osseg_", forged_generation, field="generation_id"
+        )
+        forged_generation = selector.validate_runtime_object(
+            forged_generation, label="forged manifest-cache generation"
+        )
+        forged_generation_item = selector._evidence_object(forged_generation)
+        forged_decision = copy.deepcopy(decision)
+        forged_decision["evidence"]["generation"] = forged_generation_item.pointer
+        with pytest.raises(
+            selector.SparseSelectorError,
+            match="settled manifest cached full pointer drifted",
+        ):
+            selector._validate_decision_evidence_objects(
+                root,
+                forged_decision,
+                planned_by_key={
+                    forged_generation_item.key: forged_generation_item,
+                },
+                candidate=candidate,
+                evidence_inputs=selector.EvidenceInputs(),
+                generation_cache={},
+                manifest_cache=manifest_cache,
+            )
 
 
 @pytest.mark.parametrize(
@@ -1735,7 +2347,7 @@ def test_handoff_queue_recovery_rejects_conflicting_immutable_ordinal_object(
     queue_path.write_bytes(queue_path.read_bytes() + b"{}\n")
     with pytest.raises(
         selector.SparseSelectorError,
-        match="immutable object conflicts",
+        match="object receipt differs from prestaged bytes",
     ):
         selector.commit_cycle(root, None)
 
@@ -2180,10 +2792,12 @@ def test_evidence_snapshot_is_built_once_per_manifest(
     calls = 0
     original = selector._build_evidence_snapshot
 
-    def counted(inputs: selector.EvidenceInputs) -> selector.EvidenceSnapshot:
+    def counted(
+        inputs: selector.EvidenceInputs, **scope
+    ) -> selector.EvidenceSnapshot:
         nonlocal calls
         calls += 1
-        return original(inputs)
+        return original(inputs, **scope)
 
     monkeypatch.setattr(selector, "_build_evidence_snapshot", counted)
     plan = selector.plan_cycle(
@@ -2445,23 +3059,33 @@ def test_recovery_seal_rejects_self_consistent_alternate_evidence_intent(
 ) -> None:
     source = _source([[_episode("sealed-evidence", "2026-08-12T13:31:00Z")]])
     root = tmp_path / "sealed-evidence"
-    head = _commit_first(root, source)
+    runtime_head = _commit_first(root, source)
+    passing, head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
     pinned = _pinned_source(source, head)
+    absent_inputs = selector.EvidenceInputs(
+        mark_root=passing.mark_root,
+        lifecycle_root=passing.lifecycle_root,
+    )
     absent_plan = selector.plan_cycle(
         root=root,
         source=pinned,
-        evidence_inputs=selector.EvidenceInputs(),
-        scheduled_at="2026-08-12T14:05:00Z",
-        clock=_clock("2026-08-12T14:05:00Z"),
+        evidence_inputs=absent_inputs,
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
         runtime_armed=True,
     )
-    passing = _passing_evidence(tmp_path, monkeypatch, source)
     passing_plan = selector.plan_cycle(
         root=root,
         source=pinned,
         evidence_inputs=passing,
-        scheduled_at="2026-08-12T14:05:00Z",
-        clock=_clock("2026-08-12T14:05:00Z"),
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
         runtime_armed=True,
     )
     passing_decision = next(
@@ -2495,6 +3119,245 @@ def test_recovery_seal_rejects_self_consistent_alternate_evidence_intent(
     assert selector._load_head(root) == head
 
 
+def test_combined_settlement_lock_order_and_live_fences_span_intent_seal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _source([[_episode("combined-locks", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "combined-lock-selector"
+    runtime_head = _commit_first(root, source)
+    inputs, complete_head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, complete_head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
+        runtime_armed=True,
+    )
+    assert any(
+        item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+        for item in plan.objects
+    )
+
+    held: list[str] = []
+    locked: list[str] = []
+    seal_points: list[str] = []
+    complete_fences = 0
+    real_store_lock = selector._store_lock
+    real_w1a_fence = selector._w1a_commit_fence
+    real_evidence_lock = selector._anchored_evidence_lock
+    real_complete_fence = selector._validate_live_complete_evidence
+
+    @contextmanager
+    def traced_store_lock(path: Path):
+        with real_store_lock(path):
+            assert held == []
+            held.append("selector")
+            locked.append("selector")
+            try:
+                yield
+            finally:
+                assert held.pop() == "selector"
+
+    @contextmanager
+    def traced_w1a_fence(
+        path: Path,
+        current_plan: selector.CyclePlan,
+        current_inputs: selector.EvidenceInputs,
+    ):
+        assert held == ["selector"]
+        with real_w1a_fence(path, current_plan, current_inputs):
+            held.append("w1a")
+            locked.append("w1a")
+            try:
+                yield
+            finally:
+                assert held.pop() == "w1a"
+
+    @contextmanager
+    def traced_evidence_lock(lane, authority):
+        # Receipt-only reconstruction may transiently authenticate the live
+        # COMPLETE generation before the long-held publication fences begin.
+        if held == ["selector"]:
+            with real_evidence_lock(lane, authority) as descriptor:
+                yield descriptor
+            return
+        label = (
+            "mark"
+            if lane.root == Path(inputs.mark_root).absolute()
+            else "lifecycle"
+        )
+        expected = ["selector", "w1a"]
+        if label == "lifecycle":
+            expected.append("mark")
+        assert held == expected
+        with real_evidence_lock(lane, authority) as descriptor:
+            held.append(label)
+            locked.append(label)
+            try:
+                yield descriptor
+            finally:
+                assert held.pop() == label
+
+    def traced_complete_fence(*args, **kwargs) -> None:
+        nonlocal complete_fences
+        if held == ["selector"]:
+            real_complete_fence(*args, **kwargs)
+            return
+        assert held == ["selector", "w1a", "mark", "lifecycle"]
+        complete_fences += 1
+        real_complete_fence(*args, **kwargs)
+
+    def observe_seal(point: str) -> None:
+        if point in {"after_intent_before_seal", "after_intent_seal"}:
+            assert held == ["selector", "w1a", "mark", "lifecycle"]
+            seal_points.append(point)
+
+    monkeypatch.setattr(selector, "_store_lock", traced_store_lock)
+    monkeypatch.setattr(selector, "_w1a_commit_fence", traced_w1a_fence)
+    monkeypatch.setattr(selector, "_anchored_evidence_lock", traced_evidence_lock)
+    monkeypatch.setattr(
+        selector, "_validate_live_complete_evidence", traced_complete_fence
+    )
+    committed = selector.commit_cycle(
+        root,
+        plan,
+        evidence_inputs=inputs,
+        hook=observe_seal,
+    )
+    assert committed == plan.head
+    assert locked[:4] == ["selector", "w1a", "mark", "lifecycle"]
+    assert seal_points == ["after_intent_before_seal", "after_intent_seal"]
+    assert complete_fences >= 5
+    assert held == []
+
+
+def test_sealed_combined_settlement_replays_after_producer_heads_advance(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    episode = _episode("sealed-producer-advance", "2026-08-12T13:31:00Z")
+    source = _source([[episode]])
+    root = tmp_path / "sealed-producer-advance-selector"
+    runtime_head = _commit_first(root, source)
+    inputs, complete_head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, complete_head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
+        runtime_armed=True,
+    )
+    planned_decisions = [
+        item
+        for item in plan.objects
+        if item.value.get("schema") == "options.sparse_selector_decision/v1"
+    ]
+    assert len(planned_decisions) == 1
+    assert planned_decisions[0].value["action"] == "propose"
+
+    def crash_after_seal(point: str) -> None:
+        if point == "after_intent_seal":
+            raise RuntimeError("sealed settlement crash")
+
+    with pytest.raises(RuntimeError, match="sealed settlement crash"):
+        selector.commit_cycle(
+            root,
+            plan,
+            evidence_inputs=inputs,
+            hook=crash_after_seal,
+        )
+    assert selector._load_head(root) == complete_head
+    assert (root / selector.INTENT_FILE).is_file()
+    before_decisions = {
+        path.relative_to(root): path.read_bytes()
+        for path in (root / "decisions").rglob("*.json")
+    }
+    assert set(before_decisions) == {
+        Path(item.key) for item in planned_decisions
+    }
+
+    reference = _bound_w1a_reference(
+        owner_id=episode["episode_id"],
+        record_sha256=hashlib.sha256(source.episodes_raw.splitlines()[0]).hexdigest(),
+    )
+    later_w1a = _publish_w1a(
+        Path(inputs.w1a_receipt_root),
+        [reference],
+        published_at="2026-08-12T14:50:00Z",
+        salt="b",
+    )
+    assert later_w1a["head"]["publication_id"] != (
+        plan.head["w1a_publication_high_water"]["publication_id"]
+    )
+
+    mark_root = Path(inputs.mark_root)
+    lifecycle_root = Path(inputs.lifecycle_root)
+    monkeypatch.setenv("PROPHET_OPTION_EVIDENCE_STATE_ROOT", str(mark_root))
+    later_index = {
+        "schema": "prophet.index/v1",
+        "asof": "2026-08-12",
+        "recorded_at": "2026-08-12",
+        "plans": [],
+    }
+    later_coverage = selector.mark_chain._evidence_coverage(
+        index=later_index,
+        rows=[],
+        source_call_count=0,
+    )
+    later_mark = selector.mark_chain._publish_private_observation(
+        index=later_index,
+        payload={
+            "schema": "prophet.live_marks/v1",
+            "asof_utc": "2026-08-12T14:50:00Z",
+            "session_date": "2026-08-12",
+            "marks": {},
+            "coverage": later_coverage,
+        },
+        evidence_rows=[],
+    )
+    ledger_path = lifecycle_root / "canonical_ledger/ledger.jsonl"
+    advanced = selector.lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    assert advanced["status"] == "advanced"
+    assert selector.lifecycle._load_state(lifecycle_root)["mark_cursor"] == later_mark
+
+    recovered = selector.commit_cycle(root, None, evidence_inputs=inputs)
+    assert recovered == plan.head
+    assert recovered["evidence_high_water"] == complete_head["evidence_high_water"]
+    assert recovered["decision_count"] == complete_head["decision_count"] + 1
+    assert {
+        path.relative_to(root): path.read_bytes()
+        for path in (root / "decisions").rglob("*.json")
+    } == before_decisions
+    authenticated, decisions, _body = selector.authenticate_store(
+        root, evidence_inputs=inputs
+    )
+    assert authenticated == recovered
+    assert [decision["decision_id"] for decision in decisions] == [
+        planned_decisions[0].value["decision_id"]
+    ]
+
+
 def test_source_recovery_cannot_omit_an_eligible_campaign_seed(
     tmp_path: Path,
 ) -> None:
@@ -2519,9 +3382,9 @@ def test_source_recovery_cannot_omit_an_eligible_campaign_seed(
         runtime_armed=True,
     )
     seed_receipts = [
-        receipt
-        for receipt in campaign_plan.intent["objects"]
-        if receipt["value"].get("schema")
+        item.receipt
+        for item in campaign_plan.objects
+        if item.value.get("schema")
         == "options.sparse_selector_source_seed/v1"
     ]
     assert len(seed_receipts) == 1
@@ -2532,11 +3395,16 @@ def test_source_recovery_cannot_omit_an_eligible_campaign_seed(
     forged["intent_sha256"] = selector._content_id(
         "", forged, field="intent_sha256"
     )
-    with pytest.raises(
-        selector.SparseSelectorError,
-        match="omitted or changed an eligible seed",
-    ):
-        selector._plan_from_intent(root, forged)
+    with selector._store_lock(root):
+        for item in campaign_plan.objects:
+            selector._prestage_immutable(
+                selector._object_path(root, item.key), item.body, root=root
+            )
+        with pytest.raises(
+            selector.SparseSelectorError,
+            match="omitted or changed an eligible seed",
+        ):
+            selector._plan_from_intent(root, forged)
 
 
 def test_source_recovery_binds_the_complete_parent_cursor_state(
@@ -2567,11 +3435,16 @@ def test_source_recovery_binds_the_complete_parent_cursor_state(
     forged["intent_sha256"] = selector._content_id(
         "", forged, field="intent_sha256"
     )
-    with pytest.raises(
-        selector.SparseSelectorError,
-        match="parent source state drifted",
-    ):
-        selector._plan_from_intent(root, forged)
+    with selector._store_lock(root):
+        for item in campaign_plan.objects:
+            selector._prestage_immutable(
+                selector._object_path(root, item.key), item.body, root=root
+            )
+        with pytest.raises(
+            selector.SparseSelectorError,
+            match="parent source state drifted",
+        ):
+            selector._plan_from_intent(root, forged)
 
 
 def test_settlement_only_backoff_recovers_and_resumes_global_prefix(
@@ -2587,10 +3460,10 @@ def test_settlement_only_backoff_recovers_and_resumes_global_prefix(
     snapshot_calls = 0
     original_snapshot = selector._build_evidence_snapshot
 
-    def counted_snapshot(inputs):
+    def counted_snapshot(inputs, **scope):
         nonlocal snapshot_calls
         snapshot_calls += 1
-        return original_snapshot(inputs)
+        return original_snapshot(inputs, **scope)
 
     original_once = selector._plan_cycle_once
 
@@ -2649,7 +3522,7 @@ def test_large_source_evidence_is_shared_and_compact_while_null_fails_closed(
         tmp_path,
         monkeypatch,
         source,
-        padding_bytes=selector.MAX_EVIDENCE_OBJECT_BYTES,
+        padding_bytes=6_000,
     )
     candidate = selector._load_pointer(
         root, head["last_candidate"], label="large-evidence candidate"
@@ -2665,10 +3538,10 @@ def test_large_source_evidence_is_shared_and_compact_while_null_fails_closed(
         )
     )
     assert reasons == []
-    assert mark is not None and len(mark.body) > selector.MAX_EVIDENCE_OBJECT_BYTES
+    assert mark is not None and len(mark.body) >= 5_371
     assert (
         lifecycle_evidence is not None
-        and len(lifecycle_evidence.body) > selector.MAX_EVIDENCE_OBJECT_BYTES
+        and len(lifecycle_evidence.body) >= 5_704
     )
 
     plan = selector.plan_cycle(
@@ -2760,6 +3633,186 @@ def test_large_source_evidence_is_shared_and_compact_while_null_fails_closed(
         "options.sparse_selector_w1a_source_receipt/v1",
         "options.sparse_selector_evidence_generation/v1",
     }
+
+
+def test_manifest_scoped_snapshot_skips_256_unrelated_enrollments_and_bounds_reads(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source([[_episode("scoped-evidence", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "selector-source"
+    head = _commit_first(root, source)
+    candidate = selector._load_pointer(
+        root, head["last_candidate"], label="scoped evidence candidate"
+    )
+    mark_root = tmp_path / "marks"
+    lifecycle_root = tmp_path / "lifecycle"
+    mark_root.mkdir(mode=0o700)
+    lifecycle_root.mkdir(mode=0o700)
+    def event_pointer(ordinal: int) -> dict:
+        event_id = f"posle_{ordinal:064x}"
+        return {
+            "schema": selector.lifecycle.EVENT_POINTER_SCHEMA,
+            "event_id": event_id,
+            "key": f"events/2026-08-12/{event_id}.json",
+            "sha256": f"{ordinal:064x}",
+            "bytes": 1,
+        }
+
+    activation = event_pointer(10_000)
+    mark_cursor = {
+        "schema": selector.mark_chain.EVIDENCE_POINTER_SCHEMA,
+        "observation_id": f"pom_obs_{'a' * 64}",
+        "key": f"observations/2026-08-12/pom_obs_{'a' * 64}.json",
+        "sha256": "a" * 64,
+        "bytes": 1,
+    }
+    target_occ = selector._campaign_occ_symbol(candidate["campaign_row"])
+    enrollments = {}
+    latest_marks = {}
+    for ordinal in range(257):
+        plan_id = f"plan-{ordinal}"
+        enrollments[plan_id] = event_pointer(ordinal + 1)
+        latest_marks[plan_id] = {
+            "contract_occ_symbol": target_occ if ordinal == 256 else f"ZZZZ  260101C{ordinal + 1:08d}",
+            "contract_drift": False,
+            "plan_identity_drift": False,
+            "sessions": {},
+        }
+    state = {
+        "activation": activation,
+        "lifecycle_head": enrollments["plan-256"],
+        "mark_cursor": mark_cursor,
+        "enrollments": enrollments,
+        "terminals": {},
+        "latest_marks": latest_marks,
+    }
+    enrollment = {
+        "payload": {
+            "plan": {"id": "plan-256"},
+            "contract": {
+                "root": candidate["campaign_row"]["group"]["ticker"],
+                "right": candidate["campaign_row"]["group"]["right"],
+                "expiry": candidate["campaign_row"]["group"]["expiration"],
+                "strike": candidate["campaign_row"]["group"]["strike_key"],
+                "occ_symbol": target_occ,
+            }
+        },
+        "authority": dict(selector.FALSE_AUTHORITY),
+    }
+    loads: list[str] = []
+    event_reads: list[str] = []
+    monkeypatch.setattr(selector.lifecycle, "_validate_private_root_location", lambda *a, **k: None)
+    monkeypatch.setattr(selector.mark_chain, "_require_private_directory", lambda *a, **k: None)
+    monkeypatch.setattr(selector.mark_chain, "_private_ledger_lock", lambda *a, **k: nullcontext())
+    monkeypatch.setattr(selector.mark_chain, "_load_previous_pointer", lambda *a, **k: mark_cursor)
+    monkeypatch.setattr(selector.lifecycle, "_load_state", lambda *a, **k: copy.deepcopy(state))
+    monkeypatch.setattr(selector.lifecycle, "_validate_event_chain", lambda *a, **k: None)
+    monkeypatch.setattr(
+        selector.lifecycle,
+        "_validate_activation_boundary_against_state",
+        lambda *a, **k: None,
+    )
+    boundary = {
+        "mark_boundary": mark_cursor,
+        "mark_boundary_observed_at_utc": "2026-08-12T14:00:00+00:00",
+        "ledger_boundary": {"sha256": "b" * 64},
+    }
+    monkeypatch.setattr(
+        selector.lifecycle, "_load_activation_boundary", lambda *_a, **_k: boundary
+    )
+
+    def load_event(_root, pointer):
+        event_reads.append(pointer["event_id"])
+        if pointer == activation:
+            return {
+                "event_kind": "activation_boundary",
+                "previous": None,
+                "payload": {
+                    **boundary,
+                    "prospective_after_boundary": True,
+                },
+            }
+        return {
+            "event_kind": "enrollment",
+            "previous": activation,
+            "payload": {"plan": {"id": "plan-256"}},
+        }
+
+    monkeypatch.setattr(selector.lifecycle, "_load_event", load_event)
+    monkeypatch.setattr(selector, "_bounded_mark_chain", lambda *a, **k: ((), {}))
+    monkeypatch.setattr(selector, "_validate_selected_enrollment_source", lambda **_k: None)
+
+    def load_enrollment(_root, _pointer, plan_id):
+        loads.append(plan_id)
+        return copy.deepcopy(enrollment)
+
+    monkeypatch.setattr(selector.lifecycle, "_load_enrollment", load_enrollment)
+    snapshot = selector._build_evidence_snapshot(
+        selector.EvidenceInputs(mark_root=mark_root, lifecycle_root=lifecycle_root),
+        candidates=(candidate,),
+        session_dates=frozenset({"2026-08-12"}),
+    )
+    assert loads == ["plan-256"]
+    assert event_reads == [activation["event_id"]]
+    assert len(snapshot.enrollments_by_contract) == 1
+
+    monkeypatch.setattr(selector, "MAX_EVIDENCE_SOURCE_READS", 64)
+    with pytest.raises(selector.EvidenceGenerationDrift, match="source-read budget"):
+        selector._build_evidence_snapshot(
+            selector.EvidenceInputs(mark_root=mark_root, lifecycle_root=lifecycle_root),
+            candidates=(candidate,),
+            session_dates=frozenset({"2026-08-12"}),
+        )
+
+
+def test_authenticate_store_rejects_rehashed_selected_row_forgery_with_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source([[_episode("row-forgery", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "selector"
+    runtime_head = _commit_first(root, source)
+    inputs, head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
+    plan = selector.plan_cycle(
+        root=root,
+        source=_pinned_source(source, head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
+        runtime_armed=True,
+    )
+    selector.commit_cycle(root, plan)
+    authenticated_state = selector._authenticate_selector_state(root)
+    decision_item = next(
+        item for item in plan.objects
+        if item.value.get("schema") == "options.sparse_selector_decision/v1"
+    )
+    mark_item = next(
+        item for item in plan.objects
+        if item.value.get("schema") == "options.sparse_selector_mark_evidence/v1"
+    )
+    forged_mark_value = copy.deepcopy(mark_item.value)
+    forged_mark_value["selected_row_sha256"] = "0" * 64
+    forged_mark = selector._evidence_object(forged_mark_value)
+    selector._write_immutable(
+        selector._object_path(root, forged_mark.key),
+        forged_mark.body,
+        root=root,
+    )
+    forged_decision = copy.deepcopy(decision_item.value)
+    forged_decision["evidence"]["mark"] = forged_mark.pointer
+    forged_decision["decision_id"] = selector._content_id(
+        "ossd_", forged_decision, field="decision_id"
+    )
+    monkeypatch.setattr(selector, "_authenticate_selector_state", lambda _root: authenticated_state)
+    monkeypatch.setattr(selector, "_walk_immutable_chain", lambda *a, **k: [forged_decision])
+    with pytest.raises(selector.SparseSelectorError, match="mark evidence source binding drifted"):
+        selector.authenticate_store(root, evidence_inputs=inputs)
 
 
 def test_cycle_decision_cap_and_evidence_recovery_are_fail_closed(
@@ -2988,19 +4041,25 @@ def test_decision_clock_outside_rth_can_only_abstain(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _source([[_episode("after-hours", "2026-08-12T13:31:00Z")]])
-    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
     root = tmp_path / "selector"
-    _commit_first(root, source)
+    runtime_head = _commit_first(root, source)
+    evidence_inputs, complete_head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
     plan = selector.plan_cycle(
         root=root,
-        source=source,
+        source=_pinned_source(source, complete_head),
         evidence_inputs=evidence_inputs,
         scheduled_at="2026-08-12T21:00:00Z",
         clock=_clock("2026-08-12T21:00:00Z"),
         runtime_armed=True,
     )
     selector.commit_cycle(root, plan)
-    decision = _decision_rows(root, evidence_inputs)[0]
+    decision = _decision_rows(root, evidence_inputs=evidence_inputs)[0]
     assert decision["action"] == "abstain"
     assert decision["reason_codes"] == ["DECISION_OUTSIDE_NYSE_RTH"]
     assert decision["proposal_ordinal"] is None
@@ -3095,43 +4154,40 @@ def test_decision_evidence_and_cycle_clocks_remain_authenticated(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _source([[_episode("auth-evidence", "2026-08-12T13:31:00Z")]])
-    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
     root = tmp_path / "selector"
-    _commit_first(root, source)
+    runtime_head = _commit_first(root, source)
+    evidence_inputs, complete_head = _complete_passing_evidence(
+        root=root,
+        head=runtime_head,
+        source=source,
+        tmp_path=tmp_path,
+        monkeypatch=monkeypatch,
+    )
+    pinned_source = _pinned_source(source, complete_head)
     instants = iter(
         (
-            datetime(2026, 8, 12, 14, 5, 0, tzinfo=timezone.utc),
-            datetime(2026, 8, 12, 14, 5, 0, tzinfo=timezone.utc),
-            datetime(2026, 8, 12, 14, 5, 2, tzinfo=timezone.utc),
-            datetime(2026, 8, 12, 14, 5, 1, tzinfo=timezone.utc),
+            datetime(2026, 8, 12, 14, 45, 0, tzinfo=timezone.utc),
+            datetime(2026, 8, 12, 14, 45, 0, tzinfo=timezone.utc),
+            datetime(2026, 8, 12, 14, 45, 2, tzinfo=timezone.utc),
+            datetime(2026, 8, 12, 14, 45, 1, tzinfo=timezone.utc),
         )
     )
     with pytest.raises(selector.SparseSelectorError, match="noncausal"):
         selector.plan_cycle(
             root=root,
-            source=selector.SourceSnapshot(
-                commit=source.commit,
-                campaigns_raw=source.campaigns_raw,
-                episodes_raw=source.episodes_raw,
-                observed_at="2026-08-12T14:05:00Z",
-            ),
+            source=pinned_source,
             evidence_inputs=evidence_inputs,
-            scheduled_at="2026-08-12T14:05:00Z",
+            scheduled_at="2026-08-12T14:45:00Z",
             clock=lambda: next(instants),
             runtime_armed=True,
         )
 
     good_plan = selector.plan_cycle(
         root=root,
-        source=selector.SourceSnapshot(
-            commit=source.commit,
-            campaigns_raw=source.campaigns_raw,
-            episodes_raw=source.episodes_raw,
-            observed_at="2026-08-12T14:05:00Z",
-        ),
+        source=pinned_source,
         evidence_inputs=evidence_inputs,
-        scheduled_at="2026-08-12T14:05:00Z",
-        clock=_clock("2026-08-12T14:05:00Z"),
+        scheduled_at="2026-08-12T14:45:00Z",
+        clock=_clock("2026-08-12T14:45:00Z"),
         runtime_armed=True,
     )
     selector.commit_cycle(root, good_plan)
@@ -3144,3 +4200,2161 @@ def test_decision_evidence_and_cycle_clocks_remain_authenticated(
     os.link(evidence_path, tmp_path / "linked-evidence")
     with pytest.raises(selector.SparseSelectorError, match="metadata is unsafe"):
         selector.authenticate_store(root, evidence_inputs=evidence_inputs)
+
+
+def _mock_evidence_capture_sources(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> tuple[selector.EvidenceInputs, dict, dict]:
+    del monkeypatch
+    mark_root = tmp_path / "capture-marks"
+    lifecycle_root = tmp_path / "capture-lifecycle"
+    mark_root.mkdir(mode=0o700)
+    lifecycle_root.mkdir(mode=0o700)
+    mark_root.chmod(0o700)
+    lifecycle_root.chmod(0o700)
+    for root in (mark_root, lifecycle_root):
+        lock_path = root / ".ledger.lock"
+        lock_path.write_bytes(b"")
+        lock_path.chmod(0o600)
+
+    index = {
+        "schema": "prophet.index/v1",
+        "asof": "2026-08-12",
+        "recorded_at": "2026-08-12T13:55:00Z",
+        "plans": [],
+    }
+    observation = selector.mark_chain._build_observation(
+        index=index,
+        observed_at_utc="2026-08-12T14:00:00Z",
+        session_date="2026-08-12",
+        rows=[],
+        coverage=selector.mark_chain._evidence_coverage(
+            index=index, rows=[], source_call_count=0
+        ),
+        previous=None,
+    )
+    selector.mark_chain._validate_evidence_schema(observation)
+    mark_pointer = selector.mark_chain._observation_pointer(observation)
+    selector.mark_chain._write_private_immutable(
+        selector.mark_chain._private_observation_path(
+            mark_root, mark_pointer, create_parents=True
+        ),
+        selector.mark_chain._canonical_json_bytes(observation),
+    )
+    selector.mark_chain._write_private_head(
+        mark_root,
+        selector.mark_chain._canonical_json_bytes(
+            {
+                "schema": selector.mark_chain.EVIDENCE_HEAD_SCHEMA,
+                "evidence": mark_pointer,
+            }
+        ),
+    )
+
+    ledger_body = b"\n"
+    ledger_receipt = selector.lifecycle._ledger_receipt(
+        ledger_body, [], source_commit="5" * 40
+    )
+    ledger_root = lifecycle_root / "canonical_ledger"
+    selector.mark_chain._ensure_private_directory(ledger_root)
+    selector.mark_chain._write_private_immutable(
+        ledger_root / "ledger.jsonl", ledger_body
+    )
+    selector.mark_chain._write_private_immutable(
+        ledger_root / "receipt.json",
+        selector.lifecycle._canonical_json_bytes(ledger_receipt),
+    )
+    activation_boundary = selector.lifecycle._make_activation_boundary(
+        mark_pointer=mark_pointer,
+        mark_observation=observation,
+        ledger_receipt=ledger_receipt,
+    )
+    activation_event = selector.lifecycle._activation_event(
+        mark_pointer=mark_pointer,
+        mark_observation=observation,
+        ledger_receipt=ledger_receipt,
+    )
+    selector.lifecycle._write_events(lifecycle_root, [activation_event])
+    event_pointer = selector.lifecycle._event_pointer(activation_event)
+    selector.mark_chain._write_private_immutable(
+        lifecycle_root / "activation_boundary.json",
+        selector.lifecycle._canonical_json_bytes(activation_boundary),
+    )
+    state = selector.lifecycle._make_state(
+        activation=event_pointer,
+        lifecycle_head=event_pointer,
+        mark_cursor=mark_pointer,
+        ledger_cursor=ledger_receipt,
+        enrollments={},
+        terminals={},
+        latest_marks={},
+    )
+    selector.lifecycle._write_state(lifecycle_root, state)
+    return (
+        selector.EvidenceInputs(mark_root=mark_root, lifecycle_root=lifecycle_root),
+        state,
+        mark_pointer,
+    )
+
+
+def _complete_passing_evidence(
+    *,
+    root: Path,
+    head: dict,
+    source: selector.SourceSnapshot,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[selector.EvidenceInputs, dict]:
+    """Install real anchored passing producers and audit them to COMPLETE."""
+
+    real_build_snapshot = selector._build_evidence_snapshot
+    real_reference_for_candidate = selector._reference_for_candidate
+    real_validate_state = selector.lifecycle._validate_state_shape
+    w1a_inputs = _passing_evidence(tmp_path, monkeypatch, source)
+    monkeypatch.setattr(selector, "_build_evidence_snapshot", real_build_snapshot)
+    monkeypatch.setattr(
+        selector, "_reference_for_candidate", real_reference_for_candidate
+    )
+    monkeypatch.setattr(
+        selector.lifecycle, "_validate_state_shape", real_validate_state
+    )
+
+    producer_parent = tmp_path / "passing-producers"
+    producer_parent.mkdir(mode=0o700)
+    producer_inputs, _activation_state, _activation_mark = (
+        _mock_evidence_capture_sources(producer_parent, monkeypatch)
+    )
+    mark_root = Path(producer_inputs.mark_root)
+    lifecycle_root = Path(producer_inputs.lifecycle_root)
+    monkeypatch.setenv("PROPHET_OPTION_EVIDENCE_STATE_ROOT", str(mark_root))
+    session_date = "2026-08-12"
+    session = date.fromisoformat(session_date)
+    observed_at = "2026-08-12T14:04:59Z"
+    observed = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+    quote, quote_reason = selector.mark_chain._validated_quote(
+        {
+            "bid": 99.5,
+            "ask": 100.5,
+            "last": 100.0,
+            "quote_ts_utc": "2026-08-12T14:04:58Z",
+            "trade_ts_utc": "2026-08-12T14:04:58.500000Z",
+            "source_sequence": 7,
+        },
+        observed_at=observed,
+        session_date=session,
+    )
+    assert quote is not None
+    assert quote_reason is None
+    plans: list[dict] = []
+    rows: list[dict] = []
+    for campaign in (
+        json.loads(line) for line in source.campaigns_raw.splitlines()
+    ):
+        group = campaign["group"]
+        plan = {
+            "id": f"selector-test-{campaign['campaign_id']}",
+            "asset": group["ticker"],
+            "phase": "triggered_pre_t1",
+            "closed": False,
+            "plan_asof": session_date,
+            "recorded_at": session_date,
+            "entry_date": session_date,
+            "option_contract": {
+                "right": group["right"],
+                "strike": float(group["strike_key"]),
+                "expiry": group["expiration"],
+                "entry_premium": 100.0,
+                "freshness": "EOD mark",
+            },
+        }
+        contract, contract_reason = selector.mark_chain._plan_contract(
+            plan, session_date=session
+        )
+        assert contract is not None
+        assert contract_reason is None
+        plans.append(plan)
+        rows.append(
+            selector.mark_chain._plan_evidence_row(
+                plan,
+                contract=contract,
+                contract_reason=None,
+                quote=quote,
+                quote_reason=None,
+            )
+        )
+    index = {
+        "schema": "prophet.index/v1",
+        "asof": session_date,
+        "recorded_at": session_date,
+        "plans": plans,
+    }
+    coverage = selector.mark_chain._evidence_coverage(
+        index=index,
+        rows=rows,
+        source_call_count=len(plans),
+    )
+    selector.mark_chain._publish_private_observation(
+        index=index,
+        payload={
+            "schema": "prophet.live_marks/v1",
+            "asof_utc": observed_at,
+            "session_date": session_date,
+            "marks": {},
+            "coverage": coverage,
+        },
+        evidence_rows=rows,
+    )
+    ledger_path = lifecycle_root / "canonical_ledger/ledger.jsonl"
+    summary = selector.lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    assert summary["status"] == "advanced"
+    assert summary["enrollment_count"] == len(plans)
+
+    inputs = selector.EvidenceInputs(
+        w1a_receipt_root=w1a_inputs.w1a_receipt_root,
+        mark_root=mark_root,
+        lifecycle_root=lifecycle_root,
+    )
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=head,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    complete = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    complete, _plans = _drain_cold_occurrence(
+        root, inputs, complete, row_limit=64
+    )
+    high = selector._load_evidence_high_water(
+        root, complete["evidence_high_water"]
+    )
+    assert high["phase"] == "COMPLETE"
+    return inputs, complete
+
+
+def _occurrence_mark_plan(
+    *, plan_id: str = "SOFI-BULL-20260803", phase: str
+) -> dict:
+    return {
+        "id": plan_id,
+        "asset": "SOFI",
+        "phase": phase,
+        "closed": False,
+        "plan_asof": "2026-08-03",
+        "recorded_at": "2026-08-03",
+        "entry_date": "2026-08-03",
+        "option_contract": {
+            "right": "C",
+            "strike": 16.0,
+            "expiry": "2026-10-16",
+            "entry_premium": 1.8,
+            "freshness": "EOD mark",
+        },
+    }
+
+
+def _emit_occurrence_mark(
+    monkeypatch: pytest.MonkeyPatch,
+    mark_root: Path,
+    *,
+    observed_at: str,
+    phase: str,
+    plan_id: str = "SOFI-BULL-20260803",
+    additional_plan_ids: tuple[str, ...] = (),
+    mid: float = 3.0,
+) -> dict:
+    monkeypatch.setenv("PROPHET_OPTION_EVIDENCE_STATE_ROOT", str(mark_root))
+    session_date = "2026-08-11"
+    plans = [
+        _occurrence_mark_plan(plan_id=item, phase=phase)
+        for item in (plan_id, *additional_plan_ids)
+    ]
+    index = {
+        "schema": "prophet.index/v1",
+        "asof": session_date,
+        "recorded_at": session_date,
+        "plans": plans,
+    }
+    session = date.fromisoformat(session_date)
+    observed = datetime.fromisoformat(observed_at.replace("Z", "+00:00"))
+    quote_clock = observed - timedelta(minutes=1)
+    quote, quote_reason = selector.mark_chain._validated_quote(
+        {
+            "bid": mid - 0.05,
+            "ask": mid + 0.05,
+            "last": mid,
+            "quote_ts_utc": quote_clock.isoformat(),
+            "trade_ts_utc": (quote_clock + timedelta(seconds=1)).isoformat(),
+            "source_sequence": 7,
+        },
+        observed_at=observed,
+        session_date=session,
+    )
+    rows = []
+    for plan in plans:
+        contract, contract_reason = selector.mark_chain._plan_contract(
+            plan, session_date=session
+        )
+        rows.append(
+            selector.mark_chain._plan_evidence_row(
+                plan,
+                contract=contract,
+                contract_reason=contract_reason,
+                quote=quote,
+                quote_reason=quote_reason,
+            )
+        )
+    coverage = selector.mark_chain._evidence_coverage(
+        index=index, rows=rows, source_call_count=len(plans)
+    )
+    return selector.mark_chain._publish_private_observation(
+        index=index,
+        payload={
+            "schema": "prophet.live_marks/v1",
+            "asof_utc": observed_at,
+            "session_date": session_date,
+            "marks": {},
+            "coverage": coverage,
+        },
+        evidence_rows=rows,
+    )
+
+
+def _refresh_occurrence_ledger(
+    ledger_path: Path, *, source_commit: str = "a" * 40
+) -> dict:
+    body = ledger_path.read_bytes()
+    rows = sum(
+        bool(line.strip()) and not line.lstrip().startswith(b"#")
+        for line in body.splitlines()
+    )
+    receipt = selector.lifecycle._ledger_receipt(
+        body,
+        [
+            json.loads(line)
+            for line in ledger_path.read_text(encoding="utf-8").splitlines()
+            if line.strip() and not line.lstrip().startswith("#")
+        ],
+        source_commit=source_commit,
+    )
+    assert receipt["row_count"] == rows
+    receipt_path = ledger_path.parent / "receipt.json"
+    receipt_path.write_bytes(selector.lifecycle._canonical_json_bytes(receipt))
+    receipt_path.chmod(0o600)
+    return receipt
+
+
+def _occurrence_producer_roots(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    *,
+    activation_phase: str = "pre_trigger",
+) -> tuple[selector.EvidenceInputs, Path]:
+    mark_root = tmp_path / "occurrence-marks"
+    lifecycle_root = tmp_path / "occurrence-lifecycle"
+    lifecycle_root.mkdir(mode=0o700)
+    lifecycle_root.chmod(0o700)
+    lifecycle_lock = lifecycle_root / ".ledger.lock"
+    lifecycle_lock.write_bytes(b"")
+    lifecycle_lock.chmod(0o600)
+    ledger_root = lifecycle_root / "canonical_ledger"
+    ledger_root.mkdir(mode=0o700)
+    ledger_root.chmod(0o700)
+    ledger_path = ledger_root / "ledger.jsonl"
+    ledger_path.write_text("# canonical occurrence ledger\n", encoding="utf-8")
+    ledger_path.chmod(0o600)
+    _refresh_occurrence_ledger(ledger_path)
+    _emit_occurrence_mark(
+        monkeypatch,
+        mark_root,
+        observed_at="2026-08-11T14:00:00+00:00",
+        phase=activation_phase,
+    )
+    assert selector.lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=mark_root,
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_root / "receipt.json",
+    )["status"] == "activated"
+    return (
+        selector.EvidenceInputs(
+            mark_root=mark_root, lifecycle_root=lifecycle_root
+        ),
+        ledger_path,
+    )
+
+
+@pytest.mark.parametrize(
+    ("stage", "recovery_needs_plan"),
+    (
+        ("after_intent_attempt", True),
+        ("after_intent_before_seal", True),
+        ("after_intent_seal", False),
+    ),
+)
+def test_receipt_only_wal_crashes_are_abandoned_or_recovered_exactly(
+    tmp_path: Path,
+    stage: str,
+    recovery_needs_plan: bool,
+) -> None:
+    root = tmp_path / stage
+    source = _source([])
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+
+    def crash(point: str) -> None:
+        if point == stage:
+            raise RuntimeError("WAL crash")
+
+    with pytest.raises(RuntimeError, match="WAL crash"):
+        selector.commit_cycle(root, plan, hook=crash)
+    assert selector._load_head(root) is None
+    recovered = selector.commit_cycle(root, plan if recovery_needs_plan else None)
+    assert recovered == plan.head
+    assert selector.authenticate_store(root)[0] == plan.head
+
+
+def test_deleted_authoritative_intent_is_detected_before_replanning(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "deleted-authoritative-intent"
+    source = _source([])
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+
+    def crash(point: str) -> None:
+        if point == "after_intent_seal":
+            raise RuntimeError("sealed")
+
+    with pytest.raises(RuntimeError, match="sealed"):
+        selector.commit_cycle(root, plan, hook=crash)
+    (root / selector.INTENT_FILE).unlink()
+    (root / selector.INTENT_ATTEMPT_FILE).unlink()
+    before = {path: path.read_bytes() for path in root.rglob("*.json")}
+    with pytest.raises(selector.SparseSelectorError, match="orphan authoritative"):
+        selector.commit_cycle(root, plan)
+    assert {path: path.read_bytes() for path in root.rglob("*.json")} == before
+
+
+def test_missing_intent_with_attempt_and_parent_seal_mutates_nothing(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "missing-intent-with-attempt"
+    source = _source([])
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+
+    def crash(point: str) -> None:
+        if point == "after_intent_seal":
+            raise RuntimeError("sealed")
+
+    with pytest.raises(RuntimeError, match="sealed"):
+        selector.commit_cycle(root, plan, hook=crash)
+    (root / selector.INTENT_FILE).unlink()
+    prepare = root / selector.INTENT_PREPARE_FILE
+    prepare.write_bytes(b"untrusted-prepare")
+    prepare.chmod(0o600)
+    before = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
+    with pytest.raises(selector.SparseSelectorError, match="orphan authoritative"):
+        selector.commit_cycle(root, plan)
+    assert {path: path.read_bytes() for path in root.rglob("*") if path.is_file()} == before
+
+
+def test_prestage_first_install_is_0600_and_repairs_link_crash(
+    tmp_path: Path,
+) -> None:
+    root = selector.validate_private_root(tmp_path / "prestage", create=True)
+    body = selector.canonical_bytes({"schema": "test.prestage/v1", "value": 1})
+    path = root / "evidence" / "prestage.json"
+    path.parent.mkdir(mode=0o700)
+    with selector._store_lock(root):
+        prior_umask = os.umask(0o777)
+        try:
+            selector._prestage_immutable(path, body, root=root)
+        finally:
+            os.umask(prior_umask)
+        assert path.read_bytes() == body
+        assert path.stat().st_mode & 0o777 == 0o600
+        temporary = path.parent / f".{path.name}.prestage"
+        os.link(path, temporary)
+        assert path.stat().st_nlink == 2
+        selector._prestage_immutable(path, body, root=root)
+        assert not temporary.exists()
+        assert path.stat().st_nlink == 1
+
+
+@pytest.mark.parametrize(
+    "stage",
+    (
+        "before_batch_file_fsync",
+        "after_batch_file_fsync",
+        "before_batch_object_link",
+        "after_batch_object_link",
+        "before_batch_parent_fsync",
+        "after_batch_parent_fsync",
+        "after_prestage",
+    ),
+)
+def test_batch_immutable_crashes_remain_pre_authority_and_retry_exact(
+    tmp_path: Path,
+    stage: str,
+) -> None:
+    source = _source([[_episode(f"batch-{stage}", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / stage
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+    crashed = False
+
+    def crash(point: str) -> None:
+        nonlocal crashed
+        if point == stage and not crashed:
+            crashed = True
+            raise RuntimeError("batch durability crash")
+
+    with pytest.raises(RuntimeError, match="batch durability crash"):
+        selector.commit_cycle(root, plan, hook=crash)
+    assert crashed is True
+    assert selector._load_head(root) is None
+    assert not (root / selector.INTENT_FILE).exists()
+    assert not selector._object_path(
+        root, selector._intent_seal_key(plan.intent)
+    ).exists()
+
+    recovered = selector.commit_cycle(root, plan)
+    assert recovered == plan.head
+    assert selector.authenticate_store(root)[0] == plan.head
+
+
+def test_batch_immutable_fsyncs_new_files_and_each_parent_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = _source([[_episode("batch-fsync-count", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "batch-fsync-count"
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+    parent_paths = {
+        selector._object_path(root, item.key).parent for item in plan.objects
+    }
+    with selector._store_lock(root):
+        for parent_path in parent_paths:
+            selector._require_private_directory(
+                parent_path, root=root, create=True
+            )
+        parent_identities = {
+            (parent_path.stat().st_dev, parent_path.stat().st_ino)
+            for parent_path in parent_paths
+        }
+        real_fsync = selector.os.fsync
+
+        def observe_batch() -> tuple[int, dict[tuple[int, int], int]]:
+            regular_calls = 0
+            directory_calls: dict[tuple[int, int], int] = {}
+
+            def counted_fsync(descriptor: int) -> None:
+                nonlocal regular_calls
+                metadata = os.fstat(descriptor)
+                identity = (metadata.st_dev, metadata.st_ino)
+                if stat.S_ISDIR(metadata.st_mode):
+                    directory_calls[identity] = directory_calls.get(identity, 0) + 1
+                elif stat.S_ISREG(metadata.st_mode):
+                    regular_calls += 1
+                real_fsync(descriptor)
+
+            with monkeypatch.context() as scoped:
+                scoped.setattr(selector.os, "fsync", counted_fsync)
+                selector._prestage_immutable_batch(root, plan.objects)
+            return regular_calls, directory_calls
+
+        new_file_calls, new_parent_calls = observe_batch()
+        assert new_file_calls == len(plan.objects)
+        assert new_parent_calls == {
+            identity: 1 for identity in parent_identities
+        }
+
+        existing_file_calls, existing_parent_calls = observe_batch()
+        assert existing_file_calls == 0
+        assert existing_parent_calls == {
+            identity: 1 for identity in parent_identities
+        }
+
+
+def test_batch_immutable_conflict_stays_pre_authority(
+    tmp_path: Path,
+) -> None:
+    source = _source([[_episode("batch-conflict", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "batch-conflict"
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+    target = selector._object_path(root, plan.objects[0].key)
+    selector._write_immutable(target, b'{"conflict":true}', root=root)
+    with pytest.raises(selector.SparseSelectorError, match="conflicts"):
+        selector.commit_cycle(root, plan)
+    assert selector._load_head(root) is None
+    assert not (root / selector.INTENT_FILE).exists()
+
+    target.unlink()
+    recovered = selector.commit_cycle(root, plan)
+    assert recovered == plan.head
+    assert selector.authenticate_store(root)[0] == plan.head
+
+
+def test_batch_immutable_parent_rebind_stays_pre_authority_and_retries(
+    tmp_path: Path,
+) -> None:
+    source = _source([[_episode("batch-rebind", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "batch-rebind"
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+    parent = selector._object_path(root, plan.objects[0].key).parent
+    saved = parent.with_name(f"{parent.name}.saved")
+
+    def rebind(point: str) -> None:
+        if point == "before_batch_parent_fsync":
+            parent.rename(saved)
+            parent.mkdir(mode=0o700)
+            parent.chmod(0o700)
+
+    with pytest.raises(selector.SparseSelectorError, match="rebound"):
+        selector.commit_cycle(root, plan, hook=rebind)
+    assert selector._load_head(root) is None
+    assert not (root / selector.INTENT_FILE).exists()
+    parent.rmdir()
+    saved.rename(parent)
+
+    recovered = selector.commit_cycle(root, plan)
+    assert recovered == plan.head
+    assert selector.authenticate_store(root)[0] == plan.head
+
+
+def test_non_genesis_pin_is_exact_and_source_drift_stays_pre_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source([])
+    root = tmp_path / "pin"
+    parent = _commit_first(root, source)
+    inputs, state, mark_pointer = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    assert plan.intent["objects"] == [item.receipt for item in plan.objects]
+    assert all("value" not in receipt for receipt in plan.intent["objects"])
+    assert selector._source_expected_state(plan.head) == selector._source_expected_state(parent)
+    assert {
+        key: value
+        for key, value in selector._runtime_expected_state(plan.head).items()
+        if key != "evidence_high_water"
+    } == {
+        key: value
+        for key, value in selector._runtime_expected_state(parent).items()
+        if key != "evidence_high_water"
+    }
+
+    changed_state = selector.lifecycle._make_state(
+        activation=state["activation"],
+        lifecycle_head=state["lifecycle_head"],
+        mark_cursor={**mark_pointer, "sha256": "6" * 64},
+        ledger_cursor=state["ledger_cursor"],
+        enrollments={},
+        terminals={},
+        latest_marks={},
+    )
+
+    def drift(point: str) -> None:
+        if point == "after_prestage":
+            path = Path(inputs.lifecycle_root) / "current.json"
+            path.write_bytes(selector.lifecycle._canonical_json_bytes(changed_state))
+            path.chmod(0o600)
+
+    with pytest.raises(selector.EvidenceGenerationDrift, match="changed before PIN"):
+        selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=drift)
+    assert selector._load_head(root) == parent
+    assert not (root / selector.INTENT_FILE).exists()
+
+    state_path = Path(inputs.lifecycle_root) / "current.json"
+    state_path.write_bytes(selector.lifecycle._canonical_json_bytes(state))
+    state_path.chmod(0o600)
+    committed = selector.commit_cycle(root, plan, evidence_inputs=inputs)
+    assert committed == plan.head
+    assert selector._load_evidence_high_water(
+        root, committed["evidence_high_water"]
+    )["phase"] == "AUDIT_PINNED"
+
+
+def test_pin_uses_only_anchored_producer_reads_and_persists_root_receipts(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "anchored-pin"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+
+    def path_read_forbidden(*_args: object, **_kwargs: object) -> None:
+        raise AssertionError("PIN escaped its anchored descriptor")
+
+    monkeypatch.setattr(selector.mark_chain, "_read_private_file", path_read_forbidden)
+    monkeypatch.setattr(selector.mark_chain, "_private_ledger_lock", path_read_forbidden)
+    monkeypatch.setattr(selector.lifecycle, "_load_state", path_read_forbidden)
+    monkeypatch.setattr(selector.lifecycle, "_load_activation_boundary", path_read_forbidden)
+    monkeypatch.setenv("PROPHET_LEDGER_PATH", str(tmp_path / "hostile-ledger.jsonl"))
+    monkeypatch.setenv(
+        "PROPHET_LEDGER_RECEIPT_PATH", str(tmp_path / "hostile-receipt.json")
+    )
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    snapshot = next(
+        item.value
+        for item in plan.objects
+        if item.value["schema"]
+        == "options.sparse_selector_evidence_source_snapshot/v1"
+    )
+    for name, configured in (
+        ("mark", inputs.mark_root),
+        ("lifecycle", inputs.lifecycle_root),
+    ):
+        receipt = snapshot["producer_roots"][name]
+        normalized = selector._absolute_private_path(Path(configured))
+        assert receipt["path_sha256"] == selector._sha256(
+            os.fsencode(str(normalized))
+        )
+        assert set(receipt) == {"path_sha256"}
+
+
+def test_pin_rejects_aliased_and_nested_producer_roots(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root-overlap-pin"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    with pytest.raises(selector.SparseSelectorError, match="distinct and non-nested"):
+        selector._plan_evidence_capture_transition(
+            root=root,
+            head=parent,
+            evidence_inputs=selector.EvidenceInputs(
+                mark_root=inputs.mark_root,
+                lifecycle_root=inputs.mark_root,
+            ),
+            clock=_clock("2026-08-12T14:05:00Z"),
+        )
+
+    with pytest.raises(selector.SparseSelectorError, match="distinct and non-nested"):
+        selector._plan_evidence_capture_transition(
+            root=root,
+            head=parent,
+            evidence_inputs=selector.EvidenceInputs(
+                mark_root=inputs.mark_root,
+                lifecycle_root=root,
+            ),
+            clock=_clock("2026-08-12T14:05:00Z"),
+        )
+
+    selector_nested = root / "nested-producer"
+    selector_nested.mkdir(mode=0o700)
+    selector_nested.chmod(0o700)
+    selector_nested_lock = selector_nested / ".ledger.lock"
+    selector_nested_lock.write_bytes(b"")
+    selector_nested_lock.chmod(0o600)
+    with pytest.raises(selector.SparseSelectorError, match="distinct and non-nested"):
+        selector._plan_evidence_capture_transition(
+            root=root,
+            head=parent,
+            evidence_inputs=selector.EvidenceInputs(
+                mark_root=inputs.mark_root,
+                lifecycle_root=selector_nested,
+            ),
+            clock=_clock("2026-08-12T14:05:00Z"),
+        )
+
+    nested = Path(inputs.mark_root) / "nested-lifecycle"
+    nested.mkdir(mode=0o700)
+    nested.chmod(0o700)
+    lock = nested / ".ledger.lock"
+    lock.write_bytes(b"")
+    lock.chmod(0o600)
+    with pytest.raises(selector.SparseSelectorError, match="distinct and non-nested"):
+        selector._plan_evidence_capture_transition(
+            root=root,
+            head=parent,
+            evidence_inputs=selector.EvidenceInputs(
+                mark_root=inputs.mark_root,
+                lifecycle_root=nested,
+            ),
+            clock=_clock("2026-08-12T14:05:00Z"),
+        )
+
+
+def test_anchored_sources_reject_ancestor_rebind(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    container = tmp_path / "producer-container"
+    container.mkdir(mode=0o700)
+    container.chmod(0o700)
+    inputs, _state, _mark = _mock_evidence_capture_sources(container, monkeypatch)
+    moved = tmp_path / "producer-container-moved"
+    with pytest.raises(selector.SparseSelectorError, match="rebound"):
+        with selector._anchored_evidence_sources(
+            Path(inputs.mark_root), Path(inputs.lifecycle_root)
+        ):
+            container.rename(moved)
+            container.mkdir(mode=0o700)
+            container.chmod(0o700)
+
+
+def test_pin_root_rebind_after_prestage_stays_pre_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root-rebind-pin"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    lifecycle_root = Path(inputs.lifecycle_root)
+    moved = tmp_path / "capture-lifecycle-original"
+
+    def rebind(point: str) -> None:
+        if point == "after_prestage":
+            lifecycle_root.rename(moved)
+            shutil.copytree(moved, lifecycle_root, copy_function=shutil.copy2)
+
+    with pytest.raises(selector.SparseSelectorError, match="rebound"):
+        selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=rebind)
+    assert selector._load_head(root) == parent
+    assert not (root / selector.INTENT_FILE).exists()
+
+
+def test_pin_accepts_exact_root_clone_before_authoritative_open(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "root-clone-pin"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    lifecycle_root = Path(inputs.lifecycle_root)
+    moved = tmp_path / "capture-lifecycle-before-clone"
+    lifecycle_root.rename(moved)
+    shutil.copytree(moved, lifecycle_root, copy_function=shutil.copy2)
+    committed = selector.commit_cycle(root, plan, evidence_inputs=inputs)
+    assert committed == plan.head
+
+
+def test_pin_lock_swap_after_prestage_stays_pre_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "lock-swap-pin"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    lock = Path(inputs.lifecycle_root) / ".ledger.lock"
+    saved = Path(inputs.lifecycle_root) / ".ledger.lock.saved"
+
+    def swap(point: str) -> None:
+        if point == "after_prestage":
+            lock.rename(saved)
+            lock.write_bytes(b"")
+            lock.chmod(0o600)
+
+    with pytest.raises(selector.SparseSelectorError, match="lock path"):
+        selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=swap)
+    assert selector._load_head(root) == parent
+    assert not (root / selector.INTENT_FILE).exists()
+
+
+def test_pin_activation_boundary_swap_after_prestage_stays_pre_authority(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "activation-swap-pin"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    boundary_path = Path(inputs.lifecycle_root) / "activation_boundary.json"
+    boundary = json.loads(boundary_path.read_text(encoding="utf-8"))
+    boundary["mark_boundary_observed_at_utc"] = "2026-08-12T14:00:01Z"
+    boundary["boundary_id"] = selector.lifecycle._activation_boundary_identity(
+        boundary
+    )
+    selector.lifecycle._validate_activation_boundary(boundary)
+
+    def swap(point: str) -> None:
+        if point == "after_prestage":
+            boundary_path.write_bytes(
+                selector.lifecycle._canonical_json_bytes(boundary)
+            )
+            boundary_path.chmod(0o600)
+
+    with pytest.raises(selector.SparseSelectorError, match="authentic prefixes"):
+        selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=swap)
+    assert selector._load_head(root) == parent
+    assert not (root / selector.INTENT_FILE).exists()
+
+
+@pytest.mark.parametrize(
+    ("stage", "authority_expected"),
+    (
+        ("after_intent_attempt", False),
+        ("after_intent_before_seal", False),
+        ("after_intent_seal", True),
+    ),
+)
+def test_pin_root_swap_at_wal_boundaries_has_exact_authority_semantics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    authority_expected: bool,
+) -> None:
+    root = tmp_path / f"root-swap-{stage}"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    lifecycle_root = Path(inputs.lifecycle_root)
+    moved = tmp_path / f"capture-lifecycle-{stage}-original"
+
+    def swap(point: str) -> None:
+        if point == stage:
+            lifecycle_root.rename(moved)
+            shutil.copytree(moved, lifecycle_root, copy_function=shutil.copy2)
+
+    if authority_expected:
+        assert selector.commit_cycle(
+            root, plan, evidence_inputs=inputs, hook=swap
+        ) == plan.head
+        assert selector._load_head(root) == plan.head
+        assert not (root / selector.INTENT_FILE).exists()
+    else:
+        with pytest.raises(selector.SparseSelectorError, match="rebound"):
+            selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=swap)
+        assert selector._load_head(root) == parent
+        assert not selector._object_path(
+            root, selector._intent_seal_key(plan.intent)
+        ).exists()
+
+
+@pytest.mark.parametrize(
+    ("stage", "authority_expected"),
+    (
+        ("after_intent_attempt", False),
+        ("after_intent_before_seal", False),
+        ("after_intent_seal", True),
+    ),
+)
+def test_pin_lock_swap_at_wal_boundaries_has_exact_authority_semantics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    authority_expected: bool,
+) -> None:
+    root = tmp_path / f"lock-swap-{stage}"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    lock = Path(inputs.lifecycle_root) / ".ledger.lock"
+    saved = Path(inputs.lifecycle_root) / f".ledger.lock.{stage}.saved"
+
+    def swap(point: str) -> None:
+        if point == stage:
+            lock.rename(saved)
+            lock.write_bytes(b"")
+            lock.chmod(0o600)
+
+    if authority_expected:
+        assert selector.commit_cycle(
+            root, plan, evidence_inputs=inputs, hook=swap
+        ) == plan.head
+        assert selector._load_head(root) == plan.head
+        assert not (root / selector.INTENT_FILE).exists()
+    else:
+        with pytest.raises(selector.SparseSelectorError, match="lock path"):
+            selector.commit_cycle(root, plan, evidence_inputs=inputs, hook=swap)
+        assert selector._load_head(root) == parent
+        assert not selector._object_path(
+            root, selector._intent_seal_key(plan.intent)
+        ).exists()
+
+
+def test_previous_high_water_must_be_typed_and_complete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source([])
+    root = tmp_path / "previous-high-water"
+    parent = _commit_first(root, source)
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    plan = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    selector.commit_cycle(root, plan, evidence_inputs=inputs)
+    first_incomplete_pointer = copy.deepcopy(plan.head["evidence_high_water"])
+    complete, _plans = _drain_cold_occurrence(root, inputs, plan.head)
+    second_pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=complete,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T15:00:00Z"),
+    )
+    second_head = selector.commit_cycle(
+        root, second_pin, evidence_inputs=inputs
+    )
+    pinned = selector._load_evidence_high_water(
+        root, second_head["evidence_high_water"]
+    )
+    assert pinned["phase"] == "AUDIT_PINNED"
+    assert pinned["previous_complete"] == complete["evidence_high_water"]
+    forged = copy.deepcopy(pinned)
+    forged["previous_complete"] = first_incomplete_pointer
+    forged["high_water_id"] = selector._content_id(
+        "osehw_", forged, field="high_water_id"
+    )
+    forged_object = selector.PlannedObject(
+        key=f"{selector.EVIDENCE_AUDIT_NAMESPACE}/{forged['high_water_id']}.json",
+        value=selector.validate_runtime_object(forged, label="forged child high-water"),
+    )
+    with selector._store_lock(root):
+        selector._prestage_immutable(
+            selector._object_path(root, forged_object.key),
+            forged_object.body,
+            root=root,
+        )
+        with pytest.raises(selector.SparseSelectorError, match="not exact and complete"):
+            selector._load_evidence_high_water(root, forged_object.pointer)
+
+
+def _drain_cold_occurrence(
+    root: Path,
+    inputs: selector.EvidenceInputs,
+    head: dict,
+    *,
+    row_limit: int = 64,
+) -> tuple[dict, list[selector.CyclePlan]]:
+    plans: list[selector.CyclePlan] = []
+    for ordinal in range(32):
+        high = selector._load_evidence_high_water(
+            root, head["evidence_high_water"]
+        )
+        if high["phase"] == "COMPLETE":
+            return head, plans
+        plan = selector._plan_evidence_occurrence_transition(
+            root=root,
+            head=head,
+            evidence_inputs=inputs,
+            clock=_clock(f"2026-08-12T14:{6 + ordinal:02d}:00Z"),
+            row_limit=row_limit,
+        )
+        assert len(plan.objects) + 1 <= selector.MAX_SOURCE_OBJECTS_PER_CYCLE
+        assert selector._transition_footprint_bytes(plan.intent, plan.objects) <= (
+            selector.MAX_SOURCE_INTENT_BYTES
+        )
+        head = selector.commit_cycle(
+            root, plan, evidence_inputs=inputs
+        )
+        plans.append(plan)
+    raise AssertionError("cold occurrence replay did not complete")
+
+
+def test_cold_occurrence_activation_only_reaches_exact_complete(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "cold-activation"
+    parent = _commit_first(root, _source([]))
+    inputs, state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    head, plans = _drain_cold_occurrence(root, inputs, head)
+    high = selector._load_evidence_high_water(root, head["evidence_high_water"])
+    assert high["phase"] == "COMPLETE"
+    assert high["occurrence_stage"] == "DONE"
+    assert high["ledger_capture_bytes"] == state["ledger_cursor"]["bytes"]
+    assert high["ledger_replay_bytes"] == state["ledger_cursor"]["bytes"]
+    assert high["ledger_replay_rows"] == state["ledger_cursor"]["row_count"]
+    assert high["replay_state_id"] == state["state_id"]
+    assert all(plan.intent["audit_window"]["row_limit"] == 64 for plan in plans)
+    assert selector.authenticate_store(root, evidence_inputs=inputs)[0] == head
+
+
+def _append_occurrence_close(
+    ledger_path: Path, *, plan_id: str = "SOFI-BULL-20260803"
+) -> None:
+    row = {
+        "schema": "prophet.ledger/v1",
+        "id": plan_id,
+        "close_date": "2026-08-11",
+        "outcome": "T1_HIT",
+        "asof": "2026-08-11",
+        "option_result_pct": None,
+    }
+    with ledger_path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(row, allow_nan=False, separators=(",", ":")) + "\n")
+    _refresh_occurrence_ledger(ledger_path)
+
+
+def _pin_and_drain_occurrence(
+    root: Path,
+    inputs: selector.EvidenceInputs,
+) -> tuple[dict, dict, list[selector.CyclePlan]]:
+    parent = _commit_first(root, _source([]))
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    head, plans = _drain_cold_occurrence(root, inputs, head, row_limit=2)
+    high = selector._load_evidence_high_water(root, head["evidence_high_water"])
+    return head, high, plans
+
+
+def test_cold_occurrence_same_edge_mark_and_close_never_enrolls(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+    _append_occurrence_close(ledger_path)
+    _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:05:00+00:00",
+        phase="triggered_pre_t1",
+    )
+    summary = selector.lifecycle.advance_lifecycle(
+        lifecycle_root=Path(inputs.lifecycle_root),
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    assert summary["status"] == "advanced"
+    assert summary["enrollment_count"] == 0
+    head, high, plans = _pin_and_drain_occurrence(
+        tmp_path / "same-edge-selector", inputs
+    )
+    replay = selector._load_evidence_replay_state(
+        tmp_path / "same-edge-selector",
+        high["replay_state"],
+        snapshot=high["snapshot"],
+    )["state"]
+    assert replay["enrollments"] == {}
+    assert replay["terminals"] == {}
+    assert high["phase"] == "COMPLETE"
+    assert any(
+        plan.intent["audit_window"]["stage"] == "OCCURRENCE_EDGE_FINALIZE"
+        for plan in plans
+    )
+    assert selector.authenticate_store(
+        tmp_path / "same-edge-selector", evidence_inputs=inputs
+    )[0] == head
+
+
+def test_cold_occurrence_split_edges_enroll_then_terminal_and_ignore_outgoing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+    _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:05:00+00:00",
+        phase="triggered_pre_t1",
+    )
+    enrolled = selector.lifecycle.advance_lifecycle(
+        lifecycle_root=Path(inputs.lifecycle_root),
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    assert enrolled["enrollment_count"] == 1
+    _append_occurrence_close(ledger_path)
+    terminal = selector.lifecycle.advance_lifecycle(
+        lifecycle_root=Path(inputs.lifecycle_root),
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    assert terminal["terminal_count"] == 1
+    lifecycle_root = Path(inputs.lifecycle_root)
+    target = selector.lifecycle._load_state(lifecycle_root)
+    assert target is not None
+
+    # A producer crash may leave a valid outgoing boundary without advancing
+    # current.json. The selector must stop at the exact pinned current state.
+    next_mark_pointer = _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:10:00+00:00",
+        phase="triggered_pre_t1",
+        mid=3.2,
+    )
+    next_mark = selector._load_frozen_mark_observation(
+        Path(inputs.mark_root), next_mark_pointer
+    )
+    orphan_candidate = selector.lifecycle._make_state(
+        activation=target["activation"],
+        lifecycle_head=target["lifecycle_head"],
+        mark_cursor=next_mark_pointer,
+        ledger_cursor=target["ledger_cursor"],
+        enrollments=target["enrollments"],
+        terminals=target["terminals"],
+        latest_marks=target["latest_marks"],
+    )
+    orphan = selector.lifecycle._make_advance_boundary(
+        state=target,
+        mark_pointer=next_mark_pointer,
+        mark_observation=next_mark,
+        ledger_receipt=target["ledger_cursor"],
+        candidate=orphan_candidate,
+        events=[],
+    )
+    selector.lifecycle._write_advance_boundary(lifecycle_root, target, orphan)
+    _append_occurrence_close(ledger_path, plan_id="UNRELATED-CLOSED-PLAN")
+
+    root = tmp_path / "split-edge-selector"
+    head, high, plans = _pin_and_drain_occurrence(root, inputs)
+    replay = selector._load_evidence_replay_state(
+        root, high["replay_state"], snapshot=high["snapshot"]
+    )["state"]
+    assert replay == target
+    assert set(replay["enrollments"]) == {"SOFI-BULL-20260803"}
+    assert set(replay["terminals"]) == {"SOFI-BULL-20260803"}
+    assert replay["latest_marks"] == {}
+    assert high["phase"] == "COMPLETE"
+    assert high["ledger_capture_bytes"] > high["ledger_replay_bytes"]
+    assert sum(
+        plan.intent["audit_window"]["stage"] == "OCCURRENCE_EDGE_INIT"
+        for plan in plans
+    ) == 2
+    assert selector.authenticate_store(root, evidence_inputs=inputs)[0] == head
+
+
+@pytest.mark.parametrize("mutation", ("missing", "reordered"))
+def test_cold_occurrence_rejects_missing_or_reordered_boundary_events(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mutation: str,
+) -> None:
+    inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+    lifecycle_root = Path(inputs.lifecycle_root)
+    base = selector.lifecycle._load_state(lifecycle_root)
+    assert base is not None
+    _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:05:00+00:00",
+        phase="triggered_pre_t1",
+        additional_plan_ids=("SOFI-BULL-20260804",),
+    )
+    advanced = selector.lifecycle.advance_lifecycle(
+        lifecycle_root=lifecycle_root,
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    assert advanced["enrollment_count"] == 2
+    boundary_path = (
+        lifecycle_root / "advance_boundaries" / f"{base['state_id']}.json"
+    )
+    boundary = json.loads(boundary_path.read_text(encoding="utf-8"))
+    assert len(boundary["event_pointers"]) == 2
+    if mutation == "missing":
+        boundary["event_pointers"] = []
+        boundary["candidate_lifecycle_head"] = base["lifecycle_head"]
+    else:
+        boundary["event_pointers"].reverse()
+        boundary["candidate_lifecycle_head"] = boundary["event_pointers"][-1]
+    boundary["boundary_id"] = selector.lifecycle._advance_boundary_identity(
+        boundary
+    )
+    selector.lifecycle._validate_advance_boundary(boundary)
+    boundary_path.unlink()
+    boundary_path.write_bytes(selector.lifecycle._canonical_json_bytes(boundary))
+    boundary_path.chmod(0o600)
+
+    root = tmp_path / f"forged-{mutation}-selector"
+    parent = _commit_first(root, _source([]))
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    with pytest.raises(
+        selector.SparseSelectorError,
+        match="orphan lifecycle event|differs from boundary order",
+    ):
+        _drain_cold_occurrence(root, inputs, head, row_limit=2)
+
+
+def _install_synthetic_occurrence_edge(
+    lifecycle_root: Path,
+    *,
+    base: dict,
+    mark_pointer: dict,
+    mark_observation: dict,
+    ledger_receipt: dict,
+    candidate: dict,
+    events: list[dict],
+) -> None:
+    boundary = selector.lifecycle._make_advance_boundary(
+        state=base,
+        mark_pointer=mark_pointer,
+        mark_observation=mark_observation,
+        ledger_receipt=ledger_receipt,
+        candidate=candidate,
+        events=events,
+    )
+    selector.lifecycle._write_advance_boundary(lifecycle_root, base, boundary)
+    if events:
+        selector.lifecycle._write_events(lifecycle_root, events)
+    selector.lifecycle._write_state(lifecycle_root, candidate)
+
+
+@pytest.mark.parametrize(
+    "forgery",
+    ("activation_mark_enrollment", "omitted_enrollment", "skipped_first", "missing_terminal"),
+)
+def test_cold_occurrence_rejects_source_derived_completeness_forgery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    forgery: str,
+) -> None:
+    inputs, ledger_path = _occurrence_producer_roots(
+        tmp_path,
+        monkeypatch,
+        activation_phase=(
+            "triggered_pre_t1"
+            if forgery == "activation_mark_enrollment"
+            else "pre_trigger"
+        ),
+    )
+    lifecycle_root = Path(inputs.lifecycle_root)
+    mark_root = Path(inputs.mark_root)
+    base = selector.lifecycle._load_state(lifecycle_root)
+    assert base is not None
+
+    if forgery == "activation_mark_enrollment":
+        mark_pointer = base["mark_cursor"]
+        observation = selector._load_frozen_mark_observation(
+            mark_root, mark_pointer
+        )
+        event = selector._frozen_enrollment_event(
+            row=observation["rows"][0],
+            mark_pointer=mark_pointer,
+            observation=observation,
+            previous=base["lifecycle_head"],
+        )
+        event_pointer = selector.lifecycle._event_pointer(event)
+        plan_id = event["payload"]["plan"]["id"]
+        candidate = selector.lifecycle._make_state(
+            activation=base["activation"],
+            lifecycle_head=event_pointer,
+            mark_cursor=mark_pointer,
+            ledger_cursor=base["ledger_cursor"],
+            enrollments={plan_id: event_pointer},
+            terminals={},
+            latest_marks={
+                plan_id: {
+                    "contract_occ_symbol": event["payload"]["contract"]["occ_symbol"],
+                    "contract_drift": False,
+                    "plan_identity_drift": False,
+                    "sessions": {observation["session_date"]: mark_pointer},
+                }
+            },
+        )
+        _install_synthetic_occurrence_edge(
+            lifecycle_root,
+            base=base,
+            mark_pointer=mark_pointer,
+            mark_observation=observation,
+            ledger_receipt=base["ledger_cursor"],
+            candidate=candidate,
+            events=[event],
+        )
+    elif forgery in {"omitted_enrollment", "skipped_first"}:
+        first = _emit_occurrence_mark(
+            monkeypatch,
+            mark_root,
+            observed_at="2026-08-11T14:05:00+00:00",
+            phase="triggered_pre_t1",
+        )
+        mark_pointer = first
+        if forgery == "skipped_first":
+            mark_pointer = _emit_occurrence_mark(
+                monkeypatch,
+                mark_root,
+                observed_at="2026-08-11T14:10:00+00:00",
+                phase="triggered_pre_t1",
+                mid=3.2,
+            )
+        observation = selector._load_frozen_mark_observation(
+            mark_root, mark_pointer
+        )
+        if forgery == "omitted_enrollment":
+            events = []
+            enrollments = {}
+            latest = {}
+            lifecycle_head = base["lifecycle_head"]
+        else:
+            event = selector._frozen_enrollment_event(
+                row=observation["rows"][0],
+                mark_pointer=mark_pointer,
+                observation=observation,
+                previous=base["lifecycle_head"],
+            )
+            event_pointer = selector.lifecycle._event_pointer(event)
+            plan_id = event["payload"]["plan"]["id"]
+            events = [event]
+            enrollments = {plan_id: event_pointer}
+            latest = {
+                plan_id: {
+                    "contract_occ_symbol": event["payload"]["contract"]["occ_symbol"],
+                    "contract_drift": False,
+                    "plan_identity_drift": False,
+                    "sessions": {observation["session_date"]: mark_pointer},
+                }
+            }
+            lifecycle_head = event_pointer
+        candidate = selector.lifecycle._make_state(
+            activation=base["activation"],
+            lifecycle_head=lifecycle_head,
+            mark_cursor=mark_pointer,
+            ledger_cursor=base["ledger_cursor"],
+            enrollments=enrollments,
+            terminals={},
+            latest_marks=latest,
+        )
+        _install_synthetic_occurrence_edge(
+            lifecycle_root,
+            base=base,
+            mark_pointer=mark_pointer,
+            mark_observation=observation,
+            ledger_receipt=base["ledger_cursor"],
+            candidate=candidate,
+            events=events,
+        )
+    else:
+        _emit_occurrence_mark(
+            monkeypatch,
+            mark_root,
+            observed_at="2026-08-11T14:05:00+00:00",
+            phase="triggered_pre_t1",
+        )
+        enrolled = selector.lifecycle.advance_lifecycle(
+            lifecycle_root=lifecycle_root,
+            mark_root=mark_root,
+            ledger_path=ledger_path,
+            ledger_receipt_path=ledger_path.parent / "receipt.json",
+        )
+        assert enrolled["enrollment_count"] == 1
+        base = selector.lifecycle._load_state(lifecycle_root)
+        assert base is not None
+        _append_occurrence_close(ledger_path)
+        ledger_receipt = json.loads(
+            (ledger_path.parent / "receipt.json").read_text(encoding="utf-8")
+        )
+        observation = selector._load_frozen_mark_observation(
+            mark_root, base["mark_cursor"]
+        )
+        candidate = selector.lifecycle._make_state(
+            activation=base["activation"],
+            lifecycle_head=base["lifecycle_head"],
+            mark_cursor=base["mark_cursor"],
+            ledger_cursor=ledger_receipt,
+            enrollments=base["enrollments"],
+            terminals={},
+            latest_marks=base["latest_marks"],
+        )
+        _install_synthetic_occurrence_edge(
+            lifecycle_root,
+            base=base,
+            mark_pointer=base["mark_cursor"],
+            mark_observation=observation,
+            ledger_receipt=ledger_receipt,
+            candidate=candidate,
+            events=[],
+        )
+
+    root = tmp_path / f"semantic-forgery-{forgery}"
+    parent = _commit_first(root, _source([]))
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    with pytest.raises(selector.SparseSelectorError):
+        _drain_cold_occurrence(root, inputs, head, row_limit=2)
+
+
+def _rehashed_occurrence_intent(
+    plan: selector.CyclePlan,
+    *,
+    mutate_high=None,
+    extra: selector.PlannedObject | None = None,
+) -> tuple[dict, tuple[selector.PlannedObject, ...]]:
+    objects = list(plan.objects)
+    high_index = next(
+        index
+        for index, item in enumerate(objects)
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_high_water/v1"
+    )
+    if mutate_high is not None:
+        forged = copy.deepcopy(objects[high_index].value)
+        mutate_high(forged)
+        forged["high_water_id"] = selector._content_id(
+            "osehw_", forged, field="high_water_id"
+        )
+        forged = selector.validate_runtime_object(
+            forged, label="forged occurrence high-water"
+        )
+        objects[high_index] = selector.PlannedObject(
+            key=(
+                f"{selector.EVIDENCE_AUDIT_NAMESPACE}/"
+                f"{forged['high_water_id']}.json"
+            ),
+            value=forged,
+        )
+    if extra is not None:
+        objects.append(extra)
+    ordered = tuple(sorted(objects, key=lambda item: item.key))
+    next_high = objects[high_index].pointer
+    next_head = copy.deepcopy(plan.head)
+    next_head["evidence_high_water"] = next_high
+    next_head["head_id"] = selector._content_id(
+        "ossh_", next_head, field="head_id"
+    )
+    intent = copy.deepcopy(plan.intent)
+    intent["objects"] = [item.receipt for item in ordered]
+    intent["next_head"] = next_head
+    intent["audit_window"]["next_high_water"] = next_high
+    intent["intent_sha256"] = selector._content_id(
+        "", intent, field="intent_sha256"
+    )
+    return intent, ordered
+
+
+@pytest.mark.parametrize(
+    "forgery", ("early_complete", "cursor_skip", "orphan_root", "extra_object")
+)
+def test_occurrence_recovery_rejects_rehashed_stage_root_and_object_set_forgery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    forgery: str,
+) -> None:
+    root = tmp_path / f"occurrence-recovery-{forgery}"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    plan = selector._plan_evidence_occurrence_transition(
+        root=root,
+        head=head,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:06:00Z"),
+        row_limit=2,
+    )
+
+    mutate = None
+    extra = None
+    if forgery == "early_complete":
+        def mutate(value: dict) -> None:
+            value["phase"] = "COMPLETE"
+            value["occurrence_stage"] = "DONE"
+    elif forgery == "cursor_skip":
+        def mutate(value: dict) -> None:
+            value["ledger_replay_bytes"] = 1
+    elif forgery == "orphan_root":
+        def mutate(value: dict) -> None:
+            value["boundary_index"] = selector.private_auth_dict.sharded_root_receipt(
+                domain=selector.EVIDENCE_BOUNDARY_DOMAIN,
+                root={
+                    "id": f"padn_{'0' * 64}",
+                    "key": f"auth_dict_nodes/padn_{'0' * 64}.json",
+                    "sha256": "0" * 64,
+                    "bytes": 1,
+                },
+                entry_count=1,
+            )
+    else:
+        prior_value = selector._load_pointer(
+            root, head["evidence_high_water"], label="prior high-water"
+        )
+        extra = selector.PlannedObject(
+            key=head["evidence_high_water"]["key"], value=prior_value
+        )
+    forged_intent, forged_objects = _rehashed_occurrence_intent(
+        plan, mutate_high=mutate, extra=extra
+    )
+    with selector._store_lock(root):
+        for item in forged_objects:
+            selector._prestage_immutable(
+                selector._object_path(root, item.key), item.body, root=root
+            )
+        with pytest.raises(selector.SparseSelectorError):
+            selector._plan_from_intent(
+                root, forged_intent, evidence_inputs=inputs
+            )
+    assert selector._load_head(root) == head
+
+
+def test_replay_wrapper_represents_a_valid_near_two_mib_producer_state(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _inputs, base, mark_pointer = _mock_evidence_capture_sources(
+        tmp_path, monkeypatch
+    )
+    all_sessions = {
+        (date(2000, 1, 1) + timedelta(days=index)).isoformat(): mark_pointer
+        for index in range(9_000)
+    }
+    keys = list(all_sessions)
+    low, high = 1, len(keys)
+    selected = None
+    while low <= high:
+        middle = (low + high) // 2
+        candidate = selector.lifecycle._make_state(
+            activation=base["activation"],
+            lifecycle_head=base["lifecycle_head"],
+            mark_cursor=base["mark_cursor"],
+            ledger_cursor=base["ledger_cursor"],
+            enrollments={"P": base["activation"]},
+            terminals={},
+            latest_marks={
+                "P": {
+                    "contract_occ_symbol": "SOFI  261016C00016000",
+                    "contract_drift": False,
+                    "plan_identity_drift": False,
+                    "sessions": {key: all_sessions[key] for key in keys[:middle]},
+                }
+            },
+        )
+        size = len(selector.canonical_bytes(candidate))
+        if size < 2 * 1024 * 1024 - 1_024:
+            low = middle + 1
+        elif size > 2 * 1024 * 1024:
+            high = middle - 1
+        else:
+            selected = candidate
+            break
+    assert selected is not None
+    state_bytes = len(selector.canonical_bytes(selected))
+    assert 2 * 1024 * 1024 - 1_024 <= state_bytes <= 2 * 1024 * 1024
+    snapshot_pointer = {
+        "id": f"osess_{'1' * 64}",
+        "key": f"evidence_audit/osess_{'1' * 64}.json",
+        "sha256": "2" * 64,
+        "bytes": 1,
+    }
+    replay = selector._make_evidence_replay_state(
+        snapshot=snapshot_pointer, state=selected
+    )
+    assert replay.pointer["bytes"] > 2 * 1024 * 1024
+    assert replay.pointer["bytes"] < selector.MAX_SOURCE_INTENT_BYTES
+
+
+@pytest.mark.parametrize("forgery", ("cursor_skip", "early_complete"))
+def test_authenticate_store_rejects_rehashed_partial_occurrence_head(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    forgery: str,
+) -> None:
+    root = tmp_path / f"partial-auth-{forgery}"
+    parent = _commit_first(root, _source([]))
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    plan = selector._plan_evidence_occurrence_transition(
+        root=root,
+        head=head,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:06:00Z"),
+        row_limit=2,
+    )
+    head = selector.commit_cycle(root, plan, evidence_inputs=inputs)
+    high = selector._load_evidence_high_water(root, head["evidence_high_water"])
+    forged_high = copy.deepcopy(high)
+    if forgery == "cursor_skip":
+        forged_high["ledger_replay_bytes"] = 1
+    else:
+        forged_high["phase"] = "COMPLETE"
+        forged_high["occurrence_stage"] = "DONE"
+    forged_high["high_water_id"] = selector._content_id(
+        "osehw_", forged_high, field="high_water_id"
+    )
+    forged_object = selector.PlannedObject(
+        key=(
+            f"{selector.EVIDENCE_AUDIT_NAMESPACE}/"
+            f"{forged_high['high_water_id']}.json"
+        ),
+        value=selector.validate_runtime_object(
+            forged_high, label="forged partial high-water"
+        ),
+    )
+    forged_head = copy.deepcopy(head)
+    forged_head["evidence_high_water"] = forged_object.pointer
+    forged_head["head_id"] = selector._content_id(
+        "ossh_", forged_head, field="head_id"
+    )
+    forged_head = selector.validate_runtime_object(
+        forged_head, label="forged partial HEAD"
+    )
+    with selector._store_lock(root):
+        selector._prestage_immutable(
+            selector._object_path(root, forged_object.key),
+            forged_object.body,
+            root=root,
+        )
+        selector._atomic_write(
+            root / selector.HEAD_FILE,
+            selector.canonical_bytes(forged_head),
+            root=root,
+            limit=selector.MAX_HEAD_BYTES,
+        )
+    with pytest.raises(selector.SparseSelectorError, match="occurrence stage"):
+        selector.authenticate_store(root, evidence_inputs=inputs)
+
+
+def test_authenticate_store_rejects_restored_old_head_before_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "restored-old-head"
+    parent = _commit_first(root, _source([]))
+    parent_body = selector.canonical_bytes(parent)
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=parent,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    with selector._store_lock(root):
+        selector._atomic_write(
+            root / selector.HEAD_FILE,
+            parent_body,
+            root=root,
+            limit=selector.MAX_HEAD_BYTES,
+        )
+    before = {
+        path: path.read_bytes() for path in root.rglob("*") if path.is_file()
+    }
+    with pytest.raises(selector.SparseSelectorError, match="surviving child"):
+        selector.authenticate_store(root)
+    assert {
+        path: path.read_bytes() for path in root.rglob("*") if path.is_file()
+    } == before
+
+
+def _install_rehashed_complete_high_water(
+    root: Path,
+    head: dict,
+    high: dict,
+    *,
+    supporting_objects: tuple[selector.PlannedObject, ...] = (),
+) -> dict:
+    forged = copy.deepcopy(high)
+    forged["high_water_id"] = selector._content_id(
+        "osehw_", forged, field="high_water_id"
+    )
+    forged_object = selector.PlannedObject(
+        key=(
+            f"{selector.EVIDENCE_AUDIT_NAMESPACE}/"
+            f"{forged['high_water_id']}.json"
+        ),
+        value=selector.validate_runtime_object(
+            forged, label="forged complete evidence high-water"
+        ),
+    )
+    forged_head = copy.deepcopy(head)
+    forged_head["evidence_high_water"] = forged_object.pointer
+    forged_head["head_id"] = selector._content_id(
+        "ossh_", forged_head, field="head_id"
+    )
+    forged_head = selector.validate_runtime_object(
+        forged_head, label="forged complete selector HEAD"
+    )
+    with selector._store_lock(root):
+        for item in (*supporting_objects, forged_object):
+            selector._prestage_immutable(
+                selector._object_path(root, item.key), item.body, root=root
+            )
+        selector._atomic_write(
+            root / selector.HEAD_FILE,
+            selector.canonical_bytes(forged_head),
+            root=root,
+            limit=selector.MAX_HEAD_BYTES,
+        )
+    return forged_head
+
+
+@pytest.mark.parametrize("missing_kind", ("activation", "terminal"))
+def test_complete_occurrence_authentication_requires_every_source_event_body(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    missing_kind: str,
+) -> None:
+    root = tmp_path / f"missing-{missing_kind}-event"
+    if missing_kind == "activation":
+        inputs, _state, _mark = _mock_evidence_capture_sources(
+            tmp_path, monkeypatch
+        )
+    else:
+        inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+        _emit_occurrence_mark(
+            monkeypatch,
+            Path(inputs.mark_root),
+            observed_at="2026-08-11T14:05:00+00:00",
+            phase="triggered_pre_t1",
+        )
+        selector.lifecycle.advance_lifecycle(
+            lifecycle_root=Path(inputs.lifecycle_root),
+            mark_root=Path(inputs.mark_root),
+            ledger_path=ledger_path,
+            ledger_receipt_path=ledger_path.parent / "receipt.json",
+        )
+        _append_occurrence_close(ledger_path)
+        selector.lifecycle.advance_lifecycle(
+            lifecycle_root=Path(inputs.lifecycle_root),
+            mark_root=Path(inputs.mark_root),
+            ledger_path=ledger_path,
+            ledger_receipt_path=ledger_path.parent / "receipt.json",
+        )
+    head, high, _plans = _pin_and_drain_occurrence(root, inputs)
+    replay = selector._load_evidence_replay_state(
+        root, high["replay_state"], snapshot=high["snapshot"]
+    )["state"]
+    pointer = (
+        replay["activation"]
+        if missing_kind == "activation"
+        else next(iter(replay["terminals"].values()))
+    )
+    selector.lifecycle._event_path(
+        Path(inputs.lifecycle_root), pointer, create_parents=False
+    ).unlink()
+    with pytest.raises(selector.SparseSelectorError, match="event"):
+        selector.authenticate_store(root, evidence_inputs=inputs)
+    assert selector._load_head(root) == head
+
+
+def test_complete_occurrence_authentication_rejects_empty_boundary_index(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "empty-complete-boundary-index"
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    head, high, _plans = _pin_and_drain_occurrence(root, inputs)
+    high["boundary_index"] = selector._empty_evidence_audit_index(
+        selector.EVIDENCE_BOUNDARY_DOMAIN
+    )
+    forged_head = _install_rehashed_complete_high_water(root, head, high)
+    with pytest.raises(selector.SparseSelectorError, match="boundary index"):
+        selector.authenticate_store(root, evidence_inputs=inputs)
+    assert selector._load_head(root) == forged_head
+
+
+def test_complete_occurrence_authentication_rebuilds_exact_ledger_index(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+    _append_occurrence_close(ledger_path)
+    _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:05:00+00:00",
+        phase="triggered_pre_t1",
+    )
+    selector.lifecycle.advance_lifecycle(
+        lifecycle_root=Path(inputs.lifecycle_root),
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    root = tmp_path / "forged-complete-ledger-index"
+    head, high, _plans = _pin_and_drain_occurrence(root, inputs)
+    binding = selector._ledger_ordinal_binding(
+        root, high["ledger_row_index"], 1
+    )
+    forged_binding = copy.deepcopy(binding)
+    forged_binding["outcome"] = "NO_ENTRY"
+    forged_binding["row_semantic_sha256"] = "0" * 64
+    forged_index, nodes = selector._evidence_auth_nodes(
+        root,
+        prior=selector._empty_evidence_audit_index(
+            selector.EVIDENCE_LEDGER_ROW_DOMAIN
+        ),
+        domain=selector.EVIDENCE_LEDGER_ROW_DOMAIN,
+        entries=(
+            (["plan", forged_binding["plan_id"]], forged_binding),
+            (["ordinal", 1], forged_binding),
+        ),
+    )
+    high["ledger_row_index"] = forged_index
+    forged_head = _install_rehashed_complete_high_water(
+        root, head, high, supporting_objects=nodes
+    )
+    with pytest.raises(
+        selector.SparseSelectorError,
+        match="ledger index differs from captured ledger bytes",
+    ):
+        selector.authenticate_store(root, evidence_inputs=inputs)
+    assert selector._load_head(root) == forged_head
+
+
+def _repin_and_drain_incremental(
+    root: Path,
+    inputs: selector.EvidenceInputs,
+    head: dict,
+) -> tuple[dict, dict, selector.CyclePlan, list[selector.CyclePlan]]:
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=head,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T16:05:00Z"),
+    )
+    head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    plans: list[selector.CyclePlan] = []
+    for ordinal in range(32):
+        high = selector._load_evidence_high_water(
+            root, head["evidence_high_water"]
+        )
+        if high["phase"] == "COMPLETE":
+            break
+        plan = selector._plan_evidence_occurrence_transition(
+            root=root,
+            head=head,
+            evidence_inputs=inputs,
+            clock=_clock(f"2026-08-12T16:{6 + ordinal:02d}:00Z"),
+            row_limit=2,
+        )
+        assert len(plan.objects) + 1 <= selector.MAX_SOURCE_OBJECTS_PER_CYCLE
+        assert selector._transition_footprint_bytes(
+            plan.intent, plan.objects
+        ) <= selector.MAX_SOURCE_INTENT_BYTES
+        head = selector.commit_cycle(root, plan, evidence_inputs=inputs)
+        plans.append(plan)
+    else:
+        raise AssertionError("incremental occurrence did not complete")
+    high = selector._load_evidence_high_water(
+        root, head["evidence_high_water"]
+    )
+    return head, high, pin, plans
+
+
+def test_incremental_occurrence_same_target_reuses_complete_base(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "incremental-same-target"
+    inputs, _state, _mark = _mock_evidence_capture_sources(tmp_path, monkeypatch)
+    first_head, first_high, _plans = _pin_and_drain_occurrence(root, inputs)
+    head, high, pin, plans = _repin_and_drain_incremental(
+        root, inputs, first_head
+    )
+    pinned = next(
+        item.value
+        for item in pin.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_high_water/v1"
+    )
+    assert pinned["previous_complete"] == first_head["evidence_high_water"]
+    assert pinned["replay_state"] == first_high["replay_state"]
+    assert pinned["boundary_index"] == first_high["boundary_index"]
+    assert pinned["ledger_row_index"] == first_high["ledger_row_index"]
+    assert pinned["ledger_chunks"] == first_high["ledger_chunks"]
+    assert high["phase"] == "COMPLETE"
+    assert high["source_state_id"] == first_high["source_state_id"]
+    assert not any(
+        plan.intent["audit_window"]["stage"] == "OCCURRENCE_ACTIVATION"
+        for plan in plans
+    )
+    assert selector.authenticate_store(root, evidence_inputs=inputs)[0] == head
+
+
+def test_incremental_occurrence_replays_only_one_new_suffix_edge(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+    root = tmp_path / "incremental-one-edge"
+    first_head, first_high, _plans = _pin_and_drain_occurrence(root, inputs)
+    _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:05:00+00:00",
+        phase="triggered_pre_t1",
+    )
+    selector.lifecycle.advance_lifecycle(
+        lifecycle_root=Path(inputs.lifecycle_root),
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    target = selector.lifecycle._load_state(Path(inputs.lifecycle_root))
+    assert target is not None
+    head, high, _pin, plans = _repin_and_drain_incremental(
+        root, inputs, first_head
+    )
+    replay = selector._load_evidence_replay_state(
+        root, high["replay_state"], snapshot=high["snapshot"]
+    )["state"]
+    assert replay == target
+    assert high["boundary_index"]["entry_count"] == (
+        first_high["boundary_index"]["entry_count"] + 1
+    )
+    assert sum(
+        plan.intent["audit_window"]["stage"] == "OCCURRENCE_EDGE_INIT"
+        for plan in plans
+    ) == 1
+    assert not any(
+        plan.intent["audit_window"]["stage"] == "OCCURRENCE_ACTIVATION"
+        for plan in plans
+    )
+    assert selector.authenticate_store(root, evidence_inputs=inputs)[0] == head
+
+
+def test_stale_complete_evidence_repins_before_pending_manifest_settlement(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source(
+        [[_episode("freshness", "2026-08-12T13:31:00Z", strike=700.0)]]
+    )
+    root = tmp_path / "settlement-freshness"
+    runtime_head = _commit_first(root, source)
+    assert runtime_head["pending_manifest"] is not None
+    inputs, ledger_path = _occurrence_producer_roots(tmp_path, monkeypatch)
+    pin = selector._plan_evidence_capture_transition(
+        root=root,
+        head=runtime_head,
+        evidence_inputs=inputs,
+        clock=_clock("2026-08-12T14:05:00Z"),
+    )
+    complete_head = selector.commit_cycle(root, pin, evidence_inputs=inputs)
+    complete_head, _plans = _drain_cold_occurrence(
+        root, inputs, complete_head, row_limit=2
+    )
+    before_decisions = complete_head["decision_count"]
+    pending = copy.deepcopy(complete_head["pending_manifest"])
+
+    _emit_occurrence_mark(
+        monkeypatch,
+        Path(inputs.mark_root),
+        observed_at="2026-08-11T14:05:00+00:00",
+        phase="triggered_pre_t1",
+    )
+    selector.lifecycle.advance_lifecycle(
+        lifecycle_root=Path(inputs.lifecycle_root),
+        mark_root=Path(inputs.mark_root),
+        ledger_path=ledger_path,
+        ledger_receipt_path=ledger_path.parent / "receipt.json",
+    )
+    plan = selector._plan_cycle_once(
+        root=root,
+        source=_pinned_source(source, complete_head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:30:00Z",
+        clock=_clock("2026-08-12T14:30:00Z"),
+        runtime_armed=True,
+        admission_cap=selector.MAX_CANDIDATES_PER_MANIFEST,
+        settlement_cache={},
+    )
+    assert plan.intent["schema"] == (
+        "options.sparse_selector_evidence_audit_intent/v1"
+    )
+    assert plan.intent["audit_window"]["stage"] == "PIN"
+    assert plan.head["pending_manifest"] == pending
+    assert plan.head["decision_count"] == before_decisions
+    assert not any(
+        item.value.get("schema") == "options.sparse_selector_decision/v1"
+        for item in plan.objects
+    )

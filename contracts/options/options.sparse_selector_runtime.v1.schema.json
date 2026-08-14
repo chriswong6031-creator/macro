@@ -8,6 +8,10 @@
     {"$ref": "#/$defs/manifest"},
     {"$ref": "#/$defs/w1aSourceReceipt"},
     {"$ref": "#/$defs/evidenceGeneration"},
+    {"$ref": "#/$defs/evidenceSourceSnapshot"},
+    {"$ref": "#/$defs/evidenceReplayState"},
+    {"$ref": "#/$defs/evidenceLedgerChunk"},
+    {"$ref": "#/$defs/evidenceHighWater"},
     {"$ref": "#/$defs/konsekiEvidence"},
     {"$ref": "#/$defs/markEvidence"},
     {"$ref": "#/$defs/lifecycleEvidence"},
@@ -47,13 +51,48 @@
         "may_train_prophet": {"const": false}
       }
     },
+    "evidenceProducerContract": {
+      "const": {
+        "schema": "options.sparse_selector_evidence_producer_contract/v1",
+        "lifecycle_builder": {
+          "path": "scripts/build_prophet_option_shadow_lifecycle.py",
+          "bytes": 86565,
+          "sha256": "a5710b6ba5aedcd605541794aa7343c6f10d9af834848a95b2f8eb46b024c281"
+        },
+        "lifecycle_event_schema": {
+          "path": "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json",
+          "bytes": 14919,
+          "sha256": "047721a1a86d7ef920a2c9a5fd035ab95f2e407453b33842dbfc6ca54e433a8f"
+        },
+        "mark_builder": {
+          "path": "scripts/build_prophet_marks.py",
+          "bytes": 54446,
+          "sha256": "04eb6636303c223ce88a22c8f224612f33ba6d97f95095fdd09a2c2851896de6"
+        },
+        "mark_schema": {
+          "path": "contracts/options/prophet.option_mark_observation.v1.schema.json",
+          "bytes": 13088,
+          "sha256": "22e9a2fc6d0b4d9de5788d54b8f4413e8c96c081fd18a53596c1ce3243605f7c"
+        },
+        "ledger": {
+          "schema": "prophet.canonical_ledger_snapshot_receipt/v1",
+          "source_repository": "https://github.com/mastermindx-market-intelligence/macro",
+          "source_ref": "refs/heads/main",
+          "source_path": "data/prophet/ledger.jsonl",
+          "cursor_fields": [
+            "schema", "source_repository", "source_ref", "source_commit",
+            "source_path", "bytes", "sha256", "row_count"
+          ]
+        }
+      }
+    },
     "pointer": {
       "type": "object",
       "additionalProperties": false,
       "required": ["id", "key", "sha256", "bytes"],
       "properties": {
         "id": {"type": "string", "minLength": 1, "maxLength": 128},
-        "key": {"type": "string", "pattern": "^(?:candidates|manifests|decisions|cycles|evidence|handoff_queue|source_projection|auth_dict_nodes)/[A-Za-z0-9_.-]+\\.json$"},
+        "key": {"type": "string", "pattern": "^(?:candidates|manifests|decisions|cycles|evidence|evidence_audit|handoff_queue|source_projection|auth_dict_nodes)/[A-Za-z0-9_.-]+\\.json$"},
         "sha256": {"$ref": "#/$defs/sha256"},
         "bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
       }
@@ -122,7 +161,7 @@
         "observation_id": {"type": "string", "pattern": "^pom_obs_[a-f0-9]{64}$"},
         "key": {"type": "string", "pattern": "^observations/[0-9]{4}-[0-9]{2}-[0-9]{2}/pom_obs_[a-f0-9]{64}\\.json$"},
         "sha256": {"$ref": "#/$defs/sha256"},
-        "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152}
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 4194304}
       }
     },
     "lifecycleEventPointer": {
@@ -135,6 +174,98 @@
         "key": {"type": "string", "pattern": "^events/[0-9]{4}-[0-9]{2}-[0-9]{2}/posle_[a-f0-9]{64}\\.json$"},
         "sha256": {"$ref": "#/$defs/sha256"},
         "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152}
+      }
+    },
+    "evidenceSnapshotPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^osess_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^evidence_audit/osess_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 4194304}
+      }
+    },
+    "evidenceHighWaterPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^osehw_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^evidence_audit/osehw_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 1048576}
+      }
+    },
+    "evidenceReplayStatePointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^osers_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^evidence_audit/osers_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 4194304}
+      }
+    },
+    "lifecycleBoundaryReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind", "boundary_id", "base_state_id", "candidate_state_id", "sha256", "bytes",
+        "mark_boundary", "ledger_boundary", "candidate_lifecycle_head", "event_count"
+      ],
+      "properties": {
+        "kind": {"const": "advance"},
+        "boundary_id": {"type": "string", "pattern": "^poslxb_[a-f0-9]{64}$"},
+        "base_state_id": {"type": "string", "pattern": "^posls_[a-f0-9]{64}$"},
+        "candidate_state_id": {"type": "string", "pattern": "^posls_[a-f0-9]{64}$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152},
+        "mark_boundary": {"$ref": "#/$defs/markPointer"},
+        "ledger_boundary": {"type": "object"},
+        "candidate_lifecycle_head": {"$ref": "#/$defs/lifecycleEventPointer"},
+        "event_count": {"type": "integer", "minimum": 0, "maximum": 20000}
+      }
+    },
+    "lifecycleActivationReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "boundary_id", "sha256", "bytes", "mark_boundary", "ledger_boundary"],
+      "properties": {
+        "kind": {"const": "activation"},
+        "boundary_id": {"type": "string", "pattern": "^poslab_[a-f0-9]{64}$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152},
+        "mark_boundary": {"$ref": "#/$defs/markPointer"},
+        "ledger_boundary": {"type": "object"}
+      }
+    },
+    "authRoot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "algorithm", "domain", "root", "entry_count"],
+      "properties": {
+        "schema": {"const": "private.auth_dict_root/v1"},
+        "algorithm": {"const": "sha256-sharded-sorted/v1"},
+        "domain": {
+          "enum": [
+            "selector.evidence_event_seen/v1",
+            "selector.evidence_event_enrollments/v1",
+            "selector.evidence_event_terminals/v1",
+            "selector.evidence_state_enrollments/v1",
+            "selector.evidence_state_terminals/v1",
+            "selector.evidence_mark_seen/v1",
+            "selector.evidence_state_latest/v1",
+            "selector.evidence_derived_latest/v1",
+            "selector.evidence_ledger_rows/v1",
+            "selector.evidence_ledger_terminals/v1",
+            "selector.evidence_lifecycle_boundaries/v1"
+          ]
+        },
+        "root": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "entry_count": {"type": "integer", "minimum": 0}
       }
     },
     "prefix": {
@@ -260,6 +391,180 @@
         "mark_error": {"type": "boolean"},
         "lifecycle_error": {"type": "boolean"},
         "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "evidenceSourceSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "snapshot_id", "captured_at", "state_sha256", "producer_contract", "producer_roots", "activation_boundary",
+        "lifecycle_state", "live_mark_head", "live_ledger_receipt", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_evidence_source_snapshot/v1"},
+        "snapshot_id": {"type": "string", "pattern": "^osess_[a-f0-9]{64}$"},
+        "captured_at": {"$ref": "#/$defs/utc"},
+        "state_sha256": {"$ref": "#/$defs/sha256"},
+        "producer_contract": {"$ref": "#/$defs/evidenceProducerContract"},
+        "producer_roots": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["mark", "lifecycle"],
+          "properties": {
+            "mark": {"$ref": "#/$defs/evidenceProducerRootReceipt"},
+            "lifecycle": {"$ref": "#/$defs/evidenceProducerRootReceipt"}
+          }
+        },
+        "activation_boundary": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "boundary_id", "mark_boundary", "mark_boundary_observed_at_utc", "ledger_boundary"],
+          "properties": {
+            "schema": {"const": "prophet.option_shadow_lifecycle_activation_boundary/v1"},
+            "boundary_id": {"type": "string", "pattern": "^poslab_[a-f0-9]{64}$"},
+            "mark_boundary": {"$ref": "#/$defs/markPointer"},
+            "mark_boundary_observed_at_utc": {"type": "string", "minLength": 1},
+            "ledger_boundary": {"type": "object"}
+          }
+        },
+        "lifecycle_state": {"type": "object"},
+        "live_mark_head": {"$ref": "#/$defs/markPointer"},
+        "live_ledger_receipt": {"type": "object"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "evidenceProducerRootReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path_sha256"],
+      "properties": {
+        "path_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "evidenceReplayState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "replay_id", "snapshot", "producer_contract", "state_id",
+        "state", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_evidence_replay_state/v1"},
+        "replay_id": {"type": "string", "pattern": "^osers_[a-f0-9]{64}$"},
+        "snapshot": {"$ref": "#/$defs/evidenceSnapshotPointer"},
+        "producer_contract": {"$ref": "#/$defs/evidenceProducerContract"},
+        "state_id": {"type": "string", "pattern": "^posls_[a-f0-9]{64}$"},
+        "state": {"type": "object"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "evidenceLedgerChunk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "ledger_chunk_id", "snapshot", "producer_contract", "ordinal",
+        "first_byte", "last_byte", "body_sha256", "body_base64", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_evidence_ledger_chunk/v1"},
+        "ledger_chunk_id": {"type": "string", "pattern": "^oselc_[a-f0-9]{64}$"},
+        "snapshot": {"$ref": "#/$defs/evidenceSnapshotPointer"},
+        "producer_contract": {"$ref": "#/$defs/evidenceProducerContract"},
+        "ordinal": {"type": "integer", "minimum": 1, "maximum": 64},
+        "first_byte": {"type": "integer", "minimum": 0, "maximum": 33554431},
+        "last_byte": {"type": "integer", "minimum": 1, "maximum": 33554432},
+        "body_sha256": {"$ref": "#/$defs/sha256"},
+        "body_base64": {"type": "string", "minLength": 1, "maxLength": 699052},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "evidenceHighWater": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "high_water_id", "phase", "snapshot", "previous_complete", "producer_contract",
+        "replay_state", "replay_state_id", "replay_lifecycle_head", "replay_mark_cursor",
+        "replay_ledger_cursor", "base_state_id", "base_lifecycle_head", "base_mark_cursor",
+        "base_ledger_cursor", "occurrence_stage", "current_boundary",
+        "boundary_mark_cursor", "boundary_mark_row_cursor", "boundary_ledger_row_cursor",
+        "boundary_mark_ordinal",
+        "boundary_ledger_byte_cursor",
+        "boundary_event_cursor", "boundary_terminal_cursor", "boundary_index",
+        "source_state_id", "activation", "lifecycle_head", "mark_cursor", "ledger_cursor",
+        "captured_mark_head", "captured_ledger_receipt",
+        "ledger_capture_bytes", "ledger_replay_bytes", "ledger_replay_rows",
+        "live_mark_scan_cursor", "live_mark_reverse_ordinal",
+        "event_cursor", "event_count", "event_seen_index", "event_enrollment_index",
+        "event_terminal_index", "state_enrollment_cursor", "state_terminal_cursor",
+        "state_enrollment_index", "state_terminal_index", "state_latest_cursor",
+        "state_latest_index", "mark_scan_cursor", "mark_row_cursor", "mark_count",
+        "mark_seen_index", "derived_latest_index", "derived_latest_active_count",
+        "ledger_cursor_bytes", "ledger_chunks", "ledger_row_count", "ledger_row_index",
+        "ledger_terminal_match_count", "ledger_terminal_index",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_evidence_high_water/v1"},
+        "high_water_id": {"type": "string", "pattern": "^osehw_[a-f0-9]{64}$"},
+        "phase": {"enum": ["AUDIT_PINNED", "AUDIT_EVENTS", "AUDIT_STATE_MAPS", "AUDIT_MARKS", "AUDIT_LEDGER", "AUDIT_OCCURRENCES", "COMPLETE"]},
+        "snapshot": {"$ref": "#/$defs/evidenceSnapshotPointer"},
+        "previous_complete": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/evidenceHighWaterPointer"}]},
+        "producer_contract": {"$ref": "#/$defs/evidenceProducerContract"},
+        "replay_state": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/evidenceReplayStatePointer"}]},
+        "replay_state_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^posls_[a-f0-9]{64}$"}]},
+        "replay_lifecycle_head": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/lifecycleEventPointer"}]},
+        "replay_mark_cursor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/markPointer"}]},
+        "replay_ledger_cursor": {"oneOf": [{"type": "null"}, {"type": "object"}]},
+        "base_state_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^posls_[a-f0-9]{64}$"}]},
+        "base_lifecycle_head": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/lifecycleEventPointer"}]},
+        "base_mark_cursor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/markPointer"}]},
+        "base_ledger_cursor": {"oneOf": [{"type": "null"}, {"type": "object"}]},
+        "occurrence_stage": {"enum": ["LEDGER_CAPTURE", "LIVE_MARK_BACKWALK", "COLD_ACTIVATION", "LEDGER_ROWS", "EDGE_INIT", "EDGE_MARK_BACKWALK", "EDGE_MARK_ROWS", "EDGE_TERMINALS", "EDGE_FINALIZE", "DONE"]},
+        "current_boundary": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/lifecycleActivationReceipt"}, {"$ref": "#/$defs/lifecycleBoundaryReceipt"}]},
+        "boundary_mark_cursor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/markPointer"}]},
+        "boundary_mark_row_cursor": {"type": "integer", "minimum": 0},
+        "boundary_mark_ordinal": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "boundary_ledger_row_cursor": {"type": "integer", "minimum": 0},
+        "boundary_ledger_byte_cursor": {"type": "integer", "minimum": 0, "maximum": 33554432},
+        "boundary_event_cursor": {"type": "integer", "minimum": 0},
+        "boundary_terminal_cursor": {"type": "integer", "minimum": 0},
+        "boundary_index": {"$ref": "#/$defs/authRoot"},
+        "source_state_id": {"type": "string", "pattern": "^posls_[a-f0-9]{64}$"},
+        "activation": {"$ref": "#/$defs/lifecycleEventPointer"},
+        "lifecycle_head": {"$ref": "#/$defs/lifecycleEventPointer"},
+        "mark_cursor": {"$ref": "#/$defs/markPointer"},
+        "ledger_cursor": {"type": "object"},
+        "captured_mark_head": {"$ref": "#/$defs/markPointer"},
+        "captured_ledger_receipt": {"type": "object"},
+        "ledger_capture_bytes": {"type": "integer", "minimum": 0, "maximum": 33554432},
+        "ledger_replay_bytes": {"type": "integer", "minimum": 0, "maximum": 33554432},
+        "ledger_replay_rows": {"type": "integer", "minimum": 0},
+        "live_mark_scan_cursor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/markPointer"}]},
+        "live_mark_reverse_ordinal": {"type": "integer", "minimum": 0, "maximum": 20000},
+        "event_cursor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/lifecycleEventPointer"}]},
+        "event_count": {"type": "integer", "minimum": 0},
+        "event_seen_index": {"$ref": "#/$defs/authRoot"},
+        "event_enrollment_index": {"$ref": "#/$defs/authRoot"},
+        "event_terminal_index": {"$ref": "#/$defs/authRoot"},
+        "state_enrollment_cursor": {"type": "integer", "minimum": 0},
+        "state_terminal_cursor": {"type": "integer", "minimum": 0},
+        "state_enrollment_index": {"$ref": "#/$defs/authRoot"},
+        "state_terminal_index": {"$ref": "#/$defs/authRoot"},
+        "state_latest_cursor": {"type": "integer", "minimum": 0},
+        "state_latest_index": {"$ref": "#/$defs/authRoot"},
+        "mark_scan_cursor": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/markPointer"}]},
+        "mark_row_cursor": {"type": "integer", "minimum": 0},
+        "mark_count": {"type": "integer", "minimum": 0},
+        "mark_seen_index": {"$ref": "#/$defs/authRoot"},
+        "derived_latest_index": {"$ref": "#/$defs/authRoot"},
+        "derived_latest_active_count": {"type": "integer", "minimum": 0},
+        "ledger_cursor_bytes": {"type": "integer", "minimum": 0},
+        "ledger_chunks": {"type": "array", "maxItems": 64, "items": {"$ref": "#/$defs/pointer"}},
+        "ledger_row_count": {"type": "integer", "minimum": 0},
+        "ledger_row_index": {"$ref": "#/$defs/authRoot"},
+        "ledger_terminal_match_count": {"type": "integer", "minimum": 0},
+        "ledger_terminal_index": {"$ref": "#/$defs/authRoot"},
         "authority": {"$ref": "#/$defs/authority"}
       }
     },
@@ -505,6 +810,7 @@
         "source_episode_cursor_records", "source_episode_cursor_bytes", "source_episode_chunks", "source_episode_identity_index", "source_episode_group_index", "source_episode_group_count",
         "source_projection_next", "source_run_manifests", "source_run_cursors", "source_candidate_index", "source_campaign_history_index",
         "source_ready_run", "source_ready_count", "source_ready_cursor",
+        "evidence_high_water",
         "pending_manifest", "last_cycle",
         "cycle_count", "handoff_queue_count", "last_handoff_queue",
         "last_candidate", "candidate_count", "candidate_index", "last_decision", "decision_count",
@@ -598,6 +904,7 @@
         "source_ready_run": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
         "source_ready_count": {"type": "integer", "minimum": 0},
         "source_ready_cursor": {"type": "integer", "minimum": 0},
+        "evidence_high_water": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/evidenceHighWaterPointer"}]},
         "pending_manifest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
         "last_cycle": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
         "cycle_count": {"type": "integer", "minimum": 0},
