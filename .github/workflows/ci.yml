@@ -4170,7 +4170,11 @@ jobs:
           git config gc.auto 0
           git sparse-checkout init --cone
           git sparse-checkout set .github scripts
-          git fetch --no-tags --filter=blob:none --depth=2 origin "$GITHUB_REF"
+          # Fetch the immutable event object, not its mutable ref. A queued main
+          # workflow_dispatch can acquire a runner after refs/heads/main advances;
+          # fetching that ref would either prove the wrong tree or reject every
+          # delayed baseline before planning starts.
+          git fetch --no-tags --filter=blob:none --depth=2 origin "$GITHUB_SHA"
           fetched_sha="$(git rev-parse FETCH_HEAD)"
           if [ "$fetched_sha" != "$GITHUB_SHA" ]; then
             echo "::error title=immutable-checkout::event ref moved from $GITHUB_SHA to $fetched_sha before planner acquisition"

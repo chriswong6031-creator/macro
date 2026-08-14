@@ -179,7 +179,8 @@ def test_ci_plan_uses_an_exact_blobless_sparse_checkout() -> None:
     )
     run = checkout["run"]
     assert "git sparse-checkout set .github scripts" in run
-    assert '--filter=blob:none --depth=2 origin "$GITHUB_REF"' in run
+    assert '--filter=blob:none --depth=2 origin "$GITHUB_SHA"' in run
+    assert 'origin "$GITHUB_REF"' not in run
     assert 'fetched_sha="$(git rev-parse FETCH_HEAD)"' in run
     assert '"$fetched_sha" != "$GITHUB_SHA"' in run
     assert 'git checkout --detach "$GITHUB_SHA"' in run

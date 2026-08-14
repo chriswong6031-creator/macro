@@ -2312,7 +2312,8 @@ def test_ci_pack_and_plan_avoid_historical_site_blobs() -> None:
         if step.get("name") == "metadata-only sparse checkout of the immutable event"
     )
     assert "git sparse-checkout set .github scripts" in plan_checkout["run"]
-    assert '--filter=blob:none --depth=2 origin "$GITHUB_REF"' in plan_checkout["run"]
+    assert '--filter=blob:none --depth=2 origin "$GITHUB_SHA"' in plan_checkout["run"]
+    assert 'origin "$GITHUB_REF"' not in plan_checkout["run"]
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
