@@ -78,16 +78,923 @@
 # one is loud on the first PR that ships it.
 
 schema_version: 1
-updated: "2026-08-12"
+updated: "2026-08-14"
 
-engines: {}
+# W3 (2026-08-14): output_class adjudicated for the required_but_uncurated set —
+# evidence-first (producer write paths, live artifact rows, governing prereg docs),
+# one row per engine below, rationale cites the deciding source. Engines the wave
+# left uncurated on purpose (multi-class conflicts, insufficient evidence) are listed
+# in agentos/handoffs/ for WS:EVAL-OS-T1-ENGINE-REGISTRY — they keep their
+# OUTPUT_CLASS_MISSING finding deliberately: a disclosed null beats a forced class.
 
-# Deliberately EMPTY on arrival.
-#
-# output_class is the single largest human cost in T1 — the builder reports the engines
-# that require one, and stops there. THERE IS NO PROPOSAL MODE: an earlier round shipped
-# `--proposals PATH`, which emitted a derived guess per engine, and it was deleted with the
-# rest of the generated-artifact design. A wrong metric contract is worse than a null one,
-# so no output_class is guessed to make a gate green; the warn-tier law
-# `epistemics.engine_authority_evidence` reports the gap on every PR and the count is
-# trackable. Ratification is T7's work in research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md.
+engines:
+  admin/server.py::nw-rails:
+    output_class:
+      rationale: data/operator/action_ledger.jsonl records one row per HUMAN operator UI action (acted/dismissed/overrode/snoozed)
+        with server-stamped ts (admin/actions.py::append_action; VALID_ACTIONS at :34; POST /api/actions
+        handler in admin/server.py). An audit trail of human decisions — reconciliation and completeness
+        are its only contract.
+      value: descriptive
+  engine/ai_desk.py::qualitative-intelligence:
+    output_class:
+      rationale: data/ai_desk/theses.jsonl rows assert a directional lean (overweight/underweight a
+        GICS sector vs SPY, or fade-fear on VIX) over a stated horizon_d with an engine-derived machine-checkable
+        rel_return falsifier and check_by date (engine/ai_desk.py::_build_thesis, ::_derive_check);
+        live rows carry lean/horizon_d/falsifier/entry_levels. Dated falsifiable directional claims
+        — predictive by product; the LLM is implementation.
+      value: predictive
+  engine/altdata_ledger.py::qualitative-intelligence:
+    output_class:
+      rationale: data/altdata/theses.jsonl asserts that a ticker lit by >=2 independent alt-data channels
+        will out/underperform SPY beyond a 5% threshold over the stated horizon — lean is a deterministic
+        function of claim_family (engine/altdata_ledger.py::build_theses :265-268, THRESHOLD at :40;
+        'no LLM'), with the live corpus one-sided (overweight) to date. Deterministic rule-derived,
+        but the product is a dated falsifiable directional claim graded at its ruler.
+      value: predictive
+  engine/board_ledger.py::hk-canada:
+    output_class:
+      rationale: 'data/board_ledger/ca_board.parquet logs the HK/CA standout board''s published rank
+        order each render and grades it against realized benchmark-relative forward returns — ''the
+        explicit standout-board scoreboard the plan mandates: it logs the RANKED board each render,
+        then grades it honestly'' (engine/board_ledger.py:1-46, ::append_board). Recorder/grader of
+        another surface''s ordering claims; asserts no ordering of its own.'
+      value: descriptive
+  engine/btc_impulse_ledger.py::btc-vector:
+    output_class:
+      rationale: 'data/vector/impulse_ledger.jsonl stamps one row per BUILD DAY with the impulse radar''s
+        ladder position copied verbatim from the caller (engine/btc_impulse_ledger.py::stamp; the radar
+        logic lives in engine/btc_impulse_radar.py, which holds no registry cell) and ::grade scores
+        fired legs against a fixed ±5%/3-session forward-return ruler. Live corpus: 38 rows, fires False
+        on every row, hit_rate None both directions — the cell''s product is the accountability tape
+        of another module''s radar, graded at a declared ruler it does not itself assert (review R4).'
+      value: descriptive
+  engine/btc_override_ledger.py::btc-vector:
+    output_class:
+      rationale: data/vector/override_ledger.jsonl + override_scored.json monitor whether the four FROZEN
+        pre-registered sub-claims justifying the already-decided midterm_blackout 0%-BTC override held
+        against realized closes, via block-bootstrap nulls and BH-FDR — 'MONITORING ONLY — it carries
+        ZERO allocation authority. Nothing in the sizing or allocation execution path may import or
+        read this module' (engine/btc_override_ledger.py:1-20). One-shot verification of a decided policy's
+        stated premises; the statistical machinery grades past claims, it does not originate forward
+        ones.
+      value: descriptive
+  engine/btc_regime_ledger.py::btc-vector:
+    output_class:
+      rationale: data/vector/regime_ledger.jsonl stamps the BTC regime band/index/tier sub-scores verbatim
+        from the caller's regime dict (engine/btc_regime_ledger.py::stamp; the regime is computed in
+        engine/btc_regime.py within scripts/build_vector.py's run) and ::score measures the recorded
+        classification's state-conditional record (drawdown under STAY-AWAY, forwards under DOUBLE-DOWN).
+        Under the cell partition this is the regime's accountability recorder — grading of another engine's
+        claims — not the classifier itself (R4 register-then-grade cohort rule).
+      value: descriptive
+  engine/china_basket_turn.py::china-alpha:
+    output_class:
+      rationale: 'basket_turn_cn.v1 + data/china_basket_turn/ledger.jsonl assign every CN basket (curated
+        + THS) exactly one washout-lifecycle state via a hard-precedence technical cascade (engine/china_basket_turn.py::classify_basket);
+        the AUTHORITY block pins may_rank/gate/size/escalate=False and evidence tags carry no forward
+        verbs. State assignment with transition/stability semantics. Not predictive: a TURNING print
+        asserts current cascade position, not a forward outcome, and no qledger claim is ever registered.'
+      value: classification_state
+  engine/china_radar_ledger.py::china-alpha:
+    output_class:
+      rationale: 'data/china_radar/ledger.parquet transcribes fired cross-signal divergences whose sign
+        ORIGINATES in engine/china_radar.py::_divergence — engine/china_radar_ledger.py''s accrue copies
+        the direction verbatim, its columns carry no hypothesis field, and fwd_rel/status grading is
+        a read-time view (::track_record). The cell''s own act is PIT registration plus grading of another
+        module''s fired signs — accountability reconciliation, not origination (review R2: n_resolved=0
+        to date).'
+      value: descriptive
+  engine/china_regime_store.py::china-alpha:
+    output_class:
+      rationale: data/china_regime/regime_daily.parquet is the PIT keep-first archive of the CN regime
+        row — engine/china_regime_store.py::append reads today's already-computed row from data/china_regime/regime_history.parquet
+        ('all produced by china_run.py', store header) and preserves it immutably; ::get_regime_for_date
+        then serves it to consumers. The quad/liquidity/cycle classification originates in engine/china_run.py;
+        this cell's product is faithful PIT transcription and canonical distribution of it (R4 register-then-grade
+        cohort rule).
+      value: descriptive
+  engine/china_sector_cycles.py::china-alpha:
+    output_class:
+      rationale: data/china_sector_cycles/forward_log.parquet carries the identical phase + proj_next/proj
+        cone + hazard block as its US/country siblings and is graded by the SAME shared promise-grader
+        with identical gates — scripts/grade_promises.py lists china_sector_cycles in ENGINES and its
+        scorecard exists on disk over 5,081 stamps (turn precision/recall, cone calibration, reliability,
+        FDR). The china-specific grader is additive, and its 'can never earn' clauses withhold AUTHORITY,
+        not the assertion — hazard values ship source='MODEL'. The falsifiable next-turn timing/direction
+        projection is the evaluated product; one class across the cycle trio.
+      value: predictive
+  engine/china_standout_audit.py::china-alpha:
+    output_class:
+      rationale: Attribution + fitness artifacts assign matured china_standout_track picks a retrospective
+        two-axis cause taxonomy (outcome_cause x process_fault) and roll stratified hit/capture stats
+        into the fitness card (engine/china_standout_audit.py::_compute_attribution, ::_axis1_outcome);
+        _AUTHORITY_BLOCK declares not_a_signal with scored_path/ranking/sizing forbidden. Backward reconciliation
+        of realized outcomes — no forward assertion.
+      value: descriptive
+  engine/china_standout_track.py::china-alpha:
+    output_class:
+      rationale: 'data/china_standout_track/board.parquet records the published CN board each run —
+        engine/china_standout_track.py::append_board is a pure enumeration stamping board_rank in the
+        order handed to it (the ordering originates in engine/china_board_rank.py), and ::grade computes
+        rank-IC of that recorded order against forward excess. A board scoreboard: it logs and grades
+        another module''s ordering claim, asserting none of its own (same species as engine/board_ledger.py
+        and the grade_us_board lanes).'
+      value: descriptive
+  engine/cn_prophet_audit.py::china-alpha:
+    output_class:
+      rationale: 'data/cn_prophet_audit/forward_log.parquet is a nightly zero-authority forensic pass
+        over china_standout_track''s own board ledger — chase-shape loser forensics, missed-runner funnel
+        attribution, rank-ordering effectiveness — writing authority=''none — ops telemetry'' into the
+        artifact (engine/cn_prophet_audit.py::run; ::rank_effectiveness: ''this grades an ordering it
+        cannot change''). Pure retrospective measurement.'
+      value: descriptive
+  engine/cn_reversal_sleeve_ledger.py::china-alpha:
+    output_class:
+      rationale: engine/cn_reversal_sleeve_ledger.py::append_rebalance PIT-registers sleeve membership
+        computed upstream (rebalance_date/ticker/rev_z/weight; selection lives in engine/cn_reversal_sleeve.py,
+        a different producer) and ::grade computes realized-excess statistics on matured rows — 'the
+        REAL track record... RESEARCH/display telemetry, never a trade trigger'. A track-record register
+        originating no selections or forward claims.
+      value: descriptive
+  engine/demand_ledger.py::qualitative-intelligence:
+    output_class:
+      rationale: 'data/demand_chain/theses.jsonl turns demand-chain divergence reads into ''FALSIFIABLE,
+        forward-scored predictions'' (module docstring, ''no LLM call here''): lean outperform/underperform
+        vs SPY with chain-specific horizon_d and a rel_return falsifier check (engine/demand_ledger.py::_thesis_for).
+        Dated falsifiable directional claims.'
+      value: predictive
+  engine/experiments_registry.py::qualitative-intelligence:
+    output_class:
+      rationale: site/marketdata/experiments.json (experiments_registry.v1) is a meta-inventory of every
+        running validation/accrual experiment and when to check back — 'DISPLAY-ONLY operational metadata;
+        never sizes anything' (engine/experiments_registry.py:1-23; ::_refresh_qledger_promotion READS
+        promotion_readiness, writes nothing back). Inventory reconciliation; no market assertion.
+      value: descriptive
+  engine/foresight_earliness.py::qualitative-intelligence:
+    output_class:
+      rationale: 'data/foresight/earliness_log.jsonl measures how much CURRENT attention/crowding each
+        theme has (earliness = 1 - rank_pct of four observable attention legs: coverage arrival, news
+        velocity, 13F breadth, tape extension — engine/foresight_earliness.py::compute_foresight_earliness;
+        ''Measures ATTENTION, not revisions... display-only''). A crowding meter describing present
+        state; it neither directs nor selects what deserves attention.'
+      value: descriptive
+  engine/hub_track_record.py::qualitative-intelligence:
+    output_class:
+      rationale: data/hub/signal_snapshots.jsonl + track_record.json record the Intelligence Hub's OWN
+        prior claims daily and grade them against realized SPY-relative returns — 'measure, don't assert'
+        (engine/hub_track_record.py:1-25). Accountability reconciliation of another surface's claims;
+        originates none of its own.
+      value: descriptive
+  engine/index_leadership_track.py::oracle:
+    output_class:
+      rationale: data/index_leadership/snapshots.jsonl logs the index-leadership layer's RUNNING/COILING
+        calls verbatim (payload originated by scripts/build_index_leadership.py:390) and grades them
+        against realized member-EW SPY-relative returns — 'Falsifiable forward TRACK-RECORD... measure,
+        don't assert' (engine/index_leadership_track.py:1-22, ::snapshot assigns no score itself). Accountability
+        reconciliation of another producer's claims.
+      value: descriptive
+  engine/mag7_regime.py::flow-continuity:
+    output_class:
+      rationale: data/cohort_flow_ledger/ledger.jsonl assigns each of four tech cohorts one of three
+        options-positioning buckets (call_tilted/put_tilted/balanced) per session from the day's put/call
+        ratio; the producer's own doctrine block reads 'accrual only... grades NOTHING yet — registered
+        as an expected-NULL forward meter. No direction language' (engine/mag7_regime.py::_append_cohort_flow_ledger,
+        ::_pc_word). Daily categorical state assignment despite the forward-meter name.
+      value: classification_state
+  engine/mag7_regime.py::mag7-regime:
+    output_class:
+      rationale: data/mag7_regime/ledger.jsonl assigns the Mag-7 cap-weighted composite one of six mutually-exclusive
+        trend/regime labels plus a three-value structure label every session via a deterministic first-match
+        rule (engine/mag7_regime.py::_compute_trend_state, ::_compute_structure). Unconditional per-session
+        state classification.
+      value: classification_state
+  engine/master_brain.py::qualitative-intelligence:
+    output_class:
+      rationale: 'data/master_brain/theses.jsonl rows are dated falsifiable directional claims — lean
+        in {overweight,underweight,avoid,fade-fear} with horizon_d and an engine-derived rel_return/level
+        falsifier check, pre-registered immutably (engine/master_brain.py::_mb_build_thesis, ::_append_ledger
+        via desk_ledger.reject_existing_ids) and graded by engine/master_brain_scorer.py. The generative-sounding
+        ''morning note'' framing describes a separate non-authority brief artifact. Metric-binding caution
+        for T7: the desk ''hit'' endpoint is a NON-REFUTATION rate with a no-skill null far above one-half
+        (engine/desk_scorer.py) — the honest ruler is dir_accuracy or placebo-netted hit rate, never
+        the bare hit_rate field.'
+      value: predictive
+  engine/metabolism/authority_audit.py::metabolism-phase-v2c:
+    output_class:
+      rationale: data/metabolism/authority_audit/<quarter>.json reconciles config/synapse.yml's declared
+        tiers/consumers/scored_path_surfaces against the governance rule that no display/shadow lobe
+        may feed a confirmer/scored consumer, reporting violations found (engine/metabolism/authority_audit.py::run_audit).
+        A declared-state audit (synapse.yml marks the lane DORMANT-UNWIRED); no forward or state claim
+        of its own.
+      value: descriptive
+  engine/metabolism/insight_bus.py::metabolism-phase-v2a:
+    output_class:
+      rationale: 'data/metabolism/insight_bus.jsonl emits one typed row per fired condition in the system''s
+        own operation (kind enum: health_transition/contradiction/falsifier_tripped/freshness_sla_breach/...),
+        and emitters fire ONLY on threshold-crossing conditions (engine/metabolism/insight_bus.py::health_transition_emitter
+        emits only degraded/stale/missing; ::falsifier_tripped_emitter only on FALSIFIER_TRIPPED). Event
+        finding with precision/false-positive burden as the honest contract; not classification — most
+        entities get no row on most runs.'
+      value: detection_event
+  engine/metabolism/lifecycle.py::metabolism-phase-v2c:
+    output_class:
+      rationale: data/metabolism/lifecycle_docket/ items assert lobe lifecycle state transitions (active->probation,
+        demoted->retired, ...) through the _ALLOWED_EDGES fence that refuses tier-raising edges (engine/metabolism/lifecycle.py::transition,
+        ::_write_docket_item). The product is the lifecycle state machine over registered lobes; transition
+        legality and stability are its contract.
+      value: classification_state
+  engine/metabolism/lobe_registry.py::metabolism-phase-v2c:
+    output_class:
+      rationale: engine/metabolism/lobe_registry.py only loads and validates the declared lobe charter
+        registry (config/lobe_charters.yml) and its tier mirror — 'This module only loads + validates;
+        it does not write' (::load, ::validate_tier_mirror; ledger=none). Registry-consistency reporting;
+        nothing asserted beyond declared-state validity.
+      value: descriptive
+  engine/metabolism/memory.py::metabolism-phase-v2d:
+    output_class:
+      rationale: data/metabolism/fitness_history/<lobe>.jsonl (per-lobe dirs; the flat declared path
+        is stale) appends raw per-run snapshots of each lobe's fitness sensor readings (engine/metabolism/memory.py::append_fitness_history)
+        consumed by organism_state's trajectory computation. A telemetry tape — 'these were lobe X's
+        sensor values at run Y'.
+      value: descriptive
+  engine/metabolism/trajectory.py::metabolism-phase-v2a:
+    output_class:
+      rationale: data/metabolism/trajectory.jsonl assigns the whole organism one GREEN/AMBER/RED trajectory
+        label every run, computed from rolling fitness_delta with explicit transition gating (engine/metabolism/trajectory.py::build_trajectory_row,
+        ::_compute_fitness_delta). Unconditional per-run state assignment; transition lag/stability
+        are its contract.
+      value: classification_state
+  engine/metabolism/verify.py::metabolism-phase-v2c:
+    output_class:
+      rationale: data/metabolism/lifecycle/<lobe>.jsonl journals grading outcomes of already-graded
+        proposal contracts into per-lobe breach counters feeding the demotion ladder (engine/metabolism/verify.py::journal_breach,
+        ::grade_demotion_ladder). The breach events are DEFINED by the ladder's own rules over existing
+        grades — deterministically re-derivable bookkeeping, not detection of an external event with
+        a precision/recall ground truth. Reconciliation of the grading record.
+      value: descriptive
+  engine/metabolism/verify.py::metabolism-phase-v2d:
+    output_class:
+      rationale: data/metabolism/verify/<cycle>.json + agenda_archive re-grade a proposal's ALREADY-REGISTERED
+        fitness contract against realized sensor deltas, classifying outcomes CONFIRMED/TRIPPED/UNVERIFIABLE
+        (engine/metabolism/verify.py::verify_proposal, ::write_verify_record). Grading another lane's
+        past forecast — measurement, not origination.
+      value: descriptive
+  engine/mtf_upturn.py::china-alpha:
+    output_class:
+      rationale: data/mtf_upturn_cn/ledger.jsonl assigns every universe symbol one of NONE/UPTURN_WATCH/UPTURN_CONFIRMED
+        via a K-of-N multi-timeframe confluence count with CONFIRMED hysteresis (engine/mtf_upturn.py::_compute_symbol);
+        AUTHORITY block may_rank/gate/size/escalate=False and display-tier law bans act-now verbs. Three-state
+        technical classification with transition semantics; no qledger registration.
+      value: classification_state
+  engine/name_score_grader.py::china-alpha:
+    output_class:
+      rationale: data/name_score/us_calls.parquet registers per-name POTENTIAL scores computed in engine/name_score.py
+        — engine/name_score_grader.py::append_name_calls copies score/tier/fuel/trigger with no scoring
+        arithmetic of its own, and its grade() (cross-sectional rank-IC) has zero production callers
+        (the live grading is a diverged mirror in engine/prophet_miss_audit.py). The cell is the score's
+        registration-and-audit lane; the ordering claim originates elsewhere.
+      value: descriptive
+  engine/neuralweb/key_pool.py::metabolism-phase-v2b:
+    output_class:
+      rationale: data/metabolism/key_ledger.jsonl tracks estimated usage/cooling state per OAuth key
+        in the dispatch pool (session rows + cooling rows; engine/neuralweb/key_pool.py::record_session,
+        ::window_load/weekly_load) — operational belief-state bookkeeping for key rotation. Reconciliation
+        against actual dispatch history is its only honest metric.
+      value: descriptive
+  engine/neuralweb/reflexes.py::neural-web:
+    output_class:
+      rationale: data/reflexes/<NAME>/firings.jsonl records deterministic trigger->scoped-chain->bounded-action
+        FIRINGS with is_context_only=True mandatory ('these records annotate the spine index but feed
+        no score/allocation/ranking surface' — engine/neuralweb/reflexes.py:1-54; ::record_firing).
+        The claim per row is that a declared tripwire condition fired; precision and false-positive
+        burden per unit time are the honest contract.
+      value: detection_event
+  engine/options_signal_campaign.py::options-intelligence-program:
+    output_class:
+      rationale: data/options_signal_campaign/campaigns.jsonl deterministically groups valid flow episodes
+        sharing (session_date,ticker,right,expiration,strike) into an append-only campaign census with
+        aggregate stats — 'Nothing in this module ranks, scores, gates, sizes, selects, originates,
+        publishes, trains, or computes option P&L' with a 13-key all-False authority block (engine/options_signal_campaign.py:1-12,
+        :63-77). Mechanical exact-key census.
+      value: descriptive
+  engine/personality_relief_hazard.py::personality-timing:
+    output_class:
+      rationale: data/personality_timing/relief_hazard.jsonl detects historical base+first-recovery
+        pattern instances and, 63 sessions later, tags each with its realized outcome under a sole-read
+        accrual design — 'deliberately inert with respect to the product... cannot enter, rank, size,
+        gate, alert' with no interim effect estimates and sole_read_executed=false (engine/personality_relief_hazard.py:1-10,
+        ::_grade_row). A research accrual harness measuring past pattern instances; no live claim is
+        emitted.
+      value: descriptive
+  engine/personality_terminality_shadow.py::personality-timing:
+    output_class:
+      rationale: data/personality_timing/terminality_shadow.jsonl scores each qualifying incumbent fire
+        with frozen boosted-tree probabilities p_near_low and p_tail_safe plus a locator_score thresholded
+        at the frozen DEV cut (engine/personality_terminality_shadow.py::_score_source, ::score_frozen_model),
+        graded later by hit-rate/MAE. Live per-subject forward probabilities at declared rulers — calibration
+        is the contract; the frozen FIT lives in the separate pss_f4_hazard manifest cell.
+      value: predictive
+  engine/policy_intent_desk.py::qualitative-intelligence:
+    output_class:
+      rationale: data/policy_intent/theses.jsonl asserts a directional lean (overweight/underweight/avoid
+        a proxy ticker vs SPY) from a policy/realpolitik read, with horizon_d 10-126td and the same
+        engine-derived rel_return falsifier contract as the sibling desks (engine/policy_intent_desk.py::_build_thesis
+        pipeline). Dated falsifiable directional claims — predictive by product.
+      value: predictive
+  engine/qledger.py::qualitative-intelligence:
+    output_class:
+      rationale: 'engine/qledger.py is the Universal Scoreboard substrate — ''the ONE claims+grades
+        substrate every scored number must pass through'', owning the claim schema + register() validation,
+        the grade model and the track-record emit (module docstring; ::register appends other desks''
+        claims). Its own output is the reconciled state of the corpus: schema integrity, grading correctness,
+        honest-N — reconciliation properties. The forward claims inside belong to the originating desks,
+        which carry their own output_class.'
+      value: descriptive
+  engine/run.py::engine-fix:
+    output_class:
+      rationale: 'data/regime/latest.json''s regime block (quad/quad_name/label/raw_quad/pending_*)
+        assigns every session one of four macro regime quadrants — Q1 Goldilocks through Q4 Growth-scare/Deflation
+        (engine/regime.py:25-26) — through a hysteresis-gated confirmation machine (engine/regime.py::apply_hysteresis,
+        ::flip_condition; republished at engine/run.py:263-269). The classification contract is scoped
+        to those regime keys: latest.json is a 79-key composite that also embeds unrelated context blocks
+        (sector_rs, mtf_signals, liquidity_quality), which carry their own surfaces. Its user_ranking
+        authority is downstream governance (alert_triage/board_ordering/push_floor read the regime state),
+        not a semantic hint — the regime block orders nothing; it is the catalog''s own regime-vector
+        classification exemplar.'
+      value: classification_state
+  engine/shock_deescalation.py::policy-shock:
+    output_class:
+      rationale: 'data/reflexes/shock_deescalation/firings.jsonl fires when repricing_coherence reaches
+        SHOCK (or 2x ELEVATED with driver flip), opening a de-escalation window with direction hard-coded
+        0 (engine/shock_deescalation.py::_evaluate_trigger; PS-R3: ''Originating direction, reordering
+        ranks, or touching sizing is FORBIDDEN''). Detects a declared policy-shock condition; no directional
+        or state-vector claim.'
+      value: detection_event
+  engine/spine.py::qualitative-intelligence:
+    output_class:
+      rationale: data/spine/predictions.parquet rows are ADAPTED from other engines' own prediction
+        ledgers into the one shared signal_id->outcome schema — engine/spine.py::adapt_us_board copies
+        score from the existing composite_z column and derives direction from the ledger's lane string;
+        ::adapt_altdata copies convergence_score; ::adapt_desk_scorer sets constants ('the one shared
+        signal-id -> outcome substrate', 'ADAPTERS, NOT DUPLICATES'). The cell originates no market
+        claim; its product is the reconciliation substrate and uniform grading (::graded_rows feeds
+        the pooling engine). Live corpus carries both matured and not-yet-graded adapted rows — descriptive
+        rests on non-origination, not on completeness.
+      value: descriptive
+  engine/stock_desk.py::qualitative-intelligence:
+    output_class:
+      rationale: data/stock_desk/theses.jsonl carries 'an ACCOUNTABLE, FALSIFIABLE LEAN per top pick
+        — a direction the model is graded on' (engine/stock_desk.py:5-21) with lean/conviction/horizon_d/falsifier
+        check and entry levels; live rows confirm the schema. Explicitly distinguished from the board's
+        cross-sectional rank. Predictive.
+      value: predictive
+  engine/subsector_track_record.py::oracle:
+    output_class:
+      rationale: data/subsector_rotation/snapshots.jsonl records the rotation engine's emerging_score
+        ranking and emerging/fading/neutral labels daily (originated by scripts/build_subsector_rotation.py:273)
+        and grades them against realized member-EW SPY-relative forwards ('Those are CLAIMS about the
+        future. This harness records them daily and... grades them' — engine/subsector_track_record.py:1-33).
+        Track-record reconciliation; originates neither ranking nor labels.
+      value: descriptive
+  engine/thematic_desk.py::qualitative-intelligence:
+    output_class:
+      rationale: data/thematic_desk/theses.jsonl asserts a directional lean on a THEME via its proxy
+        against the REGIONAL benchmark (theme_rel_return check, not the siblings' SPY rel_return — engine/thematic_desk.py::_derive_check),
+        produced by a multi-analyst LLM panel plus crowding-skeptic adjudication (::_run_panel, ::_adjudicate)
+        and graded on the machine-checkable falsifier. This ledger alone also persists thesis/evidence/dissent
+        prose, but the authority-bearing product is the structured falsifiable forecast — predictive
+        by product.
+      value: predictive
+  engine/track_record.py::setup-species:
+    output_class:
+      rationale: data/signal_archive/track_record.parquet ingests buy/sell/quality markers authored
+        by a DIFFERENT engine — type/quality are frozen identity columns read from site/signals marker
+        files via engine/track_record.py::_iter_marker_files — and MEASURES realized forward drawdown/return/MFE
+        against them ('MEASUREMENT ONLY... Never return-alpha'). The fwd_* columns are its measured
+        content, not its own forward claims; reconciliation and reproducibility are its contract.
+      value: descriptive
+  engine/trial_ledger.py::engine-fix:
+    output_class:
+      rationale: data/trial_ledger.jsonl records, at GENERATION time, every configuration a calibration
+        search touched per signal family (content-hash deduped) plus declared budgets — the anti-p-hacking
+        trial-count ledger (engine/trial_ledger.py::TrialLedger.log_trial, ::log_declared_budget). An
+        honest count of search effort; reconciliation only.
+      value: descriptive
+  engine/us_basket_turn.py::prophet:
+    output_class:
+      rationale: data/us_basket_turn/ledger.jsonl is the verbatim US port of the CN washout-lifecycle
+        state machine — six states per basket from the EW technical cascade; 'DISPLAY TIER, ZERO SCORED
+        AUTHORITY... ranks nothing, gates nothing, sizes nothing' and 'A TURNING print is NOT a bottom
+        call' (engine/us_basket_turn.py:47-73), with engine/us_board_rank.py granting it zero points
+        (context chips only). Classification of current cascade position, not a forecast.
+      value: classification_state
+  engine/us_context_vector.py::momoedge:
+    output_class:
+      rationale: data/us_prophet_rank/candidates/YYYY-MM.parquet stamps one 180-column point-in-time
+        feature-and-admission snapshot per name per night — 'joins no forward returns, computes no score,
+        and changes no production rank or lane... Zero authority at birth' (engine/us_context_vector.py:1-54).
+        A PIT feature log for later study; reproducibility and PIT fidelity are its contract.
+      value: descriptive
+  engine/us_prophet_grades.py::momoedge:
+    output_class:
+      rationale: data/us_prophet_rank/grades/ turns each matured candidate stamp into realized forward
+        measurements (fwd_ret, excess_spy, fwd_mfe, fwd_mdd at 10/21/42/63d) — 'the OUTCOME half...
+        measured against what the tape actually did instead of asserted', policy-free fixed-horizon
+        marks (engine/us_prophet_grades.py:1-49, ::grade_row). Measurement of the stamp log; originates
+        no claims.
+      value: descriptive
+  scripts/backtest_vol_overlay.py::options-alpha:
+    output_class:
+      rationale: 'data/vol_regime/basket_overlay_gate.json certifies, via a nested-ablation backtest
+        (L0-L3, 1993-2026), the vol-regime sizing overlay''s measured record: live_overlay_helps and
+        the published dd-reduction CI answer L2-vs-L0 (the unscaled book), and the marginal-over-vol-targeting
+        question is the separate regime_marginal_over_voltarget field (L2-vs-L1) — scripts/backtest_vol_overlay.py:224-267.
+        The consumer takes booleans only (engine/vol_regime.py::regime_caution_scored returns bool(...);
+        every haircut magnitude comes from config, never from this artifact). A verdict about a mechanism''s
+        historical record, re-derivable by reconciliation; the live scalar is engine/vol_regime.py''s
+        product.'
+      value: descriptive
+  scripts/build_basket_turn_grading.py::fast-turn:
+    output_class:
+      rationale: 'The cell''s three itemized artifacts are all display-tier bookkeeping/reconciliation
+        logs: data/basket_turn/disagreement_ledger.jsonl (engine/tape_disagreement.py — a self-described
+        ''LATENCY METER... not an allocation-flip predictor'') plus the cohort claim/grade transcription
+        logs. The directional cohort claims that engine/basket_turn_cohort.py::register_cohort_claims
+        originates are registered INTO data/qledger/claims.jsonl, which the TOTAL/DISJOINT partition
+        assigns to engine/qledger.py::qualitative-intelligence — they are graded under the qledger basket_turn.v1
+        family lane, never under this cell (review R3). This cell''s own contract is reconciliation
+        fidelity of its meters and logs; the predictive strand''s home is the qledger family machinery.'
+      value: descriptive
+  scripts/build_basket_washout_state.py::blocked-entry-override:
+    output_class:
+      rationale: 'site/factordata/basket_washout_state.json assigns each basket and name a peer-washout
+        admission state — leave-one-out peer_dd with per-threshold qualifies flags recomputed from the
+        published numbers (scripts/build_basket_washout_state.py::_qualifies, ::leave_one_out_median).
+        The docstring''s ''scores/ranks/gates nothing'' is RETIRED by the synapse promotion note (display->scored
+        2026-08-10): engine/signal_quality.py live-reads names[].qualifies[''20''] to waive a buy-filter
+        leg, and the governing prereg — research/RECLAIM_VETO_CONDITIONAL_PREREG.md §3, the qual_ladder_ref
+        at config/synapse.yml:9459 — gates on state-conditional forward-return CIs, the classification
+        contract exactly. Not descriptive: the qualifies state is a gauntleted admission condition consumed
+        live.'
+      value: classification_state
+  scripts/build_baskets.py::sector-pulse:
+    output_class:
+      rationale: site/basketdata/baskets.json orders thematic baskets relative to one another — sorted
+        by trailing relative performance with leader/laggard story plus theme_intel's 'transparent composite
+        score' carrying an explicit rank field (engine/baskets.py:245,:277,:282-285; engine/theme_scoring.py:1-18)
+        — and board_ordering is its scored surface. The relative ORDER is the product; per-basket direction
+        is not asserted. The catalog names 'sector rotation, basket scores' as ranking exemplars.
+      value: ranking
+  scripts/build_causal_confluence_audit.py::causal-hypothesis-factory:
+    output_class:
+      rationale: 'data/neuralweb/causal_confluence_audit.json emits three deterministic structural-hygiene
+        annotations over the ALREADY-COMPUTED confluence graph and mechanism corpus (duplicate_exposure,
+        shared_parent_suspect, ...) with ''ZERO recomputation... ZERO LLM-originated annotations...
+        not_a_signal: True unconditionally'' (engine/neuralweb/causal_audit.py:1-53, _AUTHORITY). Audit
+        reconciliation of existing artifacts.'
+      value: descriptive
+  scripts/build_china_library.py::china-alpha:
+    output_class:
+      rationale: china_standouts.json orders CN A-share candidates into a ranked standouts buy board
+        via the cascade-tier x conviction blend (scripts/build_china_library.py::compute_china_standouts,
+        order preserved from signal_gate.blend_sorted), with site/factordata/cn_track_ledger.json as
+        its forward accountability record — the CN parity of the us_standouts board-ordering pattern.
+        The ordering claim is the product; the track ledger grades that ordering (board rank vs forward
+        excess).
+      value: ranking
+  scripts/build_country_cycles.py::cycle-intelligence:
+    output_class:
+      rationale: 'data/country_cycles/forward_log.parquet carries, per country/region ETF and basket,
+        the phase wheel PLUS the explicit next-turn projection (direction, central date, Q25/Q75 cone,
+        hazard probabilities — engine/cycle_ontology.py::project_next; engine/cycle_forward_log.py schema)
+        under the same shared promise-grading contract as the sector siblings (scripts/grade_promises.py:
+        turn precision/recall, cone calibration). The falsifiable turn-timing projection is the evaluated
+        product; one class across the cycle trio.'
+      value: predictive
+  scripts/build_foresight.py::qualitative-intelligence:
+    output_class:
+      rationale: 'data/foresight/log.jsonl assigns each tracked theme a lifecycle STAGE — ''the desk''s
+        one number is not a score, it is a STAGE'' (engine/foresight_cascade.py::_stage, one of 9 enum
+        values from bottleneck x revision-breadth legs) — written as a stage-TRANSITION log with a 7-day
+        heartbeat (::_append_ledger, _HEARTBEAT_DAYS=7), not a daily panel. The grader aggregates PER
+        STAGE with hit computed only for directional stages and avg_excess for all (engine/foresight_grader.py::grade_ledger_rows,
+        ::_finalize_bucket) — state-conditional forward distributions, the classification contract verbatim.
+        Not predictive: most stage prints assert position, and the non-directional stages are control
+        arms the grader refuses to score as hits.'
+      value: classification_state
+  scripts/build_government_revenue_candidates.py::government-revenue-foresight:
+    output_class:
+      rationale: 'candidate_ledger.jsonl admits one row per receipt-bound, verified real-world government
+        award/obligation-change event, entity-resolved to a listed issuer (engine/government_revenue/candidates.py::build_candidate_observations
+        — ''an admission gate, not a signal generator''); the claim is that the event occurred and is
+        exactly linked, so event precision/recall is the honest contract. Not predictive: earnings_transmission.direction
+        is explicitly ''research_context_not_trade_signal'' with authority.* false and no downstream
+        accuracy grading.'
+      value: detection_event
+  scripts/build_intraday_flow.py::intraday-flow-tracker:
+    output_class:
+      rationale: 'data/intraday_flow/ledger.parquet stamps the FULL leader universe every session (116
+        rows per session, no selection step — K=0 rows included) with seven boolean confluence legs,
+        their count K, and forward returns at 1/5/10/21d filled as they mature (scripts/build_intraday_flow.py::_advance_ledger,
+        _FWD_HORIZONS). An unfiltered panel accrual whose designed claim is conditional: sessions with
+        more legs lit precede stronger forward strength, runnable as a conditional-on-K contract with
+        low-K rows as the internal control. Executability today is partial — stance is null on all live
+        rows and legs L3/L4/L5 are unpopulated — so the predictive contract binds to the K-leg design,
+        not to populated directional prose.'
+      value: predictive
+  scripts/build_liquidity_plumbing.py::neural-web:
+    output_class:
+      rationale: data/neuralweb/liquidity_plumbing.json is a deterministic multi-source readout of CURRENT
+        liquidity-plumbing conditions (Fed balance sheet, RRP, TGA, funding spreads) with lookup-table
+        relabelings as headline state — 'This lobe EXPOSES liquidity context — it never originates a
+        signal, raises a score/rank, or fires a hard gate' (engine/neuralweb/liquidity_plumbing.py:1-51).
+        Measured present-state description; the labels are presentation over measurements, not a modeled
+        regime.
+      value: descriptive
+  scripts/build_macro_snapshot.py::macro-context-rail:
+    output_class:
+      rationale: 'data/macro_snapshots/ledger.parquet + latest.json freeze per (asof, domain, field)
+        the state labels ~30 upstream domain engines computed, and consumers stamp them as PIT retrieval
+        context only (engine/neuralweb/query.py::_stamp_macro_context — backward merge_asof, fills only
+        missing, fails open). One label is locally banded (::_commodity_breadth_bucket bins pct_up_trend
+        at 0.70/0.40), so the module is not purely verbatim — but the cell''s product remains the reconciliation
+        snapshot of other engines'' states, evaluated by PIT fidelity and freshness. Not classification_state:
+        no consumer performs state-conditional evaluation on this ledger, and transition-lag grading
+        here would grade the upstream engines'' labels.'
+      value: descriptive
+  scripts/build_market_structure.py::market-structure:
+    output_class:
+      rationale: 'data/market_structure/ledger.parquet unions three row types (scripts/build_market_structure.py::_build_ledger_rows):
+        systematic_state (daily categorical positioning snapshot — the majority of live rows), gamma_regime_flip
+        (the transition record of the dealer-gamma regime state variable, a second state machine in
+        the same cell), and em_breach (realized |ret_1d| exceeded the t-1 options-implied expected band,
+        direction = the sign of the ALREADY-REALIZED move — a post-hoc deterministic annotation, no
+        lookahead). State machines plus their own transition records are one classification species;
+        em_breach rows are arithmetic re-derivable from tape+IV inputs, checked by reconciliation —
+        a detection precision/recall contract is degenerate on an event that is its own arithmetic.'
+      value: classification_state
+  scripts/build_options_prophet.py::options-prophet-shadow:
+    output_class:
+      rationale: 'site/options_prophet/index.json is ''intentionally a projection, not a new signal
+        engine'': it re-publishes actual Pick Lab fires as opportunities (source_rank copied verbatim,
+        direction_reliable hardcoded False) and the Flow Leaders board order as watchlist, ''without
+        inventing a score, probability, direction, contract, or exit target'' (scripts/build_options_prophet.py:1-25,
+        ::_opportunities). A re-publication surface over other engines'' outputs; fidelity to its sources
+        is its only contract.'
+      value: descriptive
+  scripts/build_options_signal_episode.py::options-intelligence-program:
+    output_class:
+      rationale: data/options_signal_episode/episodes.jsonl freezes each flow print whose premium clears
+        a pre-registered notability floor into an immutable non-directional watch episode — 'a notable
+        live-flow event is a watch episode, not a stock pick', underlying_direction='none', authority
+        intentionally zero (engine/options_signal_episode.py:1-31, ::episode_from_event) — then measures
+        the underlying's realized move for the learning seam. The claim is 'this flow deserves attention',
+        evaluated by realized-|move| coverage; not detection_event, because notability is the engine's
+        own importance floor rather than an externally-defined event with a curated ground truth.
+      value: salience
+  scripts/build_oracle_ratio_lens.py::oracle:
+    output_class:
+      rationale: data/oracle/ratio_lens_ledger.jsonl assigns each of 15 curated ratio pairs exactly
+        one of four mutually-exclusive states per run — EXTENDED/BASING/NO_ANCHOR/TRENDING with fixed
+        thresholds (engine/oracle/ratio_lens.py:1-24 'State assignment (RL-R8)'; AUTHORITY block at
+        :47-56). Deterministic state classification over a fixed registry; transition/stability semantics.
+      value: classification_state
+  scripts/build_organism_state.py::metabolism-phase-v2a:
+    output_class:
+      rationale: data/metabolism/organism_state.json assigns EVERY registered lobe a health_status (fresh/fresh_partial/stale/missing)
+        and trajectory maturity+label (accruing/compounding/stagnating/degrading) each run, rolled into
+        organism-wide label_counts (engine/metabolism/organism_state.py::_discover_fitness_cards globs
+        ALL fitness cards; label constants at :43-47). Every entity gets a state every run — state classification
+        of the system.
+      value: classification_state
+  scripts/build_prophet.py::momoedge:
+    output_class:
+      rationale: data/prophet/ledger.jsonl holds prophet.trade_plan/v1 envelopes — BULL/BEAR direction
+        per admitted ticker with explicit entry, invalidation stop and T1/T2 targets from fixed ATR
+        risk-unit geometry, graded to T1_HIT/T2_HIT/INVALIDATED/EXPIRED outcomes (engine/prophet_bridge.py
+        plan envelope; scripts/build_prophet.py docstring). Dated falsifiable directional trade plans
+        at declared rulers — the catalog's own predictive exemplar.
+      value: predictive
+  scripts/build_release_cpi_truth_parity.py::macro-release-intel:
+    output_class:
+      rationale: cpi_truth parity artifacts run a preregistered reconciliation between the ALFRED same-release-vintage
+        proxy and immutable official BLS Table-1 archives, withholding promotion on failure (scripts/build_release_cpi_truth_parity.py::build_release_cpi_truth_parity;
+        official_target_epoch.status='withheld', promotion_authorized=false). Asserts what the archives
+        contain and whether the proxy matches — no forward claim.
+      value: descriptive
+  scripts/build_release_forecast.py::macro-release-intel:
+    output_class:
+      rationale: release_forecast forward_ledger.jsonl 'projection' rows freeze, the night before each
+        official macro release (CPI/NFP/PPI/PCE/claims), a point + p10/p25/p75/p90 quantile projection
+        of the printed value (scripts/build_release_forecast.py projection-row construction), graded
+        post-release against official actuals via surprise and interval coverage — a dated falsifiable
+        claim about a future official print at a declared ruler.
+      value: predictive
+  scripts/build_seasonality_shadow_state.py::biopharma-seasonality-intelligence:
+    output_class:
+      rationale: data/seasonality/nw_forward_ledger.jsonl 'register' rows assert an explicit probability
+        p that an issuer rises during a calendar day-of-year window, vs a baseline rate p_baseline from
+        N years of history, then 'grade' rows record realized outcome_up (engine/seasonality/state.py::register_rows
+        — 'A forward-outcome row for every forecast this run would SHOW' — and ::grade_rows). Dated
+        probabilistic forecasts graded against realized returns; calibration vs base rate is the contract.
+      value: predictive
+  scripts/build_sector_cycles.py::cycle-intelligence:
+    output_class:
+      rationale: data/sector_cycles/forward_log.parquet carries, per US sector/basket, the phase wheel
+        PLUS an explicit next-turn projection — direction (peak|trough), central month and Q25/Q75 cone
+        from median/IQR half-cycle lengths, with hazard probabilities sourced from the live hazard model
+        (engine/cycle_forward_log.py schema; engine/cycle_ontology.py::project_next) — graded as promises
+        by engine/promise_graders.py via scripts/grade_promises.py (turn precision/recall, cone-interval
+        calibration, reliability, FDR; scorecard on disk). The falsifiable turn-timing projection is
+        the evaluated product; same class as both cycle siblings under the same shared grader.
+      value: predictive
+  scripts/build_session_digest.py::options-intelligence-program:
+    output_class:
+      rationale: 'data/options_session/ledger.parquet writes one settled backward-looking session record
+        per (date, root) after the close — net-premium arc shape, per-family event counts, walls — from
+        already-archived intraday stamps (''the Terminal->EOD bridge''; synapse: ''DISPLAY-ONLY and
+        descriptive: no direction claim, no fused score, no ranking''). Historical session reconciliation.'
+      value: descriptive
+  scripts/build_signal_quality.py::setup-species:
+    output_class:
+      rationale: 'The per-ticker signal files emit a MARKER stream — discrete typed events (buy/sell/cut/rebuy,
+        each take/block) that fire only when confluence conditions are met (engine/signal_quality.py::analyze)
+        — plus a coarse 3-way per-bar state. The governing charter is explicit: ''Detect, don''t predict...
+        this is a RISK TOOL, not a return-alpha engine'', and eval is ''NEVER on does it beat buy-and-hold
+        return'' (research/signal_engine/CHARTER.md). The accountable act is detecting setup/exit conditions
+        (markers are what track_record.py measures forward); precision and false-fire burden are the
+        honest contract. Nearest alternative classification_state (the 3-way bias label) loses: the
+        label is a summary of the same confluence legs, and the authority-bearing consumption is the
+        marker/filter stream.'
+      value: detection_event
+  scripts/build_stock_library.py::stock-personality:
+    output_class:
+      rationale: 'The stock-personality cell''s product is the per-name personality classification —
+        archetype/dna_class/chart/ownership/microstructure labels assigned to every covered ticker and
+        consumed by five live surfaces (config/synapse.yml:11004-11039) — and its shadow-tier forward_ledger.parquet
+        PIT-stamps that classification at each buy/rebuy fire (scripts/build_stock_library.py::_stamp_personality_forward_ledger;
+        11 columns, no outcome column — the stamp, not the evaluation instrument). The governing study
+        contract is state-conditional: 48 pre-registered personality-cell vs control tests, all null
+        so far, with the ledger as the open accrual path and clock 2026-12-15 (research/STOCK_PERSONALITY_SETUP_COMPAT_PHASE0.md:174;
+        research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md:42). State assignment with state-conditional forward
+        evaluation.'
+      value: classification_state
+  scripts/build_stock_library.py::us-stocks-prebreakout:
+    output_class:
+      rationale: 'us_standouts.json orders admitted US names into the ranked standout buy board — engine/us_board_rank.py:5-7:
+        ''The score is a transparent priority heuristic, not a calibrated return forecast — it orders
+        names that the confluence admission gate has already admitted; it never decides who is on the
+        board''; synapse site-us-standouts declares scored_path_surfaces=[board_ordering, top_setups]
+        with external contracts (mastermind:anchor, terminal:screener). The board ORDER is the authority-bearing
+        claim, graded downstream by board rank-IC lanes.'
+      value: ranking
+  scripts/build_thematic_state.py::thematic-intelligence:
+    output_class:
+      rationale: data/neuralweb/theme_thesis_ledger.jsonl compiles, per curated thesis, which asset
+        CLASSES benefit (winner_classes) and suffer (loser_classes) if the stated mechanism plays out,
+        together with machine-checkable falsifiers whose states run ARMED/FIRED (engine/neuralweb/theme_thesis.py::compile_thesis_record).
+        A conditional directional claim graded on whether it died the way it predicted — thesis+falsifier
+        is the house's scored-prediction shape; not detection, because the differentiating content is
+        the winner/loser direction, not the firing of the tripwire.
+      value: predictive
+  scripts/build_til_fitness.py::metabolism-phase-a:
+    output_class:
+      rationale: data/metabolism/fitness/til.json is a typed retrospective rollup of the TIL subsystem's
+        already-graded outputs — median front-run lead days, placebo-adjusted hit rate, falsifier-honesty
+        rate — computed from existing grade stores (engine/metabolism/til_fitness.py::_read_lead_days
+        etc.). Measurement of another lane's realized record; no forward assertion.
+      value: descriptive
+  scripts/build_vol_regime.py::rates-inflation-command:
+    output_class:
+      rationale: data/opex_windows/forward_log.jsonl assigns every monthly OPEX window a categorical
+        risk level quiet/elevated/heavy from an unweighted count of triggered structural flags (engine/opex_risk.py::_level_word,
+        ::log_window); standing law bans weights, composite scores and directional targets (RO-3/F-21),
+        and every ruler declares direction 'none'. State assignment with transition/stability semantics,
+        not a forecast.
+      value: classification_state
+  scripts/build_whitehouse.py::whitehouse-desk:
+    output_class:
+      rationale: qledger:whitehouse claims register one dated directional claim per activated White
+        House alert — direction from benefit/hurt tone, horizon_d = banner_days, per named ticker (scripts/build_whitehouse.py::_register_wh_claim);
+        config/qual_ladder.yml declares the whitehouse family SHADOW and 72 graded rows exist with hit/excess
+        values. Falsifiable policy-impact forecasts at a declared ruler.
+      value: predictive
+  scripts/calibrate_vector.py::btc-vector:
+    output_class:
+      rationale: 'data/vector/calibration.json is a calibration STUDY: measured forward-return records
+        per BTC signal band, split-half robustness, whipsaw stats, and a CONFIRMED/CONTEXT-ONLY/INVERTED
+        verdict per signal (scripts/calibrate_vector.py:1-19, verdict computation ~:696-711). It asserts
+        what was measured about each band''s history and which claims the dashboard may make; the live
+        forward claims belong to the vector ledger engines. Reconciliation/reproducibility is its contract.'
+      value: descriptive
+  scripts/causal_ingest_brainstorm.py::neural-web:
+    output_class:
+      rationale: data/neuralweb/causal_mechanisms.jsonl files mechanism cards whose claim_en is a falsifiable,
+        horizon-bound, metric-bound forward claim with an explicit falsifier and environment map (schema
+        neuralweb.causal_mechanism_card.v1; live rows quote e.g. a 10d fed_net_liquidity acceleration
+        predicting 21d breadth deterioration). The producer's filing layer is administrative (dedup/kill-mask/budget)
+        and the cards sit at status='inbox' with zero authority — but the authority-bearing product
+        registered for later validation is a structured falsifiable forward mechanism claim, so the
+        predictive contract (did the mechanism's declared metric behave as claimed at its horizon) is
+        the only honest grading.
+      value: predictive
+  scripts/collect_release_cpi_official_truth.py::macro-release-intel:
+    output_class:
+      rationale: official_table1_collection.json + receipts content-address (sha256 + byte length) the
+        historically-published BLS CPI Table-1 editions for a frozen preregistered period set, including
+        documented non-publication cases (scripts/collect_release_cpi_official_truth.py::collect_cpi_official_truth,
+        ::collect_cpi_not_published_truth). An immutable evidence archive — reconciliation and completeness
+        are its contract.
+      value: descriptive
+  scripts/collect_release_target_vintages.py::macro-release-intel:
+    output_class:
+      rationale: data/fred_vintage/release_targets/manifest.json seals the full ALFRED vintage history
+        (original prints and revisions) for the seven target series with exact sha256/byte/row binding
+        (scripts/collect_release_target_vintages.py::collect_release_target_vintages). A historical
+        revision record asserting nothing about future prints.
+      value: descriptive
+  scripts/commodity_sentinel.py::neural-web:
+    output_class:
+      rationale: data/reflexes/commodity_shock/firings.jsonl records intraday price-shock state-machine
+        transitions for gold/silver/copper/crude; direction=-1 is a fixed post-hoc convention on shock-state
+        rows, not a computed forecast (scripts/commodity_sentinel.py:126-152), and engine.neuralweb.query.adapt_reflexes()
+        explicitly disclaims live forward-return grading ('operational event records... No grading is
+        fabricated here'). Today's behavior is event detection; any future graded-vs-ETF design remains
+        registry intent, not shipped semantics.
+      value: detection_event
+  scripts/fit_cycle_hazard.py::cycle-intelligence:
+    output_class:
+      rationale: data/hazard/model_<epoch>.json ships discrete-time logistic hazard coefficients + isotonic
+        calibration maps estimating P(cycle turn within 1/3/6 months) per direction, gated per cell
+        on OOS Brier skill vs the family-stratified KM prior with month-block bootstrap CIs (scripts/fit_cycle_hazard.py:1-32,
+        ::run_fit) — and the stored model is applied LIVE by engine/hazard_score.py to emit forward
+        turn probabilities. Falsifiable calibrated probability forecasts at declared horizons; Brier/calibration
+        is its native contract.
+      value: predictive
+  scripts/grade_cortex_attention.py::neural-web:
+    output_class:
+      rationale: data/reflexes/cortex_attention/grades.jsonl grades ANOTHER engine's matured attention
+        claims (cortex firings) by falsifier class, computing realized forward metrics vs SPY for realized_move
+        rows (scripts/grade_cortex_attention.py::_grade_realized_move) and running the A2 earn-in. Grading/reconciliation
+        of a pre-existing claim stream; originates nothing.
+      value: descriptive
+  scripts/grade_thematic.py::thematic-intelligence:
+    output_class:
+      rationale: 'engine/qledger_falsifier.py::evaluate_falsifiers reads data/qledger/claims.jsonl —
+        a store populated by OTHER desks — and emits FALSIFIER_TRIPPED/CONFIRMED/UNVERIFIABLE verdicts
+        against realized relative returns (''Judge #4: closes the pre-registration loop''). Retrospective
+        reconciliation of pre-existing claims; originates none.'
+      value: descriptive
+  scripts/grade_us_board.py::setup-species:
+    output_class:
+      rationale: 'data/us_board_ledger/retro_grades.parquet is the git-archaeology retro-grader of the
+        US Buy Board: it reconstructs historical boards and grades each row''s ALREADY-MATURED forward
+        return vs SPY and sector ETF at 5/10/21/63d with hit-rate/Wilson-CI rollups (scripts/grade_us_board.py:1-19,
+        ::grade_boards; position is the order AS PUBLISHED). Grading of another surface''s published
+        claims.'
+      value: descriptive
+  scripts/grade_us_board.py::standout-accountability:
+    output_class:
+      rationale: 'data/us_board_ledger/retro_grades_v2.parquet applies the SAME grade_boards()/build_track()
+        logic to the experimental v2 board in an isolated sibling lane (''SA-W5: v2 parallel lane...
+        ISOLATED from main'' — scripts/grade_us_board.py:186-217, ::run_v2_lane). Same retrospective
+        grading act as the setup-species lane, different board.'
+      value: descriptive
+  scripts/intl_phase0.py::intl-fix:
+    output_class:
+      rationale: 'data/intl_bridge/ledger.json runs the composed anti-overfit validation harness (DSR/PBO/CPCV,
+        orthogonality, crisis bootstrap, HAC lead-lag, BH-FDR) over the pre-registered intl_bridge claim
+        grid (trial-budget family N=17, engine/intl_claims.py:438 — the ported forex declared-N=60 is
+        a different family''s discipline) and emits per-feature verdicts CONFIRMED/DIRECTIONAL/CONTEXT/INVERTED/PENDING
+        with weight caps (scripts/intl_phase0.py::decide — a pure function of the current measurement;
+        the kill flag derives, never latches). The verdict asserts what the measured record earned against
+        pre-registered bars — grading of pre-declared claims, re-derivable by reconciliation; because
+        weight_cap is a live-applied continuous magnitude (engine/intl_feed.py converts it to position
+        weight), the descriptive contract must re-derive weight_cap, not just the labels. Not classification_state:
+        no latent market state is tracked; transitions are evidence accrual against fixed bars.'
+      value: descriptive
+  scripts/materialize_capital_structure_share_counts.py::capital-structure-intelligence:
+    output_class:
+      rationale: R2-stored share-count generations convert raw SEC Company Facts filings into a verified,
+        point-in-time, content-addressed observation ledger — 'this is the exact fact SEC Company Facts
+        reported' — with a 10-flag all-False authority block (engine/capital_structure/share_count_materializer.py::_authority).
+        Source reconciliation infrastructure.
+      value: descriptive
+  scripts/metabolism_agenda.py::metabolism-phase-v2a:
+    output_class:
+      rationale: data/metabolism/agenda/<cycle>.json selects and orders a capped docket of work items
+        that deserve the system's limited attention next cycle (URGENT_FIX/NOVEL_BUILD/DEEP_RESEARCH
+        buckets, severity, 1-2 sentence evidence citation), with a deterministic severity floor and
+        prior-calibration de-rank dominating the LLM draft (engine/metabolism/agenda.py docstring +
+        _AGENDA_PROMPT_TEMPLATE). The claim is 'this matters next' — attention allocation without outcome
+        direction; not generative because the structured docket, not prose quality, is the product.
+      value: salience
+  scripts/metabolism_budget.py::metabolism-phase-a:
+    output_class:
+      rationale: data/metabolism/budget_ledger.json reconciles per-cycle LLM spend (USD/tokens) against
+        operator-ratified caps and tracks the per-lobe circuit breaker (scripts/metabolism_budget.py::record_spend,
+        ::record_pr_outcome). Spend bookkeeping — reconciliation only.
+      value: descriptive
+  scripts/metabolism_build.py::metabolism-phase-v2b:
+    output_class:
+      rationale: data/metabolism/claims.jsonl rows are mutual-exclusion FILE-LOCK records — 'proposal
+        X for lobe Y has claimed target_files Z this cycle' (scripts/metabolism_build.py::claim_proposal;
+        schema metabolism.build_claims.v1 {cycle_id, proposal_id, lobe, target_files, ts}). Concurrency-control
+        bookkeeping for the build dispatcher, unrelated to the market qledger; nothing is asserted beyond
+        the administrative act.
+      value: descriptive
+  scripts/metabolism_digest.py::metabolism-phase-a:
+    output_class:
+      rationale: data/metabolism/digest/<week>.md reconciles the PAST 7 days of the metabolism loop's
+        own operation (cycles, governance events, verify outcomes, spend, breaker trips) via hard-coded
+        sentence templates — zero LLM calls in the 689-line file (scripts/metabolism_digest.py::build_operator_onepager).
+        Deterministic operational summary.
+      value: descriptive
+  scripts/metabolism_dream.py::metabolism-phase-v2d:
+    output_class:
+      rationale: data/metabolism/preference_prior.json aggregates ALREADY-GRADED verify outcomes into
+        hit-rate calibration curves by construction kind/lobe/sensor (engine/metabolism/dream.py::run_dream_cycle,
+        ::_build_calibration_from_priors). A measured prior over past outcomes; asserts nothing forward
+        itself.
+      value: descriptive
+  scripts/oracle_nightly.py::oracle:
+    output_class:
+      rationale: 'The cell''s live authority-bearing surface is tape-onset detection with confirm/false-positive
+        accrual: data/oracle/tape_onset_ledger.jsonl (13 live rows, confirm/unconfirmed vocabulary,
+        no direction field) flags per-node onset conditions (accel_z>=1.0 AND vel_1w>vel_3m, ''DISPLAY-ONLY
+        unconfirmed flag''), and the turn-desk writer logs A15 window_open/member_fire events graded
+        by fwd_ret_21/outcome_mature (scripts/oracle_nightly.py::_write_turn_desk_ledger). The display
+        payload is swept by a banned-key check refusing ''forecast''/''predicted''/''expected_return''
+        vocabulary (::_check_banned_keys_recursive over oracle_turn_desk.v1). The other two declared
+        shadow artifacts (turn_desk_ledger.jsonl, qual_filter_stamps.jsonl) are not yet produced on
+        disk and qual_filter_accrual reports zero graded windows — the descriptive stamp sidecar is
+        empty today, so the detection contract (precision, FP burden, confirm rates) is the honest engine-level
+        contract.'
+      value: detection_event
+  scripts/oracle_reversion_forward_ledger.py::oracle:
+    output_class:
+      rationale: data/oracle/reversion_forward/<compound_id>.jsonl detects live fires of gauntlet-passed
+        reversion compounds and grades each fire's forward 21-session return/MFE/MAE toward the frozen
+        LIVE promotion floor — 'hits = matured fires with ret_exit > 0 (the WR definition)... vs base_rate'
+        (module docstring; research/ORACLE_REVERSION_PROMOTION_PREREG.md). Each fire asserts positive
+        expected forward return at a declared ruler under a preregistered hit-rate-vs-control test.
+      value: predictive
+  scripts/reconcile_release_actuals.py::macro-release-intel:
+    output_class:
+      rationale: data/release_forecast/official_actuals.jsonl persists keep-first immutable receipts
+        of the official first-published value of each release with content-hash binding to the source
+        document (scripts/reconcile_release_actuals.py::reconcile; engine/release_actuals.py normalizes
+        units and 'never derives'). A factual record of what printed — grading input, not a claim.
+      value: descriptive
+  scripts/research/bd_avoid1_stamper.py::short-side:
+    output_class:
+      rationale: 'data/research/bd_avoid1_ledger.parquet stamps BD-2/BD-3 avoid-long events plus up
+        to three seeded PIT random-bar control rows per event and grades matured rows per the frozen
+        preregistration: H1/H2 test the long-side 21-bar STOP RATE on forward post-registration events
+        exceeding the matched control''s stop rate by >=8pp with an episode-clustered 95% CI excluding
+        0 and BH q<=0.10 (research/short_side/BD_AVOID1_PHASE1_PREREG.md:17,:20,§5; short side quarantined
+        §8). scripts/research/bd_avoid1_stamper.py is the declared single writer. Each event row is
+        a dated falsifiable claim tested excess-vs-matched-control — the predictive contract verbatim.'
+      value: predictive
+  scripts/research/freeze_pss_rh1_relief_hazard.py::personality-timing:
+    output_class:
+      rationale: data/personality_timing/relief_hazard_manifest_v1.json is a one-time pre-registration
+        freeze — construction parameters, bands and label definitions with research_only authority;
+        'does not construct events and never reads a post-action outcome' (scripts/research/freeze_pss_rh1_relief_hazard.py:1-7).
+        A frozen registration record.
+      value: descriptive
+  scripts/research/pss_f4_hazard.py::personality-timing:
+    output_class:
+      rationale: data/personality_timing/terminality_shadow_model_v1/manifest.json ships a frozen model
+        specification — features, sha256-bound tree files, DEV-set threshold — from a one-time time-split
+        fit ('fits two shallow boosted trees on DEV... frozen for 2023+', scripts/research/pss_f4_hazard.py:1-16).
+        The manifest describes the fit; the live forward claims belong to the terminality_shadow scorer
+        cell.
+      value: descriptive
+  scripts/validate_options_dislocation.py::options-dislocation:
+    output_class:
+      rationale: data/options_dislocation/validation_gate.json tests each of 7 pre-registered dislocation
+        primitives (computed in engine/options_dislocation.py, a separate producer) as cross-sectional
+        forward-return predictors — per-date rank-IC at 5/10/21d, hard 120-date/15-name history floor,
+        BH-FDR — and emits the scored/weight verdict (scripts/validate_options_dislocation.py:1-20,
+        :141-178). A dormant validation gate whose output asserts the measured record of another engine's
+        primitives against preregistered bars; verified by re-derivation, not by state-transition dynamics.
+        Same species as its siblings validate_options_entry and validate_vol_regime.
+      value: descriptive
+  scripts/validate_options_entry.py::options-nw-entry-intelligence:
+    output_class:
+      rationale: data/options_entry/gate.json computes conditioned-vs-unconditioned outcome DELTAS for
+        ~15 pre-registered options-state flag buckets over board entries with IID bootstrap CIs — 'Each
+        test is a conditioned-vs-unconditioned descriptive delta'; 'Only recomputes counts / descriptive
+        statuses. scored remains false, weight remains zero' (scripts/validate_options_entry.py:1-58;
+        live status='building_history'). Measured evidence accrual for a future promotion decision.
+      value: descriptive
+  scripts/validate_vol_regime.py::options-alpha:
+    output_class:
+      rationale: 'data/vol_regime/gate.json decides which index vol-regime legs have ''EARNED the right
+        to move money'' — per leg: expected-sign forward-vol correlation at a Newey-West bar, purged-fold
+        sign stability, crisis-exclusion robustness (scripts/validate_vol_regime.py::evaluate_leg).
+        A firewall verdict on measured historical evidence, re-derivable by reconciliation; the live
+        regime scalar is engine/vol_regime.py''s product. Same certify/badge species as its options-alpha
+        sibling and the other validation gates.'
+      value: descriptive

@@ -140,7 +140,7 @@ filter instead of a reading exercise.
 
 ---
 
-## Phase 2b — Publish readiness to the canonical agenda *(IMPLEMENTED; awaiting cross-repo CI)*
+## Phase 2b — Publish readiness to the canonical agenda *(COMPLETE)*
 
 **Objective.** `brain/improvement_agenda.py` is the sole canonical "what should we do next?"
 queue. Agent OS contributes dependency/readiness as an input, and the human CEO brief carries
@@ -167,9 +167,19 @@ the local `data/agenda/` checkout — that path is gitignored, VPS-authoritative
 status mappings plus fail-soft `unknown`, absence of ranking inputs, auxiliary-join isolation,
 malformed/duplicate readiness-source degradation alongside fail-closed validation, terminal
 dependency cleanup, UNKNOWN propagation from excluded/duplicate dependencies, zero network,
-and no
-legacy list keys or human section. The cross-repo producer/consumer E2E must prove the agenda
-column before W2B moves from `awaiting_ci` to `done`; W4 remains untouched and `todo`.
+and no legacy list keys or human section.
+
+**Closure receipt (2026-08-14).** Mastermind consumer PR #49 merged as
+`d74d13e76b46d7d90f7f71e735c3479b2bc991e0`; Macro producer PR #5649 merged as
+`f499006047851d61bc312418b3e75cb404360751`. The live host and the Mastermind service
+namespace both resolved Macro descendant `9ea1bcb6844c9ca724f45e63bb94081938d3dfbf`.
+The producer returned 78 identity-sorted readiness records with `degraded: []` and no
+legacy queue keys. The deployed consumer proved an exact `AGENT-OS`/`W2B` join, rejected a
+lowercase-wave near miss as `unknown/unmapped_ref`, preserved rank bytes, and persisted the
+authoritative 27-item agenda with zero authored refs and 27 structured N/A annotations.
+JSON, Markdown, internal API, and the tunneled UI agreed; all 27 cards visibly rendered
+readiness with no browser errors. W2B is therefore `done`. W4 remains untouched, `todo`,
+and merely eligible for a separate high-blast-radius hook PR.
 
 ---
 
