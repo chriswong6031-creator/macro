@@ -37,15 +37,9 @@ waves:
     depends_on: [W0]
   - id: W2B
     title: "Phase 2b — publish non-ranked readiness for the canonical improvement agenda"
-    status: awaiting_ci
+    status: done
+    pr: 5649
     depends_on: [W2]
-    next_action: >
-      Complete the cross-repo producer/consumer E2E: agent_os_state.v1 and ceo_brief.v1
-      expose agentos.readiness.v1, and Mastermind renders readiness inside the sole
-      canonical improvement agenda. Prove a real exact-tuple join through the sanctioned
-      bridge and prove that current agenda constructors remain honest N/A: none yet authors
-      a workstream/wave identity, so zero live mappings is expected and fuzzy mapping is
-      forbidden. Do not mark done before that E2E is green.
   - id: W3
     title: "Phase 3 — compile-context over the existing context index"
     status: done
@@ -83,9 +77,9 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Finish W2B's cross-repo readiness E2E and CI. Keep the brief list-free and the
-  readiness envelope graph-only; Mastermind's improvement agenda remains the sole
-  ranked queue. W4 remains todo until W2B is proven and the separate hook wave begins.
+  Phase 4 is eligible but has not started. Keep the brief list-free and the readiness
+  envelope graph-only; Mastermind's improvement agenda remains the sole ranked queue.
+  Begin W4 only as a separate, explicitly scoped hook wave.
 ---
 
 ## Context
@@ -116,8 +110,7 @@ implementation commits were merged to `origin/main`:
 
 These are six records rather than six distinct workstreams because Conditional Fusion
 authored two genuine implementation handoffs. They are adoption receipts, not manufactured
-closure records. W3 separately closed when PR #5561 merged; W2B stays `awaiting_ci` until
-its Macro producer and Mastermind consumer pass the cross-repo E2E.
+closure records. W3 separately closed when PR #5561 merged.
 
 ## Phase 2b mapping acceptance
 
@@ -127,3 +120,17 @@ real item is N/A until its own source explicitly supplies `agentos_ref`. The E2E
 prove that Mastermind reads and indexes the real producer, that a synthetic exact tuple joins,
 and that title or evidence prose never manufactures a mapping. A future source that gains a
 legitimate stable identity may opt in at construction time without changing ranking policy.
+
+## Phase 2b acceptance receipts
+
+W2B closed only after the Macro producer and merged Mastermind #49 consumer passed the real
+one-way bridge through `brief --json --no-remember`. The consumer accepted
+`agentos.readiness.v1` without degradation, indexed the exact case-sensitive
+`(workstream, wave)` tuples, and joined synthetic `AGENT-OS/W2B` and `AGENT-OS/W4` agenda
+items without changing their frozen rank receipt. Lowercase tuple variants remained absent.
+
+The production constructor census stayed honest: no current agenda item authors an
+`agentos_ref`, so live items remain `not_applicable` rather than receiving inferred mappings.
+The producer envelope contains graph readiness only—no rank, priority, P0, or next-action
+field—and the CEO text brief renders no competing readiness list. Phase 4 remains authored
+`todo`; W2B closure merely satisfies its declared dependency graph.
