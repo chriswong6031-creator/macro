@@ -76,10 +76,13 @@ are added here when hold-thesis Article-2-equivalent surfaces are chartered.
 from __future__ import annotations
 
 import argparse
+import ast
+import io
 import json
 import re
 import sys
 import textwrap
+import tokenize
 from pathlib import Path
 from typing import NamedTuple
 
@@ -247,6 +250,108 @@ def _normalize_search_path(path: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Prose masking — a MENTION is not a READ
+# ---------------------------------------------------------------------------
+
+
+def _blank_span(lines: list[str], span: tuple[int, int, int, int]) -> None:
+    """Overwrite one (srow, scol, erow, ecol) span with spaces, in place.
+
+    Equal-length replacement on purpose: every line keeps its length and the
+    file keeps its line count, so the line numbers reported downstream stay the
+    file's real ones and never need translating back.
+    """
+    srow, scol, erow, ecol = span
+    if not (1 <= srow <= len(lines)) or not (1 <= erow <= len(lines)):
+        return
+    if srow == erow:
+        line = lines[srow - 1]
+        end = min(ecol, len(line))
+        start = min(scol, end)
+        lines[srow - 1] = line[:start] + " " * (end - start) + line[end:]
+        return
+    first = lines[srow - 1]
+    start = min(scol, len(first))
+    lines[srow - 1] = first[:start] + " " * (len(first) - start)
+    for row in range(srow + 1, erow):
+        lines[row - 1] = " " * len(lines[row - 1])
+    last = lines[erow - 1]
+    end = min(ecol, len(last))
+    lines[erow - 1] = " " * end + last[end:]
+
+
+def _prose_masked_source(source_text: str) -> str:
+    """Return ``source_text`` with docstring and comment bodies blanked out.
+
+    A registered artifact path that appears ONLY in prose is a MENTION, not a
+    read. Docstrings in this repo routinely name the upstream store a function
+    reasons about — ``scripts/build_stock_library.py::_name_score_asof`` explains
+    a measured (date, ticker) join against ``data/name_score/us_calls.parquet``
+    without ever opening it — and a raw substring scan read that sentence as an
+    Article-2 money-path consumer and hard-failed the fleet on a paragraph
+    (#5674's docstring; the read it describes lives in the grader).
+
+    Masking is deliberately narrow. ONLY two things are blanked:
+
+      * docstrings — the leading bare string expression of a module, class or
+        function. A bare string statement is never a read by construction.
+      * comments — never executed, so never a read.
+
+    Every OTHER string literal still counts, including one merely assigned to a
+    variable, so no real read can hide from this. The same distinction
+    ``tests/test_render_builder_ownership.py`` already draws for render's
+    builder closure ("comments that merely name another builder").
+
+    Fails OPEN: a module that will not parse is returned UNCHANGED and is
+    scanned exactly as before. A guard that cannot read a file must keep its old
+    reach over it, never go quietly blind on it.
+    """
+    try:
+        tree = ast.parse(source_text)
+    except (SyntaxError, ValueError, RecursionError):
+        return source_text
+
+    lines = source_text.splitlines()
+    if not lines:
+        return source_text
+
+    spans: list[tuple[int, int, int, int]] = []
+
+    for node in ast.walk(tree):
+        if not isinstance(
+            node, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef)
+        ):
+            continue
+        body = getattr(node, "body", None)
+        if not body:
+            continue
+        first = body[0]
+        if (
+            isinstance(first, ast.Expr)
+            and isinstance(first.value, ast.Constant)
+            and isinstance(first.value.value, str)
+            and first.value.end_lineno is not None
+            and first.value.end_col_offset is not None
+        ):
+            const = first.value
+            spans.append(
+                (const.lineno, const.col_offset, const.end_lineno, const.end_col_offset)
+            )
+
+    try:
+        for tok in tokenize.generate_tokens(io.StringIO(source_text).readline):
+            if tok.type == tokenize.COMMENT:
+                spans.append((tok.start[0], tok.start[1], tok.end[0], tok.end[1]))
+    except (tokenize.TokenError, SyntaxError, IndentationError, ValueError):
+        # Keep the docstring masking already collected; comments stay visible.
+        pass
+
+    for span in spans:
+        _blank_span(lines, span)
+    return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
 # Module discovery
 # ---------------------------------------------------------------------------
 
@@ -380,10 +485,16 @@ def scan_findings(
         # Normalize path separators
         mod = rel_path.replace("\\", "/")
 
+        # Scan CODE, not prose. Docstrings and comments are blanked (same offsets,
+        # so line numbers below stay real) because a path named in a paragraph is a
+        # MENTION, not a read — see _prose_masked_source. Unparseable files come
+        # back unchanged and are scanned exactly as before.
+        code_text = _prose_masked_source(source_text)
+
         for ac in artifact_configs:
             search_path = ac["search_path"]
             # Quick pre-check: path string present at all?
-            if search_path not in source_text:
+            if search_path not in code_text:
                 continue
 
             # Skip registered producer
@@ -396,8 +507,10 @@ def scan_findings(
             if mod in ac["consumers"]:
                 continue
 
-            # Confirmed undeclared reader — find line numbers
-            lines = source_text.splitlines()
+            # Confirmed undeclared reader — find line numbers. Line-matching uses
+            # the masked text too, so the reported line is a line of CODE and never
+            # a paragraph that merely names the store.
+            lines = code_text.splitlines()
             found_lines: list[int] = []
             for i, line in enumerate(lines, start=1):
                 if search_path in line:

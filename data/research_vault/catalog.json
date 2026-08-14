@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-14T23:16:33.803823+00:00",
-  "count": 1088,
+  "generated_at": "2026-08-14T23:48:41.183584+00:00",
+  "count": 1100,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -67,6 +67,69 @@
   ],
   "items": [
     {
+      "id": "marketdesk-6uofu4kbna7-26ff4d",
+      "title": "Connecting the Dots Beach reading & listening plus key research",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T23:15:44Z",
+      "summary_points": [
+        "**Oil Capex Upcycle**: Reserve life down 65% for top projects since 2013, US shale flattening, and geopolitical capacity risks signal structural supply shortage.",
+        "**Europe Resilient Growth**: Outperformed US despite energy/tariff shocks (2025), with improving ROE (Exhibits 3-6) and strong diversified investor charts.",
+        "**Ulanqab AI Cluster**: Ulanab in Inner Mongolia has 12.5 GW AI data center commitment (10x capacity by 2025), leveraging low temps, cheap power, and renewables—critical APAC AI infrastructure.",
+        "**RWE EPS Catalyst**: Q2 results imply 2031 EPS lift to €6 (vs.",
+        "€5.50 prior), with CEO fireside chat (Aug 17) and 2027 grid approval as near-term catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-a4y2hlorxiv-386517",
+      "title": "Global Economics Wrap Up August 14, 2026",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T23:11:17Z",
+      "summary_points": [
+        "**Central Bank Communication Shifts**: Enhanced transparency (forecasts, press conferences) by DM central banks reduced year-ahead rate volatility by ~10% and improved policy transmission (e.g., 100bp hawkish surprise → 100bp FCI tightening vs.",
+        "70bp median).",
+        "**US Inflation & GDP Revision**: Core CPI +0.22% MoM (shelter +0.26%, medical +0.6%), core PCE +0.20%; Q3 GDP estimate lowered to +2.2% (home sales -1.7%, retail sales -0.6%).",
+        "**Global Inflation Divergence**: India CPI at 4.5% (19-mo high, food-driven) vs.",
+        "China CPI at 0.5% (oil/tourism decline), signaling stark regional monetary policy paths."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-hhe1j546teu-6d0cfd",
+      "title": "MS How Could Open Weight Models Impact GenAI ROIC",
+      "institution": "Morgan Stanley",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T17:22:31Z",
+      "summary_points": [
+        "**Hyperscalers' ROIC Resilience**: Hyperscalers maintain 20–60% ROIC despite open-weight pricing pressure ($1.75/million tokens) via throughput optimization (2,000–3,500 tokens/sec/GPU on GB300 hardware) and proprietary infrastructure.",
+        "**Open-Weight Pricing Pressure**: Open-weight models (e.g., Meta Muse Spark, Google Gemini Flash) drive per-token pricing down, forcing providers to prioritize throughput to sustain margins amid competitive pricing.",
+        "**Compute Monetization Imperative**: Hyperscalers monetize scarce compute via token throughput (not just pricing), with revenue/GW tied to custom silicon (TPUs/Trainium), request batching, and MoE sparsity.",
+        "**AWS Growth Acceleration**: AWS revenue growth surges to 36.8% (2028e), driving core revenue/gross profit expansion while paid units decline, positioning it as the primary growth engine.",
+        "**MS Estimates vs Consensus**: Morgan Stanley estimates below consensus (Sales: $251.3B vs $257.9B; EPS: $29.32 vs $33.65), signaling potential upside if execution exceeds expectations."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 18,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-mmm8pylvrqm-9ed123",
       "title": "Taiwan Semis Semiconductor IP sensing different progress in advanced node achievement",
       "institution": "Bank of America",
@@ -127,6 +190,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-zr9yrqjcqm8-8855c9",
+      "title": "A Rorschach Test",
+      "institution": "BTIG",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T16:28:25Z",
+      "summary_points": [
+        "**CPI & Rate Hike Dynamics**: In-line CPI sustains 40% Sep hike odds; VIX near YTD low (14.49), 30yr yields flat +4bps post-CPI, signaling bond path of least resistance higher amid negative S&P 500 breadth.",
+        "**UBXHYPE Critical Support Test**: Hyperscalers under pressure as UBXHYPE retests 8/3 gap with 200 DMA (94.5527) as critical support, risking breakdown amid semis volatility.",
+        "**R2K Restaurants Breakout**: Russell 2000 Restaurants & Bars Subsector (RGUSDSRT) breaks multi-year downtrend with strong momentum, signaling sector recovery catalyst.",
+        "**TXRH Buy Execution**: Texas Roadhouse (TXRH) breakout at $220 target (vs.",
+        "$209.82 close) with analyst backing, critical for trade positioning in recovering restaurant sector."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 9,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ycnqxk7pi2o-e230ec",
+      "title": "GS McGeoch Materials 14Aug2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T15:40:08Z",
+      "summary_points": [
+        "**Copper Supply Scarcity**: Smelter rates down, concentrate scarcity, US-China dynamics (US pulling units, China leveraging smelters), ANTO downgrade (0% 2027 supply growth), US scrap ban as critical policy risk.",
+        "**BHP Valuation Premium vs Negative Growth**: Trading at 10% premium (7.6x vs peer 6.9x) despite FY27 EBITDA (-5.5%), NPAT (-12%), FCF (-15%) showing overvaluation risk.",
+        "**Sustained Outflows**: Persistent selling pressure (Feb-Apr-Jun-26 red bars) contradicting Dec-25 $5B+ ETF inflow spike, signaling sector weakness.",
+        "**ANTO Downgrade Impact**: GIR cuts 2027-28 forecast (4%/3%) and lowers 12m PT to £42/sh due to cost pressure (cash costs +23% YoY) and net debt/EBITDA risk."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 6,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-xn02rc1cyuc-088e1e",
       "title": "GS Early Morning Research Recap Ratings and Target Price Changes August 14, 2026 as of 5 30 AM ET",
       "institution": "Goldman Sachs",
@@ -169,6 +273,27 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-uv2e2s4hjty-13b7bd",
+      "title": "JPM US Market Intelligence | Morning Briefing: Futs are flat; Retail Sales preview: August 14, 2026",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T10:44:46Z",
+      "summary_points": [
+        "**BOJ Rate Hike Probability Surge**: 81% chance of September hike (vs.",
+        "65% prior), signaling accelerated tightening and global bond yield impact.",
+        "**US Retail Sales Forecast**: -0.4% MoM expected (vs.",
+        "1% survey), risking bond yield pressure amid dovish NFP/cool PPI.",
+        "**Tech/Cyclicals Barbell Strategy**: Favor AI-themed tech/cyclicals for rally broadening; delay deployment post-CPI/Retail Sales prints."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-gf3sdjbcvjr-06af81",
       "title": "Duttenhoefer´s Daily (14.08.2026)",
       "institution": "S&T",
@@ -185,6 +310,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 8,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-wxkzf92hs4z-482847",
+      "title": "RBC UK & EUROPEAN RESEARCH AT A GLANCE",
+      "institution": "RBC",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T10:24:56Z",
+      "summary_points": [
+        "**China Export Policy**: China's yttrium export restrictions (70x Chinese prices) pressure Oerlikon pricing; European prices likely rise, revising target to CHF4.75.",
+        "**E&P Valuation Metrics**: NA Senior E&Ps trade at 6.2x debt-adjusted cash flow (2026E); Canadian E&Ps outperform US peers, European Majors discounted vs NA.",
+        "**Life Science/Luxury Catalysts**: Life Science (WAT, A, RGEN, DHR) shows recovery; luxury sector impacted by travel flows but cost management boosts earnings; hedge fund interest in CFR, RACE.",
+        "**Natural Gas Storage Baseline**: Prices pinned under 3.9 Tf 2026 storage baseline; downside risk near term, AI data center moratoriums key risk factor."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
       "language": "en",
       "needs_metadata": false
     },
@@ -334,6 +479,47 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-k76trdvttn4-db2553",
+      "title": "2608 japan s growth strategy a powerful tailwind for equities and active investing emea",
+      "institution": "Other",
+      "side": "independent",
+      "desk": "",
+      "published_at": "2026-08-14T01:12:52Z",
+      "summary_points": [
+        "**Japan's Growth Strategy**: Targets JPY 370T (USD 2.35T) public/private investment by FY2040 across 17 sectors (AI, semiconductors, healthcare, energy), driving equity tailwinds via policy-driven capital allocation.",
+        "**Market Validation**: Nikkei >70,000 and TOPIX at record highs in 2026, fueled by earnings outlook, corporate reforms, and AI/automation beneficiaries (e.g., Kioxia +740%, Nichicon +152%).",
+        "**METI Policy Shift**: New \"Guidance for Growth Investment\" prioritizes economic profit (EP) over dividends/buybacks, redirecting capital to growth sectors (AI/semiconductors: JPY 101.6T; biotech: JPY 33.6T).",
+        "**Margin Expansion Catalyst**: DuPont analysis shows TOPIX 500 net margin (5.9%) below S&P 500 (10.5%) with asset turnover (0.6) vs 0.7, signaling upside under new governance policies.",
+        "**AI Value Chain Diversification**: Japan’s broad exposure (semiconductors, robotics, healthcare) vs US mega-cap concentration offers wider equity beneficiaries, leveraging infrastructure for \"AI picks and shovels\" opportunities."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 7,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-rnjb6e1zaiy-80e293",
+      "title": "GS Callahan TMT quick hits 13 Aug 2026",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T21:32:46Z",
+      "summary_points": [
+        "**NDX Momentum & Sector Shifts**: NDX near 50-dma (11% off July lows), tech grinding higher with sector rotation (SNDK memory surge, optical fade, software laggards like CRM/ADBE), volumes down 15% ahead of key earnings (Walmart, BABA).",
+        "**AMAT Earnings & China Exposure**: Beat Q3 with $9.12B revs (+25% YoY), 50.4% GMs, China 28% of revs; F4Q guide $10.25B (+12.5% QoQ), conf call focus on WFE ramp and CY27 growth.",
+        "**Fed Policy Shift**: Sept FOMC rate hike odds plummeted from >70% (Aug 1) to 1/3, altering interest rate expectations and market flows.",
+        "**Dell Breakout Confirmation**: Stock broke multi-month range post-40% T+1 earnings move (May), price action above $450 resistance signals sustained momentum."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-cktljv6xsuc-ee62aa",
       "title": "JPM US Market Intelligence Macro Week Ahead",
       "institution": "J.P. Morgan",
@@ -367,6 +553,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 1,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-58kvinf7h6l-7b504f",
+      "title": "GS Asia Tencent Capex Shock Masks Core Franchise Strength",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T19:08:59Z",
+      "summary_points": [
+        "**Tencent Valuation Dilemma**: 34% stock decline from peak due to AI capex shock (25.8% revenue), Q1 revenue miss, FCF-negative Q2, and geopolitical outflows; hedge fund China allocation at 5-yr low (6%).",
+        "**Hedge Fund Sentiment Shift**: S3 Long Concentration Score collapsed to 0.10% (from 0.50%) and put/call ratio surged to 1.08, confirming extreme bearish positioning.",
+        "**AI Capex Structural Risk**: Q2 capex RMB52.8bn for AI infrastructure pressures FCF; operating margin drops from 35% (reported) to 9% (economic), EPS falls to RMB 88.",
+        "**Valuation Discrepancy**: Gross margins ~58% vs.",
+        "normalized P/E 4-5x (vs."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 5,
       "language": "en",
       "needs_metadata": false
     },
@@ -408,6 +615,27 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-m9urdqnwngr-5d4d81",
+      "title": "GS Materials August 13....ANTO trim, RWE inline , EON ontrack, RIO power deal, Gold push/fade, Steel's summer of content.",
+      "institution": "S&T",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T15:12:02Z",
+      "summary_points": [
+        "**China ETF Outflows**: $3.4bn cumulative redemptions (May-July 2026) in US-listed China ETFs signal aggressive capital withdrawal, a critical flow risk factor for portfolio positioning.",
+        "**Gold Policy & Technicals**: PBOC mid-month reverse repo (RMB600bn/day cap), China central bank gold purchases, and strong technicals (200-day MA $4500) drive gold momentum amid geopolitical de-escalation.",
+        "**Copper Fundamentals**: ANTO reduces FY production guidance to 625-655kt (vs prior), debt concerns, and scarcity narrative push copper to record high (6.71/lb), elevating deal risk (GIR, AAL).",
+        "**RWE Financial Divergence**: 1H25F revenue/EBITDA 2-4% below guidance but net income 5% above; free cash flow 410% above guidance, with capacity payments excluded from 2031 outlook.",
+        "**EON Index & Steel Flows**: EON index exclusion delay (Germany regulatory tactics) and Asia steel short cover (FOB/SHFE +1% despite weak demand) drive near-term flow catalysts."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 15,
       "language": "en",
       "needs_metadata": false
     },
@@ -715,6 +943,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 28,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-axwwl1dykrq-feed4d",
+      "title": "JPM Asian Semis",
+      "institution": "J.P. Morgan",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T10:44:17Z",
+      "summary_points": [
+        "**June WSTS Memory Surge**: Memory revenue growth at 369% YoY (June 2026) signals explosive demand, driven by AI infrastructure and memory ASP strength, creating a critical technical catalyst for semiconductor stocks.",
+        "**Hyperscaler Capex Momentum**: 65% YoY hyperscaler capex growth (2027) with 100%+ pace in 2026, extending demand visibility through 2027E, confirming sustained AI-driven upcycle fundamentals.",
+        "**Memory Supply-Demand Imbalance**: Memory supply-demand shortage worsens in 2027E before slight improvement in 2028E, with 69% CAGR datacenter AI growth (2024-29) and revised upward TAM, reinforcing pricing power.",
+        "**JPM Research Conflict Risk**: JPM holds >1% in Samsung/Tokyo Electron as manager/co-manager, receiving compensation, creating material bias in research—critical for portfolio construction and due diligence."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 11,
       "language": "en",
       "needs_metadata": false
     },
