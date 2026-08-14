@@ -1241,6 +1241,43 @@ def test_fast_lane_staggers_overlay_and_risk(tmp_path: Path):
     assert "live_overlay" not in odd_names
 
 
+def test_display_lane_publishes_a_tile_only_snapshot(tmp_path: Path):
+    """The display universe now carries the scraped board leg beside the ~35 macro
+    tiles, so `resolved/requested` is no longer a ~1.0 ratio: a Yahoo outage on the
+    A-share leg alone lands a perfectly good tile-only snapshot near 21%. Under the
+    old 0.20 floor that (plus any one missing tile) REFUSED the publish and froze
+    the served quotes.json for every page — the tiles included. Pin the display
+    lane's own thresholds against that shape."""
+    validator = None
+    orch = vlo.Orchestrator(
+        live_dir=tmp_path / "live",
+        state_dir=tmp_path / "state",
+        data_dir=tmp_path / "data",
+        now=datetime(2026, 8, 13, 2, 4, tzinfo=timezone.utc),
+    )
+
+    def capture(name, *args, **kwargs):
+        nonlocal validator
+        if name == "display_quotes":
+            validator = kwargs.get("validator")
+        return vlo.TaskResult(name, "ok", 0.0)
+
+    orch.module = capture  # type: ignore[method-assign]
+    orch.fast()
+    assert validator is not None, "display_quotes lane no longer runs"
+
+    path = tmp_path / "quotes.json"
+    # tiles resolve, every board symbol fails -> must still publish
+    path.write_text(
+        json.dumps({"quotes": {f"T{i}": {"price": i + 1.0} for i in range(34)},
+                    "meta": {"requested": 168, "resolved": 34}})
+    )
+    assert validator(path) is None
+    # a collapsed fetch is still refused
+    path.write_text(json.dumps({"quotes": {}, "meta": {"requested": 168, "resolved": 0}}))
+    assert "quality too low" in (validator(path) or "")
+
+
 def test_status_is_external_and_lane_scoped(tmp_path: Path):
     orch = vlo.Orchestrator(
         live_dir=tmp_path / "live",
