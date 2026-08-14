@@ -271,3 +271,220 @@ def rewound(instant: str, **delta: float) -> str:
     :func:`_clamped_rewind` for what the clamp defends against.
     """
     return _clamped_rewind(instant, timedelta(**delta), floor=canonical_newest_known_at())
+
+
+#: The curated issuer scope.  Hand-maintained, and turned into ``latest.json``'s
+#: ``companies`` by ``metrics.build_payload`` -- a different code path from the
+#: ``candidates.py`` rebuild these suites exercise.
+_ENTITIES = "entities.json"
+
+#: The published reviewed recipient graph.  Minted by the recipient-graph review
+#: act (``scripts/propose_government_revenue_recipient_graph.py`` plus a human
+#: re-mint into the ``:reviewed:`` namespace), never by the candidate engine.
+_RECIPIENT_GRAPH = "recipient_entity_graph.json"
+
+#: Namespace prefix every *published* graph id carries.  Seen historically as
+#: ``recipient-graph:reviewed-empty:<date>`` and
+#: ``recipient-graph:reviewed:<date>:<slug>``, so the prefix is the stable part.
+#: The trailing slug is NOT parsed for a count: it has already been ``pltr-v1``
+#: and ``defense19-v1``, so reading a census out of it would only trade a
+#: hand-typed number for a hand-typed naming convention.
+_REVIEWED_GRAPH_ID_PREFIX = "recipient-graph:reviewed"
+
+
+def _canonical_document(name: str) -> Any:
+    """Read one committed document out of the canonical directory."""
+    return json.loads((ROOT / CANONICAL_DIRECTORY / name).read_text(encoding="utf-8"))
+
+
+@lru_cache(maxsize=1)
+def canonical_requested_issuer_tickers() -> tuple[str, ...]:
+    """Return the curated issuer scope the mapping backlog is a census of.
+
+    ``build_mapping_backlog`` emits one row per company on the payload, so
+    ``len(mapping_backlog)`` -- and the ``counts["mapping_needed"]`` that mirrors
+    it -- measure the REQUESTED issuer set and nothing the recipient graph did.
+    ``== 21`` was that census transcribed by hand on the vintage the test was
+    written, and it moves the day an issuer is added to or retired from
+    coverage: the same scheduled failure as ``== 8`` for the candidate store and
+    ``2026-08-03T15:00:00+00:00`` for the run clock.
+
+    The scope is curated in ``entities.json`` and read into the payload by
+    ``metrics.build_payload``, a different code path from the ``candidates.py``
+    rebuild under test, so counting it there is a real cross-artifact agreement
+    rather than the suite measuring its own input.
+
+    The scope is bound before it is believed: the curated roster and the built
+    payload must name the same issuers.  An issuer curated into scope without
+    the payload being rebuilt would otherwise surface as an unexplained
+    off-by-one in a coverage count somewhere downstream; here it fails naming
+    exactly that condition.
+    """
+    entities = _canonical_document(_ENTITIES).get("entities")
+    if not isinstance(entities, dict) or not entities:
+        raise AssertionError(
+            f"the curated issuer scope {_ENTITIES!r} carries no non-empty "
+            "`entities` mapping, so the requested issuer census is not knowable"
+        )
+    requested = tuple(sorted(entities))
+    payload_companies = _canonical_document("latest.json").get("companies")
+    payload_tickers = tuple(sorted(
+        company.get("ticker")
+        for company in (payload_companies if isinstance(payload_companies, list) else [])
+        if isinstance(company, dict) and company.get("ticker")
+    ))
+    if payload_tickers != requested:
+        raise AssertionError(
+            "the curated issuer scope and the built payload describe different "
+            f"issuer sets: {_ENTITIES} has {len(requested)} "
+            f"({', '.join(requested)}), latest.json has {len(payload_tickers)} "
+            f"({', '.join(payload_tickers)}) -- curated only "
+            f"{sorted(set(requested) - set(payload_tickers))}, payload only "
+            f"{sorted(set(payload_tickers) - set(requested))}.  The payload was "
+            "not rebuilt after the scope moved, so no requested census is knowable"
+        )
+    return requested
+
+
+@lru_cache(maxsize=1)
+def canonical_reviewed_issuer_tickers() -> tuple[str, ...]:
+    """Return the reviewed issuer roster the published recipient graph declares.
+
+    ``coverage["reviewed_issuer_company_count"]`` and
+    ``coverage["reviewed_issuer_tickers"]`` are a census of the reviewed graph,
+    so they move on every graph republish -- ``19`` and its nineteen
+    hand-listed tickers described exactly one vintage,
+    ``recipient-graph:reviewed:2026-08-08:defense19-v1``, and re-typing ``20``
+    for ``defense20-v1`` would only re-arm them for the graph after that.
+
+    The roster is taken from the graph's own ``companies`` declaration.  That is
+    deliberately NOT the predicate the engine evaluates: the engine reaches a
+    ticker by resolving each exact identifier through the ownership chain
+    (``_reviewed_exact_graph_tickers`` -> ``entity_resolution.resolve_recipient``),
+    a multi-hop walk that a test-side re-implementation would get subtly wrong.
+    Comparing the engine's resolved set against the roster the graph publishes is
+    therefore a genuine agreement between two readings of the artifact -- a graph
+    that declares an issuer reviewed but ships no reachable exact path for it
+    fails, which is precisely the state BWXT was in before its exact edges were
+    reviewed.
+
+    The graph is bound before it is believed:
+
+    * its id must sit in the published ``:reviewed:`` namespace, so a candidate
+      proposal that was never re-minted cannot be read as a reviewed roster;
+    * it must be ADMISSIBLE at the payload's own analysis clock.  A graph the
+      loader rejects makes ``_reviewed_exact_graph_tickers`` return the empty
+      set, so every coverage count silently collapses to zero -- an off-by-N
+      with no stated cause.  Here the rejection is named, with its error codes;
+    * every declared issuer must be wired by at least one ownership edge, since
+      an issuer with no edge at all can never be reached however the resolution
+      walk goes.
+    """
+    graph = _canonical_document(_RECIPIENT_GRAPH)
+    graph_id = graph.get("graph_id")
+    if not isinstance(graph_id, str) or not graph_id.startswith(
+        _REVIEWED_GRAPH_ID_PREFIX
+    ):
+        raise AssertionError(
+            f"the committed recipient graph is not a published reviewed graph: "
+            f"graph_id {graph_id!r} does not start with "
+            f"{_REVIEWED_GRAPH_ID_PREFIX!r}, so its companies are not a reviewed roster"
+        )
+
+    # Imported here rather than at module scope so this file stays importable as
+    # the stdlib-only input boundary its header describes.
+    from engine.government_revenue.entity_resolution import load_recipient_entity_graph
+
+    analysis_as_of = _canonical_document("latest.json").get("as_of")
+    loaded = load_recipient_entity_graph(graph, as_of=analysis_as_of)
+    if loaded.get("status") != "ready":
+        raise AssertionError(
+            f"the committed recipient graph {graph_id!r} is not admissible at the "
+            f"payload's analysis clock {analysis_as_of!r}: load status "
+            f"{loaded.get('status')!r}, error codes {loaded.get('error_codes')!r}.  "
+            "Every reviewed-coverage count collapses to zero in that state, so no "
+            "reviewed census is knowable"
+        )
+
+    companies = graph.get("companies")
+    if not isinstance(companies, list):
+        raise AssertionError(
+            f"the committed recipient graph {graph_id!r} carries no `companies` list"
+        )
+    roster = tuple(sorted(
+        company.get("ticker")
+        for company in companies
+        if isinstance(company, dict)
+        and company.get("verification_state") == "reviewed"
+        and company.get("ticker")
+    ))
+    if not roster:
+        raise AssertionError(
+            f"the committed recipient graph {graph_id!r} declares no reviewed "
+            "issuer, so there is no reviewed roster to derive coverage from"
+        )
+    if len(set(roster)) != len(roster):
+        duplicated = sorted({t for t in roster if roster.count(t) > 1})
+        raise AssertionError(
+            f"the committed recipient graph {graph_id!r} declares the same issuer "
+            f"more than once ({duplicated}); a reviewed roster must be a set"
+        )
+
+    edges = graph.get("ownership_edges")
+    wired = {
+        edge.get("parent_company_id")
+        for edge in (edges if isinstance(edges, list) else [])
+        if isinstance(edge, dict)
+    }
+    unwired = sorted(
+        company.get("ticker")
+        for company in companies
+        if isinstance(company, dict)
+        and company.get("verification_state") == "reviewed"
+        and company.get("ticker")
+        and company.get("company_id") not in wired
+    )
+    if unwired:
+        raise AssertionError(
+            f"the committed recipient graph {graph_id!r} declares {unwired} "
+            "reviewed but connects no ownership edge to them, so no exact "
+            "identifier path can ever reach them; the declared roster overstates "
+            "what the graph can resolve"
+        )
+    return roster
+
+
+def canonical_unreviewed_issuer_tickers() -> tuple[str, ...]:
+    """Return the requested issuers the reviewed graph carries no mapping for.
+
+    These are the ``mapping_needed`` rows -- ``["BWXT", "GE"]`` on
+    ``defense19-v1`` -- derived as a set difference rather than hand-listed, so
+    an issuer that gains (or loses) reviewed exact edges moves between the two
+    coverage states without a test edit.
+    """
+    reviewed = set(canonical_reviewed_issuer_tickers())
+    return tuple(
+        ticker
+        for ticker in canonical_requested_issuer_tickers()
+        if ticker not in reviewed
+    )
+
+
+def canonical_mapping_backlog_states() -> dict[str, int]:
+    """Return the backlog's ``mapping_state`` partition of the requested scope.
+
+    Shaped to compare directly against a ``Counter`` over the live backlog: a
+    state with no rows is absent rather than zero, because that is what a
+    ``Counter`` built from a generator yields.
+    """
+    reviewed = set(canonical_reviewed_issuer_tickers())
+    requested = canonical_requested_issuer_tickers()
+    partial = sum(1 for ticker in requested if ticker in reviewed)
+    return {
+        state: count
+        for state, count in (
+            ("partial_identifier_coverage", partial),
+            ("mapping_needed", len(requested) - partial),
+        )
+        if count
+    }
