@@ -1,7 +1,7 @@
 {
   "organ": "index_momentum.v1",
   "as_of": "2026-08-13",
-  "data_as_of": "2026-08-13",
+  "data_as_of": "2026-08-14",
   "authority": {
     "rank": false,
     "size": false,
@@ -17,17 +17,17 @@
       "region": "US",
       "grids": {
         "1D": {
-          "macd": 2.843,
-          "signal": 1.457,
-          "hist": 1.386,
-          "hist_vel3": -0.634,
-          "k": 94.487,
-          "d": 95.878,
-          "depth_pctile": 67.103,
+          "macd": 3.535,
+          "signal": 2.149,
+          "hist": 1.385,
+          "hist_vel3": -0.531,
+          "k": 94.81,
+          "d": 95.218,
+          "depth_pctile": 73.73,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-12",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "SPY",
@@ -56,17 +56,17 @@
           ]
         },
         "2B": {
-          "macd": 0.614,
-          "signal": -0.356,
-          "hist": 0.97,
-          "hist_vel3": 1.246,
+          "macd": 1.366,
+          "signal": 0.218,
+          "hist": 1.148,
+          "hist_vel3": 0.714,
           "k": 95.837,
-          "d": 87.408,
-          "depth_pctile": 51.865,
+          "d": 96.359,
+          "depth_pctile": 57.103,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-11",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "SPY",
@@ -83,17 +83,17 @@
           ]
         },
         "3B": {
-          "macd": 1.8,
-          "signal": 1.504,
-          "hist": 0.297,
-          "hist_vel3": 1.465,
-          "k": 73.56,
-          "d": 41.566,
-          "depth_pctile": 61.667,
+          "macd": 2.482,
+          "signal": 1.83,
+          "hist": 0.652,
+          "hist_vel3": 1.603,
+          "k": 100.0,
+          "d": 71.932,
+          "depth_pctile": 66.706,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "SPY",
@@ -157,17 +157,17 @@
       "region": "US",
       "grids": {
         "1D": {
-          "macd": -1.481,
-          "signal": -3.029,
-          "hist": 1.548,
-          "hist_vel3": -0.406,
-          "k": 92.479,
-          "d": 92.234,
-          "depth_pctile": 40.754,
+          "macd": -0.581,
+          "signal": -2.213,
+          "hist": 1.632,
+          "hist_vel3": -0.215,
+          "k": 94.881,
+          "d": 93.317,
+          "depth_pctile": 45.992,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-12",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "QQQ",
@@ -192,33 +192,21 @@
               "quality_tag": "ordinary",
               "us_confirm": false,
               "global_washout_turn": false
-            },
-            {
-              "index": "QQQ",
-              "grid": "1D",
-              "date": "2026-07-14",
-              "direction": "bull",
-              "depth_at_cross": -6.597,
-              "depth_pctile": 11.7,
-              "hist_vel3": 0.186,
-              "quality_tag": "ordinary",
-              "us_confirm": false,
-              "global_washout_turn": false
             }
           ]
         },
         "2B": {
-          "macd": -4.168,
-          "signal": -4.576,
-          "hist": 0.408,
-          "hist_vel3": 1.569,
-          "k": 84.673,
-          "d": 69.22,
-          "depth_pctile": 23.889,
+          "macd": -3.405,
+          "signal": -4.185,
+          "hist": 0.781,
+          "hist_vel3": 1.163,
+          "k": 91.233,
+          "d": 83.127,
+          "depth_pctile": 28.175,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-11",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "QQQ",
@@ -235,17 +223,17 @@
           ]
         },
         "3B": {
-          "macd": -2.015,
-          "signal": -1.131,
-          "hist": -0.884,
-          "hist_vel3": 1.546,
-          "k": 43.612,
-          "d": 23.585,
-          "depth_pctile": 35.31,
-          "pctile_window_bars": 2226,
-          "pctile_window_days": 3116,
+          "macd": -1.629,
+          "signal": -1.297,
+          "hist": -0.332,
+          "hist_vel3": 1.897,
+          "k": 64.332,
+          "d": 43.69,
+          "depth_pctile": 38.123,
+          "pctile_window_bars": 2227,
+          "pctile_window_days": 3118,
           "fast_reclaim": false,
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-13",
           "recent_events": []
         },
         "W-FRI": {
@@ -271,17 +259,17 @@
       "region": "US",
       "grids": {
         "1D": {
-          "macd": -0.055,
-          "signal": -1.124,
-          "hist": 1.069,
-          "hist_vel3": -0.151,
-          "k": 85.695,
-          "d": 83.28,
-          "depth_pctile": 49.603,
+          "macd": 0.544,
+          "signal": -0.568,
+          "hist": 1.113,
+          "hist_vel3": 0.05,
+          "k": 93.173,
+          "d": 87.74,
+          "depth_pctile": 54.048,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-12",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "IWM",
@@ -298,17 +286,17 @@
           ]
         },
         "2B": {
-          "macd": 0.601,
-          "signal": 0.207,
-          "hist": 0.394,
-          "hist_vel3": 1.082,
-          "k": 72.876,
-          "d": 57.711,
-          "depth_pctile": 52.302,
+          "macd": 1.152,
+          "signal": 0.522,
+          "hist": 0.63,
+          "hist_vel3": 0.803,
+          "k": 84.202,
+          "d": 72.841,
+          "depth_pctile": 56.746,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-11",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "IWM",
@@ -345,18 +333,6 @@
               "depth_at_cross": 3.435,
               "depth_pctile": 72.7,
               "hist_vel3": 0.985,
-              "quality_tag": "ordinary",
-              "us_confirm": false,
-              "global_washout_turn": false
-            },
-            {
-              "index": "IWM",
-              "grid": "3B",
-              "date": "2026-07-14",
-              "direction": "bear",
-              "depth_at_cross": 4.38,
-              "depth_pctile": 79.1,
-              "hist_vel3": -0.863,
               "quality_tag": "ordinary",
               "us_confirm": false,
               "global_washout_turn": false
@@ -399,17 +375,17 @@
       "region": "US",
       "grids": {
         "1D": {
-          "macd": -5.157,
-          "signal": -6.398,
-          "hist": 1.241,
-          "hist_vel3": -0.096,
-          "k": 90.705,
-          "d": 90.707,
-          "depth_pctile": 15.913,
+          "macd": -4.416,
+          "signal": -5.737,
+          "hist": 1.322,
+          "hist_vel3": 0.144,
+          "k": 96.407,
+          "d": 92.606,
+          "depth_pctile": 19.881,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-12",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "SOXX",
@@ -450,18 +426,31 @@
           ]
         },
         "2B": {
-          "macd": -8.521,
-          "signal": -8.248,
-          "hist": -0.273,
-          "hist_vel3": 1.332,
-          "k": 44.534,
-          "d": 31.536,
-          "depth_pctile": 3.214,
+          "macd": -8.089,
+          "signal": -8.195,
+          "hist": 0.106,
+          "hist_vel3": 1.161,
+          "k": 58.265,
+          "d": 44.831,
+          "depth_pctile": 4.206,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": true,
-          "as_of": "2026-08-11",
-          "recent_events": []
+          "as_of": "2026-08-13",
+          "recent_events": [
+            {
+              "index": "SOXX",
+              "grid": "2B",
+              "date": "2026-08-13",
+              "direction": "bull",
+              "depth_at_cross": -8.089,
+              "depth_pctile": 4.2,
+              "hist_vel3": 1.161,
+              "quality_tag": "washout_turn",
+              "us_confirm": false,
+              "global_washout_turn": false
+            }
+          ]
         },
         "3B": {
           "macd": -6.632,
@@ -500,17 +489,17 @@
       "region": "US",
       "grids": {
         "1D": {
-          "macd": 2.825,
-          "signal": 1.964,
-          "hist": 0.861,
-          "hist_vel3": -0.995,
-          "k": 87.013,
-          "d": 93.542,
-          "depth_pctile": 66.468,
+          "macd": 3.078,
+          "signal": 2.335,
+          "hist": 0.743,
+          "hist_vel3": -1.027,
+          "k": 82.681,
+          "d": 88.487,
+          "depth_pctile": 68.056,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-12",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "MAG7",
@@ -578,17 +567,17 @@
           ]
         },
         "3B": {
-          "macd": -1.755,
-          "signal": -2.19,
-          "hist": 0.434,
-          "hist_vel3": 1.357,
-          "k": 73.002,
-          "d": 49.505,
-          "depth_pctile": 36.114,
-          "pctile_window_bars": 983,
-          "pctile_window_days": 1376,
+          "macd": -1.328,
+          "signal": -1.902,
+          "hist": 0.574,
+          "hist_vel3": 1.162,
+          "k": 84.322,
+          "d": 68.754,
+          "depth_pctile": 39.634,
+          "pctile_window_bars": 984,
+          "pctile_window_days": 1378,
           "fast_reclaim": false,
-          "as_of": "2026-08-10",
+          "as_of": "2026-08-13",
           "recent_events": [
             {
               "index": "MAG7",
@@ -806,20 +795,7 @@
           "pctile_window_days": 3528,
           "fast_reclaim": false,
           "as_of": "2026-08-12",
-          "recent_events": [
-            {
-              "index": "^HSCE",
-              "grid": "3B",
-              "date": "2026-07-14",
-              "direction": "bull",
-              "depth_at_cross": -6.7,
-              "depth_pctile": 11.3,
-              "hist_vel3": 2.028,
-              "quality_tag": "ordinary",
-              "us_confirm": false,
-              "global_washout_turn": false
-            }
-          ]
+          "recent_events": []
         },
         "W-FRI": {
           "macd": -5.169,
@@ -1337,17 +1313,17 @@
       "region": "INTL",
       "grids": {
         "1D": {
-          "macd": -5.331,
-          "signal": -6.819,
-          "hist": 1.488,
-          "hist_vel3": 0.475,
-          "k": 95.23,
-          "d": 88.521,
-          "depth_pctile": 19.802,
+          "macd": -4.253,
+          "signal": -5.963,
+          "hist": 1.711,
+          "hist_vel3": 0.711,
+          "k": 100.0,
+          "d": 94.726,
+          "depth_pctile": 24.762,
           "pctile_window_bars": 2520,
           "pctile_window_days": 3528,
           "fast_reclaim": false,
-          "as_of": "2026-08-13",
+          "as_of": "2026-08-14",
           "recent_events": [
             {
               "index": "^KS11",
@@ -1415,31 +1391,31 @@
           ]
         },
         "3B": {
-          "macd": -11.737,
-          "signal": -10.29,
-          "hist": -1.447,
-          "hist_vel3": 1.094,
-          "k": 21.2,
-          "d": 13.809,
-          "depth_pctile": 1.144,
-          "pctile_window_bars": 2361,
-          "pctile_window_days": 3305,
+          "macd": -11.359,
+          "signal": -10.647,
+          "hist": -0.713,
+          "hist_vel3": 1.479,
+          "k": 28.649,
+          "d": 21.157,
+          "depth_pctile": 1.397,
+          "pctile_window_bars": 2362,
+          "pctile_window_days": 3307,
           "fast_reclaim": true,
-          "as_of": "2026-08-11",
+          "as_of": "2026-08-14",
           "recent_events": []
         },
         "W-FRI": {
-          "macd": -6.072,
-          "signal": -2.714,
-          "hist": -3.358,
-          "hist_vel3": -0.68,
-          "k": 0.0,
-          "d": 0.0,
-          "depth_pctile": 16.09,
-          "pctile_window_bars": 1473,
-          "pctile_window_days": 2062,
+          "macd": -6.822,
+          "signal": -4.084,
+          "hist": -2.739,
+          "hist_vel3": 0.372,
+          "k": 6.22,
+          "d": 2.073,
+          "depth_pctile": 13.229,
+          "pctile_window_bars": 1474,
+          "pctile_window_days": 2064,
           "fast_reclaim": false,
-          "as_of": "2026-08-07",
+          "as_of": "2026-08-14",
           "recent_events": []
         }
       }
@@ -1552,5 +1528,5 @@
     "fresh_crossers": []
   },
   "n_roster": 13,
-  "_timing_s": 3.27
+  "_timing_s": 2.05
 }
