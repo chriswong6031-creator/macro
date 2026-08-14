@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Host-private, paper-only sparse options selector.
+
+  Install as the Mac13,1 user only after the persistent runtime and clean
+  dedicated release checkout are independently attested.  Copy this plist to
+  ~/Library/LaunchAgents; never load it from a mutable Documents checkout.
+
+  StartInterval supplies cadence only.  The Python runner authenticates the
+  exact release/runtime/state/evidence roots and owns the ET slot fence.  This
+  job has no trade, publication, daily-workflow, or proposal authority.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.mastermind.optionssparseselector</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/sh</string>
+    <string>/Users/chriswong/options-sparse-selector-ops-wt/ops/launchd/run_options_sparse_selector_loop.sh</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/chriswong/options-sparse-selector-ops-wt</string>
+
+  <key>StartInterval</key>
+  <integer>300</integer>
+
+  <key>StandardOutPath</key>
+  <string>/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchd.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/launchd.stderr.log</string>
+
+  <key>KeepAlive</key>
+  <false/>
+  <key>ThrottleInterval</key>
+  <integer>60</integer>
+</dict>
+</plist>

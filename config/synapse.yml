@@ -15249,6 +15249,7 @@ artifacts:
       - scripts/capture_market_memory_options_episodes.py
       - scripts/audit_options_market_memory_context.py
       - engine/options_signal_campaign.py
+      - scripts/run_options_sparse_selector.py
     external_consumers: []
     notes: >
       Immutable point-in-time option-flow decision episodes. Event, observation,
@@ -15262,7 +15263,10 @@ artifacts:
       it binds exact committed bytes in a private zero-authority store, never writes
       this owner ledger, and excludes the frozen initial prefix from forward proof.
       The context audit and canonical campaign engine also read the exact ledger but
-      receive no writer or decision authority.
+      receive no writer or decision authority. The bounded M1 sparse-selector canary
+      starts fresh epochs from authenticated current-origin/main Git blobs and pins
+      active epochs to that exact ancestor. It cannot write this ledger, use W1A, emit a proposal, publish a
+      public artifact, or attach a downstream consumer; every authority remains false.
 
   options-signal-episode-h60-outcomes:
     path: data/options_signal_episode/outcomes_h60.jsonl
@@ -15389,14 +15393,18 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/options_signal_campaign.py
+      - scripts/run_options_sparse_selector.py
     external_consumers: []
     notes: >
       Append-only exact-contract/session campaign census. Every valid source group,
       including singletons, receives a stable campaign identity; later source-prefix
       extension creates a new immutable revision and preserves lineage. The nightly
-      campaign engine is the sole writer and consumer. All selection, ranking,
-      scoring, gating, sizing, trading, publication, training, Neural Web, and
-      Prophet authority remains false.
+      campaign engine is the sole writer. The bounded M1 sparse-selector canary is
+      an authenticated read-only consumer: fresh epochs use exact current-origin/main
+      Git blobs and active epochs stay pinned to their exact ancestor;
+      W1A and proposals are forbidden and it has no public or handoff consumer. All
+      selection, ranking, scoring, gating, sizing, trading, publication, training,
+      Neural Web, Prophet, and completion authority remains false.
 
   options-signal-campaign-outcomes:
     path: data/options_signal_campaign/outcomes.jsonl
@@ -15440,12 +15448,16 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/options_signal_campaign.py
+      - scripts/run_options_sparse_selector.py
     external_consumers: []
     notes: >
       Deterministic checkpoint written only after canonical campaign revisions and
       outcomes are durably replaced. It binds exact immutable source and output
       prefixes and fails closed on shrink or drift. The nightly campaign engine is
-      the sole writer and consumer and the checkpoint grants no downstream authority.
+      the sole writer. The bounded M1 sparse-selector canary authenticates this exact
+      blob from current-origin/main for a fresh epoch, then pins that exact ancestor
+      alongside both source ledgers until the epoch drains; it receives no
+      writer, proposal, handoff, public-output, trade, or downstream authority.
 
   options-signal-episode-checkpoint:
     path: data/options_signal_episode/checkpoint.json
