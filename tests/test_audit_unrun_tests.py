@@ -291,25 +291,51 @@ def test_census_selftest_passes() -> None:
     assert result.returncode == 0, result.stdout + result.stderr
 
 
+def _ci_step_commands() -> set[str]:
+    """Every `run:` scalar CI executes on a pull request, whitespace-normalised.
+
+    BOTH homes, since 2026-08-14: the legacy manifest (executed inside the
+    ci-pack matrix) AND `ci.yml` itself, because the armed census moved into
+    `ci-plan`'s fast preflight that day — a structural defect must red in
+    ~2 minutes instead of at minute 67 of a pack run (incident run
+    31763116872). Reading only the manifest made this guard fail on the very
+    PR that improved what it guards, which is the mirrored-guard trap: the
+    assertion pinned the LOCATION, not the property it cares about.
+    """
+    commands: set[str] = set()
+    for path in (MANIFEST, ROOT / ".github" / "workflows" / "ci.yml"):
+        document = yaml.safe_load(path.read_text()) or {}
+        for job in (document.get("jobs") or {}).values():
+            if not isinstance(job, dict):
+                continue
+            for step in job.get("steps") or []:
+                if isinstance(step, dict):
+                    commands.add(" ".join(str(step.get("run", "")).split()))
+    return commands
+
+
 def test_the_census_runs_in_a_ci_job() -> None:
-    """An unrun guard is a comment with a shebang."""
-    manifest = yaml.safe_load(MANIFEST.read_text())
-    commands = {
-        " ".join(str(step.get("run", "")).split())
-        for job in manifest["jobs"].values()
-        if isinstance(job, dict)
-        for step in job.get("steps") or []
-        if isinstance(step, dict)
-    }
+    """An unrun guard is a comment with a shebang.
+
+    The three invocations are DIFFERENT guarantees and all three must run
+    somewhere CI executes on a pull request: the selftest proves the detector
+    still detects, the bare run is the armed ratchet, and the unit suite pins
+    the discovery logic. A `$RUNNER_TEMP`-prefixed interpreter counts — ci.yml
+    runs the preflight from its isolated venv — so each requirement is matched
+    as a SUFFIX of a normalised command rather than by equality.
+    """
+    commands = _ci_step_commands()
     for required in (
-        "python scripts/audit_unrun_tests.py --selftest",
+        "scripts/audit_unrun_tests.py --selftest",
         # The BARE run — the armed gate, not the selftest and not the unit tests.
-        # Matched by content and never by line number: the three steps sit next to
+        # Matched by content and never by line number: the steps sit next to
         # each other and a positional assertion would pass on the wrong one.
-        "python scripts/audit_unrun_tests.py",
-        "python -m pytest tests/test_audit_unrun_tests.py -q",
+        "scripts/audit_unrun_tests.py",
+        "-m pytest tests/test_audit_unrun_tests.py -q",
     ):
-        assert required in commands, f"no CI step runs `{required}`"
+        assert any(
+            command.endswith(required) for command in commands
+        ), f"no CI step runs `... {required}`"
 
 
 # ── 5. the gate: reds the new, grandfathers the backlog, honours the waivers ──
