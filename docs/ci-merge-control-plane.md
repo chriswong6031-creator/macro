@@ -89,45 +89,46 @@ required aggregate in a later step of the same job.
 ## Merge authority and live state
 
 At the incident cutover, the custom `merge-on-green` workflow is manually
-disabled. Keep it disabled: its historical presence-derived proof set allowed PR
-#5555 to merge before the final-head CI job existed. The controller code may
-remain temporarily for rollback archaeology, but it is not merge authority and
-must not compete with a native queue.
+disabled. Keep it disabled through the validation cutover: its historical
+presence-derived proof set allowed PR #5555 to merge before the final-head CI job
+existed. PR #5580 made `ci-gate` unconditionally mandatory, closing that exact
+absence-as-clean race, but the controller is still not live merge authority until
+its bounded wake/reconciliation path is separately proven.
 
-Native Merge Queue is supported by the current public organization-owned
-Enterprise repository. Code now handles `merge_group`; live adoption still
-requires configuration receipts. Use the fixed
-`codex/merge-queue-pilot` branch first:
+Native Merge Queue is available on this public organization-owned Enterprise
+repository, and repository code now handles `merge_group`. A fresh live canary on
+temporary branch `mq-eval-base` nevertheless rejected it for `main` under the
+current producer architecture:
 
-1. install the organization required-workflow rule for `ci-authority.yml` on the
-   pilot in evaluation mode, then active mode after a fresh PR proves it;
-2. require the pilot-specific authority context, `ci-gate`, and `fence-pack` from
-   the expected GitHub Actions App;
-3. enable a one-build, one-entry `ALLGREEN` merge queue on the pilot;
-4. prove red, pending, missing, conflict, base-retarget, merge-group, and no-work
-   behavior plus several automatic merges; and
-5. verify the resulting branch and workflow audit receipts before considering
-   `main`.
+- probe PR #5581 entered the queue at `2026-08-14T05:55:16Z` and merged 31 seconds
+  after its required proof went green;
+- one ordinary direct push to the target branch destroyed the first merge group
+  (`00951d82`) and rebuilt it as `341d7706`, resetting validation to
+  `AWAITING_CHECKS` even though the push carried `[skip ci]`;
+- `main` moved 323 times in the measured 24-hour window, roughly once every 4.5
+  minutes with bursts, so queue proofs longer than that cadence would repeatedly
+  restart; and
+- GitHub rejected Actions App `15368` as a bypass actor for the temporary
+  repository ruleset with HTTP 422. A dedicated producer identity could solve
+  that identity constraint, but bypass pushes would still move the base and
+  rebuild merge groups.
 
-The temporary producer-bypass canary uses `repository_dispatch`, so GitHub runs
-the workflow definition from the default branch. It accepts one named operator
-and hard-codes both checkout and push destination to the pilot. Any ruleset bypass
-for GitHub Actions App ID `15368` authorizes the whole App, not one workflow. It is
-therefore transitional and pilot-only. Do not grant that App a `main` bypass until
-all write-capable workflow entry points have been audited or producers use a
-dedicated identity/PR path.
+The scratch ruleset and branches were removed after the experiment; current live
+state again has no repository ruleset or native queue. The temporary privileged
+producer-bypass workflow was removed from this change because the canary decision
+no longer needs it. `merge_group` and pilot-specific authority support remain
+dormant so the decision can be revisited without re-opening event-identity bugs.
 
-The pilot is not proof of `main` adoption. Main cutover requires an atomic order:
+Reopen native queue adoption only after direct producers stop advancing `main`
+(for example, by publishing data outside Git history or through queued PRs), then
+repeat the pilot with stable required `ci-authority`, `ci-gate`, and `fence-pack`
+evidence. Until then, the safe live posture is manual merge while the custom
+reconciler is disabled. Any later custom-controller reactivation must be a
+separate atomic step after its required-gate, wake-loss, red/pending/missing, and
+bounded-load receipts are green; it must never overlap a native queue.
 
-1. successful pilot acceptance receipts;
-2. required trusted workflow and stable aggregate rules installed for `main`;
-3. native queue active for `main`;
-4. custom merger still disabled; and
-5. direct-push authority explicitly narrowed or removed.
-
-Rollback disables the new repository queue rule before the organization workflow
-rule, preserves unrelated rulesets, leaves the unsafe custom merger disabled, and
-returns to a safe manual merge posture while evidence is repaired.
+The durable decision record is
+`agentos/decisions/DEC-CI-NATIVE-MERGE-QUEUE-REJECTED.md`.
 
 ## Known limits and proof ledger
 

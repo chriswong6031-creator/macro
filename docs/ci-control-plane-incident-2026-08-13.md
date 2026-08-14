@@ -1,7 +1,8 @@
 # GitHub CI and merge control-plane incident model — 2026-08-13
 
-**Status:** measured BEFORE record and target architecture. This is not an
-incident-closure report. No remediation in this document has after-state proof.
+**Status:** measured BEFORE record, target architecture, and fresh native-queue
+decision. This is not an incident-closure report; remediation criteria remain
+unproven unless the acceptance ledger names a live receipt.
 
 ## Verdict
 
@@ -19,11 +20,14 @@ the final head's `ci-plan` job until `03:56:18Z`. The sweeper derived required
 anchors from check names visible at that instant, saw completed fences but no CI
 anchors, and called that set clean.
 
-GitHub Merge Queue is available to this public organization repository, but it is
-not configured. Current receipts show no ruleset, no classic protection, and no
-merge queue on `main`. Migration is therefore a viable target, not a completed
-decision: `ci.yml` and its event assumptions must first support `merge_group`, and
-automated producer identities need a tested, narrow bypass or a PR-based path.
+GitHub Merge Queue is available to this public organization repository, but a
+fresh temporary-branch canary rejected it for `main` under the current direct-push
+producer architecture. The queue merged probe PR #5581 quickly once green, then a
+single target-branch push destroyed and rebuilt its in-flight merge group. With
+323 direct `main` commits in the measured 24-hour window, that invalidation would
+recreate the proof treadmill rather than remove it. The temporary ruleset and
+branches were cleaned up; current `main` again has no ruleset, classic protection,
+or merge queue.
 
 ## Capture scope and evidence rules
 
@@ -356,28 +360,34 @@ Primary documentation:
 - [Troubleshooting required status checks](https://docs.github.com/en/enterprise-cloud@latest/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks)
 - [Repository rules REST API](https://docs.github.com/en/rest/repos/rules)
 
-Migration blockers to resolve before enforcing it on `main`:
+### Fresh native-queue experiment and decision
 
-1. `ci.yml` has no `merge_group` trigger. GitHub explicitly requires it for
-   Actions checks required by a merge queue.
-2. CI event expressions assume `github.event.pull_request`: immutable base SHA,
-   closed-event fences, scope arguments, and concurrency semantics need a
-   merge-group-safe path. The current fallback would safely widen to full suite,
-   but at unacceptable cost.
-3. Current workflow concurrency uses `cancel-in-progress` for every non-dispatch
-   event. GitHub warns against cancelling merge-group validation; this must be
-   excluded or replaced with head-keyed semantics.
-4. The ruleset must require stable aggregates (`ci-gate` and the applicable
-   fence aggregate), not dynamic per-pack names.
-5. Direct automated producer pushes to `main` need an explicit authority model.
-   A dedicated GitHub App bypass actor, or migration of producers to queued PRs,
-   must be proven on a temporary branch. Historical comments are not a current
-   receipt.
-6. The custom sweeper and native queue cannot both own merge/update decisions.
-   Cutover must be atomic after the canary, with one controller disabled before
-   the other becomes authoritative.
-7. Required-check behavior for no-work, fork, closed, and `[skip ci]` shapes must
-   be exercised in evaluation/canary mode before main enforcement.
+At `2026-08-14T05:52Z–05:59Z`, a scratch `mq-eval-base` ruleset and probe PR
+#5581 established the missing live evidence:
+
+1. the repository accepted a merge-queue rule, created merge group commit
+   `00951d82`, and refused an ordinary direct squash merge while the queue owned
+   the branch;
+2. a direct target-branch push (`9065b39c`, carrying `[skip ci]`) destroyed that
+   group and rebuilt it as `341d7706`, with state reset to `AWAITING_CHECKS`;
+3. the rebuilt group went green and the queue merged #5581 at
+   `2026-08-14T05:58:50Z`, 31 seconds after its required proof completed; and
+4. adding GitHub Actions App `15368` as a repository-ruleset bypass actor returned
+   HTTP 422. More importantly, even a valid dedicated bypass identity would not
+   prevent its push from changing the queue base and rebuilding every group.
+
+`git rev-list --count --since='24 hours ago' origin/main` measured 323 direct
+commits at the experiment snapshot, roughly one every 4.5 minutes and sometimes
+in much tighter bursts. Queue validation longer than that interval would restart
+indefinitely. The temporary ruleset and scratch branches were removed after the
+receipt; this section records historical experiment evidence, not current live
+configuration.
+
+**Decision:** reject native Merge Queue for `main` under the current producer
+architecture. Reopen the decision only after direct producers stop advancing
+`main`; `merge_group` support remains in code for that future canary. The durable
+decision record is
+`agentos/decisions/DEC-CI-NATIVE-MERGE-QUEUE-REJECTED.md`.
 
 ## Target architecture
 
@@ -385,16 +395,20 @@ Migration blockers to resolve before enforcing it on `main`:
 flowchart LR
     PR["PR head"] --> PRE["fast metadata-only preflight"]
     PRE -->|"red"| STOP["actionable refusal; no heavy packs"]
-    PRE -->|"green"| QUEUE["native Merge Queue"]
-    QUEUE --> MG["merge_group candidate against latest main"]
-    MG --> PLAN["metadata-only authoritative plan artifact"]
+    PRE -->|"green"| PLAN["metadata-only authoritative plan artifact"]
     PLAN --> ADMIT["bounded heavy-CI admission"]
     ADMIT --> PACK["right-sized workers consume plan"]
     PACK --> GATE["required ci-gate + fence aggregate"]
-    GATE --> QUEUE
-    QUEUE --> MAIN["serialized native merge"]
-    PRODUCER["narrow producer GitHub App or queued producer PR"] --> MAIN
+    GATE --> RECON["single head-SHA reconciler"]
+    RECON --> MAIN["serialized squash merge"]
+    PRODUCER["existing direct producers"] --> MAIN
+    MAIN --> RECON
 ```
+
+The reconciler edge is a target, not current live authority. It remains disabled
+until its wake durability, missing-check refusal, and bounded refresh behavior are
+proven. Manual merge is the safe interim posture; native and custom controllers
+must never overlap.
 
 ### Phase A — Stop amplification and add receipts
 
@@ -422,11 +436,11 @@ flowchart LR
 
 - Make worker count a function of selected runtime weight, not merely non-empty
   indices in a fixed 12-way partition.
-- Admit authoritative heavy validation only through a bounded lane. Native
-  merge-queue build concurrency is the preferred bound; start conservatively and
-  tune from throughput/p95 evidence.
-- Keep optional PR-head feedback cheap; run the authoritative expensive suite on
-  `merge_group`, where it proves the candidate against latest main once.
+- Admit authoritative heavy validation only through a bounded lane. Cap per-PR
+  parallelism independently from logical coverage, then tune the repository-wide
+  budget from throughput and p95 evidence.
+- Keep PR-head feedback cheap. Preserve `merge_group` support as a dormant future
+  path, but do not depend on it while direct producer pushes invalidate groups.
 - Replace unknown ownership with a visible metadata defect. Do not convert an
   unowned narrative file into repository-global proof invalidation.
 - Split or narrowly scope indivisible heavyweight jobs and reuse hermetic
@@ -434,17 +448,21 @@ flowchart LR
 - Exit receipt: measured peak remains below the configured heavy-job budget under
   a concurrent-PR burst, with unrelated PRs progressing.
 
-### Phase D — Native queue canary and atomic cutover
+### Phase D — Single-controller recovery and atomic cutover
 
-- Add `merge_group` support and stable required aggregates.
-- Create an evaluation/temporary-branch ruleset with low merge-queue build
-  concurrency and one-entry groups initially for clean provenance.
-- Prove red, pending, no-work, fork, conflict, stale-base, and producer-push
-  behavior. Prove the exact bypass actor or move that producer to PRs.
-- Disable the custom sweeper before activating the `main` queue rule; remove its
-  refresh/merge authority after successful canary evidence.
-- Exit receipt: native queue alone merges several concurrent PRs and main remains
-  green.
+- Keep the historical custom sweeper disabled while CI authority changes land.
+- Preserve an unconditional final-head `ci-gate`, stable fence aggregate, and
+  trusted authority boundary; missing or unpublished checks stay pending, never
+  optional.
+- Replace lossy completion storms with durable head-SHA work and bounded
+  reconciliation. A base move may schedule one re-evaluation, not refresh every
+  armed branch or duplicate heavy validation.
+- Prove red, pending, missing, conflict, stale-base, no-work, and concurrent wake
+  behavior before enabling the reconciler.
+- Re-enable exactly one controller in an atomic configuration step; native queue
+  remains rejected until producers leave `main`.
+- Exit receipt: several concurrent eligible PRs merge without babysitting while
+  red and incomplete heads remain blocked and main stays green.
 
 ### Phase E — Soak and tune
 
@@ -471,7 +489,7 @@ flowchart LR
 | Wake durability | 25 sweeps/7m21s, 15 cancelled | native queue or durable head-keyed wake loses none | Unproven |
 | Main safety | custom presence-derived gate disproven | red/pending/missing/conflict cases blocked; main stays green | Unproven |
 | Queue drain | jam persisted | queue drains by automation without manual merges | Unproven |
-| Native queue decision | capable, not configured | adopted with receipts, or rejected by a fresh canary/API blocker | Unproven |
+| Native queue decision | capable, not configured | adopted with receipts, or rejected by a fresh canary/API blocker | **Proven rejected for current producer architecture**: #5581 + direct-push group rebuild + bypass 422 |
 
 No p50/p95 green-to-merge value is reported for the primary window: successful
 heads were subsequently advanced/refreshed or remained unmerged, so pairing their

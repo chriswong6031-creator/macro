@@ -2204,34 +2204,6 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "closed" in triggers["pull_request"]["types"]
 
 
-def test_merge_queue_bypass_canary_uses_trusted_default_branch_and_fixed_pilot() -> None:
-    """The temporary bypass probe must not execute a candidate-ref definition."""
-    path = ROOT / ".github" / "workflows" / "merge-queue-bypass-canary.yml"
-    workflow = _yaml(path)
-    triggers = workflow.get("on") or workflow.get(True)
-    assert set(triggers) == {"repository_dispatch"}
-    assert triggers["repository_dispatch"]["types"] == ["merge_queue_bypass_canary"]
-    assert workflow["permissions"] == {"contents": "write"}
-    assert workflow["concurrency"]["cancel-in-progress"] is False
-    job = workflow["jobs"]["push-pilot-receipt"]
-    condition = job["if"]
-    assert "github.ref == 'refs/heads/main'" in condition
-    assert "github.actor == 'chriswong6031-creator'" in condition
-    assert (
-        "github.event.client_payload.target_ref == "
-        "'refs/heads/codex/merge-queue-pilot'"
-    ) in condition
-    checkout = next(step for step in job["steps"] if "uses" in step)
-    assert checkout["uses"] == (
-        "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
-    )
-    assert checkout["with"]["ref"] == "codex/merge-queue-pilot"
-    run = "\n".join(str(step.get("run", "")) for step in job["steps"])
-    assert "HEAD:refs/heads/codex/merge-queue-pilot" in run
-    assert "--force" not in run
-    assert "github.event.client_payload" not in run
-
-
 def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
     """Both public product faces must trigger CI and run their focused suites."""
     workflow = _yaml(WORKFLOW)
