@@ -4524,6 +4524,10 @@ jobs:
           ref: ${{ github.sha }}
           filter: blob:none
           fetch-depth: 1
+          sparse-checkout: |
+            scripts/ci_collect_pack_evidence.py
+            scripts/ci_failure_summary.py
+          sparse-checkout-cone-mode: false
       - name: download terminal pack evidence
         if: needs.ci-plan.result == 'success' && needs.ci-plan.outputs.has_work == 'true'
         continue-on-error: true

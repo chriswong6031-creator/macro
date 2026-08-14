@@ -507,6 +507,11 @@ def test_ci_gate_exists_needs_both_jobs_and_always_runs() -> None:
 
 def test_ci_gate_assembles_and_publishes_machine_readable_failure_evidence() -> None:
     job = _job("ci-gate")
+    checkout = next(
+        step
+        for step in job["steps"]
+        if "actions/checkout" in step.get("uses", "")
+    )
     download = next(
         step for step in job["steps"]
         if step.get("name") == "download terminal pack evidence"
@@ -518,6 +523,13 @@ def test_ci_gate_assembles_and_publishes_machine_readable_failure_evidence() -> 
     )
     assert download["uses"].endswith("d3f86a106a0bac45b974a628896c90dbdf5c8093")
     assert download["continue-on-error"] is True
+    assert checkout["with"]["filter"] == "blob:none"
+    assert checkout["with"]["fetch-depth"] == 1
+    assert checkout["with"]["sparse-checkout-cone-mode"] is False
+    assert set(checkout["with"]["sparse-checkout"].splitlines()) == {
+        "scripts/ci_collect_pack_evidence.py",
+        "scripts/ci_failure_summary.py",
+    }
     assert download["with"]["pattern"] == "ci-pack-evidence-${{ github.run_id }}-*"
     assert download["with"]["merge-multiple"] is True
     assert "ci_collect_pack_evidence.py run" in classify["run"]
