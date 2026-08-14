@@ -16,7 +16,11 @@ import pytest
 from tests.government_revenue_candidate_fixture import (
     _clamped_rewind,
     canonical_frozen_at,
+    canonical_mapping_backlog_states,
     canonical_newest_known_at,
+    canonical_requested_issuer_tickers,
+    canonical_reviewed_issuer_tickers,
+    canonical_unreviewed_issuer_tickers,
     rewound,
     shifted,
 )
@@ -157,3 +161,141 @@ def test_live_vintage_offsets_stay_inside_the_shipped_margin() -> None:
             f"{name}={value} is not before the run clock {FROZEN_AT}; "
             f"vintage margin is {margin}"
         )
+
+
+# --------------------------------------------------------------------------
+# Derived issuer-coverage rosters.
+#
+# Same argument as the clock, one axis over: `reviewed_issuer_company_count ==
+# 19`, its nineteen hand-listed tickers, `mapping_backlog == 21` and the
+# `["BWXT", "GE"]` remainder were a census of ONE graph vintage
+# (`recipient-graph:reviewed:2026-08-08:defense19-v1`).  The rosters below are
+# derived from the committed artifacts instead, and the binds that make a stale
+# or malformed source fail BY NAME are exercised here -- in seconds, with the
+# cause printed -- rather than as an off-by-N inside the projection suite.
+# --------------------------------------------------------------------------
+
+_DERIVED_ROSTERS = (
+    canonical_requested_issuer_tickers,
+    canonical_reviewed_issuer_tickers,
+)
+
+
+@pytest.fixture
+def uncached_rosters():
+    """Clear the roster caches around a test that doctors the source documents."""
+    for helper in _DERIVED_ROSTERS:
+        helper.cache_clear()
+    yield
+    for helper in _DERIVED_ROSTERS:
+        helper.cache_clear()
+
+
+def test_live_rosters_are_non_empty_sorted_and_consistent() -> None:
+    """Canary over the REAL shipped artifacts, not a re-derivation of them."""
+    requested = canonical_requested_issuer_tickers()
+    reviewed = canonical_reviewed_issuer_tickers()
+
+    assert requested and reviewed
+    assert list(requested) == sorted(requested)
+    assert list(reviewed) == sorted(reviewed)
+    assert len(set(requested)) == len(requested)
+
+    unreviewed = canonical_unreviewed_issuer_tickers()
+    assert set(unreviewed) == set(requested) - set(reviewed)
+    # The partition is a partition: the two states account for the whole scope.
+    assert sum(canonical_mapping_backlog_states().values()) == len(requested)
+    assert canonical_mapping_backlog_states().get("mapping_needed", 0) == len(unreviewed)
+
+
+def test_partition_omits_an_empty_state_the_way_a_counter_does() -> None:
+    """A `Counter` over rows never stores a zero, so neither may the expectation."""
+    assert all(count > 0 for count in canonical_mapping_backlog_states().values())
+
+
+def test_curated_scope_ahead_of_the_payload_fails_naming_that(
+    monkeypatch: pytest.MonkeyPatch, uncached_rosters: None
+) -> None:
+    """An issuer curated into scope without a payload rebuild is not a census."""
+    from tests import government_revenue_candidate_fixture as module
+
+    real = module._canonical_document
+
+    def doctored(name: str):
+        document = real(name)
+        if name == module._ENTITIES:
+            document = {**document, "entities": {**document["entities"], "ZZZZ": {}}}
+        return document
+
+    monkeypatch.setattr(module, "_canonical_document", doctored)
+    with pytest.raises(AssertionError, match="not rebuilt after the scope moved"):
+        module.canonical_requested_issuer_tickers()
+
+
+def test_unpublished_candidate_graph_is_not_read_as_a_reviewed_roster(
+    monkeypatch: pytest.MonkeyPatch, uncached_rosters: None
+) -> None:
+    """A proposal that was never re-minted into `:reviewed:` has no roster."""
+    from tests import government_revenue_candidate_fixture as module
+
+    real = module._canonical_document
+
+    def doctored(name: str):
+        document = real(name)
+        if name == module._RECIPIENT_GRAPH:
+            document = {
+                **document,
+                "graph_id": "recipient-graph:candidate:2026-08-11:defense",
+            }
+        return document
+
+    monkeypatch.setattr(module, "_canonical_document", doctored)
+    with pytest.raises(AssertionError, match="not a published reviewed graph"):
+        module.canonical_reviewed_issuer_tickers()
+
+
+def test_inadmissible_graph_fails_by_name_instead_of_collapsing_to_zero(
+    monkeypatch: pytest.MonkeyPatch, uncached_rosters: None
+) -> None:
+    """The loader rejecting the graph zeroes every coverage count silently.
+
+    Without this bind the suite would report "expected 19, got 0" and name no
+    cause; the graph's rejection codes are the cause.
+    """
+    from tests import government_revenue_candidate_fixture as module
+
+    real = module._canonical_document
+
+    def doctored(name: str):
+        document = real(name)
+        if name == module._RECIPIENT_GRAPH:
+            document = {**document, "schema_version": "0.0.0-not-admissible"}
+        return document
+
+    monkeypatch.setattr(module, "_canonical_document", doctored)
+    with pytest.raises(AssertionError, match="not admissible at the payload"):
+        module.canonical_reviewed_issuer_tickers()
+
+
+def test_declared_issuer_with_no_ownership_edge_fails_by_name(
+    monkeypatch: pytest.MonkeyPatch, uncached_rosters: None
+) -> None:
+    """A roster entry no exact path can reach overstates what the graph resolves."""
+    from tests import government_revenue_candidate_fixture as module
+
+    real = module._canonical_document
+
+    def doctored(name: str):
+        document = real(name)
+        if name == module._RECIPIENT_GRAPH:
+            orphan = {
+                **document["companies"][0],
+                "company_id": "central:ZZZZ",
+                "ticker": "ZZZZ",
+            }
+            document = {**document, "companies": [*document["companies"], orphan]}
+        return document
+
+    monkeypatch.setattr(module, "_canonical_document", doctored)
+    with pytest.raises(AssertionError, match="connects no ownership edge"):
+        module.canonical_reviewed_issuer_tickers()
