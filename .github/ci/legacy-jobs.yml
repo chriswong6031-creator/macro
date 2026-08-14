@@ -3224,7 +3224,7 @@ jobs:
           PARSE_RC=0
           FILES=$(python3 scripts/check_self_mod_fence.py --print-planner-files) || PARSE_RC=$?
           if [ "$PARSE_RC" -eq 2 ]; then
-            echo "::error:: self-mod-fence: CI_CHANGED_FILES_JSON malformed — fail-closed (exit 1)." >&2
+            echo "::error:: self-mod-fence: CI_CHANGED_FILES_FILE/CI_CHANGED_FILES_JSON malformed — fail-closed (exit 1)." >&2
             exit 1
           fi
           if [ "$PARSE_RC" -eq 0 ]; then
@@ -3259,7 +3259,7 @@ jobs:
                 exit 0
               fi
               echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-              echo "Possible causes: CI_CHANGED_FILES_JSON unset/malformed, git diff error, or base_ref resolution failure." >&2
+              echo "Possible causes: CI_CHANGED_FILES_FILE/CI_CHANGED_FILES_JSON unset/malformed, git diff error, or base_ref resolution failure." >&2
               exit 1
             fi
           fi
