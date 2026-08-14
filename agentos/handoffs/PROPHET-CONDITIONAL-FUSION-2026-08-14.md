@@ -59,6 +59,13 @@ unverified:
     what_would_verify: PR #5593 checks concluding (merge-on-green armed; sweeper owns the merge)
   - claim: the context-vector accrual chip was picked up
     what_would_verify: a diagnosis session/PR exists, or PR-1a executes §13.0 itself
+unresolved:
+  - "Context-vector accrual stalled since 08-07 — chipped for diagnosis; not fixed here
+    (docs-only PR); PR-1a executes §13.0 if the chip was not picked up"
+  - "Insider panel collector stopped at 2026q1 and _short_int_dim is snapshot_not_pit —
+    both are collector/engine repairs outside this PR's fence, sequenced in §13.0"
+  - "H=42/63 grades have zero rows, so the basing-class chartered headline is
+    indefinitely dark until the grades ladder matures (§8.7) — calendar, not code"
 next_actions:
   - "PR-1a (wave w1, after #5593 merges): §13 accrual columns; §13.0 accrual restoration
     verified-or-executed; families.yml (memberships + pit_status + coverage_floor +
