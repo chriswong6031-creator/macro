@@ -774,7 +774,7 @@
     if (!sm && !ins) {
       return lrowHTML({ lab: W4_LABEL.owners, state: 'na',
         en: 'No institutional or insider filings for this name in last night&rsquo;s build.',
-        zh: '昨夜的构建里没有这只票的机构或内部人申报数据。' });
+        zh: '昨夜的构建里没有这只票的机构或内部人披露数据。' });
     }
     var en = [], zh = [];
     if (sm && isNum(sm.n_holders)) {
@@ -792,14 +792,14 @@
     if (!en.length) {
       return lrowHTML({ lab: W4_LABEL.owners, state: 'na',
         en: 'The ownership filings for this name carry no counts we can read.',
-        zh: '这只票的持股申报里没有我们能读出的计数。' });
+        zh: '这只票的持股披露里没有我们能读出的计数。' });
     }
     var period = (ins && ins.quarter) || (sm && sm.as_of) || '';
     var tip = {
       en: 'Institutional holdings are the latest 13F filings from the funds we follow; insider counts are reported transactions over the filing window' +
           (period ? ' (' + period + ')' : '') + '. Filings lag the market by weeks.',
-      zh: '机构持股来自我们跟踪的基金最新 13F 申报；内部人计数为申报窗口内的报备交易' +
-          (period ? '（' + period + '）' : '') + '。申报数据滞后市场数周。'
+      zh: '机构持股来自我们跟踪的基金最新 13F 披露；内部人计数为披露窗口内的报备交易' +
+          (period ? '（' + period + '）' : '') + '。披露数据滞后市场数周。'
     };
     /* NEUTRAL state, deliberately. This row painted `watch` from
        `insider.cluster === true`, which measured 1,133 of the 1,221 names carrying

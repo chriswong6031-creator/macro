@@ -68,7 +68,15 @@ PORTFOLIO = ROOT / "templates" / "portfolio.js"
 TEMPLATE = ROOT / "templates" / "watchlist.html.j2"
 
 # the pack this suite runs in; pinned against the workflow at the bottom of this file
-PACK_DEPS = {"pytest", "pandas", "numpy", "pyarrow", "yaml"}
+PACK_DEPS = {
+    "jinja2",
+    "markupsafe",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "pytest",
+    "yaml",
+}
 
 SHIM = """
 var __lang = LANG;
