@@ -54,7 +54,7 @@ waves:
   - id: W4
     title: "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)"
     status: todo
-    depends_on: [W1, W2]
+    depends_on: [W1, W2, W2B]
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -103,16 +103,21 @@ invariant I1 makes that structural rather than promised: nothing here can block 
 
 ## Phase 1 acceptance receipts
 
-W1 closed only after three independent real-work sessions, none of them the Agent OS
-scaffolding sessions, wrote schema-valid handoffs:
+W1 closed only after six independent real-work handoff records across five non-Agent-OS
+workstreams, none of them the Agent OS scaffolding sessions, were written and their
+implementation commits were merged to `origin/main`:
 
+- `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-13.md`
 - `agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-14.md`
 - `agentos/handoffs/STOCK-IDENTITY-2026-08-13.md`
+- `agentos/handoffs/WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14.md`
 - `agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-14.md`
+- `agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-14-pr1a.md`
 
-These are adoption receipts, not manufactured closure records. W3 separately closed when
-PR #5561 merged; W2B stays `awaiting_ci` until its Macro producer and Mastermind consumer
-pass the cross-repo E2E.
+These are six records rather than six distinct workstreams because Conditional Fusion
+authored two genuine implementation handoffs. They are adoption receipts, not manufactured
+closure records. W3 separately closed when PR #5561 merged; W2B stays `awaiting_ci` until
+its Macro producer and Mastermind consumer pass the cross-repo E2E.
 
 ## Phase 2b mapping acceptance
 
