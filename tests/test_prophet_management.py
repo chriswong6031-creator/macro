@@ -1015,3 +1015,140 @@ class TestOriginatePlansDictShapeEndToEnd:
         from engine.options_structure import validate_management_state as _vms
         errors = _vms(result)
         assert errors == [], f"Validator errors on originate-shaped plan: {errors}"
+
+
+# ===========================================================================
+# Stale-frame action safety (no closing print ⇒ no current instruction)
+# ===========================================================================
+
+class TestStaleFrameActionSafety:
+    """A stale or unavailable closing print must never carry MORE action
+    authority than a fresh one.
+
+    The horizon clock advances with ``asof`` even when the tape stops printing
+    (halt, delisting, feed gap), so a plan drifts into overtime purely on the
+    calendar.  The engine must withhold the current-looking instruction
+    (trim/hold/…) in that state, stamp the frame's staleness, and leave the
+    clock, phase and score machinery untouched.  Freshness authority =
+    ``prophet_bridge.price_frame_freshness`` (``STALE_BASIS_MAX_SESSIONS``).
+    """
+
+    def _stale_state(self, *, horizon_days, asof, closes=None,
+                     trigger=105.0, start="2026-01-05"):
+        plan = _make_plan(horizon_days=horizon_days, trigger=trigger,
+                          signal_date="2026-01-05")
+        prices = _make_prices(start, closes or [100.0] * 8)
+        return compute_management_state(plan=plan, price_history=prices,
+                                        asof=asof)
+
+    def test_overtime_from_halted_tape_carries_no_action(self):
+        # 8 business days of prints (last close 2026-01-14), then silence.
+        # horizon 10d, asof 2026-02-16 → tau≈4.2, T1 never hit → overtime —
+        # but the "trim" instruction must NOT ship off a month-old print.
+        state = self._stale_state(horizon_days=10, asof="2026-02-16")
+        assert state["phase"] == "overtime"
+        assert state["detection_phase"] == "overtime"
+        assert state["recommended_action"] is None
+        pf = state["price_frame"]
+        assert pf["state"] == "stale"
+        assert pf["last_close_date"] == "2026-01-14"
+        assert pf["lag"] > pf["max_lag"]
+        assert pf["lag_basis"] == "business_days"
+        # Clock and score machinery untouched: the window still reads elapsed,
+        # confidence is still stated, narration unchanged.
+        assert state["tau"] > 1.0
+        assert state["management_confidence"] is not None
+        assert state["human_state"] == "Overtime Stall"
+        assert "no closing print" in state["reliability"]["recommended_action"]
+
+    def test_delisted_long_gap_same_guarantee(self):
+        state = self._stale_state(horizon_days=10, asof="2026-04-01")
+        assert state["phase"] == "overtime"
+        assert state["recommended_action"] is None
+        assert state["price_frame"]["state"] == "stale"
+
+    def test_stale_frame_mid_horizon_withholds_hold_too(self):
+        # tau < 1 (no overtime): a fresh frame here would say "hold" — the
+        # invariant is phase-independent, staleness alone withholds it.
+        state = self._stale_state(horizon_days=100, asof="2026-02-16",
+                                  trigger=None)
+        assert state["phase"] == "triggered_pre_t1"
+        assert state["recommended_action"] is None
+        assert state["price_frame"]["state"] == "stale"
+
+    def test_invalidated_on_real_print_survives_staleness(self):
+        # The stop was breached by a REAL print before the tape went dark:
+        # "invalidated" mirrors that terminal fact, not the current tape, so
+        # closure semantics are untouched — only the disclosure is added.
+        closes = [100.0] * 5 + [95.0, 88.0, 85.0]
+        state = self._stale_state(horizon_days=10, asof="2026-02-16",
+                                  closes=closes)
+        assert state["phase"] == "invalidated"
+        assert state["recommended_action"] == "invalidated"
+        assert state["price_frame"]["state"] == "stale"
+
+    def test_fresh_overtime_still_trims_and_carries_no_stamp(self):
+        # Byte-parity witness: a fresh frame in overtime behaves exactly as
+        # before — trim, no price_frame key, baseline reliability note.
+        plan = _make_plan(horizon_days=10, trigger=105.0,
+                          signal_date="2026-01-05")
+        prices = _make_prices("2026-01-05", [100.0] * 30)
+        asof = prices.index[-1].date().isoformat()
+        state = compute_management_state(plan=plan, price_history=prices,
+                                         asof=asof)
+        assert state["phase"] == "overtime"
+        assert state["recommended_action"] == "trim"
+        assert "price_frame" not in state
+        assert state["reliability"]["recommended_action"] == (
+            "display — narrate, not authoritative order")
+
+    def test_freshness_boundary_is_the_origination_tolerance(self):
+        # Last close Mon 2026-03-02.  Three business days behind (Thu 03-05)
+        # is still current — the shared STALE_BASIS_MAX_SESSIONS tolerance —
+        # four (Fri 03-06) is stale.
+        plan = _make_plan(horizon_days=10, trigger=105.0,
+                          signal_date="2026-01-05")
+        prices = _make_prices("2026-02-16", [100.0] * 11)  # ends 2026-03-02
+        cur = compute_management_state(plan=plan, price_history=prices,
+                                       asof="2026-03-05")
+        assert cur["recommended_action"] == "trim"
+        assert "price_frame" not in cur
+        stale = compute_management_state(plan=plan, price_history=prices,
+                                         asof="2026-03-06")
+        assert stale["recommended_action"] is None
+        assert stale["price_frame"]["lag"] == 4
+
+    def test_weekend_gap_is_not_stale(self):
+        # Friday close read on a Sunday run is lag 0 — no false degradation.
+        plan = _make_plan(horizon_days=10, trigger=105.0,
+                          signal_date="2026-01-05")
+        prices = _make_prices("2026-02-16", [100.0] * 15)  # ends Fri 2026-03-06
+        state = compute_management_state(plan=plan, price_history=prices,
+                                         asof="2026-03-08")
+        assert state["phase"] == "overtime"
+        assert state["recommended_action"] == "trim"
+        assert "price_frame" not in state
+
+    def test_validator_bars_instructions_on_stale_frames(self):
+        from engine.options_structure import validate_management_state as _vms
+        base = {
+            "schema": "prophet.management_state/v1",
+            "id": "x", "asof": "2026-01-01", "phase": "overtime",
+            "management_confidence": 40.0,
+        }
+        stale_trim = dict(base, recommended_action="trim",
+                          price_frame={"state": "stale"})
+        assert any("stale price frame" in e for e in _vms(stale_trim))
+        # The engine's own degraded shape is clean…
+        assert _vms(dict(base, recommended_action=None,
+                         price_frame={"state": "stale"})) == []
+        # …a fresh frame keeps full vocabulary…
+        assert _vms(dict(base, recommended_action="trim",
+                         price_frame={"state": "current"})) == []
+        # …a malformed frame fails closed…
+        assert _vms(dict(base, recommended_action="trim",
+                         price_frame="stale"))
+        # …and "invalidated" (real-print terminal fact) is exempt.
+        assert _vms(dict(base, phase="invalidated",
+                         recommended_action="invalidated",
+                         price_frame={"state": "stale"})) == []
