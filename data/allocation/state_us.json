@@ -19,6 +19,7 @@
     "mag7",
     "managed_care",
     "memory_storage",
+    "non_ai_software",
     "non_ai_tech",
     "obesity_glp1",
     "power_grid",
@@ -31,6 +32,7 @@
     "silver_miners",
     "space_economy",
     "travel",
+    "us_sector_comm",
     "us_sector_discretionary",
     "us_sector_energy",
     "us_sector_financials",
@@ -39,13 +41,14 @@
     "us_sector_materials",
     "us_sector_realestate",
     "us_sector_staples",
-    "us_sector_tech"
+    "us_sector_tech",
+    "us_sector_utilities"
   ],
   "held": [
     "memory_storage",
-    "ai_infra",
     "cybersecurity",
-    "silver_miners"
+    "ai_infra",
+    "gold_miners"
   ],
   "leader": "memory_storage",
   "names": {

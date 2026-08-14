@@ -70,6 +70,11 @@ from engine.prophet_bridge import (  # noqa: E402
     plan_key,
     select_candidates,
 )
+from engine.prophet_integrity import (  # noqa: E402
+    PLAN_CORRECTIONS_FILENAME,
+    apply_plan_corrections,
+    load_plan_corrections,
+)
 
 @pytest.fixture(autouse=True)
 def _arena_writes_to_tmp(tmp_path, monkeypatch):
@@ -98,6 +103,14 @@ def _arena_writes_to_tmp(tmp_path, monkeypatch):
 
 COMMITTED_STANDOUTS = _REPO / "site" / "factordata" / "us_standouts.json"
 SEEDS = (0, 1, 2, 3, 5, 7, 11, 13, 17, 23, 42, 1337)
+
+# The shipped tree, for the read-only census at the end of section 2.  Agent
+# worktrees are commonly sparse (no site/, no data/); those tests skip there and run
+# for real in CI, where the checkout is complete.
+REAL_PLANS_DIR = _REPO / "site" / "prophet" / "plans"
+REAL_INDEX_PATH = _REPO / "site" / "prophet" / "index.json"
+REAL_LEDGER_PATH = _REPO / "data" / "prophet" / "ledger.jsonl"
+REAL_CORRECTIONS_PATH = _REPO / "data" / "prophet" / PLAN_CORRECTIONS_FILENAME
 
 
 # ---------------------------------------------------------------------------
@@ -582,6 +595,187 @@ class TestOpenPlanKeys:
     def test_plan_key_normalises_case_and_whitespace(self):
         assert plan_key(" clf ", "bull") == plan_key("CLF", "BULL") == "CLF-BULL"
 
+    def test_a_quarantined_plan_does_not_hold_its_ticker_slot(self):
+        """The SECOND way a slot frees, and it is not closure.
+
+        An audit-quarantined plan carries no forward-ledger row — nothing closed, so
+        `closed_ids` never names it — but the published index says out loud that a
+        quarantined plan "cannot emit live instructions or ledger rows"
+        (site/prophet/index.json `plan_integrity.effect`).  A plan that can do neither
+        is not occupying the ticker's opportunity slot, so a later bake may lawfully
+        re-originate the name, and this function is the ONE place that says so.
+        """
+        plans = {
+            "CLF-BULL-20260724": {"asset": "CLF", "direction": "BULL"},
+            "PI-BULL-20260620": {"asset": "PI", "direction": "BULL"},
+        }
+        assert bp.open_plan_keys(plans, set()) == {"CLF-BULL", "PI-BULL"}
+        assert bp.open_plan_keys(
+            plans, set(), quarantined_ids={"CLF-BULL-20260724"}) == {"PI-BULL"}
+        assert bp.open_plan_keys(plans, set(), quarantined_ids=set(plans)) == set()
+
+    def test_a_second_open_plan_keeps_the_key_the_quarantined_one_released(self):
+        """Quarantine releases a PLAN's hold, never the ticker's whole key.
+
+        FCX / HEI / MDB on the shipped tree are exactly this shape (2026-08-08 audit,
+        research/prophet_us_audit/OUTAGE_PLAN_CHRONOLOGY_2026-08-08.json): the audit
+        quarantined one plan, a later bake lawfully re-originated the name, and the
+        live successor still blocks a third.  Over-excluding here would re-open a name
+        that IS live.
+        """
+        plans = {
+            "FCX-BULL-20260730": {"asset": "FCX", "direction": "BULL"},
+            "FCX-BULL-20260731": {"asset": "FCX", "direction": "BULL"},
+        }
+        assert bp.open_plan_keys(
+            plans, set(), quarantined_ids={"FCX-BULL-20260730"}) == {"FCX-BULL"}
+
+    def test_the_quarantined_ids_argument_takes_any_iterable(self):
+        """`build_prophet` hands this the `frozenset` off a CorrectionProjection and
+        the backfill lane hands it a set built from a git blob; a `set()`-typed
+        parameter that only worked for one of them would fail at the caller, not here.
+        """
+        plans = {"CLF-BULL-20260724": {"asset": "CLF", "direction": "BULL"}}
+        for ids in (["CLF-BULL-20260724"], ("CLF-BULL-20260724",),
+                    frozenset({"CLF-BULL-20260724"})):
+            assert bp.open_plan_keys(plans, set(), quarantined_ids=ids) == set()
+
+
+@pytest.mark.skipif(
+    not REAL_PLANS_DIR.exists() or not REAL_INDEX_PATH.exists(),
+    reason="sparse checkout: site/prophet is not materialised here",
+)
+class TestTheShippedTreeReadsOneDefinitionOfOpen:
+    """The same rule, against the tree that actually ships — read-only.
+
+    The unit tests above pin the mechanism; this pins that the mechanism is WIRED.
+    The index already tells the operator which plans are quarantined and that they
+    cannot act, so a quarantined plan still holding its ticker+direction slot would be
+    the artifact contradicting itself: a name withdrawn from display, silently barred
+    from ever being originated again.
+
+    WITNESS SETS SKIP; THE CORPUS FLOOR ASSERTS.  The two directional tests below need
+    a witness that only exists while the tree happens to hold one — a routine nightly
+    close of the live successors, or of the last quarantined plan, empties them with no
+    code change at all, and an `assert witnesses` there would be a scheduled fleet-wide
+    red on an unchanged repo.  So an empty witness set SKIPS: "nothing to witness today"
+    is honest, and the real assertion in each test is unconditional.  The corpus floor
+    in `test_the_shipped_corpus_is_big_enough_to_mean_something` stays a hard assert —
+    skipping THAT would be exactly the vacuity these floors exist to catch.
+    """
+
+    @staticmethod
+    def _shipped() -> dict:
+        raw: dict[str, dict] = {}
+        for path in REAL_PLANS_DIR.glob("*.json"):
+            data = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(data, dict) and data.get("schema") == "prophet.trade_plan/v1":
+                raw[str(data.get("id"))] = data
+        # The raw publications carry no `integrity_status` at all — quarantine exists
+        # ONLY in the append-only overlay, which is why this is derived through the
+        # real loader pair the nightly runs and never from a typed-in id list.
+        projection = apply_plan_corrections(
+            raw, load_plan_corrections(REAL_CORRECTIONS_PATH))
+        closed: set[str] = set()
+        if REAL_LEDGER_PATH.exists():
+            for line in REAL_LEDGER_PATH.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if not line or line.startswith("#"):
+                    continue
+                closed.add(str(json.loads(line).get("id")))
+        open_by_key: dict[str, list[str]] = {}
+        for plan_id, plan in projection.plans.items():
+            if plan_id in closed:
+                continue
+            asset, direction = plan.get("asset"), plan.get("direction")
+            if not asset or not direction:
+                continue
+            open_by_key.setdefault(
+                plan_key(str(asset), str(direction)), []).append(plan_id)
+        return {
+            "plan_count": len(raw),
+            "quarantined": set(projection.quarantined_ids),
+            "open_by_key": open_by_key,
+            "keys": bp.open_plan_keys(
+                projection.plans, closed,
+                quarantined_ids=projection.quarantined_ids),
+        }
+
+    def test_the_shipped_corpus_is_big_enough_to_mean_something(self):
+        """Anti-vacuity floor. An empty or unreadable corpus agrees with everything."""
+        shipped = self._shipped()
+        assert shipped["plan_count"] >= 50, (
+            f"only {shipped['plan_count']} plan(s) read from {REAL_PLANS_DIR} — the "
+            "census below would be vacuous; read the tree before trusting it")
+        assert len(shipped["keys"]) >= 50, (
+            f"only {len(shipped['keys'])} open ticker+direction key(s) derived; the "
+            "re-origination block would be barely holding anything")
+        assert shipped["quarantined"], (
+            f"no quarantined plan on the shipped tree, but {REAL_CORRECTIONS_PATH} is "
+            "APPEND-ONLY and the 2026-08-08 chronology audit wrote quarantine rows "
+            "into it. A zero here means the overlay lost rows or the plans they "
+            "target were deleted — deleting a frozen publication is never the fix.")
+
+    def test_the_published_quarantine_roster_is_the_one_this_rule_reads(self):
+        """The index's roster and the overlay must be the same set, or the operator is
+        reading one story while the originator obeys another."""
+        published = set(
+            json.loads(REAL_INDEX_PATH.read_text(encoding="utf-8"))
+            .get("plan_integrity", {}).get("quarantined_ids") or [])
+        derived = self._shipped()["quarantined"]
+        assert published == derived, (
+            f"site/prophet/index.json publishes {len(published)} quarantined id(s) "
+            f"and the overlay derives {len(derived)}: "
+            f"published-only={sorted(published - derived)}, "
+            f"overlay-only={sorted(derived - published)}")
+
+    def test_a_ticker_whose_only_open_plan_is_quarantined_is_originatable_again(self):
+        """THE assertion: quarantine frees the slot on the shipped tree, not just in a
+        fixture.  Witnesses on 2026-08-13 — APH, ELAN, FHI, GE, NUE, SE, WB, ZWS."""
+        shipped = self._shipped()
+        quarantined = shipped["quarantined"]
+        orphaned = {
+            key: ids for key, ids in shipped["open_by_key"].items()
+            if all(plan_id in quarantined for plan_id in ids)
+        }
+        if not orphaned:
+            pytest.skip(
+                "no ticker on the shipped tree has a quarantined plan as its ONLY "
+                "open plan, so this direction is untested today — the witness set is "
+                "empty, not the property false. Expected whenever the last quarantined "
+                f"plan closes out; {REAL_CORRECTIONS_PATH} is append-only, so the rule "
+                "itself is still pinned by the unit tests above. Do not delete this.")
+        still_held = sorted(set(orphaned) & shipped["keys"])
+        assert not still_held, (
+            f"{still_held} are blocked from re-origination by plans that are ALL "
+            "quarantined — withdrawn from display and unable to emit an instruction "
+            "or a ledger row, yet still holding the ticker's opportunity slot forever")
+
+    def test_a_live_successor_still_holds_the_key_its_quarantined_sibling_released(self):
+        """The other direction, so the exclusion cannot be widened into a hole.
+        Witnesses on 2026-08-13 — FCX-BULL, HEI-BULL, MDB-BULL: one quarantined plan
+        each (2026-08-08 audit), one lawfully re-originated live plan each."""
+        shipped = self._shipped()
+        quarantined = shipped["quarantined"]
+        contested = {
+            key: ids for key, ids in shipped["open_by_key"].items()
+            if any(plan_id in quarantined for plan_id in ids)
+            and any(plan_id not in quarantined for plan_id in ids)
+        }
+        if not contested:
+            pytest.skip(
+                "no ticker carries both a quarantined and a live open plan today, so "
+                "this direction is untested — the witness set is empty, not the "
+                "property false. A routine ledger close of the live successors empties "
+                f"it with no code change ({REAL_CORRECTIONS_PATH} is append-only). Do "
+                "not delete this: it is the direction that catches an exclusion "
+                "widened until it re-opens names that ARE live.")
+        missing = sorted(set(contested) - shipped["keys"])
+        assert not missing, (
+            f"{missing} carry a LIVE open plan and are no longer blocking "
+            f"re-origination: {({k: contested[k] for k in missing})}. Quarantine "
+            "releases one plan's hold on a key, never the whole key.")
+
 
 class TestReoriginationBlock:
 
@@ -894,7 +1088,8 @@ class TestLedgerOutcomeReader:
 
 def _run_main(tmp_path: Path, buys: list[dict], *, asof: str,
               seed_plans: dict[str, dict] | None = None,
-              ledger: dict[str, str] | None = None) -> dict:
+              ledger: dict[str, str] | None = None,
+              corrections: list[dict] | None = None) -> dict:
     """Run build_prophet.main() against tmp_path and return the written index.json."""
     standouts_path = _write_standouts(tmp_path, buys, gate_go=False, as_of=asof)
 
@@ -922,6 +1117,11 @@ def _run_main(tmp_path: Path, buys: list[dict], *, asof: str,
                 "\n".join(json.dumps({"schema": "prophet.ledger/v1", "id": plan_id,
                                       "outcome": outcome})
                           for plan_id, outcome in ledger.items()) + "\n",
+                encoding="utf-8")
+        if corrections:
+            bp.LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+            (bp.LEDGER_DIR / PLAN_CORRECTIONS_FILENAME).write_text(
+                "\n".join(json.dumps(row) for row in corrections) + "\n",
                 encoding="utf-8")
 
         prices = pd.DataFrame(
@@ -1029,6 +1229,49 @@ class TestIndexHygieneEndToEnd:
         assert new["formation_date"] == new["signal_date"] == "2026-07-31"
         assert new["price_basis_date"] == new["entry_date"] == "2026-08-03"
         assert new["recorded_at"] == new["plan_asof"] == "2026-08-03"
+
+    def test_a_quarantined_incumbent_does_not_block_tonights_origination(self, tmp_path):
+        """The whole pipeline, not just the helper: the nightly must HAND the overlay's
+        quarantine set to `open_plan_keys`, or the exclusion is code nobody calls.
+
+        Same fixture as the test above with one difference — the incumbent CLF plan is
+        quarantined by the correction overlay — and the outcome inverts: the slot is
+        free, CLF is originated, and the index discloses zero blocked keys.  Drop the
+        `quarantined_ids=` argument at the call site in `build_prophet.main` and this
+        test goes red while every unit test above stays green, which is the point of
+        running it end to end.
+        """
+        seeded = _seed_plan("CLF-BULL-20260601", "CLF", "2026-06-01")
+        evidence = {"audit_receipt":
+                    "research/prophet_us_audit/OUTAGE_PLAN_CHRONOLOGY_2026-08-08.json"}
+        index = _run_main(
+            tmp_path,
+            [_buy("CLF", priority=90.0, anchor="2026-07-31", spot=120.0)],
+            asof="2026-08-03",
+            seed_plans={"CLF-BULL-20260601": seeded},
+            corrections=[
+                {"schema": "prophet.plan_correction/v1",
+                 "id": "CLF-BULL-20260601:integrity_reason:20260808",
+                 "corrects_id": "CLF-BULL-20260601", "field": "integrity_reason",
+                 "old_value": None,
+                 "new_value": "published after its own entry-price session",
+                 "basis": "chronology audit disposition",
+                 "corrected_at": "2026-08-08", "evidence": evidence},
+                {"schema": "prophet.plan_correction/v1",
+                 "id": "CLF-BULL-20260601:integrity_status:20260808",
+                 "corrects_id": "CLF-BULL-20260601", "field": "integrity_status",
+                 "old_value": None, "new_value": "quarantined",
+                 "basis": "chronology audit disposition",
+                 "corrected_at": "2026-08-08", "evidence": evidence},
+            ],
+        )
+        intake = index["intake"]
+        assert intake["reorigination_blocked"] == 0
+        assert intake["reorigination_blocked_keys"] == []
+        assert intake["open_plan_keys"] == 0, (
+            "the quarantined incumbent is still counted as an open key, so it is still "
+            "holding CLF's opportunity slot")
+        assert "CLF-BULL-20260731" in {p["id"] for p in index["plans"]}
 
     def test_a_closed_plan_lets_the_name_back_in(self, tmp_path):
         index = _run_main(

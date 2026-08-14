@@ -954,6 +954,7 @@ def grade_rows(
                         "p_baseline": register.get("p_baseline"),
                         "brier": None,
                         "grade_status": "ungradable_missing_prices",
+                        "tier": "shadow",
                     }
                 )
             continue
@@ -979,6 +980,7 @@ def grade_rows(
                 "p_baseline": register.get("p_baseline"),
                 "brier": brier,
                 "grade_status": "graded",
+                "tier": "shadow",
             }
         )
     return rows
