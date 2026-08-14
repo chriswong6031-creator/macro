@@ -3001,6 +3001,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0912, PLR0915
                 log.error("poller: durable day_state recovery failed", exc_info=True)
             if args.once:
                 return 1
+            if args.rth_only and not _within_rth():
+                log.info(
+                    "poller: --rth-only outside RTH after errored cycle — "
+                    "preserving durable state and exiting cleanly"
+                )
+                return 0
             time.sleep(poll_floor_sec)
             continue
 
