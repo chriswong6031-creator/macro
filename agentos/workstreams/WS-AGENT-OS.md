@@ -54,7 +54,7 @@ waves:
   - id: W4
     title: "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)"
     status: todo
-    depends_on: [W1, W2]
+    depends_on: [W1, W2, W2B]
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY

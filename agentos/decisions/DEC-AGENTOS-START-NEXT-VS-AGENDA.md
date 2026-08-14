@@ -6,12 +6,13 @@ question: >
   brain/improvement_agenda.py ("owns the ranked work queue"). Is START NEXT a second
   ranked work queue, and if not, what exactly is it?
 answer: >
-  HISTORICAL DESIGN, NOW RETIRED: START NEXT was a READINESS view, not a priority queue,
-  and the brief said so in prose on every render. It answered "which waves CAN start" —
-  dependencies satisfied — and never "which work matters most", which remained the
-  improvement agenda's answer. Phase 2b removed this independent human list.
+  START NEXT is a READINESS view, not a priority queue, and the brief says so in prose
+  on every render. It answers "which waves CAN start" — dependencies satisfied — and
+  never "which work matters most", which remains the improvement agenda's answer. The
+  brief carries a fixed scope line above the section so the CEO can never be left
+  holding two ranked lists without being told which question each one answers.
 rationale: >
-  Historical rationale: Charter P7 is one source of truth per CONCEPT, not one list per screen. Readiness and
+  Charter P7 is one source of truth per CONCEPT, not one list per screen. Readiness and
   priority are different concepts with different inputs: readiness is computed from the
   workstream dependency graph, which only Agent OS holds; priority is computed from
   accountability-fused evidence, which only the improvement agenda holds. A wave can be
@@ -19,8 +20,8 @@ rationale: >
   thing while Agent OS cannot tell you the second. The failure P7 actually guards
   against is two lists that both claim to answer the same question and disagree — so
   the fix is not to delete one list, it is to make each one state its question. That
-  statement was not a comment in the source: START_NEXT_SCOPE (historical; retired)
-  rendered inside the brief, above the items, in both the text and JSON forms.
+  statement is not a comment in the source: START_NEXT_SCOPE renders inside the brief,
+  above the items, in both the text and JSON forms.
   Deriving START NEXT from the agenda instead was considered and rejected on evidence,
   not preference. The agenda's artifacts live at data/agenda/, which is gitignored and
   VPS-authoritative; the local checkout of it here is absent entirely. Reading a
@@ -50,7 +51,7 @@ evidence:
   - "research/EXECUTIVE_OS_PHASE0_CENSUS.md §5.3 — improvement_agenda is the only ranked, evidence-cited priority engine in the org"
   - "research/MASTERMIND_CEO_BRIEF_SPEC.md §3 — START NEXT ranking rule (deps satisfied, P0 alignment, unblock count, unclaimed)"
   - "research/MASTERMIND_CEO_BRIEF_SPEC.md §1 and §6 — zero network calls is a stated contract of this command"
-  - "Historical implementation (retired): scripts/agentos.py rank_start_next + START_NEXT_SCOPE rendered the scope line"
+  - "scripts/agentos.py rank_start_next + START_NEXT_SCOPE — the scope line is rendered, not merely commented"
 affects: [WS:AGENT-OS]
 confidence: medium
 reversibility: easy
@@ -59,11 +60,6 @@ decided_at: 2026-08-12
 superseded_by: DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA
 review_by: 2026-09-12
 ---
-
-**Historical record.** This decision is superseded. Every reference below to `START NEXT`,
-`rank_start_next`, or `START_NEXT_SCOPE` describes the retired Phase 2 implementation and is
-preserved only to show the reasoning that preceded Chairman ruling C3. None names a current
-symbol or output surface.
 
 ## Grounds
 
@@ -94,8 +90,7 @@ Chairman-level judgment about which seat owns a concept.
 ## SUPERSEDED 2026-08-12 by Chairman ruling C3
 
 This record proposed keeping both lists and distinguishing them by prose. The Chairman
-ruled further: `brain/improvement_agenda.py` is the SOLE canonical queue, and Agent OS owns
-readiness computation only. Phase 2b now feeds the machine readiness envelope to the agenda
-and has retired the independent human list. Retained for provenance — the reasoning here is
-still the reasoning that framed the question. See
-`DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`.
+ruled further: `brain/improvement_agenda.py` is the SOLE canonical queue, Agent OS owns
+readiness computation only, and the independent list is retired once readiness is fed
+into the agenda. Retained for provenance — the reasoning here is still the reasoning that
+framed the question. See `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA`.
