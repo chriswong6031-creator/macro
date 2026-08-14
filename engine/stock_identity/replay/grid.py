@@ -48,6 +48,7 @@ __all__ = [
     "KNOWN_BASIS_WEEKLY",
     "macro_grid",
     "daily_known",
+    "period_bars",
     "weekly_completed",
 ]
 
@@ -120,25 +121,45 @@ def daily_known(dates) -> pd.Series:
     return pd.Series(idx, index=idx)
 
 
-def weekly_completed(daily_close: pd.Series) -> pd.DataFrame:
-    """Completed W-FRI bars: the Friday label plus the week's last ACTUAL session.
+def period_bars(daily_close: pd.Series, rule: str) -> pd.DataFrame:
+    """Calendar-resampled bars carrying BOTH real session stamps.
 
-    ``resample("W-FRI")`` labels each bucket with its Friday, which may be a holiday the
-    name never traded — so the label is a calendar fact and the *known* stamp is the last
-    real session in the bucket. The trailing partial week is dropped (the same PIT rule
-    ``engine.washout_turn._completed_weekly`` applies), because its indicator values will
-    still move.
+    A right-labelled resample (``W-FRI``, ``2W-FRI``, ``ME``) stamps each bucket with a
+    calendar date the instrument may never have traded, and that label sits at the END of
+    the period — so using it as ``signal_ts`` would put the event's own date AFTER the
+    close that made it knowable, which inverts the known-ts law. The fix is to carry the
+    bucket's first and last ACTUAL sessions and let callers stamp
+    ``signal_ts = open_session`` / ``signal_known_ts = known`` — the same "opens here,
+    becomes final there" semantics the session-anchored 2D/3D grids already have.
 
-    Returns a frame indexed by the Friday label with columns ``known`` and ``close``.
+    The trailing bucket is dropped: whether it has closed is not decidable from the series
+    alone for every rule, and one forgone bucket at the very end of history is the only
+    conservative direction.
+
+    Returns a positionally-indexed frame of ``label``, ``open``, ``known``, ``close``.
     """
     s = pd.to_numeric(daily_close, errors="coerce").dropna().sort_index()
+    empty = pd.DataFrame({"label": pd.Series(dtype="datetime64[ns]"),
+                          "open": pd.Series(dtype="datetime64[ns]"),
+                          "known": pd.Series(dtype="datetime64[ns]"),
+                          "close": pd.Series(dtype="float64")})
     if s.empty:
-        return pd.DataFrame(columns=["known", "close"])
-    grp = s.resample("W-FRI")
-    wk = grp.last().dropna()
-    last_sess = grp.apply(lambda x: x.index[-1] if len(x) else pd.NaT).reindex(wk.index)
-    out = pd.DataFrame({"known": pd.DatetimeIndex(last_sess), "close": wk.to_numpy()},
-                       index=wk.index)
-    if len(out) and pd.Timestamp(out.index[-1]).date() > s.index[-1].date():
-        out = out.iloc[:-1]
-    return out
+        return empty
+    grp = s.resample(rule)
+    vals = grp.last().dropna()
+    if len(vals) < 2:
+        return empty
+    first = grp.apply(lambda x: x.index[0] if len(x) else pd.NaT).reindex(vals.index)
+    last = grp.apply(lambda x: x.index[-1] if len(x) else pd.NaT).reindex(vals.index)
+    out = pd.DataFrame({
+        "label": pd.DatetimeIndex(vals.index),
+        "open": pd.DatetimeIndex(first),
+        "known": pd.DatetimeIndex(last),
+        "close": vals.to_numpy(dtype="float64"),
+    }).reset_index(drop=True)
+    return out.iloc[:-1].reset_index(drop=True)
+
+
+def weekly_completed(daily_close: pd.Series) -> pd.DataFrame:
+    """Completed W-FRI bars — the grain the weekly washout organ reads."""
+    return period_bars(daily_close, "W-FRI")

@@ -25,7 +25,11 @@ import pandas as pd
 from engine import canon
 
 from engine.stock_identity.replay import events as ev
-from engine.stock_identity.replay.grid import KNOWN_BASIS_BUCKET, KNOWN_BASIS_DAILY
+from engine.stock_identity.replay.grid import (
+    KNOWN_BASIS_BUCKET,
+    KNOWN_BASIS_DAILY,
+    period_bars,
+)
 
 __all__ = ["FAMILY_KEYS", "ERA", "constants", "fires"]
 
@@ -135,26 +139,22 @@ def fires(
         ))
 
     # --- stoch2w_cross -------------------------------------------------------
-    grp = close.resample("2W-FRI")
-    bars = grp.last().dropna()
+    bars = period_bars(close, "2W-FRI")
     if len(bars) >= canon.STOCH_LEN + canon.SMOOTH_K + canon.SMOOTH_D + 2:
-        last_sess = grp.apply(lambda x: x.index[-1] if len(x) else pd.NaT).reindex(bars.index)
-        # Completed bars only: the trailing bucket is dropped unconditionally.
-        bars = bars.iloc[:-1]
-        last_sess = last_sess.iloc[:-1]
-        k2, d2 = canon.stoch_rsi_kd(pd.Series(bars.to_numpy(dtype="float64")))
+        k2, d2 = canon.stoch_rsi_kd(pd.Series(bars["close"].to_numpy(dtype="float64")))
         sel = (
             canon.crossover(k2, d2) & (k2 < STOCH2W_BAND) & (d2 < STOCH2W_BAND)
         ).fillna(False).to_numpy()
         for i in np.flatnonzero(sel):
-            known = last_sess.iloc[i]
-            if pd.isna(known):
+            open_s, known = bars["open"].iloc[i], bars["known"].iloc[i]
+            if pd.isna(known) or pd.isna(open_s):
                 continue
             rows.append(_event(
                 family_key="stoch2w_cross", subtype="k_over_d_oversold", symbol=symbol,
                 price_plane_id=price_plane_id, grain="2W",
-                signal_ts=pd.Timestamp(bars.index[i]), signal_known_ts=pd.Timestamp(known),
+                signal_ts=pd.Timestamp(open_s), signal_known_ts=pd.Timestamp(known),
                 known_basis=KNOWN_BASIS_BUCKET, spec_hash=spec_hashes["stoch2w_cross"],
                 family_first_available=family_first_available.get("stoch2w_cross"),
+                context={"calendar_label": str(pd.Timestamp(bars['label'].iloc[i]).date())},
             ))
     return rows
