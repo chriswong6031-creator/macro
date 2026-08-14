@@ -57,7 +57,7 @@ changed:
     what: "W1 reconciled to done from merged evidence; W2 in_progress → PR number
       at ship."
 
-prs: [PENDING]
+prs: [5698]
 
 verified:
   - claim: "Parity EXACT: Track A §2.6 tables reproduce byte-for-byte at the census

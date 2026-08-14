@@ -41,6 +41,7 @@ waves:
   - id: W2
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
     status: in_progress
+    pr: 5698
     depends_on: [W0]
     next_action: >
       G0-VIS is CLOSED (operator confirmed the raw grey family 2026-08-13, contract §18
