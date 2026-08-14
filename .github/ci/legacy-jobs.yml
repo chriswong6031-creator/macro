@@ -7060,6 +7060,15 @@ jobs:
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
       - "scripts/check_title_i18n.py"
+      # Import-closure entry for tests/test_us_board_grader_honesty.py, wired into this
+      # job below.  That suite READS scripts/exit_policy_study.py's source directly to
+      # cross-pin one capture vocabulary across the study and the shipped grader, so the
+      # file is in the job's transitive closure even though no command here names it.
+      # `scope: exclusive` REPLACES inference, so an undeclared closure file means this
+      # job silently stops running when that file changes — and reports green forever.
+      # tests/test_ci_pack.py::test_curated_exclusive_scopes_cover_their_own_import_closure
+      # is the guard; widening is the direction it prescribes.
+      - "scripts/exit_policy_study.py"
       - "scripts/freshness_sentinel.py"
       - "scripts/grade_bottom_calls.py"
       - "scripts/grade_us_board.py"
