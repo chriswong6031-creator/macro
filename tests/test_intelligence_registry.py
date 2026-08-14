@@ -620,7 +620,32 @@ def test_ledger_rule_3_shadow_tier_artifact():
     assert build_registry(synapse=synapse)["engines"][0]["ledger_evidence"]["rule"] == 3
 
 
-def test_ledger_rule_4_hops_cross_program_to_a_grader():
+def test_ledger_rule_4_hops_to_a_SAME_PROGRAM_grader():
+    """A program grading its own output — the one rule-4 shape that survived the
+    2026-08-14 measurement (engine/experiments_registry.py::qualitative-intelligence hopping
+    to engine/qledger.py::qualitative-intelligence)."""
+    synapse = _synapse(
+        {
+            "board": _artifact(producer="scripts/build_x.py", owner_program="prog-a",
+                               consumers=["scripts/grade_x.py"]),
+            "grades": _artifact(producer="scripts/grade_x.py", owner_program="prog-a",
+                                path="data/x_ledger/grades.parquet"),
+        }
+    )
+    registry = build_registry(synapse=synapse)
+    row = next(r for r in registry["engines"] if r["producer"] == "scripts/build_x.py")
+    assert row["ledger_evidence"]["rule"] == 4
+    assert row["ledger_evidence"]["via"] == "scripts/grade_x.py"
+    assert row["ledger"] == "data/x_ledger/grades.parquet"
+
+
+def test_rule_4_may_NOT_hop_across_a_program_boundary():
+    """THE M2 DELETION. Rule 4 adopted ANY grader-shaped consumer's ledger, 'EVEN
+    CROSS-PROGRAM'. Measured 2026-08-14 on the live corpus: 7 engines resolved by rule 4
+    and SIX of the seven hops crossed a program boundary and were wrong — the nightly
+    orchestrator engine/run.py::engine-fix was 'graded by' hk-canada's board ledger. A
+    cross-program consumer must now leave the engine at rule 5, which says the honest
+    thing: no ledger, 'no — not yet'."""
     synapse = _synapse(
         {
             "board": _artifact(producer="scripts/build_x.py", owner_program="prog-a",
@@ -631,9 +656,36 @@ def test_ledger_rule_4_hops_cross_program_to_a_grader():
     )
     registry = build_registry(synapse=synapse)
     row = next(r for r in registry["engines"] if r["producer"] == "scripts/build_x.py")
-    assert row["ledger_evidence"]["rule"] == 4
-    assert row["ledger_evidence"]["via"] == "scripts/grade_x.py"
-    assert row["owner_program"] != "prog-b", "the hop must cross the program boundary"
+    assert row["ledger"] == LEDGER_NONE
+    assert row["ledger_evidence"]["rule"] == 5
+    assert row["graded_by_design"] == GRADED_NOT_YET
+
+
+def test_rule_4_resolves_the_SAME_PROGRAM_cell_of_a_two_cell_grader():
+    """THE ARBITRARY-PICK DEFECT. scripts/grade_us_board.py owns two cells writing two
+    DIFFERENT stores, and the producer-keyed hop index kept whichever engine_id sorted
+    first — so the hop was a coin flip dressed as a derivation. Keyed by
+    (producer, owner_program) there is nothing left to arbitrate: only the consumer's cell
+    inside the resolving engine's own program is visible at all."""
+    synapse = _synapse(
+        {
+            "board": _artifact(producer="scripts/build_x.py", owner_program="prog-b",
+                               consumers=["scripts/grade_x.py"]),
+            "grades-a": _artifact(producer="scripts/grade_x.py", owner_program="prog-a",
+                                  path="data/a_ledger/grades.parquet"),
+            "grades-b": _artifact(producer="scripts/grade_x.py", owner_program="prog-b",
+                                  path="data/b_ledger/grades.parquet"),
+        }
+    )
+    registry = build_registry(synapse=synapse)
+    row = next(
+        r for r in registry["engines"]
+        if r["engine_id"] == "scripts/build_x.py::prog-b"
+    )
+    assert row["ledger"] == "data/b_ledger/grades.parquet", (
+        "the hop must land in the resolving engine's own program, never in the "
+        "alphabetically-first cell of the same producer"
+    )
 
 
 def test_rule_4_cannot_hop_onto_a_python_module():
@@ -710,19 +762,38 @@ def test_a_template_ledger_does_not_earn_graded_by_design_yes():
 # graded_by_design — an HONESTLY LABELLED weak heuristic
 # ---------------------------------------------------------------------------
 
-def test_graded_yes_from_a_FILENAME_is_labelled_weak_and_enumerated():
-    """THE KNOWN LIMIT, ASSERTED. Waterfall rules 1 and 4 resolve the ledger from a
-    filename substring (/ledger/ on a path, /grade|ledger/ on a consumer module name). A
-    filename is not proof that graded rows are written, so every `yes` reached that way is
-    a GUESS — labelled `weak_filename_heuristic` and enumerated by audit_content on every
-    run, rather than described in prose or hand-listed (a hand list rots)."""
+def test_graded_yes_from_a_PATH_SUBSTRING_is_labelled_weak_and_enumerated():
+    """THE KNOWN LIMIT, ASSERTED. Waterfall rules 1 and 4 resolve the ledger from a PATH
+    substring (/ledger/ anywhere in a path, /grade|ledger/ on a consumer module name). A
+    name is not proof that graded rows are written, so every `yes` reached that way is a
+    GUESS — labelled `weak_path_heuristic` and enumerated by audit_content on every run,
+    rather than described in prose or hand-listed (a hand list rots)."""
     synapse = _synapse({"a": _artifact(path="data/a_ledger.jsonl")})
     registry = build_registry(synapse=synapse)
     row = registry["engines"][0]
     assert row["graded_by_design"] == GRADED_YES
     assert row["graded_by_design_evidence"] == GRADED_EVIDENCE_WEAK
-    assert "FILENAME" in row["graded_by_design_source"]
+    assert "PATH" in row["graded_by_design_source"]
     assert "GRADED_BY_DESIGN_IS_HEURISTIC" in _codes(registry)
+
+
+def test_rule_1_matches_a_DIRECTORY_component_and_the_disclosure_says_so():
+    """THE M3 CORRECTION. `_LEDGER_PATH_RE` is unanchored, so `data/qledger/claims.jsonl`
+    matches on its DIRECTORY. Measured 2026-08-14: 5 of the 35 live rule-1 matches are of
+    exactly this shape and all 5 are real grading stores, so narrowing to the basename was
+    rejected — every disclosure now says PATH, not FILENAME."""
+    registry = build_registry(synapse=_synapse({"a": _artifact(path="data/qledger/claims.jsonl")}))
+    row = registry["engines"][0]
+    assert row["ledger_evidence"]["rule"] == 1
+    assert row["graded_by_design_evidence"] == GRADED_EVIDENCE_WEAK
+    assert "FILENAME" not in row["graded_by_design_source"].upper(), (
+        "the disclosure claimed a filename match for a path that matches on its directory"
+    )
+    detail = next(
+        f.detail for f in audit_content(registry)
+        if f.code == "GRADED_BY_DESIGN_IS_HEURISTIC"
+    )
+    assert "FILENAME" not in detail.upper()
 
 
 def test_graded_yes_from_a_DECLARATION_is_labelled_strong_and_not_enumerated():
@@ -743,11 +814,13 @@ def test_graded_yes_from_an_AST_RESOLVED_desk_is_strong():
 
 
 def test_a_rule_4_hop_is_also_weak_because_it_matches_a_MODULE_NAME():
+    """Same-program is a necessary condition, not a sufficient one: the hop still selects
+    its target by grepping /grade|ledger/ over a MODULE NAME, so it stays weak."""
     synapse = _synapse(
         {
             "board": _artifact(producer="scripts/build_x.py", owner_program="prog-a",
                                consumers=["scripts/grade_x.py"]),
-            "grades": _artifact(producer="scripts/grade_x.py", owner_program="prog-b",
+            "grades": _artifact(producer="scripts/grade_x.py", owner_program="prog-a",
                                 path="data/x_ledger/grades.parquet"),
         }
     )
@@ -770,8 +843,11 @@ def test_the_module_docstring_discloses_the_weak_heuristic():
 
     doc = mod.__doc__ or ""
     assert "WEAK HEURISTIC" in doc.upper()
-    assert "FILENAME SUBSTRING" in doc.upper()
+    assert "PATH SUBSTRING" in doc.upper()
     assert GRADED_EVIDENCE_WEAK in doc
+    assert "weak_filename_heuristic" not in doc, (
+        "the retired enum value must not survive in the disclosure it used to describe"
+    )
 
 
 def test_graded_descriptive_when_every_artifact_is_infrastructure():

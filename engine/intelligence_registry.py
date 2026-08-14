@@ -62,21 +62,28 @@ instances of, one field later.
 KNOWN LIMIT — ``graded_by_design`` IS A WEAK HEURISTIC, AND SAYS SO
 -------------------------------------------------------------------
 ``graded_by_design: "yes"`` means "the ledger waterfall resolved a store-shaped path", and
-TWO of the four waterfall rules resolve that path from a FILENAME SUBSTRING: rule 1 accepts
-any artifact path matching ``/ledger/i`` and rule 4 hops to any consumer whose module name
-matches ``/grade|ledger/i``. A filename is not proof that graded rows are written, so every
-``yes`` reached that way is a GUESS, and some of those guesses are wrong on live rows.
+TWO of the four waterfall rules resolve that path from a PATH SUBSTRING: rule 1 accepts any
+artifact path matching ``/ledger/i`` ANYWHERE IN THE PATH — directory component included —
+and rule 4 hops to a same-program consumer whose module name matches ``/grade|ledger/i``. A
+name is not proof that graded rows are written, so every ``yes`` reached that way is a
+GUESS, and some of those guesses are wrong on live rows.
+
+The disclosure used to say FILENAME, and that was measurably false: 5 of the 35 live rule-1
+matches (2026-08-14) carry ``ledger`` only in a DIRECTORY component, and all 5 are real
+grading stores — see :func:`_cell_ledger_paths`, which records the measurement. Tightening
+the match to the basename was therefore REJECTED (it would have gone blind on five true
+positives); the fix was to state what the rule actually matches.
 
 This module does not hide that and does not hand-maintain a list of the wrong ones (a
 hand list rots). Every engine carries ``graded_by_design_evidence``:
 
-  ``strong``                  — rule 2 (the producer statically imports ``engine.qledger``
-                                and a desk literal resolves by AST) or rule 3 (an artifact
-                                declares tier shadow/scored/confirmer, which synapse's own
-                                ``meta.tier_vocabulary`` defines as claim-registered and
-                                graded).
-  ``weak_filename_heuristic`` — rule 1 or rule 4. The claim rests on a filename.
-  ``none``                    — no ledger resolved; the value is not ``yes``.
+  ``strong``              — rule 2 (the producer statically imports ``engine.qledger`` and
+                            a desk literal resolves by AST) or rule 3 (an artifact declares
+                            tier shadow/scored/confirmer, which synapse's own
+                            ``meta.tier_vocabulary`` defines as claim-registered and
+                            graded).
+  ``weak_path_heuristic`` — rule 1 or rule 4. The claim rests on a path/module NAME.
+  ``none``                — no ledger resolved; the value is not ``yes``.
 
 :func:`audit_content` emits ``GRADED_BY_DESIGN_IS_HEURISTIC`` for every ``yes`` standing on
 the weak evidence, so the known-wrong candidates are ENUMERATED on every run rather than
@@ -140,15 +147,18 @@ GRADED_DESCRIPTIVE = "no — descriptive"
 GRADED_NOT_YET = "no — not yet"
 GRADED_BY_DESIGN_VALUES = frozenset({GRADED_YES, GRADED_DESCRIPTIVE, GRADED_NOT_YET})
 
-#: How much the ``graded_by_design`` value is worth. See the module docstring.
+#: How much the ``graded_by_design`` value is worth. See the module docstring. The weak
+#: value was named ``weak_filename_heuristic`` until 2026-08-14, when the measurement
+#: below showed the rule matches the whole PATH, not the filename; the name now says what
+#: the rule does.
 GRADED_EVIDENCE_STRONG = "strong"
-GRADED_EVIDENCE_WEAK = "weak_filename_heuristic"
+GRADED_EVIDENCE_WEAK = "weak_path_heuristic"
 GRADED_EVIDENCE_NONE = "none"
 GRADED_EVIDENCE_VALUES = frozenset({
     GRADED_EVIDENCE_STRONG, GRADED_EVIDENCE_WEAK, GRADED_EVIDENCE_NONE,
 })
 
-#: Ledger waterfall rules whose ledger came from a FILENAME SUBSTRING, not from a
+#: Ledger waterfall rules whose ledger came from a PATH/MODULE-NAME SUBSTRING, not from a
 #: declaration. A ``graded_by_design: yes`` standing on one of these is a guess.
 _WEAK_LEDGER_RULES = frozenset({1, 4})
 
@@ -527,11 +537,28 @@ def _store_shaped(path: str | None) -> bool:
 
 
 def _cell_ledger_paths(artifact_entries: Sequence[Mapping[str, Any]]) -> list[str]:
-    """Rule-1 candidates: store-shaped artifact paths whose FILENAME contains 'ledger'.
+    """Rule-1 candidates: store-shaped artifact paths containing 'ledger' ANYWHERE.
+
+    ``_LEDGER_PATH_RE`` is unanchored, so a DIRECTORY component satisfies it. That is
+    deliberate and MEASURED, not an oversight: of the 35 live rule-1 matches on 2026-08-14,
+    FIVE carry ``ledger`` only in a directory component —
+
+        data/qledger/claims.jsonl                  (engine/qledger.py)
+        data/qledger/falsifier_evaluations.jsonl   (scripts/grade_thematic.py)
+        data/board_ledger/ca_board.parquet         (engine/board_ledger.py)
+        data/us_board_ledger/retro_grades.parquet     (scripts/grade_us_board.py)
+        data/us_board_ledger/retro_grades_v2.parquet  (scripts/grade_us_board.py)
+
+    — and all five are REAL grading stores whose semantics live in the directory name.
+    Tightening the match to the basename was therefore measured and REJECTED: it would
+    have dropped five true positives, which is the shrink-direction failure (a detector
+    going blind reads exactly like a detector getting stricter). The fix applied instead
+    was to stop CALLING it a filename heuristic — do not re-litigate the narrowing without
+    re-running this measurement.
 
     This is the weak half of the waterfall — see the module docstring. It is retained
     because it is right far more often than it is wrong, and it is LABELLED
-    (``graded_by_design_evidence = weak_filename_heuristic``) rather than trusted.
+    (``graded_by_design_evidence = weak_path_heuristic``) rather than trusted.
     """
     return sorted(
         {
@@ -547,9 +574,10 @@ def _cell_ledger_paths(artifact_entries: Sequence[Mapping[str, Any]]) -> list[st
 def derive_ledger(
     *,
     producer: str,
+    owner_program: str,
     artifact_entries: Sequence[Mapping[str, Any]],
     desk_scan: DeskScan | None,
-    producer_ledger_index: Mapping[str, str],
+    producer_ledger_index: Mapping[tuple[str, str], str],
 ) -> dict[str, Any]:
     """Resolve the engine's grading ledger. Waterfall, first hit wins. Never null.
 
@@ -559,13 +587,29 @@ def derive_ledger(
     3. any artifact in the cell is tier shadow/scored/confirmer AND its path is
        store-shaped -> that artifact path.                                    **strong**
     4. a grader-shaped consumer that is itself the producer of a store-shaped ledger
-       artifact, EVEN CROSS-PROGRAM -> that consumer's ledger path.           **WEAK**
+       artifact IN THE SAME ``owner_program`` -> that consumer's ledger path.  **WEAK**
     5. else the literal string ``'none'``, mirroring data/species/registry.json's own
        ``ledger_binding`` convention.
 
-    Rules 1 and 4 match on a FILENAME SUBSTRING, so a ``graded_by_design: yes`` they
-    produce is a guess. The strength is recorded per engine and enumerated by
+    Rules 1 and 4 match on a PATH / MODULE-NAME SUBSTRING, so a ``graded_by_design: yes``
+    they produce is a guess. The strength is recorded per engine and enumerated by
     :func:`audit_content`; see the module docstring's known-limit section.
+
+    RULE 4 WAS CROSS-PROGRAM UNTIL 2026-08-14, AND THAT FORM IS DELETED. Measured on the
+    live corpus that day: 7 engines resolved by rule 4 and SIX of the seven hops crossed a
+    program boundary and were wrong or unearned — flagrantly ``engine/run.py::engine-fix``
+    (the nightly orchestrator) adopting hk-canada's ``data/board_ledger/ca_board.parquet``,
+    and ``scripts/build_stock_library.py::us-stocks-prebreakout`` resolving through
+    ``scripts/grade_us_board.py``, a producer that owns TWO cells with DIFFERENT ledgers,
+    so the per-PRODUCER index made an arbitrary pick. The index is now keyed by
+    ``(producer, owner_program)`` and the hop may only land inside the resolving engine's
+    own program, which kills all six wrong hops and the arbitrary pick in one move. The
+    single same-program hop that survives
+    (``engine/experiments_registry.py::qualitative-intelligence`` ->
+    ``engine/qledger.py::qualitative-intelligence``) is structurally plausible: a program
+    grading its own output. The six now fall to rule 5 —
+    ``ledger='none'``, ``graded_by_design='no — not yet'`` — which is the honest value: an
+    engine that publishes no grading semantics it can earn.
 
     DEVIATION, deliberate: the brief made rule 2 conditional on the desk having >0 rows in
     ``data/qledger/claims.jsonl``, demoting a zero-row desk down the waterfall. That would
@@ -596,7 +640,10 @@ def derive_ledger(
     if graded:
         return {"ledger": graded[0], "rule": 3, "desk": None}
 
-    # Rule 4 — one hop out to a grader that itself owns a ledger.
+    # Rule 4 — one hop out to a SAME-PROGRAM grader that itself owns a ledger. The
+    # (consumer, owner_program) key is what makes the restriction structural: a consumer
+    # with no cell in this program is simply absent from the index, so there is nothing
+    # to arbitrate and nothing to pick arbitrarily.
     consumers: set[str] = set()
     for entry in artifact_entries:
         consumers.update(entry.get("consumers") or [])
@@ -604,7 +651,7 @@ def derive_ledger(
     for consumer in sorted(consumers):
         if not _GRADER_RE.search(consumer):
             continue
-        hop = producer_ledger_index.get(consumer)
+        hop = producer_ledger_index.get((consumer, owner_program))
         if hop and hop != LEDGER_NONE:
             return {"ledger": hop, "rule": 4, "desk": None, "via": consumer}
 
@@ -754,17 +801,24 @@ def build_registry(
         if isinstance(entry, dict):
             span.setdefault(entry.get("producer") or "", set()).add(entry.get("owner_program") or "")
 
-    # First pass over cells to build producer -> ledger index, needed by waterfall rule 4.
-    # Store-shaped only, and NEVER the producer module itself — a rule-4 hop that lands on
-    # a `.py` file is how `scripts/seed_us_sector_baskets.py::sector-pulse` came to be
-    # "graded by" engine/demand_ledger.py.
-    producer_ledger_index: dict[str, str] = {}
+    # First pass over cells to build the (producer, owner_program) -> ledger index needed
+    # by waterfall rule 4. Store-shaped only, and NEVER the producer module itself — a
+    # rule-4 hop that lands on a `.py` file is how
+    # `scripts/seed_us_sector_baskets.py::sector-pulse` came to be "graded by"
+    # engine/demand_ledger.py.
+    #
+    # KEYED BY THE WHOLE CELL, not by the producer. A producer-keyed index collapsed every
+    # cell a multi-program producer owns into ONE arbitrary ledger — measured 2026-08-14 on
+    # `scripts/grade_us_board.py`, which owns two cells writing two different stores, so
+    # whichever engine_id sorted first silently won. The cell key removes the ambiguity
+    # rather than resolving it, which is why there is no tie-break here to review.
+    producer_ledger_index: dict[tuple[str, str], str] = {}
     for eid, artifact_ids in cells.items():
-        producer = eid.split(ENGINE_ID_SEP, 1)[0]
+        cell_producer, cell_program = eid.split(ENGINE_ID_SEP, 1)
         entries = [artifacts[a] for a in artifact_ids]
         paths = _cell_ledger_paths(entries)
         if paths:
-            producer_ledger_index.setdefault(producer, paths[0])
+            producer_ledger_index.setdefault((cell_producer, cell_program), paths[0])
 
     engines: list[dict[str, Any]] = []
     excluded: list[dict[str, Any]] = []
@@ -865,6 +919,7 @@ def build_registry(
         # --- ledger -------------------------------------------------------
         ledger_info = derive_ledger(
             producer=producer,
+            owner_program=owner_program,
             artifact_entries=entries,
             desk_scan=desk_scans.get(producer),
             producer_ledger_index=producer_ledger_index,
@@ -894,10 +949,11 @@ def build_registry(
             if ledger_info["rule"] in _WEAK_LEDGER_RULES:
                 graded_evidence = GRADED_EVIDENCE_WEAK
                 graded_source = (
-                    f"derived by WEAK FILENAME HEURISTIC (ledger waterfall rule "
-                    f"{ledger_info['rule']}): a path/module NAME matching /ledger|grade/ "
-                    f"resolved to {ledger!r}. A filename is not proof that graded rows are "
-                    f"written — treat as a candidate, not as gradeability"
+                    f"derived by WEAK PATH HEURISTIC (ledger waterfall rule "
+                    f"{ledger_info['rule']}): /ledger|grade/ matched ANYWHERE in a path or "
+                    f"module name — directory component included — and resolved to "
+                    f"{ledger!r}. A name is not proof that graded rows are written — treat "
+                    f"as a candidate, not as gradeability"
                 )
             else:
                 graded_evidence = GRADED_EVIDENCE_STRONG
@@ -1252,9 +1308,9 @@ def audit_content(registry: Mapping[str, Any]) -> list[Finding]:
             )
 
         # THE HEURISTIC DISCLOSURE, ENUMERATED PER ENGINE. `graded_by_design: yes` reached
-        # by ledger waterfall rule 1 or 4 rests on a FILENAME SUBSTRING, not on a
-        # declaration. These are the known-wrong CANDIDATES, listed mechanically so the
-        # list cannot rot; a hand-maintained list of wrong rows would.
+        # by ledger waterfall rule 1 or 4 rests on a PATH SUBSTRING, not on a declaration.
+        # These are the known-wrong CANDIDATES, listed mechanically so the list cannot rot;
+        # a hand-maintained list of wrong rows would.
         if (
             row.get("graded_by_design") == GRADED_YES
             and row.get("graded_by_design_evidence") == GRADED_EVIDENCE_WEAK
@@ -1264,10 +1320,11 @@ def audit_content(registry: Mapping[str, Any]) -> list[Finding]:
                     "GRADED_BY_DESIGN_IS_HEURISTIC",
                     SEVERITY_CONTENT,
                     eid,
-                    f"graded_by_design='yes' rests on a FILENAME SUBSTRING (ledger "
-                    f"waterfall rule {(row.get('ledger_evidence') or {}).get('rule')} "
-                    f"resolved {row.get('ledger')!r}) — a candidate, not proof that graded "
-                    f"rows are written. T7 must not count this as gradeability",
+                    f"graded_by_design='yes' rests on a PATH SUBSTRING (ledger waterfall "
+                    f"rule {(row.get('ledger_evidence') or {}).get('rule')} resolved "
+                    f"{row.get('ledger')!r} by matching /ledger|grade/ anywhere in a path "
+                    f"or module name) — a candidate, not proof that graded rows are "
+                    f"written. T7 must not count this as gradeability",
                 )
             )
 

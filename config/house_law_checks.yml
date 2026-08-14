@@ -3009,9 +3009,10 @@ checks:
       - >-
         `graded_by_design: "yes"` IS PARTLY A WEAK HEURISTIC — see the fuller disclosure in
         epistemics.engine_authority_evidence. Ledger waterfall rules 1 and 4 resolve the
-        ledger from a FILENAME SUBSTRING, so a `yes` they produce is a guess. Every engine
-        carries graded_by_design_evidence in {strong, weak_filename_heuristic, none} and
-        every weak `yes` is enumerated as GRADED_BY_DESIGN_IS_HEURISTIC on every run.
+        ledger from a PATH / MODULE-NAME SUBSTRING, so a `yes` they produce is a guess.
+        Every engine carries graded_by_design_evidence in {strong, weak_path_heuristic,
+        none} and every weak `yes` is enumerated as GRADED_BY_DESIGN_IS_HEURISTIC on every
+        run.
     owner_program: qualitative-intelligence
     notes: >
       Split from epistemics.engine_authority_evidence deliberately: one entry would force
@@ -3100,26 +3101,61 @@ checks:
         OUTPUT_CLASS_MISSING, 45 SCORED_PATH_SURFACES_INCOMPLETE, 2 SPECIES_UNBOUND, 0
         unresolvable and 0 unchecked refs — plus 41 GRADED_BY_DESIGN_IS_HEURISTIC.
         Authority splits 355 display / 12 engine_input / 6 user_ranking / 5 gate_size,
-        against a synapse `tier` that saw only the 5 scored — which is finding C-2. These
-        are DATED MEASUREMENTS, deliberately not pinned by any test: every one of them
-        moves when a sibling PR touches config/synapse.yml, and pinning them is what made
-        rounds 1 and 2 scheduled fleet-wide reds.
+        against a synapse `tier` that saw only the 5 scored — which is finding C-2.
+        RE-MEASURED 2026-08-14 after the rule-4 same-program restriction (same 378 engines):
+        212 findings — 21 AUTHORITY_WITHOUT_EVIDENCE, 109 OUTPUT_CLASS_MISSING, 45
+        SCORED_PATH_SURFACES_INCOMPLETE, 2 SPECIES_UNBOUND, 0 unresolvable and 0 unchecked
+        — plus 35 GRADED_BY_DESIGN_IS_HEURISTIC; authority is unchanged. These are DATED
+        MEASUREMENTS, deliberately not pinned by any test: every one of them moves when a
+        sibling PR touches config/synapse.yml, and pinning them is what made rounds 1 and 2
+        scheduled fleet-wide reds.
       - >-
         `graded_by_design: "yes"` IS A WEAK HEURISTIC IN TWO OF ITS FOUR RULES, AND SAYS
         SO. It means "the ledger waterfall resolved a store-shaped path", and rule 1
-        accepts any artifact path whose FILENAME matches /ledger/i while rule 4 hops to any
-        consumer whose MODULE NAME matches /grade|ledger/i. A filename is not proof that
-        graded rows are written, so every `yes` reached that way is a GUESS and some of
-        those guesses are wrong on live rows. The derived claim is neither dropped nor
-        trusted: every engine carries graded_by_design_evidence — `strong` (rule 2, the
+        accepts any artifact path matching /ledger/i ANYWHERE IN THE PATH while rule 4 hops
+        to a SAME-PROGRAM consumer whose MODULE NAME matches /grade|ledger/i. A name is not
+        proof that graded rows are written, so every `yes` reached that way is a GUESS and
+        some of those guesses are wrong on live rows. The derived claim is neither dropped
+        nor trusted: every engine carries graded_by_design_evidence — `strong` (rule 2, the
         producer statically imports engine.qledger and a desk literal resolves by AST; or
         rule 3, an artifact DECLARES tier shadow/scored/confirmer, which synapse's own
-        meta.tier_vocabulary defines as claim-registered and graded), `weak_filename_heuristic`
+        meta.tier_vocabulary defines as claim-registered and graded), `weak_path_heuristic`
         (rules 1 and 4), or `none`. Every weak `yes` is ENUMERATED as
-        GRADED_BY_DESIGN_IS_HEURISTIC on every run — 41 of the 106 `yes` engines measured
-        2026-08-12 — rather than described in prose or kept in a hand-maintained list of
+        GRADED_BY_DESIGN_IS_HEURISTIC on every run — 35 of the 100 `yes` engines measured
+        2026-08-14 — rather than described in prose or kept in a hand-maintained list of
         known-wrong rows, which would rot. T7 MUST NOT treat a weak `yes` as gradeability.
         Mirrored in the engine/intelligence_registry.py module docstring.
+      - >-
+        THE DISCLOSURE SAID "FILENAME" AND WAS MEASURABLY WRONG UNTIL 2026-08-14, and the
+        enum value said so too (`weak_filename_heuristic`). `_LEDGER_PATH_RE` is
+        unanchored, so a DIRECTORY component satisfies rule 1: 5 of the 35 live rule-1
+        matches carry `ledger` only in a directory — data/qledger/claims.jsonl,
+        data/qledger/falsifier_evaluations.jsonl, data/board_ledger/ca_board.parquet and
+        the two data/us_board_ledger/retro_grades*.parquet — and ALL FIVE are real grading
+        stores whose semantics live in the directory name. Tightening the match to the
+        basename was therefore measured and REJECTED (it would drop five true positives —
+        the shrink direction, where a detector going blind reads exactly like a detector
+        getting stricter); the fix was honesty, so the value is now `weak_path_heuristic`
+        and every disclosure string says PATH. Do not re-litigate the narrowing without
+        re-running that measurement, which is recorded in _cell_ledger_paths' docstring.
+      - >-
+        LEDGER WATERFALL RULE 4 IS SAME-PROGRAM ONLY SINCE 2026-08-14; the cross-program
+        form is deleted, not deprecated. It used to adopt ANY grader-shaped consumer's
+        ledger "EVEN CROSS-PROGRAM". Measured that day on the live corpus: 7 engines
+        resolved by rule 4 and SIX of the seven hops crossed a program boundary and were
+        wrong or unearned — engine/run.py::engine-fix, the nightly orchestrator, was
+        "graded by" hk-canada's data/board_ledger/ca_board.parquet, and
+        scripts/build_stock_library.py::us-stocks-prebreakout resolved through
+        scripts/grade_us_board.py, a producer owning TWO cells with DIFFERENT ledgers, so
+        the per-producer hop index made an ARBITRARY pick. The index is now keyed by
+        (producer, owner_program) and the hop may only land inside the resolving engine's
+        own program. Live effect measured the same day: rule-4 count 7 -> 1 (the surviving
+        hop is engine/experiments_registry.py::qualitative-intelligence ->
+        engine/qledger.py::qualitative-intelligence, a program grading its own output), the
+        other six fall to rule 5 and publish `ledger='none'` /
+        `graded_by_design='no — not yet'`, `yes` 106 -> 100, weak evidence 41 -> 35, and
+        the content-finding total 222 -> 212. The engine count is unchanged at 378 — this
+        deletes unearned SEMANTICS, never a row.
       - >-
         graded_by_design='yes' also requires a STORE-shaped ledger: a Python module, a
         charter config, and an unexpanded template/glob path cannot hold a graded row, and

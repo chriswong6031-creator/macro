@@ -298,11 +298,11 @@ def _selftest() -> int:
 
     # ---- graded_by_design honesty ------------------------------------------
     add(
-        "NEGATIVE — a graded_by_design='yes' resting on a FILENAME SUBSTRING is labelled "
-        "weak and enumerated",
+        "NEGATIVE — a graded_by_design='yes' resting on a PATH SUBSTRING is labelled weak "
+        "and enumerated",
         good_row(good, "engine/a.py::prog")["graded_by_design"] == "yes"
         and good_row(good, "engine/a.py::prog")["graded_by_design_evidence"]
-        == "weak_filename_heuristic"
+        == "weak_path_heuristic"
         and "GRADED_BY_DESIGN_IS_HEURISTIC" in _codes_for(good, "engine/a.py::prog"),
     )
     add(
