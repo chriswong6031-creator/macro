@@ -1439,48 +1439,6 @@ checks:
     notes: >
       Manual run required at each LLM model upgrade. Gate threshold: field_agree_rate >= 0.85.
 
-  - law_id: site.stretch_oracle_disclosure
-    summary: >
-      The per-ticker drawer renders TWO independent answers to "has this name
-      already run" — ladder.alignment.overextended (a 4-leg, oscillator-dominant
-      entry-timing brake) and entry_signal.status == "extended" (a relabel of
-      ladder.entry.urgency == "caution"). They disagree on roughly 38% of names
-      and that divergence is LEGITIMATE (a measurement versus a bucket label), so
-      this guard does not force them equal. What it enforces is that the
-      divergence stays DISCLOSED: every flagged name must carry the leg that
-      actually fired, so no consumer has to guess a cause. HARD invariants:
-      overextended=True implies a non-empty overextended_legs; overextended=False
-      implies an empty one; overextended_basis equals
-      overextension_basis(overextended_legs); and an oscillator-only basis may not
-      coexist with a qualifying distance reading (producer and disclosure computed
-      from different inputs).
-    source_ref:
-      - scripts/check_stretch_oracle_contract.py
-      - docs/site_semantics/stretch_oracles.md
-    severity: manual
-    check_script: scripts/check_stretch_oracle_contract.py
-    ci_wiring: []
-    selftest: false
-    selftest_exempt_reason: >
-      The script takes a built store directory as its argument and has no
-      synthetic self-test mode; its invariants are exercised instead by
-      tests/test_stretch_oracle_contract.py, which the engine-render-guards job
-      runs on every PR.
-    allowlist: null
-    ratchet: null
-    known_limits:
-      - Needs a BUILT stock store to read; it cannot run against a bare checkout,
-        which is why it carries no ci_wiring entry of its own.
-      - The O1 x O2 confusion counters are annotation-only and never fatal; only
-        the four disclosure invariants exit 1.
-    owner_program: per-ticker-stock-intelligence
-    notes: >
-      Enforced at BUILD time rather than as a CI step: scripts/build_stock_library.py
-      lazy-imports `check` and runs it over the store it just wrote, so a violation
-      fails the producer. Registered here per the census rule after the script
-      shipped unregistered in #5574, which reddened the house-law meta-guard on main
-      and every PR branched from it.
-
   - law_id: ops.live_worker
     summary: >
       Pre-flight probe for Cloudflare live-quotes worker deploys. Verifies that
@@ -3322,6 +3280,9 @@ checks:
     severity: warn
     check_script: scripts/check_stretch_oracle_contract.py
     ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: engine-render-international-guards
+        lane: pr_ci
       - workflow: .github/workflows/daily.yml
         job: engine
         lane: hook
