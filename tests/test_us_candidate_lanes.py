@@ -305,6 +305,22 @@ class TestLaneTaxonomy:
         assert row["headline_reason"] == ucl.PENDING_EXPIRED
         assert block["lane_counts"][ucl.LANE_FEATURED] == 0
 
+    def test_board_wiring_serializes_zero_before_the_nonzero_demotion_branch(self):
+        """The optional legacy key must still be emitted on every successful zero day."""
+        source = (REPO / "scripts" / "build_stock_library.py").read_text(
+            encoding="utf-8"
+        )
+        start = source.index(
+            "_buy_after, _watch_passthrough, _n_expired = _expire_pending_buys("
+        )
+        end = source.index("except Exception as _exp_e", start)
+        expiry_try = source[start:end]
+        assignment = 'wide["pending_expired_count"] = _n_expired'
+        nonzero_guard = "if _n_expired:"
+        assert assignment in expiry_try
+        assert nonzero_guard in expiry_try
+        assert expiry_try.index(assignment) < expiry_try.index(nonzero_guard)
+
     def test_an_unaccounted_eligible_fails_closed_into_forming(self, board):
         block = _build(board, off_board_reasons={})
         row = next(r for r in block["rows"] if r["ticker"] == "III")

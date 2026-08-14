@@ -145,6 +145,24 @@ def test_negated_zh_variants_are_not_claims(zh):
     assert n_neg >= 1 and not hits, f"honest disclaimer flagged as a claim: {zh}"
 
 
+def test_adjacent_rather_than_is_an_honest_contrast_not_a_claim():
+    """The live alt-data wording denies validated flow evidence; it does not claim it."""
+    line = (
+        "Convergence comes from sentiment, analyst and affiliation signals rather than "
+        "validated capital flows."
+    )
+    n_neg, hits = _scan_line(line, ALLOW, frozenset({"_probe"}))
+    assert n_neg == 1 and hits == []
+
+
+def test_rather_than_cannot_launder_a_later_affirmative_claim():
+    """Only an immediately adjacent contrast negates; an earlier clause earns nothing."""
+    line = "Rather than observed, this is a validated capital-flow signal."
+    n_neg, hits = _scan_line(line, ALLOW, frozenset({"_probe"}))
+    assert n_neg == 0
+    assert hits and not any(backed for backed, _ in hits)
+
+
 # ── the dislocation panel: the audited claim, now naming its own study ───────────────
 
 _DISLOCATION_CLAIMS = [

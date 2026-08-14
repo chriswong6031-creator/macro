@@ -95,7 +95,7 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.9.0",
+   "schema_version": "2.0.0",
    "schema_fields": [
     "as_of",
     "board_definition",
@@ -110,7 +110,6 @@
     "laggards",
     "lane_counts",
     "leaders",
-    "pending_expired_count",
     "ran",
     "rank_by",
     "ranking",
@@ -123,6 +122,7 @@
     "anchor",
     "candidate_pool",
     "earnings_soon",
+    "pending_expired_count",
     "post_earnings_move",
     "universe_sources"
    ],

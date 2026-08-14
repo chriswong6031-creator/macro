@@ -280,9 +280,14 @@ ARTIFACT_MANIFEST = [
     # display-only US candidate-lane disclosure.  The board builder deliberately
     # wraps it in a fail-open try/except, so absence means the additive disclosure
     # failed; it cannot be promoted to a required field.
+    # 1.9.0 -> 2.0.0 (2026-08-14): `pending_expired_count` was declared required
+    # even though the builder emitted it only when nonzero.  Move it to the
+    # may-be-absent register for compatibility with already-published boards and
+    # the builder's explicit fail-open expiry-evaluation path.  On every successful
+    # evaluation, the repaired builder now emits zero instead of flapping the key.
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.9.0",
+     "schema_version": "2.0.0",
      "schema_fields": [
          # 1.6.0 GRADUATION (2026-08-03): board_definition / ran / ranking /
          # themes_in_favour moved up from optional_fields after the first committed
@@ -291,7 +296,7 @@ ARTIFACT_MANIFEST = [
          # — the same order china_standouts reached 2.0.0 in.
          "as_of", "board_definition", "buy", "concentration", "delta",
          "dispersion_regime", "donor", "earnings_blackout_note", "eligible",
-         "gate_go", "laggards", "lane_counts", "leaders", "pending_expired_count",
+         "gate_go", "laggards", "lane_counts", "leaders",
          "ran", "rank_by", "ranking", "staleness", "themes_in_favour", "universe",
          "watch",
      ],
@@ -306,6 +311,10 @@ ARTIFACT_MANIFEST = [
          # attached per row only when the earnings store can answer for that name, so a
          # consumer must treat both as may-be-absent and must not infer "no report
          # scheduled" from their absence.
+         # `pending_expired_count` is explicit optionality: 1.x artifacts omitted
+         # zero, while the 2.0 builder emits an explicit zero after a successful
+         # expiry evaluation.  Absence means legacy zero/unknown or failed evaluation,
+         # never evidence that a demotion occurred.
          # `universe_sources` (2026-08-07) is the universe-source disclosure. OPTIONAL,
          # not required: build_stock_library emits it inside a try/except whose handler
          # is explicit that the key is dropped on failure ("disclosure is additive, never
@@ -314,8 +323,8 @@ ARTIFACT_MANIFEST = [
          # optional_fields exists to prevent. Consumers must not read its absence as a
          # complete universe — absence means the disclosure itself failed.
          # (List order is alphabetical — test_contract_drift asserts it sorted.)
-         "anchor", "candidate_pool", "earnings_soon", "post_earnings_move",
-         "universe_sources",
+         "anchor", "candidate_pool", "earnings_soon", "pending_expired_count",
+         "post_earnings_move", "universe_sources",
      ],
      "schema_item_fields": [
          "above_trend", "adv_dollar_20d_median", "adv_dollar_21d", "align_tier", "alpha",

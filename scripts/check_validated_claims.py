@@ -510,6 +510,12 @@ _NEG_EN = re.compile(
     r"(?:\bno\b|\bnot\b|\bnon-?|\bun-?|\bnever\b|\bno-\b|without|"
     r"lacks?|\bwithout\b|\bcannot\b|\b\w+n['’]t\b)\s*[\w\s,'’\-/×&()]{0,30}$",
     re.IGNORECASE)
+# Contrastive negation is deliberately ADJACENT-only.  A broad ``rather than``
+# lookback would let an earlier contrast launder a later affirmative claim, e.g.
+# "Rather than observed, this is a validated signal."  The generated alt-data
+# sentence that exposed this gap has the honest, immediate shape
+# ``rather than validated capital flows``.
+_NEG_EN_ADJACENT_CONTRAST = re.compile(r"\brather\s+than\s*$", re.IGNORECASE)
 # 'un'/'in'/'re' glued directly to the token, e.g. 'unvalidated', 'invalidated', 're-validated'
 _GLUED_UN = re.compile(r"un-?$|re-?$|in$", re.IGNORECASE)
 # Multi-char negators (没有/尚未/缺乏) precede the single-char class: they are honest-
@@ -611,6 +617,8 @@ def _is_negated(line: str, start: int) -> bool:
     pre = line[:start]
     low = pre.lower()
     if _NEG_EN.search(pre):
+        return True
+    if _NEG_EN_ADJACENT_CONTRAST.search(pre):
         return True
     if _GLUED_UN.search(pre):                       # unvalidated / re-validated
         return True

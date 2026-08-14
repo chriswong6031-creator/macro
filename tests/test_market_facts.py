@@ -13,7 +13,7 @@ Test list:
 10. sector_facts no indicator vocab in any fact text
 11. breadth_facts returns {facts, numbers_whitelist} shape
 12. breadth_facts fails soft on empty root
-13. breadth_facts from real data produces at least one fact with a digit
+13. breadth_facts real-data presence follows the producer's vacuity gate
 14. breadth_facts numbers_whitelist covers every number in fact texts
 15. breadth_facts no indicator vocab in any fact text
 16. event_facts returns {facts, numbers_whitelist} shape
@@ -215,16 +215,26 @@ def test_breadth_facts_failsoft_missing_root(tmp_path):
     assert fd["facts"] == [], f"Expected empty facts for missing root, got: {fd['facts']}"
 
 
-def test_breadth_facts_real_data_has_digit():
+def test_breadth_facts_real_data_obeys_the_vacuity_gate():
     tc_path = ROOT / "site" / "factordata" / "tech_confluence.json"
     if not tc_path.exists():
         pytest.skip("site/factordata/tech_confluence.json not present")
-    from engine.marketing.market_facts import breadth_facts
+    raw = json.loads(tc_path.read_text(encoding="utf-8"))
+    now = raw.get("now") or {}
+    n_active = len([
+        ticker for ticker, value in now.items()
+        if isinstance(value, list) and value
+    ])
+    universe = int(raw.get("universe_n") or 0)
+    from engine.marketing.market_facts import _is_vacuous_count, breadth_facts
     fd = breadth_facts(ROOT)
-    texts = " ".join(f.get("text", "") for f in fd["facts"])
-    assert re.search(r"\d", texts), (
-        f"No digit in any breadth fact. Facts: {[f['text'] for f in fd['facts']]}"
+    breadth = next((fact for fact in fd["facts"] if fact.get("id") == "breadth_active"), None)
+    vacuous = _is_vacuous_count(n_active, universe)
+    assert (breadth is None) is vacuous, (
+        f"{n_active} of {universe}: breadth fact disagrees with the vacuity gate: {fd['facts']}"
     )
+    if breadth is not None:
+        assert re.search(r"\d", breadth.get("text", "")), breadth
 
 
 def test_breadth_facts_whitelist_covers_fact_numbers():

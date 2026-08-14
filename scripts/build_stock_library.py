@@ -5768,13 +5768,16 @@ def main() -> int:
         try:
             _buy_after, _watch_passthrough, _n_expired = _expire_pending_buys(
                 wide.get("buy", []), wide.get("watch", []), wide.get("as_of"))
+            # Count is part of the board contract even on a zero-expiry day.  The
+            # original conditional made the field flap with market state and took
+            # the hard contract-drift gate red when the first zero day arrived.
+            wide["pending_expired_count"] = _n_expired
             if _n_expired:
                 # Demoted rows stay in wide["buy"] with lane='watch'; the board loop
                 # renders them under the Watch sub-heading via the _lane_order partition.
                 # wide["watch"] is a separate data-plane the standout board template never
                 # iterates, so we intentionally do NOT assign it here.
                 wide["buy"] = _buy_after
-                wide["pending_expired_count"] = _n_expired
         except Exception as _exp_e:  # noqa: BLE001
             log.warning("CSP-W5 pending expiry: failed (%s) — no rows demoted", _exp_e)
 
