@@ -1,0 +1,495 @@
+"""scripts/check_design_system.py — design-system ratchet (R0: report-only).
+
+Static lint over the Jinja/HTML/CSS template estate.  It answers one question:
+where does a surface hand-roll something the design system already owns — a raw
+colour, a font stack, a radius, a token, a card, a banner word, an emoji?
+
+R0 SHIPS REPORT-ONLY ON PURPOSE.  `--mode report` (the default) always exits 0,
+however many findings it prints, because the estate has thousands of pre-existing
+literals and a gate that reds on day one is a gate somebody disables in week one.
+The BLOCKING arm exists and is tested from the first commit anyway: `--mode
+enforce` exits non-zero on rules 1-4, and the R1 flip is then a one-line wiring
+change plus a registry severity bump — not a new script written under pressure.
+
+Enforcement scope in `--mode enforce` is deliberately narrow: a template is
+GOVERNED only when the page registry says a row that renders it is
+`design_system.compliant`, or when the template is NEW (unknown to the registry).
+Everything else reports.  That is the ratchet: compliant surfaces cannot regress,
+new surfaces are born compliant, and the backlog is migrated on a schedule rather
+than in one heroic red-build weekend.
+
+Usage::
+
+    python3 scripts/check_design_system.py                  # report (exit 0)
+    python3 scripts/check_design_system.py --mode enforce   # blocking arm
+    python3 scripts/check_design_system.py --self-check     # prove the rules bite
+
+CLOSURE LEGIBILITY (load-bearing, do not regress): this module names exactly ONE
+scan root, ``templates``, and makes NO subprocess call.  scripts/run_ci_pack.py
+infers a CI job's path ownership from the scan-root string constants of the
+modules it loads and widens an opaque edge (a traversal, a subprocess) to every
+root the module names.  A single stray literal naming another root would hand the
+wired job that entire tree and push the narrow-diff selector over its ceiling
+(measured incident #5396).  Keep every path literal here under ``templates``.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+import tempfile
+from pathlib import Path
+from typing import Iterable, NamedTuple, Optional
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+# The one scan root this module may name.  See CLOSURE LEGIBILITY above.
+TEMPLATES_DIR = "templates"
+
+# The token source of truth.  Colour literals, font stacks and radius values are
+# legal here and nowhere else — this file IS the palette.
+THEME_CSS = "templates/theme.css"
+
+# Sanctioned asset files: hand-authored or vendored surfaces that legitimately
+# carry literals because they predate (or deliberately sit outside) the token
+# layer.  Every entry is a DEBT, not an endorsement; the migration factory
+# retires them one at a time.
+SANCTIONED_LITERAL_FILES: frozenset[str] = frozenset({
+    "templates/theme.css",
+    "templates/landing.css",
+    "templates/navigation-refresh.css",
+})
+
+MODES = ("report", "enforce")
+
+# Rules 1-4 are mechanical and exact — they are what `--mode enforce` blocks on.
+# Rules 5-6 are HEURISTICS by design (a regex cannot know whether `.foo-card` is
+# a new component or a rename), and rule 7 is a measurement, so all three are
+# warn-tier for as long as this script exists.
+BLOCKING_RULES = ("color-literal", "font-family-literal", "radius-literal",
+                  "literal-custom-property")
+
+# Rule 6 seed.  DELIBERATELY SMALL: this is the vocabulary the Tier-1 glance
+# doctrine bans outright (internal state names, untranslated statistics,
+# falsifier language), not the full doctrine lint.  EXTENSIBLE — the complete
+# banned-vocabulary pass is a later wave with its own per-surface allowlist, and
+# a word added here without that machinery will produce false positives on
+# methodology and calibration pages, which legitimately explain these terms.
+BANNED_VOCABULARY_SEED: tuple[str, ...] = (
+    "falsifier",
+    "refuted",
+    "证伪",
+    "z-score",
+    "percentile rank",
+)
+
+# --- rule patterns ----------------------------------------------------------
+
+HEX_RE = re.compile(r"#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\b")
+FUNC_COLOR_RE = re.compile(r"\b(?:rgba?|hsla?)\s*\(")
+FONT_FAMILY_RE = re.compile(r"font-family\s*:\s*([^;}\n]+)")
+RADIUS_RE = re.compile(r"border-radius\s*:\s*([^;}\n]+)")
+CUSTOM_PROP_RE = re.compile(r"(--[A-Za-z0-9_-]+)\s*:\s*([^;}\n]+)")
+CARD_CLASS_RE = re.compile(r"\.([A-Za-z0-9_-]*-card)\b\s*(?=[,{:.\[])")
+STYLE_BLOCK_RE = re.compile(r"<style\b[^>]*>(.*?)</style>", re.DOTALL | re.IGNORECASE)
+
+# A custom property whose value is ONLY composition over other tokens is a
+# DERIVATION, not a literal — that is exactly how a surface is supposed to extend
+# the palette, so it passes.  Decided by subtraction rather than by matching a
+# whole-value shape: strip the composition (token references, calc/min/max/clamp,
+# inert keywords) and ask whether any literal SURVIVES.  A whole-value regex got
+# this wrong in both directions — `var(--b,#fff)` passed because the fallback fit
+# inside `[^)]*`, while `var(--b,rgba(1,2,3))` failed only because its nested
+# parens happened to break the same group.  A literal in a fallback is a literal.
+COMPOSITION_RE = re.compile(
+    r"var\(\s*--[A-Za-z0-9_-]+\s*"
+    r"|\b(?:calc|min|max|clamp)\s*\("
+    r"|\b(?:inherit|initial|unset|revert|none|transparent|currentColor|auto)\b",
+    re.IGNORECASE)
+# What counts as a surviving literal: a colour, a word (keyword, font name,
+# colour function), a QUANTITY WITH A UNIT, or a quoted string.  A bare unitless
+# number is left alone so `calc(var(--sp-2) * 2)` stays a derivation.
+VALUE_LITERAL_RE = re.compile(
+    r"#[0-9a-fA-F]{3,8}"
+    r"|[A-Za-z]{2,}"
+    r"|\d+\s*(?:px|rem|em|%|vh|vw|vmin|vmax|ch|ex|pt|deg|ms|s|fr)\b"
+    r"|[\"']")
+
+
+def is_derived_value(value: str) -> bool:
+    """True when a custom-property value composes tokens and adds no literal."""
+    return not VALUE_LITERAL_RE.search(COMPOSITION_RE.sub(" ", value))
+
+# Emoji: the pictographic planes plus the standalone dingbats that render as
+# colour glyphs.  Ranges, not a list, so a new vendor emoji cannot slip through.
+EMOJI_RE = re.compile(
+    "[" "\U0001F300-\U0001FAFF" "\U00002600-\U000027BF" "\U0001F000-\U0001F2FF"
+    "\U0000FE0F" "\U0001F900-\U0001F9FF" "]")
+
+# A radius is compliant only when it reads a radius token.
+RADIUS_TOKEN_RE = re.compile(r"var\(\s*--r-[A-Za-z0-9_-]+")
+# Radius keywords that carry no design decision.
+RADIUS_INERT = frozenset({"0", "0px", "inherit", "initial", "unset", "revert"})
+
+TEXT_SUFFIXES = (".j2", ".html", ".css", ".js")
+
+
+class Finding(NamedTuple):
+    rule: str
+    path: str
+    line: int
+    detail: str
+
+
+# --- scanning ---------------------------------------------------------------
+
+def iter_template_files(root: Path) -> list[Path]:
+    """Every lintable file under the templates root, sorted for determinism."""
+    base = root / TEMPLATES_DIR
+    if not base.is_dir():
+        return []
+    out = [p for p in base.rglob("*")
+           if p.is_file() and p.suffix in TEXT_SUFFIXES]
+    return sorted(out)
+
+
+def _rel(path: Path, root: Path) -> str:
+    try:
+        return path.relative_to(root).as_posix()
+    except ValueError:
+        return path.as_posix()
+
+
+def _blank(match: re.Match[str]) -> str:
+    """Replace a match with spaces, preserving newlines so line numbers hold."""
+    return re.sub(r"[^\n]", " ", match.group(0))
+
+
+JINJA_RE = re.compile(r"\{[{%#].*?[}%#]\}", re.DOTALL)
+
+# Fragment references are NOT colours.  `href="#abc"` and `url(#fade)` both end
+# in three-or-six characters that happen to be hex digits, and rule 1 blocks in
+# enforce mode — a false positive there would block a correct new template.
+FRAGMENT_REF_RE = re.compile(
+    r"""(?:xlink:)?href\s*=\s*"#[^"]*"|(?:xlink:)?href\s*=\s*'#[^']*'"""
+    r"""|url\(\s*#[^)]*\)""", re.IGNORECASE)
+
+
+def _strip_jinja(text: str) -> str:
+    """Blank Jinja expressions and fragment refs, keeping line numbers intact.
+
+    A `{{ '#fff' if dark else '#000' }}` is a template decision, not a stylesheet
+    literal, and flagging it teaches people to ignore the rule.
+    """
+    return FRAGMENT_REF_RE.sub(_blank, JINJA_RE.sub(_blank, text))
+
+
+def scan_text(rel_path: str, text: str) -> list[Finding]:
+    """Apply all eight rules to one file's text."""
+    findings: list[Finding] = []
+    sanctioned = rel_path in SANCTIONED_LITERAL_FILES
+    is_theme = rel_path == THEME_CSS
+    cleaned = _strip_jinja(text)
+    lines = cleaned.splitlines()
+
+    for n, line in enumerate(lines, 1):
+        # 1 — colour literals
+        if not sanctioned:
+            for match in HEX_RE.finditer(line):
+                findings.append(Finding("color-literal", rel_path, n,
+                                        f"hex colour {match.group(0)}"))
+            for match in FUNC_COLOR_RE.finditer(line):
+                findings.append(Finding("color-literal", rel_path, n,
+                                        f"colour function {match.group(0).strip()}"))
+        # 2 — font-family literals
+        if not sanctioned:
+            for match in FONT_FAMILY_RE.finditer(line):
+                value = match.group(1).strip()
+                if "var(" not in value:
+                    findings.append(Finding("font-family-literal", rel_path, n,
+                                            f"font-family: {value[:60]}"))
+        # 3 — radius values that are not var(--r-*)
+        for match in RADIUS_RE.finditer(line):
+            value = match.group(1).strip()
+            if RADIUS_TOKEN_RE.search(value) or value.lower() in RADIUS_INERT:
+                continue
+            findings.append(Finding("radius-literal", rel_path, n,
+                                    f"border-radius: {value[:60]}"))
+        # 4 — literal-valued custom properties declared outside theme.css.
+        #     ANY selector counts: :root, body.page-*, a class scope alike — a
+        #     shadow palette hurts just as much when it hides in a page class.
+        if not is_theme:
+            for match in CUSTOM_PROP_RE.finditer(line):
+                name, value = match.group(1), match.group(2).strip()
+                if is_derived_value(value):
+                    continue
+                findings.append(Finding("literal-custom-property", rel_path, n,
+                                        f"{name}: {value[:60]}"))
+        # 5 — new *-card class definitions (heuristic)
+        for match in CARD_CLASS_RE.finditer(line):
+            findings.append(Finding("card-class", rel_path, n,
+                                    f"card class .{match.group(1)}"))
+        # 6 — banned Tier-1 vocabulary (heuristic, seed list)
+        lowered = line.lower()
+        for word in BANNED_VOCABULARY_SEED:
+            if word in lowered:
+                findings.append(Finding("banned-vocabulary", rel_path, n,
+                                        f"banned term {word!r}"))
+        # 8 — emoji codepoints in markup
+        for match in EMOJI_RE.finditer(line):
+            findings.append(Finding("emoji", rel_path, n,
+                                    f"emoji U+{ord(match.group(0)[0]):04X}"))
+
+    # 7 — inline <style> byte size (R0 measures; no growth gate yet)
+    inline = sum(len(m.group(1).encode("utf-8"))
+                 for m in STYLE_BLOCK_RE.finditer(cleaned))
+    if inline:
+        line_no = next((i for i, m in enumerate(cleaned.splitlines(), 1)
+                        if "<style" in m.lower()), 1)
+        findings.append(Finding("inline-style-bytes", rel_path, line_no,
+                                f"{inline} bytes of inline <style>"))
+    return findings
+
+
+def scan(root: Path, paths: Optional[Iterable[Path]] = None) -> list[Finding]:
+    files = list(paths) if paths is not None else iter_template_files(root)
+    findings: list[Finding] = []
+    for path in files:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        findings.extend(scan_text(_rel(path, root), text))
+    return findings
+
+
+# --- governance -------------------------------------------------------------
+
+def governed_templates(registry: Optional[dict]) -> set[str]:
+    """Templates under enforcement: those a `design_system.compliant` row names.
+
+    `governed_regions` narrows a claim to part of a template; R0 enforcement is
+    whole-file, so a region entry still puts its template in the set.  Region
+    ACCURACY becomes load-bearing at R1, when a partially-migrated template must
+    be able to hold a compliant region beside a legacy one.
+    """
+    if not isinstance(registry, dict):
+        return set()
+    out: set[str] = set()
+    for row in registry.get("pages") or []:
+        if not isinstance(row, dict):
+            continue
+        design = row.get("design_system")
+        if not isinstance(design, dict) or design.get("compliant") is not True:
+            continue
+        regions = design.get("governed_regions")
+        if isinstance(regions, list) and regions:
+            for region in regions:
+                if isinstance(region, dict) and isinstance(region.get("template"), str):
+                    out.add(region["template"])
+            continue
+        template = row.get("source_template")
+        if isinstance(template, str) and template.startswith(TEMPLATES_DIR):
+            out.add(template)
+    return out
+
+
+def known_templates(registry: Optional[dict]) -> set[str]:
+    """Every template the registry has ever seen, compliant or not."""
+    if not isinstance(registry, dict):
+        return set()
+    out: set[str] = set()
+    for row in registry.get("pages") or []:
+        if not isinstance(row, dict):
+            continue
+        template = row.get("source_template")
+        if isinstance(template, str) and template.startswith(TEMPLATES_DIR):
+            out.add(template)
+        design = row.get("design_system")
+        if isinstance(design, dict):
+            for region in design.get("governed_regions") or []:
+                if isinstance(region, dict) and isinstance(region.get("template"), str):
+                    out.add(region["template"])
+    return out
+
+
+def blocking_findings(findings: Iterable[Finding], governed: set[str],
+                      known: set[str]) -> list[Finding]:
+    """Rules 1-4 on a governed-compliant template, or on a template nobody knows."""
+    out = []
+    for finding in findings:
+        if finding.rule not in BLOCKING_RULES:
+            continue
+        if finding.path in governed or finding.path not in known:
+            out.append(finding)
+    return out
+
+
+# --- reporting --------------------------------------------------------------
+
+ANNOTATION_CAP = 10
+
+
+def annotate(level: str, message: str) -> None:
+    """Emit ONE GitHub annotation.
+
+    Bare `print`, never a logger: every builder here logs through a prefixing
+    formatter, and GitHub silently drops an annotation that does not START the
+    line.  `flush` is load-bearing — stdout is block-buffered when piped in CI.
+    """
+    print(f"::{level} title=design-system::{message}", flush=True)
+
+
+def report(findings: list[Finding], *, mode: str, blocking: list[Finding]) -> None:
+    """Summary-first annotations (capped), then full plain-text detail."""
+    counts: dict[str, int] = {}
+    for finding in findings:
+        counts[finding.rule] = counts.get(finding.rule, 0) + 1
+
+    emitted = 0
+    level = "error" if (mode == "enforce" and blocking) else "notice"
+    summary = ", ".join(f"{rule}={counts[rule]}" for rule in sorted(counts)) or "none"
+    annotate(level, f"R0 {mode}: {len(findings)} finding(s) — {summary}")
+    emitted += 1
+
+    # Exemplars: the blocking ones first when they exist, since those are the
+    # findings a reader can actually be asked to fix today.
+    exemplars = blocking or findings
+    for finding in exemplars[:ANNOTATION_CAP - emitted]:
+        annotate(level,
+                 f"{finding.path}:{finding.line} [{finding.rule}] {finding.detail}")
+        emitted += 1
+    if len(exemplars) > ANNOTATION_CAP - 1:
+        # The cap is why the plain-text block below exists; say so in-band.
+        print(f"... {len(exemplars) - (ANNOTATION_CAP - 1)} further finding(s) "
+              f"not annotated (cap {ANNOTATION_CAP}); full detail follows",
+              flush=True)
+
+    print(f"design-system ratchet — mode={mode} findings={len(findings)} "
+          f"blocking={len(blocking)}", flush=True)
+    for rule in sorted(counts):
+        print(f"  {rule}: {counts[rule]}", flush=True)
+    for finding in findings:
+        print(f"{finding.path}:{finding.line}: {finding.rule}: {finding.detail}",
+              flush=True)
+
+
+# --- self-check -------------------------------------------------------------
+
+# One fixture per rule: the violation, and the clean counterpart that must pass.
+# Written to a tempdir rather than asserted against the live estate — a
+# self-check derived from what it checks cannot fail (house trap).
+DIRTY_FIXTURES: dict[str, tuple[str, str]] = {
+    "color-literal": ("a.css", ".x{color:#ff0044}"),
+    "font-family-literal": ("b.css", ".x{font-family:Helvetica,sans-serif}"),
+    "radius-literal": ("c.css", ".x{border-radius:7px}"),
+    "literal-custom-property": ("d.css", "body.page-x{--brand:#123456}"),
+    "card-class": ("e.css", ".insight-card{padding:0}"),
+    "banned-vocabulary": ("f.html.j2", "<p>the falsifier fired</p>"),
+    "inline-style-bytes": ("g.html.j2", "<style>.x{padding:0}</style>"),
+    "emoji": ("h.html.j2", "<p>\U0001F600 hello</p>"),
+}
+
+CLEAN_FIXTURE = (
+    "clean.css",
+    ".x{color:var(--ink-1);font-family:var(--font-body);"
+    "border-radius:var(--r-2)}\n:root{--ink-soft:var(--ink-1)}\n",
+)
+
+
+def self_check() -> int:
+    """Prove each rule detects its own violation, and that clean text passes."""
+    problems: list[str] = []
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        for rule, (name, body) in sorted(DIRTY_FIXTURES.items()):
+            hits = {f.rule for f in scan_text(f"{TEMPLATES_DIR}/{name}", body)}
+            if rule not in hits:
+                problems.append(f"rule {rule!r} did NOT fire on its own fixture "
+                                f"(fired: {sorted(hits)})")
+        name, body = CLEAN_FIXTURE
+        clean = scan_text(f"{TEMPLATES_DIR}/{name}", body)
+        if clean:
+            problems.append(
+                "clean fixture produced findings: "
+                + ", ".join(f"{f.rule}@{f.line}" for f in clean))
+        # The traversal itself must work, or every rule above is vacuous in the
+        # real run: plant one violation on disk and require the walk to find it.
+        planted = root / TEMPLATES_DIR / "planted.css"
+        planted.parent.mkdir(parents=True, exist_ok=True)
+        planted.write_text(".x{color:#abcdef}", encoding="utf-8")
+        walked = scan(root)
+        if not any(f.rule == "color-literal" for f in walked):
+            problems.append("scan() walked the templates root and found nothing")
+
+    for problem in problems:
+        annotate("error", f"self-check: {problem}")
+    if problems:
+        print(f"self-check FAILED: {len(problems)} problem(s)", flush=True)
+        return 1
+    print(f"self-check OK: {len(DIRTY_FIXTURES)} rule fixtures + clean fixture "
+          f"+ traversal", flush=True)
+    return 0
+
+
+# --- CLI --------------------------------------------------------------------
+
+def load_registry(path: Path) -> Optional[dict]:
+    """Read the page registry if present; absence is not fatal.
+
+    Imported lazily and defensively: the ratchet must still report on a checkout
+    where the registry has not been built.
+    """
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def main(argv: Optional[list[str]] = None) -> int:
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--mode", choices=MODES, default="report",
+                    help="report (default; always exit 0) or enforce (blocks on "
+                         "rules 1-4 in governed-compliant or new templates)")
+    ap.add_argument("--root", type=Path, default=REPO_ROOT,
+                    help="repository root to scan (tests point this at a fixture)")
+    ap.add_argument("--registry", type=Path, default=None,
+                    help="page registry JSON; governs which templates enforce")
+    # `--selftest` is the house spelling every other guard uses, and the one
+    # scripts/check_house_law_registry.py looks for when it verifies that a
+    # `selftest: true` registry entry is not a stale claim. Both spellings run
+    # the same code; neither is deprecated.
+    ap.add_argument("--self-check", "--selftest", dest="self_check",
+                    action="store_true",
+                    help="prove each rule detects its own violation, then exit")
+    args = ap.parse_args(argv)
+
+    if args.self_check:
+        return self_check()
+
+    findings = scan(args.root)
+    registry = load_registry(args.registry) if args.registry else None
+    governed = governed_templates(registry)
+    known = known_templates(registry)
+    blocking = blocking_findings(findings, governed, known)
+
+    if args.mode == "enforce" and registry is None:
+        # Fail CLOSED, but say so: with no census loaded every template is
+        # "unknown", so the new-template arm covers the whole estate. That is the
+        # right default for a guard, and the wrong thing to wire by accident.
+        annotate("warning",
+                 "enforce ran with no readable --registry: every template counts "
+                 "as NEW, so the whole estate is blocking. Pass --registry to "
+                 "scope enforcement to design_system.compliant rows.")
+
+    report(findings, mode=args.mode, blocking=blocking)
+
+    if args.mode == "enforce" and blocking:
+        return 1
+    # report mode ALWAYS exits 0 — see the module docstring.
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

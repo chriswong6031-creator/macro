@@ -1,0 +1,636 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/options/options.sparse_selector_runtime.v1.schema.json",
+  "title": "Host-private sparse exact-option selector runtime objects",
+  "description": "Immutable candidate, manifest, decision, cycle, head, and sanitized W1A-export objects. Proposal means private research review only. Every authority flag is false.",
+  "oneOf": [
+    {"$ref": "#/$defs/candidate"},
+    {"$ref": "#/$defs/manifest"},
+    {"$ref": "#/$defs/evidenceGeneration"},
+    {"$ref": "#/$defs/konsekiEvidence"},
+    {"$ref": "#/$defs/markEvidence"},
+    {"$ref": "#/$defs/lifecycleEvidence"},
+    {"$ref": "#/$defs/decision"},
+    {"$ref": "#/$defs/cycle"},
+    {"$ref": "#/$defs/handoffQueueItem"},
+    {"$ref": "#/$defs/head"},
+    {"$ref": "#/$defs/w1aExport"}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "commit": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+    "utc": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{1,6})?Z$"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "may_claim_sparse_gate", "may_compute_option_pnl", "may_feed_neural_web",
+        "may_issue", "may_originate_signal", "may_publish_pick", "may_rank",
+        "may_score", "may_select", "may_size", "may_trade", "may_train_prophet"
+      ],
+      "properties": {
+        "may_claim_sparse_gate": {"const": false},
+        "may_compute_option_pnl": {"const": false},
+        "may_feed_neural_web": {"const": false},
+        "may_issue": {"const": false},
+        "may_originate_signal": {"const": false},
+        "may_publish_pick": {"const": false},
+        "may_rank": {"const": false},
+        "may_score": {"const": false},
+        "may_select": {"const": false},
+        "may_size": {"const": false},
+        "may_trade": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    },
+    "pointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "key": {"type": "string", "pattern": "^(?:candidates|manifests|decisions|cycles|evidence|handoff_queue|source_projection|auth_dict_nodes)/[A-Za-z0-9_.-]+\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
+      }
+    },
+    "candidatePointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^ossc_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^candidates/ossc_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
+      }
+    },
+    "manifestPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^ossm_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^manifests/ossm_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
+      }
+    },
+    "generationPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^osseg_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^evidence/[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
+      }
+    },
+    "compactEvidencePointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^obj_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^evidence/[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 4096}
+      }
+    },
+    "markPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "observation_id", "key", "sha256", "bytes"],
+      "properties": {
+        "schema": {"const": "prophet.option_mark_pointer/v1"},
+        "observation_id": {"type": "string", "pattern": "^pom_obs_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^observations/[0-9]{4}-[0-9]{2}-[0-9]{2}/pom_obs_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152}
+      }
+    },
+    "lifecycleEventPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "event_id", "key", "sha256", "bytes"],
+      "properties": {
+        "schema": {"const": "prophet.option_shadow_lifecycle_pointer/v1"},
+        "event_id": {"type": "string", "pattern": "^posle_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^events/[0-9]{4}-[0-9]{2}-[0-9]{2}/posle_[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 2097152}
+      }
+    },
+    "prefix": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "records", "bytes", "sha256", "git_blob_oid"],
+      "properties": {
+        "path": {"enum": ["data/options_signal_campaign/campaigns.jsonl", "data/options_signal_episode/episodes.jsonl"]},
+        "records": {"type": "integer", "minimum": 0},
+        "bytes": {"type": "integer", "minimum": 0},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "git_blob_oid": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"}
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path", "bytes", "sha256", "git_blob_oid", "source_commit", "checkpoint_id",
+        "campaign_records", "campaign_sha256", "episode_records", "episode_sha256"
+      ],
+      "properties": {
+        "path": {"const": "data/options_signal_campaign/checkpoint.json"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 8388608},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "git_blob_oid": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+        "source_commit": {"$ref": "#/$defs/commit"},
+        "checkpoint_id": {"type": "string", "pattern": "^ocp_[a-f0-9]{24}$"},
+        "campaign_records": {"type": "integer", "minimum": 0},
+        "campaign_sha256": {"$ref": "#/$defs/sha256"},
+        "episode_records": {"type": "integer", "minimum": 0},
+        "episode_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "digests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "benchmark_digest_sha256", "selector_rule_sha256",
+        "candidate_manifest_rule_sha256", "decision_rule_sha256",
+        "evidence_rule_sha256", "source_campaign_rule_sha256"
+      ],
+      "properties": {
+        "benchmark_digest_sha256": {"const": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"},
+        "selector_rule_sha256": {"const": "a98d3b92e1ebe069c141d5f79ee9260eeb2b8eeee4f90f574ef0069c062ad20b"},
+        "candidate_manifest_rule_sha256": {"const": "70e1bec30bde9764a5e88dfec6aa01a654b9eece65ee3b7d20fa57e1c87444a6"},
+        "decision_rule_sha256": {"const": "734d742723f650a05b321131079c1329ff608e9e72bf5bcc1d1276b718fdc79c"},
+        "evidence_rule_sha256": {"const": "518ae9a36cf60e400933c07e46ce885955b720cc71c59a39e328800e86ac91af"},
+        "source_campaign_rule_sha256": {"const": "6ff5cc16a74bf27807b3c8540b31794a6d9c54aec8fc152edc02602d646ad7f6"}
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "candidate_id", "ordinal", "previous_candidate", "campaign_id", "campaign_revision_id",
+        "campaign_row", "campaign_row_number", "campaign_row_sha256",
+        "candidate_available_at", "source_available_at", "source_commit",
+        "campaign_prefix", "episode_prefix", "source_checkpoint", "final_episode_row",
+        "final_episode_row_sha256", "eligible_for_manifest", "digests", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_candidate/v1"},
+        "candidate_id": {"type": "string", "pattern": "^ossc_[a-f0-9]{64}$"},
+        "ordinal": {"type": "integer", "minimum": 1},
+        "previous_candidate": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "campaign_id": {"type": "string", "pattern": "^ocam_[a-f0-9]{24}$"},
+        "campaign_revision_id": {"type": "string", "pattern": "^ocrev_[a-f0-9]{24}$"},
+        "campaign_row": {"type": "object"},
+        "campaign_row_number": {"type": "integer", "minimum": 1},
+        "campaign_row_sha256": {"$ref": "#/$defs/sha256"},
+        "candidate_available_at": {"$ref": "#/$defs/utc"},
+        "source_available_at": {"$ref": "#/$defs/utc"},
+        "source_commit": {"$ref": "#/$defs/commit"},
+        "campaign_prefix": {"$ref": "#/$defs/prefix"},
+        "episode_prefix": {"$ref": "#/$defs/prefix"},
+        "source_checkpoint": {"$ref": "#/$defs/checkpoint"},
+        "final_episode_row": {"type": "object"},
+        "final_episode_row_sha256": {"$ref": "#/$defs/sha256"},
+        "eligible_for_manifest": {"type": "boolean"},
+        "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "manifest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "manifest_id", "cycle_id", "frozen_at", "source_commit",
+        "source_campaign_prefix", "source_episode_prefix", "source_checkpoint", "candidate_count", "candidates", "digests", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_candidate_manifest/v1"},
+        "manifest_id": {"type": "string", "pattern": "^ossm_[a-f0-9]{64}$"},
+        "cycle_id": {"type": "string", "pattern": "^oscy_[a-f0-9]{64}$"},
+        "frozen_at": {"$ref": "#/$defs/utc"},
+        "source_commit": {"$ref": "#/$defs/commit"},
+        "source_campaign_prefix": {"$ref": "#/$defs/prefix"},
+        "source_episode_prefix": {"$ref": "#/$defs/prefix"},
+        "source_checkpoint": {"$ref": "#/$defs/checkpoint"},
+        "candidate_count": {"type": "integer", "minimum": 1, "maximum": 128},
+        "candidates": {"type": "array", "minItems": 1, "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/pointer"}},
+        "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "evidenceGeneration": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "generation_id", "settled_manifest", "fenced_at",
+        "w1a_export", "lifecycle_state", "w1a_error", "mark_error",
+        "lifecycle_error", "digests", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_evidence_generation/v1"},
+        "generation_id": {"type": "string", "pattern": "^osseg_[a-f0-9]{64}$"},
+        "settled_manifest": {"$ref": "#/$defs/manifestPointer"},
+        "fenced_at": {"$ref": "#/$defs/utc"},
+        "w1a_export": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/w1aExport"}]},
+        "lifecycle_state": {"oneOf": [{"type": "null"}, {"type": "object"}]},
+        "w1a_error": {"type": "boolean"},
+        "mark_error": {"type": "boolean"},
+        "lifecycle_error": {"type": "boolean"},
+        "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "konsekiEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "generation", "candidate", "reference_ordinal",
+        "reference_id", "reference_sha256", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_konseki_evidence/v1"},
+        "generation": {"$ref": "#/$defs/generationPointer"},
+        "candidate": {"$ref": "#/$defs/candidatePointer"},
+        "reference_ordinal": {"type": "integer", "minimum": 1, "maximum": 16384},
+        "reference_id": {"type": "string", "pattern": "^omctxref_[a-f0-9]{64}$"},
+        "reference_sha256": {"$ref": "#/$defs/sha256"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "markEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "generation", "candidate", "plan_id", "session_date",
+        "mark_pointer", "selected_row_sha256", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_mark_evidence/v1"},
+        "generation": {"$ref": "#/$defs/generationPointer"},
+        "candidate": {"$ref": "#/$defs/candidatePointer"},
+        "plan_id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "session_date": {"type": "string", "format": "date"},
+        "mark_pointer": {"$ref": "#/$defs/markPointer"},
+        "selected_row_sha256": {"$ref": "#/$defs/sha256"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "lifecycleEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "generation", "candidate", "plan_id",
+        "enrollment_pointer", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_lifecycle_evidence/v1"},
+        "generation": {"$ref": "#/$defs/generationPointer"},
+        "candidate": {"$ref": "#/$defs/candidatePointer"},
+        "plan_id": {"type": "string", "minLength": 1, "maxLength": 200},
+        "enrollment_pointer": {"$ref": "#/$defs/lifecycleEventPointer"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["options", "generation", "konseki", "mark", "lifecycle"],
+      "properties": {
+        "options": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/candidatePointer"}]},
+        "generation": {"$ref": "#/$defs/generationPointer"},
+        "konseki": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/compactEvidencePointer"}]},
+        "mark": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/compactEvidencePointer"}]},
+        "lifecycle": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/compactEvidencePointer"}]}
+      }
+    },
+    "occContract": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["root", "expiration", "right", "strike", "strike_millis", "occ_symbol"],
+      "properties": {
+        "root": {"type": "string", "pattern": "^[A-Z0-9]{1,6}$"},
+        "expiration": {"type": "string", "format": "date"},
+        "right": {"enum": ["call", "put"]},
+        "strike": {"type": "string", "pattern": "^(?:0|[1-9][0-9]*)(?:\\.[0-9]{1,3})?$"},
+        "strike_millis": {"type": "integer", "minimum": 1, "maximum": 99999999},
+        "occ_symbol": {"type": "string", "pattern": "^[A-Z0-9 ]{6}[0-9]{6}[CP][0-9]{8}$"}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "decision_id", "ordinal", "previous_decision", "manifest_id", "candidate", "action",
+        "reason_codes", "decision_event_at", "evidence_verified_at", "decision_available_at",
+        "decision_nyse_session_date", "proposal_ordinal", "proposal_cap",
+        "contract", "plan_id", "evidence", "digests", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_decision/v1"},
+        "decision_id": {"type": "string", "pattern": "^ossd_[a-f0-9]{64}$"},
+        "ordinal": {"type": "integer", "minimum": 1},
+        "previous_decision": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "manifest_id": {"type": "string", "pattern": "^ossm_[a-f0-9]{64}$"},
+        "candidate": {"$ref": "#/$defs/pointer"},
+        "action": {"enum": ["abstain", "propose"]},
+        "reason_codes": {
+          "type": "array", "maxItems": 16, "uniqueItems": true,
+          "items": {"enum": [
+            "LEGACY_OR_RETROSPECTIVE_CAMPAIGN", "BEFORE_SELECTOR_EFFECTIVE_FREEZE",
+            "BENCHMARK_DIGEST_MISSING_OR_MISMATCHED", "CAMPAIGN_PREFIX_RECEIPT_INVALID",
+            "EXACT_OCC_CONTRACT_MISSING_OR_INVALID", "OPTIONS_EVIDENCE_MISSING_OR_MISMATCHED",
+            "KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED", "KONSEKI_EXACT_ASOF_CONTEXT_ABSENT",
+            "MARK_RECEIPT_MISSING_OR_MISMATCHED", "MARK_NOT_ADMITTED_OR_STALE",
+            "LIFECYCLE_RECEIPT_MISSING_OR_MISMATCHED", "LIFECYCLE_NOT_DURABLE_OR_IDENTITY_DRIFT",
+            "LIFECYCLE_ALREADY_TERMINAL", "ANY_UPSTREAM_AUTHORITY_TRUE",
+            "DECISION_OUTSIDE_NYSE_RTH", "SESSION_PROPOSAL_CAP_REACHED"
+          ]}
+        },
+        "decision_event_at": {"$ref": "#/$defs/utc"},
+        "evidence_verified_at": {"$ref": "#/$defs/utc"},
+        "decision_available_at": {"$ref": "#/$defs/utc"},
+        "decision_nyse_session_date": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]},
+        "proposal_ordinal": {"oneOf": [{"type": "null"}, {"type": "integer", "minimum": 1, "maximum": 3}]},
+        "proposal_cap": {"const": 3},
+        "contract": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/occContract"}]},
+        "plan_id": {"oneOf": [{"type": "null"}, {"type": "string", "minLength": 1, "maxLength": 200}]},
+        "evidence": {"$ref": "#/$defs/evidence"},
+        "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"action": {"const": "propose"}}, "required": ["action"]},
+          "then": {
+            "properties": {
+              "reason_codes": {"maxItems": 0},
+              "decision_nyse_session_date": {"type": "string"},
+              "proposal_ordinal": {"type": "integer"},
+              "contract": {"type": "object"},
+              "plan_id": {"type": "string"},
+              "evidence": {
+                "properties": {
+                  "options": {"type": "object"}, "generation": {"type": "object"}, "konseki": {"type": "object"},
+                  "mark": {"type": "object"}, "lifecycle": {"type": "object"}
+                }
+              }
+            }
+          },
+          "else": {"properties": {"proposal_ordinal": {"type": "null"}}}
+        }
+      ]
+    },
+    "cycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "cycle_id", "ordinal", "scheduled_at", "started_at", "completed_at",
+        "source_observed_at", "source_commit", "source_campaign_prefix", "source_episode_prefix", "source_checkpoint",
+        "source_campaign_cursor_before", "source_campaign_cursor_after", "source_projection_after",
+        "previous_head_id", "previous_cycle", "settled_manifest", "next_manifest",
+        "candidate_count_before", "candidate_count_after", "previous_candidate", "candidate_pointers", "last_candidate",
+        "decision_count_before", "decision_count_after", "previous_decision", "last_decision", "decision_count",
+        "abstain_count", "propose_count", "decision_ids", "decision_pointers", "exactly_one_reconciled",
+        "runtime_armed", "digests", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_cycle_receipt/v1"},
+        "cycle_id": {"type": "string", "pattern": "^oscy_[a-f0-9]{64}$"},
+        "ordinal": {"type": "integer", "minimum": 1},
+        "scheduled_at": {"$ref": "#/$defs/utc"},
+        "started_at": {"$ref": "#/$defs/utc"},
+        "completed_at": {"$ref": "#/$defs/utc"},
+        "source_observed_at": {"$ref": "#/$defs/utc"},
+        "source_commit": {"$ref": "#/$defs/commit"},
+        "source_campaign_prefix": {"$ref": "#/$defs/prefix"},
+        "source_episode_prefix": {"$ref": "#/$defs/prefix"},
+        "source_checkpoint": {"$ref": "#/$defs/checkpoint"},
+        "source_campaign_cursor_before": {"type": "integer", "minimum": 0},
+        "source_campaign_cursor_after": {"type": "integer", "minimum": 0},
+        "source_projection_after": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "previous_head_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^ossh_[a-f0-9]{64}$"}]},
+        "previous_cycle": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "settled_manifest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "next_manifest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "candidate_count_before": {"type": "integer", "minimum": 0},
+        "candidate_count_after": {"type": "integer", "minimum": 0},
+        "previous_candidate": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "candidate_pointers": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/pointer"}},
+        "last_candidate": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "decision_count_before": {"type": "integer", "minimum": 0},
+        "decision_count_after": {"type": "integer", "minimum": 0},
+        "previous_decision": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "last_decision": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "decision_count": {"type": "integer", "minimum": 0, "maximum": 128},
+        "abstain_count": {"type": "integer", "minimum": 0},
+        "propose_count": {"type": "integer", "minimum": 0, "maximum": 3},
+        "decision_ids": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"type": "string", "pattern": "^ossd_[a-f0-9]{64}$"}},
+        "decision_pointers": {"type": "array", "maxItems": 128, "uniqueItems": true, "items": {"$ref": "#/$defs/pointer"}},
+        "exactly_one_reconciled": {"const": true},
+        "runtime_armed": {"type": "boolean"},
+        "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "handoffQueueItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "queue_item_id", "ordinal", "previous_queue_item_id", "skip_queue_items",
+        "previous_queue_item", "previous_cycle", "selector_cycle",
+        "runtime_armed", "producer_rule_sha256", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_handoff_queue_item/v1"},
+        "queue_item_id": {"type": "string", "pattern": "^ossq_[a-f0-9]{64}$"},
+        "ordinal": {"type": "integer", "minimum": 1},
+        "previous_queue_item_id": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "string", "pattern": "^ossq_[a-f0-9]{64}$"}
+          ]
+        },
+        "previous_queue_item": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/pointer"}
+          ]
+        },
+        "skip_queue_items": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/pointer"}
+        },
+        "previous_cycle": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/pointer"}
+          ]
+        },
+        "selector_cycle": {"$ref": "#/$defs/pointer"},
+        "runtime_armed": {"const": true},
+        "producer_rule_sha256": {"const": "a98d3b92e1ebe069c141d5f79ee9260eeb2b8eeee4f90f574ef0069c062ad20b"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "head_id", "generation", "previous_head_id", "advanced_at", "source_observed_at", "source_commit",
+        "source_campaign_prefix", "source_episode_prefix", "source_checkpoint", "source_phase",
+        "source_audit_stage", "source_campaign_cursor_records", "source_campaign_cursor_bytes",
+        "source_episode_cursor_records", "source_episode_cursor_bytes", "source_episode_chunks", "source_episode_identity_index", "source_episode_group_index", "source_episode_group_count",
+        "source_projection_next", "source_run_manifests", "source_run_cursors", "source_candidate_index", "source_campaign_history_index",
+        "source_ready_run", "source_ready_count", "source_ready_cursor",
+        "pending_manifest", "last_cycle",
+        "cycle_count", "handoff_queue_count", "last_handoff_queue",
+        "last_candidate", "candidate_count", "candidate_index", "last_decision", "decision_count",
+        "proposal_session_date", "proposal_session_count", "digests", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_head/v1"},
+        "head_id": {"type": "string", "pattern": "^ossh_[a-f0-9]{64}$"},
+        "generation": {"type": "integer", "minimum": 1},
+        "previous_head_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^ossh_[a-f0-9]{64}$"}]},
+        "advanced_at": {"$ref": "#/$defs/utc"},
+        "source_observed_at": {"$ref": "#/$defs/utc"},
+        "source_commit": {"$ref": "#/$defs/commit"},
+        "source_campaign_prefix": {"$ref": "#/$defs/prefix"},
+        "source_episode_prefix": {"$ref": "#/$defs/prefix"},
+        "source_checkpoint": {"$ref": "#/$defs/checkpoint"},
+        "source_phase": {"enum": ["AUDITING", "RUNS_READY", "MERGING", "READY", "DRAINED"]},
+        "source_audit_stage": {"enum": ["EPISODES", "CAMPAIGNS", "COMPLETE"]},
+        "source_campaign_cursor_records": {"type": "integer", "minimum": 0},
+        "source_campaign_cursor_bytes": {"type": "integer", "minimum": 0},
+        "source_episode_cursor_records": {"type": "integer", "minimum": 0},
+        "source_episode_cursor_bytes": {"type": "integer", "minimum": 0},
+        "source_episode_chunks": {
+          "type": "array",
+          "maxItems": 1024,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pointer", "first_row", "last_row", "first_byte", "last_byte"],
+            "properties": {
+              "pointer": {"$ref": "#/$defs/pointer"},
+              "first_row": {"type": "integer", "minimum": 1},
+              "last_row": {"type": "integer", "minimum": 1},
+              "first_byte": {"type": "integer", "minimum": 0},
+              "last_byte": {"type": "integer", "minimum": 1}
+            }
+          }
+        },
+        "source_episode_identity_index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "algorithm", "domain", "root", "entry_count"],
+          "properties": {
+            "schema": {"const": "private.auth_dict_root/v1"},
+            "algorithm": {"const": "sha256-sharded-sorted/v1"},
+            "domain": {"const": "selector.source_episode_identity/v1"},
+            "root": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+            "entry_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "source_episode_group_count": {"type": "integer", "minimum": 0},
+        "source_episode_group_index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "algorithm", "domain", "root", "entry_count"],
+          "properties": {
+            "schema": {"const": "private.auth_dict_root/v1"},
+            "algorithm": {"const": "sha256-sharded-sorted/v1"},
+            "domain": {"const": "selector.source_episode_groups/v1"},
+            "root": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+            "entry_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "source_projection_next": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "source_run_manifests": {"type": "array", "maxItems": 256, "uniqueItems": true, "items": {"$ref": "#/$defs/pointer"}},
+        "source_run_cursors": {"type": "array", "maxItems": 256, "items": {"type": "integer", "minimum": 0}},
+        "source_candidate_index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "algorithm", "domain", "root", "entry_count"],
+          "properties": {
+            "schema": {"const": "private.auth_dict_root/v1"},
+            "algorithm": {"const": "sha256-sharded-sorted/v1"},
+            "domain": {"const": "selector.source_candidates/v1"},
+            "root": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+            "entry_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "source_campaign_history_index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "algorithm", "domain", "root", "entry_count"],
+          "properties": {
+            "schema": {"const": "private.auth_dict_root/v1"},
+            "algorithm": {"const": "sha256-sharded-sorted/v1"},
+            "domain": {"const": "selector.source_campaign_history/v1"},
+            "root": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+            "entry_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "source_ready_run": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "source_ready_count": {"type": "integer", "minimum": 0},
+        "source_ready_cursor": {"type": "integer", "minimum": 0},
+        "pending_manifest": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "last_cycle": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "cycle_count": {"type": "integer", "minimum": 0},
+        "handoff_queue_count": {"type": "integer", "minimum": 0},
+        "last_handoff_queue": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "last_candidate": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "candidate_count": {"type": "integer", "minimum": 0},
+        "candidate_index": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema", "algorithm", "domain", "root", "entry_count"],
+          "properties": {
+            "schema": {"const": "private.auth_dict_root/v1"},
+            "algorithm": {"const": "sha256-sharded-sorted/v1"},
+            "domain": {"const": "selector.candidates/v1"},
+            "root": {
+              "oneOf": [
+                {"type": "null"},
+                {"$ref": "#/$defs/pointer"}
+              ]
+            },
+            "entry_count": {"type": "integer", "minimum": 0}
+          }
+        },
+        "last_decision": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/pointer"}]},
+        "decision_count": {"type": "integer", "minimum": 0},
+        "proposal_session_date": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]},
+        "proposal_session_count": {"type": "integer", "minimum": 0, "maximum": 3},
+        "digests": {"$ref": "#/$defs/digests"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "w1aExport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema", "export_id", "exported_at", "head", "references", "authority"],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_w1a_receipt_export/v1"},
+        "export_id": {"type": "string", "pattern": "^ossw_[a-f0-9]{64}$"},
+        "exported_at": {"$ref": "#/$defs/utc"},
+        "head": {"type": "object"},
+        "references": {"type": "array", "maxItems": 4096, "items": {"type": "object"}},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    }
+  }
+}

@@ -1916,7 +1916,28 @@ def build_candidate_queue(
     *,
     generated_at: str,
 ) -> dict[str, Any]:
-    """Build a deterministic display-only queue and explicit mapping backlog."""
+    """Build a deterministic display-only queue and explicit mapping backlog.
+
+    Point-in-time contract: this is a pure projection of ``latest_payload``.
+    Admission gates on ``known_at <= end_of_UTC_day(latest_payload.as_of)`` — a
+    boundary that can sit up to a day AFTER ``generated_at``, which is an output
+    stamp, never a knowledge filter.  Replaying a frozen ``generated_at`` over a
+    payload that kept growing therefore admits events the frozen generation
+    could not have known; a replay is honest only over inputs frozen to that
+    generation.  Point-in-time honesty is owned by the callers, each fail-closed
+    before projected observations are used: issuance refuses any observation
+    whose clock postdates the frozen ``generated_at``
+    (``scripts/build_government_revenue_candidates.py``, "current candidate
+    observation is after the frozen generated_at clock", plus latest/workspace/
+    graph document-clock refusals); render verification and the API instead bind
+    ``latest_sha256``/``workspace_sha256``/graph digest to the recorded
+    projection state (``verify_candidate_artifacts``,
+    ``app/government_revenue.py``), so a frozen clock only ever replays the
+    byte-exact recorded vintage.  Incident-replay tests must restrict the copied
+    boundary to events known by the incident's own issuance clock.  Full
+    adjudication (2026-08-13, red-teamed):
+    ``research/GOVERNMENT_REVENUE_AUG13_BATCH_ADJUDICATION_2026-08-13.md``.
+    """
     if not isinstance(latest_payload, Mapping):
         raise ValueError("latest_payload must be a mapping")
     generated = _iso(generated_at)

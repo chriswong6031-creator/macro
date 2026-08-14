@@ -1336,6 +1336,11 @@ on:
       # suite when only the test itself is edited (same one-sided-trigger trap
       # as the et_gate entry above; workflow files are already path-covered).
       - "tests/test_workflow_file_size.py"
+      # 2026-08-13 US nightly cron redundancy (the CN five-slot idiom, ported). The
+      # actor and its suite must reach the workflow-yaml job when either is edited
+      # alone; the workflow it schedules is already covered by ".github/workflows/**".
+      - "scripts/nightly_backstop.py"
+      - "tests/test_nightly_backstop.py"
       # TXI W1 transmission chains: the chain library, the compiler/engine, the runner, and
       # the test file must all trigger the chain suite so a bad edit reds the PR (the #3357
       # vacuous-green trap needs BOTH the paths entry here AND the job below).
@@ -3887,6 +3892,12 @@ on:
       - "templates/onboard.js"
       - "tests/test_gh_quota_guard.py"
       - ".claude/hooks/gh_quota_guard.py"
+      # Prophet US rescue lane (2026-08-14), run in the same unrun-dark-guards job.
+      # Both halves are listed for the same reason as the pair above: the suite
+      # reaches its subject through importlib from a path literal, so the
+      # import-derived auditor reports subjects=[] and would call it untriggerable.
+      - "tests/test_prophet_rescue.py"
+      - "scripts/prophet_rescue.py"
       # ── Public-render fastlane (2026-07-28) ─────────────────────────────────
       # test_public_render_fastlane pins the heavy/public render split and the
       # rendered pricing copy; it was named by no lane and rotted red when #3856

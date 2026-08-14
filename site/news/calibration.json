@@ -2,13 +2,13 @@
   "schema": "news_event_calibration.v1",
   "is_context_only": true,
   "asof": "2026-08-13",
-  "n_events_logged": 348,
+  "n_events_logged": 357,
   "n_events_graded": 226,
   "classes": [
     {
       "event_type": "bankruptcy_restructuring",
       "direction": "bearish",
-      "n": 3,
+      "n": 4,
       "n_graded": 3,
       "hit_5d": 0.3333333333333333,
       "hit_21d": 1.0,
@@ -73,7 +73,7 @@
     {
       "event_type": "earnings_result",
       "direction": "mixed",
-      "n": 78,
+      "n": 81,
       "n_graded": 44,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
@@ -88,12 +88,12 @@
       "direction": "bearish",
       "n": 15,
       "n_graded": 8,
-      "hit_5d": 0.5,
+      "hit_5d": 0.375,
       "hit_21d": 1.0,
-      "avg_rel_5d": 0.0321101875,
-      "avg_rel_21d": -0.003321499999999999,
-      "wilson_low_5d": 0.215213,
-      "wilson_high_5d": 0.784787,
+      "avg_rel_5d": 0.0384143125,
+      "avg_rel_21d": -0.0017749999999999992,
+      "wilson_low_5d": 0.136842,
+      "wilson_high_5d": 0.694262,
       "verdict": "insufficient"
     },
     {
@@ -112,7 +112,7 @@
     {
       "event_type": "guidance_raise",
       "direction": "bullish",
-      "n": 21,
+      "n": 23,
       "n_graded": 9,
       "hit_5d": 0.8888888888888888,
       "hit_21d": 0.3333333333333333,
@@ -127,18 +127,18 @@
       "direction": "bearish",
       "n": 118,
       "n_graded": 107,
-      "hit_5d": 0.4205607476635514,
-      "hit_21d": 0.39655172413793105,
-      "avg_rel_5d": 0.005596724299065421,
-      "avg_rel_21d": 0.023431181034482756,
-      "wilson_low_5d": 0.331371,
-      "wilson_high_5d": 0.515257,
+      "hit_5d": 0.411214953271028,
+      "hit_21d": 0.3770491803278688,
+      "avg_rel_5d": 0.0067138862928348905,
+      "avg_rel_21d": 0.028208549180327867,
+      "wilson_low_5d": 0.322636,
+      "wilson_high_5d": 0.505948,
       "verdict": "context_only"
     },
     {
       "event_type": "macro_release",
       "direction": "informational",
-      "n": 21,
+      "n": 24,
       "n_graded": 4,
       "hit_5d": 0.0,
       "hit_21d": null,
@@ -182,7 +182,7 @@
       "hit_5d": 1.0,
       "hit_21d": 1.0,
       "avg_rel_5d": 0.07516300000000001,
-      "avg_rel_21d": 0.005929,
+      "avg_rel_21d": 0.077924,
       "wilson_low_5d": 0.342372,
       "wilson_high_5d": 1.0,
       "verdict": "insufficient"
@@ -194,8 +194,8 @@
       "n_graded": 10,
       "hit_5d": 0.0,
       "hit_21d": 0.0,
-      "avg_rel_5d": -0.010373406666666666,
-      "avg_rel_21d": 0.03731937083333333,
+      "avg_rel_5d": -0.017463856666666666,
+      "avg_rel_21d": 0.04821099583333333,
       "wilson_low_5d": null,
       "wilson_high_5d": null,
       "verdict": "insufficient"
@@ -267,7 +267,7 @@
     }
   ],
   "reject_audit": {
-    "n_sampled": 683,
+    "n_sampled": 694,
     "n_graded": 0,
     "classes": []
   }

@@ -1,18 +1,27 @@
 {
-"applied": "2026-08-06T21:04:46.017126+00:00",
-"rows_flagged": 13,
-"tickers_flagged": 7,
+"applied": "2026-08-14T03:56:47.535792+00:00",
+"rows_flagged": 24,
+"tickers_flagged": 14,
 "by_flag": {
-"assets:flank_scale": 2,
+"assets:junk_null": 10,
+"assets:flank_scale": 4,
 "equity:flank_scale": 1,
 "debt_lt:flank_scale": 2,
-"assets:junk_null": 4,
-"equity:junk_null": 4
+"equity:junk_null": 7
 },
-"repaired": 5,
-"nulled": 8,
-"mirrors": 6,
+"repaired": 7,
+"nulled": 17,
+"mirrors": 14,
 "rows": [
+{
+"ticker": "ABAT",
+"fy": 2016,
+"col": "assets",
+"flag": "junk_null",
+"raw": 7568.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 3747x)"
+},
 {
 "ticker": "ATO",
 "fy": 2010,
@@ -41,6 +50,33 @@
 "note": "x1e3 flank corr:same_row_assets"
 },
 {
+"ticker": "CLOV",
+"fy": 2019,
+"col": "assets",
+"flag": "junk_null",
+"raw": 100346.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 4607x)"
+},
+{
+"ticker": "CLOV",
+"fy": 2019,
+"col": "equity",
+"flag": "junk_null",
+"raw": -17631.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "CORZ",
+"fy": 2020,
+"col": "assets",
+"flag": "junk_null",
+"raw": 15000.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 4021x)"
+},
+{
 "ticker": "FTI",
 "fy": 2015,
 "col": "assets",
@@ -66,6 +102,33 @@
 "raw": 1048400.0,
 "repair": 1048400000.0,
 "note": "x1e3 flank"
+},
+{
+"ticker": "GRPN",
+"fy": 2010,
+"col": "assets",
+"flag": "junk_null",
+"raw": 381570.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 1021x)"
+},
+{
+"ticker": "GRPN",
+"fy": 2010,
+"col": "equity",
+"flag": "junk_null",
+"raw": 8077.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
+"ticker": "MBUU",
+"fy": 2013,
+"col": "assets",
+"flag": "junk_null",
+"raw": 10.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 2589900x)"
 },
 {
 "ticker": "MDT",
@@ -122,6 +185,24 @@
 "note": "null junk-fact leading-edge corr:same_row_assets"
 },
 {
+"ticker": "PWP",
+"fy": 2019,
+"col": "assets",
+"flag": "junk_null",
+"raw": 65635.0,
+"repair": null,
+"note": "null junk-fact leading-edge (anchor 8125x)"
+},
+{
+"ticker": "PWP",
+"fy": 2019,
+"col": "equity",
+"flag": "junk_null",
+"raw": 22704.0,
+"repair": null,
+"note": "null junk-fact leading-edge corr:same_row_assets"
+},
+{
 "ticker": "SNEX",
 "fy": 2018,
 "col": "assets",
@@ -129,6 +210,24 @@
 "raw": 8710.5,
 "repair": 8710500000.0,
 "note": "x1e6 flank"
+},
+{
+"ticker": "TCI",
+"fy": 2011,
+"col": "assets",
+"flag": "flank_scale",
+"raw": 1160324.0,
+"repair": 1160324000.0,
+"note": "x1e3 flank"
+},
+{
+"ticker": "TCI",
+"fy": 2012,
+"col": "assets",
+"flag": "flank_scale",
+"raw": 1045344.0,
+"repair": 1045344000.0,
+"note": "x1e3 flank"
 }
 ],
 "xsrc_disagreements": [
@@ -1045,6 +1144,20 @@
 ],
 "flank_suspects": [
 {
+"ticker": "ABAT",
+"fy_lo": 2012,
+"fy_hi": 2020,
+"col": "assets",
+"med": 33054.0
+},
+{
+"ticker": "AEVA",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 218543000.0
+},
+{
 "ticker": "AHCO",
 "fy_lo": 2017,
 "fy_hi": 2017,
@@ -1057,6 +1170,27 @@
 "fy_hi": 2015,
 "col": "assets",
 "med": 202000.0
+},
+{
+"ticker": "AIRJ",
+"fy_lo": 2021,
+"fy_hi": 2022,
+"col": "assets",
+"med": 294901353.0
+},
+{
+"ticker": "AIRJ",
+"fy_lo": 2023,
+"fy_hi": 2023,
+"col": "assets",
+"med": 556135.0
+},
+{
+"ticker": "AIRJ",
+"fy_lo": 2024,
+"fy_hi": 2025,
+"col": "assets",
+"med": 355247176.0
 },
 {
 "ticker": "ALG",
@@ -1080,11 +1214,158 @@
 "med": 114503000.0
 },
 {
+"ticker": "ALMU",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 206.0
+},
+{
+"ticker": "ALMU",
+"fy_lo": 2019,
+"fy_hi": 2020,
+"col": "equity",
+"med": 3016.0
+},
+{
+"ticker": "ALTG",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "assets",
+"med": 212158.0
+},
+{
+"ticker": "ALTG",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1290600000.0
+},
+{
+"ticker": "ALTI",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "assets",
+"med": 130686.0
+},
+{
+"ticker": "ALTI",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1176448000.0
+},
+{
+"ticker": "ALTI",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": 16908.0
+},
+{
+"ticker": "ALTI",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 352144000.0
+},
+{
 "ticker": "AMCR",
 "fy_lo": 2018,
 "fy_hi": 2018,
 "col": "equity",
 "med": 130.0
+},
+{
+"ticker": "AREC",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "equity",
+"med": -20005500.0
+},
+{
+"ticker": "ARL",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "assets",
+"med": 1557275000.0
+},
+{
+"ticker": "ARL",
+"fy_lo": 2011,
+"fy_hi": 2012,
+"col": "assets",
+"med": 1185408.0
+},
+{
+"ticker": "ARL",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1023484000.0
+},
+{
+"ticker": "ARL",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "equity",
+"med": 60617000.0
+},
+{
+"ticker": "ARL",
+"fy_lo": 2011,
+"fy_hi": 2012,
+"col": "equity",
+"med": 90180.5
+},
+{
+"ticker": "ARL",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "equity",
+"med": 239499000.0
+},
+{
+"ticker": "ASLE",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "assets",
+"med": 417500.0
+},
+{
+"ticker": "ASLE",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "assets",
+"med": 531579000.0
+},
+{
+"ticker": "ASLE",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "equity",
+"med": 24549.0
+},
+{
+"ticker": "ASLE",
+"fy_lo": 2019,
+"fy_hi": 2021,
+"col": "equity",
+"med": 351455000.0
+},
+{
+"ticker": "ATEC",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 189968500.0
+},
+{
+"ticker": "ATLC",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "equity",
+"med": 360543000.0
 },
 {
 "ticker": "ATO",
@@ -1115,6 +1396,62 @@
 "med": 2455131000.0
 },
 {
+"ticker": "AVR",
+"fy_lo": 2024,
+"fy_hi": 2024,
+"col": "equity",
+"med": 62761000.0
+},
+{
+"ticker": "AVR",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": -93000.0
+},
+{
+"ticker": "AVXL",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "assets",
+"med": 42879156.5
+},
+{
+"ticker": "AVXL",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "debt_lt",
+"med": 5719727.0
+},
+{
+"ticker": "AVXL",
+"fy_lo": 2015,
+"fy_hi": 2016,
+"col": "debt_lt",
+"med": 305.0
+},
+{
+"ticker": "AXGN",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "equity",
+"med": 102453000.0
+},
+{
+"ticker": "AXGN",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "debt_lt",
+"med": 35000.0
+},
+{
+"ticker": "AXGN",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 46157500.0
+},
+{
 "ticker": "BCPC",
 "fy_lo": 2015,
 "fy_hi": 2018,
@@ -1122,11 +1459,151 @@
 "med": 226490000.0
 },
 {
+"ticker": "BETR",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 913057000.0
+},
+{
+"ticker": "BETR",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": 5000.0
+},
+{
+"ticker": "BETR",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 37183000.0
+},
+{
+"ticker": "BKSY",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "assets",
+"med": 214338.0
+},
+{
+"ticker": "BKSY",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "assets",
+"med": 254146000.0
+},
+{
+"ticker": "BKSY",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "equity",
+"med": 22823.0
+},
+{
+"ticker": "BKSY",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "equity",
+"med": 93989000.0
+},
+{
+"ticker": "BLBD",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "assets",
+"med": 329679000.0
+},
+{
+"ticker": "BLBD",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "equity",
+"med": -31713000.0
+},
+{
+"ticker": "BNAI",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "assets",
+"med": 71546.0
+},
+{
+"ticker": "BNAI",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": 20000.0
+},
+{
+"ticker": "BOC",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "assets",
+"med": 640707426.0
+},
+{
+"ticker": "BOC",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "equity",
+"med": 381566257.0
+},
+{
 "ticker": "BYND",
 "fy_lo": 2025,
 "fy_hi": 2025,
 "col": "equity",
 "med": -997000.0
+},
+{
+"ticker": "CHCT",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "assets",
+"med": 2000.0
+},
+{
+"ticker": "CHCT",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "assets",
+"med": 668402000.0
+},
+{
+"ticker": "CHCT",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "equity",
+"med": 2000.0
+},
+{
+"ticker": "CHCT",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "equity",
+"med": 429387000.0
+},
+{
+"ticker": "CIFR",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 491336000.0
+},
+{
+"ticker": "CLOV",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 575706500.0
+},
+{
+"ticker": "CLOV",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "equity",
+"med": 332125000.0
 },
 {
 "ticker": "CLSK",
@@ -1143,6 +1620,55 @@
 "med": -56692.0
 },
 {
+"ticker": "CMDB",
+"fy_lo": 2024,
+"fy_hi": 2024,
+"col": "equity",
+"med": 6000.0
+},
+{
+"ticker": "CMDB",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": 665648000.0
+},
+{
+"ticker": "CMPX",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "assets",
+"med": 4679.0
+},
+{
+"ticker": "CMPX",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "assets",
+"med": 153757000.0
+},
+{
+"ticker": "CNTN",
+"fy_lo": 2020,
+"fy_hi": 2024,
+"col": "assets",
+"med": 3721624.0
+},
+{
+"ticker": "CORZ",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1475946000.0
+},
+{
+"ticker": "CVGI",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "equity",
+"med": 95370000.0
+},
+{
 "ticker": "DEA",
 "fy_lo": 2014,
 "fy_hi": 2014,
@@ -1150,11 +1676,172 @@
 "med": 1000.0
 },
 {
+"ticker": "DJT",
+"fy_lo": 2024,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1783987550.0
+},
+{
+"ticker": "EAF",
+"fy_lo": 2010,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 731698000.0
+},
+{
+"ticker": "EGY",
+"fy_lo": 2010,
+"fy_hi": 2015,
+"col": "equity",
+"med": 202025000.0
+},
+{
+"ticker": "ELA",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 13293468.0
+},
+{
+"ticker": "EOSE",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 200527000.0
+},
+{
 "ticker": "FANG",
 "fy_lo": 2012,
 "fy_hi": 2012,
 "col": "debt_lt",
 "med": 193000.0
+},
+{
+"ticker": "FDBC",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "assets",
+"med": 561673.0
+},
+{
+"ticker": "FDBC",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "assets",
+"med": 981102000.0
+},
+{
+"ticker": "FHTX",
+"fy_lo": 2019,
+"fy_hi": 2021,
+"col": "equity",
+"med": 96871000.0
+},
+{
+"ticker": "FHTX",
+"fy_lo": 2022,
+"fy_hi": 2022,
+"col": "equity",
+"med": 112000.0
+},
+{
+"ticker": "FHTX",
+"fy_lo": 2023,
+"fy_hi": 2025,
+"col": "equity",
+"med": -77190000.0
+},
+{
+"ticker": "FTK",
+"fy_lo": 2013,
+"fy_hi": 2022,
+"col": "debt_lt",
+"med": 7833000.0
+},
+{
+"ticker": "FUBO",
+"fy_lo": 2018,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1155034000.0
+},
+{
+"ticker": "FVR",
+"fy_lo": 2023,
+"fy_hi": 2023,
+"col": "equity",
+"med": 1000.0
+},
+{
+"ticker": "FVR",
+"fy_lo": 2024,
+"fy_hi": 2025,
+"col": "equity",
+"med": 358008000.0
+},
+{
+"ticker": "GBTG",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 1854.0
+},
+{
+"ticker": "GBTG",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 3739500000.0
+},
+{
+"ticker": "GBTG",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "equity",
+"med": 1854.0
+},
+{
+"ticker": "GBTG",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "equity",
+"med": 1129500000.0
+},
+{
+"ticker": "GDC",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": 667857807.0
+},
+{
+"ticker": "GENI",
+"fy_lo": 2019,
+"fy_hi": 2020,
+"col": "debt_lt",
+"med": 77944500.0
+},
+{
+"ticker": "GEVO",
+"fy_lo": 2023,
+"fy_hi": 2023,
+"col": "debt_lt",
+"med": 21000.0
+},
+{
+"ticker": "GEVO",
+"fy_lo": 2024,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 115929500.0
+},
+{
+"ticker": "GLSI",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 26671.0
 },
 {
 "ticker": "GNL",
@@ -1171,6 +1858,104 @@
 "med": 933356000.0
 },
 {
+"ticker": "GRPN",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1642142000.0
+},
+{
+"ticker": "GRPN",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "equity",
+"med": 264420000.0
+},
+{
+"ticker": "HROW",
+"fy_lo": 2012,
+"fy_hi": 2025,
+"col": "assets",
+"med": 53462500.0
+},
+{
+"ticker": "HYMC",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "assets",
+"med": 191445.0
+},
+{
+"ticker": "HYMC",
+"fy_lo": 2018,
+"fy_hi": 2025,
+"col": "assets",
+"med": 207598966.0
+},
+{
+"ticker": "HYMC",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "equity",
+"med": 22216.0
+},
+{
+"ticker": "HYMC",
+"fy_lo": 2018,
+"fy_hi": 2025,
+"col": "equity",
+"med": -10379500.0
+},
+{
+"ticker": "IMKTA",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "assets",
+"med": 1532358.0
+},
+{
+"ticker": "IMKTA",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1855763317.0
+},
+{
+"ticker": "IMVT",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "assets",
+"med": 456243000.0
+},
+{
+"ticker": "IMXI",
+"fy_lo": 2017,
+"fy_hi": 2025,
+"col": "assets",
+"med": 340536000.0
+},
+{
+"ticker": "INFQ",
+"fy_lo": 2024,
+"fy_hi": 2024,
+"col": "assets",
+"med": 157937.0
+},
+{
+"ticker": "INFQ",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "assets",
+"med": 115313000.0
+},
+{
+"ticker": "IOVA",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "assets",
+"med": 480821000.0
+},
+{
 "ticker": "IRT",
 "fy_lo": 2010,
 "fy_hi": 2010,
@@ -1183,6 +1968,20 @@
 "fy_hi": 2010,
 "col": "debt_lt",
 "med": 6232500.0
+},
+{
+"ticker": "JILL",
+"fy_lo": 2017,
+"fy_hi": 2021,
+"col": "equity",
+"med": 38565000.0
+},
+{
+"ticker": "JILL",
+"fy_lo": 2023,
+"fy_hi": 2025,
+"col": "equity",
+"med": 105769000.0
 },
 {
 "ticker": "KNF",
@@ -1213,6 +2012,41 @@
 "med": 10000.0
 },
 {
+"ticker": "KURA",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "assets",
+"med": 448935000.0
+},
+{
+"ticker": "LASR",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "debt_lt",
+"med": 15108000.0
+},
+{
+"ticker": "LIND",
+"fy_lo": 2012,
+"fy_hi": 2012,
+"col": "assets",
+"med": 167775.0
+},
+{
+"ticker": "LIND",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "assets",
+"med": 548658000.0
+},
+{
+"ticker": "MAMA",
+"fy_lo": 2012,
+"fy_hi": 2025,
+"col": "equity",
+"med": 3376957.5
+},
+{
 "ticker": "MARA",
 "fy_lo": 2010,
 "fy_hi": 2019,
@@ -1220,11 +2054,88 @@
 "med": 9787596.0
 },
 {
+"ticker": "MBUU",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "assets",
+"med": 572526500.0
+},
+{
+"ticker": "MDV",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "assets",
+"med": 441462210.5
+},
+{
+"ticker": "MDV",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "equity",
+"med": 152096952.0
+},
+{
+"ticker": "MDXG",
+"fy_lo": 2022,
+"fy_hi": 2025,
+"col": "equity",
+"med": 167912000.0
+},
+{
 "ticker": "MP",
 "fy_lo": 2020,
 "fy_hi": 2020,
 "col": "debt_lt",
 "med": 961000.0
+},
+{
+"ticker": "MVST",
+"fy_lo": 2018,
+"fy_hi": 2018,
+"col": "assets",
+"med": 101200.0
+},
+{
+"ticker": "MVST",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "assets",
+"med": 984957000.0
+},
+{
+"ticker": "NEXT",
+"fy_lo": 2014,
+"fy_hi": 2014,
+"col": "assets",
+"med": 116885.0
+},
+{
+"ticker": "NEXT",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "assets",
+"med": 221195000.0
+},
+{
+"ticker": "NHP",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "assets",
+"med": 2193705000.0
+},
+{
+"ticker": "NHP",
+"fy_lo": 2012,
+"fy_hi": 2012,
+"col": "equity",
+"med": 185000.0
+},
+{
+"ticker": "NHP",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "equity",
+"med": 1033696000.0
 },
 {
 "ticker": "NRDY",
@@ -1241,6 +2152,13 @@
 "med": 43203500.0
 },
 {
+"ticker": "NUTX",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 431751985.0
+},
+{
 "ticker": "OGS",
 "fy_lo": 2013,
 "fy_hi": 2013,
@@ -1248,11 +2166,144 @@
 "med": 1318000.0
 },
 {
+"ticker": "ONDS",
+"fy_lo": 2017,
+"fy_hi": 2025,
+"col": "assets",
+"med": 92164682.0
+},
+{
+"ticker": "ONDS",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "equity",
+"med": 15833297.5
+},
+{
+"ticker": "ONEW",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 10000.0
+},
+{
+"ticker": "ONEW",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1526790500.0
+},
+{
+"ticker": "OPAL",
+"fy_lo": 2021,
+"fy_hi": 2021,
+"col": "equity",
+"med": 14000.0
+},
+{
+"ticker": "OPAL",
+"fy_lo": 2022,
+"fy_hi": 2025,
+"col": "equity",
+"med": -313628000.0
+},
+{
+"ticker": "ORGO",
+"fy_lo": 2015,
+"fy_hi": 2015,
+"col": "assets",
+"med": 416271.0
+},
+{
+"ticker": "ORGO",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "assets",
+"med": 377347455.5
+},
+{
 "ticker": "OTIS",
 "fy_lo": 2019,
 "fy_hi": 2019,
 "col": "debt_lt",
 "med": 5000000.0
+},
+{
+"ticker": "PACK",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "assets",
+"med": 870815.0
+},
+{
+"ticker": "PACK",
+"fy_lo": 2018,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1123800000.0
+},
+{
+"ticker": "PAR",
+"fy_lo": 2019,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 368355000.0
+},
+{
+"ticker": "PAYS",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "equity",
+"med": 13111934.0
+},
+{
+"ticker": "PBYI",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "assets",
+"med": 462.0
+},
+{
+"ticker": "PBYI",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "assets",
+"med": 222059000.0
+},
+{
+"ticker": "PBYI",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "equity",
+"med": 462.0
+},
+{
+"ticker": "PBYI",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "equity",
+"med": 54372000.0
+},
+{
+"ticker": "PLBY",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 100231.0
+},
+{
+"ticker": "PLBY",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 373190500.0
+},
+{
+"ticker": "PLUG",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 72676000.0
 },
 {
 "ticker": "PR",
@@ -1269,11 +2320,46 @@
 "med": 23000.0
 },
 {
+"ticker": "PRTH",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "assets",
+"med": 908223500.0
+},
+{
+"ticker": "PSIX",
+"fy_lo": 2023,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 38000.0
+},
+{
+"ticker": "PWP",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 739717500.0
+},
+{
+"ticker": "PWP",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "equity",
+"med": 100251000.0
+},
+{
 "ticker": "PWR",
 "fy_lo": 2014,
 "fy_hi": 2019,
 "col": "debt_lt",
 "med": 573042500.0
+},
+{
+"ticker": "QUBT",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 76433000.0
 },
 {
 "ticker": "RBC",
@@ -1290,11 +2376,130 @@
 "med": -69807000.0
 },
 {
+"ticker": "RDNW",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "assets",
+"med": 393496545.5
+},
+{
+"ticker": "RDNW",
+"fy_lo": 2013,
+"fy_hi": 2020,
+"col": "equity",
+"med": 2831720.5
+},
+{
+"ticker": "REPX",
+"fy_lo": 2022,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 238674500.0
+},
+{
+"ticker": "RGTI",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "assets",
+"med": 43309.0
+},
+{
+"ticker": "RGTI",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 203442000.0
+},
+{
+"ticker": "RIOT",
+"fy_lo": 2023,
+"fy_hi": 2023,
+"col": "debt_lt",
+"med": 526000.0
+},
+{
+"ticker": "RIOT",
+"fy_lo": 2024,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 585610000.0
+},
+{
 "ticker": "RNG",
 "fy_lo": 2012,
 "fy_hi": 2012,
 "col": "equity",
 "med": 71000.0
+},
+{
+"ticker": "RPAY",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "assets",
+"med": 176330.0
+},
+{
+"ticker": "RPAY",
+"fy_lo": 2018,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1359791000.0
+},
+{
+"ticker": "RUM",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 295712888.0
+},
+{
+"ticker": "RUM",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 251623148.0
+},
+{
+"ticker": "RZLT",
+"fy_lo": 2011,
+"fy_hi": 2011,
+"col": "assets",
+"med": 565789.0
+},
+{
+"ticker": "RZLT",
+"fy_lo": 2012,
+"fy_hi": 2012,
+"col": "assets",
+"med": 480.0
+},
+{
+"ticker": "RZLT",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "equity",
+"med": 14688000.0
+},
+{
+"ticker": "SBET",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "assets",
+"med": 2431766000.0
+},
+{
+"ticker": "SBET",
+"fy_lo": 2022,
+"fy_hi": 2024,
+"col": "equity",
+"med": 2084000.0
+},
+{
+"ticker": "SBET",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": 2419017000.0
 },
 {
 "ticker": "SKYT",
@@ -1311,11 +2516,179 @@
 "med": 55644000.0
 },
 {
+"ticker": "SLDP",
+"fy_lo": 2021,
+"fy_hi": 2022,
+"col": "debt_lt",
+"med": 6000.0
+},
+{
+"ticker": "SLNH",
+"fy_lo": 2010,
+"fy_hi": 2011,
+"col": "assets",
+"med": 5001500.0
+},
+{
+"ticker": "SLNH",
+"fy_lo": 2012,
+"fy_hi": 2012,
+"col": "assets",
+"med": 4845.0
+},
+{
+"ticker": "SLNH",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "assets",
+"med": 7424500.0
+},
+{
+"ticker": "SMA",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1296827394.0
+},
+{
+"ticker": "SMA",
+"fy_lo": 2013,
+"fy_hi": 2013,
+"col": "equity",
+"med": 1000.0
+},
+{
+"ticker": "SMA",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "equity",
+"med": 344034362.5
+},
+{
+"ticker": "SNDA",
+"fy_lo": 2010,
+"fy_hi": 2024,
+"col": "equity",
+"med": 80433000.0
+},
+{
+"ticker": "SNDA",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": -11000.0
+},
+{
 "ticker": "SNEX",
 "fy_lo": 2010,
 "fy_hi": 2017,
 "col": "assets",
 "med": 3033400000.0
+},
+{
+"ticker": "SOC",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "assets",
+"med": 304223.0
+},
+{
+"ticker": "SOC",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 711581000.0
+},
+{
+"ticker": "SOC",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": 23343.0
+},
+{
+"ticker": "SOC",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 339021000.0
+},
+{
+"ticker": "SPCE",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "debt_lt",
+"med": 310000.0
+},
+{
+"ticker": "SPCE",
+"fy_lo": 2024,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 348241000.0
+},
+{
+"ticker": "TBCH",
+"fy_lo": 2011,
+"fy_hi": 2025,
+"col": "equity",
+"med": 63387000.0
+},
+{
+"ticker": "TCI",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "assets",
+"med": 1384761000.0
+},
+{
+"ticker": "TCI",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1043044000.0
+},
+{
+"ticker": "TCI",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "equity",
+"med": 169848000.0
+},
+{
+"ticker": "TCI",
+"fy_lo": 2011,
+"fy_hi": 2012,
+"col": "equity",
+"med": 121016.0
+},
+{
+"ticker": "TCI",
+"fy_lo": 2013,
+"fy_hi": 2025,
+"col": "equity",
+"med": 341807000.0
+},
+{
+"ticker": "TG",
+"fy_lo": 2010,
+"fy_hi": 2010,
+"col": "debt_lt",
+"med": 228000.0
+},
+{
+"ticker": "TH",
+"fy_lo": 2017,
+"fy_hi": 2017,
+"col": "assets",
+"med": 242088.0
+},
+{
+"ticker": "TH",
+"fy_lo": 2018,
+"fy_hi": 2025,
+"col": "assets",
+"med": 549634500.0
 },
 {
 "ticker": "TOI",
@@ -1332,6 +2705,83 @@
 "med": 188078000.0
 },
 {
+"ticker": "TRON",
+"fy_lo": 2022,
+"fy_hi": 2022,
+"col": "equity",
+"med": -2594.0
+},
+{
+"ticker": "TSHA",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "assets",
+"med": 15000.0
+},
+{
+"ticker": "TSHA",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "assets",
+"med": 193343500.0
+},
+{
+"ticker": "TSHA",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "equity",
+"med": -135000.0
+},
+{
+"ticker": "TVTX",
+"fy_lo": 2012,
+"fy_hi": 2025,
+"col": "assets",
+"med": 599462500.0
+},
+{
+"ticker": "TWIN",
+"fy_lo": 2011,
+"fy_hi": 2014,
+"col": "debt_lt",
+"med": 23859500.0
+},
+{
+"ticker": "TWIN",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 26591000.0
+},
+{
+"ticker": "TYGO",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "assets",
+"med": 23260.0
+},
+{
+"ticker": "TYGO",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "assets",
+"med": 88078000.0
+},
+{
+"ticker": "TYGO",
+"fy_lo": 2020,
+"fy_hi": 2020,
+"col": "equity",
+"med": 21810.0
+},
+{
+"ticker": "TYGO",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "equity",
+"med": 8385000.0
+},
+{
 "ticker": "UNF",
 "fy_lo": 2010,
 "fy_hi": 2011,
@@ -1346,11 +2796,39 @@
 "med": 155000.0
 },
 {
+"ticker": "VERX",
+"fy_lo": 2022,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 190964500.0
+},
+{
 "ticker": "VIRT",
 "fy_lo": 2014,
 "fy_hi": 2014,
 "col": "equity",
 "med": -8711.0
+},
+{
+"ticker": "VPG",
+"fy_lo": 2010,
+"fy_hi": 2018,
+"col": "debt_lt",
+"med": 22421000.0
+},
+{
+"ticker": "VPG",
+"fy_lo": 2019,
+"fy_hi": 2019,
+"col": "debt_lt",
+"med": 17000.0
+},
+{
+"ticker": "VPG",
+"fy_lo": 2020,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 36241000.0
 },
 {
 "ticker": "VRRM",
@@ -1395,6 +2873,41 @@
 "med": 624626000.0
 },
 {
+"ticker": "WHWK",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "assets",
+"med": 67221246.0
+},
+{
+"ticker": "WHWK",
+"fy_lo": 2012,
+"fy_hi": 2014,
+"col": "equity",
+"med": -124242.0
+},
+{
+"ticker": "WHWK",
+"fy_lo": 2015,
+"fy_hi": 2025,
+"col": "equity",
+"med": 52478000.0
+},
+{
+"ticker": "WLDN",
+"fy_lo": 2011,
+"fy_hi": 2011,
+"col": "debt_lt",
+"med": 77000.0
+},
+{
+"ticker": "WLDN",
+"fy_lo": 2021,
+"fy_hi": 2025,
+"col": "debt_lt",
+"med": 85538000.0
+},
+{
 "ticker": "WSO",
 "fy_lo": 2009,
 "fy_hi": 2010,
@@ -1423,6 +2936,27 @@
 "med": 797000.0
 },
 {
+"ticker": "XRN",
+"fy_lo": 2013,
+"fy_hi": 2013,
+"col": "assets",
+"med": 3519.0
+},
+{
+"ticker": "XRN",
+"fy_lo": 2014,
+"fy_hi": 2025,
+"col": "assets",
+"med": 992920000.0
+},
+{
+"ticker": "XRN",
+"fy_lo": 2016,
+"fy_hi": 2025,
+"col": "equity",
+"med": 477287500.0
+},
+{
 "ticker": "YELP",
 "fy_lo": 2011,
 "fy_hi": 2011,
@@ -1435,6 +2969,20 @@
 "fy_hi": 2016,
 "col": "debt_lt",
 "med": 7527000.0
+},
+{
+"ticker": "ZSQR",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "assets",
+"med": 1402.0
+},
+{
+"ticker": "ZSQR",
+"fy_lo": 2025,
+"fy_hi": 2025,
+"col": "equity",
+"med": 1282.0
 }
 ]
 }
