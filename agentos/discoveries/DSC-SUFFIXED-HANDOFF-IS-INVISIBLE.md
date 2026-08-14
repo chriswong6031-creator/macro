@@ -34,7 +34,7 @@ verified_by: >
   `older_handoff (latest: WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14)` and served the PRE-P0d
   record, whose next_actions still asked for the ruling the P0d session had already
   executed. agentos/schema/handoff.schema.yml declares `file:
-  agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md` with no suffix form. Repaired in the same
+  agentos/handoffs/<WS-KEY>-<YYYY-MM-DD>.md` with no suffix form. Repaired in PR #5665, the same
   change that mints this record: the P0D content folded into the dated file, the suffixed
   sibling deleted, compile-context re-run to 0 exclusions.
 scope: [macro, mastermind, terminal, agentos/handoffs/]

@@ -4,8 +4,8 @@ session: >
   claude/evalos-sitrep-wave2 (original record) · ADDENDUM #5609
   claude/eval-os-p0d-matched-control (the P0d contract session, folded in from a
   wrongly-named sibling file — see the FILENAME REPAIR note in the body) ·
-  ADDENDUM-FOLLOWUP claude/eval-os-p0d-control-wiring (the two chipped P0d
-  follow-ups: demand_chain's control wiring and reviewer finding 4)
+  ADDENDUM-FOLLOWUP #5665 claude/eval-os-p0d-control-wiring (the two chipped
+  P0d follow-ups: demand_chain's control wiring and reviewer finding 4)
 model: opus
 ended_because: ci_handoff
 
@@ -203,7 +203,7 @@ danger_areas:
   - "ADDENDUM #5609 — tests seeded through make_claim WITHOUT horizon_unit are legacy-clock seeds; after P0c-2 they can never produce eligible=True at GRADED, so any alert/promotion test built on them is unreachable-by-construction. Seed the explicit clock (horizon_unit + the clock_version/horizon_unit/clock_market triple on grade rows)."
   - "ADDENDUM #5609 — Dark test suites: a file not named in a legacy-jobs.yml run step runs NOWHERE in CI — it can fail on main for days with zero signal (w6 monitor did exactly that since 05:44Z). Grep the manifest before trusting 'green locally' as fleet state."
 
-prs: [5471, 5512, 5519, 5534, 5559, 5563, 5572, 5573, 5577, 5582, 5584, 5609, 5617]
+prs: [5471, 5512, 5519, 5534, 5559, 5563, 5572, 5573, 5577, 5582, 5584, 5609, 5617, 5665]
 discoveries:
   - DSC:NO-QLEDGER-CLAIM-EVER-CARRIED-A-CONTROL-LEG
   - DSC:CONTROL-VOCABULARY-MISMATCH-KILLED-EVERY-WIRED-CONTROL
