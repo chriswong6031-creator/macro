@@ -29,7 +29,6 @@ import pandas as pd
 
 from engine.confluence_tiers import (
     ANCHOR_ERA as CT_ANCHOR_ERA,
-    BUYABLE_TIERS,
     FRESH_TICKS,
     tier_stream,
 )
@@ -49,7 +48,6 @@ def constants() -> dict[str, Any]:
         "producer": "engine.confluence_tiers:tier_stream",
         "anchor_era": CT_ANCHOR_ERA,
         "fresh_ticks": FRESH_TICKS,
-        "buyable_tiers": list(BUYABLE_TIERS),
         "event_convention": "tier ONSET (entry into T_k from a different state)",
         "provisional_row": "final row dropped — it reads the in-progress partial bucket",
     }
@@ -110,7 +108,6 @@ def fires(
                 spec_postdates_history=True,
                 context={
                     "prior_tier": None if pd.isna(prev.iloc[i]) else str(prev.iloc[i]),
-                    "buyable": t in BUYABLE_TIERS,
                 },
             )
         )

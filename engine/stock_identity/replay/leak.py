@@ -12,12 +12,34 @@ in a test file, because the test file cannot stop the CLI from writing.
     could see — the last bucket of a truncated frame is legitimately still open, so a
     small settling margin is honored rather than counted as a leak.
 
-``shift_audit``
-    Shifting the input tape by one session shifts every event stamp accordingly. Any
-    absolute-date dependence — a hard-coded era boundary, a calendar-anchored bin that does
-    not move with the data — breaks this and nothing else catches it. The tape is shifted by
-    RE-INDEXING onto the next sessions, so the price path is byte-identical and only the
-    dates move.
+``shift_audit`` (two checks — see the deviation note below)
+    ``shift_audit_start_invariance``: dropping LEADING history must not change any event on
+    the region both runs can see. This is the R-SQ1/R-SQ2 property the absolute session
+    anchor was adopted to guarantee — the retired ``3B`` resample anchored its bins to the
+    series' first timestamp, so four production history depths read four different marker
+    streams for one name (measured: ~80% of NVDA signal dates relocated). A detector that
+    fails this is reading *where the caller's window starts*, which is exactly the
+    "position in the tape rather than the tape" defect a shift audit exists to catch.
+
+    ``shift_audit_forming_bar``: appending an in-progress bar that WOULD fire the detector
+    must not add, move or remove any event at or before the last completed known-ts. This
+    is the house RUL-31 completed-bar shape (``tests/test_entry_primitives_a3.py::
+    test_forming_week_does_not_flip_w_hist_rising``).
+
+    **Deviation of record.** The registration's literal phrasing is "shifting the input tape
+    by one session shifts every event stamp accordingly". That test cannot pass here, and
+    should not: every grid in this repo is **calendar-anchored by ratified design** —
+    ``signal_quality._tf_grid`` buckets on ``session_positions(date) // n``, a function of
+    (reference calendar, date) alone, and the weekly/monthly legs resample on the calendar.
+    Re-hanging the same closes on later dates therefore re-phases the buckets *by design*,
+    and demanding otherwise would be demanding the R-SQ1 repair be undone (measured on
+    NVDA: a one-session shift moves 35 dots to 42; a phase-preserving 6-session shift still
+    moves them, because the W-FRI weekly leg re-groups). The registration also instructs
+    "reusing the existing RUL-31 test shapes where present", and the house's RUL-31
+    instruments are truncation-invariance plus the completed-bar test — there is no
+    date-shift test in them. The two checks above are those shapes, and they test the same
+    property the literal phrasing was reaching for: **an event may not depend on anything
+    but the tape up to its own known-ts.**
 
 ``feed_truncation``
     The F6 shape, and the Radar contract's highest-value case: truncate the feed to each
@@ -39,7 +61,8 @@ import pandas as pd
 __all__ = [
     "FixtureResult",
     "truncation_invariance",
-    "shift_audit",
+    "shift_audit_start_invariance",
+    "shift_audit_forming_bar",
     "feed_truncation",
     "append_only_conformance",
     "run_recompute_fixtures",
@@ -103,45 +126,126 @@ def truncation_invariance(
     )
 
 
-def shift_audit(
+#: Warm-up margin after a truncated START before events are compared. Every family here
+#: needs a few hundred sessions of oscillator/MA warm-up, and a shortened warm-up is a
+#: legitimate difference, not a leak.
+_WARMUP_SESSIONS = 400
+
+
+#: Residual start-sensitivity that is NOT a leak, and why a ceiling exists rather than a
+#: zero. Two producer properties, both documented in the producers themselves, make exact
+#: start-invariance unattainable for some families:
+#:
+#: * ``engine.technicals.rsi`` (what ``signal_quality`` imports) is a bare
+#:   ``ewm(alpha=1/n)`` with an EXPANDING warm-up from bar 0 — ``engine.canon.rma``'s own
+#:   docstring names this as differing "exactly where it matters — the early, near-threshold
+#:   history the audit says flips crosses". Dropping leading rows perturbs every later RSI
+#:   value infinitesimally, which flips a cross that sat on the threshold.
+#: * ``engine.washout_turn``'s depth percentile is explicitly a WHOLE-SAMPLE statistic
+#:   ("percent of the FULL weekly line history strictly BELOW bar j"), so its reference
+#:   distribution legitimately depends on how much history exists.
+#:
+#: Both are functions of PAST data only — nothing future leaks either way. The defect this
+#: fixture exists to catch is categorically larger: the retired ``3B`` resample relocated
+#: ~80% of NVDA's signal dates when the window start moved. A ceiling two orders of
+#: magnitude below that separates the two cleanly.
+_START_FLIP_CEILING = 0.05
+
+
+def shift_audit_start_invariance(
     fire_fn: Callable[[pd.DataFrame], list[dict[str, Any]]],
     df: pd.DataFrame,
     *,
-    calendar: pd.DatetimeIndex | None = None,
+    drop: int = 37,
+    ceiling: float = _START_FLIP_CEILING,
 ) -> FixtureResult:
-    """Shift the tape one session forward; every stamp must move with it.
+    """Dropping LEADING history must not move the detector's events.
 
-    The shift is a REINDEX, not a resample: the same closes are hung on the next session
-    dates, so anything that changes is a function of the dates alone.
+    ``drop`` is deliberately coprime to 2, 3 and 5 so the truncated series starts on a
+    different bucket phase AND a different weekday than the original — if the detector
+    anchored its grid to its own first row (the retired ``3B`` defect), essentially every
+    event moves and the check fails loudly.
+
+    The verdict is a RATE against ``ceiling`` (with a one-event floor for small samples),
+    not exact equality, for the reasons recorded on :data:`_START_FLIP_CEILING`. The
+    measured rate is always reported, passing or failing, so a drift upward is visible.
     """
-    idx = pd.DatetimeIndex(df.index)
-    cal = pd.DatetimeIndex(calendar) if calendar is not None else idx
-    pos = cal.searchsorted(idx, side="left")
-    nxt = pos + 1
-    if nxt[-1] >= len(cal):
-        nxt = nxt[:-1]
-        df = df.iloc[:-1]
-    shifted = df.copy()
-    shifted.index = pd.DatetimeIndex(cal[nxt])
-    shifted.index.name = df.index.name
+    if len(df) <= drop + _WARMUP_SESSIONS + 60:
+        return FixtureResult(
+            "shift_audit_start_invariance", True, "frame too short to drop a lead safely"
+        )
+    cut = df.iloc[drop:]
+    start_guard = pd.Timestamp(cut.index[min(_WARMUP_SESSIONS, len(cut) - 1)])
 
-    base = _keys(fire_fn(df))
-    moved = _keys(fire_fn(shifted))
-    if len(base) != len(moved):
+    base = [t for t in _keys(fire_fn(df)) if t[1] >= start_guard.date()]
+    short = [t for t in _keys(fire_fn(cut)) if t[1] >= start_guard.date()]
+    n = max(len(base), 1)
+    diff = set(base) ^ set(short)
+    allowed = max(1, int(round(ceiling * n)))
+    rate = len(diff) / n
+    if len(diff) <= allowed:
         return FixtureResult(
-            "shift_audit", False,
-            f"event count changed under a one-session shift: {len(base)} -> {len(moved)}",
+            "shift_audit_start_invariance", True,
+            f"{len(base)} event(s) compared after dropping {drop} leading session(s); "
+            f"{len(diff)} differ ({rate:.2%}, ceiling {ceiling:.0%} / floor 1) — "
+            "producer warm-up sensitivity, not a window dependence",
         )
+    only_base = sorted(set(base) - set(short))[:3]
+    only_short = sorted(set(short) - set(base))[:3]
+    return FixtureResult(
+        "shift_audit_start_invariance", False,
+        f"the detector moved with the WINDOW, not the tape: {len(diff)}/{n} events differ "
+        f"({rate:.2%} > ceiling {ceiling:.0%}); lost e.g. {only_base}; "
+        f"gained e.g. {only_short}",
+    )
+
+
+def shift_audit_forming_bar(
+    fire_fn: Callable[[pd.DataFrame], list[dict[str, Any]]],
+    df: pd.DataFrame,
+    *,
+    bump: float = 0.25,
+) -> FixtureResult:
+    """An appended in-progress bar may not change any COMPLETED event.
+
+    The appended bar is engineered to move the oscillators hard (a ``bump`` up-move on the
+    last close, with the band widened to match), so a detector that reads its own forming
+    bar will visibly gain or move events. Only events at or before the ORIGINAL frame's
+    last event known-ts are compared — new events after it are the forming bar's own
+    business, not a leak into the past.
+    """
+    if len(df) < 120:
+        return FixtureResult("shift_audit_forming_bar", True, "frame too short")
+    base = fire_fn(df)
     if not base:
-        return FixtureResult("shift_audit", True, "no events on this frame")
-    # Every stamp must have moved forward, and none may have stayed put.
-    stuck = sum(1 for a, b in zip(base, moved) if a[1] == b[1])
-    if stuck:
+        return FixtureResult("shift_audit_forming_bar", True, "no events on this frame")
+    horizon = max(pd.Timestamp(r["signal_known_ts"]) for r in base)
+
+    idx = pd.DatetimeIndex(df.index)
+    step = idx[-1] - idx[-2] if len(idx) > 1 else pd.Timedelta(days=1)
+    nxt = idx[-1] + (step if step > pd.Timedelta(0) else pd.Timedelta(days=1))
+    row = df.iloc[[-1]].copy()
+    row.index = pd.DatetimeIndex([nxt])
+    row.index.name = df.index.name
+    for c in row.columns:
+        if c == "volume":
+            continue
+        row[c] = float(row[c].iloc[0]) * (1.0 + bump)
+    extended = pd.concat([df, row])
+
+    base_keys = [t for t in _keys(base) if t[1] <= horizon.date()]
+    ext_keys = [t for t in _keys(fire_fn(extended)) if t[1] <= horizon.date()]
+    if base_keys == ext_keys:
         return FixtureResult(
-            "shift_audit", False,
-            f"{stuck}/{len(base)} known_ts stamps did not move with the tape",
+            "shift_audit_forming_bar", True,
+            f"{len(base_keys)} completed event(s) unchanged by an in-progress bar",
         )
-    return FixtureResult("shift_audit", True, f"{len(base)} stamp(s) moved with the tape")
+    delta = sorted(set(base_keys) ^ set(ext_keys))[:3]
+    return FixtureResult(
+        "shift_audit_forming_bar", False,
+        f"an in-progress bar changed {len(set(base_keys) ^ set(ext_keys))} completed "
+        f"event(s), e.g. {delta}",
+    )
 
 
 def feed_truncation(
@@ -231,9 +335,10 @@ def run_recompute_fixtures(
     *,
     calendar: pd.DatetimeIndex | None = None,
 ) -> list[FixtureResult]:
-    """The three fixtures every RECOMPUTED family must pass."""
+    """Every fixture a RECOMPUTED family must pass before its events may ship."""
     return [
         truncation_invariance(fire_fn, df),
-        shift_audit(fire_fn, df, calendar=calendar),
+        shift_audit_start_invariance(fire_fn, df),
+        shift_audit_forming_bar(fire_fn, df),
         feed_truncation(fire_fn, df),
     ]

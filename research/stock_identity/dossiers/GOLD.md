@@ -2,11 +2,13 @@
 
 Descriptive behavioral read. **Zero authority**: nothing on this page ranks, sizes, gates, originates a signal, or escalates. No expert content exists in W1 by law. Episode *resolutions* use future data by design — they are a research-time labeling instrument, never a live surface.
 
+**Dated correction (2026-08-14).** This dossier's W1 edition read this tape as Barrick and assigned it the *miner neighborhood probe* role. That identity was wrong and is withdrawn. NYSE `GOLD` is **Gold.com, Inc.** (fka A-Mark Precious Metals; `AMRK` -> `GOLD` on 2025-12-02) — a precious-metals trading and bullion-dealing business, not a mining company. The tape's 2014-03-17 first print is **A-Mark's spinoff listing**, and the store carries zero Barrick rows. Barrick Mining trades as NYSE `B` and is covered by its own dossier in this addendum. Nothing on this page should be read as a miner's behavior. Authority: operator/CEO W1-return ruling 3, 2026-08-14 (#5613 ticker-identity forensics).
+
 ## Identity
 
 | field | value |
 |---|---|
-| pilot role | miner neighborhood probe |
+| pilot role | reused-ticker hygiene case study (bullion dealer instrument) |
 | price plane | `baskets_ohlcv_v1` |
 | first print | 2014-03-17 |
 | last print | 2026-08-13 |
@@ -25,9 +27,10 @@ Descriptive behavioral read. **Zero authority**: nothing on this page ranks, siz
 
 | flag | resolution |
 |---|---|
-| `symbol_history_note` | continuous Barrick history under the CURRENT symbol — the pre-2018 rows are the ABX era restated, i.e. instrument-level continuity via rename, not a splice. The separate data/baskets/ohlcv/ABX.parquet (2020-09 onward) is a DIFFERENT instrument on Barrick's retired symbol and is excluded from this program; that reuse is unacknowledged in config (reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups all silent on both symbols) |
+| `reused_symbol_unacked` | NYSE `GOLD` has carried two unrelated issuers. Barrick used it from the 2019 `ABX` rename until its own 2025-05-09 rename to `B`; A-Mark Precious Metals took the freed symbol on 2025-12-02 and now trades as Gold.com, Inc. This store's tape is the A-MARK instrument throughout (first print 2014-03-17 = A-Mark's spinoff listing), so the symbol is a reused ticker whose reuse is absent from config.yml quality.reused_ticker_acks / ticker_key_migrations / breadth.ticker_fixups. Roster/config repair belongs to the sibling lane (#5613 + the curated-basket act), not to this program. |
+| `instrument_identity_corrected` | operator/CEO W1-return ruling 3, 2026-08-14 (#5613 ticker-identity forensics): the W1 dossier's 'continuous Barrick history' note was a misidentification and is withdrawn. The instrument is the bullion dealer; the miner is NYSE `B`. |
 
-**First-print sanity:** `PREDATES_CALENDAR` — first print 2014-03-17 predates the deal calendar's earliest priced date (2024-12-03)
+**First-print sanity:** `INSTRUMENT_IDENTITY_CORRECTED` — first print 2014-03-17 is A-Mark Precious Metals' spinoff listing date — the correct first print for THIS instrument, and the receipt that the tape is not Barrick's (whose NYSE listing long predates it)
 
 ## Behavioral fingerprint v0 (snapshot at asof)
 

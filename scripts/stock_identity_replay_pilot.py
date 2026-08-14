@@ -87,10 +87,12 @@ FAMILY_GROUPS: tuple[str, ...] = (
     "bottom_watch", "starter", "sea", "naive",
 )
 
-#: Groups whose fixtures are the RECOMPUTE trio; the rest are ledger-shaped.
-_RECOMPUTE_GROUPS = frozenset(
-    {"grey_dot", "confirmed_buy", "tiers", "washout_turn", "bottom_watch", "starter", "naive"}
-)
+#: Groups that RECOMPUTE and therefore take the full recompute fixture set. ``sea`` is the
+#: only pure-store family and takes the append-only check alone.
+_RECOMPUTE_GROUPS = frozenset({
+    "grey_dot", "confirmed_buy", "tiers", "washout_turn", "reclaim_waiver",
+    "bottom_watch", "starter", "naive",
+})
 
 #: Fixture probe names: a fixture is a property of the family's FUNCTION, not of a name, so
 #: it is exercised on a small set with long history and different planes rather than on all

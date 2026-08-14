@@ -1,0 +1,2112 @@
+{
+  "authority": {
+    "can_escalate": false,
+    "can_gate": false,
+    "can_originate_signal": false,
+    "can_rank": false,
+    "can_size": false
+  },
+  "authority_note": "every family, every event row and every edge in this store carries the five-key all-false block. scored_authority on a row records what the EMITTER's authority was at the time \u2014 a fact about the past, never a grant.",
+  "edge_schema": {
+    "columns": [
+      "relation",
+      "source_event_id",
+      "target_event_id",
+      "symbol",
+      "source_family_key",
+      "target_family_key",
+      "note",
+      "authority_can_rank",
+      "authority_can_size",
+      "authority_can_gate",
+      "authority_can_originate_signal",
+      "authority_can_escalate"
+    ],
+    "name": "stock_identity.event_edge.v0",
+    "relations": [
+      "promoted_by",
+      "dedup_suppressed_by"
+    ]
+  },
+  "event_schema": {
+    "columns": [
+      "event_id",
+      "family_key",
+      "producer",
+      "detector_id",
+      "family",
+      "subtype",
+      "stage",
+      "quality",
+      "context",
+      "symbol",
+      "price_plane_id",
+      "grain",
+      "signal_ts",
+      "signal_known_ts",
+      "known_basis",
+      "source_hash",
+      "signal_era",
+      "detector_spec_hash",
+      "scored_authority",
+      "family_first_available",
+      "family_era",
+      "field_origin",
+      "provenance_class",
+      "spec_postdates_history",
+      "in_washout_context",
+      "authority_can_rank",
+      "authority_can_size",
+      "authority_can_gate",
+      "authority_can_originate_signal",
+      "authority_can_escalate"
+    ],
+    "field_origin_extension": "ledger_recorded and replay_recomputed extend Radar's {emitter_verbatim, radar_derived} for historical provenance",
+    "field_origin_values": [
+      "emitter_verbatim",
+      "radar_derived",
+      "ledger_recorded",
+      "replay_recomputed"
+    ],
+    "name": "stock_identity.expert_event.v0",
+    "radar_compatibility": "Radar's nested source_identity{source_hash, signal_era, detector_spec_hash} is carried as three top-level columns under its own inner field names, so a PR-7 union is a rename-free concat."
+  },
+  "families": [
+    {
+      "era_pins": [
+        "sq-abs-session-2026-08-06"
+      ],
+      "family": "grey_dot",
+      "family_first_available": null,
+      "family_key": "grey_dot_macro",
+      "parity_notes": "measured against grey_dot_terminal on the pilot; the two families are kept separate regardless of the counts (registration \u00a73)",
+      "producer": "engine.signal_quality:signal_frame.early",
+      "provenance_class": "R",
+      "replay_notes": "the engine's own `early` column, read off signal_frame and never re-derived. Published as a DUAL series: every fire carries `in_washout_context`, so the as-recorded reading (all fires) and the as-restated reading (fires today's promotion rule would carve out to amber_early) are both available from one store. The as-restated view is expressed as typed edges, never by deleting rows.",
+      "spec_constants": {
+        "anchor_era": "sq-abs-session-2026-08-06",
+        "buy_rsi_max": 65,
+        "conf_w": 8,
+        "fast_grid_sessions": 2,
+        "grid_sessions": 3,
+        "legs": "stochBullCross(k,d) & rolling(CONF_W).min(d) < OS & rising 2D RSI-MACD histogram on the prior CLOSED 2D bar (two bars) & (weeklyBull | fromOS) & rsi14 < BUY_RSI_MAX",
+        "ma_len": 200,
+        "os_band": 20,
+        "producer": "engine.signal_quality:signal_frame.early",
+        "rsi_family": "engine.technicals.rsi (bare ewm) \u2014 the family signal_quality imports",
+        "rsi_len": 14
+      },
+      "spec_hash": "20caf156c75a12414ed1f5f408b97e3e42c8be2526e23d99cae624872e65b962",
+      "stage": "ANTICIPATION",
+      "subtypes": [
+        "early"
+      ]
+    },
+    {
+      "era_pins": [
+        "gc_v2_wo2"
+      ],
+      "family": "grey_dot",
+      "family_first_available": null,
+      "family_key": "grey_dot_terminal",
+      "parity_notes": "four measured divergence axes vs grey_dot_macro: (1) oscillator family \u2014 signal_quality imports engine.technicals.rsi (bare ewm), the port pins engine.canon (SMA-seeded RMA); (2) 2D bucketing \u2014 absolute session anchor vs calendar resample('2B') with a PIT searchsorted join; (3) the rising leg \u2014 two bars on the prior CLOSED bar vs exactly one strictly-greater bar; (4) Macro carries rsi14 < 65, the Terminal spec does not. NAMED DEVIATION: the port cuts 3D bars on the Macro absolute anchor because the Terminal's per-symbol listing anchor (bar_anchor) is not reproducible from anything committed here \u2014 so the anchor axis is held fixed, not measured.",
+      "producer": "charting-app confluence_v2::early_dots (locked-spec port)",
+      "provenance_class": "B",
+      "replay_notes": "the Terminal twin persists nothing and G-8 forbids running Terminal internals, so this is the Radar contract \u00a73.2 fallback: a Macro-side locked-spec reproduction, Class B on every row.",
+      "spec_constants": {
+        "conf_w": 8,
+        "legs": "dot = crossover(K,D) & (D.rolling(8).min() < 20) & PIT-mapped(rising2)",
+        "macd_fast": 14,
+        "macd_signal": 5,
+        "macd_slow": 60,
+        "os_band": 20,
+        "pit_join": "per 3D row, newest 2D state whose availability <= that row's known_ts",
+        "port_deviation": "3D bars cut on the Macro absolute session anchor; the Terminal's per-symbol listing anchor (bar_anchor) is not reproducible from committed artifacts",
+        "producer": "charting-app/signal_layer/confluence_v2.py::early_dots (locked-spec port)",
+        "rising_leg": "2D hist > 2D hist.shift(1) \u2014 exactly one bar, strictly greater",
+        "rsi_family": "engine.canon.rsi (SMA-seeded RMA, == Pine ta.rsi)",
+        "rsi_len": 14,
+        "signal_era": "gc_v2_wo2",
+        "smooth_d": 3,
+        "smooth_k": 3,
+        "spec_source": "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md \u00a73.1",
+        "stoch_len": 14,
+        "two_day_availability": "each 2B bucket's LAST actual session",
+        "two_day_bucketing": "pandas resample(\"2B\").last().dropna(), left-edge label"
+      },
+      "spec_hash": "76f819f29a135af5c92a97c12362ca2ebed1664278b635d9d83fd49fa71310fa",
+      "stage": "ANTICIPATION",
+      "subtypes": [
+        "early"
+      ]
+    },
+    {
+      "era_pins": [
+        "sq-abs-session-2026-08-06"
+      ],
+      "family": "confirmed_buy",
+      "family_first_available": null,
+      "family_key": "confirmed_buy",
+      "parity_notes": null,
+      "producer": "engine.signal_quality:analyze -> data/signal_archive/track_record.parquet",
+      "provenance_class": "R",
+      "replay_notes": "two arms, never merged. Ledger rows (field_origin=ledger_recorded) carry the buy-filter verdict and scored_authority=True, which records what that surface's authority WAS. The deeper recompute (field_origin=replay_recomputed, subtype cb_3d_confluence) is the PRE-FILTER 3D confluence cross with scored_authority=False; reading it as 'the ledger, extended' would silently promote a raw cross into a graded verdict. spec_postdates_history is stamped on every recomputed row the ledger does not cover. Ledger outcome columns (fwd_*, trade_*, outcome) are never read.",
+      "spec_constants": {
+        "anchor_era": "sq-abs-session-2026-08-06",
+        "buy_rsi_max": 65,
+        "cb_legs": "macdBullCross & recentStochBull(<=CONF_W) & (weeklyBull|fromOS) & rsi14<BUY_RSI_MAX",
+        "conf_w": 8,
+        "grid_sessions": 3,
+        "ledger_key": "(ticker, date, type)",
+        "ledger_semantics": "append-only; extraction is a pure filter, keep-FIRST honored",
+        "ma_len": 200,
+        "os_band": 20,
+        "producer": "engine.signal_quality:analyze/_buy_filter -> data/signal_archive/track_record.parquet",
+        "recompute_producer": "engine.signal_quality:signal_frame.CB",
+        "rsi_len": 14
+      },
+      "spec_hash": "5955814f23592e821b6721e1d17ee63a908fdea270587bc559750712907c175b",
+      "stage": "CONFIRMED",
+      "subtypes": [
+        "buy",
+        "cb_3d_confluence"
+      ]
+    },
+    {
+      "era_pins": [
+        "sq-abs-session-2026-08-06"
+      ],
+      "family": "confirmed_buy",
+      "family_first_available": null,
+      "family_key": "rebuy",
+      "parity_notes": null,
+      "producer": "engine.signal_quality:analyze -> data/signal_archive/track_record.parquet",
+      "provenance_class": "R",
+      "replay_notes": "ledger-only: REBUY is a distinct ledger `type` with no separate recompute arm, so the family carries exactly the committed rows.",
+      "spec_constants": {
+        "anchor_era": "sq-abs-session-2026-08-06",
+        "buy_rsi_max": 65,
+        "cb_legs": "macdBullCross & recentStochBull(<=CONF_W) & (weeklyBull|fromOS) & rsi14<BUY_RSI_MAX",
+        "conf_w": 8,
+        "grid_sessions": 3,
+        "ledger_key": "(ticker, date, type)",
+        "ledger_semantics": "append-only; extraction is a pure filter, keep-FIRST honored",
+        "ma_len": 200,
+        "os_band": 20,
+        "producer": "engine.signal_quality:analyze/_buy_filter -> data/signal_archive/track_record.parquet",
+        "recompute_producer": "engine.signal_quality:signal_frame.CB",
+        "rsi_len": 14
+      },
+      "spec_hash": "5955814f23592e821b6721e1d17ee63a908fdea270587bc559750712907c175b",
+      "stage": "CONFIRMED",
+      "subtypes": [
+        "rebuy"
+      ]
+    },
+    {
+      "era_pins": [
+        "us_prophet_v2"
+      ],
+      "family": "reentry_block_repair",
+      "family_first_available": "2026-08-13",
+      "family_key": "reclaim_waiver",
+      "parity_notes": null,
+      "producer": "engine.signal_quality:washout_qualifier + reclaim_waiver_for",
+      "provenance_class": "R",
+      "replay_notes": "re-derived ONLY over the committed nightly state artifact's own era. That artifact is overwritten nightly and carries one as_of, so the replayable window is [as_of, as_of + 5 sessions] and there is nothing earlier to replay. A zero here is a STRUCTURAL ABSENCE (the state history was never kept), never evidence that the waiver does nothing. Synthesizing peer-group state to extend the window is forbidden by the registration.",
+      "spec_constants": {
+        "anchor_era": "sq-abs-session-2026-08-06",
+        "era": "us_prophet_v2",
+        "max_stale_sessions": 5,
+        "notch": "20",
+        "producer": "engine.signal_quality:washout_qualifier + reclaim_waiver_for",
+        "replay_scope": "the committed state artifact's own as_of era only; the artifact is nightly overwritten and no historical vintage exists, so there is nothing earlier to replay and nothing is synthesized to fill it",
+        "state_artifact": "site/factordata/basket_washout_state.json",
+        "state_schema": "basket_washout_state.v1"
+      },
+      "spec_hash": "790a4666b34b296304c17d3a9f5749a70190aced1cecf3317bff99479c19f432",
+      "stage": "ADMISSION",
+      "subtypes": [
+        "reclaim_waived"
+      ]
+    },
+    {
+      "era_pins": [
+        "washout_turn.v1"
+      ],
+      "family": "weekly_washout_turn",
+      "family_first_available": "2026-08-05",
+      "family_key": "weekly_washout_turn",
+      "parity_notes": null,
+      "producer": "engine.washout_turn:compute_symbol_washout + data/washout_turn/ledger.jsonl",
+      "provenance_class": "R",
+      "replay_notes": "ledger arm (pure filter, keep-FIRST) union an earlier recompute that calls the organ's own pure function on the frame TRUNCATED at each weekly bar. Truncation is the correctness argument, not an optimization: the organ's depth percentile is a whole-sample statistic, so a single-pass evaluation over the full series would let a bar's qualification depend on bars that had not happened yet.",
+      "spec_constants": {
+        "canon_params": {
+          "buy_rsi_max": 65,
+          "conf_w": 8,
+          "grid": "W-FRI completed bars",
+          "ob": 80,
+          "os": 20,
+          "rsi_len": 14
+        },
+        "depth_pctile_max": 15.0,
+        "event_convention": "transition INTO a state (the organ's own ledger convention)",
+        "fail_hist_bars": 2,
+        "grain": "W-FRI completed bars only",
+        "min_weekly_bars": 200,
+        "producer": "engine.washout_turn:compute_symbol_washout",
+        "replay_method": "the organ's own pure function called on the frame truncated at each weekly bar \u2014 its depth percentile is a whole-sample statistic, so a single-pass evaluation over the full series would not be causal",
+        "schema": "washout_turn.v1"
+      },
+      "spec_hash": "5e51cf83ec1cd563e179f2dd17f2590aeac8ef59f9fe10adbaced7839dccf8de",
+      "stage": "ORGAN",
+      "subtypes": [
+        "WASHOUT_TURN",
+        "TURN_WATCH"
+      ]
+    },
+    {
+      "era_pins": [
+        "pre2010",
+        "post2010"
+      ],
+      "family": "sea_event_class",
+      "family_first_available": null,
+      "family_key": "sea_event_classes",
+      "parity_notes": null,
+      "producer": "engine.stock_events -> data/stock_events",
+      "provenance_class": "R",
+      "replay_notes": "pure filter over the committed SEA store, backfill union live months, keep-FIRST on the store's own key. The store's forward-outcome columns are OUTCOME content and are never read into a W2 artifact.",
+      "spec_constants": {
+        "columns_deliberately_not_read": [
+          "fwd_13w",
+          "fwd_26w",
+          "fwd_21s",
+          "fwd_63s",
+          "exc_13w",
+          "exc_26w",
+          "exc_21s",
+          "exc_63s",
+          "matured",
+          "matured_short"
+        ],
+        "columns_read": [
+          "ticker",
+          "grid",
+          "date",
+          "direction",
+          "era",
+          "depth_pctile",
+          "depth_window_n",
+          "depth_class",
+          "level",
+          "washout_len",
+          "washout_len_class",
+          "align_class"
+        ],
+        "idempotency": "keep-FIRST (the store's own documented rule)",
+        "producer": "engine.stock_events -> data/stock_events/{events_backfill,live/*}.parquet",
+        "store_key": [
+          "ticker",
+          "grid",
+          "date",
+          "direction"
+        ],
+        "taxonomy": "frozen SEA class taxonomy (grid x direction x depth x level x washout x align)"
+      },
+      "spec_hash": "5d85f5e81478dd18c37652ae0c7b8ef6ea0f2df258fdfd57ad4fc6f1e77f3b2c",
+      "stage": "CONTEXT",
+      "subtypes": [
+        "<grid>_<direction>"
+      ]
+    },
+    {
+      "era_pins": [
+        "gc_v2_wo2"
+      ],
+      "family": "bottom_watch",
+      "family_first_available": null,
+      "family_key": "bottom_watch_terminal",
+      "parity_notes": "declared approximation: the 'blocked' half is the CB/revBuy trigger firing below the 200-session average, because the Terminal's own block verdict is produced by machinery this program may not import. Declared rather than invented.",
+      "producer": "charting-app confluence_v2 bottom_watch (locked-spec port)",
+      "provenance_class": "B",
+      "replay_notes": "locked-spec C5 port per Radar contract \u00a73.4. The blocked_trigger / early_dot de-duplication is recorded as a typed `dedup_suppressed_by` edge; both rows survive, because deleting the dot would destroy the honest count of how often the two coincide.",
+      "spec_constants": {
+        "candidates": "(early_dot | blocked CB/revBuy trigger) & washed",
+        "port_deviation": "the 'blocked' half is taken as the CB/revBuy trigger firing while the name is below its 200-session average \u2014 the Terminal's own block verdict is produced by machinery this program may not import, and inventing a verdict would be worse than declaring the approximation",
+        "precedence": "blocked_trigger over early_dot; de-dup recorded as a typed edge",
+        "producer": "charting-app confluence_v2 bottom_watch (locked-spec port)",
+        "signal_era": "gc_v2_wo2",
+        "spec_source": "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md \u00a73.4",
+        "w1": "monthly RSI-MACD bear \u2227 below 200DMA \u2227 2W RSI-MACD not bull",
+        "w2a": "252-session drawdown <= -35%",
+        "w2b": "prior-closed monthly StochRSI-D < 20 for >= 3 consecutive months",
+        "w3": "3D StochRSI-D oversold visit within 8 bars (min_periods=1)",
+        "washout_context": "W1 \u2227 (W2a \u2228 W2b) \u2227 W3"
+      },
+      "spec_hash": "6d695fd6ff559c0ebe3dbef533b1a6c6a13e234a7332e1e1f385758d4ed9191f",
+      "stage": "WATCH",
+      "subtypes": [
+        "early_dot",
+        "blocked_trigger"
+      ]
+    },
+    {
+      "era_pins": [
+        "union-admission-v1-2026-08-11"
+      ],
+      "family": "starter_signature",
+      "family_first_available": null,
+      "family_key": "starter_signature",
+      "parity_notes": null,
+      "producer": "engine.us_early_turn:union_admission legs",
+      "provenance_class": "R",
+      "replay_notes": "the SIGNATURE only \u2014 the admission legs, with no licence claimed. This family exists because the registration's consequence matrix resolved the licensing context as NOT PIT-reconstructable; see `starter_resolution`.",
+      "spec_constants": {
+        "completed_buckets_only": true,
+        "era": "union-admission-v1-2026-08-11",
+        "leg_a": "early_dot \u2014 the engine's own signal_frame.early column",
+        "leg_b": "relaxed_cross \u2014 3D StochRSI %K x %D bull cross with BOTH lines under 20, confirmed by the 1D MACD-RSI in force within 5 sessions or arriving within 10",
+        "legs": [
+          "relaxed_cross",
+          "early_dot"
+        ],
+        "licensing_context": {
+          "basket_states": [
+            "BASING",
+            "TURNING",
+            "WASHED_OUT"
+          ],
+          "leader_states": [
+            "PULLBACK",
+            "RESET_TURN"
+          ]
+        },
+        "producer": "engine.us_early_turn:union_admission (legs) + assess_early_turn (licence)"
+      },
+      "spec_hash": "e0d638942302c16025589be01951c92b2eb63a5989be7615079f91ec1b3159b9",
+      "stage": "EARLY",
+      "subtypes": [
+        "relaxed_cross",
+        "early_dot"
+      ]
+    },
+    {
+      "era_pins": [
+        "abs-session-2026-08-06"
+      ],
+      "family": "tier_cascade",
+      "family_first_available": null,
+      "family_key": "tier_cascade_t1",
+      "parity_notes": null,
+      "producer": "engine.confluence_tiers:tier_stream",
+      "provenance_class": "B",
+      "replay_notes": "T1 ONSET events (entry into the tier), recomputed via tier_stream under the cascade's own ANCHOR_ERA, which postdates almost all of the recomputed history \u2014 hence Class B on every row. The stream's trailing row is dropped because it reads the in-progress partial bucket; the residual ~8% of days where this stream and the LIVE board differ is a live-vs-replay basis difference, not a leak, and W2 makes no claim about the live board.",
+      "spec_constants": {
+        "anchor_era": "abs-session-2026-08-06",
+        "event_convention": "tier ONSET (entry into T_k from a different state)",
+        "fresh_ticks": 2,
+        "producer": "engine.confluence_tiers:tier_stream",
+        "provisional_row": "final row dropped \u2014 it reads the in-progress partial bucket",
+        "tier": "T1"
+      },
+      "spec_hash": "8a4d479940ca407a016d09b72a6b150e31195b6f0950a8e1daa5d266a90536f1",
+      "stage": "TIER",
+      "subtypes": [
+        "T1"
+      ]
+    },
+    {
+      "era_pins": [
+        "abs-session-2026-08-06"
+      ],
+      "family": "tier_cascade",
+      "family_first_available": null,
+      "family_key": "tier_cascade_t2",
+      "parity_notes": null,
+      "producer": "engine.confluence_tiers:tier_stream",
+      "provenance_class": "B",
+      "replay_notes": "T2 ONSET events (entry into the tier), recomputed via tier_stream under the cascade's own ANCHOR_ERA, which postdates almost all of the recomputed history \u2014 hence Class B on every row. The stream's trailing row is dropped because it reads the in-progress partial bucket; the residual ~8% of days where this stream and the LIVE board differ is a live-vs-replay basis difference, not a leak, and W2 makes no claim about the live board.",
+      "spec_constants": {
+        "anchor_era": "abs-session-2026-08-06",
+        "event_convention": "tier ONSET (entry into T_k from a different state)",
+        "fresh_ticks": 2,
+        "producer": "engine.confluence_tiers:tier_stream",
+        "provisional_row": "final row dropped \u2014 it reads the in-progress partial bucket",
+        "tier": "T2"
+      },
+      "spec_hash": "e1c79851878346a7572df0b3f86c0d32b9a19d208f4bc587a482f351cc1589c7",
+      "stage": "TIER",
+      "subtypes": [
+        "T2"
+      ]
+    },
+    {
+      "era_pins": [
+        "abs-session-2026-08-06"
+      ],
+      "family": "tier_cascade",
+      "family_first_available": null,
+      "family_key": "tier_cascade_t3",
+      "parity_notes": null,
+      "producer": "engine.confluence_tiers:tier_stream",
+      "provenance_class": "B",
+      "replay_notes": "T3 ONSET events (entry into the tier), recomputed via tier_stream under the cascade's own ANCHOR_ERA, which postdates almost all of the recomputed history \u2014 hence Class B on every row. The stream's trailing row is dropped because it reads the in-progress partial bucket; the residual ~8% of days where this stream and the LIVE board differ is a live-vs-replay basis difference, not a leak, and W2 makes no claim about the live board.",
+      "spec_constants": {
+        "anchor_era": "abs-session-2026-08-06",
+        "event_convention": "tier ONSET (entry into T_k from a different state)",
+        "fresh_ticks": 2,
+        "producer": "engine.confluence_tiers:tier_stream",
+        "provisional_row": "final row dropped \u2014 it reads the in-progress partial bucket",
+        "tier": "T3"
+      },
+      "spec_hash": "b428cb16a7cad955126cb071aca589492b7c79946cc04b1f87461aeaaac78ed8",
+      "stage": "TIER",
+      "subtypes": [
+        "T3"
+      ]
+    },
+    {
+      "era_pins": [
+        "abs-session-2026-08-06"
+      ],
+      "family": "tier_cascade",
+      "family_first_available": null,
+      "family_key": "tier_cascade_t4",
+      "parity_notes": null,
+      "producer": "engine.confluence_tiers:tier_stream",
+      "provenance_class": "B",
+      "replay_notes": "T4 ONSET events (entry into the tier), recomputed via tier_stream under the cascade's own ANCHOR_ERA, which postdates almost all of the recomputed history \u2014 hence Class B on every row. The stream's trailing row is dropped because it reads the in-progress partial bucket; the residual ~8% of days where this stream and the LIVE board differ is a live-vs-replay basis difference, not a leak, and W2 makes no claim about the live board.",
+      "spec_constants": {
+        "anchor_era": "abs-session-2026-08-06",
+        "event_convention": "tier ONSET (entry into T_k from a different state)",
+        "fresh_ticks": 2,
+        "producer": "engine.confluence_tiers:tier_stream",
+        "provisional_row": "final row dropped \u2014 it reads the in-progress partial bucket",
+        "tier": "T4"
+      },
+      "spec_hash": "db05c85fb834150b20732a17fb27827ebd0c35e396875a75efc82958f97c928a",
+      "stage": "TIER",
+      "subtypes": [
+        "T4"
+      ]
+    },
+    {
+      "era_pins": [
+        "si-naive-comparators-v0-2026-08-14"
+      ],
+      "family": "naive_comparator",
+      "family_first_available": null,
+      "family_key": "rsi30_cross",
+      "parity_notes": null,
+      "producer": "engine.stock_identity.replay.naive:rsi30_cross",
+      "provenance_class": "R",
+      "replay_notes": "a frozen REFERENCE construction minted by this registration \u2014 not a production engine. Canon oscillator core only (one RSI family), completed bars, close basis.",
+      "spec_constants": {
+        "basis": "close, completed bars only",
+        "era": "si-naive-comparators-v0-2026-08-14",
+        "grain": "1D",
+        "level": 30.0,
+        "oscillator_core": "engine.canon (SMA-seeded RMA; one RSI family)",
+        "producer": "engine.stock_identity.replay.naive:rsi30_cross",
+        "rsi_len": 14,
+        "rule": "prior close RSI < 30 and this close RSI >= 30"
+      },
+      "spec_hash": "73b329f21d9f52e897156dd5d68cd51ac14e7bc950e8b4688ccba81d42314757",
+      "stage": "REFERENCE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "si-naive-comparators-v0-2026-08-14"
+      ],
+      "family": "naive_comparator",
+      "family_first_available": null,
+      "family_key": "low20d_bounce",
+      "parity_notes": null,
+      "producer": "engine.stock_identity.replay.naive:low20d_bounce",
+      "provenance_class": "R",
+      "replay_notes": "a frozen REFERENCE construction minted by this registration \u2014 not a production engine. Canon oscillator core only (one RSI family), completed bars, close basis.",
+      "spec_constants": {
+        "basis": "close, completed bars only",
+        "era": "si-naive-comparators-v0-2026-08-14",
+        "grain": "1D",
+        "oscillator_core": "engine.canon (SMA-seeded RMA; one RSI family)",
+        "producer": "engine.stock_identity.replay.naive:low20d_bounce",
+        "rule": "close prints a 20-session low, next session closes above the prior session's close",
+        "window": 20
+      },
+      "spec_hash": "100e8abdb44f2647ed4ea775bd8875e0bcb6b3c05b905d283f4aa0a8ff871ef1",
+      "stage": "REFERENCE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "si-naive-comparators-v0-2026-08-14"
+      ],
+      "family": "naive_comparator",
+      "family_first_available": null,
+      "family_key": "stoch2w_cross",
+      "parity_notes": null,
+      "producer": "engine.stock_identity.replay.naive:stoch2w_cross",
+      "provenance_class": "R",
+      "replay_notes": "a frozen REFERENCE construction minted by this registration \u2014 not a production engine. Canon oscillator core only (one RSI family), completed bars, close basis.",
+      "spec_constants": {
+        "band": 20.0,
+        "basis": "close, completed bars only",
+        "era": "si-naive-comparators-v0-2026-08-14",
+        "grain": "2W",
+        "oscillator_core": "engine.canon (SMA-seeded RMA; one RSI family)",
+        "producer": "engine.stock_identity.replay.naive:stoch2w_cross",
+        "rule": "%K crosses up through %D with both < 20 on the completed 2W bar",
+        "smooth_d": 3,
+        "smooth_k": 3,
+        "stoch_len": 14
+      },
+      "spec_hash": "de1e50e029a3aaf29d1f848c43672edc336416c0f32372c80fd4379d1f4c0c30",
+      "stage": "REFERENCE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "union-admission-v1-2026-08-11"
+      ],
+      "expected_rows": 0,
+      "family": "starter_zone",
+      "family_first_available": null,
+      "family_key": "starter_pending",
+      "parity_notes": null,
+      "producer": "engine.prophet_bridge:evaluate_entry_zone (STARTER zone lifecycle)",
+      "provenance_class": "P",
+      "replay_notes": "Class C resolved by the registration \u00a73 consequence matrix: starter_pending/starter_failed/starter_converted RECLASSIFY to Class P (zero rows, no synthetic context, no backfill); the admission SIGNATURE ships separately as starter_signature (Class R) The signature half ships separately as starter_signature; the trio is never merged with it and never partially faked.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "union-admission-v1-2026-08-11"
+      ],
+      "expected_rows": 0,
+      "family": "starter_zone",
+      "family_first_available": null,
+      "family_key": "starter_failed",
+      "parity_notes": null,
+      "producer": "engine.prophet_bridge:evaluate_entry_zone (STARTER zone lifecycle)",
+      "provenance_class": "P",
+      "replay_notes": "Class C resolved by the registration \u00a73 consequence matrix: starter_pending/starter_failed/starter_converted RECLASSIFY to Class P (zero rows, no synthetic context, no backfill); the admission SIGNATURE ships separately as starter_signature (Class R) The signature half ships separately as starter_signature; the trio is never merged with it and never partially faked.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "union-admission-v1-2026-08-11"
+      ],
+      "expected_rows": 0,
+      "family": "starter_zone",
+      "family_first_available": null,
+      "family_key": "starter_converted",
+      "parity_notes": null,
+      "producer": "engine.prophet_bridge:evaluate_entry_zone (STARTER zone lifecycle)",
+      "provenance_class": "P",
+      "replay_notes": "Class C resolved by the registration \u00a73 consequence matrix: starter_pending/starter_failed/starter_converted RECLASSIFY to Class P (zero rows, no synthetic context, no backfill); the admission SIGNATURE ships separately as starter_signature (Class R) The signature half ships separately as starter_signature; the trio is never merged with it and never partially faked.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "terminal-935389d4-2026-08-11"
+      ],
+      "expected_rows": 0,
+      "family": "amber_early",
+      "family_first_available": "2026-08-11",
+      "family_key": "amber_early",
+      "parity_notes": null,
+      "producer": "charting-app confluence_v2 washout-promoted EARLY marker",
+      "provenance_class": "P",
+      "replay_notes": "the family was CREATED on 2026-08-11 when the Terminal began promoting a washout-context grey dot to an amber EARLY marker. It has no history before that date because it did not exist. The as-restated grey-dot reading (the in_washout_context flag on grey_dot_macro) is how W2 shows what WOULD have been carved out \u2014 it is not this family's history and is never labelled as it.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "prospective-only by charter"
+      ],
+      "expected_rows": 0,
+      "family": "reentry_trend_reclaim",
+      "family_first_available": null,
+      "family_key": "door_r_rearm",
+      "parity_notes": null,
+      "producer": "engine.prophet_doors Door R (re-arm / trend reclaim)",
+      "provenance_class": "P",
+      "replay_notes": "the organ's own charter forbids historical backfill \u2014 every row must be a real forward call. Replaying it would violate the charter that created it.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "nightly artifact only"
+      ],
+      "expected_rows": 0,
+      "family": "turn_watch",
+      "family_first_available": null,
+      "family_key": "turn_watch_deck",
+      "parity_notes": null,
+      "producer": "engine.us_turn_watch:compute_deck",
+      "provenance_class": "P",
+      "replay_notes": "the deck publishes a nightly artifact and keeps no fire ledger, so no past fire was ever recorded and none can be recovered from a committed artifact.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "per-request computation"
+      ],
+      "expected_rows": 0,
+      "family": "gc_v2",
+      "family_first_available": null,
+      "family_key": "gc_v2_scores",
+      "parity_notes": null,
+      "producer": "charting-app confluence_v2::build_v2 keeper / recipe / structure legs",
+      "provenance_class": "P",
+      "replay_notes": "computed per request with no persistence located in either repo, and its cited source lab (harness/e_factors.py) does not exist in either repo \u2014 so there is neither a store to read nor a specification to port.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    },
+    {
+      "era_pins": [
+        "live-forward only"
+      ],
+      "expected_rows": 0,
+      "family": "radar_live_state",
+      "family_first_available": null,
+      "family_key": "radar_c1_c2",
+      "parity_notes": null,
+      "producer": "Live Entry Radar C1/C2 LIVE-state detectors",
+      "provenance_class": "P",
+      "replay_notes": "the Radar contract \u00a75 replay rule: historical replay of a LIVE-state input requires minute reconstruction of what the indicator showed at the decision timestamp. No U.S. equity intraday bars exist in-repo, so these detectors are live-forward only and may never be backfilled from EOD values.",
+      "spec_constants": null,
+      "spec_hash": null,
+      "stage": "PROSPECTIVE",
+      "subtypes": []
+    }
+  ],
+  "fixtures": {
+    "bottom_watch": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "7 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "12 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "12 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "0 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "1 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "1 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "1 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "confirmed_buy": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "52 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "86 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "88 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "24 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
+          "name": "append_only_conformance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "24 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "35 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "38 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "store is empty",
+          "name": "append_only_conformance",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "grey_dot": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "110 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "162 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "173 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "53 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "80 event(s) compared after dropping 37 leading session(s); 4 differ (5.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "87 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "naive": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "300 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "429 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "449 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "126 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "170 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "209 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "reclaim_waiver": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "0 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "0 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "no events on this frame",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "0 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "0 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "no events on this frame",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "sea": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "677 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
+          "name": "append_only_conformance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "328 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
+          "name": "append_only_conformance",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "starter": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "79 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "112 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "120 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "43 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "64 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "71 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "tiers": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "66 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "104 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "111 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "NVDA"
+        },
+        {
+          "detail": "36 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "53 event(s) compared after dropping 37 leading session(s); 0 differ (0.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "58 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "no event on this frame becomes knowable after its own signal_ts (1D-grain family: signal_ts == known_ts by construction)",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    },
+    "washout_turn": {
+      "all_passed": true,
+      "fixtures": [
+        {
+          "detail": "6 event(s) identical on the truncated prefix",
+          "name": "truncation_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "10 event(s) compared after dropping 37 leading session(s); 1 differ (10.00%, ceiling 5% / floor 1) \u2014 producer warm-up sensitivity, not a window dependence",
+          "name": "shift_audit_start_invariance",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "10 completed event(s) unchanged by an in-progress bar",
+          "name": "shift_audit_forming_bar",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "3 probe event(s) vanished when the feed stopped at their signal_ts",
+          "name": "feed_truncation",
+          "passed": true,
+          "symbol": "AEM"
+        },
+        {
+          "detail": "2 row(s) all present in the store; keep-FIRST dropped 0 duplicate(s)",
+          "name": "append_only_conformance",
+          "passed": true,
+          "symbol": "AEM"
+        }
+      ]
+    }
+  },
+  "inventory": {
+    "bottom_watch_terminal": {
+      "by_field_origin": {
+        "replay_recomputed": 206
+      },
+      "by_symbol": {
+        "AEM": 1,
+        "AG": 9,
+        "B": 25,
+        "BABA": 5,
+        "GOLD": 6,
+        "HL": 8,
+        "KO": 16,
+        "KRUS": 2,
+        "MCD": 20,
+        "MCK": 6,
+        "META": 6,
+        "MSFT": 12,
+        "NEM": 21,
+        "NVDA": 12,
+        "PAAS": 5,
+        "REGN": 23,
+        "UEC": 7,
+        "WMT": 12,
+        "WPM": 8,
+        "YELP": 2
+      },
+      "n_events": 206,
+      "n_names": 20
+    },
+    "confirmed_buy": {
+      "by_field_origin": {
+        "ledger_recorded": 367,
+        "replay_recomputed": 1472
+      },
+      "by_symbol": {
+        "AEM": 38,
+        "AG": 37,
+        "B": 133,
+        "BABA": 33,
+        "FFAI": 14,
+        "GOLD": 24,
+        "HL": 38,
+        "KO": 225,
+        "KRUS": 14,
+        "MCD": 187,
+        "MCK": 95,
+        "META": 47,
+        "MSFT": 133,
+        "NEM": 188,
+        "NVDA": 85,
+        "PAAS": 35,
+        "REGN": 194,
+        "UEC": 35,
+        "WMT": 198,
+        "WPM": 55,
+        "YELP": 31
+      },
+      "n_events": 1839,
+      "n_names": 21
+    },
+    "grey_dot_macro": {
+      "by_field_origin": {
+        "replay_recomputed": 730
+      },
+      "by_symbol": {
+        "AEM": 27,
+        "AG": 18,
+        "B": 64,
+        "BABA": 16,
+        "FFAI": 5,
+        "GOLD": 17,
+        "HL": 16,
+        "KO": 71,
+        "KRUS": 8,
+        "MCD": 75,
+        "MCK": 42,
+        "META": 17,
+        "MSFT": 54,
+        "NEM": 69,
+        "NVDA": 35,
+        "PAAS": 10,
+        "REGN": 55,
+        "UEC": 16,
+        "WMT": 69,
+        "WPM": 26,
+        "YELP": 20
+      },
+      "n_events": 730,
+      "n_names": 21
+    },
+    "grey_dot_terminal": {
+      "by_field_origin": {
+        "replay_recomputed": 2719
+      },
+      "by_symbol": {
+        "AEM": 60,
+        "AG": 63,
+        "B": 220,
+        "BABA": 58,
+        "FFAI": 32,
+        "GOLD": 59,
+        "HL": 64,
+        "KO": 319,
+        "KRUS": 37,
+        "MCD": 302,
+        "MCK": 156,
+        "META": 58,
+        "MSFT": 196,
+        "NEM": 229,
+        "NVDA": 138,
+        "PAAS": 66,
+        "REGN": 183,
+        "UEC": 58,
+        "WMT": 264,
+        "WPM": 97,
+        "YELP": 60
+      },
+      "n_events": 2719,
+      "n_names": 21
+    },
+    "low20d_bounce": {
+      "by_field_origin": {
+        "replay_recomputed": 7437
+      },
+      "by_symbol": {
+        "AEM": 157,
+        "AG": 204,
+        "B": 600,
+        "BABA": 170,
+        "CBRS": 2,
+        "FFAI": 132,
+        "GOLD": 183,
+        "HL": 200,
+        "KO": 808,
+        "KRUS": 105,
+        "MCD": 764,
+        "MCK": 376,
+        "META": 169,
+        "MSFT": 501,
+        "NEM": 692,
+        "NVDA": 362,
+        "PAAS": 203,
+        "REGN": 535,
+        "UEC": 183,
+        "WMT": 639,
+        "WPM": 284,
+        "YELP": 168
+      },
+      "n_events": 7437,
+      "n_names": 22
+    },
+    "rebuy": {
+      "by_field_origin": {
+        "ledger_recorded": 87
+      },
+      "by_symbol": {
+        "KO": 12,
+        "MCD": 10,
+        "MCK": 5,
+        "META": 1,
+        "MSFT": 8,
+        "NEM": 9,
+        "NVDA": 3,
+        "REGN": 25,
+        "WMT": 14
+      },
+      "n_events": 87,
+      "n_names": 9
+    },
+    "rsi30_cross": {
+      "by_field_origin": {
+        "replay_recomputed": 1480
+      },
+      "by_symbol": {
+        "AEM": 40,
+        "AG": 45,
+        "B": 111,
+        "BABA": 43,
+        "CBRS": 1,
+        "FFAI": 33,
+        "GOLD": 36,
+        "HL": 32,
+        "KO": 130,
+        "KRUS": 22,
+        "MCD": 162,
+        "MCK": 96,
+        "META": 37,
+        "MSFT": 81,
+        "NEM": 143,
+        "NVDA": 60,
+        "PAAS": 33,
+        "REGN": 104,
+        "UEC": 42,
+        "WMT": 121,
+        "WPM": 58,
+        "YELP": 50
+      },
+      "n_events": 1480,
+      "n_names": 22
+    },
+    "sea_event_classes": {
+      "by_field_origin": {
+        "ledger_recorded": 10384
+      },
+      "by_symbol": {
+        "AEM": 328,
+        "AG": 24,
+        "GOLD": 276,
+        "HL": 320,
+        "KO": 1719,
+        "MCD": 1516,
+        "MCK": 780,
+        "META": 351,
+        "MSFT": 1033,
+        "NEM": 1178,
+        "NVDA": 677,
+        "PAAS": 12,
+        "REGN": 296,
+        "UEC": 480,
+        "WMT": 1394
+      },
+      "n_events": 10384,
+      "n_names": 15
+    },
+    "starter_signature": {
+      "by_field_origin": {
+        "replay_recomputed": 2559
+      },
+      "by_symbol": {
+        "AEM": 71,
+        "AG": 60,
+        "B": 211,
+        "BABA": 54,
+        "FFAI": 30,
+        "GOLD": 61,
+        "HL": 57,
+        "KO": 253,
+        "KRUS": 33,
+        "MCD": 286,
+        "MCK": 147,
+        "META": 61,
+        "MSFT": 174,
+        "NEM": 237,
+        "NVDA": 120,
+        "PAAS": 53,
+        "REGN": 181,
+        "UEC": 53,
+        "WMT": 252,
+        "WPM": 103,
+        "YELP": 62
+      },
+      "n_events": 2559,
+      "n_names": 21
+    },
+    "stoch2w_cross": {
+      "by_field_origin": {
+        "replay_recomputed": 575
+      },
+      "by_symbol": {
+        "AEM": 12,
+        "AG": 11,
+        "B": 48,
+        "BABA": 11,
+        "FFAI": 7,
+        "GOLD": 13,
+        "HL": 18,
+        "KO": 68,
+        "KRUS": 8,
+        "MCD": 64,
+        "MCK": 28,
+        "META": 13,
+        "MSFT": 40,
+        "NEM": 55,
+        "NVDA": 27,
+        "PAAS": 13,
+        "REGN": 40,
+        "UEC": 15,
+        "WMT": 51,
+        "WPM": 21,
+        "YELP": 12
+      },
+      "n_events": 575,
+      "n_names": 21
+    },
+    "tier_cascade_t1": {
+      "by_field_origin": {
+        "replay_recomputed": 2122
+      },
+      "by_symbol": {
+        "AEM": 50,
+        "AG": 55,
+        "B": 167,
+        "BABA": 42,
+        "FFAI": 15,
+        "GOLD": 37,
+        "HL": 49,
+        "KO": 268,
+        "KRUS": 21,
+        "MCD": 234,
+        "MCK": 116,
+        "META": 56,
+        "MSFT": 151,
+        "NEM": 184,
+        "NVDA": 97,
+        "PAAS": 47,
+        "REGN": 135,
+        "UEC": 51,
+        "WMT": 223,
+        "WPM": 76,
+        "YELP": 48
+      },
+      "n_events": 2122,
+      "n_names": 21
+    },
+    "tier_cascade_t2": {
+      "by_field_origin": {
+        "replay_recomputed": 236
+      },
+      "by_symbol": {
+        "AEM": 7,
+        "AG": 8,
+        "B": 24,
+        "BABA": 5,
+        "FFAI": 5,
+        "GOLD": 7,
+        "HL": 4,
+        "KO": 28,
+        "KRUS": 2,
+        "MCD": 17,
+        "MCK": 20,
+        "META": 10,
+        "MSFT": 9,
+        "NEM": 21,
+        "NVDA": 11,
+        "PAAS": 7,
+        "REGN": 14,
+        "UEC": 5,
+        "WMT": 23,
+        "WPM": 7,
+        "YELP": 2
+      },
+      "n_events": 236,
+      "n_names": 21
+    },
+    "tier_cascade_t3": {
+      "by_field_origin": {
+        "replay_recomputed": 28
+      },
+      "by_symbol": {
+        "AG": 2,
+        "B": 3,
+        "BABA": 1,
+        "GOLD": 2,
+        "HL": 1,
+        "KO": 5,
+        "MCD": 1,
+        "MCK": 2,
+        "NVDA": 1,
+        "PAAS": 1,
+        "REGN": 2,
+        "WMT": 5,
+        "WPM": 1,
+        "YELP": 1
+      },
+      "n_events": 28,
+      "n_names": 14
+    },
+    "tier_cascade_t4": {
+      "by_field_origin": {
+        "replay_recomputed": 47
+      },
+      "by_symbol": {
+        "AEM": 1,
+        "AG": 2,
+        "B": 5,
+        "BABA": 1,
+        "FFAI": 1,
+        "HL": 2,
+        "KO": 3,
+        "MCD": 4,
+        "MCK": 3,
+        "META": 1,
+        "MSFT": 5,
+        "NEM": 5,
+        "NVDA": 2,
+        "REGN": 1,
+        "UEC": 3,
+        "WMT": 8
+      },
+      "n_events": 47,
+      "n_names": 16
+    },
+    "weekly_washout_turn": {
+      "by_field_origin": {
+        "ledger_recorded": 12,
+        "replay_recomputed": 640
+      },
+      "by_symbol": {
+        "AEM": 10,
+        "AG": 15,
+        "B": 51,
+        "BABA": 13,
+        "GOLD": 16,
+        "HL": 13,
+        "KO": 85,
+        "KRUS": 7,
+        "MCD": 73,
+        "MCK": 29,
+        "META": 20,
+        "MSFT": 54,
+        "NEM": 51,
+        "NVDA": 28,
+        "PAAS": 16,
+        "REGN": 49,
+        "UEC": 21,
+        "WMT": 70,
+        "WPM": 18,
+        "YELP": 13
+      },
+      "n_events": 652,
+      "n_names": 20
+    }
+  },
+  "join_coverage": [
+    {
+      "family_key": "bottom_watch_terminal",
+      "n_attributed": 107,
+      "n_events": 206,
+      "n_unattributed": 99
+    },
+    {
+      "family_key": "confirmed_buy",
+      "n_attributed": 436,
+      "n_events": 1839,
+      "n_unattributed": 1403
+    },
+    {
+      "family_key": "grey_dot_macro",
+      "n_attributed": 353,
+      "n_events": 730,
+      "n_unattributed": 377
+    },
+    {
+      "family_key": "grey_dot_terminal",
+      "n_attributed": 1153,
+      "n_events": 2719,
+      "n_unattributed": 1566
+    },
+    {
+      "family_key": "low20d_bounce",
+      "n_attributed": 4418,
+      "n_events": 7437,
+      "n_unattributed": 3019
+    },
+    {
+      "family_key": "rebuy",
+      "n_attributed": 19,
+      "n_events": 87,
+      "n_unattributed": 68
+    },
+    {
+      "family_key": "rsi30_cross",
+      "n_attributed": 1056,
+      "n_events": 1480,
+      "n_unattributed": 424
+    },
+    {
+      "family_key": "sea_event_classes",
+      "n_attributed": 3037,
+      "n_events": 10384,
+      "n_unattributed": 7347
+    },
+    {
+      "family_key": "starter_signature",
+      "n_attributed": 1265,
+      "n_events": 2559,
+      "n_unattributed": 1294
+    },
+    {
+      "family_key": "stoch2w_cross",
+      "n_attributed": 178,
+      "n_events": 575,
+      "n_unattributed": 397
+    },
+    {
+      "family_key": "tier_cascade_t1",
+      "n_attributed": 486,
+      "n_events": 2122,
+      "n_unattributed": 1636
+    },
+    {
+      "family_key": "tier_cascade_t2",
+      "n_attributed": 69,
+      "n_events": 236,
+      "n_unattributed": 167
+    },
+    {
+      "family_key": "tier_cascade_t3",
+      "n_attributed": 8,
+      "n_events": 28,
+      "n_unattributed": 20
+    },
+    {
+      "family_key": "tier_cascade_t4",
+      "n_attributed": 13,
+      "n_events": 47,
+      "n_unattributed": 34
+    },
+    {
+      "family_key": "weekly_washout_turn",
+      "n_attributed": 245,
+      "n_events": 652,
+      "n_unattributed": 407
+    }
+  ],
+  "no_ruler_content": "W2 publishes NO ruler metric \u2014 no lead/lag, distance, MAE, capture, recall, precision, composite, fit, rank or best exists as a column, key or identifier in this store. Those are PR-3's object (registration \u00a70.1). The only aggregates published are inventory counts and join-coverage counts.",
+  "parity_counts": {
+    "per_name": {
+      "AEM": {
+        "agree": 24,
+        "macro_only": 3,
+        "macro_total": 27,
+        "terminal_only": 36,
+        "terminal_total": 60
+      },
+      "AG": {
+        "agree": 17,
+        "macro_only": 1,
+        "macro_total": 18,
+        "terminal_only": 46,
+        "terminal_total": 63
+      },
+      "B": {
+        "agree": 57,
+        "macro_only": 7,
+        "macro_total": 64,
+        "terminal_only": 163,
+        "terminal_total": 220
+      },
+      "BABA": {
+        "agree": 14,
+        "macro_only": 2,
+        "macro_total": 16,
+        "terminal_only": 44,
+        "terminal_total": 58
+      },
+      "FFAI": {
+        "agree": 5,
+        "macro_only": 0,
+        "macro_total": 5,
+        "terminal_only": 27,
+        "terminal_total": 32
+      },
+      "GOLD": {
+        "agree": 14,
+        "macro_only": 3,
+        "macro_total": 17,
+        "terminal_only": 45,
+        "terminal_total": 59
+      },
+      "HL": {
+        "agree": 14,
+        "macro_only": 2,
+        "macro_total": 16,
+        "terminal_only": 50,
+        "terminal_total": 64
+      },
+      "KO": {
+        "agree": 66,
+        "macro_only": 5,
+        "macro_total": 71,
+        "terminal_only": 253,
+        "terminal_total": 319
+      },
+      "KRUS": {
+        "agree": 8,
+        "macro_only": 0,
+        "macro_total": 8,
+        "terminal_only": 29,
+        "terminal_total": 37
+      },
+      "MCD": {
+        "agree": 67,
+        "macro_only": 8,
+        "macro_total": 75,
+        "terminal_only": 235,
+        "terminal_total": 302
+      },
+      "MCK": {
+        "agree": 38,
+        "macro_only": 4,
+        "macro_total": 42,
+        "terminal_only": 118,
+        "terminal_total": 156
+      },
+      "META": {
+        "agree": 16,
+        "macro_only": 1,
+        "macro_total": 17,
+        "terminal_only": 42,
+        "terminal_total": 58
+      },
+      "MSFT": {
+        "agree": 50,
+        "macro_only": 4,
+        "macro_total": 54,
+        "terminal_only": 146,
+        "terminal_total": 196
+      },
+      "NEM": {
+        "agree": 59,
+        "macro_only": 10,
+        "macro_total": 69,
+        "terminal_only": 170,
+        "terminal_total": 229
+      },
+      "NVDA": {
+        "agree": 31,
+        "macro_only": 4,
+        "macro_total": 35,
+        "terminal_only": 107,
+        "terminal_total": 138
+      },
+      "PAAS": {
+        "agree": 10,
+        "macro_only": 0,
+        "macro_total": 10,
+        "terminal_only": 56,
+        "terminal_total": 66
+      },
+      "REGN": {
+        "agree": 46,
+        "macro_only": 9,
+        "macro_total": 55,
+        "terminal_only": 137,
+        "terminal_total": 183
+      },
+      "UEC": {
+        "agree": 12,
+        "macro_only": 4,
+        "macro_total": 16,
+        "terminal_only": 46,
+        "terminal_total": 58
+      },
+      "WMT": {
+        "agree": 65,
+        "macro_only": 4,
+        "macro_total": 69,
+        "terminal_only": 199,
+        "terminal_total": 264
+      },
+      "WPM": {
+        "agree": 22,
+        "macro_only": 4,
+        "macro_total": 26,
+        "terminal_only": 75,
+        "terminal_total": 97
+      },
+      "YELP": {
+        "agree": 19,
+        "macro_only": 1,
+        "macro_total": 20,
+        "terminal_only": 41,
+        "terminal_total": 60
+      }
+    },
+    "total": {
+      "agree": 654,
+      "macro_only": 76,
+      "macro_total": 730,
+      "n_names": 21,
+      "terminal_only": 2065,
+      "terminal_total": 2719
+    }
+  },
+  "pilot_symbols": [
+    "AEM",
+    "AG",
+    "B",
+    "BABA",
+    "CBRS",
+    "FFAI",
+    "GOLD",
+    "HL",
+    "KO",
+    "KRUS",
+    "MCD",
+    "MCK",
+    "META",
+    "MSFT",
+    "NEM",
+    "NVDA",
+    "PAAS",
+    "REGN",
+    "UEC",
+    "WMT",
+    "WPM",
+    "YELP"
+  ],
+  "reclaim_waiver_receipts": [
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "AEM",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "AG",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "B",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "BABA",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "CBRS",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "FFAI",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "GOLD",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "HL",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "KO",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "KRUS",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "MCD",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "MCK",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "META",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "MSFT",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "NEM",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "NVDA",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "PAAS",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "REGN",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": true,
+      "reason": "no marker of this name became knowable inside the artifact's own era (2026-08-13 + 5 sessions)",
+      "state_available": true,
+      "symbol": "UEC",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "WMT",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "WPM",
+      "waived": 0
+    },
+    {
+      "as_of": "2026-08-13",
+      "markers_in_window": 0,
+      "qualifies_at_notch": false,
+      "reason": "the name does not qualify at notch 20 in the committed vintage, so no marker of its could have been relieved in that era",
+      "state_available": true,
+      "symbol": "YELP",
+      "waived": 0
+    }
+  ],
+  "registration": "research/stock_identity/W2_EXPERT_REPLAY_REGISTRATION.md",
+  "schema": "stock_identity.expert_family_registry.v0",
+  "starter_resolution": {
+    "basket_state_history_stores_found": [],
+    "consequence": "starter_pending/starter_failed/starter_converted RECLASSIFY to Class P (zero rows, no synthetic context, no backfill); the admission SIGNATURE ships separately as starter_signature (Class R)",
+    "context_state_evidence": [
+      {
+        "artifact": "site/basketdata/us_basket_turn.json",
+        "as_of": "2026-08-13",
+        "carries_history": false,
+        "n_dated_vintages": 1,
+        "note": "single nightly vintage keyed by basket/ticker; no per-date state series",
+        "present_in_checkout": true,
+        "read_by": "us_early_turn.load_basket_turn_membership",
+        "read_from": "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-worktrees-vigorous-mirzakhani-3ae795/c32f41aa-0889-4850-9b1b-a7edd35407e9/scratchpad/replay_work/committed/us_basket_turn.json",
+        "role": "basket_state"
+      },
+      {
+        "artifact": "site/anticipationdata/us_leader_pullback.json",
+        "as_of": "2026-08-13",
+        "carries_history": false,
+        "n_dated_vintages": 1,
+        "note": "single nightly vintage keyed by basket/ticker; no per-date state series",
+        "present_in_checkout": true,
+        "read_by": "us_early_turn.load_leader_pullback_states",
+        "read_from": "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-worktrees-vigorous-mirzakhani-3ae795/c32f41aa-0889-4850-9b1b-a7edd35407e9/scratchpad/replay_work/committed/us_leader_pullback.json",
+        "role": "leader_pullback_state"
+      }
+    ],
+    "membership_evidence": [
+      {
+        "artifact": "data/baskets/membership.json",
+        "has_added_removed": null,
+        "n_snapshot_dates": null,
+        "note": null,
+        "present_in_checkout": true,
+        "role": "membership_current"
+      },
+      {
+        "artifact": "data/baskets/membership_history.parquet",
+        "has_added_removed": true,
+        "n_snapshot_dates": 1,
+        "note": "per-ticker [added, removed) intervals \u2014 PIT MEMBERSHIP exists. Membership is not the licensed object; the licensed object is the basket's washout STATE on a past date.",
+        "present_in_checkout": true,
+        "role": "membership_history"
+      }
+    ],
+    "question": "is the STARTER licensing context (basket washout state OR leader-pullback state, as of a past date) reconstructable point-in-time from committed artifacts?",
+    "reasoning": "Both context artifacts are nightly-overwritten single-vintage JSON keyed by basket/ticker with one as_of; neither is a dated series and no dated basket-state store exists under data/. PIT membership DOES exist (membership_history.parquet's added/removed intervals) but membership is not what licenses a STARTER \u2014 the basket's washout STATE on the fire date is, and recomputing that over history would be a new construction with its own gates, not a read of a committed artifact.",
+    "verdict": "NOT_PIT_RECONSTRUCTABLE"
+  },
+  "vintage_stamp": {
+    "adjustment_mode": "auto_adjust=True (dividend/split adjusted total-return)",
+    "coverage_frac": 1.0,
+    "dead_name_coverage_pct": 0.0,
+    "era_law_cohort": "pre2010 | post2010 (DNR:LAW-ERA-SPLIT \u2014 never pooled across the break)",
+    "frame": "per-name full replayable depth (no fire-tape cohort filter)",
+    "price_plane_id": [
+      "baskets_ohlcv_v1",
+      "stock_identity_ohlcv_v1",
+      "stocks_tr_v1"
+    ],
+    "survivorship_biased": true,
+    "survivorship_note": "the allowed price planes retain no ceased tapes, so every event here belongs to a surviving instrument. The Dead Instrument Control Set is a separately registered future act that BLOCKS PR-5/Q1 (registration \u00a70.2); W2 does not build it and no cohort claim may be made over this store without it.",
+    "universe_as_of": "2026-08-13"
+  },
+  "wave": "W2"
+}
