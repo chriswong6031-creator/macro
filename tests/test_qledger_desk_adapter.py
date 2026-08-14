@@ -22,7 +22,9 @@ from __future__ import annotations
 
 import json
 from datetime import date
+from pathlib import Path
 
+import pandas as pd
 import pytest
 
 from engine import qledger as q
@@ -374,3 +376,219 @@ def test_demand_chain_registers_at_its_true_126d_ruler(tmp_path):
     # this test only pins that registration itself is not blocked or altered
     # by that ladder.
     assert q.in_scope_horizons(126) == sorted(set(q.in_scope_horizons(126)))
+
+
+# --------------------------------------------------------------------------- #
+# P0d C2.3/C2.4 — THE demand_chain CONTROL LEG, AND THE REFUSALS IT COUNTS
+#
+# `demand_chain` is `matched_control_required`, but `_register_qledger_claims`
+# passed no `sector_of` at all: every claim registered uncontrolled forever and
+# the family's control-evidence clock could never start. The wiring is
+# `qledger.membership_gics_sector_of(root)` — membership.parquet + the explicit
+# alias normalisation census D0-2 requires — and EVERY candidate's control
+# outcome is now counted, because a lookup that returns None on unrecognised
+# vocabulary is a legal claim state and stayed dead four months unobserved
+# (DSC:CONTROL-VOCABULARY-MISMATCH-KILLED-EVERY-WIRED-CONTROL).
+# --------------------------------------------------------------------------- #
+#: A membership store that speaks BOTH vocabularies at once — the real file's
+#: measured shape (census D0-2) — plus an unknown value. "OFFIDX" is deliberately
+#: absent from it (the ADR/off-index tail).
+_MEMBERSHIP_SECTORS = {
+    "NVDA": "Technology",                 # Yahoo   -> Information Technology -> XLK
+    "MSFT": "Information Technology",     # GICS    -> XLK
+    "JNJ": "Healthcare",                  # Yahoo   -> Health Care -> XLV
+    "WEIRD": "Quantum Widgets",           # unknown -> a COUNTED refusal, never a silent None
+}
+
+
+def _seed_membership(root: Path) -> Path:
+    d = Path(root) / "data" / "universe"
+    d.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame({"ticker": list(_MEMBERSHIP_SECTORS),
+                  "sector": list(_MEMBERSHIP_SECTORS.values())}
+                 ).to_parquet(d / "membership.parquet")
+    q._MEMBERSHIP_SECTORS.clear()         # the per-root parquet memo
+    return Path(root)
+
+
+def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_path):
+    """END-TO-END (C2.3): a demand_chain run with the real wiring registers
+    STORED claims carrying the right sector ETFs, across BOTH of the universe
+    file's vocabularies, and starts the C3.1 control-evidence clock.
+
+    MUTATION CONTROL: wire the RAW resolver instead
+    (`sector_of=lambda t: q.sector_of_ticker(t, tmp_path)`, no alias
+    normalisation). The Yahoo-vocabulary names (NVDA "Technology", JNJ
+    "Healthcare") then reach `control_for_sector` unnormalised, register
+    `control=None`, and this test fails on `stored["NVDA"]["control"] == "XLK"`.
+    That is DSC:CONTROL-VOCABULARY-MISMATCH pinned as an executable check.
+    """
+    _seed_membership(tmp_path)
+    rows = [_demand_chain_row(ticker=t)
+            for t in ("NVDA", "MSFT", "JNJ", "WEIRD", "OFFIDX")]
+
+    stats = qda.register_prospective(
+        rows, family="demand_chain", root=tmp_path, today=TODAY,
+        sector_of=q.membership_gics_sector_of(tmp_path), git_sha="c0ffee")
+
+    assert stats["n_accepted"] == 5
+    stored = {c["scope"]["key"]: c for c in q.load_claims(tmp_path)}
+    assert stored["NVDA"]["control"] == "XLK"        # Yahoo vocabulary, normalised
+    assert stored["MSFT"]["control"] == "XLK"        # GICS vocabulary, untouched
+    assert stored["JNJ"]["control"] == "XLV"         # Yahoo vocabulary, normalised
+    assert stored["WEIRD"].get("control") is None    # unknown value — refused, counted
+    assert stored["OFFIDX"].get("control") is None   # absent from the universe file
+
+    assert stats["control_policy"] == q.CONTROL_POLICY_REQUIRED
+    assert stats["n_control_valid"] == 3
+    assert stats["n_control_missing"] == 2
+    assert stats["control_refusals"] == {qda.CONTROL_REFUSAL_SECTOR_ABSENT: 2}
+
+    # C3.1: the wiring actually starts the matched-control evidence clock, which
+    # is the whole reason the control has to be resolved at REGISTRATION.
+    clock = q.read_control_clock_start("demand_chain", tmp_path)
+    assert clock is not None
+    assert clock["control"] in {"XLK", "XLV"}
+
+
+def test_demand_ledger_passes_a_working_sector_resolver(tmp_path, monkeypatch):
+    """`engine/demand_ledger.py::_register_qledger_claims` must actually HAND the
+    adapter a resolver, and that resolver must answer with the canonical GICS
+    sector NAME (never an ETF — `make_claim` does its own ETF lookup).
+
+    MUTATION CONTROL: drop the `sector_of=` kwarg from the
+    `register_prospective` call in `_register_qledger_claims` — the captured
+    kwargs then carry no `sector_of` and this test fails on the KeyError/None.
+    """
+    from engine import demand_ledger
+
+    captured: dict = {}
+
+    def _capture(rows, **kwargs):
+        captured["rows"] = list(rows)
+        captured.update(kwargs)
+        return {"stub": True}
+
+    monkeypatch.setattr(qda, "register_prospective", _capture)
+    out = demand_ledger._register_qledger_claims([_demand_chain_row()], tmp_path,
+                                                 today=TODAY)
+
+    assert out == {"stub": True}
+    assert captured["family"] == "demand_chain"
+    sector_of = captured.get("sector_of")
+    assert sector_of is not None, "demand_chain must not register uncontrolled claims"
+
+    _seed_membership(tmp_path)
+    assert sector_of("NVDA") == "Information Technology"   # the NAME, not "XLK"
+    assert sector_of("JNJ") == "Health Care"
+    assert sector_of("WEIRD") is None                      # unknown vocabulary
+    assert sector_of("OFFIDX") is None                     # absent from the file
+    assert q.control_for_sector(sector_of("NVDA")) == "XLK"
+
+
+def test_control_refusals_are_split_by_cause(tmp_path):
+    """C2.4: the four refusal causes are COUNTED SEPARATELY, because one operator
+    lever fixes only one of them — `no_sector_source` is a wiring defect,
+    `sector_absent` a universe gap, `vocabulary_unmapped` census D0-2's alias
+    mismatch, `control_equals_subject_or_bench` C2.2's self-netting.
+
+    MUTATION CONTROL: collapse the buckets into a single "missing" key in
+    `_classify_control`. The two assertions on the exact `control_refusals` dict
+    then fail.
+    """
+    no_resolver = qda.register_prospective(
+        [_demand_chain_row(ticker="NVDA")], family="demand_chain",
+        root=tmp_path / "a", today=TODAY, dry_run=True)
+    assert no_resolver["control_refusals"] == {qda.CONTROL_REFUSAL_NO_SOURCE: 1}
+    assert no_resolver["n_control_valid"] == 0
+
+    # A RAW-vocabulary resolver — the D0-1 wiring shape: it hands `make_claim` a
+    # value `control_for_sector` cannot map, and one that maps onto the subject.
+    raw = {"NVDA": "Technology", "XLK": "Information Technology"}
+    rows = [_demand_chain_row(ticker="NVDA"),      # unmapped vocabulary
+            _demand_chain_row(ticker="XLK"),       # control == subject (C2.2)
+            _demand_chain_row(ticker="OFFIDX")]    # resolver answers None
+    stats = qda.register_prospective(rows, family="demand_chain",
+                                     root=tmp_path / "b", today=TODAY,
+                                     dry_run=True, sector_of=raw.get)
+
+    assert stats["n_control_valid"] == 0
+    assert stats["n_control_missing"] == 3
+    assert stats["control_refusals"] == {
+        qda.CONTROL_REFUSAL_VOCABULARY: 1,
+        qda.CONTROL_REFUSAL_SELF_OR_BENCH: 1,
+        qda.CONTROL_REFUSAL_SECTOR_ABSENT: 1,
+    }
+
+
+def test_missing_controls_emit_one_bare_github_annotation(tmp_path, capsys):
+    """C2.4 loudly: a required family with any missing control emits exactly ONE
+    `::warning`, carrying the counts, the refusal split, and a SAMPLE of the
+    offending vocabulary values — the thing that would have caught D0-1/D0-2 from
+    a nightly log instead of from a four-months-later census.
+
+    Asserted with `capsys` and `startswith("::")` on purpose: the annotation must
+    be a BARE print. Through a logger it becomes `WARNING ::warning ...` and
+    GitHub drops it silently (house law, tests/test_gh_annotation_line_start.py).
+    """
+    rows = [_demand_chain_row(ticker="NVDA"), _demand_chain_row(ticker="OFFIDX")]
+    stats = qda.register_prospective(rows, family="demand_chain", root=tmp_path,
+                                     today=TODAY, dry_run=True,
+                                     sector_of={"NVDA": "Technology"}.get)
+
+    assert stats["n_control_missing"] == 2
+    annotations = [ln for ln in capsys.readouterr().out.splitlines()
+                   if ln.startswith("::")]
+    assert len(annotations) == 1, annotations
+    line = annotations[0]
+    assert line.startswith("::warning title=demand_chain-qledger-control-missing::")
+    assert "vocabulary_unmapped=1" in line
+    assert "sector_absent=1" in line
+    assert "'Technology'" in line, (
+        "the offending vocabulary value is the load-bearing part of the sample")
+
+
+def test_a_fully_controlled_run_emits_no_control_annotation(tmp_path, capsys):
+    """The annotation is a SIGNAL, not a nightly banner: a run whose controls all
+    resolve stays silent."""
+    _seed_membership(tmp_path)
+    rows = [_demand_chain_row(ticker="NVDA"), _demand_chain_row(ticker="JNJ")]
+    stats = qda.register_prospective(
+        rows, family="demand_chain", root=tmp_path, today=TODAY, dry_run=True,
+        sector_of=q.membership_gics_sector_of(tmp_path))
+
+    assert stats["n_control_valid"] == 2 and stats["n_control_missing"] == 0
+    assert stats["control_refusals"] == {}
+    assert not [ln for ln in capsys.readouterr().out.splitlines()
+                if "qledger-control-missing" in ln]
+
+
+def test_a_benchmark_only_family_never_emits_the_control_annotation(tmp_path, capsys):
+    """C1.4: whether a family needs a control is POLICY. `thematic_desk` is
+    `benchmark_only` — the census measured its counterfactual as self-cancelling
+    — so its uncontrolled claims are correct, counted, and silent."""
+    stats = qda.register_prospective([_thematic_desk_row()], family="thematic_desk",
+                                     root=tmp_path, today=TODAY, dry_run=True)
+
+    assert stats["control_policy"] == q.CONTROL_POLICY_BENCHMARK_ONLY
+    assert stats["n_control_missing"] == 1
+    assert not [ln for ln in capsys.readouterr().out.splitlines()
+                if "qledger-control-missing" in ln]
+
+
+def test_dry_run_reports_the_control_accounting_too(tmp_path, capsys):
+    """The classification runs BEFORE registration, so a `dry_run` reports the
+    same control numbers the live path would — a wiring defect is visible from a
+    rehearsal, not only after it has already registered a night of blind claims."""
+    _seed_membership(tmp_path)
+    rows = [_demand_chain_row(ticker=t) for t in ("NVDA", "OFFIDX")]
+    kwargs = dict(family="demand_chain", today=TODAY,
+                  sector_of=q.membership_gics_sector_of(tmp_path))
+    dry = qda.register_prospective(rows, root=tmp_path, dry_run=True, **kwargs)
+    capsys.readouterr()
+    live = qda.register_prospective(rows, root=tmp_path, **kwargs)
+
+    for key in ("control_policy", "n_control_valid", "n_control_missing",
+                "control_refusals"):
+        assert dry[key] == live[key], key
+    assert dry["n_control_valid"] == 1 and dry["n_control_missing"] == 1

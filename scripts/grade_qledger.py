@@ -299,6 +299,17 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             "n_controlled_dates": getattr(pr, "n_controlled_dates", None),
             "n_cohort_rows": getattr(pr, "n_cohort_rows", None),
             "n_controlled_rows": getattr(pr, "n_controlled_rows", None),
+            # P0d review finding 4 — a cohort claim whose DECLARED control could
+            # not be priced over the shared window has NO grade row at all, so it
+            # used to vanish from the coverage denominator: declaring an
+            # unpriceable control read BETTER than declaring none. These three
+            # publish the repair — the refused set is counted INTO
+            # `n_cohort_rows`/`n_cohort_dates` above, and `cohort_rowless` is the
+            # full reason census for every rowless cohort claim so a young cohort
+            # is legible as young rather than as broken (or vice versa).
+            "n_control_refused_rows": getattr(pr, "n_control_refused_rows", None),
+            "n_control_refused_dates": getattr(pr, "n_control_refused_dates", None),
+            "cohort_rowless": getattr(pr, "cohort_rowless", None),
             "control_clock_start": getattr(pr, "control_clock_start", None),
             "unclassified": getattr(pr, "unclassified", False),
         }
