@@ -1415,7 +1415,7 @@
       },
       {
         "path": "engine/altdata_brain.py",
-        "signature_sha256": "352a033c3382433f2a5ac2ecb6a79c7b4b9ddcde38d1c6f639d27ce032595c80"
+        "signature_sha256": "b0e24961f06e0fb3622e3a0c1bce49e03638b66e8b17e038d0d141e4065edb6b"
       },
       {
         "path": "engine/altdata_confirmers.py",
@@ -14847,7 +14847,7 @@
       },
       {
         "path": "tests/test_ci_plan_workflow.py",
-        "signature_sha256": "ff2712de81c232682b2c41281c68bdef1d3ecacd6a9f5ba859695304fe97423c"
+        "signature_sha256": "677a1dffe3b7099d238005e1eb93b94b3483b86b02c73aaf716707a637d368e3"
       },
       {
         "path": "tests/test_ci_trigger_closure.py",
@@ -22313,7 +22313,7 @@
     "python_count": 5577,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "af77973e4dfbef95e02060a119c3954d68a366dc4721d0664317e71cf0f1b8cb",
+  "index_sha256": "5b3fbc48b1526d40085c02fc5d6c90b5b1a2c36f25bd4b0ea642240c8457c9ce",
   "job_count": 192,
   "job_inventory": [
     "inline-js",
