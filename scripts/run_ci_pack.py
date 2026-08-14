@@ -1245,6 +1245,15 @@ def _resolve_pack(plan: CIPackPlan, pack_index: int) -> list[LegacyJob]:
 
 def render_command(command: str, *, base_ref: str, head_ref: str) -> str:
     """Resolve the only GitHub expressions permitted in legacy run steps."""
+    # merge_group exposes full refs (refs/heads/main and refs/heads/gh-readonly-*),
+    # while the legacy commands were authored against pull_request's short refs.
+    # Normalize at the one rendering boundary so native-queue proof executes the
+    # identical commands instead of inventing origin/refs/heads/main.
+    for prefix in ("refs/heads/", "refs/remotes/origin/"):
+        if base_ref.startswith(prefix):
+            base_ref = base_ref[len(prefix) :]
+        if head_ref.startswith(prefix):
+            head_ref = head_ref[len(prefix) :]
     replacements = {
         "${{ github.base_ref || 'main' }}": base_ref or "main",
         "${{ github.base_ref }}": base_ref,

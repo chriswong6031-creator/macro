@@ -9,7 +9,7 @@ on:
     # group, cancelling a long CI pack when its PR merges or closes. Without it,
     # auto-merged PRs kept both hosted runners busy for up to another hour.
     types: [opened, synchronize, reopened, closed]
-    branches: [main]
+    branches: [main, codex/merge-queue-pilot]
     paths:
       # Start on every repository path. The selector, not this event filter, owns
       # cost; this catch-all is what makes a brand-new top-level directory fail
@@ -4038,6 +4038,10 @@ on:
       - "tests/test_dataos_security_master.py"
       - "scripts/build_security_master.py"
       - "data/reference/**"
+  # Native merge queue validates its synthetic, latest-main merge commit. Without
+  # this event a queued PR waits forever for ci-gate even if its head was green.
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch:
 
 permissions:
@@ -4084,6 +4088,9 @@ concurrency:
   #   workflow_dispatch -> false.  A dispatch is an ORDER FOR EVIDENCE. Evidence
   #                    that is 44 minutes old is nearly evidence; discarding it
   #                    for an identical run that starts from zero is never right.
+  #   merge_group -> false. GitHub owns obsolescence for its synthetic queue ref;
+  #                    duplicate delivery must not cancel the only useful queued
+  #                    latest-main proof while another workflow completion arrives.
   # Dedup is NOT lost: GitHub allows one PENDING run per group and replaces it
   # regardless of this flag, so N racing dispatches still collapse to "the one
   # running + the newest queued". Only the kill is gone. Progress is therefore
@@ -4092,11 +4099,11 @@ concurrency:
   # bound (`MAIN_BASELINE_MIN_INTERVAL_MINUTES`, scripts/merge_on_green.py).
   #
   # Note the group expression partitions by event type: a pull_request run always
-  # has `pull_request.number`, a dispatch never does, so `ci-refs/heads/main`
-  # holds dispatches ONLY. Every run in a given group evaluates this expression
-  # to the same value, which is why the fix does not depend on whether GitHub
-  # reads the flag from the arriving run or the in-progress one.
-  cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
+  # has `pull_request.number`; dispatch and merge_group use distinct `github.ref`
+  # values (`refs/heads/main` versus GitHub's queue ref). Every run in a given group
+  # evaluates this expression to the same value, which is why the fix does not
+  # depend on whether GitHub reads the flag from the arriving or in-progress run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # PLAN ONCE, ADJUDICATE ONCE (Wave B, 2026-08-11). Before this job existed all
@@ -4195,7 +4202,7 @@ jobs:
           # therefore still audits the complete manifest.
           CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
           CI_DYNAMIC_MATRIX_MODE: ${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
+          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--changed-from {0}', github.event.merge_group.base_sha) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
@@ -4291,18 +4298,19 @@ jobs:
       # so one run reports every legacy failure; the matrix must do the same
       # BETWEEN packs. A real red still fails ci-gate (`PACK_RESULT != success`)
       # and still blocks merge. workflow_dispatch (main's heal) was already
-      # fail-fast:false. Do not add max-parallel (#5465).
+      # fail-fast:false.
       #
       # Literal boolean, not an expression. `fail-fast: "${{ ... }}"` evaluates
       # to the strings "true"/"false"; some Actions parsers treat any non-empty
       # string as true.
       fail-fast: false
-      # NO `max-parallel`. It existed only to stop main's four packs from taking all
-      # four `render-linux` runners and starving `merge-on-green.yml`, then co-resident
-      # on that pool. With both control/proof lanes hosted there is no shared pool to
-      # protect, and throttling would only make main's proof twice as slow (~26 min
-      # unthrottled vs ~50 min at 2). Do not reintroduce one without a shared-pool
-      # reason; the hosted ceiling is an ACCOUNT-wide limit that this key cannot help.
+      # Fleet admission, not self-hosted routing. The old max-parallel protected a
+      # four-runner render-linux pool and slowed main's proof; that pool is no longer
+      # used here. This cap instead bounds EACH hosted PR after the 2026-08-14 jam
+      # reached 53 simultaneous PR-CI runs and 299 ci jobs queued/running. Forty PRs
+      # can now request at most 160 pack workers, not 480. A deliberate main baseline
+      # keeps all twelve lanes so recovery evidence is not needlessly serialized.
+      max-parallel: ${{ github.event_name == 'workflow_dispatch' && 12 || 4 }}
       #
       # The literal `pack: [0..11]` list that stood here until Wave B (2026-08-11) is
       # now the PLAN's, emitted by `ci-plan` as {"include": [{"pack": N}, ...]} over
@@ -4403,14 +4411,14 @@ jobs:
       # Pinning is a PARITY check between plan and execution, never the only gate.
       - name: validate and run legacy CI pack
         env:
-          CI_BASE_REF: ${{ github.base_ref || 'main' }}
-          CI_HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
           # Active unless the repository variable is exactly `off` (2026-08-13).
           # A leftover `shadow` from the first deployment would keep copying
           # every main-red onto every pull request. `off` is the emergency
           # full-suite kill switch.
           CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || '' }}
+          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--changed-from {0}', github.event.merge_group.base_sha) || '' }}
           PLAN_SHA_ARG: ${{ needs.ci-plan.outputs.plan_sha && format('--expect-plan-sha {0}', needs.ci-plan.outputs.plan_sha) || '' }}
           CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
         run: >-

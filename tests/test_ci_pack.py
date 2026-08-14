@@ -77,6 +77,18 @@ def test_legacy_expressions_are_supported() -> None:
             assert "${{" not in rendered
 
 
+def test_merge_group_full_refs_render_like_pull_request_short_refs() -> None:
+    command = "git fetch origin ${{ github.base_ref }} && echo ${{ github.head_ref }}"
+    assert PACK.render_command(
+        command,
+        base_ref="refs/heads/main",
+        head_ref="refs/heads/gh-readonly-queue/main/pr-42-deadbeef",
+    ) == (
+        "git fetch origin main && echo "
+        "gh-readonly-queue/main/pr-42-deadbeef"
+    )
+
+
 def test_unknown_job_semantics_fail_closed(tmp_path: Path) -> None:
     workflow = tmp_path / "ci.yml"
     workflow.write_text(
@@ -189,14 +201,18 @@ def test_workflows_cancel_superseded_pr_runs() -> None:
     # PR events keep cancel-on-newer-push. Dispatches (ci) and main pushes (fences)
     # do not — those are the two proof paths.
     assert ci["concurrency"]["cancel-in-progress"] == (
-        "${{ github.event_name != 'workflow_dispatch' }}"
-    ), "a main baseline dispatch must never cancel the proof already running"
+        "${{ github.event_name == 'pull_request' }}"
+    ), "main and merge-group proof must never be cancelled by a duplicate event"
     assert fences["concurrency"]["cancel-in-progress"] == (
         "${{ github.event_name == 'pull_request' }}"
     ), "a push to main must never cancel the fence run proving an earlier main SHA"
     assert "pull_request.number" in ci["concurrency"]["group"]
     assert "github.ref" in ci["concurrency"]["group"]
     assert "pull_request.number" in fences["concurrency"]["group"]
+    ci_triggers = ci.get("on") or ci.get(True)
+    fence_triggers = fences.get("on") or fences.get(True)
+    assert ci_triggers["merge_group"]["types"] == ["checks_requested"]
+    assert fence_triggers["merge_group"]["types"] == ["checks_requested"]
     # The 2026-07-28 merged-close fence (PR #3867) lives in the same expression and
     # must survive every later edit to this block.
     assert "merged" in ci["concurrency"]["group"], (
@@ -1597,14 +1613,13 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "fail-fast: false" in pack_src
     assert "fail-fast: ${{ github.event_name == 'pull_request' }}" not in pack_src
     assert 'fail-fast: "${{ github.event_name == \'pull_request\' }}"' not in pack_src
-    # No `max-parallel`: it existed only to stop main's packs from taking all four
-    # `render-linux` runners. With no shared pool to protect, throttling would only
-    # double main's proof (~26 min -> ~50 min), and it cannot help against the hosted
-    # ceiling because that limit is ACCOUNT-wide, not per-matrix.
-    assert "max-parallel" not in pack["strategy"], (
-        "reintroducing max-parallel only slows main's proof; the hosted concurrency "
-        "ceiling is account-wide and this key cannot raise it"
-    )
+    # PR fanout is bounded independently of main's deliberate full-suite proof.
+    # The previous cap protected a four-slot self-hosted render pool; packs are now
+    # hosted, and this event-conditioned cap is fleet admission under a measured
+    # 53-run/299-job jam rather than runner-pool routing.
+    max_parallel = str(pack["strategy"]["max-parallel"])
+    assert "github.event_name == 'workflow_dispatch'" in max_parallel
+    assert "&& 12 || 4" in max_parallel
     # The closed-event fence must LEAD the condition. Wave B appends
     # `&& needs.ci-plan.outputs.has_work == 'true'`; anything that replaces the
     # fence instead of extending it re-allocates a runner for every merged-close.

@@ -484,20 +484,20 @@ def test_live_check_still_blocks_loop_pr_touching_immutable(tmp_path):
     )
 
 
-def test_fences_workflow_live_check_is_pull_request_only():
-    """The fences.yml twin has no dispatch arm — its `if:` is what keeps it sound.
+def test_fences_workflow_live_check_covers_pr_and_merge_group_but_not_push():
+    """The live diff exists for review and queue events, never a bare main push.
 
-    fences.yml carries a second copy of this shell without the dispatch arm, and
-    it also fires on `push: main` where the diff is likewise empty. It survives
-    only because the step is gated to pull_request events. Dropping that gate
-    reintroduces this exact red on every push to main.
+    Native merge queue requires the synthetic latest-main commit to repeat this
+    fence. A main push has no review diff and must retain the selftest-only path.
     """
     step = _fence_step_run(".github/workflows/fences.yml", LIVE_CHECK_STEP)
     condition = str(step.get("if", ""))
-    assert "pull_request" in condition and "github.event_name" in condition, (
-        "fences.yml's live check must stay gated to pull_request events (or grow "
-        f"the same verified-empty dispatch arm ci.yml has). Found if: {condition!r}"
-    )
+    assert "github.event_name == 'pull_request'" in condition
+    assert "github.event_name == 'merge_group'" in condition
+    assert "push" not in condition
+    body = str(step["run"])
+    assert "github.event.pull_request.base.sha" in body
+    assert "github.event.merge_group.base_sha" in body
 
 
 def test_packed_live_check_reads_ci_changed_files_json():

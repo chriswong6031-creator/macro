@@ -39,6 +39,7 @@ WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 
 PACK_COUNT = 12
 IMMUTABLE_BASE = "github.event.pull_request.base.sha"
+IMMUTABLE_MERGE_GROUP_BASE = "github.event.merge_group.base_sha"
 # Every one of these resolves to a moving branch tip at run time.  They are the
 # plausible-looking substitutions for the immutable base SHA above, which is exactly
 # what makes them dangerous: the workflow keeps running and the plan quietly drifts.
@@ -178,6 +179,16 @@ def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
     assert IMMUTABLE_BASE in scope_arg
     for mutable in MUTABLE_REFS:
         assert mutable not in scope_arg, f"ci-plan's diff base must not depend on {mutable}"
+
+
+def test_ci_plan_handles_native_merge_group_with_immutable_base_sha() -> None:
+    workflow = _workflow()
+    triggers = workflow.get("on") or workflow.get(True)
+    assert triggers["merge_group"]["types"] == ["checks_requested"]
+    for step in (_plan_step(), _pack_step()):
+        scope_arg = step["env"]["CI_SCOPE_ARG"]
+        assert "github.event_name == 'merge_group'" in scope_arg
+        assert IMMUTABLE_MERGE_GROUP_BASE in scope_arg
 
 
 def test_workflow_dispatch_passes_no_changed_from_so_main_stays_full_suite() -> None:

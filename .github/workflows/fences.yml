@@ -18,7 +18,9 @@ name: fences
 # classification stay intact while runner allocation falls from three to one.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, codex/merge-queue-pilot]
+  merge_group:
+    types: [checks_requested]
   push:
     branches: [main]
 
@@ -33,9 +35,9 @@ concurrency:
   group: fences-${{ github.event.pull_request.number || github.ref }}
   # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09. On a PR it is still
   # `true` — a newer commit obsoletes the older fence result, and coalescing agent
-  # push bursts is the whole reason this line exists. On MAIN it must be `false`,
-  # because coalescing-by-cancel there does not merely waste a run, it makes a
-  # concluded run IMPOSSIBLE.
+  # push bursts is the whole reason this line exists. On MAIN and merge_group it
+  # must be `false`: main can be pushed faster than a fence concludes, while GitHub
+  # itself owns queue-ref obsolescence and needs one durable synthetic-head proof.
   #
   # THE MEASUREMENT. This workflow is one of the two main proofs that
   # merge_on_green.main_proof reads (MAIN_PROOF_WORKFLOWS, scripts/merge_on_green.py),
@@ -94,15 +96,14 @@ jobs:
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         id: self_mod_live
         continue-on-error: true
-        # On push events there is no PR head/base; the selftest above already
-        # proves the discriminating behaviour, so the live diff check only runs
-        # for pull_request events.
-        if: github.event_name == 'pull_request'
+        # Main pushes carry no review diff. Pull requests and native merge groups
+        # do; the latter must prove the queued latest-main synthetic commit too.
+        if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         run: |
-          git fetch origin ${{ github.base_ref || 'main' }}
-          BRANCH="${{ github.head_ref }}"
-          TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
+          BASE_SHA="${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
+          BRANCH="${{ github.head_ref || github.event.merge_group.head_ref }}"
+          TRAILERS=$(git log --format="%B" "$BASE_SHA"..HEAD 2>/dev/null || echo "")
+          FILES=$(git diff --name-only "$BASE_SHA"...HEAD 2>/dev/null || echo "")
           if [ -z "$FILES" ]; then
             echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
             exit 1
