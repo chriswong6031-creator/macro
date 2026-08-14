@@ -480,6 +480,21 @@ the cause has been identified or corrected, and one session owns the recovery.
 Parallel sessions must reuse that recovery instead of launching retries of
 their own.
 
+**Hook-enforced as of 2026-08-13.** `.claude/hooks/gh_quota_guard.py` shape 6
+denies `gh run cancel`, `POST …/actions/runs/<id>/cancel` and `…/force-cancel`
+when the run belongs to `daily.yml`, `closing-bell.yml`, `asia-close.yml`,
+`render.yml`, `engine-render.yml` or `weekly.yml`; it fails OPEN when the run
+cannot be resolved. The paragraph above already said all of this on 2026-08-12
+and did not bind: a live fleet session force-cancelled the US nightly's recovery
+dispatches six times (receipt: `POST /actions/runs/31583415065/force-cancel`),
+and stacked on the #5362 workflow-size strand the night before it served Prophet
+US's 2026-08-10 picks for two full sessions before the operator noticed by
+looking at the site. **A cancel is invisible to every staleness instrument in
+this repo** — a killed bake and a bake that never fired leave the same trace,
+which is nothing. The hook binds Claude-fleet sessions; sessions on other agent
+accounts are bound by this paragraph alone, so treat killing a production run as
+an OPERATOR call and hand it over rather than taking it.
+
 The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,
