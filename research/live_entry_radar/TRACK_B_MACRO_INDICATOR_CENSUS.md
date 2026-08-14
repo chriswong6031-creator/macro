@@ -70,10 +70,9 @@ So M-3 sits on the disagreeing branch; M-4 drops the warm-up floor.
 
 ### 1.4 Plain price MACD — a different family
 
-`engine/technicals.py:34-38 macd_hist`, `engine/cycles.py:213-218 macd_parts`: classic 12/26/9 on
-**price**, `adjust=True`. The gate uses RSI-MACD, never price MACD
-(`engine/confluence_tiers.py:32` — "faithful RSI-MACD (NOT price MACD)");
-`engine/mtf_upturn.py:268 _price_macd_hist` is the price-MACD leg.
+`engine/technicals.py:34-38 macd_hist`, `engine/cycles.py:213-218 macd_parts`,
+`engine/mtf_upturn.py:268 _price_macd_hist`: classic 12/26/9 on **price**, `adjust=True`. The gate
+uses RSI-MACD, never price MACD (`engine/confluence_tiers.py:32`).
 
 ### 1.5 ATR — three different definitions
 
@@ -94,14 +93,13 @@ here uses canon's SMA-seeded RMA**, so none equals Pine `ta.atr`.
 
 **It does not compute the confluence.** It is a presentation + price-plan layer receiving the gate
 verdict as a boolean keyword — `engine/entry_signal.py:148-159`:
-`assess(close, high, rec, *, buyable: bool | None = None)`, where "``buyable`` is the MACD-2D x
-StochRSI-3D CONFLUENCE verdict (engine/signal_gate.is_buyable)". Its only use of `buyable` is a
-**one-way demotion** (`:193-195`): `buyable is False` + a ladder reading `buy_now`/`partial` →
-`await_confluence`. It never upgrades, never re-derives, never inspects a timeframe;
-`buyable=None` leaves it ungated. Everything else (buy zone, `chase_above`, `stop`, `atr_pct` =
-A-6, horizon reads `d3/d21/d63`, timing window) derives from the daily close plus
-`rec["ladder"]`/`rec["cycle"]`. Self-gates: no ladder state, or `< 60` closes → `None` with a named
-reason (`:131-145`).
+`assess(close, high, rec, *, buyable: bool | None = None)`, "the MACD-2D x StochRSI-3D CONFLUENCE
+verdict (engine/signal_gate.is_buyable)". Its only use of `buyable` is a **one-way demotion**
+(`:193-195`): `buyable is False` + a ladder reading `buy_now`/`partial` → `await_confluence`. It
+never upgrades, never re-derives, never inspects a timeframe; `buyable=None` leaves it ungated.
+Everything else (buy zone, `chase_above`, `stop`, `atr_pct` = A-6, horizon reads `d3/d21/d63`,
+timing window) derives from the daily close plus `rec["ladder"]`/`rec["cycle"]`. Self-gates: no
+ladder state, or `< 60` closes → `None` with a named reason (`:131-145`).
 
 **The validated gate lives in `confluence_tiers.py` (compute) + `signal_gate.py` (adjudicate).**
 Tier table `engine/confluence_tiers.py:12-16` (weight, definition, held-out stop-out / 110 US
@@ -112,26 +110,25 @@ above-200MA 43.1%. `BUYABLE_TIERS = ("T1","T2","T3")` (`engine/signal_gate.py:10
 deliberately excluded** — it fires off the 2D StochRSI, not the 3D (`:102-103`). `is_buyable(v)` =
 `v["eligible"] and v["tier_cascade"] in BUYABLE_TIERS` (`:107-114`). `FRESH_TICKS = 2` **on the
 signal's own timeframe** (a tick = one native bar: 3d on the 3D, 2d on the 2D);
-`EARLY_CROSS_BARS = 1.5` is the T3/T4 projection window (`engine/confluence_tiers.py:60-66`). The
-asymmetry is intentional: "the StochRSI sets up the zone (it need not be same-bar), the 2D MACD
-cross is the freshness-gated trigger" (`engine/signal_gate.py:96-99`).
+`EARLY_CROSS_BARS = 1.5` is the T3/T4 projection window (`:60-66`). The asymmetry is intentional:
+"the StochRSI sets up the zone (it need not be same-bar), the 2D MACD cross is the freshness-gated
+trigger" (`engine/signal_gate.py:96-99`).
 
 **2D/3D bar construction (the PIT core)** — `_tf_bars(daily, n, market)`,
 `engine/confluence_tiers.py:274-304`: `bucket(d) = session_anchor.session_positions(d, market) // n`
 — an **absolute** session-calendar anchor, not the caller's first timestamp; era
 `ANCHOR_ERA = "abs-session-2026-08-06"` on every verdict (`:54`); ruling
 `research/SESSION_ANCHOR_ABSOLUTE_CALENDAR_ADJUDICATION_BY_FABLE.md`. Aggregation = per-bucket
-**last close**, indexed by that bucket's **last session date** (`:286-290`), so a downstream ffill
-can only reference a bucket at/after its close (leak-free). The old `resample("2B"/"3B")` anchored
-bins to the series' first timestamp: one dropped leading bar flipped the tier on 13/232 names and
-the not-topped veto on 27/232, and the two production loaders disagreed on live buyability the same
-night (`engine/session_anchor.py:5-12`). The US reference is **rules, not data** —
-`lib.nyse_calendar` (`:20-26`); a missing CN/HK/CA reference **raises**, never falls back (`:28-33`).
-A second, deliberate anchor exists: `canon.resample_sessions` (`engine/canon.py:365-398`) buckets by
-*ordinal from the caller's first bar* — a 1-to-5-session leading drop moves a cascade field on
-**12.83%** of data/stocks cases through the ordinal path and **0.00%** through the anchored one
-(`engine/canon.py:380-384`; pinned `tests/test_canon.py:237-338` §5b). Canon must not be re-phased
-(its phase is part of the cross-repo contract); the cascade stays absolute.
+**last close**, indexed by that bucket's **last session date** (`:286-290`) — leak-free. The old
+`resample("2B"/"3B")` anchored bins to the series' first timestamp: one dropped leading bar flipped
+the tier on 13/232 names and the not-topped veto on 27/232, and the two production loaders
+disagreed on live buyability the same night (`engine/session_anchor.py:5-12`). The US reference is
+**rules, not data** — `lib.nyse_calendar` (`:20-26`); a missing CN/HK/CA reference **raises**
+(`:28-33`). A second, deliberate anchor exists: `canon.resample_sessions`
+(`engine/canon.py:365-398`) buckets by *ordinal from the caller's first bar* — a 1-to-5-session
+leading drop moves a cascade field on **12.83%** of data/stocks cases through the ordinal path and
+**0.00%** through the anchored one (`engine/canon.py:380-384`; pinned `tests/test_canon.py:237-338`
+§5b). Canon must not be re-phased; the cascade stays absolute.
 
 **What Prophet consumes:** `engine/prophet_doors.py:565-570` — `door_t_fires(v)`, "the incumbent
 VALIDATED construction, **byte-unmodified**", returning
@@ -162,16 +159,14 @@ Door T — the coupling surface is imports and the params block, nothing else.
 
 **Depth failed.** `research/entry_stack/A3_CANDIDATE_BOOK_DRAFT.md:20`, verbatim: "Multi-TF stoch
 **washout DEPTH** behind a fire (incl. 2W deep) | **H1 FAIL** — +2.9pp clean15 but **+3.5pp
-stop5**; `w2_deep ≈ 0 alone`; depth works only through the cohort lens (H6→COILED)". So depth
-bought a marginally cleaner 15-day path at the cost of a **+3.5pp higher stop-out rate** — the
-"increased stop burden".
-
-**Motion looked better.** `…:39`: "Weekly TURN adds **+19pp held21** (68.4 vs 49.0) at state level;
-deep×reversing **+26pp**; **4-TF turn-confluence count monotone 43.7→61.4%** (BOTTOM_CONFIDENCE
-Ph1-2, 68,916 evals — state-level, held21, **NOT fire-conditional, NOT ESX grader**)." The lesson,
-`…:62-65`: "at fire time, cycle-scale POSITION (depth/age/location) is dead or NC-2-confounded;
-cycle-scale MOTION (turn evidence) is a near-miss/validated-ingredient at state level … **but never
-adjudicated on the gate-fire tape itself**." Note the caveat — those figures motivate, not validate.
+stop5**; `w2_deep ≈ 0 alone`; depth works only through the cohort lens (H6→COILED)" — a marginally
+cleaner 15-day path at the cost of a **+3.5pp higher stop-out rate** (the "increased stop burden").
+**Motion looked better** — `…:39`: "Weekly TURN adds **+19pp held21** (68.4 vs 49.0) at state
+level; deep×reversing **+26pp**; **4-TF turn-confluence count monotone 43.7→61.4%**
+(BOTTOM_CONFIDENCE Ph1-2, 68,916 evals — state-level, held21, **NOT fire-conditional, NOT ESX
+grader**)." The lesson, `…:62-65`: "at fire time, cycle-scale POSITION (depth/age/location) is dead
+or NC-2-confounded; cycle-scale MOTION (turn evidence) is a near-miss/validated-ingredient at state
+level … **but never adjudicated on the gate-fire tape itself**." Those figures motivate, not validate.
 
 **The kill.** `research/DO_NOT_REBUILD.md:83`, verbatim:
 `| KILL-WASHOUT-TURN | Washout × turn (2W operator seed) | KILLED — operator seed dies in test | Entry-stack Amendment-3 adjudication (#1747) |`
@@ -229,27 +224,24 @@ Pin and disclose which store is read.
 (An earlier pass of this census wrongly concluded "no": a sweep for `interval="60m"` misses it,
 because Polygon is a REST aggregates path, not a kwarg. Corrected.)
 
-- **Producer** `scripts/build_polygon_intraday.py` → `data/intraday/<T>.parquet`; docstring `:1-7`:
-  "Intraday (hourly) US price accrual via Polygon / massive.com … **Powers the 4H timeframe** on US
-  single-stock charts and the 2D/3D intraday bar-derivation hooks (`engine/bar_derive.py`)".
-- **Vendor/freshness** Polygon **STANDARD** — **15-MIN DELAYED**, `DELAYED_MIN = 15` (`:38`),
-  stamped to a `data/intraday/_meta.json` sidecar (`:9-13`). **Not real-time.**
-- **Granularity** `multiplier: 1`, `timespan: hour` (`config.yml:597-598`); **4H is aggregated
-  client-side by chart.js** (`config.yml:590-591`) — no stored 4H bar exists.
-- **Coverage** US-only by entitlement, curated to `data/stocks/*` + sector/factor ETFs
-  (`config.yml:592`) — ~240 names, **not** the 2,779-name `baskets/ohlcv` universe.
-- **Retention** `lookback_days: 180` cold-start; hourly cron `--lookback-days 5`; append-only,
-  2-day overlap, dedup on bar ts (`config.yml:598`). **Schedule**
-  `.github/workflows/intraday.yml` (`intraday-bars`), cron `35 13-21 * * 1-5`, self-hosted,
-  `POLYGON_API_KEY` a CI secret (`:15,55-60`).
-- **Persistence — this matters:** **gitignored** (`.gitignore:66`), persisted only via
-  `actions/cache` under the `intraday-` namespace (`.gitignore:63-65`); `site/intraday/<T>.json` is
-  the shipped artifact. So it is **CI-cache-resident, not committed** — 0 tracked files, absent
-  from the primary checkout. **UNVERIFIED:** live population (needs the CI-only key, `:24-25`).
-
-Out of scope but present: `commodity/{asset}_hourly` (`scripts/commodity_sentinel.py:40,75`) and
-`coinbase/btc_hourly` (`scripts/vector_sentinel.py:63`) — the two callers of the store's intraday
-affordance (`lib/store.py:63`). `engine/thetadata_store.py` is **EOD options** (`:4`, `:96`).
+**Producer** `scripts/build_polygon_intraday.py` → `data/intraday/<T>.parquet`; docstring `:1-7`:
+"Intraday (hourly) US price accrual via Polygon / massive.com … **Powers the 4H timeframe** on US
+single-stock charts and the 2D/3D intraday bar-derivation hooks (`engine/bar_derive.py`)".
+**Vendor/freshness** Polygon **STANDARD** — **15-MIN DELAYED**, `DELAYED_MIN = 15` (`:38`), stamped
+to a `data/intraday/_meta.json` sidecar (`:9-13`); **not real-time**. **Granularity**
+`multiplier: 1`, `timespan: hour` (`config.yml:597-598`) — **4H is aggregated client-side by
+chart.js** (`:590-591`), no stored 4H bar exists. **Coverage** US-only by entitlement, curated to
+`data/stocks/*` + sector/factor ETFs (`:592`) — ~240 names, **not** the 2,779-name `baskets/ohlcv`
+universe. **Retention** `lookback_days: 180` cold-start, hourly cron `--lookback-days 5`,
+append-only with 2-day overlap and dedup on bar ts (`:598`); **schedule**
+`.github/workflows/intraday.yml` (`intraday-bars`), cron `35 13-21 * * 1-5`, self-hosted,
+`POLYGON_API_KEY` a CI secret (`:15,55-60`). **Persistence — this matters:** **gitignored**
+(`.gitignore:66`), persisted only via `actions/cache` under the `intraday-` namespace (`:63-65`),
+with `site/intraday/<T>.json` the shipped artifact — so it is **CI-cache-resident, not committed**
+(0 tracked files, absent from the primary checkout). **UNVERIFIED:** live population (needs the
+CI-only key, `:24-25`). Also present, out of scope: `commodity/{asset}_hourly`
+(`scripts/commodity_sentinel.py:40,75`), `coinbase/btc_hourly` (`scripts/vector_sentinel.py:63`);
+`engine/thetadata_store.py` is **EOD options** (`:4`, `:96`).
 
 **Two hard caveats** — `engine/bar_derive.py:1-4, 20-23`: (1) "Nothing here is wired into a
 production build by default — **it is additive plumbing**" — `derive_daily_close`,
@@ -264,23 +256,23 @@ inputs to `signal_frame` — that "would double-resample and break faithfulness"
 All calendar logic is **hand-rolled stdlib**; `pandas_market_calendars` / `exchange_calendars` are
 used nowhere and are in no `requirements.txt`. Timezones are stdlib `zoneinfo`.
 
-- **`lib/nyse_calendar.py`** (625 ln) — **real**: rule-computed NYSE holidays + observance shifts,
-  `ONE_OFF_CLOSURES` (2012 Sandy, 2018 Bush, 2025 Carter), session-gap API `session_n_back/forward`,
-  `sessions_between` (`:469-624`). Explicitly does **not** model early closes (`:10-13`).
-- **`engine/session_digest.py`** — **real, DST-safe**, the *only* early-close model: open 9:30 /
-  close 16:00 / `EARLY_CLOSE_ET` 13:00 (`:170-176`), `is_early_close()` (`:199-226`),
-  `session_window_et()` (`:229-239`).
-- `lib/hk_calendar.py` (283) · `lib/cn_calendar.py` (202) — mirror the `is_session`/`holidays` shape
-  but are **separate modules with no shared rule engine**; CN deliberately minimal plus a
-  `MAX_LEGIT_CLOSURE_DAYS = 11` backstop (`cn_calendar.py:16-28,53`). `pd.offsets.BDay()` (dozens of
-  sites) is holiday-**blind**, self-labelled (`engine/earnings_blackout.py:102`).
+**`lib/nyse_calendar.py`** (625 ln) is the **real** one: rule-computed NYSE holidays + observance
+shifts, `ONE_OFF_CLOSURES` (2012 Sandy, 2018 Bush, 2025 Carter), session-gap API
+`session_n_back/forward`, `sessions_between` (`:469-624`) — but it explicitly does **not** model
+early closes (`:10-13`). That gap is filled by **`engine/session_digest.py`**, **real and
+DST-safe** and the *only* early-close model: open 9:30 / close 16:00 / `EARLY_CLOSE_ET` 13:00
+(`:170-176`), `is_early_close()` (`:199-226`), `session_window_et()` (`:229-239`).
+`lib/hk_calendar.py` (283) and `lib/cn_calendar.py` (202) mirror the `is_session`/`holidays` shape
+but are **separate modules with no shared rule engine** (CN deliberately minimal plus a
+`MAX_LEGIT_CLOSURE_DAYS = 11` backstop, `cn_calendar.py:16-28,53`); `pd.offsets.BDay()` (dozens of
+sites) is holiday-**blind**, self-labelled (`engine/earnings_blackout.py:102`).
 
 **Reach:** ~110 files import `lib.nyse_calendar` (404 occurrences) — the nightly
 (`scripts.build_session_digest`, `daily.yml:3622`), the render lane (`scripts/build_site.py:74`),
-and Prophet (`engine/prophet_bridge.py`, `engine/prophet_live/{armed_pack,live_states}.py`, raising
-`ContractError` on "not an NYSE session", e.g. `engine/options_signal_episode.py:620`). It is also
-the reference behind the 2D/3D anchor (§2), and `engine/marketing/market_clock.py:108-217`,
-`engine/rebalance_calendar.py`, `engine/source_registry.py:236-249` do their session arithmetic on it.
+Prophet (`engine/prophet_bridge.py`, `engine/prophet_live/{armed_pack,live_states}.py`, raising
+`ContractError` on "not an NYSE session", e.g. `engine/options_signal_episode.py:620`), and
+`engine/{marketing/market_clock,rebalance_calendar,source_registry}.py`. It is also the reference
+behind the 2D/3D anchor (§2).
 
 **Intraday session clock: YES, but fragmented and partly holiday-blind.** Holiday-aware
 `pre|rth|post|closed` machines at `scripts/build_basket_pulse.py:158-214` (US+HK),
@@ -311,14 +303,13 @@ price-threshold inversion**; the intraday lane does no bar math at all.
 session's bar**, never overwriting the as-of close. Measured: switching from replace- to
 append-semantics changed the answer for **45 of 180** probed names and moved the armed count
 98 → 68 (`:20-25`), because replacing froze series length, session-anchor bucket positions and
-freshness tick counts at yesterday's.
-
-**Price-basis hazard, already solved once** — `live_states.py:136-147`: armed levels are prices on
-the **split+dividend adjusted** close series; `price` on every row is a **raw vendor print**; "the
-live quote is deliberately NOT converted — an adjusted 'quote' is a number no exchange ever
-printed." Every pass runs `interval.basis_audit` (pack `as_of_close` vs feed `prev_close`, per
-name); past `basis_tolerance_pct` the name goes `dark` with `basis_mismatch`. States are graded
-`live / delayed(~Nmin) / last_rth / eod / dark` (`:20`; honest-delay law TS-R1 at
+freshness tick counts at yesterday's. **Price-basis hazard, already solved once** —
+`live_states.py:136-147`: armed levels are prices on the **split+dividend adjusted** close series;
+`price` on every row is a **raw vendor print**; "the live quote is deliberately NOT converted — an
+adjusted 'quote' is a number no exchange ever printed." Every pass runs `interval.basis_audit`
+(pack `as_of_close` vs feed `prev_close`, per name); past `basis_tolerance_pct` the name goes
+`dark` with `basis_mismatch`. States are graded `live / delayed(~Nmin) / last_rth / eod / dark`
+(`:20`; honest-delay law TS-R1 at
 `research/TURN_SENSITIVITY_UPGRADE_MASTERPLAN_BY_FABLE.md:44`).
 
 **Partial-bucket provisionals exist on the daily grid:** `engine/confluence_tiers.py:664` — "the
@@ -349,23 +340,23 @@ residual alpha) × timing (`engine/cycles` + reversal overlay) (`:1-10`), explic
 statistical edge**" (`:6-10`); alpha weights US 0.7 / CN 0.35 / CA 0.55 (`:29-31`). A **consumer**
 of Prophet's gate — the US "Top setups" shortlist is gated on `signal_gate.is_buyable` (`:240-245`)
 and it reads `entry_signal.assess()["status"]` (`:270`).
-**`engine/stock_personality.py` (1129 ln)** — per-ticker `stock_personality.v1` label assembly,
-**DISPLAY-ONLY and PURE**; "Never scores, sizes, or gates positions"; `may_rank/size/gate=False`
-(`:1-18`). `setup_compatibility(personality, species_entries)` is where a new entry species would
-be *described*, not gated.
+**`engine/stock_personality.py` (1129 ln)** — per-ticker label assembly, **DISPLAY-ONLY and PURE**;
+"Never scores, sizes, or gates positions"; `may_rank/size/gate=False` (`:1-18`).
+`setup_compatibility(personality, species_entries)` is where a new entry species would be
+*described*, not gated.
 
-**The real collision is NOT `ignition_radar`** — despite the name it is market/basket-grain
-breadth, and its only washout-shaped element is `_c3_washout_thrust20`, a **breadth** chip
-(`%>20dma washout→thrust`, off `data/breadth/_closes_cache.parquet`,
+**The real collision is NOT `ignition_radar`** — despite the name it is market/basket-grain breadth,
+and its only washout-shaped element is `_c3_washout_thrust20`, a **breadth** chip (`%>20dma
+washout→thrust`, off `data/breadth/_closes_cache.parquet`,
 `engine/risk_radar_market_catalysts.py:312-320`). Different grain, different input; the overlap is
 vocabulary only.
 
 **It is `engine/washout_turn.py`** — an existing **per-name weekly washout-turn watch organ (US)**,
-display-tier, zero authority (`:1-4`). It exists because MCD printed a weekly RSI-MACD bullish
-cross at the 6.3rd percentile of its own weekly line history since 1968 and no organ consumed
-weekly-grain confluence per name (`:6-16`). It writes `site/stockdata/washout_turn.json`,
+display-tier, zero authority (`:1-4`), built because MCD printed a weekly RSI-MACD bullish cross at
+the 6.3rd percentile of its own weekly line history since 1968 and no organ consumed weekly-grain
+confluence per name (`:6-16`). It writes `site/stockdata/washout_turn.json`,
 `data/washout_turn/ledger.jsonl`, `rec["washout_turn"]` (`:18-22`), on **canon math only** (R-A)
-(`:24-33`). Its charter already records the kill boundary —
+(`:24-33`), and its charter already records the kill boundary —
 `research/washout_turn_name_lane/MCD_MISS_EVIDENCE_2026-08-05.md:76-77`: "Scored washout→turn
 constructions remain NULL/killed per Oracle P8 P-W1/S-W3 and Entry-stack Amendment-3 #1747 — this
 lane ships display-tier watch vocabulary only." `engine/mtf_upturn.py` (TS-R3, §3) is the second
@@ -373,9 +364,8 @@ adjacency: per-stock multi-TF upturn organ, K-of-N legs, display tier, registere
 
 **Contract implication.** Draw the boundary against `engine/washout_turn.py` and
 `engine/mtf_upturn.py` (same grain, same family, overlapping vocabulary); merely *note*
-`ignition_radar` as a name collision at a different grain. `setups.py` and `stock_personality.py`
-are downstream consumers — the boundary there is "may be read by them; must not write into their
-scoring".
+`ignition_radar` as a name collision at a different grain. `setups.py`/`stock_personality.py` are
+downstream consumers — "may be read by them; must not write into their scoring".
 
 ## 8 · Top risks for indicator parity
 
