@@ -88,9 +88,9 @@ scripts/build_prophet_marks.py	82	SCHEMA = "prophet.live_marks/v1"
 scripts/build_prophet_marks.py	83	R2_KEY = "live_flow/prophet_marks.json"
 scripts/build_prophet_marks.py	1152	def _private_observation_path(
 scripts/build_session_digest.py	104	R2_SURFACE_PREFIX = "live_flow/surface/"
-scripts/build_stock_library.py	3601	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
-scripts/build_stock_library.py	4021	# amended at FS-5.
-scripts/build_stock_library.py	4398	_calls = _collect_potential_calls(to_write)
+scripts/build_stock_library.py	3615	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
+scripts/build_stock_library.py	4035	# amended at FS-5.
+scripts/build_stock_library.py	4412	_calls = _collect_potential_calls(to_write)
 scripts/build_tape_flow_daily.py	12	Storage:
 scripts/build_tape_flow_daily.py	18	State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 scripts/calibrate_thetadata_tape_sessions.py	12	to data/options_flow/tape_signing_sessions.jsonl (append-only; never rewritten).
