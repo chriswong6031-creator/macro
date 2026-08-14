@@ -32,7 +32,7 @@ changed:
   - path: agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-13.md
     what: "This handoff."
 
-prs: []
+prs: [5578]
 
 verified:
   - claim: "The grey dot is Terminal's early anticipation dot; fired dates computed for NVDA/NFLX/TSLA."

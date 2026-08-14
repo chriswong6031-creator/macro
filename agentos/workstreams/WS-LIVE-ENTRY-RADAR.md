@@ -27,6 +27,7 @@ waves:
   - id: W0
     title: PR-0 archaeology + frozen research contract (Tracks A–E, kill-registry compliance)
     status: in_progress
+    pr: 5578
     next_action: >
       Merge the PR-0 contract (research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md) with all
       PENDING slots resolved except the operator-facing G0-VIS glyph gate.
