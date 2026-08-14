@@ -3316,6 +3316,7 @@ jobs:
         run: python -m pytest tests/test_evidence_clock.py -q
 
   vintage-pin-fence:
+    scope: exclusive
     if: ${{ false }}
     # Fail-closed: a PR must not equality-pin a live nightly store. Measured
     # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
@@ -9126,6 +9127,7 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_capture_page_evidence.py -q
 
   momoedge-browser-observe:
+    scope: exclusive
     # Observe-only authenticated-page companion. Tests are synthetic/static and
     # never contact MomoEdge, inspect browser authentication, or write cohort
     # coverage. Exact source bytes remain host-private outside git.
@@ -9220,6 +9222,7 @@ jobs:
       - name: reference-integrity mutation / anti-vacuity suite
         run: python -m pytest tests/test_check_reference_integrity.py -q
   dataos-foundation:
+    scope: exclusive
     # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
     # temporal, price-basis, null, registry and quality spine every later Data OS wave
     # builds on. WITHOUT THIS JOB the six suites are dead code: there is no broad
@@ -9245,6 +9248,12 @@ jobs:
     # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
+      - config/delisted_symbols.yml
+      - lib/__init__.py
+      - lib/config.py
+      - lib/delisted_symbols.py
+      - lib/ticker_aliases.py
+      - scripts/build_security_master.py
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml
