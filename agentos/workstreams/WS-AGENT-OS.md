@@ -27,32 +27,34 @@ waves:
     pr: 5472
   - id: W1
     title: "Phase 1 — adoption: CLAUDE.md/AGENTS.md sections, handoff protocol in use, <=10 backfilled decisions"
-    status: in_progress
+    status: done
     pr: 5556
     depends_on: [W0]
-    next_action: >
-      Adoption instructions + backfill are in PR. Gate status: DEC>=10 met (19);
-      DSC>=5 met on the corpus-total reading the Phase 1 commissioning handoff
-      specifies (5 total; 2 postdate Phase 0); UNMET: >=3 handoffs written by
-      sessions other than the scaffolding sessions, from real work — accrues as
-      live workstream sessions stop; do not manufacture records to close it.
   - id: W2
     title: "Phase 2 — status generator + mastermind status CEO brief"
     status: done
     pr: 5472
     depends_on: [W0]
+  - id: W2B
+    title: "Phase 2b — publish non-ranked readiness for the canonical improvement agenda"
+    status: awaiting_ci
+    depends_on: [W2]
+    next_action: >
+      Complete the cross-repo producer/consumer E2E: agent_os_state.v1 and ceo_brief.v1
+      expose agentos.readiness.v1, and Mastermind renders readiness inside the sole
+      canonical improvement agenda. Prove a real exact-tuple join through the sanctioned
+      bridge and prove that current agenda constructors remain honest N/A: none yet authors
+      a workstream/wave identity, so zero live mappings is expected and fuzzy mapping is
+      forbidden. Do not mark done before that E2E is green.
   - id: W3
     title: "Phase 3 — compile-context over the existing context index"
-    status: awaiting_ci
+    status: done
     pr: 5561
     depends_on: [W0]
-    next_action: >
-      merge-on-green lands #5561; then the wave is done. First nightly after the merge
-      rebuilds the context index with the agentos corpus registered.
   - id: W4
     title: "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)"
     status: todo
-    depends_on: [W1, W2]
+    depends_on: [W1, W2, W2B]
 decisions:
   - DEC:AGENTOS-CXI-R12-OVERRULED
   - DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY
@@ -81,12 +83,9 @@ artifacts:
   - research/MASTERMIND_AGENT_OS_V1_IMPLEMENTATION_PLAN.md
   - research/MASTERMIND_CEO_BRIEF_SPEC.md
 next_action: >
-  Close W1's remaining gate: >=3 genuine handoffs from sessions other than the
-  scaffolding sessions, accrued from real work as adopted instructions take effect.
-  Then Phase 3 (compile-context), which gains the agenda-integration wave that
-  retires the UNBLOCKED list. All five conflicts remain ruled: C1 no task store,
-  C2 claims advisory-only, C3 readiness feeds the agenda, C4 stores stay separate,
-  C5 CXI-R12 overruled.
+  Finish W2B's cross-repo readiness E2E and CI. Keep the brief list-free and the
+  readiness envelope graph-only; Mastermind's improvement agenda remains the sole
+  ranked queue. W4 remains todo until W2B is proven and the separate hook wave begins.
 ---
 
 ## Context
@@ -101,3 +100,37 @@ discoveries, a handoff schema, work identity between "program" and "PR", and a C
 
 This workstream owns the knowledge plane only. It does not touch either execution plane, and
 invariant I1 makes that structural rather than promised: nothing here can block or start work.
+
+## Phase 1 acceptance receipts
+
+The current store contains twelve independent real-work handoff records across seven
+non-Agent-OS workstreams. None came from the Agent OS scaffolding/compiler sessions or this
+Phase 2b closure session, and every implementation commit is merged to `origin/main`:
+
+- `agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-14-e2big.md`
+- `agentos/handoffs/CI-MERGE-CONTROL-PLANE-2026-08-14-exclusive-curation.md`
+- `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-13.md`
+- `agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-14.md`
+- `agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-14.md`
+- `agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-14-pr1a.md`
+- `agentos/handoffs/PROPHET-US-AVAILABILITY-2026-08-14.md`
+- `agentos/handoffs/STOCK-IDENTITY-2026-08-13.md`
+- `agentos/handoffs/STOCK-IDENTITY-2026-08-14.md`
+- `agentos/handoffs/WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14.md`
+- `agentos/handoffs/WS-EVAL-OS-MEASUREMENT-LAW-2026-08-14-P0D.md`
+- `agentos/handoffs/WS-EVAL-OS-T1-ENGINE-REGISTRY-2026-08-14.md`
+
+Multiple workstreams authored more than one genuine implementation handoff, so record count
+and distinct-workstream count intentionally differ. The two `WS:AGENT-OS` handoffs are
+excluded. These are adoption receipts, not manufactured closure records. W3 separately closed
+when PR #5561 merged; W2B stays `awaiting_ci` until its Macro producer and Mastermind consumer
+pass the deployed cross-repo E2E.
+
+## Phase 2b mapping acceptance
+
+The current Improvement Agenda sources do not author Agent OS workstream/wave identities.
+Phase 2b therefore accepts zero production mappings as the only honest initial state: every
+real item is N/A until its own source explicitly supplies `agentos_ref`. The E2E must still
+prove that Mastermind reads and indexes the real producer, that a synthetic exact tuple joins,
+and that title or evidence prose never manufactures a mapping. A future source that gains a
+legitimate stable identity may opt in at construction time without changing ranking policy.

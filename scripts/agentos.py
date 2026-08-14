@@ -95,6 +95,7 @@ _BRIEF_MARK = _ROOT / "data" / "governance" / ".ceo_brief_last"
 
 STATE_SCHEMA = "agent_os_state.v1"
 BRIEF_SCHEMA = "ceo_brief.v1"
+READINESS_SCHEMA = "agentos.readiness.v1"
 
 # Sibling checkouts, resolved by walking up from this repo.  Macro is this checkout; the
 # other two are separate clones under the shared project home.  Absent is NORMAL (I4).
@@ -281,8 +282,8 @@ def _citations(value: Any, prefix: str) -> tuple[list[str], list[str]]:
     the single most expensive kind of defect available here: ``depends_on: [FOO]`` was
     silently DROPPED (0 errors, 0 warnings) while ``depends_on: ["WS:FOO"]`` hard-erred,
     so the workstream dependency graph that ``check_references`` walks for cycles — and
-    that ``status`` now walks for readiness — was quietly incomplete, with no
-    signal that an edge was missing.  A ranking computed over a graph with dropped edges
+    that ``status`` now exposes as readiness — was quietly incomplete, with no
+    signal that an edge was missing.  Readiness computed over a graph with dropped edges
     is wrong in a way nobody can see.
     """
     keys: list[str] = []
@@ -555,8 +556,15 @@ def check_workstream(rec: dict[str, Any], path: Path, programs: set[str] | None)
                 out.append(Problem(path, "bad-wave", f"{where} must be a mapping", hard=True))
                 continue
             wid = wave.get("id")
-            if not wid:
-                out.append(Problem(path, "bad-wave", f"{where} missing 'id'", hard=True))
+            if not isinstance(wid, str) or not wid.strip() or wid != wid.strip():
+                out.append(
+                    Problem(
+                        path,
+                        "bad-wave",
+                        f"{where} 'id' must be a non-empty string without surrounding whitespace",
+                        hard=True,
+                    )
+                )
                 continue
             if not wave.get("title"):
                 out.append(Problem(path, "bad-wave", f"{where} ({wid}) missing 'title'", hard=True))
@@ -1116,7 +1124,7 @@ def _strategic_state_from_refs(
     A checkout parked on a branch that predates the file still CARRIES it on
     `refs/remotes/origin/*` — the CLONE is current, only the working tree is behind
     (measured 2026-08-13: Mastermind's `master` sat 43 commits back, and the brief
-    neutralised its P0 ranking over a file the clone had all along).  The ref copy is
+    reported unknown P0 activity over a file the clone had all along).  The ref copy is
     already on disk, so reading it stays inside the zero-network contract; the
     alternative is discarding a join over which branch a sibling happens to be on.
     Both misses degrade, and they degrade DIFFERENTLY: a checkout with no readable
@@ -1126,7 +1134,7 @@ def _strategic_state_from_refs(
                 "--format=%(refname:short)", "refs/heads", "refs/remotes", cwd=root)
     if walk is None:
         degraded.add(
-            f"{label} absent — p0 ids unvalidated, P0 ranking neutral (not found in the "
+            f"{label} absent — p0 ids unvalidated, p0_active unknown (not found in the "
             "Mastermind working tree, and the checkout has no readable git refs to fall "
             "back to)"
         )
@@ -1141,12 +1149,12 @@ def _strategic_state_from_refs(
         if text is not None:
             degraded.add(
                 f"{label} absent from the working tree — read from local ref {ref} "
-                "(stale Mastermind checkout; P0 ranking uses the ref copy)"
+                "(stale Mastermind checkout; p0_active uses the ref copy)"
             )
             return text, ref
     degraded.add(
         f"{label} absent from the working tree and all local refs — p0 ids unvalidated, "
-        "P0 ranking neutral (this Mastermind clone predates config/strategic_state.yml)"
+        "p0_active unknown (this Mastermind clone predates config/strategic_state.yml)"
     )
     return None
 
@@ -1160,7 +1168,7 @@ def load_p0(degraded: Degraded) -> dict[str, str] | None:
     """
     root = repo_roots().get("mastermind")
     if root is None:
-        degraded.add("Mastermind checkout not found — p0 ids unvalidated, P0 ranking neutral")
+        degraded.add("Mastermind checkout not found — p0 ids unvalidated, p0_active unknown")
         return None
     target = root / _STRATEGIC_STATE_REL
     # Host paths are never printed into a COMMITTED artifact — the message names the
@@ -1346,7 +1354,6 @@ def build_records(
     merged_truncated = bool((builds or {}).get("merged_truncated"))
     live_branches = set(worktrees.get("branches") or [])
 
-    # Wave-level dependents, for the UNBLOCKED section's unblock count.
     out: list[dict[str, Any]] = []
     for key in sorted(ws):
         rec = ws[key]
@@ -1356,12 +1363,6 @@ def build_records(
         waves = [w for w in (rec.get("waves") or []) if isinstance(w, dict)]
         rollup = {name: 0 for name in sorted(WAVE_STATUS)}
         record_warnings: list[str] = []
-
-        dependents: dict[str, int] = {}
-        for wave in waves:
-            for dep in wave.get("depends_on") or []:
-                if isinstance(dep, str):
-                    dependents[dep] = dependents.get(dep, 0) + 1
         done_ids = {w.get("id") for w in waves if w.get("status") == "done"}
 
         wave_detail: list[dict[str, Any]] = []
@@ -1407,8 +1408,9 @@ def build_records(
                 "title": wave.get("title"),
                 "status": wstatus,
                 "depends_on": deps,
+                # Compatibility field for agent_os_state.v1 readers.  This is a
+                # boolean projection of the local dependency graph, never a sort key.
                 "deps_satisfied": all(d in done_ids for d in deps),
-                "unblocks": dependents.get(wave.get("id"), 0),
                 "next_action": wave.get("next_action"),
                 "prs": wave_prs,
                 "done_at": done_at,
@@ -1530,51 +1532,216 @@ def build_records(
     return out, warnings
 
 
-def compute_unblocked(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    """Waves whose dependencies are satisfied, ranked per CEO brief spec §3.
+def compute_readiness(
+    records: list[dict[str, Any]], *, degraded: Iterable[str] = (),
+    uncertain_workstreams: Iterable[str] = (),
+) -> dict[str, Any]:
+    """Return the non-ranked dependency envelope consumed by the canonical agenda.
 
-    THIS IS NOT AN ASSIGNMENT AND NOT A QUEUE (I1, and brief §6 "CEO becomes the
-    dispatcher").  It ranks work that is *unblocked*; nothing consumes it to decide what
-    to run, and nothing is assigned to anyone.  See DEC:AGENTOS-START-NEXT-VS-AGENDA for
-    why this is a readiness view and NOT a second copy of the org's ranked work queue —
-    `brain/improvement_agenda.py` owns that concept and this must never impersonate it.
-
-    Order: (1) deps satisfied [filter]; (2) active P0 alignment; (3) unblock count;
-    (4) unclaimed; then key/wave id so the output is stable and arguable.
+    The record order is identity order, never priority order: workstream key, then the
+    workstream record (``wave: null``), then wave id.  Only authored ``depends_on`` edges
+    participate.  P0 alignment, unblock counts, claims, next actions, and titles are
+    intentionally absent so this payload cannot become a second agenda by accident.
     """
-    done_ws = {r["key"] for r in records if r["status"] == "done"}
-    blocked_states = {"blocked", "parked", "killed", "done"}
-    candidates: list[dict[str, Any]] = []
+    by_key = {row["key"]: row for row in records}
+    uncertain = set(uncertain_workstreams)
+    done_workstreams = {
+        key for key, row in by_key.items()
+        if row["status"] == "done" and key not in uncertain
+    }
+    items: list[dict[str, Any]] = []
+
+    def _reason_for_workstream(
+        key: str, status: Any, unmet: list[str], unavailable: list[str]
+    ) -> tuple[str, str, str]:
+        if key in uncertain:
+            return (
+                "unknown", "status_unknown",
+                f"Authored readiness source for WS:{key} is ambiguous or invalid.",
+            )
+        if status == "done":
+            return "done", "status_done", "Authored workstream status is done."
+        if status == "killed":
+            return (
+                "done", "status_done",
+                "Authored workstream status is killed; it is terminal and not actionable.",
+            )
+        if status in {"active", "awaiting_ci", "awaiting_review"}:
+            return (
+                "in_progress", "status_in_progress",
+                f"Authored workstream status is {status}.",
+            )
+        if status in {"blocked", "parked"}:
+            return (
+                "blocked", "workstream_blocked",
+                f"Authored workstream status is {status}.",
+            )
+        if status == "proposed":
+            if unavailable:
+                return (
+                    "unknown", "status_unknown",
+                    f"Declared dependency sources are unavailable: {', '.join(unavailable)}.",
+                )
+            if unmet:
+                return (
+                    "blocked", "unmet_dependencies",
+                    f"Waiting for declared dependencies: {', '.join(unmet)}.",
+                )
+            return "ready", "dependencies_satisfied", "All declared dependencies are done."
+        return "unknown", "status_unknown", f"Authored workstream status is {status!r}."
+
+    def _reason_for_wave(
+        key: str, status: Any, parent_status: Any, unmet: list[str],
+        unavailable: list[str],
+    ) -> tuple[str, str, str]:
+        if key in uncertain:
+            return (
+                "unknown", "status_unknown",
+                f"Authored readiness source for WS:{key} is ambiguous or invalid.",
+            )
+        if status in {"done", "dropped"}:
+            return "done", "status_done", f"Authored wave status is {status}."
+        if status in {"in_progress", "awaiting_ci"}:
+            return "in_progress", "status_in_progress", f"Authored wave status is {status}."
+        if status == "todo":
+            if unavailable:
+                return (
+                    "unknown", "status_unknown",
+                    f"Declared dependency sources are unavailable: {', '.join(unavailable)}.",
+                )
+            if unmet:
+                return (
+                    "blocked", "unmet_dependencies",
+                    f"Waiting for declared dependencies: {', '.join(unmet)}.",
+                )
+            if parent_status in {"blocked", "parked", "killed"}:
+                return (
+                    "blocked", "workstream_blocked",
+                    f"Parent workstream status is {parent_status}.",
+                )
+            if parent_status == "done":
+                return (
+                    "unknown", "status_unknown",
+                    "Parent workstream is done while this wave remains todo.",
+                )
+            if parent_status in {"proposed", "active", "awaiting_ci", "awaiting_review"}:
+                return "ready", "dependencies_satisfied", "All declared dependencies are done."
+        return "unknown", "status_unknown", f"Authored wave status is {status!r}."
+
     for row in records:
-        if row["status"] in blocked_states:
-            continue
-        if any(dep not in done_ws for dep in row["depends_on"]):
-            continue
-        claimed = bool(row["claim"] and not row["claim"]["stale"])
+        key = row["key"]
+        ws_dependencies = sorted({f"WS:{dep}" for dep in row["depends_on"]})
+        ws_unavailable = sorted(
+            dep for dep in ws_dependencies
+            if dep.split(":", 1)[1] not in by_key
+            or dep.split(":", 1)[1] in uncertain
+        )
+        graph_unmet = sorted(
+            dep for dep in ws_dependencies if dep.split(":", 1)[1] not in done_workstreams
+        )
+        # Terminal records retain graph provenance but have no remaining action to
+        # unblock, so an inherited unfinished edge is not an unmet readiness condition.
+        ws_unmet = [] if row["status"] in {"done", "killed"} else graph_unmet
+        state, reason_code, reason = _reason_for_workstream(
+            key, row["status"], ws_unmet, ws_unavailable
+        )
+        items.append({
+            "workstream": key,
+            "wave": None,
+            "state": state,
+            "reason_code": reason_code,
+            "reason": reason,
+            "depends_on": ws_dependencies,
+            "unmet_dependencies": ws_unmet,
+            "source": row["source"],
+        })
+
+        done_waves = {
+            str(wave["id"])
+            for wave in row["wave_detail"]
+            if wave["status"] == "done"
+        }
+        known_waves = {str(wave["id"]) for wave in row["wave_detail"]}
         for wave in row["wave_detail"]:
-            if wave["status"] != "todo" or not wave["deps_satisfied"]:
-                continue
-            candidates.append({
-                "workstream": row["key"],
+            local_dependencies = {
+                f"WS:{key}#{dep}" for dep in wave["depends_on"]
+            }
+            dependencies = sorted(set(ws_dependencies) | local_dependencies)
+            unavailable = sorted(
+                set(ws_unavailable) | {
+                    ref for ref in local_dependencies
+                    if ref.split("#", 1)[1] not in known_waves
+                }
+            )
+            unmet = sorted(
+                set(ws_unmet) | {
+                    ref for ref in local_dependencies
+                    if ref.split("#", 1)[1] not in done_waves
+                }
+            )
+            if wave["status"] in {"done", "dropped"}:
+                unmet = []
+            state, reason_code, reason = _reason_for_wave(
+                key, wave["status"], row["status"], unmet, unavailable
+            )
+            items.append({
+                "workstream": key,
                 "wave": wave["id"],
-                "title": wave["title"],
-                "p0": row["p0"],
-                "p0_active": bool(row["p0_active"]),
-                "unblocks": wave["unblocks"],
-                "claimed": claimed,
-                "next_action": wave["next_action"] or row["next_action"],
+                "state": state,
+                "reason_code": reason_code,
+                "reason": reason,
+                "depends_on": dependencies,
+                "unmet_dependencies": unmet,
                 "source": row["source"],
             })
-    candidates.sort(
-        key=lambda c: (
-            0 if c["p0_active"] else 1,
-            -c["unblocks"],
-            1 if c["claimed"] else 0,
-            c["workstream"],
-            str(c["wave"]),
-        )
-    )
-    return candidates
+
+    items.sort(key=lambda item: (
+        item["workstream"], item["wave"] is not None, item["wave"] or ""
+    ))
+    return {
+        "schema": READINESS_SCHEMA,
+        "records": items,
+        "degraded": sorted(set(degraded)),
+    }
+
+
+def readiness_producer_issues(store: Store) -> tuple[list[str], set[str]]:
+    """Return degradation receipts and workstream identities whose truth is uncertain.
+
+    PR state, P0 context, and worktree occupancy enrich the parent status/brief but do
+    not participate in the dependency graph.  Mirroring their health here would make a
+    complete readiness feed look incomplete.  A hard problem attached to a workstream
+    file is different: the view either excludes that source or retains one ambiguous
+    duplicate, so the affected identity must be explicit in the independently consumed
+    envelope.
+    """
+    authoring_root = (store.root / "workstreams").resolve()
+    items: set[str] = set()
+    affected: set[str] = set()
+    for problem in store.problems:
+        if not problem.hard:
+            continue
+        try:
+            problem.path.resolve().relative_to(authoring_root)
+        except ValueError:
+            continue
+        items.add(f"record excluded (malformed): {problem.render(_ROOT)}")
+        # A duplicate may live in a differently named copy, so frontmatter is the
+        # identity authority.  An unparseable source has no frontmatter truth; its
+        # canonical WS filename is the best bounded fallback for dependent records.
+        key: str | None = None
+        try:
+            rec, _body = parse_record(problem.path)
+            raw_key = rec.get("key")
+            if isinstance(raw_key, str) and raw_key:
+                key = raw_key
+        except (OSError, ValueError):
+            stem = problem.path.stem
+            if stem.startswith("WS-") and len(stem) > 3:
+                key = stem[3:]
+        if key:
+            affected.add(key)
+    return sorted(items), affected
 
 
 def build_state(
@@ -1590,6 +1757,7 @@ def build_state(
     records, warnings = build_records(
         store, now=now, builds=builds, p0_status=p0_status, worktrees=worktrees
     )
+    readiness_issues, uncertain_workstreams = readiness_producer_issues(store)
     for problem in store.problems:
         if not problem.hard:
             warnings.append(problem.render(_ROOT))
@@ -1626,23 +1794,35 @@ def build_state(
         # ---- pure function of the authored records + join inputs ----
         "workstreams": records,
         "needs_ceo": [
-            # `workstream`, matching blocked/finished/unblocked and the documented
+            # `workstream`, matching blocked/finished/readiness and the documented
             # ceo_brief.v1 envelope.  It emitted `key` here alone, so the one section the
             # CEO acts on was the one whose shape diverged from its own spec.
             {"workstream": row["key"], **row["needs_ceo"], "source": row["source"]}
             for row in records if row["needs_ceo"]
         ],
-        "unblocked": compute_unblocked(records),
+        "readiness": compute_readiness(
+            records,
+            # This envelope travels independently to the agenda.  It therefore names
+            # defects in its own authored graph, not unrelated parent-view joins.
+            degraded=readiness_issues,
+            uncertain_workstreams=uncertain_workstreams,
+        ),
         "warnings": warnings,
     }
 
 
-PURE_SECTIONS = ("schema", "generator", "workstreams", "needs_ceo", "unblocked", "warnings")
+PURE_SECTIONS = ("schema", "generator", "workstreams", "needs_ceo", "warnings")
 
 
 def pure_section(state: dict[str, Any]) -> dict[str, Any]:
     """The part of the state that must be byte-identical run over run."""
-    return {name: state[name] for name in PURE_SECTIONS if name in state}
+    pure = {name: state[name] for name in PURE_SECTIONS if name in state}
+    readiness = state.get("readiness")
+    if isinstance(readiness, dict):
+        # All three envelope fields are graph-pure: readiness degradation is restricted
+        # to invalid workstream authoring and never mirrors volatile auxiliary joins.
+        pure["readiness"] = readiness
+    return pure
 
 
 def _dump_json(payload: dict[str, Any]) -> str:
@@ -1704,14 +1884,6 @@ def render_state_markdown(state: dict[str, Any]) -> str:
             lines.append(
                 f"- **WS:{item['workstream']}** — {_md_cell(item['question'])}"
                 f" (blocks {item['blocks_waves']} wave(s){when}) — `{item['source']}`"
-            )
-        lines.append("")
-
-    if state["unblocked"]:
-        lines += ["## Unblocked work (readiness, not assignment)", ""]
-        for item in state["unblocked"]:
-            lines.append(
-                f"- `WS:{item['workstream']}` {item['wave']} — {_md_cell(item['title'] or '')}"
             )
         lines.append("")
 
@@ -1788,8 +1960,9 @@ def cmd_status(args: argparse.Namespace) -> int:
         print(f"::warning title=agentos-degraded::{item}", flush=True)
     print(
         f"agentos status: {len(state['workstreams'])} workstreams · "
-        f"{len(state['needs_ceo'])} needing a ruling · {len(state['unblocked'])} unblocked "
-        f"wave(s) · {len(state['warnings'])} warning(s) · "
+        f"{len(state['needs_ceo'])} needing a ruling · "
+        f"{len(state['readiness']['records'])} readiness record(s) · "
+        f"{len(state['warnings'])} warning(s) · "
         f"{len(degraded.items)} degraded input(s)",
         flush=True,
     )
@@ -1803,7 +1976,6 @@ RULE = "━" * 68
 CAP_NEEDS_CEO = 5
 CAP_BLOCKED = 5
 CAP_FINISHED = 8
-CAP_START_NEXT = 3
 
 
 def _overflow(out: list[str], total: int, shown: int, noun: str) -> None:
@@ -1838,20 +2010,6 @@ def _recommended_option(options: list[str], recommendation: str) -> str | None:
     head = _norm(recommendation)
     hits = [opt for opt in options if opt and head.startswith(_norm(opt))]
     return hits[0] if len(hits) == 1 else None
-
-# The brief is a READINESS view, not the company's ranked work queue.  Charter P7 gives
-# that concept to Mastermind `brain/improvement_agenda.py`, and two ranked lists that
-# disagree is exactly the failure P7 exists to prevent — so the brief SAYS SO in prose
-# rather than quietly presenting a rival ordering.  Recorded as DEC:AGENTOS-START-NEXT-
-# VS-AGENDA and escalated as conflict C3.
-UNBLOCKED_SCOPE = (
-    "READINESS, NOT PRIORITY — which waves CAN start because their dependencies are "
-    "satisfied. brain/improvement_agenda.py is the SOLE canonical answer to 'what "
-    "should we do next?' (Chairman ruling C3, 2026-08-12; Charter P7). Agent OS owns "
-    "dependency/readiness computation only. This section is INTERIM: readiness is to "
-    "be fed into the agenda as an input, and this list retired once that lands — see "
-    "DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA."
-)
 
 
 def _since_window(text: str | None, now: _dt.datetime) -> tuple[_dt.datetime, str]:
@@ -1961,8 +2119,7 @@ def build_brief(
         "blocked": blocked,
         "finished": finished,
         "running": running,
-        "unblocked": state["unblocked"],
-        "unblocked_scope": UNBLOCKED_SCOPE,
+        "readiness": state["readiness"],
         "warnings": state["warnings"],
     }
 
@@ -2073,23 +2230,6 @@ def render_brief(brief: dict[str, Any], *, full: bool, state: dict[str, Any]) ->
         f"{running['claims_without_worktree']} claim(s) with no live worktree."
     )
     out.append("                                     → agentos.py brief --full")
-    out.append("")
-
-    out.append(f"━━ UNBLOCKED — READY TO START {RULE[:37]}")
-    out.append("")
-    out.extend(_wrap(UNBLOCKED_SCOPE, 64, " "))
-    out.append("")
-    if not brief["unblocked"]:
-        out.append(" Nothing is unblocked.")
-    cap_next = len(brief["unblocked"]) if full else CAP_START_NEXT
-    for index, item in enumerate(brief["unblocked"][:cap_next], start=1):
-        p0 = f" · P0 {item['p0']}" if item["p0_active"] else ""
-        unblocks = f" · unblocks {item['unblocks']}" if item["unblocks"] else ""
-        claimed = " · CLAIMED" if item["claimed"] else ""
-        out.append(f" {index}. WS:{item['workstream']} {item['wave']} — "
-                   f"{_md_cell(item['title'] or '')}")
-        out.append(f"    {item['source']}{p0}{unblocks}{claimed}")
-    _overflow(out, len(brief["unblocked"]), cap_next, "ready to start")
     out.append("")
 
     if full:
@@ -2901,7 +3041,7 @@ def _higher_law_items(
         p0_status = load_p0(degraded)
         label = f"mastermind:{_STRATEGIC_STATE_REL.as_posix()}"
         if p0_status is None:
-            pass  # load_p0 already said why; ranking stays neutral (I4)
+            pass  # load_p0 already said why; P0 context stays unknown (I4)
         elif p0 not in p0_status:
             degraded.add(
                 f"p0 {p0!r} on WS:{key} is not an objective in {label} — P0 context omitted"
