@@ -334,6 +334,15 @@
   .wri-lrow .st.elev  { color:var(--act); }
   .wri-lrow .st.info  { color:var(--ink-link); }
   .wri-lrow .st.na    { opacity:.62; }
+  /* THREE coverage meanings, three marks (W4 m8). `na` is dimmed because it is an
+     ABSENCE — we could not read it. `none` and `n/app` are ANSWERS ("we looked, there is
+     none" / "this does not apply here"), so they sit at full muted weight: the
+     nulls-printed law is exactly the distinction between not measuring and measuring a
+     negative, and one dimmed mark for all three erased it. Muted ramp only — a coverage
+     state is not a price direction, so the direction tokens (which swap under
+     红涨绿跌) have no business here — the same law as the severity tokens above. */
+  .wri-lrow .st.none  { color:var(--muted); }
+  .wri-lrow .st.n\/app { color:var(--muted); letter-spacing:0; }
   .wri-lrow .rs { color:var(--text); line-height:1.45; }
   /* the Tier-2 receipt mark: a real affordance, not a stray question mark */
   .wri-q { display:inline-grid; place-items:center; width:13px; height:13px; margin-left:5px;

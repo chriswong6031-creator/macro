@@ -191,8 +191,48 @@ def test_every_section_speaks_when_it_has_nothing_to_say(builder, payload):
     assert 'class="wri-lrow"' in html, "%s did not emit a row" % builder
     read = _rs_text(html)
     assert read.strip(), "%s emitted a row with an EMPTY read" % builder
-    # the absence must be marked as one, not dressed as an OK
-    assert 'class="st na"' in html, "%s did not mark itself not-covered" % builder
+    # The absence must be MARKED as one, not dressed as an OK — in any of the three
+    # marks m8 separated: `na` (we could not read it), `none` (we read it; the answer is
+    # none), `n/app` (the dimension does not apply here). What is barred is `ok`.
+    marks = ['class="st na"', 'class="st none"', 'class="st n/app"']
+    assert any(m in html for m in marks), \
+        "%s did not mark itself not-covered" % builder
+    assert 'class="st ok"' not in html, "%s dressed an absence as OK" % builder
+
+
+@needs_node
+def test_the_three_coverage_meanings_render_three_different_marks():
+    """Nulls-printed separates "we did not measure" from "we measured; the answer is no",
+    and one shared `n/a` erased that distinction across the whole drawer.
+
+      na    — a coverage gap. We could not read it; this is NOT an all-clear.
+      none  — evaluated, and the answer is none (Transmission: in no armed chain).
+      n/app — the dimension does not apply to this row (a watchlist name has no weight).
+
+    MUTATION CHECK: map any two of them onto the same token and this reds. The
+    honest-absence sweep does NOT catch that — it asserts a row is marked as
+    not-affirmative, which all three still are."""
+    out = _wr("OUT({na: WR.optionsRow({}), none: WR.chainSection(null), "
+              "napp: WR.roleRow({inBook:false}), "
+              "tokens: [WR.lrowHTML({lab:{en:'x',zh:'x'},state:'na',en:'a',zh:'a'}),"
+              " WR.lrowHTML({lab:{en:'x',zh:'x'},state:'none',en:'a',zh:'a'}),"
+              " WR.lrowHTML({lab:{en:'x',zh:'x'},state:'n/app',en:'a',zh:'a'})]});")
+    assert 'class="st na"' in out["na"]
+    assert 'class="st none"' in out["none"]
+    assert 'class="st n/app"' in out["napp"]
+
+    def token(html):
+        import re as _re
+        m = _re.search(r'<span class="st [^"]*">(.*?)</span>', html, _re.S)
+        return _re.sub(r"<[^>]+>", "|", m.group(1)) if m else None
+
+    marks = [token(h) for h in out["tokens"]]
+    assert len(set(marks)) == 3, \
+        "three different coverage meanings render as %r — the distinction is gone" % marks
+    # and the template styles each of them
+    css = TEMPLATE.read_text()
+    for cls in (".wri-lrow .st.na", ".wri-lrow .st.none", ".wri-lrow .st.n\\/app"):
+        assert cls in css, "%s is emitted and styled nowhere" % cls
 
 
 @needs_node
@@ -347,6 +387,58 @@ def test_the_stance_precedence_uses_the_role_ladders_own_grading(lanes, role, ex
         built[k] = {"state": st}
     out = _wr("OUT({s: WR.intelStance(L, R)});", {"L": built, "R": role})
     assert out["s"] == expect
+
+
+@needs_node
+def test_an_overextended_name_is_never_told_nothing_needs_a_decision():
+    """The stretch oracles disagree, and the drawer must not resolve that in the
+    reader's disfavour.
+
+    Two fields answer "is it stretched": `ladder.alignment.overextended` and
+    `entry_signal.status === 'extended'`. The ladder flags a name the entry status calls
+    clean on 607 of 1,629 (37.3%) — RIVN is exactly this shape (overextended, status
+    `buy_now`) — and because the stance reads the LANE, those names could render
+    "No action / Nothing here needs a decision today." over a position the other oracle
+    calls overextended.
+
+    The floor is a one-way clamp on the all-clear branch only: it can raise attention,
+    never lower it, and it deliberately does NOT touch Get ready (clamping every tier
+    moved 549 names and put Watch back to 83.7%, undoing the previous round's partition).
+
+    MUTATION CHECK: drop the `flags && flags.overextended` clamp and this reds."""
+    quiet = {k: {"state": "ok"} for k in
+             ["price_trend", "stretch", "events", "estimates", "balance", "selling", "rates"]}
+    out = _wr("OUT({plain: WR.intelStance(L, null), "
+              "floored: WR.intelStance(L, null, {overextended:true}), "
+              "flag: WR.overextendedFlag(J), "
+              "ready: WR.intelStance(L2, null, {overextended:true})});",
+              {"L": quiet, "L2": dict(quiet, stretch={"state": "watch"}),
+               "J": {"ladder": {"alignment": {"overextended": True}}}})
+    assert out["plain"] == "none", "the fixture is not the all-clear case"
+    assert out["floored"] == "watch", "an overextended name was told nothing needs a decision"
+    assert out["flag"] is True
+    # and the clamp is scoped: a name already carrying attention is not escalated
+    assert out["ready"] == "ready", "the floor escalated a tier it should not touch"
+
+
+@needs_node
+def test_the_two_stretch_oracles_do_not_contradict_each_other_in_one_vocabulary():
+    """One English word may not name two measurements. The distance row and the stretch
+    lane are different oracles, so the distance row talks about DISTANCE and does not
+    reuse "stretched" — otherwise the drawer renders "Stretched" eight rows above "not
+    stretched", which in ZH was a flat self-negation."""
+    rivn = {"tech": {"pct_vs_200dma": 8.9, "above200": True, "above50": True},
+            "ladder": {"alignment": {"overextended": True}},
+            "entry_signal": {"status": "buy_now"}}
+    out = _wr("OUT({dist: WR.distanceRow(P), lane: WR.laneRead(P).stretch});", {"P": rivn})
+    assert "trend" in out["dist"] and "8.9" in out["dist"]
+    assert "tretched" not in out["dist"], \
+        "the distance row reused the stretch lane's word: %s" % out["dist"]
+    assert "\u62c9\u4f38" not in out["dist"], "the ZH half reused 拉伸 too"
+    # the lane keeps its own vocabulary, and the two labels name different dimensions
+    assert "Distance from trend" in out["dist"]
+    # this fixture IS the disagreement: the ladder says overextended, the lane says clean
+    assert out["lane"]["state"] == "ok" and "not stretched" in out["lane"]["en"]
 
 
 @needs_node
@@ -520,8 +612,11 @@ def test_the_engine_headline_never_reaches_the_dom_at_any_tier():
     may be rendered, and the map is keyed on `status` so a reworded headline still lands
     on descriptive copy instead of falling through to passthrough.
 
-    MUTATION CHECK: restore `es.headline` as the lead (or add a
-    `|| es.headline` fallback) and this reds on the headline text itself."""
+    MUTATION CHECK: restore `es.headline` as the lead and this reds on the headline text
+    itself. (It does NOT cover a `|| es.headline` fallback bolted onto `intelLead` — the
+    payload below uses a MAPPED status, so a fallback never evaluates. The unmapped-status
+    sibling directly beneath is what covers that branch; the two are separate checks
+    because they fail for separate reasons.)"""
     payload = dict(FULL)
     payload["entry_signal"] = {
         "status": "extended",
@@ -837,6 +932,11 @@ def test_severity_never_paints_from_the_direction_tokens():
     Painting an error from `--down` turns it GREEN in Chinese."""
     css = TEMPLATE.read_text()
     block = css[css.index(".wri-lrow .st {"):css.index(".wri-lrow .rs {")]
+    # comments stripped first: the block now carries a comment EXPLAINING that these
+    # rules must not use the direction tokens, and a guard that cannot tell a rule from
+    # its explanation fails the file for documenting itself. Fifth occurrence of this
+    # trap in this wave, so it is called out here by name.
+    block = re.sub(r"/\*.*?\*/", "", block, flags=re.S)
     assert "--up" not in block and "--down" not in block, block
 
 

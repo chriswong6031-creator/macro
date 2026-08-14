@@ -27,6 +27,7 @@ Needs network (fetches the live page once and caches it) and a browser. Hand-run
 the reason recorded in ../IMPLEMENTATION_DELTAS.md: a pytest wrapper would SKIP in CI on
 a missing playwright and report green while proving nothing.
 """
+import argparse
 import http.server
 import pathlib
 import socketserver
@@ -103,20 +104,37 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(raw)
 
 
-def open_first_drawer(page) -> dict:
-    """Click a real chevron and report what happened.
+# The two tables are DIFFERENT code paths and only one of them was ever broken:
+# `#tbl_pf` (holdings) is drawn by portfolio.js, whose row handler swallowed the click;
+# `#tbl_wl` (watchlist) is drawn by watchlist.js, whose delegation always worked. A
+# selector spanning both can land on the never-broken one and report success for the
+# path under test.
+TABLES = {"holdings": "#tbl_pf", "watchlist": "#tbl_wl"}
 
-    Existence is not function: the D1 defect this wave fixed was a chevron that rendered
-    and rotated and opened nothing. Clicking is the only assertion that can tell those
-    two apart."""
-    before = page.evaluate("()=>document.querySelectorAll('tr.row-drawer').length")
-    clicked = page.evaluate(
-        "()=>{var b=document.querySelector('.hold [data-row-exp], .hold [data-exp]');"
-        "if(!b)return false; b.click(); return true;}")
+
+def open_first_drawer(page, table: str) -> dict:
+    """Click a real chevron IN ONE TABLE and report which of three things happened.
+
+    Three states, not a boolean: "no chevron found" and "clicked and nothing opened" are
+    different findings, and collapsing them hides whichever one is real. The second is
+    the D1 defect state — a control that renders, rotates on `aria-expanded`, and does
+    nothing — which no existence check can see."""
+    sel = TABLES[table]
+    before = page.evaluate("(s)=>document.querySelectorAll(s+' ~ * tr.row-drawer, '"
+                           "+s+' tr.row-drawer').length", sel)
+    found = page.evaluate(
+        "(s)=>{var b=document.querySelector(s+' [data-row-exp], '+s+' [data-exp]');"
+        "if(!b)return false; b.click(); return true;}", sel)
     page.wait_for_timeout(600)
-    after = page.evaluate("()=>document.querySelectorAll('tr.row-drawer').length")
-    rows = page.evaluate("()=>document.querySelectorAll('tr.row-drawer .wri-lrow').length")
-    return {"clicked": clicked, "before": before, "after": after, "laneRows": rows}
+    after = page.evaluate("(s)=>document.querySelectorAll(s+' tr.row-drawer').length", sel)
+    rows = page.evaluate("(s)=>document.querySelectorAll(s+' tr.row-drawer .wri-lrow').length", sel)
+    if not found:
+        outcome = "not-found"
+    elif after > before:
+        outcome = "opened"
+    else:
+        outcome = "clicked-no-open"
+    return {"outcome": outcome, "before": before, "after": after, "laneRows": rows}
 
 
 def probe(page) -> dict:
@@ -163,7 +181,7 @@ def main():
     cases = [("all-old", set())] + [("new:" + f, {f}) for f in JS] + [("all-new", set(JS))]
     failures = []
     baseline = {}
-    control_opens = []
+    control_outcome = []
     try:
         with sync_playwright() as pw:
             b = pw.chromium.launch()
@@ -221,31 +239,32 @@ def main():
                                    % (r["tblRows"], r["expBtns"]))
                     # THE FUNCTIONAL CHECK: operate the control, do not merely count it
                     if r["expBtns"]:
-                        d = open_first_drawer(page)
-                        opened = d["clicked"] and d["after"] > d["before"]
-                        note = "opened" if opened else "DID NOT OPEN"
+                        d = open_first_drawer(page, "holdings")
                         if name == "all-old":
-                            # The CONTROL is allowed to be broken — being broken is the
-                            # finding. `portfolio.js` on main returns early on any
-                            # <button>, and `data-row-exp` is one, so production's own
-                            # chevron opens nothing. This run is the receipt for that,
-                            # which is why the control records rather than asserts.
-                            control_opens.append(opened)
-                            print("      control chevron: %s (this is D1, live)" % note)
+                            # The CONTROL is allowed to be broken — being broken IS the
+                            # finding, and which way it is broken is the receipt. Recorded
+                            # with its outcome named, never asserted.
+                            control_outcome.append(d["outcome"])
+                            print("      control holdings chevron: %s%s" % (
+                                d["outcome"],
+                                "  <- this is D1" if d["outcome"] == "clicked-no-open" else ""))
                         elif "portfolio.js" in swap:
-                            # every branch carrying the fix must operate
-                            if not opened:
-                                bad.append("the chevron was clicked and no drawer opened "
-                                           "— the D1 fix is not working")
+                            # the branch carrying the fix must OPEN, in the holdings table
+                            # specifically — that is the path portfolio.js owns
+                            if d["outcome"] != "opened":
+                                bad.append("holdings chevron: %s — the D1 fix is not "
+                                           "working on the path it fixes" % d["outcome"])
                             elif name == "all-new" and not d["laneRows"]:
-                                bad.append("the drawer opened with zero lane rows in it")
+                                bad.append("the holdings drawer opened with zero lane rows")
                         else:
-                            # watchlist.js / watchlist_risk.js alone sit on top of main's
-                            # portfolio.js, so the holdings chevron is still the broken
-                            # one. Asserting it opens would be asserting someone else's
-                            # unfixed bug; what matters is that these files did not make
-                            # the control WORSE.
-                            print("      mixed-branch chevron: %s (main's portfolio.js)" % note)
+                            print("      holdings chevron: %s (on main's portfolio.js)"
+                                  % d["outcome"])
+                        # the watchlist path is asserted SEPARATELY: it was never broken,
+                        # so it must work in every configuration including the control
+                        w = open_first_drawer(page, "watchlist")
+                        if w["outcome"] == "clicked-no-open":
+                            bad.append("the watchlist drawer stopped opening — this path "
+                                       "was never part of D1 and must not regress")
                 print("%-26s list=%-3s tbl=%-3s exp=%-3s drawers=%-2s WRI=%-5s %s"
                       % (name, r["listChildren"], r["tblRows"], r["expBtns"],
                          r["drawers"], r["wri"], "OK" if not bad else "FAIL " + "; ".join(bad)))
@@ -256,15 +275,31 @@ def main():
     finally:
         srv.shutdown()
 
-    if control_opens and not any(control_opens):
-        print("\nNOTE — production's OWN holdings chevron opens nothing today (defect D1: "
-              "portfolio.js's row handler returns early on any <button>, and the expand "
-              "control is one). This branch fixes it; the all-new row above is the proof.")
+    if "clicked-no-open" in control_outcome:
+        print("\nRECEIPT — production's OWN holdings chevron was CLICKED and opened nothing "
+              "(defect D1: portfolio.js's row handler returns early on any <button>, and the "
+              "expand control is one). This branch fixes it; the all-new row is the proof.")
+    elif control_outcome:
+        print("\nNOTE — the control's holdings chevron outcome was %r, not "
+              "'clicked-no-open'. D1 may already be live, or the page state changed; "
+              "re-derive before citing this run as a D1 receipt." % control_outcome[0])
     if failures:
         print("\nFAILURES:", failures)
         sys.exit(1)
     print("\nOK — the live page renders unchanged under every W4 script, alone and all "
           "together; no drawer code runs without a host, and nothing throws.")
+    return 0
 
 
-main()
+if __name__ == "__main__":
+    # Guarded for the same reason its sibling is: at module scope this fired a live fetch
+    # to production, three `git show` subprocesses, a chromium launch and a port bind on
+    # import — including on `--help`.
+    ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    ap.add_argument("--url", default=LIVE_URL, help="page to fetch as the live markup")
+    ap.add_argument("--refresh", action="store_true", help="ignore the cached live page")
+    a = ap.parse_args()
+    LIVE_URL = a.url
+    if a.refresh and CACHE.exists():
+        CACHE.unlink()
+    sys.exit(main())
