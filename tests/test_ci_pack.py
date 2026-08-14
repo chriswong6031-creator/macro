@@ -2548,12 +2548,18 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     exclusive: it only fallback-matched this probe, so curating it keeps the
     ceiling at 128 rather than raising it. Weight and pack ceilings are
     unchanged.
+
+    The two deeper code probes each gain one legitimate conservative match
+    from `options-estate-guards` after #5634 wired its gap-discipline suite.
+    The measured current shapes are 127 jobs / 5,035 weight-seconds for
+    build_free_content.py and 121 / 5,021 for plan_book.py — still nine packs,
+    and still comfortably below the unchanged weight and pack ceilings.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
         ("templates/index.html", 128, 5_800),
-        ("scripts/build_free_content.py", 126, 5_600),
-        ("engine/prophet/plan_book.py", 120, 5_600),
+        ("scripts/build_free_content.py", 127, 5_600),
+        ("engine/prophet/plan_book.py", 121, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
