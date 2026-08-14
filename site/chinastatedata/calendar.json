@@ -1,11 +1,11 @@
 {
   "schema": "china_calendar.v1",
-  "asof": "2026-08-13",
-  "generated_at_utc": "2026-08-13T09:43:55.854412+00:00",
+  "asof": "2026-08-14",
+  "generated_at_utc": "2026-08-14T10:45:56.119489+00:00",
   "horizon_days": 45,
   "entries": [
     {
-      "date": "2026-08-13",
+      "date": "2026-08-14",
       "window_end": "2026-08-31",
       "etype": "earnings_season",
       "label_en": "A-share interim results season — 99% of the covered board reports in 2026-08",
@@ -14,6 +14,18 @@
       "impact": "high",
       "source_class": "feed",
       "source": "china_earnings.calendar",
+      "approx": false
+    },
+    {
+      "date": "2026-08-14",
+      "window_end": null,
+      "etype": "omo_outright_repo_tender",
+      "label_en": "PBoC outright reverse repo tender — 6个月, RMB 1,000bn, matures 2027-02-15",
+      "label_zh": "央行买断式逆回购操作：6个月，10,000亿元，到期 2027-02-15",
+      "region": "cn",
+      "impact": "medium",
+      "source_class": "feed",
+      "source": "china_omo.operations",
       "approx": false
     },
     {
@@ -341,9 +353,7 @@
       "approx": true
     }
   ],
-  "data_gaps": [
-    "china_omo store holds no announced operation inside the horizon (the tape is present; the PBoC simply has nothing pending)"
-  ],
+  "data_gaps": [],
   "authority": {
     "tier": "context_only",
     "may_rank": false
