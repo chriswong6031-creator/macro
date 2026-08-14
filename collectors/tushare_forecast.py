@@ -11,7 +11,8 @@ Two analyst/earnings feeds the free akshare stack can't reliably reach:
 
 GATED: no-ops unless ``TUSHARE_TOKEN`` is set.
   data/tushare/forecast.parquet   ticker, type, p_change_min, p_change_max, end_date, ann_date, asof
-  data/tushare/report_rc.parquet  raw recent-window sell-side rows (best-effort), for revision calc
+  data/tushare/report_rc.parquet  raw sell-side rows, append-only accrual across fetch windows
+                                  (best-effort), for revision calc
 
 DISPLAY/CONTEXT-ONLY (registered ``pending`` in china_signal_lab) — collected + accruing (report_rc
 history is the point); not yet surfaced or scored, awaiting a Phase-0 validation.
@@ -64,6 +65,26 @@ def _accrue_hist(df) -> None:
     new = new.drop_duplicates(subset=["ticker", "ann_date"], keep="last")
     OUT_HIST.parent.mkdir(parents=True, exist_ok=True)
     new.to_parquet(OUT_HIST, index=False)
+
+
+# report_rc row identity: one row per (name, report, forecast quarter). Absent columns drop out of
+# the key (the store is a raw pass-through of whatever schema the endpoint returns); no key column
+# at all degrades to full-row identity minus the run stamp, so overlapping fetches still can't
+# multiply rows.
+_RC_KEY = ("ticker", "report_date", "org_name", "author_name", "quarter", "report_title")
+
+
+def _accrue_rc(rc: pd.DataFrame) -> pd.DataFrame:
+    """Append-only accrual for the raw report_rc store (history is the point — the fetch is a
+    trailing 30-day window, so a bare overwrite forgets every row older than the current window).
+    First-seen row wins on a key collision, preserving its original asof capture stamp."""
+    if OUT_RC.exists():
+        try:
+            rc = pd.concat([pd.read_parquet(OUT_RC), rc], ignore_index=True)
+        except Exception:  # noqa: BLE001
+            pass
+    key = [c for c in _RC_KEY if c in rc.columns] or [c for c in rc.columns if c != "asof"]
+    return rc.drop_duplicates(subset=key, keep="first")
 
 
 def _window(days: int) -> tuple[str, str]:
@@ -132,9 +153,11 @@ def refresh() -> int:
         if rc is not None and len(rc):
             rc = rc.rename(columns={"ts_code": "ticker"})
             rc["asof"] = today
+            out = _accrue_rc(rc)
             OUT_RC.parent.mkdir(parents=True, exist_ok=True)
-            rc.to_parquet(OUT_RC, index=False)
-            log.info("tushare report_rc: wrote %s (%d rows, raw)", OUT_RC, len(rc))
+            out.to_parquet(OUT_RC, index=False)
+            log.info("tushare report_rc: wrote %s (%d rows, +%d fetched, raw)",
+                     OUT_RC, len(out), len(rc))
     except Exception as e:  # noqa: BLE001 — premium/throttled, never fatal
         log.info("tushare report_rc skipped (%s)", e)
     return n
