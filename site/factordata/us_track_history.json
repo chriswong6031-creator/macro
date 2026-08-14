@@ -1,7 +1,7 @@
 {
   "schema": "us_track_history/v1",
-  "as_of": "2026-08-13",
-  "generated": "2026-08-13T16:44:20.922761+00:00",
+  "as_of": "2026-08-14",
+  "generated": "2026-08-14T08:26:15.513226+00:00",
   "cohort_rollup": {
     "horizons": {
       "h5": {
@@ -82,13 +82,13 @@
       },
       "h10": {
         "accruing": true,
-        "raw_n": 1244,
-        "effective_n": 1,
-        "win_rate": 0.5193,
-        "avg_excess": 0.0038,
-        "med_excess": 0.0035,
-        "wilson_lo": 0.2065,
-        "wilson_hi": 1.0,
+        "raw_n": 1383,
+        "effective_n": 2,
+        "win_rate": 0.4989,
+        "avg_excess": 0.001,
+        "med_excess": -0.0002,
+        "wilson_lo": 0.0945,
+        "wilson_hi": 0.9055,
         "cohort_series": [
           {
             "week": "2026-06-15/2026-06-21",
@@ -132,20 +132,20 @@
           },
           {
             "week": "2026-07-27/2026-08-02",
-            "raw_n": 302,
+            "raw_n": 441,
             "effective_n": 1,
-            "win_rate": 0.3477,
-            "avg_excess": -0.0147,
-            "med_excess": -0.0377
+            "win_rate": 0.3379,
+            "avg_excess": -0.0178,
+            "med_excess": -0.0384
           }
         ]
       },
       "h21": {
         "accruing": true,
-        "raw_n": 380,
+        "raw_n": 442,
         "effective_n": 1,
-        "win_rate": 0.4842,
-        "avg_excess": 0.0045,
+        "win_rate": 0.4864,
+        "avg_excess": 0.0052,
         "med_excess": -0.0034,
         "wilson_lo": 0.0,
         "wilson_hi": 0.7935,
@@ -168,11 +168,11 @@
           },
           {
             "week": "2026-07-13/2026-07-19",
-            "raw_n": 64,
+            "raw_n": 126,
             "effective_n": 1,
-            "win_rate": 0.4219,
-            "avg_excess": -0.0153,
-            "med_excess": -0.037
+            "win_rate": 0.4603,
+            "avg_excess": -0.0029,
+            "med_excess": -0.0078
           }
         ]
       },
@@ -186,55 +186,55 @@
     },
     "accruing": false,
     "return_distribution_21d": {
-      "raw_n": 380,
+      "raw_n": 442,
       "bins": [
         {
-          "lo": -0.3057,
-          "hi": -0.2235,
-          "count": 11
+          "lo": -0.4923,
+          "hi": -0.3915,
+          "count": 1
         },
         {
-          "lo": -0.2235,
-          "hi": -0.1413,
-          "count": 21
+          "lo": -0.3915,
+          "hi": -0.2906,
+          "count": 2
         },
         {
-          "lo": -0.1413,
-          "hi": -0.0591,
-          "count": 65
+          "lo": -0.2906,
+          "hi": -0.1897,
+          "count": 16
         },
         {
-          "lo": -0.0591,
-          "hi": 0.0231,
-          "count": 148
+          "lo": -0.1897,
+          "hi": -0.0889,
+          "count": 51
         },
         {
-          "lo": 0.0231,
-          "hi": 0.1053,
-          "count": 75
+          "lo": -0.0889,
+          "hi": 0.012,
+          "count": 192
         },
         {
-          "lo": 0.1053,
-          "hi": 0.1875,
-          "count": 40
+          "lo": 0.012,
+          "hi": 0.1128,
+          "count": 109
         },
         {
-          "lo": 0.1875,
-          "hi": 0.2697,
-          "count": 8
+          "lo": 0.1128,
+          "hi": 0.2137,
+          "count": 49
         },
         {
-          "lo": 0.2697,
-          "hi": 0.3519,
+          "lo": 0.2137,
+          "hi": 0.3146,
+          "count": 14
+        },
+        {
+          "lo": 0.3146,
+          "hi": 0.4154,
           "count": 4
         },
         {
-          "lo": 0.3519,
-          "hi": 0.4341,
-          "count": 4
-        },
-        {
-          "lo": 0.4341,
+          "lo": 0.4154,
           "hi": 0.5163,
           "count": 4
         }
@@ -336,6 +336,11 @@
       },
       {
         "as_of": "2026-08-12",
+        "total": 0,
+        "by_lane": {}
+      },
+      {
+        "as_of": "2026-08-13",
         "total": 0,
         "by_lane": {}
       }
