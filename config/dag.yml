@@ -3169,6 +3169,24 @@ lanes:
           Generic builds and site-only renders may verify/mirror the current candidate
           projection but cannot append, retime, or backfill its ledger. No trade-signal
           scoring, ranking, sizing, gating, or escalation is permitted.
+      - id: prove_candidate_projection
+        module: pytest
+        args: [-p, no:cacheprovider, tests/test_government_revenue_candidates.py,
+               tests/test_government_revenue_candidate_projection.py,
+               tests/test_government_revenue_candidate_fixture.py]
+        note: >
+          Candidate-projection prover (#5516), gated on steps.gate publish == 'yes' and
+          running between the build above and the commit below: the projection proves
+          itself before it publishes, rather than being graded after the fact by whoever
+          next opens a PR. This is a READER — the step diffs `git status --porcelain --
+          data/government_revenue` before and after and fails if the run moved anything,
+          because the builder above owns every `data/` write and a prover must never
+          become a writer. Non-fatal by default (GOVREV_CANDIDATE_PROOF_FATAL=0): the
+          collector venv carries no pytest, so an install that cannot happen on the
+          runner publishes UNPROVEN with a `::warning` rather than dropping the fold.
+          Declared here because the conformance parser extracts it via _PYTHON_M_RE
+          (`python -m pytest`) like any other module; leaving it undeclared is what made
+          this lane the sole hard failure of the DAG conformance check.
 
   # ── filing-forensics-sec.yml / acquire_project_sync ──────────────────────
   - workflow: .github/workflows/filing-forensics-sec.yml
