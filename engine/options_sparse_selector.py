@@ -15,6 +15,7 @@ change flips the constant after the deployment receipts exist.
 from __future__ import annotations
 
 import copy
+import base64
 import fcntl
 import hashlib
 import heapq
@@ -27,7 +28,7 @@ from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from pathlib import Path
 from typing import Any, NoReturn
 from uuid import uuid4
@@ -46,6 +47,56 @@ from scripts import build_prophet_option_shadow_lifecycle as lifecycle
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "contracts/options/options.sparse_selector_runtime.v1.schema.json"
+FROZEN_LIFECYCLE_SCHEMA_PATH = (
+    ROOT / "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json"
+)
+FROZEN_MARK_SCHEMA_PATH = (
+    ROOT / "contracts/options/prophet.option_mark_observation.v1.schema.json"
+)
+FROZEN_LIFECYCLE_BUILDER_PATH = (
+    ROOT / "scripts/build_prophet_option_shadow_lifecycle.py"
+)
+FROZEN_MARK_BUILDER_PATH = ROOT / "scripts/build_prophet_marks.py"
+
+PRODUCER_CONTRACT: dict[str, Any] = {
+    "schema": "options.sparse_selector_evidence_producer_contract/v1",
+    "lifecycle_builder": {
+        "path": "scripts/build_prophet_option_shadow_lifecycle.py",
+        "bytes": 86_565,
+        "sha256": "a5710b6ba5aedcd605541794aa7343c6f10d9af834848a95b2f8eb46b024c281",
+    },
+    "lifecycle_event_schema": {
+        "path": "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json",
+        "bytes": 14_919,
+        "sha256": "047721a1a86d7ef920a2c9a5fd035ab95f2e407453b33842dbfc6ca54e433a8f",
+    },
+    "mark_builder": {
+        "path": "scripts/build_prophet_marks.py",
+        "bytes": 54_446,
+        "sha256": "04eb6636303c223ce88a22c8f224612f33ba6d97f95095fdd09a2c2851896de6",
+    },
+    "mark_schema": {
+        "path": "contracts/options/prophet.option_mark_observation.v1.schema.json",
+        "bytes": 13_088,
+        "sha256": "22e9a2fc6d0b4d9de5788d54b8f4413e8c96c081fd18a53596c1ce3243605f7c",
+    },
+    "ledger": {
+        "schema": "prophet.canonical_ledger_snapshot_receipt/v1",
+        "source_repository": lifecycle.CANONICAL_LEDGER_REPOSITORY,
+        "source_ref": lifecycle.CANONICAL_LEDGER_REF,
+        "source_path": lifecycle.CANONICAL_LEDGER_SOURCE_PATH,
+        "cursor_fields": [
+            "schema",
+            "source_repository",
+            "source_ref",
+            "source_commit",
+            "source_path",
+            "bytes",
+            "sha256",
+            "row_count",
+        ],
+    },
+}
 
 RULE_ID = "sparse_exact_option_truth_gate/v1"
 BENCHMARK_DIGEST = "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42"
@@ -85,9 +136,34 @@ SOURCE_CANDIDATE_INDEX_DOMAIN = "selector.source_candidates/v1"
 SOURCE_CAMPAIGN_HISTORY_DOMAIN = "selector.source_campaign_history/v1"
 SOURCE_EPISODE_IDENTITY_DOMAIN = "selector.source_episode_identity/v1"
 SOURCE_EPISODE_GROUP_DOMAIN = "selector.source_episode_groups/v1"
+EVIDENCE_AUDIT_NAMESPACE = "evidence_audit"
+EVIDENCE_EVENT_SEEN_DOMAIN = "selector.evidence_event_seen/v1"
+EVIDENCE_EVENT_ENROLLMENT_DOMAIN = "selector.evidence_event_enrollments/v1"
+EVIDENCE_EVENT_TERMINAL_DOMAIN = "selector.evidence_event_terminals/v1"
+EVIDENCE_STATE_ENROLLMENT_DOMAIN = "selector.evidence_state_enrollments/v1"
+EVIDENCE_STATE_TERMINAL_DOMAIN = "selector.evidence_state_terminals/v1"
+EVIDENCE_MARK_SEEN_DOMAIN = "selector.evidence_mark_seen/v1"
+EVIDENCE_STATE_LATEST_DOMAIN = "selector.evidence_state_latest/v1"
+EVIDENCE_DERIVED_LATEST_DOMAIN = "selector.evidence_derived_latest/v1"
+EVIDENCE_LEDGER_ROW_DOMAIN = "selector.evidence_ledger_rows/v1"
+EVIDENCE_LEDGER_TERMINAL_DOMAIN = "selector.evidence_ledger_terminals/v1"
+EVIDENCE_BOUNDARY_DOMAIN = "selector.evidence_lifecycle_boundaries/v1"
+OCCURRENCE_STAGES = (
+    "LEDGER_CAPTURE",
+    "LIVE_MARK_BACKWALK",
+    "COLD_ACTIVATION",
+    "LEDGER_ROWS",
+    "EDGE_INIT",
+    "EDGE_MARK_BACKWALK",
+    "EDGE_MARK_ROWS",
+    "EDGE_TERMINALS",
+    "EDGE_FINALIZE",
+    "DONE",
+)
 HEAD_FILE = "HEAD.json"
 INTENT_FILE = "ADVANCE_INTENT.json"
 INTENT_ATTEMPT_FILE = "ADVANCE_INTENT.attempt.json"
+INTENT_PREPARE_FILE = ".ADVANCE_INTENT.json.prepare"
 INTENT_SEAL_NAMESPACE = "intent_seals"
 LOCK_FILE = ".store.lock"
 LEGACY_SELECTOR_FILES = (
@@ -106,7 +182,7 @@ MAX_SOURCE_BYTES = 256 * 1024 * 1024
 MAX_OBJECT_BYTES = 16 * 1024 * 1024
 MAX_HEAD_BYTES = 1 * 1024 * 1024
 MAX_SOURCE_INTENT_BYTES = 4 * 1024 * 1024
-MAX_INTENT_BYTES = 32 * 1024 * 1024
+MAX_INTENT_BYTES = MAX_SOURCE_INTENT_BYTES
 # Import work is bounded per invocation, not over the lifetime of the queue.
 # One selector cycle is itself bounded by MAX_INTENT_BYTES, so a valid oldest
 # cycle can always be consumed even after an arbitrarily long importer outage.
@@ -128,6 +204,17 @@ MAX_EVIDENCE_OBJECT_BYTES = 4 * 1024
 MAX_EVIDENCE_GENERATION_BYTES = 16 * 1024 * 1024
 MAX_EVIDENCE_SNAPSHOT_BYTES = 32 * 1024 * 1024
 MAX_EVIDENCE_SNAPSHOT_RECORDS = 16_384
+MAX_W1A_HEAD_BYTES = 16 * 1024
+MAX_W1A_AUDIT_BYTES = 64 * 1024
+MAX_W1A_REFERENCE_SET_OBJECT_BYTES = 8 * 1024 * 1024 + 16 * 1024
+MAX_W1A_SOURCE_RECEIPT_BYTES = 1 * 1024 * 1024
+# A selector settlement may inspect only one manifested prefix.  The producer
+# chains remain fully authenticated, but contract/session material retained by
+# the selector is limited to the exact candidates being settled.  These caps
+# are input/read budgets, not eligibility or lifetime limits.
+MAX_EVIDENCE_SOURCE_READS = 2_048
+MAX_EVIDENCE_SOURCE_BYTES = 32 * 1024 * 1024
+EVIDENCE_LEDGER_CHUNK_BYTES = 512 * 1024
 # Source projection work is segmented independently from candidate admission.
 # This bounds a single scheduled transaction without imposing a lifetime/source
 # ceiling or forcing the same immutable Git blobs to be rescanned.
@@ -178,8 +265,12 @@ RUNTIME_OBJECT_SCHEMAS = frozenset(
         "options.sparse_selector_cycle_receipt/v1",
         "options.sparse_selector_handoff_queue_item/v1",
         "options.sparse_selector_head/v1",
-        "options.sparse_selector_w1a_receipt_export/v1",
+        "options.sparse_selector_w1a_source_receipt/v1",
         "options.sparse_selector_evidence_generation/v1",
+        "options.sparse_selector_evidence_source_snapshot/v1",
+        "options.sparse_selector_evidence_high_water/v1",
+        "options.sparse_selector_evidence_replay_state/v1",
+        "options.sparse_selector_evidence_ledger_chunk/v1",
         "options.sparse_selector_konseki_evidence/v1",
         "options.sparse_selector_mark_evidence/v1",
         "options.sparse_selector_lifecycle_evidence/v1",
@@ -190,6 +281,9 @@ _SHA256_RE = re.compile(r"[a-f0-9]{64}\Z")
 _COMMIT_RE = re.compile(r"[a-f0-9]{40,64}\Z")
 _CAMPAIGN_ID_RE = re.compile(r"ocam_[a-f0-9]{24}\Z")
 _UTC_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?Z\Z")
+_RFC3339_RE = re.compile(
+    r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,6})?(?:Z|[+-]\d{2}:\d{2})\Z"
+)
 ET = ZoneInfo("America/New_York")
 
 # ``jsonschema`` treats an unknown format as annotation-only.  That made
@@ -213,6 +307,22 @@ def _is_rfc3339_date(value: object) -> bool:
     if not isinstance(value, str) or re.fullmatch(r"\d{4}-\d{2}-\d{2}", value) is None:
         return False
     return date.fromisoformat(value).isoformat() == value
+
+
+_PRODUCER_FORMAT_CHECKER = FormatChecker()
+
+
+@_PRODUCER_FORMAT_CHECKER.checks("date-time", raises=(TypeError, ValueError))
+def _is_producer_rfc3339_datetime(value: object) -> bool:
+    if not isinstance(value, str) or _RFC3339_RE.fullmatch(value) is None:
+        return False
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return parsed.tzinfo is not None and parsed.utcoffset() is not None
+
+
+@_PRODUCER_FORMAT_CHECKER.checks("date", raises=(TypeError, ValueError))
+def _is_producer_rfc3339_date(value: object) -> bool:
+    return _is_rfc3339_date(value)
 
 
 class SparseSelectorError(ValueError):
@@ -313,6 +423,22 @@ def _utc(value: object, *, label: str) -> datetime:
     return parsed
 
 
+def _source_rfc3339(value: object, *, label: str) -> datetime:
+    """Parse one producer timestamp without rewriting its authenticated bytes."""
+
+    if not isinstance(value, str) or _RFC3339_RE.fullmatch(value) is None:
+        _fail(f"{label} must be RFC3339 with an explicit offset")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise SparseSelectorError(
+            f"{label} must be RFC3339 with an explicit offset"
+        ) from exc
+    if parsed.tzinfo is None or parsed.utcoffset() is None:
+        _fail(f"{label} must be RFC3339 with an explicit offset")
+    return parsed.astimezone(timezone.utc)
+
+
 def _aware_utc(value: datetime, *, label: str) -> datetime:
     if value.tzinfo is None or value.utcoffset() is None:
         _fail(f"{label} is naive")
@@ -394,8 +520,92 @@ def runtime_schema_validator() -> Draft202012Validator:
     return _SCHEMA_VALIDATOR
 
 
+def _frozen_producer_validator(
+    path: Path, receipt: Mapping[str, Any], *, label: str
+) -> Draft202012Validator:
+    body = path.read_bytes()
+    if len(body) != receipt["bytes"] or _sha256(body) != receipt["sha256"]:
+        _fail(f"selector frozen {label} receipt drifted")
+    schema = strict_json(body, label=f"selector frozen {label}")
+    if not isinstance(schema, Mapping):
+        _fail(f"selector frozen {label} is not an object")
+    Draft202012Validator.check_schema(schema)
+    return Draft202012Validator(schema, format_checker=_PRODUCER_FORMAT_CHECKER)
+
+
+def _verify_frozen_producer_contract() -> None:
+    for path, field in (
+        (FROZEN_LIFECYCLE_BUILDER_PATH, "lifecycle_builder"),
+        (FROZEN_MARK_BUILDER_PATH, "mark_builder"),
+    ):
+        body = path.read_bytes()
+        receipt = PRODUCER_CONTRACT[field]
+        if len(body) != receipt["bytes"] or _sha256(body) != receipt["sha256"]:
+            _fail(f"selector frozen {field.replace('_', ' ')} receipt drifted")
+
+
+def _validate_frozen_lifecycle_event(value: Mapping[str, Any]) -> dict[str, Any]:
+    clean = copy.deepcopy(dict(value))
+    errors = sorted(
+        _FROZEN_LIFECYCLE_EVENT_VALIDATOR.iter_errors(clean),
+        key=lambda error: (list(error.absolute_path), error.message),
+    )
+    if errors:
+        where = ".".join(str(part) for part in errors[0].absolute_path) or "<root>"
+        _fail(
+            "selector frozen lifecycle event schema validation failed at "
+            f"{where}: {errors[0].message}"
+        )
+    try:
+        pointer = lifecycle._event_pointer(clean)
+    except (TypeError, ValueError, KeyError) as exc:
+        raise SparseSelectorError(
+            "selector frozen lifecycle event identity drifted"
+        ) from exc
+    if pointer["event_id"] != clean.get("event_id"):
+        _fail("selector frozen lifecycle event identity drifted")
+    return clean
+
+
+def _validate_frozen_mark_observation(
+    value: Mapping[str, Any], pointer: Mapping[str, Any]
+) -> dict[str, Any]:
+    clean = copy.deepcopy(dict(value))
+    errors = sorted(
+        _FROZEN_MARK_OBSERVATION_VALIDATOR.iter_errors(clean),
+        key=lambda error: (list(error.absolute_path), error.message),
+    )
+    if errors:
+        where = ".".join(str(part) for part in errors[0].absolute_path) or "<root>"
+        _fail(
+            "selector frozen mark observation schema validation failed at "
+            f"{where}: {errors[0].message}"
+        )
+    try:
+        expected = mark_chain._observation_pointer(clean)
+        checked = mark_chain._validate_pointer(pointer)
+    except (TypeError, ValueError, KeyError) as exc:
+        raise SparseSelectorError(
+            "selector frozen mark observation identity drifted"
+        ) from exc
+    if expected != checked:
+        _fail("selector frozen mark observation pointer drifted")
+    return clean
+
+
 _RUNTIME_SCHEMA = _runtime_schema()
 _SCHEMA_VALIDATOR = _validator(_RUNTIME_SCHEMA)
+_FROZEN_LIFECYCLE_EVENT_VALIDATOR = _frozen_producer_validator(
+    FROZEN_LIFECYCLE_SCHEMA_PATH,
+    PRODUCER_CONTRACT["lifecycle_event_schema"],
+    label="lifecycle event schema",
+)
+_FROZEN_MARK_OBSERVATION_VALIDATOR = _frozen_producer_validator(
+    FROZEN_MARK_SCHEMA_PATH,
+    PRODUCER_CONTRACT["mark_schema"],
+    label="mark observation schema",
+)
+_verify_frozen_producer_contract()
 _SCHEMA_VALIDATORS_BY_NAME: dict[str, Draft202012Validator] = {}
 for _definition_name, _definition in _RUNTIME_SCHEMA["$defs"].items():
     if not isinstance(_definition, Mapping):
@@ -503,21 +713,168 @@ def validate_runtime_object(value: Mapping[str, Any], *, label: str) -> dict[str
             ):
                 _fail(f"{label} manifest identity or count drifted")
         elif schema == "options.sparse_selector_evidence_generation/v1":
-            export = clean["w1a_export"]
+            source_receipt = clean["w1a_source_receipt"]
             state = clean["lifecycle_state"]
-            if export is not None:
-                validate_w1a_export(export)
             if state is not None:
                 lifecycle._validate_state_shape(state)
             if (
                 clean["generation_id"]
                 != _content_id("osseg_", clean, field="generation_id")
-                or clean["w1a_error"] != (export is None)
+                or clean["w1a_error"] != (source_receipt is None)
                 or clean["lifecycle_error"] != (state is None)
                 or (clean["mark_error"] and state is not None)
                 or len(canonical_bytes(clean)) > MAX_EVIDENCE_GENERATION_BYTES
             ):
                 _fail(f"{label} evidence generation binding drifted")
+        elif schema == "options.sparse_selector_evidence_source_snapshot/v1":
+            state = lifecycle._validate_state_shape(clean["lifecycle_state"])
+            activation_boundary = lifecycle._validate_activation_boundary(
+                clean["activation_boundary"]
+            )
+            mark_chain._validate_pointer(clean["live_mark_head"])
+            lifecycle._validate_ledger_receipt(clean["live_ledger_receipt"])
+            if (
+                clean["snapshot_id"]
+                != _content_id("osess_", clean, field="snapshot_id")
+                or clean["state_sha256"] != _sha256(canonical_bytes(state))
+                or clean["producer_contract"] != PRODUCER_CONTRACT
+                or set(clean["producer_roots"]) != {"mark", "lifecycle"}
+                or int(activation_boundary["ledger_boundary"]["bytes"])
+                > int(state["ledger_cursor"]["bytes"])
+                or len(canonical_bytes(clean)) > MAX_SOURCE_INTENT_BYTES
+            ):
+                _fail(f"{label} evidence source snapshot binding drifted")
+        elif schema == "options.sparse_selector_evidence_replay_state/v1":
+            state = lifecycle._validate_state_shape(clean["state"])
+            if (
+                clean["replay_id"]
+                != _content_id("osers_", clean, field="replay_id")
+                or clean["producer_contract"] != PRODUCER_CONTRACT
+                or clean["state_id"] != state["state_id"]
+                or len(canonical_bytes(clean)) > MAX_SOURCE_INTENT_BYTES
+            ):
+                _fail(f"{label} evidence replay state binding drifted")
+        elif schema == "options.sparse_selector_evidence_ledger_chunk/v1":
+            try:
+                raw = base64.b64decode(clean["body_base64"], validate=True)
+            except (ValueError, TypeError) as exc:
+                raise SparseSelectorError(
+                    f"{label} evidence ledger chunk encoding drifted"
+                ) from exc
+            if (
+                clean["ledger_chunk_id"]
+                != _content_id("oselc_", clean, field="ledger_chunk_id")
+                or clean["producer_contract"] != PRODUCER_CONTRACT
+                or clean["last_byte"] - clean["first_byte"] != len(raw)
+                or not 0 < len(raw) <= EVIDENCE_LEDGER_CHUNK_BYTES
+                or clean["body_sha256"] != _sha256(raw)
+            ):
+                _fail(f"{label} evidence ledger chunk binding drifted")
+        elif schema == "options.sparse_selector_evidence_high_water/v1":
+            roots = {
+                "event_seen_index": EVIDENCE_EVENT_SEEN_DOMAIN,
+                "event_enrollment_index": EVIDENCE_EVENT_ENROLLMENT_DOMAIN,
+                "event_terminal_index": EVIDENCE_EVENT_TERMINAL_DOMAIN,
+                "state_enrollment_index": EVIDENCE_STATE_ENROLLMENT_DOMAIN,
+                "state_terminal_index": EVIDENCE_STATE_TERMINAL_DOMAIN,
+                "mark_seen_index": EVIDENCE_MARK_SEEN_DOMAIN,
+                "state_latest_index": EVIDENCE_STATE_LATEST_DOMAIN,
+                "derived_latest_index": EVIDENCE_DERIVED_LATEST_DOMAIN,
+                "ledger_row_index": EVIDENCE_LEDGER_ROW_DOMAIN,
+                "ledger_terminal_index": EVIDENCE_LEDGER_TERMINAL_DOMAIN,
+                "boundary_index": EVIDENCE_BOUNDARY_DOMAIN,
+            }
+            for field, domain in roots.items():
+                private_auth_dict.validate_sharded_root(clean[field], domain=domain)
+            legacy_roots = (
+                "event_seen_index",
+                "event_terminal_index",
+                "state_enrollment_index",
+                "state_terminal_index",
+                "state_latest_index",
+                "derived_latest_index",
+                "ledger_terminal_index",
+            )
+            if (
+                clean["high_water_id"]
+                != _content_id("osehw_", clean, field="high_water_id")
+                or clean["source_state_id"] == ""
+                or clean["producer_contract"] != PRODUCER_CONTRACT
+                or (clean["replay_state"] is None)
+                != (clean["replay_state_id"] is None)
+                or (clean["replay_state"] is None)
+                != (clean["replay_lifecycle_head"] is None)
+                or (clean["replay_state"] is None)
+                != (clean["replay_mark_cursor"] is None)
+                or (clean["replay_state"] is None)
+                != (clean["replay_ledger_cursor"] is None)
+                or (clean["base_state_id"] is None)
+                != (clean["base_lifecycle_head"] is None)
+                or (clean["base_state_id"] is None)
+                != (clean["base_mark_cursor"] is None)
+                or (clean["base_state_id"] is None)
+                != (clean["base_ledger_cursor"] is None)
+                or clean["occurrence_stage"] not in OCCURRENCE_STAGES
+                or clean["ledger_capture_bytes"]
+                > clean["captured_ledger_receipt"].get("bytes", -1)
+                or clean["ledger_replay_bytes"]
+                > clean["ledger_cursor"].get("bytes", -1)
+                or clean["ledger_replay_rows"]
+                > clean["ledger_cursor"].get("row_count", -1)
+                or clean["ledger_cursor_bytes"] != 0
+                or clean["ledger_row_count"] != clean["ledger_replay_rows"]
+                or clean["event_cursor"] is not None
+                or clean["event_count"] != 0
+                or clean["state_enrollment_cursor"] != 0
+                or clean["state_terminal_cursor"] != 0
+                or clean["state_latest_cursor"] != 0
+                or clean["mark_scan_cursor"] is not None
+                or clean["mark_row_cursor"] != 0
+                or clean["mark_count"] != 0
+                or clean["derived_latest_active_count"] != 0
+                or clean["ledger_terminal_match_count"] != 0
+                or any(clean[field]["entry_count"] for field in legacy_roots)
+                or (
+                    clean["phase"] == "AUDIT_PINNED"
+                    and (
+                        clean["live_mark_scan_cursor"]
+                        != clean["captured_mark_head"]
+                        or clean["live_mark_reverse_ordinal"] != 0
+                        or clean["base_state_id"] is not None
+                        or clean["base_lifecycle_head"] is not None
+                        or clean["base_mark_cursor"] is not None
+                        or clean["base_ledger_cursor"] is not None
+                        or clean["occurrence_stage"] != "LEDGER_CAPTURE"
+                        or clean["current_boundary"] is not None
+                        or clean["boundary_mark_cursor"] is not None
+                        or clean["boundary_mark_row_cursor"] != 0
+                        or clean["boundary_mark_ordinal"] != 0
+                        or clean["boundary_ledger_row_cursor"] != 0
+                        or clean["boundary_ledger_byte_cursor"] != 0
+                        or clean["boundary_event_cursor"] != 0
+                        or clean["boundary_terminal_cursor"] != 0
+                        or clean["event_enrollment_index"]["entry_count"] != 0
+                        or clean["mark_seen_index"]["entry_count"] != 0
+                        or (
+                            clean["previous_complete"] is None
+                            and (
+                                clean["ledger_capture_bytes"] != 0
+                                or clean["ledger_replay_bytes"] != 0
+                                or clean["ledger_replay_rows"] != 0
+                                or clean["replay_state"] is not None
+                                or clean["boundary_index"]["entry_count"] != 0
+                                or clean["ledger_chunks"]
+                                or clean["ledger_row_index"]["entry_count"] != 0
+                            )
+                        )
+                        or (
+                            clean["previous_complete"] is not None
+                            and clean["replay_state"] is None
+                        )
+                    )
+                )
+            ):
+                _fail(f"{label} evidence high-water binding drifted")
         elif schema == "options.sparse_selector_decision/v1":
             previous_decision = clean["previous_decision"]
             truth_complete = all(
@@ -810,9 +1167,61 @@ def validate_runtime_object(value: Mapping[str, Any], *, label: str) -> dict[str
                 or next_byte != clean["source_episode_cursor_bytes"]
             ):
                 _fail(f"{label} episode chunk cursor drifted")
-        elif schema == "options.sparse_selector_w1a_receipt_export/v1":
-            if clean["export_id"] != _content_id("ossw_", clean, field="export_id"):
-                _fail(f"{label} W1A export identity drifted")
+        elif schema == "options.sparse_selector_w1a_source_receipt/v1":
+            head = context_store.validate_head(clean["head"])
+            head_body = canonical_bytes(head)
+            descriptors = clean["descriptors"]
+            ordinals = [item["descriptor_ordinal"] for item in descriptors]
+            candidate_ids = [item["candidate_id"] for item in descriptors]
+            candidate_pointers = [item["candidate"] for item in descriptors]
+            reference_ordinals = [
+                item["reference_ordinal"]
+                for item in descriptors
+                if item["reference_ordinal"] is not None
+            ]
+            if (
+                clean["receipt_id"]
+                != _content_id("ossw_", clean, field="receipt_id")
+                or clean["head_sha256"] != _sha256(head_body)
+                or clean["head_bytes"] != len(head_body)
+                or clean["audit_id"] != head["audit_id"]
+                or clean["audit_object_key"] != head["audit_object_key"]
+                or clean["audit_sha256"] != head["audit_sha256"]
+                or clean["reference_set_object_key"]
+                != head["reference_set_object_key"]
+                or clean["reference_set_object_sha256"]
+                != head["reference_set_object_sha256"]
+                or clean["reference_set_sha256"] != head["reference_set_sha256"]
+                or clean["reference_count"] != head["reference_count"]
+                or ordinals != list(range(1, len(descriptors) + 1))
+                or len(candidate_ids) != len(set(candidate_ids))
+                or len({canonical_bytes(item) for item in candidate_pointers})
+                != len(candidate_pointers)
+                or len(reference_ordinals) != len(set(reference_ordinals))
+                or any(
+                    item["candidate"]["id"] != item["candidate_id"]
+                    or (
+                        item["reference_ordinal"] is None
+                        and (
+                            item["reference_id"] is not None
+                            or item["reference_sha256"] is not None
+                        )
+                    )
+                    or (
+                        item["reference_ordinal"] is not None
+                        and (
+                            item["reference_id"] is None
+                            or item["reference_sha256"] is None
+                            or item["reference_ordinal"] > clean["reference_count"]
+                        )
+                    )
+                    for item in descriptors
+                )
+                or _utc(clean["captured_at"], label="W1A source capture")
+                < _utc(head["published_at"], label="W1A publication")
+                or len(canonical_bytes(clean)) > MAX_W1A_SOURCE_RECEIPT_BYTES
+            ):
+                _fail(f"{label} W1A source receipt binding drifted")
     except (KeyError, TypeError, campaign_contract.CampaignContractError) as exc:
         raise SparseSelectorError(f"{label} semantic validation failed") from exc
     return clean
@@ -859,14 +1268,17 @@ class SourceProjectionBatch:
 
 @dataclass(frozen=True)
 class EvidenceInputs:
-    w1a_export: Mapping[str, Any] | None = None
+    w1a_receipt_root: Path | None = None
     mark_root: Path | None = None
     lifecycle_root: Path | None = None
 
 
 @dataclass(frozen=True)
 class EvidenceSnapshot:
-    w1a_export: Mapping[str, Any] | None
+    w1a_head: Mapping[str, Any] | None
+    w1a_audit: Mapping[str, Any] | None
+    w1a_references: tuple[Mapping[str, Any], ...]
+    w1a_root_path_sha256: str | None
     w1a_by_episode: Mapping[str, tuple[Mapping[str, Any], ...]]
     lifecycle_state: Mapping[str, Any] | None
     enrollments_by_contract: Mapping[
@@ -904,6 +1316,16 @@ class PlannedObject:
             "bytes": len(self.body),
         }
 
+    @property
+    def receipt(self) -> dict[str, Any]:
+        pointer = self.pointer
+        return {
+            "id": pointer["id"],
+            "key": self.key,
+            "sha256": pointer["sha256"],
+            "bytes": pointer["bytes"],
+        }
+
 
 @dataclass(frozen=True)
 class CyclePlan:
@@ -912,6 +1334,18 @@ class CyclePlan:
     head: dict[str, Any]
     intent: dict[str, Any]
     evidence_inputs: EvidenceInputs = EvidenceInputs()
+
+
+def _transition_footprint_bytes(
+    intent: Mapping[str, Any], objects: Sequence[PlannedObject]
+) -> int:
+    """Conservative authority-record plus every immutable transition body."""
+
+    return (
+        len(canonical_bytes(intent))
+        + len(_intent_seal_body(intent))
+        + sum(len(item.body) for item in objects)
+    )
 
 
 def object_identity(value: Mapping[str, Any]) -> str:
@@ -946,8 +1380,12 @@ def object_identity(value: Mapping[str, Any]) -> str:
         "reference_id",
         "observation_id",
         "event_id",
+        "snapshot_id",
+        "high_water_id",
+        "replay_id",
+        "ledger_chunk_id",
         "state_id",
-        "export_id",
+        "receipt_id",
     ):
         item = value.get(field)
         if isinstance(item, str) and item:
@@ -1696,10 +2134,11 @@ def _validate_episode_chunk(value: Mapping[str, Any]) -> dict[str, Any]:
             "row_sha256",
         }:
             _fail("selector episode chunk row is malformed")
+        expected_end = prior_end + len(canonical_bytes(item["row"])) + 1
         if (
             item["ordinal"] != expected_row
             or type(item["end_byte"]) is not int
-            or item["end_byte"] <= prior_end
+            or item["end_byte"] != expected_end
             or item["row_sha256"] != _sha256(canonical_bytes(item["row"]))
         ):
             _fail("selector episode chunk row binding drifted")
@@ -2591,6 +3030,22 @@ class _SelectorLane:
         return self.descriptors[-1]
 
 
+@dataclass(frozen=True)
+class _AnchoredEvidenceSources:
+    mark: _SelectorLane
+    lifecycle: _SelectorLane
+    mark_lock_fd: int
+    lifecycle_lock_fd: int
+    producer_roots: Mapping[str, Mapping[str, str]]
+    root_bindings: Mapping[str, Mapping[str, str]]
+    authority: "_EvidenceAuthorityBoundary"
+
+
+@dataclass
+class _EvidenceAuthorityBoundary:
+    granted: bool = False
+
+
 @dataclass
 class _StagedWrite:
     parent_fd: int
@@ -2600,8 +3055,19 @@ class _StagedWrite:
     closed: bool = False
 
 
+@dataclass
+class _ImmutableBatchParent:
+    path: Path
+    descriptor: int
+    identity: tuple[int, int]
+    closed: bool = False
+
+
 _ACTIVE_SELECTOR_LANE: ContextVar[_SelectorLane | None] = ContextVar(
     "options_sparse_selector_lane", default=None
+)
+_ACTIVE_EVIDENCE_SOURCES: ContextVar[_AnchoredEvidenceSources | None] = ContextVar(
+    "options_sparse_selector_evidence_sources", default=None
 )
 
 
@@ -2667,7 +3133,12 @@ def _open_directory_component(
 
 
 @contextmanager
-def _open_selector_lane(root: Path, *, create: bool) -> Iterator[_SelectorLane]:
+def _open_selector_lane(
+    root: Path,
+    *,
+    create: bool,
+    skip_final_identity_check: Callable[[], bool] | None = None,
+) -> Iterator[_SelectorLane]:
     root = _absolute_private_path(root)
     if root == Path("/") or root == Path.home().resolve():
         _fail("selector private root is too broad")
@@ -2697,7 +3168,8 @@ def _open_selector_lane(root: Path, *, create: bool) -> Iterator[_SelectorLane]:
         lane = _SelectorLane(root, tuple(descriptors), tuple(bindings))
         _assert_lane_identity(lane)
         yield lane
-        _assert_lane_identity(lane)
+        if skip_final_identity_check is None or not skip_final_identity_check():
+            _assert_lane_identity(lane)
     finally:
         for descriptor in reversed(descriptors):
             os.close(descriptor)
@@ -2718,6 +3190,266 @@ def _assert_lane_identity(lane: _SelectorLane) -> None:
             _fail("selector private root or ancestor was rebound during transaction")
     root_metadata = os.fstat(lane.root_fd)
     _validate_directory_metadata(root_metadata, private=True)
+
+
+def _lane_path_receipt(lane: _SelectorLane) -> dict[str, str]:
+    """Persist only the normalized producer path under the local trust model."""
+
+    return {"path_sha256": _sha256(os.fsencode(str(lane.root)))}
+
+
+def _lane_binding_identity(lane: _SelectorLane) -> dict[str, str]:
+    """Transaction-local root/ancestor identity used only for anti-ABA fencing."""
+
+    ancestry = [
+        {
+            "component": name,
+            "device": str(device),
+            "inode": str(inode),
+        }
+        for _parent_fd, name, device, inode in lane.bindings
+    ]
+    root_metadata = os.fstat(lane.root_fd)
+    return {
+        "path_sha256": _sha256(os.fsencode(str(lane.root))),
+        "binding_sha256": _sha256(canonical_bytes(ancestry)),
+        "device": str(root_metadata.st_dev),
+        "inode": str(root_metadata.st_ino),
+    }
+
+
+def _require_disjoint_evidence_lanes(*lanes: _SelectorLane) -> None:
+    for index, left in enumerate(lanes):
+        left_metadata = os.fstat(left.root_fd)
+        for right in lanes[index + 1 :]:
+            right_metadata = os.fstat(right.root_fd)
+            if (
+                left.root == right.root
+                or left.root in right.root.parents
+                or right.root in left.root.parents
+                or (left_metadata.st_dev, left_metadata.st_ino)
+                == (right_metadata.st_dev, right_metadata.st_ino)
+            ):
+                _fail("selector and producer roots must be distinct and non-nested")
+
+
+def _assert_evidence_lock_identity(lane: _SelectorLane, descriptor: int) -> None:
+    _assert_lane_identity(lane)
+    opened = os.fstat(descriptor)
+    try:
+        bound = os.stat(
+            ".ledger.lock", dir_fd=lane.root_fd, follow_symlinks=False
+        )
+    except FileNotFoundError as exc:
+        raise SparseSelectorError("selector producer lock was renamed") from exc
+    for metadata in (opened, bound):
+        if (
+            stat.S_ISLNK(metadata.st_mode)
+            or not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.getuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+        ):
+            _fail("selector producer lock metadata is unsafe")
+    if (opened.st_dev, opened.st_ino) != (bound.st_dev, bound.st_ino):
+        _fail("selector producer lock path no longer names the locked inode")
+
+
+@contextmanager
+def _anchored_evidence_lock(
+    lane: _SelectorLane, authority: _EvidenceAuthorityBoundary
+) -> Iterator[int]:
+    try:
+        descriptor = os.open(
+            ".ledger.lock",
+            os.O_RDWR
+            | getattr(os, "O_CLOEXEC", 0)
+            | getattr(os, "O_NOFOLLOW", 0),
+            dir_fd=lane.root_fd,
+        )
+    except OSError as exc:
+        raise SparseSelectorError(
+            "selector existing producer lock cannot be opened safely"
+        ) from exc
+    locked = False
+    try:
+        _assert_evidence_lock_identity(lane, descriptor)
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
+        locked = True
+        _assert_evidence_lock_identity(lane, descriptor)
+        yield descriptor
+        if not authority.granted:
+            _assert_evidence_lock_identity(lane, descriptor)
+    finally:
+        try:
+            if locked:
+                fcntl.flock(descriptor, fcntl.LOCK_UN)
+        finally:
+            os.close(descriptor)
+
+
+@contextmanager
+def _anchored_evidence_sources(
+    mark_root: Path,
+    lifecycle_root: Path,
+    *,
+    selector_lane: _SelectorLane | None = None,
+) -> Iterator[_AnchoredEvidenceSources]:
+    """Open and lock both existing producer roots without following paths again."""
+
+    mark_root = _absolute_private_path(mark_root)
+    lifecycle_root = _absolute_private_path(lifecycle_root)
+    authority = _EvidenceAuthorityBoundary()
+    with _open_selector_lane(
+        mark_root,
+        create=False,
+        skip_final_identity_check=lambda: authority.granted,
+    ) as mark_lane:
+        with _open_selector_lane(
+            lifecycle_root,
+            create=False,
+            skip_final_identity_check=lambda: authority.granted,
+        ) as lifecycle_lane:
+            _require_disjoint_evidence_lanes(
+                *(
+                    (mark_lane, lifecycle_lane)
+                    if selector_lane is None
+                    else (selector_lane, mark_lane, lifecycle_lane)
+                )
+            )
+            receipts = {
+                "mark": _lane_path_receipt(mark_lane),
+                "lifecycle": _lane_path_receipt(lifecycle_lane),
+            }
+            bindings = {
+                "mark": _lane_binding_identity(mark_lane),
+                "lifecycle": _lane_binding_identity(lifecycle_lane),
+            }
+            with _anchored_evidence_lock(mark_lane, authority) as mark_lock_fd:
+                with _anchored_evidence_lock(
+                    lifecycle_lane, authority
+                ) as lifecycle_lock_fd:
+                    _assert_lane_identity(mark_lane)
+                    _assert_lane_identity(lifecycle_lane)
+                    yield _AnchoredEvidenceSources(
+                        mark=mark_lane,
+                        lifecycle=lifecycle_lane,
+                        mark_lock_fd=mark_lock_fd,
+                        lifecycle_lock_fd=lifecycle_lock_fd,
+                        producer_roots=receipts,
+                        root_bindings=bindings,
+                        authority=authority,
+                    )
+                    if not authority.granted:
+                        _assert_lane_identity(mark_lane)
+                        _assert_lane_identity(lifecycle_lane)
+
+
+@contextmanager
+def _open_anchored_parent(
+    lane: _SelectorLane, key: str
+) -> Iterator[tuple[int, str]]:
+    parts = key.split("/")
+    if (
+        not parts
+        or any(part in {"", ".", ".."} or "\\" in part for part in parts)
+        or any("/" in part for part in parts)
+    ):
+        _fail("selector producer object key is unsafe")
+    descriptors: list[int] = []
+    current = os.dup(lane.root_fd)
+    descriptors.append(current)
+    bindings: list[tuple[int, str, int, int]] = []
+    try:
+        for index, part in enumerate(parts[:-1]):
+            child = _open_directory_component(
+                current,
+                part,
+                create=False,
+                private=True,
+                label=f"{lane.root.name}:{'/'.join(parts[: index + 1])}",
+            )
+            metadata = os.fstat(child)
+            bindings.append((current, part, metadata.st_dev, metadata.st_ino))
+            descriptors.append(child)
+            current = child
+        yield current, parts[-1]
+        _assert_lane_identity(lane)
+        for parent_fd, name, device, inode in bindings:
+            rebound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            if stat.S_ISLNK(rebound.st_mode) or (rebound.st_dev, rebound.st_ino) != (
+                device,
+                inode,
+            ):
+                _fail("selector producer object directory was rebound")
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _read_anchored_file(
+    lane: _SelectorLane,
+    key: str,
+    *,
+    limit: int,
+    required: bool = True,
+    label: str,
+) -> bytes | None:
+    try:
+        with _open_anchored_parent(lane, key) as (parent_fd, name):
+            body = _read_regular_at(
+                parent_fd,
+                name,
+                limit=limit,
+                required=required,
+                label=label,
+            )
+            if required and not body:
+                _fail(f"{label} is empty")
+            return body
+    except _PrivateDirectoryMissing:
+        if required:
+            _fail(f"{label} is missing")
+        return None
+
+
+def _stat_anchored_file(
+    lane: _SelectorLane, key: str, *, limit: int, label: str
+) -> os.stat_result:
+    with _open_anchored_parent(lane, key) as (parent_fd, name):
+        try:
+            checked = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            descriptor = os.open(
+                name,
+                os.O_RDONLY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=parent_fd,
+            )
+        except OSError as exc:
+            raise SparseSelectorError(f"{label} cannot be opened safely") from exc
+        try:
+            opened = os.fstat(descriptor)
+            rebound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            for metadata in (checked, opened, rebound):
+                if (
+                    stat.S_ISLNK(metadata.st_mode)
+                    or not stat.S_ISREG(metadata.st_mode)
+                    or metadata.st_nlink != 1
+                    or metadata.st_uid != os.getuid()
+                    or stat.S_IMODE(metadata.st_mode) != 0o600
+                    or metadata.st_size > limit
+                ):
+                    _fail(f"{label} metadata is unsafe")
+            if any(
+                (metadata.st_dev, metadata.st_ino)
+                != (opened.st_dev, opened.st_ino)
+                for metadata in (checked, rebound)
+            ):
+                _fail(f"{label} changed during secure open")
+            return opened
+        finally:
+            os.close(descriptor)
 
 
 @contextmanager
@@ -2912,7 +3644,12 @@ def _write_all(descriptor: int, body: bytes) -> None:
 
 
 def _stage_atomic_write(
-    path: Path, body: bytes, *, root: Path, limit: int
+    path: Path,
+    body: bytes,
+    *,
+    root: Path,
+    limit: int,
+    temporary_name: str | None = None,
 ) -> _StagedWrite:
     if len(body) > limit:
         _fail(f"selector atomic write exceeds cap: {path.name}")
@@ -2924,7 +3661,9 @@ def _stage_atomic_write(
             required=False,
             label="selector atomic target",
         )
-        temporary_name = f".{name}.{os.getpid()}.{uuid4().hex}.tmp"
+        temporary_name = temporary_name or f".{name}.{os.getpid()}.{uuid4().hex}.tmp"
+        if "/" in temporary_name or temporary_name in {"", ".", ".."}:
+            _fail("selector atomic temporary name is unsafe")
         descriptor = os.open(
             temporary_name,
             os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
@@ -2932,6 +3671,7 @@ def _stage_atomic_write(
             dir_fd=parent_fd,
         )
         try:
+            os.fchmod(descriptor, 0o600)
             _write_all(descriptor, body)
             os.fsync(descriptor)
         finally:
@@ -3073,12 +3813,443 @@ def _write_immutable(
         _assert_lane_identity(lane)
 
 
+def _recover_prestage_temp(
+    parent_fd: int, name: str, *, sync_parent: bool = True
+) -> bool:
+    """Remove the one reserved non-authoritative temp after proving its inode."""
+
+    temporary_name = f".{name}.prestage"
+    try:
+        temporary = os.stat(
+            temporary_name, dir_fd=parent_fd, follow_symlinks=False
+        )
+    except FileNotFoundError:
+        return False
+    if (
+        stat.S_ISLNK(temporary.st_mode)
+        or not stat.S_ISREG(temporary.st_mode)
+        or temporary.st_uid != os.getuid()
+        or stat.S_IMODE(temporary.st_mode) != 0o600
+    ):
+        _fail("selector prestage temporary metadata is unsafe")
+    try:
+        installed = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+    except FileNotFoundError:
+        installed = None
+    if installed is not None and (
+        stat.S_ISLNK(installed.st_mode)
+        or not stat.S_ISREG(installed.st_mode)
+        or installed.st_uid != os.getuid()
+        or stat.S_IMODE(installed.st_mode) != 0o600
+    ):
+        _fail("selector prestaged immutable metadata is unsafe")
+    if installed is not None and (
+        installed.st_dev,
+        installed.st_ino,
+    ) == (temporary.st_dev, temporary.st_ino):
+        if installed.st_nlink != 2 or temporary.st_nlink != 2:
+            _fail("selector prestage linked inode has an unknown alias")
+    elif temporary.st_nlink != 1:
+        _fail("selector prestage temporary has an unknown alias")
+    os.unlink(temporary_name, dir_fd=parent_fd)
+    if sync_parent:
+        os.fsync(parent_fd)
+    return True
+
+
+def _prestage_immutable(path: Path, body: bytes, *, root: Path) -> None:
+    """Install complete orphan-safe bytes without ever exposing a partial final.
+
+    A staged object is not authority until a parent-bound intent and HEAD name
+    it.  The temporary file is fully written, file-fsynced, and read back before
+    a no-replace hard link can make the content-addressed final path visible.
+    A crash can therefore leave only an ignorable temporary orphan or a complete
+    exact final object; a retry adopts and directory-fsyncs the latter.
+    """
+
+    if not body or len(body) > MAX_OBJECT_BYTES:
+        _fail("selector prestaged immutable object exceeds its bound")
+    with _open_private_parent(root, path, create=True) as (lane, parent_fd, name):
+        _recover_prestage_temp(parent_fd, name)
+        existing = _read_regular_at(
+            parent_fd,
+            name,
+            limit=MAX_OBJECT_BYTES,
+            required=False,
+            label="selector prestaged immutable object",
+        )
+        if existing is not None:
+            if existing != body:
+                _fail("selector immutable object conflicts with existing bytes")
+            os.fsync(parent_fd)
+            _assert_lane_identity(lane)
+            return
+
+        temporary_name = f".{name}.prestage"
+        descriptor = os.open(
+            temporary_name,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0),
+            0o600,
+            dir_fd=parent_fd,
+        )
+        try:
+            os.fchmod(descriptor, 0o600)
+            _write_all(descriptor, body)
+            os.fsync(descriptor)
+        finally:
+            os.close(descriptor)
+        try:
+            staged = _read_regular_at(
+                parent_fd,
+                temporary_name,
+                limit=MAX_OBJECT_BYTES,
+                required=True,
+                label="selector prestaged temporary object",
+            )
+            if staged != body:
+                _fail("selector prestaged immutable object readback mismatch")
+            try:
+                os.link(
+                    temporary_name,
+                    name,
+                    src_dir_fd=parent_fd,
+                    dst_dir_fd=parent_fd,
+                    follow_symlinks=False,
+                )
+            except FileExistsError:
+                installed = _read_regular_at(
+                    parent_fd,
+                    name,
+                    limit=MAX_OBJECT_BYTES,
+                    required=True,
+                    label="selector prestaged immutable object",
+                )
+                if installed != body:
+                    _fail("selector immutable object conflicts with existing bytes")
+            os.fsync(parent_fd)
+            os.unlink(temporary_name, dir_fd=parent_fd)
+            os.fsync(parent_fd)
+            installed = _read_regular_at(
+                parent_fd,
+                name,
+                limit=MAX_OBJECT_BYTES,
+                required=True,
+                label="selector prestaged immutable object",
+            )
+            if installed != body:
+                _fail("selector prestaged immutable object install drifted")
+        finally:
+            try:
+                os.unlink(temporary_name, dir_fd=parent_fd)
+                os.fsync(parent_fd)
+            except FileNotFoundError:
+                pass
+        _assert_lane_identity(lane)
+
+
 def _sync_immutable_parent(path: Path, *, root: Path) -> None:
     """Durably publish a batch of fsynced immutable files before HEAD."""
 
     with _open_private_parent(root, path, create=False) as (lane, parent_fd, _name):
         os.fsync(parent_fd)
         _assert_lane_identity(lane)
+
+
+def _remember_immutable_batch_parent(
+    parents: dict[Path, _ImmutableBatchParent],
+    *,
+    path: Path,
+    parent_fd: int,
+) -> None:
+    parent_path = path.parent
+    metadata = os.fstat(parent_fd)
+    _validate_directory_metadata(metadata, private=True)
+    identity = (metadata.st_dev, metadata.st_ino)
+    existing = parents.get(parent_path)
+    if existing is not None:
+        if existing.closed or existing.identity != identity:
+            _fail("selector immutable batch parent identity drifted")
+        return
+    if any(item.identity == identity for item in parents.values()):
+        _fail("selector immutable batch aliases a parent directory")
+    descriptor = os.dup(parent_fd)
+    opened = os.fstat(descriptor)
+    if (opened.st_dev, opened.st_ino) != identity:
+        os.close(descriptor)
+        _fail("selector immutable batch parent changed during retention")
+    parents[parent_path] = _ImmutableBatchParent(
+        path=parent_path,
+        descriptor=descriptor,
+        identity=identity,
+    )
+
+
+def _close_immutable_batch_parents(
+    parents: Mapping[Path, _ImmutableBatchParent],
+) -> None:
+    for parent in parents.values():
+        if not parent.closed:
+            os.close(parent.descriptor)
+            parent.closed = True
+
+
+def _fsync_immutable_batch_parents(
+    root: Path,
+    parents: Mapping[Path, _ImmutableBatchParent],
+    *,
+    hook: Callable[[str], None] | None,
+) -> None:
+    if hook is not None:
+        hook("before_batch_parent_fsync")
+    for path in sorted(parents, key=str):
+        parent = parents[path]
+        if parent.closed:
+            _fail("selector immutable batch parent closed before durability")
+        retained = os.fstat(parent.descriptor)
+        if (retained.st_dev, retained.st_ino) != parent.identity:
+            _fail("selector immutable batch retained parent identity drifted")
+        _validate_directory_metadata(retained, private=True)
+        with _open_private_directory(root, path, create=False) as (
+            lane,
+            rebound_fd,
+        ):
+            rebound = os.fstat(rebound_fd)
+            if (rebound.st_dev, rebound.st_ino) != parent.identity:
+                _fail("selector immutable batch parent was rebound")
+            os.fsync(parent.descriptor)
+            durable = os.fstat(parent.descriptor)
+            rebound_after = os.fstat(rebound_fd)
+            if (
+                (durable.st_dev, durable.st_ino) != parent.identity
+                or (rebound_after.st_dev, rebound_after.st_ino)
+                != parent.identity
+            ):
+                _fail("selector immutable batch parent drifted during fsync")
+            _assert_lane_identity(lane)
+    if hook is not None:
+        hook("after_batch_parent_fsync")
+
+
+def _prestage_immutable_batch(
+    root: Path,
+    objects: Sequence[PlannedObject],
+    *,
+    hook: Callable[[str], None] | None = None,
+) -> dict[Path, tuple[int, int]]:
+    """Publish one transition's immutable bodies behind one directory barrier."""
+
+    parents: dict[Path, _ImmutableBatchParent] = {}
+    seen: set[Path] = set()
+    try:
+        for item in objects:
+            path = _object_path(root, item.key)
+            if path in seen:
+                _fail("selector immutable batch repeats an object path")
+            seen.add(path)
+            body = item.body
+            if not body or len(body) > MAX_OBJECT_BYTES:
+                _fail("selector prestaged immutable object exceeds its bound")
+            with _open_private_parent(root, path, create=True) as (
+                lane,
+                parent_fd,
+                name,
+            ):
+                _remember_immutable_batch_parent(
+                    parents, path=path, parent_fd=parent_fd
+                )
+                _recover_prestage_temp(parent_fd, name, sync_parent=False)
+                existing = _read_regular_at(
+                    parent_fd,
+                    name,
+                    limit=MAX_OBJECT_BYTES,
+                    required=False,
+                    label="selector prestaged immutable object",
+                )
+                if existing is not None:
+                    if existing != body:
+                        _fail(
+                            "selector immutable object conflicts with existing bytes"
+                        )
+                    _assert_lane_identity(lane)
+                    continue
+
+                temporary_name = f".{name}.prestage"
+                descriptor = os.open(
+                    temporary_name,
+                    os.O_WRONLY
+                    | os.O_CREAT
+                    | os.O_EXCL
+                    | getattr(os, "O_NOFOLLOW", 0),
+                    0o600,
+                    dir_fd=parent_fd,
+                )
+                try:
+                    os.fchmod(descriptor, 0o600)
+                    created = os.fstat(descriptor)
+                    if (
+                        not stat.S_ISREG(created.st_mode)
+                        or created.st_nlink != 1
+                        or created.st_uid != os.getuid()
+                        or stat.S_IMODE(created.st_mode) != 0o600
+                    ):
+                        _fail("selector prestaged temporary metadata is unsafe")
+                    _write_all(descriptor, body)
+                    if hook is not None:
+                        hook("before_batch_file_fsync")
+                    os.fsync(descriptor)
+                    if hook is not None:
+                        hook("after_batch_file_fsync")
+                    fsynced = os.fstat(descriptor)
+                    if (
+                        (fsynced.st_dev, fsynced.st_ino)
+                        != (created.st_dev, created.st_ino)
+                        or fsynced.st_nlink != 1
+                        or fsynced.st_size != len(body)
+                    ):
+                        _fail("selector prestaged temporary changed during fsync")
+                finally:
+                    os.close(descriptor)
+                try:
+                    staged = _read_regular_at(
+                        parent_fd,
+                        temporary_name,
+                        limit=MAX_OBJECT_BYTES,
+                        required=True,
+                        label="selector prestaged temporary object",
+                    )
+                    if staged != body:
+                        _fail(
+                            "selector prestaged immutable object readback mismatch"
+                        )
+                    staged_metadata = os.stat(
+                        temporary_name,
+                        dir_fd=parent_fd,
+                        follow_symlinks=False,
+                    )
+                    linked = False
+                    if hook is not None:
+                        hook("before_batch_object_link")
+                    try:
+                        os.link(
+                            temporary_name,
+                            name,
+                            src_dir_fd=parent_fd,
+                            dst_dir_fd=parent_fd,
+                            follow_symlinks=False,
+                        )
+                        linked = True
+                    except FileExistsError:
+                        installed = _read_regular_at(
+                            parent_fd,
+                            name,
+                            limit=MAX_OBJECT_BYTES,
+                            required=True,
+                            label="selector prestaged immutable object",
+                        )
+                        if installed != body:
+                            _fail(
+                                "selector immutable object conflicts with existing bytes"
+                            )
+                    if linked:
+                        installed_metadata = os.stat(
+                            name, dir_fd=parent_fd, follow_symlinks=False
+                        )
+                        temporary_metadata = os.stat(
+                            temporary_name,
+                            dir_fd=parent_fd,
+                            follow_symlinks=False,
+                        )
+                        expected_inode = (
+                            staged_metadata.st_dev,
+                            staged_metadata.st_ino,
+                        )
+                        if (
+                            (installed_metadata.st_dev, installed_metadata.st_ino)
+                            != expected_inode
+                            or (
+                                temporary_metadata.st_dev,
+                                temporary_metadata.st_ino,
+                            )
+                            != expected_inode
+                            or installed_metadata.st_nlink != 2
+                            or temporary_metadata.st_nlink != 2
+                        ):
+                            _fail(
+                                "selector prestaged immutable link identity drifted"
+                            )
+                        if hook is not None:
+                            hook("after_batch_object_link")
+                finally:
+                    _recover_prestage_temp(
+                        parent_fd, name, sync_parent=False
+                    )
+                installed = _read_regular_at(
+                    parent_fd,
+                    name,
+                    limit=MAX_OBJECT_BYTES,
+                    required=True,
+                    label="selector prestaged immutable object",
+                )
+                if installed != body:
+                    _fail("selector prestaged immutable object install drifted")
+                _assert_lane_identity(lane)
+        _fsync_immutable_batch_parents(root, parents, hook=hook)
+        return {path: parent.identity for path, parent in parents.items()}
+    finally:
+        _close_immutable_batch_parents(parents)
+
+
+def _reprove_immutable_batch(
+    root: Path,
+    objects: Sequence[PlannedObject],
+    *,
+    label: str,
+    expected_parent_identities: Mapping[Path, tuple[int, int]] | None = None,
+) -> None:
+    """Exact metadata/byte reproof without redundant durability syscalls."""
+
+    seen: set[Path] = set()
+    object_parents = {
+        _object_path(root, item.key).parent for item in objects
+    }
+    if (
+        expected_parent_identities is not None
+        and set(expected_parent_identities) != object_parents
+    ):
+        _fail(f"{label} parent set differs from its durability batch")
+    for item in objects:
+        path = _object_path(root, item.key)
+        if path in seen:
+            _fail(f"{label} repeats an immutable object path")
+        seen.add(path)
+        with _open_private_parent(root, path, create=False) as (
+            lane,
+            parent_fd,
+            name,
+        ):
+            if expected_parent_identities is not None:
+                expected_identity = expected_parent_identities[path.parent]
+                parent_metadata = os.fstat(parent_fd)
+                if (parent_metadata.st_dev, parent_metadata.st_ino) != (
+                    expected_identity
+                ):
+                    _fail(f"{label} parent was rebound after durability")
+            body = _read_regular_at(
+                parent_fd,
+                name,
+                limit=MAX_OBJECT_BYTES,
+                required=True,
+                label=label,
+            )
+            if body != item.body:
+                _fail(f"{label} differs from durable bytes")
+            if expected_parent_identities is not None:
+                parent_after = os.fstat(parent_fd)
+                if (parent_after.st_dev, parent_after.st_ino) != (
+                    expected_parent_identities[path.parent]
+                ):
+                    _fail(f"{label} parent drifted during reproof")
+            _assert_lane_identity(lane)
 
 
 def _assert_store_lock_identity(lane: _SelectorLane, descriptor: int) -> None:
@@ -3152,6 +4323,7 @@ def _object_path(root: Path, key: str) -> Path:
             "decisions",
             "cycles",
             "evidence",
+            EVIDENCE_AUDIT_NAMESPACE,
             INTENT_SEAL_NAMESPACE,
             HANDOFF_QUEUE_NAMESPACE,
             SOURCE_PROJECTION_NAMESPACE,
@@ -3190,6 +4362,44 @@ def _load_pointer(
     if value.get("schema") in RUNTIME_OBJECT_SCHEMAS:
         validate_runtime_object(value, label=label)
     return value
+
+
+_PointerObjectCache = dict[
+    str,
+    tuple[dict[str, Any], dict[str, Any], bytes],
+]
+
+
+def _full_pointer(
+    pointer: Mapping[str, Any], *, label: str
+) -> tuple[str, dict[str, Any]]:
+    if (
+        not isinstance(pointer, Mapping)
+        or set(pointer) != {"id", "key", "sha256", "bytes"}
+        or not isinstance(pointer.get("id"), str)
+    ):
+        _fail(f"{label} pointer is malformed")
+    return str(pointer["id"]), copy.deepcopy(dict(pointer))
+
+
+def _load_pointer_cached(
+    root: Path,
+    pointer: Mapping[str, Any],
+    *,
+    label: str,
+    cache: _PointerObjectCache,
+) -> tuple[dict[str, Any], bytes]:
+    identity, clean_pointer = _full_pointer(pointer, label=label)
+    cached = cache.get(identity)
+    if cached is not None:
+        cached_pointer, cached_value, cached_body = cached
+        if cached_pointer != clean_pointer:
+            _fail(f"{label} cached full pointer drifted")
+        return cached_value, cached_body
+    value = _load_pointer(root, clean_pointer, label=label)
+    body = canonical_bytes(value)
+    cache[identity] = (clean_pointer, value, body)
+    return value, body
 
 
 def _load_candidate_index_node(
@@ -3508,6 +4718,7 @@ def _walk_candidate_chain_receipts(
             {
                 "ordinal": expected,
                 "candidate_id": candidate["candidate_id"],
+                "campaign_id": candidate["campaign_id"],
                 "candidate_available_at": candidate["candidate_available_at"],
                 "pointer": copy.deepcopy(pointer),
             }
@@ -3529,6 +4740,90 @@ def _walk_candidate_chain_receipts(
     return newest_first
 
 
+def _load_evidence_high_water(
+    root: Path, pointer: Mapping[str, Any]
+) -> dict[str, Any]:
+    value = _load_pointer(root, pointer, label="selector evidence high-water")
+    clean = validate_runtime_object(value, label="selector evidence high-water")
+    if (
+        clean.get("schema") != "options.sparse_selector_evidence_high_water/v1"
+        or pointer["key"]
+        != f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['high_water_id']}.json"
+    ):
+        _fail("selector evidence high-water namespace drifted")
+    snapshot = _load_pointer(
+        root, clean["snapshot"], label="selector evidence source snapshot"
+    )
+    snapshot = validate_runtime_object(
+        snapshot, label="selector evidence source snapshot"
+    )
+    if (
+        snapshot.get("schema")
+        != "options.sparse_selector_evidence_source_snapshot/v1"
+        or clean["snapshot"]["key"]
+        != f"{EVIDENCE_AUDIT_NAMESPACE}/{snapshot['snapshot_id']}.json"
+        or snapshot["lifecycle_state"]["state_id"] != clean["source_state_id"]
+        or snapshot["producer_contract"] != clean["producer_contract"]
+        or snapshot["lifecycle_state"]["activation"] != clean["activation"]
+        or snapshot["lifecycle_state"]["lifecycle_head"]
+        != clean["lifecycle_head"]
+        or snapshot["lifecycle_state"]["mark_cursor"] != clean["mark_cursor"]
+        or snapshot["lifecycle_state"]["ledger_cursor"] != clean["ledger_cursor"]
+        or snapshot["live_mark_head"] != clean["captured_mark_head"]
+        or snapshot["live_ledger_receipt"] != clean["captured_ledger_receipt"]
+    ):
+        _fail("selector evidence high-water escaped its source snapshot")
+    previous = clean["previous_complete"]
+    prior: dict[str, Any] | None = None
+    if previous is not None:
+        prior = _load_pointer(
+            root, previous, label="selector prior complete evidence high-water"
+        )
+        prior = validate_runtime_object(
+            prior, label="selector prior complete evidence high-water"
+        )
+        if (
+            prior.get("schema")
+            != "options.sparse_selector_evidence_high_water/v1"
+            or prior.get("phase") != "COMPLETE"
+            or previous["key"]
+            != f"{EVIDENCE_AUDIT_NAMESPACE}/{prior.get('high_water_id')}.json"
+        ):
+            _fail("selector evidence high-water parent is not exact and complete")
+    if clean["replay_state"] is not None:
+        replay = _load_pointer(
+            root, clean["replay_state"], label="selector evidence replay state"
+        )
+        replay = validate_runtime_object(
+            replay, label="selector evidence replay state"
+        )
+        inherited_replay = (
+            prior is not None
+            and clean["replay_state"] == prior.get("replay_state")
+            and replay.get("snapshot") == prior.get("snapshot")
+        )
+        if (
+            replay.get("schema")
+            != "options.sparse_selector_evidence_replay_state/v1"
+            or clean["replay_state"]["key"]
+            != f"{EVIDENCE_AUDIT_NAMESPACE}/{replay.get('replay_id')}.json"
+            or (
+                replay.get("snapshot") != clean["snapshot"]
+                and not inherited_replay
+            )
+        ):
+            _fail("selector evidence replay state escaped its high-water")
+        state = replay["state"]
+        if (
+            state["state_id"] != clean["replay_state_id"]
+            or state["lifecycle_head"] != clean["replay_lifecycle_head"]
+            or state["mark_cursor"] != clean["replay_mark_cursor"]
+            or state["ledger_cursor"] != clean["replay_ledger_cursor"]
+        ):
+            _fail("selector evidence replay state receipt drifted")
+    return clean
+
+
 def _authenticate_selector_state(
     root: Path,
 ) -> tuple[
@@ -3541,6 +4836,8 @@ def _authenticate_selector_state(
     raw_head = _load_head(root)
     if raw_head is None:
         return None
+    if raw_head["evidence_high_water"] is not None:
+        _load_evidence_high_water(root, raw_head["evidence_high_water"])
     if raw_head["cycle_count"] == 0:
         if any(
             raw_head[field] is not None
@@ -3595,13 +4892,684 @@ def _authenticate_selector_state(
     return head, pending, cycle, last_candidate, last_decision
 
 
+def _authenticate_store_wal_preflight(root: Path) -> None:
+    """Reject mutable or rolled-back authority state without repairing it."""
+
+    for name, limit in (
+        (INTENT_FILE, MAX_INTENT_BYTES),
+        (INTENT_ATTEMPT_FILE, 1024 * 1024),
+        (INTENT_PREPARE_FILE, MAX_INTENT_BYTES),
+    ):
+        if _read_private_file(
+            root / name, root=root, limit=limit, required=False
+        ) is not None:
+            _fail("selector authentication found an unresolved durable WAL")
+    head = _load_head(root)
+    parent = "genesis" if head is None else head["head_id"]
+    if _read_private_file(
+        _object_path(root, f"{INTENT_SEAL_NAMESPACE}/{parent}.json"),
+        root=root,
+        limit=1024 * 1024,
+        required=False,
+    ) is not None:
+        _fail("selector current HEAD has a surviving child intent seal")
+
+
+def _authenticate_sharded_root_graph(
+    root: Path,
+    receipt: Mapping[str, Any],
+    *,
+    domain: str,
+) -> list[dict[str, Any]]:
+    """Authenticate every reachable directory/bucket and return exact entries."""
+
+    clean = private_auth_dict.validate_sharded_root(receipt, domain=domain)
+    pointer = clean["root"]
+    if pointer is None:
+        if clean["entry_count"] != 0:
+            _fail("selector evidence auth root lost its entries")
+        return []
+    directory = private_auth_dict.validate_node(
+        _load_pointer(root, pointer, label="selector evidence auth directory"),
+        domain=domain,
+    )
+    if (
+        private_auth_dict.pointer(directory) != pointer
+        or directory["kind"] != "directory"
+        or directory["entry_count"] != clean["entry_count"]
+    ):
+        _fail("selector evidence auth directory drifted")
+    entries: list[dict[str, Any]] = []
+    for shard_index, bucket_pointer in enumerate(directory["buckets"]):
+        if bucket_pointer is None:
+            continue
+        bucket = private_auth_dict.validate_node(
+            _load_pointer(
+                root, bucket_pointer, label="selector evidence auth bucket"
+            ),
+            domain=domain,
+        )
+        if (
+            private_auth_dict.pointer(bucket) != bucket_pointer
+            or bucket["kind"] != "bucket"
+            or bucket["shard"] != f"{shard_index:02x}"
+        ):
+            _fail("selector evidence auth bucket drifted")
+        entries.extend(copy.deepcopy(bucket["entries"]))
+    if len(entries) != clean["entry_count"]:
+        _fail("selector evidence auth entry count drifted")
+    return entries
+
+def _auth_entry_receipts(
+    entries: Sequence[Mapping[str, Any]],
+) -> list[bytes]:
+    """Return a canonical, order-independent receipt for authenticated entries."""
+
+    return sorted(
+        canonical_bytes(
+            {
+                "logical_key": copy.deepcopy(entry["logical_key"]),
+                "binding": copy.deepcopy(entry["binding"]),
+            }
+        )
+        for entry in entries
+    )
+
+
+def _authenticate_replayed_ledger_index(
+    root: Path,
+    high: Mapping[str, Any],
+    *,
+    entries: Sequence[Mapping[str, Any]],
+    inherited_chunks: Sequence[Mapping[str, Any]] = (),
+    prior_high: Mapping[str, Any] | None = None,
+    prior_entries: Sequence[Mapping[str, Any]] = (),
+) -> None:
+    """Reparse the captured prefix and require its exact authenticated index."""
+
+    byte_cursor = (
+        0 if prior_high is None else int(prior_high["ledger_replay_bytes"])
+    )
+    row_cursor = (
+        0 if prior_high is None else int(prior_high["ledger_replay_rows"])
+    )
+    expected: list[dict[str, Any]] = [
+        copy.deepcopy(dict(entry)) for entry in prior_entries
+    ]
+    seen_plans: set[str] = {
+        str(entry["logical_key"][1])
+        for entry in prior_entries
+        if isinstance(entry.get("logical_key"), list)
+        and len(entry["logical_key"]) == 2
+        and entry["logical_key"][0] == "plan"
+    }
+    boundary = {"bytes": int(high["ledger_replay_bytes"])}
+    while byte_cursor < boundary["bytes"]:
+        next_byte, rows = _captured_ledger_rows(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            byte_cursor=byte_cursor,
+            row_cursor=row_cursor,
+            boundary=boundary,
+            row_limit=256,
+        )
+        if next_byte <= byte_cursor:
+            _fail("selector replay ledger authentication made no progress")
+        for ordinal, row in rows:
+            binding = _ledger_row_binding(row, ordinal)
+            plan_id = binding["plan_id"]
+            if plan_id in seen_plans:
+                _fail("selector replay ledger repeats a plan id")
+            seen_plans.add(plan_id)
+            expected.extend(
+                (
+                    {"logical_key": ["plan", plan_id], "binding": binding},
+                    {"logical_key": ["ordinal", ordinal], "binding": binding},
+                )
+            )
+        byte_cursor = next_byte
+        row_cursor += len(rows)
+    if (
+        byte_cursor != int(high["ledger_replay_bytes"])
+        or row_cursor != int(high["ledger_replay_rows"])
+        or len(expected) != 2 * row_cursor
+        or _auth_entry_receipts(entries) != _auth_entry_receipts(expected)
+    ):
+        _fail("selector replay ledger index differs from captured ledger bytes")
+
+def _authenticate_cold_occurrence_source_path(
+    lifecycle_root: Path,
+    mark_root: Path,
+    *,
+    snapshot: Mapping[str, Any],
+    boundary_entries: Sequence[Mapping[str, Any]],
+) -> None:
+    """Authenticate the exact activation-to-target producer occurrence path."""
+
+    target = snapshot["lifecycle_state"]
+    activation_boundary = snapshot["activation_boundary"]
+    activation_mark = _load_frozen_mark_observation(
+        mark_root, activation_boundary["mark_boundary"]
+    )
+    expected_activation = _frozen_activation_event(
+        activation_boundary, activation_mark
+    )
+    actual_activation = _load_frozen_lifecycle_event(
+        lifecycle_root, target["activation"]
+    )
+    if (
+        actual_activation != expected_activation
+        or lifecycle._event_pointer(actual_activation) != target["activation"]
+    ):
+        _fail("selector activation event is not its exact frozen occurrence")
+
+    activation_state = lifecycle._make_state(
+        activation=target["activation"],
+        lifecycle_head=target["activation"],
+        mark_cursor=activation_boundary["mark_boundary"],
+        ledger_cursor=activation_boundary["ledger_boundary"],
+        enrollments={},
+        terminals={},
+        latest_marks={},
+    )
+    state_id = activation_state["state_id"]
+    lifecycle_head = copy.deepcopy(activation_state["lifecycle_head"])
+    mark_cursor = copy.deepcopy(activation_state["mark_cursor"])
+    ledger_cursor = copy.deepcopy(activation_state["ledger_cursor"])
+    expected_entries: list[dict[str, Any]] = [
+        {
+            "logical_key": ["activation", activation_boundary["boundary_id"]],
+            "binding": _activation_boundary_receipt(activation_boundary),
+        }
+    ]
+    seen_states: set[str] = set()
+    # The authenticated root cardinality bounds the source walk.  It also
+    # prevents an outgoing crash boundary after the pinned target from being
+    # mistaken for an accepted occurrence.
+    while state_id != target["state_id"]:
+        if state_id in seen_states or len(expected_entries) > len(boundary_entries):
+            _fail("selector occurrence boundary path is cyclic or incomplete")
+        seen_states.add(state_id)
+        boundary, receipt = _load_exact_advance_boundary(
+            lifecycle_root, state_id
+        )
+        expected_entries.append(
+            {
+                "logical_key": ["advance", state_id],
+                "binding": receipt,
+            }
+        )
+        previous = copy.deepcopy(lifecycle_head)
+        for event_pointer in boundary["event_pointers"]:
+            event = _load_frozen_lifecycle_event(
+                lifecycle_root, event_pointer
+            )
+            if event.get("previous") != previous:
+                _fail("selector occurrence boundary event chain is not contiguous")
+            previous = copy.deepcopy(event_pointer)
+        if previous != boundary["candidate_lifecycle_head"]:
+            _fail("selector occurrence boundary event tail drifted")
+        state_id = boundary["candidate_state_id"]
+        lifecycle_head = copy.deepcopy(boundary["candidate_lifecycle_head"])
+        mark_cursor = copy.deepcopy(boundary["mark_boundary"])
+        ledger_cursor = copy.deepcopy(boundary["ledger_boundary"])
+
+    if (
+        lifecycle_head != target["lifecycle_head"]
+        or mark_cursor != target["mark_cursor"]
+        or ledger_cursor != target["ledger_cursor"]
+        or _auth_entry_receipts(boundary_entries)
+        != _auth_entry_receipts(expected_entries)
+    ):
+        _fail("selector occurrence boundary index differs from its exact source path")
+
+
+def _authenticate_incremental_occurrence_source_path(
+    lifecycle_root: Path,
+    *,
+    target: Mapping[str, Any],
+    prior_high: Mapping[str, Any],
+    prior_entries: Sequence[Mapping[str, Any]],
+    boundary_entries: Sequence[Mapping[str, Any]],
+) -> None:
+    """Authenticate only the exact suffix after a prior COMPLETE occurrence."""
+
+    state_id = str(prior_high["source_state_id"])
+    lifecycle_head = copy.deepcopy(prior_high["lifecycle_head"])
+    mark_cursor = copy.deepcopy(prior_high["mark_cursor"])
+    ledger_cursor = copy.deepcopy(prior_high["ledger_cursor"])
+    expected_entries = [copy.deepcopy(dict(entry)) for entry in prior_entries]
+    seen_states: set[str] = set()
+    while state_id != target["state_id"]:
+        if state_id in seen_states or len(expected_entries) > len(boundary_entries):
+            _fail("selector incremental occurrence path is cyclic or incomplete")
+        seen_states.add(state_id)
+        boundary, receipt = _load_exact_advance_boundary(
+            lifecycle_root, state_id
+        )
+        expected_entries.append(
+            {
+                "logical_key": ["advance", state_id],
+                "binding": receipt,
+            }
+        )
+        previous = copy.deepcopy(lifecycle_head)
+        for event_pointer in boundary["event_pointers"]:
+            event = _load_frozen_lifecycle_event(
+                lifecycle_root, event_pointer
+            )
+            if event.get("previous") != previous:
+                _fail("selector incremental boundary events are not contiguous")
+            previous = copy.deepcopy(event_pointer)
+        if previous != boundary["candidate_lifecycle_head"]:
+            _fail("selector incremental boundary event tail drifted")
+        state_id = boundary["candidate_state_id"]
+        lifecycle_head = copy.deepcopy(boundary["candidate_lifecycle_head"])
+        mark_cursor = copy.deepcopy(boundary["mark_boundary"])
+        ledger_cursor = copy.deepcopy(boundary["ledger_boundary"])
+    if (
+        lifecycle_head != target["lifecycle_head"]
+        or mark_cursor != target["mark_cursor"]
+        or ledger_cursor != target["ledger_cursor"]
+        or _auth_entry_receipts(boundary_entries)
+        != _auth_entry_receipts(expected_entries)
+    ):
+        _fail("selector incremental boundary index differs from its exact suffix")
+
+
+def _authenticate_evidence_high_water_graph(
+    root: Path,
+    pointer: Mapping[str, Any],
+    *,
+    evidence_inputs: EvidenceInputs | None,
+) -> dict[str, Any]:
+    high = _load_evidence_high_water(root, pointer)
+    prior_high: dict[str, Any] | None = None
+    prior_entries: dict[str, list[dict[str, Any]]] = {}
+    inherited_chunks: Sequence[Mapping[str, Any]] = ()
+    if high["previous_complete"] is not None:
+        prior_high = _authenticate_evidence_high_water_graph(
+            root,
+            high["previous_complete"],
+            evidence_inputs=evidence_inputs,
+        )
+        if (
+            prior_high["phase"] != "COMPLETE"
+            or prior_high["producer_contract"] != high["producer_contract"]
+        ):
+            _fail("selector incremental evidence parent drifted")
+        inherited_chunks = tuple(prior_high["ledger_chunks"])
+    snapshot = validate_runtime_object(
+        _load_pointer(
+            root, high["snapshot"], label="selector evidence source snapshot"
+        ),
+        label="selector evidence source snapshot",
+    )
+    stage = high["occurrence_stage"]
+    target = snapshot["lifecycle_state"]
+    no_base = all(
+        high[field] is None
+        for field in (
+            "base_state_id",
+            "base_lifecycle_head",
+            "base_mark_cursor",
+            "base_ledger_cursor",
+        )
+    )
+    has_base = all(
+        high[field] is not None
+        for field in (
+            "base_state_id",
+            "base_lifecycle_head",
+            "base_mark_cursor",
+            "base_ledger_cursor",
+        )
+    )
+    incremental = prior_high is not None
+    if (
+        (high["phase"] == "AUDIT_PINNED" and stage != "LEDGER_CAPTURE")
+        or (high["phase"] == "COMPLETE") != (stage == "DONE")
+        or (
+            stage in {"LEDGER_CAPTURE", "LIVE_MARK_BACKWALK", "COLD_ACTIVATION"}
+            and (
+                (
+                    not incremental
+                    and (
+                        high["replay_state"] is not None
+                        or high["ledger_replay_bytes"] != 0
+                        or high["ledger_replay_rows"] != 0
+                    )
+                )
+                or high["current_boundary"] is not None
+                or not no_base
+            )
+        )
+        or (
+            stage == "LEDGER_CAPTURE"
+            and (
+                high["live_mark_scan_cursor"] != high["captured_mark_head"]
+                or high["live_mark_reverse_ordinal"] != 0
+            )
+        )
+        or (
+            stage in {"LIVE_MARK_BACKWALK", "COLD_ACTIVATION"}
+            and high["ledger_capture_bytes"]
+            != int(snapshot["live_ledger_receipt"]["bytes"])
+        )
+        or (
+            stage == "COLD_ACTIVATION"
+            and high["live_mark_scan_cursor"] != target["mark_cursor"]
+        )
+        or (
+            stage == "LEDGER_ROWS"
+            and (
+                high["replay_state"] is None
+                or high["current_boundary"] is None
+                or not (
+                    no_base
+                    if high["current_boundary"]["kind"] == "activation"
+                    else has_base
+                )
+                or high["ledger_replay_bytes"]
+                > int(high["current_boundary"]["ledger_boundary"]["bytes"])
+                or high["ledger_replay_rows"]
+                > int(high["current_boundary"]["ledger_boundary"]["row_count"])
+            )
+        )
+        or (
+            stage == "EDGE_INIT"
+            and (
+                high["replay_state"] is None
+                or high["current_boundary"] is not None
+                or not no_base
+                or high["boundary_mark_cursor"] is not None
+                or any(
+                    high[field] != 0
+                    for field in (
+                        "boundary_mark_row_cursor",
+                        "boundary_mark_ordinal",
+                        "boundary_event_cursor",
+                        "boundary_terminal_cursor",
+                    )
+                )
+            )
+        )
+        or (
+            stage
+            in {
+                "EDGE_MARK_BACKWALK",
+                "EDGE_MARK_ROWS",
+                "EDGE_TERMINALS",
+                "EDGE_FINALIZE",
+            }
+            and (
+                high["replay_state"] is None
+                or high["current_boundary"] is None
+                or high["current_boundary"]["kind"] != "advance"
+                or not has_base
+            )
+        )
+        or (
+            stage in {"EDGE_TERMINALS", "EDGE_FINALIZE"}
+            and (
+                high["boundary_mark_cursor"] is not None
+                or high["boundary_mark_ordinal"] != 0
+                or high["boundary_mark_row_cursor"] != 0
+            )
+        )
+        or (stage == "DONE" and high["replay_state"] is None)
+    ):
+        _fail("selector evidence high-water occurrence stage drifted")
+    roots = {
+        "boundary_index": EVIDENCE_BOUNDARY_DOMAIN,
+        "mark_seen_index": EVIDENCE_MARK_SEEN_DOMAIN,
+        "ledger_row_index": EVIDENCE_LEDGER_ROW_DOMAIN,
+        "event_enrollment_index": EVIDENCE_EVENT_ENROLLMENT_DOMAIN,
+        "event_seen_index": EVIDENCE_EVENT_SEEN_DOMAIN,
+        "event_terminal_index": EVIDENCE_EVENT_TERMINAL_DOMAIN,
+        "state_enrollment_index": EVIDENCE_STATE_ENROLLMENT_DOMAIN,
+        "state_terminal_index": EVIDENCE_STATE_TERMINAL_DOMAIN,
+        "state_latest_index": EVIDENCE_STATE_LATEST_DOMAIN,
+        "derived_latest_index": EVIDENCE_DERIVED_LATEST_DOMAIN,
+        "ledger_terminal_index": EVIDENCE_LEDGER_TERMINAL_DOMAIN,
+    }
+    authenticated_entries = {
+        field: _authenticate_sharded_root_graph(
+            root, high[field], domain=domain
+        )
+        for field, domain in roots.items()
+    }
+    if prior_high is not None:
+        prior_entries = {
+            "boundary_index": _authenticate_sharded_root_graph(
+                root,
+                prior_high["boundary_index"],
+                domain=EVIDENCE_BOUNDARY_DOMAIN,
+            ),
+            "ledger_row_index": _authenticate_sharded_root_graph(
+                root,
+                prior_high["ledger_row_index"],
+                domain=EVIDENCE_LEDGER_ROW_DOMAIN,
+            ),
+        }
+
+    captured = 0
+    for ordinal, chunk_pointer in enumerate(high["ledger_chunks"], start=1):
+        chunk, raw = _load_evidence_ledger_chunk(
+            root,
+            chunk_pointer,
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            ordinal=ordinal,
+            first_byte=captured,
+        )
+        captured = chunk["last_byte"]
+        if captured > high["ledger_capture_bytes"] or not raw:
+            _fail("selector evidence ledger chunk escaped its capture cursor")
+    if captured != high["ledger_capture_bytes"]:
+        _fail("selector evidence ledger capture cursor omitted a chunk")
+    if captured == int(snapshot["live_ledger_receipt"]["bytes"]):
+        _authenticate_captured_ledger(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            receipt=snapshot["live_ledger_receipt"],
+        )
+
+    if high["replay_state"] is not None:
+        replay = validate_runtime_object(
+            _load_pointer(
+                root, high["replay_state"], label="selector evidence replay state"
+            ),
+            label="selector evidence replay state",
+        )
+        if replay["state"]["state_id"] != high["replay_state_id"]:
+            _fail("selector replay state escaped its high-water")
+
+    if high["ledger_row_index"]["entry_count"] != 2 * high["ledger_replay_rows"]:
+        _fail("selector replay ledger index cardinality drifted")
+    _authenticate_replayed_ledger_index(
+        root,
+        high,
+        entries=authenticated_entries["ledger_row_index"],
+        inherited_chunks=inherited_chunks,
+        prior_high=prior_high,
+        prior_entries=prior_entries.get("ledger_row_index", ()),
+    )
+
+    if evidence_inputs is None or (
+        evidence_inputs.mark_root is None
+        or evidence_inputs.lifecycle_root is None
+    ):
+        if high["phase"] == "COMPLETE":
+            _fail("selector complete evidence high-water requires producer roots")
+    else:
+        mark_root = Path(evidence_inputs.mark_root).expanduser()
+        lifecycle_root = Path(evidence_inputs.lifecycle_root).expanduser()
+        with _selector_lane(root, create=False) as selector_lane:
+            with _anchored_evidence_sources(
+                mark_root, lifecycle_root, selector_lane=selector_lane
+            ) as sources:
+                if sources.producer_roots != snapshot["producer_roots"]:
+                    _fail("selector evidence producer roots drifted")
+                token = _ACTIVE_EVIDENCE_SOURCES.set(sources)
+                try:
+                    if (
+                        _read_anchored_activation_boundary(sources.lifecycle)
+                        != snapshot["activation_boundary"]
+                    ):
+                        _fail("selector activation boundary receipt drifted")
+                    if prior_high is not None:
+                        prior_snapshot = validate_runtime_object(
+                            _load_pointer(
+                                root,
+                                prior_high["snapshot"],
+                                label="selector prior source snapshot",
+                            ),
+                            label="selector prior source snapshot",
+                        )
+                        if (
+                            prior_snapshot["producer_roots"]
+                            != snapshot["producer_roots"]
+                        ):
+                            _fail("selector incremental producer roots drifted")
+                        _anchored_mark_chain_contains(
+                            sources.mark,
+                            snapshot["live_mark_head"],
+                            (
+                                target["mark_cursor"],
+                                prior_snapshot["live_mark_head"],
+                            ),
+                        )
+                        _anchored_ledger_extends(
+                            sources.lifecycle,
+                            prior_snapshot["live_ledger_receipt"],
+                        )
+                    if high["phase"] == "COMPLETE":
+                        if prior_high is None:
+                            _authenticate_cold_occurrence_source_path(
+                                lifecycle_root,
+                                mark_root,
+                                snapshot=snapshot,
+                                boundary_entries=authenticated_entries[
+                                    "boundary_index"
+                                ],
+                            )
+                        else:
+                            _authenticate_incremental_occurrence_source_path(
+                                lifecycle_root,
+                                target=target,
+                                prior_high=prior_high,
+                                prior_entries=prior_entries["boundary_index"],
+                                boundary_entries=authenticated_entries[
+                                    "boundary_index"
+                                ],
+                            )
+                    else:
+                        for entry in authenticated_entries["boundary_index"]:
+                            logical_key = entry["logical_key"]
+                            binding = entry["binding"]
+                            if (
+                                isinstance(logical_key, list)
+                                and len(logical_key) == 2
+                                and logical_key[0] == "activation"
+                                and binding
+                                == _activation_boundary_receipt(
+                                    snapshot["activation_boundary"]
+                                )
+                            ):
+                                continue
+                            if (
+                                isinstance(logical_key, list)
+                                and len(logical_key) == 2
+                                and logical_key[0] == "advance"
+                                and logical_key[1]
+                                == binding.get("base_state_id")
+                            ):
+                                _load_boundary_from_receipt(
+                                    lifecycle_root, binding
+                                )
+                                continue
+                            _fail(
+                                "selector boundary index contains a foreign key"
+                            )
+                    for entry in authenticated_entries["mark_seen_index"]:
+                        _load_frozen_mark_observation(mark_root, entry["binding"])
+                    for entry in authenticated_entries["event_enrollment_index"]:
+                        event = _load_frozen_lifecycle_event(
+                            lifecycle_root, entry["binding"]
+                        )
+                        if event.get("event_kind") != "enrollment":
+                            _fail("selector generated-enrollment index drifted")
+                finally:
+                    _ACTIVE_EVIDENCE_SOURCES.reset(token)
+
+    if high["phase"] == "COMPLETE":
+        replay = validate_runtime_object(
+            _load_pointer(
+                root, high["replay_state"], label="selector evidence replay state"
+            ),
+            label="selector evidence replay state",
+        )
+        target = snapshot["lifecycle_state"]
+        if (
+            high["occurrence_stage"] != "DONE"
+            or replay["state"] != target
+            or high["replay_state_id"] != target["state_id"]
+            or high["ledger_capture_bytes"]
+            != int(snapshot["live_ledger_receipt"]["bytes"])
+            or high["ledger_replay_bytes"] != int(target["ledger_cursor"]["bytes"])
+            or high["ledger_replay_rows"]
+            != int(target["ledger_cursor"]["row_count"])
+            or high["live_mark_scan_cursor"] != target["mark_cursor"]
+            or high["current_boundary"] is not None
+            or any(
+                high[field] is not None
+                for field in (
+                    "base_state_id",
+                    "base_lifecycle_head",
+                    "base_mark_cursor",
+                    "base_ledger_cursor",
+                    "boundary_mark_cursor",
+                )
+            )
+            or any(
+                high[field] != 0
+                for field in (
+                    "boundary_mark_row_cursor",
+                    "boundary_mark_ordinal",
+                    "boundary_ledger_row_cursor",
+                    "boundary_ledger_byte_cursor",
+                    "boundary_event_cursor",
+                    "boundary_terminal_cursor",
+                )
+            )
+        ):
+            _fail("selector complete evidence replay is not exact")
+    return high
+
+
 def authenticate_store(
     root: Path,
+    *,
+    evidence_inputs: EvidenceInputs | None = None,
+    _allow_durable_intent: bool = False,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]], bytes]:
+    if not _allow_durable_intent:
+        _authenticate_store_wal_preflight(root)
     state = _authenticate_selector_state(root)
     if state is None:
         return None, [], b""
     head, pending, cycle, _last_candidate, _last_decision = state
+    if head["evidence_high_water"] is not None:
+        _authenticate_evidence_high_water_graph(
+            root,
+            head["evidence_high_water"],
+            evidence_inputs=evidence_inputs,
+        )
     if head["cycle_count"] == 0:
         for reference in head["source_episode_chunks"]:
             _load_episode_chunk(
@@ -3653,6 +5621,22 @@ def authenticate_store(
     }
     if len(candidates_by_id) != len(candidate_receipts):
         _fail("selector candidate chain repeats an identity")
+    candidate_index_cache = private_auth_dict.ShardedLookupCache.empty(
+        CANDIDATE_INDEX_DOMAIN
+    )
+    for receipt in candidate_receipts:
+        membership = _candidate_index_lookup(
+            root,
+            head["candidate_index"],
+            receipt["campaign_id"],
+            node_cache=candidate_index_cache,
+        )
+        if membership.binding != {
+            "campaign_id": receipt["campaign_id"],
+            "candidate_id": receipt["candidate_id"],
+            "candidate": receipt["pointer"],
+        }:
+            _fail("selector candidate index does not bind its complete chain")
 
     if pending is not None:
         pending_ids: list[str] = []
@@ -3679,8 +5663,40 @@ def authenticate_store(
             _fail("pending manifest identity or order drifted")
 
     proposed_by_session: dict[str, list[int]] = {}
+    proposal_session: str | None = None
+    proposal_count = 0
     previous_available: datetime | None = None
     by_decision_id: dict[str, dict[str, Any]] = {}
+    generation_sessions: dict[str, set[str]] = {}
+    generation_pointers: dict[str, dict[str, Any]] = {}
+    for decision in decisions:
+        generation_pointer = decision["evidence"]["generation"]
+        generation_identity, clean_generation_pointer = _full_pointer(
+            generation_pointer, label="authenticated evidence generation"
+        )
+        prior_generation_pointer = generation_pointers.get(generation_identity)
+        if (
+            prior_generation_pointer is not None
+            and prior_generation_pointer != clean_generation_pointer
+        ):
+            _fail("authenticated evidence generation cached full pointer drifted")
+        generation_pointers[generation_identity] = clean_generation_pointer
+        generation_sessions.setdefault(generation_identity, set()).add(
+            _utc(
+                decision["decision_event_at"],
+                label="authenticated evidence session",
+            )
+            .astimezone(ET)
+            .date()
+            .isoformat()
+        )
+    generation_snapshots: dict[str, EvidenceSnapshot] = {}
+    generation_cache: _PointerObjectCache = {}
+    manifest_cache: _PointerObjectCache = {}
+    source_cache: _PointerObjectCache = {}
+    w1a_cache: _W1APublicationCache = {}
+    w1a_seen: dict[str, dict[str, Any]] = {}
+    reconstructed_w1a_high_water: Mapping[str, Any] | None = None
     for decision in decisions:
         candidate_pointer = decision["candidate"]
         candidate = _load_pointer(root, candidate_pointer, label="decided candidate")
@@ -3693,7 +5709,90 @@ def authenticate_store(
             _fail("decision candidate is not the frozen chained object")
         if decision["evidence"]["options"] != candidate_pointer:
             _fail("selector decision options evidence drifted")
-        _validate_decision_evidence_objects(root, decision, candidate=candidate)
+        generation_pointer = decision["evidence"]["generation"]
+        generation_identity, _clean_generation_pointer = _full_pointer(
+            generation_pointer, label="authenticated evidence generation"
+        )
+        generation, _generation_body = _load_pointer_cached(
+            root,
+            generation_pointer,
+            label="authenticated evidence generation",
+            cache=generation_cache,
+        )
+        compact_present = any(
+            decision["evidence"][slot] is not None
+            for slot in ("konseki", "mark", "lifecycle")
+        )
+        evidence_snapshot: EvidenceSnapshot | None = None
+        if compact_present:
+            if evidence_inputs is None:
+                _fail(
+                    "selector compact evidence lacks trusted producer inputs"
+                )
+            evidence_snapshot = generation_snapshots.get(generation_identity)
+            if evidence_snapshot is None:
+                settled_manifest, _settled_manifest_body = _load_pointer_cached(
+                    root,
+                    generation["settled_manifest"],
+                    label="authenticated evidence settled manifest",
+                    cache=manifest_cache,
+                )
+                scoped_candidates = tuple(
+                    _load_pointer(
+                        root,
+                        pointer,
+                        label="authenticated evidence candidate",
+                    )
+                    for pointer in settled_manifest["candidates"]
+                )
+                evidence_snapshot = _evidence_snapshot_from_generation(
+                    generation,
+                    evidence_inputs,
+                    root=root,
+                    candidates=scoped_candidates,
+                    session_dates=frozenset(
+                        generation_sessions[generation_identity]
+                    ),
+                    generation_already_validated=True,
+                    manifest_cache=manifest_cache,
+                    source_cache=source_cache,
+                    w1a_cache=w1a_cache,
+                )
+                generation_snapshots[generation_identity] = evidence_snapshot
+        _validate_decision_evidence_objects(
+            root,
+            decision,
+            candidate=candidate,
+            evidence_inputs=evidence_inputs or EvidenceInputs(),
+            generation_cache=generation_cache,
+            manifest_cache=manifest_cache,
+            source_cache=source_cache,
+            w1a_cache=w1a_cache,
+            evidence_snapshot=evidence_snapshot,
+        )
+        source_pointer = generation["w1a_source_receipt"]
+        if source_pointer is not None:
+            source_identity, clean_source_pointer = _full_pointer(
+                source_pointer,
+                label="authenticated selector W1A source receipt",
+            )
+            seen_source_pointer = w1a_seen.get(source_identity)
+            if (
+                seen_source_pointer is not None
+                and seen_source_pointer != clean_source_pointer
+            ):
+                _fail("authenticated selector W1A cached full pointer drifted")
+            source_receipt, _source_body = _load_pointer_cached(
+                root,
+                source_pointer,
+                label="authenticated selector W1A source receipt",
+                cache=source_cache,
+            )
+            if seen_source_pointer is None:
+                reconstructed_w1a_high_water = _advance_w1a_high_water(
+                    reconstructed_w1a_high_water, source_receipt
+                )
+                w1a_seen[source_identity] = clean_source_pointer
         available = _utc(
             decision["decision_available_at"], label="decision chain availability"
         )
@@ -3705,6 +5804,34 @@ def authenticate_store(
             proposed_by_session.setdefault(session, []).append(
                 decision["proposal_ordinal"]
             )
+        session = decision["decision_nyse_session_date"]
+        if session is not None:
+            parsed_session = date.fromisoformat(session)
+            if not nyse_calendar.is_session(parsed_session):
+                _fail("selector decision session is not a NYSE session")
+            if proposal_session is None:
+                proposal_session = session
+                proposal_count = 0
+            elif session < proposal_session:
+                _fail("selector proposal session moved backward")
+            elif session > proposal_session:
+                prior_session = date.fromisoformat(proposal_session)
+                transitions = nyse_calendar.sessions_between(
+                    prior_session + timedelta(days=1), parsed_session
+                )
+                if not transitions or transitions[-1] != parsed_session:
+                    _fail("selector proposal counter reset off-session")
+                proposal_session = session
+                proposal_count = 0
+        if decision["action"] == "propose":
+            if (
+                session is None
+                or session != proposal_session
+                or proposal_count >= PROPOSAL_CAP
+                or decision["proposal_ordinal"] != proposal_count + 1
+            ):
+                _fail("selector proposal ordinal escaped its session cap")
+            proposal_count += 1
         by_decision_id[decision["decision_id"]] = decision
 
     for ordinals in proposed_by_session.values():
@@ -3713,6 +5840,13 @@ def authenticate_store(
             or len(ordinals) > PROPOSAL_CAP
         ):
             _fail("selector proposal ordinals or per-session cap drifted")
+    if (
+        head["proposal_session_date"] != proposal_session
+        or head["proposal_session_count"] != proposal_count
+    ):
+        _fail("selector HEAD proposal session state drifted")
+    if reconstructed_w1a_high_water != head["w1a_publication_high_water"]:
+        _fail("selector W1A publication high-water does not reconcile")
     if pending is None and head["source_phase"] == "DRAINED":
         candidate_pointers = [receipt["pointer"] for receipt in candidate_receipts]
         if (
@@ -3739,7 +5873,12 @@ def authenticate_store(
         if cycle_decisions:
             _fail("selector initial cycle settlement drifted")
     else:
-        settled = _load_pointer(root, settled_pointer, label="settled manifest")
+        settled, _settled_body = _load_pointer_cached(
+            root,
+            settled_pointer,
+            label="settled manifest",
+            cache=manifest_cache,
+        )
         if (
             len(cycle_decisions) != settled["candidate_count"]
             or any(
@@ -3989,6 +6128,7 @@ def _evidence_object(value: Mapping[str, Any]) -> PlannedObject:
 def _make_evidence_generation(
     *,
     snapshot: EvidenceSnapshot,
+    w1a_source_receipt: PlannedObject | None,
     manifest_pointer: Mapping[str, Any],
     fenced_at: str,
 ) -> PlannedObject:
@@ -3997,10 +6137,10 @@ def _make_evidence_generation(
         "generation_id": "",
         "settled_manifest": copy.deepcopy(dict(manifest_pointer)),
         "fenced_at": fenced_at,
-        "w1a_export": (
+        "w1a_source_receipt": (
             None
-            if snapshot.w1a_export is None
-            else copy.deepcopy(dict(snapshot.w1a_export))
+            if w1a_source_receipt is None
+            else copy.deepcopy(w1a_source_receipt.pointer)
         ),
         "lifecycle_state": (
             None
@@ -4032,13 +6172,12 @@ def _compact_konseki_evidence(
 ) -> PlannedObject | None:
     if full is None:
         return None
-    export = snapshot.w1a_export
-    if export is None:
-        _fail("selector Konseki evidence lacks its generation export")
+    if snapshot.w1a_head is None:
+        _fail("selector Konseki evidence lacks its W1A source publication")
     reference = full.value["reference"]
     matches = [
         index
-        for index, item in enumerate(export["references"])
+        for index, item in enumerate(snapshot.w1a_references)
         if canonical_bytes(item) == canonical_bytes(reference)
     ]
     if len(matches) != 1:
@@ -4131,29 +6270,59 @@ def _validate_decision_evidence_objects(
     planned_by_key: Mapping[str, PlannedObject] | None = None,
     candidate: Mapping[str, Any] | None = None,
     evidence_inputs: EvidenceInputs | None = None,
+    generation_cache: _PointerObjectCache | None = None,
+    manifest_cache: _PointerObjectCache | None = None,
+    source_cache: _PointerObjectCache | None = None,
+    w1a_cache: _W1APublicationCache | None = None,
+    evidence_snapshot: EvidenceSnapshot | None = None,
 ) -> set[str]:
-    def load(pointer: Mapping[str, Any], *, label: str) -> tuple[Mapping[str, Any], bytes]:
+    def load(
+        pointer: Mapping[str, Any],
+        *,
+        label: str,
+        cache: _PointerObjectCache | None = None,
+    ) -> tuple[Mapping[str, Any], bytes]:
         planned = None if planned_by_key is None else planned_by_key.get(pointer["key"])
         if planned is not None:
             if planned.pointer != pointer:
                 _fail(f"{label} differs from planned bytes")
             return planned.value, planned.body
+        if cache is not None:
+            return _load_pointer_cached(
+                root, pointer, label=label, cache=cache
+            )
         value = _load_pointer(root, pointer, label=label)
         return value, canonical_bytes(value)
+
+    def validated(
+        value: Mapping[str, Any], *, label: str
+    ) -> Mapping[str, Any]:
+        # Authenticated store reads pass through _load_pointer(), which already
+        # performs runtime-schema validation before an object can enter a
+        # call-local cache.  Planned recovery objects still require the
+        # explicit validation below because they may not have been disk-loaded.
+        if planned_by_key is None:
+            return value
+        return validate_runtime_object(value, label=label)
 
     generation_pointer = decision["evidence"].get("generation")
     if not isinstance(generation_pointer, Mapping):
         _fail("selector decision lacks its evidence generation")
     generation_value, generation_body = load(
-        generation_pointer, label="decision evidence generation"
+        generation_pointer,
+        label="decision evidence generation",
+        cache=generation_cache,
     )
-    generation = validate_runtime_object(
+    generation = validated(
         generation_value, label="decision evidence generation"
     )
-    settled_manifest = _load_pointer(
-        root,
+    settled_manifest_value, _settled_manifest_body = load(
         generation["settled_manifest"],
         label="decision evidence settled manifest",
+        cache=manifest_cache,
+    )
+    settled_manifest = validated(
+        settled_manifest_value, label="decision evidence settled manifest"
     )
     if (
         generation.get("schema")
@@ -4167,18 +6336,63 @@ def _validate_decision_evidence_objects(
         > _utc(decision["decision_event_at"], label="decision event")
     ):
         _fail("selector decision evidence generation binding drifted")
+    source_pointer = generation["w1a_source_receipt"]
+    source_receipt: Mapping[str, Any] | None = None
+    w1a_publication: _W1APublication | None = None
+    used: set[str] = {generation_pointer["key"]}
+    if source_pointer is not None:
+        if evidence_inputs is None or evidence_inputs.w1a_receipt_root is None:
+            _fail("selector decision W1A source lacks its trusted receipt root")
+        source_value, source_body = load(
+            source_pointer,
+            label="decision W1A source receipt",
+            cache=source_cache,
+        )
+        source_receipt = validated(
+            source_value, label="decision W1A source receipt"
+        )
+        if (
+            source_pointer["key"] != f"evidence/{_sha256(source_body)}.json"
+            or source_receipt["settled_manifest"] != generation["settled_manifest"]
+            or _utc(source_receipt["captured_at"], label="W1A capture")
+            > _utc(generation["fenced_at"], label="evidence generation fence")
+        ):
+            _fail("selector decision W1A source binding drifted")
+        used.add(source_pointer["key"])
+        w1a_publication = _cached_w1a_publication(
+            source_pointer, cache=w1a_cache
+        )
+        if w1a_publication is None:
+            candidate_rows = [
+                (
+                    copy.deepcopy(dict(pointer)),
+                    _load_pointer(
+                        root, pointer, label="W1A source manifested candidate"
+                    ),
+                )
+                for pointer in settled_manifest["candidates"]
+            ]
+            w1a_publication = _authenticate_historical_w1a_source_cached(
+                source_pointer,
+                source_receipt,
+                receipt_root=Path(evidence_inputs.w1a_receipt_root),
+                manifest=settled_manifest,
+                candidate_rows=candidate_rows,
+                cache=w1a_cache,
+            )
+    elif generation["w1a_error"] is not True:
+        _fail("selector decision W1A absence is not fail-closed")
     expected_schemas = {
         "konseki": "options.sparse_selector_konseki_evidence/v1",
         "mark": "options.sparse_selector_mark_evidence/v1",
         "lifecycle": "options.sparse_selector_lifecycle_evidence/v1",
     }
-    used: set[str] = {generation_pointer["key"]}
     for slot, schema in expected_schemas.items():
         pointer = decision["evidence"][slot]
         if pointer is None:
             continue
         value, body = load(pointer, label=f"decision {slot} evidence")
-        value = validate_runtime_object(value, label=f"decision {slot} evidence")
+        value = validated(value, label=f"decision {slot} evidence")
         if (
             len(body) > MAX_EVIDENCE_OBJECT_BYTES
             or value.get("schema") != schema
@@ -4191,17 +6405,17 @@ def _validate_decision_evidence_objects(
         used.add(pointer["key"])
         if candidate is not None and slot == "konseki":
             try:
-                export = generation["w1a_export"]
                 ordinal = value["reference_ordinal"]
                 if (
-                    export is None
+                    source_receipt is None
+                    or w1a_publication is None
                     or generation["w1a_error"] is not False
                     or type(ordinal) is not int
-                    or not 1 <= ordinal <= len(export["references"])
+                    or not 1 <= ordinal <= len(w1a_publication.references)
                 ):
                     _fail("selector Konseki evidence generation is unavailable")
                 reference = context_bridge.validate_context_reference(
-                    export["references"][ordinal - 1]
+                    w1a_publication.references[ordinal - 1]
                 )
                 owner = reference["owner"]
                 if (
@@ -4234,7 +6448,32 @@ def _validate_decision_evidence_objects(
                     )
                 ):
                     _fail("selector lifecycle evidence escaped its decision")
-                if evidence_inputs is not None and evidence_inputs.lifecycle_root is not None:
+                if evidence_snapshot is not None:
+                    matches = [
+                        item
+                        for item in evidence_snapshot.enrollments_by_contract.get(
+                            _campaign_contract_key(candidate["campaign_row"]), ()
+                        )
+                        if item[0] == plan_id
+                        and item[2] == value["enrollment_pointer"]
+                    ]
+                    if len(matches) != 1:
+                        _fail("selector lifecycle evidence source binding drifted")
+                    enrollment = matches[0][1]
+                    if (
+                        not _contract_matches_campaign(
+                            enrollment["payload"]["contract"],
+                            candidate["campaign_row"],
+                        )
+                        or not _all_false_mapping(enrollment.get("authority"))
+                        or (
+                            decision["contract"] is not None
+                            and _nbbo_contract(enrollment["payload"]["contract"])
+                            != decision["contract"]
+                        )
+                    ):
+                        _fail("selector lifecycle evidence source binding drifted")
+                elif evidence_inputs is not None and evidence_inputs.lifecycle_root is not None:
                     enrollment = lifecycle._load_enrollment(
                         Path(evidence_inputs.lifecycle_root),
                         value["enrollment_pointer"],
@@ -4272,7 +6511,29 @@ def _validate_decision_evidence_objects(
                     )
                 ):
                     _fail("selector mark evidence escaped its decision")
-                if evidence_inputs is not None and evidence_inputs.mark_root is not None:
+                if evidence_snapshot is not None:
+                    admitted = evidence_snapshot.mark_rows_by_plan_session.get(
+                        (plan_id, session_date)
+                    )
+                    if admitted is None:
+                        _fail("selector mark evidence source binding drifted")
+                    mark_pointer, observation, row = admitted
+                    if (
+                        mark_pointer != value["mark_pointer"]
+                        or value["selected_row_sha256"]
+                        != _sha256(canonical_bytes(row))
+                        or not _all_false_mapping(observation.get("authority"))
+                        or not _contract_matches_campaign(
+                            row["contract"], candidate["campaign_row"]
+                        )
+                        or (
+                            decision["contract"] is not None
+                            and _nbbo_contract(row["contract"])
+                            != decision["contract"]
+                        )
+                    ):
+                        _fail("selector mark evidence source binding drifted")
+                elif evidence_inputs is not None and evidence_inputs.mark_root is not None:
                     observation = lifecycle._load_mark_observation(
                         Path(evidence_inputs.mark_root), value["mark_pointer"]
                     )
@@ -4297,86 +6558,526 @@ def _validate_decision_evidence_objects(
     return used
 
 
-def _make_w1a_export_for_test(
-    publication: Mapping[str, Any], *, exported_at: str
-) -> dict[str, Any]:
-    head = publication.get("head") if isinstance(publication, Mapping) else None
-    references = (
-        publication.get("references") if isinstance(publication, Mapping) else None
-    )
-    if not isinstance(head, Mapping) or not isinstance(references, list):
-        _fail("W1A publication is incomplete")
-    clean_head = context_store.validate_head(head)
-    context_bridge.canonical_reference_set_bytes(references)
-    if clean_head["reference_count"] != len(references):
-        _fail("W1A export reference count differs from HEAD")
-    export_clock = _utc(exported_at, label="W1A export clock")
-    if export_clock < _utc(clean_head["published_at"], label="W1A HEAD clock"):
-        _fail("W1A export clock predates its authenticated HEAD")
-    export: dict[str, Any] = {
-        "schema": "options.sparse_selector_w1a_receipt_export/v1",
-        "export_id": "",
-        "exported_at": exported_at,
-        "head": clean_head,
-        "references": copy.deepcopy(references),
-        "authority": dict(FALSE_AUTHORITY),
-    }
-    export["export_id"] = _content_id("ossw_", export, field="export_id")
-    return validate_runtime_object(export, label="W1A selector export")
+@dataclass(frozen=True)
+class _W1ALane:
+    root: Path
+    descriptors: tuple[int, ...]
+    bindings: tuple[tuple[int, str, int, int], ...]
+
+    @property
+    def root_fd(self) -> int:
+        return self.descriptors[-1]
 
 
-def validate_w1a_export(value: Mapping[str, Any]) -> dict[str, Any]:
-    clean = validate_runtime_object(value, label="W1A selector export")
-    if clean.get("schema") != "options.sparse_selector_w1a_receipt_export/v1":
-        _fail("W1A selector export schema drifted")
-    if clean["export_id"] != _content_id("ossw_", clean, field="export_id"):
-        _fail("W1A selector export identity drifted")
-    head = context_store.validate_head(clean["head"])
-    if _utc(clean["exported_at"], label="W1A export clock") < _utc(
-        head["published_at"], label="W1A HEAD clock"
-    ):
-        _fail("W1A export clock predates its authenticated HEAD")
-    references = clean["references"]
-    canonical = context_bridge.canonical_reference_set_bytes(references)
+@dataclass(frozen=True)
+class _W1APublication:
+    root_path_sha256: str
+    head: Mapping[str, Any]
+    head_body: bytes
+    audit: Mapping[str, Any]
+    references: tuple[Mapping[str, Any], ...]
+
+
+def _assert_w1a_lane_identity(lane: _W1ALane) -> None:
+    for parent_fd, name, device, inode in lane.bindings:
+        try:
+            bound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError as exc:
+            raise SparseSelectorError(
+                "W1A receipt root was renamed during authenticated read"
+            ) from exc
+        if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+            device,
+            inode,
+        ):
+            _fail("W1A receipt root or ancestor was rebound during authenticated read")
+    _validate_directory_metadata(os.fstat(lane.root_fd), private=True)
+
+
+@contextmanager
+def _open_w1a_lane(root: Path) -> Iterator[_W1ALane]:
+    """Open a W1A root by anchored components without touching selector lane state."""
+
+    absolute = _absolute_private_path(Path(root))
+    if absolute in {Path("/"), Path.home().resolve()}:
+        _fail("W1A receipt root is too broad")
+    repository = ROOT.resolve()
+    if absolute == repository or repository in absolute.parents:
+        _fail("W1A receipt root cannot be inside the repository")
+    descriptors: list[int] = []
+    bindings: list[tuple[int, str, int, int]] = []
+    try:
+        current = os.open("/", _DIRECTORY_FLAGS)
+        descriptors.append(current)
+        rendered: list[str] = []
+        for index, part in enumerate(absolute.parts[1:]):
+            rendered.append(part)
+            child = _open_directory_component(
+                current,
+                part,
+                create=False,
+                private=index == len(absolute.parts[1:]) - 1,
+                label="/" + "/".join(rendered),
+            )
+            metadata = os.fstat(child)
+            bindings.append((current, part, metadata.st_dev, metadata.st_ino))
+            descriptors.append(child)
+            current = child
+        lane = _W1ALane(absolute, tuple(descriptors), tuple(bindings))
+        _assert_w1a_lane_identity(lane)
+        yield lane
+        _assert_w1a_lane_identity(lane)
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+@contextmanager
+def _open_w1a_directory(
+    lane: _W1ALane, parts: Sequence[str]
+) -> Iterator[int]:
+    descriptors: list[int] = []
+    bindings: list[tuple[int, str, int, int]] = []
+    current = os.dup(lane.root_fd)
+    descriptors.append(current)
+    try:
+        for part in parts:
+            child = _open_directory_component(
+                current,
+                part,
+                create=False,
+                private=True,
+                label="W1A receipt namespace",
+            )
+            metadata = os.fstat(child)
+            bindings.append((current, part, metadata.st_dev, metadata.st_ino))
+            descriptors.append(child)
+            current = child
+        yield current
+        _assert_w1a_lane_identity(lane)
+        for parent_fd, name, device, inode in bindings:
+            bound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+                device,
+                inode,
+            ):
+                _fail("W1A receipt namespace was rebound during authenticated read")
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _read_w1a_key(
+    lane: _W1ALane, key: str, *, limit: int, label: str
+) -> tuple[dict[str, Any], bytes]:
+    parts = key.split("/")
+    if len(parts) != 3 or parts[0] not in {"audits", "reference_sets"}:
+        _fail(f"{label} key is malformed")
+    digest = parts[2].removesuffix(".json")
     if (
-        len(references) != head["reference_count"]
-        or _sha256(canonical) != head["reference_set_sha256"]
+        not re.fullmatch(r"[a-f0-9]{2}", parts[1])
+        or not _SHA256_RE.fullmatch(digest)
+        or parts[1] != digest[:2]
+        or parts[2] != f"{digest}.json"
     ):
-        _fail("W1A selector export does not bind the current reference set")
-    return clean
+        _fail(f"{label} key is not content addressed")
+    with _open_w1a_directory(lane, parts[:2]) as parent_fd:
+        body = _read_regular_at(
+            parent_fd,
+            parts[2],
+            limit=limit,
+            required=True,
+            label=label,
+        )
+    assert body is not None
+    value = strict_json(body, label=label)
+    if not isinstance(value, dict) or canonical_bytes(value) != body:
+        _fail(f"{label} is not canonical")
+    return value, body
+
+
+def _read_w1a_head(lane: _W1ALane) -> tuple[dict[str, Any], bytes]:
+    body = _read_regular_at(
+        lane.root_fd,
+        "HEAD.json",
+        limit=MAX_W1A_HEAD_BYTES,
+        required=True,
+        label="W1A receipt HEAD",
+    )
+    assert body is not None
+    value = strict_json(body, label="W1A receipt HEAD")
+    if not isinstance(value, dict) or canonical_bytes(value) != body:
+        _fail("W1A receipt HEAD is not canonical")
+    return context_store.validate_head(value), body
+
+
+def _authenticate_w1a_head(
+    lane: _W1ALane, head: Mapping[str, Any], head_body: bytes
+) -> _W1APublication:
+    clean_head = context_store.validate_head(head)
+    if canonical_bytes(clean_head) != head_body:
+        _fail("W1A historical HEAD bytes are not exact canonical bytes")
+    audit_value, audit_body = _read_w1a_key(
+        lane,
+        clean_head["audit_object_key"],
+        limit=MAX_W1A_AUDIT_BYTES,
+        label="W1A historical audit object",
+    )
+    reference_value, reference_body = _read_w1a_key(
+        lane,
+        clean_head["reference_set_object_key"],
+        limit=MAX_W1A_REFERENCE_SET_OBJECT_BYTES,
+        label="W1A historical reference-set object",
+    )
+    if (
+        _sha256(audit_body) != clean_head["audit_sha256"]
+        or _sha256(reference_body)
+        != clean_head["reference_set_object_sha256"]
+    ):
+        _fail("W1A historical object differs from its HEAD")
+    try:
+        reference_set = context_store._validate_reference_set_object(reference_value)
+        references = tuple(
+            context_bridge.validate_context_reference(item)
+            for item in reference_set["references"]
+        )
+        audit = context_bridge.validate_audit_receipt(
+            audit_value, references=references
+        )
+    except (
+        context_bridge.OptionsMarketMemoryContextError,
+        context_store.OptionsMarketMemoryReceiptStoreError,
+    ) as exc:
+        raise SparseSelectorError("W1A historical publication is invalid") from exc
+    if (
+        audit["audit_id"] != clean_head["audit_id"]
+        or audit["audited_at"] != clean_head["published_at"]
+        or reference_set["reference_set_sha256"]
+        != clean_head["reference_set_sha256"]
+        or reference_set["reference_count"] != clean_head["reference_count"]
+    ):
+        _fail("W1A historical publication does not reconcile to its HEAD")
+    return _W1APublication(
+        root_path_sha256=_sha256(os.fsencode(str(lane.root))),
+        head=clean_head,
+        head_body=head_body,
+        audit=audit,
+        references=references,
+    )
+
+
+def _assert_w1a_lock_identity(lane: _W1ALane, descriptor: int) -> None:
+    _assert_w1a_lane_identity(lane)
+    opened = os.fstat(descriptor)
+    try:
+        bound = os.stat(".publish.lock", dir_fd=lane.root_fd, follow_symlinks=False)
+    except FileNotFoundError as exc:
+        raise SparseSelectorError("W1A publication lock was renamed") from exc
+    for metadata in (opened, bound):
+        if (
+            stat.S_ISLNK(metadata.st_mode)
+            or not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.getuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+        ):
+            _fail("W1A publication lock metadata is unsafe")
+    if (opened.st_dev, opened.st_ino) != (bound.st_dev, bound.st_ino):
+        _fail("W1A publication lock path no longer names the locked inode")
+
+
+@contextmanager
+def _locked_w1a_publication(root: Path) -> Iterator[_W1APublication]:
+    """Authenticate one current W1A publication under its existing lock."""
+
+    with _open_w1a_lane(root) as lane:
+        try:
+            descriptor = os.open(
+                ".publish.lock",
+                os.O_RDWR
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=lane.root_fd,
+            )
+        except OSError as exc:
+            raise SparseSelectorError(
+                "W1A publication lock must already exist"
+            ) from exc
+        locked = False
+        try:
+            _assert_w1a_lock_identity(lane, descriptor)
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            locked = True
+            _assert_w1a_lock_identity(lane, descriptor)
+            head, head_body = _read_w1a_head(lane)
+            publication = _authenticate_w1a_head(lane, head, head_body)
+            yield publication
+            _assert_w1a_lock_identity(lane, descriptor)
+            final_head, final_body = _read_w1a_head(lane)
+            final_publication = _authenticate_w1a_head(
+                lane, final_head, final_body
+            )
+            if final_publication != publication:
+                raise EvidenceGenerationDrift(
+                    "W1A publication changed during selector capture"
+                )
+        finally:
+            try:
+                if locked:
+                    fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
 
 
 def _w1a_snapshot(
-    export: Mapping[str, Any] | None,
+    receipt_root: Path | None,
+    *,
+    episode_ids: frozenset[str] | None = None,
 ) -> tuple[
     Mapping[str, Any] | None,
+    Mapping[str, Any] | None,
+    tuple[Mapping[str, Any], ...],
+    str | None,
     Mapping[str, tuple[Mapping[str, Any], ...]],
     bool,
 ]:
-    if export is None:
-        return None, {}, True
-    try:
-        clean = validate_w1a_export(export)
-        if (
-            len(clean["references"]) > MAX_EVIDENCE_SNAPSHOT_RECORDS
-            or len(canonical_bytes(clean)) > MAX_EVIDENCE_SNAPSHOT_BYTES
-        ):
-            _fail("selector W1A snapshot exceeds its bounded index")
+    if receipt_root is None:
+        return None, None, (), None, {}, True
+    with _locked_w1a_publication(Path(receipt_root)) as publication:
         grouped: dict[str, list[Mapping[str, Any]]] = {}
-        for raw in clean["references"]:
-            reference = context_bridge.validate_context_reference(raw)
-            owner = reference.get("owner")
-            if isinstance(owner, Mapping) and owner.get("schema") == "options.signal_episode/v1":
-                episode_id = owner.get("id")
-                if isinstance(episode_id, str):
-                    grouped.setdefault(episode_id, []).append(reference)
-        return clean, {key: tuple(value) for key, value in grouped.items()}, False
-    except (
-        SparseSelectorError,
-        context_bridge.OptionsMarketMemoryContextError,
-        context_store.OptionsMarketMemoryReceiptStoreError,
+        for reference in publication.references:
+            owner = reference["owner"]
+            if (
+                owner["schema"] == "options.signal_episode/v1"
+                and (episode_ids is None or owner["id"] in episode_ids)
+            ):
+                grouped.setdefault(owner["id"], []).append(reference)
+        return (
+            copy.deepcopy(dict(publication.head)),
+            copy.deepcopy(dict(publication.audit)),
+            tuple(copy.deepcopy(dict(item)) for item in publication.references),
+            publication.root_path_sha256,
+            {key: tuple(value) for key, value in grouped.items()},
+            False,
+        )
+
+
+def _w1a_descriptors(
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+    references: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    by_owner: dict[tuple[str, str], tuple[int, Mapping[str, Any]]] = {}
+    for ordinal, raw in enumerate(references, start=1):
+        reference = context_bridge.validate_context_reference(raw)
+        owner = reference["owner"]
+        key = (owner["schema"], owner["id"])
+        if key in by_owner:
+            _fail("W1A reference set repeats an owner identity")
+        by_owner[key] = (ordinal, reference)
+    descriptors: list[dict[str, Any]] = []
+    for descriptor_ordinal, (pointer, candidate) in enumerate(
+        candidate_rows, start=1
     ):
-        return None, {}, True
+        clean_candidate = validate_runtime_object(
+            candidate, label="W1A manifested selector candidate"
+        )
+        if pointer != _pointer_for(
+            f"candidates/{clean_candidate['candidate_id']}.json", clean_candidate
+        ):
+            _fail("W1A descriptor candidate pointer differs from exact bytes")
+        episode = clean_candidate["final_episode_row"]
+        owner_key = ("options.signal_episode/v1", episode["episode_id"])
+        found = by_owner.get(owner_key)
+        descriptor: dict[str, Any] = {
+            "descriptor_ordinal": descriptor_ordinal,
+            "candidate": copy.deepcopy(dict(pointer)),
+            "candidate_id": clean_candidate["candidate_id"],
+            "owner_schema": owner_key[0],
+            "owner_id": owner_key[1],
+            "owner_record_sha256": clean_candidate["final_episode_row_sha256"],
+            "reference_ordinal": None,
+            "reference_id": None,
+            "reference_sha256": None,
+        }
+        if found is not None:
+            reference_ordinal, reference = found
+            descriptor.update(
+                {
+                    "reference_ordinal": reference_ordinal,
+                    "reference_id": reference["reference_id"],
+                    "reference_sha256": _sha256(canonical_bytes(reference)),
+                }
+            )
+        descriptors.append(descriptor)
+    return descriptors
+
+
+def _make_w1a_source_receipt(
+    *,
+    snapshot: EvidenceSnapshot,
+    manifest_pointer: Mapping[str, Any],
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+    captured_at: str,
+) -> PlannedObject | None:
+    if snapshot.w1a_error:
+        if any(
+            item is not None
+            for item in (
+                snapshot.w1a_head,
+                snapshot.w1a_audit,
+                snapshot.w1a_root_path_sha256,
+            )
+        ) or snapshot.w1a_references:
+            _fail("unavailable W1A snapshot retains publication truth")
+        return None
+    if (
+        snapshot.w1a_head is None
+        or snapshot.w1a_audit is None
+        or snapshot.w1a_root_path_sha256 is None
+    ):
+        _fail("W1A snapshot lacks its authenticated publication")
+    head = context_store.validate_head(snapshot.w1a_head)
+    head_body = canonical_bytes(head)
+    value: dict[str, Any] = {
+        "schema": "options.sparse_selector_w1a_source_receipt/v1",
+        "receipt_id": "",
+        "captured_at": captured_at,
+        "root_path_sha256": snapshot.w1a_root_path_sha256,
+        "settled_manifest": copy.deepcopy(dict(manifest_pointer)),
+        "head": copy.deepcopy(head),
+        "head_sha256": _sha256(head_body),
+        "head_bytes": len(head_body),
+        "audit_id": head["audit_id"],
+        "audit_object_key": head["audit_object_key"],
+        "audit_sha256": head["audit_sha256"],
+        "reference_set_object_key": head["reference_set_object_key"],
+        "reference_set_object_sha256": head["reference_set_object_sha256"],
+        "reference_set_sha256": head["reference_set_sha256"],
+        "reference_count": head["reference_count"],
+        "descriptors": _w1a_descriptors(candidate_rows, snapshot.w1a_references),
+        "authority": dict(FALSE_AUTHORITY),
+    }
+    value["receipt_id"] = _content_id("ossw_", value, field="receipt_id")
+    clean = validate_runtime_object(value, label="selector W1A source receipt")
+    item = _evidence_object(clean)
+    if len(item.body) > MAX_W1A_SOURCE_RECEIPT_BYTES:
+        _fail("selector W1A source receipt exceeds its compact bound")
+    return item
+
+
+def _w1a_high_water_from_receipt(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    clean = validate_runtime_object(receipt, label="selector W1A high-water source")
+    return {
+        "root_path_sha256": clean["root_path_sha256"],
+        "published_at": clean["head"]["published_at"],
+        "publication_id": clean["head"]["publication_id"],
+        "head_sha256": clean["head_sha256"],
+    }
+
+
+def _advance_w1a_high_water(
+    prior: Mapping[str, Any] | None,
+    receipt: Mapping[str, Any] | None,
+) -> Mapping[str, Any] | None:
+    if receipt is None:
+        return None if prior is None else copy.deepcopy(dict(prior))
+    next_value = _w1a_high_water_from_receipt(receipt)
+    if prior is None:
+        return next_value
+    if prior["root_path_sha256"] != next_value["root_path_sha256"]:
+        _fail("selector W1A receipt root changed after its first publication")
+    prior_clock = _utc(prior["published_at"], label="prior W1A high-water")
+    next_clock = _utc(next_value["published_at"], label="next W1A high-water")
+    if next_clock < prior_clock or (next_clock == prior_clock and dict(prior) != next_value):
+        _fail("selector W1A publication rolled back or forked at its high-water")
+    return next_value
+
+
+def _authenticate_historical_w1a_source(
+    receipt: Mapping[str, Any],
+    *,
+    receipt_root: Path,
+    manifest: Mapping[str, Any],
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+) -> _W1APublication:
+    clean = validate_runtime_object(receipt, label="historical selector W1A source")
+    if clean["settled_manifest"] != _pointer_for(
+        f"manifests/{manifest['manifest_id']}.json", manifest
+    ):
+        _fail("selector W1A source escaped its settled manifest")
+    with _open_w1a_lane(receipt_root) as lane:
+        if _sha256(os.fsencode(str(lane.root))) != clean["root_path_sha256"]:
+            _fail("selector W1A source root differs from its configuration binding")
+        head = context_store.validate_head(clean["head"])
+        head_body = canonical_bytes(head)
+        publication = _authenticate_w1a_head(lane, head, head_body)
+    expected_descriptors = _w1a_descriptors(candidate_rows, publication.references)
+    if (
+        clean["head_sha256"] != _sha256(publication.head_body)
+        or clean["head_bytes"] != len(publication.head_body)
+        or clean["descriptors"] != expected_descriptors
+        or clean["audit_id"] != publication.audit["audit_id"]
+        or clean["reference_count"] != len(publication.references)
+    ):
+        _fail("selector W1A source does not rederive from historical publication")
+    return publication
+
+
+_W1APublicationCache = dict[
+    str,
+    tuple[dict[str, Any], _W1APublication],
+]
+
+
+def _cached_w1a_publication(
+    source_pointer: Mapping[str, Any],
+    *,
+    cache: _W1APublicationCache | None,
+) -> _W1APublication | None:
+    if cache is None:
+        return None
+    identity, clean_pointer = _full_pointer(
+        source_pointer, label="historical selector W1A source"
+    )
+    cached = cache.get(identity)
+    if cached is None:
+        return None
+    cached_pointer, publication = cached
+    if cached_pointer != clean_pointer:
+        _fail("historical selector W1A cached full pointer drifted")
+    return publication
+
+
+def _authenticate_historical_w1a_source_cached(
+    source_pointer: Mapping[str, Any],
+    receipt: Mapping[str, Any],
+    *,
+    receipt_root: Path,
+    manifest: Mapping[str, Any],
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+    cache: _W1APublicationCache | None,
+) -> _W1APublication:
+    if cache is None:
+        return _authenticate_historical_w1a_source(
+            receipt,
+            receipt_root=receipt_root,
+            manifest=manifest,
+            candidate_rows=candidate_rows,
+        )
+    identity, clean_pointer = _full_pointer(
+        source_pointer, label="historical selector W1A source"
+    )
+    cached = _cached_w1a_publication(source_pointer, cache=cache)
+    if cached is not None:
+        return cached
+    publication = _authenticate_historical_w1a_source(
+        receipt,
+        receipt_root=receipt_root,
+        manifest=manifest,
+        candidate_rows=candidate_rows,
+    )
+    cache[identity] = (clean_pointer, publication)
+    return publication
 
 
 def _lifecycle_contract_key(contract: Mapping[str, Any]) -> tuple[str, str, str, str]:
@@ -4398,10 +7099,315 @@ def _campaign_contract_key(campaign: Mapping[str, Any]) -> tuple[str, str, str, 
     )
 
 
-def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
-    clean_export, by_episode, w1a_error = _w1a_snapshot(inputs.w1a_export)
+def _assert_evidence_roots_distinct(
+    selector_root: Path, inputs: EvidenceInputs
+) -> None:
+    configured = [
+        ("selector", _absolute_private_path(selector_root)),
+        *[
+            (label, _absolute_private_path(Path(value)))
+            for label, value in (
+                ("W1A", inputs.w1a_receipt_root),
+                ("mark", inputs.mark_root),
+                ("lifecycle", inputs.lifecycle_root),
+            )
+            if value is not None
+        ],
+    ]
+    identities: dict[tuple[int, int], str] = {}
+    for index, (label, path) in enumerate(configured):
+        for other_label, other_path in configured[index + 1 :]:
+            if (
+                path == other_path
+                or path in other_path.parents
+                or other_path in path.parents
+            ):
+                _fail(
+                    f"selector evidence roots are not pairwise separate: "
+                    f"{label}/{other_label}"
+                )
+        try:
+            metadata = os.stat(path, follow_symlinks=False)
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
+            _fail(f"selector {label} evidence root is not a directory")
+        identity = (metadata.st_dev, metadata.st_ino)
+        prior = identities.get(identity)
+        if prior is not None:
+            _fail(f"selector evidence root aliases {prior} and {label}")
+        identities[identity] = label
+
+
+def _campaign_occ_symbol(campaign: Mapping[str, Any]) -> str:
+    group = campaign["group"]
+    root = str(group["ticker"])
+    right = str(group["right"])
+    expiry = date.fromisoformat(str(group["expiration"]))
+    strike_millis = Decimal(_canonical_strike_text(group["strike_key"])) * Decimal(
+        1000
+    )
+    if (
+        not re.fullmatch(r"[A-Z0-9]{1,6}", root)
+        or right not in {"C", "P"}
+        or strike_millis != strike_millis.to_integral_value()
+        or not 1 <= int(strike_millis) <= 99_999_999
+    ):
+        _fail("selector evidence scope contains a malformed OCC contract")
+    return (
+        f"{root:<6}{expiry.strftime('%y%m%d')}{right}{int(strike_millis):08d}"
+    )
+
+
+@dataclass
+class _EvidenceReadBudget:
+    reads: int = 0
+    bytes: int = 0
+
+    def add_pointer(self, pointer: Mapping[str, Any], *, label: str) -> None:
+        size = pointer.get("bytes")
+        if isinstance(size, bool) or not isinstance(size, int) or size <= 0:
+            raise EvidenceGenerationDrift(f"{label} pointer size is malformed")
+        self.reads += 1
+        self.bytes += size
+        if (
+            self.reads > MAX_EVIDENCE_SOURCE_READS
+            or self.bytes > MAX_EVIDENCE_SOURCE_BYTES
+        ):
+            raise EvidenceGenerationDrift(
+                "selector evidence generation exceeds its fixed source-read budget"
+            )
+
+    def add_body(self, body: bytes, *, label: str) -> None:
+        if not body:
+            raise EvidenceGenerationDrift(f"{label} is empty")
+        self.reads += 1
+        self.bytes += len(body)
+        if (
+            self.reads > MAX_EVIDENCE_SOURCE_READS
+            or self.bytes > MAX_EVIDENCE_SOURCE_BYTES
+        ):
+            raise EvidenceGenerationDrift(
+                "selector evidence generation exceeds its fixed source-read budget"
+            )
+
+
+def _evidence_scope(
+    candidates: Sequence[Mapping[str, Any]] | None,
+    *,
+    session_dates: frozenset[str] | None,
+) -> tuple[
+    frozenset[str],
+    frozenset[tuple[str, str, str, str]],
+    Mapping[str, tuple[str, str, str, str]],
+    frozenset[str],
+]:
+    rows = tuple(candidates or ())
+    if len(rows) > MAX_CANDIDATES_PER_MANIFEST:
+        raise EvidenceGenerationDrift(
+            "selector evidence scope exceeds the manifested candidate bound"
+        )
+    episodes: set[str] = set()
+    contracts: set[tuple[str, str, str, str]] = set()
+    occ_to_contract: dict[str, tuple[str, str, str, str]] = {}
+    for candidate in rows:
+        try:
+            episode_id = candidate["final_episode_row"]["episode_id"]
+            campaign = candidate["campaign_row"]
+            contract_key = _campaign_contract_key(campaign)
+            occ = _campaign_occ_symbol(campaign)
+        except (KeyError, TypeError, ValueError, SparseSelectorError) as exc:
+            raise EvidenceGenerationDrift(
+                "selector manifested evidence scope is malformed"
+            ) from exc
+        if not isinstance(episode_id, str) or not episode_id:
+            raise EvidenceGenerationDrift(
+                "selector manifested evidence episode identity is malformed"
+            )
+        prior = occ_to_contract.setdefault(occ, contract_key)
+        if prior != contract_key:
+            raise EvidenceGenerationDrift(
+                "selector manifested OCC symbol aliases distinct contracts"
+            )
+        episodes.add(episode_id)
+        contracts.add(contract_key)
+    sessions = frozenset(session_dates or ())
+    for session_text in sessions:
+        try:
+            if date.fromisoformat(session_text).isoformat() != session_text:
+                raise ValueError
+        except ValueError as exc:
+            raise EvidenceGenerationDrift(
+                "selector evidence session scope is malformed"
+            ) from exc
+    return frozenset(episodes), frozenset(contracts), occ_to_contract, sessions
+
+
+def _bounded_mark_chain(
+    mark_root: Path,
+    *,
+    current: Mapping[str, Any],
+    cursor: Mapping[str, Any],
+    budget: _EvidenceReadBudget,
+) -> tuple[
+    tuple[tuple[Mapping[str, Any], Mapping[str, Any]], ...],
+    Mapping[str, tuple[Mapping[str, Any], Mapping[str, Any]]],
+]:
+    pointer: Mapping[str, Any] | None = mark_chain._validate_pointer(dict(current))
+    target = mark_chain._validate_pointer(dict(cursor))
+    newest_first: list[tuple[Mapping[str, Any], Mapping[str, Any]]] = []
+    seen: set[str] = set()
+    while pointer is not None:
+        observation_id = str(pointer["observation_id"])
+        if observation_id in seen:
+            raise EvidenceGenerationDrift(
+                "selector evidence mark chain contains a cycle"
+            )
+        seen.add(observation_id)
+        budget.add_pointer(pointer, label="selector mark observation")
+        observation = lifecycle._load_mark_observation(mark_root, pointer)
+        newest_first.append((copy.deepcopy(dict(pointer)), observation))
+        if pointer == target:
+            break
+        previous = observation.get("previous")
+        pointer = (
+            None
+            if previous is None
+            else mark_chain._validate_pointer(previous)
+        )
+    else:
+        raise EvidenceGenerationDrift(
+            "selector evidence mark cursor is not on its authenticated chain"
+        )
+    if newest_first[-1][0] != target:
+        raise EvidenceGenerationDrift(
+            "selector evidence mark cursor is not on its authenticated chain"
+        )
+    ordered = tuple(reversed(newest_first))
+    by_pointer = {
+        canonical_bytes(pointer).decode("utf-8"): (pointer, observation)
+        for pointer, observation in ordered
+    }
+    if len(by_pointer) != len(ordered):
+        raise EvidenceGenerationDrift(
+            "selector evidence mark chain repeats a pointer"
+        )
+    return ordered, by_pointer
+
+
+def _validate_selected_enrollment_source(
+    *,
+    enrollment: Mapping[str, Any],
+    plan_id: str,
+    mark_chain_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+    mark_by_pointer: Mapping[
+        str, tuple[Mapping[str, Any], Mapping[str, Any]]
+    ],
+    latest: Mapping[str, Any],
+) -> None:
+    payload = enrollment["payload"]
+    entry_pointer = mark_chain._validate_pointer(payload["mark_observation"])
+    entry_key = canonical_bytes(entry_pointer).decode("utf-8")
+    entry_pair = mark_by_pointer.get(entry_key)
+    if entry_pair is None:
+        raise EvidenceGenerationDrift(
+            "selector enrollment mark is outside the authenticated producer chain"
+        )
+    entry_observation = entry_pair[1]
+    entry_row = lifecycle._row_for_plan(entry_observation, plan_id)
+    if (
+        entry_observation.get("session_date")
+        != enrollment["event_session_date"]
+        or lifecycle._plan_from_mark_row(entry_row) != payload["plan"]
+        or entry_row.get("contract") != payload["contract"]
+        or entry_row.get("quote_status") != "available"
+        or entry_row["plan"].get("phase") not in lifecycle.POST_TRIGGER_PHASES
+        or payload["shadow_entry_mark"]
+        != lifecycle._shadow_mark(
+            entry_row,
+            entry_pointer,
+            basis="first_fresh_post_trigger_trade_paired_mid",
+        )
+    ):
+        raise EvidenceGenerationDrift(
+            f"selector enrollment source binding drifted for {plan_id}"
+        )
+
+    entry_index = next(
+        (
+            index
+            for index, (pointer, _observation) in enumerate(mark_chain_rows)
+            if pointer == entry_pointer
+        ),
+        None,
+    )
+    if entry_index is None:
+        raise EvidenceGenerationDrift(
+            "selector enrollment mark is outside the authenticated producer chain"
+        )
+    enrolled_identity = lifecycle._stable_plan_identity(payload["plan"])
+    sessions: dict[str, Mapping[str, Any]] = {}
+    contract_drift = False
+    plan_identity_drift = False
+    for pointer, observation in mark_chain_rows[entry_index:]:
+        row = lifecycle._optional_row_for_plan(observation, plan_id)
+        if row is None:
+            continue
+        row_contract = row.get("contract")
+        if isinstance(row_contract, Mapping) and row_contract != payload["contract"]:
+            contract_drift = True
+        identity_matches = (
+            lifecycle._stable_plan_identity(row.get("plan")) == enrolled_identity
+        )
+        if not identity_matches:
+            plan_identity_drift = True
+        plan = row.get("plan")
+        if (
+            isinstance(plan, Mapping)
+            and identity_matches
+            and plan.get("phase") in lifecycle.POST_TRIGGER_PHASES
+            and row.get("quote_status") == "available"
+            and isinstance(row.get("quote"), Mapping)
+            and row_contract == payload["contract"]
+        ):
+            sessions[str(observation["session_date"])] = copy.deepcopy(dict(pointer))
+    if (
+        latest.get("contract_occ_symbol") != payload["contract"]["occ_symbol"]
+        or latest.get("contract_drift") is not contract_drift
+        or latest.get("plan_identity_drift") is not plan_identity_drift
+        or latest.get("sessions") != sessions
+    ):
+        raise EvidenceGenerationDrift(
+            f"selector latest mark source binding drifted for {plan_id}"
+        )
+
+
+def _build_evidence_snapshot(
+    inputs: EvidenceInputs,
+    *,
+    candidates: Sequence[Mapping[str, Any]] | None = None,
+    session_dates: frozenset[str] | None = None,
+    _captured_state: Mapping[str, Any] | None = None,
+) -> EvidenceSnapshot:
+    episode_ids, contract_keys, occ_to_contract, sessions = _evidence_scope(
+        candidates, session_dates=session_dates
+    )
+    (
+        w1a_head,
+        w1a_audit,
+        w1a_references,
+        w1a_root_path_sha256,
+        by_episode,
+        w1a_error,
+    ) = _w1a_snapshot(
+        inputs.w1a_receipt_root,
+        episode_ids=episode_ids,
+    )
     empty = EvidenceSnapshot(
-        w1a_export=clean_export,
+        w1a_head=w1a_head,
+        w1a_audit=w1a_audit,
+        w1a_references=w1a_references,
+        w1a_root_path_sha256=w1a_root_path_sha256,
         w1a_by_episode=by_episode,
         lifecycle_state=None,
         enrollments_by_contract={},
@@ -4433,43 +7439,99 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
             lifecycle_root
         ):
             mark_head_before = mark_chain._load_previous_pointer(mark_root)
-            ledger_path, receipt_path = lifecycle._ledger_paths(
-                lifecycle_root,
-                ledger_path=None,
-                ledger_receipt_path=None,
-                create=False,
-            )
-            ledger_body, ledger_rows, _ledger_receipt = lifecycle._read_ledger_snapshot(
-                ledger_path, receipt_path
-            )
-            state = lifecycle._load_state(lifecycle_root)
-            if state is None:
+            current_state = lifecycle._load_state(lifecycle_root)
+            if current_state is None:
                 _fail("lifecycle state is absent")
-            lifecycle._validate_event_chain(lifecycle_root, state)
-            lifecycle._validate_activation_boundary_against_state(
-                lifecycle_root, state
+            state = (
+                current_state
+                if _captured_state is None
+                else lifecycle._validate_state_shape(dict(_captured_state))
             )
-            lifecycle._validate_source_references(
-                lifecycle_root=lifecycle_root,
-                mark_root=mark_root,
-                state=state,
-                ledger_body=ledger_body,
-                ledger_rows=ledger_rows,
-            )
-            snapshot_bytes = len(canonical_bytes(state))
+            if not candidates and state["enrollments"]:
+                raise EvidenceGenerationDrift(
+                    "selector evidence generation lacks a manifested candidate scope"
+                )
+            if set(state["latest_marks"]) != (
+                set(state["enrollments"]) - set(state["terminals"])
+            ):
+                raise EvidenceGenerationDrift(
+                    "selector lifecycle state lacks an exact open-plan index"
+                )
+            budget = _EvidenceReadBudget()
+            state_body = canonical_bytes(state)
+            budget.add_body(state_body, label="selector lifecycle state")
+            event_pointers = [
+                state["activation"],
+                *state["enrollments"].values(),
+                *state["terminals"].values(),
+            ]
+            unique_event_pointers = {
+                canonical_bytes(pointer).decode("utf-8"): pointer
+                for pointer in event_pointers
+            }
+            for pointer in unique_event_pointers.values():
+                budget.add_pointer(pointer, label="selector lifecycle event")
             if (
                 len(state.get("enrollments", {}))
                 + len(state.get("terminals", {}))
                 + len(state.get("latest_marks", {}))
                 > MAX_EVIDENCE_SNAPSHOT_RECORDS
-                or len(canonical_bytes(state)) > MAX_EVIDENCE_SNAPSHOT_BYTES
+                or len(state_body) > MAX_EVIDENCE_SNAPSHOT_BYTES
             ):
                 _fail("selector lifecycle snapshot exceeds its bounded index")
+            lifecycle._validate_event_chain(lifecycle_root, state)
+            budget.add_pointer(
+                state["activation"], label="selector lifecycle activation"
+            )
+            lifecycle._validate_activation_boundary_against_state(
+                lifecycle_root, state
+            )
+            activation = lifecycle._load_event(lifecycle_root, state["activation"])
+            activation_mark = mark_chain._validate_pointer(
+                activation["payload"]["mark_boundary"]
+            )
+            mark_chain_rows, mark_by_pointer = _bounded_mark_chain(
+                mark_root,
+                current=state["mark_cursor"],
+                cursor=activation_mark,
+                budget=budget,
+            )
+            snapshot_bytes = len(state_body)
             enrollments: dict[
                 tuple[str, str, str, str],
                 list[tuple[str, Mapping[str, Any], Mapping[str, Any]]],
             ] = {}
-            for plan_id, pointer in state["enrollments"].items():
+            for plan_id, terminal_pointer in state["terminals"].items():
+                budget.add_pointer(
+                    terminal_pointer, label="selector terminal lifecycle event"
+                )
+                terminal = lifecycle._load_event(lifecycle_root, terminal_pointer)
+                terminal_key = _lifecycle_contract_key(terminal["payload"]["contract"])
+                if terminal_key in contract_keys:
+                    enrollments.setdefault(terminal_key, []).append(
+                        (
+                            plan_id,
+                            copy.deepcopy(terminal),
+                            copy.deepcopy(terminal_pointer),
+                        )
+                    )
+
+            selected_open_plans = [
+                plan_id
+                for plan_id, latest in state["latest_marks"].items()
+                if latest.get("contract_occ_symbol") in occ_to_contract
+            ]
+            if len(selected_open_plans) > MAX_CANDIDATES_PER_MANIFEST * 2:
+                raise EvidenceGenerationDrift(
+                    "selector evidence scope contains too many matching open plans"
+                )
+            rows: dict[
+                tuple[str, str],
+                tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]],
+            ] = {}
+            for plan_id in selected_open_plans:
+                pointer = state["enrollments"][plan_id]
+                budget.add_pointer(pointer, label="selector scoped enrollment")
                 enrollment = lifecycle._load_enrollment(
                     lifecycle_root, pointer, plan_id
                 )
@@ -4477,6 +7539,18 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
                 if snapshot_bytes > MAX_EVIDENCE_SNAPSHOT_BYTES:
                     _fail("selector evidence snapshot exceeds its aggregate byte bound")
                 key = _lifecycle_contract_key(enrollment["payload"]["contract"])
+                if key not in contract_keys:
+                    raise EvidenceGenerationDrift(
+                        "selector lifecycle OCC index aliases another contract"
+                    )
+                latest = state["latest_marks"][plan_id]
+                _validate_selected_enrollment_source(
+                    enrollment=enrollment,
+                    plan_id=plan_id,
+                    mark_chain_rows=mark_chain_rows,
+                    mark_by_pointer=mark_by_pointer,
+                    latest=latest,
+                )
                 enrollments.setdefault(key, []).append(
                     (
                         plan_id,
@@ -4484,33 +7558,23 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
                         copy.deepcopy(pointer),
                     )
                 )
-            rows: dict[
-                tuple[str, str],
-                tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]],
-            ] = {}
-            observations: dict[str, Mapping[str, Any]] = {}
-            for plan_id, latest in state["latest_marks"].items():
-                for session_date, pointer in latest.get("sessions", {}).items():
-                    pointer_key = canonical_bytes(pointer).decode("utf-8")
-                    observation = observations.get(pointer_key)
-                    if observation is None:
-                        observation = lifecycle._load_mark_observation(
-                            mark_root, pointer
+                for session_date in sessions:
+                    session_pointer = latest.get("sessions", {}).get(session_date)
+                    if session_pointer is None:
+                        continue
+                    pointer_key = canonical_bytes(session_pointer).decode("utf-8")
+                    pair = mark_by_pointer.get(pointer_key)
+                    if pair is None:
+                        raise EvidenceGenerationDrift(
+                            "selector scoped mark is outside its authenticated chain"
                         )
-                        snapshot_bytes += len(canonical_bytes(observation))
-                        if snapshot_bytes > MAX_EVIDENCE_SNAPSHOT_BYTES:
-                            _fail(
-                                "selector evidence snapshot exceeds its aggregate byte bound"
-                            )
-                        observations[pointer_key] = observation
-                    if len(canonical_bytes(observation)) > MAX_EVIDENCE_SNAPSHOT_BYTES:
-                        _fail("selector mark observation exceeds its snapshot bound")
+                    loaded_pointer, observation = pair
                     row = lifecycle._row_for_plan(observation, plan_id)
-                    key = (plan_id, session_date)
-                    if key in rows:
+                    row_key = (plan_id, session_date)
+                    if row_key in rows:
                         _fail("lifecycle snapshot repeats a plan/session mark")
-                    rows[key] = (
-                        copy.deepcopy(pointer),
+                    rows[row_key] = (
+                        copy.deepcopy(loaded_pointer),
                         copy.deepcopy(observation),
                         copy.deepcopy(row),
                     )
@@ -4518,14 +7582,20 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
             # evidence validated under the lifecycle lock. Any changed HEAD is
             # a concurrent snapshot and must be retried, never mixed.
             if (
-                lifecycle._load_state(lifecycle_root) != state
+                (
+                    _captured_state is None
+                    and lifecycle._load_state(lifecycle_root) != state
+                )
                 or mark_chain._load_previous_pointer(mark_root) != mark_head_before
             ):
                 raise EvidenceGenerationDrift(
                     "lifecycle state changed during selector evidence snapshot"
                 )
             return EvidenceSnapshot(
-                w1a_export=clean_export,
+                w1a_head=w1a_head,
+                w1a_audit=w1a_audit,
+                w1a_references=w1a_references,
+                w1a_root_path_sha256=w1a_root_path_sha256,
                 w1a_by_episode=by_episode,
                 lifecycle_state=copy.deepcopy(state),
                 enrollments_by_contract={
@@ -4541,37 +7611,134 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
             )
     except EvidenceGenerationDrift:
         raise
-    except (OSError, ValueError, KeyError, TypeError, SparseSelectorError):
-        return empty
+    except (OSError, ValueError, KeyError, TypeError, SparseSelectorError) as exc:
+        raise EvidenceGenerationDrift(
+            "selector lifecycle evidence generation is invalid or drifted"
+        ) from exc
 
 
 def _evidence_snapshot_from_generation(
     generation: Mapping[str, Any],
     inputs: EvidenceInputs,
+    *,
+    root: Path,
+    candidates: Sequence[Mapping[str, Any]],
+    session_dates: frozenset[str],
+    planned_by_key: Mapping[str, PlannedObject] | None = None,
+    generation_already_validated: bool = False,
+    manifest_cache: _PointerObjectCache | None = None,
+    source_cache: _PointerObjectCache | None = None,
+    w1a_cache: _W1APublicationCache | None = None,
 ) -> EvidenceSnapshot:
-    """Rebuild one captured evidence generation from immutable producer bytes.
+    """Rebuild one captured generation from exact immutable producer bytes."""
 
-    Recovery must not substitute whichever mutable producer heads happen to be
-    current later.  The generation carries the validated W1A export and exact
-    lifecycle state; producer roots are used only to re-authenticate the
-    immutable enrollment, mark, event-chain, and ledger-prefix objects named by
-    that captured state.
-    """
-
-    clean_generation = validate_runtime_object(
-        generation, label="captured selector evidence generation"
+    clean_generation = (
+        generation
+        if generation_already_validated
+        else validate_runtime_object(
+            generation, label="captured selector evidence generation"
+        )
     )
-    clean_export, by_episode, w1a_error = _w1a_snapshot(
-        clean_generation["w1a_export"]
-    )
+    source_pointer = clean_generation["w1a_source_receipt"]
+    w1a_head: Mapping[str, Any] | None = None
+    w1a_audit: Mapping[str, Any] | None = None
+    w1a_references: tuple[Mapping[str, Any], ...] = ()
+    w1a_root_path_sha256: str | None = None
+    by_episode: dict[str, tuple[Mapping[str, Any], ...]] = {}
+    w1a_error = source_pointer is None
     if w1a_error != clean_generation["w1a_error"]:
-        _fail("captured selector W1A generation cannot be replayed")
+        _fail("captured selector W1A generation availability drifted")
+    if source_pointer is not None:
+        if inputs.w1a_receipt_root is None:
+            _fail("captured selector W1A generation lacks its trusted source root")
+        source_item = (
+            None
+            if planned_by_key is None
+            else planned_by_key.get(source_pointer["key"])
+        )
+        if source_item is None:
+            if source_cache is None:
+                source_value = _load_pointer(
+                    root,
+                    source_pointer,
+                    label="captured selector W1A source receipt",
+                )
+            else:
+                source_value, _source_body = _load_pointer_cached(
+                    root,
+                    source_pointer,
+                    label="captured selector W1A source receipt",
+                    cache=source_cache,
+                )
+        else:
+            if source_item.pointer != source_pointer:
+                _fail("captured selector W1A source pointer differs from planned bytes")
+            source_value = source_item.value
+        if manifest_cache is None:
+            manifest = _load_pointer(
+                root,
+                clean_generation["settled_manifest"],
+                label="captured selector W1A settled manifest",
+            )
+        else:
+            manifest, _manifest_body = _load_pointer_cached(
+                root,
+                clean_generation["settled_manifest"],
+                label="captured selector W1A settled manifest",
+                cache=manifest_cache,
+            )
+        candidate_rows = [
+            (
+                copy.deepcopy(dict(pointer)),
+                _load_pointer(root, pointer, label="captured W1A manifested candidate"),
+            )
+            for pointer in manifest["candidates"]
+        ]
+        if [candidate for _pointer, candidate in candidate_rows] != list(candidates):
+            _fail("captured selector W1A candidates differ from replay scope")
+        publication = _authenticate_historical_w1a_source_cached(
+            source_pointer,
+            source_value,
+            receipt_root=Path(inputs.w1a_receipt_root),
+            manifest=manifest,
+            candidate_rows=candidate_rows,
+            cache=w1a_cache,
+        )
+        source = validate_runtime_object(
+            source_value, label="captured selector W1A source receipt"
+        )
+        if _utc(source["captured_at"], label="W1A capture") > _utc(
+            clean_generation["fenced_at"], label="evidence generation fence"
+        ):
+            _fail("captured selector W1A source follows its generation fence")
+        w1a_head = copy.deepcopy(dict(publication.head))
+        w1a_audit = copy.deepcopy(dict(publication.audit))
+        w1a_references = tuple(
+            copy.deepcopy(dict(item)) for item in publication.references
+        )
+        w1a_root_path_sha256 = publication.root_path_sha256
+        episode_ids, _contracts, _occ, _sessions = _evidence_scope(
+            candidates, session_dates=session_dates
+        )
+        grouped: dict[str, list[Mapping[str, Any]]] = {}
+        for reference in w1a_references:
+            owner = reference["owner"]
+            if (
+                owner["schema"] == "options.signal_episode/v1"
+                and owner["id"] in episode_ids
+            ):
+                grouped.setdefault(owner["id"], []).append(reference)
+        by_episode = {key: tuple(value) for key, value in grouped.items()}
+
     state = clean_generation["lifecycle_state"]
     if state is None:
         if not clean_generation["lifecycle_error"]:
             _fail("captured selector lifecycle absence is inconsistent")
         return EvidenceSnapshot(
-            w1a_export=clean_export,
+            w1a_head=w1a_head,
+            w1a_audit=w1a_audit,
+            w1a_references=w1a_references,
+            w1a_root_path_sha256=w1a_root_path_sha256,
             w1a_by_episode=by_episode,
             lifecycle_state=None,
             enrollments_by_contract={},
@@ -4581,146 +7748,62 @@ def _evidence_snapshot_from_generation(
             lifecycle_error=True,
             lifecycle_publishable=False,
         )
-    # The normal recovery path first re-acquires the producer generation.  If
-    # it is still current, exact equality is the strongest and cheapest proof.
-    # Historical reconstruction below is used only after mutable heads advance.
-    current_snapshot = _build_evidence_snapshot(inputs)
-    if (
-        current_snapshot.lifecycle_state == state
-        and current_snapshot.w1a_export == clean_export
-        and current_snapshot.w1a_error == clean_generation["w1a_error"]
-        and current_snapshot.mark_error == clean_generation["mark_error"]
-        and current_snapshot.lifecycle_error == clean_generation["lifecycle_error"]
-    ):
-        return current_snapshot
     if inputs.mark_root is None or inputs.lifecycle_root is None:
         _fail("captured selector lifecycle generation lacks trusted producer roots")
-    mark_root = Path(inputs.mark_root).expanduser()
-    lifecycle_root = Path(inputs.lifecycle_root).expanduser()
-    lifecycle._validate_private_root_location(
-        mark_root, label="private option mark evidence"
+    replay_inputs = EvidenceInputs(
+        w1a_receipt_root=None,
+        mark_root=inputs.mark_root,
+        lifecycle_root=inputs.lifecycle_root,
     )
-    lifecycle._validate_private_root_location(
-        lifecycle_root, label="private lifecycle state"
+    snapshot = _build_evidence_snapshot(
+        replay_inputs,
+        candidates=candidates,
+        session_dates=session_dates,
+        _captured_state=state,
     )
-    mark_chain._require_private_directory(mark_root)
-    mark_chain._require_private_directory(lifecycle_root)
-    with mark_chain._private_ledger_lock(mark_root), mark_chain._private_ledger_lock(
-        lifecycle_root
+    if (
+        snapshot.lifecycle_state != state
+        or snapshot.mark_error != clean_generation["mark_error"]
+        or snapshot.lifecycle_error != clean_generation["lifecycle_error"]
     ):
-        ledger_path, receipt_path = lifecycle._ledger_paths(
-            lifecycle_root,
-            ledger_path=None,
-            ledger_receipt_path=None,
-            create=False,
-        )
-        ledger_body, ledger_rows, _ledger_receipt = lifecycle._read_ledger_snapshot(
-            ledger_path, receipt_path
-        )
-        clean_state = lifecycle._validate_state_shape(state)
-        lifecycle._validate_event_chain(lifecycle_root, clean_state)
-        lifecycle._validate_activation_boundary_against_state(
-            lifecycle_root, clean_state
-        )
-        lifecycle._validate_source_references(
-            lifecycle_root=lifecycle_root,
-            mark_root=mark_root,
-            state=clean_state,
-            ledger_body=ledger_body,
-            ledger_rows=ledger_rows,
-        )
-        snapshot_bytes = len(canonical_bytes(clean_state))
-        enrollments: dict[
-            tuple[str, str, str, str],
-            list[tuple[str, Mapping[str, Any], Mapping[str, Any]]],
-        ] = {}
-        for plan_id, pointer in clean_state["enrollments"].items():
-            enrollment = lifecycle._load_enrollment(
-                lifecycle_root, pointer, plan_id
-            )
-            snapshot_bytes += len(canonical_bytes(enrollment))
-            if snapshot_bytes > MAX_EVIDENCE_SNAPSHOT_BYTES:
-                _fail("captured selector evidence generation exceeds its byte bound")
-            key = _lifecycle_contract_key(enrollment["payload"]["contract"])
-            enrollments.setdefault(key, []).append(
-                (plan_id, copy.deepcopy(enrollment), copy.deepcopy(pointer))
-            )
-        rows: dict[
-            tuple[str, str],
-            tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]],
-        ] = {}
-        observations: dict[str, Mapping[str, Any]] = {}
-        for plan_id, latest in clean_state["latest_marks"].items():
-            for session_date, pointer in latest.get("sessions", {}).items():
-                pointer_key = canonical_bytes(pointer).decode("utf-8")
-                observation = observations.get(pointer_key)
-                if observation is None:
-                    observation = lifecycle._load_mark_observation(mark_root, pointer)
-                    snapshot_bytes += len(canonical_bytes(observation))
-                    if snapshot_bytes > MAX_EVIDENCE_SNAPSHOT_BYTES:
-                        _fail(
-                            "captured selector evidence generation exceeds its byte bound"
-                        )
-                    observations[pointer_key] = observation
-                row = lifecycle._row_for_plan(observation, plan_id)
-                key = (plan_id, session_date)
-                if key in rows:
-                    _fail("captured selector generation repeats a plan/session mark")
-                rows[key] = (
-                    copy.deepcopy(pointer),
-                    copy.deepcopy(observation),
-                    copy.deepcopy(row),
-                )
+        _fail("captured selector evidence generation cannot be replayed exactly")
     return EvidenceSnapshot(
-        w1a_export=clean_export,
+        w1a_head=w1a_head,
+        w1a_audit=w1a_audit,
+        w1a_references=w1a_references,
+        w1a_root_path_sha256=w1a_root_path_sha256,
         w1a_by_episode=by_episode,
-        lifecycle_state=copy.deepcopy(clean_state),
-        enrollments_by_contract={key: tuple(value) for key, value in enrollments.items()},
-        mark_rows_by_plan_session=rows,
+        lifecycle_state=snapshot.lifecycle_state,
+        enrollments_by_contract=snapshot.enrollments_by_contract,
+        mark_rows_by_plan_session=snapshot.mark_rows_by_plan_session,
         w1a_error=w1a_error,
-        mark_error=clean_generation["mark_error"],
-        lifecycle_error=False,
-        lifecycle_publishable=True,
+        mark_error=snapshot.mark_error,
+        lifecycle_error=snapshot.lifecycle_error,
+        lifecycle_publishable=snapshot.lifecycle_publishable,
+        lifecycle_unpublishable_contracts=(
+            snapshot.lifecycle_unpublishable_contracts
+        ),
+        mark_unpublishable_plan_sessions=(
+            snapshot.mark_unpublishable_plan_sessions
+        ),
     )
 
 
 def _reference_for_candidate(
     candidate: Mapping[str, Any],
-    export: Mapping[str, Any] | EvidenceSnapshot | None,
+    snapshot: EvidenceSnapshot | None,
     *,
     evidence_available_at: datetime,
 ) -> tuple[PlannedObject | None, list[str]]:
-    if isinstance(export, EvidenceSnapshot):
-        clean = export.w1a_export
-        matching = list(
-            export.w1a_by_episode.get(
-                candidate["final_episode_row"]["episode_id"], ()
-            )
+    if snapshot is None or snapshot.w1a_head is None:
+        return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
+    clean = snapshot.w1a_head
+    matching = list(
+        snapshot.w1a_by_episode.get(
+            candidate["final_episode_row"]["episode_id"], ()
         )
-    elif export is None:
-        return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-    else:
-        try:
-            clean = validate_w1a_export(export)
-        except (
-            SparseSelectorError,
-            context_bridge.OptionsMarketMemoryContextError,
-            context_store.OptionsMarketMemoryReceiptStoreError,
-        ):
-            return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-        if _utc(clean["exported_at"], label="W1A export clock") > evidence_available_at:
-            return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-        matching = [
-            context_bridge.validate_context_reference(reference)
-            for reference in clean["references"]
-            if isinstance(reference, Mapping)
-            and reference.get("owner", {}).get("schema") == "options.signal_episode/v1"
-            and reference.get("owner", {}).get("id")
-            == candidate["final_episode_row"]["episode_id"]
-        ]
-    if clean is None:
-        return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-    if _utc(clean["exported_at"], label="W1A export clock") > evidence_available_at:
+    )
+    if _utc(clean["published_at"], label="W1A publication clock") > evidence_available_at:
         return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
     episode = candidate["final_episode_row"]
     if len(matching) != 1:
@@ -4742,27 +7825,24 @@ def _reference_for_candidate(
         or owner["event_time"] != episode["event_time"]
         or owner["requested_as_of"] != episode["available_at"]
         or owner["requested_as_of_basis"] != "durable_available_at"
-        or owner["evidence_phase"]
-        != candidate["campaign_row"]["evidence_phase"]
+        # Episode-owned W1A receipts retain their owner contract phase.  The
+        # candidate's campaign phase is independently prospective and must not
+        # be substituted for this literal owner value.
+        or owner["evidence_phase"] != "decision_time_actual_output"
         or query["subject"] != expected_subject
         or query["identity_config_sha256"] != identity["identity_config_sha256"]
         or query["event_time"] != episode["event_time"]
         or query["as_known_at"] != episode["available_at"]
         or query["mode"] != "operational_pit"
         or query["fallback_policy"] != "exact_no_fallback"
-        or reference["authority"].get("may_select_options_candidate") is not False
-        or any(
-            value is not False
-            for key, value in reference["authority"].items()
-            if isinstance(value, bool)
-        )
+        or reference["authority"]
+        != dict(context_bridge.market_memory.AUTHORITY)
     ):
         return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
     evidence = _evidence_object(
         {
             "schema": "options.sparse_selector_konseki_evidence/v1",
-            "export_id": clean["export_id"],
-            "head": clean["head"],
+            "source_publication_id": clean["publication_id"],
             "reference": reference,
             "authority": dict(FALSE_AUTHORITY),
         }
@@ -4932,8 +8012,10 @@ def _lifecycle_evidence(
                 plan_id,
                 ["MARK_RECEIPT_MISSING_OR_MISMATCHED"],
             )
-        _utc(observation.get("observed_at_utc"), label="mark observation clock")
-        _utc(row["quote"].get("quote_ts_utc"), label="mark quote clock")
+        _source_rfc3339(
+            observation.get("observed_at_utc"), label="mark observation clock"
+        )
+        _source_rfc3339(row["quote"].get("quote_ts_utc"), label="mark quote clock")
         if not _all_false_mapping(enrollment.get("authority")) or not _all_false_mapping(
             observation.get("authority")
         ):
@@ -5058,8 +8140,12 @@ def _lifecycle_evidence(
             ):
                 reasons.append("MARK_RECEIPT_MISSING_OR_MISMATCHED")
                 return None, None, None, plan_id, reasons
-            _utc(observation.get("observed_at_utc"), label="mark observation clock")
-            _utc(row["quote"].get("quote_ts_utc"), label="mark quote clock")
+            _source_rfc3339(
+                observation.get("observed_at_utc"), label="mark observation clock"
+            )
+            _source_rfc3339(
+                row["quote"].get("quote_ts_utc"), label="mark quote clock"
+            )
             if not _all_false_mapping(
                 enrollment.get("authority")
             ) or not _all_false_mapping(observation.get("authority")):
@@ -5185,6 +8271,7 @@ def _settle_manifest(
     decision_count: int,
     proposal_session_date: str | None,
     proposal_session_count: int,
+    evidence_session_date: str,
     clock: Callable[[], datetime],
     evidence_snapshot: EvidenceSnapshot | None = None,
 ) -> tuple[
@@ -5243,10 +8330,24 @@ def _settle_manifest(
     ):
         _fail("selector proposal session state is malformed")
     if evidence_snapshot is None:
-        evidence_snapshot = _build_evidence_snapshot(evidence_inputs)
+        _assert_evidence_roots_distinct(root, evidence_inputs)
+        evidence_snapshot = _build_evidence_snapshot(
+            evidence_inputs,
+            candidates=tuple(candidate for _pointer, candidate in candidate_rows),
+            session_dates=frozenset({evidence_session_date}),
+        )
     generation_fenced = _aware_utc(clock(), label="evidence generation fence")
+    w1a_source_receipt = _make_w1a_source_receipt(
+        snapshot=evidence_snapshot,
+        manifest_pointer=manifest_pointer,
+        candidate_rows=candidate_rows,
+        captured_at=utc_text(generation_fenced),
+    )
+    if w1a_source_receipt is not None:
+        objects[w1a_source_receipt.key] = w1a_source_receipt
     generation_object = _make_evidence_generation(
         snapshot=evidence_snapshot,
+        w1a_source_receipt=w1a_source_receipt,
         manifest_pointer=manifest_pointer,
         fenced_at=utc_text(generation_fenced),
     )
@@ -5311,11 +8412,11 @@ def _settle_manifest(
         available_text = utc_text(decision_available)
         if mark_object is not None:
             try:
-                quote_at = _utc(
+                quote_at = _source_rfc3339(
                     mark_object.value["selected_plan_row"]["quote"]["quote_ts_utc"],
                     label="selected mark quote clock",
                 )
-                observed_at = _utc(
+                observed_at = _source_rfc3339(
                     mark_object.value["observation"]["observed_at_utc"],
                     label="selected mark observation clock",
                 )
@@ -5595,6 +8696,26 @@ def _empty_source_episode_group_index() -> dict[str, Any]:
     )
 
 
+def _empty_evidence_audit_index(domain: str) -> dict[str, Any]:
+    if domain not in {
+        EVIDENCE_EVENT_SEEN_DOMAIN,
+        EVIDENCE_EVENT_ENROLLMENT_DOMAIN,
+        EVIDENCE_EVENT_TERMINAL_DOMAIN,
+        EVIDENCE_STATE_ENROLLMENT_DOMAIN,
+        EVIDENCE_STATE_TERMINAL_DOMAIN,
+        EVIDENCE_MARK_SEEN_DOMAIN,
+        EVIDENCE_STATE_LATEST_DOMAIN,
+        EVIDENCE_DERIVED_LATEST_DOMAIN,
+        EVIDENCE_LEDGER_ROW_DOMAIN,
+        EVIDENCE_LEDGER_TERMINAL_DOMAIN,
+        EVIDENCE_BOUNDARY_DOMAIN,
+    }:
+        _fail("selector evidence audit index domain is foreign")
+    return private_auth_dict.sharded_root_receipt(
+        domain=domain, root=None, entry_count=0
+    )
+
+
 def _make_campaign_source_window(
     *,
     source: SourceSnapshot,
@@ -5718,7 +8839,7 @@ def _source_transition_intent(
     source_window: Mapping[str, Any],
 ) -> CyclePlan:
     ordered = tuple(sorted(objects, key=lambda item: item.key))
-    if len(ordered) > MAX_SOURCE_OBJECTS_PER_CYCLE:
+    if len(ordered) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE:
         _fail("selector source transition exceeds its object cap")
     previous_head_id = None if head is None else head["head_id"]
     expected_source_state = None if head is None else _source_expected_state(head)
@@ -5745,19 +8866,14 @@ def _source_transition_intent(
         "expected_source_state": expected_source_state,
         "expected_runtime_state": _runtime_expected_state(head),
         "source_window": copy.deepcopy(dict(source_window)),
-        "objects": [
-            {
-                "key": item.key,
-                "sha256": _sha256(item.body),
-                "bytes": len(item.body),
-                "value": item.value,
-            }
-            for item in ordered
-        ],
+        "objects": [item.receipt for item in ordered],
         "next_head": copy.deepcopy(dict(next_head)),
     }
     intent["intent_sha256"] = _content_id("", intent, field="intent_sha256")
-    if len(canonical_bytes(intent)) > MAX_SOURCE_INTENT_BYTES:
+    if (
+        len(canonical_bytes(intent)) > MAX_SOURCE_INTENT_BYTES
+        or _transition_footprint_bytes(intent, ordered) > MAX_SOURCE_INTENT_BYTES
+    ):
         _fail("selector source intent exceeds its recovery bound")
     return CyclePlan(
         expected_head_id=previous_head_id,
@@ -5834,6 +8950,14 @@ def _base_source_head(
         ),
         "source_ready_count": ready_count,
         "source_ready_cursor": ready_cursor,
+        "evidence_high_water": (
+            None if head is None else copy.deepcopy(head["evidence_high_water"])
+        ),
+        "w1a_publication_high_water": (
+            None
+            if head is None
+            else copy.deepcopy(head["w1a_publication_high_water"])
+        ),
         "pending_manifest": None if head is None else copy.deepcopy(head["pending_manifest"]),
         "last_cycle": None if head is None else copy.deepcopy(head["last_cycle"]),
         "cycle_count": 0 if head is None else head["cycle_count"],
@@ -5861,6 +8985,2418 @@ def _base_source_head(
     }
     next_head["head_id"] = _content_id("ossh_", next_head, field="head_id")
     return validate_runtime_object(next_head, label="selector source HEAD")
+
+
+def _read_lifecycle_state_bytes(
+    lifecycle_lane: _SelectorLane,
+) -> tuple[bytes, dict[str, Any]]:
+    body = _read_anchored_file(
+        lifecycle_lane,
+        "current.json",
+        limit=2 * 1024 * 1024,
+        label="selector lifecycle current state",
+    )
+    if body is None or len(body) > 2 * 1024 * 1024:
+        _fail("selector lifecycle current state is absent or oversized")
+    value = strict_json(body, label="selector lifecycle current state")
+    if (
+        not isinstance(value, dict)
+        or lifecycle._canonical_json_bytes(value) != body
+    ):
+        _fail("selector lifecycle current state is not canonical")
+    try:
+        state = lifecycle._validate_state_shape(value)
+    except (TypeError, ValueError, KeyError) as exc:
+        raise EvidenceGenerationDrift(
+            "selector lifecycle current state is malformed"
+        ) from exc
+    return body, state
+
+
+def _load_anchored_frozen_mark_observation(
+    lane: _SelectorLane, pointer: Mapping[str, Any]
+) -> dict[str, Any]:
+    try:
+        checked = mark_chain._validate_pointer(dict(pointer))
+        body = _read_anchored_file(
+            lane,
+            checked["key"],
+            limit=2 * 1024 * 1024,
+            label="selector frozen mark observation",
+        )
+        if (
+            body is None
+            or len(body) != checked["bytes"]
+            or _sha256(body) != checked["sha256"]
+        ):
+            _fail("selector frozen mark observation receipt drifted")
+        value = strict_json(body, label="selector frozen mark observation")
+        if (
+            not isinstance(value, Mapping)
+            or mark_chain._canonical_json_bytes(dict(value)) != body
+        ):
+            _fail("selector frozen mark observation is not canonical")
+        return _validate_frozen_mark_observation(value, checked)
+    except (OSError, TypeError, ValueError, KeyError) as exc:
+        if isinstance(exc, SparseSelectorError):
+            raise
+        raise EvidenceGenerationDrift(
+            "selector frozen mark observation is unavailable"
+        ) from exc
+
+
+def _load_anchored_frozen_lifecycle_event(
+    lane: _SelectorLane, pointer: Mapping[str, Any]
+) -> dict[str, Any]:
+    try:
+        checked = lifecycle._validate_event_pointer(dict(pointer))
+        body = _read_anchored_file(
+            lane,
+            checked["key"],
+            limit=2 * 1024 * 1024,
+            label="selector frozen lifecycle event",
+        )
+        if (
+            body is None
+            or len(body) != checked["bytes"]
+            or _sha256(body) != checked["sha256"]
+        ):
+            _fail("selector frozen lifecycle event receipt drifted")
+        value = strict_json(body, label="selector frozen lifecycle event")
+        if (
+            not isinstance(value, Mapping)
+            or lifecycle._canonical_json_bytes(dict(value)) != body
+        ):
+            _fail("selector frozen lifecycle event is not canonical")
+        clean = _validate_frozen_lifecycle_event(value)
+        if lifecycle._event_pointer(clean) != checked:
+            _fail("selector frozen lifecycle event pointer drifted")
+        return clean
+    except (OSError, TypeError, ValueError, KeyError) as exc:
+        if isinstance(exc, SparseSelectorError):
+            raise
+        raise EvidenceGenerationDrift(
+            "selector frozen lifecycle event is unavailable"
+        ) from exc
+
+
+def _read_anchored_activation_boundary(lane: _SelectorLane) -> dict[str, Any]:
+    body = _read_anchored_file(
+        lane,
+        "activation_boundary.json",
+        limit=2 * 1024 * 1024,
+        label="selector lifecycle activation boundary",
+    )
+    value = strict_json(body, label="selector lifecycle activation boundary")
+    if (
+        not isinstance(value, Mapping)
+        or lifecycle._canonical_json_bytes(dict(value)) != body
+    ):
+        _fail("selector lifecycle activation boundary is not canonical")
+    try:
+        return lifecycle._validate_activation_boundary(dict(value))
+    except (TypeError, ValueError, KeyError) as exc:
+        raise EvidenceGenerationDrift(
+            "selector lifecycle activation boundary is malformed"
+        ) from exc
+
+
+def _read_anchored_mark_head(lane: _SelectorLane) -> dict[str, Any]:
+    body = _read_anchored_file(
+        lane,
+        "current.json",
+        limit=2 * 1024 * 1024,
+        label="selector live mark HEAD",
+    )
+    value = strict_json(body, label="selector live mark HEAD")
+    if (
+        not isinstance(value, Mapping)
+        or set(value) != {"schema", "evidence"}
+        or value.get("schema") != mark_chain.EVIDENCE_HEAD_SCHEMA
+        or mark_chain._canonical_json_bytes(dict(value)) != body
+    ):
+        _fail("selector live mark HEAD is malformed")
+    pointer = mark_chain._validate_pointer(value["evidence"])
+    _load_anchored_frozen_mark_observation(lane, pointer)
+    return pointer
+
+
+def _read_anchored_ledger_receipt(lane: _SelectorLane) -> dict[str, Any]:
+    # Ambient producer ledger path overrides are not part of the frozen contract.
+    body = _read_anchored_file(
+        lane,
+        "canonical_ledger/receipt.json",
+        limit=lifecycle.MAX_RECEIPT_BYTES,
+        label="selector canonical ledger receipt",
+    )
+    value = strict_json(body, label="selector captured ledger receipt")
+    if (
+        not isinstance(value, Mapping)
+        or lifecycle._canonical_json_bytes(dict(value)) != body
+    ):
+        _fail("selector captured ledger receipt is not canonical")
+    receipt = lifecycle._validate_ledger_receipt(dict(value))
+    ledger_metadata = _stat_anchored_file(
+        lane,
+        "canonical_ledger/ledger.jsonl",
+        limit=lifecycle.MAX_LEDGER_BYTES,
+        label="selector canonical ledger",
+    )
+    if ledger_metadata.st_size != int(receipt["bytes"]):
+        _fail("selector canonical ledger size differs from its live receipt")
+    return receipt
+
+
+def _require_distinct_evidence_roots(mark_root: Path, lifecycle_root: Path) -> None:
+    """Compatibility fence for the unfinished occurrence planner."""
+
+    mark_root = _absolute_private_path(mark_root)
+    lifecycle_root = _absolute_private_path(lifecycle_root)
+    if (
+        mark_root == lifecycle_root
+        or mark_root in lifecycle_root.parents
+        or lifecycle_root in mark_root.parents
+    ):
+        _fail("selector producer roots must be distinct and non-nested")
+    mark_metadata = os.stat(mark_root, follow_symlinks=False)
+    lifecycle_metadata = os.stat(lifecycle_root, follow_symlinks=False)
+    if (mark_metadata.st_dev, mark_metadata.st_ino) == (
+        lifecycle_metadata.st_dev,
+        lifecycle_metadata.st_ino,
+    ):
+        _fail("selector producer roots must be distinct and non-nested")
+
+
+def _verify_capture_source_prefixes(
+    *,
+    sources: _AnchoredEvidenceSources,
+    state: Mapping[str, Any],
+    expected_mark_head: Mapping[str, Any] | None = None,
+    expected_ledger_receipt: Mapping[str, Any] | None = None,
+    prior_snapshot: Mapping[str, Any] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Authenticate the pinned cursors without scanning their lifetime chains."""
+
+    try:
+        _load_anchored_frozen_lifecycle_event(
+            sources.lifecycle, state["lifecycle_head"]
+        )
+        _load_anchored_frozen_mark_observation(sources.mark, state["mark_cursor"])
+        activation_boundary = _read_anchored_activation_boundary(
+            sources.lifecycle
+        )
+        if prior_snapshot is None:
+            activation_event = _load_anchored_frozen_lifecycle_event(
+                sources.lifecycle, state["activation"]
+            )
+            activation_mark = _load_anchored_frozen_mark_observation(
+                sources.mark, activation_boundary["mark_boundary"]
+            )
+            if (
+                activation_event
+                != _frozen_activation_event(activation_boundary, activation_mark)
+                or state["activation"] != lifecycle._event_pointer(activation_event)
+            ):
+                _fail("selector lifecycle activation occurrence drifted")
+        elif (
+            activation_boundary != prior_snapshot["activation_boundary"]
+            or state["activation"]
+            != prior_snapshot["lifecycle_state"]["activation"]
+        ):
+            _fail("selector incremental activation receipt drifted")
+        live_mark_head = _read_anchored_mark_head(sources.mark)
+        live_ledger_receipt = _read_anchored_ledger_receipt(sources.lifecycle)
+        if (
+            int(live_ledger_receipt["bytes"])
+            < int(state["ledger_cursor"]["bytes"])
+            or int(live_ledger_receipt["row_count"])
+            < int(state["ledger_cursor"]["row_count"])
+        ):
+            _fail("selector captured ledger receipt precedes the lifecycle cursor")
+        if expected_mark_head is not None and live_mark_head != expected_mark_head:
+            raise EvidenceGenerationDrift(
+                "selector live mark head changed before PIN authority"
+            )
+        if (
+            expected_ledger_receipt is not None
+            and live_ledger_receipt != expected_ledger_receipt
+        ):
+            raise EvidenceGenerationDrift(
+                "selector live ledger receipt changed before PIN authority"
+            )
+        return (
+            copy.deepcopy(live_mark_head),
+            copy.deepcopy(live_ledger_receipt),
+            copy.deepcopy(activation_boundary),
+        )
+    except (OSError, TypeError, ValueError, KeyError) as exc:
+        raise EvidenceGenerationDrift(
+            "selector evidence capture source cursors are not authentic prefixes"
+        ) from exc
+
+
+def _anchored_mark_chain_contains(
+    lane: _SelectorLane,
+    live_head: Mapping[str, Any],
+    required: Sequence[Mapping[str, Any]],
+) -> None:
+    """Prove each required pointer occurs in the captured live mark chain."""
+
+    remaining = {
+        canonical_bytes(mark_chain._validate_pointer(dict(pointer)))
+        for pointer in required
+    }
+    pointer: dict[str, Any] | None = mark_chain._validate_pointer(dict(live_head))
+    seen: set[str] = set()
+    for _ in range(lifecycle.MAX_CHAIN_DEPTH):
+        if pointer is None:
+            break
+        remaining.discard(canonical_bytes(pointer))
+        observation_id = str(pointer["observation_id"])
+        if observation_id in seen:
+            _fail("selector captured live mark chain contains a cycle")
+        seen.add(observation_id)
+        observation = _load_anchored_frozen_mark_observation(lane, pointer)
+        if not remaining:
+            return
+        previous = observation.get("previous")
+        pointer = (
+            None
+            if previous is None
+            else mark_chain._validate_pointer(previous)
+        )
+    _fail("selector captured live mark chain omitted a required ancestor")
+
+
+def _anchored_ledger_extends(
+    lane: _SelectorLane, prior_receipt: Mapping[str, Any]
+) -> None:
+    """Prove the live canonical ledger exact-prefix-extends a prior capture."""
+
+    checked = lifecycle._validate_ledger_receipt(dict(prior_receipt))
+    body = _read_anchored_file(
+        lane,
+        "canonical_ledger/ledger.jsonl",
+        limit=lifecycle.MAX_LEDGER_BYTES,
+        label="selector canonical ledger",
+    )
+    size = int(checked["bytes"])
+    if (
+        len(body) < size
+        or _sha256(body[:size]) != checked["sha256"]
+        or (body[:size] and not body[:size].endswith(b"\n"))
+    ):
+        _fail("selector canonical ledger rolled back or forked before PIN")
+
+
+def _incremental_target_descends(
+    lifecycle_root: Path,
+    *,
+    prior_state_id: str,
+    target_state_id: str,
+) -> None:
+    """Prove a pinned target is on the immutable forward-boundary suffix."""
+
+    cursor = prior_state_id
+    seen: set[str] = set()
+    for _ in range(lifecycle.MAX_CHAIN_DEPTH):
+        if cursor == target_state_id:
+            return
+        if cursor in seen:
+            break
+        seen.add(cursor)
+        boundary, _receipt = _load_exact_advance_boundary(
+            lifecycle_root, cursor
+        )
+        cursor = boundary["candidate_state_id"]
+    _fail("selector incremental target is not a descendant of prior COMPLETE")
+
+
+def _load_frozen_mark_observation(
+    root: Path, pointer: Mapping[str, Any]
+) -> dict[str, Any]:
+    active = _ACTIVE_EVIDENCE_SOURCES.get()
+    if active is not None:
+        if _absolute_private_path(root) != active.mark.root:
+            _fail("selector frozen mark read escaped its anchored root")
+        return _load_anchored_frozen_mark_observation(active.mark, pointer)
+    try:
+        checked = mark_chain._validate_pointer(dict(pointer))
+        path = mark_chain._private_observation_path(
+            root, checked, create_parents=False
+        )
+        body = mark_chain._read_private_file(path)
+        if (
+            body is None
+            or len(body) != checked["bytes"]
+            or _sha256(body) != checked["sha256"]
+        ):
+            _fail("selector frozen mark observation receipt drifted")
+        value = strict_json(body, label="selector frozen mark observation")
+        if (
+            not isinstance(value, Mapping)
+            or mark_chain._canonical_json_bytes(dict(value)) != body
+        ):
+            _fail("selector frozen mark observation is not canonical")
+        return _validate_frozen_mark_observation(value, checked)
+    except (OSError, TypeError, ValueError, KeyError) as exc:
+        if isinstance(exc, SparseSelectorError):
+            raise
+        raise EvidenceGenerationDrift(
+            "selector frozen mark observation is unavailable"
+        ) from exc
+
+
+def _load_frozen_lifecycle_event(
+    root: Path, pointer: Mapping[str, Any]
+) -> dict[str, Any]:
+    active = _ACTIVE_EVIDENCE_SOURCES.get()
+    if active is not None:
+        if _absolute_private_path(root) != active.lifecycle.root:
+            _fail("selector frozen lifecycle read escaped its anchored root")
+        return _load_anchored_frozen_lifecycle_event(active.lifecycle, pointer)
+    try:
+        checked = lifecycle._validate_event_pointer(dict(pointer))
+        body = mark_chain._read_private_file(
+            lifecycle._event_path(root, checked, create_parents=False)
+        )
+        if (
+            body is None
+            or len(body) != checked["bytes"]
+            or _sha256(body) != checked["sha256"]
+        ):
+            _fail("selector frozen lifecycle event receipt drifted")
+        value = strict_json(body, label="selector frozen lifecycle event")
+        if (
+            not isinstance(value, Mapping)
+            or lifecycle._canonical_json_bytes(dict(value)) != body
+        ):
+            _fail("selector frozen lifecycle event is not canonical")
+        clean = _validate_frozen_lifecycle_event(value)
+        if lifecycle._event_pointer(clean) != checked:
+            _fail("selector frozen lifecycle event pointer drifted")
+        return clean
+    except (OSError, TypeError, ValueError, KeyError) as exc:
+        if isinstance(exc, SparseSelectorError):
+            raise
+        raise EvidenceGenerationDrift(
+            "selector frozen lifecycle event is unavailable"
+        ) from exc
+
+
+def _frozen_lifecycle_event(
+    *,
+    kind: str,
+    session_date: str,
+    payload: Mapping[str, Any],
+    previous: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    value: dict[str, Any] = {
+        "schema": lifecycle.EVENT_SCHEMA,
+        "event_id": "",
+        "event_kind": kind,
+        "event_session_date": session_date,
+        "storage": {
+            "visibility": "host_private",
+            "public_discovery": False,
+            "public_redistribution": False,
+        },
+        "previous": None if previous is None else copy.deepcopy(dict(previous)),
+        "payload": copy.deepcopy(dict(payload)),
+        "limitations": lifecycle._limitations_block(),
+        "authority": lifecycle._authority_block(),
+    }
+    identity = copy.deepcopy(value)
+    identity.pop("event_id")
+    value["event_id"] = (
+        "posle_" + _sha256(lifecycle._canonical_json_bytes(identity))
+    )
+    return _validate_frozen_lifecycle_event(value)
+
+
+def _frozen_activation_event(
+    boundary: Mapping[str, Any], observation: Mapping[str, Any]
+) -> dict[str, Any]:
+    if observation.get("observed_at_utc") != boundary["mark_boundary_observed_at_utc"]:
+        _fail("selector activation boundary mark clock drifted")
+    return _frozen_lifecycle_event(
+        kind="activation_boundary",
+        session_date=str(observation["session_date"]),
+        previous=None,
+        payload={
+            "kind": "activation_boundary",
+            "mark_boundary": copy.deepcopy(boundary["mark_boundary"]),
+            "mark_boundary_observed_at_utc": boundary[
+                "mark_boundary_observed_at_utc"
+            ],
+            "ledger_boundary": copy.deepcopy(boundary["ledger_boundary"]),
+            "prospective_after_boundary": True,
+        },
+    )
+
+
+def _frozen_enrollment_event(
+    *,
+    row: Mapping[str, Any],
+    mark_pointer: Mapping[str, Any],
+    observation: Mapping[str, Any],
+    previous: Mapping[str, Any],
+) -> dict[str, Any]:
+    plan = lifecycle._plan_from_mark_row(dict(row))
+    contract = row.get("contract")
+    if plan["phase"] not in lifecycle.POST_TRIGGER_PHASES or not isinstance(
+        contract, Mapping
+    ):
+        _fail("selector replay enrollment source is ineligible")
+    return _frozen_lifecycle_event(
+        kind="enrollment",
+        session_date=str(observation["session_date"]),
+        previous=previous,
+        payload={
+            "kind": "enrollment",
+            "plan": plan,
+            "contract": copy.deepcopy(dict(contract)),
+            "mark_observation": copy.deepcopy(dict(mark_pointer)),
+            "shadow_entry_mark": lifecycle._shadow_mark(
+                dict(row),
+                dict(mark_pointer),
+                basis="first_fresh_post_trigger_trade_paired_mid",
+            ),
+            "position_assumed": False,
+            "provider_observed_entry": False,
+        },
+    )
+
+
+def _frozen_terminal_event(
+    *,
+    lifecycle_root: Path,
+    mark_root: Path,
+    plan_id: str,
+    ledger_row: Mapping[str, Any],
+    ledger_row_ordinal: int,
+    ledger_receipt: Mapping[str, Any],
+    enrollment_pointer: Mapping[str, Any],
+    mark_chain_head: Mapping[str, Any],
+    latest_state: Mapping[str, Any],
+    previous: Mapping[str, Any],
+    row_semantic_sha256: str | None = None,
+) -> dict[str, Any]:
+    enrollment = _load_frozen_lifecycle_event(lifecycle_root, enrollment_pointer)
+    if (
+        enrollment.get("event_kind") != "enrollment"
+        or enrollment["payload"]["plan"]["id"] != plan_id
+    ):
+        _fail(f"selector replay enrollment pointer is wrong for {plan_id}")
+    enrollment_payload = enrollment["payload"]
+    close_date = str(ledger_row["close_date"])
+    reason: str | None = None
+    terminal_mark: dict[str, Any] | None = None
+    if ledger_row["outcome"] == "NO_ENTRY":
+        reason = "CANONICAL_NO_ENTRY"
+    elif date.fromisoformat(close_date) < date.fromisoformat(
+        str(enrollment["event_session_date"])
+    ):
+        reason = "CANONICAL_CLOSE_PREDATES_ENROLLMENT"
+    elif latest_state.get("plan_identity_drift") is True:
+        reason = "PLAN_IDENTITY_DRIFT"
+    elif latest_state.get("contract_drift") is True:
+        reason = "CONTRACT_DRIFT"
+    else:
+        sessions = latest_state.get("sessions")
+        mark_pointer = sessions.get(close_date) if isinstance(sessions, Mapping) else None
+        if mark_pointer is None:
+            reason = "NO_SAME_SESSION_ADMITTED_MARK"
+        else:
+            observation = _load_frozen_mark_observation(mark_root, mark_pointer)
+            row = lifecycle._row_for_plan(observation, plan_id)
+            if lifecycle._stable_plan_identity(row.get("plan")) != (
+                lifecycle._stable_plan_identity(enrollment_payload["plan"])
+            ):
+                reason = "PLAN_IDENTITY_DRIFT"
+            elif row.get("contract") != enrollment_payload["contract"]:
+                reason = "CONTRACT_DRIFT"
+            elif observation.get("session_date") != close_date:
+                _fail("selector replay terminal mark session drifted")
+            else:
+                terminal_mark = lifecycle._shadow_mark(
+                    row,
+                    mark_pointer,
+                    basis="latest_admitted_same_session_trade_paired_mid",
+                )
+    if terminal_mark is None:
+        terminal_wrapper = {"status": "unavailable", "reason": reason, "mark": None}
+        shadow_return = {
+            "status": "unavailable",
+            "basis": "shadow_mid_to_mid_research_only",
+            "shadow_mark_to_mark_return_pct": None,
+            "unavailable_reason": reason,
+            "trade_pnl": False,
+        }
+    else:
+        entry = Decimal(str(enrollment_payload["shadow_entry_mark"]["mid"]))
+        terminal = Decimal(str(terminal_mark["mid"]))
+        if entry <= 0 or terminal <= 0:
+            _fail("selector replay terminal mark is non-positive")
+        value = ((terminal / entry) - Decimal("1")) * Decimal("100")
+        terminal_wrapper = {"status": "available", "reason": None, "mark": terminal_mark}
+        shadow_return = {
+            "status": "available",
+            "basis": "shadow_mid_to_mid_research_only",
+            "shadow_mark_to_mark_return_pct": float(
+                value.quantize(Decimal("0.0001"), rounding=ROUND_HALF_UP)
+            ),
+            "unavailable_reason": None,
+            "trade_pnl": False,
+        }
+    canonical_close = {
+        "schema": "prophet.ledger/v1",
+        "plan_id": plan_id,
+        "close_date": close_date,
+        "outcome": ledger_row["outcome"],
+        "asof": ledger_row["asof"],
+        "row_ordinal": ledger_row_ordinal,
+        "row_semantic_sha256": (
+            row_semantic_sha256
+            or _sha256(lifecycle._canonical_json_bytes(dict(ledger_row)))
+        ),
+        "ledger_receipt": copy.deepcopy(dict(ledger_receipt)),
+        "source_option_result_pct_was_null": True,
+    }
+    return _frozen_lifecycle_event(
+        kind="terminal",
+        session_date=close_date,
+        previous=previous,
+        payload={
+            "kind": "terminal",
+            "plan_id": plan_id,
+            "contract": copy.deepcopy(enrollment_payload["contract"]),
+            "enrollment_event": copy.deepcopy(dict(enrollment_pointer)),
+            "mark_chain_head": copy.deepcopy(dict(mark_chain_head)),
+            "shadow_entry_mark": copy.deepcopy(enrollment_payload["shadow_entry_mark"]),
+            "canonical_close": canonical_close,
+            "terminal_mark": terminal_wrapper,
+            "shadow_return": shadow_return,
+            "position_assumed": False,
+            "provider_observed_exit": False,
+        },
+    )
+
+
+def _make_evidence_source_snapshot(
+    *,
+    state: Mapping[str, Any],
+    live_mark_head: Mapping[str, Any],
+    live_ledger_receipt: Mapping[str, Any],
+    activation_boundary: Mapping[str, Any],
+    producer_roots: Mapping[str, Mapping[str, str]],
+    captured_at: str,
+) -> PlannedObject:
+    value: dict[str, Any] = {
+        "schema": "options.sparse_selector_evidence_source_snapshot/v1",
+        "snapshot_id": "",
+        "captured_at": captured_at,
+        "state_sha256": _sha256(canonical_bytes(state)),
+        "producer_contract": copy.deepcopy(PRODUCER_CONTRACT),
+        "producer_roots": copy.deepcopy(dict(producer_roots)),
+        "activation_boundary": copy.deepcopy(dict(activation_boundary)),
+        "lifecycle_state": copy.deepcopy(dict(state)),
+        "live_mark_head": copy.deepcopy(dict(live_mark_head)),
+        "live_ledger_receipt": copy.deepcopy(dict(live_ledger_receipt)),
+        "authority": dict(FALSE_AUTHORITY),
+    }
+    value["snapshot_id"] = _content_id("osess_", value, field="snapshot_id")
+    clean = validate_runtime_object(value, label="selector evidence source snapshot")
+    return PlannedObject(
+        key=f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['snapshot_id']}.json",
+        value=clean,
+    )
+
+
+def _make_evidence_replay_state(
+    *, snapshot: Mapping[str, Any], state: Mapping[str, Any]
+) -> PlannedObject:
+    checked_state = lifecycle._validate_state_shape(dict(state))
+    value: dict[str, Any] = {
+        "schema": "options.sparse_selector_evidence_replay_state/v1",
+        "replay_id": "",
+        "snapshot": copy.deepcopy(dict(snapshot)),
+        "producer_contract": copy.deepcopy(PRODUCER_CONTRACT),
+        "state_id": checked_state["state_id"],
+        "state": checked_state,
+        "authority": dict(FALSE_AUTHORITY),
+    }
+    value["replay_id"] = _content_id("osers_", value, field="replay_id")
+    clean = validate_runtime_object(value, label="selector evidence replay state")
+    return PlannedObject(
+        key=f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['replay_id']}.json",
+        value=clean,
+    )
+
+
+def _load_evidence_replay_state(
+    root: Path, pointer: Mapping[str, Any], *, snapshot: Mapping[str, Any]
+) -> dict[str, Any]:
+    value = _load_pointer(root, pointer, label="selector evidence replay state")
+    clean = validate_runtime_object(value, label="selector evidence replay state")
+    if (
+        clean.get("schema")
+        != "options.sparse_selector_evidence_replay_state/v1"
+        or pointer["key"]
+        != f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['replay_id']}.json"
+        or clean["snapshot"] != dict(snapshot)
+    ):
+        _fail("selector evidence replay state escaped its high-water")
+    return clean
+
+
+def _evidence_auth_nodes(
+    root: Path,
+    *,
+    prior: Mapping[str, Any],
+    domain: str,
+    entries: Sequence[tuple[Any, Any]],
+) -> tuple[dict[str, Any], tuple[PlannedObject, ...]]:
+    def load_node(pointer: Mapping[str, Any]) -> Mapping[str, Any]:
+        value = _load_pointer(root, pointer, label="selector evidence auth node")
+        return private_auth_dict.validate_node(value, domain=domain)
+
+    try:
+        receipt, nodes = private_auth_dict.sharded_insert_many(
+            prior,
+            entries,
+            domain=domain,
+            load_node=load_node,
+            cache=private_auth_dict.ShardedLookupCache.empty(domain),
+        )
+    except private_auth_dict.AuthDictError as exc:
+        raise SparseSelectorError(str(exc)) from exc
+    planned = tuple(
+        PlannedObject(
+            key=f"{private_auth_dict.NAMESPACE}/{node['node_id']}.json",
+            value=node,
+        )
+        for node in nodes
+    )
+    return receipt, planned
+
+
+def _activation_boundary_receipt(boundary: Mapping[str, Any]) -> dict[str, Any]:
+    checked = lifecycle._validate_activation_boundary(dict(boundary))
+    body = lifecycle._canonical_json_bytes(checked)
+    return {
+        "kind": "activation",
+        "boundary_id": checked["boundary_id"],
+        "sha256": _sha256(body),
+        "bytes": len(body),
+        "mark_boundary": copy.deepcopy(checked["mark_boundary"]),
+        "ledger_boundary": copy.deepcopy(checked["ledger_boundary"]),
+    }
+
+
+def _load_exact_advance_boundary(
+    lifecycle_root: Path, base_state_id: str
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    if re.fullmatch(r"posls_[a-f0-9]{64}", base_state_id) is None:
+        _fail("selector replay base state id is malformed")
+    key = f"advance_boundaries/{base_state_id}.json"
+    active = _ACTIVE_EVIDENCE_SOURCES.get()
+    if active is not None:
+        if _absolute_private_path(lifecycle_root) != active.lifecycle.root:
+            _fail("selector advance boundary read escaped its anchored root")
+        body = _read_anchored_file(
+            active.lifecycle,
+            key,
+            limit=2 * 1024 * 1024,
+            required=False,
+            label="selector replay advance boundary",
+        )
+    else:
+        path = lifecycle_root / "advance_boundaries" / f"{base_state_id}.json"
+        body = mark_chain._read_private_file(path, required=False)
+    if body is None:
+        _fail("selector replay advance boundary is missing before pinned state")
+    value = strict_json(body, label="selector replay advance boundary")
+    if (
+        not isinstance(value, Mapping)
+        or lifecycle._canonical_json_bytes(dict(value)) != body
+    ):
+        _fail("selector replay advance boundary is not canonical")
+    try:
+        boundary = lifecycle._validate_advance_boundary(dict(value))
+    except (TypeError, ValueError, KeyError) as exc:
+        raise SparseSelectorError(
+            "selector replay advance boundary is malformed"
+        ) from exc
+    if boundary["base_state_id"] != base_state_id:
+        _fail("selector replay advance boundary base drifted")
+    receipt = {
+        "kind": "advance",
+        "boundary_id": boundary["boundary_id"],
+        "base_state_id": boundary["base_state_id"],
+        "candidate_state_id": boundary["candidate_state_id"],
+        "sha256": _sha256(body),
+        "bytes": len(body),
+        "mark_boundary": copy.deepcopy(boundary["mark_boundary"]),
+        "ledger_boundary": copy.deepcopy(boundary["ledger_boundary"]),
+        "candidate_lifecycle_head": copy.deepcopy(
+            boundary["candidate_lifecycle_head"]
+        ),
+        "event_count": len(boundary["event_pointers"]),
+    }
+    return boundary, receipt
+
+
+def _load_boundary_from_receipt(
+    lifecycle_root: Path, receipt: Mapping[str, Any]
+) -> dict[str, Any]:
+    boundary, exact = _load_exact_advance_boundary(
+        lifecycle_root, str(receipt.get("base_state_id"))
+    )
+    if exact != dict(receipt):
+        _fail("selector replay advance boundary receipt drifted")
+    return boundary
+
+
+def _fixed_new_mark_observations(
+    mark_root: Path,
+    current: Mapping[str, Any],
+    cursor: Mapping[str, Any],
+) -> list[tuple[dict[str, Any], dict[str, Any]]]:
+    checked_current = mark_chain._validate_pointer(dict(current))
+    checked_cursor = mark_chain._validate_pointer(dict(cursor))
+    if checked_current == checked_cursor:
+        _load_frozen_mark_observation(mark_root, checked_cursor)
+        return []
+    backwards: list[tuple[dict[str, Any], dict[str, Any]]] = []
+    pointer: dict[str, Any] | None = checked_current
+    seen: set[str] = set()
+    for _ in range(lifecycle.MAX_CHAIN_DEPTH):
+        if pointer is None:
+            break
+        if pointer == checked_cursor:
+            _load_frozen_mark_observation(mark_root, checked_cursor)
+            backwards.reverse()
+            return backwards
+        identity = str(pointer["observation_id"])
+        if identity in seen:
+            _fail("selector replay mark chain contains a cycle")
+        seen.add(identity)
+        observation = _load_frozen_mark_observation(mark_root, pointer)
+        backwards.append((pointer, observation))
+        previous = observation.get("previous")
+        pointer = (
+            None
+            if previous is None
+            else mark_chain._validate_pointer(previous)
+        )
+    _fail("selector replay mark cursor is not an ancestor of its boundary")
+
+
+def _replay_high_water_object(
+    parent: Mapping[str, Any], **updates: Any
+) -> PlannedObject:
+    value = copy.deepcopy(dict(parent))
+    value.update(copy.deepcopy(updates))
+    value["high_water_id"] = ""
+    value["high_water_id"] = _content_id(
+        "osehw_", value, field="high_water_id"
+    )
+    clean = validate_runtime_object(value, label="selector replay high-water")
+    return PlannedObject(
+        key=f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['high_water_id']}.json",
+        value=clean,
+    )
+
+
+def _replay_state_fields(replay: PlannedObject) -> dict[str, Any]:
+    state = replay.value["state"]
+    return {
+        "replay_state": replay.pointer,
+        "replay_state_id": state["state_id"],
+        "replay_lifecycle_head": copy.deepcopy(state["lifecycle_head"]),
+        "replay_mark_cursor": copy.deepcopy(state["mark_cursor"]),
+        "replay_ledger_cursor": copy.deepcopy(state["ledger_cursor"]),
+    }
+
+
+def _replay_actual_event(
+    lifecycle_root: Path,
+    boundary: Mapping[str, Any],
+    ordinal: int,
+    expected: Mapping[str, Any],
+) -> None:
+    pointers = boundary["event_pointers"]
+    if ordinal >= len(pointers):
+        _fail("selector replay generated an orphan lifecycle event")
+    pointer = pointers[ordinal]
+    actual = _load_frozen_lifecycle_event(lifecycle_root, pointer)
+    if actual != dict(expected) or lifecycle._event_pointer(dict(expected)) != pointer:
+        _fail("selector replay lifecycle event differs from boundary order")
+
+
+def _ledger_at_boundary(
+    lifecycle_root: Path, receipt: Mapping[str, Any]
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    ledger_path, receipt_path = lifecycle._ledger_paths(
+        lifecycle_root,
+        ledger_path=None,
+        ledger_receipt_path=None,
+        create=False,
+    )
+    live_body, _live_rows, _live_receipt = lifecycle._read_ledger_snapshot(
+        ledger_path, receipt_path
+    )
+    _prefix, rows, checked = lifecycle._ledger_snapshot_at_receipt(
+        live_body, dict(receipt)
+    )
+    return [copy.deepcopy(row) for row in rows], copy.deepcopy(checked)
+
+
+def _ledger_row_binding(row: Mapping[str, Any], ordinal: int) -> dict[str, Any]:
+    return {
+        "ordinal": ordinal,
+        "plan_id": str(row["id"]),
+        "close_date": str(row["close_date"]),
+        "outcome": str(row["outcome"]),
+        "asof": str(row["asof"]),
+        "option_result_pct": None,
+        "row_semantic_sha256": _sha256(
+            lifecycle._canonical_json_bytes(dict(row))
+        ),
+    }
+
+
+def _evidence_auth_lookup(
+    root: Path,
+    receipt: Mapping[str, Any],
+    *,
+    domain: str,
+    logical_key: Any,
+) -> private_auth_dict.Lookup:
+    def load_node(pointer: Mapping[str, Any]) -> Mapping[str, Any]:
+        value = _load_pointer(root, pointer, label="selector evidence auth node")
+        return private_auth_dict.validate_node(value, domain=domain)
+
+    try:
+        return private_auth_dict.sharded_lookup(
+            receipt,
+            logical_key,
+            domain=domain,
+            load_node=load_node,
+            cache=private_auth_dict.ShardedLookupCache.empty(domain),
+        )
+    except private_auth_dict.AuthDictError as exc:
+        raise SparseSelectorError(str(exc)) from exc
+
+
+def _ledger_plan_binding(
+    root: Path, receipt: Mapping[str, Any], plan_id: str
+) -> dict[str, Any] | None:
+    found = _evidence_auth_lookup(
+        root,
+        receipt,
+        domain=EVIDENCE_LEDGER_ROW_DOMAIN,
+        logical_key=["plan", plan_id],
+    )
+    return None if not found.found else copy.deepcopy(found.binding)
+
+
+def _ledger_ordinal_binding(
+    root: Path, receipt: Mapping[str, Any], ordinal: int
+) -> dict[str, Any]:
+    found = _evidence_auth_lookup(
+        root,
+        receipt,
+        domain=EVIDENCE_LEDGER_ROW_DOMAIN,
+        logical_key=["ordinal", ordinal],
+    )
+    if not found.found or not isinstance(found.binding, Mapping):
+        _fail("selector replay ledger ordinal is absent")
+    return copy.deepcopy(dict(found.binding))
+
+
+def _boundary_mark_pointer(
+    root: Path,
+    receipt: Mapping[str, Any],
+    boundary_id: str,
+    reverse_ordinal: int,
+) -> dict[str, Any]:
+    found = _evidence_auth_lookup(
+        root,
+        receipt,
+        domain=EVIDENCE_MARK_SEEN_DOMAIN,
+        logical_key=["boundary", boundary_id, "reverse", reverse_ordinal],
+    )
+    if not found.found or not isinstance(found.binding, Mapping):
+        _fail("selector occurrence mark index is incomplete")
+    try:
+        return mark_chain._validate_pointer(dict(found.binding))
+    except (TypeError, ValueError, KeyError) as exc:
+        raise SparseSelectorError(
+            "selector occurrence mark index binding drifted"
+        ) from exc
+
+
+def _live_mark_pointer(
+    root: Path,
+    receipt: Mapping[str, Any],
+    reverse_ordinal: int,
+) -> dict[str, Any]:
+    found = _evidence_auth_lookup(
+        root,
+        receipt,
+        domain=EVIDENCE_MARK_SEEN_DOMAIN,
+        logical_key=["live", "reverse", reverse_ordinal],
+    )
+    if not found.found or not isinstance(found.binding, Mapping):
+        _fail("selector captured live mark index is incomplete")
+    try:
+        return mark_chain._validate_pointer(dict(found.binding))
+    except (TypeError, ValueError, KeyError) as exc:
+        raise SparseSelectorError(
+            "selector captured live mark index binding drifted"
+        ) from exc
+
+
+def _read_pinned_ledger_slice(
+    lifecycle_root: Path, *, first_byte: int, last_byte: int
+) -> bytes:
+    active = _ACTIVE_EVIDENCE_SOURCES.get()
+    if active is not None:
+        if _absolute_private_path(lifecycle_root) != active.lifecycle.root:
+            _fail("selector ledger read escaped its anchored root")
+        with _open_anchored_parent(
+            active.lifecycle, "canonical_ledger/ledger.jsonl"
+        ) as (parent_fd, name):
+            fd = os.open(
+                name,
+                os.O_RDONLY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=parent_fd,
+            )
+            try:
+                info = os.fstat(fd)
+                if (
+                    not stat.S_ISREG(info.st_mode)
+                    or info.st_uid != os.getuid()
+                    or stat.S_IMODE(info.st_mode) != 0o600
+                    or info.st_nlink != 1
+                    or not 0 <= first_byte < last_byte <= info.st_size
+                ):
+                    _fail("selector pinned ledger metadata or slice is unsafe")
+                body = os.pread(fd, last_byte - first_byte, first_byte)
+                if len(body) != last_byte - first_byte:
+                    _fail("selector pinned ledger slice changed length")
+                after = os.fstat(fd)
+                if (
+                    after.st_dev,
+                    after.st_ino,
+                    after.st_size,
+                    after.st_mtime_ns,
+                ) != (
+                    info.st_dev,
+                    info.st_ino,
+                    info.st_size,
+                    info.st_mtime_ns,
+                ):
+                    _fail("selector pinned ledger changed during bounded read")
+                return body
+            finally:
+                os.close(fd)
+    ledger_path, _receipt_path = lifecycle._ledger_paths(
+        lifecycle_root,
+        ledger_path=None,
+        ledger_receipt_path=None,
+        create=False,
+    )
+    fd = os.open(ledger_path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+    try:
+        info = os.fstat(fd)
+        if (
+            not stat.S_ISREG(info.st_mode)
+            or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o600
+            or info.st_nlink != 1
+            or not 0 <= first_byte < last_byte <= info.st_size
+        ):
+            _fail("selector pinned ledger metadata or slice is unsafe")
+        body = os.pread(fd, last_byte - first_byte, first_byte)
+        if len(body) != last_byte - first_byte:
+            _fail("selector pinned ledger slice changed length")
+        after = os.fstat(fd)
+        if (
+            (after.st_dev, after.st_ino, after.st_size, after.st_mtime_ns)
+            != (info.st_dev, info.st_ino, info.st_size, info.st_mtime_ns)
+        ):
+            _fail("selector pinned ledger changed during bounded read")
+        return body
+    finally:
+        os.close(fd)
+
+
+def _make_evidence_ledger_chunk(
+    *,
+    snapshot: Mapping[str, Any],
+    ordinal: int,
+    first_byte: int,
+    raw: bytes,
+) -> PlannedObject:
+    value: dict[str, Any] = {
+        "schema": "options.sparse_selector_evidence_ledger_chunk/v1",
+        "ledger_chunk_id": "",
+        "snapshot": copy.deepcopy(dict(snapshot)),
+        "producer_contract": copy.deepcopy(PRODUCER_CONTRACT),
+        "ordinal": ordinal,
+        "first_byte": first_byte,
+        "last_byte": first_byte + len(raw),
+        "body_sha256": _sha256(raw),
+        "body_base64": base64.b64encode(raw).decode("ascii"),
+        "authority": dict(FALSE_AUTHORITY),
+    }
+    value["ledger_chunk_id"] = _content_id(
+        "oselc_", value, field="ledger_chunk_id"
+    )
+    clean = validate_runtime_object(value, label="selector evidence ledger chunk")
+    return PlannedObject(
+        key=f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['ledger_chunk_id']}.json",
+        value=clean,
+    )
+
+
+def _load_evidence_ledger_chunk(
+    root: Path,
+    pointer: Mapping[str, Any],
+    *,
+    snapshot: Mapping[str, Any],
+    inherited_pointers: Sequence[Mapping[str, Any]] = (),
+    ordinal: int,
+    first_byte: int,
+) -> tuple[dict[str, Any], bytes]:
+    value = _load_pointer(root, pointer, label="selector evidence ledger chunk")
+    clean = validate_runtime_object(value, label="selector evidence ledger chunk")
+    if (
+        clean.get("schema")
+        != "options.sparse_selector_evidence_ledger_chunk/v1"
+        or pointer["key"]
+        != f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['ledger_chunk_id']}.json"
+        or (
+            clean["snapshot"] != dict(snapshot)
+            and dict(pointer) not in [dict(item) for item in inherited_pointers]
+        )
+        or clean["ordinal"] != ordinal
+        or clean["first_byte"] != first_byte
+    ):
+        _fail("selector evidence ledger chunk chain drifted")
+    raw = base64.b64decode(clean["body_base64"], validate=True)
+    return clean, raw
+
+
+def _ledger_chunk_stream(
+    root: Path,
+    pointers: Sequence[Mapping[str, Any]],
+    *,
+    snapshot: Mapping[str, Any],
+    inherited_pointers: Sequence[Mapping[str, Any]] = (),
+) -> Iterator[bytes]:
+    cursor = 0
+    for ordinal, pointer in enumerate(pointers, start=1):
+        chunk, raw = _load_evidence_ledger_chunk(
+            root,
+            pointer,
+            snapshot=snapshot,
+            inherited_pointers=inherited_pointers,
+            ordinal=ordinal,
+            first_byte=cursor,
+        )
+        cursor = chunk["last_byte"]
+        yield raw
+
+
+def _authenticate_captured_ledger(
+    root: Path,
+    pointers: Sequence[Mapping[str, Any]],
+    *,
+    snapshot: Mapping[str, Any],
+    inherited_pointers: Sequence[Mapping[str, Any]] = (),
+    receipt: Mapping[str, Any],
+) -> None:
+    digest = hashlib.sha256()
+    size = 0
+    last = b""
+    for raw in _ledger_chunk_stream(
+        root,
+        pointers,
+        snapshot=snapshot,
+        inherited_pointers=inherited_pointers,
+    ):
+        digest.update(raw)
+        size += len(raw)
+        if raw:
+            last = raw[-1:]
+    if (
+        size != receipt["bytes"]
+        or digest.hexdigest() != receipt["sha256"]
+        or last != b"\n"
+    ):
+        _fail("selector captured ledger does not match its pinned receipt")
+
+
+def _captured_ledger_range(
+    root: Path,
+    pointers: Sequence[Mapping[str, Any]],
+    *,
+    snapshot: Mapping[str, Any],
+    inherited_pointers: Sequence[Mapping[str, Any]] = (),
+    first_byte: int,
+    last_byte: int,
+) -> bytes:
+    if not 0 <= first_byte <= last_byte:
+        _fail("selector captured ledger range is malformed")
+    result = bytearray()
+    cursor = 0
+    for raw in _ledger_chunk_stream(
+        root,
+        pointers,
+        snapshot=snapshot,
+        inherited_pointers=inherited_pointers,
+    ):
+        next_cursor = cursor + len(raw)
+        if next_cursor > first_byte and cursor < last_byte:
+            start = max(first_byte, cursor) - cursor
+            end = min(last_byte, next_cursor) - cursor
+            result.extend(raw[start:end])
+        cursor = next_cursor
+        if cursor >= last_byte:
+            break
+    if len(result) != last_byte - first_byte:
+        _fail("selector captured ledger range is incomplete")
+    return bytes(result)
+
+
+def _captured_ledger_rows(
+    root: Path,
+    pointers: Sequence[Mapping[str, Any]],
+    *,
+    snapshot: Mapping[str, Any],
+    inherited_pointers: Sequence[Mapping[str, Any]] = (),
+    byte_cursor: int,
+    row_cursor: int,
+    boundary: Mapping[str, Any],
+    row_limit: int,
+) -> tuple[int, list[tuple[int, dict[str, Any]]]]:
+    boundary_bytes = int(boundary["bytes"])
+    if not 0 <= byte_cursor <= boundary_bytes:
+        _fail("selector captured ledger byte cursor drifted")
+    position = byte_cursor
+    chunk_index = byte_cursor // EVIDENCE_LEDGER_CHUNK_BYTES
+    line = bytearray()
+    parsed: list[tuple[int, dict[str, Any]]] = []
+    while position < boundary_bytes and len(parsed) < row_limit:
+        if chunk_index >= len(pointers):
+            _fail("selector captured ledger chunks end before their boundary")
+        first = chunk_index * EVIDENCE_LEDGER_CHUNK_BYTES
+        _chunk, raw = _load_evidence_ledger_chunk(
+            root,
+            pointers[chunk_index],
+            snapshot=snapshot,
+            inherited_pointers=inherited_pointers,
+            ordinal=chunk_index + 1,
+            first_byte=first,
+        )
+        local = position - first
+        available = raw[local : min(len(raw), boundary_bytes - first)]
+        while available and len(parsed) < row_limit:
+            newline = available.find(b"\n")
+            if newline < 0:
+                line.extend(available)
+                position += len(available)
+                available = b""
+                break
+            line.extend(available[:newline])
+            position += newline + 1
+            available = available[newline + 1 :]
+            stripped = bytes(line).strip()
+            line.clear()
+            if not stripped or stripped.startswith(b"#"):
+                continue
+            value = strict_json(stripped, label="selector captured ledger row")
+            try:
+                row = lifecycle._validate_ledger_row(
+                    value, ordinal=row_cursor + len(parsed) + 1
+                )
+            except (TypeError, ValueError, KeyError) as exc:
+                raise SparseSelectorError(
+                    "selector captured ledger row is invalid"
+                ) from exc
+            parsed.append((row_cursor + len(parsed) + 1, row))
+        if position >= first + len(raw):
+            chunk_index += 1
+    if position == boundary_bytes and line:
+        _fail("selector captured ledger boundary cuts a line")
+    return position, parsed
+
+
+def _make_pinned_evidence_high_water(
+    *,
+    snapshot: PlannedObject,
+    previous_complete: Mapping[str, Any] | None,
+    prior_high: Mapping[str, Any] | None = None,
+) -> PlannedObject:
+    state = snapshot.value["lifecycle_state"]
+    incremental = previous_complete is not None
+    if incremental != (prior_high is not None):
+        _fail("selector incremental PIN parent is incomplete")
+    if prior_high is not None and (
+        prior_high.get("phase") != "COMPLETE"
+        or prior_high.get("producer_contract") != PRODUCER_CONTRACT
+        or prior_high.get("activation") != state["activation"]
+    ):
+        _fail("selector incremental PIN parent contract drifted")
+    value: dict[str, Any] = {
+        "schema": "options.sparse_selector_evidence_high_water/v1",
+        "high_water_id": "",
+        "phase": "AUDIT_PINNED",
+        "snapshot": snapshot.pointer,
+        "previous_complete": (
+            None if previous_complete is None else copy.deepcopy(dict(previous_complete))
+        ),
+        "producer_contract": copy.deepcopy(PRODUCER_CONTRACT),
+        "replay_state": (
+            None if prior_high is None else copy.deepcopy(prior_high["replay_state"])
+        ),
+        "replay_state_id": (
+            None if prior_high is None else prior_high["replay_state_id"]
+        ),
+        "replay_lifecycle_head": (
+            None
+            if prior_high is None
+            else copy.deepcopy(prior_high["replay_lifecycle_head"])
+        ),
+        "replay_mark_cursor": (
+            None
+            if prior_high is None
+            else copy.deepcopy(prior_high["replay_mark_cursor"])
+        ),
+        "replay_ledger_cursor": (
+            None
+            if prior_high is None
+            else copy.deepcopy(prior_high["replay_ledger_cursor"])
+        ),
+        "base_state_id": None,
+        "base_lifecycle_head": None,
+        "base_mark_cursor": None,
+        "base_ledger_cursor": None,
+        "occurrence_stage": "LEDGER_CAPTURE",
+        "current_boundary": None,
+        "boundary_mark_cursor": None,
+        "boundary_mark_row_cursor": 0,
+        "boundary_mark_ordinal": 0,
+        "boundary_ledger_row_cursor": 0,
+        "boundary_ledger_byte_cursor": 0,
+        "boundary_event_cursor": 0,
+        "boundary_terminal_cursor": 0,
+        "boundary_index": (
+            _empty_evidence_audit_index(EVIDENCE_BOUNDARY_DOMAIN)
+            if prior_high is None
+            else copy.deepcopy(prior_high["boundary_index"])
+        ),
+        "source_state_id": state["state_id"],
+        "activation": copy.deepcopy(state["activation"]),
+        "lifecycle_head": copy.deepcopy(state["lifecycle_head"]),
+        "mark_cursor": copy.deepcopy(state["mark_cursor"]),
+        "ledger_cursor": copy.deepcopy(state["ledger_cursor"]),
+        "captured_mark_head": copy.deepcopy(snapshot.value["live_mark_head"]),
+        "captured_ledger_receipt": copy.deepcopy(
+            snapshot.value["live_ledger_receipt"]
+        ),
+        "ledger_capture_bytes": (
+            0 if prior_high is None else prior_high["ledger_capture_bytes"]
+        ),
+        "ledger_replay_bytes": (
+            0 if prior_high is None else prior_high["ledger_replay_bytes"]
+        ),
+        "ledger_replay_rows": (
+            0 if prior_high is None else prior_high["ledger_replay_rows"]
+        ),
+        "live_mark_scan_cursor": copy.deepcopy(snapshot.value["live_mark_head"]),
+        "live_mark_reverse_ordinal": 0,
+        "event_cursor": None,
+        "event_count": 0,
+        "event_seen_index": _empty_evidence_audit_index(
+            EVIDENCE_EVENT_SEEN_DOMAIN
+        ),
+        "event_enrollment_index": _empty_evidence_audit_index(
+            EVIDENCE_EVENT_ENROLLMENT_DOMAIN
+        ),
+        "event_terminal_index": _empty_evidence_audit_index(
+            EVIDENCE_EVENT_TERMINAL_DOMAIN
+        ),
+        "state_enrollment_cursor": 0,
+        "state_terminal_cursor": 0,
+        "state_enrollment_index": _empty_evidence_audit_index(
+            EVIDENCE_STATE_ENROLLMENT_DOMAIN
+        ),
+        "state_terminal_index": _empty_evidence_audit_index(
+            EVIDENCE_STATE_TERMINAL_DOMAIN
+        ),
+        "state_latest_cursor": 0,
+        "state_latest_index": _empty_evidence_audit_index(
+            EVIDENCE_STATE_LATEST_DOMAIN
+        ),
+        "mark_scan_cursor": None,
+        "mark_row_cursor": 0,
+        "mark_count": 0,
+        "mark_seen_index": _empty_evidence_audit_index(
+            EVIDENCE_MARK_SEEN_DOMAIN
+        ),
+        "derived_latest_index": _empty_evidence_audit_index(
+            EVIDENCE_DERIVED_LATEST_DOMAIN
+        ),
+        "derived_latest_active_count": 0,
+        "ledger_cursor_bytes": 0,
+        "ledger_chunks": (
+            [] if prior_high is None else copy.deepcopy(prior_high["ledger_chunks"])
+        ),
+        "ledger_row_count": (
+            0 if prior_high is None else prior_high["ledger_row_count"]
+        ),
+        "ledger_row_index": (
+            _empty_evidence_audit_index(EVIDENCE_LEDGER_ROW_DOMAIN)
+            if prior_high is None
+            else copy.deepcopy(prior_high["ledger_row_index"])
+        ),
+        "ledger_terminal_match_count": 0,
+        "ledger_terminal_index": _empty_evidence_audit_index(
+            EVIDENCE_LEDGER_TERMINAL_DOMAIN
+        ),
+        "authority": dict(FALSE_AUTHORITY),
+    }
+    value["high_water_id"] = _content_id("osehw_", value, field="high_water_id")
+    clean = validate_runtime_object(value, label="selector pinned evidence high-water")
+    return PlannedObject(
+        key=f"{EVIDENCE_AUDIT_NAMESPACE}/{clean['high_water_id']}.json",
+        value=clean,
+    )
+
+
+def _evidence_audit_head(
+    *, head: Mapping[str, Any], high_water: PlannedObject, advanced_at: str
+) -> dict[str, Any]:
+    next_head = copy.deepcopy(dict(head))
+    next_head.update(
+        {
+            "head_id": "",
+            "generation": head["generation"] + 1,
+            "previous_head_id": head["head_id"],
+            "advanced_at": advanced_at,
+            "evidence_high_water": high_water.pointer,
+        }
+    )
+    next_head["head_id"] = _content_id("ossh_", next_head, field="head_id")
+    return validate_runtime_object(next_head, label="selector evidence audit HEAD")
+
+
+def _evidence_audit_transition_intent(
+    *,
+    head: Mapping[str, Any],
+    next_head: Mapping[str, Any],
+    objects: Sequence[PlannedObject],
+    audit_window: Mapping[str, Any],
+    evidence_inputs: EvidenceInputs,
+) -> CyclePlan:
+    ordered = tuple(sorted(objects, key=lambda item: item.key))
+    intent: dict[str, Any] = {
+        "schema": "options.sparse_selector_evidence_audit_intent/v1",
+        "intent_sha256": "",
+        "expected_head_id": head["head_id"],
+        "expected_advanced_at": head["advanced_at"],
+        "expected_source_state": _source_expected_state(head),
+        "expected_runtime_state": _runtime_expected_state(head),
+        "expected_evidence_high_water": copy.deepcopy(
+            head["evidence_high_water"]
+        ),
+        "audit_window": copy.deepcopy(dict(audit_window)),
+        "objects": [item.receipt for item in ordered],
+        "next_head": copy.deepcopy(dict(next_head)),
+    }
+    intent["intent_sha256"] = _content_id("", intent, field="intent_sha256")
+    if (
+        len(ordered) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE
+        or len(canonical_bytes(intent)) > MAX_SOURCE_INTENT_BYTES
+        or _transition_footprint_bytes(intent, ordered) > MAX_SOURCE_INTENT_BYTES
+    ):
+        _fail("selector evidence audit transition exceeds its bounds")
+    return CyclePlan(
+        expected_head_id=head["head_id"],
+        objects=ordered,
+        head=copy.deepcopy(dict(next_head)),
+        intent=intent,
+        evidence_inputs=evidence_inputs,
+    )
+
+
+def _plan_evidence_capture_transition(
+    *,
+    root: Path,
+    head: Mapping[str, Any],
+    evidence_inputs: EvidenceInputs,
+    clock: Callable[[], datetime],
+) -> CyclePlan:
+    if evidence_inputs.mark_root is None or evidence_inputs.lifecycle_root is None:
+        _fail("selector evidence capture requires both producer roots")
+    previous = head["evidence_high_water"]
+    prior: dict[str, Any] | None = None
+    prior_snapshot: dict[str, Any] | None = None
+    if previous is not None:
+        prior = _authenticate_evidence_high_water_graph(
+            root, previous, evidence_inputs=evidence_inputs
+        )
+        if prior["phase"] != "COMPLETE":
+            _fail("selector cannot repin over an incomplete evidence audit")
+        prior_snapshot = validate_runtime_object(
+            _load_pointer(
+                root, prior["snapshot"], label="selector prior source snapshot"
+            ),
+            label="selector prior source snapshot",
+        )
+    mark_root = Path(evidence_inputs.mark_root).expanduser()
+    lifecycle_root = Path(evidence_inputs.lifecycle_root).expanduser()
+    with _open_selector_lane(root, create=False) as selector_lane:
+        with _anchored_evidence_sources(
+            mark_root, lifecycle_root, selector_lane=selector_lane
+        ) as sources:
+            state_body, state = _read_lifecycle_state_bytes(sources.lifecycle)
+            live_mark_head, live_ledger_receipt, activation_boundary = (
+                _verify_capture_source_prefixes(
+                    sources=sources,
+                    state=state,
+                    prior_snapshot=prior_snapshot,
+                )
+            )
+            if prior is not None:
+                assert prior_snapshot is not None
+                if (
+                    prior["producer_contract"] != PRODUCER_CONTRACT
+                    or prior_snapshot["producer_roots"] != sources.producer_roots
+                ):
+                    _fail("selector incremental producer contract or roots drifted")
+                _anchored_mark_chain_contains(
+                    sources.mark,
+                    live_mark_head,
+                    (
+                        state["mark_cursor"],
+                        prior_snapshot["live_mark_head"],
+                    ),
+                )
+                _anchored_ledger_extends(
+                    sources.lifecycle, prior_snapshot["live_ledger_receipt"]
+                )
+                token = _ACTIVE_EVIDENCE_SOURCES.set(sources)
+                try:
+                    _incremental_target_descends(
+                        lifecycle_root,
+                        prior_state_id=prior["source_state_id"],
+                        target_state_id=state["state_id"],
+                    )
+                finally:
+                    _ACTIVE_EVIDENCE_SOURCES.reset(token)
+            if _read_anchored_file(
+                sources.lifecycle,
+                "current.json",
+                limit=2 * 1024 * 1024,
+                label="selector lifecycle current state",
+            ) != state_body:
+                raise EvidenceGenerationDrift(
+                    "selector lifecycle state changed during capture planning"
+                )
+            producer_roots = copy.deepcopy(dict(sources.producer_roots))
+    captured = _aware_utc(clock(), label="selector evidence capture clock")
+    if captured < _utc(head["advanced_at"], label="selector prior HEAD clock"):
+        _fail("selector evidence capture clock moved backward")
+    captured_at = utc_text(captured)
+    snapshot = _make_evidence_source_snapshot(
+        state=state,
+        live_mark_head=live_mark_head,
+        live_ledger_receipt=live_ledger_receipt,
+        activation_boundary=activation_boundary,
+        producer_roots=producer_roots,
+        captured_at=captured_at,
+    )
+    high_water = _make_pinned_evidence_high_water(
+        snapshot=snapshot,
+        previous_complete=previous,
+        prior_high=prior,
+    )
+    next_head = _evidence_audit_head(
+        head=head, high_water=high_water, advanced_at=captured_at
+    )
+    return _evidence_audit_transition_intent(
+        head=head,
+        next_head=next_head,
+        objects=(snapshot, high_water),
+        audit_window={
+            "stage": "PIN",
+            "snapshot": snapshot.pointer,
+            "high_water": high_water.pointer,
+        },
+        evidence_inputs=evidence_inputs,
+    )
+
+
+def _plan_evidence_occurrence_transition_core(
+    *,
+    root: Path,
+    head: Mapping[str, Any],
+    evidence_inputs: EvidenceInputs,
+    clock: Callable[[], datetime],
+    row_limit: int = 64,
+) -> CyclePlan:
+    """Advance one bounded, non-consumable producer-occurrence audit step."""
+
+    if not 1 <= row_limit <= 128:
+        _fail("selector occurrence replay row bound is malformed")
+    if evidence_inputs.mark_root is None or evidence_inputs.lifecycle_root is None:
+        _fail("selector occurrence replay requires producer roots")
+    if head.get("evidence_high_water") is None:
+        _fail("selector occurrence replay lacks a pinned high-water")
+    mark_root = Path(evidence_inputs.mark_root).expanduser()
+    lifecycle_root = Path(evidence_inputs.lifecycle_root).expanduser()
+    high = _load_evidence_high_water(root, head["evidence_high_water"])
+    prior_high = (
+        None
+        if high["previous_complete"] is None
+        else _load_evidence_high_water(root, high["previous_complete"])
+    )
+    inherited_chunks: Sequence[Mapping[str, Any]] = (
+        () if prior_high is None else tuple(prior_high["ledger_chunks"])
+    )
+    snapshot = _load_pointer(
+        root, high["snapshot"], label="selector occurrence source snapshot"
+    )
+    snapshot = validate_runtime_object(
+        snapshot, label="selector occurrence source snapshot"
+    )
+    target = snapshot["lifecycle_state"]
+    advanced = _aware_utc(clock(), label="selector occurrence replay clock")
+    if advanced < _utc(head["advanced_at"], label="selector occurrence parent clock"):
+        _fail("selector occurrence replay clock moved backward")
+    advanced_at = utc_text(advanced)
+
+    def finish(
+        next_high: PlannedObject,
+        objects: Sequence[PlannedObject],
+        *,
+        stage: str,
+    ) -> CyclePlan:
+        next_head = _evidence_audit_head(
+            head=head, high_water=next_high, advanced_at=advanced_at
+        )
+        return _evidence_audit_transition_intent(
+            head=head,
+            next_head=next_head,
+            objects=(*objects, next_high),
+            audit_window={
+                "stage": stage,
+                "prior_high_water": copy.deepcopy(head["evidence_high_water"]),
+                "next_high_water": next_high.pointer,
+                "row_limit": row_limit,
+            },
+            evidence_inputs=evidence_inputs,
+        )
+
+    if high["phase"] == "AUDIT_PINNED":
+        if high["occurrence_stage"] != "LEDGER_CAPTURE":
+            _fail("selector pinned occurrence stage drifted")
+        receipt = snapshot["live_ledger_receipt"]
+        first_byte = int(high["ledger_capture_bytes"])
+        if first_byte == int(receipt["bytes"]):
+            next_high = _replay_high_water_object(
+                high,
+                phase="AUDIT_OCCURRENCES",
+                occurrence_stage="LIVE_MARK_BACKWALK",
+            )
+            return finish(
+                next_high, (), stage="OCCURRENCE_LEDGER_CAPTURE"
+            )
+        replace_tail = first_byte % EVIDENCE_LEDGER_CHUNK_BYTES != 0
+        chunk_first = (
+            first_byte - (first_byte % EVIDENCE_LEDGER_CHUNK_BYTES)
+            if replace_tail
+            else first_byte
+        )
+        last_byte = min(
+            int(receipt["bytes"]), chunk_first + EVIDENCE_LEDGER_CHUNK_BYTES
+        )
+        raw = _read_pinned_ledger_slice(
+            lifecycle_root, first_byte=chunk_first, last_byte=last_byte
+        )
+        chunk = _make_evidence_ledger_chunk(
+            snapshot=high["snapshot"],
+            ordinal=(len(high["ledger_chunks"]) if replace_tail else len(high["ledger_chunks"]) + 1),
+            first_byte=chunk_first,
+            raw=raw,
+        )
+        chunks = (
+            [*high["ledger_chunks"][:-1], chunk.pointer]
+            if replace_tail
+            else [*high["ledger_chunks"], chunk.pointer]
+        )
+        next_high = _replay_high_water_object(
+            high,
+            phase="AUDIT_OCCURRENCES",
+            ledger_chunks=chunks,
+            ledger_capture_bytes=last_byte,
+        )
+        return finish(
+            next_high, (chunk,), stage="OCCURRENCE_LEDGER_CAPTURE"
+        )
+
+    if high["phase"] not in {"AUDIT_OCCURRENCES", "COMPLETE"}:
+        _fail("selector occurrence replay phase is unsupported")
+    if high["phase"] == "COMPLETE":
+        _fail("selector occurrence replay is already complete")
+    stage = high["occurrence_stage"]
+    if stage == "LEDGER_CAPTURE":
+        receipt = snapshot["live_ledger_receipt"]
+        first_byte = high["ledger_capture_bytes"]
+        if first_byte < int(receipt["bytes"]):
+            replace_tail = first_byte % EVIDENCE_LEDGER_CHUNK_BYTES != 0
+            chunk_first = (
+                first_byte - (first_byte % EVIDENCE_LEDGER_CHUNK_BYTES)
+                if replace_tail
+                else first_byte
+            )
+            last_byte = min(
+                int(receipt["bytes"]), chunk_first + EVIDENCE_LEDGER_CHUNK_BYTES
+            )
+            raw = _read_pinned_ledger_slice(
+                lifecycle_root, first_byte=chunk_first, last_byte=last_byte
+            )
+            chunk = _make_evidence_ledger_chunk(
+                snapshot=high["snapshot"],
+                ordinal=(len(high["ledger_chunks"]) if replace_tail else len(high["ledger_chunks"]) + 1),
+                first_byte=chunk_first,
+                raw=raw,
+            )
+            chunks = (
+                [*high["ledger_chunks"][:-1], chunk.pointer]
+                if replace_tail
+                else [*high["ledger_chunks"], chunk.pointer]
+            )
+            next_high = _replay_high_water_object(
+                high,
+                ledger_chunks=chunks,
+                ledger_capture_bytes=last_byte,
+            )
+            return finish(
+                next_high, (chunk,), stage="OCCURRENCE_LEDGER_CAPTURE"
+            )
+        _authenticate_captured_ledger(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            receipt=receipt,
+        )
+        next_high = _replay_high_water_object(
+            high,
+            occurrence_stage="LIVE_MARK_BACKWALK",
+        )
+        return finish(
+            next_high, (), stage="OCCURRENCE_LEDGER_CAPTURE"
+        )
+
+    if stage == "LIVE_MARK_BACKWALK":
+        pointer = high["live_mark_scan_cursor"]
+        count = high["live_mark_reverse_ordinal"]
+        entries: list[tuple[Any, Any]] = []
+        for _ in range(row_limit):
+            if pointer == target["mark_cursor"]:
+                break
+            if pointer is None:
+                _fail("selector live mark head forked before the pinned cursor")
+            observation = _load_frozen_mark_observation(mark_root, pointer)
+            count += 1
+            entries.append((["live", "reverse", count], copy.deepcopy(pointer)))
+            previous = observation.get("previous")
+            pointer = (
+                None
+                if previous is None
+                else mark_chain._validate_pointer(previous)
+            )
+        mark_index, nodes = _evidence_auth_nodes(
+            root,
+            prior=high["mark_seen_index"],
+            domain=EVIDENCE_MARK_SEEN_DOMAIN,
+            entries=entries,
+        )
+        done = pointer == target["mark_cursor"]
+        if done:
+            _load_frozen_mark_observation(mark_root, target["mark_cursor"])
+        next_high = _replay_high_water_object(
+            high,
+            mark_seen_index=mark_index,
+            live_mark_scan_cursor=(
+                copy.deepcopy(target["mark_cursor"]) if done else pointer
+            ),
+            live_mark_reverse_ordinal=count,
+            occurrence_stage=(
+                (
+                    "EDGE_INIT"
+                    if done and prior_high is not None
+                    else "COLD_ACTIVATION"
+                    if done
+                    else "LIVE_MARK_BACKWALK"
+                )
+            ),
+        )
+        return finish(
+            next_high, nodes, stage="OCCURRENCE_LIVE_MARK_BACKWALK"
+        )
+
+    if stage == "COLD_ACTIVATION":
+        _authenticate_captured_ledger(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            receipt=snapshot["live_ledger_receipt"],
+        )
+        boundary = lifecycle._validate_activation_boundary(
+            snapshot["activation_boundary"]
+        )
+        active_sources = _ACTIVE_EVIDENCE_SOURCES.get()
+        if active_sources is None:
+            _fail("selector occurrence activation lacks anchored sources")
+        if _read_anchored_activation_boundary(active_sources.lifecycle) != boundary:
+            _fail("selector captured activation boundary drifted before replay")
+        activation_prefix = _captured_ledger_range(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            first_byte=0,
+            last_byte=int(boundary["ledger_boundary"]["bytes"]),
+        )
+        if _sha256(activation_prefix) != boundary["ledger_boundary"]["sha256"]:
+            _fail("selector activation ledger boundary drifted")
+        mark = _load_frozen_mark_observation(mark_root, boundary["mark_boundary"])
+        activation_event = _frozen_activation_event(boundary, mark)
+        if (
+            lifecycle._event_pointer(activation_event) != target["activation"]
+            or _load_frozen_lifecycle_event(lifecycle_root, target["activation"])
+            != activation_event
+        ):
+            _fail("selector activation event is not its exact frozen occurrence")
+        activation_state = lifecycle._make_state(
+            activation=target["activation"],
+            lifecycle_head=target["activation"],
+            mark_cursor=boundary["mark_boundary"],
+            ledger_cursor=boundary["ledger_boundary"],
+            enrollments={}, terminals={}, latest_marks={},
+        )
+        replay = _make_evidence_replay_state(
+            snapshot=high["snapshot"], state=activation_state
+        )
+        activation_receipt = _activation_boundary_receipt(boundary)
+        boundary_index, auth_nodes = _evidence_auth_nodes(
+            root,
+            prior=high["boundary_index"],
+            domain=EVIDENCE_BOUNDARY_DOMAIN,
+            entries=(([
+                "activation", boundary["boundary_id"]
+            ], activation_receipt),),
+        )
+        next_high = _replay_high_water_object(
+            high,
+            occurrence_stage="LEDGER_ROWS",
+            current_boundary=activation_receipt,
+            boundary_index=boundary_index,
+            ledger_replay_rows=0,
+            ledger_replay_bytes=0,
+            **_replay_state_fields(replay),
+        )
+        return finish(
+            next_high, (*auth_nodes, replay), stage="OCCURRENCE_ACTIVATION"
+        )
+
+    replay_value = validate_runtime_object(
+        _load_pointer(
+            root, high["replay_state"], label="selector evidence replay state"
+        ),
+        label="selector evidence replay state",
+    )
+    state = copy.deepcopy(replay_value["state"])
+
+    if stage == "LEDGER_ROWS":
+        if high["current_boundary"] is None:
+            _fail("selector occurrence ledger stage lacks its boundary")
+        receipt = high["current_boundary"]["ledger_boundary"]
+        byte_cursor, selected = _captured_ledger_rows(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            byte_cursor=high["ledger_replay_bytes"],
+            row_cursor=high["ledger_replay_rows"],
+            boundary=receipt,
+            row_limit=row_limit,
+        )
+        entries: list[tuple[Any, Any]] = []
+        seen_plans: set[str] = set()
+        for ordinal, row in selected:
+            binding = _ledger_row_binding(row, ordinal)
+            if binding["plan_id"] in seen_plans or _ledger_plan_binding(
+                root, high["ledger_row_index"], binding["plan_id"]
+            ) is not None:
+                _fail("selector captured ledger repeats a plan id")
+            seen_plans.add(binding["plan_id"])
+            entries.extend(
+                ((["plan", binding["plan_id"]], binding), (["ordinal", ordinal], binding))
+            )
+        ledger_index, nodes = _evidence_auth_nodes(
+            root,
+            prior=high["ledger_row_index"],
+            domain=EVIDENCE_LEDGER_ROW_DOMAIN,
+            entries=entries,
+        )
+        next_cursor = high["ledger_replay_rows"] + len(selected)
+        done = byte_cursor == int(receipt["bytes"])
+        if done and next_cursor != int(receipt["row_count"]):
+            _fail("selector activation ledger row count drifted")
+        updates: dict[str, Any] = {
+            "ledger_row_index": ledger_index,
+            "ledger_row_count": next_cursor,
+            "ledger_replay_rows": next_cursor,
+            "ledger_replay_bytes": byte_cursor,
+        }
+        if done:
+            if high["current_boundary"]["kind"] == "activation":
+                updates["current_boundary"] = None
+                updates["occurrence_stage"] = "EDGE_INIT"
+            else:
+                updates.update(
+                    occurrence_stage="EDGE_MARK_BACKWALK",
+                    boundary_mark_cursor=copy.deepcopy(
+                        high["current_boundary"]["mark_boundary"]
+                    ),
+                    boundary_mark_ordinal=0,
+                    boundary_mark_row_cursor=0,
+                )
+        next_high = _replay_high_water_object(high, **updates)
+        return finish(next_high, nodes, stage="OCCURRENCE_LEDGER_ROWS")
+
+    if stage == "EDGE_INIT":
+        # The target equality check precedes the boundary lookup deliberately:
+        # a producer crash may leave an outgoing orphan edge after current.json.
+        if state["state_id"] == target["state_id"]:
+            if state != target:
+                _fail("selector replay target state identity collided")
+            if (
+                high["ledger_capture_bytes"]
+                != int(snapshot["live_ledger_receipt"]["bytes"])
+                or high["ledger_replay_bytes"]
+                != int(target["ledger_cursor"]["bytes"])
+                or high["ledger_replay_rows"]
+                != int(target["ledger_cursor"]["row_count"])
+                or high["live_mark_scan_cursor"] != target["mark_cursor"]
+                or high["current_boundary"] is not None
+                or any(
+                    high[field] is not None
+                    for field in (
+                        "base_state_id",
+                        "base_lifecycle_head",
+                        "base_mark_cursor",
+                        "base_ledger_cursor",
+                        "boundary_mark_cursor",
+                    )
+                )
+                or any(
+                    high[field] != 0
+                    for field in (
+                        "boundary_mark_row_cursor",
+                        "boundary_mark_ordinal",
+                        "boundary_ledger_row_cursor",
+                        "boundary_ledger_byte_cursor",
+                        "boundary_event_cursor",
+                        "boundary_terminal_cursor",
+                    )
+                )
+            ):
+                _fail("selector occurrence target is not completely replayed")
+            next_high = _replay_high_water_object(
+                high, phase="COMPLETE", occurrence_stage="DONE"
+            )
+            return finish(next_high, (), stage="OCCURRENCE_COMPLETE")
+        boundary, receipt = _load_exact_advance_boundary(
+            lifecycle_root, state["state_id"]
+        )
+        mark = _load_frozen_mark_observation(mark_root, boundary["mark_boundary"])
+        if mark.get("observed_at_utc") != boundary["mark_boundary_observed_at_utc"]:
+            _fail("selector replay advance mark clock drifted")
+        ledger_receipt = boundary["ledger_boundary"]
+        if (
+            int(ledger_receipt["bytes"])
+            > int(target["ledger_cursor"]["bytes"])
+            or int(ledger_receipt["row_count"])
+            > int(target["ledger_cursor"]["row_count"])
+        ):
+            _fail("selector replay advance boundary passed its pinned target")
+        boundary_prefix = _captured_ledger_range(
+            root,
+            high["ledger_chunks"],
+            snapshot=high["snapshot"],
+            inherited_pointers=inherited_chunks,
+            first_byte=0,
+            last_byte=int(ledger_receipt["bytes"]),
+        )
+        base_prefix = boundary_prefix[: int(state["ledger_cursor"]["bytes"])]
+        if (
+            int(ledger_receipt["bytes"]) < int(state["ledger_cursor"]["bytes"])
+            or int(ledger_receipt["row_count"])
+            < int(state["ledger_cursor"]["row_count"])
+            or _sha256(boundary_prefix) != ledger_receipt["sha256"]
+            or _sha256(base_prefix) != state["ledger_cursor"]["sha256"]
+            or (
+                base_prefix
+                and not base_prefix.endswith(b"\n")
+            )
+        ):
+            _fail("selector replay advance ledger moved backward")
+        boundary_index, nodes = _evidence_auth_nodes(
+            root,
+            prior=high["boundary_index"],
+            domain=EVIDENCE_BOUNDARY_DOMAIN,
+            entries=(([
+                "advance", boundary["base_state_id"]
+            ], receipt),),
+        )
+        next_high = _replay_high_water_object(
+            high,
+            occurrence_stage="LEDGER_ROWS",
+            current_boundary=receipt,
+            boundary_index=boundary_index,
+            base_state_id=state["state_id"],
+            base_lifecycle_head=copy.deepcopy(state["lifecycle_head"]),
+            base_mark_cursor=copy.deepcopy(state["mark_cursor"]),
+            base_ledger_cursor=copy.deepcopy(state["ledger_cursor"]),
+            boundary_mark_cursor=None,
+            boundary_mark_ordinal=0,
+            boundary_mark_row_cursor=0,
+            boundary_event_cursor=0,
+            boundary_terminal_cursor=0,
+        )
+        return finish(next_high, nodes, stage="OCCURRENCE_EDGE_INIT")
+
+    if high["current_boundary"] is None:
+        _fail("selector occurrence edge stage lacks its boundary")
+    boundary = _load_boundary_from_receipt(
+        lifecycle_root, high["current_boundary"]
+    )
+    if boundary["base_state_id"] != high["base_state_id"]:
+        _fail("selector occurrence edge escaped its base state")
+
+    if stage == "EDGE_MARK_BACKWALK":
+        pointer = high["boundary_mark_cursor"]
+        count = high["boundary_mark_ordinal"]
+        entries: list[tuple[Any, Any]] = []
+        for _ in range(128):
+            if pointer == high["base_mark_cursor"]:
+                break
+            if pointer is None:
+                _fail("selector occurrence mark boundary forked before its base")
+            observation = _load_frozen_mark_observation(mark_root, pointer)
+            count += 1
+            entries.append(
+                (
+                    ["boundary", boundary["boundary_id"], "reverse", count],
+                    copy.deepcopy(pointer),
+                )
+            )
+            previous = observation.get("previous")
+            pointer = (
+                None
+                if previous is None
+                else mark_chain._validate_pointer(previous)
+            )
+        mark_index, nodes = _evidence_auth_nodes(
+            root,
+            prior=high["mark_seen_index"],
+            domain=EVIDENCE_MARK_SEEN_DOMAIN,
+            entries=entries,
+        )
+        done = pointer == high["base_mark_cursor"]
+        if done:
+            _load_frozen_mark_observation(mark_root, high["base_mark_cursor"])
+        oldest_pointer = None if count == 0 else (
+            copy.deepcopy(entries[-1][1])
+            if entries
+            else _boundary_mark_pointer(
+                root,
+                high["mark_seen_index"],
+                boundary["boundary_id"],
+                count,
+            )
+        )
+        next_high = _replay_high_water_object(
+            high,
+            mark_seen_index=mark_index,
+            occurrence_stage=(
+                "EDGE_MARK_ROWS" if done else "EDGE_MARK_BACKWALK"
+            ),
+            boundary_mark_cursor=(
+                oldest_pointer if done else pointer
+            ),
+            boundary_mark_ordinal=count,
+            boundary_mark_row_cursor=0,
+        )
+        return finish(
+            next_high, nodes, stage="OCCURRENCE_EDGE_MARK_BACKWALK"
+        )
+
+    if stage == "EDGE_MARK_ROWS":
+        enrollments = copy.deepcopy(state["enrollments"])
+        terminals = copy.deepcopy(state["terminals"])
+        latest = copy.deepcopy(state["latest_marks"])
+        lifecycle_head = copy.deepcopy(state["lifecycle_head"])
+        event_cursor = high["boundary_event_cursor"]
+        generated_entries: list[tuple[Any, Any]] = []
+        current_pointer = high["boundary_mark_cursor"]
+        mark_ordinal = high["boundary_mark_ordinal"]
+        remaining = row_limit
+        row_cursor = high["boundary_mark_row_cursor"]
+        while mark_ordinal > 0 and remaining:
+            if current_pointer is None:
+                _fail("selector occurrence mark row cursor is absent")
+            mark_pointer = _boundary_mark_pointer(
+                root,
+                high["mark_seen_index"],
+                boundary["boundary_id"],
+                mark_ordinal,
+            )
+            if mark_pointer != current_pointer:
+                _fail("selector occurrence mark row cursor escaped its index")
+            observation = _load_frozen_mark_observation(mark_root, mark_pointer)
+            raw_rows = observation.get("rows")
+            if not isinstance(raw_rows, list) or any(
+                not isinstance(item, Mapping) for item in raw_rows
+            ):
+                _fail("selector occurrence mark rows are malformed")
+            ordered_rows = sorted(
+                (dict(item) for item in raw_rows),
+                key=lambda item: str((item.get("plan") or {}).get("id") or ""),
+            )
+            if row_cursor > len(ordered_rows):
+                _fail("selector occurrence mark row cursor moved past its object")
+            take = min(remaining, len(ordered_rows) - row_cursor)
+            for row in ordered_rows[row_cursor : row_cursor + take]:
+                plan = row.get("plan")
+                contract = row.get("contract")
+                if not isinstance(plan, Mapping):
+                    _fail("selector occurrence mark plan is malformed")
+                plan_id = str(plan.get("id") or "")
+                if not plan_id:
+                    _fail("selector occurrence mark plan id is missing")
+                if plan_id in terminals:
+                    continue
+                identity_matches = True
+                if plan_id in enrollments:
+                    enrolled = _load_frozen_lifecycle_event(
+                        lifecycle_root, enrollments[plan_id]
+                    )
+                    identity_matches = lifecycle._stable_plan_identity(plan) == (
+                        lifecycle._stable_plan_identity(enrolled["payload"]["plan"])
+                    )
+                    if plan_id not in latest:
+                        _fail("selector occurrence open enrollment lacks latest state")
+                    if not identity_matches:
+                        latest[plan_id]["plan_identity_drift"] = True
+                    if isinstance(contract, Mapping) and dict(contract) != enrolled[
+                        "payload"
+                    ]["contract"]:
+                        latest[plan_id]["contract_drift"] = True
+                closed = _ledger_plan_binding(
+                    root, high["ledger_row_index"], plan_id
+                )
+                close_date = (
+                    None
+                    if closed is None
+                    or closed["ordinal"]
+                    <= int(high["base_ledger_cursor"]["row_count"])
+                    else closed["close_date"]
+                )
+                eligible = (
+                    (plan_id in enrollments or closed is None)
+                    and identity_matches
+                    and (
+                        close_date is None
+                        or str(observation["session_date"]) <= close_date
+                    )
+                    and plan.get("phase") in lifecycle.POST_TRIGGER_PHASES
+                    and row.get("quote_status") == "available"
+                    and isinstance(row.get("quote"), Mapping)
+                    and isinstance(contract, Mapping)
+                )
+                if not eligible:
+                    continue
+                if plan_id not in enrollments:
+                    event = _frozen_enrollment_event(
+                        row=row,
+                        mark_pointer=mark_pointer,
+                        observation=observation,
+                        previous=lifecycle_head,
+                    )
+                    _replay_actual_event(
+                        lifecycle_root, boundary, event_cursor, event
+                    )
+                    event_pointer = lifecycle._event_pointer(event)
+                    event_cursor += 1
+                    lifecycle_head = event_pointer
+                    enrollments[plan_id] = event_pointer
+                    generated_entries.append(
+                        (
+                            ["boundary", boundary["boundary_id"], "enrollment", plan_id],
+                            event_pointer,
+                        )
+                    )
+                    latest[plan_id] = {
+                        "contract_occ_symbol": contract["occ_symbol"],
+                        "contract_drift": False,
+                        "plan_identity_drift": False,
+                        "sessions": {},
+                    }
+                enrolled = _load_frozen_lifecycle_event(
+                    lifecycle_root, enrollments[plan_id]
+                )
+                if dict(contract) != enrolled["payload"]["contract"]:
+                    latest[plan_id]["contract_drift"] = True
+                    continue
+                latest[plan_id]["sessions"][str(observation["session_date"])] = (
+                    copy.deepcopy(mark_pointer)
+                )
+            remaining -= take
+            row_cursor += take
+            if row_cursor == len(ordered_rows):
+                mark_ordinal -= 1
+                row_cursor = 0
+                current_pointer = (
+                    None
+                    if mark_ordinal == 0
+                    else _boundary_mark_pointer(
+                        root,
+                        high["mark_seen_index"],
+                        boundary["boundary_id"],
+                        mark_ordinal,
+                    )
+                )
+            elif take == 0:
+                _fail("selector occurrence mark replay made no progress")
+        intermediate = lifecycle._make_state(
+            activation=state["activation"],
+            lifecycle_head=lifecycle_head,
+            mark_cursor=high["base_mark_cursor"],
+            ledger_cursor=high["base_ledger_cursor"],
+            enrollments=enrollments,
+            terminals=terminals,
+            latest_marks=latest,
+        )
+        replay = _make_evidence_replay_state(
+            snapshot=high["snapshot"], state=intermediate
+        )
+        enrollment_index, enrollment_nodes = _evidence_auth_nodes(
+            root,
+            prior=high["event_enrollment_index"],
+            domain=EVIDENCE_EVENT_ENROLLMENT_DOMAIN,
+            entries=generated_entries,
+        )
+        done = mark_ordinal == 0
+        next_high = _replay_high_water_object(
+            high,
+            occurrence_stage=(
+                "EDGE_TERMINALS" if done else "EDGE_MARK_ROWS"
+            ),
+            boundary_mark_cursor=(None if done else current_pointer),
+            boundary_mark_ordinal=mark_ordinal,
+            boundary_mark_row_cursor=row_cursor,
+            boundary_event_cursor=event_cursor,
+            event_enrollment_index=enrollment_index,
+            **_replay_state_fields(replay),
+        )
+        return finish(
+            next_high,
+            (*enrollment_nodes, replay),
+            stage="OCCURRENCE_EDGE_MARK_ROWS",
+        )
+
+    if stage == "EDGE_TERMINALS":
+        enrollments = copy.deepcopy(state["enrollments"])
+        terminals = copy.deepcopy(state["terminals"])
+        latest = copy.deepcopy(state["latest_marks"])
+        lifecycle_head = copy.deepcopy(state["lifecycle_head"])
+        event_cursor = high["boundary_event_cursor"]
+        delta_count = int(boundary["ledger_boundary"]["row_count"]) - int(
+            high["base_ledger_cursor"]["row_count"]
+        )
+        terminal_cursor = high["boundary_terminal_cursor"]
+        for offset in range(
+            terminal_cursor, min(delta_count, terminal_cursor + row_limit)
+        ):
+            ordinal = int(high["base_ledger_cursor"]["row_count"]) + offset + 1
+            binding = _ledger_ordinal_binding(
+                root, high["ledger_row_index"], ordinal
+            )
+            plan_id = binding["plan_id"]
+            generated = _evidence_auth_lookup(
+                root,
+                high["event_enrollment_index"],
+                domain=EVIDENCE_EVENT_ENROLLMENT_DOMAIN,
+                logical_key=[
+                    "boundary", boundary["boundary_id"], "enrollment", plan_id
+                ],
+            )
+            if (
+                plan_id not in enrollments
+                or generated.found
+                or plan_id in terminals
+            ):
+                continue
+            if plan_id not in latest:
+                _fail("selector occurrence durable enrollment lacks latest state")
+            event = _frozen_terminal_event(
+                lifecycle_root=lifecycle_root,
+                mark_root=mark_root,
+                plan_id=plan_id,
+                ledger_row=binding,
+                ledger_row_ordinal=ordinal,
+                ledger_receipt=boundary["ledger_boundary"],
+                enrollment_pointer=enrollments[plan_id],
+                mark_chain_head=boundary["mark_boundary"],
+                latest_state=latest[plan_id],
+                previous=lifecycle_head,
+                row_semantic_sha256=binding["row_semantic_sha256"],
+            )
+            _replay_actual_event(lifecycle_root, boundary, event_cursor, event)
+            pointer = lifecycle._event_pointer(event)
+            event_cursor += 1
+            lifecycle_head = pointer
+            terminals[plan_id] = pointer
+            latest.pop(plan_id)
+        next_terminal = min(delta_count, terminal_cursor + row_limit)
+        done = next_terminal == delta_count
+        intermediate = lifecycle._make_state(
+            activation=state["activation"],
+            lifecycle_head=lifecycle_head,
+            mark_cursor=high["base_mark_cursor"],
+            ledger_cursor=high["base_ledger_cursor"],
+            enrollments=enrollments,
+            terminals=terminals,
+            latest_marks=latest,
+        )
+        replay = _make_evidence_replay_state(
+            snapshot=high["snapshot"], state=intermediate
+        )
+        next_high = _replay_high_water_object(
+            high,
+            **_replay_state_fields(replay),
+            occurrence_stage=(
+                "EDGE_FINALIZE" if done else "EDGE_TERMINALS"
+            ),
+            boundary_event_cursor=event_cursor,
+            boundary_terminal_cursor=next_terminal,
+        )
+        return finish(
+            next_high, (replay,), stage="OCCURRENCE_EDGE_TERMINALS"
+        )
+
+    if stage == "EDGE_FINALIZE":
+        if high["boundary_terminal_cursor"] != (
+            int(boundary["ledger_boundary"]["row_count"])
+            - int(high["base_ledger_cursor"]["row_count"])
+        ):
+            _fail("selector occurrence terminal cursor skipped its edge")
+        if high["boundary_event_cursor"] != len(boundary["event_pointers"]):
+            _fail("selector occurrence boundary omitted or added lifecycle events")
+        if state["lifecycle_head"] != boundary["candidate_lifecycle_head"]:
+            _fail("selector occurrence boundary lifecycle head drifted")
+        candidate = lifecycle._make_state(
+            activation=state["activation"],
+            lifecycle_head=state["lifecycle_head"],
+            mark_cursor=boundary["mark_boundary"],
+            ledger_cursor=boundary["ledger_boundary"],
+            enrollments=state["enrollments"],
+            terminals=state["terminals"],
+            latest_marks=state["latest_marks"],
+        )
+        if candidate["state_id"] != boundary["candidate_state_id"]:
+            _fail("selector occurrence boundary candidate state drifted")
+        replay = _make_evidence_replay_state(
+            snapshot=high["snapshot"], state=candidate
+        )
+        next_high = _replay_high_water_object(
+            high,
+            **_replay_state_fields(replay),
+            occurrence_stage="EDGE_INIT",
+            current_boundary=None,
+            base_state_id=None,
+            base_lifecycle_head=None,
+            base_mark_cursor=None,
+            base_ledger_cursor=None,
+            boundary_mark_cursor=None,
+            boundary_mark_ordinal=0,
+            boundary_mark_row_cursor=0,
+            boundary_ledger_row_cursor=0,
+            boundary_ledger_byte_cursor=0,
+            boundary_event_cursor=0,
+            boundary_terminal_cursor=0,
+        )
+        return finish(
+            next_high, (replay,), stage="OCCURRENCE_EDGE_FINALIZE"
+        )
+
+    _fail("selector occurrence edge stage is unsupported")
+
+
+def _plan_evidence_occurrence_transition(
+    *,
+    root: Path,
+    head: Mapping[str, Any],
+    evidence_inputs: EvidenceInputs,
+    clock: Callable[[], datetime],
+    row_limit: int = 64,
+) -> CyclePlan:
+    """Plan one occurrence step with every producer read rooted in locked dirfds."""
+
+    if evidence_inputs.mark_root is None or evidence_inputs.lifecycle_root is None:
+        _fail("selector occurrence replay requires producer roots")
+    mark_root = Path(evidence_inputs.mark_root).expanduser()
+    lifecycle_root = Path(evidence_inputs.lifecycle_root).expanduser()
+    with _selector_lane(root, create=False) as selector_lane:
+        with _anchored_evidence_sources(
+            mark_root, lifecycle_root, selector_lane=selector_lane
+        ) as sources:
+            if head.get("evidence_high_water") is None:
+                _fail("selector occurrence replay lacks a pinned high-water")
+            high = _load_evidence_high_water(root, head["evidence_high_water"])
+            snapshot = _load_pointer(
+                root, high["snapshot"], label="selector occurrence source snapshot"
+            )
+            snapshot = validate_runtime_object(
+                snapshot, label="selector occurrence source snapshot"
+            )
+            if snapshot["producer_roots"] != sources.producer_roots:
+                _fail("selector occurrence replay producer roots drifted")
+            token = _ACTIVE_EVIDENCE_SOURCES.set(sources)
+            try:
+                return _plan_evidence_occurrence_transition_core(
+                    root=root,
+                    head=head,
+                    evidence_inputs=evidence_inputs,
+                    clock=clock,
+                    row_limit=row_limit,
+                )
+            finally:
+                _ACTIVE_EVIDENCE_SOURCES.reset(token)
 
 
 def _merge_source_runs(
@@ -6728,6 +12264,7 @@ def _plan_cycle_once(
     admission_cap: int,
     settlement_cache: dict[str, Any],
     evidence_snapshot: EvidenceSnapshot | None = None,
+    _sealed_recovery: bool = False,
 ) -> CyclePlan:
     """Plan one exact transition without mutating the private store."""
 
@@ -6810,6 +12347,56 @@ def _plan_cycle_once(
     campaign_prefix = copy.deepcopy(dict(head["source_campaign_prefix"]))
     episode_prefix = copy.deepcopy(dict(head["source_episode_prefix"]))
     source_checkpoint = copy.deepcopy(dict(head["source_checkpoint"]))
+    producer_roots_present = (
+        evidence_inputs.mark_root is not None,
+        evidence_inputs.lifecycle_root is not None,
+    )
+    if producer_roots_present[0] is not producer_roots_present[1]:
+        _fail("selector evidence capture requires both producer roots")
+    if head["pending_manifest"] is not None and all(producer_roots_present):
+        high_pointer = head["evidence_high_water"]
+        if high_pointer is None:
+            return _plan_evidence_capture_transition(
+                root=private_root,
+                head=head,
+                evidence_inputs=evidence_inputs,
+                clock=clock,
+            )
+        high = _load_evidence_high_water(private_root, high_pointer)
+        if high["phase"] != "COMPLETE":
+            return _plan_evidence_occurrence_transition(
+                root=private_root,
+                head=head,
+                evidence_inputs=evidence_inputs,
+                clock=clock,
+            )
+        manifest = _load_pointer(
+            private_root, head["pending_manifest"], label="pending manifest"
+        )
+        snapshot = validate_runtime_object(
+            _load_pointer(
+                private_root,
+                high["snapshot"],
+                label="selector COMPLETE evidence snapshot",
+            ),
+            label="selector COMPLETE evidence snapshot",
+        )
+        if (
+            _utc(snapshot["captured_at"], label="evidence capture clock")
+            < _utc(manifest["frozen_at"], label="manifest freeze clock")
+            or (
+                not _sealed_recovery
+                and not _complete_evidence_is_live(
+                    private_root, high_pointer, evidence_inputs
+                )
+            )
+        ):
+            return _plan_evidence_capture_transition(
+                root=private_root,
+                head=head,
+                evidence_inputs=evidence_inputs,
+                clock=clock,
+            )
     previous_campaign_cursor_records = head["source_campaign_cursor_records"]
     ready_entries: list[Mapping[str, Any]] = []
     ready_runs: list[dict[str, Any]] = []
@@ -6915,6 +12502,9 @@ def _plan_cycle_once(
         None if head is None else head["proposal_session_date"]
     )
     proposal_session_count = 0 if head is None else head["proposal_session_count"]
+    w1a_publication_high_water = copy.deepcopy(
+        head["w1a_publication_high_water"]
+    )
     if head["pending_manifest"] is not None:
         settled_manifest_pointer = copy.deepcopy(head["pending_manifest"])
         if settlement_cache:
@@ -6942,6 +12532,7 @@ def _plan_cycle_once(
                 decision_count=decision_count_before,
                 proposal_session_date=proposal_session_date,
                 proposal_session_count=proposal_session_count,
+                evidence_session_date=scheduled.astimezone(ET).date().isoformat(),
                 clock=settlement_clock,
                 evidence_snapshot=evidence_snapshot,
             )
@@ -6962,6 +12553,18 @@ def _plan_cycle_once(
         ) = settlement
         for item in settled_objects:
             objects[item.key] = item
+        source_receipts = [
+            item.value
+            for item in settled_objects
+            if item.value.get("schema")
+            == "options.sparse_selector_w1a_source_receipt/v1"
+        ]
+        if len(source_receipts) > 1:
+            _fail("selector settlement repeats its W1A source receipt")
+        w1a_publication_high_water = _advance_w1a_high_water(
+            w1a_publication_high_water,
+            None if not source_receipts else source_receipts[0],
+        )
 
     new_candidate_objects: list[PlannedObject] = []
     pending_candidate_objects: list[PlannedObject] = []
@@ -7209,6 +12812,7 @@ def _plan_cycle_once(
         "source_ready_run": copy.deepcopy(ready_run_after),
         "source_ready_count": head["source_ready_count"],
         "source_ready_cursor": ready_cursor_after,
+        "evidence_high_water": copy.deepcopy(head["evidence_high_water"]),
         "pending_manifest": (
             None if manifest_object is None else manifest_object.pointer
         ),
@@ -7223,6 +12827,7 @@ def _plan_cycle_once(
         "decision_count": decision_count_after,
         "proposal_session_date": proposal_session_date,
         "proposal_session_count": proposal_session_count,
+        "w1a_publication_high_water": w1a_publication_high_water,
         "digests": dict(DIGESTS),
         "authority": dict(FALSE_AUTHORITY),
     }
@@ -7230,7 +12835,7 @@ def _plan_cycle_once(
     next_head = validate_runtime_object(next_head, label="selector HEAD")
 
     ordered_objects = tuple(objects[key] for key in sorted(objects))
-    if len(ordered_objects) > MAX_SOURCE_OBJECTS_PER_CYCLE:
+    if len(ordered_objects) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE:
         raise _AdvanceBoundExceeded(
             "selector advance transition exceeds its object cap"
         )
@@ -7246,19 +12851,15 @@ def _plan_cycle_once(
         "expected_candidate_index": candidate_index_before,
         "expected_last_decision": previous_decision,
         "expected_decision_count": decision_count_before,
-        "objects": [
-            {
-                "key": item.key,
-                "sha256": _sha256(item.body),
-                "bytes": len(item.body),
-                "value": item.value,
-            }
-            for item in ordered_objects
-        ],
+        "objects": [item.receipt for item in ordered_objects],
         "next_head": next_head,
     }
     intent["intent_sha256"] = _content_id("", intent, field="intent_sha256")
-    if len(canonical_bytes(intent)) > MAX_INTENT_BYTES:
+    if (
+        len(canonical_bytes(intent)) > MAX_SOURCE_INTENT_BYTES
+        or _transition_footprint_bytes(intent, ordered_objects)
+        > MAX_SOURCE_INTENT_BYTES
+    ):
         raise _AdvanceBoundExceeded(
             "selector advance intent exceeds its recovery bound"
         )
@@ -7455,6 +13056,8 @@ def _runtime_expected_state(head: Mapping[str, Any] | None) -> dict[str, Any]:
             "decision_count": 0,
             "proposal_session_date": None,
             "proposal_session_count": 0,
+            "w1a_publication_high_water": None,
+            "evidence_high_water": None,
         }
     return {
         "pending_manifest": copy.deepcopy(head["pending_manifest"]),
@@ -7469,6 +13072,10 @@ def _runtime_expected_state(head: Mapping[str, Any] | None) -> dict[str, Any]:
         "decision_count": head["decision_count"],
         "proposal_session_date": head["proposal_session_date"],
         "proposal_session_count": head["proposal_session_count"],
+        "w1a_publication_high_water": copy.deepcopy(
+            head["w1a_publication_high_water"]
+        ),
+        "evidence_high_water": copy.deepcopy(head["evidence_high_water"]),
     }
 
 
@@ -7528,12 +13135,368 @@ def _advance_replay_clock_values(
     return tuple(values)
 
 
-def _plan_from_intent(
+def _replay_largest_fitting_advance(
+    *,
+    root: Path,
+    source: SourceSnapshot,
+    evidence_inputs: EvidenceInputs,
+    scheduled_at: str,
+    replay_values: Sequence[datetime],
+    evidence_snapshot: EvidenceSnapshot | None,
+    _sealed_recovery: bool = False,
+) -> tuple[CyclePlan, int]:
+    """Replay the planner's exact max-first backoff, never a saved prefix cap."""
+
+    if not replay_values:
+        _fail("selector intent replay carries no authenticated clocks")
+    settlement_cache: dict[str, Any] = {}
+    admission_cap = MAX_CANDIDATES_PER_MANIFEST
+    while True:
+        replay_index = 0
+
+        def replay_clock() -> datetime:
+            nonlocal replay_index
+            # A terminal settlement-only plan does not retain the extra manifest
+            # freeze/completion sample consumed by a larger overflowing attempt.
+            # Repeating its authenticated completion is causal and cannot change
+            # object counts or canonical byte lengths, which are the only facts
+            # needed to prove that the larger prefix did not fit.
+            value = (
+                replay_values[replay_index]
+                if replay_index < len(replay_values)
+                else replay_values[-1]
+            )
+            replay_index += 1
+            return value
+
+        try:
+            plan = _plan_cycle_once(
+                root=root,
+                source=source,
+                evidence_inputs=evidence_inputs,
+                scheduled_at=scheduled_at,
+                clock=replay_clock,
+                runtime_armed=True,
+                admission_cap=admission_cap,
+                settlement_cache=settlement_cache,
+                evidence_snapshot=evidence_snapshot,
+                _sealed_recovery=_sealed_recovery,
+            )
+            return plan, replay_index
+        except _AdvanceBoundExceeded as exc:
+            if admission_cap == 0:
+                raise SparseSelectorError(
+                    "selector recovered settlement cannot fit its authenticated bounds"
+                ) from exc
+            if admission_cap == 1:
+                if settlement_cache:
+                    admission_cap = 0
+                    continue
+                raise SparseSelectorError(
+                    "selector recovered admission cannot fit one ordered candidate"
+                ) from exc
+            admission_cap = max(1, admission_cap // 2)
+
+
+def _planned_object_from_receipt(
+    root: Path,
+    receipt: object,
+    *,
+    label: str,
+) -> PlannedObject:
+    """Load one pre-staged immutable object from its exact compact receipt."""
+
+    if not isinstance(receipt, Mapping) or set(receipt) != {
+        "id",
+        "key",
+        "sha256",
+        "bytes",
+    }:
+        _fail(f"{label} receipt is malformed")
+    item_id = receipt.get("id")
+    key = receipt.get("key")
+    digest = receipt.get("sha256")
+    size = receipt.get("bytes")
+    if (
+        not isinstance(item_id, str)
+        or not item_id
+        or not isinstance(key, str)
+        or not isinstance(digest, str)
+        or _SHA256_RE.fullmatch(digest) is None
+        or type(size) is not int
+        or not 0 < size <= MAX_OBJECT_BYTES
+    ):
+        _fail(f"{label} receipt fields are malformed")
+    body = _read_private_file(
+        _object_path(root, key),
+        root=root,
+        limit=MAX_OBJECT_BYTES,
+        required=True,
+    )
+    if len(body) != size or _sha256(body) != digest:
+        _fail(f"{label} receipt differs from prestaged bytes")
+    value = strict_json(body, label=label)
+    if not isinstance(value, dict) or canonical_bytes(value) != body:
+        _fail(f"{label} object is not canonical JSON")
+    item = PlannedObject(key=key, value=value)
+    if item.receipt != dict(receipt):
+        _fail(f"{label} identity differs from its receipt")
+    return item
+
+
+def _plan_evidence_audit_from_intent(
     root: Path,
     intent: Mapping[str, Any],
     *,
     evidence_inputs: EvidenceInputs | None = None,
 ) -> CyclePlan:
+    expected_fields = {
+        "schema",
+        "intent_sha256",
+        "expected_head_id",
+        "expected_advanced_at",
+        "expected_source_state",
+        "expected_runtime_state",
+        "expected_evidence_high_water",
+        "audit_window",
+        "objects",
+        "next_head",
+    }
+    if set(intent) != expected_fields:
+        _fail("selector evidence audit intent fields are malformed")
+    clean = copy.deepcopy(dict(intent))
+    receipt_keys = (
+        [receipt.get("key") for receipt in clean["objects"]]
+        if isinstance(clean.get("objects"), list)
+        and all(isinstance(receipt, Mapping) for receipt in clean["objects"])
+        else []
+    )
+    if (
+        clean["schema"] != "options.sparse_selector_evidence_audit_intent/v1"
+        or clean["intent_sha256"]
+        != _content_id("", clean, field="intent_sha256")
+        or not isinstance(clean["objects"], list)
+        or len(clean["objects"]) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE
+        or len(canonical_bytes(clean)) > MAX_SOURCE_INTENT_BYTES
+        or len(receipt_keys) != len(clean["objects"])
+        or any(not isinstance(key, str) for key in receipt_keys)
+        or receipt_keys != sorted(receipt_keys)
+    ):
+        _fail("selector evidence audit intent identity or bounds drifted")
+    objects = tuple(
+        _planned_object_from_receipt(
+            root, receipt, label="selector evidence audit intent object"
+        )
+        for receipt in clean["objects"]
+    )
+    if _transition_footprint_bytes(clean, objects) > MAX_SOURCE_INTENT_BYTES:
+        _fail("selector evidence audit intent hides an oversized projection")
+    if len({item.key for item in objects}) != len(objects):
+        _fail("selector evidence audit intent repeats an object key")
+    for item in objects:
+        schema = item.value.get("schema")
+        if schema in {
+            "options.sparse_selector_evidence_source_snapshot/v1",
+            "options.sparse_selector_evidence_high_water/v1",
+            "options.sparse_selector_evidence_replay_state/v1",
+            "options.sparse_selector_evidence_ledger_chunk/v1",
+        }:
+            validate_runtime_object(item.value, label="selector evidence audit object")
+            expected_key = (
+                f"{EVIDENCE_AUDIT_NAMESPACE}/{object_identity(item.value)}.json"
+            )
+        elif schema == private_auth_dict.SCHEMA:
+            domain = item.value.get("domain")
+            if domain not in {
+                EVIDENCE_EVENT_SEEN_DOMAIN,
+                EVIDENCE_EVENT_ENROLLMENT_DOMAIN,
+                EVIDENCE_EVENT_TERMINAL_DOMAIN,
+                EVIDENCE_STATE_ENROLLMENT_DOMAIN,
+                EVIDENCE_STATE_TERMINAL_DOMAIN,
+                EVIDENCE_MARK_SEEN_DOMAIN,
+                EVIDENCE_STATE_LATEST_DOMAIN,
+                EVIDENCE_DERIVED_LATEST_DOMAIN,
+                EVIDENCE_LEDGER_ROW_DOMAIN,
+                EVIDENCE_LEDGER_TERMINAL_DOMAIN,
+                EVIDENCE_BOUNDARY_DOMAIN,
+            }:
+                _fail("selector evidence audit intent contains a foreign auth node")
+            private_auth_dict.validate_node(item.value, domain=domain)
+            expected_key = (
+                f"{private_auth_dict.NAMESPACE}/{item.value['node_id']}.json"
+            )
+        else:
+            _fail("selector evidence audit intent contains a foreign object")
+        if item.key != expected_key:
+            _fail("selector evidence audit object namespace drifted")
+
+    next_head = validate_runtime_object(
+        clean["next_head"], label="selector evidence audit next HEAD"
+    )
+    expected_head_id = clean["expected_head_id"]
+    prior = _load_head(root)
+    prior_id = None if prior is None else prior["head_id"]
+    if prior_id not in {expected_head_id, next_head["head_id"]}:
+        _fail("selector evidence audit intent parent drifted")
+    if expected_head_id is None:
+        _fail("selector evidence audit cannot initialize source state")
+    source_fields = set(_source_expected_state(next_head))
+    runtime_fields = set(_runtime_expected_state(next_head))
+    if (
+        not isinstance(clean["expected_source_state"], Mapping)
+        or set(clean["expected_source_state"]) != source_fields
+        or not isinstance(clean["expected_runtime_state"], Mapping)
+        or set(clean["expected_runtime_state"]) != runtime_fields
+        or clean["expected_evidence_high_water"]
+        != clean["expected_runtime_state"]["evidence_high_water"]
+        or not isinstance(clean["expected_advanced_at"], str)
+    ):
+        _fail("selector evidence audit parent state receipt is malformed")
+    if prior_id == expected_head_id and (
+        prior is None
+        or _source_expected_state(prior) != clean["expected_source_state"]
+        or _runtime_expected_state(prior) != clean["expected_runtime_state"]
+        or prior["advanced_at"] != clean["expected_advanced_at"]
+    ):
+        _fail("selector evidence audit live parent state drifted")
+    if _source_expected_state(next_head) != clean["expected_source_state"]:
+        _fail("selector evidence audit changed source state")
+    next_runtime = _runtime_expected_state(next_head)
+    for field in runtime_fields - {"evidence_high_water"}:
+        if next_runtime[field] != clean["expected_runtime_state"][field]:
+            _fail("selector evidence audit changed runtime state")
+    if (
+        next_head["previous_head_id"] != expected_head_id
+        or next_head["evidence_high_water"]
+        == clean["expected_evidence_high_water"]
+        or (
+            prior_id == expected_head_id
+            and prior is not None
+            and next_head["generation"] != prior["generation"] + 1
+        )
+    ):
+        _fail("selector evidence audit HEAD transition is not monotone")
+
+    window = clean["audit_window"]
+    if not isinstance(window, Mapping):
+        _fail("selector evidence audit recovery window is malformed")
+    if window.get("stage") != "PIN":
+        if (
+            not isinstance(window.get("stage"), str)
+            or not window["stage"].startswith("OCCURRENCE_")
+            or set(window)
+            != {"stage", "prior_high_water", "next_high_water", "row_limit"}
+            or window["prior_high_water"]
+            != clean["expected_evidence_high_water"]
+            or next_head["evidence_high_water"] != window["next_high_water"]
+            or type(window["row_limit"]) is not int
+            or not 1 <= window["row_limit"] <= 128
+        ):
+            _fail("selector occurrence recovery window is malformed")
+        high_waters = [
+            item
+            for item in objects
+            if item.value.get("schema")
+            == "options.sparse_selector_evidence_high_water/v1"
+        ]
+        if (
+            len(high_waters) != 1
+            or high_waters[0].pointer != window["next_high_water"]
+            or high_waters[0].value["snapshot"]
+            != _load_evidence_high_water(
+                root, window["prior_high_water"]
+            )["snapshot"]
+        ):
+            _fail("selector occurrence recovery high-water is not exact")
+        replay_inputs = evidence_inputs or EvidenceInputs()
+        if replay_inputs.mark_root is None or replay_inputs.lifecycle_root is None:
+            _fail("selector occurrence recovery lacks producer roots")
+        synthetic_parent = copy.deepcopy(next_head)
+        synthetic_parent.update(copy.deepcopy(clean["expected_source_state"]))
+        synthetic_parent.update(copy.deepcopy(clean["expected_runtime_state"]))
+        synthetic_parent.update(
+            {
+                "head_id": expected_head_id,
+                "generation": next_head["generation"] - 1,
+                "previous_head_id": None,
+                "advanced_at": clean["expected_advanced_at"],
+            }
+        )
+        exact = _plan_evidence_occurrence_transition(
+            root=root,
+            head=synthetic_parent,
+            evidence_inputs=replay_inputs,
+            clock=lambda: _utc(
+                next_head["advanced_at"], label="selector occurrence recovery clock"
+            ),
+            row_limit=window["row_limit"],
+        )
+        if (
+            exact.expected_head_id != expected_head_id
+            or exact.objects != objects
+            or exact.head != next_head
+            or exact.intent != clean
+        ):
+            _fail("selector occurrence recovery transition is not exact")
+        return exact
+    if set(window) != {"stage", "snapshot", "high_water"}:
+        _fail("selector evidence PIN window fields are malformed")
+    snapshots = [
+        item
+        for item in objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_source_snapshot/v1"
+    ]
+    high_waters = [
+        item
+        for item in objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_high_water/v1"
+    ]
+    if (
+        len(objects) != 2
+        or len(snapshots) != 1
+        or len(high_waters) != 1
+        or snapshots[0].pointer != window["snapshot"]
+        or high_waters[0].pointer != window["high_water"]
+        or high_waters[0].value["phase"] != "AUDIT_PINNED"
+        or high_waters[0].value["snapshot"] != snapshots[0].pointer
+        or snapshots[0].value["captured_at"] != next_head["advanced_at"]
+        or _utc(next_head["advanced_at"], label="evidence audit advance")
+        < _utc(clean["expected_advanced_at"], label="evidence audit parent")
+        or high_waters[0].value["previous_complete"]
+        != clean["expected_evidence_high_water"]
+        or next_head["evidence_high_water"] != high_waters[0].pointer
+    ):
+        _fail("selector evidence PIN transition is not exact")
+    previous = high_waters[0].value["previous_complete"]
+    if previous is not None:
+        prior_high_water = _load_evidence_high_water(root, previous)
+        if prior_high_water["phase"] != "COMPLETE":
+            _fail("selector evidence PIN parent is not a complete high-water")
+    return CyclePlan(
+        expected_head_id=expected_head_id,
+        objects=objects,
+        head=next_head,
+        intent=clean,
+    )
+
+
+def _plan_from_intent(
+    root: Path,
+    intent: Mapping[str, Any],
+    *,
+    evidence_inputs: EvidenceInputs | None = None,
+    _sealed_recovery: bool = False,
+) -> CyclePlan:
+    if (
+        isinstance(intent, Mapping)
+        and intent.get("schema")
+        == "options.sparse_selector_evidence_audit_intent/v1"
+    ):
+        return _plan_evidence_audit_from_intent(
+            root, intent, evidence_inputs=evidence_inputs
+        )
     if isinstance(intent, Mapping) and intent.get("schema") == "options.sparse_selector_source_intent/v1":
         expected_fields = {
             "schema",
@@ -7558,7 +13521,7 @@ def _plan_from_intent(
             _fail("selector source intent identity drifted")
         if (
             not isinstance(clean["objects"], list)
-            or len(clean["objects"]) > MAX_SOURCE_OBJECTS_PER_CYCLE
+            or len(clean["objects"]) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE
             or len(canonical_bytes(clean)) > MAX_SOURCE_INTENT_BYTES
         ):
             _fail("selector source recovery intent exceeds its bounds")
@@ -7566,16 +13529,9 @@ def _plan_from_intent(
         by_pointer_id: dict[str, PlannedObject] = {}
         object_keys: set[str] = set()
         for receipt in clean["objects"]:
-            if not isinstance(receipt, Mapping) or set(receipt) != {
-                "key",
-                "sha256",
-                "bytes",
-                "value",
-            }:
-                _fail("selector source intent object receipt is malformed")
-            item = PlannedObject(key=receipt["key"], value=receipt["value"])
-            if len(item.body) != receipt["bytes"] or _sha256(item.body) != receipt["sha256"]:
-                _fail("selector source intent object receipt drifted")
+            item = _planned_object_from_receipt(
+                root, receipt, label="selector source intent object"
+            )
             if item.value.get("schema") == "options.sparse_selector_source_seed/v1":
                 _validate_source_seed(item.value)
                 expected_key = f"{SOURCE_PROJECTION_NAMESPACE}/{item.value['seed_id']}.json"
@@ -8510,8 +14466,8 @@ def _plan_from_intent(
         _fail("selector advance intent identity drifted")
     if (
         not isinstance(clean["objects"], list)
-        or len(clean["objects"]) > MAX_SOURCE_OBJECTS_PER_CYCLE
-        or len(canonical_bytes(clean)) > MAX_INTENT_BYTES
+        or len(clean["objects"]) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE
+        or len(canonical_bytes(clean)) > MAX_SOURCE_INTENT_BYTES
     ):
         _fail("selector advance recovery intent exceeds its bounds")
     expected_head_id = clean["expected_head_id"]
@@ -8572,19 +14528,9 @@ def _plan_from_intent(
     if not isinstance(clean["objects"], list):
         _fail("selector intent object list is malformed")
     for receipt in clean["objects"]:
-        if not isinstance(receipt, Mapping) or set(receipt) != {
-            "key",
-            "sha256",
-            "bytes",
-            "value",
-        }:
-            _fail("selector intent object receipt is malformed")
-        item = PlannedObject(key=receipt["key"], value=receipt["value"])
-        if (
-            len(item.body) != receipt["bytes"]
-            or _sha256(item.body) != receipt["sha256"]
-        ):
-            _fail("selector intent object receipt differs from its value")
+        item = _planned_object_from_receipt(
+            root, receipt, label="selector advance intent object"
+        )
         schema = item.value.get("schema")
         if schema == "options.sparse_selector_candidate/v1":
             expected_key = f"candidates/{item.value.get('candidate_id')}.json"
@@ -8607,6 +14553,13 @@ def _plan_from_intent(
                 _fail("selector advance intent evidence generation exceeds its envelope")
             validate_runtime_object(
                 item.value, label="selector advance intent evidence generation"
+            )
+            expected_key = f"evidence/{_sha256(item.body)}.json"
+        elif schema == "options.sparse_selector_w1a_source_receipt/v1":
+            if len(item.body) > MAX_W1A_SOURCE_RECEIPT_BYTES:
+                _fail("selector advance intent W1A source exceeds its compact bound")
+            validate_runtime_object(
+                item.value, label="selector advance intent W1A source receipt"
             )
             expected_key = f"evidence/{_sha256(item.body)}.json"
         elif schema in {
@@ -8849,6 +14802,8 @@ def _plan_from_intent(
         decision_predecessor = pointer
 
     used_evidence_keys: set[str] = set()
+    manifest_cache: _PointerObjectCache = {}
+    w1a_cache: _W1APublicationCache = {}
     planned_candidates_by_pointer = {
         canonical_bytes(item.pointer): item.value for item in candidate_objects
     }
@@ -8868,6 +14823,8 @@ def _plan_from_intent(
                 planned_by_key=planned_by_key,
                 candidate=candidate,
                 evidence_inputs=evidence_inputs,
+                manifest_cache=manifest_cache,
+                w1a_cache=w1a_cache,
             )
         )
     intent_evidence_keys = {
@@ -8875,6 +14832,21 @@ def _plan_from_intent(
     }
     if intent_evidence_keys != used_evidence_keys:
         _fail("selector advance intent contains orphan or missing evidence")
+    source_receipts = [
+        item.value
+        for item in objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    ]
+    if len(source_receipts) > 1:
+        _fail("selector advance intent repeats its W1A source receipt")
+    if parent_is_live:
+        expected_w1a_high_water = _advance_w1a_high_water(
+            prior_head["w1a_publication_high_water"],
+            None if not source_receipts else source_receipts[0],
+        )
+        if next_head["w1a_publication_high_water"] != expected_w1a_high_water:
+            _fail("selector advance intent W1A high-water is not monotone")
 
     if parent_is_live:
         proposal_session = prior_head["proposal_session_date"]
@@ -9129,20 +15101,37 @@ def _plan_from_intent(
             generation_item = planned_by_key.get(generation_pointer["key"])
             if generation_item is None or generation_item.pointer != generation_pointer:
                 _fail("selector intent replay lacks its evidence generation")
+            settled_manifest = _load_pointer(
+                root,
+                generation_item.value["settled_manifest"],
+                label="selector intent replay settled manifest",
+            )
+            replay_candidates = tuple(
+                _load_pointer(
+                    root,
+                    pointer,
+                    label="selector intent replay evidence candidate",
+                )
+                for pointer in settled_manifest["candidates"]
+            )
+            replay_sessions = frozenset(
+                _utc(
+                    item.value["decision_event_at"],
+                    label="selector intent replay evidence session",
+                )
+                .astimezone(ET)
+                .date()
+                .isoformat()
+                for item in decision_objects
+            )
             replay_snapshot = _evidence_snapshot_from_generation(
                 generation_item.value,
                 evidence_inputs,
+                root=root,
+                planned_by_key=planned_by_key,
+                candidates=replay_candidates,
+                session_dates=replay_sessions,
             )
-        replay_index = 0
-
-        def replay_clock() -> datetime:
-            nonlocal replay_index
-            if replay_index >= len(replay_values):
-                _fail("selector intent replay requested an unrecorded clock")
-            value = replay_values[replay_index]
-            replay_index += 1
-            return value
-
         pinned_source = SourceSnapshot(
             commit=prior_head["source_commit"],
             campaigns_raw=None,
@@ -9153,16 +15142,14 @@ def _plan_from_intent(
             checkpoint_raw=None,
             checkpoint_blob_oid=prior_head["source_checkpoint"]["git_blob_oid"],
         )
-        replayed = _plan_cycle_once(
+        replayed, replay_index = _replay_largest_fitting_advance(
             root=root,
             source=pinned_source,
             evidence_inputs=evidence_inputs,
             scheduled_at=cycle["scheduled_at"],
-            clock=replay_clock,
-            runtime_armed=True,
-            admission_cap=len(cycle["candidate_pointers"]),
-            settlement_cache={},
+            replay_values=replay_values,
             evidence_snapshot=replay_snapshot,
+            _sealed_recovery=_sealed_recovery,
         )
         if replay_index != len(replay_values):
             _fail("selector intent replay left authenticated clocks unused")
@@ -9182,6 +15169,76 @@ def _plan_from_intent(
     )
 
 
+def _validated_intent_attempt(body: bytes) -> dict[str, Any]:
+    value = strict_json(body, label="selector advance intent attempt")
+    if (
+        not isinstance(value, dict)
+        or canonical_bytes(value) != body
+        or set(value)
+        != {
+            "schema",
+            "expected_head_id",
+            "intent_sha256",
+            "intent_bytes",
+            "recovery_allowed",
+        }
+        or value.get("schema")
+        != "options.sparse_selector_advance_intent_attempt/v1"
+        or value.get("recovery_allowed") is not False
+        or not isinstance(value.get("intent_sha256"), str)
+        or _SHA256_RE.fullmatch(value["intent_sha256"]) is None
+        or type(value.get("intent_bytes")) is not int
+        or not 0 < value["intent_bytes"] <= MAX_INTENT_BYTES
+        or (
+            value.get("expected_head_id") is not None
+            and (
+                not isinstance(value["expected_head_id"], str)
+                or re.fullmatch(
+                    r"ossh_[a-f0-9]{64}", value["expected_head_id"]
+                )
+                is None
+            )
+        )
+    ):
+        _fail("selector advance intent attempt is malformed")
+    return value
+
+
+def _discard_intent_prepare(root: Path, *, attempt: Mapping[str, Any] | None) -> None:
+    lane = _ACTIVE_SELECTOR_LANE.get()
+    assert lane is not None
+    try:
+        metadata = os.stat(
+            INTENT_PREPARE_FILE,
+            dir_fd=lane.root_fd,
+            follow_symlinks=False,
+        )
+    except FileNotFoundError:
+        return
+    if (
+        stat.S_ISLNK(metadata.st_mode)
+        or not stat.S_ISREG(metadata.st_mode)
+        or metadata.st_uid != os.getuid()
+        or stat.S_IMODE(metadata.st_mode) != 0o600
+        or metadata.st_nlink != 1
+    ):
+        _fail("selector prepared intent metadata is unsafe")
+    if attempt is not None:
+        prepared = _read_private_file(
+            root / INTENT_PREPARE_FILE,
+            root=root,
+            limit=MAX_INTENT_BYTES,
+            required=True,
+        )
+        if (
+            len(prepared) != attempt["intent_bytes"]
+            or _sha256(prepared) != attempt["intent_sha256"]
+        ):
+            _fail("selector prepared intent differs from its durable attempt")
+    os.unlink(INTENT_PREPARE_FILE, dir_fd=lane.root_fd)
+    os.fsync(lane.root_fd)
+
+
 def _read_intent(root: Path) -> dict[str, Any] | None:
     attempt_body = _read_private_file(
         root / INTENT_ATTEMPT_FILE,
@@ -9192,35 +15249,81 @@ def _read_intent(root: Path) -> dict[str, Any] | None:
     body = _read_private_file(
         root / INTENT_FILE, root=root, limit=MAX_INTENT_BYTES, required=False
     )
+    if body is None:
+        live = _load_head(root)
+        parent = "genesis" if live is None else live["head_id"]
+        orphan_seal = _read_private_file(
+            _object_path(root, f"{INTENT_SEAL_NAMESPACE}/{parent}.json"),
+            root=root,
+            limit=1024 * 1024,
+            required=False,
+        )
+        if orphan_seal is not None:
+            _fail("selector current parent has an orphan authoritative intent seal")
     if body is None and attempt_body is None:
+        _discard_intent_prepare(root, attempt=None)
         return None
     if body is None:
-        _fail("selector advance intent has an unclosed publication attempt")
-    _reprove_exact_private_file(
-        root / INTENT_FILE,
-        body,
-        root=root,
-        limit=MAX_INTENT_BYTES,
-        label="selector advance intent",
-    )
+        assert attempt_body is not None
+        attempt = _validated_intent_attempt(attempt_body)
+        live = _load_head(root)
+        live_id = None if live is None else live["head_id"]
+        if live_id != attempt["expected_head_id"]:
+            _fail("selector attempt-only recovery parent changed")
+        _discard_intent_prepare(root, attempt=attempt)
+        lane = _ACTIVE_SELECTOR_LANE.get()
+        assert lane is not None
+        os.unlink(INTENT_ATTEMPT_FILE, dir_fd=lane.root_fd)
+        os.fsync(lane.root_fd)
+        return None
     value = strict_json(body, label="selector advance intent")
     if not isinstance(value, dict) or canonical_bytes(value) != body:
         _fail("selector advance intent is not canonical")
     seal_path = _object_path(root, _intent_seal_key(value))
-    seal_body = _read_private_file(
-        seal_path, root=root, limit=1024 * 1024, required=True
-    )
-    if seal_body != _intent_seal_body(value):
-        _fail("selector advance intent differs from its durable recovery seal")
-    if attempt_body is not None and attempt_body != _intent_attempt_body(body):
+    expected_attempt = _intent_attempt_body(body)
+    if attempt_body is not None and attempt_body != expected_attempt:
         _fail("selector advance intent publication attempt drifted")
+    expected_seal = _intent_seal_body(value)
+    seal_body = _read_private_file(
+        seal_path, root=root, limit=1024 * 1024, required=False
+    )
+    if seal_body is None:
+        if attempt_body != expected_attempt:
+            _fail("selector advance intent lacks its publication attempt and seal")
+        expected_parent = value.get("expected_head_id")
+        live = _load_head(root)
+        live_id = None if live is None else live["head_id"]
+        if live_id != expected_parent:
+            _fail("selector unsealed durable intent is stale")
+        # A mutable intent and attempt are never recovery authority.  If the
+        # immutable parent seal did not land, abandon them only against the
+        # exact unchanged parent and let a fresh plan sample current sources.
+        lane = _ACTIVE_SELECTOR_LANE.get()
+        assert lane is not None
+        os.unlink(INTENT_FILE, dir_fd=lane.root_fd)
+        os.unlink(INTENT_ATTEMPT_FILE, dir_fd=lane.root_fd)
+        os.fsync(lane.root_fd)
+        return None
+    if seal_body != expected_seal:
+        _fail("selector advance intent differs from its durable recovery seal")
     return value
 
 
 def _intent_attempt_body(intent_body: bytes) -> bytes:
+    value = strict_json(intent_body, label="selector attempted advance intent")
+    expected_head_id = value.get("expected_head_id") if isinstance(value, Mapping) else None
+    if not isinstance(value, Mapping) or (
+        expected_head_id is not None
+        and (
+            not isinstance(expected_head_id, str)
+            or re.fullmatch(r"ossh_[a-f0-9]{64}", expected_head_id) is None
+        )
+    ):
+        _fail("selector attempted advance intent parent is malformed")
     return canonical_bytes(
         {
             "schema": "options.sparse_selector_advance_intent_attempt/v1",
+            "expected_head_id": expected_head_id,
             "intent_sha256": _sha256(intent_body),
             "intent_bytes": len(intent_body),
             "recovery_allowed": False,
@@ -9290,7 +15393,14 @@ def _clear_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
     os.fsync(lane.root_fd)
 
 
-def _publish_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
+def _publish_advance_intent(
+    root: Path,
+    intent: Mapping[str, Any],
+    *,
+    hook: Callable[[str], None] | None = None,
+    pre_authority_check: Callable[[], None] | None = None,
+    authority_granted: Callable[[], None] | None = None,
+) -> None:
     """Publish recovery authority only across a proven durable rename boundary."""
 
     intent_path = root / INTENT_FILE
@@ -9314,6 +15424,7 @@ def _publish_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
         intent_body,
         root=root,
         limit=MAX_INTENT_BYTES,
+        temporary_name=INTENT_PREPARE_FILE,
     )
     try:
         _atomic_write(
@@ -9322,6 +15433,10 @@ def _publish_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
             root=root,
             limit=1024 * 1024,
         )
+        if hook is not None:
+            hook("after_intent_attempt")
+        if pre_authority_check is not None:
+            pre_authority_check()
         # If rename or its directory fsync has an uncertain outcome, the
         # already-durable attempt remains and all future recovery fails closed.
         _install_staged_write(
@@ -9331,6 +15446,10 @@ def _publish_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
             root=root,
             limit=MAX_INTENT_BYTES,
         )
+        if hook is not None:
+            hook("after_intent_before_seal")
+        if pre_authority_check is not None:
+            pre_authority_check()
         attempt_body = _read_private_file(
             attempt_path, root=root, limit=1024 * 1024, required=True
         )
@@ -9349,20 +15468,275 @@ def _publish_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
             or stat.S_IMODE(attempt_metadata.st_mode) != 0o600
         ):
             _fail("selector intent publication attempt metadata drifted")
+        if pre_authority_check is not None:
+            pre_authority_check()
         # Publish a parent-keyed immutable seal before granting recovery
         # authority.  It remains for the store lifetime, so an alternate
         # self-consistent intent for the same parent cannot replace history.
-        _write_immutable(
+        _prestage_immutable(
             _object_path(root, _intent_seal_key(intent)),
             _intent_seal_body(intent),
             root=root,
         )
+        if authority_granted is not None:
+            authority_granted()
+        if hook is not None:
+            hook("after_intent_seal")
         lane = _ACTIVE_SELECTOR_LANE.get()
         assert lane is not None
         os.unlink(INTENT_ATTEMPT_FILE, dir_fd=lane.root_fd)
         os.fsync(lane.root_fd)
     finally:
         _discard_staged_write(temporary)
+
+
+@contextmanager
+def _w1a_commit_fence(
+    root: Path, plan: CyclePlan, inputs: EvidenceInputs
+) -> Iterator[None]:
+    receipts = [
+        item.value
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    ]
+    if not receipts:
+        yield
+        return
+    if len(receipts) != 1 or inputs.w1a_receipt_root is None:
+        _fail("selector transition lacks one trusted W1A source root")
+    _assert_evidence_roots_distinct(root, inputs)
+    receipt = validate_runtime_object(
+        receipts[0], label="selector final W1A source fence"
+    )
+    with _locked_w1a_publication(Path(inputs.w1a_receipt_root)) as publication:
+        manifest = _load_pointer(
+            root,
+            receipt["settled_manifest"],
+            label="selector final W1A settled manifest",
+        )
+        candidate_rows = [
+            (
+                copy.deepcopy(dict(pointer)),
+                _load_pointer(root, pointer, label="selector final W1A candidate"),
+            )
+            for pointer in manifest["candidates"]
+        ]
+        if (
+            receipt["root_path_sha256"] != publication.root_path_sha256
+            or receipt["head"] != publication.head
+            or receipt["head_sha256"] != _sha256(publication.head_body)
+            or receipt["head_bytes"] != len(publication.head_body)
+            or receipt["audit_id"] != publication.audit["audit_id"]
+            or receipt["reference_count"] != len(publication.references)
+            or receipt["descriptors"]
+            != _w1a_descriptors(candidate_rows, publication.references)
+        ):
+            raise EvidenceGenerationDrift(
+                "W1A publication changed before selector intent seal"
+            )
+        # The durable intent and its parent-keyed seal are published while the
+        # exact source HEAD remains locked and fully re-authenticated.
+        yield
+
+
+def _is_evidence_pin_plan(plan: CyclePlan | None) -> bool:
+    if plan is None or plan.intent.get("schema") != (
+        "options.sparse_selector_evidence_audit_intent/v1"
+    ):
+        return False
+    window = plan.intent.get("audit_window")
+    return isinstance(window, Mapping) and window.get("stage") == "PIN"
+
+
+def _is_evidence_settlement_plan(plan: CyclePlan | None) -> bool:
+    if (
+        plan is None
+        or plan.intent.get("schema")
+        != "options.sparse_selector_advance_intent/v1"
+    ):
+        return False
+    before = plan.intent.get("expected_decision_count")
+    after = plan.head.get("decision_count")
+    return (
+        type(before) is int
+        and type(after) is int
+        and after > before
+        and plan.head.get("evidence_high_water") is not None
+    )
+
+
+def _validate_live_complete_evidence(
+    root: Path,
+    high_pointer: Mapping[str, Any],
+    evidence_inputs: EvidenceInputs,
+    sources: _AnchoredEvidenceSources,
+) -> None:
+    """Fence a COMPLETE evidence generation against all mutable producer heads."""
+
+    high = _load_evidence_high_water(root, high_pointer)
+    if high["phase"] != "COMPLETE":
+        _fail("selector settlement evidence high-water is incomplete")
+    snapshot = validate_runtime_object(
+        _load_pointer(
+            root, high["snapshot"], label="selector settlement source snapshot"
+        ),
+        label="selector settlement source snapshot",
+    )
+    if sources.producer_roots != snapshot["producer_roots"]:
+        raise EvidenceGenerationDrift(
+            "selector settlement producer roots changed"
+        )
+    state_body, state = _read_lifecycle_state_bytes(sources.lifecycle)
+    expected_state = snapshot["lifecycle_state"]
+    if (
+        state != expected_state
+        or state_body != lifecycle._canonical_json_bytes(expected_state)
+        or _read_anchored_mark_head(sources.mark) != snapshot["live_mark_head"]
+        or _read_anchored_ledger_receipt(sources.lifecycle)
+        != snapshot["live_ledger_receipt"]
+        or _read_anchored_activation_boundary(sources.lifecycle)
+        != snapshot["activation_boundary"]
+    ):
+        raise EvidenceGenerationDrift(
+            "selector COMPLETE evidence moved before settlement authority"
+        )
+    _assert_evidence_lock_identity(sources.mark, sources.mark_lock_fd)
+    _assert_evidence_lock_identity(
+        sources.lifecycle, sources.lifecycle_lock_fd
+    )
+
+
+def _complete_evidence_is_live(
+    root: Path,
+    high_pointer: Mapping[str, Any],
+    evidence_inputs: EvidenceInputs,
+) -> bool:
+    if evidence_inputs.mark_root is None or evidence_inputs.lifecycle_root is None:
+        _fail("selector settlement requires producer roots")
+    mark_root = Path(evidence_inputs.mark_root).expanduser()
+    lifecycle_root = Path(evidence_inputs.lifecycle_root).expanduser()
+    try:
+        with _selector_lane(root, create=False) as selector_lane:
+            with _anchored_evidence_sources(
+                mark_root, lifecycle_root, selector_lane=selector_lane
+            ) as sources:
+                _validate_live_complete_evidence(
+                    root, high_pointer, evidence_inputs, sources
+                )
+        return True
+    except EvidenceGenerationDrift:
+        return False
+
+
+def _validate_live_evidence_pin(
+    root: Path,
+    plan: CyclePlan,
+    evidence_inputs: EvidenceInputs,
+    sources: _AnchoredEvidenceSources,
+) -> None:
+    snapshots = [
+        item
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_source_snapshot/v1"
+    ]
+    if len(snapshots) != 1:
+        _fail("selector evidence PIN lacks one exact source snapshot")
+    high_waters = [
+        item
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_evidence_high_water/v1"
+    ]
+    if len(high_waters) != 1:
+        _fail("selector evidence PIN lacks one exact high-water")
+    if evidence_inputs.mark_root is None or evidence_inputs.lifecycle_root is None:
+        _fail("selector evidence PIN recovery lacks producer roots")
+    previous = high_waters[0].value["previous_complete"]
+    prior: dict[str, Any] | None = None
+    prior_snapshot: dict[str, Any] | None = None
+    if previous is not None:
+        prior = _load_evidence_high_water(root, previous)
+        prior_snapshot = validate_runtime_object(
+            _load_pointer(
+                root, prior["snapshot"], label="selector prior source snapshot"
+            ),
+            label="selector prior source snapshot",
+        )
+    _assert_evidence_lock_identity(sources.mark, sources.mark_lock_fd)
+    _assert_evidence_lock_identity(
+        sources.lifecycle, sources.lifecycle_lock_fd
+    )
+    if sources.producer_roots != snapshots[0].value["producer_roots"]:
+        raise EvidenceGenerationDrift(
+            "selector producer roots changed before PIN authority"
+        )
+    state_body, live_state = _read_lifecycle_state_bytes(sources.lifecycle)
+    expected_state = snapshots[0].value["lifecycle_state"]
+    if (
+        state_body != lifecycle._canonical_json_bytes(expected_state)
+        or live_state != expected_state
+    ):
+        raise EvidenceGenerationDrift(
+            "selector lifecycle state changed before PIN authority"
+        )
+    live_mark_head, live_ledger_receipt, activation_boundary = _verify_capture_source_prefixes(
+        sources=sources,
+        state=expected_state,
+        expected_mark_head=snapshots[0].value["live_mark_head"],
+        expected_ledger_receipt=snapshots[0].value["live_ledger_receipt"],
+        prior_snapshot=prior_snapshot,
+    )
+    if (
+        live_mark_head != snapshots[0].value["live_mark_head"]
+        or live_ledger_receipt != snapshots[0].value["live_ledger_receipt"]
+        or activation_boundary != snapshots[0].value["activation_boundary"]
+    ):
+        raise EvidenceGenerationDrift(
+            "selector evidence source changed before PIN authority"
+        )
+    if previous is not None:
+        assert prior is not None and prior_snapshot is not None
+        if (
+            prior["phase"] != "COMPLETE"
+            or prior["producer_contract"] != PRODUCER_CONTRACT
+            or prior_snapshot["producer_roots"] != sources.producer_roots
+        ):
+            _fail("selector incremental PIN parent drifted before authority")
+        _anchored_mark_chain_contains(
+            sources.mark,
+            live_mark_head,
+            (
+                expected_state["mark_cursor"],
+                prior_snapshot["live_mark_head"],
+            ),
+        )
+        _anchored_ledger_extends(
+            sources.lifecycle, prior_snapshot["live_ledger_receipt"]
+        )
+        token = _ACTIVE_EVIDENCE_SOURCES.set(sources)
+        try:
+            _incremental_target_descends(
+                Path(evidence_inputs.lifecycle_root).expanduser(),
+                prior_state_id=prior["source_state_id"],
+                target_state_id=expected_state["state_id"],
+            )
+        finally:
+            _ACTIVE_EVIDENCE_SOURCES.reset(token)
+    if _read_anchored_file(
+        sources.lifecycle,
+        "current.json",
+        limit=2 * 1024 * 1024,
+        label="selector lifecycle current state",
+    ) != state_body:
+        raise EvidenceGenerationDrift(
+            "selector lifecycle state changed at PIN authority boundary"
+        )
+    _assert_evidence_lock_identity(sources.mark, sources.mark_lock_fd)
+    _assert_evidence_lock_identity(
+        sources.lifecycle, sources.lifecycle_lock_fd
+    )
 
 
 def _commit_cycle_locked(
@@ -9372,16 +15746,25 @@ def _commit_cycle_locked(
     evidence_inputs: EvidenceInputs | None = None,
     hook: Callable[[str], None] | None = None,
     trusted_internal_plan: bool = False,
+    _w1a_fence_held: bool = False,
+    _producer_locks_held: bool = False,
+    _producer_sources: _AnchoredEvidenceSources | None = None,
+    _objects_batch_durable: bool = False,
+    _objects_batch_parent_identities: Mapping[
+        Path, tuple[int, int]
+    ] | None = None,
 ) -> dict[str, Any]:
     """Commit or recover one intent while the caller owns the store lock."""
 
     private_root = root
     existing_intent = _read_intent(private_root)
+    batch_parent_identities = _objects_batch_parent_identities
     if existing_intent is not None:
         active = _plan_from_intent(
             private_root,
             existing_intent,
             evidence_inputs=evidence_inputs or EvidenceInputs(),
+            _sealed_recovery=True,
         )
         current_head = _load_head(private_root)
         current_id = None if current_head is None else current_head["head_id"]
@@ -9391,14 +15774,78 @@ def _commit_cycle_locked(
         if plan is None:
             _fail("selector has no transition to commit or recover")
         plan_evidence_inputs = evidence_inputs or plan.evidence_inputs
-        if trusted_internal_plan:
-            # advance() creates this plan inside the same exclusive store-lock
-            # scope and never exposes a mutation boundary before publication.
-            # Crash recovery still uses the independently sealed intent and the
-            # full deterministic replay path above.
-            active = plan
+        if (
+            len(canonical_bytes(plan.intent)) > MAX_SOURCE_INTENT_BYTES
+            or len(plan.objects) + 1 > MAX_SOURCE_OBJECTS_PER_CYCLE
+            or _transition_footprint_bytes(plan.intent, plan.objects)
+            > MAX_SOURCE_INTENT_BYTES
+            or plan.intent.get("objects") != [item.receipt for item in plan.objects]
+        ):
+            _fail("selector plan does not bind its exact compact object receipts")
+        active = plan
+        current_head = _load_head(private_root)
+        current_head_id = current_head["head_id"] if current_head is not None else None
+        evidence_audit = active.intent.get("schema") == (
+            "options.sparse_selector_evidence_audit_intent/v1"
+        )
+        if evidence_audit:
+            parent_drifted = (
+                current_head_id != active.expected_head_id
+                or current_head is None
+                or _source_expected_state(current_head)
+                != active.intent["expected_source_state"]
+                or _runtime_expected_state(current_head)
+                != active.intent["expected_runtime_state"]
+                or current_head["evidence_high_water"]
+                != active.intent["expected_evidence_high_water"]
+            )
         else:
-            # A caller-provided CyclePlan is never publication authority.
+            parent_drifted = (
+                current_head_id != active.expected_head_id
+                or (
+                    current_head is None
+                    and (
+                        active.intent["expected_candidate_count"] != 0
+                        or active.intent["expected_decision_count"] != 0
+                    )
+                )
+                or (
+                    current_head is not None
+                    and (
+                        current_head["last_candidate"]
+                        != active.intent["expected_last_candidate"]
+                        or current_head["candidate_count"]
+                        != active.intent["expected_candidate_count"]
+                        or current_head["candidate_index"]
+                        != active.intent["expected_candidate_index"]
+                        or current_head["last_decision"]
+                        != active.intent["expected_last_decision"]
+                        or current_head["decision_count"]
+                        != active.intent["expected_decision_count"]
+                        or current_head["last_handoff_queue"]
+                        != active.intent["expected_last_handoff_queue"]
+                    )
+                )
+            )
+        if parent_drifted:
+            _fail("selector plan parent changed before intent publication")
+
+        # All content-addressed bodies become durable orphan-safe bytes before
+        # the intent grants them authority.  A crash here cannot expose a
+        # partial final object and cannot advance HEAD; a retry may exact-adopt
+        # complete staged objects.
+        if not _objects_batch_durable:
+            batch_parent_identities = _prestage_immutable_batch(
+                private_root,
+                active.objects,
+                hook=hook,
+            )
+        elif batch_parent_identities is None:
+            _fail("selector durable object batch lacks its parent identities")
+
+        if not trusted_internal_plan:
+            # Once exact bodies are durable, a caller-provided plan must be
+            # reconstructed entirely from its parent-bound receipt-only intent.
             reconstructed = _plan_from_intent(
                 private_root,
                 plan.intent,
@@ -9412,37 +15859,160 @@ def _commit_cycle_locked(
             ):
                 _fail("selector supplied plan differs from its authenticated intent")
             active = reconstructed
-        current_head = _load_head(private_root)
-        current_head_id = current_head["head_id"] if current_head is not None else None
-        if (
-            current_head_id != active.expected_head_id
-            or (
-                current_head is None
-                and (
-                    active.intent["expected_candidate_count"] != 0
-                    or active.intent["expected_decision_count"] != 0
+
+        requires_producer_fence = _is_evidence_pin_plan(
+            active
+        ) or _is_evidence_settlement_plan(active)
+        if requires_producer_fence and not _producer_locks_held:
+            if (
+                plan_evidence_inputs.mark_root is None
+                or plan_evidence_inputs.lifecycle_root is None
+            ):
+                _fail("selector evidence transition lacks producer roots")
+            selector_lane = _ACTIVE_SELECTOR_LANE.get()
+            if selector_lane is None:
+                _fail("selector evidence transition lacks its anchored store root")
+            pin_high: Mapping[str, Any] | None = None
+            if _is_evidence_pin_plan(active):
+                pin_high = next(
+                    item.value
+                    for item in active.objects
+                    if item.value.get("schema")
+                    == "options.sparse_selector_evidence_high_water/v1"
                 )
-            )
-            or (
-                current_head is not None
-                and (
-                    current_head["last_candidate"]
-                    != active.intent["expected_last_candidate"]
-                    or current_head["candidate_count"]
-                    != active.intent["expected_candidate_count"]
-                    or current_head["candidate_index"]
-                    != active.intent["expected_candidate_index"]
-                    or current_head["last_decision"]
-                    != active.intent["expected_last_decision"]
-                    or current_head["decision_count"]
-                    != active.intent["expected_decision_count"]
-                    or current_head["last_handoff_queue"]
-                    != active.intent["expected_last_handoff_queue"]
+                if pin_high["previous_complete"] is not None:
+                    _authenticate_evidence_high_water_graph(
+                        private_root,
+                        pin_high["previous_complete"],
+                        evidence_inputs=plan_evidence_inputs,
+                    )
+            else:
+                assert active.head["evidence_high_water"] is not None
+                _authenticate_evidence_high_water_graph(
+                    private_root,
+                    active.head["evidence_high_water"],
+                    evidence_inputs=plan_evidence_inputs,
                 )
+            mark_root = Path(plan_evidence_inputs.mark_root).expanduser()
+            lifecycle_root = Path(
+                plan_evidence_inputs.lifecycle_root
+            ).expanduser()
+            # Receipt-only replay and exact comparison above are complete before
+            # any external source lock is taken.  Hold the selector store lock,
+            # then W1A, mark, and lifecycle in that order only for the repeated
+            # live pre-seal fences and authority boundary.
+            with _w1a_commit_fence(
+                private_root, active, plan_evidence_inputs
+            ):
+                with _anchored_evidence_sources(
+                    mark_root,
+                    lifecycle_root,
+                    selector_lane=selector_lane,
+                ) as sources:
+                    if pin_high is not None:
+                        _validate_live_evidence_pin(
+                            private_root,
+                            active,
+                            plan_evidence_inputs,
+                            sources,
+                        )
+                    else:
+                        _validate_live_complete_evidence(
+                            private_root,
+                            active.head["evidence_high_water"],
+                            plan_evidence_inputs,
+                            sources,
+                        )
+                    return _commit_cycle_locked(
+                        private_root,
+                        active,
+                        evidence_inputs=plan_evidence_inputs,
+                        hook=hook,
+                        trusted_internal_plan=True,
+                        _w1a_fence_held=True,
+                        _producer_locks_held=True,
+                        _producer_sources=sources,
+                        _objects_batch_durable=True,
+                        _objects_batch_parent_identities=batch_parent_identities,
+                    )
+
+        if hook is not None:
+            hook("after_prestage")
+
+        if _is_evidence_pin_plan(active):
+            if not _producer_locks_held or _producer_sources is None:
+                _fail("selector evidence PIN lost its producer locks")
+            _validate_live_evidence_pin(
+                private_root,
+                active,
+                plan_evidence_inputs,
+                _producer_sources,
             )
-        ):
-            _fail("selector plan parent changed before intent publication")
-        _publish_advance_intent(private_root, active.intent)
+        elif _is_evidence_settlement_plan(active):
+            if not _producer_locks_held or _producer_sources is None:
+                _fail("selector settlement lost its producer locks")
+            _validate_live_complete_evidence(
+                private_root,
+                active.head["evidence_high_water"],
+                plan_evidence_inputs,
+                _producer_sources,
+            )
+        pre_authority_check: Callable[[], None] | None = None
+        authority_granted: Callable[[], None] | None = None
+        if _is_evidence_pin_plan(active):
+            assert _producer_sources is not None
+
+            def pre_authority_check() -> None:
+                _validate_live_evidence_pin(
+                    private_root,
+                    active,
+                    plan_evidence_inputs,
+                    _producer_sources,
+                )
+
+            def authority_granted() -> None:
+                _producer_sources.authority.granted = True
+
+        elif _is_evidence_settlement_plan(active):
+            assert _producer_sources is not None
+
+            def pre_authority_check() -> None:
+                _validate_live_complete_evidence(
+                    private_root,
+                    active.head["evidence_high_water"],
+                    plan_evidence_inputs,
+                    _producer_sources,
+                )
+
+            def authority_granted() -> None:
+                _producer_sources.authority.granted = True
+
+        def publish_intent() -> None:
+            # The batch durability barrier completed before this authority
+            # boundary.  Re-read every final name immediately before the WAL
+            # publication so a namespace rebind cannot substitute another
+            # inode after the batched parent fsyncs.
+            _reprove_immutable_batch(
+                private_root,
+                active.objects,
+                label="selector prestaged transition",
+                expected_parent_identities=batch_parent_identities,
+            )
+            _publish_advance_intent(
+                private_root,
+                active.intent,
+                hook=hook,
+                pre_authority_check=pre_authority_check,
+                authority_granted=authority_granted,
+            )
+
+        if _w1a_fence_held:
+            publish_intent()
+        else:
+            with _w1a_commit_fence(
+                private_root, active, plan_evidence_inputs
+            ):
+                publish_intent()
         if hook is not None:
             hook("after_intent")
 
@@ -9451,33 +16021,28 @@ def _commit_cycle_locked(
         # Crash-after-HEAD recovery is adoption, not another publication.  Prove
         # every immutable byte and the complete authenticated graph, then clear
         # only the durable intent.  No object or HEAD write is permitted here.
-        for item in active.objects:
-            body = _read_private_file(
-                _object_path(private_root, item.key),
-                root=private_root,
-                limit=MAX_OBJECT_BYTES,
-                required=True,
-            )
-            if body != item.body:
-                _fail("selector adopted intent object differs from durable bytes")
-        authenticated, _decisions, _body = authenticate_store(private_root)
+        _reprove_immutable_batch(
+            private_root,
+            active.objects,
+            label="selector adopted intent object",
+        )
+        authenticated, _decisions, _body = authenticate_store(
+            private_root,
+            evidence_inputs=evidence_inputs or active.evidence_inputs,
+            _allow_durable_intent=True,
+        )
         if authenticated != active.head:
             _fail("selector adopted intent HEAD does not authenticate exactly")
         _clear_advance_intent(private_root, active.intent)
         return active.head
 
-    touched_parents: set[Path] = set()
-    for item in active.objects:
-        object_path = _object_path(private_root, item.key)
-        _write_immutable(
-            object_path,
-            item.body,
-            root=private_root,
-            sync_parent=False,
-        )
-        touched_parents.add(object_path.parent)
-    for parent in sorted(touched_parents, key=str):
-        _sync_immutable_parent(parent / ".durability-probe", root=private_root)
+    # An authoritative intent may reference only complete, already durable
+    # content-addressed bodies.  Reprove them; never create or rewrite here.
+    _reprove_immutable_batch(
+        private_root,
+        active.objects,
+        label="selector prestaged intent object",
+    )
     if hook is not None:
         hook("after_objects")
         hook("after_handoff_queue")
@@ -9623,7 +16188,11 @@ def advance(
         )
 
 
-def status(private_root: Path) -> dict[str, Any]:
+def status(
+    private_root: Path,
+    *,
+    evidence_inputs: EvidenceInputs | None = None,
+) -> dict[str, Any]:
     root = _absolute_private_path(private_root)
     if not root.exists():
         return {
@@ -9633,10 +16202,16 @@ def status(private_root: Path) -> dict[str, Any]:
             "recovery_intent": False,
         }
     root = validate_private_root(root, create=False)
+    trusted_inputs = evidence_inputs or EvidenceInputs()
     with _store_lock(root):
         intent = _read_intent(root)
         if intent is not None:
-            plan = _plan_from_intent(root, intent)
+            plan = _plan_from_intent(
+                root,
+                intent,
+                evidence_inputs=trusted_inputs,
+                _sealed_recovery=True,
+            )
             return {
                 "runtime_armed": SELECTOR_RUNTIME_ARMED,
                 "initialized": True,
@@ -9644,8 +16219,10 @@ def status(private_root: Path) -> dict[str, Any]:
                 "recovery_intent": True,
                 "intent_next_head_id": plan.head["head_id"],
             }
-        state = _authenticate_selector_state(root)
-        head = None if state is None else state[0]
+        head, _decisions, _body = authenticate_store(
+            root,
+            evidence_inputs=trusted_inputs,
+        )
         return {
             "runtime_armed": SELECTOR_RUNTIME_ARMED,
             "initialized": head is not None,
@@ -9684,5 +16261,4 @@ __all__ = [
     "utc_text",
     "validate_runtime_object",
     "validate_source_snapshot",
-    "validate_w1a_export",
 ]
