@@ -56,6 +56,30 @@ ALLOWLIST_PATH = ROOT / "data" / "regime" / "validated_claims_allowlist.json"
 ALLOWLISTED_LINE = "Gated by the validated MACD-2D × StochRSI-3D confluence."
 
 
+# ── an ABSENT register is a checkout fault, not an empty allowlist ───────────────────
+
+def test_a_missing_allowlist_names_the_checkout_fault_instead_of_failing_open(
+        monkeypatch, tmp_path, capsys):
+    """`return []` on a missing register was the loudest possible wrong answer.
+
+    With no allowlist every backed claim on the estate turns unearned at once, so a
+    partial/sparse checkout reports ~650 violations across templates backed for months
+    and buries whatever the one real claim was. The gate must say which of the two
+    worlds it is in — it cannot answer, vs nothing is allowed.
+    """
+    import scripts.check_validated_claims as gate
+
+    monkeypatch.setattr(gate, "ALLOWLIST", tmp_path / "nope" / "allowlist.json")
+    with pytest.raises(SystemExit) as excinfo:
+        gate._load_allowlist()
+    assert excinfo.value.code != 0, "a register it cannot read must never exit clean"
+    err = capsys.readouterr().out
+    assert err.startswith("::error"), "GitHub drops an annotation that does not start the line"
+    assert "allowlist-missing" in err
+    # The message has one job beyond failing: stop the reader rewriting innocent copy.
+    assert "CHECKOUT fault" in err
+
+
 # ── GAP 1: surfaces are enforced ─────────────────────────────────────────────────────
 
 def test_allowlisted_phrase_passes_on_a_listed_surface():

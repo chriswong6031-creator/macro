@@ -1,5 +1,17 @@
 {
   "hooks": {
+    "WorktreeCreate": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/worktree_create_sparse.py\"",
+            "timeout": 180,
+            "statusMessage": "Minting a sparse session worktree off fresh origin/main"
+          }
+        ]
+      }
+    ],
     "SessionStart": [
       {
         "matcher": "startup|resume|clear|compact",

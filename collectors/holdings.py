@@ -34,16 +34,24 @@ log = logging.getLogger(__name__)
 # shared by the diff engine (active_changes_dir) AND the collector
 # (collectors.etf_holdings._normalize), because already-stored snapshots are
 # never re-cleaned — the diff layer can't trust the snapshot was filtered at write.
-# Real foreign-listed EQUITIES (e.g. "000720 KS", "1211 HK", "8001 JP") are kept.
+# Real foreign-listed EQUITIES (e.g. "000720 KS", "1211 HK", "8001 JP") are kept —
+# INCLUDING the ones whose ticker is currency-SHAPED ("EUR AU" = European Lithium
+# on the ASX, "COP" = ConocoPhillips). The ticker alone never decides those; the
+# name column does. See the _CURRENCY_NAME_RE block below.
 # --------------------------------------------------------------------------- #
 _CURRENCY_CODES = {
     "USD", "USDOLLAR", "EUR", "GBP", "JPY", "CAD", "CHF", "AUD", "HKD", "CNY",
     "CNH", "KRW", "TWD", "SGD", "INR", "BRL", "MXN", "ZAR", "SEK", "NOK", "DKK",
     "NZD", "ILS", "PLN", "THB", "IDR", "MYR", "PHP", "TRY", "CLP", "COP", "PEN",
 }
-_NON_EQUITY_TICKERS = _CURRENCY_CODES | {
+# Sentinels that are non-equity on the TICKER ALONE: an empty/placeholder cell can
+# never name an issuer, so no corroboration is possible or needed. Kept separate
+# from _CURRENCY_CODES because a currency code CAN also be a real issuer's ticker
+# (see _CURRENCY_NAME_RE below); a blank cell cannot.
+_SENTINEL_TICKERS = {
     "", "-", "--", "—", "NAN", "NONE", "NULL", "<NA>", "N/A", "NA", "CASH",
 }
+_NON_EQUITY_TICKERS = _CURRENCY_CODES | _SENTINEL_TICKERS   # kept: legacy importers
 # High-precision name patterns — kept tight to avoid flagging real issuers
 # (e.g. "FutureFuel", "Cash America" are NOT matched: we anchor on cash-sleeve /
 # currency / instrument phrasing, not bare substrings).
@@ -54,6 +62,58 @@ _NON_EQUITY_NAME_RE = re.compile(
     r"\bfx\s+forward|forward\s+contract|\bswap\b",
     re.IGNORECASE,
 )
+# An ISO-4217 code in the ticker is EVIDENCE of a currency line, never a verdict:
+# real issuers carry currency-shaped tickers. Measured over all 55,612 rows of
+# data/etf_holdings + data/holdings (2026-08-12), the bare-code and leading-code
+# branches were dropping SIX REAL ISSUERS, 130 rows:
+#   COP ConocoPhillips (SPY, RSP) · PEN Penumbra Inc. (MDY) · CNH Industrial NV
+#   (MDY) · "EUR AU" European Lithium (LIT, 42 rows) · "INR AU" ioneer (LIT, 42)
+#   · "PEN AU" Peninsula Energy (URA, 42).
+# The last three are the sharper half: the `head in _CURRENCY_CODES` rule was
+# written for INSTRUMENT suffixes ("USD CASH", "EUR FWD") but a Bloomberg foreign
+# listing has the identical shape — "<CODE> <EXCHANGE>" — so an ASX lithium and
+# uranium miner read as an FX line in the two funds built to hold exactly those.
+# This is the failure direction the futures predicate (§6c m17) also refuses: a
+# wrongly-dropped equity leaves NO trace in any output, and here not even in the
+# store, because collectors.etf_holdings._normalize applies this predicate at
+# WRITE time — the row is erased at ingest, not merely hidden at read.
+#
+# The discriminator is the name column, and on the live corpus it is clean: every
+# genuine FX/cash line is named for the CURRENCY ("EURO", "SOUTH KOREA WON",
+# "NEW TAIWAN DOLLAR", "DANISH KRONE"), every equity for its ISSUER. So a
+# currency-coded ticker is non-equity only when the name corroborates it, or when
+# the name is blank and nothing CAN corroborate it (R1's lesson, masterplan §6b:
+# sponsors do file cash sleeves with an empty name column).
+# CONSERVATISM. _CURRENCY_NAME_RE is anchored end-to-end, not a substring search,
+# and is consulted ONLY for a ticker already matching a currency code. Both guards
+# are load-bearing: "Dollar General", "Dollar Tree" and "The RealReal" carry
+# currency WORDS, and a substring rule would drop all three the day one of them
+# is filed under a currency-shaped ticker. Verified over the full corpus: 130 rows
+# change verdict, all six issuers above, and ZERO rows newly dropped.
+_CURRENCY_NAME_RE = re.compile(
+    r"^[a-z.\s]{0,24}?(?:dollar|euro|pound|yen|yuan|renminbi|won|franc|krone|"
+    r"krona|peso|rupee|rupiah|ringgit|baht|shekel|zloty|lira|rand|koruna|"
+    r"forint|dirham|riyal|dinar|dong|sol|real)s?$",
+    re.IGNORECASE,
+)
+# The second corroborating form: a cash/treasury token ANYWHERE in the name
+# ("Euro Cash", "USD Cash Account", "JPY spot"). Deliberately a loose substring
+# search where _CURRENCY_NAME_RE is anchored, because it is reachable ONLY after
+# the ticker already matched a currency code — the two guards compose, and
+# neither is safe alone. "Cash America International" (ticker CSH) never reaches
+# here; if it ever traded under a currency-shaped ticker this rule would drop it,
+# which is the residual risk accepted for catching the sponsor forms below.
+_CURRENCY_CONTEXT_RE = re.compile(
+    r"\b(?:cash|balance|deposit|account|spot|fx|forward|fwd|currency|"
+    r"money\s*market|treasur\w+)\b",
+    re.IGNORECASE,
+)
+# "<CCY> CASH" / "<CCY> FWD" — a currency code followed by an INSTRUMENT token is
+# non-equity whatever the name says. A currency code followed by an EXCHANGE code
+# ("EUR AU") is a real foreign listing. Enumerating the instrument tokens is what
+# separates the two; the old rule could not tell them apart.
+_CURRENCY_INSTRUMENT_RE = re.compile(
+    r"^[A-Z]{3}[\s_-]+(?:CASH|FWD|FORWARD|SPOT|FX|CURRENCY|CCY|MM)\b")
 # Sponsor cash-sleeve lines whose CASH MARKER IS THE TICKER and whose name column
 # is empty/NaN, so neither the ticker set nor the name patterns above can see them.
 # VanEck's form is "-USD CASH-" / "-EUR CASH-" / "-CZK CASH-": a LEADING HYPHEN
@@ -160,13 +220,31 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
     """True if a holdings row is cash / FX / money-market / a derivative / an
     index-futures overlay / receivable — anything whose share count is a balance
     or a contract count, not an equity position. Used to weed the radar's
-    erroneous near-zero-base blow-ups and phantom lifecycle rows."""
+    erroneous near-zero-base blow-ups and phantom lifecycle rows.
+
+    A currency-shaped TICKER is evidence, not a verdict: it decides the row only
+    when the NAME corroborates it (or is blank, so nothing can). See the comment
+    block above for the six real issuers the unqualified rule was erasing.
+    """
     tk = str(ticker).strip().upper()
-    if tk in _NON_EQUITY_TICKERS:
+    nm = str(name).strip()
+    if nm.lower() in ("nan", "none", "<na>"):       # pandas NaN → "nan" via str()
+        nm = ""
+    if tk in _SENTINEL_TICKERS:
         return True
+    if _CURRENCY_INSTRUMENT_RE.match(tk):           # e.g. "USD CASH", "EUR FWD"
+        return True
+    # Currency-shaped ticker is evidence, not a verdict. A name that
+    # does not corroborate (COP, PEN, CNH, "EUR AU") is an equity.
     head = tk.split()[0] if tk.split() else ""
-    if head in _CURRENCY_CODES:                     # e.g. "USD CASH", "EUR FWD"
-        return True
+    if tk in _CURRENCY_CODES or head in _CURRENCY_CODES:
+        if not nm:                                  # nothing can contradict it
+            return True
+        if (_CURRENCY_NAME_RE.match(nm)             # "EURO", "DANISH KRONE"
+                or _CURRENCY_CONTEXT_RE.search(nm)  # "Euro Cash", "JPY spot"
+                or _NON_EQUITY_NAME_RE.search(nm)):
+            return True
+        return False
     if _CASH_SLEEVE_TICKER_RE.match(tk):            # e.g. "-USD CASH-" (name NaN)
         return True
     if _FUTURES_TICKER_RE.match(tk):                # e.g. "NQU6 Index" (Bloomberg)
@@ -174,7 +252,6 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
     parts = tk.split()
     if len(parts) > 1 and _DERIVATIVE_TOKENS & set(parts):   # e.g. "21873S108 SWP"
         return True
-    nm = str(name).strip()
     if not nm:
         return False
     if _NON_EQUITY_NAME_RE.search(nm):
@@ -186,9 +263,20 @@ def is_non_equity_holding(ticker, name: str = "") -> bool:
     return bool(_MMF_TICKER_RE.match(tk) and _MMF_NAME_TOKEN_RE.search(nm))
 
 
-def _drop_non_equity(df: pd.DataFrame) -> pd.DataFrame:
+def drop_non_equity(df: pd.DataFrame) -> pd.DataFrame:
     """Filter cash/FX/derivative rows from a holdings snapshot. Resolves the name
-    column across sponsors (etf_holdings: 'name'; ARK csv: 'company')."""
+    column across sponsors (etf_holdings: 'name'; ARK csv: 'company').
+
+    PUBLIC because stored snapshots deliberately RETAIN these rows — the store is
+    the raw sponsor filing, and every reader must weed it for itself. Readers that
+    only ever look a ticker UP (`weights.get(t)` keyed by an independent equity
+    universe) are inert against cash keys today, but the inertness is an accident
+    of which strings sponsors happen to use: `CASH` is both a sentinel here and a
+    live published ticker (Pathward Financial), so a sponsor filing its sleeve
+    under that string would hand a real stock a cash weight. Call this instead of
+    relying on the accident. Never resolve the name column by hand at a call site
+    — that is what silently diverges when a new sponsor arrives.
+    """
     if df is None or df.empty or "ticker" not in df.columns:
         return df
     ncol = next((c for c in df.columns if c.lower() in ("name", "company")), None)
@@ -196,6 +284,9 @@ def _drop_non_equity(df: pd.DataFrame) -> pd.DataFrame:
     keep = [not is_non_equity_holding(t, n)
             for t, n in zip(df["ticker"].astype(str), names)]
     return df[pd.Series(keep, index=df.index)]
+
+
+_drop_non_equity = drop_non_equity          # legacy in-module alias
 
 
 class HoldingsAdapter(Adapter):

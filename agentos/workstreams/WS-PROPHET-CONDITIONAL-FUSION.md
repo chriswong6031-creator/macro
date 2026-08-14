@@ -34,9 +34,10 @@ landmines:
 do_not_redo:
   - "Do not restore the additive potential_score, a confirming-desk-count score, or any
     unconditional composite — the CEO ruling explicitly does not authorize them."
-  - "Do not edit DNR rows in PR-0; the two row amendments (KILL-FUSED-COMPOSITE
-    authority half, KILL-POSITIONING-FUSION) land as their own registry PR after
-    adversarial review + ratification (masterplan §12)."
+  - "The two DNR row amendments LANDED in PR-0 (#5593):
+    DNR:KILL-FUSED-COMPOSITE Amendment 3 and DNR:KILL-POSITIONING-FUSION Amendment 1,
+    with compiled blocklists regenerated per masterplan §12 and §17 attack 13; do not
+    re-defer or re-litigate absent new evidence."
   - "Do not register anything inside Live Entry Radar's detector arena — entry-detector
     fusion is its reserved F1_FUSION slot; this program fuses cross-family only."
   - "Do not build a rival fingerprint/epoch/personality stack — consume

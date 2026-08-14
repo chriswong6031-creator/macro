@@ -1124,8 +1124,16 @@ def evaluate(
             if {"threshold", "win", "loss", "cost"} <= set(econ_cfg)
             else _null("decision_economics_not_configured:"
                        "requires threshold, win, loss, cost")),
-        "promotion": ("NONE — shadow tier. The forward ledger has zero matured grades; "
-                      "nothing here moves an availability flag"),
+        # The promotion DECISION (none) is this module's to make. The forward ledger's
+        # grade COUNT is not — and this function never reads the ledger, so it was in no
+        # position to assert one. It claimed "zero matured grades" as a standing fact
+        # until 2026-08-14, when the first window matured (BDX:2026:219-224, graded
+        # 2026-08-13) and the sentence quietly became false. Nothing caught it: the only
+        # test compared the literal to itself, so the claim was its own evidence. State
+        # what this module actually knows.
+        "promotion": ("NONE — shadow tier. Forward grades accrue as windows mature and are "
+                      "evidence toward a record, not a promotion; nothing here moves an "
+                      "availability flag"),
     }
 
 

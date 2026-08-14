@@ -41,6 +41,8 @@ from engine.top_picks import (ALPHA_W, TILT_LEGS, TILT_W,  # noqa: E402
                               band, compute_scores, entry_meta)
 from lib import config  # noqa: E402
 from lib.pages import write_page  # noqa: E402
+from scripts.check_signal_gate_coherence import (  # noqa: E402 — one shared predicate
+    BUCKETS as COHERENCE_BUCKETS, incoherent_tickers, stale_side)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("build_discovery")
@@ -59,6 +61,56 @@ SIGNAL_LABELS = {
 }
 
 
+def _demote_stale_gate(site: Path, gate: dict, verdicts: dict) -> None:
+    """Replace gate verdicts that DISAGREE with the board's own embedded copy (#5490).
+
+    signal_gate.json is the primary source below, and it is the side that can silently go
+    stale: build_stock_library writes both artifacts, but only the gate write is guarded
+    (`if sig_verdict:` + try/except), so a `scope=all` re-render can advance
+    us_standouts.json's embedded `signal` blobs and leave the gate behind — wearing the
+    same `as_of`, because that field is the DATA date, not the write time. When the two
+    disagree the BOARD is the fresher side, and its blob is a strict superset of the gate
+    entry's keys, so signal_gate.is_buyable reads it unchanged.
+
+    Mutates `verdicts` in place. A coherent pair is untouched, and this is never fatal:
+    its own try/except is deliberate — falling into the caller's would log
+    "unreadable / recomputing cascade" and discard a gate that loaded fine.
+    """
+    try:
+        p = site / "factordata" / "us_standouts.json"
+        if not p.exists():
+            return
+        board = json.loads(p.read_text())
+        flagged = incoherent_tickers(board, gate)
+        if not flagged:
+            return
+        blobs: dict[str, dict] = {}
+        for bucket in COHERENCE_BUCKETS:
+            for row in board.get(bucket) or []:
+                t = row.get("ticker")
+                if t and row.get("signal"):
+                    blobs.setdefault(t, row["signal"])
+        swapped = []
+        for t in sorted(flagged):
+            blob = blobs.get(t)
+            if blob:
+                verdicts[t] = blob      # board wins; ADDs the name when the gate lacked it
+                swapped.append(t)
+        if not swapped:
+            return
+        side = stale_side(board, gate)
+        tail = f"; emit stamps name the {side} side as the stale one" if side else ""
+        # Bare print at line start with flush=True — house law (CLAUDE.md §GitHub
+        # annotations): this module's logger prefixes every record, so a logged
+        # "::warning" reviews as wired and is dropped silently by GitHub.
+        print(f"::warning title=signal-gate-coherence::"
+              f"{len(swapped)} ticker(s) disagreed between signal_gate.json and the "
+              f"board's embedded signal blob ({', '.join(swapped[:8])}) — using the board "
+              f"copy for them{tail}", flush=True)
+    except Exception as e:  # noqa: BLE001 — a coherence demotion must never break the page
+        log.warning("signal-gate coherence demotion skipped (%s)", e)
+
+
 def _signal_verdicts(site: Path, closes) -> dict:
     """ticker -> the compact MACD-2D x StochRSI-3D confluence verdict that gates the Top-setups
     strip on us_stocks.html. PRIMARY source: site/factordata/signal_gate.json, written by
@@ -73,6 +125,7 @@ def _signal_verdicts(site: Path, closes) -> dict:
             v = data.get("verdicts") if isinstance(data, dict) else None
             if v:
                 log.info("loaded signal_gate.json (%d verdicts)", len(v))
+                _demote_stale_gate(site, data, v)
                 return v
         except Exception as e:  # noqa: BLE001 — additive, never fatal
             log.warning("signal_gate.json unreadable (%s); recomputing cascade", e)

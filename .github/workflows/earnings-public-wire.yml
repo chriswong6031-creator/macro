@@ -10,6 +10,7 @@ on:
     paths:
       - "scripts/build_earnings_public_wire.py"
       - "scripts/publish_earnings_private_store.py"
+      - "scripts/audit_earnings_wire_freshness.py"
       - "engine/earnings_narrative/**"
       - "app/earnings.py"
       - "templates/earnings_wire/**"
@@ -165,3 +166,20 @@ jobs:
           push_lost
           echo "::error title=earnings-public-wire::could not publish after ${PUSH_ATTEMPT} attempts"
           exit 1
+
+      # DEAD-MAN'S SWITCH (2026-08-14). Everything above can succeed while the
+      # archive is dead. This lane is DOWNSTREAM of the only ingest lane
+      # (earnings-evidence-graph), so when that lane dies this one keeps
+      # regenerating and republishing a frozen evidence root once an hour, exits 0,
+      # and commits a `verified_at` bump that reads as a healthy cadence. That is
+      # exactly what happened from 2026-08-02 to 2026-08-14: twelve days, ~24
+      # green commits a day, 1,631 unprocessed transcript bodies, and no alarm.
+      #
+      # Runs LAST and with `always()` so publication is never gated on the audit —
+      # publishing correct-but-stale bytes is still better than not publishing —
+      # but the job then goes RED once the archive is >=7 days behind upstream.
+      # A red hourly lane is the signal that was missing; an ::error annotation on
+      # a green job is not, because a green job is what nobody looks at.
+      - name: earnings archive staleness tripwire
+        if: always()
+        run: python -m scripts.audit_earnings_wire_freshness --strict

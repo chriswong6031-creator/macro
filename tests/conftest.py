@@ -356,6 +356,111 @@ def _module_leaks(
     )
 
 
+"""Sparse session-worktree awareness (research/WORKTREE_GC_POLICY.md §0 R8)
+--------------------------------------------------------------------------
+Session worktrees are minted sparse by `.claude/hooks/worktree_create_sparse.py`
+— every tracked directory EXCEPT the heavy generated ones (`data/`, `site/`,
+`mockups/`, `verify_shots/`), which are 87 % of a 3.8 GiB checkout. A test that
+reads one of those committed trees then fails with a FileNotFoundError that
+reads exactly like a real regression, and the remedy is undiscoverable from the
+traceback.
+
+Three things happen here, and NONE of them turns a real failure green:
+
+  * every run in a sparse tree prints a header line naming the omitted trees and
+    the one command that materialises them;
+  * a test explicitly marked `needs_full_checkout(*dirs)` SKIPS with that same
+    command as its reason — reserved for tests verified to need the tree, never
+    applied to a failure we have not diagnosed;
+  * any OTHER failure whose traceback mentions an omitted tree still FAILS, with
+    a section appended saying the checkout is sparse. A wrong answer stays red;
+    it just stops being a mystery.
+"""
+
+_SPARSE_MISSING: list[str] | None = None
+
+
+def _sparse_missing() -> list[str]:
+    """Tracked top-level dirs this checkout omits; [] in a full checkout."""
+    global _SPARSE_MISSING
+    if _SPARSE_MISSING is None:
+        try:
+            if str(_REPO_ROOT) not in sys.path:
+                sys.path.insert(0, str(_REPO_ROOT))
+            from scripts.worktree_sparse import missing_dirs
+            _SPARSE_MISSING = missing_dirs(_REPO_ROOT)
+        except Exception:  # noqa: BLE001 — detection must never break collection
+            _SPARSE_MISSING = []
+    return _SPARSE_MISSING
+
+
+def _sparse_remedy(dirs: list[str]) -> str:
+    try:
+        from scripts.worktree_sparse import remedy_line
+        return remedy_line(dirs)
+    except Exception:  # noqa: BLE001
+        return (f"sparse worktree — {', '.join(dirs)} not checked out; opt into a full "
+                f"checkout with: python3 scripts/worktree_sparse.py full")
+
+
+def pytest_configure(config):
+    config.addinivalue_line(
+        "markers",
+        "needs_full_checkout(*dirs): this test reads committed trees that a sparse "
+        "session worktree omits (policy R8). Skipped — with the opt-in command as the "
+        "reason — only when those dirs are actually absent.",
+    )
+
+
+def pytest_report_header(config):
+    missing = _sparse_missing()
+    return _sparse_remedy(missing) if missing else None
+
+
+def pytest_terminal_summary(terminalreporter, exitstatus, config):
+    # The header above is suppressed by -q, which is how this suite is usually
+    # run. Repeat the notice in the summary — where -q still prints — but only
+    # when something actually went wrong, so green runs stay quiet.
+    missing = _sparse_missing()
+    if not missing:
+        return
+    if not (terminalreporter.stats.get("failed") or terminalreporter.stats.get("error")):
+        return
+    terminalreporter.write_line("")
+    terminalreporter.write_line(f"NOTE: {_sparse_remedy(missing)}", yellow=True)
+
+
+def pytest_collection_modifyitems(config, items):
+    missing = set(_sparse_missing())
+    if not missing:
+        return
+    for item in items:
+        for mark in item.iter_markers(name="needs_full_checkout"):
+            needed = set(mark.args) or missing
+            absent = sorted(needed & missing)
+            if absent:
+                item.add_marker(pytest.mark.skip(reason=_sparse_remedy(absent)))
+                break
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    # A failure that merely LOOKS like a regression in a sparse tree keeps its
+    # red; it just carries the remedy. Attribution is by name match against the
+    # omitted trees, so unrelated failures are not annotated.
+    outcome = yield
+    report = outcome.get_result()
+    missing = _sparse_missing()
+    if not missing or not report.failed:
+        return
+    text = report.longreprtext or ""
+    hits = sorted(d for d in missing if f"/{d}/" in text or f"'{d}'" in text or f"{d}/" in text)
+    if hits:
+        report.sections.append(
+            ("Sparse worktree", f"This checkout omits {', '.join(missing)}. "
+                                f"If this failure is an artifact of that, {_sparse_remedy(hits)}"))
+
+
 def pytest_sessionstart(session):
     if _data_guard_mode() == "off" or hasattr(session.config, "workerinput"):
         return

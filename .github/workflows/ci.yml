@@ -531,7 +531,9 @@ on:
       # OIP PIT decision/outcome ledger: both the durable R2 source and the
       # nightly consumer/contracts must trigger the exact adversarial suite.
       - "engine/options_signal_episode.py"
+      - "engine/options_episode_coverage.py"
       - "scripts/build_options_signal_episode.py"
+      - "scripts/audit_options_episode_outcome_coverage.py"
       - "scripts/build_polygon_intraday.py"
       - "contracts/options/options.signal_episode.v1.schema.json"
       - "contracts/options/options.signal_episode_outcome.v1.schema.json"
@@ -542,6 +544,7 @@ on:
       - "research/options_estate/OPTIONS_SIGNAL_CAMPAIGNS_PREREG.md"
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "tests/test_options_signal_episode.py"
+      - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_polygon_intraday.py"
       # Canonical campaign v2: independent immutable revisions, causal outcomes,
       # exact-prefix checkpoint, preregistration, and hostile replay tests.
@@ -1414,6 +1417,15 @@ on:
       # without this line an edit to the CONFIG side could not start the pack
       # that runs the guard over it — the #3488 shape.
       - "config/earnings_qual.yml"
+      # The two guards written after the 2026-08-02 ingest outage, same #3488
+      # shape: the lanes they protect are workflow YAML and a scripts/ module, so
+      # without these lines a test-only edit could not start the pack that runs
+      # them. test_earnings_evidence_graph_deps.py derives the pyyaml requirement
+      # from the live import chain; test_earnings_wire_freshness.py pins the
+      # published-vs-upstream lag tripwire.
+      - "tests/test_earnings_evidence_graph_deps.py"
+      - "tests/test_earnings_wire_freshness.py"
+      - "scripts/audit_earnings_wire_freshness.py"
       - "tests/test_china_board_watch_lane.py"
       - "tests/test_risk_state_live_session_floor.py"
       # Hosted-runner packing contract: changes to the orchestrator or its
@@ -1741,9 +1753,11 @@ on:
       # is complete and consistent.
       - "config/house_law_checks.yml"
       - "scripts/check_house_law_registry.py"
+      - "scripts/check_append_only_assertions.py"
       - "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
       - "docs/**"
       - "tests/test_house_law_registry.py"
+      - "tests/test_append_only_assertions.py"
       # validated-claims guard: wire as PR gate so unearned 'validated' claims
       # are caught before merge (not just in the nightly calibration run).
       - "scripts/check_validated_claims.py"

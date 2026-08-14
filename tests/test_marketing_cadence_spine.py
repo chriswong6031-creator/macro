@@ -626,6 +626,18 @@ def test_session_windows_may_wrap_past_midnight():
 # 4. One conversation, one owner
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _press_lead(handle: str) -> str:
+    """The lead sentence the deterministic summarizer will relay for `handle`.
+
+    Exposed rather than inlined because the near-dup radar test has to build a
+    PRIOR item that matches what this lane actually composes — a prior built
+    from the headline alone stopped being a near-duplicate the moment the
+    packets gained real bodies (W2E).
+    """
+    return (f"The {handle} desk carried the statement in full and notified "
+            f"clients on its own wire.")
+
+
 def _press_item(iid: str, *, handle: str, headline: str,
                 truth_status_id: str = "", source_tier: str = "") -> dict:
     """One press FeedItem.
@@ -644,7 +656,17 @@ def _press_item(iid: str, *, handle: str, headline: str,
         "url": f"https://example.test/{iid}",
         "published_at": "2026-07-22T11:58:00Z",
         "headline": headline,
-        "body_snippet": headline,
+        # A REAL PACKET, not an echo of its own headline (W2E, 2026-08-11). With
+        # body == headline the deterministic summarizer has nothing to relay and
+        # compose-or-drop refuses the item, which would make every story-lock and
+        # near-dup assertion below vacuous for the wrong reason.
+        #
+        # THE LEAD SENTENCE NAMES ITS OWN MIRROR, and that is load-bearing rather
+        # than decorative: the story-lock tests pair two DIFFERENTLY-WORDED
+        # mirrors of one Truth post, so a body shared verbatim between them would
+        # let the cross-account near-dup radar refuse the second item before the
+        # lock was ever exercised. Each mirror's packet reads like its own desk's.
+        "body_snippet": f"{headline}. {_press_lead(handle)}",
         "corroboration_class": "direct-quote",
     }
     if truth_status_id:
@@ -806,9 +828,15 @@ def test_cross_account_radar_covers_the_press_lane(tmp_path):
     from engine.marketing.press_lane import run_press_tick
 
     headline = "Oil spikes after a strike near the Strait of Hormuz"
-    # deskA already queued near-identical copy through the ordinary path.
+    # deskA already queued near-identical copy through the ordinary path. The
+    # prior mirrors the press lane's COMPOSED shape (headline + the lead sentence
+    # the deterministic summarizer relays), not the headline twice — since W2E an
+    # item whose only body is its own headline never reaches the outbox at all,
+    # so a headline-doubled prior would have made this test pass on the wrong
+    # mechanism.
     prior = make_item(account="deskA", kind="macro",
-                      text=f"{headline}\n\n{headline}", as_of=_AS_OF,
+                      text=f"{headline}\n\n{_press_lead('FirstSquawk')}",
+                      as_of=_AS_OF,
                       provenance="content_studio", now=_WED_UTC)
     assert enqueue(prior, root=tmp_path) == "queued"
 
