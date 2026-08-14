@@ -2642,8 +2642,26 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # `requests` is load-bearing, not decoration: tests/test_w6_readiness_monitor.py
+      # patches `scripts.notify.send_telegram`, and mock.patch RESOLVES its target by
+      # importing the module — `scripts/notify.py` imports requests at module level and
+      # does not guard it. Measured per-suite before wiring: test_qledger.py and
+      # test_grade_qledger.py never load requests, the w6 suite always does, so without
+      # this the new step ERRORS on import while every existing step here stays green.
+      # WIDENING IS LEGAL HERE, and the distinction is the whole point of the rule it
+      # looks like it breaks. "Never widen the pip line" is scoped to lanes whose thin
+      # env is a DECLARED canary — dataos-foundation's pytest+pyyaml ("a pandas import
+      # creeping into lib/dataos/ breaks HERE first", see house-law-registry below) and
+      # the marketing/chart-render thin lanes. This job declares no such contract, and
+      # no comment here turns on a dep being absent. What that rule actually forbids is
+      # provisioning a new environment to buy green; this line is byte-identical to one
+      # three other jobs already declare, so run_ci_pack.py reuses their venv and
+      # provisions nothing. The alternative — relocating the w6 suite to one of those
+      # three (altdata-new-sources, earnings-release-identity, group-earnings-pulse) —
+      # would put the qledger promotion monitor in a job that does not own its subject,
+      # which is the failure mode that left it unowned in the first place.
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        run: pip install pytest pandas numpy pyarrow pyyaml requests
       - name: qledger cluster-honest Wilson CI unit tests
         run: python -m pytest tests/test_qledger_cluster_honest_ci.py -q
       # P0a — the explicit horizon-clock contract. STEP PLACEMENT IS DELIBERATE:
@@ -2667,8 +2685,22 @@ jobs:
       # Placed AFTER the contract suites deliberately: if the clock contract
       # itself regresses, that must be the failure a reader sees first, not a
       # downstream adapter failing for a borrowed reason.
-      - name: qledger forward-only desk adapters + evidence clock (P3)
-        run: python -m pytest tests/test_qledger_desk_adapter.py tests/test_qledger_evidence_clock.py -q
+      # The nightly RUNNER over that substrate joins this step (2026-08-14). Both
+      # suites were named by NO run: step in legacy-jobs.yml and appear nowhere in
+      # ci.yml, so `scripts/grade_qledger.py` — the grader that writes every grade row
+      # and the W6 readiness monitor that decides promotion — had no CI owner at all.
+      # The cost was measured, not theorised: the w6 first-cross alert tests were red
+      # on main from #5573 (2026-08-14 05:44Z) until #5609 healed them, with zero CI
+      # signal for the whole window. They ride this step rather than a new one because
+      # a step is the masking unit here (run_ci_pack.py returns on the first non-zero
+      # step) while pytest reports EVERY file in one step — so extending the list adds
+      # coverage without adding a place for a later step to go dark, and adds no job to
+      # a manifest already at the narrow-diff ceiling. Placement inherits the rationale
+      # above: strictly downstream of the contract suites, so a clock or _aggregate
+      # regression is still the first failure a reader sees, never a runner failing for
+      # a borrowed reason.
+      - name: qledger forward-only desk adapters + evidence clock (P3) + nightly grader & W6 readiness runner
+        run: python -m pytest tests/test_qledger_desk_adapter.py tests/test_qledger_evidence_clock.py tests/test_grade_qledger.py tests/test_w6_readiness_monitor.py -q
       # round 5 MINOR: this file was owned by NO legacy job, so
       # test_register_claims_are_salience_only_macro — which asserts on
       # register_claims()'s "returns the count REGISTERED OPEN" semantics
