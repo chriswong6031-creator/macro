@@ -809,6 +809,29 @@ def _validate_staged(stage_root: Path, receipt: dict[str, Any], staged_gold: Pat
     if staged_gold.read_text(encoding="utf-8").count(GOLD_ANNOTATION_BEGIN) != 1:
         raise SystemExit("staged GOLD annotation marker is not unique")
 
+    reopened_receipt = json.loads(
+        (stage_root / RECEIPT_RELATIVE_PATH).read_text(encoding="utf-8")
+    )
+    if reopened_receipt != receipt or reopened_receipt.get("authority") != authority_block():
+        raise SystemExit("serialized amendment receipt differs from its validated object")
+    episode_json = json.loads((stage_root / OUTPUT_PATHS[4]).read_text(encoding="utf-8"))
+    if episode_json.get("authority") != authority_block() or episode_json.get("symbol") != SYMBOL:
+        raise SystemExit("serialized B episode JSON lacks B-only/all-false closure")
+
+    for relative, label in (
+        (OUTPUT_PATHS[1], "B fingerprint"),
+        (OUTPUT_PATHS[2], "B states"),
+        (OUTPUT_PATHS[3], "B episodes"),
+    ):
+        reopened = pd.read_parquet(stage_root / relative)
+        _assert_zero_authority_frame(reopened, label)
+        if set(reopened["symbol"].astype(str)) != {SYMBOL}:
+            raise SystemExit(f"{label}: serialized rows are not B-only")
+        if "price_plane_id" in reopened.columns and set(
+            reopened["price_plane_id"].astype(str)
+        ) != {PRICE_PLANE_ID}:
+            raise SystemExit(f"{label}: serialized price plane drifted")
+
 
 def _publish(stage_root: Path, staged_gold: Path) -> None:
     _validate_outputs_absent()
@@ -894,6 +917,21 @@ def main() -> int:
     for relative, expected in receipt["generated_output_sha256"].items():
         if _sha256(REPO_ROOT / relative) != expected:
             raise SystemExit(f"published output hash drift: {relative}")
+    published_receipt = json.loads(
+        (REPO_ROOT / RECEIPT_RELATIVE_PATH).read_text(encoding="utf-8")
+    )
+    if published_receipt != receipt:
+        raise SystemExit("published amendment receipt differs from the staged receipt")
+    published_gold = REPO_ROOT / DISCLOSURE_ONLY_PATH
+    disclosure = receipt["disclosure_only"]
+    if _sha256(published_gold) != disclosure["after_sha256"]:
+        raise SystemExit("published GOLD annotation hash drifted")
+    gold_text = published_gold.read_text(encoding="utf-8")
+    if gold_text.count(GOLD_ANNOTATION_BEGIN) != 1 or gold_text.count(GOLD_ANNOTATION_END) != 1:
+        raise SystemExit("published GOLD annotation markers are absent or ambiguous")
+    restored = gold_text.replace(f"\n\n{GOLD_ANNOTATION}\n\n", "\n\n", 1)
+    if hashlib.sha256(restored.encode("utf-8")).hexdigest() != disclosure["before_sha256"]:
+        raise SystemExit("published GOLD annotation does not restore the sealed dossier")
     print(
         f"[W1-A1] published B-only amendment: {receipt['result_counts']} · "
         "GOLD measured rows unchanged · receipt written last",
