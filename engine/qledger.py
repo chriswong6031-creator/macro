@@ -3023,21 +3023,66 @@ def promotion_check(claim_family: str, horizon: int,
         dates.add(_date_cluster(c.get("asof", "")))
 
         hit = g.get("hit")
-        if hit is not None:
+        if hit is None:
+            continue
+
+        if control_only:
+            # P0c-1 (research/PREREG_P0C1_DIRECTION_CORRECT_CONTROL_HITS.md).
+            # THE DEFECT this replaces: `if ctrl_excess > 0: hits += 1` never
+            # read the claim's `direction`, so a direction=-1 (bearish) call
+            # that correctly called subject_ret < control_ret scored a MISS,
+            # and a WRONG bearish call scored a HIT — an inverted hit series
+            # for every family holding short claims. The §3 Wilson bound (the
+            # promotion gate) was therefore computed on inverted arithmetic
+            # for any family holding short claims.
+            #
+            # `bench_ret` used to be read AND GATED ON here but never used in
+            # the comparison — the gate is dropped (not the field's meaning
+            # elsewhere): it is not part of the control leg, and gating on it
+            # only caused a row with a valid control leg but a null bench to
+            # wrongly fall through to the primary-hit fallback below.
+            ctrl = g.get("control_ret")
+            subj = g.get("subject_ret")
+            if ctrl is None or subj is None:
+                # Missing control leg: this row CANNOT be scored on the
+                # control leg. Prereg §2/§3 — EXCLUDED from numerator AND
+                # denominator, never converted into a miss, and never
+                # silently rescored on the primary (bench-relative) `hit` the
+                # way the old `elif hit: hits += 1` fallback did (that
+                # fallback is exactly what let a control-only reading mix in
+                # bench-relative outcomes). Skip both `graded_hits` and `hits`
+                # for this row — it contributes to neither the numerator nor
+                # the denominator of the control-only hit rate. (n_dates is
+                # unaffected: it is computed above, over the whole grade set,
+                # unconditionally — this fix changes how a row's hit counts,
+                # never which claims are eligible.)
+                continue
+
+            direction = c.get("direction")
+            if not direction:
+                # direction == 0 (salience) or absent: "salience-only claims
+                # have no direction to be right about" (prereg §2). No
+                # directional hit, AND excluded from the denominator so a
+                # salience-dominated family cannot inflate its control-only
+                # hit rate's base via rows it has nothing to say about
+                # (prereg §6.3). In production these rows already carry
+                # hit=None (grade_claim() salience path, prereg §5) and never
+                # reach this branch at all — this check makes that invariant
+                # explicit rather than assumed, so this function's
+                # control-only semantics do not silently depend on an
+                # upstream contract it cannot see.
+                continue
+
             graded_hits += 1
-            # Use control_ret leg when control_only=True; fall back to primary leg
-            if control_only:
-                ctrl = g.get("control_ret")
-                subj = g.get("subject_ret")
-                bench = g.get("bench_ret")
-                if ctrl is not None and subj is not None and bench is not None:
-                    # excess vs control = subject_ret - control_ret
-                    ctrl_excess = subj - ctrl
-                    if ctrl_excess > 0:
-                        hits += 1
-                elif hit:
-                    hits += 1   # fall back to primary hit when control unavailable
-            elif hit:
+            raw_control_excess = subj - ctrl
+            # direction * raw_control_excess > 0  <=>  (direction==+1 and
+            # excess>0) or (direction==-1 and excess<0) — the mirrored rule,
+            # prereg §2. Strict `>` so an exact-zero excess is NOT a hit.
+            if direction * raw_control_excess > 0:
+                hits += 1
+        else:
+            graded_hits += 1
+            if hit:
                 hits += 1
 
     n_dates = len(dates)
