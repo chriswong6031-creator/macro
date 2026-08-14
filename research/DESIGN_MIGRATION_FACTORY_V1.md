@@ -188,12 +188,12 @@ tail converges by template, post-launch. Nothing is hand-polished ×4,000.
 
 | # | Item | Dependency |
 |---|---|---|
-| 1 | packet PR-0 foundations | **Sol §J.9** (count-ladder ratification incl. the display-tier stage field minted in PR-0(c)) |
+| 1 | packet PR-0 foundations | **Sol §J.9** (count-ladder ratification; clause 3 — the cell set + field — is ANSWERED 2026-08-13 by the Prophet ruling, PR #5504: PR-0(c) builds the derived `lifecycle_state` projection per ruling §9, not a minted stage enum) |
 | 2 | DS-PR-0 (scales + `.mx-*` primitives + rebinds) | packet PR-0 merged |
 | 3 | **DS-PR-1** (registry field schema + archetype re-key + governance unit + ratchet R0) | DS-PR-0 — **sequenced before every migration below because gates §0.3/§0.7/§0.8 consume it** |
 | 4 | PR-1 funnel chrome (nav auth/plans presence, 404 — the 404 mockup in PR-1's own mockup gate is archetype I's reference, satisfying first-of-archetype) | PR-0 |
 | 5 | Today reference build (`start.html`, A) | DS-PR-0 + mockup gate |
-| 6 | Prophet board reference (`us_stocks.html`, B) | DS-PR-0, §J.10 concurrence, Prophet-lane coordination |
+| 6 | Prophet board reference (`us_stocks.html`, B) — packet AUTHORED 2026-08-13: `research/migration_packets/MP-1-prophet-board.md` | DS-PR-0; PR-0(c) field live in a published payload; §J.10 concurrence **GRANTED 2026-08-13** (PR #5504, ruling §10 conditions bind); mockup gate |
 | 7 | Prophet detail (new surface, C-signal) | Sol §J decisions, Handoff D |
 | 8 | Plans (H-plans) | Chairman Founding-Pro variant decision |
 | 9 | Dossier reference + `stock.html` resolver (C-company) | Sol route ruling |
