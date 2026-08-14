@@ -41,8 +41,8 @@
       +'.rc-title { font-weight:800; font-size:13.5px; }'
       +'.rc-sev { font-size:9.5px; font-weight:700; text-transform:uppercase; padding:2px 7px; border-radius:6px;'
       +'  background:color-mix(in srgb,var(--muted) 15%,transparent); color:var(--muted); letter-spacing:.04em; }'
-      +'.rc-sev.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--warn); }'
-      +'.rc-sev.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--link); }'
+      +'.rc-sev.major { background:color-mix(in srgb,var(--warn) 20%,transparent); color:var(--ink-warn, var(--warn)); }'
+      +'.rc-sev.notable { background:color-mix(in srgb,var(--link) 16%,transparent); color:var(--ink-link, var(--link)); }'
       +'.rc-day { font-size:11px; color:var(--muted); margin-left:auto; font-variant-numeric:tabular-nums; }'
       +'.rc-copy { font-size:12.5px; line-height:1.55; }'
       +'.rc-receipts { margin-top:6px; font-size:10.5px; color:var(--muted); font-variant-numeric:tabular-nums; }'
@@ -73,14 +73,14 @@
       +'.rcf-state { font-size:12.5px; font-weight:600; flex:1 1 160px; min-width:120px; }'
       +'.rcf-stance { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:6px;'
       +'  white-space:nowrap; }'
-      +'.rcf-stance.rcf-watch { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }'
-      +'.rcf-stance.rcf-favour { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--up); }'
-      +'.rcf-stance.rcf-aside  { background:color-mix(in srgb,var(--warn) 14%,transparent); color:var(--warn); }'
+      +'.rcf-stance.rcf-watch { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--ink-link, var(--link)); }'
+      +'.rcf-stance.rcf-favour { background:color-mix(in srgb,var(--up) 14%,transparent); color:var(--ink-up, var(--up)); }'
+      +'.rcf-stance.rcf-aside  { background:color-mix(in srgb,var(--warn) 14%,transparent); color:var(--ink-warn, var(--warn)); }'
       +'.rcf-stance.rcf-weak   { background:color-mix(in srgb,var(--muted) 14%,transparent); color:var(--muted); }'
       +'.rcf-decay { width:100%; height:5px; border-radius:3px;'
       +'  background:var(--panel2); border:1px solid var(--line); overflow:hidden; margin-top:4px; }'
       +'.rcf-decay-bar { height:100%; border-radius:3px; background:var(--warn); transition:width .3s; }'
-      +'.rcf-decay-cap { font-size:10px; color:var(--warn); margin-top:3px; }'
+      +'.rcf-decay-cap { font-size:10px; color:var(--ink-warn, var(--warn)); margin-top:3px; }'
       +'.rcf-help { display:inline-block; font-size:9.5px; font-weight:700; color:var(--muted);'
       +'  border:1px solid var(--line); border-radius:50%; width:16px; height:16px; line-height:14px;'
       +'  text-align:center; cursor:help; flex:none; }'
@@ -413,7 +413,7 @@
           var h=e.health||null;
           if(h&&(h.weakening||h.lapse_count>=2||h.neg_run>=2)){
             var stc=h.sessions_to_close!=null?h.sessions_to_close:(h.sessions_to_close_bound||null);
-            rec+=' <span style="color:var(--warn);font-weight:600;">'
+            rec+=' <span style="color:var(--ink-warn, var(--warn));font-weight:600;">'
               +t('Weakening — may close'+(stc!=null?' in '+stc+' sessions':''),
                  '转弱——'+(stc!=null?'或于'+stc+'个交易日内关闭':'或将关闭'))+'</span>';
           } else if(h&&h.lapse_count>0&&!e.confirmed_tonight){
@@ -471,7 +471,7 @@
             ?(e.to_sector_zh||e.sector_name_zh||(e.to_leg&&(e.to_leg.name_zh||e.to_leg.name_en))||'')
             :(e.to_sector_en||e.sector_name_en||(e.to_leg&&(e.to_leg.name_en||e.to_leg.key))||'');
           if(toSec){
-            html+='<div style="font-size:11px;color:var(--link);margin-top:8px;">'
+            html+='<div style="font-size:11px;color:var(--ink-link, var(--link));margin-top:8px;">'
               +t('Money is rotating toward '+esc(toSec)+' — see it in the flow map above.',
                  '资金正在轮向'+esc(toSec)+'——见上方资金流向图。')
               +'</div>';

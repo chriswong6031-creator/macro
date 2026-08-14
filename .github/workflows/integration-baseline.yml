@@ -72,36 +72,81 @@ concurrency:
 jobs:
   baseline:
     name: integration-baseline
-    # Main's circuit-breaker proof must not queue behind the hosted PR packs it
-    # gates, whether the proof was triggered by a push or dispatched manually.
-    # An off-main dispatch must never execute inside the persistent
-    # production-adjacent runner workspace.
-    runs-on: ${{ github.ref == 'refs/heads/main' && fromJSON('["self-hosted","render-linux"]') || 'ubuntu-latest' }}
-    # The source tree now contains roughly 60k tracked paths.  On the persistent
-    # render-linux runner, checkout@v4 must update that full index before the
-    # control-plane tests can start; two consecutive post-merge proofs were
-    # cancelled at the former 12-minute whole-job ceiling while still inside
-    # checkout.  Keep every gate below unchanged and bound the complete job at
-    # 30 minutes so a real failure still terminates promptly.
+    # EVERY event runs on the hosted pool. The self-hosted detour is retired.
+    #
+    # History, because the reversal is the point: this job was pinned to
+    # `["self-hosted","render-linux"]` on main (2026-08-08) so the circuit
+    # breaker would not queue behind hosted PR packs. That constraint is gone —
+    # the repository is on the MastermindX Enterprise plan (500 hosted jobs)
+    # and ci-pack already starts within seconds on ubuntu-latest. The detour
+    # now COSTS the merge train: measured 2026-08-13, consecutive main-ref
+    # baselines 31667559199 / 31667698650 died inside checkout on render-linux
+    # (codeload.github.com HttpClient.Timeout of 100s; git fetch early EOF;
+    # promisor-remote cancel). merge-on-green reads a failed conclusion as
+    # `red` and pauses EVERY ordinary merge; there was no `main-red-repair`
+    # labelled PR, so the whole armed backlog sat behind a runner-network
+    # flake. The same class already fired 2026-08-12 21:14Z (checkout action
+    # download timed out after 3 attempts).
+    #
+    # Hosted VMs are fresh, talk to GitHub on GitHub's network, and cannot
+    # inherit a sibling's sparse checkout, so the render-linux sparse-clear
+    # guard is no longer load-bearing. Do not route this job back onto
+    # render-linux without a new measurement that hosted pickup is worse than
+    # those checkout failures; that pool is the render lane.
+    runs-on: ubuntu-latest
+    # Bound the complete job at 30 minutes so a real failure still terminates
+    # promptly. The old 12-minute ceiling was a self-hosted-checkout artefact.
     timeout-minutes: 30
     steps:
-      # A self-hosted runner reuses its workspace.  A prior sparse checkout in
-      # the same directory can leave core.sparseCheckout enabled, after which
-      # checkout@v4 may materialise only part of this repository even though
-      # this job does not request a sparse tree.  Disable it before checkout;
-      # hosted runners are fresh and must not run this cleanup.
-      - name: clear any sparse checkout left in the shared workspace
-        if: runner.environment == 'self-hosted'
-        shell: bash
-        run: |
-          if [ -d "${{ github.workspace }}/.git" ]; then
-            git -C "${{ github.workspace }}" sparse-checkout disable || true
-            git -C "${{ github.workspace }}" config --unset-all core.sparseCheckout || true
-          fi
       - uses: actions/checkout@v4
         with:
           filter: blob:none
-          fetch-depth: 0
+          # fetch-depth 0 -> 1 (2026-08-13). NOTHING in this job reads repository
+          # history: check_workflow_yaml parses .github/workflows off disk,
+          # check_skip_only_suites walks job definitions, and the two pytest
+          # modules are unit tests (test_ci_pack's only git use is `git init` on
+          # its own tmp fixture). A full-history clone of a ~60k-path tree was
+          # therefore pure cost on the persistent render-linux workspace — and it
+          # was the cost that kept killing the breaker: run 31707607311 spent its
+          # entire 30-minute ceiling INSIDE checkout@v4 (13:57:51Z -> 14:27:49Z,
+          # every later step skipped), as did 31700629027 and 31698155510, while
+          # the last SUCCESS (31665323888) finished the whole job in 3m57s.
+          #
+          # This is the third turn of the same screw. The ceiling was already
+          # raised 12 -> 30 minutes for "two consecutive post-merge proofs
+          # cancelled while still inside checkout" (see timeout-minutes above);
+          # raising it again would buy another few weeks. Removing work the job
+          # never needed is the fix that does not need a fourth raise.
+          #
+          # Cost of being wrong is bounded and loud: any step that did need
+          # history fails immediately and visibly on this workflow, which is
+          # itself the gate everyone watches.
+          fetch-depth: 1
+          # AND the tree itself (2026-08-13, second attempt — the first was wrong).
+          # fetch-depth alone did NOT fix this: run 31723440810 carried
+          # `fetch-depth: 1` in its own SHA (verified) and still spent 28m17s in
+          # checkout@v4 before dying at the ceiling. So the cost is not history,
+          # it is MATERIALISING ~61k paths into the persistent render-linux
+          # workspace. Measured split:
+          #     data/   41,302 paths
+          #     site/   10,958 paths
+          #     what this job actually reads  ~9,000
+          # This job parses .github/workflows, walks job definitions, and runs two
+          # unit-test modules. It opens nothing under site/ or data/ — proven by
+          # running its COMPLETE gate set in a worktree that has neither:
+          # check_workflow_yaml selftest + 83 workflows parsed, check_skip_only_suites
+          # selftest + full run, and pytest test_ci_pack + test_merge_on_green
+          # (365 passed). Excluding those two directories drops ~85% of the
+          # checkout for zero loss of coverage.
+          #
+          # Non-cone with negation, deliberately: it states the EXCLUSION, so a new
+          # top-level directory is included by default and cannot silently fall out
+          # of this job's view the way a cone allowlist would let it.
+          sparse-checkout: |
+            /*
+            !/site/
+            !/data/
+          sparse-checkout-cone-mode: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

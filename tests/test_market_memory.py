@@ -7,7 +7,10 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Iterator
+from concurrent.futures import Future
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from threading import BoundedSemaphore
@@ -567,14 +570,69 @@ def test_symbol_cache_keeps_only_validated_detached_projection(monkeypatch, tmp_
     api._reset_symbol_rate_limit_for_tests()
 
 
-def _wait_for_symbol_fetches_to_finish(timeout: float = 2.0) -> None:
+def _wait_for_symbol_fetches_to_finish(
+    timeout: float = 2.0, *, strict: bool = True
+) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         with api._symbol_data_lock:
             if not api._symbol_fetch_inflight:
-                return
+                return True
         time.sleep(0.01)
-    raise AssertionError("symbol fetch lane did not drain")
+    if strict:
+        raise AssertionError("symbol fetch lane did not drain")
+    return False
+
+
+@contextmanager
+def _drains_the_symbol_fetch_lane(*parked: threading.Event) -> Iterator[None]:
+    """Release every parked work item and drain the lane, failure path included.
+
+    ``api._symbol_fetch_executor`` is a module-level pool that is never shut
+    down, so ``concurrent.futures`` joins its worker threads at interpreter exit
+    with NO timeout — and a still-QUEUED item is executed during that shutdown,
+    by which point ``monkeypatch`` has restored the real ``_fetch_stock_record``.
+    That real path calls ``_require_public_hostname`` -> ``socket.getaddrinfo``,
+    which takes no timeout, runs before the ``requests`` connect timeout, and is
+    outside ``_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS``.  One stranded item
+    therefore blocks the interpreter forever, AFTER pytest has already printed
+    its summary: ``market-memory-contract`` burned its whole 10-minute budget
+    that way twice on a docs-only PR that could not have influenced it (#5367,
+    2026-08-11T21:02Z and 2026-08-12T00:09Z), hanging rather than failing.
+
+    The tests below park a work item and then assert timing budgets
+    (``started.wait(1.0)``, ``time.monotonic() - before < 0.25``) BEFORE their
+    ``release.set()``.  Those budgets are the first thing to blow on a loaded
+    4-core runner, and the bare ``AssertionError`` then skips the release and
+    the drain.  Releasing here keeps every one of those assertions exactly as
+    strict while making the strand impossible.
+
+    A drain failure never masks a real one: when the body raised, the drain is
+    best-effort so the original assertion is what the report shows.
+    """
+    failed = False
+    try:
+        yield
+    except BaseException:
+        failed = True
+        raise
+    finally:
+        for event in parked:
+            event.set()
+        _wait_for_symbol_fetches_to_finish(5.0, strict=not failed)
+
+
+@pytest.fixture(autouse=True)
+def _symbol_fetch_lane_must_not_outlive_the_test() -> Iterator[None]:
+    """Tripwire: no test may leave work on the module-level fetch executor.
+
+    A strand is invisible while the tests pass — it costs the JOB, not the
+    assertion — so name the responsible test here instead of letting the pack
+    die on its wall clock with no output.  See ``_drains_the_symbol_fetch_lane``
+    for why a survivor hangs interpreter exit outright.
+    """
+    yield
+    _wait_for_symbol_fetches_to_finish(10.0)
 
 
 def test_symbol_fetch_singleflight_rejects_duplicate_cold_waiters(
@@ -597,19 +655,19 @@ def test_symbol_fetch_singleflight_rejects_duplicate_cold_waiters(
 
     monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
     with ThreadPoolExecutor(max_workers=8) as callers:
-        first = callers.submit(api._load_symbol_context, tmp_path, "AAPL")
-        assert started.wait(1.0)
-        duplicates = [
-            callers.submit(api._load_symbol_context, tmp_path, "AAPL")
-            for _ in range(7)
-        ]
-        for duplicate in duplicates:
-            with pytest.raises(api._SymbolDataBusy, match="already in progress"):
-                duplicate.result(timeout=1.0)
-        release.set()
-        assert first.result(timeout=1.0)["available"] is True
+        with _drains_the_symbol_fetch_lane(release):
+            first = callers.submit(api._load_symbol_context, tmp_path, "AAPL")
+            assert started.wait(1.0)
+            duplicates = [
+                callers.submit(api._load_symbol_context, tmp_path, "AAPL")
+                for _ in range(7)
+            ]
+            for duplicate in duplicates:
+                with pytest.raises(api._SymbolDataBusy, match="already in progress"):
+                    duplicate.result(timeout=1.0)
+            release.set()
+            assert first.result(timeout=1.0)["available"] is True
 
-    _wait_for_symbol_fetches_to_finish()
     assert calls == 1
     api._reset_symbol_rate_limit_for_tests()
 
@@ -628,16 +686,16 @@ def test_symbol_fetch_lane_saturation_fails_fast(monkeypatch, tmp_path) -> None:
 
     monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
     with ThreadPoolExecutor(max_workers=1) as caller:
-        first = caller.submit(api._load_symbol_context, tmp_path, "AAPL")
-        assert started.wait(1.0)
-        before = time.monotonic()
-        with pytest.raises(api._SymbolDataBusy, match="saturated"):
-            api._load_symbol_context(tmp_path, "MSFT")
-        assert time.monotonic() - before < 0.25
-        release.set()
-        assert first.result(timeout=1.0)["available"] is True
+        with _drains_the_symbol_fetch_lane(release):
+            first = caller.submit(api._load_symbol_context, tmp_path, "AAPL")
+            assert started.wait(1.0)
+            before = time.monotonic()
+            with pytest.raises(api._SymbolDataBusy, match="saturated"):
+                api._load_symbol_context(tmp_path, "MSFT")
+            assert time.monotonic() - before < 0.25
+            release.set()
+            assert first.result(timeout=1.0)["available"] is True
 
-    _wait_for_symbol_fetches_to_finish()
     api._reset_symbol_rate_limit_for_tests()
 
 
@@ -655,13 +713,43 @@ def test_symbol_fetch_caller_has_a_real_wall_clock_deadline(
         return _stock_record(symbol)
 
     monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
-    before = time.monotonic()
-    with pytest.raises(api._SymbolDataBusy, match="caller deadline"):
-        api._load_symbol_context(tmp_path, "AAPL")
-    assert time.monotonic() - before < 0.25
-    release.set()
-    _wait_for_symbol_fetches_to_finish()
+    with _drains_the_symbol_fetch_lane(release):
+        before = time.monotonic()
+        with pytest.raises(api._SymbolDataBusy, match="caller deadline"):
+            api._load_symbol_context(tmp_path, "AAPL")
+        assert time.monotonic() - before < 0.25
+        release.set()
     api._reset_symbol_rate_limit_for_tests()
+
+
+def test_a_parked_fetch_is_released_when_a_timing_budget_blows() -> None:
+    """A blown timing assertion must never strand a queued work item.
+
+    Pins the ``market-memory-contract`` 10-minute CI hang directly: the three
+    tests above park an item on the never-shut-down module executor and assert
+    wall-clock budgets before releasing it, so on a loaded runner the assertion
+    fired first and the release never ran.  The stranded item was then picked up
+    after the test ended — past ``monkeypatch`` teardown, so through the real
+    ``_fetch_stock_record`` and its unbounded ``socket.getaddrinfo`` — and the
+    process hung with the pytest summary already printed.  Deterministically
+    reproduced (resolver blackholed, all six executor workers held busy so the
+    singleflight item was still queued when ``started.wait(1.0)`` blew):
+    unpatched, pytest printed ``1 failed`` and interpreter exit then hung
+    forever in ``_python_exit``'s join — a watchdog killed it at 30s with the
+    worker parked inside ``getaddrinfo`` under the real ``_fetch_stock_record``;
+    with this file's finally-release, the identical failing run exited cleanly
+    in 8s.
+    """
+    release = threading.Event()
+
+    with pytest.raises(AssertionError, match="starved runner"):
+        with _drains_the_symbol_fetch_lane(release):
+            assert False, "starved runner blew a timing budget"
+
+    assert release.is_set(), (
+        "the parked work item was left blocked — it will outlive the session "
+        "and hang interpreter exit"
+    )
 
 
 def test_symbol_transport_enforces_total_deadline_on_trickling_body(
@@ -685,6 +773,291 @@ def test_symbol_transport_enforces_total_deadline_on_trickling_body(
 
     with pytest.raises(api._SymbolDataError, match="total deadline"):
         api._fetch_stock_record("https://public.example", "AAPL")
+
+
+_INTERPRETER_EXIT_PROBE = '''\
+import sys
+import threading
+
+marker_path, repo_root = sys.argv[1], sys.argv[2]
+sys.path.insert(0, repo_root)
+
+# Import the pool machinery FIRST so concurrent.futures' own _python_exit is
+# registered before this probe's hook: threading._register_atexit runs LIFO, so
+# the module hook registered last must still run before either of them.
+import concurrent.futures.thread  # noqa: F401
+
+release = threading.Event()
+started = threading.Semaphore(0)
+threading._register_atexit(release.set)
+
+import app.market_memory as mm
+
+
+def blocker():
+    started.release()
+    release.wait(30.0)
+
+
+def sentinel():
+    with open(marker_path, "w", encoding="utf-8") as handle:
+        handle.write("executed")
+
+
+for _ in range(mm._SYMBOL_FETCH_MAX_INFLIGHT):
+    mm._symbol_fetch_executor.submit(blocker)
+for _ in range(mm._SYMBOL_FETCH_MAX_INFLIGHT):
+    assert started.acquire(timeout=10.0), "the fetch pool never filled"
+
+mm._symbol_fetch_executor.submit(sentinel)
+'''
+
+
+def test_interpreter_exit_cancels_queued_symbol_fetch_work(tmp_path) -> None:
+    """A queued fetch is cancelled at interpreter exit, never executed by it.
+
+    ``concurrent.futures`` registers ``_python_exit`` via
+    ``threading._register_atexit`` when it is imported and then joins its
+    workers with NO timeout, so a still-QUEUED item is executed during
+    shutdown — past ``monkeypatch`` teardown, hence through the real
+    ``_fetch_stock_record``.  The probe fills every worker, queues one item
+    that writes a marker file, and ends the main thread; the marker is the
+    witness that the queued item ran.
+    """
+    script = tmp_path / "exit_probe.py"
+    script.write_text(_INTERPRETER_EXIT_PROBE, encoding="utf-8")
+    marker = tmp_path / "queued-item-executed"
+    repo_root = Path(api.__file__).resolve().parents[1]
+
+    before = time.monotonic()
+    completed = subprocess.run(
+        [sys.executable, str(script), str(marker), str(repo_root)],
+        cwd=str(repo_root),
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    elapsed = time.monotonic() - before
+
+    assert completed.returncode == 0, completed.stderr
+    assert elapsed < 20.0, (
+        f"interpreter exit blocked on the fetch lane for {elapsed:.1f}s"
+    )
+    assert not marker.exists(), (
+        "a queued stockdata fetch executed during interpreter shutdown"
+    )
+
+
+def _wedged_resolver() -> tuple[threading.Event, threading.Event, object]:
+    entered = threading.Event()
+    park = threading.Event()
+
+    def wedged_getaddrinfo(*_args, **_kwargs):
+        entered.set()
+        park.wait(30.0)
+        return []
+
+    return entered, park, wedged_getaddrinfo
+
+
+def _resolution_error(host: str, raised: list[BaseException]) -> None:
+    try:
+        api._require_public_hostname(host)
+    except BaseException as exc:  # noqa: BLE001 - recorded for the assertions
+        raised.append(exc)
+
+
+def test_wedged_resolver_costs_a_bounded_wait_not_the_fetch_worker(
+    monkeypatch,
+) -> None:
+    """``getaddrinfo`` takes no timeout, so the resolve must be timeboxed.
+
+    It runs before the ``requests`` connect timeout and outside
+    ``_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS``, so an unbounded call parks the
+    fetch worker forever and the permit it holds is never returned.
+    """
+    entered, park, wedged_getaddrinfo = _wedged_resolver()
+    monkeypatch.setattr(api.socket, "getaddrinfo", wedged_getaddrinfo)
+    monkeypatch.setattr(api, "_SYMBOL_RESOLVE_TIMEOUT_SECONDS", 0.2)
+    raised: list[BaseException] = []
+
+    try:
+        caller = threading.Thread(
+            target=_resolution_error, args=("wedge.example", raised), daemon=True
+        )
+        caller.start()
+        caller.join(2.0)
+
+        assert not caller.is_alive(), (
+            "the caller is parked inside getaddrinfo — the resolve is not "
+            "timeboxed"
+        )
+        assert entered.is_set(), "the wedged resolver never ran"
+        assert len(raised) == 1
+        assert isinstance(raised[0], api._SymbolDataError)
+        assert "resolution timed out" in str(raised[0])
+    finally:
+        park.set()
+
+
+def test_resolver_saturation_fails_fast_when_the_thread_cap_is_spent(
+    monkeypatch,
+) -> None:
+    """A wedged resolver keeps its thread; the cap must then refuse, not queue."""
+    entered, park, wedged_getaddrinfo = _wedged_resolver()
+    monkeypatch.setattr(api.socket, "getaddrinfo", wedged_getaddrinfo)
+    monkeypatch.setattr(api, "_symbol_resolve_tokens", BoundedSemaphore(1))
+    monkeypatch.setattr(api, "_SYMBOL_RESOLVE_TIMEOUT_SECONDS", 0.5)
+    raised: list[BaseException] = []
+
+    try:
+        holder = threading.Thread(
+            target=_resolution_error, args=("wedge.example", raised), daemon=True
+        )
+        holder.start()
+        holder.join(3.0)
+
+        assert not holder.is_alive()
+        assert entered.is_set(), "the wedged resolver never ran"
+        assert "resolution timed out" in str(raised[0])
+
+        before = time.monotonic()
+        with pytest.raises(api._SymbolDataError, match="resolution is saturated"):
+            api._require_public_hostname("second.example")
+        assert time.monotonic() - before < 0.15
+    finally:
+        park.set()
+
+
+def test_a_stranded_fetch_slot_is_reclaimed_and_the_lane_recovers(
+    monkeypatch, tmp_path, caplog
+) -> None:
+    """A fetch nobody concludes must not retire its permit from the lane.
+
+    The permit is taken in ``_load_symbol_context`` and returned by a future
+    done-callback, so a work item that never completes leaks it: six strands
+    and every later call raises ``stockdata fetch lane is saturated`` forever.
+    """
+    api._reset_symbol_rate_limit_for_tests()
+    started = threading.Event()
+    release = threading.Event()
+    api._symbol_fetch_executor.submit(int).result(timeout=5.0)
+    monkeypatch.setattr(api, "_stockdata_base", lambda _root: "https://public.example")
+
+    def parked_fetch(_base, symbol):
+        started.set()
+        assert release.wait(10.0)
+        return _stock_record(symbol)
+
+    monkeypatch.setattr(api, "_fetch_stock_record", parked_fetch)
+    monkeypatch.setattr(api, "_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS", 0.3)
+    monkeypatch.setattr(api, "_SYMBOL_FETCH_CALLER_GRACE_SECONDS", 0.05)
+    cache_key = ("https://public.example", "AAPL")
+
+    try:
+        with pytest.raises(api._SymbolDataBusy, match="caller deadline"):
+            api._load_symbol_context(tmp_path, "AAPL")
+
+        assert started.wait(2.0), "the parked fetch never reached a worker"
+        assert api._symbol_fetch_slots._value == api._SYMBOL_FETCH_MAX_INFLIGHT - 1
+
+        with api._symbol_data_lock:
+            stranded = api._symbol_fetch_inflight[cache_key]
+            stranded.started -= api._SYMBOL_FETCH_STRANDED_AFTER_SECONDS + 1.0
+
+        monkeypatch.setattr(
+            api, "_fetch_stock_record", lambda _base, symbol: _stock_record(symbol)
+        )
+        recovered = api._load_symbol_context(tmp_path, "AAPL")
+
+        assert recovered["available"] is True
+        assert api._symbol_fetch_slots._value == api._SYMBOL_FETCH_MAX_INFLIGHT
+    finally:
+        release.set()
+        _wait_for_symbol_fetches_to_finish(5.0)
+
+    stranded.future.result(timeout=5.0)
+    api._conclude_symbol_fetch(cache_key, stranded.future, stranded.lease)
+
+    assert api._symbol_fetch_slots._value == api._SYMBOL_FETCH_MAX_INFLIGHT
+    assert [
+        record for record in caplog.records if record.name == "concurrent.futures"
+    ] == []
+    api._reset_symbol_rate_limit_for_tests()
+
+
+class _HeldCallbackFuture(Future):
+    """A future that stashes its done-callbacks instead of invoking them."""
+
+    def __init__(self):
+        super().__init__()
+        self.held_callbacks = []
+
+    def add_done_callback(self, fn):
+        self.held_callbacks.append(fn)
+
+
+class _HeldCallbackExecutor:
+    """Runs work inline and holds every done-callback until the test fires it.
+
+    A real ``Future`` notifies its waiters BEFORE running done-callbacks, so
+    holding the callback reproduces that window deterministically instead of
+    racing it.
+    """
+
+    def __init__(self):
+        self.futures = []
+
+    def submit(self, fn, *args, **kwargs):
+        future = _HeldCallbackFuture()
+        self.futures.append(future)
+        try:
+            future.set_result(fn(*args, **kwargs))
+        except BaseException as exc:  # noqa: BLE001 - mirrors the pool contract
+            future.set_exception(exc)
+        return future
+
+
+def test_waiter_owns_completion_so_an_immediate_second_call_hits_cache(
+    monkeypatch, tmp_path
+) -> None:
+    """The waiter, not the done-callback, must publish the fetch result.
+
+    ``future.result()`` returns before the callbacks run, so an immediate
+    second call used to see the in-flight entry the callback had not popped
+    yet and raise ``stockdata fetch is already in progress`` spuriously.
+    """
+    api._reset_symbol_rate_limit_for_tests()
+    calls = []
+    monkeypatch.setattr(api, "_stockdata_base", lambda _root: "https://public.example")
+
+    def counted_fetch(_base, symbol):
+        calls.append(symbol)
+        return _stock_record(symbol)
+
+    monkeypatch.setattr(api, "_fetch_stock_record", counted_fetch)
+    executor = _HeldCallbackExecutor()
+    monkeypatch.setattr(api, "_symbol_fetch_executor", executor)
+    cache_key = ("https://public.example", "AAPL")
+
+    first = api._load_symbol_context(tmp_path, "AAPL")
+
+    assert first["available"] is True
+    assert cache_key not in api._symbol_fetch_inflight
+    assert api._symbol_fetch_slots._value == api._SYMBOL_FETCH_MAX_INFLIGHT
+
+    second = api._load_symbol_context(tmp_path, "AAPL")
+
+    assert second["available"] is True
+    assert calls == ["AAPL"]
+
+    assert len(executor.futures) == 1
+    held = executor.futures[0].held_callbacks
+    assert len(held) == 1
+    held[0](executor.futures[0])
+
+    assert api._symbol_fetch_slots._value == api._SYMBOL_FETCH_MAX_INFLIGHT
+    api._reset_symbol_rate_limit_for_tests()
 
 
 def test_stockdata_base_caches_validated_config_until_file_changes(

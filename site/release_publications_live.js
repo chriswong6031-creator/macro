@@ -131,7 +131,7 @@
       ".mx-live-event-asof{font-size:10px;color:var(--ink-3,var(--muted))}" +
       ".mx-live-event-headline{font-size:15px;font-weight:750;color:var(--ink-1,var(--text));line-height:1.3;margin-bottom:4px}" +
       ".mx-live-event-summary{font-size:11.5px;color:var(--ink-2,var(--muted));line-height:1.5}" +
-      ".mx-live-event-source{display:inline-flex;margin-top:8px;font-size:10.5px;font-weight:650;color:var(--link,#2563eb);text-decoration:none}" +
+      ".mx-live-event-source{display:inline-flex;margin-top:8px;font-size:10.5px;font-weight:650;color:var(--ink-link, var(--link,#2563eb));text-decoration:none}" +
       ".mx-live-event-source:hover{text-decoration:underline}" +
       ".mx5-dlg-cal-card.is-published{border-color:color-mix(in srgb,#16a36a 55%,var(--line))!important;" +
       "background:color-mix(in srgb,#16a36a 7%,var(--panel2))!important}" +
@@ -147,7 +147,7 @@
       ".mx5-tl-dot.live-out-dot{background:#16a36a!important;box-shadow:0 0 0 3px color-mix(in srgb,#16a36a 18%,transparent)!important}" +
       ".mx-live-cal-outcome{font-size:11px;font-weight:700;line-height:1.4;color:var(--mx-live-ok);margin-top:7px}" +
       ".mx-live-cal-outcome.awaiting{color:#a76400}" +
-      ".mx-live-cal-source{display:inline-block;margin-top:5px;font-size:10px;color:var(--link,#2563eb);text-decoration:none}" +
+      ".mx-live-cal-source{display:inline-block;margin-top:5px;font-size:10px;color:var(--ink-link, var(--link,#2563eb));text-decoration:none}" +
       ".mx-live-fed-result{margin:7px 0 8px;padding:8px 9px;border-radius:8px;border:1px solid color-mix(in srgb,#16a36a 32%,var(--line));" +
       "background:color-mix(in srgb,#16a36a 7%,transparent);font-size:11px;font-weight:700;line-height:1.4;color:var(--mx-live-ok)}" +
       ".mx-live-fed-result.awaiting{color:#a76400;border-color:color-mix(in srgb,#d99016 30%,var(--line));" +

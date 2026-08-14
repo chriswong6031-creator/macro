@@ -31,48 +31,48 @@
   };
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Watchlist &amp; Portfolio — your list, your holdings, their signals</title>
+<title>Portfolio Intelligence — what you hold, what changed, what it adds up to</title>
 
-<meta name="description" content="Your list, your holdings, their signals — track any stock with Mastermind&#39;s full signal stack attached. Free account.">
+<meta name="description" content="Paste your holdings and see what they are really a bet on. Weights, structure and the signals attached to every name. Free account.">
 <link rel="canonical" href="https://www.mastermind-x.com/watchlist.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="MastermindX">
-<meta property="og:title" content="Watchlist &amp; Portfolio — Mastermind">
-<meta property="og:description" content="Your list, your holdings, their signals — track any stock with Mastermind&#39;s full signal stack attached. Free account.">
+<meta property="og:title" content="Portfolio Intelligence — Mastermind">
+<meta property="og:description" content="Paste your holdings and see what they are really a bet on. Weights, structure and the signals attached to every name. Free account.">
 <meta property="og:url" content="https://www.mastermind-x.com/watchlist.html">
 <meta property="og:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Watchlist &amp; Portfolio — Mastermind">
-<meta name="twitter:description" content="Your list, your holdings, their signals — track any stock with Mastermind&#39;s full signal stack attached. Free account.">
+<meta name="twitter:title" content="Portfolio Intelligence — Mastermind">
+<meta name="twitter:description" content="Paste your holdings and see what they are really a bet on. Weights, structure and the signals attached to every name. Free account.">
 <meta name="twitter:image" content="https://www.mastermind-x.com/apple-touch-icon.png">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
-<link rel="stylesheet" href="theme.css?v=a0c743b0">
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<link rel="stylesheet" href="theme.css?v=90137296">
+<link rel="stylesheet" href="tier_preview.css?v=d390f599">
 <script>
-  // engine + page config injected at build time (the watchlist is pure client
+  // engine + page config injected at build time (the workspace is pure client
   // state — these globals are the only server-provided inputs)
   window.STATE_DISPLAY = {"DECLINE": {"label": "DOWNTREND", "action": "AVOID", "dir": "down", "label_zh": "\u4e0b\u8dcc\u8d8b\u52bf", "action_zh": "\u56de\u907f"}, "BOTTOM WATCH": {"label": "NEARING A LOW", "action": "GET READY", "dir": "down", "label_zh": "\u63a5\u8fd1\u4f4e\u70b9", "action_zh": "\u51c6\u5907"}, "TURN SIGNALED": {"label": "BOTTOMING", "action": "BUY SETUP", "dir": "up", "label_zh": "\u7b51\u5e95\u4e2d", "action_zh": "\u4e70\u5165\u9884\u5907"}, "FRESH BUY": {"label": "BUY ZONE", "action": "BUY", "dir": "up", "label_zh": "\u4e70\u5165\u533a", "action_zh": "\u4e70\u5165"}, "RALLY ON": {"label": "UPTREND", "action": "HOLD", "dir": "up", "label_zh": "\u4e0a\u6da8\u8d8b\u52bf", "action_zh": "\u6301\u6709"}, "TOP WATCH": {"label": "NEARING A HIGH", "action": "TAKE PROFITS", "dir": "caution", "label_zh": "\u63a5\u8fd1\u9ad8\u70b9", "action_zh": "\u6b62\u76c8"}, "ROLLING OVER": {"label": "TOPPING", "action": "SELL SETUP", "dir": "down", "label_zh": "\u505a\u9876\u4e2d", "action_zh": "\u5356\u51fa\u9884\u5907"}, "COUNTERTREND BOUNCE": {"label": "UNCONFIRMED TURN", "action": "HIGH-RISK \u00b7 NIMBLE ONLY", "dir": "caution", "label_zh": "\u672a\u786e\u8ba4\u8f6c\u5411", "action_zh": "\u9ad8\u98ce\u9669 \u00b7 \u4ec5\u9650\u7075\u6d3b\u64cd\u4f5c"}, "CONFIRMING TURN": {"label": "TURN IN PROGRESS", "action": "WATCH \u2014 DON'T CHASE", "dir": "caution", "label_zh": "\u8f6c\u5411\u8fdb\u884c\u4e2d", "action_zh": "\u89c2\u5bdf \u2014 \u52ff\u8ffd\u9ad8"}};
   window.SUPABASE_CFG  = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv", "ref": "fsldfzlxyavsuwqbceod"};   // null => local-only build
   window.WL_STARTERS   = ["SPY", "QQQ", "BTC-USD", "GC=F"];
-  // L3 regime rail input (baked risk_radar state + dominant label + vol regime).
-  // null/absent => watchlist_risk.js hides the rail. Book-derived text is client-side.
-  window.WRI_REGIME    = {"state": "watch", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "normalizing", "asof": "2026-08-12"};
+  // L3 regime input (baked risk_radar state + dominant label + vol regime).
+  // null/absent => the book-read subline stays book-only. Book-derived text is client-side.
+  window.WRI_REGIME    = {"state": "caution", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "normalizing", "asof": "2026-08-13"};
 </script>
-<link rel="stylesheet" href="assets/css/f8e0f918.css?v=f8e0f918">
+<link rel="stylesheet" href="assets/css/6f6d37b1.css?v=6f6d37b1">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=65bba21c">
+<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
 <body>
-<div class="wri wri-aurora" aria-hidden="true"></div>
 
 
 <nav class="site-nav">
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=65bba21c">
+    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -287,7 +287,7 @@
   <script src="logo_config.js?v=b37d33d3" defer></script>
   <script src="stock-logos.js?v=cc29be53" defer></script>
   <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=e19f6af3" defer></script>
+  <script src="live.js?v=b245e3c3" defer></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -309,223 +309,284 @@
   </div>
 </nav>
 
-  <div class="panel">
-    <div class="topline">
-      <h1><span class="l-en">Watchlist &amp; Portfolio</span><span class="l-zh">自选与持仓</span></h1>
-      <div class="searchwrap">
-        <input id="wl_q" autocomplete="off">
-        <div id="wl_sugg"></div>
-      </div>
-      <span id="wl_count"></span>
+<main class="ws">
+
+  <!-- ═════════ WORKSPACE HEAD ═════════ -->
+  <header class="ws-head">
+    <div>
+      <h1 class="ws-title"><span class="l-en">Portfolio Intelligence</span><span class="l-zh">组合透视</span></h1>
+      <p class="ws-purpose" id="ws_purpose"><span class="l-en">What you hold, what changed, what it adds up to.</span><span class="l-zh">你持有什么、有什么变化、加起来是什么。</span></p>
     </div>
-    <p class="muted" style="margin:8px 0 0"><span class="l-en">Your book, by market — every position with the desk&#39;s read.</span><span class="l-zh">你的组合，按市场分列——每笔持仓都附系统解读。</span></p>
-  </div>
-
-  <!-- ===== L3 · regime rail (window.WRI_REGIME × book beta; hidden if absent) ===== -->
-  <div class="wri-rail" id="wri_rail" style="display:none"></div>
-
-  <!-- ===== Books strip — one ledger plate per market the user actually holds
-       (market_books.js). Hidden entirely when only one market is present. ===== -->
-  <div id="bk_strip" style="display:none"></div>
-
-  <!-- ===== Today strip — fact chips (earnings this week, signals changed since the
-       last visit). Hidden when there is nothing true to say. ===== -->
-  <div id="tod_strip" style="display:none"></div>
-
-  <!-- ===== L2 · Book Risk hero (watchlist_risk.js renders from factor_betas.json;
-       hidden until ≥2 modeled holdings; absorbs the old #fx_panel into sub-card 1) ===== -->
-  <div class="tile wri wri-hero" id="wri_hero" data-state="tilt" style="display:none"></div>
-
-  <!-- sync / account bar (hidden entirely when Supabase isn't configured) -->
-  <div class="panel" id="wl_auth" style="display:none">
-    <div class="wl-syncbar">
-      <h2 style="margin:0"><span class="l-en">Account sync</span><span class="l-zh">账户同步</span></h2>
-      <span id="wl_syncpill" class="wl-pill wl-pill-local"></span>
-      <span style="flex:1"></span>
-      <button class="wl-btn" id="wl_signin"></button>
-      <div id="wl_authbox" style="display:none">
-        <input class="wl-in" id="wl_email" type="email">
-        <button class="wl-btn" id="wl_send"></button>
-        <span id="wl_sent" class="muted" style="display:none"></span>
+    <div class="ws-headright">
+      <div class="ws-modes" role="tablist" id="ws_modes">
+        <button class="ws-mode" type="button" role="tab" aria-selected="true" data-go="portfolio">
+          <span class="l-en">Portfolio</span><span class="l-zh">持仓</span><span class="n fig" data-count="pf"></span>
+        </button>
+        <button class="ws-mode" type="button" role="tab" aria-selected="false" data-go="watchlists">
+          <span class="l-en">Watchlists</span><span class="l-zh">自选股</span><span class="n fig" data-count="wl"></span>
+        </button>
       </div>
-      <div id="wl_account" style="display:none">
-        <span class="muted" id="wl_who"></span>
-        <button class="wl-btn" id="wl_signout"></button>
-      </div>
+      <!-- the ONLY place sync is ever mentioned; the Account Sync panel is deleted -->
+      <span class="ws-chip is-local" id="ws_savechip"><i></i><span id="ws_savechip_txt"></span></span>
     </div>
-  </div>
+  </header>
 
   <div id="wl_banner" class="wl-banner"></div>
 
-  <!-- ---- Position assessment desk (above the cards: the book leads the page) ---- -->
-  <div class="panel" id="pf_section">
-    <div class="pf-sh">
-      <h2><span class="l-en">Portfolio</span><span class="l-zh">持仓</span></h2>
-      <button class="pf-help" aria-label="About portfolio"
-        data-tip-en="Track your open and closed positions. Prices shown are the last nightly close — not live. Your holdings are stored privately in your account and sync across devices when signed in. Add a position with the button below. Books split your names by market; each book's totals stay in its own currency."
-        data-tip-zh="记录你的开仓和已平仓持仓。显示的价格为最近夜间收盘价——非实时。你的持仓仅保存在账户中，登录后跨设备同步。点击下方按钮添加持仓。「账本」按市场拆分你的名称；每个账本的合计使用其本币。">?</button>
-    </div>
+  <!-- ══════════════════════════════════════════════════════════════════════
+       MODE — PORTFOLIO
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div data-ws-mode="portfolio">
 
-    <!-- inline error -->
-    <div id="pf_err_inline"></div>
+    <!-- ── anonymous bulk entry ─────────────────────────────────────────── -->
+    <section class="sec" id="ws_sec_entry">
+      <div class="panel entry">
+        <h2 class="entry-say"><span class="l-en">Paste your holdings. See what they are really a bet on.</span><span class="l-zh">把持仓贴进来，看清它们到底押在什么上。</span></h2>
+        <p class="entry-sub"><span class="l-en">Ten names can still be one bet. This reads the structure of the book you already own — no account needed to start.</span><span class="l-zh">十只票，可能只是一个方向。这里读的是你已经持有的这本账簿的结构 —— 无需注册即可开始。</span></p>
 
-    <!-- empty state -->
-    <div id="pf_empty" style="display:none">
-      <p><span class="l-en">No holdings yet — add your first.</span><span class="l-zh">还没有持仓——添加第一笔。</span></p>
-      <button class="wl-btn" id="pf_add_first"><span class="l-en">Add holding</span><span class="l-zh">添加持仓</span></button>
-    </div>
-
-    <!-- assessment table -->
-    <div id="pf_desk" style="display:none">
-      <div class="ts pfx-ts">
-        <table>
-          <thead>
-            <tr>
-              <th id="pf_th_position"></th>
-              <th id="pf_th_value" style="text-align:right"></th>
-              <th id="pf_th_since" style="text-align:right"></th>
-              <th id="pf_th_assess"></th>
-            </tr>
-          </thead>
-          <tbody id="pf_rows"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- signed-out: one quiet value-framed line, never a locked panel -->
-    <div id="pf_localnote" style="display:none"></div>
-
-    <!-- add button -->
-    <button class="wl-btn" id="pf_add" style="display:none; margin-top:10px"><span class="l-en">Add holding</span><span class="l-zh">添加持仓</span></button>
-
-    <!-- closed positions -->
-    <details id="pf_closed" style="display:none; margin-top:12px">
-      <summary><span><span class="l-en">Closed</span><span class="l-zh">已平仓</span></span> <span id="pf_closed_n"></span></summary>
-      <div class="ts" style="margin-top:8px">
-        <table>
-          <thead>
-            <tr>
-              <th><span class="l-en">Ticker</span><span class="l-zh">代码</span></th>
-              <th><span class="l-en">Name</span><span class="l-zh">名称</span></th>
-              <th style="text-align:right"><span class="l-en">Shares</span><span class="l-zh">股数</span></th>
-              <th style="text-align:right"><span class="l-en">Entry</span><span class="l-zh">成本</span></th>
-              <th><span class="l-en">Date</span><span class="l-zh">日期</span></th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="pf_closed_rows"></tbody>
-        </table>
-      </div>
-    </details>
-
-    <!-- as-of footnote. The privacy clause is filled by portfolio.js: a signed-out
-         visitor's book lives in this browser, NOT in an account — saying otherwise
-         would be false for the anonymous local book. -->
-    <small id="pf_foot" class="muted"><span class="l-en">Prices are the last nightly close (as of </span><span class="l-zh">价格为最近夜间收盘（截至 </span><span id="pf_asof">—</span><span class="l-en">).</span><span class="l-zh">）。</span> <span id="pf_priv"></span></small>
-  </div>
-
-  <!-- Portfolio factor exposure — your book's hidden bet (factor_exposure.js fills
-       it client-side from factor_betas.json; hidden until ≥2 covered holdings) -->
-  <div class="panel" id="fx_panel" style="display:none"></div>
-
-  <!-- ---- Watchlist cards (filtered by the active book) ---- -->
-  <div class="wl-controls" id="wl_controls" style="display:none">
-    <label><span id="wl_sortlbl"></span>
-      <select id="wl_sort">
-        <option value="order"></option><option value="added"></option>
-        <option value="name"></option><option value="sector"></option><option value="signal"></option>
-      </select>
-    </label>
-    <label><input type="checkbox" id="wl_buysoon"> <span id="wl_buysoonlbl"></span></label>
-  </div>
-
-  <div id="wl_list" class="wl-grid"></div>
-
-  <div class="panel" id="wl_empty">
-    <p class="muted" id="wl_emptymsg"></p>
-    <div id="wl_starters"></div>
-    <script>document.getElementById('wl_emptymsg').textContent =
-      (document.documentElement.getAttribute('data-lang')==='zh'
-        ? '清单为空。在上方搜索以添加持仓——股票、ETF、大宗商品或加密货币。'
-        : 'Your watchlist is empty. Search above to add a holding — equity, ETF, commodity or crypto.');</script>
-  </div>
-
-  <!-- ---- Holding modal ---- -->
-  <div id="dlg-holding" class="mx5-dlg" role="dialog" aria-modal="true" tabindex="-1">
-    <div class="mx5-dlg-backdrop" data-close></div>
-    <div class="mx5-dlg-panel mx5-dlg-panel-narrow">
-      <div class="mx5-dlg-header">
-        <span class="mx5-dlg-title" id="pfm_title"><span class="l-en">Add holding</span><span class="l-zh">添加持仓</span></span>
-        <button class="mx5-dlg-close" data-close aria-label="Close">✕</button>
-      </div>
-      <div class="mx5-dlg-body">
-        <div class="pfm-row">
-          <label id="pfm_lbl_ticker" for="pfm_ticker"><span class="l-en">Ticker</span><span class="l-zh">代码</span></label>
-          <div class="pfm-ticker-wrap">
-            <input class="wl-in" id="pfm_ticker" type="text" autocomplete="off" autocapitalize="characters">
-            <div id="pfm_sugg" style="display:none"></div>
+        <div class="entry-box">
+          <textarea class="entry-in" id="ws_entry_in" rows="3" spellcheck="false"
+            data-ph-en="AAPL, MSFT, NVDA, GLD, TLT&#10;AAPL 20%, MSFT 15%, NVDA 12% …"
+            data-ph-zh="AAPL, MSFT, NVDA, GLD, TLT&#10;AAPL 20%, MSFT 15%, NVDA 12% …"></textarea>
+          <div class="entry-ctl">
+            <span class="wmode-lbl"><span class="l-en">Sizes are</span><span class="l-zh">权重按</span></span>
+            <div class="wmode" role="group" id="ws_wmode">
+              <button type="button" data-w="equal"  aria-pressed="true"><span class="l-en">Equal</span><span class="l-zh">等权</span></button>
+              <button type="button" data-w="pct"    aria-pressed="false"><span class="l-en">Percent</span><span class="l-zh">百分比</span></button>
+              <button type="button" data-w="usd"    aria-pressed="false"><span class="l-en">Dollars</span><span class="l-zh">金额</span></button>
+              <button type="button" data-w="shares" aria-pressed="false"><span class="l-en">Shares</span><span class="l-zh">股数</span></button>
+            </div>
+            <button class="gbtn gbtn-cta" type="button" id="ws_entry_go"><span class="l-en">Analyze</span><span class="l-zh">开始分析</span></button>
           </div>
-          <div id="pfm_hint"></div>
+          <p class="entry-err" id="ws_entry_err"></p>
         </div>
-        <div class="pfm-row">
-          <label id="pfm_lbl_shares" for="pfm_shares"><span class="l-en">Shares</span><span class="l-zh">股数</span></label>
-          <input class="wl-in" id="pfm_shares" type="number" step="any" min="0">
+
+        <div class="entry-why">
+          <div><b><span class="l-en">Your real spread</span><span class="l-zh">真实的分散度</span></b><span class="l-en">How concentrated those names actually are, by weight and by market.</span><span class="l-zh">这些名字究竟有多集中 —— 按权重，也按市场。</span></div>
+          <div><b><span class="l-en">What drives it</span><span class="l-zh">谁在驱动</span></b><span class="l-en">The one idea most of the book is leaning on, in plain words.</span><span class="l-zh">这本账簿大部分压在哪一件事上，用大白话说清。</span></div>
+          <div><b><span class="l-en">What is coming</span><span class="l-zh">接下来会发生什么</span></b><span class="l-en">The next earnings and events attached to each name.</span><span class="l-zh">每只票接下来的财报与事件。</span></div>
         </div>
-        <div class="pfm-row">
-          <label id="pfm_lbl_entry" for="pfm_price"><span class="l-en">Entry price</span><span class="l-zh">入场价</span></label>
-          <input class="wl-in" id="pfm_price" type="number" step="any">
-        </div>
-        <div class="pfm-row">
-          <label id="pfm_lbl_date" for="pfm_date"><span class="l-en">Entry date</span><span class="l-zh">入场日期</span></label>
-          <input class="wl-in" id="pfm_date" type="date">
-        </div>
-        <div class="pfm-row">
-          <label id="pfm_lbl_notes" for="pfm_notes"><span class="l-en">Notes</span><span class="l-zh">备注</span></label>
-          <input class="wl-in" id="pfm_notes" type="text">
-        </div>
-        <div class="pfm-row" id="pfm_status_row" style="display:none">
-          <label id="pfm_lbl_status" for="pfm_status"><span class="l-en">Status</span><span class="l-zh">状态</span></label>
-          <select class="wl-in" id="pfm_status">
-            <option value="open"><span class="l-en">Open</span><span class="l-zh">开仓</span></option>
-            <option value="closed"><span class="l-en">Closed</span><span class="l-zh">已平仓</span></option>
-          </select>
-        </div>
-        <div id="pfm_err"></div>
-        <button class="wl-btn" id="pfm_save"><span class="l-en">Save</span><span class="l-zh">保存</span></button>
+
+        <p class="empty-why"><span class="l-en">Nothing saved yet — whatever you type stays on this device until you save it.</span><span class="l-zh">还没有保存任何内容 —— 在你保存之前，输入的内容只留在本机。</span></p>
       </div>
-    </div>
+    </section>
+
+    <section class="sec" id="ws_sec_starters">
+      <div class="sec-hd">
+        <span class="sec-eyebrow"><span class="l-en">Or start from a ready-made list</span><span class="l-zh">或从现成名单开始</span></span>
+      </div>
+      <div class="panel books" id="wl_starters"></div>
+    </section>
+
+    <!-- ── BOOK READ + the Book Seam ────────────────────────────────────── -->
+    <section class="sec" id="ws_sec_bookread">
+      <div class="sec-hd">
+        <span class="sec-eyebrow" id="ws_book_eyebrow"><span class="l-en">Your book</span><span class="l-zh">你的持仓</span></span>
+        <span class="sec-sub" id="ws_book_sub"></span>
+        <span class="sec-asof"><span class="l-en">as of last night&amp;rsquo;s close</span><span class="l-zh">数据截至昨夜收盘</span></span>
+      </div>
+      <div class="panel bookread">
+        <div class="bk-meta" id="ws_book_meta"></div>
+        <p class="bk-say" id="ws_book_say"></p>
+        <p class="bk-because" id="ws_book_because"></p>
+        <span class="bk-stance" id="ws_book_stance"></span>
+        <!-- ★ THE BOOK SEAM ★ -->
+        <div class="seam" id="ws_seam"></div>
+        <p class="bk-coverage" id="ws_book_coverage"></p>
+      </div>
+    </section>
+
+    <!-- ── WHAT NEEDS ATTENTION ─────────────────────────────────────────── -->
+    <section class="sec" id="ws_sec_att">
+      <div class="sec-hd">
+        <span class="sec-eyebrow"><span class="l-en">What needs attention</span><span class="l-zh">需要留意</span></span>
+        <span class="sec-sub"><span class="l-en">Ordered by a fixed rule, not a score</span><span class="l-zh">按固定规则排序，不是打分</span></span>
+        <span class="sec-asof" id="ws_att_scope"></span>
+      </div>
+      <div class="panel att" id="ws_att"></div>
+    </section>
+
+    <!-- ── HOLDINGS — THE HERO ──────────────────────────────────────────── -->
+    <section class="sec" id="ws_sec_hold">
+      <div class="sec-hd">
+        <span class="sec-eyebrow"><span class="l-en">Holdings</span><span class="l-zh">持仓明细</span></span>
+        <span class="sec-sub" id="ws_hold_sub"><span class="l-en">Your work surface — every position, no cap</span><span class="l-zh">主操作区 —— 全部持仓，不设上限</span></span>
+      </div>
+      <div class="panel" style="overflow:hidden">
+        <!-- ONE toolbar, two lines: controls above, the book filter below. The chips
+             filter THIS TABLE only; the scope line beside them names the active book,
+             so a persisted filter can never silently shorten the list (§7d). -->
+        <div class="tbl-bar">
+          <div class="tbl-top">
+            <input class="srch" type="search" id="pf_q"
+                   data-ph-en="Filter positions" data-ph-zh="筛选持仓">
+            <span class="tbl-scope" id="pf_scope"></span>
+            <span class="tbl-tools">
+              <button class="gbtn gbtn-sm" type="button" id="pf_add"><span class="l-en">Add position</span><span class="l-zh">添加持仓</span></button>
+            </span>
+          </div>
+          <div class="tbl-books" id="bk_strip"></div>
+        </div>
+        <table class="hold" id="tbl_pf"></table>
+        <div class="tbl-foot">
+          <span><span class="l-en">Since-entry figures use the entry price you saved. It stays in your account — it never feeds our signals and is never shown to anyone else.</span><span class="l-zh">「持有以来」按你保存的买入价计算。成本价只留在你的账户里 —— 不会进入我们的信号计算，也不会展示给任何其他人。</span></span>
+          <span class="grow" id="pf_rowcount"></span>
+        </div>
+      </div>
+
+      <!-- anonymous: the stage read is not delivered, and the gate says what unlocks it -->
+      <div class="mx-tier-gate mx-tier-gate--prophet" id="ws_gate_signal">
+        <div class="mx-tier-copy">
+          <span class="mx-tier-eyebrow"><span class="mx-tier-mark">◇</span><span class="l-en">Free account</span><span class="l-zh">免费账户</span></span>
+          <b id="ws_gate_head"><span class="l-en">The stage read for each of these names</span><span class="l-zh">这些票各自的阶段判断</span></b>
+          <small><span class="l-en">Where each name sits in its own cycle — early, confirming, confirmed, aging — updated every night. Your list stays yours, saved to your account instead of just this browser.</span><span class="l-zh">每只票现在处在自己周期的哪一段 —— 初现、确认中、已确认、转弱 —— 每晚更新。名单始终属于你，保存在账户里，不再只留在这个浏览器。</span></small>
+        </div>
+        <div class="mx-tier-actions">
+          <button class="mx-tier-primary" type="button" id="ws_gate_save"><span class="l-en">Save + get alerts — Free</span><span class="l-zh">保存并接收提醒 —— 免费</span></button>
+          <button class="mx-tier-signin" type="button" id="ws_gate_signin"><span class="l-en">Already have an account? Sign in</span><span class="l-zh">已有账户？登录</span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── RISK CENTER ──────────────────────────────────────────────────── -->
+    <section class="sec" id="ws_sec_rc">
+      <div class="sec-hd">
+        <span class="sec-eyebrow"><span class="l-en">Risk center</span><span class="l-zh">风险中心</span></span>
+        <span class="sec-sub"><span class="l-en">One question per tab</span><span class="l-zh">每个标签只回答一个问题</span></span>
+      </div>
+      <div class="panel" style="overflow:hidden">
+        <div class="rc-tabs" role="tablist" id="rc_tabs">
+          <button class="rc-tab" type="button" role="tab" aria-selected="true"  data-rc="conc"><span class="l-en">Concentration</span><span class="l-zh">集中度</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="corr"><span class="l-en">Correlation</span><span class="l-zh">相关性</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="fact"><span class="l-en">Factors &amp;amp; macro</span><span class="l-zh">因子与宏观</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="strs"><span class="l-en">Stress</span><span class="l-zh">压力情景</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="evt"><span class="l-en">Events</span><span class="l-zh">事件</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="weak"><span class="l-en">Weak links &amp;amp; strengths</span><span class="l-zh">弱点与支撑</span></button>
+        </div>
+        <div class="rc-body" id="rc_body"></div>
+        <details class="lab">
+          <summary>
+            <span class="car">›</span>
+            <span><span class="l-en">Scenario Lab</span><span class="l-zh">情景实验室</span></span>
+            <span class="q"><span class="l-en">What happens if I add a position?</span><span class="l-zh">如果加一笔仓位，会怎样？</span></span>
+          </summary>
+          <div class="labbody" id="rc_lab"></div>
+        </details>
+      </div>
+    </section>
   </div>
 
-  <details class="panel">
-    <summary style="cursor:pointer; font-weight:600"><span class="l-en">Export / import (move to another device)</span><span class="l-zh">导出 / 导入（迁移到其他设备）</span></summary>
-    <p class="muted" style="font-size:12.5px; margin:8px 0"><span class="l-en">Your list lives in this browser. Copy a share link to open it on your phone, or paste a code to merge another list in. (Sign in above for automatic cross-device sync.)</span><span class="l-zh">你的清单保存在本浏览器中。复制分享链接即可在手机上打开，或粘贴代码以合并另一份清单。（在上方登录可自动跨设备同步。）</span></p>
-    <div style="display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; margin-bottom:8px">
-      <textarea class="wl-in" id="wl_export" readonly></textarea>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
-      <button class="wl-btn" id="wl_copylink"><span class="l-en">Copy share link</span><span class="l-zh">复制分享链接</span></button>
-      <input class="wl-in" id="wl_import" placeholder="paste code to import" style="flex:1; min-width:200px">
-      <button class="wl-btn" id="wl_importbtn"><span class="l-en">Import</span><span class="l-zh">导入</span></button>
-    </div>
-  </details>
+  <!-- ══════════════════════════════════════════════════════════════════════
+       MODE — WATCHLISTS
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div data-ws-mode="watchlists">
+    <section class="sec">
+      <div class="panel" style="overflow:hidden">
+        <div class="wl-head">
+          <button class="listpick" type="button" id="wl_listpick" aria-haspopup="true" aria-expanded="false">
+            <span id="wl_listname"></span><span class="car">▾</span>
+          </button>
+          <div class="listmenu" id="wl_listmenu"></div>
+          <span class="wl-add">
+            <input class="srch" type="search" id="wl_q" autocomplete="off"
+                   data-ph-en="Add a name…" data-ph-zh="添加名称…">
+            <div id="wl_sugg"></div>
+          </span>
+          <span class="wl-facts" id="wl_facts"></span>
+        </div>
+        <div class="tbl-top">
+          <input class="srch" type="search" id="wl_filter"
+                 data-ph-en="Filter names" data-ph-zh="筛选名称">
+          <span class="tbl-scope" id="wl_scope"></span>
+          <span class="tbl-tools">
+            <button class="gbtn gbtn-sm gbtn-cta" type="button" id="wl_analyze"><span class="l-en">Analyze this watchlist</span><span class="l-zh">分析这个列表</span></button>
+          </span>
+        </div>
+        <table class="hold" id="tbl_wl"></table>
+        <div class="tbl-foot">
+          <span><span class="l-en">Analyzing a watchlist reads it as an &lt;b&gt;equal-weighted structure&lt;/b&gt; — a watchlist has no position sizes, so it is never treated as a portfolio.</span><span class="l-zh">分析自选股列表时按 &lt;b&gt;等权重结构&lt;/b&gt; 处理 —— 自选股没有仓位金额，因此绝不会被当成实际持仓来算。</span></span>
+          <span class="grow" id="wl_rowcount"></span>
+        </div>
+      </div>
+    </section>
+  </div>
 
-  <div id="wl_toast" class="wl-toast"></div>
+</main>
+
+<!-- ---- Holding modal (add / edit a position) ---- -->
+<div id="dlg-holding" class="mx5-dlg" role="dialog" aria-modal="true" tabindex="-1">
+  <div class="mx5-dlg-backdrop" data-close></div>
+  <div class="mx5-dlg-panel">
+    <div class="mx5-dlg-header">
+      <span class="mx5-dlg-title" id="pfm_title"><span class="l-en">Add position</span><span class="l-zh">添加持仓</span></span>
+      <button class="mx5-dlg-close" type="button" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="mx5-dlg-body">
+      <div class="pfm-row">
+        <label id="pfm_lbl_ticker" for="pfm_ticker"><span class="l-en">Ticker</span><span class="l-zh">代码</span></label>
+        <div class="pfm-ticker-wrap">
+          <input class="wl-in" id="pfm_ticker" type="text" autocomplete="off" autocapitalize="characters">
+          <div id="pfm_sugg" style="display:none"></div>
+        </div>
+        <div id="pfm_hint"></div>
+      </div>
+      <div class="pfm-row">
+        <label id="pfm_lbl_shares" for="pfm_shares"><span class="l-en">Shares</span><span class="l-zh">股数</span></label>
+        <input class="wl-in" id="pfm_shares" type="number" step="any" min="0">
+      </div>
+      <div class="pfm-row">
+        <label id="pfm_lbl_entry" for="pfm_price"><span class="l-en">Entry price</span><span class="l-zh">入场价</span></label>
+        <input class="wl-in" id="pfm_price" type="number" step="any">
+      </div>
+      <div class="pfm-row">
+        <label id="pfm_lbl_date" for="pfm_date"><span class="l-en">Entry date</span><span class="l-zh">入场日期</span></label>
+        <input class="wl-in" id="pfm_date" type="date">
+      </div>
+      <div class="pfm-row">
+        <label id="pfm_lbl_notes" for="pfm_notes"><span class="l-en">Notes</span><span class="l-zh">备注</span></label>
+        <input class="wl-in" id="pfm_notes" type="text">
+      </div>
+      <div class="pfm-row" id="pfm_status_row" style="display:none">
+        <label id="pfm_lbl_status" for="pfm_status"><span class="l-en">Status</span><span class="l-zh">状态</span></label>
+        <select class="wl-in" id="pfm_status">
+          <option value="open"><span class="l-en">Open</span><span class="l-zh">开仓</span></option>
+          <option value="closed"><span class="l-en">Closed</span><span class="l-zh">已平仓</span></option>
+        </select>
+      </div>
+      <div id="pfm_err"></div>
+      <button class="gbtn gbtn-cta" type="button" id="pfm_save"><span class="l-en">Save</span><span class="l-zh">保存</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- factor_exposure.js host. The FX layer is load-bearing — it resolves the weights
+     the Book Seam's risk rail and the Concentration tab are computed from — but its
+     OWN panel belongs to the Factors & macro tab, which is a declared W3 shell. It
+     sets display:block on this node whenever it has data, so the rule below is what
+     keeps a raw factor table from appearing under the page footer. Delete the rule,
+     not the node, when W3 gives the panel its home. -->
+<div id="fx_panel"></div>
+<!-- hosts the closed-position list the holding modal writes to; surfaced in W3 -->
+<div id="pf_closed" style="display:none"><span id="pf_closed_n"></span><span id="pf_closed_rows"></span></div>
+<div id="pf_err_inline" style="display:none"></div>
+<div id="wl_toast" class="wl-toast"></div>
 
 <!-- market_books.js owns marketOf()/storeOf() and MUST load before stockdata.js:
      SD routes each per-ticker fetch to its market's store through window.MB. -->
-<script src="market_books.js?v=1"></script>
-<script src="stockdata.js?v=2"></script>
-<script src="watchlist.js?v=3"></script>
-<script src="factor_exposure.js?v=2"></script>
-<!-- WRI W3: pure book-structure math + the render layer (rail, hero, patch-bay,
-     card lanes). risk_core.js must precede watchlist_risk.js; both need SD + FX. -->
-<script src="risk_core.js?v=1"></script>
-<script src="watchlist_risk.js?v=2"></script>
-<script src="watchstore.js?v=3"></script>
-<script src="portfolio.js?v=2"></script>
+<script src="market_books.js?v=2"></script>
+<script src="stockdata.js?v=3"></script>
+<script src="watchlist.js?v=6"></script>
+<script src="factor_exposure.js?v=3"></script>
+<!-- pure book-structure math + the risk publisher. risk_core.js must precede
+     watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
+     boots without them and the Risk rails render as lock shells (packet A9). -->
+<script src="risk_core.js?v=2"></script>
+<script src="watchlist_risk.js?v=4"></script>
+<script src="watchstore.js?v=5"></script>
+<script src="portfolio.js?v=4"></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
-<script src="theme.js?v=e07e6c36" defer></script>
-<p class="muted" style="font-size:12px"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-12 23:24 UTC</p>
+<script src="theme.js?v=2a51e41d" defer></script>
+<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-13 23:13 UTC</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

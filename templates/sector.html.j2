@@ -10,7 +10,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ s.name }} ({{ s.fund }}) — cycle & holdings</title>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="../theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -36,18 +36,18 @@
              border:1px solid var(--line); }
   .eqbadge.sm { font-size:11px; padding:2px 7px; border-radius:9px; }
   .eqbadge .eqg { font-weight:500; opacity:.8; }
-  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+  .eqbadge.eq-up { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up));
                    border-color:color-mix(in srgb,var(--up) 40%,transparent); }
-  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--down);
+  .eqbadge.eq-down { background:color-mix(in srgb,var(--down) 16%,transparent); color:var(--ink-down, var(--down));
                      border-color:color-mix(in srgb,var(--down) 40%,transparent); }
   .eqbadge.eq-flat { background:var(--panel2); color:var(--muted); }
   .alpha-entry { font-size:11px; font-weight:700; padding:2px 8px; border-radius:9px;
                  text-transform:capitalize; border:1px solid var(--line); white-space:nowrap; }
-  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--up);
+  .ae-pullback { background:color-mix(in srgb,var(--up) 16%,transparent); color:var(--ink-up, var(--up));
                  border-color:color-mix(in srgb,var(--up) 40%,transparent); }
   .ae-extended { background:color-mix(in srgb,var(--warn) 22%,transparent); color:var(--text);
                  border-color:color-mix(in srgb,var(--warn) 55%,transparent); }
-  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--link); }
+  .ae-intact { background:color-mix(in srgb,var(--link) 14%,transparent); color:var(--ink-link, var(--link)); }
   .ae-laggard,.ae-neutral { background:var(--panel); color:var(--muted); }
   /* entry call bar + urgency colors */
   .entrybar { display:flex; gap:10px; align-items:flex-start; margin:10px 0 8px;
@@ -112,7 +112,7 @@
   th,td { text-align:left; padding:4px 8px; border-bottom:1px solid var(--line); }
   th { color:var(--muted); font-weight:500; }
   .tv { margin-top:8px; overflow:hidden; }
-  details summary { cursor:pointer; color:var(--link); font-size:12.5px; margin-top:6px; }
+  details summary { cursor:pointer; color:var(--ink-link, var(--link)); font-size:12.5px; margin-top:6px; }
 </style>
 </head>
 <body>
@@ -310,7 +310,7 @@
 
   {% if s.accumulation %}
   <div class="panel" id="accumulation">
-    <h2>{{ t('🐳 Accumulation watch — weight change beyond price', '🐳 增持监测 — 超越价格的权重变动') }}
+    <h2>{{ t('Accumulation watch — weight change beyond price', '增持监测 — 超越价格的权重变动') }}
       {{ help("Each top-10 holding's weight change since the prior snapshot, split into the part explained by the stock's own price move and a residual ('active' = weight beyond price). A large positive residual = real buying flowed in beyond market drift. HONEST CAVEAT: this is a PASSIVE index fund, so the residual is index reconstitution / float-weight flow (forced buying), NOT discretionary manager conviction. ✅ = accumulation that also has a forming technical buy setup. Thresholds uncalibrated until more snapshots accumulate.", "每只前十大持仓自上一快照以来的权重变动，被拆分为“由个股自身价格变动解释的部分”与“残差”（“主动”=超越价格的权重）。较大的正残差=除市场漂移外确有真实买盘流入。诚实提示：这是被动指数基金，故残差代表指数再平衡／流通权重调整带来的资金流（强制买入），并非主动经理的信念。✅=增持同时出现正在形成的技术买入形态。在积累更多快照前阈值未校准。") }}
     </h2>
     <table>

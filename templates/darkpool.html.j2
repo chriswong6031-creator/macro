@@ -18,7 +18,7 @@
 <title>Dark Pool — how much of each stock trades off the public tape</title>
 {% set seo_title = "Dark Pool — Mastermind" %}{% set seo_desc = "How much of each stock's volume trades away from the public tape, how far that sits from the name's own norm, and whether it reached a real dark pool. Nightly." %}{% set seo_path = "darkpool.html" %}
 {% include "_seo_head.html.j2" %}
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   * { box-sizing:border-box; }
@@ -34,8 +34,8 @@
      --acc (accumulation/up) & --dis (distribution/down) are DIRECTION reads →
      they swap under html[data-lang="zh"] per the house 红涨绿跌 ruling.
      --unc (amber) & --dpb (blue) are non-directional → they never swap. */
-  :root { --ink:#e8edf4; --faint:#6b7280; --acc:#2dd4a7; --dis:#e5738a; --unc:#e0a44a; --dpb:#8b96f8; }
-  html[data-theme="light"] { --ink:#0f1622; --faint:#8894a6; --acc:#0f9b7a; --dis:#cf5570; --unc:#b9791a; --dpb:#4559dc; }
+  :root { --ink:#e8edf4; --faint:#828b9c; --acc:#2dd4a7; --dis:#e5738a; --unc:#e0a44a; --dpb:#8b96f8; }
+  html[data-theme="light"] { --ink:#0f1622; --faint:#5f6a7a; --acc:#0f9b7a; --dis:#cf5570; --unc:#b9791a; --dpb:#4559dc; }
   html[data-lang="zh"] { --acc:#e5738a; --dis:#2dd4a7; }
   html[data-theme="light"][data-lang="zh"] { --acc:#cf5570; --dis:#0f9b7a; }
 
@@ -171,11 +171,11 @@
   table.dp-tbl td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:right; font-variant-numeric:tabular-nums; }
   table.dp-tbl td:first-child { text-align:left; font-weight:600; color:var(--ink); }
   table.dp-tbl tr:hover td { background:var(--panel2); }
-  .num-pos { color:var(--up); } .num-neg { color:var(--down); } .num-neu { color:var(--muted); }
+  .num-pos { color:var(--ink-up, var(--up)); } .num-neg { color:var(--ink-down, var(--down)); } .num-neu { color:var(--muted); }
   .norm-chip { display:inline-block; font-size:10.5px; padding:1px 7px; border-radius:12px; white-space:nowrap; }
-  .norm-hi2 { background:rgba(220,50,50,.14); color:var(--down); } .norm-hi1 { background:rgba(220,50,50,.07); color:var(--down); }
+  .norm-hi2 { background:rgba(220,50,50,.14); color:var(--ink-down, var(--down)); } .norm-hi1 { background:rgba(220,50,50,.07); color:var(--ink-down, var(--down)); }
   .norm-mid { background:var(--panel2); color:var(--muted); }
-  .norm-lo1 { background:rgba(35,134,54,.07); color:var(--up); } .norm-lo2 { background:rgba(35,134,54,.14); color:var(--up); }
+  .norm-lo1 { background:rgba(35,134,54,.07); color:var(--ink-up, var(--up)); } .norm-lo2 { background:rgba(35,134,54,.14); color:var(--ink-up, var(--up)); }
   .spark-cell { min-width:90px; } svg.spark { display:block; overflow:visible; }
   .filters-row { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin:10px 0; }
   .dp-input, .dp-select { background:var(--panel2); border:1px solid var(--line); border-radius:8px; padding:5px 10px; font-size:13px; color:var(--text); outline:none; }
@@ -228,7 +228,7 @@
   <p class="dp-sub">{{ t("How much of each stock's volume traded away from the public tape today — and what the price was doing while it did.", '今日每只个股有多少成交发生在公开报价带之外——以及成交发生时股价的表现。') }}</p>
   {% if dp and dp.hero %}<div class="dp-verdict">{{ bl(dp.hero) }}</div>{% endif %}
   <div class="dp-asof"><span class="dp-dot"></span>{{ t('As of', '截至') }} {{ panel_latest }}
-    {% if below_floor %}· <span style="color:var(--warn)">{{ t('thin history (' ~ panel_dates ~ ' dates)', '历史较短（' ~ panel_dates ~ ' 天）') }}</span>{% endif %}
+    {% if below_floor %}· <span style="color:var(--ink-warn, var(--warn))">{{ t('thin history (' ~ panel_dates ~ ' dates)', '历史较短（' ~ panel_dates ~ ' 天）') }}</span>{% endif %}
     · {{ t('settled off-exchange tape · positioning context, not trade calls', '结算后的场外成交 · 仅为仓位背景，非交易信号') }}</div>
 
   {# Market gauge — dollar-weighted, so a $3 name and a $300 name do not count the same. #}

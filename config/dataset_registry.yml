@@ -1,0 +1,377 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Mastermind Data OS — dataset registry (§D5 / §D9)
+#
+# WHAT THIS IS.  One row per dataset: who produces it, where it lives, which clocks
+# it carries, what its columns actually MEAN, and which datasets it reads. Loaded by
+# lib/dataos/registry.py::load_registry and checked by
+# tests/test_dataos_registry.py.
+#
+# WHY IT EXISTS.  Nothing in this repo declared what a dataset IS, so every consumer's
+# assumption lived only in the consumer — which is how the same NVDA close came to be
+# 114.80 in two stores, 115.00 in a third column and 1150.00 in a fourth, all named
+# some form of "close" (§D4). The registry is where a basis stops being folklore.
+#
+# THE HONESTY RULE — THE ONLY ONE THAT MATTERS HERE.  A registry that lists a dataset
+# which does not exist is WORSE than no registry, because the next session builds
+# against it. Every row is either:
+#     status: PRODUCED   the store exists today and a named producer writes it, and
+#                        every fact below was verified before it was written down;
+#     status: PROPOSED   declared so it has a stable dataset_id, produced by NOTHING.
+# This seed is deliberately SMALL: only datasets whose facts are verified in the
+# pinned design spec are PRODUCED. Growing it is cheap; un-lying is not.
+#
+# THE COLUMN NAMES BELOW ARE THE NAMES ON DISK TODAY, not the canonical ones. Where a
+# stored name is ambiguous (`close`), `basis:` carries the MEASURED truth and `renames_to:`
+# carries the canonical §D4 name the V1 reader shim will expose. That pairing is the
+# whole V1 migration: 132 files keep reading `close`, and the basis stops being a guess.
+#
+# TWO KINDS OF "CONSUMER", AND THEY ARE NOT THE SAME FIELD. `inputs:` holds
+# dataset_ids ONLY — it IS the lineage DAG, and the reverse edge (Registry.consumers_of)
+# is DERIVED from it, never hand-maintained. Functions that read a store go in
+# `code_consumers:` and are prose. Both once lived under the name "consumers", and a
+# caller could not tell which of the two answers it was holding.
+#
+# temporal_profile ∈ BARS | REVISABLE_RELEASE | SNAPSHOT_SERIES | EVENT | DERIVED | INTELLIGENCE
+# layer            ∈ L0 (SOURCE) | L1 (NORMALIZED) | L2 (CANONICAL) | L3 (DERIVED) | L4 (INTELLIGENCE)
+# conflict_policy  ∈ PRIMARY_ONLY | FALLBACK | DOMAIN_AUTHORITY | CROSS_VALIDATE | COMPOSITE
+# ─────────────────────────────────────────────────────────────────────────────
+schema: dataset_registry.v1
+updated: "2026-08-12"
+
+datasets:
+
+  # ── Equity bars ────────────────────────────────────────────────────────────
+  - dataset_id: equity.bars.daily.stocks
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/sector_holdings.py::StockPriceAdapter
+    storage: data/stocks/{ticker}.parquet
+    format: parquet
+    grain: [ticker, date]
+    identity:
+      id_column: ticker
+      id_type: symbol            # NOT an identity (§D2) — the alias table is the join
+    temporal_profile: BARS
+    timezone: America/New_York
+    frequency: 1d
+    adjustment: total_return     # measured, not declared by the store
+    vendor: yahoo
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, validity, freshness, continuity]
+    version: "1.0.0"
+    licensing: vendor_terms_personal_use
+    schema:
+      close:
+        dtype: float64
+        unit: quote_currency
+        basis: tradj
+        renames_to: close_tradj
+        nullable: false
+        note: >
+          MEASURED NVDA 2024-06-03 = 114.80, identical to data/yahoo `close` — i.e. this
+          store carries the TOTAL-RETURN series under a name that says nothing. The
+          split-adjusted basis the house itself calls correct for structure math is
+          ABSENT from this store, which 132 files read.
+    notes: >
+      This store has NO `open` column (§D4 measurement). An OHLC-shaped read against it
+      returns a frame quietly missing a leg rather than raising, so consumers must check
+      rather than assume. The producer splices short auto_adjust=True windows onto deep
+      history, which is how 30/231 names came to be stranded on a stale adjustment basis
+      (measured 2026-07-19, healed by scripts/heal_stocks_basis.py) — the concrete cost of
+      an adjusted series whose adjustment vintage is not recorded (§D4).
+
+  - dataset_id: equity.bars.daily.yahoo
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/yahoo.py
+    storage: data/yahoo/{ticker}.parquet
+    format: parquet
+    grain: [ticker, date]
+    identity:
+      id_column: ticker
+      id_type: symbol
+    temporal_profile: BARS
+    timezone: America/New_York
+    frequency: 1d
+    adjustment: dual_basis
+    vendor: yahoo
+    endpoint: yfinance
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, validity, freshness, continuity]
+    version: "1.0.0"
+    licensing: vendor_terms_personal_use
+    schema:
+      close:
+        dtype: float64
+        unit: quote_currency
+        basis: tradj
+        renames_to: close_tradj
+        nullable: false
+        note: >
+          Adj Close from yfinance auto_adjust=False. MEASURED NVDA 2024-06-03 = 114.80.
+      close_price:
+        dtype: float64
+        unit: quote_currency
+        basis: sadj
+        renames_to: close_sadj
+        nullable: false
+        note: >
+          Close from yfinance auto_adjust=False — split-adjusted, dividend-UNadjusted.
+          MEASURED NVDA 2024-06-03 = 115.00. collectors/yahoo.py calls this "the correct
+          basis for all structure math"; the NAMES invert intuition, which is exactly the
+          §D4 defect.
+      volume:
+        dtype: int64
+        unit: shares
+        nullable: true
+    notes: >
+      Both stored bases are RE-ADJUSTED by Yahoo at every fetch, so an adjusted series
+      here is a point-in-time quantity with an UNRECORDED vintage (§D4). collectors/yahoo.py
+      detects the resulting overlap disagreement via store.basis_shifted and re-pulls
+      period='max' instead of splicing. `adjustment_asof` is owed and not yet carried.
+
+  - dataset_id: equity.bars.daily.massive
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/massive_stock_day.py
+    storage: data/massive_stock_day/{ticker}.parquet
+    format: parquet
+    grain: [ticker, date]
+    identity:
+      id_column: ticker
+      id_type: symbol
+    temporal_profile: BARS
+    timezone: America/New_York
+    frequency: 1d
+    adjustment: none
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, validity, freshness]
+    version: "1.0.0"
+    schema:
+      close:
+        dtype: float64
+        unit: quote_currency
+        basis: raw
+        renames_to: close_raw
+        nullable: false
+        note: >
+          MEASURED NVDA 2024-06-03 = 1150.00 — the price actually PRINTED, pre the 10:1
+          split. Same column name as the two stores above, 10x the number.
+    notes: >
+      The only raw-print equity store here, and therefore the only lawful input for
+      limit-price / tick-size / exchange-rule work — see DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT,
+      where using an adjusted tape for exactly that stop-shipped a whole program.
+
+  # ── Macro releases ─────────────────────────────────────────────────────────
+  - dataset_id: macro.fred.observations
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/fred.py
+    storage: data/fred/{series}.parquet
+    format: parquet
+    grain: [series, date]
+    identity:
+      id_column: series
+      id_type: fred_series_id
+    temporal_profile: REVISABLE_RELEASE
+    timezone: UTC
+    frequency: mixed
+    vendor: fred
+    endpoint: https://api.stlouisfed.org/fred/series/observations
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [freshness, completeness, temporal_integrity]
+    version: "1.0.0"
+    licensing: public_domain
+    schema:
+      value:
+        dtype: float64
+        nullable: true
+        null_reasons: [NOT_YET_AVAILABLE, VENDOR_FAILED]
+        note: >
+          LATEST VINTAGE ONLY. This store answers "what is the series now", never "what
+          did we know on date t" — macro.fred.vintages is the point-in-time reader.
+          REVISABLE_RELEASE declares published_at as owed; the store does not carry it
+          yet, which is a contract gap this row exists to make visible.
+    notes: >
+      config.yml `fred.vintage_series` decides which of these survive into the ALFRED
+      store and REPLACES (never extends) collectors/fred.py:DEFAULT_VINTAGE_SERIES. A
+      one-line deletion there silently drops series from the vintage store on the next
+      keyed collect; it has happened twice (IC4WSA/CCSA restored #3710, then
+      PPIFES/ECIALLCIV/ECIWAG #3735).
+
+  - dataset_id: macro.fred.vintages
+    layer: L1
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: collectors/fred.py::fetch_vintages
+    storage: data/fred_vintage/vintages.parquet
+    format: parquet
+    grain: [series, period, realtime_start]
+    identity:
+      id_column: series
+      id_type: fred_series_id
+    temporal_profile: REVISABLE_RELEASE
+    timezone: UTC
+    frequency: mixed
+    vendor: fred
+    endpoint: https://api.stlouisfed.org/fred/series/observations (ALFRED realtime)
+    conflict_policy: PRIMARY_ONLY
+    quality_checks: [uniqueness, temporal_integrity, completeness]
+    version: "1.0.0"
+    licensing: public_domain
+    # NO `inputs:`. This store and macro.fred.observations are L1 SIBLINGS off one
+    # vendor API, not a producer/consumer pair: collectors/fred.py::_vintage_series
+    # (:153-174) takes its series list from config.yml / DEFAULT_VINTAGE_SERIES, and
+    # _fetch_vintage_one (:177-195) calls the ALFRED realtime endpoint directly. It
+    # never reads data/fred/*.parquet. An edge here was declared and was FALSE — see
+    # tests/test_dataos_registry.py::test_the_two_fred_stores_are_siblings_...
+    # for what a false edge costs a lineage query.
+    code_consumers: [collectors/fred.py::as_of_series, collectors/fred.py::initial_release]
+    schema:
+      series: {dtype: string, nullable: false}
+      period: {dtype: "datetime64[ns]", nullable: false, note: "the interval the observation describes"}
+      value: {dtype: float64, nullable: true}
+      realtime_start:
+        dtype: "datetime64[ns]"
+        nullable: false
+        note: >
+          The published_at clock in ALFRED's own vocabulary — the date this vintage
+          became knowable. This is what makes the store point-in-time readable.
+      realtime_end: {dtype: "datetime64[ns]", nullable: true}
+    notes: >
+      ONE of the six independent, locally-correct PIT implementations §D0 names. It is
+      correct; it is also unregistered and shares no vocabulary with the other five,
+      which is the whole thesis. fetch_vintages() REWRITES this parquet wholesale, so
+      the append-only revision chain lives in ALFRED, not here.
+
+  # ── Reference / identity spine (§D2) — PRODUCED (DOS-1.1, 2026-08-13) ───────
+  - dataset_id: reference.security_master
+    layer: L2
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: scripts/build_security_master.py
+    storage: data/reference/security_master.parquet
+    format: parquet
+    grain: [security_id]
+    identity:
+      id_column: security_id
+      id_type: SEC
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: UTC
+    # ON_DEMAND, not `1d`: NOTHING schedules this producer. It is in no workflow, no
+    # cron and no nightly step, and saying "daily" would be the same class of lie as a
+    # PROPOSED row claiming a store — the next session joins on it and gets a frozen
+    # snapshot with no signal that it is frozen (gate G1, one step downstream).
+    # tests/test_dataos_security_master.py::
+    # test_the_committed_artifact_is_not_stale_against_the_current_seeds is the
+    # freshness detector instead: it rebuilds from the CURRENT seeds on top of the
+    # committed artifact and reds when a seed change would add a security. Remedy is
+    # one command: python3 scripts/build_security_master.py --report
+    frequency: on_demand
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, referential, completeness]
+    version: "0.1.0"
+    schema:
+      security_id: {dtype: string, nullable: false, note: "SEC:<inception listing key>, minted once and stored"}
+      issuer_id: {dtype: string, nullable: false}
+      listing_key: {dtype: string, nullable: false, note: "<CC>-<MIC>-<CODE>[.N] — inception code, never today's symbol"}
+      country: {dtype: string, nullable: false}
+      mic: {dtype: string, nullable: false}
+      inception_code: {dtype: string, nullable: false}
+      effective_at: {dtype: "datetime64[ns]", nullable: false}
+      ingested_at: {dtype: "datetime64[ns]", nullable: false}
+    notes: >
+      lib/dataos/identity.py is the ALLOCATOR (mint-once, a pure derivation); this
+      dataset is the AUTHORITY (the stored value). Re-running the producer NEVER
+      re-mints an existing security_id — it joins a committed row by listing_key and
+      keeps every stored column, so a later correction to inception facts appends an
+      ALIAS instead (§D2). Seeded from data/breadth/constituents.parquet,
+      data/baskets/membership.json and config/delisted_symbols.yml; the VENUE comes from
+      the newest data/symbol_directory/snapshots/*.parquet (exit ledger first for a
+      delisted name — the directory is a CURRENT listing set and cannot carry a finished
+      tape). Coverage is REPORTED, not asserted: the 2026-08-13 seed resolved 703/711,
+      8 unresolved and named in data/reference/_receipt.json. effective_at is NOT a
+      listing date — no in-repo US listing-date source exists (§4) and back-dating one
+      from a store's earliest bar would be fabrication, so it carries the earliest DATED
+      OBSERVATION in the committed seeds instead. NOT SCHEDULED (frequency: on_demand)
+      — no workflow, cron or nightly step runs the producer, so the freshness contract
+      is a TEST rather than a lane: the suite rebuilds from the current seeds on top of
+      the committed artifact and reds when a seed change would add a security, which is
+      the moment a re-run is owed. DISPLAY TIER: nothing reads this as authority yet;
+      the master becomes authority at spec §11.4.
+
+  - dataset_id: reference.vendor_aliases
+    layer: L2
+    status: PRODUCED
+    owner: macro-dashboard
+    producer: scripts/build_security_master.py
+    storage: data/reference/vendor_aliases.parquet
+    format: parquet
+    grain: [vendor, vendor_symbol, valid_from]
+    identity:
+      id_column: security_id
+      id_type: SEC
+    temporal_profile: SNAPSHOT_SERIES
+    timezone: UTC
+    frequency: on_demand   # same producer, same reason — see reference.security_master
+    conflict_policy: DOMAIN_AUTHORITY
+    quality_checks: [uniqueness, referential, temporal_integrity]
+    version: "0.1.0"
+    inputs: [reference.security_master]
+    schema:
+      vendor: {dtype: string, nullable: false}
+      vendor_symbol: {dtype: string, nullable: false}
+      security_id: {dtype: string, nullable: false}
+      valid_from: {dtype: date, nullable: true, note: "inclusive; null = open bound"}
+      valid_to:
+        dtype: date
+        nullable: true
+        note: >
+          EXCLUSIVE — the first day the row no longer holds; null = open bound. An
+          inclusive end makes the changeover day ambiguous, and 2026-01-14 is exactly
+          the day the MMC/MRSH answer has to be unambiguous.
+      ingested_at: {dtype: "datetime64[ns]", nullable: false}
+    notes: >
+      Supersedes lib/ticker_aliases.py — 53 lines, 2 entries, Yahoo-only and TIMELESS,
+      which is why it can say "MMC means MRSH" but not "MMC meant MMC before
+      2026-01-14". Its own docstring records the 7-month silent production loss the
+      time-scoped table exists to prevent: data/baskets/ohlcv/MMC.parquet never existed,
+      the `insurance` basket rendered 18/19 members and `us_sector_financials` 75/76.
+      PRODUCED as of 2026-08-13, and it now answers DIFFERENTLY either side of both
+      dated renames: yahoo/MMC before 2026-01-14 and yahoo/MRSH from it, yahoo+ledger+
+      membership SATS before 2026-06-24 and ECHO from it — one security_id on each side
+      (SEC:US-XNYS-MMC, SEC:US-XNAS-SATS).
+      FIVE vendor SPACES in TWO FAMILIES, and reading one family as the other is the
+      MMC outage in a new costume (adversarial review 2026-08-13), so the names say
+      which clock they run on. HISTORICAL NAMING — "what did this space call it ON that
+      day", DATED across a rename: `yahoo` (what the price vendor called it), `membership`
+      (this repo's own key) and `ledger` (the signal-archive key space). CURRENT CATALOG
+      — "what string do I use TODAY, for a bar of ANY date", ONE OPEN-BOUNDED row at
+      today's symbol: `yahoo_fetch` (reproduces lib.ticker_aliases.fetch_symbol — Yahoo
+      migrated Marsh's WHOLE history onto MRSH, so a backfill of 2020 requests MRSH, not
+      the MMC the historical space correctly reports) and `store` (reproduces
+      lib.ticker_aliases.store_key — data/stocks/ECHO.parquet holds EchoStar back to
+      2008 and data/baskets/ohlcv/MMC.parquet is the file that exists). `supersedes:`
+      below is the CURRENT-CATALOG family only; the historical rows are not, and must
+      never be used as, a fetch-symbol or store-key resolver.
+      The membership space does NOT generalise from MMC: it moves when the repo's own
+      key moves. breadth.ticker_fixups pins MRSH back to MMC (Marsh's repo key did NOT
+      move, so that row is open), while quality.ticker_key_migrations ratifies
+      SATS->ECHO (EchoStar's DID, so that pair is dated). Leaving membership open at
+      today's ECHO re-labelled EchoStar's whole repo-side past — the timeless-map defect
+      this dataset exists to end, and it shipped here until 2026-08-13.
+      Fiserv is the undated case and stays open-bounded on its historical rows: the
+      vendor LAGS that rename and no in-repo source dates it, so an open bound is the
+      honest absence of a claim.
+      lib/dataos/identity.VendorAliasTable is the only reader, and the producer
+      round-trips every row through it before writing, so an ambiguous table fails at
+      write time rather than in a consumer — which is also why a current-catalog space
+      carries one row per security and not two: the reader refuses rows that overlap on
+      (vendor, security_id), and "what do I call it today" has exactly one answer.
+      DISPLAY TIER: nothing reads it as authority yet; lib/ticker_aliases.py remains the
+      live seam until spec §11.4.
+    supersedes: lib/ticker_aliases.py   # the `yahoo_fetch`/`store` rows only — see notes

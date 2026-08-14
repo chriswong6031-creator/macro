@@ -1,12 +1,12 @@
 {
   "schema": "prophet.management_state/v1",
   "id": "KMT-BULL-20260721",
-  "asof": "2026-08-12",
+  "asof": "2026-08-13",
   "phase": "invalidated",
   "detection_phase": "invalidated",
   "management_confidence": 11.4,
   "raw_confidence": 8.0,
-  "delta_vs_base": -48.5,
+  "delta_vs_base": -48.6,
   "recommended_action": "invalidated",
   "human_state": "Invalidated",
   "components": {
@@ -20,7 +20,7 @@
     "dist_to_stop_r": -0.003,
     "dist_to_t1_r": 1.5,
     "dist_to_t2_r": 3.0,
-    "horizon_pct_used": 48.9,
+    "horizon_pct_used": 51.1,
     "p1": -0.6685,
     "p2": -0.3343,
     "p3": null,
@@ -30,7 +30,7 @@
   },
   "rr_ratio": 1.5,
   "rr_grade": "ACCEPTABLE",
-  "change_reason": "Stop Level Breached",
+  "change_reason": "",
   "confidence_ceiling": 92,
   "authority": "trade-management-only-NOT-pick-rank",
   "authority_tier": "display",
@@ -45,6 +45,6 @@
   "_first_trigger_ts": "2026-07-25",
   "_first_t1_ts": null,
   "_first_t2_ts": null,
-  "days_elapsed": 22,
-  "tau": 0.4889
+  "days_elapsed": 23,
+  "tau": 0.5111
 }

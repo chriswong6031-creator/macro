@@ -1,53 +1,33 @@
 {
-  "appended": 5,
-  "asof": "2026-08-10",
+  "appended": 0,
+  "asof": "2026-08-12",
   "candidates": {
-    "R": 4,
+    "R": 2,
     "T": 9,
     "W": 44
   },
   "deduped": {
-    "R": 3,
-    "T": 5,
+    "R": 2,
+    "T": 9,
     "W": 44
   },
   "dry_run": false,
   "feature_source": {
     "enabled": true,
     "foresight": {
-      "asof": "2026-08-10",
-      "consulted": true,
-      "n_keys": 27,
-      "n_themes": 18,
-      "ok": true,
-      "reason": null,
-      "source": "site/basketdata/foresight_cascade.json"
+      "consulted": false
     },
     "ignition": {
       "coil_min_sessions": 293,
-      "consulted": true,
-      "null_reasons": {
-        "no_bar_on_flag_date": 5,
-        "ohlcv_absent": 33
-      },
+      "consulted": false,
+      "null_reasons": {},
       "reason": null,
       "source": "data/baskets/ohlcv/<ticker>.parquet",
-      "themes_read": {
-        "Agriculture & FoodTech": {
-          "theme_thrust_frac": 0.0,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "quiet"
-        },
-        "Software": {
-          "theme_thrust_frac": 0.5476,
-          "theme_thrust_reason": null,
-          "theme_thrust_state": "thrusting"
-        }
-      },
+      "themes_read": {},
       "thrust_min_members": 6,
       "thrust_min_sessions": 27,
-      "tickers_ok": 55,
-      "tickers_read": 93
+      "tickers_ok": 0,
+      "tickers_read": 0
     },
     "keys": [
       "relay_count_3d",
@@ -65,21 +45,10 @@
       "theme_thrust_reason"
     ],
     "relay": {
-      "consulted": true,
-      "high_lookback": 63,
-      "members_indexed": 165,
-      "n_covered": 83,
-      "reason": null,
-      "window_sessions": 21
+      "consulted": false
     },
     "turnover": {
-      "consulted": true,
-      "last_session": "2026-08-10",
-      "n_tickers": 1541,
-      "ok": true,
-      "reason": null,
-      "source": "data/{breadth,midcap_breadth,smallcap_breadth}/_volume_cache.parquet",
-      "window_max": 60
+      "consulted": false
     }
   },
   "feature_source_w": {
@@ -107,15 +76,8 @@
     ]
   },
   "flag_tickers": {
-    "R": [
-      "TILE"
-    ],
-    "T": [
-      "DAR",
-      "QLYS",
-      "BLKB",
-      "ORCL"
-    ],
+    "R": [],
+    "T": [],
     "W": []
   },
   "n_universe": 1495,
@@ -124,41 +86,41 @@
     "T": 0,
     "W": 0
   },
-  "run_utc": "2026-08-11 04:27:55",
-  "runtime_s": 105.5,
+  "run_utc": "2026-08-13 19:34:32",
+  "runtime_s": 104.5,
   "schema": "prophet_doors/v1",
   "theme_source": {
-    "age_days": 0,
-    "asof": "2026-08-10",
-    "n_members": 165,
+    "age_days": -1,
+    "asof": "2026-08-13",
+    "n_members": 156,
     "ok": true,
     "reason": null,
     "source": "site/marketdata/subsector_rotation.json",
     "top_themes": [
       {
-        "emerging_score": 6.129,
+        "emerging_score": 4.101,
         "rank": 1,
         "theme": "Commodities Metals"
       },
       {
-        "emerging_score": 3.918,
+        "emerging_score": 3.724,
         "rank": 2,
         "theme": "Space Tech"
       },
       {
-        "emerging_score": 1.517,
+        "emerging_score": 2.43,
         "rank": 3,
+        "theme": "Commodities Energy"
+      },
+      {
+        "emerging_score": 1.744,
+        "rank": 4,
         "theme": "Agriculture & FoodTech"
       },
       {
-        "emerging_score": 1.374,
-        "rank": 4,
-        "theme": "Software"
-      },
-      {
-        "emerging_score": 1.241,
+        "emerging_score": 1.658,
         "rank": 5,
-        "theme": "Defense & Aerospace"
+        "theme": "Energy Traditional"
       }
     ]
   },
@@ -168,15 +130,15 @@
       "3B"
     ],
     "aligned": 44,
-    "asof_max": "2026-08-10",
+    "asof_max": "2026-08-12",
     "asof_mismatch": 0,
-    "asof_run": "2026-08-10",
+    "asof_run": "2026-08-12",
     "evaluated": 712,
     "fresh": 44,
     "fresh_weeks_max": 2,
     "ok": true,
     "reason": null,
-    "runtime_s": 16.4,
+    "runtime_s": 17.7,
     "skipped": 5,
     "source": "baskets/membership.json",
     "state_turn": 103,

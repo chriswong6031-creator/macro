@@ -171,11 +171,11 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
    height and the grid is untouched — the second chip row sits over the sparkline. #}
 .pv-ov.pv-ovl{flex-wrap:wrap;row-gap:3px}
 .pv-ovl{left:9px}.pv-ovr{right:9px}
-.pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh) 13%,var(--panel));color:var(--pvh-ink,var(--pvh));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh)) 40%,transparent)}
+.pv-chip{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;line-height:1.35;padding:2px 9px;border-radius:999px;white-space:nowrap;background:color-mix(in srgb,var(--pvh,var(--muted)) 13%,var(--panel,#fff));color:var(--pvh-ink,var(--pvh,var(--muted)));border:1px solid color-mix(in srgb,var(--pvh-ink,var(--pvh,var(--muted))) 40%,transparent)}
 /* solid Buy chip: ink-grade fill + panel ink — white on the raw hue was 3.61:1
    light / 2.51:1 dark at 10px/800 (the worst white-on-hue chip in the estate
    audit); panel-on-ink clears 4.5 in both themes and keeps the solid identity. */
-.pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh));color:var(--panel);border-color:transparent}
+.pv-buy .pv-chip{background:var(--pvh-ink,var(--pvh,var(--up)));color:var(--panel,#fff);border-color:transparent}
 .pvcard .pv-quote{display:inline-flex;align-items:baseline;gap:6px;background:color-mix(in srgb,var(--panel) 86%,transparent);border:1px solid var(--line);border-radius:7px;padding:1px 6px;white-space:nowrap}
 .pvcard .nb-px.pv-px,.pvcard .nb-chg.pv-chg{font-size:10.5px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.35;white-space:nowrap;margin:0}
 .pvcard .nb-px.pv-px{color:var(--text)}
@@ -311,7 +311,7 @@ html[data-theme="light"] .pvcard.pv-featured:hover{border-color:color-mix(in srg
    growing without limit — a name can carry six or more cautions. #}
 .pv-cau-pop{display:none;position:absolute;top:calc(100% + 6px);left:0;z-index:30;width:264px;max-width:min(264px,78vw);max-height:min(300px,58vh);overflow-y:auto;overscroll-behavior:contain;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:9px 11px 10px;box-shadow:var(--popover-shadow);white-space:normal;text-align:left}
 .pv-cau:hover .pv-cau-pop,.pv-cau:focus-within .pv-cau-pop{display:block}
-.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--warn)}
+.pv-cau-hd{display:block;margin:0 0 7px;font-size:8.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-warn, var(--warn))}
 {# Bulleted, not hairline-ruled: five ledger rows read as a table of equals; a bullet
    list reads as notes and lets each row keep its own sentence rhythm. #}
 .pv-cau-row{position:relative;display:block;padding-left:12px;font-size:10.5px;line-height:1.5;color:var(--text)}

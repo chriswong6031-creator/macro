@@ -120,13 +120,21 @@ _ROTATION = {
 _T5 = {"tone": "u", "head": {"en": "Risk-on tape", "zh": "风险偏好行情"},
        "rest": {"en": "credit and cyclicals lead. Watch, don’t chase.",
                 "zh": "信用与周期领先。观望，勿追。"}}
+# `fleet_group` is marshalled onto every coverage row by build_etf_page (off the
+# fund registry, not off `is_active` — ARK's thematic funds are stock pickers
+# too). It drives the fleet directory's three groups, so the fixture carries one
+# of each; a row WITHOUT the key still has to render, which
+# test_a_coverage_row_with_no_fleet_group_still_reaches_the_directory pins.
 _COVERAGE = [
     {"fund": "ARKK", "fund_name": "ARK Innovation ETF", "is_active": True,
      "category": "Innovation", "n_snapshots": 412, "latest_asof": "2026-08-02",
-     "stale_days": 1, "unofficial": False},
+     "stale_days": 1, "unofficial": False, "fleet_group": "active"},
+    {"fund": "URA", "fund_name": "Global X Uranium ETF", "is_active": False,
+     "category": "Uranium", "n_snapshots": 61, "latest_asof": "2026-08-01",
+     "stale_days": 2, "unofficial": False, "fleet_group": "theme"},
     {"fund": "IWM", "fund_name": "iShares Russell 2000 ETF", "is_active": False,
      "category": "Small-cap", "n_snapshots": 96, "latest_asof": "2026-07-28",
-     "stale_days": 6, "unofficial": True},
+     "stale_days": 6, "unofficial": True, "fleet_group": "sector"},
 ]
 _GRADED_TILE = {"k": {"en": "Strongest consensus", "zh": "最强共识"}, "v": "AAA",
                 "m": {"en": "3 funds building", "zh": "3 只基金增持"},
@@ -332,6 +340,25 @@ def test_ungated_shell_keeps_every_row_and_no_gate_furniture():
     assert "attempt-hydrate" not in shell
 
 
+def test_a_coverage_row_with_no_fleet_group_still_reaches_the_directory():
+    """The fleet directory selects three groups by `fleet_group`, a key the
+    BUILDER adds. Three selectattr filters and no fallback would silently drop
+    every fund the day that marshalling breaks — a coverage table that quietly
+    empties is the worst version of this failure, because the page still renders
+    and the free tier just loses its anchor. Ungrouped rows fall through to the
+    theme list instead."""
+    bare = [dict(c) for c in _COVERAGE]
+    for c in bare:
+        c.pop("fleet_group")
+    env = _env()
+    shell = env.get_template("etfs.html.j2").render(
+        favored=[], accumulation=[], trims=[], coverage=bare, pulse={},
+        board=_board(gated=True), gate=_gate(), generated_utc="2026-08-12 00:00")
+    for name in ("ARK Innovation ETF", "Global X Uranium ETF",
+                 "iShares Russell 2000 ETF"):
+        assert name in shell, f"{name} vanished from the fleet directory"
+
+
 def test_coverage_shelf_opens_on_BOTH_builds():
     """T-B3 ruled the <details> default state UNIFIES open.
 
@@ -358,7 +385,11 @@ def test_partials_are_the_one_source_for_both_sides():
         ("_etf_board_rows.html.j2", '<div class="cb-row">'),
         ("_etf_accumulation_rows.html.j2", '<td class="fundcell">'),
         ("_etf_fresh_cards.html.j2", '<div class="fc-top">'),
-        ("_etf_trim_rows.html.j2", '<span class="sh-ic">🔻</span>'),
+        # marker was '<span class="sh-ic">🔻</span>' until 2026-08-12: a decorative
+        # emoji is the WORST possible anti-drift marker, because a doctrine §5.8
+        # sweep removes it estate-wide and this guard silently reports "vacuous"
+        # rather than the drift it exists to catch. Anchored on structure instead.
+        ("_etf_trim_rows.html.j2", '<span class="mini exit"'),
     ):
         assert f'{{% include "{partial}" %}}' in shell_src, (
             f"the shell must render {partial}, not its own copy of those rows")
@@ -420,6 +451,51 @@ def test_no_banned_tier1_vocabulary_reaches_the_public_shell():
         assert banned not in shell, f"banned vocabulary in the public shell: {banned}"
 
 
+def test_the_money_source_copy_stays_in_plain_words():
+    """The W1 flow/selection decomposition and the W2b weighting lens gave this
+    page a second vocabulary, and every term in it is an ENGINE term. The glance
+    tier gets the plain-word translation — "investor money" / "manager picks",
+    "read on where the money goes" — and the field names, registry slugs and
+    estimator language stay behind the wall or in the code (Doctrine Law 2).
+
+    Checked on the free shell because that is the copy Google and the AI
+    overviews extract, and on the row partials because the entitled board is
+    read by a human too.
+    """
+    bodies = {"free shell": _render(gated=True),
+              "entitled shell": _render(gated=False)}
+    for name in ("_etf_board_rows.html.j2", "_etf_accumulation_rows.html.j2",
+                 "_etf_trim_rows.html.j2", "_etf_fresh_cards.html.j2"):
+        bodies[name] = (ROOT / "templates" / name).read_text(encoding="utf-8")
+    for where, body in bodies.items():
+        for banned in (
+            # engine field names / registry slugs
+            "conviction_pp", "flow_usd", "selection_usd", "total_usd",
+            "usd_complete", "n_funds_flow", "n_funds_selection", "n_accum",
+            "thematic_passive", "accel_pct_per_day", "max_streak",
+            # the weighting lens is payload-only (tests/test_etf_weighting.py)
+            "weighted_usd", "weight_receipt", "mismatch_discount",
+            # estimator / tier vocabulary that must never face a reader
+            "decomposition", "residual", "common scale factor", "display-tier",
+            "flow component", "selection component",
+        ):
+            # A Jinja expression legitimately NAMES a field, and a CSS or HTML
+            # comment legitimately explains the engine it renders — the ban is
+            # on what a READER sees, so expressions and comments come out first.
+            visible = re.sub(r"\{[{%#].*?[}%#]\}|/\*.*?\*/|<!--.*?-->",
+                             "", body, flags=re.S)
+            assert banned not in visible, (
+                f"{where}: internal vocabulary reaches the reader: {banned}")
+    # …and the plain-word replacements are actually there, in both languages,
+    # so this guard can never pass because the feature quietly disappeared
+    free = bodies["free shell"]
+    assert "read on what the manager picks" in free and "看经理人选了什么" in free
+    assert "read on where the money goes" in free and "看资金流向哪里" in free
+    board = bodies["_etf_board_rows.html.j2"]
+    assert "investor money" in board and "投资者资金" in board
+    assert "manager picks" in board and "经理人选股" in board
+
+
 def test_rotation_disclaimer_is_rendered_from_code_not_from_the_stale_pulse_file():
     """basketdata/etf_pulse.json is rebuilt under render scope `baskets` while
     this page bakes under `macro`, so a macro-only render reprints whatever
@@ -453,6 +529,50 @@ def test_backdrop_tile_speaks_chinese_on_both_builds():
                 or '<div class="tv">AAA</div>' in shell), f"gated={gated}"
 
 
+def test_backdrop_tile_speaks_chinese_on_the_neutral_branch_too():
+    """The NEUTRAL branch, end-to-end through the REAL emitter.
+
+    The case above renders a hand-built fixture whose zh half is already correct,
+    so it could only ever catch a TEMPLATE regression. The leak that survived it
+    was in the emitter and on the default path: `_rotation` fell back to
+    `label_en` whenever the pulse carried no `label_zh` — which is every render
+    where etf_pulse.json is missing or stale, since it is rebuilt under render
+    scope `baskets` while this page bakes under `macro`. The zh hero of a page
+    Google indexes then read a bare "NEUTRAL".
+
+    Built from engine.etf_board.board_context with no pulse at all, so a revert
+    in the emitter reds here even though the fixture-based case stays green.
+    """
+    from engine.etf_board import board_context
+
+    for pulse in ({}, {"risk": {"label_en": "NEUTRAL", "tilt": 0.0}}):
+        real = board_context([], [], [], [], _COVERAGE, pulse)
+        assert real["tiles"][-1]["v"] == {"en": "NEUTRAL", "zh": "中性"}, pulse
+        for gated in (True, False):
+            shell = _render(gated=gated, board=real)
+            assert ('<div class="tv"><span class="l-en">NEUTRAL</span>'
+                    '<span class="l-zh">中性</span></div>') in shell, (
+                f"untranslated backdrop on the zh view (gated={gated}, pulse={pulse})")
+            assert ">NEUTRAL</span><span class=\"l-zh\">NEUTRAL<" not in shell
+
+
+def test_the_hero_tile_says_managers_disagree_not_contested():
+    """Designer flag: "contested" is Tier-1 jargon — our word for the state, not
+    the reader's. Asserted through the real emitter AND the real template, so
+    neither half can regress alone."""
+    from engine.etf_board import board_context
+
+    favored = [dict(_fav("AAA", 0), contested=True, n_accum=4, n_trim=2)]
+    real = board_context([], [], [], favored, _COVERAGE, {})
+    tile = real["tiles"][0]
+    assert "contested" not in tile["m"]["en"].lower()
+    assert tile["m"]["en"] == "4 funds building · managers disagree"
+    assert tile["m"]["zh"] == "4 只基金增持 · 经理人意见不一"
+    shell = _render(gated=False, board=real)
+    assert "managers disagree" in shell and "经理人意见不一" in shell
+    assert "· contested" not in shell
+
+
 def test_rotation_backdrop_is_dated_by_the_pulse_as_of_not_the_bake_stamp():
     """§B9.6: etf_pulse.json refreshes under render scope `baskets` while this
     page bakes under `macro`, so a macro-only render can rebake the page around
@@ -483,6 +603,16 @@ def test_freshness_dots_do_not_ride_the_direction_inks():
         assert f"{cls}{{background:{ink}}}" in css, f"{cls} must use a fixed ink"
     assert ".fdot.fresh{background:var(--lift)}" not in css
     assert ".fdot.stale{background:var(--drag)}" not in css
+    # The fleet directory draws its per-fund dot as a ::before instead of a
+    # .fdot element (105 funds × that markup was 3 KiB of the free shell), so
+    # the inks live in TWO places. Pin them to the same values — a swatch legend
+    # that disagrees with the rows it explains is worse than no legend.
+    for cls, ink in ((".fu.s1", "#1FA971"), (".fu.s2", "#f0b429"),
+                     (".fu.s3", "#e06464")):
+        assert f"{cls}::before{{background:{ink}}}" in css, (
+            f"{cls} must carry the same fixed ink as its .fdot legend swatch")
+    for token in ("var(--lift)", "var(--drag)", "var(--up)", "var(--down)"):
+        assert f".fu.s1::before{{background:{token}}}" not in css
 
 
 def test_gate_furniture_carries_no_directional_colour():

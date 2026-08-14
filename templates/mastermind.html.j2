@@ -9,7 +9,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <title>Mastermind — {{ as_of }}</title>
 {% set seo_title = "Mastermind Dashboard" %}{% set seo_desc = "The Mastermind macro regime and market cycle dashboard — live regime reads, signal boards and cycle intelligence across US and global markets." %}{% set seo_path = "mastermind.html" %}
 {% include "_seo_head.html.j2" %}
@@ -26,7 +26,7 @@
            padding:14px 16px; margin-bottom:14px; }
   .muted { color:var(--muted); }
   .sm { font-size:13px; }
-  .up { color:var(--up); } .down { color:var(--down); }
+  .up { color:var(--ink-up, var(--up)); } .down { color:var(--ink-down, var(--down)); }
   .help { display:inline-flex; align-items:center; justify-content:center; width:15px;
           height:15px; border-radius:50%; border:1px solid var(--muted); color:var(--muted);
           font-size:10px; font-weight:600; cursor:help; position:relative;
@@ -70,8 +70,8 @@
   table.mm td.num, table.mm th.num { text-align:right; font-variant-numeric:tabular-nums; }
   .pill { display:inline-block; padding:1px 7px; border-radius:999px; font-size:11px; font-weight:600;
           border:1px solid var(--line); color:var(--muted); }
-  .pill.pend { color:var(--down); border-color:var(--down); }
-  .pill.hold { color:var(--up); border-color:var(--up); }
+  .pill.pend { color:var(--ink-down, var(--down)); border-color:var(--down); }
+  .pill.hold { color:var(--ink-up, var(--up)); border-color:var(--up); }
   .mm-dec { border-bottom:1px solid var(--line); padding:9px 0; }
   .mm-dec:last-child { border-bottom:none; }
   .mm-dec .h { font-weight:600; }

@@ -259,10 +259,46 @@ def _git(repo: Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=repo, check=True, capture_output=True)
 
 
+def _correction(plan_id: str, field: str, new_value, *,
+                corrected_at: str = "2026-08-08") -> dict:
+    """One append-only plan-correction row in the SHIPPED shape.
+
+    Deliberately literal rather than built from a helper in the module under test: the
+    defect this fixture exists for was a reader that invented its own row shape, so the
+    fixture must state the real one. ``id`` is the CORRECTION id and ``corrects_id`` is
+    the PLAN id — the exact pair the broken predicate confused.
+    """
+    return {
+        "schema": "prophet.plan_correction/v1",
+        "id": f"{plan_id}:{field}:{corrected_at.replace('-', '')}",
+        "corrects_id": plan_id,
+        "field": field,
+        "old_value": None,
+        "new_value": new_value,
+        "basis": "chronology audit disposition",
+        "corrected_at": corrected_at,
+        "evidence": {"audit_receipt": "research/prophet_us_audit/FIXTURE.json"},
+    }
+
+
+def _quarantine_rows(plan_id: str) -> list[dict]:
+    """The disposition as it is actually written: status AND reason.
+
+    ``_validate_effective_chronology`` refuses a quarantine with no reason, so the real
+    corpus always carries the pair; a status-only fixture would not be the shipped shape.
+    """
+    return [
+        _correction(plan_id, "integrity_status", "quarantined"),
+        _correction(plan_id, "integrity_reason",
+                    "outage-era plan published after its entry-price session"),
+    ]
+
+
 def _pinned_repo(tmp_path: Path, monkeypatch, *, buys: list[dict],
                  plans: dict[str, dict] | None = None,
                  closed_ids: tuple[str, ...] = (),
                  board: dict | None = None,
+                 corrections: list[dict] | None = None,
                  name: str = "pinned_repo") -> tuple[Path, str]:
     """A throwaway git repo carrying a board, a plan baseline and a ledger.
 
@@ -290,6 +326,11 @@ def _pinned_repo(tmp_path: Path, monkeypatch, *, buys: list[dict],
         ),
         encoding="utf-8",
     )
+    if corrections is not None:
+        (repo / bf.PLAN_CORRECTIONS_RELPATH).write_text(
+            "".join(json.dumps(row, sort_keys=True) + "\n" for row in corrections),
+            encoding="utf-8",
+        )
 
     _git(repo, "init", "-q")
     _git(repo, "config", "user.email", "test@example.com")
@@ -1217,12 +1258,52 @@ class TestCollisionRuleLiveWins:
         assert [e["plan_key"] for e in dirty["new_collisions"]] == ["AAA-BULL"]
 
 
-#: Ticker+direction keys that ALREADY carry multiple open plans on main, from before
-#: the W1 re-origination block shipped (tests/test_prophet_w1_intake_repair.py
-#: documents the same debt: "10 ticker+direction pairs held duplicate open plans on
-#: 2026-08-03; PI held three"). This backfill did not create them and does not fix
-#: them; the ratchet below stops it from ADDING to them, which is the part §0.4 owns.
-_LEGACY_DOUBLED_KEYS = 10
+#: Ticker+direction keys that ALREADY carry multiple open plans on main, each with
+#: WHY it is not this lane's to fix. This backfill created none of them and repairs
+#: none of them; the ratchet below stops it from ADDING one, which is the part §0.4
+#: owns.
+#:
+#: A SUBSET bound, not a census. It replaced a hand-typed count of the whole shipped
+#: corpus, which was weather: `_open_keys()` reads `site/prophet/plans/` and
+#: `data/prophet/ledger.jsonl`, both advanced nightly by lanes this suite does not
+#: own, so the count moved without anything here changing and took the fleet red with
+#: it. A legacy pair closing out through the ledger shrinks this set harmlessly; a key
+#: that is NOT listed is a new duplicate and fails by name.
+_DISCLOSED_DOUBLED_KEYS = frozenset({
+    # Legacy pairs: every member predates the W1 re-origination block, and none
+    # carries a `recorded_at`, so no post-block lane wrote them. The census taken
+    # the day the block shipped counted ten such keys
+    # (tests/test_prophet_w1_intake_repair.py §2: "10 ticker+direction pairs held
+    # duplicate open plans on 2026-08-03; PI held three"); the eight below are what
+    # is still OPEN on the shipped tree today, the rest having closed out through
+    # data/prophet/ledger.jsonl.
+    "APPF-BULL",
+    "BDC-BULL",
+    "CELH-BULL",
+    "CLF-BULL",
+    "ENOV-BULL",
+    "LPG-BULL",
+    "PAHC-BULL",
+    "PI-BULL",
+    # One recurring post-block shape, three times: the `prophet-us: durable nightly
+    # checkpoint` lane writes a plan keyed on FORMATION date beside an older open
+    # plan on the same name. FCX-BULL-20260731 and MDB-BULL-20260731 arrived in the
+    # 2026-08-09 checkpoint (56260d0a7b1) and sat inside the tolerated count;
+    # HEI-BULL-20260723 arrived in 2026-08-13's (f9140631d37) carrying
+    # recorded_at/asof 2026-08-12 and selection_era anticipation-v1-2026-08-08,
+    # beside the still-open HEI-BULL-20260731, and tipped the count over.
+    #
+    # It is a real finding and it belongs to the Prophet US intake lane -- W1's
+    # BLOCK (an OPEN plan on the same ticker+direction blocks re-origination) does
+    # not appear to cover the checkpoint's origination path. Nothing the outage
+    # backfill does can cause, prove, or repair it, and none of these three plans
+    # carries an `outage_backfill*` origination_mode; pinning a cross-lane census
+    # here only converted the program's finding into a fleet-wide CI red. Flagged to
+    # the Prophet US program 2026-08-13.
+    "FCX-BULL",
+    "MDB-BULL",
+    "HEI-BULL",
+})
 
 
 @pytest.mark.skipif(
@@ -1269,15 +1350,30 @@ class TestOnePlanPerEpisodeOnTheShippedTree:
             "minting it. Re-run `--verify-collisions` before merging."
         )
 
-    def test_the_legacy_duplicate_open_keys_do_not_grow(self):
-        """A ratchet, not a heal. The pre-W1 duplicates are somebody else's lane; the
-        point here is that this PR cannot quietly add an eleventh."""
+    def test_no_undisclosed_duplicate_open_key_appears(self):
+        """A ratchet, not a heal. The known duplicates are somebody else's lane and
+        are disclosed BY NAME above; the point here is that a new one cannot appear
+        quietly — least of all one this PR minted."""
+        keys = self._open_keys()
+        # Anti-vacuity: an empty or unreadable plan corpus agrees with the clause
+        # below about nothing. TestTheShippedTreeIsSegregated carries the same guard
+        # for the census it owns.
+        assert len(keys) >= 50, (
+            f"only {len(keys)} open ticker+direction key(s) read from "
+            f"{REAL_PLANS_DIR} — the ratchet below would be vacuous; read the tree "
+            "before trusting it"
+        )
         doubled = {k: [str(p.get("id")) for p in v]
-                   for k, v in self._open_keys().items() if len(v) > 1}
-        assert len(doubled) <= _LEGACY_DOUBLED_KEYS, (
-            f"{len(doubled)} ticker+direction keys now carry multiple OPEN plans, up "
-            f"from the {_LEGACY_DOUBLED_KEYS} pre-W1 legacy pairs: {doubled}. "
-            "Something minted a second episode for a live name."
+                   for k, v in keys.items() if len(v) > 1}
+        undisclosed = {k: v for k, v in doubled.items()
+                       if k not in _DISCLOSED_DOUBLED_KEYS}
+        assert not undisclosed, (
+            f"{len(undisclosed)} ticker+direction key(s) carry multiple OPEN plans "
+            f"and are not disclosed above: {undisclosed}. Something minted a second "
+            "episode for a live name — ATTRIBUTE it before disclosing it. If a "
+            "reconstructed plan is one of them, the replay should have recorded a "
+            "collision in backfill_disclosures.json instead of minting it; re-run "
+            "`--verify-collisions` before merging."
         )
 
 
@@ -1636,4 +1732,165 @@ class TestTheDisclosureArtifactIsWellFormed:
         assert ids == [bf.WINDOW_ID], (
             f"disclosed windows {ids} — the force-majeure exception covers exactly "
             f"one event ({bf.WINDOW_ID})."
+        )
+
+
+# ===========================================================================
+# 13. THE DISPOSITION READER — the replay must see the quarantines the nightly sees
+# ===========================================================================
+
+class TestTheQuarantineReaderReadsTheRealRowShape:
+    """``_quarantined_plan_ids_at`` resolved NOTHING, and read as "there are none".
+
+    Two independent bugs in one comprehension (found 2026-08-13, pre-existing):
+
+      1. the predicate tested ``row["integrity_status"]`` on a CORRECTION row, which
+         carries ``field`` / ``new_value`` and never a bare disposition key — 0 of the
+         373 shipped rows have it, so the predicate could not be true even once;
+      2. it collected ``row["id"]`` — the CORRECTION id, e.g.
+         ``HEI-BULL-20260731:integrity_status:20260808`` — where the caller subtracts
+         PLAN ids.
+
+    Net effect: the replay lane saw 0 quarantined plans while the nightly saw 12, and
+    the two lanes disagreed about which ticker+direction slots were free. Each test
+    below fails on EITHER bug alone, so a half-fix cannot go green.
+    """
+
+    def test_a_quarantine_resolves_to_the_plan_id_not_the_correction_id(
+            self, tmp_path, monkeypatch):
+        """The whole defect in one assertion, on the shipped row shape."""
+        plans = {
+            "XBULL-BULL-20260101": _seed_plan(
+                "XBULL-BULL-20260101", "XBULL", recorded_at="2026-01-01"),
+            "YCLEAN-BULL-20260102": _seed_plan(
+                "YCLEAN-BULL-20260102", "YCLEAN", recorded_at="2026-01-02"),
+        }
+        repo, sha = _pinned_repo(
+            tmp_path, monkeypatch, buys=[_buy_row("AAA")], plans=plans,
+            corrections=_quarantine_rows("XBULL-BULL-20260101"),
+        )
+        resolved = bf._quarantined_plan_ids_at(repo, sha, bf.load_plans_at(repo, sha))
+
+        assert resolved == {"XBULL-BULL-20260101"}, (
+            f"resolved {sorted(resolved)}. The quarantined PLAN id is what the caller "
+            "subtracts; an empty set means the predicate never matched, and "
+            "'XBULL-BULL-20260101:integrity_status:20260808' means the CORRECTION id "
+            "was collected instead."
+        )
+        # Anti-vacuity: the clean plan proves this is a filter, not a passthrough.
+        assert "YCLEAN-BULL-20260102" not in resolved
+
+    def test_a_non_quarantine_disposition_is_not_returned(self, tmp_path, monkeypatch):
+        """``integrity_status`` is a field, not a flag — only the quarantine value
+        retires a plan. A reader keyed on the field's PRESENCE would fail here."""
+        plans = {
+            "AUD-BULL-20260101": _seed_plan(
+                "AUD-BULL-20260101", "AUD", recorded_at="2026-01-01"),
+            "QUAR-BULL-20260102": _seed_plan(
+                "QUAR-BULL-20260102", "QUAR", recorded_at="2026-01-02"),
+        }
+        repo, sha = _pinned_repo(
+            tmp_path, monkeypatch, buys=[_buy_row("AAA")], plans=plans,
+            corrections=[
+                _correction("AUD-BULL-20260101", "integrity_status", "audited_current"),
+                *_quarantine_rows("QUAR-BULL-20260102"),
+            ],
+        )
+        resolved = bf._quarantined_plan_ids_at(repo, sha, bf.load_plans_at(repo, sha))
+
+        assert resolved == {"QUAR-BULL-20260102"}, (
+            f"resolved {sorted(resolved)} — 'audited_current' is a CLEAN disposition "
+            "and must not retire the plan's slot"
+        )
+
+    def test_an_absent_corrections_file_is_empty_not_fatal(self, tmp_path, monkeypatch):
+        """Every fixture repo in this file predates the corrections store; a tree
+        without one has no quarantines rather than an error."""
+        repo, sha = _pinned_repo(
+            tmp_path, monkeypatch, buys=[_buy_row("AAA")],
+            plans={"AAA-BULL-20260101": _seed_plan(
+                "AAA-BULL-20260101", "AAA", recorded_at="2026-01-01")},
+        )
+        assert bf._quarantined_plan_ids_at(repo, sha, bf.load_plans_at(repo, sha)) == set()
+
+    def test_a_reader_that_resolves_nothing_is_LOUD(self, tmp_path, monkeypatch, capsys):
+        """Requirement 2 — a count of 0 must not be indistinguishable from a broken
+        reader. The original defect was silent for five days; the guard that replaces
+        it is asserted here rather than merely registered.
+
+        The broken state is unreachable through the real projection (a declared
+        quarantine IS the effective one), so it is INJECTED: this is the M9 idiom —
+        prove the guard goes red when the behaviour it guards is removed.
+        """
+        import engine.prophet_integrity as integrity
+
+        rows = _quarantine_rows("ZZZ-BULL-20260101")
+        plans = {"ZZZ-BULL-20260101": _seed_plan(
+            "ZZZ-BULL-20260101", "ZZZ", recorded_at="2026-01-01")}
+        real = integrity.apply_plan_corrections
+        monkeypatch.setattr(
+            integrity, "apply_plan_corrections",
+            lambda p, c: type(real(p, c))(
+                plans=real(p, c).plans,
+                applied_by_plan=real(p, c).applied_by_plan,
+                quarantined_ids=frozenset(),        # the reader goes blind
+            ),
+        )
+        bf._plan_projection(plans, rows)
+
+        out = capsys.readouterr().out
+        warnings = [ln for ln in out.splitlines()
+                    if ln.startswith("::warning title=prophet-backfill-quarantine-reader::")]
+        assert warnings, (
+            f"a blind disposition reader produced no annotation; stdout was {out!r}. "
+            "GitHub only renders an annotation that STARTS the line (house law, "
+            "tests/test_gh_annotation_line_start.py) — a logger would swallow it."
+        )
+        assert "ZZZ-BULL-20260101" in warnings[0], "the annotation must name the plan"
+
+    def test_an_unapplicable_overlay_refuses_instead_of_reading_clean(
+            self, tmp_path, monkeypatch):
+        """An overlay this run cannot resolve is a REFUSAL. Returning an empty
+        projection would reproduce the original failure — 'nothing is quarantined' —
+        from a different direction."""
+        repo, sha = _pinned_repo(
+            tmp_path, monkeypatch, buys=[_buy_row("AAA")],
+            plans={"AAA-BULL-20260101": _seed_plan(
+                "AAA-BULL-20260101", "AAA", recorded_at="2026-01-01")},
+            corrections=_quarantine_rows("GHOST-BULL-20260101"),   # no such plan
+        )
+        with pytest.raises(bf.BackfillRefused, match="correction overlay"):
+            bf._quarantined_plan_ids_at(repo, sha, bf.load_plans_at(repo, sha))
+
+
+@pytest.mark.skipif(
+    not REAL_PLANS_DIR.exists(),
+    reason="sparse checkout: site/prophet/plans is not materialised here",
+)
+class TestBothLanesAgreeOnTheShippedTree:
+    """The end-to-end form: the replay lane and the nightly must resolve the SAME set.
+
+    The replay reads its inputs out of git at a pinned SHA; the nightly reads the
+    working tree. Those are different code paths over the same facts, and the defect
+    was exactly a disagreement between them (0 vs 12) that neither lane could see.
+    """
+
+    def test_the_replay_lane_resolves_what_the_nightly_resolves(self):
+        from engine.prophet_integrity import load_effective_plans
+
+        nightly = set(load_effective_plans(_REPO).quarantined_ids)
+        replay = bf._quarantined_plan_ids_at(
+            _REPO, "HEAD", bf.load_plans_at(_REPO, "HEAD"))
+
+        # Anti-vacuity FIRST: two empty sets are equal, and an unreadable corpus would
+        # otherwise read as perfect agreement — which is the bug, not the fix.
+        assert nightly, (
+            "the nightly's own reader resolves NO quarantined plans on the shipped "
+            "tree; the agreement assertion below would be vacuous"
+        )
+        assert replay == nightly, (
+            f"replay-only={sorted(replay - nightly)}, "
+            f"nightly-only={sorted(nightly - replay)}. The outage-replay lane and the "
+            "nightly must subtract the same plans before deriving open ticker+direction "
+            "keys, or they disagree about which slots are free."
         )
