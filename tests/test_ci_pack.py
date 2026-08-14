@@ -2075,6 +2075,7 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     }
     pack = jobs["fence-pack"]
     assert pack["runs-on"] == "ubuntu-latest"
+    assert "if" not in pack, "the required aggregate must execute for fork PRs too"
     checkout = next(
         step
         for step in pack["steps"]
@@ -2084,7 +2085,8 @@ def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:
     assert checkout["with"]["fetch-depth"] == 0
 
     publish = next(step for step in pack["steps"] if step.get("id") == "publish")
-    assert publish["if"] == "always()"
+    assert "always()" in publish["if"]
+    assert "head.repo.full_name == github.repository" in publish["if"]
     assert publish["uses"].startswith("actions/github-script@")
     script = publish["with"]["script"]
     for context in ("self-mod-fence", "capability-broker", "grader-manifest"):
