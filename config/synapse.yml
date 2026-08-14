@@ -2857,6 +2857,8 @@ artifacts:
       - board_ordering
       - top_setups
     consumers:
+      - engine/entry_radar/producers/__init__.py
+      - engine/entry_radar/producers/boards.py
       - engine/intelligence.py
       - engine/risk_brain.py
       - engine/signal_sanity.py
