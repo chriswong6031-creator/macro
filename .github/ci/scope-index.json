@@ -5239,7 +5239,7 @@
       },
       {
         "path": "engine/options_sparse_selector.py",
-        "signature_sha256": "17b4a945b9f07fad9843020c7e5fb56eb281316a10539e55428757c42133777b"
+        "signature_sha256": "e7460e84e31c8e851baec12d3ee039faba48490a2e4904d73e3cc9ae8e39ab97"
       },
       {
         "path": "engine/options_stamp.py",
@@ -19203,7 +19203,7 @@
       },
       {
         "path": "tests/test_options_signal_episode.py",
-        "signature_sha256": "4efcf69dedb61d2d3b3ee3ddf19eaf0aebdafbb157691e3c59a439087551712a"
+        "signature_sha256": "69f7e327b55b01719d96c2082fa15cdc319b9a46f1e236c0a9337f74499cd387"
       },
       {
         "path": "tests/test_options_skew.py",
@@ -19215,7 +19215,7 @@
       },
       {
         "path": "tests/test_options_sparse_selector_runtime.py",
-        "signature_sha256": "2d3052b0633fd7e92a2645bf451f9310a7889c9ad5378313d1a8a56e8220d162"
+        "signature_sha256": "676931fbe5c3bc46c08c9ad74085ed9a8c770d20be3616ce1fe2de7a4532a5ad"
       },
       {
         "path": "tests/test_options_stamp.py",
@@ -22493,7 +22493,7 @@
     "python_count": 5622,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "bc1b39823c337799643eb2e18944cf905184f98ac5f5130d89b11a93ec00f940",
+  "index_sha256": "463578e510f4273305495d2e3ca5d986eaab9fa2859699249a2483b2c6c5304d",
   "job_count": 194,
   "job_inventory": [
     "inline-js",
@@ -63237,6 +63237,7 @@
         "engine/ollama_provider.py",
         "engine/opex.py",
         "engine/options_dislocation.py",
+        "engine/options_episode_coverage.py",
         "engine/options_issue_desk.py",
         "engine/options_ivspread.py",
         "engine/options_market_memory_context.py",
@@ -63455,6 +63456,7 @@
         "research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md",
         "scripts/__init__.py",
         "scripts/accrue_market_memory_spy_experience.py",
+        "scripts/audit_options_episode_outcome_coverage.py",
         "scripts/audit_options_market_memory_context.py",
         "scripts/build_biocatalyst.py",
         "scripts/build_capital_structure_page.py",
@@ -64416,7 +64418,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2215,
+    "candidate_count": 2218,
     "candidates": [
       {
         "path": ".claude",
@@ -67395,6 +67397,10 @@
         "present": true
       },
       {
+        "path": "engine/options_episode_coverage.py",
+        "present": true
+      },
+      {
         "path": "engine/options_issue_desk.py",
         "present": true
       },
@@ -69355,6 +69361,10 @@
         "present": false
       },
       {
+        "path": "scripts/audit_options_episode_outcome_coverage.py",
+        "present": true
+      },
+      {
         "path": "scripts/audit_options_market_memory_context.py",
         "present": true
       },
@@ -69692,6 +69702,10 @@
       },
       {
         "path": "scripts/build_prophet.py",
+        "present": true
+      },
+      {
+        "path": "scripts/build_prophet_marks.py",
         "present": true
       },
       {
