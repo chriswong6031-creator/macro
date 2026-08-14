@@ -203,8 +203,8 @@ only; ECL/SW inverted) — the disagreement the absolute anchor fixed (`engine/s
 Pin and disclose which store is read.
 
 **Intraday bar data: YES — a US-equity HOURLY store exists and already names the 4H timeframe.**
-(An earlier pass of this census wrongly concluded "no": a sweep for `interval="60m"` misses it,
-because Polygon is a REST aggregates path, not a kwarg. Corrected.) **Producer**
+(An earlier pass here wrongly concluded "no" — an `interval="60m"` sweep misses a REST aggregates
+path.) **Producer**
 `scripts/build_polygon_intraday.py` → `data/intraday/<T>.parquet`; docstring `:1-7`: "Intraday
 (hourly) US price accrual via Polygon / massive.com … **Powers the 4H timeframe** on US
 single-stock charts and the 2D/3D intraday bar-derivation hooks (`engine/bar_derive.py`)".
@@ -259,9 +259,9 @@ behind the 2D/3D anchor (§2).
 `scripts/build_prophet_marks.py:206-213`. **Holiday-BLIND** RTH checks — verified directly — at
 `scripts/live_breadth_poller.py:138-169` (`session_tag` is bare `et.weekday() >= 5` plus minute
 arithmetic; the file **does not import `nyse_calendar` at all**),
-`scripts/live_flow_poller.py:2712-2725`, `engine/live_quotes.py:51-66`,
+`scripts/live_flow_poller.py:2712-2725`, `engine/live_quotes.py:51-66`, and
 `engine/live_overlay.py:129-160` ("ADVISORY hint only — no exchange holiday calendar and no
-half-days"). These treat a weekday market holiday as open. **No canonical "now in ET" helper:** 27+
+half-days") — all treat a weekday market holiday as open. **No canonical "now in ET" helper:** 27+
 modules independently define `ET = ZoneInfo("America/New_York")`;
 `engine/marketing/market_clock.py:20-22`: "Nine separate sites had independently re-implemented
 `weekday() >= 5`... not one of them was holiday-aware."
