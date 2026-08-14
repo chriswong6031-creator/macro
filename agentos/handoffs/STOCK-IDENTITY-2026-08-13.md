@@ -17,7 +17,7 @@ changed:
   - path: research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md
     what: NEW — archaeology map (prior work, kill scopes, expert taxonomy census both repos, interfaces, data substrate, disambiguation)
   - path: research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md
-    what: NEW — frozen PR-0 research contract (charter/gates, method law, fingerprint/epoch/ruler/fit/validation/pooling/abstention designs, interfaces, pilot, PR sequence, adversarial review §15, open rulings §16)
+    what: NEW — frozen PR-0 research contract (charter/gates, method law, fingerprint/epoch/ruler/fit/validation/pooling/abstention designs, interfaces, pilot, PR sequence, adversarial review §15, rulings §16 — ratified 2026-08-14 in-PR)
   - path: agentos/workstreams/WS-STOCK-IDENTITY.md
     what: NEW — workstream (program market-timing-intelligence, p0 US_PROPHET_ENTRY_TIMING, W0-W7)
   - path: agentos/decisions/DEC-SI-METHOD-LAW-CHANNELS.md
@@ -41,7 +41,7 @@ unverified:
   - "Census lane file:line citations were spot-checked by the reviewer pass, not 100% re-read by the main loop; archaeology §4.5 carries the census's own uncertainty list (STARTER stage wiring, Terminal twin parity, harness/e_factors.py location, T2-T4 history, basket-state PIT availability)."
   - "BABA/AEM/PAAS/WPM/AG deep TR-adjusted store presence — flagged as a PR-1 data gate, not resolved here."
 unresolved:
-  - "Masterplan §16 open rulings (method-law ratification, ruler orientation, GO/NO-GO gate, Radar coupling, tops sibling, registry row, CN scope) — returned to Sol/operator; W1 is gated on them."
+  - "Sealed calibration partition and blind evaluation arm are not yet drawn — both are PR-1 registration acts (§9.3/§13); the §8.5 power simulation runs on the post-exclusion pool."
 next_actions:
   - "DONE 2026-08-14: CEO/operator RATIFIED all eight §16 rulings (overall PROCEED) with two modifications (sealed-calibration-partition terminology; §16.3 storage hygiene) — folded into the contract §16/§16.9 on this PR by the orchestrating session, consistency-passed."
   - "W1 session (after #5583 merges, per §16.9): Identity Atlas v0 per masterplan §14 PR-1 row — descriptive only, NO expert-fit results; resolve pilot data gates first; mint stock-identity registry row (§16.7); return to operator with Atlas + dossiers before expert replay/fit."

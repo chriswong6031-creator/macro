@@ -43,9 +43,10 @@ review_by: 2026-09-15
 
 ## Note
 
-Masterplan §16.1 requests explicit Sol/operator ratification of this interpretation before
-W1; this record freezes the working law that governs design in the meantime. If the ruling
-amends it, supersede this record rather than editing it.
+Masterplan §16.1 requested explicit Sol/operator ratification of this interpretation before
+W1; this record froze the working law in the meantime. Ratification was granted 2026-08-14
+without amendment — see Ratification below (had the ruling amended it, this record would
+have been superseded rather than edited).
 
 ## Ratification
 

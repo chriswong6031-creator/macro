@@ -6,7 +6,7 @@ objective: >
   episode catalog with a localization-first ruler, and measure which recorded entry-expert
   families historically describe each security's reversal process — routing that evidence
   (display-tier, gauntleted before any authority) toward Prophet. Done for the first arc =
-  the PR-4 fit read answers the registered persistence question (Q1) OOS with honest
+  the PR-5 / W5 fit read answers the registered persistence question (Q1) OOS with honest
   episode-N, and the operator has ruled GO or NO-GO on the thesis.
 status: active
 program: market-timing-intelligence
