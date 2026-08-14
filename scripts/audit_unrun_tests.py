@@ -53,6 +53,15 @@ Wiring every unrun suite at once would blow the ci-pack budget, which is why the
 backlog is grandfathered rather than gated — the tiers below stay triage input.  What
 the gate buys is the ratchet: the 970th dark suite cannot ship silently.
 
+SPARSE CHECKOUTS ARE ANSWERED FROM GIT, NOT SKIPPED (2026-08-14).  Session worktrees
+omit `data/`, `site/`, `mockups/` and `verify_shots/` by default, and discovery used to
+end at an `is_file()` probe that cannot tell "not in this repo" from "not checked out".
+A suite under an omitted tree was therefore dropped from the census AND from the
+"not a suite" disclosure, and the gate exited 0 where CI's full checkout would red.
+Candidates under omitted trees are now read from HEAD, so the verdict is the same in
+both checkouts; the run says which trees it could not see, and REFUSES outright if
+those bytes cannot be reached at all.  See `sparse_omitted_dirs` / `suite_source`.
+
 Usage:
     python3 scripts/audit_unrun_tests.py                     # summary table, then GATE
     python3 scripts/audit_unrun_tests.py --tier P0           # list one tier
@@ -144,7 +153,7 @@ TIERS = (
 # suite discovery — the whole tree, classified by what pytest would collect
 # ─────────────────────────────────────────────────────────────────────────────
 
-def defines_tests(path: Path) -> bool:
+def defines_tests(path: Path, src: str | None = None) -> bool:
     """Would pytest collect anything from this file?
 
     A `test_`-shaped FILENAME is not a suite.  Three of them in this tree are CLI
@@ -167,9 +176,12 @@ def defines_tests(path: Path) -> bool:
     which is louder than a miscounted row, and over-including is the safe direction
     for every consumer here: two only report, and the third fails only on a suite
     some job actually NAMES.
+
+    ``src`` lets a caller hand over bytes it already holds — the sparse-checkout
+    path reads them from HEAD, where ``path`` names a file with no working copy.
     """
     try:
-        tree = ast.parse(path.read_text(errors="ignore"))
+        tree = ast.parse(path.read_text(errors="ignore") if src is None else src)
     except (SyntaxError, ValueError):
         return True
     for node in tree.body:
@@ -225,26 +237,154 @@ def _walked_candidates(root: Path) -> list[str]:
     return found
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# sparse checkouts — a census over a smaller tree than CI's must not read green
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Session worktrees are SPARSE by default (policy R8, .claude/hooks/worktree_create_sparse.py):
+# `data/`, `site/`, `mockups/` and `verify_shots/` are tracked but not materialized.
+# Discovery used to end at `(root / rel).is_file()`, which cannot tell "git does not
+# track this" from "this checkout did not check it out" — so a suite under an omitted
+# tree was dropped from BOTH lists, appeared in neither the tiers nor the "not a suite"
+# disclosure, and the gate exited 0 while CI's full checkout would have red.  Measured
+# 2026-08-14 on a default sparse worktree: 2,408 tracked pytest-shaped paths, 2,407
+# candidates classified, and the missing one — `mockups/refs/.../tools/mutation_test.py`
+# — named in neither `config/unrun_test_baseline.json` nor `config/unrun_test_waivers.yml`.
+# The verdict was right only by luck: that file is a CLI instrument, so a full checkout
+# drops it too.  The next one need not be.
+#
+# The fix is not to refuse — a blanket refusal would make this census unusable in every
+# session worktree and push sessions into a 3.8 GiB full checkout to answer "is my new
+# test wired", which is how guards get disabled.  An omitted tree has no working copy,
+# but git still holds its bytes, so the census reads them from HEAD and reaches exactly
+# the verdict a full checkout would.  Refusal is kept for the case where that recovery
+# FAILS, because only then is the answer genuinely unknowable.
+
+
+def sparse_omitted_dirs(root: Path = ROOT) -> tuple[str, ...]:
+    """Top-level trees this checkout tracks but does not materialize.
+
+    Delegates to ``scripts.worktree_sparse.missing_dirs`` — never an ``is_dir()``
+    probe, which reads a 0-byte husk left by `git reset --hard` as present.  Any
+    failure answers "not sparse": the detector must never break the census, and a
+    full checkout (every CI lane) is the case that has to stay untouched.
+    """
+    try:
+        from scripts.worktree_sparse import missing_dirs
+    except Exception:  # noqa: BLE001
+        return ()
+    try:
+        return tuple(missing_dirs(root))
+    except Exception:  # noqa: BLE001
+        return ()
+
+
+def _sparse_remedy(omitted: tuple[str, ...]) -> str:
+    """The one-line remedy every sparse refusal/disclosure carries.
+
+    Shared with the other sparse-aware guards through ``worktree_sparse`` so the
+    opt-in command is written down once; a local string here would drift the day
+    that command changes.
+    """
+    try:
+        from scripts.worktree_sparse import remedy_line
+    except Exception:  # noqa: BLE001
+        return (f"sparse worktree — {', '.join(sorted(omitted)) or 'heavy generated trees'} "
+                f"not checked out; opt into a full checkout with: "
+                f"python3 scripts/worktree_sparse.py full")
+    return remedy_line(list(omitted))
+
+
+def _git_stdout(root: Path, *args: str) -> str | None:
+    """Text of a git command run in ``root``; None when git cannot answer."""
+    try:
+        done = subprocess.run(
+            ["git", *args], cwd=root,
+            capture_output=True, check=True, timeout=120,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.decode("utf-8", errors="ignore")
+
+
+def _omitted_candidates(root: Path, omitted: tuple[str, ...], known: list[str]) -> list[str]:
+    """Tracked paths under sparse-omitted trees that the inventory above missed.
+
+    Normally none: this repo's worktrees run a full index, so `git ls-files` names
+    every omitted file even though none is on disk.  With `index.sparse=true` the
+    index collapses an omitted tree to a single directory entry and `ls-files`
+    cannot name what is inside it at all — so any tree the inventory did not reach
+    into is re-read from HEAD, which is sparse-index-proof.  Skipping the trees the
+    inventory already covers keeps the common case free: `ls-tree -r` over all four
+    omitted trees is ~57k paths and ~2s, against ~1 path that actually matters.
+    """
+    seen = {rel.split("/", 1)[0] for rel in known if "/" in rel}
+    found: list[str] = []
+    for name in omitted:
+        if name in seen:
+            continue
+        listed = _git_stdout(root, "ls-tree", "-r", "--name-only", "-z", "HEAD", "--", name)
+        if listed is None:
+            continue
+        found.extend(rel for rel in listed.split("\0") if rel)
+    return found
+
+
+def suite_source(rel: str, root: Path | None = None) -> str | None:
+    """Source of a candidate, whether or not this checkout materializes it.
+
+    Disk first, so a full checkout behaves exactly as it always has.  A path that
+    is absent only because a sparse profile omitted its tree is read from HEAD —
+    the omitted trees carry no working copy, so HEAD is both the only truth
+    available and the state a full checkout would materialize.  ``None`` means the
+    bytes could not be reached at all, which callers must treat as fail-closed.
+    """
+    base = ROOT if root is None else root
+    path = base / rel
+    if path.is_file():
+        return path.read_text(errors="ignore")
+    top = rel.split("/", 1)[0]
+    if top not in sparse_omitted_dirs(base):
+        return None       # not sparse — a stale index entry or a deleted file
+    return _git_stdout(base, "cat-file", "blob", f"HEAD:{rel}")
+
+
 @functools.lru_cache(maxsize=None)
-def _classify(root_str: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
-    """``(real suites, filename-shaped non-suites)`` — cached per root.
+def _classify(root_str: str) -> tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]:
+    """``(real suites, filename-shaped non-suites, unreadable)`` — cached per root.
 
     Keyed on the root string so a caller that repoints ``ROOT`` (the guards' own
     tests do, to seed a suite into a synthetic tree) gets a fresh classification
     instead of a stale cache.
+
+    ``unreadable`` is the fail-closed third bucket: a candidate this checkout does
+    not materialize AND whose bytes git would not hand over.  It is never silently
+    dropped — ``main`` refuses on a non-empty one.
     """
     root = Path(root_str)
     names = _tracked_candidates(root)
     if names is None:
         names = _walked_candidates(root)
+    omitted = sparse_omitted_dirs(root)
+    names = list(names) + _omitted_candidates(root, omitted, names)
     candidates = sorted({
         rel for rel in names
         if _SUITE_FILENAME.match(rel.rsplit("/", 1)[-1])
         and not any(part in EXCLUDED_DIRS for part in rel.split("/")[:-1])
-        and (root / rel).is_file()
+        and ((root / rel).is_file() or rel.split("/", 1)[0] in omitted)
     })
-    suites = tuple(rel for rel in candidates if defines_tests(root / rel))
-    return suites, tuple(rel for rel in candidates if rel not in set(suites))
+    suites: list[str] = []
+    non_suites: list[str] = []
+    unreadable: list[str] = []
+    for rel in candidates:
+        src = suite_source(rel, root)
+        if src is None:
+            unreadable.append(rel)
+        elif defines_tests(root / rel, src=src):
+            suites.append(rel)
+        else:
+            non_suites.append(rel)
+    return tuple(suites), tuple(non_suites), tuple(unreadable)
 
 
 def discover_suites() -> list[str]:
@@ -255,6 +395,11 @@ def discover_suites() -> list[str]:
 def not_a_suite() -> list[str]:
     """Filename-shaped files that collect nothing — printed, never silently dropped."""
     return list(_classify(str(ROOT))[1])
+
+
+def unreadable_candidates() -> list[str]:
+    """Filename-shaped files this checkout can neither read nor rule out."""
+    return list(_classify(str(ROOT))[2])
 
 
 def _workflow_blob() -> str:
@@ -320,14 +465,18 @@ def _matched(rel: str, patterns: list[str]) -> bool:
     return False
 
 
-def _subject_modules(path: Path) -> set[str]:
+def _subject_modules(path: Path, src: str | None = None) -> set[str]:
     """First-party modules a suite imports, plus repo-relative files it names.
 
     `from pkg import a, b` binds pkg.a / pkg.b when those are submodules; resolving
     only `pkg` collapses hundreds of suites onto pkg/__init__.py and silently
     understates how dark they are.
+
+    ``src`` carries bytes the caller already holds, so a suite recovered from HEAD
+    in a sparse checkout is tiered like any other instead of raising on the read.
     """
-    src = path.read_text(errors="ignore")
+    if src is None:
+        src = path.read_text(errors="ignore")
     mods: set[str] = set()
     try:
         tree = ast.parse(src)
@@ -444,7 +593,9 @@ def census() -> list[dict]:
         if _named_by_a_run_step(rel_test, blob, ambiguous):
             continue                                    # named by some run: step
         subjects = sorted({
-            rel for mod in _subject_modules(path) for rel in _to_relpaths(mod)
+            rel
+            for mod in _subject_modules(path, src=suite_source(rel_test))
+            for rel in _to_relpaths(mod)
         })
         real = [s for s in subjects
                 if not s.startswith("tests") and not s.endswith("__init__.py")]
@@ -634,6 +785,28 @@ def main(argv: list[str] | None = None) -> int:
     if args.selftest:
         return _selftest()
 
+    unreadable = unreadable_candidates()
+    if unreadable:
+        # Fail closed, the same posture check_template_site_sync.py takes: these
+        # paths are tracked, pytest-shaped, and this checkout can neither read them
+        # nor rule them out, so every verdict below is a guess. Never exit 0 here.
+        print(f"unrun-test census REFUSED: {_sparse_remedy(sparse_omitted_dirs(ROOT))}")
+        print(f"  {len(unreadable)} tracked candidate(s) could not be read from disk "
+              f"or from HEAD — classify them or the gate is a guess:")
+        for rel in unreadable:
+            print(f"    {rel}")
+        return 1
+
+    omitted = sparse_omitted_dirs(ROOT)
+    if omitted:
+        # Never a ::warning — CI runs this on a full checkout, so an annotation here
+        # would only ever fire where no Actions summary exists to carry it.
+        print(f"NOTE: {_sparse_remedy(omitted)}")
+        print("      Their contents were read from HEAD, so the counts and the gate "
+              "verdict below match a full checkout — but nothing here was executed "
+              "against the files themselves.")
+        print()
+
     rows = census()
     suites = discover_suites()
     excluded = not_a_suite()
@@ -682,7 +855,13 @@ def main(argv: list[str] | None = None) -> int:
         return _write_baseline(unrun, waivers)
     # --tier and --json are report SHAPES, not report-only modes: a run that gates
     # for one caller and not another is a gate that can be turned off by a flag.
-    return gate(unrun, _load_baseline(), waivers, set(suites))
+    rc = gate(unrun, _load_baseline(), waivers, set(suites))
+    if omitted:
+        # Repeated under the verdict on purpose: the banner above scrolls off, and a
+        # bare "OK" is exactly what a reader would otherwise carry away from a tree
+        # smaller than CI's.
+        print(f"NOTE: verdict produced in a sparse checkout — {_sparse_remedy(omitted)}")
+    return rc
 
 
 # ─────────────────────────────────────────────────────────────────────────────
