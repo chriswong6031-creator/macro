@@ -529,6 +529,7 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/smart_money/**",          # subtree-narrowed child of data/**
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
+        "engine/*",                     # single-level subset of engine/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -536,6 +537,7 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/**/*.json",     # narrowing an untriggerable tree
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
+        "app/*",                        # single-level, but app/** is not a trigger
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
@@ -2091,3 +2093,74 @@ def test_inline_js_owns_the_rendered_tree_it_lints() -> None:
     for probe in ("site/theme.css", "site/index.html", "templates/index.html"):
         match = PACK._job_diff_match(inline_js, [probe])
         assert match and match[1] == "declared", (probe, match)
+
+
+def test_exclusive_scope_replaces_inference_and_audits_coverage(tmp_path: Path) -> None:
+    """`scope: exclusive` is declared-wins: inference must not re-widen it.
+
+    And the coverage audit is FATAL for it: an exclusive job whose commands
+    name a file outside its declared paths must refuse to load — mis-declaring
+    narrow has to be loud, because the silent version is a guard that stops
+    running on the PRs that can break it.
+    """
+    workflow = tmp_path / "legacy.yml"
+    workflow.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/example/**"
+    steps:
+      - run: echo engine/example only
+  plain:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo unscoped
+""",
+        encoding="utf-8",
+    )
+    jobs = PACK.load_legacy_jobs(workflow)
+    curated = {job.job_id: job for job in jobs}["curated"]
+    assert curated.exclusive and curated.paths == ("engine/example/**",)
+    inferred, _ = PACK.infer_job_scopes(jobs)
+    curated_after = {job.job_id: job for job in inferred}["curated"]
+    assert curated_after.paths == ("engine/example/**",)
+    assert curated_after.fallback_paths == ()
+
+    bad = tmp_path / "bad.yml"
+    bad.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/example/**"
+    steps:
+      - run: python -m pytest tests/test_ci_pack.py -q
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(PACK.ManifestError, match="do not cover"):
+        PACK.load_legacy_jobs(bad)
+
+    empty = tmp_path / "empty.yml"
+    empty.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    steps:
+      - run: echo no paths declared
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(PACK.ManifestError, match="scope: exclusive but no paths"):
+        PACK.load_legacy_jobs(empty)
