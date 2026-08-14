@@ -886,6 +886,8 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
 
 PLAN_SCHEMA = "ci.pack_plan.v2"
 PLAN_MARKER = "CI_PACK_PLAN="
+SELECTION_EXPLANATION_SCHEMA = "ci.scope_selection_explanation.v1"
+SELECTION_EXPLANATION_MARKER = "CI_SCOPE_SELECTION_EXPLANATION="
 FULL_SUITE_PACK_COUNT = 12
 # Fleet containment: at the observed 53 concurrent PR runs, a four-worker cap
 # bounds demand to 212 pack requests instead of 318 at six. Main retains twelve.
@@ -1307,6 +1309,119 @@ def _load_committed_scopes(
     except (OSError, ci_committed_scope_index.ScopeIndexError) as exc:
         raise ManifestError(f"committed scope index is invalid: {exc}") from exc
     return list(receipt.jobs), receipt.index_sha256
+
+
+def _matching_path_records(
+    changed_paths: Iterable[str],
+    patterns: Iterable[str],
+    *,
+    pattern_source: str,
+) -> tuple[dict[str, Any], ...]:
+    """Name every path/pattern pair behind one selection explanation.
+
+    These records are diagnostic evidence, not selector inputs. Sorting and
+    de-duplicating here makes the planner log stable even when git reports an
+    equivalent changed set in a different order.
+    """
+    stable_patterns = tuple(sorted(set(patterns)))
+    records: list[dict[str, Any]] = []
+    for changed_path in sorted(set(changed_paths)):
+        matching_patterns = [
+            pattern
+            for pattern in stable_patterns
+            if _glob_to_regex(pattern).match(changed_path)
+        ]
+        if matching_patterns:
+            records.append(
+                {
+                    "changed_path": changed_path,
+                    "matching_patterns": matching_patterns,
+                    "pattern_source": pattern_source,
+                }
+            )
+    return tuple(records)
+
+
+def selection_explanations(plan: CIPackPlan) -> tuple[dict[str, Any], ...]:
+    """Explain every selected logical job without re-running selection.
+
+    The immutable plan remains the sole execution contract. These records are
+    derived only from that plan's resolved jobs, selected ids, and changed set;
+    they carry ``plan_sha256`` as a join key but are intentionally excluded from
+    both ``CIPackPlan.to_dict`` and ``plan_hash_payload``. A wording/schema
+    change in diagnostics therefore cannot make a pack reject an otherwise
+    identical execution plan.
+    """
+    jobs_by_id = {job.job_id: job for job in plan.scoped_jobs}
+    changed_paths = tuple(plan.changed_paths or ())
+    global_matches = _matching_path_records(
+        changed_paths,
+        GLOBAL_INVALIDATORS,
+        pattern_source="global-invalidator",
+    )
+    predicted_ids = set(plan.predicted_job_ids)
+    explanations: list[dict[str, Any]] = []
+
+    for job_id in sorted(plan.eligible_job_ids):
+        job = jobs_by_id.get(job_id)
+        owned_matches = (
+            _matching_path_records(
+                changed_paths,
+                job.paths,
+                pattern_source="owned-scope",
+            )
+            if job is not None
+            else ()
+        )
+
+        if job is None:
+            selected_by = "plan-metadata-unavailable"
+            matches: tuple[dict[str, Any], ...] = ()
+        elif not job.paths:
+            selected_by = "unscoped-always-on"
+            matches = ()
+        elif plan.scope_mode == "off" and plan.changed_from:
+            selected_by = "scope-mode-off"
+            matches = owned_matches
+        elif global_matches:
+            selected_by = "global-invalidator"
+            matches = global_matches
+        elif plan.changed_paths is None:
+            selected_by = "changed-files-unavailable"
+            matches = ()
+        elif plan.scope_mode == "shadow" and job_id not in predicted_ids:
+            selected_by = "scope-mode-shadow"
+            matches = owned_matches
+        elif owned_matches:
+            selected_by = "owned-scope-match"
+            matches = owned_matches
+        else:
+            # This should be unreachable for an active scoped plan. Keeping a
+            # deterministic diagnostic instead of raising is deliberate: an
+            # observability defect must not widen or suppress the CI decision.
+            selected_by = "plan-selection"
+            matches = ()
+
+        explanations.append(
+            {
+                "schema": SELECTION_EXPLANATION_SCHEMA,
+                "plan_sha256": plan.plan_sha256,
+                "job_id": job_id,
+                "selected_by": selected_by,
+                "matches": list(matches),
+            }
+        )
+    return tuple(explanations)
+
+
+def _emit_selection_explanations(plan: CIPackPlan) -> None:
+    """Emit parseable planner records, one line per selected job."""
+    for explanation in selection_explanations(plan):
+        print(
+            SELECTION_EXPLANATION_MARKER
+            + json.dumps(explanation, sort_keys=True, separators=(",", ":")),
+            flush=True,
+        )
 
 
 def plan_from_workflow(
@@ -2203,6 +2318,8 @@ def main(argv: list[str] | None = None) -> int:
                 flush=True,
             )
         _emit_plan_artifacts(args, plan)
+        if args.plan_only:
+            _emit_selection_explanations(plan)
         # Bare print, never a logger: a prefixing formatter makes GitHub drop the
         # annotation silently (CLAUDE.md — annotations must START the line).
         print(

@@ -1281,6 +1281,196 @@ def test_global_invalidator_widens_the_plan_without_inferring_scopes(
     assert plan.has_work is True
 
 
+def test_selection_explanations_name_exact_owned_path_pattern_matches(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job(
+            "engine-owner",
+            0,
+            paths=("site/**", "engine/*.py", "engine/**"),
+        ),
+        _plan_job("site-owner", 1, paths=("site/**",)),
+    ]
+    plan = PACK.build_plan(
+        jobs,
+        ["engine/z.py", "docs/handoff.md", "engine/a.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=2,
+    )
+
+    assert PACK.selection_explanations(plan) == (
+        {
+            "schema": PACK.SELECTION_EXPLANATION_SCHEMA,
+            "plan_sha256": plan.plan_sha256,
+            "job_id": "engine-owner",
+            "selected_by": "owned-scope-match",
+            "matches": [
+                {
+                    "changed_path": "engine/a.py",
+                    "matching_patterns": ["engine/**", "engine/*.py"],
+                    "pattern_source": "owned-scope",
+                },
+                {
+                    "changed_path": "engine/z.py",
+                    "matching_patterns": ["engine/**", "engine/*.py"],
+                    "pattern_source": "owned-scope",
+                },
+            ],
+        },
+    )
+
+
+def test_selection_explanations_distinguish_global_invalidator_and_full_suite(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("engine-owner", 0, paths=("engine/**",)),
+        _plan_job("site-owner", 1, paths=("site/**",)),
+    ]
+    invalidated = PACK.build_plan(
+        jobs,
+        ["engine/market_state.py", ".github/ci/legacy-jobs.yml"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=2,
+    )
+    invalidator_explanations = PACK.selection_explanations(invalidated)
+    assert [record["job_id"] for record in invalidator_explanations] == [
+        "engine-owner",
+        "site-owner",
+    ]
+    for record in invalidator_explanations:
+        assert record["selected_by"] == "global-invalidator"
+        assert record["matches"] == [
+            {
+                "changed_path": ".github/ci/legacy-jobs.yml",
+                "matching_patterns": [
+                    ".github/ci/**",
+                    ".github/ci/legacy-jobs.yml",
+                ],
+                "pattern_source": "global-invalidator",
+            }
+        ]
+
+    full_suite = PACK.build_plan(
+        jobs,
+        None,
+        changed_from=None,
+        scope_mode="active",
+        pack_count=2,
+    )
+    assert {
+        record["selected_by"] for record in PACK.selection_explanations(full_suite)
+    } == {"changed-files-unavailable"}
+    assert all(
+        record["matches"] == []
+        for record in PACK.selection_explanations(full_suite)
+    )
+
+
+def test_selection_explanations_label_unscoped_jobs_explicitly(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    plan = PACK.build_plan(
+        [
+            _plan_job("scoped", 0, paths=("engine/**",)),
+            _plan_job("always-on", 1),
+        ],
+        ["engine/example.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=2,
+    )
+    records = {
+        record["job_id"]: record for record in PACK.selection_explanations(plan)
+    }
+    assert records["always-on"]["selected_by"] == "unscoped-always-on"
+    assert records["always-on"]["matches"] == []
+    assert records["scoped"]["selected_by"] == "owned-scope-match"
+
+
+def test_selection_explanations_have_stable_job_path_and_pattern_order(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("z-owner", 0, paths=("engine/*.py", "engine/**")),
+        _plan_job("a-owner", 1, paths=("engine/**",)),
+    ]
+    first = PACK.build_plan(
+        jobs,
+        ["engine/z.py", "engine/a.py", "engine/z.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=2,
+    )
+    second = PACK.build_plan(
+        jobs,
+        ["engine/a.py", "engine/z.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=2,
+    )
+
+    assert first.plan_sha256 == second.plan_sha256
+    assert PACK.selection_explanations(first) == PACK.selection_explanations(second)
+    records = PACK.selection_explanations(first)
+    assert [record["job_id"] for record in records] == ["a-owner", "z-owner"]
+    assert [
+        match["changed_path"] for match in records[1]["matches"]
+    ] == ["engine/a.py", "engine/z.py"]
+    assert records[1]["matches"][0]["matching_patterns"] == [
+        "engine/**",
+        "engine/*.py",
+    ]
+
+
+def test_plan_only_emits_sha_bound_selection_explanation_json(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("engine-owner", 0, paths=("engine/**",))]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    _stub_planner_paths(monkeypatch, ["engine/example.py"])
+
+    assert (
+        PACK.main(
+            [
+                "--workflow", str(MANIFEST),
+                "--changed-from", "base-sha",
+                    "--pack-count", "2",
+                    "--plan-only",
+                    "--emit-plan-json", "-",
+                ]
+        )
+        == 0
+    )
+    output_lines = capsys.readouterr().out.splitlines()
+    lines = [
+        line
+        for line in output_lines
+        if line.startswith(PACK.SELECTION_EXPLANATION_MARKER)
+    ]
+    assert len(lines) == 1
+    record = json.loads(lines[0][len(PACK.SELECTION_EXPLANATION_MARKER):])
+    plan_lines = [
+        line for line in output_lines if line.startswith(PACK.PLAN_MARKER)
+    ]
+    assert len(plan_lines) == 1
+    published_plan = json.loads(
+        plan_lines[0][len(PACK.PLAN_MARKER):]
+    )
+    assert record["plan_sha256"] == published_plan["plan_sha256"]
+    assert record["job_id"] == "engine-owner"
+    assert record["selected_by"] == "owned-scope-match"
+
+
 def test_rename_plans_both_the_old_and_the_new_owner(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
