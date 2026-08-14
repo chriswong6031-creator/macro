@@ -193,8 +193,10 @@ def test_ack_status_tail_records_the_curated_repair():
 @pytest.mark.skipif(not PREREQUISITE_READY, reason="PR #5632 prerequisite not present")
 def test_b_source_is_exactly_the_registered_curated_plane():
     path = ROOT / amendment_builder.B_SOURCE_RELATIVE_PATH
-    assert _sha256(path) == amendment_builder.B_SOURCE_SHA256
-    frame = pd.read_parquet(path)
+    frame = amendment_builder._validate_b_source()
+    assert amendment_builder._ohlcv_prefix_sha256(frame) == (
+        amendment_builder.B_SOURCE_PREFIX_SHA256
+    )
     assert len(frame) == 3172
     assert frame.index.min() == pd.Timestamp("2014-01-02")
     assert frame.index.max() == pd.Timestamp("2026-08-13")

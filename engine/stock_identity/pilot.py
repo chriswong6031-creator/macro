@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 import hashlib
+import re
 from pathlib import Path
 
 from engine.stock_identity.authority import is_zero_authority
@@ -54,6 +55,64 @@ W1A1_EFFECTIVE_MINER_PROBE: tuple[str, ...] = (
     "B",
 )
 
+W1A1_RECEIPT_SCHEMA = "stock_identity.w1_amendment.v1"
+W1A1_ASOF = "2026-08-13"
+W1A1_IDENTITY_RECEIPT = {
+    "GOLD": {
+        "issuer": "Gold.com, Inc. (fka A-Mark Precious Metals)",
+        "edgar_cik": "1591588",
+        "role": "bullion dealer instrument; frozen W1 miner interpretation withdrawn",
+        "effective_symbol_date": "2025-12-02",
+        "store_first_print": "2014-03-17",
+    },
+    "B": {
+        "issuer": "Barrick Mining Corporation",
+        "edgar_cik": "756894",
+        "role": "design-touched W1-A1 miner-probe addendum",
+        "effective_symbol_date": "2025-05-09",
+        "curated_tape_floor": "2014-01-02",
+    },
+}
+W1A1_PARTITION_TREATMENT = {
+    "B_design_touched": True,
+    "B_absent_from_w1_universe": True,
+    "B_absent_from_w1_pilot": True,
+    "B_excluded_from_blind": True,
+    "B_excluded_from_calibration": True,
+    "B_excluded_from_future_blind_extension": True,
+    "B_excluded_from_confirmatory_grading": True,
+}
+W1A1_REFERENCE_SHA256 = {
+    "raw_all.parquet": "ca9c5e5ac78c9a1913a145f8763a2bea84cd80a4a10d6fd2f4d095377f021a08",
+    "univ_ew.parquet": "80f5ab3c80aa44da26e17ca58d8a14db930e5d3c03e45031c4c9505c3edba70a",
+    "strata.parquet": "67ae54370dfd2279583f99a16475865796542b786cd983a1e94da27edb33f769",
+}
+W1A1_SEALED_W1_SHA256 = {
+    "data/stock_identity/partition/partition_manifest_v1.json":
+        "b1f82f842350e39ac7a73214fd8ebd58b175b52fdf42b3a0fb5a2d03143a5d48",
+    "data/stock_identity/partition/universe_snapshot_v1.parquet":
+        "9f22807e7cb6ba570f1963de945b7be77461a1788608754e25db6235f4fe3730",
+    "data/stock_identity/constants/si_constants_v1.json":
+        "276d4ad267ab8711942943e306e844bfdff1f17a051bd17a9d460c1e428fc648",
+    "data/stock_identity/fingerprints/fingerprint_spec.json":
+        "bbefcd5b72915435acb8714d7892b79e010cb49d394b3222d89575c7b022dee0",
+    "data/stock_identity/fingerprints/pilot_fingerprint_v0.parquet":
+        "2bdef8763b0c73a6df3f27e8307246887b7b9dc982f66331ba4d96ff09d72ba3",
+    "data/stock_identity/state/pilot_state_daily.parquet":
+        "e2c43f8761431c62506311e61fa387c70433f82bde8143b564fdf87da7ee485e",
+    "data/stock_identity/episodes/pilot_episode_catalog_v0.parquet":
+        "3216f6cbbf539584dba31caf30e09b6e76e0297ca34698fcb0235cf6e0d6bc0f",
+    "data/stock_identity/episodes/pilot/GOLD.json":
+        "be8a1d053c6fc9f639017abb4cf7f3063e7bde8229d9a1622dedd38a02ff16d1",
+    "data/stock_identity/census/coverage_census_v0.parquet":
+        "d64d37c0ab8e0729aa732f2a68a183dd08e0ca3336e9a4a71975772f28c0b4cd",
+    "data/stock_identity/census/coverage_census_v0.md":
+        "cf1a818749802bf6143656cfc06efa8ad95d3e87570a011726766c461bf371bb",
+    W1A1_GOLD_DISCLOSURE_PATH: W1A1_GOLD_MD_BEFORE_SHA256,
+    "research/stock_identity/dossiers/GOLD.svg":
+        "e4e6466f2b4535b97d2fae4eb3eb7e39c1a40600343d955f0e0fe843d7df49db",
+}
+
 RECEIPT_RELATIVE_PATH = Path(
     W1A1_REGISTERED_OUTPUT_PATHS[0]
 )
@@ -93,10 +152,79 @@ def current_miner_probe(repo_root: str | Path | None = None) -> tuple[str, ...]:
         )
 
     payload = json.loads(path.read_text(encoding="utf-8"))
+    if payload.get("schema") != W1A1_RECEIPT_SCHEMA:
+        raise ValueError(f"{path}: unexpected receipt schema")
     if payload.get("amendment_id") != AMENDMENT_ID:
         raise ValueError(f"{path}: unexpected amendment_id")
+    if payload.get("asof") != W1A1_ASOF:
+        raise ValueError(f"{path}: amendment asof drifted")
+    if not isinstance(payload.get("pull_request"), int) or payload["pull_request"] <= 0:
+        raise ValueError(f"{path}: pull_request receipt is malformed")
+    if not re.fullmatch(r"[0-9a-f]{40}", str(payload.get("registration_commit") or "")):
+        raise ValueError(f"{path}: registration commit receipt is malformed")
     if not is_zero_authority(payload):
         raise ValueError(f"{path}: amendment authority is not all-false")
+    if payload.get("identity_receipt") != W1A1_IDENTITY_RECEIPT:
+        raise ValueError(f"{path}: issuer identity receipt drifted")
+    if payload.get("partition_treatment") != W1A1_PARTITION_TREATMENT:
+        raise ValueError(f"{path}: B partition quarantine drifted")
+
+    prerequisites = payload.get("prerequisite_merges") or {}
+    if set(prerequisites) != {"pr_5613", "pr_5632"} or any(
+        not re.fullmatch(r"[0-9a-f]{40}", str(value))
+        for value in prerequisites.values()
+    ):
+        raise ValueError(f"{path}: prerequisite merge closure is malformed")
+
+    deviation = payload.get("procedural_deviation") or {}
+    if deviation.get("status") != "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE":
+        raise ValueError(f"{path}: preregistration deviation disclosure drifted")
+    if "permanently design-touched" not in str(deviation.get("consequence") or ""):
+        raise ValueError(f"{path}: design-touch consequence is absent")
+
+    rank = payload.get("rank_context") or {}
+    rank_expected = {
+        "frozen_reference_rows": 2780,
+        "hypothetical_joint_rows": 2781,
+        "only_B_persisted": True,
+        "w1_percentiles_rewritten": False,
+        "univ_ew_recomputed": False,
+        "reference_sha256": W1A1_REFERENCE_SHA256,
+    }
+    if any(rank.get(key) != value for key, value in rank_expected.items()):
+        raise ValueError(f"{path}: frozen rank context drifted")
+    if "GOLD dealer context" not in str(rank.get("dealer_context_disclosure") or ""):
+        raise ValueError(f"{path}: dealer rank-context disclosure is absent")
+
+    price = payload.get("price_input") or {}
+    stable_price = {
+        "path": "data/baskets/ohlcv/B.parquet",
+        "price_plane_id": "baskets_ohlcv_v1",
+        "prefix_asof": W1A1_ASOF,
+        "prefix_sha256": "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db",
+        "seed_container_sha256": "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f",
+        "rows_used": 3172,
+        "first_date": "2014-01-02",
+        "last_date_used": W1A1_ASOF,
+    }
+    if any(price.get(key) != value for key, value in stable_price.items()):
+        raise ValueError(f"{path}: B price-input receipt drifted")
+    if not re.fullmatch(r"[0-9a-f]{64}", str(price.get("file_sha256_at_run") or "")):
+        raise ValueError(f"{path}: B run-file hash is malformed")
+    if not isinstance(price.get("file_rows_at_run"), int) or price["file_rows_at_run"] < 3172:
+        raise ValueError(f"{path}: B run-file row count precedes the registered prefix")
+    if str(price.get("file_last_date_at_run") or "") < W1A1_ASOF:
+        raise ValueError(f"{path}: B run file does not reach the registered asof")
+
+    sealed = payload.get("sealed_w1_sha256") or {}
+    if sealed != W1A1_SEALED_W1_SHA256:
+        raise ValueError(f"{path}: sealed W1 hash receipt drifted")
+    for relative, expected in sealed.items():
+        if relative == W1A1_GOLD_DISCLOSURE_PATH:
+            continue
+        frozen = _contained_path(root, relative, label=str(path))
+        if not frozen.is_file() or _sha256(frozen) != expected:
+            raise ValueError(f"{path}: sealed W1 artifact drifted: {relative}")
 
     roster = payload.get("miner_probe_roster") or {}
     sealed = tuple(roster.get("sealed_w1") or ())

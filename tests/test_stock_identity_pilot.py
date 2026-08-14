@@ -33,9 +33,20 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
         path.write_bytes(f"governed:{relative}".encode("utf-8"))
         generated[relative] = _sha256(path)
 
+    sealed: dict[str, str] = {}
+    for relative in pilot.W1A1_SEALED_W1_SHA256:
+        if relative == pilot.W1A1_GOLD_DISCLOSURE_PATH:
+            continue
+        frozen = root / relative
+        frozen.parent.mkdir(parents=True, exist_ok=True)
+        frozen.write_bytes(f"sealed:{relative}".encode("utf-8"))
+        sealed[relative] = _sha256(frozen)
+
     original = "# sealed GOLD dossier\n\nstanding authority\n\n## Identity\n"
     before_sha = hashlib.sha256(original.encode("utf-8")).hexdigest()
     monkeypatch.setattr(pilot, "W1A1_GOLD_MD_BEFORE_SHA256", before_sha)
+    sealed[pilot.W1A1_GOLD_DISCLOSURE_PATH] = before_sha
+    monkeypatch.setattr(pilot, "W1A1_SEALED_W1_SHA256", sealed)
     block = "\n".join(
         (
             pilot.W1A1_GOLD_ANNOTATION_BEGIN,
@@ -49,11 +60,48 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
     gold.write_text(annotated, encoding="utf-8")
 
     payload = {
+        "schema": pilot.W1A1_RECEIPT_SCHEMA,
         "amendment_id": pilot.AMENDMENT_ID,
+        "asof": pilot.W1A1_ASOF,
+        "pull_request": 9999,
+        "registration_commit": "3" * 40,
+        "prerequisite_merges": {"pr_5613": "1" * 40, "pr_5632": "2" * 40},
+        "identity_receipt": copy.deepcopy(pilot.W1A1_IDENTITY_RECEIPT),
         "miner_probe_roster": {
             "sealed_w1": list(pilot.W1_SEALED_MINER_PROBE),
             "effective_w1a1": list(pilot.W1A1_EFFECTIVE_MINER_PROBE),
         },
+        "partition_treatment": copy.deepcopy(pilot.W1A1_PARTITION_TREATMENT),
+        "procedural_deviation": {
+            "status": "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE",
+            "write_scope": "no repository artifacts written",
+            "observed_scope": "implementation outputs printed before registration",
+            "consequence": "B is permanently design-touched and nonconfirmatory",
+        },
+        "rank_context": {
+            "method": "B-only hypothetical insertion",
+            "frozen_reference_rows": 2780,
+            "hypothetical_joint_rows": 2781,
+            "only_B_persisted": True,
+            "w1_percentiles_rewritten": False,
+            "univ_ew_recomputed": False,
+            "dealer_context_disclosure": "frozen ranks retain GOLD dealer context",
+            "reference_sha256": copy.deepcopy(pilot.W1A1_REFERENCE_SHA256),
+        },
+        "price_input": {
+            "path": "data/baskets/ohlcv/B.parquet",
+            "price_plane_id": "baskets_ohlcv_v1",
+            "prefix_asof": pilot.W1A1_ASOF,
+            "prefix_sha256": "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db",
+            "seed_container_sha256": "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f",
+            "file_sha256_at_run": "4" * 64,
+            "file_rows_at_run": 3172,
+            "file_last_date_at_run": pilot.W1A1_ASOF,
+            "rows_used": 3172,
+            "first_date": "2014-01-02",
+            "last_date_used": pilot.W1A1_ASOF,
+        },
+        "sealed_w1_sha256": copy.deepcopy(sealed),
         "registered_output_paths": list(pilot.W1A1_REGISTERED_OUTPUT_PATHS),
         "generated_output_sha256": generated,
         "disclosure_only": {
@@ -66,6 +114,7 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
             "gold_svg_unchanged": True,
         },
         "measured_rows_mutated": False,
+        "trial_budget": "one deterministic descriptive configuration, no sweep",
         "authority": authority_block(),
     }
     _write_receipt(root, payload)
@@ -75,6 +124,40 @@ def _closed_fixture(root: Path, monkeypatch: pytest.MonkeyPatch) -> dict:
 def test_current_miner_probe_requires_complete_closed_receipt(tmp_path, monkeypatch):
     _closed_fixture(tmp_path, monkeypatch)
     assert pilot.current_miner_probe(tmp_path) == pilot.W1A1_EFFECTIVE_MINER_PROBE
+
+
+@pytest.mark.parametrize(
+    "keys,value,match",
+    (
+        (("schema",), "wrong", "receipt schema"),
+        (("identity_receipt", "B", "edgar_cik"), "1591588", "identity receipt"),
+        (("partition_treatment", "B_design_touched"), False, "partition quarantine"),
+        (("prerequisite_merges", "pr_5632"), "not-a-sha", "prerequisite merge"),
+        (("rank_context", "w1_percentiles_rewritten"), True, "rank context"),
+        (("price_input", "prefix_sha256"), "0" * 64, "price-input"),
+        (("sealed_w1_sha256", "data/stock_identity/constants/si_constants_v1.json"),
+         "0" * 64, "sealed W1 hash receipt"),
+    ),
+)
+def test_current_miner_probe_rejects_governance_tampering(
+    tmp_path, monkeypatch, keys, value, match
+):
+    payload = copy.deepcopy(_closed_fixture(tmp_path, monkeypatch))
+    target = payload
+    for key in keys[:-1]:
+        target = target[key]
+    target[keys[-1]] = value
+    _write_receipt(tmp_path, payload)
+    with pytest.raises(ValueError, match=match):
+        pilot.current_miner_probe(tmp_path)
+
+
+def test_current_miner_probe_rejects_actual_sealed_artifact_drift(tmp_path, monkeypatch):
+    _closed_fixture(tmp_path, monkeypatch)
+    frozen = tmp_path / "data/stock_identity/constants/si_constants_v1.json"
+    frozen.write_text("tampered", encoding="utf-8")
+    with pytest.raises(ValueError, match="sealed W1 artifact drifted"):
+        pilot.current_miner_probe(tmp_path)
 
 
 def test_current_miner_probe_rejects_omitted_governed_output(tmp_path, monkeypatch):
@@ -132,6 +215,46 @@ def test_authority_frame_rejects_nulls_and_integer_zero():
     integer_zero["authority_can_rank"] = 0
     with pytest.raises(SystemExit, match="non-null boolean"):
         builder._assert_zero_authority_frame(integer_zero, "integer")
+
+
+def test_b_compute_hygiene_fails_before_history_is_consumed(monkeypatch):
+    monkeypatch.setattr(builder.hyg_mod, "COMPUTE_BLOCKLIST", {"B": "verified block"})
+    monkeypatch.setattr(
+        builder.hyg_mod,
+        "check_symbol",
+        lambda *args, **kwargs: {
+            "flags": ["compute_blocklisted"],
+            "notes": {"compute_blocklisted": "verified block"},
+            "compute_eligible": False,
+        },
+    )
+    with pytest.raises(SystemExit, match="pre-read compute hygiene gate"):
+        builder._validate_compute_hygiene("B", pd.Timestamp("2014-01-02"))
+
+
+def test_b_logical_prefix_digest_ignores_later_appends_but_detects_revisions():
+    columns = ["open", "high", "low", "close", "volume"]
+    prefix = pd.DataFrame(
+        [[1.0, 2.0, 0.5, 1.5, 100.0], [1.5, 2.5, 1.0, 2.0, 120.0]],
+        index=pd.DatetimeIndex(["2026-08-12", "2026-08-13"], name="Date"),
+        columns=columns,
+    )
+    appended = pd.concat(
+        [
+            prefix,
+            pd.DataFrame(
+                [[2.0, 3.0, 1.5, 2.5, 140.0]],
+                index=pd.DatetimeIndex(["2026-08-14"], name="Date"),
+                columns=columns,
+            ),
+        ]
+    )
+    assert builder._ohlcv_prefix_sha256(appended.loc[:"2026-08-13"]) == (
+        builder._ohlcv_prefix_sha256(prefix)
+    )
+    revised = prefix.copy()
+    revised.loc[pd.Timestamp("2026-08-12"), "close"] = 1.5000001
+    assert builder._ohlcv_prefix_sha256(revised) != builder._ohlcv_prefix_sha256(prefix)
 
 
 def test_additive_schema_is_normalized_then_reopened_exactly(tmp_path):

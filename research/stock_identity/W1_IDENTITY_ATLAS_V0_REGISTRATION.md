@@ -277,10 +277,17 @@ The lawful remedy is **(a) plus (b), not (c)**:
 ### A1.3 Frozen inputs and ranking context
 
 The only permitted A1 price input is `data/baskets/ohlcv/B.parquet`,
-`price_plane_id=baskets_ohlcv_v1`, SHA256
-`dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f`,
-truncated at the frozen W1 asof **2026-08-13**. A program-owned B plane and the
-close-only Yahoo B file are prohibited.
+`price_plane_id=baskets_ohlcv_v1`, truncated at the frozen W1 asof
+**2026-08-13**. PR #5632 seeded its parquet container at SHA256
+`dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f`; that is a
+historical seed receipt, not a durable equality pin, because normal membership
+collection advances the curated file. The governing input is the normalized 3,172-row
+OHLCV prefix from 2014-01-02 through 2026-08-13, whose versioned logical digest is
+`6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db`. The digest serializes an algorithm-version header, the fixed
+`Date/open/high/low/close/volume` schema, each ISO date, and each normalized float64
+value via Python's exact hexadecimal representation. Post-asof appends may not move it;
+any historical revision must. A program-owned B plane and the close-only Yahoo B file
+are prohibited.
 
 Existing committed W1 artifacts are pinned before and after the run:
 

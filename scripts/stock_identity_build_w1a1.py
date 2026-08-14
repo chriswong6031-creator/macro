@@ -44,6 +44,12 @@ from engine.stock_identity import state as state_mod  # noqa: E402
 from engine.stock_identity.authority import AUTHORITY_KEYS, authority_block  # noqa: E402
 from engine.stock_identity.pilot import (  # noqa: E402
     AMENDMENT_ID,
+    W1A1_ASOF,
+    W1A1_IDENTITY_RECEIPT,
+    W1A1_PARTITION_TREATMENT,
+    W1A1_RECEIPT_SCHEMA,
+    W1A1_REFERENCE_SHA256,
+    W1A1_SEALED_W1_SHA256,
     W1_SEALED_MINER_PROBE,
     W1A1_EFFECTIVE_MINER_PROBE,
     W1A1_GOLD_ANNOTATION_BEGIN,
@@ -108,7 +114,20 @@ REFERENCE_SHA256: dict[str, str] = {
     "strata.parquet": "67ae54370dfd2279583f99a16475865796542b786cd983a1e94da27edb33f769",
 }
 
-B_SOURCE_SHA256 = "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
+if str(ASOF.date()) != W1A1_ASOF:
+    raise RuntimeError("builder/pilot A1 asof constants diverged")
+if REFERENCE_SHA256 != W1A1_REFERENCE_SHA256:
+    raise RuntimeError("builder/pilot A1 reference hashes diverged")
+if FROZEN_SHA256 != W1A1_SEALED_W1_SHA256:
+    raise RuntimeError("builder/pilot A1 sealed hashes diverged")
+
+# The #5632 seed container itself was sha256 dc126c36..., but this curated store is
+# advanced nightly. A durable A1 input receipt therefore pins the logical OHLCV prefix
+# through ASOF, not mutable parquet container bytes or post-ASOF appends.
+B_SOURCE_SEED_CONTAINER_SHA256 = (
+    "dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f"
+)
+B_SOURCE_PREFIX_SHA256 = "6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db"
 GOLD_ANNOTATION_BEGIN = W1A1_GOLD_ANNOTATION_BEGIN
 GOLD_ANNOTATION_END = W1A1_GOLD_ANNOTATION_END
 
@@ -170,6 +189,27 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _ohlcv_prefix_sha256(frame: pd.DataFrame) -> str:
+    """Versioned, parquet-container-independent digest of normalized OHLCV rows."""
+    columns = ["open", "high", "low", "close", "volume"]
+    if list(frame.columns) != columns:
+        raise SystemExit(f"B prefix columns drifted: {list(frame.columns)}")
+    if not isinstance(frame.index, pd.DatetimeIndex) or not frame.index.is_unique:
+        raise SystemExit("B prefix index must be a unique DatetimeIndex")
+    if not frame.index.is_monotonic_increasing:
+        raise SystemExit("B prefix index must be ascending")
+
+    digest = hashlib.sha256()
+    digest.update(b"stock_identity.w1a1.ohlcv_prefix.v1\n")
+    digest.update(b"Date\x1fopen\x1fhigh\x1flow\x1fclose\x1fvolume\n")
+    for stamp, values in zip(frame.index, frame[columns].to_numpy(dtype="float64")):
+        if not bool(np.isfinite(values).all()):
+            raise SystemExit(f"B prefix has non-finite OHLCV at {stamp}")
+        row = [pd.Timestamp(stamp).strftime("%Y-%m-%d"), *(float(v).hex() for v in values)]
+        digest.update("\x1f".join(row).encode("ascii") + b"\n")
+    return digest.hexdigest()
 
 
 def _replace_once(text: str, old: str, new: str, *, label: str) -> str:
@@ -252,9 +292,6 @@ def _validate_prerequisites(pr_5613_merge: str, pr_5632_merge: str) -> None:
 
     if not B_SOURCE_PATH.exists():
         raise SystemExit(f"missing prerequisite B input {B_SOURCE_PATH}")
-    if _sha256(B_SOURCE_PATH) != B_SOURCE_SHA256:
-        raise SystemExit("B input hash differs from the registered PR #5632 receipt")
-
     cfg = yaml.safe_load((REPO_ROOT / "config.yml").read_text(encoding="utf-8")) or {}
     ack = str((((cfg.get("quality") or {}).get("reused_ticker_acks") or {}).get("GOLD", "")))
     required = ("Gold.com", "1591588", "756894", "2025-12-02", "2025-05-09", "PR #5632")
@@ -278,7 +315,7 @@ def _validate_registration() -> dict[str, Any]:
         "before the only artifact-producing A1 run",
         "Procedural-deviation ledger",
         "effective analytical miner probe",
-        B_SOURCE_SHA256,
+        B_SOURCE_PREFIX_SHA256,
         REFERENCE_SHA256["raw_all.parquet"],
         "measured_rows_mutated: false",
     )
@@ -314,6 +351,25 @@ def _validate_outputs_absent() -> None:
         raise SystemExit("REFUSING to overwrite A1 output(s): " + ", ".join(present))
 
 
+def _validate_compute_hygiene(symbol: str, first_date: pd.Timestamp) -> dict[str, Any]:
+    """Run masterplan §9.6 before any history for ``symbol`` is consumed."""
+    verdict = dict(
+        hyg_mod.check_symbol(symbol, repo_root=REPO_ROOT, first_date=first_date)
+    )
+    flags = set(verdict.get("flags") or ())
+    blocked_flags = {"compute_blocklisted", "reused_ticker_unacked"}
+    if (
+        symbol in hyg_mod.COMPUTE_BLOCKLIST
+        or verdict.get("compute_eligible") is not True
+        or flags & blocked_flags
+    ):
+        raise SystemExit(
+            f"{symbol} fails the registered pre-read compute hygiene gate: "
+            f"flags={sorted(flags)}, notes={verdict.get('notes') or {}}"
+        )
+    return verdict
+
+
 def _validate_b_membership(manifest: dict[str, Any]) -> pd.DataFrame:
     snapshot_path = DATA / "partition" / "universe_snapshot_v1.parquet"
     snapshot = pd.read_parquet(snapshot_path)
@@ -337,18 +393,23 @@ def _validate_b_membership(manifest: dict[str, Any]) -> pd.DataFrame:
         raise SystemExit(f"prohibited duplicate program-owned B plane exists: {duplicate}")
     if "GOLD" in hyg_mod.COMPUTE_BLOCKLIST:
         raise SystemExit("GOLD must not be compute-blocked: its dealer tape is valid")
+    _validate_compute_hygiene(SYMBOL, pd.Timestamp("2014-01-02"))
     return snapshot
 
 
 def _validate_b_source() -> pd.DataFrame:
-    frame = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
-    if len(frame) != 3172:
-        raise SystemExit(f"B source row count drifted: expected 3172, got {len(frame)}")
-    if frame.index.min() != pd.Timestamp("2014-01-02") or frame.index.max() != ASOF:
-        raise SystemExit("B source date range differs from the registered receipt")
-    if list(frame.columns) != ["open", "high", "low", "close", "volume"]:
-        raise SystemExit(f"B source columns drifted: {list(frame.columns)}")
-    return frame.loc[frame.index <= ASOF]
+    source = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
+    if source.index.min() != pd.Timestamp("2014-01-02") or ASOF not in source.index:
+        raise SystemExit("B source does not contain the registered 2014-01-02..ASOF prefix")
+    frame = source.loc[source.index <= ASOF].copy()
+    if len(frame) != 3172 or frame.index.max() != ASOF:
+        raise SystemExit("B source prefix row/date receipt drifted")
+    actual = _ohlcv_prefix_sha256(frame)
+    if actual != B_SOURCE_PREFIX_SHA256:
+        raise SystemExit(
+            f"B source logical prefix differs from registration: {actual}"
+        )
+    return frame
 
 
 def _validate_reference(reference_dir: Path) -> tuple[pd.DataFrame, pd.Series, pd.DataFrame]:
@@ -735,7 +796,8 @@ def _build_and_stage(
         "asof": str(ASOF.date()),
         "price_plane_id": PRICE_PLANE_ID,
         "source_path": B_SOURCE_RELATIVE_PATH,
-        "source_sha256": B_SOURCE_SHA256,
+        "source_prefix_asof": str(ASOF.date()),
+        "source_prefix_sha256": B_SOURCE_PREFIX_SHA256,
         "constants_values": constants["values"],
         "atr_basis": ep_mod.ATR_BASIS,
         "labeling_note": (
@@ -775,8 +837,9 @@ def _build_and_stage(
         for relative in OUTPUT_PATHS[1:]
     }
     gold_post_sha = _sha256(staged_gold)
+    source_at_run = load_symbol(SYMBOL, PRICE_PLANE_ID, REPO_ROOT)
     receipt = {
-        "schema": "stock_identity.w1_amendment.v1",
+        "schema": W1A1_RECEIPT_SCHEMA,
         "amendment_id": AMENDMENT_ID,
         "registered_date": BUILD_DATE,
         "asof": str(ASOF.date()),
@@ -786,35 +849,12 @@ def _build_and_stage(
             "pr_5613": pr_5613_merge,
             "pr_5632": pr_5632_merge,
         },
-        "identity_receipt": {
-            "GOLD": {
-                "issuer": "Gold.com, Inc. (fka A-Mark Precious Metals)",
-                "edgar_cik": "1591588",
-                "role": "bullion dealer instrument; frozen W1 miner interpretation withdrawn",
-                "effective_symbol_date": "2025-12-02",
-                "store_first_print": "2014-03-17",
-            },
-            "B": {
-                "issuer": "Barrick Mining Corporation",
-                "edgar_cik": "756894",
-                "role": "design-touched W1-A1 miner-probe addendum",
-                "effective_symbol_date": "2025-05-09",
-                "curated_tape_floor": "2014-01-02",
-            },
-        },
+        "identity_receipt": W1A1_IDENTITY_RECEIPT,
         "miner_probe_roster": {
             "sealed_w1": list(W1_SEALED_MINER_PROBE),
             "effective_w1a1": list(W1A1_EFFECTIVE_MINER_PROBE),
         },
-        "partition_treatment": {
-            "B_design_touched": True,
-            "B_absent_from_w1_universe": True,
-            "B_absent_from_w1_pilot": True,
-            "B_excluded_from_blind": True,
-            "B_excluded_from_calibration": True,
-            "B_excluded_from_future_blind_extension": True,
-            "B_excluded_from_confirmatory_grading": True,
-        },
+        "partition_treatment": W1A1_PARTITION_TREATMENT,
         "procedural_deviation": {
             "status": "DISCLOSED_PRE_REGISTRATION_IMPLEMENTATION_EXPOSURE",
             "write_scope": "no repository artifacts written; independent git status/diff clean",
@@ -845,11 +885,16 @@ def _build_and_stage(
         },
         "price_input": {
             "path": B_SOURCE_RELATIVE_PATH,
-            "sha256": B_SOURCE_SHA256,
             "price_plane_id": PRICE_PLANE_ID,
-            "rows": int(len(frame)),
+            "prefix_asof": str(ASOF.date()),
+            "prefix_sha256": B_SOURCE_PREFIX_SHA256,
+            "seed_container_sha256": B_SOURCE_SEED_CONTAINER_SHA256,
+            "file_sha256_at_run": _sha256(B_SOURCE_PATH),
+            "file_rows_at_run": int(len(source_at_run)),
+            "file_last_date_at_run": str(source_at_run.index.max().date()),
+            "rows_used": int(len(frame)),
             "first_date": str(frame.index.min().date()),
-            "last_date": str(frame.index.max().date()),
+            "last_date_used": str(frame.index.max().date()),
             "history_caveat": (
                 "2014-01-02 is a curated data floor, not issuer/listing birth; no "
                 "pre-2014 portion of the 2011-2015 gold bear is covered"
@@ -1028,7 +1073,9 @@ def main() -> int:
     )
     if not gold["compute_eligible"] or gold["blind_eligible"]:
         raise SystemExit("GOLD must be compute-eligible and blind-ineligible after acknowledgement")
-    if "reused_ticker_acked" not in gold["flags"] or "reused_ticker_unacked" in gold["flags"]:
+    if "reused_ticker_acked" not in gold["flags"] or {
+        "reused_ticker_unacked", "compute_blocklisted"
+    } & set(gold["flags"]):
         raise SystemExit("GOLD acknowledgement flags are contradictory")
 
     if args.validate_only:
