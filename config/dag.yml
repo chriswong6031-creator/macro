@@ -4597,6 +4597,37 @@ modules:
       (house ruling). cl_gex cluster (daily.yml), after build_vol_regime so
       site/vol/regime.json is available.
 
+  # Bounded host-private sparse-selector canary. This node is launchd-owned,
+  # not a GitHub workflow or nightly/daily producer step.
+  - module: scripts.run_options_sparse_selector
+    reads:
+      - git:origin/main:data/options_signal_episode/episodes.jsonl
+      - git:origin/main:data/options_signal_campaign/campaigns.jsonl
+      - git:origin/main:data/options_signal_campaign/checkpoint.json
+      - /Users/chriswong/.mastermind_private/prophet_option_mark_observations_v1/
+      - /Users/chriswong/.mastermind_private/prophet_option_shadow_lifecycle_v1/
+    writes:
+      - /Users/chriswong/.mastermind_private/options_sparse_selector_v1/
+      - /Users/chriswong/.mastermind_private/options_sparse_selector_ops_v1/
+    impure: true
+    needs_secrets: true
+    event_driven: true
+    note: >
+      Mac13,1/arm64 launchd-only paper canary. Every 300-second fire is RTH-gated
+      and may grant at most one new selector generation. Fresh epochs use exact
+      currently fetched origin/main Git blobs; active epochs stay pinned to their
+      authenticated ancestor commit. The daily episode/campaign producers are never called.
+      The activation expires exactly 2026-08-21T20:00:00Z, has a hard 128-generation
+      ceiling, and refuses every further advance after the first decision-bearing
+      generation settles one authenticated manifest (1–128 abstention decisions).
+      W1A is forbidden and proposal capability is false, so the only lawful settled
+      result is an evidence-bound abstention. There is no handoff consumer, public
+      output, trade, portfolio, issue, score, rank, size, publication, training,
+      Prophet, Neural Web, or completion authority. Rollback unloads launchd and
+      retains the authenticated selector root intact. The secret is the fixed
+      host-local read-only Git deploy identity used to authenticate origin/main;
+      it grants no selector, evidence, proposal, or publication authority.
+
   # Host-private MomoEdge same-basis outcome lane. It is launchd-owned rather
   # than a GitHub workflow and publishes no raw or exact competitor artifact.
   - module: scripts.capture_options_nbbo_cohort
