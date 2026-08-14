@@ -8,6 +8,7 @@
     "029ecf0b88e2029b87444f04984db2fd7ca9a364": "2026-08-14T05:06:03.161679+00:00",
     "02b45bdb536c39b3dee5fd20516d5c4707ec93b2": "2026-08-14T15:26:34.890451+00:00",
     "02cbb70174ab2e7767506532c523e354c6193640": "2026-08-14T14:34:47.809556+00:00",
+    "031b01d4ce04a6605c7fe5b620b37198e3e9f95a": "2026-08-14T21:02:48.523636+00:00",
     "03403c4eb9fffca1e564b8a11d255ded7ee65d73": "2026-08-14T03:15:12.496116+00:00",
     "0343b1fc047bf4519844df5a76f3f90fdd3bcb6e": "2026-08-13T23:41:00.665528+00:00",
     "039527d839573ecec94d950db7f99226ed5b483a": "2026-08-14T06:40:03.291571+00:00",
@@ -87,6 +88,7 @@
     "1fe383596a0db024c30ea4a18f72b7cc46cd9755": "2026-08-14T09:16:15.530154+00:00",
     "201c4ede63042bd23ff8b1321081a8d941382a71": "2026-08-14T05:06:03.161679+00:00",
     "21667f87aae0684fc05214ad9739b8752a1d24e4": "2026-08-14T09:16:15.530154+00:00",
+    "21b28283b0045ecbc03f69811b6a9811996ce5f7": "2026-08-14T21:02:48.523636+00:00",
     "21eefa939086b2cc7e7c8873c5cdc925fb2d95df": "2026-08-13T22:03:48.380046+00:00",
     "22fdb2c16f1a75b517b69e5ac63f502ca6b25045": "2026-08-13T22:56:14.768599+00:00",
     "230c084c948e95535b7d9960a5842bcca9c93638": "2026-08-14T20:04:38.124512+00:00",
@@ -180,7 +182,9 @@
     "48d5ec185e25600dc14bf8b99123f0de1aba945d": "2026-08-14T14:34:47.809556+00:00",
     "4934c8c7c134856acb8cf25d7fedd7a05ba2b14c": "2026-08-14T15:26:34.890451+00:00",
     "4ab70b1b072d8d76b6979c6ee8a164d0d5013c00": "2026-08-14T00:45:14.029271+00:00",
+    "4af602e9fa4925a57af85a503cf171d3da8f55c6": "2026-08-14T21:02:48.523636+00:00",
     "4b54a6a87f4b4f9335db5b3733cbea5330203a93": "2026-08-14T16:23:51.029553+00:00",
+    "4b715285abadcd0220ed40400c1714d768a3b242": "2026-08-14T21:02:48.523636+00:00",
     "4ba647411ea8820beec8e71105dff51548f957c1": "2026-08-14T13:34:26.697020+00:00",
     "4bc4a575ddf90e1a21d6d4c20f2df490a9b4575b": "2026-08-14T08:01:59.358645+00:00",
     "4bcc394d6e870408a492c65dc97c9b767a3c6781": "2026-08-13T22:03:48.380046+00:00",
@@ -218,6 +222,7 @@
     "581ce564eec768df642e915fe3e4590dc805496c": "2026-08-13T22:03:48.380046+00:00",
     "582ebe4a0595e020690bcef7772cd067757794c7": "2026-08-14T06:40:03.291571+00:00",
     "58a89c374715411db5ef90e624554ac447d80444": "2026-08-14T16:23:51.029553+00:00",
+    "58e3af1aeabb8a076a20bf72eaeae403611296cf": "2026-08-14T21:02:48.523636+00:00",
     "58e3d96f9df21e8026e317b9b145e23614a0ceca": "2026-08-14T00:45:14.029271+00:00",
     "59186b0d42128b23721273a704021c0ad43f918e": "2026-08-14T03:15:12.496116+00:00",
     "5963a2da1c88c3f24ad2abb98ca5f1d59b396674": "2026-08-14T13:34:26.697020+00:00",
@@ -231,6 +236,7 @@
     "5d9a57e466050a7c0d2b947781359887b195ce47": "2026-08-14T00:45:14.029271+00:00",
     "5df7aace71d49cb14d000cf11f303db99f3066c7": "2026-08-14T13:34:26.697020+00:00",
     "5e70cfe2e7a9ea7df545c1f5fb014df8f1f5585f": "2026-08-14T06:40:03.291571+00:00",
+    "5ecac03c3d06046734c41dcfa2f8373f1f3cc338": "2026-08-14T21:02:48.523636+00:00",
     "5f71b378cbf205afccd3a5dc59c12e21d6e29144": "2026-08-14T05:06:03.161679+00:00",
     "5f850ad29a1cb99b70d084f8118072b910fb30a3": "2026-08-14T09:16:15.530154+00:00",
     "6140493b96cc6a78c5a58b2e2bbc59923e1c068c": "2026-08-14T00:45:14.029271+00:00",
@@ -315,6 +321,7 @@
     "86ff53daacebbaddfca715657b31245bce87fa2a": "2026-08-14T00:45:14.029271+00:00",
     "88774fad9b526b8f17ef28f32b0d3ef84191291e": "2026-08-13T21:10:46.494087+00:00",
     "88b79503dc9c7d82348cc08e90cf300dc740d8cd": "2026-08-14T09:16:15.530154+00:00",
+    "89160b28754b36d3fd6babffe5194d83a0aef412": "2026-08-14T21:02:48.523636+00:00",
     "8955e105f8e4e17d5cef95c226e9892439004c97": "2026-08-14T05:06:03.161679+00:00",
     "899687d7a66a7b7e699ce67c1bbe3bc0e1e0a864": "2026-08-13T23:41:00.665528+00:00",
     "89a46788ab7cbe997722f7c4e9e98ae9dd6c2422": "2026-08-14T13:34:26.697020+00:00",
@@ -367,9 +374,11 @@
     "9eecedd95af933a9b120ccf1e02ce9b22cab6f3c": "2026-08-13T22:56:14.768599+00:00",
     "9f541ddb2734b8473f45d4fed057d18214c12652": "2026-08-13T23:41:00.665528+00:00",
     "9f6e6177a6a6398358bddf9a6a62e4def4deda01": "2026-08-14T15:26:34.890451+00:00",
+    "9f93b8cff6f013dd145455e91bdc93ad8015993e": "2026-08-14T21:02:48.523636+00:00",
     "a01626fd577b223954c06e1a95e74a535422518b": "2026-08-14T16:23:51.029553+00:00",
     "a0ca92b5738b963a1ce7132197927003cab6d2f7": "2026-08-14T03:15:12.496116+00:00",
     "a0f04d5b0dc7126c6693cc7fc9985601e6696b3b": "2026-08-14T09:16:15.530154+00:00",
+    "a100d4c870e65f3ab0ef354849a625ccc368d696": "2026-08-14T21:02:48.523636+00:00",
     "a12b519b6cf121441e53eda65ad25dd5b1e48807": "2026-08-14T14:34:47.809556+00:00",
     "a1575e0f8f29d9e829430ebf857203a7262aaffb": "2026-08-14T17:26:36.619282+00:00",
     "a17408412a32ad5dbe02c9966809de45d73c7524": "2026-08-14T00:45:14.029271+00:00",
@@ -1131,6 +1140,7 @@
     "alpaca:61132537": "2026-08-14T14:34:47.809556+00:00",
     "alpaca:61132589": "2026-08-14T14:34:47.809556+00:00",
     "alpaca:61132602": "2026-08-14T14:34:47.809556+00:00",
+    "alpaca:61132617": "2026-08-14T21:02:48.523636+00:00",
     "alpaca:61132677": "2026-08-14T14:34:47.809556+00:00",
     "alpaca:61132688": "2026-08-14T14:34:47.809556+00:00",
     "alpaca:61132756": "2026-08-14T14:34:47.809556+00:00",
@@ -1209,6 +1219,7 @@
     "alpaca:61134564": "2026-08-14T16:23:51.029553+00:00",
     "alpaca:61134575": "2026-08-14T16:23:51.029553+00:00",
     "alpaca:61134586": "2026-08-14T16:23:51.029553+00:00",
+    "alpaca:61134588": "2026-08-14T21:02:48.523636+00:00",
     "alpaca:61134589": "2026-08-14T16:23:51.029553+00:00",
     "alpaca:61134590": "2026-08-14T16:23:51.029553+00:00",
     "alpaca:61134595": "2026-08-14T16:23:51.029553+00:00",
@@ -1293,6 +1304,7 @@
     "alpaca:61136042": "2026-08-14T18:25:21.646867+00:00",
     "alpaca:61136055": "2026-08-14T18:25:21.646867+00:00",
     "alpaca:61136066": "2026-08-14T18:25:21.646867+00:00",
+    "alpaca:61136077": "2026-08-14T21:02:48.523636+00:00",
     "alpaca:61136099": "2026-08-14T18:25:21.646867+00:00",
     "alpaca:61136101": "2026-08-14T18:25:21.646867+00:00",
     "alpaca:61136127": "2026-08-14T18:25:21.646867+00:00",
@@ -1479,6 +1491,52 @@
     "alpaca:61139645": "2026-08-14T20:41:11.554741+00:00",
     "alpaca:61139646": "2026-08-14T20:41:11.554741+00:00",
     "alpaca:61139648": "2026-08-14T20:41:11.554741+00:00",
+    "alpaca:61139651": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139693": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139706": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139720": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139731": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139732": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139745": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139747": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139778": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139789": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139802": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139818": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139834": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139860": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139871": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139884": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139885": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139907": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139929": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139942": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139953": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139965": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61139992": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140004": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140010": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140044": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140062": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140094": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140134": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140176": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140286": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140302": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140336": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140347": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140393": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140420": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140435": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140468": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140478": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140488": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140498": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140528": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140529": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140541": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140549": "2026-08-14T21:02:48.523636+00:00",
+    "alpaca:61140579": "2026-08-14T21:02:48.523636+00:00",
     "b089fff152f2d3458ebaa0aef52dc7fcee213d13": "2026-08-14T06:40:03.291571+00:00",
     "b162aada5054c765f2139b690f13ac686ad819c2": "2026-08-14T18:25:21.646867+00:00",
     "b16fe09f47dc450fead241292b97a39d9e2683c8": "2026-08-13T22:56:14.768599+00:00",
@@ -1581,6 +1639,7 @@
     "d6759318b46383e68fa9c6755353066da3df95dd": "2026-08-14T16:23:51.029553+00:00",
     "d6be7cd8b70da855e933915281d59545f79194b6": "2026-08-14T13:34:26.697020+00:00",
     "d6bf299c260904654a66ceb14ac86d25b5124cee": "2026-08-14T11:20:30.112078+00:00",
+    "d7a716e6e1299ce84aeef14d7ae7c874a5f83bf3": "2026-08-14T21:02:48.523636+00:00",
     "d7e42293a5c33d6d963ecd3147421ed8f8a98826": "2026-08-14T14:34:47.809556+00:00",
     "d7f2b6cd75cf28d1e954672b183f1c28f5fa051e": "2026-08-14T08:01:59.358645+00:00",
     "d828320f2617bd2eb3c2ebcaacb0f60e7537e3ae": "2026-08-14T12:02:45.275153+00:00",
@@ -1682,7 +1741,8 @@
     "claim:company_news:sec:energy": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
-        "host:investing.com"
+        "host:investing.com",
+        "host:benzinga.com"
       ]
     },
     "claim:company_news:sec:healthcare": {
@@ -1746,6 +1806,12 @@
         "host:benzinga.com"
       ]
     },
+    "claim:none:sec:financials": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:none:sec:healthcare": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
@@ -1759,6 +1825,18 @@
         "host:benzinga.com"
       ]
     },
+    "claim:none:sec:materials": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "claim:none:sec:real_estate": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:none:sec:technology": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
@@ -1766,10 +1844,22 @@
         "host:benzinga.com"
       ]
     },
+    "claim:none:tic:AMD": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:none:tic:CRM": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
         "host:benzinga.com"
+      ]
+    },
+    "claim:none:tic:GOOGL": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
       ]
     },
     "claim:none:tic:INTC": {
@@ -1784,14 +1874,32 @@
         "host:benzinga.com"
       ]
     },
+    "claim:none:tic:KLAC": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "claim:none:tic:MSFT": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
         "host:benzinga.com"
       ]
     },
+    "head:activist ancora now seeks to buy hb fuller adhesives unit bloomberg": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:aprea therapeutics q2 eps 007 beats 023 estimate": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:beeline ceo nicholas liuzza invests additional 500k in co via convertible note": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1814,8 +1922,44 @@
         "host:investing.com"
       ]
     },
+    "head:clean harbors to acquire provider of environmental and waste management services": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:diana shipping withdraws genco acquisition offer after demands": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:dyadic international q2 eps 006 misses 004 estimate sales 961138k miss 993333k e": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
     "head:elon musks spacex lands 122 billion investment from norways 23 trillion sovereig": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:envue medical announces 50m committed equity facility with institutional investo": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:euroholdings q2 adj eps 152 up from 030 yoy sales 8599m up from 2915m yoy": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:flyexclusive q2 eps 016 misses 013 estimate sales 111124m beat 98200m estimate": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1832,10 +1976,34 @@
         "host:investing.com"
       ]
     },
+    "head:jana partners cuts stake in fiserv filing shows": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
     "head:knowles announces agreement to manufacture elucent medicals smart surgical guida": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
         "host:benzinga.com"
+      ]
+    },
+    "head:liveone q1 eps 023 beats 024 estimate sales 19350m miss 21233m estimate": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:medpace ceo august j troendle sells 71m in company stock": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
+    "head:nerdy implements 1for15 reverse stock split to meet nyse rule": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
       ]
     },
     "head:octave intelligence sees fy2026 sales 1635b1665b vs 1668b est": {
@@ -1850,8 +2018,38 @@
         "host:benzinga.com"
       ]
     },
+    "head:on holding analysts slash their forecasts after q2 results": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:ralph lauren chief product officer sells 264m in stock": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
+      ]
+    },
     "head:safe pro group enters into cooperative research and development agreement for un": {
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:these analysts increase their forecasts on etoro after strong q2 results": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:these analysts revise their forecasts on cava following q2 results": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:benzinga.com"
+      ]
+    },
+    "head:this mercury systems analyst begins coverage on a bullish note here are top 5 in": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
       "sources": [
         "host:benzinga.com"
       ]
@@ -1860,6 +2058,12 @@
       "first_ts": "2026-08-14T20:41:11.554741+00:00",
       "sources": [
         "host:benzinga.com"
+      ]
+    },
+    "head:valueact holdings increases spotify stake by 469 in q2": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:investing.com"
       ]
     },
     "head:vici properties completes 175 billion notes offering": {
@@ -3019,6 +3223,18 @@
       "sources": [
         "host:truthsocial.com"
       ]
+    },
+    "truth:117095859215373810": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:truthsocial.com"
+      ]
+    },
+    "truth:117095859868018432": {
+      "first_ts": "2026-08-14T21:02:48.523636+00:00",
+      "sources": [
+        "host:truthsocial.com"
+      ]
     }
   },
   "flagship_counter": {
@@ -3027,9 +3243,9 @@
   },
   "providers": {
     "alpaca": {
-      "last_poll": "2026-08-14T20:41:11.554741+00:00",
+      "last_poll": "2026-08-14T21:02:48.523636+00:00",
       "primed_at": "2026-08-04T07:19:01.408847+00:00",
-      "since": "2026-08-12T12:33:00+00:00"
+      "since": "2026-08-12T12:59:44+00:00"
     },
     "cnn_truth_backfill": {
       "etag": "\"f9b93c390dddc808cd804c616c99af6d-3\"",
@@ -3039,7 +3255,7 @@
     },
     "trumpstruth": {
       "fail_count": 0,
-      "last_poll_ts": 1786740074.6968744
+      "last_poll_ts": 1786741370.9793985
     },
     "twitterapiio": {
       "cursors": {
@@ -3109,65 +3325,65 @@
   },
   "schema": "press_wire.cursors/v1",
   "transient_refusals": {},
-  "updated_at": "2026-08-14T20:41:11Z",
+  "updated_at": "2026-08-14T21:02:48Z",
   "wire": {
     "bea_news": {
       "etag": "W/\"d0e223fac24dd1:0\"",
       "fail_count": 0,
       "last_modified": "Tue, 04 Aug 2026 12:30:04 GMT",
-      "last_poll_ts": 1786740072.7474604
+      "last_poll_ts": 1786741369.6601167
     },
     "bls_news": {
       "etag": "\"0a8cc4ef52bdd1:0\"",
       "fail_count": 0,
       "last_modified": "Fri, 14 Aug 2026 14:00:48 GMT",
-      "last_poll_ts": 1786740072.620374
+      "last_poll_ts": 1786741369.6231587
     },
     "cnbc_top": {
       "fail_count": 0,
-      "last_poll_ts": 1786740073.1172364
+      "last_poll_ts": 1786741370.0030725
     },
     "coindesk_rss": {
       "fail_count": 0,
-      "last_poll_ts": 1786740074.3503866
+      "last_poll_ts": 1786741370.6522539
     },
     "cointelegraph_rss": {
       "fail_count": 0,
-      "last_modified": "Fri, 14 Aug 2026 20:37:02 GMT",
-      "last_poll_ts": 1786740074.5112498
+      "last_modified": "Fri, 14 Aug 2026 21:02:18 GMT",
+      "last_poll_ts": 1786741370.8520584
     },
     "fed_press": {
       "etag": "W/\"2a44071342bdd1:0\"",
       "fail_count": 0,
       "last_modified": "Thu, 13 Aug 2026 15:00:12 GMT",
-      "last_poll_ts": 1786740072.5354474
+      "last_poll_ts": 1786741369.5637665
     },
     "forexlive_news": {
-      "etag": "W/\"toPtH5iDdLz_bF7-rIaFYAVuo64\"",
+      "etag": "W/\"ytFZK7d58WiOzcHARjJJidmWpIk\"",
       "fail_count": 0,
-      "last_poll_ts": 1786740073.8065627
+      "last_poll_ts": 1786741370.3477957
     },
     "investing_news": {
-      "etag": "W/\"127c-65907cb653da9\"",
+      "etag": "W/\"1244-659081d176a86\"",
       "fail_count": 0,
-      "last_modified": "Fri, 14 Aug 2026 20:37:52 GMT",
-      "last_poll_ts": 1786740074.1809468
+      "last_modified": "Fri, 14 Aug 2026 21:00:42 GMT",
+      "last_poll_ts": 1786741370.5108056
     },
     "marketwatch_top": {
-      "etag": "W/\"2043-wDVe+btlff3adY/6P6G3Rq/SMB8\"",
+      "etag": "W/\"2043-sPtywbyT1vsXoxCVb2I2LihqgJ4\"",
       "fail_count": 0,
-      "last_poll_ts": 1786740073.2693129
+      "last_poll_ts": 1786741370.0868127
     },
     "whitehouse_actions": {
       "etag": "\"372caf629c1498b3963729e2dc9c5d2b\"",
       "fail_count": 0,
       "last_modified": "Fri, 14 Aug 2026 19:51:44 GMT",
-      "last_poll_ts": 1786740072.918497
+      "last_poll_ts": 1786741369.7158399
     },
     "zerohedge_feed": {
       "fail_count": 0,
       "last_modified": "Fri, 14 Aug 2026 20:34:00 GMT",
-      "last_poll_ts": 1786740073.5046275
+      "last_poll_ts": 1786741370.182033
     }
   },
   "wire_day_counts": {
@@ -3179,7 +3395,7 @@
   },
   "wire_headroom": {
     "day": "2026-08-14",
-    "exhausted": 122,
+    "exhausted": 124,
     "spilled": {
       "mastermind_news->flagship": 24
     }
