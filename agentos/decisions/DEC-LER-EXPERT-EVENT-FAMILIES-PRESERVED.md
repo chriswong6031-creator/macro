@@ -8,7 +8,9 @@ answer: >
   Terminal's mechanistically distinct entry-event families — raw grey/early-dot
   anticipation, washout-promoted amber EARLY, STARTER awaiting-confirmation, STARTER
   confirmation-failed, RE-ENTRY trend-reclaim, RE-ENTRY block-repair, classic confirmed
-  BUY/REBUY, plus Radar's own C1-C5 — are CANDIDATE EXPERTS, not synonyms. Radar preserves
+  BUY/REBUY (the STARTER/RE-ENTRY/BUY names are operator-observed UI labels — only
+  early_dot and blocked_trigger have emitter receipts today; exact enums are minted at
+  PR-2 from receipts), plus Radar's own C1-C5 — are CANDIDATE EXPERTS, not synonyms. Radar preserves
   event-level identity and provenance for every one of them (producer, detector_id, family,
   subtype, quality/stage, context, signal ts, known_ts, source/spec identity, scored
   authority, promotion relationship) and never flattens them into one entry_signal boolean
@@ -37,11 +39,17 @@ alternatives:
       sequence continues as commissioned.
   - option: Mint the Stock Identity / Expert Routing workstream now
     why_not: >
-      Not commissioned; no such program exists in config/mastermind_programs.yml, DNR, or
-      agentos (collision-checked 2026-08-13). The contract records it as a future
-      dependency only.
+      Not commissioned; no such program exists in config/mastermind_programs.yml or
+      agentos (collision-checked 2026-08-13). More importantly, the adversarial pass
+      surfaced DNR:KILL-OUTCOME-AUDITION (research/DO_NOT_REBUILD.md §2): per-name
+      timing-tool selection by in-sample outcome audition is killed two-ruler at n=1,300
+      with zero OOS persistence — the future program is put on notice by name in contract
+      §18 A1.5 and must route through the row's live carve-out (structure-measurement
+      tailoring), never in-sample best-of-grid per name. The contract records it as a
+      future dependency only.
 evidence:
-  - "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md §18 A1 (normative text) + §13 A1 field block + §3.3 G0-VIS closure"
+  - "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md §18 A1 (normative text) + §13 event-store reference + §3.3 G0-VIS closure"
+  - "research/DO_NOT_REBUILD.md §2 row DNR:KILL-OUTCOME-AUDITION — the standing kill the downstream program must clear"
   - "research/live_entry_radar/TRACK_A_GREY_DOT_FORENSICS.md §4 — the artifact schema already carries type/subtype/quality/scored + known_ts"
   - "Operator/CEO amendment message, 2026-08-13, in-session (G0-VIS confirmation + Expert Preservation ruling)"
 affects: ["research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md", "engine/entry_radar/", "data/entry_radar/"]
