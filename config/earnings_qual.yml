@@ -91,15 +91,43 @@ daily_cap: 64                              # max scores per score_new() invocati
 # max_chars/tail_chars in its provider block above.  As of 2026-08-06 that is
 # EVERY rung, local included.  Do NOT lower it to accommodate a small local
 # context window — that is what the per-rung override exists for.
-max_chars: 24000                           # transcript is truncated to this length
-tail_chars: 8000                           # preserve Q&A tail on long calls
+#
+# 24,000 was leaving most of the call on the floor.  Measured over the 64 calls
+# scored on 2026-08-14: 86% were truncated, the median truncated call discarded
+# 17,048 characters (42% of its own text), and the worst kept 36% — the model was
+# scoring a third of a call and reporting a confident read of it.  Source lengths
+# ran median 37,755 / p90 53,594 / max 66,645 chars.
+#
+# 48,000 is derived from the endpoint measurements above, not chosen for looks.
+# Body density from those two data points (netting out the old ~480-token system
+# prompt) is 0.347 tok/char on prose and 0.570 on the token-dense worst case.
+# Against the 32,768-token window, with the v3 system prompt (~1,190 tok) and the
+# 1,200-token response reserve:
+#     48,000 chars  ->  29,740 tok worst case, a 9% margin
+#     53,000 chars  ->  32,589 tok worst case, a 1% margin — too close
+# Overshooting is not a soft failure: the server does not error over its window,
+# it drops the overflow and answers with prose instead of JSON, which reads as
+# invalid_json, burns the bounded retry and falls through to a METERED provider.
+# So the margin is the point.  Truncation at this cap: 28% of calls rather than
+# 86%.  Pinned by tests/test_earnings_prompt_quality.py, which fails if the
+# configured bound stops fitting the measured window.
+max_chars: 48000                           # transcript is truncated to this length
+tail_chars: 16000                          # preserve Q&A tail on long calls
 retry_on_bad_json: 1                       # one retry when the model returns non-JSON
 
 # --- prompt version --------------------------------------------------------------
-# Bump when tools/earnings_worker/prompts.py changes materially.  Stored on every
-# row's scored_at context (not the row itself) and surfaced in the manifest so
-# scores from different prompt generations can be told apart at promotion time.
-prompt_version: "equal-v2"
+# This is a LABEL, not the whole stamp.  The row's `prompt_version` is
+# `<this label>+<sha8 of the system prompt that actually ran>`
+# (engine.earnings_qual.resolve_prompt_version).
+#
+# It used to be this string alone, which made the field unable to answer the one
+# question it exists for.  Every row stamped `equal-v2` was scored by the engine's
+# "mirror" prompt, while the file that defined PROMPT_VERSION = "equal-v2"
+# (tools/earnings_worker/prompts.py) was imported by nothing — so the stamp named
+# text that had never executed, and neither direction held: editing the prompt did
+# not move the stamp, and moving the stamp did not imply an edit.  The appended
+# fingerprint closes both.
+prompt_version: "equal-v3"
 analysis_schema_version: "earnings-qual/v2"
 
 # --- usage attribution (ai_costs ledger, cloud lanes only) -----------------------
