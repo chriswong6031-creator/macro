@@ -58,8 +58,10 @@ than things a reviewer must re-check:
   scene 03 measures **8 of 16**.
 
   Both counts are `.st.na` — the COVERAGE-GAP mark only. Since m8 the drawer distinguishes
-  three coverage meanings (see §3a), so `none` (evaluated, answer is none) and `n/app`
-  (does not apply to this row) are answers and are counted as real rows, not as gaps.
+  three coverage meanings (see §3a): `none` (evaluated, answer is none) and `n/app` (does
+  not apply to this row) are answers rather than gaps, and the gate ignores them. They are
+  NOT folded into the `real` figure either — `print_inventory` reports four disjoint
+  categories (`real + n/a + none + n/app == rows`), so a row is counted exactly once.
 - **Neither scene is shot over a stub.** `assert_not_stub_grade` refuses any artifact under 20KB or missing a `tech` block, before the browser starts.
 - **The large-list law, measured on a 100-name list** (no crop): twenty drawers opened
   and closed again. `100 -> 100` rows, 20 drawers open at once, 0 surviving their own
@@ -232,8 +234,10 @@ most common" — false by ~32×. The cause is visible in the per-lane rates (`se
 `elev` on 74% of the library, `estimates` on 55%), so "≥1 elevated lane → Watch" is very
 nearly "has data". The fix is not a threshold: `roleBadge` **already grades severity into
 three rungs** and an `if (role)` was flattening them. Watch is now the two severe rungs,
-Get ready the review rung or any lane signal below it. Measured after:
-**Watch 50.0% · Get ready 47.0% · No action 2.9%**.
+Get ready the review rung or any lane signal below it. The ladder partition alone measures
+Watch 50.0% · Get ready 47.0% · No action 2.9%; AS SHIPPED, with the W4-R12 overextended
+floor moving 32 names off the all-clear, the surface renders
+**Watch 52.0% · Get ready 47.0% · No action 1.0%** — the figures a live sweep reproduces.
 
 **W4-R5 — ownership severity discriminated nothing.** `insider.cluster === true` fired on
 1,133 of the 1,221 names carrying ownership data (92.8%). The row is now NEUTRAL, and not

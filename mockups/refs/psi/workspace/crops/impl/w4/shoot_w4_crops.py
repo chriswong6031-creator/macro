@@ -330,7 +330,8 @@ def drawer_rows(page):
 def print_inventory(scene, rows):
     """The receipt. `na` is the COVERAGE-GAP mark and the only one the gate counts;
     `none` (we looked, the answer is none) and `n/app` (does not apply to this row) are
-    answers and count as real rows."""
+    answers rather than gaps. All four categories are disjoint — `real` excludes them —
+    so `real + na + none + n/app == len(rows)` and no row is counted twice."""
     na = [r for r in rows if r["mark"] == "na"]
     ev = [r for r in rows if r["mark"] == "none"]
     napp = [r for r in rows if r["mark"] == "n/app"]

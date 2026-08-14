@@ -475,8 +475,11 @@
      ALREADY grades severity into three rungs — `exit_review` > `trim_review` > `review`
      — so the calibration exists and was simply being flattened by an `if (role)`. Watch
      is the two severe rungs; Get ready is the review rung or any lane signal below it;
-     No action is a name with neither. Measured on the same 1,629: **Watch 50.0% ·
-     Get ready 47.0% · No action 2.9%** — a partition rather than a constant.
+     No action is a name with neither. Measured on the same 1,629, the ladder partition
+     alone gives Watch 50.0% · Get ready 47.0% · No action 2.9% — a partition rather than
+     a constant. AS SHIPPED the numbers are **Watch 52.0% · Get ready 47.0% · No action
+     1.0%**: the overextended floor below moves 32 names off the all-clear. Quote the
+     shipped figures, not these two, when comparing against a live sweep.
 
      No action stays genuinely rare, and that is honest rather than tuned: on this
      library almost every name has at least one elevated lane, so claiming otherwise
