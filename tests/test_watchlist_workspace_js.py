@@ -482,9 +482,13 @@ TEMPLATE = ROOT / "templates" / "watchlist.html.j2"
 PORTFOLIO = ROOT / "templates" / "portfolio.js"
 
 # The pack's install line for the job that runs this file (.github/ci/legacy-jobs.yml,
-# `wri-risk-core`): `pip install pytest pandas numpy pyarrow pyyaml`. NOTHING in this
-# file may import outside that set — see test_this_suite_imports_nothing_the_pack_lacks.
-PACK_DEPS = {"pytest", "pandas", "numpy", "pyarrow", "yaml"}
+# `wri-risk-core`): `pip install pytest pandas numpy pyarrow pyyaml markupsafe jinja2`.
+# NOTHING in this file may import outside that set — see
+# test_this_suite_imports_nothing_the_pack_lacks. markupsafe/jinja2 joined the line for
+# a SIBLING suite in the same job (test_watchlist_sector_i18n.py, which imports
+# engine.i18n and renders one template line); this file still needs neither, and the
+# import guard above is what keeps that true.
+PACK_DEPS = {"pytest", "pandas", "numpy", "pyarrow", "yaml", "markupsafe", "jinja2"}
 
 
 @pytest.fixture(scope="module")
@@ -1553,3 +1557,192 @@ def test_w3r2_the_lane_row_grammar_is_styled_where_its_drawer_lives():
     block = css[css.index(".wri-lrow"):css.index(".drw-act")]
     assert "--up" not in block and "--down" not in block, block
     assert "--warn" in block and "--act" in block, block
+
+
+# ===========================================================================
+# 10. The extension-grade vocabulary, bound to the engine that defines it
+#
+# W2 (#5496) shipped three comparisons against grade words no extension oracle in
+# this repo has ever produced — `g === 'high'`, `g === 'extreme'` — where `g` came
+# from `extGradeOf`, whose entire range is engine/extension.py's GRADES plus the two
+# literal fallbacks. The result was not a wrong flag; it was NO flag: the "Stretched"
+# attention chip and Risk Desk rules 1 and 3 were structurally unreachable from the
+# night they landed, and every instrument we own read green, because dead code raises
+# nothing. Reviewing the diff could not catch it either — `'high'` and `'extreme'`
+# are exactly what a stretch grade SHOULD be called, and the file never says what it
+# is actually called.
+#
+# So the vocabulary is pinned across the seam rather than restated on this side: the
+# allowed literals are READ from engine/extension.py, and any string compared against
+# an `extGradeOf` result must be one of them. A rename on either side now reds here.
+# ===========================================================================
+
+
+def _engine_grade_vocabulary() -> set[str]:
+    """GRADES keys, parsed from engine/extension.py SOURCE.
+
+    Deliberately not `from engine.extension import GRADES`: `engine` is not in this
+    pack's install set, so the import would pass locally and ERROR on CI — the exact
+    failure shape test_this_suite_imports_nothing_the_pack_lacks exists to forbid.
+    The parse is anti-vacuity checked below: an empty or truncated read would make
+    every assertion built on it trivially true, which is the failure mode a guard
+    like this actually dies of."""
+    import re
+
+    src = (ROOT / "engine" / "extension.py").read_text()
+    m = re.search(r"^GRADES\s*=\s*\{(.*?)^\}", src, re.S | re.M)
+    assert m, "engine/extension.py no longer defines a GRADES dict — this pin must follow it"
+    keys = set(re.findall(r"^\s*\"([a-z_]+)\"\s*:", m.group(1), re.M))
+    # the parse must actually have found the vocabulary, not an empty set
+    assert {"intrend", "steady", "stretched", "parabolic", "na"} <= keys, keys
+    return keys
+
+
+def _ext_grade_comparison_literals(src: str) -> list[tuple[str, str]]:
+    """Every string literal compared against a value that came out of `extGradeOf`.
+
+    Returns (variable, literal) pairs, and a future call site that names its variable
+    something other than `g` is still covered.
+
+    Each call site is scoped to the function it sits in, which is NOT fussiness: the
+    first version of this helper searched the whole file for the holder's name, and
+    `stretchOf` happens to use `var g = j.ext.grade` for its own unrelated read. That
+    made the pin wrong in BOTH directions — it counted stretchOf's live comparisons as
+    if they were extGradeOf's (so the reachability test below stayed green under a
+    mutation that killed every real call site), and an unrelated `g === 'x'` anywhere
+    in the file would have redded the vocabulary test. Verified by mutation, not by
+    reading: the loose version passed the exact #5496 code it was written to catch."""
+    import re
+
+    # top-level functions inside the IIFE are indented two spaces; a call site's window
+    # ends at the next one, so a comparison in a sibling function is never attributed here
+    bounds = [m.start() for m in re.finditer(r"\n  function\s+\w+", src)] + [len(src)]
+    sites = list(re.finditer(r"var\s+(\w+)\s*=\s*extGradeOf\s*\(", src))
+    assert sites, "no `var x = extGradeOf(...)` call sites found — this pin is looking at the wrong shape"
+    out = []
+    for m in sites:
+        name = m.group(1)
+        end = next((b for b in bounds if b > m.end()), len(src))
+        window = src[m.end():end]
+        for lit in re.findall(r"\b%s\s*[=!]==\s*'([^']*)'" % re.escape(name), window):
+            out.append((name, lit))
+    return out
+
+
+def test_every_extension_grade_compared_in_portfolio_js_is_one_the_engine_emits():
+    """THE #5496 DEFECT, pinned as a class.
+
+    Not "'high' must not appear" — that is the symptom. The rule is that the JS may
+    only compare an `extGradeOf` result against words engine/extension.py actually
+    produces, so the next invented synonym is caught the same way this one was not."""
+    vocabulary = _engine_grade_vocabulary()
+    pairs = _ext_grade_comparison_literals(PORTFOLIO.read_text())
+    assert pairs, "no comparisons against an extGradeOf result — the call sites moved"
+    offenders = [(n, lit) for n, lit in pairs if lit not in vocabulary]
+    assert not offenders, (
+        "these grade words are compared in portfolio.js and emitted by NOTHING, so the "
+        "branch behind each is structurally dead: %s (engine vocabulary: %s)"
+        % (sorted(offenders), sorted(vocabulary)))
+
+
+def test_the_two_caution_grades_are_both_actually_reachable_in_portfolio_js():
+    """The converse of the test above, and the half that keeps it honest.
+
+    A file comparing against nothing at all would satisfy "no invented words" while
+    leaving the desk exactly as silent as #5496 left it. Both caution grades must be
+    named on the live side of a comparison."""
+    pairs = _ext_grade_comparison_literals(PORTFOLIO.read_text())
+    compared = {lit for _, lit in pairs}
+    for grade in ("stretched", "parabolic"):
+        assert grade in compared, (
+            "'%s' is a caution grade the engine emits and portfolio.js tests for no "
+            "position on it — the flag it should raise cannot fire" % grade)
+
+
+def test_rule_3_gates_on_the_oracle_whose_method_its_copy_names():
+    """The semantic half, which the vocabulary fix alone does not buy.
+
+    `extGradeOf` answers in one vocabulary from two sources: `ext` (price/SMA200 − 1,
+    z-scored — engine/extension.py) for US-store names, and `ladder.alignment.
+    overextended` for every other market. Rule 3's hover NAMES its method — "measured
+    against its own 200-day path" / "以其自身 200 日均线路径为基准" — a sentence only the
+    first oracle can back. Making the dead comparison live without this gate would have
+    shipped that sentence over a non-US name's alignment read: a promise about how a
+    number was taken, printed over a number taken another way."""
+    src = PORTFOLIO.read_text()
+    rule3 = src[src.index("// rule 3"):src.index("/* Rule 4 takes at most ONE row")]
+    assert "200-day path" in rule3 and "200 日均线路径" in rule3, (
+        "rule 3's copy no longer names the 200-day method — if the promise moved, the "
+        "gate below should move with it", rule3)
+    assert "stretchBasis" in rule3 and "!== 'ext'" in rule3, (
+        "rule 3 promises a 200-day distance reading and no longer gates on the oracle "
+        "that takes one", rule3)
+    # rule 1 deliberately does NOT gate: its copy says only "elevated", which both
+    # oracles support, so a non-US name still reaches the desk through it
+    rule1 = src[src.index("// rule 1"):src.index("// rule 2")]
+    assert "stretchBasis" not in rule1, (
+        "rule 1's copy claims no method, so gating it on one silently drops every "
+        "non-US name from the attention desk", rule1)
+
+
+def test_stretch_basis_reads_the_same_two_sources_as_the_grade_it_qualifies():
+    """`stretchBasis` and `extGradeOf` are a pair: one says WHAT the read is, the other
+    WHERE it came from. If they ever branch on different fields, the basis stops
+    describing the grade and rule 3's gate becomes decoration."""
+    src = PORTFOLIO.read_text()
+    grade_fn = src[src.index("function extGradeOf"):]
+    grade_fn = grade_fn[:grade_fn.index("\n  }")]
+    basis_fn = src[src.index("function stretchBasis"):]
+    basis_fn = basis_fn[:basis_fn.index("\n  }")]
+    for probe in ("isModeled(t)", "j.ext.grade", "ladder", "alignment", "overextended"):
+        assert probe in grade_fn, (probe, grade_fn)
+        assert probe in basis_fn, (
+            "stretchBasis no longer reads `%s`, which extGradeOf branches on — the two "
+            "have drifted and the basis no longer describes the grade" % probe, basis_fn)
+
+
+def _engine_grades_caution() -> dict:
+    """{grade word -> is_caution} from engine/extension.py GRADES. Parsed with ast
+    so this suite still imports nothing the pack lacks."""
+    import ast
+
+    tree = ast.parse((ROOT / "engine" / "extension.py").read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "GRADES" for t in node.targets):
+            return {k: v[3] for k, v in ast.literal_eval(node.value).items()}
+    raise AssertionError("engine/extension.py no longer defines GRADES at module level")
+
+
+def _pf_code() -> str:
+    """portfolio.js with comments stripped."""
+    import re
+
+    src = re.sub(r"/\*.*?\*/", "", PORTFOLIO.read_text(), flags=re.S)
+    return re.sub(r"//[^\n]*", "", src)
+
+
+def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition():
+    """PR #5575 structural half: elevated is named once and read by all three sites.
+
+    Main already pins the vocabulary and the rule-3 oracle gate. This pin is the
+    remaining unique claim: one definition, three readers."""
+    import re
+
+    caution = {g for g, is_caution in _engine_grades_caution().items() if is_caution}
+    assert caution == {"stretched", "parabolic"}, caution
+
+    code = _pf_code()
+    m = re.search(r"function isElevatedGrade\s*\([^)]*\)\s*\{(.*?)\}", code, re.S)
+    assert m, ("the single definition of 'elevated' is gone — its readers have drifted "
+               "back apart, which is how the 'high'/'extreme' comparison survived")
+    assert set(re.findall(r"'([^']*)'", m.group(1))) == caution, m.group(1)
+
+    flag = code[code.index("function attentionFlag"):]
+    flag = flag[:flag.index("function eventDays")]
+    assert "isElevatedGrade(" in flag, "the row flag stopped reading the shared definition"
+
+    stack = code[code.index("function attentionStack"):]
+    assert stack.count("isElevatedGrade(") == 2, (
+        "rules 1 and 3 are the two elevated-grade stack rules and both must read the "
+        "shared definition; found %d call(s)" % stack.count("isElevatedGrade("))

@@ -1,0 +1,70 @@
+name: nightly-backstop
+# The CN lane's redundancy, ported to the US lane.
+#
+# asia-close.yml (CN/HK) carries FIVE cron slots — 06:00, 06:40, 07:20, 08:30 and
+# 09:30 UTC, commented in-file as "early bird" x3, "the original on-time slot" and
+# "backstop". daily.yml (US) carries ONE effective fire: a DST pair at 22:30Z/23:30Z
+# of which et_gate keeps exactly one. That is the whole reason CN "perfectly
+# refreshes nightly" while the US lane lost two consecutive sessions on 2026-08-11/12
+# — CN can lose a fire and pick the night up on the next slot; US gets one shot, and
+# a single loss costs a session of ledger that only the next night or a force-majeure
+# backfill can recover.
+#
+# Adding the CN shape literally would mean adding crons to a workflow already at 91%
+# of GitHub's 512,000-byte processing cliff — the very file whose growth stranded the
+# cron in the first place — and entangling et_gate's DST regime matching, which is
+# what guarantees the nightly runs exactly once. This lane buys the same redundancy
+# while touching neither. Decision rules and their receipts: scripts/nightly_backstop.py.
+on:
+  schedule:
+    # The primary fires 22:30Z (EDT) / 23:30Z (EST). Both failure modes this is for
+    # are visible within MINUTES of that: a stranded workflow file creates no run at
+    # all, and the 2026-08-12 force-cancellations killed their runs 1-2 minutes in.
+    # So the first slot sits early, and the later two are the retries. A bake that is
+    # merely running long is never touched — `decide()` skips on any live run, and
+    # tonight's took 2h+ in `collect` while perfectly healthy.
+    - cron: "0 1 * * *"
+    - cron: "30 3 * * *"
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "decide and print, never fire"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: write         # list daily.yml runs AND dispatch it
+
+concurrency:
+  # Its own lane, and never cancel-in-progress: two backstop slots must not race,
+  # and a watchdog that can be cancelled by its own next tick is not a watchdog.
+  group: nightly-backstop
+  cancel-in-progress: false
+
+jobs:
+  backstop:
+    # GitHub-hosted on purpose. The macstudio pool is what the nightly runs on; a
+    # backstop that queues behind the very outage it is recovering from is useless.
+    # Public repo, so this runner is free (Wave 1, #5465).
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            lib
+            site/prophet/index.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: re-fire daily.yml if the night produced nothing (scripts/nightly_backstop.py)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 scripts/nightly_backstop.py \
+            ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '--dry-run' || '' }}

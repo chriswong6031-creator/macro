@@ -2125,3 +2125,7 @@
 {"date":"2026-08-13","ticker":"URI","departed":true,"left_desk":"2026-08-13","last_rank":30,"last_score":30}
 {"date":"2026-08-13","ticker":"WMT","departed":true,"left_desk":"2026-08-13","last_rank":null,"last_score":11}
 {"date":"2026-08-13","ticker":"COLL","rank":null,"score":8,"lean":1,"broken":true}
+{"date":"2026-08-13","ticker":"RTX","rank":17,"score":39,"lean":1,"broken":false}
+{"date":"2026-08-13","ticker":"DUK","rank":26,"score":34,"lean":1,"broken":false}
+{"date":"2026-08-13","ticker":"LITE","rank":30,"score":32,"lean":1,"broken":false}
+{"date":"2026-08-13","ticker":"AMAT","rank":null,"score":42,"lean":1,"broken":true}

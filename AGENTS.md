@@ -532,6 +532,17 @@ which is nothing. The hook binds Claude-fleet sessions; sessions on other agent
 accounts are bound by this paragraph alone, so treat killing a production run as
 an OPERATOR call and hand it over rather than taking it.
 
+**Recovery etiquette (2026-08-14).** `scripts/prophet_rescue.py`
+(`.github/workflows/prophet-rescue.yml`, hourly at :40 from 23:40Z to 13:40Z) is
+now the ONLY auto-redispatcher of `daily.yml`, bounded to two attempts per night
+counted across all actors. A session that believes the nightly needs a manual
+dispatch must first read the open `prophet-outage` issue — the rescue lane's
+receipts live there, including attempts whose POST created no run — and must
+never dispatch while a `daily.yml` run is queued or in progress. The two watchdog
+lanes, `prophet-rescue.yml` and `nightly-liveness.yml`, are themselves in the
+hook's protected set: killing a watchdog is worse than killing a bake, because it
+removes the only thing that would have noticed.
+
 The contract is actively enforced for Claude by the tracked `SessionStart` and
 `Stop` hook in `.claude/hooks/ship_loop_guard.py`. It snapshots pre-existing dirty
 files, then refuses a normal stop while session-created work is uncommitted,

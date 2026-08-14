@@ -43,8 +43,12 @@ waves:
     depends_on: [W0]
   - id: W3
     title: "Phase 3 — compile-context over the existing context index"
-    status: todo
+    status: awaiting_ci
+    pr: 5561
     depends_on: [W0]
+    next_action: >
+      merge-on-green lands #5561; then the wave is done. First nightly after the merge
+      rebuilds the context index with the agentos corpus registered.
   - id: W4
     title: "Phase 4 — hook auto-capture at ship-loop boundaries (report-only)"
     status: todo

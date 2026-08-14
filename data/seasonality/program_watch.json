@@ -1,9 +1,9 @@
 {
-  "asof": "2026-08-12",
+  "asof": "2026-08-13",
   "counts": {
-    "fired": 1,
+    "fired": 2,
     "unavailable": 1,
-    "waiting": 2
+    "waiting": 1
   },
   "schema": "seasonality.program_watch.v1",
   "tripwires": [
@@ -34,27 +34,30 @@
     {
       "evidence": {
         "by_row_type": {
-          "register": 64
+          "grade": 1,
+          "register": 69
         },
         "closed_out_ungradable": 0,
-        "earliest_pending_occurrence_end": "2026-08-12",
-        "grade_status_counts": {},
-        "graded": 0,
-        "graded_total": 0,
+        "earliest_pending_occurrence_end": "2026-08-16",
+        "grade_status_counts": {
+          "graded": 1
+        },
+        "graded": 1,
+        "graded_total": 1,
         "graded_unregistered": 0,
         "keyless_rows": 0,
         "malformed": 0,
         "path": "data/seasonality/nw_forward_ledger.jsonl",
-        "pending": 64,
+        "pending": 68,
         "pending_without_readable_end": 0,
-        "registered": 64
+        "registered": 69
       },
       "handoff_doc": "research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md",
-      "headline": "64 seasonality windows registered, 0 graded — the earliest pending window closes 2026-08-12.",
+      "headline": "1 of 69 registered seasonality windows now carry a grade.",
       "key": "first_matured_grade",
-      "operator_prompt": "No seasonality window has been graded yet, so there is no calibration read to run — a grade cannot exist before its window closes. Nothing to do tonight; this tripwire fires with the calibration prompt when the first one lands. Context: research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md.",
-      "state": "waiting",
-      "why": "A grade cannot exist before its window closes, so this is expected-null at birth rather than a stall. The close date above is when to expect the first one; nothing before then is news."
+      "operator_prompt": "The seasonality forward ledger has its first graded window. Read research/BIOPHARMA_SEASONALITY_INTELLIGENCE_CONTINUATION_HANDOFF_2026-08-07.md, then run the calibration read: grade counts by symbol, realized vs registered p, and whether the sample is anywhere near the pre-registered gate. Report it as accrual, not as a verdict — one grade is not a result — and update the Calibration Lab forward-record line.",
+      "state": "fired",
+      "why": "This is the first forward evidence the calendar clock has any edge at all. Everything before it was a registered window with no outcome. Close-outs (ungradable_missing_prices) are NOT counted here — they are closed windows with no outcome, so they are not evidence."
     },
     {
       "evidence": {

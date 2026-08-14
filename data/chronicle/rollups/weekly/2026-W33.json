@@ -1,9 +1,9 @@
 {
-  "as_of": "2026-08-13",
+  "as_of": "2026-08-14",
   "coverage": {
-    "end": "2026-08-13",
+    "end": "2026-08-14",
     "note": "weekly rollup spans up to 13 ISO weeks ending 2026-W33; 14 week(s) have events so far; chronicle event store begins 2013-05-21; trimmed lowest-salience events to fit the display budget",
-    "start": "2026-05-14"
+    "start": "2026-05-15"
   },
   "iso_week": "2026-W33",
   "schema": "chronicle.rollup.weekly/v1",
@@ -11,34 +11,24 @@
     {
       "clusters": [
         {
-          "n_events": 116,
+          "n_events": 120,
           "source": "research_vault",
           "theme": null,
           "top_events": [
             {
-              "date": "2026-08-10",
-              "id": "cev-research_vault-bc00499ab68b",
+              "date": "2026-08-11",
+              "id": "cev-research_vault-9bcacbdd5d30",
               "kind": "report",
               "source": "research_vault",
-              "source_ref": "marketdesk-ozycb5rdqy2-4f6534",
+              "source_ref": "marketdesk-nal7r2gm25q-0e6c2a",
               "tickers": [],
-              "title": "J.P. Morgan: JPM US Market Intell | Morning Briefing 2026 08 10",
-              "weight_hint": 3
-            },
-            {
-              "date": "2026-08-13",
-              "id": "cev-research_vault-d9c35d7bc86d",
-              "kind": "report",
-              "source": "research_vault",
-              "source_ref": "marketdesk-ecx3kynusdj-b16e59",
-              "tickers": [],
-              "title": "Citi: Citi The Point for Europe Thursday, 13 August 2026",
+              "title": "J.P. Morgan: JPM US Market Intelligence Afternoon Briefing Aug 10",
               "weight_hint": 3
             }
           ]
         },
         {
-          "n_events": 4,
+          "n_events": 9,
           "source": "prophet_ledger",
           "theme": null,
           "top_events": []
@@ -565,13 +555,13 @@
     {
       "clusters": [
         {
-          "n_events": 45,
+          "n_events": 5,
           "source": "earnings",
           "theme": "earnings",
           "top_events": []
         },
         {
-          "n_events": 5,
+          "n_events": 2,
           "source": "earnings_call",
           "theme": "earnings",
           "top_events": []

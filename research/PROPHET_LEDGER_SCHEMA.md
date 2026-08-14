@@ -216,11 +216,22 @@ dates that were deliberately NOT reconstructed.
 **What keeps the carve-out from widening.**
 `tests/test_prophet_outage_backfill.py` asserts a both-directions set equality: every
 plan stamped `origination_mode` starting `outage_backfill` appears in the disclosure
-artifact, and every disclosed id exists as a plan. It further pins that the only
-authorised mode string is `outage_backfill_2026_08_09` and the only authorised
-`recorded_at` is `2026-08-09`. A future backfill of any other date therefore turns
-the suite red on arrival, and needs its own operator authority, its own disclosure
-row and its own dated addendum here — deleting the test is not the remedy.
+artifact, and every disclosed id exists as a plan.
+
+It originally also pinned that the ONLY authorised mode string was
+`outage_backfill_2026_08_09`, so that a backfill of any other date turned the suite red
+on arrival and needed its own operator authority, its own disclosure row and its own
+dated addendum here — with deleting the test explicitly not the remedy. **That is
+exactly what happened on 2026-08-13** (Addendum below), and it is worth recording how,
+because "the test went red and someone made it green" is the failure mode this
+paragraph was written to prevent. The second window arrived with its own operator
+authority, its own lane, its own disclosure row and its own addendum, and the assertion
+was not deleted but narrowed to what it was always for: `AUTHORISED_WINDOWS` is now a
+REGISTRY built from each lane's own constants, and the suite asserts MEMBERSHIP in it
+plus per-window `recorded_at` agreement, with a guard-the-guard case pinning that an
+invented mode is still rejected. An unchartered third window fails on arrival exactly as
+before; what changed is that a chartered one can be admitted without editing an
+assertion into vacuity.
 
 **Producer.** `scripts/backfill_prophet_outage.py`, a one-off that refuses to run
 twice: the disclosure artifact as committed on HEAD is its idempotence lock (reading
@@ -236,8 +247,112 @@ committed, add a line to this addendum that begins at column 0 with
 that this paragraph describing the convention cannot itself be mistaken for the
 claim. Once the marker is present the suite REQUIRES
 `data/prophet/backfill_disclosures.json` to exist, closing the direction where the
-docs assert an execution that left nothing behind. The marker is NOT yet set: as of
-this commit the replay has been dry-run only.
+docs assert an execution that left nothing behind.
+
+executed_window: prophet-us-outage-backfill-2026-08-09
+
+**Marker corrected 2026-08-13.** This paragraph read "The marker is NOT yet set: as of
+this commit the replay has been dry-run only" for two days after the replay had in fact
+executed and its artifacts had merged — 14 stamped plans and a disclosure row were on
+`main` while the design of record said nothing had happened. The guard could not see it:
+it keys on the marker's PRESENCE and skips when it is absent, so it catches a doc that
+overclaims and is silent about a doc that underclaims. The direction it does not cover
+is being noted here rather than left as a trap for the next reader.
+
+## Addendum 2026-08-13 — force-majeure exception, `recorded_at=2026-08-11` ONLY
+
+**A second carve-out, on the same terms as the first: named, dated, enumerated, and
+authorising nothing beyond itself.** The no-backfill law in Note 4 stands for every
+other date. Two exceptions are not a pattern and do not create a standing lane — there
+is deliberately no generic backfill script, and each window is chartered on its own.
+
+**Authority.** Operator order 2026-08-13, ratified twice in session, an explicit
+force-majeure override after the 2026-08-11 nightly was lost. Design of record:
+`research/PROPHET_OUTAGE_BACKFILL_2026_08.md` (§0 gates transfer; §5 records where this
+event departs from them).
+
+**Scope — exactly one night, and it is a RECONSTRUCTION, not a replay.** This is the
+material difference from the 2026-08-09 window and it changes what may be claimed about
+the rows. That window replayed a bake that RAN: it had an intake receipt, a refusal set,
+and a board that survives in git, so the counterfactual flipped one poisoned field on
+real bake-time bytes. 2026-08-11 has none of that. `daily.yml` was stranded by the #5362
+workflow-size cap and its recovery dispatches were force-cancelled, so the night
+produced no collect, no board, no receipt and no plan. The board artifact went from
+`as_of=2026-08-10` straight to `as_of=2026-08-12`; **an `as_of=2026-08-11` board has
+never existed anywhere in this repository's history.** The one this window originated
+against was BUILT for the purpose, and every row it minted inherits that.
+
+**What makes a reconstruction honest enough to mint from.** Four properties, each
+measured rather than asserted, all recorded in the disclosure row:
+
+* **Price truncation is structural.** The board was built inside a worktree pinned to
+  `7ba57221ddec` — main as of the 22:30Z bake slot — whose committed price store ends
+  2026-08-10 precisely because the stranded collect never wrote 08-11. Only the missing
+  sessions up to the 2026-08-11 close were overlaid, from the store the 2026-08-12
+  collect later wrote. A 2026-08-12 bar is not filtered at read time; it is never
+  written, and a fence re-scans every price file in the tree before the builder starts.
+* **The code vintage is pinned, not argued.** #5370 (union admission on the EARLY-TURN
+  starter tier) edits the origination module itself and merged at 23:52:22Z, 82 minutes
+  AFTER the bake slot. Rather than rely on the review claim that it cannot move plan
+  minting, the board build and the origination both ran the pre-#5370 tree, so no #5370
+  predicate is in scope either way.
+* **The harness was scored against a board that already exists.** The same tree, the
+  same overlay, the same alpha rebuild and the same builder, truncated one session
+  earlier, rebuild the 2026-08-10 board the pinned vintage already ships. The measured
+  agreement between that rebuild and the real artifact is this window's error bar, it is
+  recorded in `harness_fidelity`, and a run below the floor refuses.
+* **The wall clock does not reach admission.** The W1.5 earnings-blackout gate anchors to
+  `alpha.json`'s `as_of` and then to the price panel's own trading-day calendar
+  (`_eb_board_session_date`, "Reads no clock") — and because the alpha panel was rebuilt
+  from the truncated store, that anchor IS 2026-08-11. Every subprocess additionally runs
+  `TZ=UTC`, which is the timezone half of the #5289/#5304 defect. What remains is a
+  display-tier days-to-earnings chip computed from `date.today()` inside a closure, and
+  the rows it moves are NAMED in the disclosure rather than left implicit.
+
+**Scope limits, same shape as the first window.** 2026-08-03 → 2026-08-06 stay refused
+under `us-board-frozen-alpha-2026-08` — untouched by this exception, and not weakened by
+it: that ruling turns on a factor panel frozen at 2026-07-31, whereas 2026-08-11's panel
+is not frozen and its one missing session is recoverable. 2026-08-12 forward belongs to
+the live nightly: the 2026-08-12 bake collected both stranded sessions and originated 25
+plans, and **every name it took wins** — the reconstruction yields, discloses the
+counterfactual, and mints nothing.
+
+**Two refusals this window adds.** A candidate whose entry trigger the 2026-08-11 close
+had already taken out is CHRONOLOGY-REFUSED: that entry was in the past before the plan
+existed, and grading it forward would credit the lane with a fill nobody could have had.
+And every gate the engine applies at execution time is recorded, not overridden.
+
+**Stamps, surfaces and the record.** Identical to the first window:
+`origination_mode: "outage_backfill_2026_08_11"` plus `backfill_executed_at` on the plan,
+the index row and the forward-ledger row at close; `selection_era` unchanged; absent-means-live
+on all three. `record_summary` splits rather than drops; marketing surfaces hard-exclude;
+`prophet_stage_shadow`'s tilt cohort excludes. The reader-facing disclosure is plain-word
+and bilingual and says the pick was rebuilt after an outage and was never shown that night.
+
+**Producer.** `scripts/backfill_prophet_outage_20260811.py` — a one-off with no `--asof`
+flag, refusing to run twice against the committed disclosure artifact, with
+`--verify-collisions` re-derived against fresh `origin/main` immediately before merge.
+
+**What keeps THIS carve-out from widening.** `AUTHORISED_WINDOWS` in
+`tests/test_prophet_outage_backfill.py` enumerates both chartered windows, built from
+each lane's own constants, and `tests/test_prophet_outage_backfill_20260811.py` pins the
+truncation, the chronology refusal and the vintage. A third window still turns the suite
+red on arrival.
+
+**Execution marker.** Same convention as the first window — a line beginning at column 0
+with `executed_window:` followed by the window id, added when the artifacts are
+committed and not before. Unlike the first window's guard, the check on this one is a
+BICONDITIONAL: `tests/test_prophet_outage_backfill_20260811.py` asserts that the marker's
+presence and the disclosure row's existence agree in BOTH directions, so a doc that
+underclaims fails as loudly as one that overclaims. That is the direction the 2026-08-09
+guard could not see, and the reason its own marker sat unset for two days.
+
+**Executed 2026-08-13.** 69 buy rows → 46 admitted → 36 duplicate ids → 10 eligible →
+**3 minted** (HCC, LNG, NXPI), 7 chronology-refused by the engine's own six-clock
+contract, 0 collided, 0 otherwise refused. Both funnel identities close. Harness fidelity
+0.875 against the 2026-08-10 board, measured identically on four independent runs.
+
+executed_window: prophet-us-outage-backfill-2026-08-11
 
 ---
 

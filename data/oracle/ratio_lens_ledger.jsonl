@@ -272,3 +272,6 @@
 {"date": "2026-08-13", "pair_id": "memory_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.0156, "leg_den_ret_1w": 0.068165, "state": "BASING", "kind": "basket"}
 {"date": "2026-08-13", "pair_id": "memory_vs_equipment", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.0156, "leg_den_ret_1w": 0.068682, "state": "NO_ANCHOR", "kind": "basket"}
 {"date": "2026-08-13", "pair_id": "mag7_vs_ailogic", "event": "one_sided_shape", "shape_1w": "one_sided", "leg_num_ret_1w": -0.009114, "leg_den_ret_1w": 0.068165, "state": "NO_ANCHOR", "kind": "basket"}
+{"date": "2026-08-13", "pair_id": "memory_vs_ailogic", "event": "state_transition", "state_from": "BASING", "state": "NO_ANCHOR", "z252": 0.938, "z63": -0.627, "pct_3y": 93.1, "kind": "basket"}
+{"date": "2026-08-13", "pair_id": "memory_vs_equipment", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 1.247, "z63": -0.201, "pct_3y": 94.8, "kind": "basket"}
+{"date": "2026-08-13", "pair_id": "cyber_vs_software", "event": "state_transition", "state_from": "NO_ANCHOR", "state": "BASING", "z252": 1.554, "z63": 0.033, "pct_3y": 95.6, "kind": "basket"}

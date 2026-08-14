@@ -159,7 +159,7 @@ readiness column; `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA` closed.
 
 ---
 
-## Phase 3 — Context compiler
+## Phase 3 — Context compiler  *(IMPLEMENTED)*
 
 **Objective.** `compile-context --workstream X` returns a bounded, cited bundle. Closes **G6**.
 

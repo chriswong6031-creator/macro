@@ -39,6 +39,10 @@ def test_oversized_checkout_is_bounded_before_checkout_runs():
     assert 'git reset --hard "$SEED_SHA"' in script
     assert "git clean -ffdx" in script
     assert 'mv .git "$CHECKOUT_TRASH"' in script
+    assert (
+        'git --git-dir="$CHECKOUT_TRASH" update-ref refs/heads/main "$SEED_SHA"'
+        in script
+    )
     assert 'find "$GITHUB_WORKSPACE"' not in script, (
         "the 2.85 GB current tree must survive metadata compaction"
     )
@@ -211,6 +215,16 @@ def test_oversized_reset_retains_clean_tree_and_replaces_only_metadata(tmp_path)
     )
     (workspace / "tracked.txt").write_text("dirty render output\n", encoding="utf-8")
     (workspace / "ignored.tmp").write_text("throwaway\n", encoding="utf-8")
+
+    # Managed render checkouts can be left detached with only origin/main. The
+    # local file:// clone still needs a real refs/heads/main to satisfy
+    # `clone --branch main`; this is the exact runner state from run 31643182055.
+    _git(workspace, "checkout", "--detach")
+    _git(workspace, "branch", "-D", "main")
+    assert subprocess.run(
+        ["git", "show-ref", "--verify", "--quiet", "refs/heads/main"],
+        cwd=workspace,
+    ).returncode != 0
 
     runner_temp = tmp_path / "runner-temp"
     runner_temp.mkdir()

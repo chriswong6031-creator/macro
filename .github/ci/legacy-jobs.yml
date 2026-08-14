@@ -912,6 +912,16 @@ jobs:
         run: python -m pytest tests/test_options_signal_episode.py -q
       - name: sparse exact-option selector preregistration (zero denominator, permanent retrospective fence, no authority)
         run: python -m pytest tests/test_options_sparse_selector_prereg.py -q
+      - name: inert sparse selector runtime + private authenticated dictionary (fail-closed authority and cache forgery)
+        run: >-
+          python -m pytest
+          tests/test_options_sparse_selector_runtime.py
+          tests/test_private_auth_dict.py -q -rs
+      - name: inert sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
+        run: >-
+          SPARSE_SELECTOR_PERF=1 python -m pytest
+          tests/test_options_sparse_selector_runtime.py::test_4096_candidate_benchmark
+          -q -rs
       - name: options signal campaign v2 (immutable revisions, causal anchors, exact checkpoint)
         run: python -m pytest tests/test_options_signal_campaign.py -q
       - name: MSC R2.2-A Light U-CHAIN packets + monotonic R2 discovery publication
@@ -1510,8 +1520,14 @@ jobs:
       # the day it landed. It belongs in THIS job rather than a new one: the subject
       # is a China native collector reading collectors/tushare_client, and the deps
       # above already carry pandas + requests for exactly that client.
+      # tests/test_china_tushare_range_shards.py joins this step in the SAME breath as
+      # the library it covers, rather than a release later: the range-shard campaign is
+      # the cap fallback the spine now delegates to, so leaving it unnamed here would
+      # reproduce the exact hole this step's comment is about — 1,057 lines of leaf
+      # state, immutable attempt receipts and BSE alias blocking running dark from the
+      # day they landed. Both suites are synthetic and network-free.
       - name: china full-A spine collector + manifest contract (#5116)
-        run: python -m pytest tests/test_china_tushare_spine.py -q
+        run: python -m pytest tests/test_china_tushare_spine.py tests/test_china_tushare_range_shards.py -q
       # The three TuShare takeover suites (lane A #5177 add-ons, lane B #5163
       # minutes, lane C #5162 chips). Same WIRING LAW as every step above, same
       # hole: none of the three lanes named its suite in any run: step, so 144
@@ -1794,6 +1810,17 @@ jobs:
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
+      # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
+      # the two steps above are: its subject IS .github/workflows/ — specifically the
+      # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
+      # DST pair, which is why CN self-heals a lost fire and the US lane lost two whole
+      # sessions on 2026-08-11/12. The backstop is an ACTOR, so its suite is mostly the
+      # cases where it must NOT fire; test_primary_still_has_only_the_dst_pair reds if
+      # daily.yml ever grows its own backstop crons and this lane becomes double-firing.
+      - name: nightly backstop selftest (scripts/nightly_backstop.py)
+        run: python3 scripts/nightly_backstop.py --selftest
+      - name: nightly backstop dispatch rule (must never fire over a live run)
+        run: python -m pytest tests/test_nightly_backstop.py -q
       # The terminal CI handoff (`mastermind.ci_handoff.v1`) — the rule deciding WHEN a
       # worker stops. Same subject as the packing step above: the sweeper that step
       # already pins via tests/test_merge_on_green.py is the party that owns the merge
@@ -2439,6 +2466,21 @@ jobs:
         run: python -m pytest tests/test_qledger_validity.py -q
       - name: qledger metric-validity guard selftest
         run: python scripts/check_qledger_metric_validity.py --selftest
+      # V1 ENFORCEMENT at the emitter. The two steps above prove the CONTRACT
+      # (engine/qledger_validity.py) is correct; this one proves engine.qledger
+      # ._aggregate — the single chokepoint feeding site/qledger/track_record.json
+      # and, via scripts/grade_qledger.compute_promotion_readiness, the admin
+      # Experiments tab — actually OBEYS it, and that a legal single-direction
+      # family is unchanged.
+      # PLACEMENT (run_ci_pack.py returns on the first non-zero step): deliberately
+      # LAST in this job. Placing it above the two metric-validity steps would let a
+      # break in the enforcement mask the contract's own verdict, which is the
+      # upstream authority; in the reverse order a red contract masks this step, and
+      # that is correct — an enforcement result is uninformative while the rule it
+      # enforces is itself red. It sits with the other _aggregate step (the
+      # cluster-honest CI test) in the same job, so it can never ship dark.
+      - name: qledger V1 excess-legality gate at the emitter
+        run: python -m pytest tests/test_qledger_excess_legality.py -q
 
   altdata-new-sources:
     if: ${{ false }}
@@ -2500,7 +2542,11 @@ jobs:
       - name: install minimal deps
         # pyyaml: engine.factor_exposure loads the W6.1 factor-model charter (YAML) at
         # import, so the test modules need it at collection time (was ModuleNotFoundError).
-        run: pip install pytest pandas numpy pyarrow pyyaml
+        # markupsafe: engine.i18n imports Markup at module scope, and the sector-i18n
+        # suite below imports engine.i18n for the glossary half. jinja2: that same suite
+        # renders the ONE shipped template line that publishes window.WL_SECTOR_ZH, to
+        # prove an undefined context still emits `{}` rather than a bare `=`.
+        run: pip install pytest pandas numpy pyarrow pyyaml markupsafe jinja2
       - name: risk_core.js math — §7 sanity anchors + structural invariants
         run: python -m pytest tests/test_risk_core_js.py -q
       - name: watchlist_risk.js chain lane — node-shelled helper tests (TXI W4)
@@ -2522,6 +2568,15 @@ jobs:
       # read-side guard that stops a focus refetch from reverting a just-made edit.
       - name: watchlist workspace — entry parser, stage map, focus-refetch guard (W2)
         run: python -m pytest tests/test_watchlist_workspace_js.py -q
+      # Sector names are the one label on this page with no zh twin in the source:
+      # they arrive as raw English on stockdata/index.json and are painted
+      # client-side, so they rendered in English under data-lang="zh" while
+      # everything around them switched. Nothing raises when that regresses — an
+      # untranslated name renders perfectly — so the guard covers all four ways it
+      # goes quiet: a taxonomy the glossary has gone blind to, the build not
+      # handing the map over, the lookup itself, and a print site that bypasses it.
+      - name: watchlist sector names — glossary, build wiring, print sites (zh)
+        run: python -m pytest tests/test_watchlist_sector_i18n.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 
@@ -2694,6 +2749,17 @@ jobs:
         run: python3 scripts/check_validated_claims.py --selftest
       - name: no unearned 'validated' claims in user-facing surfaces
         run: python3 scripts/check_validated_claims.py
+      # design.system_ratchet (R0, REPORT-ONLY — always exits 0). Hosted here and
+      # not in a job of its own for two reasons: a 181st manifest entry reds the
+      # ci_pack narrow-diff ceiling, and this job ALREADY owns templates/** in the
+      # derived scope, so the step costs the selector nothing. The checker is
+      # stdlib-only, hence no pip install. R1 (blocking) is a later PR that flips
+      # the registry severity AND swaps `--mode report` for `--mode enforce
+      # --registry data/...` in lockstep — never one without the other.
+      - name: design-system ratchet selftest (each rule fires on its own fixture)
+        run: python3 scripts/check_design_system.py --self-check
+      - name: design-system ratchet R0 (report-only drift census over templates/)
+        run: python3 scripts/check_design_system.py --mode report
 
   template-site-sync:
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate; see the ci-pack job.
@@ -2966,7 +3032,8 @@ jobs:
           # when agentos/ is outside a sparse cone, so a store that failed to check
           # out would otherwise pass as a skip. This line cannot skip.
           python3 scripts/agentos.py validate
-          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py -q
+          python -m pytest tests/test_agentos_schema.py tests/test_agentos_status.py \
+            tests/test_agentos_compile.py -q
 
   capability-broker:
     if: ${{ false }}
@@ -5598,7 +5665,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps plus the schema/API wheels
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema fastapi httpx2
       # Wave 9D: the admissibility fences on issuer graph expansion — exact
       # identifier + verbatim Exhibit 21 name only, no discovery_query_ticker, no
       # similarity, no LLM assertion; PIT; the proposed-edge-cannot-become-a-
@@ -5653,7 +5720,7 @@ jobs:
       # fixtures grew beyond this legacy lane's original eight-minute budget,
       # and keeping them here made the entire ownership lane time out.
       - name: award-event spine, candidates, entity + workspace contracts
-        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
+        run: python -m pytest tests/test_government_revenue.py tests/test_government_revenue_award_events.py tests/test_government_revenue_award_spine.py tests/test_government_revenue_api.py tests/test_government_revenue_api_auth.py tests/test_government_revenue_budget_graph.py tests/test_government_revenue_candidates.py tests/test_government_revenue_contracts.py tests/test_government_revenue_entity_resolution.py tests/test_government_revenue_freshness.py tests/test_government_revenue_idv_bridge.py tests/test_government_revenue_idv_dossiers.py tests/test_government_revenue_neuralweb.py tests/test_government_revenue_opportunities.py tests/test_government_revenue_recipient_graph.py tests/test_government_revenue_subaward_dossiers.py tests/test_government_revenue_wave8_api.py tests/test_government_revenue_workspace.py tests/test_usaspending_idv_graph.py -q
       # Recipient->issuer attribution: the Wave 9D discovery tool that proposes
       # candidates for the reviewed graph. Named by NO run: step until 2026-08-06 —
       # the proposal tool's 60 tests could not go red on main, which is the same
@@ -6217,6 +6284,19 @@ jobs:
       # segregation gate the moment it does.
       - name: force-majeure outage backfill (segregation both ways, nightly passthrough, collision rule, idempotence)
         run: python -m pytest tests/test_prophet_outage_backfill.py -q
+      # Force-majeure 2026-08-11 outage RECONSTRUCTION (operator 2026-08-13). A STEP in
+      # this job rather than a job of its own: it shares this job's import closure and
+      # its whole point is that the two windows are checked together — the segregation
+      # law above now reads a REGISTRY of chartered windows built from both lanes'
+      # constants, so splitting them across jobs would let one half go green against a
+      # registry the other half had already widened.
+      #
+      # What is pinned here and nowhere else: the price truncation (a poisoned 2026-08-12
+      # bar must not reach the tree the board builder reads, and the fence that re-proves
+      # it must fire when one is planted), the chronology refusal, and the pinned
+      # pre-#5370 code vintage. The tests are pure — no board is built in CI.
+      - name: force-majeure outage reconstruction 2026-08-11 (price truncation, chronology, pinned vintage)
+        run: python -m pytest tests/test_prophet_outage_backfill_20260811.py -q
       # The user-facing half of the same feature (#5301): the plain-word EN/ZH chip,
       # receipt and footnote a reconstructed plan carries, plus the record split.
       # Wired HERE, with the lane that mints those plans, and wired at all because it
@@ -6919,6 +6999,16 @@ jobs:
         run: python -m pytest tests/test_signup_email_validation.py -q
       - name: shared-GitHub-quota hook — the guard that keeps polling loops off the REST pool
         run: python -m pytest tests/test_gh_quota_guard.py -q
+      # 2026-08-14 — the Prophet US rescue lane, registered HERE rather than in a new
+      # job because the legacy-jobs manifest sits at the narrow-diff ceiling and a
+      # 181st entry reds it. Same family as the two above: a subprocess/path-string
+      # guard whose subject the import-derived auditor cannot see, so it would arrive
+      # DARK by default — the exact leak this job is named after. It reaches its
+      # subject by loading scripts/prophet_rescue.py through importlib from a path
+      # literal, and it carries the four mutation-pinned dispatch-safety invariants
+      # (§0.4 a-d) plus the no-stop-a-run AST pin; unrun, all of that is decoration.
+      - name: prophet rescue lane — pure decide() matrix + the four dispatch-safety pins
+        run: python -m pytest tests/test_prophet_rescue.py -q
 
   # ── THE HK BOARD PAIR — BORN DARK EIGHT DAYS AFTER THE CENSUS (2026-08-05) ──
   # tests/test_hk_board_rank.py (163 tests) + tests/test_hk_board_ui.py landed
@@ -7613,6 +7703,14 @@ jobs:
         run: pip install pytest pyyaml
       - name: page registry — committed-JSON drift guard + derivation contracts
         run: TZ=UTC python -m pytest tests/test_build_product_page_registry.py -q
+      # DS-PR-1 suites, appended rather than given their own manifest entry: a
+      # 181st job reds tests/test_ci_pack.py's narrow-diff ceiling, and both
+      # suites' scopes (templates/**, the registry builder, the committed JSON)
+      # are already inside this job's honestly-broad derived scope.
+      - name: design-system — registry schema + archetype vocabulary
+        run: TZ=UTC python -m pytest tests/test_page_registry_design_system.py -q
+      - name: design-system — ratchet rules, modes and annotation shape
+        run: TZ=UTC python -m pytest tests/test_check_design_system.py -q
 
   product-experience-capture:
     if: ${{ false }}

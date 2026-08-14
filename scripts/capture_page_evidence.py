@@ -19,7 +19,12 @@ Contract
    artifacts by construction.
 2. **A state that could not be captured is recorded, never omitted and never
    faked.** Loading/empty/stale/error page states are gaps with a reason; a page
-   that 404s or times out is ``captured: false`` with the error text.
+   that 404s or times out is ``captured: false`` with the error text. ``--force-state``
+   (opt-in, off by default) can put the *presentation* of one of those states on
+   screen by toggling the class or attribute the page's own CSS keys it off — and
+   is labelled as exactly that everywhere it appears, because a forced class shows
+   the state's styling, not data the page really returned. The gap row stays; it
+   flips to ``captured: true`` with the forcing named.
 3. **No browser is never a pass.** ``playwright`` is imported lazily inside
    ``playwright_page_driver``; a missing library or chromium binary raises
    ``CaptureUnavailable`` and the CLI exits nonzero with outcome
@@ -66,6 +71,8 @@ Usage::
     python3 scripts/capture_page_evidence.py --site-dir site --priority P0 --repo macro
     python3 scripts/capture_page_evidence.py --base-url https://www.mastermind-x.com \\
         --routes /index.html --viewports desktop --themes light,dark --max-pages 1
+    python3 scripts/capture_page_evidence.py --site-dir site --routes /macro.html \\
+        --force-state "empty:.is-empty" --force-state "error:[data-state=error]"
 """
 
 from __future__ import annotations
@@ -76,6 +83,7 @@ import hashlib
 import http.server
 import json
 import os
+import re
 import socketserver
 import struct
 import sys
@@ -123,6 +131,25 @@ GATED_ACCESS_STATES: tuple[str, ...] = ("free", "essential", "pro")
 GATED_ACCESS_REASON = "requires authenticated session; not automatable without approved fixtures"
 SYNTHETIC_PAGE_STATES: tuple[str, ...] = ("loading", "empty", "stale", "error")
 SYNTHETIC_PAGE_STATE_REASON = "state not synthesizable against static output"
+
+# Forced presentation states (opt-in, --force-state). A migration packet must ship
+# loading/empty/stale/error shots, and against static output the DATA path cannot
+# be driven — but the PRESENTATION usually can, because the estate keys those
+# states off a class or a data-attribute. So this forces the hook and says so: the
+# capture is labelled a forced presentation in the state row, in the gap row, and
+# in the file name, and never claims the page's own data path ran.
+FORCE_STATE_NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]*$")
+FORCE_STATE_CLASS_RE = re.compile(r"^\.?([A-Za-z_-][A-Za-z0-9_-]*)$")
+FORCE_STATE_ATTR_RE = re.compile(r"""^\[([A-Za-z_:][-A-Za-z0-9_:.]*)(?:=["']?([^"'\]]*)["']?)?\]$""")
+FORCE_STATE_SYNTAX = (
+    'expected NAME:TARGET, where NAME is a lowercase slug (it becomes a file-name '
+    'suffix) and TARGET is a class (".is-empty" or "is-empty") or an attribute '
+    'selector ("[data-state=empty]" or "[data-empty]")'
+)
+FORCE_STATE_REASON = (
+    "captured by forced presentation; the page's own data path was not exercised, "
+    "so the shot shows this state's styling, not content the page really returned"
+)
 
 # A family row stands for many concrete URLs (per-ticker analyzers, per-slug
 # dossiers). Capturing "the family" is meaningless, so a family is skipped unless
@@ -219,6 +246,71 @@ class RegistryError(RuntimeError):
 
 
 @dataclass(frozen=True)
+class ForceState:
+    """One forced presentation state: a label plus the hook that turns it on."""
+
+    name: str
+    kind: str  # "class" | "attribute"
+    value: str  # the class name, or the attribute value ("" for a bare attribute)
+    attribute: str | None = None
+    spec: str = ""  # the raw CLI token, echoed into the manifest verbatim
+
+    def as_payload(self) -> dict[str, Any]:
+        """The shape handed to the browser and written into the manifest axes."""
+
+        return {
+            "name": self.name,
+            "kind": self.kind,
+            "value": self.value,
+            "attribute": self.attribute,
+            "spec": self.spec,
+        }
+
+
+def parse_force_state(raw: str) -> ForceState:
+    """Parse one ``NAME:TARGET`` token, or raise with the syntax spelled out."""
+
+    token = raw.strip()
+    # partition() splits on the FIRST colon only, so a target may contain one.
+    name, separator, target = token.partition(":")
+    name = name.strip().lower()
+    target = target.strip()
+    if not separator or not name or not target:
+        raise argparse.ArgumentTypeError(f"--force-state {token!r}: {FORCE_STATE_SYNTAX}")
+    if not FORCE_STATE_NAME_RE.match(name):
+        raise argparse.ArgumentTypeError(f"--force-state {token!r}: {name!r} is not a usable name; {FORCE_STATE_SYNTAX}")
+    attribute = FORCE_STATE_ATTR_RE.match(target)
+    if attribute is not None:
+        # A bare ``[data-empty]`` sets the attribute to "", which is exactly how a
+        # boolean HTML attribute is spelled.
+        return ForceState(
+            name=name, kind="attribute", value=attribute.group(2) or "", attribute=attribute.group(1), spec=token
+        )
+    css_class = FORCE_STATE_CLASS_RE.match(target)
+    if css_class is not None:
+        return ForceState(name=name, kind="class", value=css_class.group(1), attribute=None, spec=token)
+    raise argparse.ArgumentTypeError(f"--force-state {token!r}: {target!r} is neither a class nor an attribute; {FORCE_STATE_SYNTAX}")
+
+
+def parse_force_states(raw_values: Sequence[str]) -> tuple[ForceState, ...]:
+    """Parse every ``--force-state``. A repeated NAME is an error, not last-wins."""
+
+    parsed: list[ForceState] = []
+    seen: dict[str, str] = {}
+    for raw in raw_values:
+        state = parse_force_state(raw)
+        if state.name in seen:
+            raise argparse.ArgumentTypeError(
+                f"--force-state {state.name!r} was given twice ({seen[state.name]!r} and "
+                f"{state.spec!r}); one name is one file-name suffix, so the second would "
+                "silently overwrite the first"
+            )
+        seen[state.name] = state.spec
+        parsed.append(state)
+    return tuple(parsed)
+
+
+@dataclass(frozen=True)
 class CaptureCell:
     """One capture cell: a page plus the exact state to put it in."""
 
@@ -230,10 +322,14 @@ class CaptureCell:
     locale: str
     theme: str
     access: str = ACCESS_ANONYMOUS
+    force_state: ForceState | None = None
 
     @property
     def cell_id(self) -> str:
-        return f"{self.page_id}|{self.viewport}|{self.locale}|{self.theme}|{self.access}"
+        base = f"{self.page_id}|{self.viewport}|{self.locale}|{self.theme}|{self.access}"
+        # The rest state keeps its historical id; only a forced cell is suffixed, so
+        # adding this feature renamed no cell that already existed.
+        return base if self.force_state is None else f"{base}|{self.force_state.name}"
 
 
 @dataclass(frozen=True)
@@ -256,6 +352,10 @@ class CellObservation:
     payload_bytes_total: int = 0
     applied_theme: str | None = None
     applied_locale: str | None = None
+    # The forced state the driver could actually confirm on the element, or None.
+    # A page that strips the hook is disclosed, never filed under a state it never
+    # entered — the same discipline the theme/locale mismatch gap already applies.
+    applied_force_state: str | None = None
 
 
 class PageDriver(Protocol):
@@ -630,8 +730,14 @@ def state_matrix(
     viewports: Sequence[str],
     locales: Sequence[str],
     themes: Sequence[str],
+    force_states: Sequence[ForceState] = (),
 ) -> tuple[list[CaptureCell], list[dict[str, Any]]]:
-    """Expand one row into cells, and record the axes the registry excludes as gaps."""
+    """Expand one row into cells, and record the axes the registry excludes as gaps.
+
+    Forced states multiply the matrix rather than replacing it: every
+    viewport/locale/theme yields the page at rest plus one cell per forced state.
+    With no ``--force-state`` the matrix is byte-identical to what it always was.
+    """
 
     gaps: list[dict[str, Any]] = []
 
@@ -667,36 +773,55 @@ def state_matrix(
         width, height = VIEWPORTS[viewport]
         for locale in use_locales:
             for theme in use_themes:
-                cells.append(
-                    CaptureCell(
-                        page_id=str(row["page_id"]),
-                        route=str(row["capture_route"]),
-                        viewport=viewport,
-                        width=width,
-                        height=height,
-                        locale=locale,
-                        theme=theme,
+                for force_state in (None, *force_states):
+                    cells.append(
+                        CaptureCell(
+                            page_id=str(row["page_id"]),
+                            route=str(row["capture_route"]),
+                            viewport=viewport,
+                            width=width,
+                            height=height,
+                            locale=locale,
+                            theme=theme,
+                            force_state=force_state,
+                        )
                     )
-                )
     return cells, gaps
 
 
-def access_and_page_state_gaps() -> list[dict[str, Any]]:
-    """The states this tool refuses to fake. Recorded on every page, always."""
+def access_and_page_state_gaps(
+    forced_page_states: Mapping[str, str] | None = None,
+) -> list[dict[str, Any]]:
+    """The states this tool refuses to fake. Recorded on every page, always.
 
+    ``forced_page_states`` maps a page-state name to the ``--force-state`` spec that
+    ACTUALLY produced a shot for it on this page. Such a state keeps its row here
+    rather than disappearing from the ledger: it flips to ``captured: true`` with the
+    forcing named, because a forced class is the state's styling and not its data.
+    """
+
+    forced = dict(forced_page_states or {})
     gaps: list[dict[str, Any]] = [
         {"dimension": "access", "value": state, "captured": False, "reason": GATED_ACCESS_REASON}
         for state in GATED_ACCESS_STATES
     ]
-    gaps.extend(
-        {
-            "dimension": "page_state",
-            "value": state,
-            "captured": False,
-            "reason": SYNTHETIC_PAGE_STATE_REASON,
-        }
-        for state in SYNTHETIC_PAGE_STATES
-    )
+    for state in SYNTHETIC_PAGE_STATES:
+        spec = forced.get(state)
+        gaps.append(
+            {
+                "dimension": "page_state",
+                "value": state,
+                "captured": False,
+                "reason": SYNTHETIC_PAGE_STATE_REASON,
+            }
+            if spec is None
+            else {
+                "dimension": "page_state",
+                "value": state,
+                "captured": True,
+                "reason": f"{FORCE_STATE_REASON} (--force-state {spec})",
+            }
+        )
     return gaps
 
 
@@ -782,12 +907,24 @@ def _page_metrics(
 # ---------------------------------------------------------------------------
 
 
-def write_screenshot(png: bytes, output_dir: Path) -> tuple[Path, str]:
-    """Content-address the bytes. Identical states across pages share one file."""
+def screenshot_name(digest: str, state_suffix: str | None = None) -> str:
+    """The one place the evidence file-name format lives. Readers reuse it."""
+
+    stem = digest[:16] if not state_suffix else f"{digest[:16]}--{state_suffix}"
+    return f"{stem}.png"
+
+
+def write_screenshot(png: bytes, output_dir: Path, *, state_suffix: str | None = None) -> tuple[Path, str]:
+    """Content-address the bytes. Identical states across pages share one file.
+
+    A forced-state shot carries its state name in the file (``<sha>--empty.png``) so
+    a reviewer can tell the four required state shots apart in a directory listing
+    without opening the manifest. The digest still addresses the bytes.
+    """
 
     digest = hashlib.sha256(png).hexdigest()
     output_dir.mkdir(parents=True, exist_ok=True)
-    path = output_dir / f"{digest[:16]}.png"
+    path = output_dir / screenshot_name(digest, state_suffix)
     if not path.exists():
         path.write_bytes(png)
     return path, digest
@@ -815,6 +952,7 @@ def run_capture(
     target: Mapping[str, Any],
     excluded: Sequence[Mapping[str, str]] = (),
     selection: Mapping[str, Any] | None = None,
+    force_states: Sequence[ForceState] = (),
 ) -> dict[str, Any]:
     """Drive every cell of every row sequentially. Returns manifest + smell payloads."""
 
@@ -826,8 +964,14 @@ def run_capture(
     written_pngs: set[str] = set()
 
     for row in rows:
-        cells, axis_gaps = state_matrix(row, viewports=viewports, locales=locales, themes=themes)
-        gaps: list[dict[str, Any]] = list(axis_gaps) + access_and_page_state_gaps()
+        cells, axis_gaps = state_matrix(
+            row, viewports=viewports, locales=locales, themes=themes, force_states=force_states
+        )
+        gaps: list[dict[str, Any]] = list(axis_gaps)
+        # Which forced states this page actually got a shot for. Filled by the loop
+        # and only then turned into gap rows: a page that failed to load forced
+        # nothing, and must not claim it did.
+        forced_captured: dict[str, str] = {}
         states: list[dict[str, Any]] = []
         captured: list[tuple[CaptureCell, CellObservation]] = []
         # Deduped per page in first-seen order: the same error from two assets is
@@ -848,6 +992,9 @@ def run_capture(
                 "access": cell.access,
                 "viewport_width": cell.width,
                 "viewport_height": cell.height,
+                # null on the page at rest; the state's name on a forced shot, so a
+                # reader never has to infer which row is the forced one.
+                "force_state": None if cell.force_state is None else cell.force_state.name,
             }
             if page_failure is not None:
                 entry.update(
@@ -904,7 +1051,8 @@ def run_capture(
                 states.append(entry)
                 continue
 
-            path, digest = write_screenshot(png, output_dir)
+            suffix = None if cell.force_state is None else cell.force_state.name
+            path, digest = write_screenshot(png, output_dir, state_suffix=suffix)
             written_pngs.add(path.name)
             dimensions = _png_dimensions(png)
             entry.update(
@@ -919,6 +1067,26 @@ def run_capture(
                     "applied_locale": observation.applied_locale,
                 }
             )
+            if cell.force_state is not None:
+                entry["applied_force_state"] = observation.applied_force_state
+                if observation.applied_force_state == cell.force_state.name:
+                    forced_captured[cell.force_state.name] = cell.force_state.spec
+                else:
+                    # The hook never took. The shot exists, but it is the page at
+                    # rest wearing a forced-state file name, so say so instead of
+                    # letting the file name assert a state nobody saw.
+                    gaps.append(
+                        {
+                            "dimension": "force_state_application",
+                            "value": cell.force_state.name,
+                            "captured": True,
+                            "reason": (
+                                f"--force-state {cell.force_state.spec} did not take on "
+                                f"{cell.viewport}/{cell.locale}/{cell.theme}; the driver "
+                                f"confirmed {observation.applied_force_state!r}"
+                            ),
+                        }
+                    )
             if observation.applied_theme not in (None, cell.theme) or observation.applied_locale not in (
                 None,
                 cell.locale,
@@ -939,7 +1107,17 @@ def run_capture(
             states.append(entry)
             captured.append((cell, observation))
 
-        metrics = _page_metrics(captured, attempted=len(cells), console_errors=console_entries)
+        # Forced shots are evidence, never census input: a forced-empty page would
+        # drag visible_word_count and section_count away from what the page actually
+        # renders. Metrics are measured on the rest cells only, and
+        # screenshot_completion counts rest cells only so an unforced run's numbers
+        # are unchanged by the presence of this flag.
+        rest_captured = [pair for pair in captured if pair[0].force_state is None]
+        rest_attempted = sum(1 for cell in cells if cell.force_state is None)
+        metrics = _page_metrics(
+            rest_captured, attempted=rest_attempted, console_errors=console_entries
+        )
+        gaps.extend(access_and_page_state_gaps(forced_captured))
         page_payload = {
             "page_id": row["page_id"],
             "route": row["capture_route"],
@@ -985,6 +1163,7 @@ def run_capture(
             "locales": list(locales),
             "themes": list(themes),
             "access": [ACCESS_ANONYMOUS],
+            "force_states": [state.as_payload() for state in force_states],
         },
         "selection": dict(selection or {}),
         "excluded": [dict(item) for item in excluded],
@@ -1001,6 +1180,12 @@ def run_capture(
         },
         "pages": manifest_pages,
     }
+    if force_states:
+        manifest["honesty"]["force_states"] = (
+            "a forced state is a class/attribute toggled on <body> before the shot: it "
+            "shows that state's styling, not data the page returned; metrics are measured "
+            "on the rest cells only, and a hook that did not take is recorded as a gap"
+        )
 
     smells = {
         "schema": SMELL_SCHEMA,
@@ -1129,6 +1314,25 @@ _APPLY_STATE_SCRIPT = """
     theme: docEl.getAttribute('data-theme'),
     locale: docEl.getAttribute('data-lang') || 'en',
   };
+}
+"""
+
+# Applied AFTER theme/locale and immediately before the observer and the shot. The
+# forcing is deliberately the smallest thing that works — one class added, or one
+# attribute set, on <body> — because anything cleverer (deleting nodes, faking a
+# fetch) would be this tool synthesizing content, which it does not do. The script
+# reads the hook back off the element and reports what it could confirm, so a page
+# that strips or ignores it is disclosed instead of silently mislabelled.
+_FORCE_STATE_SCRIPT = """
+(force) => {
+  const el = document.body || document.documentElement;
+  if (!el) { return {applied: null}; }
+  if (force.kind === 'class') {
+    el.classList.add(force.value);
+    return {applied: el.classList.contains(force.value) ? force.name : null};
+  }
+  el.setAttribute(force.attribute, force.value);
+  return {applied: el.getAttribute(force.attribute) === force.value ? force.name : null};
 }
 """
 
@@ -1358,6 +1562,13 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
             page.wait_for_timeout(self._settle_ms)
             applied = page.evaluate(_APPLY_STATE_SCRIPT.strip(), state) or {}
             page.wait_for_timeout(self._settle_ms)
+            applied_force: str | None = None
+            if cell.force_state is not None:
+                forced = page.evaluate(_FORCE_STATE_SCRIPT.strip(), cell.force_state.as_payload()) or {}
+                applied_force = forced.get("applied")
+                # The state's own transition has to finish before the shot, or the
+                # screenshot catches the page mid-fade.
+                page.wait_for_timeout(self._settle_ms)
             observed = page.evaluate(_OBSERVER_SCRIPT.strip(), dict(self._observer_config)) or {}
             screenshot = page.screenshot(full_page=True)
             return CellObservation(
@@ -1371,6 +1582,7 @@ class _PlaywrightDriver:  # pragma: no cover - needs a browser
                 payload_bytes_total=int(counters["bytes"]),
                 applied_theme=applied.get("theme"),
                 applied_locale=applied.get("locale"),
+                applied_force_state=applied_force,
             )
         except Exception as exc:
             return _failed(f"{type(exc).__name__}: {exc}")
@@ -1411,10 +1623,16 @@ class _SelfCheckDriver:
     """Canned observations. Opens no browser, no socket, no page."""
 
     def capture(self, *, url: str, cell: CaptureCell, timeout_s: float) -> CellObservation:
+        fill = 7 if cell.theme == "dark" else 240
+        if cell.force_state is not None:
+            # A forced state must produce DIFFERENT bytes, or the suffix assertions
+            # below would pass against a file the rest-state shot already wrote and
+            # prove nothing about forced capture.
+            fill = (fill + 1 + sum(ord(char) for char in cell.force_state.name)) % 251
         return CellObservation(
             cell_id=cell.cell_id,
             loaded=True,
-            screenshot_png=_tiny_png(4, 3, 7 if cell.theme == "dark" else 240),
+            screenshot_png=_tiny_png(4, 3, fill),
             observed={
                 "document_height_px": 3200,
                 "section_count": 6,
@@ -1442,6 +1660,7 @@ class _SelfCheckDriver:
             payload_bytes_total=812_345,
             applied_theme=cell.theme,
             applied_locale=cell.locale,
+            applied_force_state=None if cell.force_state is None else cell.force_state.name,
         )
 
 
@@ -1626,6 +1845,149 @@ def self_check() -> tuple[bool, dict[str, Any]]:
                         f"{name}: manifest digest {state['sha256'][:16]} does not match the bytes on disk"
                     )
 
+        # ---- forced presentation states -----------------------------------
+        # A third run, forced. The two runs above stay unforced so the
+        # byte-reproducibility comparison keeps testing what it always did, and
+        # this one is compared against them: the flag has to ADD evidence without
+        # moving a single census number.
+        forced_states = parse_force_states(["empty:.is-empty", "focus:[data-probe=focus]"])
+        forced_dir = root / "evidence_forced"
+        forced_payload = run_capture(
+            rows=rows,
+            driver=_SelfCheckDriver(),
+            base_url="http://127.0.0.1:0",
+            output_dir=forced_dir,
+            manifest_dir=root,
+            viewports=("desktop", "mobile"),
+            locales=("en", "zh"),
+            themes=("light", "dark"),
+            delay_ms=0,
+            timeout_s=5,
+            generated_at="2026-01-01T00:00:00Z",
+            target={
+                "kind": "self_check",
+                "base_url": None,
+                "site_dir": None,
+                "resolved_sha_or_none": None,
+                "resolved_gitdir_or_none": None,
+            },
+            selection={"mode": "registry", "priority": "P0", "repo": "macro"},
+            force_states=forced_states,
+        )
+        forced_manifest = forced_payload["manifest"]
+
+        expected_states = manifest["totals"]["states_attempted"] * (1 + len(forced_states))
+        if forced_manifest["totals"]["states_attempted"] != expected_states:
+            findings.append(
+                f"forcing 2 states over {manifest['totals']['states_attempted']} cells should "
+                f"attempt {expected_states} states, got {forced_manifest['totals']['states_attempted']}"
+            )
+        if forced_manifest["totals"]["states_captured"] != expected_states:
+            findings.append("the canned driver captures every cell, but a forced cell was not captured")
+
+        # Captured rows only: a run whose driver returned nothing has no ``file`` to
+        # read, and the totals check above already recorded that failure. This
+        # degrades to a finding rather than a KeyError.
+        forced_rows = [
+            state
+            for page in forced_manifest["pages"]
+            for state in page["states"]
+            if state.get("force_state") and state.get("captured")
+        ]
+        if not forced_rows:
+            findings.append(
+                "not one captured state row carried a force_state, so every forced-state "
+                "assertion below would pass vacuously"
+            )
+        for state in forced_rows:
+            name = state["force_state"]
+            if state.get("applied_force_state") != name:
+                findings.append(f"forced state {name!r} was not confirmed applied by the driver")
+            file_name = Path(state["file"]).name
+            if f"--{name}.png" not in file_name:
+                findings.append(f"forced shot {file_name!r} does not carry its --{name} suffix")
+            if file_name != screenshot_name(state["sha256"], name):
+                findings.append(f"forced shot {file_name!r} is not addressed by its own content + state")
+        # The rest rows must keep the unsuffixed name, or the suffix check above
+        # would be satisfied by suffixing everything.
+        for page in forced_manifest["pages"]:
+            for state in page["states"]:
+                if state.get("force_state") or not state.get("captured"):
+                    continue
+                file_name = Path(state["file"]).name
+                if file_name != screenshot_name(state["sha256"]):
+                    findings.append(f"rest shot {file_name!r} was renamed by the forced-state feature")
+        # Distinct bytes per state, or a forced shot would be the rest shot wearing
+        # a forced name.
+        for page in forced_manifest["pages"]:
+            by_cell: dict[tuple[str, str, str], set[str]] = {}
+            for state in page["states"]:
+                if not state.get("captured"):
+                    continue
+                key = (state["viewport"], state["locale"], state["theme"])
+                by_cell.setdefault(key, set()).add(state["sha256"])
+            for key, digests in by_cell.items():
+                if len(digests) != 1 + len(forced_states):
+                    findings.append(
+                        f"{page['page_id']} {key}: {len(digests)} distinct shots for "
+                        f"{1 + len(forced_states)} states — a forced shot duplicated another state"
+                    )
+        if set(forced_payload["written_pngs"]) != {
+            screenshot_name(state["sha256"], state.get("force_state"))
+            for page in forced_manifest["pages"]
+            for state in page["states"]
+            if state.get("captured")
+        }:
+            findings.append("the forced run's write ledger disagrees with the files its manifest names")
+
+        for page in forced_manifest["pages"]:
+            page_states = {gap["value"]: gap for gap in page["gaps"] if gap["dimension"] == "page_state"}
+            if set(page_states) != set(SYNTHETIC_PAGE_STATES):
+                findings.append(f"{page['page_id']}: forcing a state changed the page_state gap ledger")
+            empty = page_states.get("empty") or {}
+            if empty.get("captured") is not True or "empty:.is-empty" not in str(empty.get("reason")):
+                findings.append(
+                    f"{page['page_id']}: a forced 'empty' state did not flip its gap row to a "
+                    "captured forced presentation naming the spec"
+                )
+            for name in ("loading", "stale", "error"):
+                unforced = page_states.get(name) or {}
+                if unforced.get("captured") is not False or unforced.get("reason") != SYNTHETIC_PAGE_STATE_REASON:
+                    findings.append(f"{page['page_id']}: unforced state {name!r} lost its gap row")
+            # 'focus' is not one of the four synthesizable states, so it must not
+            # invent a page_state row for itself.
+            if "focus" in page_states:
+                findings.append(f"{page['page_id']}: a custom forced state invented a page_state gap row")
+
+        forced_metrics = {page["page_id"]: page["metrics"] for page in forced_manifest["pages"]}
+        for page in manifest["pages"]:
+            if forced_metrics.get(page["page_id"]) != page["metrics"]:
+                findings.append(
+                    f"{page['page_id']}: forced shots moved the census metrics; they are evidence, "
+                    "not measurements"
+                )
+
+        for bad in ("empty", "empty:", ":.is-empty", "empty:div > .x", "empty:[bad", "-empty:.x"):
+            try:
+                parse_force_state(bad)
+            except argparse.ArgumentTypeError:
+                continue
+            findings.append(f"--force-state accepted the malformed spec {bad!r}")
+        # A name is lower-cased on the way in, so one spelling is one file-name
+        # suffix. Without this, "Empty" and "empty" would be two files on Linux and
+        # one on macOS — the case-sensitivity split that reds CI and not the desk.
+        if parse_force_state("Empty:.is-empty").name != "empty":
+            findings.append("--force-state did not normalize a state name to lower case")
+        for duplicate in (["empty:.a", "empty:.b"], ["empty:.a", "Empty:.b"]):
+            try:
+                parse_force_states(duplicate)
+            except argparse.ArgumentTypeError:
+                continue
+            findings.append(f"--force-state accepted {duplicate!r}; the second would overwrite the first")
+        attribute = parse_force_state("locked:[data-locked]")
+        if attribute.kind != "attribute" or attribute.attribute != "data-locked" or attribute.value != "":
+            findings.append("a bare attribute target did not parse to an empty-valued attribute")
+
         markdown = render_markdown(payloads[0]["smells"])
         if MD_DISCLAIMER not in markdown:
             findings.append("markdown emitter dropped the disclaimer")
@@ -1643,6 +2005,8 @@ def self_check() -> tuple[bool, dict[str, Any]]:
         "access_captured": [ACCESS_ANONYMOUS],
         "access_gaps": {state: GATED_ACCESS_REASON for state in GATED_ACCESS_STATES},
         "page_state_gaps": {state: SYNTHETIC_PAGE_STATE_REASON for state in SYNTHETIC_PAGE_STATES},
+        "force_state_syntax": FORCE_STATE_SYNTAX,
+        "force_state_disclosure": FORCE_STATE_REASON,
         "metrics": list(METRIC_KEYS),
         "user_agent": USER_AGENT,
         "findings": findings,
@@ -1693,6 +2057,19 @@ def build_parser() -> argparse.ArgumentParser:
         "--observer-config", help="JSON file overriding panel selectors / probes / caps"
     )
     parser.add_argument("--headed", action="store_true", help="run the browser headed")
+    parser.add_argument(
+        "--force-state",
+        action="append",
+        default=[],
+        metavar="NAME:TARGET",
+        dest="force_state",
+        help=(
+            "repeatable; capture an extra shot per cell with a class/attribute forced "
+            'on <body>, e.g. --force-state "empty:.is-empty" '
+            '--force-state "error:[data-state=error]". Files gain a --NAME suffix. '
+            "This forces the state's STYLING, not its data, and is labelled as such."
+        ),
+    )
     parser.add_argument("--self-check", action="store_true", help="canned end-to-end proof; opens no browser")
     return parser
 
@@ -1721,6 +2098,7 @@ def main(
         viewports = _csv_list(args.viewports, tuple(VIEWPORTS), "--viewports")
         locales = _csv_list(args.locales, SUPPORTED_LOCALES, "--locales")
         themes = _csv_list(args.themes, SUPPORTED_THEMES, "--themes")
+        force_states = parse_force_states(args.force_state or ())
     except argparse.ArgumentTypeError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_USAGE
@@ -1866,6 +2244,7 @@ def main(
             target=target,
             excluded=excluded,
             selection=selection,
+            force_states=force_states,
         )
     finally:
         close = getattr(driver, "close", None)
