@@ -529,6 +529,7 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "data/smart_money/**",          # subtree-narrowed child of data/**
         "data/a/b/c/**",                # deeper subtree
         "*.json",                       # repository-root form, `*` is a trigger
+        "engine/*",                     # single-level subset of engine/**
     ):
         assert PACK.scope_pattern_is_startable(covered, triggers), covered
     for uncovered in (
@@ -536,6 +537,7 @@ def test_startability_accepts_only_provable_narrowings_of_a_trigger() -> None:
         "brand_new_root/**/*.json",     # narrowing an untriggerable tree
         "brand_new_root/deep/**",
         "site/**",                      # a real root that this filter omits
+        "app/*",                        # single-level, but app/** is not a trigger
     ):
         assert not PACK.scope_pattern_is_startable(uncovered, triggers), uncovered
 
@@ -1954,3 +1956,211 @@ def test_workspace_runtime_contracts_can_start_the_ci_that_validates_them() -> N
         "deeper, inside the engine module the test imports. Fix by adding "
         '- "contracts/government_revenue/**" to that paths list.'
     )
+
+
+# ---------------------------------------------------------------------------
+# CURATED `scope: exclusive` DECLARATIONS (2026-08-14 incident follow-up)
+#
+# The mechanism landed with one union-tier user and the incident's own handoff
+# left "heavy code-file fanout (engine module still selects ~121 jobs)" open.
+# These fixtures pin the curation that closed it. The load-bearing one is
+# test_curated_exclusive_scopes_cover_their_own_import_closure: exclusivity
+# SKIPS inference, so a declaration is a promise that nothing the job actually
+# imports lost its owner, and only a test that re-derives the closure and
+# compares can keep that promise honest as the tree moves.
+# ---------------------------------------------------------------------------
+
+CURATED_EXCLUSIVE = {
+    "unrun-government-revenue-grader",
+    "biocatalyst-worker",
+    "biocatalyst-serving",
+    "flow-surface",
+    "biocatalyst-history",
+    "unrun-subsector-themes",
+    "inline-js",
+    "unrun-picks-boards",
+}
+
+
+def _inferred_as_if_not_exclusive() -> dict[str, PACK.LegacyJob]:
+    """What inference WOULD derive for the curated jobs, exclusivity aside."""
+    jobs = [PACK.replace(job, exclusive=False)
+            for job in PACK.load_legacy_jobs(MANIFEST)]
+    inferred, _ = PACK.infer_job_scopes(jobs)
+    return {job.job_id: job for job in inferred}
+
+
+def test_the_curated_exclusive_set_is_actually_declared() -> None:
+    """The set this file pins must be the set the manifest declares."""
+    declared = {job.job_id for job in PACK.load_legacy_jobs(MANIFEST) if job.exclusive}
+    assert declared == CURATED_EXCLUSIVE, sorted(declared ^ CURATED_EXCLUSIVE)
+
+
+def test_curated_exclusive_scopes_cover_their_own_import_closure() -> None:
+    """Zero MISS: every file a curated job imports must still select it.
+
+    `scope: exclusive` REPLACES inference, so the declared paths are the whole
+    scope — a closure file with no matching pattern is a job that stops running
+    when its own dependency changes, and reports green forever. The manifest's
+    load-time coverage audit only reaches the paths a job's COMMANDS name; the
+    transitive import closure is one layer deeper and is checked here.
+    """
+    would_infer = _inferred_as_if_not_exclusive()
+    declared = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)
+                if job.exclusive}
+    misses: dict[str, list[str]] = {}
+    for job_id, job in sorted(declared.items()):
+        closure = [p for p in would_infer[job_id].paths if "*" not in p]
+        assert closure, f"{job_id} derives no closure — curation cannot be checked"
+        uncovered = [p for p in closure if not PACK._matches_any(job.paths, p)]
+        if uncovered:
+            misses[job_id] = uncovered[:8]
+    assert not misses, (
+        "curated exclusive scope(s) no longer cover their own import closure:\n  "
+        + "\n  ".join(f"{k}: {v}" for k, v in misses.items())
+        + "\n\nA new import reached a tree the declaration does not name, so that "
+        "job silently stopped running for edits to it. Widen the job's `paths:` "
+        "in .github/ci/legacy-jobs.yml to cover the listed files — widening is "
+        "always the safe direction."
+    )
+
+
+def test_curated_exclusivity_drops_only_the_opaque_fallback_tier() -> None:
+    """Every job the curation stops selecting was selected by smear, not evidence.
+
+    This is the whole safety argument for the wave: exclusivity removes the
+    opaque `site/**`-shaped claims a subprocess deep in the closure minted, and
+    removes nothing that named the changed file as a real dependency.
+    """
+    would_infer = _inferred_as_if_not_exclusive()
+    curated = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)
+               if job.exclusive}
+    probes = [
+        "templates/index.html",
+        "site/theme.css",
+        "engine/prophet/plan_book.py",
+        "scripts/build_free_content.py",
+    ]
+    owned_losses: list[str] = []
+    for job_id, job in sorted(curated.items()):
+        before = would_infer[job_id]
+        for probe in probes:
+            was = PACK._job_diff_match(before, [probe])
+            now = PACK._job_diff_match(job, [probe])
+            if was and not now and was[1] != "fallback":
+                owned_losses.append(f"{job_id} lost {probe} (tier={was[1]})")
+    assert not owned_losses, owned_losses
+
+
+def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
+    """The measured before/after this wave exists to produce.
+
+    Baselines on the pre-curation manifest (PR #5585 planner, 188 jobs):
+    templates/index.html 129 jobs / 6,677 weight-seconds; build_free_content.py
+    129 / 6,430; engine/prophet/plan_book.py 123 / 6,416. Bounds below carry
+    headroom so an unrelated job gaining or losing a scope does not red this,
+    while a regression that gives the fallback tier back to the curated eight
+    (~1,550 weight-seconds and three of twelve packs per shape) does.
+    """
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    for probe, max_jobs, max_weight in (
+        ("templates/index.html", 126, 5_800),
+        ("scripts/build_free_content.py", 126, 5_600),
+        ("engine/prophet/plan_book.py", 120, 5_600),
+    ):
+        selected, reason = PACK.select_jobs(jobs, [probe])
+        weight = sum(job.weight for job in selected)
+        assert len(selected) <= max_jobs, (probe, len(selected), reason)
+        assert weight <= max_weight, (probe, weight, reason)
+        # Runners are what the incident actually spends: build_plan derives the
+        # pack count from the SELECTED weight, so the weight cut above is a
+        # runner cut. Twelve packs per shape was the pre-curation measurement.
+        packs = max(1, min(12, -(-weight // PACK.PACK_TARGET_SECONDS)))
+        assert packs <= 10, (probe, packs, weight, reason)
+
+
+def test_inline_js_owns_the_rendered_tree_it_lints() -> None:
+    """`check_inline_js.py site templates` names both trees as BARE argv.
+
+    No `/` means SCOPE_REFERENCE_RE never saw a path, so this linter's real
+    subject lived only in the opaque fallback tier — one tier-split away from
+    a site edit silently not running the site linter. The declaration makes
+    that ownership explicit, which is a correctness fix, not a narrowing.
+    """
+    jobs = {job.job_id: job for job in PACK.load_legacy_jobs(MANIFEST)}
+    inline_js = jobs["inline-js"]
+    assert inline_js.exclusive
+    for probe in ("site/theme.css", "site/index.html", "templates/index.html"):
+        match = PACK._job_diff_match(inline_js, [probe])
+        assert match and match[1] == "declared", (probe, match)
+
+
+def test_exclusive_scope_replaces_inference_and_audits_coverage(tmp_path: Path) -> None:
+    """`scope: exclusive` is declared-wins: inference must not re-widen it.
+
+    And the coverage audit is FATAL for it: an exclusive job whose commands
+    name a file outside its declared paths must refuse to load — mis-declaring
+    narrow has to be loud, because the silent version is a guard that stops
+    running on the PRs that can break it.
+    """
+    workflow = tmp_path / "legacy.yml"
+    workflow.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/example/**"
+    steps:
+      - run: echo engine/example only
+  plain:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo unscoped
+""",
+        encoding="utf-8",
+    )
+    jobs = PACK.load_legacy_jobs(workflow)
+    curated = {job.job_id: job for job in jobs}["curated"]
+    assert curated.exclusive and curated.paths == ("engine/example/**",)
+    inferred, _ = PACK.infer_job_scopes(jobs)
+    curated_after = {job.job_id: job for job in inferred}["curated"]
+    assert curated_after.paths == ("engine/example/**",)
+    assert curated_after.fallback_paths == ()
+
+    bad = tmp_path / "bad.yml"
+    bad.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/example/**"
+    steps:
+      - run: python -m pytest tests/test_ci_pack.py -q
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(PACK.ManifestError, match="do not cover"):
+        PACK.load_legacy_jobs(bad)
+
+    empty = tmp_path / "empty.yml"
+    empty.write_text(
+        """
+jobs:
+  curated:
+    if: ${{ false }}
+    runs-on: ubuntu-latest
+    scope: exclusive
+    steps:
+      - run: echo no paths declared
+""",
+        encoding="utf-8",
+    )
+    with pytest.raises(PACK.ManifestError, match="scope: exclusive but no paths"):
+        PACK.load_legacy_jobs(empty)

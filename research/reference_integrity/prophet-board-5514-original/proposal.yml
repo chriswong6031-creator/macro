@@ -1,0 +1,218 @@
+# Proposal ledger — original Prophet Board mockup (PR #5514, FROZEN at 668e5954).
+# HONEST POST-HOC RECONSTRUCTION for the founding RIG fixture: dispositions recorded
+# exactly as the original artifact treated each baseline capability, with evidence
+# from the frozen files (evidence/original_668e595/). Where the original silently
+# dropped a capability, NO disposition row exists — that omission is the defect the
+# checker must derive (missing-disposition), not something this file papers over.
+# RIG V1 §5-§7 (research/REFERENCE_INTEGRITY_GATE_V1.md).
+schema: mastermind.rig_proposal.v1
+reference_id: prophet-board-5514-original
+
+proposed_artifact:
+  frozen_sha: 668e5954876f078755537605942c644fcbbb8a1d
+  source_pr: 5514
+  note: "original head — the active revision branch has since moved and is NOT this fixture"
+  paths:
+    - research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/index.html
+    - research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/board.css
+    - research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/board.js
+    - research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/board-data.js
+    - research/reference_integrity/prophet-board-5514-original/evidence/original_668e595/DESIGN_NOTES.md
+  screenshots:
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/01-desktop-dark-en.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/01-desktop-dark-en--full.png, viewport: desktop, theme: dark, locale: en, note: full-page rhythm}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/02-desktop-light-en.png, viewport: desktop, theme: light, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/03-desktop-dark-zh.png, viewport: desktop, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/04-mobile390-dark-en.png, viewport: mobile390, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/12-filtered-invalidated.png, viewport: desktop, theme: dark, locale: en, note: ladder-filter agreement}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/14-empty-dark-en.png, viewport: desktop, theme: dark, locale: en, note: empty state — Resolved still 17}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-original/proposal/16-multi-episode-en.png, viewport: desktop, theme: dark, locale: en, note: episode chips}
+
+# ── Dispositions, as the original artifact actually made them ──────────────────
+# Baseline ids with NO row here: card.live_quote, card.live_change,
+# card.priority_score, card.compact_glance_geometry, card.caution_popover —
+# all silently absent from the frozen card (board.js card() 218-285 renders none
+# of them; DESIGN_NOTES.md never mentions their fate). Implicit deletion.
+dispositions:
+  - id: card.chart_hero
+    disposition: REMOVE
+    rationale: >
+      spark_svg is a candidate-join enrichment covering 45/179 plan rows (25%); the
+      chart hero is dropped entirely rather than shown on a quarter of cards
+      (DESIGN_NOTES.md Q1, verbatim). Data-coverage-motivated removal.
+    # user_job_impact, superiority_case, approval_ref: ABSENT in the original.
+
+  - id: card.zone_chip
+    disposition: REMOVE
+    rationale: >
+      replaced by explicit plan-book execution geometry: Entry / T1 / Void money rows
+      in the card footer (board.js:275-282), sourced from fields every plan row carries
+      (DESIGN_NOTES.md Q1 card spine).
+    # superiority_case and approval_ref ABSENT: no receipt that explicit execution
+    # levels beat the compact zone abstraction on a glance surface; the terse-verb
+    # and paid-payload rulings point the other way.
+
+  - id: card.verb_hue_identity
+    disposition: REMOVE
+    rationale: >
+      "the card does NOT get a verb hue bar — a saturated colour at the card's head,
+      on a card whose primary classification is hue-free by law, would invite exactly
+      the 'lifecycle by colour' misread the ruling forbids" (DESIGN_NOTES.md §2.3).
+      Extends the lifecycle direction-neutrality ruling (which governs lifecycle marks)
+      to the card's entire color identity.
+    # approval_ref ABSENT: no ruling extends J9C/J10's mark-neutrality to deleting
+    # the stance-verb hue system, the zh direction flip, or the Featured cohort glow.
+
+  - id: card.stance_verb
+    disposition: RELOCATE
+    rationale: >
+      the ruling stance word is not rendered; the lifecycle fact column (cell word +
+      gloss, board.js:242-247) and the entry-window gloss stand in for it.
+    destination: "lifecycle fact column (Ready/Entered word + gloss)"
+    # reachability ABSENT: a lifecycle state is not a stance — Entered says where the
+    # plan is, not what the user should do; no proof the stance job is still served.
+
+  - id: card.stage_tracker
+    disposition: IMPROVE
+    rationale: >
+      the producer-less four-dot triage rail is removed ("No .pv-stp, no .pv-dot" —
+      DESIGN_NOTES.md §5) and replaced by the ruled 7-cell lifecycle: ladder cells +
+      the same .mx-cap weight geometry on every card (board.js:221-223), counts that
+      reconcile exactly (62+96+0+0+4=162), mutation-tested by tools/verify.py.
+    target: "count ladder + per-card lifecycle cap + fact column (ruling J9C/J10)"
+
+  - id: card.asof_stamp
+    disposition: RELOCATE
+    rationale: "per-card as-of replaced by board-level freshness + dated episode chips on multi-row names (board.js:257-264)"
+    destination: "board header .dtp/.pbs stamp; episode chips carry dates on multi-episode names"
+
+  - id: board.triage_shelves
+    disposition: IMPROVE
+    rationale: >
+      triage shelves survive as the Candidates section — a second population with its
+      own noun and form (pills, no caps), one printed total (69 = 28+27+10+2+2), two
+      shipped strings relabelled per the one-referent-per-page law (DESIGN_NOTES.md §4,
+      §4.1). The Setups/Candidates separation cures the count-vocabulary defect.
+    target: "Candidates section (§4) + count ladder for Setups"
+
+  - id: board.track_record_strip
+    disposition: RETAIN
+    target: "evidence & record section (P0 §B structure row 5)"
+
+# ── New on-card behaviors the original introduced (feed the authority audit) ───
+additions:
+  - id: add.what_to_do_prose
+    what: "multi-line what-to-do prose slot on every card (.pv-do, board.js:267, r.do_/do_zh)"
+    note: "re-introduces the card prose the operator killed 2026-08-03 ('not coming back')"
+  - id: add.window_position_ui
+    what: "'day X of N' / 'past its N-day window' on every card head (board.js:232-237)"
+  - id: add.entry_t1_void
+    what: "Entry / T1 / Void explicit money rows on every card (board.js:275-282)"
+  - id: add.episode_chips
+    what: "dated 'Episode N of M' chips on multi-row names (board.js:257-264)"
+
+# ── User-Task Regression Matrix (RIG §6) ───────────────────────────────────────
+user_tasks:
+  - id: task.glance_scan
+    task: scan the grid and shortlist the 2-3 most actionable names in seconds
+    critical: true
+    production: "verb pill + verb hue + chart shape + PRIORITY number: a grid scan is pre-attentive (hue/shape), ~2s per row"
+    proposal: "hue-free weight caps + lifecycle word + prose 'why' + three money rows: every card must be read"
+    verdict: WORSE
+    notes: "visual compression replaced by text; density law says dashboards are scanned, not read"
+
+  - id: task.price_now
+    task: know where price is now relative to the stated levels before acting
+    critical: true
+    production: "live quote + change on-card (live.js), beside the zone range"
+    proposal: "static nightly plan levels only; no live quote anywhere on the card"
+    verdict: WORSE
+
+  - id: task.momentum_context
+    task: detect chase/momentum context (what did this just do?)
+    critical: true
+    production: "live change pill + sparkline geometry"
+    proposal: "neither exists; 'past its 45-day window' is the only recency signal"
+    verdict: WORSE
+
+  - id: task.readiness_rank
+    task: judge which setups are most ready today
+    critical: true
+    production: "PRIORITY 0-100 printed with honest gloss; Featured cohort glow"
+    proposal: "priority survives only as invisible sort order (board.js:200); no printed value, no cohort cue"
+    verdict: WORSE
+
+  - id: task.lifecycle_position
+    task: know where each setup sits in its lifecycle, with counts that reconcile
+    critical: true
+    production: "4-stage rail with a producer-less state (known defect) + duplicated count vocabulary"
+    proposal: "ruled 7-cell lifecycle, exhaustive partition, ladder=filter, counts reconcile exactly, Resolved outside the live count"
+    verdict: BETTER
+
+  - id: task.population_truth
+    task: trust that the board's numbers describe one real population
+    critical: true
+    production: "'69 shown · 93 setups' beside five shelf counts — three count vocabularies"
+    proposal: "one canonical total (162), every setup integer a ladder value or difference; mutation-tested"
+    verdict: BETTER
+
+  - id: task.duplicate_episodes
+    task: understand a name that appears twice (two commitments)
+    critical: false
+    production: "not represented (ticker-keyed board)"
+    proposal: "one card per plan row + dated 'Episode N of M' chips + forward links"
+    verdict: BETTER
+
+  - id: task.act_today_boundary
+    task: know which names I am allowed to act on today
+    critical: true
+    production: "Live now shelf + ⚡ trigger chips + zone active/muted states"
+    proposal: "ready/entered cells + 'in the entry window' gloss + Entry level"
+    verdict: UNKNOWN
+    notes: "different mechanisms; neither obviously dominates without user evidence"
+
+# ── Authority Delta (RIG §6) ───────────────────────────────────────────────────
+authority_delta:
+  - id: auth.zone_to_levels
+    production_claim: "ZONE $52.15–$53.81 (a relevant range; 5 presentation states)"
+    proposal_claim: "Entry 52.15 · T1 58.90 · Void 49.80 — labelled execution levels on every card"
+    direction: stronger
+    warranted: false
+    evidence: >
+      plan JSON carries the fields, but production deliberately renders the compact
+      zone only: exact entry/stop/target numbers are the paid payload and the
+      execution-prescriptive framing was never shipped on the glance tier
+      (P0 packet §C ACCESS; terse-verb ruling _prophet_card.html.j2:26-34).
+
+  - id: auth.window_position
+    production_claim: "no holding-period claim on-card (age_days/horizon_days exist in data, rendered nowhere — repo-wide template grep)"
+    proposal_claim: "'day 12 of 45' / 'past its 45-day window' on every card head"
+    direction: stronger
+    warranted: false
+    evidence: >
+      implies a required/declared holding window the engine does not stand behind on
+      the glance tier; the artifact's own notes (Q2) document the producer
+      contradiction — 16 rows past their declared window while the Overtime cell
+      reads 0 — i.e. the claim's producer disagrees with the ruled cell.
+
+  - id: auth.prose_thesis
+    production_claim: "one terse ruling verb (buy/near/wait/hold/avoid); guidance prose operator-killed 2026-08-03"
+    proposal_claim: "multi-line what-to-do prose on every card (.pv-do)"
+    direction: stronger
+    warranted: false
+    evidence: "re-introduces prescriptive narrative the operator explicitly removed ('not coming back'); no new ruling authorizes it"
+
+# ── Information-Economics Audit (RIG §6) ───────────────────────────────────────
+information_economics:
+  words_per_card:
+    production: "≈18 visible words at rest (card-zoom evidence; verb+chips+ticker+name+PRIORITY+zone+date)"
+    proposal: "≈45-70 visible words at rest (lifecycle word+gloss, window line, name·sector, prose do_, three labelled money rows, episode chip) — estimate from frozen crops 01/16; no stopwatch claims"
+  findings:
+    - "chart (pre-attentive geometry) replaced by nothing; price geometry now absent (BLOCKED_DATA mis-filed as removal)"
+    - "compact visual state (verb hue, zone chip states, tracker dots) replaced by words that must be read"
+    - "prose re-enters the dense grid (.pv-do) — the exact reading-unit-vs-glance-unit conversion the 2026-08-03 kill removed"
+    - "three labelled money rows per card repeat information the zone chip carried in one"
+    - "glance tier → reading tier conversion across a 40-card grid multiplies read cost ~40×"
+  preserved:
+    - "ladder/cap weight grammar is itself excellent visual compression (lifecycle without hue)"
+    - "count reconciliation removes the cognitive tax of three disagreeing vocabularies"

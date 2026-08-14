@@ -305,7 +305,7 @@ def test_runner_ff_updates_and_invokes_forward_only_deepseek(tmp_path: Path):
         str(ops / "tools" / "earnings_worker" / "run_worker.py"),
         "--terminal-auto",
         "--limit",
-        "64",
+        "256",
         "--provider-order",
         "deepseek",
         "--repo-root",
@@ -501,3 +501,36 @@ def test_local_llm_preflight_is_skipped_without_a_configured_endpoint(
     result = _run(fixture["runner"], env=fixture["env"])
     assert result.returncode == 0, result.stdout + result.stderr
     assert "local-llm preflight" not in result.stdout
+
+
+def test_attempt_ceiling_is_tunable(tmp_path: Path):
+    """The per-invocation ceiling must actually reach argv, not be decorative.
+
+    The flat 64 that shipped originally sat UNDER earnings-season arrival (462
+    calls on 2026-08-06 against a 3-runs-a-day ceiling of 192), so the overlay ran
+    permanently behind and never recovered from an outage. The default moved to
+    256, with this knob for draining a large backlog by hand.
+    """
+    fixture = _build_ops_clone_fixture(tmp_path)
+    env = dict(fixture["env"])
+    env["EARNINGS_WORKER_LIMIT"] = "500"
+    result = _run(fixture["runner"], env=env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    argv = fixture["capture"].read_text(encoding="utf-8").splitlines()
+    assert argv[argv.index("--limit") + 1] == "500"
+
+
+def test_a_malformed_attempt_ceiling_stops_the_run(tmp_path: Path):
+    """Junk must fail closed here rather than reach `--limit`.
+
+    Passing it through would spend the clone self-update first and only then die
+    in argparse, which reads as a worker failure rather than a config typo.
+    """
+    fixture = _build_ops_clone_fixture(tmp_path)
+    env = dict(fixture["env"])
+    env["EARNINGS_WORKER_LIMIT"] = "sixty-four"
+    rejected = _run(fixture["runner"], env=env)
+    assert rejected.returncode != 0
+    assert "EARNINGS_WORKER_LIMIT must be a positive integer" in (
+        rejected.stdout + rejected.stderr
+    )

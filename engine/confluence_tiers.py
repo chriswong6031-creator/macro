@@ -164,6 +164,15 @@ _BLANK = {"tier": None, "weight": 0.0, "sub": None, "eligible": False,
           # `anchor_era`   the bucketing era this verdict belongs to (R5)
           "bars": None, "young_history": None, "above200": None, "null_legs": None,
           "veto_legs_null": None, "anchor_era": ANCHOR_ERA,
+          # The not-topped veto's three legs, EXPOSED (2026-08-14, masterplan §13.2).
+          # They were computed and discarded; only their OR-negation `not_topped`
+          # survived, so no forward store could ever say WHICH leg vetoed a name.
+          # Pure telemetry: nothing in this module or in signal_gate reads them
+          # back, and `not_topped` is still the only value any decision sees.
+          # None here means "the cascade never got far enough to compute them" —
+          # never False, which would read as "checked, and clean" (the PLTR
+          # precedent, and the same shape as `above200` two lines up).
+          "stoch_ob": None, "stoch_bear": None, "macd_bear": None,
           # `evaluated` False = the cascade CRASHED or never ran — every other field in
           # this blank is "not knowable", NOT a verdict. A consumer that treats a blank
           # as a clean pass converts a data failure into a buyable T1 (audit F2
@@ -536,7 +545,13 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
         blank = dict(_BLANK, asof=str(di[last].date()), not_topped=not_topped, ticks=t1_ticks,
                      htf=htf, hist_d2=hist_d2, hist_d3=hist_d3,
                      bars=n_bars, young_history=young, above200=above200_pub,
-                     null_legs=nulls, veto_legs_null=veto_nulls)
+                     null_legs=nulls, veto_legs_null=veto_nulls,
+                     # The SINGLE-BAR legs exactly as the veto arithmetic read them
+                     # above — deliberately not re-derived from the hysteretic
+                     # series, which answers a different question (N-bar debounce)
+                     # and would make the published legs disagree with the ones the
+                     # decision used on a confirm>1 run.
+                     stoch_ob=stoch_ob, stoch_bear=stoch_bear, macd_bear=macd_bear)
         # T2 = a JUST-crossed 2D-MACD x 3D-stoch buy: the 2D arrow is <= FRESH_TICKS 2D-ticks old
         #
         # PIT LATCH (engine/confluence_latch): a fired event may never be un-fired.  The 2D cross
@@ -620,6 +635,11 @@ def cascade(daily_close: pd.Series, *, take_active: bool = False,
             "bars": n_bars, "young_history": young,
             "above200": above200_pub, "null_legs": nulls,
             "veto_legs_null": veto_nulls, "anchor_era": ANCHOR_ERA,
+            # §13.2 telemetry — the three veto legs the tier decision already
+            # cleared (all False here by construction, since a tier only fires on
+            # not_topped). Carried anyway so the column has one meaning on every
+            # row, rather than "null = passed" on the tiered ones.
+            "stoch_ob": stoch_ob, "stoch_bear": stoch_bear, "macd_bear": macd_bear,
             **_tier_dates(tier, observed_date, t1_event_date=t1_event_date,
                           t2_event_date=t2_event_date),
         }

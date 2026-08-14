@@ -283,6 +283,58 @@ def test_futures_predicate_leaves_real_issuers_and_tickers_alone() -> None:
         assert not is_non_equity_holding(tk, nm), f"{tk} / {nm} was dropped"
 
 
+def test_currency_shaped_ticker_needs_name_corroboration() -> None:
+    """A ticker that LOOKS like an ISO-4217 code is evidence, not a verdict.
+
+    Every case below is a live row from data/etf_holdings (swept 2026-08-12 over
+    all 55,612 rows). The unqualified ticker rule erased six real issuers, 130
+    rows — and erased them at INGEST (etf_holdings._normalize applies the same
+    predicate at write time), so they left no trace in the store either.
+    """
+    from collectors.holdings import is_non_equity_holding as nq
+
+    # --- real issuers whose ticker is a bare ISO code: KEPT ------------------
+    assert not nq("COP", "ConocoPhillips")        # SPY, RSP  (COP = Colombian peso)
+    assert not nq("COP", "CONOCOPHILLIPS")        # sponsor-uppercased form
+    assert not nq("PEN", "Penumbra Inc.")         # MDY       (PEN = Peruvian sol)
+    assert not nq("CNH", "CNH Industrial NV")     # MDY       (CNH = offshore yuan)
+    # --- Bloomberg "<CODE> <EXCHANGE>" foreign listings: KEPT ---------------
+    # These have the same shape as "USD CASH"; only the instrument-token rule
+    # separates them. All three sit in the very funds built to hold them.
+    assert not nq("EUR AU", "EUROPEAN LITHIUM LTD")   # LIT, 42 rows
+    assert not nq("INR AU", "IONEER LTD")             # LIT, 42 rows
+    assert not nq("PEN AU", "PENINSULA ENERGY LTD")   # URA, 42 rows
+
+    # --- genuine FX/cash lines: STILL DROPPED -------------------------------
+    # Named for the CURRENCY, not an issuer — the whole discriminator.
+    for tk, nm in [("KRW", "SOUTH KOREA WON"), ("EUR", "EURO"),
+                   ("GBP", "BRITISH POUNDS"), ("CNY", "CHINESE YUAN"),
+                   ("CHF", "SWISS FRANC"), ("TWD", "NEW TAIWAN DOLLAR"),
+                   ("JPY", "JAPANESE YEN"), ("HKD", "HONG KONG DOLLAR"),
+                   ("AUD", "AUSTRALIAN DOLLAR"), ("DKK", "DANISH KRONE"),
+                   ("CAD", "CANADIAN DOLLAR"), ("CASH_USD", "U.S. Dollar"),
+                   ("USD", "CASH &amp; EQUIVALENTS")]:
+        assert nq(tk, nm), f"genuine FX row leaked: {tk} / {nm}"
+    # ...and the "<currency> <cash-token>" form, which ends in the TOKEN rather
+    # than the currency word, so the anchored rule alone misses it.
+    for tk, nm in [("EUR", "Euro Cash"), ("USD", "USD Cash Account"),
+                   ("JPY", "JPY spot"), ("GBP", "GBP deposit balance")]:
+        assert nq(tk, nm), f"currency cash-token row leaked: {tk} / {nm}"
+    # blank/NaN name => nothing can corroborate, so the code still decides (R1)
+    assert nq("USD", "")
+    assert nq("EUR", "nan")            # pandas NaN arrives as the string "nan"
+    assert nq("USD CASH", "")          # instrument token, not an exchange code
+    assert nq("EUR FWD", "")
+
+    # --- the substring trap the anchored name rule exists to refuse ----------
+    # Real issuers carrying a currency WORD. A substring rule drops all three the
+    # day one is filed under a currency-shaped ticker.
+    assert not nq("DG", "Dollar General Corp")
+    assert not nq("DLTR", "Dollar Tree Inc")
+    assert not nq("REAL", "The RealReal Inc")
+    assert not nq("SOL", "Emeren Group Ltd")
+
+
 def test_active_changes_dir_weeds_cash_and_tiny_base() -> None:
     import tempfile
     from collectors.holdings import active_changes_dir

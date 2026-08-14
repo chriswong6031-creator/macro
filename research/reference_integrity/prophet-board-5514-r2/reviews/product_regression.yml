@@ -1,0 +1,250 @@
+# Critic receipt — Reviewer A (Product Regression), r2 cycle (revised Prophet Board).
+# Two-pass; pass 1 quarantined from DESIGN_NOTES.md and the designer's compare set.
+# DISCLOSURE: the pass-1 reviewer instance's transcript was lost before the reveal;
+# the pass-2 amendment was performed by a successor independent Opus reviewer
+# instance given the FROZEN pass-1 findings verbatim plus the revealed rationale.
+# The quarantine property is unaffected (pass 1 was produced and frozen unanchored);
+# the successor re-verified findings against the artifact rather than trusting them.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-r2
+role: product_regression
+artifact_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+
+reviewer:
+  identity: "independent opus reviewer agent — RIG r2 review A (pass-2 amendment by successor instance, disclosed above)"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job
+    - production-before artifact (live screenshots + production card/board source)
+    - proposed-after artifact (frozen code + 46 crops excluding the compare set)
+    - capability ledger + design lineage (baseline.yml)
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "2026-08-13T12:40:00Z"
+  verdict: BLOCK
+  findings:
+    - id: PRC-201
+      severity: blocker
+      capability: card.caution_popover
+      finding: >
+        The ⚠N caution popover is deleted from every card and has no replacement
+        anywhere on the page — card() (board.js:279-394) emits no caution node and grep
+        finds no risk surface at all, so the eight pre-trade facts production folds into
+        that one popover (anti-chase, ext_z stretch, parabolic tail, earnings-in-Nd,
+        sector stance, base broken, options context, engine cautions —
+        dashboard.html.j2:16049-16073) vanish from the flagship board; production's own
+        template pins these as un-relocatable ("The ⚡ trigger tip and the ⚠N popover
+        STAY: those carry facts that appear nowhere else on the card",
+        _prophet_card.html.j2:385-386); the board-level Earnings watch strip is dropped
+        too, so earnings-window risk has no home at any altitude.
+    - id: PRC-202
+      severity: blocker
+      capability: card.zone_chip
+      finding: >
+        The zone's actionability encoding is inverted: board.js:381-383 emits the bold
+        active-ink .pv-znr whenever zlo/zhi exist, with no stance branch, so 22 of the
+        33 cards in the canonical reference view (19 Wait, 2 Hold, 1 Avoid) print a buy
+        zone in the same ink as a live BUY zone, and 21+ have price ABOVE the zone top
+        (FTI $74.13 vs $70.66-72.35; ALB; WINA — crop 00-FREEZE-dark-en--full.png);
+        production branches on verb (dashboard.html.j2:16183 →
+        _prophet_card.html.j2:421-435), renders exactly these muted, gives Hold
+        "Re-add/回补", and prints "No zone — stand aside" for the state the proposal
+        retires into "Zone sets on confirmation" — combined with PRC-201 the reference
+        both deletes the anti-chase warning and upgrades an already-passed zone to
+        actionable ink.
+    - id: PRC-203
+      severity: blocker
+      capability: board.triage_shelves
+      finding: >
+        The canonical view's printed totals disagree with the grid they label: state=paid
+        filters rows (board.js:138-140 → 33 of 179) while every total still quotes
+        B.counts — crop 21 reads "SETUPS 96 in Entered" over a 22-card grid with no
+        "+N more" (pv-more only fires above GRID_CAP=40), crop 60 reads "4 in
+        Invalidated" then "1 rendered" four lines apart, and the ladder headline "162
+        live setups today · the six cells below add up to this number" sits 170px above
+        "SETUPS 33 setups" — the file's COUNT LAW header mandates this by forbidding
+        rendered-row counts, the direct reversal of production's rule
+        (dashboard.html.j2:15991-15994).
+    - id: PRC-204
+      severity: blocker
+      capability: card.stance_verb
+      finding: >
+        The board is re-based from production's 81 standouts rows onto 179 plan rows and
+        the entry read does not survive the move: 98/179 rows carry
+        stance='blocked_data' and only 45 carry spark/name/sector/price, so GPCR —
+        production's #1 Featured card, today BUY · ⚡Triggered · ⚠2 · PRIORITY 90 ·
+        ZONE $52.15-$53.81 — renders as "No read yet · Zone sets on confirmation ·
+        PRIORITY 91" (crop 08) and is filtered out of the canonical reference entirely,
+        surviving only as a bare Candidates row; production's entire ranked/charted/
+        zoned population demotes to ticker+price rows.
+    - id: PRC-205
+      severity: major
+      capability: card.asof_stamp
+      finding: >
+        Every freshness disclosure production ships is gone and the surviving stamp
+        asserts the wrong vintage: one "SETTLED CLOSE 2026-08-12" (board.js:709-714)
+        over cards whose prices/sparks come from the 2026-08-10 standouts extract;
+        production carries the amber behind-banner, "verify before acting" sub-line,
+        delayed-board tooltip and "Last confirmed" chip; the card's date slot silently
+        changed referent from signal as-of to plan-open date (board.js:391).
+    - id: PRC-206
+      severity: major
+      capability: card.priority_score
+      finding: >
+        Priority ships without its measured coverage nulls — production's printed
+        runway dead-input disclosure and extension-unknown count
+        (dashboard.html.j2:15956-15964, :16403) are dropped — and ★Featured chips render
+        with no tip and no selection rule anywhere ("up to 12 of the most ready names,
+        no more than four per sector" is gone), a nulls-printed regression plus a badge
+        asserted without its producer.
+    - id: PRC-207
+      severity: major
+      finding: >
+        Three hardcoded verdict strips assert house-level market calls with no producer,
+        no as-of and no receipt: header chips "Regime Risk-on / Breadth Broadening /
+        Posture Act on the best few" are string literals (board.js:718-720); groups()
+        ships lanes "Buy now — entry confirmed today (6)" and "Take profits — extended,
+        thinning out (3)" over 22 fabricated sector one-liners (:612-618, :655-678) —
+        all render unchanged on the zero-setup night (crop 50); this is the defect the
+        same file names ("a chip with no producer is the exact defect the four-dot rail
+        died of"), introduces sell-side instruction production does not carry, and
+        contradicts the cited TRIM-does-not-exist ruling by shipping 止盈/Take profits
+        as a page lane.
+    - id: PRC-208
+      severity: major
+      capability: card.stage_tracker
+      finding: >
+        Two stance vocabularies contradict each other on the same card: 17 of 33
+        reference cards read verb "Wait" beside lifecycle "Entered — in the entry
+        window" (LEX board.js:28-29), and DAR/STLD read ⚡Triggered ("the entry trigger
+        fired") beside "Ready — trigger not fired" — the designer applied the
+        one-referent-per-page test to the Candidates sub-lines but never between the
+        card's own stance chip and its lifecycle word; production's rail describes price
+        shape, not commitment state, so it can never disagree with the verb.
+    - id: PRC-209
+      severity: major
+      capability: "core_interactions: open a name via card link"
+      finding: >
+        The card stops being a link: production renders <a class="pvcard"
+        href="stock.html#{ticker}"> (_prophet_card.html.j2:375); the proposal renders
+        <article> with no href, no click handler (delegated listener matches only
+        .mx-cell/.ladder-clear/[data-view]) — yet keeps a :hover lift plus hued border
+        glow (board.css:374-376) that promises clickability, a false affordance with no
+        path to a name at all.
+    - id: PRC-210
+      severity: major
+      capability: card.live_change
+      finding: >
+        All 33 daily-change values in the canonical frozen crops are fabricated with no
+        on-page marker: demoChange() hashes the ticker into a −2.8%..+3.2% band
+        (board.js:273-277); the only disclosure is a data-mock-live DOM attribute with
+        no CSS rule, so the crops that become design law show full directional ink
+        indistinguishable from live values without reading source.
+    - id: PRC-211
+      severity: major
+      finding: >
+        The grid's overflow path drops the columns the user job needs: "+N more" routes
+        to a table rendering only Ticker/Lifecycle/Entry/Void/First target/Opened/
+        Episode — no stance, no Priority, no sector, no zone, no chart, no change — so
+        both core questions are unanswerable in the overflow surface, versus
+        production's progressive disclosure keeping every decision field in the card
+        idiom.
+    - id: PRC-212
+      severity: major
+      capability: card.zone_chip
+      finding: >
+        The table introduces exact execution levels the board has never carried — Void
+        (stop) and First target beside Entry (board.js:532-535) — on a surface the
+        baseline defines as compact-zone-only; the card layer's own comment excludes
+        "the Entry/T1/Void three-number footer" as belonging to plan detail
+        (board.js:242-243), so the reference bans the three numbers one tier and ships
+        them the next, unhedged, on the same page.
+    - id: PRC-213
+      severity: major
+      capability: board.track_record_strip
+      finding: >
+        Every board-level accountability surface is replaced by unnumbered links:
+        production prints "Track record · 59% win · +0.45% a trade", "What changed
+        today · 30", "RECENTLY FIRED 12" with per-name outcomes, and "Passed on tonight
+        27 of 69"; the proposal's evidence() emits four bare anchors with no figure —
+        the anonymous visitor judging whether the machine is real loses every number it
+        could have judged.
+    - id: PRC-214
+      severity: major
+      capability: board.track_record_strip
+      finding: >
+        The anonymous free sample is the worst card on the board: state=anon reveals
+        rows()[0] — on this payload GPCR rendering "No read yet · Zone sets on
+        confirmation · PRIORITY 91" beside four ghosts, under a gate promising "The
+        rest are part of the live board — entry, target and void levels included" —
+        three numbers the paid card deliberately does not carry; production's anonymous
+        board shows a fully-read BUY card plus proof tables.
+    - id: PRC-215
+      severity: minor
+      finding: >
+        The enrichment-gap disclosure contradicts its own arithmetic: the fallback lens
+        reads "134 rows the screener join does not reach" above "the join reaches only
+        33 of 179" (134+33≠179) because `var enriched` is declared twice in one scope
+        (board.js:433 spark→45; :435 stricter→33) and the second overwrites the first
+        that the row filter actually uses; the sentence also attributes all five
+        missing fields to the candidate join when the 33-vs-45 delta is the missing
+        entry read, a different producer.
+    - id: PRC-216
+      severity: minor
+      finding: >
+        At 390px the two-total law loses its visual carrier: the ladder wraps 4+3 so
+        Resolved sits inside the same block as the six live cells, the mx-ladder-gap
+        divider collapses, and a reader counting seven visible cells gets 179 under a
+        headline saying "162 · the six cells below add up to this number" — only the
+        dashed outline and caption survive.
+  strengths:
+    - "Key-absence is handled better than production handles it anywhere: em dash instead of 0, ladder disclosure line, and a dedicated empty state distinguishing 'producer exists, tonight's build did not publish' from 'empty today'."
+    - "The two-total law is honestly built on desktop — Resolved outside the live enclosure behind a divider on a dashed outline with 'not in today's count', with the code comment naming why."
+    - "Episode identity is a genuine new capability production lacks — one card per plan, dated N-of-M chips, global sort."
+    - "Building and shipping state=today at all is the honest act: the designer produced the state showing 98/179 no-read rows, labelled the reference view's own filter in-page, and named closing the gap a hard pre-migration dependency."
+    - "The empty-board copy refuses the outage framing — 'Nothing qualified tonight — that is a result, not an outage.'"
+    - "The anonymous state withholds by absence rather than CSS blur — nothing withheld is recoverable from view-source."
+    - "ZH is native two-character arcs paired as constants, all-or-nothing, and the direction-hue flip survives intact."
+    - "Priority keeps and hardens its honest gloss ('how ready — not how likely to win'; tooltip denies win probability, expected return, confidence)."
+    - "'No read yet / 暂无判断' is correctly kept out of the five verb hues with the explicit note that an unavailable stance is not a cautious stance."
+
+second_pass:
+  amended_at: "2026-08-13T13:20:00Z"
+  amendments:
+    - {finding: PRC-201, action: upheld, note: "Strengthened — §1's 'Removed from production' list names only the four-dot rail and the verb wash, so the ⚠N popover was dropped without appearing on the drop list of an otherwise exhaustive doc, while production pins it un-relocatable; artifact grep for caution|earnings returns zero carriers."}
+    - {finding: PRC-202, action: upheld, note: "§0b's 'Zone footer … settled, not revisited' is a process assertion, not a product justification; production branches five ways on zone_kind reserving active ink for the actionable kind; board.js has a single zlo/zhi presence check with the payload's own zstate consulted only in the else-branch; 22/33 non-Buy cards, 23 with price above zone top."}
+    - {finding: PRC-203, action: upheld, note: "§0b-1 concedes the count law is verified against state=today while the frozen canonical crops are state=paid — an admission the reference view is exempted from binding-authority-#1's count law, not cover for it; the artifact's own comments state the law it breaks three lines above the !isRef exemption, and the table's 'no remainder' claim is false under isRef."}
+    - {finding: PRC-204, action: downgraded, note: "blocker→major: Q7 supplies the missing product justification — production's GPCR BUY came through recommended_action, an engine disclaiming order authority, so refusing it corrects an originated signal, and Q7b/G-D quantify and escalate the residue; what remains unexcused is that state=paid filters GPCR OUT (stance=blocked_data, pri=90.5), so the frozen crops never show the highest-priority live plan in any form — escalation covers the payload gap, not suppressing the motivating exemplar from the reference."}
+    - {finding: PRC-205, action: upheld, note: "One scope correction ('all freshness disclosures gone' was overbroad — a what-changed strip exists) but the substance confirmed and worsened: the single as-of pair is deliberate (board.js:709), stamped 2026-08-12 over 2026-08-10-sourced spark/name/price, and §1 lists the zone-date as 'preserved from production' while the referent silently moved signal-asof → plan-open."}
+    - {finding: PRC-206, action: upheld, note: "Partially mitigated, not answered — §0b-4 fixes Featured's provenance but adds no selection rule to the surface (the Featured mark is the only mark with no LENS receipt), and Priority prints no component-coverage receipt where production carries one under the explicit 'a null runway is nobody-measured-this' doctrine."}
+    - {finding: PRC-207, action: upheld, note: "severity assessed UP major→blocker by the amender (the v1 amendment enum cannot express upward movement — schema follow-up filed); treated as blocking in the verdict. the revealed rationale refutes itself three ways — Q10 claims the simulated changes are 'the only fabricated numbers on the page' while groups() hardcodes lane counts 6/5/4/3/4, '22 sectors & themes moving', and causal sector reads ('Precious metals — real rates rolling'); Q7's 'TRIM does not exist on the Board' (restated at board.js:244-246) is contradicted by {k:'trim', en:'Take profits'} at :616; groups() mounts unconditionally with no isEmpty branch, so an empty board still asserts 22 sectors moving — producer-less signal origination in engine grammar."}
+    - {finding: PRC-208, action: upheld, note: "Strengthened — Q7 rules the stance PRODUCER and is silent on the on-card COLLISION, while §5 proves the designer holds the one-referent law and applied it to two secondary Candidates sub-lines for the same 入场 collision left on the primary card; 17/33 Wait-beside-Entered, 2 ⚡Triggered-on-ready."}
+    - {finding: PRC-209, action: upheld, note: "Unaddressed anywhere; board.css retains text-decoration:none (a vestigial link-only property) plus the full hover affordance with no target; the table rows carry no link either — no path to any name detail exists on the board."}
+    - {finding: PRC-210, action: downgraded, note: "major→minor: Q10 supplies real cover — names the fabrication, explains why, scopes it, marks the DOM; residual: §8 declares the crops the deliverable and the marker is invisible in a PNG, and the in-artifact pointer mis-cites Q8 (Priority ruling) instead of Q10."}
+    - {finding: PRC-211, action: upheld, note: "Unaddressed — the overflow table drops the board's own sort key ('Sorted by priority') and its primary answer."}
+    - {finding: PRC-212, action: upheld, note: "Strengthened — the rationale restates the ban twice ('exact levels live in plan detail') and still ships Entry/Void/First target as table columns one click from the grid on the same page."}
+    - {finding: PRC-213, action: upheld, note: "Unaddressed — the accountability layer appears in no keep/drop list and no open question; the one surface that grades the board is reduced to navigation."}
+    - {finding: PRC-214, action: upheld, note: "Strengthened — verified isAnon renders the priority-sorted first row = GPCR no-read; the gate copy promises 'entry, target and void levels included' which §1 removed and the card tier bans — a copy contract the product cannot honour (the payload does hold entry/t1/inval for that row)."}
+    - {finding: PRC-215, action: upheld, note: "severity assessed UP minor→major by the amender (same enum gap);  these are the load-bearing numbers of spawn gate G-D — the double-declared var makes the on-screen disclosure state 33/179 where Q1 and G-D item 2 both put the join at 45/179, and 134+33≠179; the artifact's own statement of the gate's size contradicts the gate it is escalating."}
+    - {finding: PRC-216, action: upheld, note: "Confirmed in the committed required-matrix crop: §3's 'outside the enclosure past a divider' guarantee is false at 390w — the doc asserts a guarantee its own frozen crop refutes; stays minor since two of three channels survive."}
+  verdict: BLOCK
+  closing_note: >
+    The rationale legitimately settles one axis and settles it well: Q7/Q7b re-source
+    the stance from Prophet's entry/actionability axis and correctly reject the prior
+    recommended_action fall-through as signal origination, Q10 scopes and discloses the
+    single simulated slot, and §0b-4 re-sources Featured/New/⚡ from real producers —
+    those earn the PRC-204 and PRC-210 downgrades. What it cannot excuse is that the
+    doc's own disclosure discipline is not applied to its own page: §0b-1 concedes the
+    count law is verified only against state=today while the frozen canonical crops are
+    state=paid, Q10's "only fabricated numbers" claim and Q7's "TRIM does not exist on
+    the Board" are both refuted by hardcoded Groups lanes, causal sector reads and
+    regime chips that survive even the empty state, and production's pinned
+    un-relocatable ⚠N caution popover never reaches §1's keep/drop list at all. G-D is
+    a genuine escalation for the coverage gap, but a hard production dependency governs
+    what ships to production — it does not authorize a frozen reference whose ladder,
+    headline and grid describe three different populations, nor a zone footer that
+    prints 买区 on an Avoid card with price already above the zone.

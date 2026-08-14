@@ -1,0 +1,46 @@
+# Production Baseline Manifest (RIG V1 §4/§5) — design memory, captured BEFORE design begins.
+schema: mastermind.rig_baseline.v1
+reference_id: <same as manifest>
+captured_at: "<YYYY-MM-DD>"
+
+production:
+  route: <route>
+  live_url: <https://... where applicable>
+  source_commit: <main SHA at capture>
+  source_paths:
+    - <templates/... builder scripts/... — every file that renders the surface>
+  shared_surfaces: []        # other routes composing the same component (blast radius)
+
+evidence:
+  screenshots:               # committed files under mockups/refs/reference_integrity/<id>/
+    # required matrix: dark+light × EN (+ZH where bilingual) × desktop+mobile;
+    # record what you could not capture as gaps — honest gaps, never silent absence
+    - {path: <...png>, viewport: desktop, theme: dark, locale: en}
+  gaps:
+    - {axis: <theme|locale|viewport|access>, value: <...>, reason: "<why>"}
+
+user_job: >
+  <one sentence — the primary user and what they come to do>
+
+core_interactions:
+  - <what the user actually does on this surface>
+
+information_hierarchy:
+  - <ordered: what the eye gets first, second, third>
+
+design_lineage:              # RIG §9 — prior decisions are presumptively preserved
+  rulings:
+    - ref: "<DNR:KEY / operator ruling / packet section>"
+      evidence: "<file:line or doc cite>"
+      implication: "<what this binds>"
+  rejected_variants:
+    - "<designs previously tried and rejected, where discoverable>"
+  comments:
+    - path: "<file:line>"
+      note: "<the non-obvious reason the current decision exists>"
+
+capabilities:                # the Capability Ledger — stable ids, one per meaningful capability
+  - id: <area.capability_name>
+    user_job: <what this lets the user understand or do>
+    evidence: "<file:line>"
+    importance: core         # core | supporting | peripheral

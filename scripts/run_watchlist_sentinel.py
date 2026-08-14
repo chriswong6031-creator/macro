@@ -69,6 +69,8 @@ from engine.watchlist_sentinel import (  # noqa: E402
     update_cooldown,
     format_discord_message,
 )
+from scripts.check_signal_gate_coherence import (  # noqa: E402 — one shared predicate
+    incoherent_tickers, stale_side)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("watchlist_sentinel")
@@ -198,6 +200,7 @@ def _load_per_ticker_states(today_str: str) -> dict[str, dict]:
 
     # --- 1. signal_gate.json -----------------------------------------------
     sg_path = site_fd / "signal_gate.json"
+    sg_data: dict = {}
     gate_verdicts: dict[str, dict] = {}
     if sg_path.exists():
         try:
@@ -208,7 +211,9 @@ def _load_per_ticker_states(today_str: str) -> dict[str, dict]:
 
     # --- 2. us_standouts.json ----------------------------------------------
     us_path = site_fd / "us_standouts.json"
+    us_data: dict = {}
     entry_by_ticker: dict[str, dict] = {}
+    row_signal_by_ticker: dict[str, dict] = {}
     if us_path.exists():
         try:
             us_data = json.loads(us_path.read_text())
@@ -224,8 +229,34 @@ def _load_per_ticker_states(today_str: str) -> dict[str, dict]:
                         "gate_eligible_row": sig.get("eligible"),
                         "gate_tier_row": sig.get("tier_cascade"),
                     }
+                    row_signal_by_ticker[ticker] = sig
         except Exception as exc:  # noqa: BLE001
             log.info("watchlist_sentinel: could not read us_standouts.json (%s)", exc)
+
+    # --- 2b. pair coherence (#5490) ----------------------------------------
+    # The gate is preferred below because it is more granular — and it is also the side
+    # that can silently go stale: build_stock_library writes both artifacts, but only the
+    # gate write is guarded (`if sig_verdict:`), so a `scope=all` re-render can advance the
+    # board's embedded `signal` blobs and leave the gate behind wearing the same `as_of`
+    # (the DATA date, not the write time). For any ticker where the two disagree the gate
+    # loses its preference and the ROW values are used instead. Same predicate the CI guard
+    # and the render-lane self-check use, so no two surfaces can flag different names.
+    incoherent: dict[str, list[str]] = {}
+    try:
+        incoherent = incoherent_tickers(us_data, sg_data)
+        if incoherent:
+            _names = sorted(incoherent)
+            _side = stale_side(us_data, sg_data)
+            _tail = f"; emit stamps name the {_side} side as the stale one" if _side else ""
+            # Bare print at line start with flush=True — house law (CLAUDE.md §GitHub
+            # annotations): this module's logger prefixes every record, so a logged
+            # "::warning" is dropped silently by GitHub.
+            print(f"::warning title=signal-gate-coherence::"
+                  f"{len(_names)} ticker(s) disagree between signal_gate.json and the "
+                  f"board's embedded signal blob ({', '.join(_names[:8])}) — sentinel "
+                  f"reads the board row for them, not the gate{_tail}", flush=True)
+    except Exception as exc:  # noqa: BLE001 — coherence is advisory, never fatal here
+        log.info("watchlist_sentinel: coherence check skipped (%s)", exc)
 
     # --- Merge sources per ticker ------------------------------------------
     all_tickers = set(gate_verdicts.keys()) | set(entry_by_ticker.keys())
@@ -233,9 +264,15 @@ def _load_per_ticker_states(today_str: str) -> dict[str, dict]:
         gv = gate_verdicts.get(ticker) or {}
         er = entry_by_ticker.get(ticker) or {}
 
-        # Prefer signal_gate.json for gate fields (it is more granular)
-        gate_eligible = gv.get("eligible") if gv else er.get("gate_eligible_row")
-        gate_tier = gv.get("tier_cascade") if gv else er.get("gate_tier_row")
+        if ticker in incoherent:
+            # The gate disagrees with the board for this name — do not trust it.
+            row_sig = row_signal_by_ticker.get(ticker) or {}
+            gate_eligible = er.get("gate_eligible_row", row_sig.get("eligible"))
+            gate_tier = er.get("gate_tier_row", row_sig.get("tier_cascade"))
+        else:
+            # Prefer signal_gate.json for gate fields (it is more granular)
+            gate_eligible = gv.get("eligible") if gv else er.get("gate_eligible_row")
+            gate_tier = gv.get("tier_cascade") if gv else er.get("gate_tier_row")
 
         entry_status: str | None = er.get("entry_status")
 
