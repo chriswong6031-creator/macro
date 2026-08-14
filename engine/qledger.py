@@ -1886,10 +1886,23 @@ def _start_control_clocks_for(new_rows: Iterable[dict],
     registration. `benchmark_only` and `not_applicable` families never start a
     clock, whatever their rows carry (C1.4).
 
+    THE CLOCK IS STAMPED WITH THE TRIGGERING CLAIM'S OWN `timestamp`, not with
+    the moment this hook happens to run (review round 1, C3.4 amendment). The
+    field is named `first_controlled_prospective_registration_utc` — so it must
+    BE that registration's stamp. Writing `now()` instead placed the clock a few
+    hundred microseconds AFTER every row in its own batch, and with the old
+    instant-granularity C3.2(d) comparison that excluded the entire triggering
+    batch from its own cohort: the reviewer's repro registered 5 rows, started
+    the clock, and the gate then reported `n_cohort_rows=0`. The clock now sits
+    exactly ON its trigger, and the gate compares at DATE granularity, so
+    neither this nor batch ordering can shave rows out of the denominator.
+
     NEVER RAISES INTO REGISTRATION. A ledger write that a clock bookkeeping
     failure could abort would be a worse defect than the one this closes."""
     try:
-        ref = today or date.today()
+        # UTC, matching the gate's `ts.astimezone(utc).date()` side — a local
+        # date would disagree with it for several hours a day.
+        ref = today or datetime.now(timezone.utc).date()
         git_sha = os.environ.get("GITHUB_SHA") or None
         started: dict[str, bool] = {}
         for stored in new_rows:
@@ -1909,16 +1922,20 @@ def _start_control_clocks_for(new_rows: Iterable[dict],
                 continue
             if claim_horizon_unit(stored) is None:
                 continue
-            if not _cohort_prospective(stored, ref):
-                continue
             if fam not in started:          # ONE store read per family per batch
                 started[fam] = read_control_clock_start(fam, root) is not None
             if started[fam]:
+                # Cheapest possible short-circuit: once a family's clock exists,
+                # nothing below can change it, so skip the calendar work for
+                # every remaining row of a nightly batch.
+                continue
+            if not _cohort_prospective(stored, ref):
                 continue
             rec = record_control_clock_start(
                 fam, horizon_d=stored.get("horizon_d"),
                 horizon_unit=stored.get("horizon_unit"),
-                control=stored.get("control"), git_sha=git_sha, root=root)
+                control=stored.get("control"), git_sha=git_sha, root=root,
+                now=stored.get("timestamp") or None)
             started[fam] = True
             log.info("control evidence clock STARTED for claim_family=%s at %s "
                      "(control=%s, horizon_d=%s %s)", fam,
@@ -3437,11 +3454,22 @@ def promotion_check(claim_family: str, horizon: int,
 
     §3 gate (SHADOW → CONFIRMER):
       1. n_dates >= 25 (independent date clusters, the honest n [P1])
-      2. Wilson-CI lower bound of excess hit-rate vs matched control > 0.5 at the
-         claim's horizon (not vs SPY — vs control; SPY excess is the headline,
-         control excess is the gate). The bound is a PROPORTION, so 0.5 — the
-         coin-flip null — is the bar; the old `> 0` was cleared by a single hit.
+      2. Wilson-CI lower bound of the excess hit-rate > 0.5 at the claim's
+         horizon. The bound is a PROPORTION, so 0.5 — the coin-flip null — is
+         the bar; the old `> 0` was cleared by a single hit.
       3. Rolling check: if wilson_ci_low <= 0.5 on the trailing window → demote.
+
+    P0d — WHICH EXCESS LEG THE GATE READS IS NOW A POLICY DISPATCH, NOT THIS
+    FUNCTION'S `control_only` FLAG. §3 used to be described here as "vs matched
+    control" unconditionally, which was never true of the code (the flag decided)
+    and is no longer true of the contract. `promotion_check_dispatch` routes by
+    the family's `FAMILY_CONTROL_POLICY` entry: a `matched_control_required`
+    family is evaluated by `matched_control_check` (matched-control leg, with
+    coverage), and a `benchmark_only`/unclassified family by THIS function on its
+    benchmark leg (`control_only=False`) — which is what every production path
+    now calls it with. `control_only=True` survives for direct/research callers
+    and is documented as subset-projecting (census D0-3); nothing in production
+    passes it. See research/PREREG_P0D_MATCHED_CONTROL_CONTRACT.md.
 
     The block-bootstrap stability check (§3: "across date clusters") and the
     incremental-information check ("incremental over price+VIX baseline") are
@@ -3858,11 +3886,20 @@ def matched_control_check(claim_family: str, horizon: int,
     Such a family's AUTHORITY BASIS IS THE MATCHED CONTROL. This returns
     eligible=True only when ALL of the following hold on ONE explicit clock basis:
       * the family's control evidence clock has started (C3.1);
-      * `control_coverage >= CONTROL_COVERAGE_MIN` (0.95) — C4.2;
+      * `control_coverage >= CONTROL_COVERAGE_MIN` (0.95) — C4.2, where coverage
+        is `min(date-cluster coverage, ROW coverage)` (amended review round 1);
       * `n_controlled_dates >= PROMOTION_MIN_DATES` (25) — C4.1/C5.1;
       * Wilson `ci_low > PROMOTION_MIN_CI_LOW` (0.5) on CONTROLLED rows only,
         direction-correct per P0c-1's rule (strict inequality; `direction=0` and
         missing legs excluded from numerator AND denominator).
+
+    REVIEW ROUND 1 (2026-08-14) closed two ways the accounting could be gamed
+    without anyone lying: cohort membership compared registration stamps at
+    INSTANT granularity, so a batch's own clock excluded the batch and sort order
+    decided who stayed in the denominator; and coverage was a DATE ratio, so one
+    controlled row per day covered an arbitrarily large uncovered book. Both are
+    fixed at the point of measurement below, and both are pinned by mutation
+    controls in tests/test_qledger_control_policy.py.
 
     THERE IS NO BENCH FALLBACK, UNDER ANY DATA CONDITION (adversarial control
     #1). A required family whose bench-relative record would sail past the bar
@@ -3916,12 +3953,35 @@ def matched_control_check(claim_family: str, horizon: int,
     clock_start = str(clock.get("first_controlled_prospective_registration_utc") or "")
     try:
         clock_start_dt = datetime.fromisoformat(clock_start)
-    except Exception:  # noqa: BLE001 — an unparseable clock admits NOBODY
-        clock_start_dt = None
+        if clock_start_dt.tzinfo is None:   # our own artifact; read it as UTC
+            clock_start_dt = clock_start_dt.replace(tzinfo=timezone.utc)
+        clock_start_date = clock_start_dt.astimezone(timezone.utc).date()
+    except Exception as exc:  # noqa: BLE001
+        # (review round 1, note 11) An unparseable clock record used to fall
+        # through to an empty-string comparison that silently admitted NOBODY —
+        # a corrupt artifact reading as "no evidence yet". Refuse LOUDLY and
+        # name the record instead: fail closed, and say which file to look at.
+        log.error("matched_control_check(%s): corrupt control clock record: %s",
+                  claim_family, exc)
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: the "
+                    f"control evidence clock record at "
+                    f"{_control_clock_path(claim_family, root)} is CORRUPT — "
+                    f"first_controlled_prospective_registration_utc="
+                    f"{clock_start!r} does not parse as a timestamp. Refusing "
+                    f"to evaluate a matched-control cohort against an "
+                    f"unreadable clock (contract C3.1, fail-closed)."),
+            n_dates=0, ci_low=None,
+            current_state=STATE_UNGRADED,
+            evidence_basis=EVIDENCE_BASIS_MATCHED_CONTROL,
+            control_clock_start=clock_start or None,
+        )
 
     claims = load_claims(root)
     cohort: dict[str, dict] = {}
     excluded_unresolvable = 0
+    excluded_retrospective = 0
     for c in claims:
         cid = c.get("claim_id")
         if not cid or c.get("is_placebo"):
@@ -3932,16 +3992,44 @@ def matched_control_check(claim_family: str, horizon: int,
             continue
         if claim_horizon_unit(c) is None:            # C3.2(c) — explicit clock only
             continue
-        try:                                          # C3.2(d) — at/after the clock
+        try:
+            # C3.2(d) at DATE granularity (review round 1 amendment). THE DEFECT
+            # THIS REPAIRS: an instant comparison made cohort membership depend
+            # on sub-millisecond registration ORDER. The clock is stamped by one
+            # row of a batch, and every sibling registered microseconds earlier
+            # — the uncontrolled ones especially, since a producer emits them in
+            # whatever order it built them — fell BELOW it and left the coverage
+            # denominator forever. That is adversarial control #6 defeated by
+            # a sort order: the reviewer's repro moved coverage from 0.4 to 1.0
+            # by putting the controlled rows first. A registration DATE is the
+            # honest granularity for "was this claim part of the prospective
+            # cohort", and it is stable under any intra-day ordering.
             ts = datetime.fromisoformat(str(c.get("timestamp")))
+            if ts.tzinfo is None:
+                # A stamp with no zone cannot be placed against a UTC clock;
+                # excluded and COUNTED (never a TypeError escaping the gate).
+                raise ValueError("registration stamp is timezone-naive")
+            ts_date = ts.astimezone(timezone.utc).date()
         except Exception:  # noqa: BLE001
             excluded_unresolvable += 1
             continue
-        if clock_start_dt is None or ts < clock_start_dt:
-            continue
+        if ts_date < clock_start_date:
+            continue                        # pre-clock history, C3.3 — untouched
         # C3.2(e) — prospective AT ITS OWN REGISTRATION STAMP, never at "today".
-        if not _cohort_prospective(c, ts.date()):
-            excluded_unresolvable += 1
+        if not _cohort_prospective(c, ts_date):
+            # Split the disclosure (review round 1, note 13): a retrospectively
+            # registered claim and a claim whose window will not resolve are
+            # different findings, and one operator lever fixes only one of them.
+            # `_cohort_prospective` above stays THE predicate; this only labels
+            # its refusal.
+            try:
+                unresolvable = claim_window(c, int(c.get("horizon_d"))) is None
+            except Exception:  # noqa: BLE001
+                unresolvable = True
+            if unresolvable:
+                excluded_unresolvable += 1
+            else:
+                excluded_retrospective += 1
             continue
         cohort[str(cid)] = c
 
@@ -3977,6 +4065,32 @@ def matched_control_check(claim_family: str, horizon: int,
             control_clock_start=clock_start,
         )
 
+    if basis == CLOCK_LEGACY:
+        # (review round 1, finding 5) DEFENCE IN DEPTH. A cohort member must
+        # declare an explicit horizon unit (C3.2(c)), so its grade rows are
+        # stamped and this branch is unreachable in production — but "cannot
+        # happen" is not a guard, and the one thing that must never happen is a
+        # matched-control AUTHORITY verdict computed on the legacy calendar
+        # approximation. `_authority_clock_basis` already refuses to count
+        # legacy rows whenever an explicit basis exists; this refuses the case
+        # where legacy is all there is, rather than evaluating it. Same rule as
+        # P0c-2's legacy-cannot-originate-authority.
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: the "
+                    f"only grading-clock basis available for this cohort is "
+                    f"{CLOCK_LEGACY!r} — matched-control evidence cannot be "
+                    f"evaluated on the legacy calendar approximation, and a "
+                    f"legacy basis can never originate authority (contract "
+                    f"C3.2(c); P0c-2). Refusing rather than grading."),
+            n_dates=0, ci_low=None,
+            current_state=STATE_UNGRADED,
+            clock_basis=CLOCK_LEGACY,
+            clock_prior_n_dates=n_dates_by_basis,
+            evidence_basis=EVIDENCE_BASIS_MATCHED_CONTROL,
+            control_clock_start=clock_start,
+        )
+
     rows = [g for g in rows if grade_clock_basis(g) == basis]
     prior_n_dates = {b: n for b, n in n_dates_by_basis.items() if b != basis}
 
@@ -3993,13 +4107,19 @@ def matched_control_check(claim_family: str, horizon: int,
         _date_cluster(str(cohort[str(g.get("claim_id"))].get("asof", "")))
         for g in controlled})
 
-    unresolvable_note = (f" {excluded_unresolvable} claim(s) excluded as "
-                         f"unresolvable (fail-closed, C3.2)."
-                         if excluded_unresolvable else "")
+    excluded_note = ""
+    if excluded_retrospective:
+        excluded_note += (f" {excluded_retrospective} claim(s) excluded as "
+                          f"RETROSPECTIVE (registered after their window began, "
+                          f"C3.2(e)).")
+    if excluded_unresolvable:
+        excluded_note += (f" {excluded_unresolvable} claim(s) excluded as "
+                          f"UNRESOLVABLE (unparseable stamp or unresolvable "
+                          f"window — fail-closed, C3.2).")
     basis_note = (f" Evaluated on clock basis {basis!r}."
                   f" Cohort: {n_cohort_rows} row(s) / {n_cohort_dates} date(s);"
                   f" controlled: {n_controlled_rows} row(s) /"
-                  f" {n_controlled_dates} date(s).{unresolvable_note}")
+                  f" {n_controlled_dates} date(s).{excluded_note}")
     common = {
         "evidence_basis": EVIDENCE_BASIS_MATCHED_CONTROL,
         "n_cohort_dates": n_cohort_dates,
@@ -4024,7 +4144,24 @@ def matched_control_check(claim_family: str, horizon: int,
             **common,
         )
 
-    coverage = round(n_controlled_dates / n_cohort_dates, 6)
+    # C4.1/C4.2 AMENDED (review round 1, strengthening): coverage is the MINIMUM
+    # of the date-cluster ratio and the ROW ratio, and both are disclosed.
+    #
+    # THE HOLE THIS CLOSES. A date-only ratio asks "did this date have A
+    # control?", so ONE controlled row per date bought coverage 1.0 no matter
+    # how many uncontrolled siblings shared that date. The reviewer's repro:
+    # 300 cohort rows, 30 controlled (10% of the issued cohort), coverage 1.0,
+    # ELIGIBLE True — the gate passing on a 10%-covered family, which is exactly
+    # the subset selection C4.2 exists to forbid, and exactly the shape a
+    # single-name desk produces (one pick per day carries a control, the rest of
+    # the day's book does not). A date ratio alone measures whether the
+    # CALENDAR is covered; the row ratio measures whether the CLAIMS are. The
+    # gate needs both, so it takes the worse one.
+    date_coverage = round(n_controlled_dates / n_cohort_dates, 6)
+    row_coverage = round(n_controlled_rows / n_cohort_rows, 6) if n_cohort_rows else 0.0
+    coverage = min(date_coverage, row_coverage)
+    basis_note += (f" Coverage: date={date_coverage}, row={row_coverage}; "
+                   f"control_coverage=min={coverage} (C4.2).")
     common["control_coverage"] = coverage
 
     # THE HIT ARITHMETIC — P0c-1's rule, verbatim, over CONTROLLED rows only.
@@ -4072,9 +4209,10 @@ def matched_control_check(claim_family: str, horizon: int,
                     f"horizon={horizon}d has control_coverage={coverage} < "
                     f"{CONTROL_COVERAGE_MIN} required (contract C4.2) — "
                     f"{n_controlled_dates} controlled date(s) of {n_cohort_dates} "
-                    f"cohort date(s). The uncovered cohort NEVER leaves the "
-                    f"denominator, and no benchmark-relative record substitutes "
-                    f"for the missing controls (C5.1).{basis_note}"),
+                    f"cohort date(s), {n_controlled_rows} controlled row(s) of "
+                    f"{n_cohort_rows} cohort row(s). The uncovered cohort NEVER "
+                    f"leaves the denominator, and no benchmark-relative record "
+                    f"substitutes for the missing controls (C5.1).{basis_note}"),
             **headline, **common,
         )
 
@@ -4146,6 +4284,11 @@ def _apply_policy_label(pr: "PromotionResult", policy: str,
     if policy == CONTROL_POLICY_NOT_APPLICABLE:
         pr.eligible = False
         pr.demote = False
+        # (review round 1, note i) `pinned_reason` carries "Auto-demote one rung"
+        # prose from the bench arm. Clearing `demote` while leaving that string
+        # on the published dict left a demotion instruction attached to a family
+        # that has no rung to be demoted from.
+        pr.pinned_reason = ""
         pr.evidence_basis = EVIDENCE_BASIS_NOT_APPLICABLE
         pr.reason = ("not_applicable family (salience/descriptive) — no "
                      "directional promotion basis exists; magnitude grades vs "
@@ -4201,6 +4344,15 @@ def emit_ladder_states(root: Path | str | None = None,
         for c in claims
         if not c.get("is_placebo") and (c.get("claim_family") or c.get("desk"))
     })
+    # P0d C5.4/C9 (review round 1, finding 6) — a `matched_control_required`
+    # family is ALWAYS enumerated, exactly as `compute_promotion_readiness`
+    # does it. Both required families are prospective-only and hold zero rows
+    # today, so a claims-derived enumeration omits them entirely and
+    # `ladder_states` carries no entry at all for the two families this whole
+    # contract is about. "Evidence has not begun accruing" is the state a
+    # reader must be able to SEE from day one, not an absence to infer.
+    all_families = set(all_families) | {
+        f for f, p in FAMILY_CONTROL_POLICY.items() if p == CONTROL_POLICY_REQUIRED}
 
     results: dict[str, dict] = {}
     for fam in sorted(all_families):
