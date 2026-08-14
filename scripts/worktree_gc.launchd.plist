@@ -18,12 +18,7 @@
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/python3</string>
-    <string>__REPO_ROOT__/scripts/worktree_gc.py</string>
-    <string>--apply</string>
-    <string>--repo-root</string>
-    <string>__REPO_ROOT__</string>
-    <string>--json-out</string>
-    <string>__HOME__/Library/Logs/macro_worktree_gc/last_run.json</string>
+    <string>__SUPPORT_DIR__/worktree_gc_launchd.py</string>
   </array>
   <key>StartCalendarInterval</key>
   <dict>
@@ -31,6 +26,11 @@
     <integer>5</integer>
     <key>Minute</key>
     <integer>17</integer>
+  </dict>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
   </dict>
   <key>RunAtLoad</key>
   <false/>

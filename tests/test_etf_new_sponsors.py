@@ -302,15 +302,21 @@ def test_weight_trajectory_oldest_to_newest() -> None:
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 9.0,
                       "shares": 100, "market_value": 900},
                      {"ticker": "AAPL", "name": "Apple", "weight_pct": 5.0,
-                      "shares": 50, "market_value": 250}])
+                      "shares": 50, "market_value": 250},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 86.0,
+                      "shares": 860, "market_value": 8600}])
     _write_snapshot(fund_dir, "2026-07-09",
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 10.5,
                       "shares": 120, "market_value": 1260},
                      {"ticker": "AAPL", "name": "Apple", "weight_pct": 4.5,
-                      "shares": 45, "market_value": 202}])
+                      "shares": 45, "market_value": 202},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 85.0,
+                      "shares": 850, "market_value": 8500}])
     _write_snapshot(fund_dir, "2026-07-10",
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 11.2,
-                      "shares": 130, "market_value": 1456}])
+                      "shares": 130, "market_value": 1456},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 88.8,
+                      "shares": 888, "market_value": 8880}])
     orig = _install_fake_store(tmp)
     try:
         traj = ec.weight_trajectory("TESTF", "NVDA", k=12)
@@ -334,10 +340,14 @@ def test_attach_trajectories_populates_weight_series() -> None:
     fund_dir = tmp / "data" / "etf_holdings" / "TESTF"
     _write_snapshot(fund_dir, "2026-07-08",
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 9.0,
-                      "shares": 100, "market_value": 900}])
+                      "shares": 100, "market_value": 900},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 91.0,
+                      "shares": 910, "market_value": 9100}])
     _write_snapshot(fund_dir, "2026-07-09",
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 10.5,
-                      "shares": 120, "market_value": 1260}])
+                      "shares": 120, "market_value": 1260},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 89.5,
+                      "shares": 895, "market_value": 8950}])
     orig = _install_fake_store(tmp)
     try:
         rows = [{"etf": "TESTF", "ticker": "NVDA"},
@@ -355,15 +365,76 @@ def test_attach_trajectories_populates_weight_series() -> None:
         _restore_store(orig)
 
 
+def test_weight_trajectory_runs_the_same_snapshot_hygiene_as_the_numbers() -> None:
+    """m12. The sparkline used to read the raw file list, so it drew a line over
+    snapshots the scoring path had already thrown away — a broken parse whose
+    weights sum to 14%, or one as-of date written twice under two filenames. Both
+    put a step in the picture that the number printed beside it denies.
+
+    Three snapshots here: two good, one whose weight column sums to 14% (the
+    shape a truncated sponsor file takes). The line must skip the bad one and
+    keep the two that the decomposition itself would have used."""
+    tmp = Path(tempfile.mkdtemp())
+    fund_dir = tmp / "data" / "etf_holdings" / "HYGF"
+    good = [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 9.0,
+             "shares": 100, "market_value": 900},
+            {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 91.0,
+             "shares": 910, "market_value": 9100}]
+    _write_snapshot(fund_dir, "2026-07-08", good)
+    # a truncated parse: NVDA is present and plausible, the BOOK is not
+    _write_snapshot(fund_dir, "2026-07-09",
+                    [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 14.0,
+                      "shares": 900, "market_value": 8100}])
+    _write_snapshot(fund_dir, "2026-07-10",
+                    [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 11.2,
+                      "shares": 130, "market_value": 1456},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 88.8,
+                      "shares": 888, "market_value": 8880}])
+    orig = _install_fake_store(tmp)
+    try:
+        traj = ec.weight_trajectory("HYGF", "NVDA", k=12)
+        assert [p["as_of"] for p in traj] == ["2026-07-08", "2026-07-10"], (
+            "the quarantined snapshot must not reach the sparkline")
+        assert [p["weight_pct"] for p in traj] == [9.0, 11.2]
+        assert 14.0 not in [p["weight_pct"] for p in traj], (
+            "9 -> 14 -> 11.2 is the phantom spike the guard exists to remove")
+    finally:
+        _restore_store(orig)
+
+
+def test_weight_trajectory_drops_cash_lines_like_the_scored_path() -> None:
+    """The other half of m12: a money-market sweep line is not a position, so it
+    can never have a position-sizing sparkline."""
+    tmp = Path(tempfile.mkdtemp())
+    fund_dir = tmp / "data" / "etf_holdings" / "CASHF"
+    rows = [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 95.0,
+             "shares": 100, "market_value": 9500},
+            {"ticker": "-USD CASH-", "name": None, "weight_pct": 5.0,
+             "shares": 500, "market_value": 500}]
+    _write_snapshot(fund_dir, "2026-07-08", rows)
+    _write_snapshot(fund_dir, "2026-07-09", rows)
+    orig = _install_fake_store(tmp)
+    try:
+        assert ec.weight_trajectory("CASHF", "NVDA", k=12), "the equity still draws"
+        assert ec.weight_trajectory("CASHF", "-USD CASH-", k=12) == [], (
+            "a cash sweep line is not a position and gets no sparkline")
+    finally:
+        _restore_store(orig)
+
+
 def test_fund_coverage_reports_depth_and_freshness() -> None:
     tmp = Path(tempfile.mkdtemp())
     fund_dir = tmp / "data" / "etf_holdings" / "TESTF"
     _write_snapshot(fund_dir, "2026-07-08",
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 9.0,
-                      "shares": 100, "market_value": 900}])
+                      "shares": 100, "market_value": 900},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 91.0,
+                      "shares": 910, "market_value": 9100}])
     _write_snapshot(fund_dir, "2026-07-10",
                     [{"ticker": "NVDA", "name": "NVIDIA", "weight_pct": 11.2,
-                      "shares": 130, "market_value": 1456}])
+                      "shares": 130, "market_value": 1456},
+                     {"ticker": "MSFT", "name": "Microsoft", "weight_pct": 88.8,
+                      "shares": 888, "market_value": 8880}])
     orig = _install_fake_store(tmp)
     try:
         cov = ec.fund_coverage()
@@ -395,6 +466,8 @@ if __name__ == "__main__":
         test_consensus_min_funds_filters_single_fund_names,
         test_consensus_empty_and_none_conviction,
         test_weight_trajectory_oldest_to_newest,
+        test_weight_trajectory_runs_the_same_snapshot_hygiene_as_the_numbers,
+        test_weight_trajectory_drops_cash_lines_like_the_scored_path,
         test_attach_trajectories_populates_weight_series,
         test_fund_coverage_reports_depth_and_freshness,
     ]

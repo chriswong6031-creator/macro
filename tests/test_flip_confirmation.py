@@ -515,7 +515,10 @@ def test_grade_claim_flip_confirmation_e2e(tmp_path, monkeypatch):
     from engine import qledger as q
 
     # ── synthetic price store: 300 bars so 21d + 5d exit windows are fully covered ──
-    # asof=2026-07-09; fill=first bar after asof; 21d exit=fill+21 calendar days (~2026-07-31).
+    # asof=2026-07-09; fill=first session after asof (2026-07-10). The claim declares
+    # horizon_unit=trading_days (P0a), so the 21d exit is 21 SESSIONS after the fill
+    # (~2026-08-10), not 21 calendar days — the old comment here assumed the calendar
+    # reading that made check_by and the graded window diverge by ten days.
     # 300 business days from 2026-01-01 reaches into late 2027 — well past the exit window.
     n_bars = 300
     asof_str = "2026-07-09"
@@ -555,8 +558,11 @@ def test_grade_claim_flip_confirmation_e2e(tmp_path, monkeypatch):
     assert (claim.get("scope") or {}).get("key") == "XLP", "scope_key must be priceable XLP"
     assert claim.get("bench") == "XLK", "bench must be priceable XLK"
 
-    # ── advance time to 30 calendar days after asof so 5d + 21d both matured ──
-    future_date = (asof_ts + pd.Timedelta(days=30)).date()
+    # ── advance past the 21-SESSION exit so 5d + 21d are both matured ──
+    # 21 sessions from the 2026-07-10 fill lands on 2026-08-10; +60 calendar days
+    # clears it with room, and is the honest wait now that the clock counts
+    # sessions instead of approximating them in calendar days.
+    future_date = (asof_ts + pd.Timedelta(days=60)).date()
 
     # ── call grade_claim ───────────────────────────────────────────────────────
     grade_rows = q.grade_claim(claim, root=tmp_path, today=future_date)
