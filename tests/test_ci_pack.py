@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import contextlib
+import ast
 import errno
 import importlib.util
 import json
@@ -311,7 +312,9 @@ def test_selection_fails_safe_toward_running_everything() -> None:
     selected, reason = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
     assert len(selected) < len(jobs), reason
     assert "did not widen" in reason
-    unscoped = [job for job in jobs if not job.paths]
+    # `is_scoped`, not `paths`: after the #5586 tier split a job can be scoped
+    # entirely by opaque `fallback_paths`, and such a job is NOT always-on.
+    unscoped = [job for job in jobs if not job.is_scoped]
     for job in unscoped:
         assert job in selected, f"always-on {job.job_id} must still run"
     # 4. a scoped job runs whenever its own scope matches
@@ -385,15 +388,72 @@ def test_derived_closure_follows_relative_first_party_imports() -> None:
     assert "engine/capital_structure/share_count_truth.py" in materializer.files
 
 
+def _declared_scan_dirs(rel: str) -> tuple[str, ...]:
+    """The `SCAN_DIRS` literal a scanner suite declares, read without importing it.
+
+    Parsed rather than imported so this stays a statement about the scanner's
+    own source. The selector derives its roots from `CODE_SCAN_ROOTS`, so the
+    two sides remain independent evidence and a root added to one but not
+    reachable by the other is a real finding, not a tautology.
+    """
+    tree = ast.parse((ROOT / rel).read_text())
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+            isinstance(target, ast.Name) and target.id == "SCAN_DIRS"
+            for target in node.targets
+        ):
+            return tuple(ast.literal_eval(node.value))
+    raise AssertionError(f"{rel} no longer declares SCAN_DIRS at module level")
+
+
 def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
-    """A tree scan cannot be narrowed to the scanner suite's import closure."""
+    """A tree scan cannot be narrowed to the scanner suite's import closure.
+
+    `all-exports-resolve` AST-walks every `*.py` under eight directories, so a
+    scope narrower than those roots is a guard that stops running on exactly the
+    pull requests that can break it, and reports green forever.
+
+    The roots reach the job on the OPAQUE tier: an `rglob("*.py")` is the
+    textbook `fallback_paths` claim (#5586 split provenance out of `paths`).
+    Reading `paths` alone reported the tier split ITSELF as the narrowing —
+    after the split that field holds `tests/test_all_exports_resolve.py` and
+    nothing else, which is precisely the scanner suite's own import closure
+    this test is named for.
+
+    The tier is also observable behavior, not merely an explanation: owned
+    paths match before passive-file suppression, while fallback paths must not
+    select narrative Markdown. Pin both the executable selection and the
+    passive-file exclusion so a later refactor cannot silently undo #5586.
+    """
+    scan_dirs = _declared_scan_dirs("tests/test_all_exports_resolve.py")
+    assert len(scan_dirs) >= 8, scan_dirs
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     export_guard = next(job for job in jobs if job.job_id == "all-exports-resolve")
-    assert "engine/**" in export_guard.paths
-    assert "scripts/**" in export_guard.paths
-    assert "research/**" in export_guard.paths
-    selected, _ = PACK.select_jobs(jobs, ["engine/market_state.py"])
-    assert export_guard in selected
+    surface = export_guard.paths + export_guard.fallback_paths
+    missing = [f"{root}/**" for root in scan_dirs if f"{root}/**" not in surface]
+    assert not missing, (
+        f"all-exports-resolve scans {missing} but no scope pattern claims them: "
+        f"{surface}"
+    )
+
+    # Membership is not selection: a pattern nothing matches is a scope that
+    # reads correct and runs never. A NEW module under a scanned root is the
+    # case that matters most — that is where an unbound `__all__` name is born.
+    for root in scan_dirs:
+        assert f"{root}/**" in export_guard.fallback_paths
+        probe = f"{root}/__whole_tree_probe__.py"
+        assert PACK._job_diff_match(export_guard, [probe]) == (probe, "fallback")
+        selected, reason = PACK.select_jobs(jobs, [probe])
+        assert export_guard in selected, (probe, reason)
+        narrative_probe = f"{root}/__whole_tree_probe__.md"
+        assert PACK._job_diff_match(export_guard, [narrative_probe]) is None
+
+    # And the probe that pins non-vacuity: an existing file OUTSIDE the scanner
+    # suite's dependency closure, i.e. one the narrowed scope would have lost.
+    closure = suite_dependency_closure("tests/test_all_exports_resolve.py").files
+    assert "engine/market_state.py" not in closure
+    selected, reason = PACK.select_jobs(jobs, ["engine/market_state.py"])
+    assert export_guard in selected, reason
 
 
 def test_a_glob_pattern_bounds_the_file_kinds_its_scan_can_reach() -> None:
@@ -813,13 +873,25 @@ def test_a_code_suffix_must_end_a_filename_not_merely_appear_in_one() -> None:
 
 
 def test_derived_scopes_are_startable_by_the_ci_workflow() -> None:
-    """A job owner is useless when its dependency edit cannot start ci.yml."""
+    """A job owner is useless when its dependency edit cannot start ci.yml.
+
+    BOTH tiers are audited. #5586 split the PROVENANCE of a claim out of
+    `paths` and into `fallback_paths`; it did not split the selection, so an
+    opaque root ci.yml cannot start is the same silent hole in a different
+    field — the planner picks the job and the run never begins.
+
+    Measured on the manifest that shipped the split: zero gaps on either tier,
+    so reading both is a restoration of dropped coverage, not a relaxation —
+    but 289 of the 327 fallback patterns appear in NO job's `paths`, and
+    dropping `ops/**` from ci.yml's triggers opens 448 gaps that the
+    `paths`-only form still reports as zero.
+    """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
     triggers = tuple(on["pull_request"]["paths"])
     gaps: list[tuple[str, str]] = []
     for job in jobs:
-        for path in job.paths:
+        for path in job.paths + job.fallback_paths:
             if any(char in path for char in "*?"):
                 if not PACK.scope_pattern_is_startable(path, triggers):
                     gaps.append((job.job_id, path))
@@ -946,7 +1018,7 @@ def test_passive_markdown_stays_scoped_and_unknown_root_does_not_widen() -> None
     assert len(docs) < len(jobs)
     assert len(code) < len(jobs)
     assert "did not widen" in reason
-    unscoped = [job for job in jobs if not job.paths]
+    unscoped = [job for job in jobs if not job.is_scoped]
     assert {job.job_id for job in unscoped} <= {job.job_id for job in code}
 
 
