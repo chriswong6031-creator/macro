@@ -1812,9 +1812,22 @@ def test_selection_explanations_have_stable_job_path_and_pattern_order(
         pack_count=2,
     )
 
-    assert first.plan_sha256 == second.plan_sha256
-    assert PACK.selection_explanations(first) == PACK.selection_explanations(second)
-    records = PACK.selection_explanations(first)
+    # The changed-file artifact digest intentionally pins exact list order and
+    # multiplicity, so these plans have different identities. Explanations are
+    # diagnostic projections: after removing that join key their job/path/
+    # pattern ordering must still be identical.
+    assert first.plan_sha256 != second.plan_sha256
+    assert first.changed_files_sha256 != second.changed_files_sha256
+    first_records = PACK.selection_explanations(first)
+    second_records = PACK.selection_explanations(second)
+    assert [
+        {key: value for key, value in record.items() if key != "plan_sha256"}
+        for record in first_records
+    ] == [
+        {key: value for key, value in record.items() if key != "plan_sha256"}
+        for record in second_records
+    ]
+    records = first_records
     assert [record["job_id"] for record in records] == ["a-owner", "z-owner"]
     assert [
         match["changed_path"] for match in records[1]["matches"]
