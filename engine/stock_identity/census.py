@@ -111,13 +111,36 @@ def build_census(
     cols = [
         "symbol", "price_plane_id", "episode_type", "tier", "n_episodes", "n_censored",
         "censored_share", "first_anchor", "last_anchor", "n_calendar_clusters",
-        "top3_cluster_share", "median_depth_pct", "median_duration_sessions",
+        "top3_cluster_share", "n_calendar_clusters_typetier",
+        "top3_cluster_share_typetier", "median_depth_pct", "median_duration_sessions",
     ]
     if catalogs is None or catalogs.empty:
         return pd.DataFrame(columns=cols), pd.DataFrame(), {}
 
     anchors = catalogs.loc[catalogs["anchor_date"].notna(), "anchor_date"]
     mapping, cluster_table = assign_calendar_clusters(list(anchors), calendar, linkage_sessions)
+
+    # Diagnostic clustering, NAMED not swapped. The frozen v0 rule pools anchors across
+    # every name AND every episode type; at universe scale that pool covers essentially
+    # every session, so single linkage returns one component and the column carries no
+    # information. The object masterplan §8.1 actually describes ("post-2010 tier-1
+    # episodes concentrate in a single-digit number of market clusters") is the anchor
+    # pool of ONE (type, tier) stratum. Both are reported: the frozen one because it is
+    # frozen, the stratified one because it is the one that can answer the question.
+    typetier_maps: dict[tuple[str, int], dict[pd.Timestamp, int]] = {}
+    typetier_tables: list[pd.DataFrame] = []
+    for (etype, tier), g in catalogs.groupby(["episode_type", "tier"], dropna=False):
+        a = g.loc[g["anchor_date"].notna(), "anchor_date"]
+        m, t = assign_calendar_clusters(list(a), calendar, linkage_sessions)
+        typetier_maps[(str(etype), int(tier))] = m
+        if not t.empty:
+            t = t.copy()
+            t.insert(0, "episode_type", str(etype))
+            t.insert(1, "tier", int(tier))
+            typetier_tables.append(t)
+    typetier_table = (
+        pd.concat(typetier_tables, ignore_index=True) if typetier_tables else pd.DataFrame()
+    )
 
     rows: list[dict[str, Any]] = []
     grouped = catalogs.groupby(["symbol", "price_plane_id", "episode_type", "tier"], dropna=False)
@@ -131,6 +154,15 @@ def build_census(
             n_clusters = int(counts.size)
         else:
             top3, n_clusters = float("nan"), 0
+        tt_map = typetier_maps.get((str(etype), int(tier)), {})
+        tt_ids = [tt_map.get(pd.Timestamp(a).normalize()) for a in anch]
+        tt_ids = [i for i in tt_ids if i is not None]
+        if tt_ids:
+            tc = pd.Series(tt_ids).value_counts()
+            tt_top3 = float(tc.iloc[:TOP_CLUSTERS].sum()) / float(len(tt_ids))
+            tt_n = int(tc.size)
+        else:
+            tt_top3, tt_n = float("nan"), 0
         n = int(len(g))
         n_cens = int(g["censored"].sum())
         rows.append(
@@ -146,6 +178,8 @@ def build_census(
                 "last_anchor": pd.Timestamp(anch.max()) if len(anch) else pd.NaT,
                 "n_calendar_clusters": n_clusters,
                 "top3_cluster_share": top3,
+                "n_calendar_clusters_typetier": tt_n,
+                "top3_cluster_share_typetier": tt_top3,
                 "median_depth_pct": float(pd.to_numeric(g["depth_pct"], errors="coerce").median()),
                 "median_duration_sessions": float(
                     pd.to_numeric(g["duration_sessions"], errors="coerce").median()
@@ -155,6 +189,12 @@ def build_census(
     census = pd.DataFrame(rows, columns=cols).sort_values(
         ["episode_type", "tier", "symbol"]
     ).reset_index(drop=True)
+    if not typetier_table.empty:
+        cluster_table = cluster_table.assign(scope="frozen_v0_pooled_all_anchors")
+        cluster_table = pd.concat(
+            [cluster_table, typetier_table.assign(scope="diagnostic_by_type_and_tier")],
+            ignore_index=True,
+        )
     return census, cluster_table, mapping
 
 
@@ -219,6 +259,11 @@ def render_markdown(
         f"({header.get('hygiene_excluded_list')})"
     )
     lines.append(f"- **Census population**: {header.get('census_n')} names")
+    lines.append(
+        "- **Survivor-only cohort**: the allowed price planes retain no ceased tapes; no "
+        "dead name could be included (registration §2). Every cohort-level statement "
+        "below is therefore a statement about survivors, and cannot name who is missing."
+    )
     lines.append(f"- **Episodes catalogued**: {header.get('n_episodes')}")
     lines.append(
         f"- **Censored share**: {header.get('censored_share')} — censored episodes are "
@@ -255,32 +300,78 @@ def render_markdown(
             )
     lines.append("")
 
-    lines.append("## Calendar clusters (pooled, global ids)")
+    lines.append("## Calendar clusters — frozen v0 rule (all anchors pooled)")
     lines.append("")
-    if cluster_table.empty:
+    frozen = (
+        cluster_table[cluster_table.get("scope", "frozen_v0_pooled_all_anchors")
+                      == "frozen_v0_pooled_all_anchors"]
+        if not cluster_table.empty else cluster_table
+    )
+    if frozen.empty:
         lines.append("_no anchored episodes_")
     else:
-        lines.append(f"Total distinct clusters: **{len(cluster_table)}**")
+        lines.append(f"Total distinct clusters: **{len(frozen)}**")
         lines.append("")
+        if len(frozen) <= 1:
+            lines.append(
+                "**This column carries no information at universe scale, and that is a "
+                "result about the rule, not about the market.** The frozen v0 rule pools "
+                "anchor dates across every name AND every episode type; with thousands of "
+                "names catalogued, the pooled anchors cover essentially every session, so "
+                "no 126-session gap ever occurs and single linkage returns one component. "
+                "The rule is applied as frozen and reported as frozen. The stratified view "
+                "below is a NAMED diagnostic, not a substitution — swapping the rule "
+                "silently is precisely what the registration forbids."
+            )
+            lines.append("")
         lines.append("| cluster_id | start | end | anchor dates |")
         lines.append("|---:|---|---|---:|")
-        for r in cluster_table.itertuples(index=False):
+        for r in frozen.itertuples(index=False):
             lines.append(
                 f"| {r.cluster_id} | {pd.Timestamp(r.start).date()} | "
                 f"{pd.Timestamp(r.end).date()} | {r.n_anchor_dates} |"
             )
     lines.append("")
 
+    lines.append("## Calendar clusters — diagnostic, stratified by (type, tier)")
+    lines.append("")
+    lines.append(
+        "Anchors pooled within one (episode_type, tier) stratum, same 126-session single "
+        "linkage. This is the object masterplan §8.1 describes when it says post-2010 "
+        "tier-1 episodes concentrate in a single-digit number of market clusters, and it "
+        "is the count to read when judging whether a cell's episodes are one market event "
+        "wearing many tickers."
+    )
+    lines.append("")
+    diag = (
+        cluster_table[cluster_table.get("scope") == "diagnostic_by_type_and_tier"]
+        if "scope" in getattr(cluster_table, "columns", []) else pd.DataFrame()
+    )
+    if diag.empty:
+        lines.append("_not computed_")
+    else:
+        lines.append("| episode_type | tier | clusters | first | last |")
+        lines.append("|---|---:|---:|---|---|")
+        for (etype, tier), g in diag.groupby(["episode_type", "tier"]):
+            lines.append(
+                f"| {etype} | {tier} | {len(g)} | {pd.Timestamp(g['start'].min()).date()} | "
+                f"{pd.Timestamp(g['end'].max()).date()} |"
+            )
+    lines.append("")
+
     lines.append("## Distinct-cluster distribution per cell")
     lines.append("")
     if not census.empty:
-        lines.append("| episode_type | tier | cells | median clusters/cell | cells with 1 cluster |")
+        lines.append(
+            "| episode_type | tier | cells | median clusters/cell (diagnostic) | "
+            "cells with <=1 cluster |"
+        )
         lines.append("|---|---:|---:|---:|---:|")
         for (etype, tier), g in census.groupby(["episode_type", "tier"]):
-            single = int((g["n_calendar_clusters"] <= 1).sum())
+            single = int((g["n_calendar_clusters_typetier"] <= 1).sum())
             lines.append(
                 f"| {etype} | {tier} | {len(g)} | "
-                f"{float(g['n_calendar_clusters'].median()):.1f} | {single} |"
+                f"{float(g['n_calendar_clusters_typetier'].median()):.1f} | {single} |"
             )
         lines.append("")
         lines.append(

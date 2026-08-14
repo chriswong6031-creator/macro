@@ -126,6 +126,12 @@ def render_markdown(
     if snapshot_row.get("terminated_reason"):
         L.append(f"| terminated reason | {snapshot_row.get('terminated_reason')} |")
     L.append("")
+    L.append(
+        "**Survivor-only cohort:** the allowed price planes retain no ceased tapes; no "
+        "dead name could be included (registration §2). Any cohort comparison this name "
+        "appears in is a comparison among survivors and cannot name who is missing."
+    )
+    L.append("")
 
     L.append("### Ticker-identity hygiene (§9.6)")
     L.append("")
@@ -294,6 +300,12 @@ def render_chart(
     import matplotlib.patches as mpatches
     import matplotlib.pyplot as plt
 
+    # Collinear-point simplification and text-as-text keep a 60-year daily path from
+    # serializing every one of its ~16,000 vertices at full precision.
+    matplotlib.rcParams["path.simplify"] = True
+    matplotlib.rcParams["path.simplify_threshold"] = 1.0
+    matplotlib.rcParams["svg.fonttype"] = "none"
+
     close = df["close"].astype(float)
     sma200 = close.rolling(200, min_periods=200).mean()
 
@@ -345,15 +357,25 @@ def render_chart(
         fontsize=7, loc="upper left", framealpha=0.85, ncol=3,
     )
 
-    st = states.reindex(close.index)
-    codes = {s: i for i, s in enumerate(state_mod.STATES)}
-    vals = st.map(codes)
-    ax_s.scatter(
-        close.index, np.zeros(len(close)),
-        c=[_STATE_COLORS.get(s, "#cccccc") for s in st.fillna("range")],
-        marker="|", s=60, linewidths=0.9,
-    )
-    del vals
+    # State strip as RUN-LENGTH spans, not one marker per session. A per-session scatter
+    # emits one SVG element per bar — ~12,000 of them on a deep name, which pushed the
+    # vector past 2 MB and forced a raster fallback. Contiguous runs collapse that to a
+    # few hundred rectangles with identical information.
+    st = states.reindex(close.index).fillna("range")
+    idx = close.index
+    vals = st.to_numpy()
+    if len(vals):
+        run_start = 0
+        for i in range(1, len(vals) + 1):
+            if i == len(vals) or vals[i] != vals[run_start]:
+                ax_s.axvspan(
+                    idx[run_start], idx[min(i, len(idx) - 1)],
+                    color=_STATE_COLORS.get(str(vals[run_start]), "#cccccc"),
+                    linewidth=0,
+                )
+                run_start = i
+    ax_s.set_xlim(idx[0], idx[-1])
+    ax_s.set_ylim(0, 1)
     ax_s.set_yticks([])
     ax_s.set_ylabel("state", fontsize=8)
     ax_s.grid(False)

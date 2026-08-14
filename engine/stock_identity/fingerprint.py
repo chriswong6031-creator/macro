@@ -509,20 +509,27 @@ def _swing_period_median(close: np.ndarray, n: int, pct: float = SWING_ZIGZAG_PC
     if w is None or len(w) < 60:
         return None
     pivots: list[int] = []
-    direction = 0  # +1 rising, -1 falling
-    ext_i, ext_v = 0, float(w[0])
+    direction = 0  # 0 undecided, +1 rising, -1 falling
+    max_i, max_v = 0, float(w[0])
+    min_i, min_v = 0, float(w[0])
+    # While the direction is undecided the running MAX and MIN must be tracked
+    # separately: collapsing them onto one "extreme" makes it track the latest price,
+    # and the flip test then demands a `pct` move in a single session, which never
+    # happens — the feature reads as universally unavailable rather than as a bug.
     for i in range(1, len(w)):
         c = float(w[i])
-        if direction >= 0 and c > ext_v:
-            ext_i, ext_v = i, c
-        elif direction <= 0 and c < ext_v:
-            ext_i, ext_v = i, c
-        if direction >= 0 and ext_v > 0 and c <= ext_v * (1.0 - pct):
-            pivots.append(ext_i)
-            direction, ext_i, ext_v = -1, i, c
-        elif direction <= 0 and ext_v > 0 and c >= ext_v * (1.0 + pct):
-            pivots.append(ext_i)
-            direction, ext_i, ext_v = 1, i, c
+        if direction >= 0 and c > max_v:
+            max_i, max_v = i, c
+        if direction <= 0 and c < min_v:
+            min_i, min_v = i, c
+        if direction >= 0 and max_v > 0 and c <= max_v * (1.0 - pct):
+            pivots.append(max_i)
+            direction = -1
+            min_i, min_v = i, c
+        elif direction <= 0 and min_v > 0 and c >= min_v * (1.0 + pct):
+            pivots.append(min_i)
+            direction = 1
+            max_i, max_v = i, c
     if len(pivots) < 3:
         return None
     return float(np.median(np.diff(np.asarray(pivots, dtype=float))))
