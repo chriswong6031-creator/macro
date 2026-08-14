@@ -15031,7 +15031,7 @@
       },
       {
         "path": "tests/test_ci_authority.py",
-        "signature_sha256": "1ac09869e5d6bfeaa88ebfc94ba5417db2bc7109bd7e9d975b96ccba5759287a"
+        "signature_sha256": "c44e8ffd28b63a3d6b3d060a1ff863f0ba58599f94ce95c671b7ea60812f4a60"
       },
       {
         "path": "tests/test_ci_cancelled_run_completion.py",
@@ -19335,7 +19335,7 @@
       },
       {
         "path": "tests/test_options_signal_episode.py",
-        "signature_sha256": "69f7e327b55b01719d96c2082fa15cdc319b9a46f1e236c0a9337f74499cd387"
+        "signature_sha256": "7c4b8476e472547d38ae2adb644c51104f373ad2c399f3ecfc4adc1293ae531b"
       },
       {
         "path": "tests/test_options_skew.py",
@@ -20743,7 +20743,7 @@
       },
       {
         "path": "tests/test_run_options_sparse_selector.py",
-        "signature_sha256": "d1a4a569c2b9b7014d0c60e92160b2a55726a6d36c6f7e59cd0c77d388c33912"
+        "signature_sha256": "06dac950e7208279f2d03b3f5d90d9c17e3883afc95064d122fbfe4f1e2a151c"
       },
       {
         "path": "tests/test_run_rule_replay.py",
@@ -20923,7 +20923,7 @@
       },
       {
         "path": "tests/test_self_mod_fence.py",
-        "signature_sha256": "a01238aa41893b3c008e4abc0cd8758bb73126679b65c8508b55f2efd18720f2"
+        "signature_sha256": "42e65ef07ebe4674c89f3a930d96069a16d589a4481d3560dfc4806b5b7a22aa"
       },
       {
         "path": "tests/test_sentiment_aaii.py",
@@ -22657,7 +22657,7 @@
     "python_count": 5663,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "6ddf6061f23e3a18e69c7e5651197e070d5ac7ab36948fa14077ec941006bbdc",
+  "index_sha256": "56df308fc8193b5b7209b48c17751d2919379736d9deb9ffa1d71ff786276dcc",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -62569,12 +62569,20 @@
         "contracts/market_memory/trial_registration.v1.schema.json",
         "contracts/market_memory/trusted_capture_receipt.v1.schema.json",
         "contracts/options/options.market_memory_context_audit.v1.schema.json",
+        "contracts/options/options.market_memory_context_receipt_head.v1.schema.json",
         "contracts/options/options.market_memory_context_reference.v1.schema.json",
+        "contracts/options/options.market_memory_context_reference_set.v1.schema.json",
         "contracts/options/options.signal_campaign.v1.schema.json",
+        "contracts/options/options.signal_campaign.v2.schema.json",
         "contracts/options/options.signal_episode.v1.schema.json",
         "contracts/options/options.signal_episode_outcome.v1.schema.json",
         "contracts/options/options.signal_episode_session_outcome.v1.schema.json",
+        "contracts/options/options.sparse_selector_activation_receipt.v1.schema.json",
+        "contracts/options/options.sparse_selector_runtime.v1.schema.json",
         "contracts/options/polygon.intraday_price_receipt.v1.schema.json",
+        "contracts/options/prophet.option_mark_observation.v1.schema.json",
+        "contracts/options/prophet.option_shadow_lifecycle_event.v1.schema.json",
+        "contracts/research/momoedge_oracle_completion_benchmark_prereg.v1.schema.json",
         "contracts/symbol_directory/symbol_directory_completion_receipt.v1.schema.json",
         "engine/__init__.py",
         "engine/_text_scrub.py",
@@ -62920,6 +62928,7 @@
         "engine/options_signal_campaign.py",
         "engine/options_signal_episode.py",
         "engine/options_signal_episode_contract.py",
+        "engine/options_sparse_selector.py",
         "engine/options_structure.py",
         "engine/options_universe.py",
         "engine/oracle/__init__.py",
@@ -62953,6 +62962,7 @@
         "engine/power_scarcity.py",
         "engine/prediction_markets.py",
         "engine/press/earnings_adapter.py",
+        "engine/private_auth_dict.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
@@ -63121,6 +63131,8 @@
         "lib/ticker_popularity.py",
         "lib/tiers.py",
         "lib/user_prefs.py",
+        "ops/launchd/com.mastermind.optionssparseselector.plist",
+        "ops/launchd/run_options_sparse_selector_verified.py",
         "research/DO_NOT_REBUILD.md",
         "research/KONSEKI_CLEAN_ROOM_MARKET_MEMORY_AND_COGNITIVE_ARCHITECTURE_FOR_FABLE_2026-08-08.md",
         "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md",
@@ -63128,7 +63140,9 @@
         "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
         "research/licenses/MASSIVE_ENTITLEMENT_RECORD.md",
+        "research/momoedge/completion_benchmark_prereg_v1.json",
         "research/options_estate/OPTIONS_CONTEXT_AUDIT_LEDGER_BOUND_ADJUDICATION_2026-08-13.md",
+        "research/options_estate/sparse_selector_preregistration_receipt_v1.json",
         "scripts/__init__.py",
         "scripts/accrue_market_memory_spy_experience.py",
         "scripts/audit_options_episode_outcome_coverage.py",
@@ -63145,6 +63159,9 @@
         "scripts/build_market_memory_page.py",
         "scripts/build_market_structure_page.py",
         "scripts/build_options_signal_episode.py",
+        "scripts/build_options_sparse_selector_prereg.py",
+        "scripts/build_prophet_marks.py",
+        "scripts/build_prophet_option_shadow_lifecycle.py",
         "scripts/build_rr_banner.py",
         "scripts/build_site.py",
         "scripts/build_sp500_heatmap.py",
@@ -63176,6 +63193,7 @@
         "scripts/project_market_memory_context.py",
         "scripts/regime_reliability_phase0.py",
         "scripts/research/ptt_w1_persistence_of_fit.py",
+        "scripts/run_options_sparse_selector.py",
         "scripts/thematic_rotation_phase0.py",
         "scripts/translate_profiles.py",
         "scripts/validate_regime_fwd.py",
@@ -64087,7 +64105,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2284,
+    "candidate_count": 2287,
     "candidates": [
       {
         "path": ".claude",
@@ -66398,6 +66416,10 @@
         "present": true
       },
       {
+        "path": "engine/json.py",
+        "present": false
+      },
+      {
         "path": "engine/leader_lifecycle.py",
         "present": true
       },
@@ -67706,6 +67728,10 @@
         "present": false
       },
       {
+        "path": "engine/yaml/__init__.py",
+        "present": false
+      },
+      {
         "path": "engine/z.py",
         "present": false
       },
@@ -67799,6 +67825,10 @@
       },
       {
         "path": "lib/python3.12/site-packages/dependency.py",
+        "present": false
+      },
+      {
+        "path": "lib/python3.12/site-packages/libfixture.dylib",
         "present": false
       },
       {
