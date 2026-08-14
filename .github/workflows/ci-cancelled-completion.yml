@@ -1,0 +1,137 @@
+name: ci-cancelled-completion
+
+# A cancelled `ci` run normally never reaches ci-gate, so its strict failure
+# summary disappears with the run. This completion lane restores that terminal
+# evidence. It is intentionally read-only and checks out the trusted default
+# branch, never the pull request head carried by workflow_run.
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+
+permissions: {}
+
+concurrency:
+  group: ci-cancelled-completion-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  summarize-cancelled-run:
+    # Non-cancelled completions allocate no runner and consume no runner minutes.
+    if: ${{ github.event.workflow_run.conclusion == 'cancelled' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+    steps:
+      # actions/checkout v4.2.2. workflow_run is privileged relative to an
+      # untrusted fork, so only trusted default-branch scripts may execute.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          sparse-checkout: scripts
+          persist-credentials: false
+
+      - name: prove whether the cancelled head is obsolete
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ORIGINAL_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: >-
+          python3 scripts/ci_cancelled_run_completion.py
+          > "$RUNNER_TEMP/ci-cancelled-disposition-${ORIGINAL_RUN_ID}.json"
+
+      - name: materialize strict terminal evidence and summary
+        env:
+          ORIGINAL_RUN_ID: ${{ github.event.workflow_run.id }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          disposition="$RUNNER_TEMP/ci-cancelled-disposition-${ORIGINAL_RUN_ID}.json"
+          evidence="$RUNNER_TEMP/ci-failure-evidence-${ORIGINAL_RUN_ID}.json"
+          summary="$RUNNER_TEMP/ci-failure-summary-${ORIGINAL_RUN_ID}.json"
+          records="$RUNNER_TEMP/ci-cancelled-pack-records"
+          mkdir -p "$records"
+
+          superseded="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1]))["superseded"]).lower())' "$disposition")"
+          if [ "$superseded" = true ]; then
+            python3 scripts/ci_collect_pack_evidence.py run \
+              --planner-outcome cancelled \
+              --expected-matrix-json '{"include":[]}' \
+              --records-dir "$records" \
+              --superseded \
+              > "$evidence"
+          else
+            : > "$RUNNER_TEMP/ci-cancelled-pack.log"
+            python3 scripts/ci_collect_pack_evidence.py pack \
+              --pack-index 0 \
+              --outcome cancelled \
+              --log "$RUNNER_TEMP/ci-cancelled-pack.log" \
+              > "$records/pack-0.json"
+            python3 scripts/ci_collect_pack_evidence.py run \
+              --planner-outcome success \
+              --expected-matrix-json '{"include":[{"pack":0}]}' \
+              --records-dir "$records" \
+              > "$evidence"
+          fi
+          python3 scripts/ci_failure_summary.py --input "$evidence" > "$summary"
+
+      - name: validate the fail-closed classification and write the job summary
+        env:
+          ORIGINAL_RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          temp = Path(os.environ["RUNNER_TEMP"])
+          run_id = os.environ["ORIGINAL_RUN_ID"]
+          disposition = json.loads(
+              (temp / f"ci-cancelled-disposition-{run_id}.json").read_text()
+          )
+          summary = json.loads(
+              (temp / f"ci-failure-summary-{run_id}.json").read_text()
+          )
+          primary = summary.get("primary_category")
+          allowed = {"superseded"} if disposition["superseded"] else {
+              "infrastructure", "flaky_unknown"
+          }
+          if summary.get("schema") != "ci.failure_summary.v1" or primary not in allowed:
+              raise SystemExit(
+                  "cancelled-run summary contradicts the fail-closed disposition"
+              )
+
+          current = disposition.get("current_head_sha") or "unavailable"
+          source_url = (
+              f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}"
+              f"/actions/runs/{run_id}"
+          )
+          with Path(os.environ["GITHUB_STEP_SUMMARY"]).open("a", encoding="utf-8") as out:
+              out.write("## Cancelled CI completion\n\n")
+              out.write(f"- Original run: [{run_id}]({source_url})\n")
+              out.write(f"- Classification: `{primary}`\n")
+              out.write(f"- Original head: `{disposition['original_head_sha']}`\n")
+              out.write(f"- Current PR head: `{current}`\n")
+              out.write(f"- Evidence: {disposition['reason']}\n\n")
+              out.write("```json\n")
+              out.write(json.dumps(summary, separators=(",", ":")))
+              out.write("\n```\n")
+          PY
+
+      # actions/upload-artifact v4.6.2. The artifact and every filename bind to
+      # the ORIGINAL ci run id, not this small completion workflow's run id.
+      - name: publish cancelled-run machine evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-cancelled-run-summary-${{ github.event.workflow_run.id }}
+          path: |
+            ${{ runner.temp }}/ci-cancelled-disposition-${{ github.event.workflow_run.id }}.json
+            ${{ runner.temp }}/ci-failure-evidence-${{ github.event.workflow_run.id }}.json
+            ${{ runner.temp }}/ci-failure-summary-${{ github.event.workflow_run.id }}.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
