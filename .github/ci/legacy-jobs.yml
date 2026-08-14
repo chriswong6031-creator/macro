@@ -676,8 +676,16 @@ jobs:
       # signal-layer contract surface the Radar seam feeds (entry_event.v1 lands beside
       # the §7 contract at Radar PR-2). Cost: 93 tests in ~7s steady-state. Radar earns
       # its own job when the live evaluator lands (PR-4), not before.
-      - name: entry-radar W1 — probe universe funnel + enlistment bus contracts
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py -q
+      #
+      # W2 (PR-2, 2026-08-14) lands in the SAME step, as that comment anticipated:
+      # the entry_event.v1 store, the governed mastermind.indicator/v1 ingest, the G0
+      # grey-dot adapter and its F1-F6 parity tables, plus the W2 boundary/mutation
+      # guards. Still hermetic — the parity substrate is five COMMITTED slice fixtures
+      # under tests/fixtures/entry_radar/, no data/, no site/, no network, pure stdlib
+      # (the suites assert that themselves: no pandas/numpy import may appear in a W2
+      # module). Cost (whole step, all five suites): ~263 tests in ~5-7s steady-state.
+      - name: entry-radar W1+W2 — probe universe, entry_event.v1 store, G0 parity
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight

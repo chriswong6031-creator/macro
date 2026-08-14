@@ -1,0 +1,40 @@
+{
+ "results": {
+  "post": {
+   "f6a_fail": [
+    {
+     "sym": "NVDA",
+     "ts": "2005-02-18",
+     "known_ts": "2005-02-23"
+    },
+    {
+     "sym": "NVDA",
+     "ts": "2007-04-05",
+     "known_ts": "2007-04-10"
+    },
+    {
+     "sym": "NFLX",
+     "ts": "2011-12-12",
+     "known_ts": "2011-12-14"
+    },
+    {
+     "sym": "TSLA",
+     "ts": "2013-10-17",
+     "known_ts": "2013-10-21"
+    }
+   ],
+   "f6b_fail": [],
+   "f6c_edge_flips": 4,
+   "f6a_n": 337,
+   "f6a_refused": 9
+  },
+  "pre": {
+   "f6a_fail": [],
+   "f6b_fail": [],
+   "f6c_edge_flips": 0,
+   "f6a_n": 327,
+   "f6a_refused": 8
+  }
+ },
+ "elapsed_s": 52.2
+}

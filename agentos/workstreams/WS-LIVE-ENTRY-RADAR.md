@@ -31,26 +31,24 @@ waves:
     pr: 5578
   - id: W1
     title: PR-1 probe universe + candidate enlistment bus
-    status: in_progress
+    status: done
     pr: 5625
     depends_on: [W0]
-    next_action: >
-      Build in flight (operator CONTINUE directive 2026-08-14): funnel layers A–D +
-      mastermind.entry_probe_nomination.v1 per contract §6 and the Track C producer census;
-      ephemeral producers spooled prospectively from day one (§5); admission never grants
-      score authority. Acceptance: a lobe-nominated small cap outside the hot universe
-      lands in the Probe Set with provenance/freshness/eligibility intact. PR number added
-      at ship.
+    # Reconciled 2026-08-14 by the W2 session from merged evidence: PR #5625 MERGED
+    # 2026-08-14T17:31:07Z, merge commit 000732bd80d594a62f9923466e5be1cbe9b86ec7
+    # (gh pr view 5625 --json state,mergeCommit,mergedAt). Historical in_progress row
+    # predated the merge; no other state transition manufactured.
   - id: W2
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
-    status: todo
+    status: in_progress
     depends_on: [W0]
     next_action: >
       G0-VIS is CLOSED (operator confirmed the raw grey family 2026-08-13, contract §18
       A1) — the parity freeze is unblocked. PR-2 additionally owns the A1 adapter
       obligation: ingest the unified indicator/v1 signals stream preserving emitter
       type/subtype/quality/stage verbatim, and mint expert-family keys from emitter
-      receipts (STARTER/RE-ENTRY enumerations are PR-2 archaeology).
+      receipts (STARTER/RE-ENTRY enumerations are PR-2 archaeology). PR number added
+      at ship.
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
     status: todo

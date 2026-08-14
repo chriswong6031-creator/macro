@@ -1,0 +1,11 @@
+{
+ "generated": "2026-08-14",
+ "generator": "scratchpad/gen/gen_fixtures.py (session live-entry-radar-w2-pr2-26fe57)",
+ "signal_layer_source": "charting-app origin/master @ 82cb8cbf799fc3a91c9bee0f11a4db718fde68eb",
+ "feed_fresh": "Macro origin/main @ 9ea1bcb6844c9ca724f45e63bb94081938d3dfbf (data: daily collection 2026-08-14; bars through 2026-08-13)",
+ "feed_vintage": "Macro 4f68f8d95030 (data: daily collection 2026-07-09; bars through 2026-07-08 \u2014 the Track A census vintage)",
+ "signal_era": "gc_v2_wo2",
+ "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+ "stamper": "none \u2014 override_gate=None => pre-fence bit-identical emission (build_v2 docstring); no washout-override display stamps, no forward-ledger writes",
+ "cohort_inputs": "none \u2014 score_basis 'partial'; recipe scores are NOT parity surface"
+}
