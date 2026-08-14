@@ -5989,8 +5989,24 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn fastapi httpx
+      # P1 unrun backfill 2026-08-14: two more scripts/build_vector.py organs join the
+      # step that already owns the vector page's organs.  Both import straight from
+      # scripts.build_vector (_g_alerts and the market-card renderer) and both were
+      # named by no `run:` step in any workflow, so the landing hub's "What changed"
+      # explanation and its per-market header labels were dark on a publish pipeline —
+      # the surface that regressed on 2026-08-06, when _g_alerts dropped the plain-word
+      # explanation and rendered only the raw engine message.
+      # They ride this existing step because a step is the masking unit (run_ci_pack.py
+      # returns on the first non-zero step, so a later step goes dark behind an earlier
+      # red) while pytest reports EVERY file inside ONE step, and add no job to a
+      # manifest at the narrow-diff ceiling.  Appended LAST so a catalyst/forward-risk/
+      # Kelly/timeline regression is the first failure a reader sees rather than a hub
+      # renderer failing for a borrowed reason.
+      # No dependency widened: probed at RUN time both load only pandas/numpy/pyarrow/
+      # pyyaml — PIL is imported transitively but blocking it leaves them 6-passed and
+      # 1-passed, so it is optional, and it is not on this install line.
       - name: vector page organs — catalyst, forward-risk, Kelly, gated timeline
-        run: python -m pytest tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py -q
+        run: python -m pytest tests/test_vector_catalyst.py tests/test_vector_forward_risk.py tests/test_vector_kelly.py tests/test_vector_timeline_gated.py tests/test_hub_alerts_explanation.py tests/test_hub_market_card_labels.py -q
       - name: DSR / override-registry trial budget (dof charged must equal dof declared)
         run: python -m pytest tests/test_btc_vector_w1.py tests/test_deflated_sharpe.py -q
       - name: settled-close tape — the basket pulse the closing-bell lane publishes
@@ -6189,8 +6205,20 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn jsonschema
       - name: R2 fetch/audit + accrual audits + surface freshness
         run: python -m pytest tests/test_fetch_r2.py tests/test_audit_r2.py tests/test_audit_options_accrual.py tests/test_audit_thetadata_accrual.py tests/test_check_surface_freshness.py -q
+      # P1 unrun backfill 2026-08-14: tests/test_mag7_events.py joins the step that
+      # already owns scripts/notify_turn_events.py (test_notify_turn_events.py) — its
+      # own pipeline subject — and lib/store.py.  It was named by no `run:` step in any
+      # workflow, so engine/mag7_regime.py and the turn events the notifier emits for it
+      # were dark while the notifier itself was covered.  It rides this existing step
+      # because a step is the masking unit (run_ci_pack.py returns on the first non-zero
+      # step, so a later step goes dark behind an earlier red) while pytest reports
+      # EVERY file inside ONE step; no new job — the manifest is at the narrow-diff
+      # ceiling.  Appended LAST so a ledger-advance, failstreak or notifier regression
+      # is the first failure a reader sees rather than the mag7 regime consumer failing
+      # for a borrowed reason.  No dependency widened: probed at RUN time it loads
+      # pandas/numpy/pyarrow/pyyaml/requests, all already on the install line above.
       - name: ledger-advance + builder failstreaks + turn-event notifier
-        run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py -q
+        run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py tests/test_mag7_events.py -q
       - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
         run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
       # Enumerated in NO workflow before this (calendar-asof audit follow-up
@@ -6608,8 +6636,21 @@ jobs:
           python-version: "3.12"
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+      # P1 unrun backfill 2026-08-14: tests/test_inflation_units.py joins the step that
+      # already owns scripts/build_site.py's panels.  It was named by no `run:` step in
+      # any workflow, so the UNITS contract on the inflation panel — percent vs
+      # percentage-point, the class of error that silently mis-states a published macro
+      # number — was dark on the nightly render path, while every sibling panel view
+      # model in this step was covered.  It rides this existing step because a step is
+      # the masking unit (run_ci_pack.py returns on the first non-zero step) while
+      # pytest reports every file inside one step, and adds no job to a manifest at the
+      # narrow-diff ceiling.  Appended LAST so a panel or view-model regression is the
+      # first failure a reader sees rather than the units guard failing for a borrowed
+      # reason.  No dependency widened: probed at RUN time it loads pandas/numpy/pyarrow/
+      # pyyaml/requests — all on the install line above — plus PIL transitively, which
+      # blocking leaves 10-passed, so it is optional and stays off the line.
       - name: scripts/build_site.py panels and view-models — the dashboard organs the nightly render ships
-        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py -q
+        run: python -m pytest tests/test_action_board_coherence.py tests/test_advanced_breadth.py tests/test_basket_integration.py tests/test_breadth_panel.py tests/test_c4_dollar.py tests/test_factor_ic_panel.py tests/test_macro_glance.py tests/test_macro_signals_vm.py tests/test_market_gamma.py tests/test_market_gamma_contract.py tests/test_regime_snap.py tests/test_spark_zone_band.py tests/test_ts_u3_dashboard_surfaces.py tests/test_vol_shock_scorecard.py tests/test_wiki_pageviews.py tests/test_inflation_units.py -q
       # Unrun backfill 2026-08-03: the Prophet Live P1 user-facing dashboard
       # surfaces join the lane that owns the dashboard organs. (Distinct from
       # the #4331 prophet-board suites, whose staging follows that PR's merge.)
@@ -7307,8 +7348,20 @@ jobs:
       # tripwire. engine/equity_factors.py was strictly dark: no `run:` step named its
       # suite and no ci.yml path named the module, so the board tiebreak's own source
       # could not start CI. Needs only the deps already installed here.
+      # P1 unrun backfill 2026-08-14: tests/test_commodities_ignition_copy.py joins the
+      # step that already owns scripts/build_commodities.py — its only subject — via
+      # test_commodity_mtf_verdict_honesty.py.  It was named by no `run:` step in any
+      # workflow, so the ignition COPY on the commodities panel was dark while the
+      # verdict honesty guard beside it was covered; both police the same published
+      # panel, one the number and one the words.  It rides this existing step because a
+      # step is the masking unit (run_ci_pack.py returns on the first non-zero step)
+      # while pytest reports every file inside one step, and adds no job to a manifest
+      # at the narrow-diff ceiling.  Appended LAST so a panel or calibration regression
+      # is the first failure a reader sees rather than the copy guard failing for a
+      # borrowed reason.  No dependency widened: probed at RUN time it loads only
+      # pandas/numpy/pyarrow/pyyaml, all already on the install line above.
       - name: commodities / forex / rates / news / policy panels and their calibration guards
-        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py -q
+        run: python -m pytest tests/test_factor_universe_hold.py tests/test_build_dispersion_regime.py tests/test_build_factor_panel.py tests/test_commodity_mtf_verdict_honesty.py tests/test_congress_score.py tests/test_context_risk.py tests/test_cross_asset_context.py tests/test_crossasset_flows.py tests/test_financial_news.py tests/test_forex.py tests/test_forex_context_bus.py tests/test_news_event_ledger.py tests/test_phase_buildout.py tests/test_policy_lever.py tests/test_rates_command.py tests/test_reflexivity_overlay.py tests/test_scorecard_incremental.py tests/test_us_sector_rotation_wiring.py tests/test_validation.py tests/test_whitehouse_build.py tests/test_commodities_ignition_copy.py -q
 
   unrun-market-plumbing:
     # live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes.
