@@ -78,7 +78,7 @@ waves:
     depends_on: [W6]
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — switching to a localization ruler does not escape it; no per-name outcome argmax anywhere (masterplan §2)."
-  - "Live Entry Radar PR-0 (#5578) is UNMERGED — its contract and entry_event.v1 schema are proposed, not ratified; revalidate at W1/W2 before consuming."
+  - "Live Entry Radar PR-0 (#5578) MERGED 2026-08-14 — entry_event.v1 vocabulary is ratified and adopted (W2, field_origin extended for replay provenance); the Radar STORE lands at Radar PR-2 and is never written by this program."
   - "data/massive_stock_day is RAW (splits uncorrected) and ~2021+ only — prohibited for any behavioral math until its adjustment transform is traced."
   - "Reused-ticker splices put a different company's history in a per-ticker file 'born clean' (ECHO/SATS class) — run identity hygiene checks before trusting any joined history."
   - "amber-EARLY family has zero history before Terminal 935389d4 (2026-08-11); Door R forbids backfill by charter — Class P families accrue prospectively only, never backfilled."
@@ -91,9 +91,11 @@ artifacts:
   - research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md
   - research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md
 next_action: >
-  §16 RATIFIED 2026-08-14 (PROCEED). Land PR-0 (#5583) via the sweeper; then a fresh
-  session launches W1 (Identity Atlas v0) per the §16.9 execution authorization —
-  descriptive only, no expert-fit results, understanding-before-backtest binding.
+  W0-W2 shipped (PRs #5583/#5612/#5643, 2026-08-14). NEXT: W3 (ruler engine +
+  estimability census) starts ONLY on its own operator go — the 2026-08-14 W1-return
+  ruling ends W2 at its handoff with no auto-roll. Before PR-5/Q1: the separately
+  registered Dead Instrument Control Set (ruling 2) must exist. PR-3 pre-reads:
+  twin-parity grain handling, weekly-washout exemption caveat, cluster-rule refinement.
 ---
 
 ## Context
