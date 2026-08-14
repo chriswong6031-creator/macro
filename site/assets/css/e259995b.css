@@ -1,0 +1,478 @@
+
+/* ═══ tokens: layered on theme.css (dark default) — components inherit light/dark ═══ */
+:root{--card:var(--panel);--grid:var(--line);--ink:#eef2f7;
+  --faint:color-mix(in srgb,var(--muted) 72%,var(--bg));
+  --amber:#fbbf24;--teal:#2dd4bf;--ch-a:#8b96f8;--ch-b:#2dd4bf;--ch-c:#fbbf24;
+  --lift:#54c39a;--drag:#e58a97;--accent:var(--ch-b);
+  /* ── the money-source pair (W1 decomposition) ────────────────────────────
+     Two kinds of buying, so two marks. They are CATEGORY inks, not direction
+     inks: investor money takes the market hue, and a manager's pick takes the
+     page's own INK — a filing is signed by a person. Because neither is
+     derived from --up/--down, neither flips under 中文 红涨绿跌, which is
+     exactly right: "who was buying" is not a direction. */
+  --flow:#8b96f8;
+  --pick:color-mix(in srgb,var(--ink) 74%,var(--bg));
+  /* glass surface tokens for the tier wall's floating card. special_situations
+     defines these locally too — theme.css ships no --surface family, so pasting
+     the wall CSS without them renders a transparent-but-working card, which is
+     exactly the failure mode a review misses (W2 spec §B3.2). Dark first: this
+     :root IS the dark default on this page. */
+  --surface: color-mix(in srgb, var(--card) 80%, transparent);
+  --surface-brd: color-mix(in srgb, var(--text) 13%, transparent);
+  --surface-shadow: 0 20px 52px -22px rgba(3,7,18,.66), 0 6px 18px -10px rgba(3,7,18,.44),
+                    inset 0 1px 0 color-mix(in srgb,#fff 7%,transparent)}
+/* Light is a design target, not a token swap (Doctrine §5.8). theme.css hands
+   this page #f7f8fa canvas against #ffffff panels — panel≈bg, the flatness bug —
+   so the canvas is deepened HERE and the panels are lifted off it with a soft
+   shadow and a crisper hairline, the reference light treatment. */
+html[data-theme="light"]{--ink:#141b26;--faint:color-mix(in srgb,var(--muted) 82%,var(--bg));
+  --amber:#b45309;--teal:#0f766e;--ch-a:#4559dc;--ch-b:#0f766e;--ch-c:#b45309;
+  --lift:#2f9270;--drag:#c65b6e;
+  --flow:#4559dc;
+  --pick:color-mix(in srgb,var(--ink) 80%,transparent);
+  --lift-shadow:0 1px 2px rgba(20,32,64,.05),0 10px 26px -18px rgba(20,32,64,.30);
+  --surface: color-mix(in srgb, var(--card) 72%, transparent);
+  --surface-brd: color-mix(in srgb, var(--ink) 12%, transparent);
+  --surface-shadow: 0 14px 36px -20px rgba(20,32,64,.22), 0 4px 12px -6px rgba(20,32,64,.12),
+                    inset 0 1px 0 rgba(255,255,255,.72)}
+html[data-theme="light"] body{background:#e9ecf3}
+/* The panel LIFT and the panel RAIL are both box-shadows, so light mode has to
+   restate the rail or the second declaration silently deletes it — which is
+   exactly what a "just add a shadow for light" patch does, and it renders as a
+   page that quietly loses its accent system on white. Every railed surface
+   carries its colour in --rail so one pair of rules covers all of them. */
+.card{--rail:var(--accent)}.tile{--rail:var(--tc,var(--accent))}
+.rrc{--rail:var(--rc,var(--accent))}.fc{--rail:var(--lift)}
+.card,.tile,.rrc,.fc{box-shadow:inset 3px 0 0 var(--rail)}
+html[data-theme="light"] .card,html[data-theme="light"] .tile,
+html[data-theme="light"] .rrc,html[data-theme="light"] .fc{
+  box-shadow:inset 3px 0 0 var(--rail),var(--lift-shadow)}
+html[data-theme="light"] .shelf details{box-shadow:var(--lift-shadow)}
+/* zh 红涨绿跌 (operator ruling): accumulate/trim are DIRECTION reads → swap. */
+html[data-lang="zh"]{--lift:#e58a97;--drag:#54c39a}
+html[data-theme="light"][data-lang="zh"]{--lift:#c65b6e;--drag:#2f9270}
+*{box-sizing:border-box}
+body{margin:0;padding:18px 0 0;background:var(--bg);color:var(--text);
+  font-family:var(--font-ui),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px 64px}
+a{color:var(--ink-link, var(--link));text-decoration:none}
+.faint{color:var(--faint)}.muted{color:var(--muted)}
+.pos{color:var(--lift)}.neg{color:var(--drag)}
+/* ── the page's type scale ────────────────────────────────────────────────
+   One eyebrow, one display size, one row voice, one micro voice. Figures are
+   tabular everywhere; the MONO face is reserved for money, which keeps the two
+   number classes audibly different — the bold pp is a row's headline, the mono
+   dollar figure is its receipt (masterplan R2, one primary number per row). */
+.eyebrow{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--muted)}
+.ic-svg{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round;display:block}
+
+/* ═══ hero ═══ */
+.eh{padding:26px 0 6px;animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.eh-brand{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+.eh-mark{display:inline-flex;width:30px;height:30px;border-radius:9px;flex:none;
+  align-items:center;justify-content:center;font-size:19px;color:var(--ch-b);
+  background:color-mix(in srgb,var(--ch-b) 12%,transparent);
+  border:1px solid color-mix(in srgb,var(--ch-b) 26%,transparent)}
+.eh-brand h1{margin:0;font-size:25px;font-weight:800;letter-spacing:-.022em;color:var(--ink)}
+.eh-brand .tag{font-size:13px;color:var(--muted);flex:1 1 220px;min-width:0}
+.eh-verdict{font-size:clamp(21px,2.9vw,29px);font-weight:800;color:var(--ink);letter-spacing:-.022em;line-height:1.28;margin:18px 0 4px;max-width:940px;text-wrap:balance}
+/* T5 stance line — the free build's Law-1 read, from rotation context only.
+   Its highlight IS directional (risk-on / risk-off), so it rides --lift/--drag
+   and flips correctly under 中文; the neutral case takes plain ink. */
+.stance-line{font-size:16px;line-height:1.5;color:var(--ink);font-weight:600;margin:18px 0 4px;max-width:760px}
+.stance-line .st.u{color:var(--lift)}.stance-line .st.d{color:var(--drag)}.stance-line .st.n{color:var(--ink)}
+/* the as-of strip: the sanctioned self-labeling .dtp chip idiom (Doctrine §3).
+   The state token IS its own label, there is exactly ONE as-of on the page, and
+   the cycle dot takes a FIXED ink — a data-freshness mark must not ride
+   --up/--down, which 中文 would flip. */
+.eh-tape{margin-top:16px;border:1px solid var(--grid);border-radius:13px;
+  background:color-mix(in srgb,var(--card) 62%,transparent)}
+.eh-tape .dtp-dot{background:#1FA971}
+.eh-tape .dtp-asof{display:inline-flex;align-items:center;gap:2px}
+.eh-tape b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
+/* hero tiles */
+.eh-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+@media(max-width:760px){.eh-tiles{grid-template-columns:1fr}}
+.tile{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:15px 17px;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.tile:nth-child(2){animation-delay:.06s}.tile:nth-child(3){animation-delay:.12s}
+.tile.t-lift{--tc:var(--lift)}.tile.t-drag{--tc:var(--drag)}.tile.t-accent{--tc:var(--ch-a)}.tile.t-neutral{--tc:var(--faint)}
+/* the free build's honest-total tile: a count is not a direction, so it takes
+   the brand link ink rather than an up/down one that 中文 would flip */
+.tile.t-link{--tc:var(--link)}
+.tile .tk{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--muted)}
+/* a step below the verdict on purpose: the sentence is the page's thesis and
+   the tiles support it, so they must not tie with it for first read */
+.tile .tv{font-size:24px;font-weight:800;letter-spacing:-.025em;color:var(--ink);line-height:1.12;margin:6px 0 3px;font-variant-numeric:tabular-nums}
+.tile .tm{font-size:12px;color:var(--faint);line-height:1.45}
+.tile .tstance{margin-top:10px}
+
+/* ═══ section chrome ═══ */
+.sec{margin-top:40px}
+.sec-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:0 0 4px}
+.sec-head .sh-dot{width:7px;height:7px;border-radius:2px;background:var(--sc,var(--accent));flex:none}
+.sec-head h2{margin:0;font-size:12.5px;font-weight:800;color:var(--ink);text-transform:uppercase;letter-spacing:.115em}
+.sec-sub{font-size:13.5px;color:var(--muted);margin:0 0 16px;max-width:720px;line-height:1.5}
+.card{background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:18px 20px;position:relative;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+
+/* ═══ stance pill ═══ */
+.stpill{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap;cursor:help;
+  background:color-mix(in srgb,var(--sp,var(--muted)) 12%,var(--card));color:var(--sp,var(--muted));border:1px solid color-mix(in srgb,var(--sp,var(--muted)) 26%,var(--grid))}
+.stpill .stdot{width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.st-act{--sp:var(--lift)}.st-act .stdot,.st-ready .stdot{animation:txBreathe 2.4s ease-in-out infinite}
+.st-ready{--sp:var(--teal)}.st-watch{--sp:var(--link)}.st-trim{--sp:var(--amber)}.st-aside{--sp:var(--faint)}.st-ignore{--sp:var(--faint)}
+
+/* ═══ breadth constellation ═══ */
+.bdots{display:inline-flex;align-items:center;gap:3px;line-height:1;cursor:help}
+.bdots i{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.bdots i.up{background:var(--lift)}.bdots i.dn{background:var(--drag)}
+.bdots i.sep{width:1px;height:12px;border-radius:0;background:var(--grid);margin:0 2px}
+.bdots i.ov{width:auto;height:auto;border-radius:0;font-size:10px;font-weight:800;color:var(--lift);font-style:normal;margin-left:1px}
+
+/* ═══ pressure bar ═══ */
+.pbar{position:relative;display:block;height:7px;background:color-mix(in srgb,var(--grid) 42%,var(--card));border-radius:999px;width:100%;overflow:hidden}
+.pb-mid{position:absolute;left:50%;top:0;bottom:0;width:1px;background:var(--muted);opacity:.72;z-index:1}
+.pb-fill{position:absolute;top:0;bottom:0;border-radius:999px;animation:txGrow .8s cubic-bezier(.2,.7,.3,1) both}
+.pb-fill.u{left:50%;transform-origin:left;background:linear-gradient(90deg,color-mix(in srgb,var(--lift) 22%,transparent),color-mix(in srgb,var(--lift) 62%,transparent))}
+.pb-fill.d{right:50%;transform-origin:right;background:linear-gradient(270deg,color-mix(in srgb,var(--drag) 22%,transparent),color-mix(in srgb,var(--drag) 62%,transparent))}
+
+/* ═══ the money-source marks (the page's signature) ═══════════════════════════
+   One rail, two segments, sized by how many funds were on each side. It rides
+   fund COUNTS rather than dollars on purpose: counts are this page's primary
+   and least manipulable lens, they survive a sponsor that publishes no market
+   values, and they cannot be misread as a second reading of the pp headline.
+   1px gap + track border so the segments stay separate on white (Doctrine §5.8). */
+.srail{display:inline-flex;width:32px;height:5px;border-radius:3px;overflow:hidden;flex:none;
+  background:color-mix(in srgb,var(--grid) 62%,var(--card));
+  box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--grid) 75%,transparent)}
+.srail i{display:block;height:100%}
+.sr-f{background:var(--flow);border-right:1px solid var(--card)}
+.sr-s{flex:1;background:var(--pick)}
+.sw{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:6px;flex:none;vertical-align:-1px}
+.sw-f{background:var(--flow)}.sw-s{background:var(--pick)}
+.src{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;white-space:nowrap}
+.src-t{color:var(--faint)}
+.sc-f .src-t{color:color-mix(in srgb,var(--flow) 62%,var(--muted))}
+.sc-s .src-t{color:color-mix(in srgb,var(--ink) 55%,var(--muted))}
+/* money: mono, quiet, never bold, never directional — the receipt voice */
+.mny{font-family:var(--font-mono),ui-monospace,monospace;font-size:11px;font-weight:600;
+  color:var(--muted);font-variant-numeric:tabular-nums;letter-spacing:-.015em;white-space:nowrap}
+.mny .pl{font-style:normal;font-weight:800;color:var(--faint);cursor:help}
+.mny.none{color:var(--faint)}
+/* one persistence chip, outlined and quiet — a streak is context, not a call */
+.prs{display:inline-block;padding:0 6px;border-radius:6px;font-size:10px;font-weight:700;
+  color:var(--muted);border:1px solid var(--grid);white-space:nowrap}
+/* the small-caps "active manager" mark: a person picks these holdings, so it
+   takes the same ink the manager's-pick segment does */
+.am{font-style:normal;font-size:9.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--ink) 62%,var(--muted));cursor:help}
+
+/* ═══ consensus board (signature) ═══ */
+.cb-card{padding:0}
+.cb-legend{display:flex;align-items:baseline;gap:7px 16px;flex-wrap:wrap;padding:12px 20px 11px;
+  border-bottom:1px solid var(--grid);font-size:11.5px;color:var(--muted);line-height:1.45}
+.cb-legend .lg-k{font-size:10.5px;font-weight:800;letter-spacing:.02em;color:var(--ink);white-space:nowrap}
+.cb-legend .lg-t{flex:1 1 300px;min-width:0}
+.cb-legend .lg-m{font-size:10.5px;color:var(--faint);white-space:nowrap}
+.cb-head,.cb-row{display:grid;grid-template-columns:28px minmax(146px,1.3fr) 116px minmax(158px,1.15fr) 172px;gap:16px;align-items:center}
+.cb-head{padding:9px 20px 8px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
+.cb-head .r{text-align:right}
+.cb-row{padding:12px 20px}
+.cb-row+.cb-row{border-top:1px solid color-mix(in srgb,var(--grid) 55%,transparent)}
+.cb-row:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.cb-rank{font-size:13px;font-weight:800;color:var(--faint);font-variant-numeric:tabular-nums;text-align:center}
+.cb-row:nth-child(-n+6) .cb-rank{color:var(--accent)}
+.stock-cell{display:flex;align-items:center;gap:9px;min-width:0}
+.stock-cell .st-txt{min-width:0}
+.stock-cell .st-txt b{display:block;font-size:14px;color:var(--ink);line-height:1.15;letter-spacing:-.005em}
+.stock-cell .st-txt .nm{display:block;font-size:11.5px;color:var(--muted);line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
+.themetag{display:inline-block;margin-top:3px;padding:0 7px;border-radius:6px;font-size:10px;font-weight:700;letter-spacing:.01em;
+  background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted)}
+.cb-breadth{display:flex;flex-direction:column;align-items:flex-start;gap:5px}
+.cb-net{text-align:right;font-variant-numeric:tabular-nums}
+.cb-net .v{font-size:15px;font-weight:800;letter-spacing:-.02em}
+.cb-net .v.u{color:var(--lift)}.cb-net .v.d{color:var(--drag)}
+.cb-pres{display:flex;flex-direction:column;gap:6px}
+.cb-src{display:flex;align-items:center;gap:9px;flex-wrap:wrap;cursor:help}
+.cb-flags{display:flex;gap:5px;flex-wrap:wrap}
+.cb-flags:empty{display:none}
+.mini{display:inline-block;padding:0 7px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.02em;white-space:nowrap}
+.mini.new{background:color-mix(in srgb,var(--lift) 16%,var(--card));color:var(--lift)}
+.mini.exit{background:color-mix(in srgb,var(--drag) 15%,var(--card));color:var(--drag)}
+/* disagreement is a FACT about the fund count, so it sits with the dots and is
+   outlined rather than filled — it must not shout louder than the stance */
+.mini.split{color:var(--ink-warn, var(--amber));border:1px solid color-mix(in srgb,var(--ink-warn, var(--amber)) 34%,var(--grid));font-weight:700}
+.mini.old{color:var(--muted);border:1px solid var(--grid);font-weight:700;cursor:help}
+.mini.contested{background:color-mix(in srgb,var(--amber) 16%,var(--card));color:var(--ink-warn, var(--amber))}
+.mini.active{background:color-mix(in srgb,var(--ch-a) 15%,var(--card));color:var(--ch-a)}
+/* the whose-conviction hover popover */
+.cb-who{position:relative;display:inline-flex}
+.cb-who .who-src{font-size:11px;color:var(--muted);cursor:help;border-bottom:1px dashed var(--grid)}
+.cb-who .who-pop{display:none;position:absolute;left:0;top:20px;z-index:40;width:230px;padding:10px 12px;border-radius:11px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.4);font-size:12px;line-height:1.5;color:var(--text)}
+.cb-who:hover .who-pop{display:block}
+.who-pop .wl{display:flex;justify-content:space-between;gap:10px;padding:2px 0}
+.who-pop .wl b{color:var(--ink)}
+.who-pop .wl .wv.u{color:var(--lift)}.who-pop .wl .wv.d{color:var(--drag)}
+/* the size lens — below the ranking, never instead of it */
+.cb-size{display:flex;align-items:center;gap:8px 14px;flex-wrap:wrap;padding:11px 20px 12px;
+  border-top:1px solid var(--grid);background:color-mix(in srgb,var(--grid) 14%,transparent)}
+.cb-size .cs-k{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--muted)}
+.cb-size .cs-i{display:inline-flex;align-items:baseline;gap:6px;color:var(--text)}
+.cb-size .cs-i b{font-size:12px;font-weight:800;color:var(--ink)}
+.cb-size .cs-i:hover b{color:var(--link)}
+.cb-size .cs-n{font-size:11px;color:var(--faint);cursor:help;border-bottom:1px dashed var(--grid);margin-left:auto}
+@media(max-width:720px){
+  .cb-head{display:none}
+  .cb-row{grid-template-columns:26px 1fr auto;gap:11px;row-gap:9px;padding:13px 16px}
+  .cb-legend,.cb-size{padding-left:16px;padding-right:16px}
+  .cb-pres{grid-column:2/-1}
+  .cb-stance-cell{grid-column:2/-1}
+}
+
+/* ═══ fresh conviction cards ═══ */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(238px,1fr));gap:14px}
+.fc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:14px;padding:14px 16px;
+  animation:txUp .5s cubic-bezier(.2,.7,.3,1) both}
+.fc-top{display:flex;align-items:center;gap:9px}
+.fc-top .st-txt{flex:1;min-width:0}
+.fc-top .st-txt b{display:block;font-size:14.5px;color:var(--ink);line-height:1.1}
+.fc-top .st-txt .nm{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px}
+.fc-conv{flex:none;font-size:14px;font-weight:800;color:var(--lift);font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.fc-conv i{font-style:normal;font-size:10px;font-weight:700;color:var(--faint);margin-left:1px}
+.fc-mid{font-size:11.5px;color:var(--muted);margin:11px 0 8px}
+.fc-mid b{color:var(--ink);font-weight:800}
+.fc-funds{display:flex;flex-wrap:wrap;gap:4px}
+.fchip{padding:1px 7px;border-radius:6px;font-size:10.5px;font-weight:700;background:color-mix(in srgb,var(--muted) 13%,var(--card));color:var(--muted)}
+/* an ACTIVE manager's chip takes the manager's-pick ink: a person chose it */
+.fchip.act{background:color-mix(in srgb,var(--ink) 15%,var(--card));color:var(--ink);cursor:help}
+.fchip.more{background:transparent;border:1px solid var(--grid);color:var(--faint)}
+.fc-foot{margin-top:12px;padding-top:11px;border-top:1px solid color-mix(in srgb,var(--grid) 60%,transparent)}
+
+/* ═══ rotation rail (market backdrop) ═══ */
+.rr{display:grid;grid-template-columns:1.05fr 1.25fr 1.05fr;gap:16px;align-items:start}
+@media(max-width:900px){.rr{grid-template-columns:1fr}}
+.rrc{position:relative;background:var(--card);border:1px solid var(--grid);border-radius:16px;padding:17px 19px;
+  animation:txUp .55s cubic-bezier(.2,.7,.3,1) both}
+.rrc:nth-child(2){animation-delay:.06s}.rrc:nth-child(3){animation-delay:.12s}
+.rrc.c-risk{--rc:var(--ch-a)}.rrc.c-sect{--rc:var(--ch-b)}.rrc.c-style{--rc:var(--ch-c)}
+.rrc .rr-eyebrow{font-size:10px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--rc,var(--accent))}
+.rrc .rr-state{font-size:23px;font-weight:800;letter-spacing:-.025em;color:var(--ink);line-height:1.1;margin:9px 0 3px}
+.rrc .rr-sub{font-size:14px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:9px 0 3px;display:flex;align-items:center}
+.rrc .rr-read{font-size:12px;color:var(--muted);line-height:1.45}
+.rr-legs{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.leg{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:8px;font-size:11px;font-weight:600;background:color-mix(in srgb,var(--grid) 45%,var(--card));color:var(--text)}
+.leg .ar{font-size:9px}.leg.u{color:var(--lift)}.leg.d{color:var(--drag)}
+/* sector ladder */
+.slad{display:flex;flex-direction:column;gap:7px;margin-top:11px}
+.slad .sl{display:grid;grid-template-columns:18px 74px 1fr auto;gap:9px;align-items:center;font-size:12px}
+.slad .sl .rk{font-size:10px;font-weight:800;color:var(--faint);text-align:center;font-variant-numeric:tabular-nums}
+.slad .sl .nm{font-weight:700;color:var(--ink)}
+.slad .sl .track{position:relative;height:6px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
+.slad .sl .track i{position:absolute;left:50%;top:0;bottom:0;border-radius:999px;animation:txGrow .7s ease both}
+.slad .sl .track i.u{transform-origin:left;background:color-mix(in srgb,var(--lift) 55%,transparent)}
+.slad .sl .track i.d{right:50%;left:auto;transform-origin:right;background:color-mix(in srgb,var(--drag) 55%,transparent)}
+.slad .sl .mv{font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;text-align:right;min-width:44px}
+.slad .sl .mv.u{color:var(--lift)}.slad .sl .mv.d{color:var(--drag)}
+/* style tug-of-war */
+.tug{display:flex;flex-direction:column;gap:11px;margin-top:8px}
+.tug .tw{font-size:12px}
+.tug .tw .lab{display:flex;justify-content:space-between;gap:8px;margin-bottom:4px}
+.tug .tw .lab .nm{font-weight:700;color:var(--ink)}
+.tug .tw .lab .ld{font-size:11px;font-weight:700;color:var(--ch-c)}
+.tug .tw .bar{position:relative;height:7px;border-radius:999px;background:color-mix(in srgb,var(--grid) 55%,var(--card))}
+.tug .tw .bar .mid{position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--faint);opacity:.4}
+.tug .tw .bar i{position:absolute;left:50%;top:0;bottom:0;border-radius:999px;animation:txGrow .7s ease both;
+  background:color-mix(in srgb,var(--ch-c) 48%,transparent)}
+.tug .tw .bar i.u{transform-origin:left}
+.tug .tw .bar i.d{right:50%;left:auto;transform-origin:right}
+
+/* ═══ accumulation table ═══ */
+.atbl-card{padding:6px 14px}
+.atbl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.atbl th{text-align:left;padding:10px 10px 9px;font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--grid)}
+.atbl td{padding:11px 10px;border-bottom:1px solid color-mix(in srgb,var(--grid) 55%,transparent);vertical-align:middle}
+.atbl tr:last-child td{border-bottom:none}
+.atbl tbody tr:hover{background:color-mix(in srgb,var(--accent) 4%,transparent)}
+.atbl th.r,.atbl td.r{text-align:right}
+.atbl .conv{font-weight:800;font-size:14px;letter-spacing:-.02em}
+.atbl .conv i{font-style:normal;font-size:10px;font-weight:700;color:var(--faint);margin-left:1px}
+.atbl .conv.u{color:var(--lift)}.atbl .conv.d{color:var(--drag)}
+.atbl .tsz{display:flex;align-items:center;justify-content:flex-end;gap:9px;margin-top:4px}
+.fundcell b{color:var(--ink)}
+.atbl-wrap{overflow-x:auto}
+@media(max-width:640px){.atbl .hide-sm{display:none}}
+
+/* ═══ shelf (trims / the fleet) ═══ */
+.shelf details{background:var(--card);border:1px solid var(--grid);border-radius:15px;margin-bottom:12px}
+.shelf summary{list-style:none;cursor:pointer;padding:14px 20px;display:flex;align-items:center;gap:11px;font-size:14px;font-weight:700;color:var(--ink);transition:background .18s;border-radius:15px}
+.shelf summary::-webkit-details-marker{display:none}
+.shelf summary:hover{background:color-mix(in srgb,var(--accent) 5%,var(--card))}
+.shelf summary .sh-ic{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 10%,var(--card))}
+.shelf summary .sh-sub{font-weight:500;color:var(--muted);font-size:12.5px}
+.shelf summary .sh-caret{margin-left:auto;flex:none;font-size:11px;color:var(--faint);transition:transform .25s}
+.shelf details[open] summary{border-radius:15px 15px 0 0}
+.shelf details[open] summary .sh-caret{transform:rotate(90deg)}
+.shelf .sh-body{padding:4px 20px 20px;border-top:1px solid var(--grid)}
+.fdot{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;flex:none}
+/* Freshness is a DATA-QUALITY status, not a market direction. It must NOT ride
+   --lift/--drag: those flip under html[data-lang="zh"] (红涨绿跌), which painted
+   "fresh" red and "stale" green in the first ZH render of the W2 mockup. Fixed
+   semantic inks, identical in both languages. Same rule for any pass/fail tint. */
+.fdot.fresh{background:#1FA971}.fdot.aging{background:#f0b429}.fdot.stale{background:#e06464}
+.fdot.none{background:var(--muted)}
+
+/* ═══ the fleet directory ═══════════════════════════════════════════════════
+   Was a 105-row, six-column table: a spreadsheet, not a directory, and 58 KiB
+   of the free shell's weight on its own (R3). It is now a grouped directory —
+   and the grouping is the point: the three groups ARE the flow-vs-selection
+   rule, so a reader who never pays still learns why an active manager's move
+   and a theme fund's move mean different things. Everything constant (what the
+   dots mean, what the small number is) is stated once in the legend, never per
+   row (Doctrine Law 4). */
+/* the fleet shelf is data quality, not distribution: it takes the page accent,
+   not the trims shelf's --drag. Keyed on the summary rather than on the
+   <details> so the element stays a bare `<details open>` — the tier suite pins
+   that literal, because a coverage directory that ships collapsed may never be
+   crawled (T-B3). */
+.fl-sum .sh-ic{color:var(--ch-b);background:color-mix(in srgb,var(--ch-b) 10%,var(--card))}
+.fl-sum:hover{background:color-mix(in srgb,var(--ch-b) 5%,var(--card))}
+.fl-stats{display:flex;align-items:center;gap:8px 10px;flex-wrap:wrap;margin:14px 0 4px}
+.fl-s{display:inline-flex;align-items:baseline;gap:6px;padding:5px 11px;border-radius:999px;
+  border:1px solid var(--grid);background:color-mix(in srgb,var(--grid) 16%,transparent);
+  font-size:11.5px;color:var(--muted)}
+.fl-s b{font-size:14px;font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.fl-lg{display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--faint);margin-left:auto}
+.fl-lg .fdot{margin-left:7px}
+.fl-lg .fdot:first-child{margin-left:0}
+.fl-g{margin-top:18px}
+.fl-gh{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;padding-bottom:7px;border-bottom:1px solid var(--grid)}
+.fl-gn{font-size:10.5px;font-weight:800;letter-spacing:.115em;text-transform:uppercase;color:var(--ink)}
+.fl-gc{font-size:10.5px;font-weight:800;color:var(--ch-b);font-variant-numeric:tabular-nums}
+.fl-gr{font-size:11.5px;color:var(--muted)}
+.fl-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));gap:1px 18px;margin-top:8px}
+.fu{display:flex;align-items:center;gap:7px;padding:4px 0;font-size:12px;min-width:0;line-height:1.35}
+/* The row's freshness dot is a ::before rather than a .fdot element: at 105
+   funds that markup was 3 KiB of the free shell on its own. It carries the SAME
+   fixed inks as the legend's .fdot swatches — never --lift/--drag, which 中文
+   flips — and tests/test_etfs_gate pins the two sets to identical values so the
+   pair cannot drift. */
+.fu::before{content:'';width:8px;height:8px;border-radius:50%;flex:none;background:var(--muted)}
+.fu.s1::before{background:#1FA971}.fu.s2::before{background:#f0b429}.fu.s3::before{background:#e06464}
+.fu b{font-weight:800;color:var(--ink);flex:none;font-size:11.5px;letter-spacing:.01em}
+.fu span{flex:1;min-width:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fu i{font-style:normal;font-size:10.5px;color:var(--faint);font-variant-numeric:tabular-nums;flex:none}
+.fu u{text-decoration:none;font-size:9.5px;font-weight:700;color:var(--faint);
+  border:1px solid var(--grid);border-radius:5px;padding:0 4px;flex:none}
+.fl-foot{margin-top:16px;font-size:11.5px;color:var(--faint);line-height:1.55}
+
+/* ═══ disclosure ═══ */
+.disc{font-size:12px;color:var(--muted);margin:32px 0 0;padding-top:16px;border-top:1px solid var(--grid);line-height:1.6}
+.disc b{color:var(--ink)}
+
+/* ═══ tk logo ═══ */
+.tk-logo{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:6px;overflow:hidden;flex:0 0 26px;
+  background:transparent}
+.tk-logo img{width:26px;height:26px;object-fit:contain;display:block}
+/* Fallback for a ticker with no CDN icon (the .png 404s → onerror swaps this in).
+   At 9px the 4-character ticker overran the 26px tile and the parent's
+   overflow:hidden sheared it on BOTH sides; size the type to the tile instead.
+   It reads as a monogram plate rather than a failed image. */
+.tk-fb{font-size:8.5px;font-weight:800;letter-spacing:-.04em;line-height:1;white-space:nowrap;
+  color:var(--muted);align-items:center;justify-content:center;width:26px;height:26px;
+  border:1px solid var(--grid);border-radius:6px;background:color-mix(in srgb,var(--grid) 22%,transparent)}
+.spark{display:inline-block;vertical-align:middle}
+
+/* ═══ ? tip ═══ */
+.txq{position:relative;display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;
+  border:1px solid var(--grid);color:var(--muted);font-size:10px;font-weight:700;cursor:help;flex:none;margin-left:5px;vertical-align:middle}
+.txq .txq-tip{display:none;position:absolute;top:22px;left:-8px;z-index:50;width:294px;padding:11px 13px;border-radius:11px;
+  background:var(--card);border:1px solid var(--grid);box-shadow:0 14px 34px -14px rgba(9,17,40,.42);
+  font-size:12px;font-weight:500;color:var(--text);line-height:1.55;text-transform:none;letter-spacing:0;text-align:left}
+.txq:hover .txq-tip,.txq:focus .txq-tip{display:block}
+.txq:focus-visible{outline:2px solid var(--link);outline-offset:2px}
+@media(max-width:520px){.txq .txq-tip{left:auto;right:-8px;width:min(290px,84vw)}}
+
+/* ═══ tier gate (SEO Supercharge W2 — docs/TIER_PREVIEW_PATTERN.md) ═══
+   Transliterated from the shipped special_situations idiom into THIS page's
+   token vocabulary: --card / --grid are already aliased above, --blue becomes
+   --link, and the --surface family is defined in :root. #8b5cf6 (the lock
+   violet) stays a hard-coded hex, identical to the reference. The CTA gradient
+   is brand blue → violet, NEVER signal amber (terminal paywall lesson).
+   None of these elements carries directional colour: a gate is not a market
+   read, so the 红涨绿跌 flip must not touch it. */
+.gate-pill{margin-left:2px;padding:2px 8px;border-radius:999px;font-size:9.5px;font-weight:800;letter-spacing:.08em;
+  color:#8b5cf6;background:color-mix(in srgb,#8b5cf6 13%,transparent);
+  border:1px solid color-mix(in srgb,#8b5cf6 34%,transparent);text-transform:none}
+@keyframes ghPulse{0%,100%{opacity:.45}50%{opacity:.85}}
+.gh{border-radius:6px;background:linear-gradient(90deg,var(--grid),color-mix(in srgb,var(--grid) 45%,transparent));
+  animation:ghPulse 2.4s ease-in-out infinite}
+/* consensus-board skeletons — the walled board's shape, none of its content */
+.cb-ghosts{border:1px solid var(--grid);border-radius:14px;overflow:hidden;background:var(--card)}
+.cbg-hd,.cbg-row{display:grid;grid-template-columns:34px 1.7fr 1fr 1.5fr 1.05fr;gap:14px;align-items:center}
+.cbg-hd{padding:10px 16px;border-bottom:1px solid var(--grid);font-size:9.5px;font-weight:800;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint)}
+.cbg-row{padding:13px 16px;border-bottom:1px solid color-mix(in srgb,var(--text) 6%,transparent)}
+.cbg-row:last-child{border-bottom:0}
+.gh-rank{width:15px;height:12px}
+.gh-tkr{width:48px;height:12px;margin-bottom:6px}
+.gh-nm{width:78%;height:9px}
+.gh-dots{width:66px;height:10px}
+.gh-bar{width:100%;height:9px}
+.gh-pill{width:96px;height:20px;border-radius:999px}
+@media(max-width:720px){.cbg-hd{display:none}.cbg-row{grid-template-columns:26px 1fr;row-gap:9px}}
+/* gate note — it EXPLAINS, it never sells. No CTA button lives here. */
+.gate-note{display:flex;align-items:flex-start;gap:8px;margin:0 0 14px;padding:11px 14px;border-radius:12px;
+  font-size:12.5px;line-height:1.5;color:var(--muted);
+  background:color-mix(in srgb,#8b5cf6 7%,transparent);border:1px solid color-mix(in srgb,#8b5cf6 22%,transparent)}
+.gate-note svg{width:14px;height:14px;flex:none;margin-top:2px;color:#8b5cf6}
+.gate-note a{color:var(--ink-link, var(--link))}
+/* the page's ONE tier wall, at "Every add, by fund" — after the free backdrop */
+.tier-wall{position:relative;margin:6px 0 4px;isolation:isolate}
+.tw-ghosts{display:flex;flex-direction:column;gap:10px;padding-top:4px}
+.tw-ghost{border:1px solid var(--grid);border-radius:14px;background:color-mix(in srgb,var(--card) 55%,transparent);
+  padding:18px 20px}
+.tw-ghost .gh-tkr{width:64px;height:14px;margin-bottom:11px}
+.tw-ghost .gh-line{width:70%;height:10px;margin-bottom:8px}
+.tw-ghost .gh-line.short{width:38%;margin-bottom:0}
+.tw-card{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,94%);text-align:center;
+  padding:30px 30px 26px;border-radius:20px;background:var(--surface);border:1px solid var(--surface-brd);
+  box-shadow:var(--surface-shadow);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px)}
+.tw-lock{width:28px;height:28px;color:#8b5cf6;margin-bottom:12px}
+.tw-h{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--ink);line-height:1.25;margin-bottom:9px}
+.tw-p{font-size:13px;line-height:1.6;color:var(--muted);max-width:450px;margin:0 auto 18px}
+.tw-acts{display:flex;flex-direction:column;align-items:center;gap:8px}
+.tw-btn{display:inline-flex;align-items:center;justify-content:center;padding:11px 26px;border-radius:12px;
+  text-decoration:none;font-size:13.5px;font-weight:700;color:#fff;
+  background:linear-gradient(135deg,var(--link),#8b5cf6);
+  box-shadow:0 8px 22px -10px color-mix(in srgb,#8b5cf6 70%,transparent);transition:transform .18s,box-shadow .18s}
+.tw-btn:hover{transform:translateY(-1px);box-shadow:0 12px 28px -10px color-mix(in srgb,#8b5cf6 80%,transparent)}
+.tw-note{font-size:11px;color:var(--faint)}
+.tw-signed{margin-top:12px;font-size:12px}
+.tw-signed a{color:var(--ink-link, var(--link));text-decoration:none;border-bottom:1px solid color-mix(in srgb,var(--link) 40%,transparent)}
+@media(max-width:900px){
+  /* Below the ghost stack's usable width the absolute card overlaps the lede
+     above it; drop the ghosts and let the card flow. */
+  .tw-ghosts{display:none}
+  .tw-card{position:static;transform:none;width:100%;padding:26px 20px 22px}
+}
+
+/* ═══ motion ═══ */
+@keyframes txUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes txBreathe{0%,100%{opacity:.5;transform:scale(.82)}50%{opacity:1;transform:scale(1.12)}}
+@keyframes txGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){
+  .eh,.tile,.card,.rrc,.fc{animation:none}
+  .pb-fill,.slad .sl .track i,.tug .tw .bar i,.stdot{animation:none}
+  /* the as-of strip's cycle dot pulses from theme.css's own keyframe — kill it
+     by name here too, the wildcard below only covers transitions */
+  .eh-tape .dtp-dot{animation:none}
+  /* the tier gate's skeleton shimmer is decorative — kill it by name, not by
+     hoping the wildcard below covers animations (it only covers transitions) */
+  .gh{animation:none}
+  .tw-btn{transition:none}
+  *{transition:none!important}
+}
