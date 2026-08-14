@@ -328,6 +328,18 @@
     if (s === 'ok') return 'OK';
     if (s === 'watch') return te('WATCH', '关注');
     if (s === 'elev') return te('ELEVATED', '升高');
+    /* THREE MEANINGS, THREE TOKENS (m8). `n/a` was carrying all of them, so a coverage
+       gap, an evaluated negative and a structural non-applicability rendered as the same
+       mark — and the nulls-printed law is precisely the distinction between "we did not
+       measure" and "we measured; the answer is no".
+         na    — we could not read it. A gap in what we can show, not an all-clear.
+         none  — we DID read it and the answer is none. A finding.
+         n/app — the dimension does not apply to this row at all.
+       All three paint from the muted/health ramp, never `--up`/`--down`: a coverage
+       state is not a price direction. `none` and `n/app` sit at full opacity because
+       they are answers; only `na` is dimmed, because only `na` is an absence. */
+    if (s === 'none') return te('NONE', '无');
+    if (s === 'n/app') return te('—', '—');
     return te('n/a', '未覆盖');
   }
 
@@ -448,7 +460,20 @@
      would be the lie. The library sweep in the test suite prints the live distribution
      so the next wave sees drift instead of inheriting a number. PURE. */
   var STANCE_SEVERE = { exit: 1, trim: 1 };
-  function intelStance(lanes, role) {
+
+  /* THE OVEREXTENDED FLOOR (M2a). Two oracles on this page answer "is it stretched" and
+     they disagree on 607 of 1,629 names (37.3%): the `stretch` LANE reads
+     `entry_signal.status === 'extended'`, while the ladder carries
+     `ladder.alignment.overextended`. Reconciling them is an engine question, chipped as
+     its own wave — but the stance READS the lane, so on a name the ladder flags and the
+     lane does not, the drawer printed "No action / Nothing here needs a decision today."
+     over a position the other oracle calls overextended. That is a display tier making a
+     confident all-clear out of an unreconciled disagreement.
+
+     The floor is a one-way clamp over an existing boolean — no weights, no composite,
+     and it can only ever RAISE attention, never lower it. When the oracles disagree the
+     drawer says the more cautious of the two things it knows. */
+  function intelStance(lanes, role, flags) {
     if (!lanes) return 'none';
     if (role && STANCE_SEVERE[role.kind]) return 'watch';
     if (role) return 'ready';
@@ -456,10 +481,60 @@
       var L = lanes[LANES[i]];
       if (L && (L.state === 'elev' || L.state === 'watch')) return 'ready';
     }
-    return 'none';
+    /* The floor applies to THIS branch only — the all-clear. A name the ladder flags may
+       not be told "nothing needs a decision today"; a name already at Get ready is
+       already carrying attention and does not need raising on a disagreement.
+       Deliberately minimal: clamping every tier moved 549 names and put Watch back to
+       83.7%, undoing the partition the previous round established. This moves the 32
+       names where the disagreement actually produces a false all-clear. */
+    return (flags && flags.overextended) ? 'watch' : 'none';
+  }
+
+  /* The ladder's own overextension bool, read defensively — it is a different block from
+     the one the stretch lane reads, and it is absent on a quarter of the library. PURE. */
+  function overextendedFlag(j) {
+    var al = j && j.ladder && j.ladder.alignment;
+    return !!(al && al.overextended === true);
   }
 
   // ---- Tier 2, one builder per section ------------------------------------
+
+  /* Distance from trend. Lived in `portfolio.js` and so appeared in the HOLDINGS drawer
+     only, which meant one name read differently depending on which mode you opened it
+     from — the exact drift a single composer exists to prevent. It reads nothing but the
+     per-ticker JSON, so there was no reason for it to be caller-side.
+
+     It does NOT reuse the `stretch` lane's vocabulary. The two are different oracles
+     (this reads `ext.grade` / `ladder.alignment.overextended`, the lane reads
+     `entry_signal.status`) and they disagree on 607 of 1,629 names in the direction that
+     matters, so they must not appear to be answering the same question in the same
+     words. This row talks about DISTANCE; the lane talks about stretch. PURE. */
+  function distanceRowHTML(j) {
+    var lab = { en: 'Distance from trend', zh: '偏离度' };
+    var pct = j && j.tech && j.tech.pct_vs_200dma;
+    if (!isNum(pct)) {
+      return lrowHTML({ lab: lab, state: 'na',
+        en: 'We could not measure this name&rsquo;s distance from its own trend line.',
+        zh: '无法测量这只票相对自身趋势线的偏离程度。' });
+    }
+    var grade = (j && j.ext && j.ext.grade) ? j.ext.grade
+      : (j && j.ladder && j.ladder.alignment && j.ladder.alignment.overextended === true)
+        ? 'stretched' : 'intrend';
+    var below = pct < 0, p = Math.abs(Math.round(pct * 10) / 10);
+    var lineEn = below ? 'about ' + p + '% below its 200-day line'
+                       : 'about ' + p + '% above its 200-day line';
+    var lineZh = below ? '低于200日线约' + p + '%' : '高于200日线约' + p + '%';
+    var word = grade === 'parabolic'
+        ? { en: 'Far above its own trend — extreme', zh: '远高于自身趋势——极端偏离' }
+      : grade === 'stretched'
+        ? { en: 'Well above its own trend', zh: '明显高于自身趋势' }
+      : grade === 'steady'
+        ? { en: 'Close to its own trend', zh: '贴近自身趋势' }
+        : { en: 'In line with its own trend', zh: '与自身趋势一致' };
+    return lrowHTML({ lab: lab, state: '',
+      en: esc(word.en) + ' — ' + lineEn + '.', zh: esc(word.zh) + '——' + lineZh + '。' });
+  }
+
 
   /* Portfolio role. The only section fed from BOOK state rather than the per-name JSON,
      because weight and risk share are properties of the book, not of the name — the
@@ -469,7 +544,7 @@
   function roleRowHTML(opts) {
     var o = opts || {};
     if (!o.inBook) {
-      return lrowHTML({ lab: W4_LABEL.role, state: 'na',
+      return lrowHTML({ lab: W4_LABEL.role, state: 'n/app',
         en: 'Not a position — this name is on a watchlist, so it carries no weight and no share of your book&rsquo;s risk.',
         zh: '不是持仓——这只票在自选列表里，因此不占用你账簿的权重，也不占用风险。' });
     }
@@ -806,7 +881,7 @@
   function intelTier1HTML(t, j) {
     var lanes = laneRead(j);
     var role = roleBadge(lanes);
-    var stance = intelStance(lanes, role);
+    var stance = intelStance(lanes, role, { overextended: overextendedFlag(j) });
     var sw = W4_STANCE[stance];
     var m = intelLead(j);
     var lead = te(esc(m.en), esc(m.zh));
@@ -831,6 +906,7 @@
     var o = opts || {};
     var rf = ROLE_FACTS[t] || null;
     return laneRowsHTML(j) +
+      distanceRowHTML(j) +
       roleRowHTML({
         inBook: !!o.inBook,
         weightPct: isNum(o.weightPct) ? o.weightPct : null,
@@ -992,7 +1068,7 @@
   function chainSectionHTML(memberships) {
     if (memberships && memberships.length) return chainRowsBody(memberships);
     return lrowHTML({
-      lab: { en: 'Transmission', zh: '传导链' }, state: 'na',
+      lab: { en: 'Transmission', zh: '传导链' }, state: 'none',
       en: 'Not downstream of any chain that is armed tonight.',
       zh: '目前不处于任何已触发传导链的下游。',
       tip: { en: 'Transmission chains are display-only WATCH context — a named channel screen places a name in a chain\'s blast radius. Being in none tonight is a state, not a gap.',
@@ -1680,9 +1756,12 @@
        claim sentence above can only lead with ONE of the three outcomes; a reader who
        gets the "does not tighten" wording would otherwise never see the two numbers
        that sentence is about. Nulls printed — and so are unremarkable results. */
+    // "about 1 separate directions" — the floored route reaches 1 and the noun has to
+    // follow the number it is attached to.
+    var dirWord = (cFig === '1') ? ' separate direction' : ' separate directions';
     var counts = '<p class="rc-note">' + te(
       'On an average day this book moves in about <span class="fig">' + cFig +
-        '</span> separate directions; on the falling days, about <span class="fig">' + sFig + '</span>.',
+        '</span>' + dirWord + '; on the falling days, about <span class="fig">' + sFig + '</span>.',
       '在平均日，这本账簿约有 <span class="fig">' + cFig +
         '</span> 个独立方向；在下跌日，约有 <span class="fig">' + sFig + '</span> 个。') + '</p>';
     var body = '<div class="conc is-worded">' +
@@ -2291,6 +2370,8 @@
       roleRow: roleRowHTML, optionsRow: optionsRowHTML, macroRow: macroRowHTML,
       themeRow: themeRowHTML, ownersRow: ownersRowHTML, notesRow: notesRowHTML,
       chainSection: chainSectionHTML, intelLead: intelLead,
+      distanceRow: distanceRowHTML,
+      overextendedFlag: overextendedFlag,
       /* the lane engine itself — the library sweeps walk every real artifact
          through the SAME functions the DOM gets, which is the only way a
          distribution measurement means anything */

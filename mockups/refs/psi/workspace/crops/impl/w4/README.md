@@ -28,9 +28,9 @@ screen is the page composing over those artifacts.
 | # | scene | proves |
 |---|---|---|
 | 01 | Tier 1, alone | the glance read is one plain sentence + one stance word, and nothing else |
-| 02 | Tier 2, expanded (AAPL) | every section renders real data from an artifact that has it |
-| 03 | degraded name (RIVN) | honest absence — nine sections say what is missing, five say something real |
-| 04 | the same name from a WATCHLIST row | one composer, two modes; and "not a position" instead of an invented weight |
+| 02 | Tier 2, expanded (AAPL, holdings) | 15 rows: **13 real**, 1 coverage gap (Events — the date is past), 1 evaluated-negative (Transmission — in no armed chain) |
+| 03 | degraded name (RIVN, holdings) | 15 rows: **6 real**, 8 coverage gaps, 1 evaluated-negative — honest degradation over a real 50KB artifact |
+| 04 | the same name (AAPL) from a WATCHLIST row | 15 rows: **12 real**, 1 gap, 1 evaluated-negative, 1 structural (Portfolio role — "not a position", never an invented weight) |
 | 05 | the anonymous drawer | a lock shell, zero lane rows, zero gated signal |
 
 ### What the harness asserts rather than leaves to the eye
@@ -44,8 +44,14 @@ than things a reviewer must re-check:
   under it.
 - **No drawer row renders a blank read.** A `.wri-lrow` with an empty `.rs` is the
   silent-empty failure this whole wave is about.
-- **The rich name's drawer contains at most `RICH_MAX_NA` (3) not-covered rows** — AAPL measures 2, and
-- **the sparse name's contains at least `SPARSE_MIN_NA` (5), but not all** — RIVN measures 9 of 14.
+- **The rich name's drawer contains at most `RICH_MAX_NA` (3) coverage gaps** — AAPL in
+  scene 02 measures **1**, and
+- **the sparse name's contains at least `SPARSE_MIN_NA` (5), but not all** — RIVN in
+  scene 03 measures **8 of 15**.
+
+  Both counts are `.st.na` — the COVERAGE-GAP mark only. Since m8 the drawer distinguishes
+  three coverage meanings (see §3a), so `none` (evaluated, answer is none) and `n/app`
+  (does not apply to this row) are answers and are counted as real rows, not as gaps.
 - **Neither scene is shot over a stub.** `assert_not_stub_grade` refuses any artifact under 20KB or missing a `tech` block, before the browser starts.
 - **The large-list law, measured on a 100-name list** (no crop): twenty drawers opened
   and closed again. `100 -> 100` rows, 20 drawers open at once, 0 surviving their own
@@ -90,9 +96,13 @@ crop hid a scene with no data in it.
 The replacement is chosen by **measuring every artifact in the library** with the same
 composer the DOM gets, not by picking a plausible ticker. Over the 1,613 real-size
 artifacts the absent-section count runs 2..13. **RIVN** is a real 50KB artifact that
-renders 5 real rows and 9 honest-absence rows (Events, Estimates, Balance sheet, Who's
-selling, Rate sensitivity, Options, Macro sensitivity, Ownership, Transmission);
-**AAPL** renders 12 real and 2 absent. Both counts are asserted, and
+renders 6 real rows and 8 coverage gaps plus 1 evaluated-negative (gaps: Events,
+Estimates, Balance sheet, Who's selling, Rate sensitivity, Options, Macro sensitivity,
+Ownership; evaluated-negative: Transmission). **AAPL** renders 13 real and 1 gap in the
+holdings scene, 12 real in the watchlist scene (where Portfolio role is structurally
+n/app). Every figure here is per-scene and matches the crop named beside it — the first
+version of this README quoted one number against the wrong scene. Both counts are
+asserted, and
 `assert_not_stub_grade()` now refuses the whole class of file that made the first attempt
 meaningless — size AND field presence, because a file can be big and still not carry what
 a scene claims.
@@ -229,6 +239,66 @@ legitimate bump; it now asserts a monotonic increase against `origin/main` and r
 itself on merge. The class-coverage test iterated a hand-written list while claiming
 derivation; it now harvests the emitted class set from the source, which is what would
 have caught `.wri-rail-chain`.
+
+---
+
+### Round 3 — the regression, and the rest
+
+**W4-R11 — a machine-local absolute-path symlink reached a commit.** `site/stockdata` was
+committed as a mode-120000 blob whose content is `/Users/<someone>/…`: it resolves on one
+laptop and dangles on every other checkout, at the exact path four builders write into and
+`scripts/audit_r2.py` reads as its freshness beacon. Four independent holes lined up —
+`.gitignore` said `site/stockdata/`, and a **trailing-slash pattern matches directories
+only**, so a symlink there was never ignored; `link_nightly_artifacts()` was called
+OUTSIDE the harness's `try`, so an exception skipped the cleanup; the "already exists,
+skip" branch returned before recording the path, so no later run would ever remove it
+either; and a broad `git add -A` did the rest. All four fixed at their own layer, and
+`tests/test_no_absolute_path_symlinks.py` closes the CLASS — no tracked symlink anywhere
+in the repo may carry an absolute target (relative targets stay legal).
+
+**W4-R12 — two oracles answer "is it stretched", and the drawer resolved the
+disagreement in the reader's disfavour.** `ladder.alignment.overextended` and
+`entry_signal.status === 'extended'` disagree on **820 of 1,629 names (50.3%)
+symmetrically**, and in the direction that matters — the ladder flags it, the entry status
+calls it clean — on **607 (37.3%)**. RIVN is exactly that shape, so all five committed
+`03_degraded_RIVN` crops rendered "Stretched" eight rows above "not stretched" (in ZH a
+flat self-negation), and the stance, which reads the LANE, printed "No action / Nothing
+here needs a decision today." over it.
+
+Reconciling the two oracles is an ENGINE question and is chipped as its own wave. Three
+display-tier fixes landed here: a **one-way stance floor** (a name the ladder flags may
+not be told nothing needs a decision — scoped to the all-clear branch only, because
+clamping every tier moved 549 names and put Watch back to 83.7%); **label and vocabulary
+disambiguation** (the row is now "Distance from trend" / 偏离度 and its values describe
+DISTANCE — "Well above its own trend" — so one English word no longer names two
+measurements); and the disclosure in the PR body.
+
+**W4-R13 — the distance row moved into the shared composer.** It lived in `portfolio.js`,
+so it appeared in the holdings drawer and not the watchlist one: the same name read
+differently depending on which mode you opened it from, which is the exact drift a single
+composer exists to prevent. It reads nothing but the per-ticker JSON, so there was no
+reason for it to be caller-side.
+
+**Stage remains holdings-only, and that is deliberate.** It is composed from
+`portfolio_ctx.json`, which only the holdings path loads; the watchlist drawer would have
+to fetch a second artifact to show it. Disclosed rather than silently asymmetric — if a
+later wave wants parity, the cost is that fetch.
+
+**W4-R14 — three coverage meanings rendered as one mark.** A coverage gap ("we could not
+read it"), an evaluated negative ("we looked; there is none") and a structural
+non-applicability ("a watchlist name has no weight") all printed `n/a`, which erases the
+exact distinction the nulls-printed law exists to make. Three marks now: `n/a` dimmed
+because it is an absence, `NONE` and `—` at full muted weight because they are answers.
+
+**W4-R15 — the sibling harness kept the module-scope `main()`** that F4 removed from the
+crop harness: importing `verify_w4_old_html_new_js.py` fired a live fetch to production,
+three `git show` subprocesses, a chromium launch and a port bind. Guarded, with argparse.
+
+**W4-R16 — the D1 receipt was ambiguous.** It collapsed "no chevron found" and "clicked,
+nothing opened" into one boolean, and its selector spanned both tables so the click could
+land on the never-broken watchlist path. Three named outcomes now, scoped per table, with
+the watchlist path asserted separately as a non-regression. It reports
+`clicked-no-open` on the holdings table under production's own scripts.
 
 ---
 

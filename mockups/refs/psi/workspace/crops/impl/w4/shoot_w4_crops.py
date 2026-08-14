@@ -17,8 +17,8 @@ false green available to this build. So the gate asserts BOTH directions:
   * the rich name's drawer must contain AT MOST `RICH_MAX_NA` absent rows, and
   * the sparse name's drawer must contain AT LEAST `SPARSE_MIN_NA` — and some real ones.
 
-Both thresholds are measured, not chosen: over the 1,613 real-size artifacts the
-absent-section count runs 2..13, AAPL sits at 2 (Events, Transmission) and RIVN at 9.
+Both thresholds are measured, not chosen: AAPL's holdings drawer has 1 coverage gap
+(Events, whose date is past) and RIVN's has 8, out of 15 rows each.
 
 A run where every row is honest is a run with no data, and it exits non-zero.
 
@@ -55,7 +55,10 @@ HERE = pathlib.Path(__file__).resolve()
 ROOT = HERE.parents[7]
 assert (ROOT / "templates" / "watchlist.html.j2").exists(), ROOT
 FINAL = HERE.parent      # the committed evidence directory
-OUT = FINAL              # rebound to a staging dir in main(); see the promote step
+# `None` until main() binds a staging dir. It used to default to FINAL, so any future
+# direct `shoot()` caller would have written straight into the committed evidence — the
+# same hazard F4 removed from the main path, left standing at module scope.
+OUT = None
 SITE = ROOT / "site"
 PORT = 8874
 BASE = "http://127.0.0.1:%d" % PORT
@@ -95,15 +98,17 @@ SEED_ANON = ("window.__W2.clear();"
 # ownership filings") was falsified by the crop itself: the stub has those KEYS but not
 # the fields the rows read, so both rendered n/a.
 #
-# RIVN is a real 50KB artifact that renders 5 real rows and 9 honest-absence rows
-# (Events, Estimates, Balance sheet, Who's selling, Rate sensitivity, Options, Macro
-# sensitivity, Ownership, Transmission). AAPL renders 12 real and 2 absent. Both counts
-# are asserted below, and `assert_not_stub_grade` refuses the class of file that made
-# the first attempt meaningless.
+# RIVN is a real 50KB artifact that renders 6 real rows and 8 coverage gaps. AAPL renders
+# 13 real and 1 gap. Both counts are asserted below, and `assert_not_stub_grade` refuses
+# the class of file that made the first attempt meaningless.
+#
+# The counts are `.st.na` ONLY — the coverage-gap mark. Since m8 split the three coverage
+# meanings apart, `none` (we looked; the answer is none) and `n/app` (does not apply here)
+# are ANSWERS and count as real rows.
 RICH = ("loc-3", "AAPL")
 SPARSE = ("loc-13", "RIVN")
-RICH_MAX_NA = 3        # AAPL measures 2; the margin is for nightly drift
-SPARSE_MIN_NA = 5      # RIVN measures 9
+RICH_MAX_NA = 3        # AAPL measures 1 (Events); the margin is for nightly drift
+SPARSE_MIN_NA = 5      # RIVN measures 8
 MIN_ARTIFACT_BYTES = 20000   # the 16 stubs here are all <2KB; the median is ~59KB
 
 
@@ -129,6 +134,14 @@ def link_nightly_artifacts() -> list:
     for name in ("stockdata",):
         src, dst = primary / "site" / name, SITE / name
         if dst.exists() or dst.is_symlink():
+            # ADOPT it for cleanup instead of walking away. This `continue` used to fire
+            # BEFORE `made.append`, so a symlink left behind by one aborted run was
+            # invisible to every later run's `finally` — it could only ever accumulate.
+            # That is how a machine-local absolute-path symlink survived long enough for
+            # a broad `git add` to commit it into the shipping tree.
+            if dst.is_symlink():
+                made.append(dst)
+                print("adopted a leftover symlink for cleanup:", dst)
             continue
         if not src.is_dir():
             print("WARNING: %s not found in the main checkout — every drawer row will be "
@@ -310,12 +323,18 @@ def main(argv=None):
     OUT = staging
     print("staging ->", staging)
 
-    linked = link_nightly_artifacts()
-    assert_not_stub_grade(RICH[1], SPARSE[1])
-    render_preview()
-    srv = serve()
+    # Everything that can leave state behind lives INSIDE the try. `link_nightly_artifacts`
+    # used to sit outside it, so an exception from the stub guard, the render or the port
+    # bind skipped the `finally` and left the symlink in the tree — the exact residue B1
+    # was made of. `linked` is seeded empty so the `finally` is safe if the link itself
+    # throws.
+    linked, srv = [], None
     errs, overflow, problems = [], [], []
     try:
+        linked = link_nightly_artifacts()
+        assert_not_stub_grade(RICH[1], SPARSE[1])
+        render_preview()
+        srv = serve()
         with sync_playwright() as pw:
             b = pw.chromium.launch()
             ctx = b.new_context(device_scale_factor=2)
@@ -459,7 +478,8 @@ def main(argv=None):
                 problems.append(("large-list", "%d drawers survived their own close" % left))
             b.close()
     finally:
-        srv.shutdown()
+        if srv is not None:
+            srv.shutdown()
         for f in ("__w4preview.html", "__w4preview_anon.html", "__w4seed.js"):
             p = SITE / f
             if p.exists():

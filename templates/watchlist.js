@@ -906,10 +906,15 @@
     var det = DETAIL[r.t];
     var j = det && det.raw ? det.raw : null;
     var cells = [];
-    cells.push('<div><span class="k">' + te('Day', '当日') + '</span>' + dayCell() + '</div>');
-    if (r.s) cells.push('<div><span class="k">' + te('Sector / theme', '行业 / 主题') + '</span>' + secCell(r.s) + '</div>');
-
     var intel = window.WRI && window.WRI.intelSections;
+    /* The demoted columns are for a drawer that HAS a read. On the anonymous lock shell
+       they were a stray "DAY —" above the gate: a column header with a dash under it,
+       restating the one thing the row already showed, on the one drawer that has nothing
+       else in it. */
+    if (window.SD && intel) {
+      cells.push('<div><span class="k">' + te('Day', '当日') + '</span>' + dayCell() + '</div>');
+      if (r.s) cells.push('<div><span class="k">' + te('Sector / theme', '行业 / 主题') + '</span>' + secCell(r.s) + '</div>');
+    }
     if (!window.SD || !intel) {
       /* Anonymous. The four gated scripts never reach a signed-out visitor (packet §14
          A9), so this is the DESIGNED state, not a failure — and the honest shape is the

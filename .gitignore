@@ -35,7 +35,11 @@ site/_tmp/
 # short-link lane (engine/marketing/links.py, D07 W1a): orphaned atomic-write
 # temps possible only after a hard crash mid-write; pages themselves ARE committed.
 site/go/**/.tmp_*
-site/stockdata/
+# no trailing slash: a trailing-slash pattern matches DIRECTORIES ONLY, so a
+# SYMLINK at this path is not ignored — which is how a machine-local absolute-path
+# symlink reached a commit (a crop harness links the nightly artifacts in from the
+# main checkout, an aborted run left it behind, and a broad `git add` swept it up).
+site/stockdata
 site/ohlc/
 site/stockbrief/
 site/chinastockdata/
