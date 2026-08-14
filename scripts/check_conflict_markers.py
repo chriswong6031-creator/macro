@@ -28,10 +28,16 @@ Usage:
     python -m scripts.check_conflict_markers --file PATH
     python -m scripts.check_conflict_markers --changed-from REV [ROOT]
     python -m scripts.check_conflict_markers --self-test
+
+When ``CI_CHANGED_FILES_JSON`` is set (ci-plan's file list), ``--changed-from``
+scans that list and does not git-diff. Packs checkout fetch-depth:1 after #5564,
+so ``origin/main...HEAD`` is often a bad revision; fail-closed only if the env
+is unset (then git) or malformed.
 Exit codes: 0 = clean / self-test passed · 1 = marker(s) found / self-test failed.
 """
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
@@ -114,6 +120,43 @@ def _scannable_relpath(path: str) -> bool:
     return False
 
 
+def scan_paths(root: str, relpaths: list[str]):
+    """Scan an explicit repo-relative file list (ci-plan / CI_CHANGED_FILES_JSON)."""
+    findings = []
+    for rel in sorted(relpaths):
+        if not rel or not _scannable_relpath(rel):
+            continue
+        path = os.path.join(root, rel)
+        if not os.path.isfile(path) or _looks_binary(path):
+            continue
+        for lineno, line in scan_file(path):
+            findings.append((path, lineno, line))
+    findings.sort()
+    return findings
+
+
+def planner_changed_paths(raw: str | None):
+    """Return a determined path list, or None when the env is unset.
+
+    ``null`` (main dispatch / no diff) is determined-empty, not unset. Malformed
+    JSON raises RuntimeError so the CLI can fail-closed without git.
+    """
+    if raw is None or raw == "":
+        return None
+    stripped = raw.strip()
+    if stripped == "null":
+        return []
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"CI_CHANGED_FILES_JSON malformed: {exc}") from exc
+    if not isinstance(parsed, list) or not all(isinstance(path, str) for path in parsed):
+        raise RuntimeError(
+            "CI_CHANGED_FILES_JSON must be a JSON array of strings or null"
+        )
+    return [path for path in parsed if path]
+
+
 def scan_changed(root: str, revision: str):
     """Scan only files changed between ``revision`` and HEAD.
 
@@ -132,17 +175,10 @@ def scan_changed(root: str, revision: str):
         detail = proc.stderr.decode("utf-8", "replace").strip()
         raise RuntimeError(detail or f"git diff from {revision!r} failed")
 
-    findings = []
-    for rel in sorted(proc.stdout.decode("utf-8", "replace").split("\0")):
-        if not rel or not _scannable_relpath(rel):
-            continue
-        path = os.path.join(root, rel)
-        if not os.path.isfile(path) or _looks_binary(path):
-            continue
-        for lineno, line in scan_file(path):
-            findings.append((path, lineno, line))
-    findings.sort()
-    return findings
+    relpaths = [
+        rel for rel in proc.stdout.decode("utf-8", "replace").split("\0") if rel
+    ]
+    return scan_paths(root, relpaths)
 
 
 def _self_test() -> int:
@@ -261,7 +297,15 @@ def main(argv: list[str] | None = None) -> int:
         revision = argv[1]
         root = argv[2] if len(argv) == 3 else "."
         try:
-            findings = scan_changed(root, revision)
+            planned = planner_changed_paths(os.environ.get("CI_CHANGED_FILES_JSON"))
+            if planned is not None:
+                findings = scan_paths(root, planned)
+                scope = (
+                    f"ci-plan changed files under {os.path.abspath(root)}"
+                )
+            else:
+                findings = scan_changed(root, revision)
+                scope = f"files changed from {revision} under {os.path.abspath(root)}"
         except RuntimeError as exc:
             print(
                 f"check_conflict_markers: ERROR — cannot classify files changed "
@@ -269,7 +313,6 @@ def main(argv: list[str] | None = None) -> int:
                 file=sys.stderr,
             )
             return 2
-        scope = f"files changed from {revision} under {os.path.abspath(root)}"
     else:
         root = argv[0] if argv else "."
         findings = scan(root)
