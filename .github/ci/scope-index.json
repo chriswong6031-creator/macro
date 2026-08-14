@@ -7383,7 +7383,7 @@
       },
       {
         "path": "ops/launchd/run_options_sparse_selector_verified.py",
-        "signature_sha256": "8293a718f8bf19718278f63a245f8ea346c3387cf3d5b0fba57060899ca5bf9b"
+        "signature_sha256": "168373821d700f013b6e5b930fdca6d3119d011fbefba7e223c536d0e1142ee1"
       },
       {
         "path": "research/blocked_entry_study/ci_bootstrap.py",
@@ -12440,6 +12440,10 @@
       {
         "path": "scripts/run_oopt_phase0.py",
         "signature_sha256": "eb7fd06944c6869fdb0bfd57a56028dcd12faa57b8949e1d052e67db6559de57"
+      },
+      {
+        "path": "scripts/run_options_sparse_selector.py",
+        "signature_sha256": "6a60663f47a0b37a150fc7c6c5e54eaf3f471866b40cadab7e74054ccfc65d66"
       },
       {
         "path": "scripts/run_press.py",
@@ -19339,7 +19343,7 @@
       },
       {
         "path": "tests/test_options_sparse_selector_bootstrap.py",
-        "signature_sha256": "ca4bcf1426890c0aa0e2f313a988c12e68f46a97a0095bd390ccc0a1c06a5bab"
+        "signature_sha256": "6858a15811a66ad55dea09a263cd512ff09f1af6171826acaf960e1258b26316"
       },
       {
         "path": "tests/test_options_sparse_selector_prereg.py",
@@ -19347,7 +19351,7 @@
       },
       {
         "path": "tests/test_options_sparse_selector_runtime.py",
-        "signature_sha256": "676931fbe5c3bc46c08c9ad74085ed9a8c770d20be3616ce1fe2de7a4532a5ad"
+        "signature_sha256": "ad81f19fc2f43ec4ddf09326c00538f392e1d3a3e2b451eff8dea90e42559162"
       },
       {
         "path": "tests/test_options_stamp.py",
@@ -20736,6 +20740,10 @@
       {
         "path": "tests/test_run_a2_macro_pos.py",
         "signature_sha256": "008fb9964cfe7ffcb9ad6222e81cffc3ed75ea7237dca20d14d18507c497b89d"
+      },
+      {
+        "path": "tests/test_run_options_sparse_selector.py",
+        "signature_sha256": "d1a4a569c2b9b7014d0c60e92160b2a55726a6d36c6f7e59cd0c77d388c33912"
       },
       {
         "path": "tests/test_run_rule_replay.py",
@@ -22646,10 +22654,10 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5661,
+    "python_count": 5663,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "6c8a0650cac67006000fe29aecdb85c2c36f369b37d811f35ff76d4e4744a797",
+  "index_sha256": "6ddf6061f23e3a18e69c7e5651197e070d5ac7ab36948fa14077ec941006bbdc",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -25092,7 +25100,9 @@
         "ops/LIVE_FLOW_RUNBOOK.md",
         "ops/launchd/com.mastermind.chainsnapshots.plist",
         "ops/launchd/com.mastermind.liveflow.plist",
+        "ops/launchd/com.mastermind.optionssparseselector.plist",
         "ops/launchd/com.mastermind.prophetmarks.plist",
+        "ops/launchd/run_options_sparse_selector_loop.sh",
         "ops/launchd/run_options_sparse_selector_verified.py",
         "ops/launchd/run_prophet_marks_loop.sh",
         "research/DO_NOT_REBUILD.md",
@@ -25125,6 +25135,7 @@
         "scripts/mirror_terminal_context_r2.py",
         "scripts/rerun_options_gates_thetadata.py",
         "scripts/research/momoedge_oracle_history_replay.py",
+        "scripts/run_options_sparse_selector.py",
         "scripts/validate_options_ivspread.py",
         "scripts/validate_options_skew.py",
         "scripts/workflow_run_source.py",
@@ -25168,6 +25179,7 @@
         "tests/test_options_sparse_selector_runtime.py",
         "tests/test_options_structure_intraday.py",
         "tests/test_private_auth_dict.py",
+        "tests/test_run_options_sparse_selector.py",
         "tests/test_thetadata_store.py"
       ],
       "weight": 267
@@ -64053,7 +64065,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "36ec6b8ef6643417a12f9444c82b7a6b49c3da10cedb7e0584b4b1bc04e43269"
+    "sha256": "f9108a4526f51bf6499600041d1601086a402e5b5199c982ff340d98ac337178"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
@@ -64075,7 +64087,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2281,
+    "candidate_count": 2284,
     "candidates": [
       {
         "path": ".claude",
@@ -67786,6 +67798,10 @@
         "present": false
       },
       {
+        "path": "lib/python3.12/site-packages/dependency.py",
+        "present": false
+      },
+      {
         "path": "lib/seo.py",
         "present": true
       },
@@ -67859,7 +67875,7 @@
       },
       {
         "path": "ops/launchd/com.mastermind.optionssparseselector.plist",
-        "present": false
+        "present": true
       },
       {
         "path": "ops/launchd/com.mastermind.prophetmarks.plist",
@@ -67883,6 +67899,14 @@
       },
       {
         "path": "ops/launchd/run_options_nbbo_cohort_loop.sh",
+        "present": true
+      },
+      {
+        "path": "ops/launchd/run_options_sparse_selector_loop.sh",
+        "present": true
+      },
+      {
+        "path": "ops/launchd/run_options_sparse_selector_verified.py",
         "present": true
       },
       {
@@ -70719,7 +70743,7 @@
       },
       {
         "path": "scripts/run_options_sparse_selector.py",
-        "present": false
+        "present": true
       },
       {
         "path": "scripts/run_press.py",
