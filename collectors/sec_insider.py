@@ -18,6 +18,7 @@ from __future__ import annotations
 import io
 import json
 import logging
+import re
 import zipfile
 from datetime import datetime, timezone
 
@@ -58,16 +59,29 @@ def _candidate_quarters(n: int) -> list[str]:
     return out
 
 
+def _zip_urls(quarter: str) -> list[str]:
+    """Candidate bulk-zip URLs for one quarter, current publication home first.
+
+    SEC moved NEW sets (2026q2 onward) from /files/structureddata/ to
+    /files/datastandardsinnovation/ with no redirect in either direction — each
+    quarter serves from exactly one home and 404s at the other — so every fetch
+    probes zip_url, then each zip_url_fallbacks entry, and a quarter counts as
+    unpublished only when EVERY home said 404. The old single-URL read froze the
+    panel at 2026q1 for five weeks while 2026q2 sat live at the new path."""
+    cfg = _cfg()
+    return [u.format(q=quarter) for u in [cfg["zip_url"], *cfg.get("zip_url_fallbacks", [])]]
+
+
 def _download_quarter() -> tuple[str, zipfile.ZipFile] | None:
     import requests
     for q in _candidate_quarters(_cfg()["lookback_quarters"]):
-        url = _cfg()["zip_url"].format(q=q)
-        try:
-            r = requests.get(url, headers=_headers(), timeout=90)
-            if r.status_code == 200 and r.content[:2] == b"PK":
-                return q, zipfile.ZipFile(io.BytesIO(r.content))
-        except Exception as e:  # noqa: BLE001
-            log.debug("insider zip %s failed: %s", q, e)
+        for url in _zip_urls(q):
+            try:
+                r = requests.get(url, headers=_headers(), timeout=90)
+                if r.status_code == 200 and r.content[:2] == b"PK":
+                    return q, zipfile.ZipFile(io.BytesIO(r.content))
+            except Exception as e:  # noqa: BLE001
+                log.debug("insider zip %s failed: %s", q, e)
     return None
 
 
@@ -236,31 +250,40 @@ def _session():
 
 
 def _get_zip(quarter: str, retries: int = 8) -> tuple[str, "zipfile.ZipFile"] | None:
-    """Download one quarter's form345 zip. Distinguishes a transient 403 'Request
-    Rate Threshold Exceeded' (patient exponential backoff) from a real 404 (quarter
-    not published / before the data set began -> permanent skip, returns None).
+    """Download one quarter's form345 zip, probing every configured URL home
+    (_zip_urls, newest home first). Distinguishes a transient 403 'Request Rate
+    Threshold Exceeded' (patient exponential backoff) from a real 404 (permanent
+    per-URL skip; the quarter counts as not-published ONLY once every home has
+    answered 404 — a single home's 404 is a location fact, not a publication fact).
 
     SEC throttles per source IP; on a shared egress IP unrelated traffic can push
     the aggregate over the 10 req/s ceiling, so the backoff is generous (up to ~60s
     a try, with jitter) and the loop is long — this is a slow background backfill."""
     import random
     import time
-    url = _cfg()["zip_url"].format(q=quarter)
+    urls = _zip_urls(quarter)
+    dead: set[str] = set()  # answered 404 — the file is permanently absent THERE
     for attempt in range(retries):
-        try:
-            r = _session().get(url, timeout=120)
-        except Exception as e:  # noqa: BLE001
-            log.debug("insider panel %s attempt %d errored: %s", quarter, attempt, e)
-            time.sleep(min(60.0, 5.0 * (attempt + 1)))
-            continue
-        if r.status_code == 200 and r.content[:2] == b"PK":
-            return quarter, zipfile.ZipFile(io.BytesIO(r.content))
-        if r.status_code == 404:
-            return None  # genuinely absent — caller skips permanently
-        # 403 rate-threshold or any other transient: patient backoff with jitter
+        for url in urls:
+            if url in dead:
+                continue
+            try:
+                r = _session().get(url, timeout=120)
+            except Exception as e:  # noqa: BLE001
+                log.debug("insider panel %s attempt %d errored: %s", quarter, attempt, e)
+                continue
+            if r.status_code == 200 and r.content[:2] == b"PK":
+                return quarter, zipfile.ZipFile(io.BytesIO(r.content))
+            if r.status_code == 404:
+                dead.add(url)
+                continue
+            # 403 rate-threshold or any other transient: try the next home now,
+            # back off before the next round
+            log.debug("insider panel %s status %d at %s (attempt %d)",
+                      quarter, r.status_code, url, attempt)
+        if len(dead) == len(urls):
+            return None  # absent at every home — caller skips permanently
         wait = min(60.0, 5.0 * (1.7 ** attempt)) + random.uniform(0, 2.0)
-        log.debug("insider panel %s status %d (attempt %d, wait %.0fs)",
-                  quarter, r.status_code, attempt, wait)
         time.sleep(wait)
     log.warning("insider panel %s: exhausted retries", quarter)
     return None
@@ -345,6 +368,30 @@ def backfill_panel(start: str = "2006q1", force: bool = False,
         part.to_parquet(qcache)
         log.info("insider panel: %s -> %d transactions", q, len(part))
         time.sleep(sleep_s)  # respect SEC fair-access pacing between quarters
+
+    # Freshness tripwire (accrual watchdog). The newest cached quarter may
+    # legitimately trail the CURRENT calendar quarter by one — a quarter's bulk
+    # set publishes only ~1-2 weeks after that quarter ends — but a lag of two+
+    # means accrual is dead (moved URL, schema change, lane not firing) and every
+    # trailing-window consumer (engine/neuralweb/context_api._insider_dim, the
+    # factors-page leaderboard) is silently reading a frozen store. That is
+    # exactly how the 2026q2 publication-path move starved the insider lobe for
+    # five weeks: the only trace was a nightly log.info "unavailable (skip)".
+    cached = sorted(p.stem for p in pdir.glob("*.parquet")
+                    if re.fullmatch(r"\d{4}q[1-4]", p.stem))
+    if cached:
+        now = datetime.now(timezone.utc)
+        cur_q = f"{now.year}q{(now.month - 1) // 3 + 1}"
+        lag = ((now.year * 4 + (now.month - 1) // 3)
+               - (int(cached[-1][:4]) * 4 + int(cached[-1][5:]) - 1))
+        if lag > 1:
+            print(f"::warning title=sec-insider-panel-stale::data/sec_insider/panel "
+                  f"newest quarter {cached[-1]} trails the current quarter {cur_q} "
+                  f"by {lag} — Form-4 accrual has stalled (moved SEC URL? parse "
+                  f"failure?) and trailing-window insider reads are running on a "
+                  f"frozen store", flush=True)
+            log.warning("insider panel stale: newest %s vs current %s (lag %d quarters)",
+                        cached[-1], cur_q, lag)
 
     parts = []
     for q in quarters:
