@@ -50,10 +50,15 @@ SAFETY INVARIANTS (masterplan §0.4; each one mutation-pinned by a named test).
   d. A GitHub read failure means NO DISPATCH.  Blind fails toward alerting, never
      toward blind re-arming.
 
-REST BUDGET.  One shared 5,000/hr account bucket for the whole fleet.  A healthy wake
-spends exactly THREE GitHub reads (index contents, run list, dispatch-budget probe)
-plus two non-GitHub GETs (R2, VPS).  No pagination, ever.  Write calls (issue upsert,
-dispatch) are spent only on an alarm.
+REST BUDGET — TWO DIFFERENT POOLS, do not conflate them.  In the Actions lane the
+`GITHUB_TOKEN` draws the per-repository 1,000/hr installation pool, which is this
+lane's own and cannot starve a session.  The launchd lane borrows `gh auth token`,
+so it spends the fleet's SHARED 5,000/hr account bucket — the one `ship_loop_guard.py`
+fails closed without — which is why the host lane wakes twice a day rather than
+hourly.  Either way: a healthy wake spends exactly THREE GitHub reads (index
+contents, run list, dispatch-budget probe) plus two non-GitHub GETs (R2, VPS).  An
+ALARM wake spends two more reads (the issue thread, for the attempt ledger and the
+duplicate-alert check) plus its writes.  No pagination, ever.
 
 EXIT CODE.  0 when nothing was done and nothing is owed (HEALTHY / WAIT).  Nonzero
 when this lane ALERTED or DISPATCHED, so a red run is itself the signal.
@@ -65,6 +70,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -153,9 +159,14 @@ DISPATCH_FLOOR = timedelta(hours=15, minutes=40)
 AUTO_DISPATCH_BUDGET = 2
 BUDGET_WINDOW_START_UTC = time(21, 0)
 
-#: The VPS pull loop runs every 3 minutes.  30 minutes is ten missed pulls — a
-#: dead loop, not a quiet one.
-VPS_COMMIT_MAX_AGE_MIN = 30
+#: `checks.site.commit_time` is CONTEXT ONLY and must not become a verdict.  It is
+#: the timestamp of main's newest commit in the served checkout, not a heartbeat of
+#: the pull loop: main goes quiet for perfectly ordinary reasons (an hour with no
+#: merges, a weekend), so an age threshold on it false-fires at our own wake times.
+#: An adversarial pass measured ~5% false fires at these hours, which is a
+#: false-positive factory — the thing that gets a watchdog muted. It is printed in
+#: the receipt so a human triaging a REAL alarm can see it, and nothing else.
+VPS_COMMIT_CONTEXT_ONLY = True
 
 #: Host-lane only (masterplan §0.10).  A disk-full runner takes the whole nightly
 #: down and reports it as unrelated job failures — that is exactly what
@@ -165,6 +176,18 @@ DISK_HEADROOM_MIN_GB = 80.0
 ISSUE_LABEL = "prophet-outage"
 ISSUE_LABEL_COLOR = "b60205"
 ISSUE_TITLE_PREFIX = "Prophet US staleness"
+
+#: Machine tokens inside the issue receipts.  The issue thread is this lane's ONLY
+#: durable state — it has no database and writes nothing to the repo — so the
+#: attempt ledger and the duplicate-alert check both read back from it.
+#:
+#: WHY THE RUN LIST IS NOT ENOUGH FOR THE BUDGET.  A dispatch POST that 404s, 403s,
+#: or is silently dropped creates no run record, so `dispatch_runs_today` stays 0
+#: and an unfixed budget would re-fire every wake forever.  Counting ATTEMPTS (what
+#: we tried) rather than only EFFECTS (what GitHub recorded) is what makes the
+#: budget a real bound.  `spent = max(runs, receipts)`.
+DISPATCH_RECEIPT_TOKEN = "DISPATCH-RECEIPT"
+VERDICT_TOKEN = "RESCUE-VERDICTS"
 
 #: Newest daily.yml runs to read.  20 is ~3 days of a lane that runs 1-6 times a
 #: day; the dispatch-budget question is answered by its own server-filtered probe
@@ -180,7 +203,7 @@ STRAND = "STRAND"
 STALE = "STALE"
 NO_COHORT = "NO_COHORT"
 SERVE_SPLIT_R2 = "SERVE_SPLIT_R2"
-SERVE_SPLIT_VPS = "SERVE_SPLIT_VPS"
+# There is deliberately no SERVE_SPLIT_VPS: see VPS_COMMIT_CONTEXT_ONLY above.
 API_DARK = "API_DARK"
 DISK_LOW = "DISK_LOW"          # launchd lane only
 
@@ -231,6 +254,15 @@ class WatchdogState:
     runs_error: str | None = None
     dispatch_runs_today: int | None = None
     dispatch_probe_error: str | None = None
+    #: Read back from the session's issue thread on the ALARM path only (see
+    #: DISPATCH_RECEIPT_TOKEN). ``dispatch_receipts_today`` is the ATTEMPT ledger
+    #: that makes the budget a real bound even when a dispatch POST left no run
+    #: record; ``last_receipt_verdicts`` is the newest wake's verdict set, used to
+    #: suppress a duplicate comment + push for an unchanged situation.
+    issue_number: int | None = None
+    issue_error: str | None = None
+    dispatch_receipts_today: int | None = None
+    last_receipt_verdicts: tuple[str, ...] | None = None
     lane: str = "actions"
     disk_free_gb: float | None = None
 
@@ -256,6 +288,127 @@ def _parse_date(value: object) -> date | None:
         return date.fromisoformat(value[:10])
     except ValueError:
         return None
+
+
+@dataclass(frozen=True)
+class RunFacts:
+    """What the run list says, derived once and shared by decide() and receipt()."""
+
+    recent: tuple[dict, ...] = ()
+    in_flight: dict | None = None
+    any_success: bool = False
+    dead_detail: str | None = None
+    anomalies: tuple[str, ...] = ()
+
+    @property
+    def in_flight_id(self):
+        return self.in_flight.get("id") if self.in_flight else None
+
+
+def run_facts(runs: list[dict] | None, boundary: datetime) -> RunFacts:
+    """Classify the run list.
+
+    THE IN-FLIGHT TEST IGNORES ``created_at`` ENTIRELY, and that is the safe
+    direction.  §0.4a says never dispatch while ANY daily.yml run is alive, and a
+    row whose timestamp will not parse is exactly the row an attacker of this logic
+    would want dropped: drop it and the lane dispatches over a live bake.  A row
+    with no ``status`` at all is likewise treated as alive — an unreadable row is
+    not evidence of absence.  Both shapes are reported as anomalies so a human
+    triaging the receipt knows the classification rested on a malformed row.
+
+    ``recent`` (the STRAND question, "does a run for tonight exist at all") still
+    needs a parseable timestamp, because a row we cannot date cannot prove a bake
+    happened.  The two questions genuinely differ, and each fails toward caution.
+    """
+    if runs is None:
+        return RunFacts()
+    recent: list[dict] = []
+    in_flight: dict | None = None
+    any_success = False
+    anomalies: list[str] = []
+    for row in runs:
+        status = row.get("status")
+        created = _parse_dt(row.get("created_at"))
+        if status is None:
+            anomalies.append(f"run {row.get('id')} has no status — treated as alive")
+        if status != "completed":
+            if in_flight is None:
+                in_flight = row
+            if created is None:
+                anomalies.append(
+                    f"run {row.get('id')} is {status!r} with an unparseable "
+                    f"created_at {row.get('created_at')!r} — treated as alive"
+                )
+        if created is not None and created >= boundary:
+            recent.append(row)
+            if row.get("conclusion") == "success":
+                any_success = True
+    dead_detail = None
+    if recent and in_flight is None and not any_success:
+        dead_detail = ", ".join(
+            f"{r.get('status')}/{r.get('conclusion') or '-'}" for r in recent
+        )
+    return RunFacts(tuple(recent), in_flight, any_success, dead_detail,
+                    tuple(anomalies))
+
+
+def budget_window_start(now: datetime) -> datetime:
+    """21:00Z of the night ``now`` belongs to — the auto-dispatch budget window.
+
+    A 23:40Z wake is inside tonight's window; a 00:40Z wake belongs to the window
+    that opened yesterday evening. Shared by the API probe and the receipt ledger so
+    the two can never count over different spans.
+    """
+    since = datetime.combine(now.date(), BUDGET_WINDOW_START_UTC, tzinfo=timezone.utc)
+    return since - timedelta(days=1) if now < since else since
+
+
+def count_dispatch_receipts(texts, since: datetime) -> int:
+    """How many dispatch ATTEMPTS this lane recorded on the issue since ``since``."""
+    pattern = re.compile(rf"{DISPATCH_RECEIPT_TOKEN}\s+(\S+)")
+    total = 0
+    for text in texts:
+        if not isinstance(text, str):
+            continue
+        for stamp in pattern.findall(text):
+            when = _parse_dt(stamp)
+            if when is not None and when >= since:
+                total += 1
+    return total
+
+
+def latest_verdicts(texts) -> tuple[str, ...] | None:
+    """The verdict set of the NEWEST receipt carrying one, or None if there is none.
+
+    ``texts`` must arrive oldest-first (the GitHub issue-comment order).
+    """
+    pattern = re.compile(rf"{VERDICT_TOKEN}\s+([A-Z0-9_,]+)")
+    found: tuple[str, ...] | None = None
+    for text in texts:
+        if not isinstance(text, str):
+            continue
+        for blob in pattern.findall(text):
+            found = tuple(sorted(v for v in blob.split(",") if v))
+    return found
+
+
+def should_file_receipt(actions: list[Action],
+                        last_verdicts: tuple[str, ...] | None) -> bool:
+    """Whether this wake earns a new issue comment and an ops push.
+
+    A dispatch ALWAYS earns one — it is an action taken, and an unreceipted action
+    is how the attempt ledger loses count.  Otherwise an unchanged verdict set is
+    not news: hourly wakes through a 14-hour outage would otherwise post fourteen
+    identical comments and fourteen pushes, which is how a channel gets muted right
+    before the night it matters.  The RED RUN still fires every wake — the heartbeat
+    is the exit code, not the comment.
+    """
+    if any(a.kind == DISPATCH for a in actions):
+        return True
+    current = tuple(sorted({a.verdict for a in actions if a.loud}))
+    if last_verdicts is None:
+        return True
+    return current != tuple(sorted(last_verdicts))
 
 
 def expected_fire_after(now: datetime) -> tuple[date, datetime]:
@@ -343,16 +496,22 @@ def _dispatch_blockers(state: WatchdogState, in_flight: dict | None,
             f"{in_flight.get('status')} — a bake is alive, so nothing is owed (§0.4a)",
         ))
 
-    # (b) budget.  Counted across all actors: an operator recovering by hand spends
+    # (b) budget.  Counted across all actors — an operator recovering by hand spends
     # the same allowance, because the resource being protected is the runner pool and
-    # the ledger, not this lane's pride.
-    spent = state.dispatch_runs_today
+    # the ledger, not this lane's pride — and counted as ATTEMPTS, not only effects.
+    # `max(runs, receipts)`: a dispatch POST that 404s or is dropped creates no run
+    # record, so an effects-only count would re-fire every wake forever.
+    counted = [c for c in (state.dispatch_runs_today, state.dispatch_receipts_today)
+               if c is not None]
+    spent = max(counted) if counted else None
     if spent is not None and spent >= AUTO_DISPATCH_BUDGET:
         blockers.append((
             "budget_spent",
-            f"{spent} workflow_dispatch {WORKFLOW_FILE} runs already exist since "
+            f"{spent} auto-dispatch attempt(s) since "
             f"{BUDGET_WINDOW_START_UTC.isoformat(timespec='minutes')}Z "
-            f"(budget {AUTO_DISPATCH_BUDGET}, any actor) — alert only (§0.4b)",
+            f"(runs recorded: {state.dispatch_runs_today}, receipts filed: "
+            f"{state.dispatch_receipts_today}; budget {AUTO_DISPATCH_BUDGET}, any "
+            "actor) — alert only (§0.4b)",
         ))
 
     # Past the floor a re-bake cannot help: it would run against mixed-vintage
@@ -383,25 +542,8 @@ def decide(state: WatchdogState) -> list[Action]:
     actions: list[Action] = []
 
     # ── run facts ───────────────────────────────────────────────────────────
-    in_flight: dict | None = None
-    recent: list[dict] = []
-    any_success = False
-    dead_detail: str | None = None
-    if state.runs is not None:
-        recent = [
-            r for r in state.runs
-            if (created := _parse_dt(r.get("created_at"))) is not None
-            and created >= boundary
-        ]
-        for row in recent:
-            if row.get("status") != "completed":
-                in_flight = in_flight or row
-            if row.get("conclusion") == "success":
-                any_success = True
-        if recent and in_flight is None and not any_success:
-            dead_detail = ", ".join(
-                f"{r.get('status')}/{r.get('conclusion') or '-'}" for r in recent
-            )
+    facts = run_facts(state.runs, boundary)
+    in_flight, recent, dead_detail = facts.in_flight, facts.recent, facts.dead_detail
 
     # ── data facts (source_asof + cohort, NEVER top-level asof) ─────────────
     src = _parse_date(state.main_index.get("source_asof")) if state.main_index else None
@@ -453,15 +595,38 @@ def decide(state: WatchdogState) -> list[Action]:
                 "since 21:00Z).",
             ))
         elif any(code == "run_in_flight" for code, _ in blockers):
-            # The one restraint that is good news rather than bad: the bake is
-            # working. Quiet, exit 0 — a watchdog that pages while the subject is
-            # healthy trains its reader to ignore it. DOMINANT over every other
-            # blocker: a live run answers the question no matter what else is true.
+            # A live run is DOMINANT over every other blocker — it answers the
+            # question no matter what else is true, and this lane will neither
+            # dispatch alongside it nor stop it.
+            #
+            # BUT SILENCE HAS A DEADLINE. Waiting quietly forever is its own failure
+            # mode, and we can mint the very run that mutes us: the #5362 512KB class
+            # produced runs that sat `queued` with ZERO jobs, uncancellable, forever
+            # — so a STRAND dispatch into a stranded workflow file creates a zombie
+            # that would keep this lane quiet all night. Past the completion deadline
+            # a run that is still alive is no longer "working", it is a question an
+            # operator has to answer, so the same restraint becomes LOUD.
             detail = next(text for code, text in blockers if code == "run_in_flight")
-            actions.append(Action(
-                NOTICE, WAIT, f"{why} No action: {detail}.",
-                blocked_by="run_in_flight",
-            ))
+            started = _parse_dt((in_flight or {}).get("created_at"))
+            age = (f"{(now - started).total_seconds() / 3600:.1f}h"
+                   if started is not None else "age unknown (unparseable created_at)")
+            if now >= stale_deadline:
+                actions.append(Action(
+                    ALERT, wants,
+                    f"{why} Run {facts.in_flight_id} has been "
+                    f"{(in_flight or {}).get('status')} for {age} and the store has "
+                    "still not advanced. NOT dispatching (a run is alive) and NOT "
+                    "stopping it (never) — an operator look is owed: a bake this "
+                    "long is either hung or a jobless queued zombie, and a zombie "
+                    "keeps this lane quiet until someone breaks the tie.",
+                    blocked_by="run_in_flight",
+                ))
+            else:
+                actions.append(Action(
+                    NOTICE, WAIT,
+                    f"{why} No action: {detail} (running {age}).",
+                    blocked_by="run_in_flight",
+                ))
         else:
             codes = ",".join(c for c, _ in blockers)
             actions.append(Action(
@@ -507,21 +672,10 @@ def decide(state: WatchdogState) -> list[Action]:
                 "leg of the last render and the R2 sync.",
             ))
 
-    vps_commit = None
-    if isinstance(state.vps_status, dict):
-        checks = state.vps_status.get("checks")
-        if isinstance(checks, dict) and isinstance(checks.get("site"), dict):
-            vps_commit = _parse_dt(checks["site"].get("commit_time"))
-    if vps_commit is not None:
-        age_min = (now - vps_commit).total_seconds() / 60.0
-        if age_min > VPS_COMMIT_MAX_AGE_MIN:
-            actions.append(Action(
-                ALERT, SERVE_SPLIT_VPS,
-                f"SERVE SPLIT: the VPS site pull is {age_min:.0f} minutes behind "
-                f"main (commit_time {vps_commit.isoformat()}, loop runs every 3 min, "
-                f"budget {VPS_COMMIT_MAX_AGE_MIN} min). Everything merged since then "
-                "is invisible to logged-in users.",
-            ))
+    # The VPS's `checks.site.commit_time` is CONTEXT, never a verdict — it stamps
+    # main's newest commit in the served checkout, not the pull loop's pulse, so an
+    # age threshold on it fires on any quiet hour on main. It is read and printed in
+    # the receipt (see `vps_commit_time`), and it decides nothing.
 
     # ── host lane only ──────────────────────────────────────────────────────
     if state.lane == "launchd" and state.disk_free_gb is not None \
@@ -536,18 +690,20 @@ def decide(state: WatchdogState) -> list[Action]:
         ))
 
     if not actions:
-        # Mid-bake is WAIT, not HEALTHY. The store legitimately still reads the
-        # previous session while collect is running, and calling that "healthy"
-        # would make the healthy label mean two different things.
-        pending = in_flight is not None and not data_current
+        # HEALTHY REQUIRES data_current, FULL STOP. Before the deadlines a store that
+        # has not advanced is legitimately still catching up — but that is WAIT, not
+        # health. Printing HEALTHY over a stale store is precisely the sentence every
+        # instrument produced for two days while the site served Aug-10 picks, and a
+        # quiet-but-honest verdict costs nothing (both exit 0).
         actions.append(Action(
-            NOTICE, WAIT if pending else HEALTHY,
+            NOTICE, HEALTHY if data_current else WAIT,
             f"session {session.isoformat()}: source_asof "
             f"{src.isoformat() if src else '?'}, {cohort if cohort is not None else '?'} "
             f"plans recorded for it, {len(recent)} {WORKFLOW_FILE} run(s) since "
             f"{boundary.isoformat()}"
-            + (f"; run {in_flight.get('id')} is {in_flight.get('status')}."
-               if pending else "."),
+            + (f"; run {facts.in_flight_id} is {in_flight.get('status')}, "
+               "still within the deadline ladder." if in_flight is not None
+               else ("." if data_current else "; the store has not advanced yet.")),
         ))
     return actions
 
@@ -667,6 +823,46 @@ def fetch_dispatch_budget(repo: str, token: str | None,
     return payload["total_count"], None
 
 
+def vps_commit_time(state: WatchdogState) -> datetime | None:
+    """``checks.site.commit_time`` from the VPS status view — CONTEXT for the
+    receipt, never an input to a verdict (see VPS_COMMIT_CONTEXT_ONLY)."""
+    if not isinstance(state.vps_status, dict):
+        return None
+    checks = state.vps_status.get("checks")
+    if not isinstance(checks, dict) or not isinstance(checks.get("site"), dict):
+        return None
+    return _parse_dt(checks["site"].get("commit_time"))
+
+
+def fetch_issue_thread(repo: str, token: str | None, session: date, now: datetime):
+    """The session's issue plus its attempt ledger and newest verdict set.
+
+    TWO reads, spent ONLY on the alarm path — the enrichment pass in ``main`` runs
+    this after a provisional ``decide`` has already said something is wrong, so a
+    healthy wake never pays for it.  Returns
+    ``(number, receipts_since_window, last_verdicts, error)``; any failure yields
+    ``(…, None, None, error)`` so the budget falls back to the run-record count
+    rather than silently reading zero attempts.
+    """
+    row, err = find_open_issue(repo, token, session)
+    if err is not None:
+        return None, None, None, err
+    if row is None:
+        return None, 0, None, None
+    number = row.get("number")
+    url = (f"https://api.github.com/repos/{repo}/issues/{number}/comments"
+           f"?per_page=100")
+    payload, err = _get_json(url, _api_headers(token))
+    if err is not None or not isinstance(payload, list):
+        return number, None, None, err or "comment list is not an array"
+    texts = [row.get("body")] + [c.get("body") for c in payload
+                                 if isinstance(c, dict)]
+    return (number,
+            count_dispatch_receipts(texts, budget_window_start(now)),
+            latest_verdicts(texts),
+            None)
+
+
 def _disk_free_gb(path: Path) -> float | None:
     try:
         return shutil.disk_usage(path).free / (1024 ** 3)
@@ -675,8 +871,15 @@ def _disk_free_gb(path: Path) -> float | None:
 
 
 def collect_state(repo: str, token: str | None, now: datetime, *,
-                  lane: str = "actions") -> WatchdogState:
-    """Three GitHub reads + two public GETs.  Nothing here can raise."""
+                  lane: str = "actions",
+                  disk_path: Path | None = None) -> WatchdogState:
+    """Three GitHub reads + two public GETs.  Nothing here can raise.
+
+    ``disk_path`` is the volume the host lane measures.  It must be passed
+    explicitly by the launchd wrapper: that wrapper runs the tool from a TEMPDIR
+    extracted out of origin/main, so measuring this file's own parent would report
+    on ``/var/folders`` instead of on the volume the runners actually fill.
+    """
     main_index, main_error = fetch_main_index(repo, token)
     r2_index, r2_error = fetch_r2_index()
     vps_status, vps_error = fetch_vps_status()
@@ -690,7 +893,8 @@ def collect_state(repo: str, token: str | None, now: datetime, *,
         runs=runs, runs_error=runs_error,
         dispatch_runs_today=budget, dispatch_probe_error=budget_error,
         lane=lane,
-        disk_free_gb=_disk_free_gb(REPO_ROOT) if lane == "launchd" else None,
+        disk_free_gb=(_disk_free_gb(disk_path or REPO_ROOT)
+                      if lane == "launchd" else None),
     )
 
 
@@ -719,8 +923,15 @@ def dispatch_nightly(repo: str, token: str | None) -> tuple[bool, str]:
     url = (f"https://api.github.com/repos/{repo}/actions/workflows/{WORKFLOW_FILE}"
            f"/dispatches")
     status, _, err = _post(url, {"ref": "main"}, _api_headers(token))
-    if err is not None:
-        return False, f"dispatch failed ({err})"
+    # SUCCESS IS THE STATUS CODE, not the absence of an exception. GitHub answers a
+    # good dispatch with 204; a 403 (token scope) or 404 (workflow disabled, or the
+    # #5362 unprocessable-file class) is a POST that "worked" at the socket level and
+    # created nothing. Reporting that as a dispatch would put a phantom attempt in
+    # the ledger and hide a real failure behind a green line.
+    if status is None or not 200 <= status < 300:
+        return False, (f"DISPATCH FAILED — HTTP {status if status is not None else '?'}"
+                       f" ({err or 'no response'}). No run was created; the budget "
+                       "still counts this attempt.")
     return True, f"dispatched {WORKFLOW_FILE} on main (HTTP {status})"
 
 
@@ -737,11 +948,13 @@ def issue_title(session: date) -> str:
 
 
 def find_open_issue(repo: str, token: str | None,
-                    session: date) -> tuple[int | None, str | None]:
-    """The open ``prophet-outage`` issue for this session, if one exists.
+                    session: date) -> tuple[dict | None, str | None]:
+    """The open ``prophet-outage`` issue ROW for this session, if one exists.
 
     One issue per expected-session date: a wake appends a receipt to it rather than
     opening a new one, so a three-day outage reads as one thread with a timeline.
+    The whole row is returned rather than just the number because its ``body`` is
+    the FIRST receipt, and the attempt ledger has to count that one too.
     """
     url = (f"https://api.github.com/repos/{repo}/issues"
            f"?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50")
@@ -753,15 +966,22 @@ def find_open_issue(repo: str, token: str | None,
     wanted = issue_title(session)
     for row in payload:
         if isinstance(row, dict) and row.get("title") == wanted:
-            return row.get("number"), None
+            return row, None
     return None, None
 
 
-def upsert_issue(repo: str, token: str | None, session: date, body: str) -> str:
-    """Open the session's issue or comment a receipt onto the existing one."""
-    number, err = find_open_issue(repo, token, session)
-    if err is not None:
-        return f"issue lookup failed ({err}) — receipt not filed"
+def upsert_issue(repo: str, token: str | None, session: date, body: str,
+                 number: int | None = None) -> str:
+    """Open the session's issue or comment a receipt onto the existing one.
+
+    ``number`` is passed in when the enrichment pass already resolved it, so the
+    alarm path does not spend a second lookup on the same question.
+    """
+    if number is None:
+        row, err = find_open_issue(repo, token, session)
+        if err is not None:
+            return f"issue lookup failed ({err}) — receipt not filed"
+        number = row.get("number") if row else None
     if number is None:
         ensure_label(repo, token)
         status, payload, post_err = _post(
@@ -831,9 +1051,18 @@ def annotate(actions: list[Action]) -> None:
 
 
 def receipt(actions: list[Action], state: WatchdogState, session: date,
-            results: list[str]) -> str:
-    """The issue body / comment: one wake, everything it saw and everything it did."""
+            results: list[str], dispatched_at: datetime | None = None) -> str:
+    """The issue body / comment: one wake, everything it saw and everything it did.
+
+    Carries two MACHINE TOKENS as well as prose, because this thread is the lane's
+    only durable state: ``DISPATCH-RECEIPT <instant>`` is the attempt ledger the
+    budget reads back, and ``RESCUE-VERDICTS <A,B>`` is what the next wake compares
+    against to avoid posting the same alarm fourteen times in one night.
+    """
     src = state.main_index.get("source_asof") if state.main_index else None
+    _, boundary = expected_fire_after(state.now)
+    facts = run_facts(state.runs, boundary)
+    vps = vps_commit_time(state)
     lines = [
         f"**Wake {state.now.isoformat(timespec='seconds')}** (`{state.lane}` lane) — "
         f"expected session `{session.isoformat()}`",
@@ -842,15 +1071,29 @@ def receipt(actions: list[Action], state: WatchdogState, session: date,
         f"`{cohort_size(state.main_index, session)}` · "
         f"`intake.eligible_after_skips`: `{intake_eligible(state.main_index)}`",
         f"- `{WORKFLOW_FILE}` runs read: "
-        f"`{len(state.runs) if state.runs is not None else 'UNREADABLE'}` · "
-        f"workflow_dispatch runs since 21:00Z: `{state.dispatch_runs_today}`",
-        "",
-        "**Verdicts**",
+        f"`{len(state.runs) if state.runs is not None else 'UNREADABLE'}` · since the "
+        f"fire boundary: `{len(facts.recent)}` · in flight: `{facts.in_flight_id}`",
+        f"- auto-dispatch spend since {budget_window_start(state.now).isoformat()}: "
+        f"runs recorded `{state.dispatch_runs_today}`, receipts filed "
+        f"`{state.dispatch_receipts_today}` (budget `{AUTO_DISPATCH_BUDGET}`)",
+        # Context only — an old commit_time is not a verdict here (main goes quiet
+        # for ordinary reasons), but a human triaging a real alarm wants to see it.
+        f"- VPS `checks.site.commit_time` (context, not a verdict): "
+        f"`{vps.isoformat() if vps else state.vps_error or 'unreadable'}`",
     ]
+    if facts.anomalies:
+        lines.append("- ⚠ run-list parse anomalies: " + "; ".join(facts.anomalies))
+    lines += ["", "**Verdicts**"]
     lines += [f"- `{a.verdict}` ({a.kind}) — {a.message}" for a in actions]
     if results:
         lines += ["", "**Actions taken**"] + [f"- {r}" for r in results]
+    verdict_set = ",".join(sorted({a.verdict for a in actions if a.loud})) or "NONE"
+    lines += ["", "```", f"{VERDICT_TOKEN} {verdict_set}"]
+    if dispatched_at is not None:
+        lines.append(f"{DISPATCH_RECEIPT_TOKEN} "
+                     f"{dispatched_at.isoformat(timespec='seconds')}")
     lines += [
+        "```",
         "",
         "_Filed by `scripts/prophet_rescue.py`. This lane can only START work — it "
         "has no authority to stop a run, and stopping one is an operator call._",
@@ -866,21 +1109,39 @@ def execute(actions: list[Action], state: WatchdogState, session: date, repo: st
     """Run the plan.  Every step is best-effort: a failed side effect degrades the
     receipt, it never changes the verdict or the exit code."""
     results: list[str] = []
+    dispatched_at: datetime | None = None
     for action in actions:
         if action.kind != DISPATCH:
             continue
         if dry_run:
             results.append(f"DRY RUN: would dispatch {WORKFLOW_FILE} on main")
             continue
+        # Stamped whether or not the POST succeeded: the ledger counts ATTEMPTS, and
+        # a failed attempt is exactly the one an effects-only count would lose.
+        dispatched_at = state.now
         ok, detail = dispatch_nightly(repo, token)
         results.append(detail)
         if not ok:
             print(f"::error title=prophet-rescue-dispatch-failed::{detail}", flush=True)
     if not any(a.loud for a in actions) or dry_run:
         return results
-    body = receipt(actions, state, session, results)
+
+    # DUPLICATE SUPPRESSION. The red run fires every wake regardless — that is the
+    # heartbeat. What is suppressed here is the fourteenth identical comment and the
+    # fourteenth identical push through one long outage, because a channel that cries
+    # the same thing hourly is a channel nobody reads on the night it matters.
+    if not should_file_receipt(actions, state.last_receipt_verdicts):
+        results.append(
+            f"receipt suppressed — unchanged verdict set "
+            f"{','.join(sorted(state.last_receipt_verdicts or ()))} already filed on "
+            f"issue #{state.issue_number}; the red run is still the signal"
+        )
+        return results
+
+    body = receipt(actions, state, session, results, dispatched_at)
     if token:
-        results.append(upsert_issue(repo, token, session, body))
+        results.append(upsert_issue(repo, token, session, body,
+                                    number=state.issue_number))
     summary = "; ".join(f"{a.verdict}: {a.message}" for a in actions if a.loud)
     push_ops_alert(f"🚨 Prophet US rescue [{state.lane}] — {summary}")
     if state.lane == "launchd":
@@ -898,17 +1159,49 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--now", default=None,
                         help="ISO-8601 override for the decision clock (testing)")
     parser.add_argument("--repo", default=DEFAULT_REPO)
+    parser.add_argument("--disk-path", default=None,
+                        help="volume the launchd lane measures for headroom; the "
+                             "wrapper passes the real checkout because the tool "
+                             "itself runs from a tempdir")
     args = parser.parse_args(argv)
 
-    now = _parse_dt(args.now) or datetime.now(timezone.utc)
+    if args.now:
+        # A bad --now must ERROR, never fall back to the wall clock: silently
+        # substituting "right now" for the instant an operator asked about turns a
+        # deliberate probe into a live decision against a different night.
+        now = _parse_dt(args.now)
+        if now is None:
+            parser.error(f"--now is not an ISO-8601 instant: {args.now!r}")
+    else:
+        now = datetime.now(timezone.utc)
     token = os.environ.get("GH_TOKEN") or os.environ.get("GITHUB_TOKEN")
     if not token:
         print("::warning title=prophet-rescue-anonymous::no GH_TOKEN/GITHUB_TOKEN — "
               "reads are anonymous (60/hr) and no issue receipt can be filed",
               flush=True)
 
-    state = collect_state(args.repo, token, now, lane=args.lane)
+    state = collect_state(args.repo, token, now, lane=args.lane,
+                          disk_path=Path(args.disk_path) if args.disk_path else None)
     session, _ = expected_fire_after(now)
+
+    # TWO PASSES, and the split is the point. Pass one answers "is anything wrong?"
+    # from the three cheap reads every wake pays for. Only if it says yes do we spend
+    # the two issue reads that carry the ATTEMPT LEDGER (a dispatch POST that created
+    # no run still counted) and the last verdict set (so an unchanged alarm does not
+    # post its fourteenth identical comment). Pass two is the authoritative one — the
+    # provisional plan is discarded, never executed, because its budget input was
+    # incomplete by construction.
+    if any(a.loud for a in decide(state)):
+        number, receipts, last_verdicts, err = fetch_issue_thread(
+            args.repo, token, session, now)
+        state.issue_number = number
+        state.dispatch_receipts_today = receipts
+        state.last_receipt_verdicts = last_verdicts
+        state.issue_error = err
+        if err is not None:
+            print("::warning title=prophet-rescue-ledger-blind::could not read the "
+                  f"issue thread ({err}) — the attempt ledger falls back to run "
+                  "records only", flush=True)
     actions = decide(state)
     annotate(actions)
     for line in execute(actions, state, session, args.repo, token,

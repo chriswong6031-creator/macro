@@ -29,6 +29,7 @@ from __future__ import annotations
 import ast
 import importlib.util
 import re
+import subprocess
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -364,7 +365,13 @@ def test_a_newest_cancelled_run_with_stale_data_is_re_armed():
 # ─────────────────────────────────────────────────────────────────────────────
 # §0.4a — MUTATION PIN: never dispatch while a run is alive
 # ─────────────────────────────────────────────────────────────────────────────
-@pytest.mark.parametrize("status", ["queued", "in_progress", "waiting", "requested"])
+# "pending" is in this list because a LIVE dry-run against the real API returned it
+# on 2026-08-14 (run 31756228858) — a status not in GitHub's documented set for
+# this endpoint. An allowlist of ("queued", "in_progress") would have called that
+# run finished and dispatched over a bake that was working. The module tests
+# `!= "completed"` for exactly this reason; the parametrize keeps the receipt.
+@pytest.mark.parametrize("status", ["queued", "in_progress", "waiting",
+                                    "requested", "pending"])
 def test_a_live_run_blocks_the_dispatch(status):
     """MUTATION PIN §0.4a. Delete the ``in_flight is not None`` branch in
     ``_dispatch_blockers`` and this test goes red.
@@ -382,15 +389,62 @@ def test_a_live_run_blocks_the_dispatch(status):
     )
     actions = RESCUE.decide(snapshot)
     assert not dispatched(actions), f"a {status} run must never be piled onto"
-    assert verdicts(actions) == [RESCUE.WAIT]
     assert actions[0].blocked_by == "run_in_flight"
-    assert RESCUE.exit_code(actions) == 0, "a live bake is not an alarm"
+
+
+def test_a_live_run_before_the_completion_deadline_is_quiet():
+    """The common healthy shape: the bake is simply still running at 05:40Z. Quiet,
+    exit 0 — a watchdog that pages while its subject is working gets muted."""
+    snapshot = state(
+        now=at(FRI, 5, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[run_row(status="in_progress", conclusion=None, created=at(THU, 22, 31))],
+    )
+    actions = RESCUE.decide(snapshot)
+    assert verdicts(actions) == [RESCUE.WAIT]
+    assert actions[0].kind == RESCUE.NOTICE
+    assert RESCUE.exit_code(actions) == 0
+    assert not dispatched(actions)
+
+
+@pytest.mark.parametrize("status", ["queued", "in_progress", "pending"])
+def test_a_hung_bake_past_the_completion_deadline_goes_LOUD(status):
+    """SILENCE HAS A DEADLINE (the B1 blocker).
+
+    Waiting quietly on a live run forever is its own failure mode, and this lane can
+    MINT the run that mutes it: the #5362 512KB class produced runs that sat `queued`
+    with zero jobs, uncancellable, forever — so a STRAND dispatch into a stranded
+    workflow file creates a zombie that would keep the lane quiet all night. Past the
+    completion deadline a run that is still alive stops being "working" and becomes a
+    question only an operator can answer, so the restraint stays (no dispatch, and
+    certainly no stopping it) while the report goes loud.
+    """
+    snapshot = state(
+        now=at(FRI, 11, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[run_row(status=status, conclusion=None, created=at(THU, 22, 31),
+                      event="workflow_dispatch", run_id=31583415065)],
+    )
+    actions = RESCUE.decide(snapshot)
+    assert not dispatched(actions), "a live run is never piled onto, loud or quiet"
+    assert [a.kind for a in actions] == [RESCUE.ALERT]
+    assert RESCUE.exit_code(actions) != 0
+    assert actions[0].blocked_by == "run_in_flight"
+    message = actions[0].message
+    assert "31583415065" in message, "the receipt must name the run"
+    # created THU 22:31Z, now FRI 11:40Z -> 13.15 hours alive.
+    assert re.search(r"for 13\.\dh", message), (
+        f"the receipt must name how long it has been alive: {message}"
+    )
+    assert "operator" in message.lower()
 
 
 def test_a_live_run_still_blocks_when_other_blockers_also_apply():
-    """A live run is DOMINANT: past the floor and out of budget, it is still WAIT,
-    because the subject is working and paging about it teaches the reader to
-    ignore the channel."""
+    """A live run is DOMINANT over every other blocker — past the floor and out of
+    budget it is still not dispatched over — but past the completion deadline it is
+    reported LOUD rather than swallowed."""
     snapshot = state(
         now=at(FRI, 13, 40), session=THU,
         main_index=index(source_asof=WED.isoformat()),
@@ -399,8 +453,10 @@ def test_a_live_run_still_blocks_when_other_blockers_also_apply():
         dispatch_runs_today=9,
     )
     actions = RESCUE.decide(snapshot)
-    assert verdicts(actions) == [RESCUE.WAIT]
     assert not dispatched(actions)
+    assert [a.kind for a in actions] == [RESCUE.ALERT]
+    assert actions[0].blocked_by == "run_in_flight"
+    assert RESCUE.exit_code(actions) != 0
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -459,8 +515,8 @@ def test_two_wakes_spend_one_budget_each_and_then_stop():
                       event="workflow_dispatch", run_id=1),
               run_row(conclusion="failure", created=at(THU, 23, 11))],
         dispatch_runs_today=1, **base))
-    assert not dispatched(wake2)
-    assert verdicts(wake2) == [RESCUE.WAIT]
+    assert not dispatched(wake2), "the re-arm we just created owns the night"
+    assert wake2[0].blocked_by == "run_in_flight"
 
     wake3 = RESCUE.decide(state(
         now=at(FRI, 12, 40),
@@ -547,6 +603,7 @@ def test_the_only_pipeline_write_is_a_dispatch():
         "/issues?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50",
         "/issues",
         "/issues/{number}/comments",
+        "/issues/{number}/comments?per_page=100",
     }, f"the GitHub surface changed: {sorted(paths)}"
 
     writes = {p for p in paths if p.startswith("/actions/") and "?" not in p}
@@ -687,18 +744,34 @@ def test_an_unreachable_r2_is_not_reported_as_a_split():
     assert verdicts(RESCUE.decide(snapshot)) == [RESCUE.HEALTHY]
 
 
-def test_a_stalled_vps_pull_loop_is_a_serve_split():
-    """The VPS pulls main every 3 minutes. 45 minutes behind is fifteen missed
-    pulls: everything merged since then is invisible to logged-in users."""
+@pytest.mark.parametrize("age_min", [45, 180, 1440])
+def test_an_old_vps_commit_time_is_context_and_never_an_alarm(age_min):
+    """M4 — there is deliberately NO SERVE_SPLIT_VPS verdict.
+
+    ``checks.site.commit_time`` is ``git log -1 --format=%cI`` in the served
+    checkout: it stamps MAIN'S NEWEST COMMIT, not the pull loop's pulse. Main goes
+    quiet for entirely ordinary reasons — an hour with no merges, a weekend — so an
+    age threshold on it fires on healthy nights (an adversarial pass measured ~5%
+    false fires at this lane's own wake times). A false-positive factory is how a
+    watchdog gets muted before the night it matters, so this field decides nothing
+    and is printed in the receipt as triage context only.
+    """
     now = at(FRI, 8, 40)
     snapshot = state(
         now=now, session=THU,
         vps_status={"checks": {"site": {
-            "commit_time": (now - timedelta(minutes=45)).isoformat()}}},
+            "commit_time": (now - timedelta(minutes=age_min)).isoformat()}}},
     )
     actions = RESCUE.decide(snapshot)
-    assert verdicts(actions) == [RESCUE.SERVE_SPLIT_VPS]
-    assert RESCUE.exit_code(actions) != 0
+    assert verdicts(actions) == [RESCUE.HEALTHY]
+    assert RESCUE.exit_code(actions) == 0
+    assert not hasattr(RESCUE, "SERVE_SPLIT_VPS"), (
+        "the VPS split verdict was reintroduced — it false-fires on a quiet main"
+    )
+    # ...but it still reaches the receipt, where a human triaging a real alarm
+    # wants to see it.
+    body = RESCUE.receipt(actions, snapshot, THU, [])
+    assert "commit_time" in body and "context, not a verdict" in body
 
 
 @pytest.mark.parametrize("payload", [None, {}, {"checks": {}},
@@ -813,17 +886,27 @@ def test_no_third_calendar_is_implemented_here():
         assert banned not in source, f"a second calendar is growing here: {banned}"
 
 
-def test_the_rest_budget_of_a_healthy_wake_is_three_github_reads():
-    """One shared 5,000/hr account bucket for the entire fleet, and this lane wakes
-    hourly forever. Pagination is what emptied the pool on 2026-07-26."""
-    source = SCRIPT.read_text(encoding="utf-8")
-    reads = re.findall(r"https://api\.github\.com/repos/\{repo\}/[a-z]+", source)
-    assert "per_page" in source and "--paginate" not in source
-    assert source.count("_get_json(url, _api_headers(token))") \
-        + source.count("_get_json(url, headers)") == 4, (
-        "fetch layer grew a call: index + runs + budget + issue-lookup is the whole "
-        f"read surface (saw {reads})"
+def test_a_healthy_wake_spends_exactly_three_github_reads():
+    """The hosted lane wakes 15 times a day forever and the host lane borrows the
+    fleet's SHARED 5,000/hr account token, so the per-wake cost is a real budget.
+    The issue-thread reads are the alarm path's and must not creep into the wake
+    path — a `collect_state` that fetched them would double every healthy wake."""
+    tree = _module_ast()
+    fn = next(n for n in ast.walk(tree)
+              if isinstance(n, ast.FunctionDef) and n.name == "collect_state")
+    called = sorted(n.func.id for n in ast.walk(fn)
+                    if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+                    and n.func.id.startswith("fetch_"))
+    assert called == ["fetch_dispatch_budget", "fetch_main_index", "fetch_r2_index",
+                      "fetch_runs", "fetch_vps_status"], called
+    github = {"fetch_main_index", "fetch_runs", "fetch_dispatch_budget"}
+    assert len(github & set(called)) == 3
+    assert "fetch_issue_thread" not in called, (
+        "the attempt ledger is an ALARM-path read; pulling it into every wake "
+        "doubles the standing cost of a lane that never sleeps"
     )
+    source = SCRIPT.read_text(encoding="utf-8")
+    assert "--paginate" not in source and "per_page" in source
 
 
 def test_the_public_r2_base_matches_the_configured_data_plane():
@@ -838,9 +921,243 @@ def test_the_public_r2_base_matches_the_configured_data_plane():
 
 
 def test_the_repo_slug_matches_the_git_remote():
-    """A typo here makes the lane permanently blind — it 404s into API_DARK forever
-    and nobody reads a watchdog that is always yellow."""
-    assert "mastermindx-market-intelligence/macro" in RESCUE.DEFAULT_REPO
+    """A typo here makes the lane permanently blind — it 404s into API_DARK forever,
+    and nobody reads a watchdog that is always yellow. Resolved from the ACTUAL
+    remote rather than from a second copy of the same literal, which would only
+    prove the constant equals itself."""
+    fallback = re.search(r'or\s+"([^"]+/[^"]+)"\s*\n?\s*\)', SCRIPT.read_text("utf-8"))
+    assert fallback, "the DEFAULT_REPO fallback literal moved"
+    remote = subprocess.run(("git", "-C", str(ROOT), "remote", "get-url", "origin"),
+                            capture_output=True, text=True, timeout=60)
+    if remote.returncode != 0 or not remote.stdout.strip():
+        pytest.skip("no origin remote in this checkout")
+    slug = re.sub(r"^.*github\.com[:/]", "", remote.stdout.strip())
+    slug = re.sub(r"\.git$", "", slug)
+    assert fallback.group(1) == slug, (
+        f"DEFAULT_REPO fallback {fallback.group(1)!r} != origin {slug!r}"
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# the attempt ledger — the budget counts what we TRIED, not only what stuck
+# ─────────────────────────────────────────────────────────────────────────────
+def test_receipts_alone_can_exhaust_the_budget():
+    """M3. A dispatch POST that 403s or 404s creates NO run record, so a budget read
+    only from run records stays at zero and the lane re-fires every wake forever —
+    unbounded, which is the one thing the budget exists to prevent. The issue thread
+    is this lane's only durable state, so the attempts are counted from there."""
+    snapshot = state(
+        now=at(FRI, 9, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[run_row(conclusion="failure", created=at(THU, 23, 11))],
+        dispatch_runs_today=0,                 # GitHub recorded nothing...
+        dispatch_receipts_today=2,             # ...but we tried twice
+    )
+    actions = RESCUE.decide(snapshot)
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "budget_spent"
+    assert "receipts filed: 2" in actions[0].message
+
+
+def test_the_budget_takes_the_larger_of_runs_and_receipts():
+    base = dict(now=at(FRI, 9, 40), session=THU,
+                main_index=index(source_asof=WED.isoformat()),
+                r2_index=index(source_asof=WED.isoformat()),
+                runs=[run_row(conclusion="failure", created=at(THU, 23, 11))])
+    assert dispatched(RESCUE.decide(state(dispatch_runs_today=1,
+                                          dispatch_receipts_today=1, **base)))
+    assert not dispatched(RESCUE.decide(state(dispatch_runs_today=2,
+                                              dispatch_receipts_today=0, **base)))
+    assert not dispatched(RESCUE.decide(state(dispatch_runs_today=0,
+                                              dispatch_receipts_today=2, **base)))
+
+
+def test_the_receipt_ledger_counts_only_this_nights_attempts():
+    """The window is the same 21:00Z boundary the API probe uses, so the two can
+    never disagree about which night an attempt belongs to."""
+    since = RESCUE.budget_window_start(at(FRI, 9, 40))
+    assert since == at(THU, 21, 0)
+    assert RESCUE.budget_window_start(at(THU, 23, 40)) == at(THU, 21, 0)
+    texts = [
+        f"{RESCUE.DISPATCH_RECEIPT_TOKEN} 2026-08-11T23:00:00+00:00",   # old night
+        f"{RESCUE.DISPATCH_RECEIPT_TOKEN} {at(FRI, 1, 41).isoformat()}",
+        f"{RESCUE.DISPATCH_RECEIPT_TOKEN} {at(FRI, 5, 41).isoformat()}",
+        "prose that merely mentions a dispatch receipt",
+        None,
+    ]
+    assert RESCUE.count_dispatch_receipts(texts, since) == 2
+
+
+def test_the_newest_verdict_token_wins():
+    texts = [
+        f"{RESCUE.VERDICT_TOKEN} STRAND",
+        f"{RESCUE.VERDICT_TOKEN} STALE,NO_COHORT",
+        "a comment with no token at all",
+    ]
+    assert RESCUE.latest_verdicts(texts) == ("NO_COHORT", "STALE")
+    assert RESCUE.latest_verdicts(["nothing here"]) is None
+
+
+def test_a_dispatch_receipt_round_trips_through_the_ledger():
+    """End to end: the body this lane writes is the body the next wake reads. A
+    receipt whose token the parser cannot find is a budget that never increments."""
+    snapshot = state(
+        now=at(FRI, 9, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[run_row(conclusion="failure", created=at(THU, 23, 11))],
+    )
+    actions = RESCUE.decide(snapshot)
+    assert dispatched(actions)
+    body = RESCUE.receipt(actions, snapshot, THU, ["dispatched"],
+                          dispatched_at=at(FRI, 9, 40))
+    assert RESCUE.count_dispatch_receipts(
+        [body], RESCUE.budget_window_start(at(FRI, 9, 40))) == 1
+    assert RESCUE.latest_verdicts([body]) == ("STALE",)
+
+
+def test_a_non_2xx_dispatch_is_reported_as_a_failure_naming_the_code(monkeypatch):
+    """A POST that reaches GitHub and is refused is not a dispatch. Reporting it as
+    one would put a phantom success in the thread and hide a token-scope or
+    disabled-workflow problem behind a green line."""
+    monkeypatch.setattr(RESCUE, "_post",
+                        lambda *a, **k: (403, b"", "HTTP 403"))
+    ok, detail = RESCUE.dispatch_nightly("o/r", "tok")
+    assert ok is False
+    assert "403" in detail and "DISPATCH FAILED" in detail
+
+    monkeypatch.setattr(RESCUE, "_post", lambda *a, **k: (204, b"", None))
+    ok, detail = RESCUE.dispatch_nightly("o/r", "tok")
+    assert ok is True and "204" in detail
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# duplicate suppression — the red run is the heartbeat, the comment is the news
+# ─────────────────────────────────────────────────────────────────────────────
+def test_an_unchanged_alarm_does_not_file_a_second_receipt():
+    """M5. Fourteen hourly wakes through one outage must not post fourteen identical
+    comments and fourteen pushes; that is how a channel gets muted right before the
+    night it matters. The nonzero exit still fires every wake."""
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "same as last time")]
+    assert RESCUE.should_file_receipt(alarm, None) is True, "first alarm always posts"
+    assert RESCUE.should_file_receipt(alarm, ("STALE",)) is False
+    assert RESCUE.exit_code(alarm) != 0, "suppressing the comment never quiets the run"
+
+
+def test_a_changed_verdict_set_always_files():
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "x"),
+             RESCUE.Action(RESCUE.ALERT, RESCUE.NO_COHORT, "y")]
+    assert RESCUE.should_file_receipt(alarm, ("STALE",)) is True
+
+
+def test_a_dispatch_always_files_even_when_the_verdict_is_unchanged():
+    """Non-negotiable: an unreceipted dispatch is an attempt the ledger loses, and a
+    lost attempt is an unbounded budget."""
+    plan = [RESCUE.Action(RESCUE.DISPATCH, RESCUE.STALE, "re-arming")]
+    assert RESCUE.should_file_receipt(plan, ("STALE",)) is True
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# malformed run rows fail SAFE for dispatch
+# ─────────────────────────────────────────────────────────────────────────────
+def test_an_unparseable_created_at_on_a_live_run_still_blocks_the_dispatch():
+    """M6. Dropping a row we cannot date is the dangerous direction: it dispatches
+    over a bake that is running. §0.4a asks whether ANY run is alive, and that
+    question does not depend on the timestamp parsing."""
+    snapshot = state(
+        now=at(FRI, 9, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[{"id": 77, "status": "in_progress", "conclusion": None,
+               "created_at": "not-a-timestamp", "event": "schedule"}],
+    )
+    actions = RESCUE.decide(snapshot)
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "run_in_flight"
+    assert "age unknown" in actions[0].message
+    body = RESCUE.receipt(actions, snapshot, THU, [])
+    assert "parse anomalies" in body and "77" in body
+
+
+def test_a_run_row_with_no_status_counts_as_alive():
+    """An unreadable row is not evidence of absence."""
+    snapshot = state(
+        now=at(FRI, 9, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[{"id": 88, "conclusion": None,
+               "created_at": at(THU, 22, 31).strftime("%Y-%m-%dT%H:%M:%SZ")}],
+    )
+    actions = RESCUE.decide(snapshot)
+    assert not dispatched(actions)
+    assert actions[0].blocked_by == "run_in_flight"
+    body = RESCUE.receipt(actions, snapshot, THU, [])
+    assert "no status" in body
+
+
+def test_a_completed_run_with_an_unparseable_timestamp_is_not_alive():
+    """Control for both tests above: `completed` is `completed` whatever else is
+    malformed, or every finished night would look like a live one forever."""
+    facts = RESCUE.run_facts(
+        [{"id": 9, "status": "completed", "conclusion": "success",
+          "created_at": "garbage"}],
+        at(THU, 22, 0))
+    assert facts.in_flight is None
+    assert facts.recent == ()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# the workflow that schedules all of this
+# ─────────────────────────────────────────────────────────────────────────────
+def test_the_hosted_lane_is_github_hosted_and_cannot_be_queue_killed():
+    """Independence from the Mac Studio is the entire point of the hosted lane, so a
+    later `runs-on: [self-hosted, macstudio]` edit — which would silence the alarm
+    and its subject together — must red a test rather than pass review."""
+    yaml = pytest.importorskip("yaml")
+    spec = yaml.safe_load(
+        (ROOT / ".github/workflows/prophet-rescue.yml").read_text(encoding="utf-8"))
+    triggers = spec[True] if True in spec else spec["on"]   # YAML 1.1 reads `on:` as True
+
+    job = spec["jobs"]["rescue"]
+    assert job["runs-on"] == "ubuntu-latest", "must not share fate with the nightly"
+    assert spec["permissions"] == {"contents": "read", "actions": "write",
+                                   "issues": "write"}
+    assert spec["concurrency"]["group"] == "prophet-rescue"
+    assert spec["concurrency"]["cancel-in-progress"] is False, (
+        "a responder a sibling wake can kill mid-dispatch is not a responder"
+    )
+    assert {c["cron"] for c in triggers["schedule"]} == {"40 23 * * *", "40 0-13 * * *"}
+    assert "workflow_dispatch" in triggers
+    run_steps = [s["run"] for s in job["steps"] if "run" in s]
+    assert len(run_steps) == 1 and "scripts/prophet_rescue.py" in run_steps[0]
+    assert "pip install" not in " ".join(run_steps), (
+        "stdlib-only: an install step is one more thing between the outage and the "
+        "alarm"
+    )
+
+
+def test_the_launchd_wrapper_extracts_everything_the_tool_imports():
+    """The host lane runs the tool out of a TEMPDIR extracted from origin/main, so
+    its EXTRACT list is a hand-maintained mirror of the tool's imports. Add an
+    import to prophet_rescue.py without updating the wrapper and the host lane dies
+    silently at 05:10 — exactly the class of silent death this whole PR is about."""
+    spec = importlib.util.spec_from_file_location(
+        "prophet_rescue_launchd_under_test", ROOT / "scripts/prophet_rescue_launchd.py")
+    wrapper = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(wrapper)
+    extracted = {repo_path for repo_path, _ in wrapper.EXTRACT}
+    assert "scripts/prophet_rescue.py" in extracted
+
+    tree = _module_ast()
+    needed = {f"{n.module.replace('.', '/')}.py"
+              for n in ast.walk(tree)
+              if isinstance(n, ast.ImportFrom) and (n.module or "").startswith("lib.")}
+    assert needed <= extracted, f"the wrapper does not extract {needed - extracted}"
+    assert "lib/__init__.py" in extracted, "lib must be importable as a package"
+    # ...and it must pass the real volume, not the tempdir it is running from.
+    source = (ROOT / "scripts/prophet_rescue_launchd.py").read_text(encoding="utf-8")
+    assert "--disk-path" in source and "--lane" in source
 
 
 def test_the_workflow_it_dispatches_is_the_authoritative_nightly():
@@ -848,3 +1165,92 @@ def test_the_workflow_it_dispatches_is_the_authoritative_nightly():
     still read price_through=2026-08-10. Build A is not a substitute for Build B."""
     assert RESCUE.WORKFLOW_FILE == "daily.yml"
     assert (ROOT / ".github" / "workflows" / "daily.yml").exists()
+
+
+def test_a_store_that_has_not_advanced_is_never_called_HEALTHY():
+    """M2. Before the deadlines a lagging store is legitimately still catching up —
+    but that is WAIT, not health. "HEALTHY" printed over a stale store is the exact
+    sentence every instrument produced for two days while the site served Aug-10
+    picks, and honesty here is free: both verdicts exit 0."""
+    snapshot = state(
+        now=at(THU, 23, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[],                       # the bake has not even fired yet
+    )
+    actions = RESCUE.decide(snapshot)
+    assert verdicts(actions) == [RESCUE.WAIT]
+    assert RESCUE.exit_code(actions) == 0, "pre-deadline quiet is still quiet"
+    assert "has not advanced yet" in actions[0].message
+    assert not dispatched(actions)
+
+
+def test_healthy_is_reserved_for_a_store_that_actually_advanced():
+    """Control for the test above — otherwise HEALTHY could be unreachable."""
+    assert verdicts(RESCUE.decide(state())) == [RESCUE.HEALTHY]
+
+
+def test_an_invalid_now_errors_rather_than_silently_using_the_wall_clock():
+    """Minor 3. Substituting "right now" for the instant an operator asked about
+    turns a deliberate probe into a live decision about a different night — and the
+    only clue would be a verdict that quietly disagrees with the question."""
+    with pytest.raises(SystemExit) as exc:
+        RESCUE.main(["--now", "yesterday-ish", "--dry-run"])
+    assert exc.value.code == 2, "argparse usage error, not a silent fallback"
+
+
+class _Recorder:
+    def __init__(self):
+        self.comments = []
+        self.pushes = []
+
+
+@pytest.fixture
+def _no_network(monkeypatch):
+    rec = _Recorder()
+    monkeypatch.setattr(RESCUE, "upsert_issue",
+                        lambda *a, **k: rec.comments.append(a[3]) or "commented")
+    monkeypatch.setattr(RESCUE, "push_ops_alert", lambda text: rec.pushes.append(text))
+    monkeypatch.setattr(RESCUE, "macos_notify", lambda *a, **k: None)
+    monkeypatch.setattr(RESCUE, "dispatch_nightly", lambda *a, **k: (True, "dispatched"))
+    return rec
+
+
+def test_two_identical_alarm_wakes_file_one_comment(_no_network):
+    """M5 WIRED, not just the helper. A correct predicate that execute() never
+    consults is the vacuous-guard trap; this pins the seam."""
+    alarm = [RESCUE.Action(RESCUE.ALERT, RESCUE.NO_COHORT, "wedge")]
+    first = state(last_receipt_verdicts=None, issue_number=7)
+    RESCUE.execute(alarm, first, THU, "o/r", "tok", dry_run=False)
+    assert len(_no_network.comments) == 1 and len(_no_network.pushes) == 1
+
+    second = state(last_receipt_verdicts=("NO_COHORT",), issue_number=7)
+    results = RESCUE.execute(alarm, second, THU, "o/r", "tok", dry_run=False)
+    assert len(_no_network.comments) == 1, "the duplicate must not post again"
+    assert len(_no_network.pushes) == 1, "and must not push again"
+    assert any("suppressed" in r for r in results)
+    assert RESCUE.exit_code(alarm) != 0, "the red run is still the heartbeat"
+
+
+def test_a_changed_verdict_set_files_again(_no_network):
+    changed = [RESCUE.Action(RESCUE.ALERT, RESCUE.STALE, "now stale too"),
+               RESCUE.Action(RESCUE.ALERT, RESCUE.NO_COHORT, "wedge")]
+    snapshot = state(last_receipt_verdicts=("NO_COHORT",), issue_number=7)
+    RESCUE.execute(changed, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert len(_no_network.comments) == 1 and len(_no_network.pushes) == 1
+
+
+def test_a_dispatch_wake_files_even_against_an_identical_verdict_set(_no_network):
+    plan = [RESCUE.Action(RESCUE.DISPATCH, RESCUE.STALE, "re-arming")]
+    snapshot = state(last_receipt_verdicts=("STALE",), issue_number=7)
+    RESCUE.execute(plan, snapshot, THU, "o/r", "tok", dry_run=False)
+    assert len(_no_network.comments) == 1, "an unreceipted attempt is a lost budget"
+    body = _no_network.comments[0]
+    assert RESCUE.DISPATCH_RECEIPT_TOKEN in body, "the ledger token must be written"
+
+
+def test_a_dry_run_mutates_nothing(_no_network):
+    plan = [RESCUE.Action(RESCUE.DISPATCH, RESCUE.STALE, "re-arming")]
+    results = RESCUE.execute(plan, state(), THU, "o/r", "tok", dry_run=True)
+    assert _no_network.comments == [] and _no_network.pushes == []
+    assert any("DRY RUN" in r for r in results)
