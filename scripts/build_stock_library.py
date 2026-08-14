@@ -3996,6 +3996,29 @@ def main() -> int:
                     rec["flow_score"] = _fs_block
             except Exception as _fs_e:  # noqa: BLE001 — additive; never fatal
                 log.debug("flow_score block skipped for %s (%s)", ticker, _fs_e)
+        # ── G-D: carry the sparkline and the gauge's disclosed null onto the
+        # per-name record, not just onto board rows ─────────────────────────────
+        # `disp_map` and `entry_sig_null` are both computed in THIS loop, for every
+        # universe name, and until now were published only where a name reached a board
+        # bucket (:4940 / :4935).  The plan book is a LEDGER population, not a screener
+        # one, so joining it against those buckets reached 45/179 rows — the enrichment
+        # was discarded at the publication boundary, never missing.  Stamping it here
+        # makes this record the single canonical per-ticker source
+        # (engine/prophet_board_read.LibraryIndex).  Board rows are untouched: they keep
+        # reading `disp_map` directly, so one field still means one thing.
+        #
+        # `spark_svg` ONLY — deliberately not disp_map's `price`/`off_high`: `price`
+        # would shadow the existing `tech.price` for every stockdata reader, and the
+        # quote half of the card is not this lane's (the plan row already carries
+        # `last_price`, and the live quote is the page's `data-sym` path).
+        _spark = (disp_map.get(ticker) or {}).get("spark_svg")
+        if _spark:
+            rec["spark_svg"] = _spark
+        if not rec.get("entry_signal"):
+            # Same disclosure law the board row obeys: a record never ships a SILENT
+            # gauge absence, so a downstream reader can name the cause instead of
+            # inventing a stance for it.
+            rec["entry_signal_null_reason"] = entry_sig_null.get(ticker, "not_assessed")
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
