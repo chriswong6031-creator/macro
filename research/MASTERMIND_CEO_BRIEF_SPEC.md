@@ -72,9 +72,9 @@ since the last 7d (2026-08-05 14:00 UTC, 168h ago)
   ⚠ DEGRADED (4) — this brief is incomplete:
       active_builds.v1 merged window is TRUNCATED — a merged PR may
       read 'unknown'
-      mastermind:config/strategic_state.yml absent — p0 ids
-      unvalidated, P0 ranking neutral (this Mastermind checkout
-      predates config/strategic_state.yml)
+      mastermind:config/strategic_state.yml absent from the working
+      tree and all local refs — p0 ids unvalidated, P0 ranking
+      neutral (this Mastermind clone predates config/strategic_state.yml)
       uncommitted-work scan skipped over 244 worktrees (one `git
       status` each) — re-run with --scan-uncommitted for stranded
       work

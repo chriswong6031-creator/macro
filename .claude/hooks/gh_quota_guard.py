@@ -52,6 +52,20 @@ worse than a missed warning.
      commit invalidates it automatically and babysitting becomes legal again the
      moment the worker has un-handed-off work. Fails OPEN in every direction:
      unresolvable git, unloadable contract, unreadable sentinel -> allow.
+  6. CANCELLING A PRODUCTION LANE (2026-08-12). Not a quota shape at all — the
+     same reflex, one step further. A live fleet session force-cancelled the US
+     nightly's recovery dispatches six times (receipt: POST
+     /actions/runs/31583415065/force-cancel); stacked on the #5362 workflow-size
+     strand the night before, Prophet US served Aug-10 picks for two full
+     sessions and the operator found it by looking at the site. A cancel is
+     invisible to every staleness instrument we own, because a killed bake and a
+     bake that never fired leave the same trace: nothing. CLAUDE.md already
+     forbade this in prose ("never cancel or manually re-run an in-progress
+     render, engine-render or daily merely to unblock this session"); prose did
+     not bind. Denies a cancel aimed at a data-advancing or publishing lane and
+     fails OPEN when the run cannot be resolved — an operator can still kill a
+     genuinely wedged run, that is just no longer something a session does on
+     its own initiative.
 """
 import datetime as dt
 import importlib.util
@@ -75,6 +89,19 @@ PROBE_TIMEOUT_S = 20
 #: plus the circuit breaker's baseline). Dispatching any of them over a live one is the
 #: shape this guard exists to stop.
 PROOF_WORKFLOWS = ("ci.yml", "fences.yml", "integration-baseline.yml")
+
+#: Lanes whose runs a session may NOT cancel (shape 6). These are the lanes that
+#: advance data or publish the site: killing one costs a session of ledger the next
+#: night cannot re-derive, and the loss is invisible to every staleness instrument
+#: because a cancelled run looks exactly like a bake that never fired.
+PROTECTED_LANES = frozenset({
+    "daily.yml",            # Build B — the sole authoritative, ledger-advancing bake
+    "closing-bell.yml",     # Build A — the provisional close render
+    "asia-close.yml",       # the CN/HK bake
+    "render.yml",
+    "engine-render.yml",
+    "weekly.yml",
+})
 
 REMEDY = (
     "Poll on a slow cadence and check the pool first:\n"
@@ -112,6 +139,13 @@ def strip_heredocs(cmd: str) -> str:
 CMD_POS = r"(?:^|[;&|\n(]|\b(?:do|then|else)\s)\s*"
 # `gh run watch` / `gh run view --watch`
 WATCH_RE = re.compile(CMD_POS + r"gh\s+run\s+(?:watch\b|view\b[^|;&\n]*--watch\b)")
+
+#: Shape 6. `gh run cancel <id>` plus both REST spellings the fleet has actually
+#: used — the force-cancel receipt from 2026-08-12 is the second form.
+CANCEL_RE = re.compile(
+    CMD_POS + r"gh\s+run\s+cancel\b[^;&|\n]*?(?<![\w-])(?P<id>\d{6,})\b"
+)
+CANCEL_API_RE = re.compile(r"/actions/runs/(?P<id>\d{6,})/(?:force-)?cancel\b")
 INTERVAL_RE = re.compile(r"(?:--interval|(?<!\w)-i)[=\s]+(\d+)")
 # any gh subcommand that hits the API (gh auth/help/version are free)
 GH_API_RE = re.compile(CMD_POS + r"gh\s+(?:api|run|pr|workflow|search|repo|issue|release)\b")
@@ -320,6 +354,54 @@ def warn(msg: str):
     print(f"GH QUOTA GUARD (fail-open): {msg}", file=sys.stderr, flush=True)
 
 
+def run_workflow_path(run_id: str):
+    """The workflow file a run belongs to, or None when the probe cannot answer.
+
+    ONE REST call, spent only after the command has already matched a cancel of a
+    specific run id. None means "unknown" -> allow, never deny.
+    """
+    try:
+        proc = subprocess.run(
+            ["gh", "api", f"repos/{{owner}}/{{repo}}/actions/runs/{run_id}",
+             "--jq", ".path"],
+            capture_output=True, timeout=PROBE_TIMEOUT_S,
+        )
+    except Exception as exc:
+        warn(f"could not resolve run {run_id} ({exc.__class__.__name__})")
+        return None
+    if proc.returncode != 0:
+        detail = proc.stderr.decode("utf-8", errors="replace").strip()[:200]
+        warn(f"`gh api` failed for run {run_id} (exit {proc.returncode}): {detail}")
+        return None
+    path = proc.stdout.decode("utf-8", errors="replace").strip()
+    return path.rsplit("/", 1)[-1] if path else None
+
+
+def protected_cancel_reason(run_id: str):
+    """Deny a cancel aimed at a production lane. See shape 6 in the docstring."""
+    workflow = run_workflow_path(run_id)
+    if workflow is None or workflow not in PROTECTED_LANES:
+        return None
+    return (
+        f"PRODUCTION LANE: run {run_id} belongs to `{workflow}`, which this session "
+        "may not cancel.\n\n"
+        "On 2026-08-12 a live fleet session force-cancelled the US nightly's recovery "
+        "dispatches SIX times (receipt: POST /actions/runs/31583415065/force-cancel). "
+        "Combined with the #5362 workflow-size strand the night before, Prophet US "
+        "shipped Aug-10 picks for two full sessions and the operator found it by "
+        "looking at the site. A cancel is invisible to every data-staleness "
+        "instrument we own — it just looks like the bake never happened.\n\n"
+        "CLAUDE.md already says it: never cancel or re-run an in-progress `render`, "
+        "`engine-render` or `daily` merely to unblock this session; a long job inside "
+        "its timeout is not evidence that it is wedged. That note did not bind, so "
+        "this hook does.\n\n"
+        "If the run is genuinely wedged (past its timeout-minutes, or provably "
+        "orphaned), that is an OPERATOR call — say so and hand it over. Cancelling a "
+        "healthy bake costs a whole session of data that only the next night, or a "
+        "force-majeure backfill, can recover."
+    )
+
+
 def main_runs(workflow: str):
     """Newest runs of `workflow` on main, or None when the probe cannot answer.
 
@@ -477,6 +559,18 @@ def check(raw: str, cwd=None):
         if ref is not None and ref not in MAIN_REFS:
             continue
         reason = live_proof_reason(workflow)
+        if reason:
+            return reason
+
+    # 6. cancelling a production lane. Probed LAST and only on an exact run-id
+    # match, so the one REST call is never spent on an unrelated command line.
+    seen: set[str] = set()
+    for m in list(CANCEL_RE.finditer(cmd)) + list(CANCEL_API_RE.finditer(cmd)):
+        run_id = m.group("id")
+        if run_id in seen:
+            continue
+        seen.add(run_id)
+        reason = protected_cancel_reason(run_id)
         if reason:
             return reason
 

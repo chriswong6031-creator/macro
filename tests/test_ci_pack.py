@@ -221,10 +221,12 @@ def test_scope_glob_separator_semantics() -> None:
 
 
 def test_selection_fails_safe_toward_running_everything() -> None:
-    """Every unknown must widen the run, never narrow it.
+    """Unknown changed-sets and global invalidators still widen; unowned paths do not.
 
-    A wasted runner-minute is cheap; a false green is not. These four are the
-    only ways scoping can be wrong, and all four must resolve to the full suite.
+    A wasted runner-minute is cheap; a false green on a control-plane file is
+    not. The two remaining wideners are the only ways scoping can be unknowable
+    rather than merely unowned. An unowned path used to be a third widener and
+    that was the speed hole: one hook file ran all 185 jobs (PR #5488).
     """
     jobs, summary = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     scoped = [job for job in jobs if job.paths]
@@ -240,9 +242,13 @@ def test_selection_fails_safe_toward_running_everything() -> None:
         selected, reason = PACK.select_jobs(jobs, [invalidator])
         assert len(selected) == len(jobs), f"{invalidator} must force a full run"
         assert "full suite" in reason
-    # 3. an unowned path is ambiguous, so it widens to the full suite
-    selected, _ = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
-    assert len(selected) == len(jobs)
+    # 3. an unowned path stays on always-on fences; it does not mint a full suite
+    selected, reason = PACK.select_jobs(jobs, ["no/such/path/at/all.txt"])
+    assert len(selected) < len(jobs), reason
+    assert "did not widen" in reason
+    unscoped = [job for job in jobs if not job.paths]
+    for job in unscoped:
+        assert job in selected, f"always-on {job.job_id} must still run"
     # 4. a scoped job runs whenever its own scope matches
     for job in scoped:
         probe = job.paths[0].replace("**/", "").replace("**", "x").replace("*", "x")
@@ -295,6 +301,8 @@ def test_real_manifest_has_non_vacuous_derived_scopes() -> None:
     assert "engine/falsifier_tripwires.py" in scoped["falsifier-tripwires"]
     assert "lib/store.py" in scoped["falsifier-tripwires"]
     assert "lib/config.py" in scoped["falsifier-tripwires"]
+    assert "unrun-dark-guards" in scoped
+    assert ".claude/hooks/gh_quota_guard.py" in scoped["unrun-dark-guards"]
 
 
 def test_derived_closure_follows_relative_first_party_imports() -> None:
@@ -349,6 +357,72 @@ def test_a_glob_pattern_bounds_the_file_kinds_its_scan_can_reach() -> None:
         assert not PACK._matches_any(narrowed, outside), outside
     # No suffix evidence means no narrowing at all.
     assert PACK.narrow_to_suffixes(("data/**",), ()) == ("data/**",)
+
+
+def test_exclude_peer_test_ownership_drops_catch_alls_keeps_fixtures() -> None:
+    """Named pytest jobs must not own every tests/*.py edit via opaque globs."""
+    filtered = PACK.exclude_peer_test_ownership(
+        (
+            "*",
+            "*.py",
+            "tests/**",
+            "tests/**/*.py",
+            "tests/**/*.py/**",
+            "tests/**/*.json",
+            "research/**",
+            "docs/**",
+            "content/**",
+            "research/**/*.md",
+            "engine/**",
+            "tests/test_foo.py",
+        )
+    )
+    assert "*" not in filtered
+    assert "tests/**" not in filtered
+    assert "tests/**/*.py" not in filtered
+    assert "docs/**" not in filtered
+    assert "content/**" not in filtered
+    assert "research/**" in filtered
+    assert "tests/**/*.json" in filtered
+    assert "research/**/*.md" in filtered
+    assert "engine/**" in filtered
+    assert "tests/test_foo.py" in filtered
+
+
+def test_resolve_changed_files_prefers_planner_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Packs must not git-diff a shallow clone when ci-plan already listed the files."""
+    monkeypatch.setattr(
+        PACK, "changed_files", lambda base: (_ for _ in ()).throw(AssertionError("git"))
+    )
+    assert PACK.resolve_changed_files(
+        "abc123", explicit_json='["tests/test_foo.py","engine/bar.py"]'
+    ) == ["tests/test_foo.py", "engine/bar.py"]
+    assert PACK.resolve_changed_files("abc123", explicit_json="null") is None
+    assert PACK.resolve_changed_files("abc123", explicit_json="not-json") is None
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", '["app/x.py"]')
+    assert PACK.resolve_changed_files("abc123") == ["app/x.py"]
+    monkeypatch.delenv("CI_CHANGED_FILES_JSON")
+    monkeypatch.setattr(PACK, "changed_files", lambda base: ["from-git.py"])
+    assert PACK.resolve_changed_files("abc123") == ["from-git.py"]
+    assert PACK.resolve_changed_files(None) is None
+
+
+def test_plan_publishes_changed_paths_for_pack_shallow_checkout(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _freeze_scope_inference(monkeypatch)
+    jobs = [_plan_job("owner", 0, paths=("tests/test_foo.py",))]
+    plan = PACK.build_plan(
+        jobs,
+        ["tests/test_foo.py"],
+        changed_from="base-sha",
+        scope_mode="active",
+        pack_count=12,
+    )
+    assert plan.changed_paths == ("tests/test_foo.py",)
+    assert plan.nonempty_pack_indices == (0,)
 
 
 def test_traversal_pattern_evidence_is_read_only_when_it_is_literal() -> None:
@@ -493,6 +567,50 @@ def test_representative_narrow_diffs_skip_at_least_one_quarter_of_jobs() -> None
     assert any(job.job_id == "free-content-estate" for job in content)
 
 
+def test_a_named_suite_edit_does_not_select_peer_pytest_jobs() -> None:
+    """PR #5550 shape: one prophet test file used to mint 133/187 jobs and 12 packs.
+
+    unrun-market-plumbing names tests/test_prophet_w1_intake_repair.py. marketing-engine
+    and engine-render-guards do not. After exclude_peer_test_ownership they must not
+    run for this diff, and the matrix must not be the full twelve.
+    """
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    changed = ["tests/test_prophet_w1_intake_repair.py"]
+    selected, reason = PACK.select_jobs(jobs, changed)
+    ids = {job.job_id for job in selected}
+    assert "unrun-market-plumbing" in ids, reason
+    assert "marketing-engine" not in ids, reason
+    assert "engine-render-guards" not in ids, reason
+    assert "full suite" not in reason, reason
+    assert len(selected) <= len(jobs) // 4, (len(selected), len(jobs), reason)
+    packs = PACK.partition_jobs(selected, 12)
+    nonempty = [index for index, pack in enumerate(packs) if pack]
+    assert len(nonempty) < 12, nonempty
+
+
+def test_unscoped_hook_diff_does_not_pull_the_full_suite() -> None:
+    """PR #5488 shape: `.claude/hooks/gh_quota_guard.py` used to mint 187/187 jobs.
+
+    CI_SCOPE_MODE is already active in ci.yml unless the repo var is exactly
+    ``off``. The remaining hole was select_jobs treating an unowned path as a
+    full-suite invalidator. After this PR the hook is owned by unrun-dark-guards
+    and an unowned sibling still does not widen.
+    """
+    jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
+    selected, reason = PACK.select_jobs(
+        jobs, [".claude/hooks/gh_quota_guard.py"]
+    )
+    assert "full suite" not in reason, reason
+    assert len(selected) < len(jobs) * 4 // 5, (len(selected), len(jobs), reason)
+    assert any(job.job_id == "unrun-dark-guards" for job in selected)
+    mixed, mixed_reason = PACK.select_jobs(
+        jobs,
+        [".claude/hooks/gh_quota_guard.py", "engine/spine.py"],
+    )
+    assert "full suite" not in mixed_reason, mixed_reason
+    assert len(mixed) < len(jobs), mixed_reason
+
+
 @pytest.mark.parametrize("graph", ["config/dag.yml", "config/synapse.yml"])
 def test_graph_metadata_is_a_global_invalidator(graph: str) -> None:
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
@@ -501,13 +619,15 @@ def test_graph_metadata_is_a_global_invalidator(graph: str) -> None:
     assert "global invalidator" in reason
 
 
-def test_passive_markdown_stays_scoped_but_unknown_root_fails_full() -> None:
+def test_passive_markdown_stays_scoped_and_unknown_root_does_not_widen() -> None:
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     docs, _ = PACK.select_jobs(jobs, ["research/UNOWNED_HANDOFF.md"])
     code, reason = PACK.select_jobs(jobs, ["brand_new_root/unowned_runtime.xyz"])
     assert len(docs) < len(jobs)
-    assert len(code) == len(jobs)
-    assert "no proven owner" in reason
+    assert len(code) < len(jobs)
+    assert "did not widen" in reason
+    unscoped = [job for job in jobs if not job.paths]
+    assert {job.job_id for job in unscoped} <= {job.job_id for job in code}
 
 
 def test_name_status_diff_preserves_both_sides_of_rename(
@@ -576,7 +696,7 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     skipped = PACK.LegacyJob("would-skip", definition, 1, 1, ("site/**",))
     jobs = [owner, skipped]
     monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: jobs)
-    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/example.py"])
+    _stub_planner_paths(monkeypatch, ["engine/example.py"])
     monkeypatch.setattr(PACK, "infer_job_scopes", lambda loaded: (loaded, "test scopes"))
     assert PACK.main([
         "--workflow", str(MANIFEST),
@@ -690,6 +810,64 @@ def _plan_job(
         weight=weight,
         paths=paths,
     )
+
+
+@pytest.fixture(autouse=True)
+def _isolate_pack_runner_planner_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Pack jobs inject planner env; unit tests must not inherit the live PR diff.
+
+    Measured 2026-08-13: main ci.yml run 31746772926 and PR #5560 pack-1 redded
+    workflow-yaml because packing-contract tests monkeypatched ``changed_files``
+    while ``plan_from_workflow`` reads ``resolve_changed_files`` →
+    ``CI_CHANGED_FILES_JSON``. On main the value was ``null`` (full suite); on
+    #5560 it was the live 81-file PR list. Tests expecting an unscoped/full
+    fixture plan then asserted against the hosted runner's diff.
+    """
+    for name in (
+        "CI_CHANGED_FILES_JSON",
+        "CI_SCOPE_MODE",
+        "CI_DYNAMIC_MATRIX_MODE",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+
+def _stub_planner_paths(
+    monkeypatch: pytest.MonkeyPatch, paths: list[str] | None
+) -> None:
+    """Pin the #5564 production path (resolve_changed_files), not git."""
+    monkeypatch.setattr(
+        PACK,
+        "resolve_changed_files",
+        lambda changed_from, explicit_json=None, _paths=paths: _paths,
+    )
+
+
+def test_packing_contract_ignores_ambient_ci_changed_files_json(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The leak that redded every PR's pack-1 after #5564.
+
+    Plant an 81-file live-PR list (the #5560 shape) as ambient env. The fixture
+    still passes ``engine/example.py``. would-skip (``site/**``) must stay
+    skipped — if this selects would-skip, the test inherited the hosted
+    runner's diff and pack-1 is red on every unrelated PR.
+    """
+    ambient = [f"site/leak_{index}.html" for index in range(81)]
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", json.dumps(ambient))
+    assert PACK.resolve_changed_files("base-sha") == ambient
+    _stub_planner_paths(monkeypatch, ["engine/example.py"])
+    _freeze_scope_inference(monkeypatch)
+    jobs = [
+        _plan_job("owner", 0, paths=("engine/**",)),
+        _plan_job("would-skip", 1, paths=("site/**",)),
+    ]
+    monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
+    plan = PACK.plan_from_workflow(
+        MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
+    )
+    assert set(plan.eligible_job_ids) == {"owner"}
+    assert plan.skipped_job_ids == ("would-skip",)
+    assert PACK.resolve_changed_files("base-sha") == ["engine/example.py"]
 
 
 def _freeze_scope_inference(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -888,13 +1066,14 @@ def test_passive_unowned_markdown_can_plan_no_work(
     assert all(entry["jobs"] == [] for entry in document["packs"])
 
 
-def test_unknown_top_level_path_widens_the_plan_to_the_full_suite(
+def test_unknown_top_level_path_does_not_widen_the_plan_to_the_full_suite(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     _freeze_scope_inference(monkeypatch)
     jobs = [
         _plan_job("engine-owner", 0, paths=("engine/**",)),
         _plan_job("site-owner", 1, paths=("site/**",)),
+        _plan_job("always-on", 2, paths=()),
     ]
     plan = PACK.build_plan(
         jobs,
@@ -903,8 +1082,8 @@ def test_unknown_top_level_path_widens_the_plan_to_the_full_suite(
         scope_mode="active",
         pack_count=12,
     )
-    assert set(plan.eligible_job_ids) == {"engine-owner", "site-owner"}
-    assert "no proven owner" in plan.reason
+    assert plan.eligible_job_ids == ("always-on",)
+    assert "did not widen" in plan.reason
     assert plan.has_work is True
 
 
@@ -958,9 +1137,7 @@ def test_rename_plans_both_the_old_and_the_new_owner(
         _plan_job("elsewhere", 2, paths=("site/**",)),
     ]
     monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
-    monkeypatch.setattr(
-        PACK, "changed_files", lambda base: ["engine/old.py", "engine/new.py"]
-    )
+    _stub_planner_paths(monkeypatch, ["engine/old.py", "engine/new.py"])
     plan = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
     )
@@ -968,7 +1145,7 @@ def test_rename_plans_both_the_old_and_the_new_owner(
     assert plan.skipped_job_ids == ("elsewhere",)
 
     # Non-vacuity: with only the new side in the diff, the old owner is skipped.
-    monkeypatch.setattr(PACK, "changed_files", lambda base: ["engine/new.py"])
+    _stub_planner_paths(monkeypatch, ["engine/new.py"])
     narrowed = PACK.plan_from_workflow(
         MANIFEST, changed_from="base-sha", scope_mode="active", pack_count=12
     )
@@ -1010,6 +1187,7 @@ def test_planner_failure_never_emits_no_work(
     assert outputs["has_work"] == "true"
     assert outputs["plan_sha"] == ""
     assert outputs["reason"].startswith("full suite: planner error")
+    assert outputs["changed_files"] == "null"
     warning = next(
         line
         for line in capsys.readouterr().out.splitlines()
@@ -1132,12 +1310,13 @@ def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> N
         )
     assert first.read_text() == second.read_text()
     outputs = _parse_github_output(first.read_text())
-    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason"}
+    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason", "changed_files"}
     assert json.loads(outputs["matrix"]) == {
         "include": [{"pack": index} for index in range(12)]
     }
     assert outputs["has_work"] == "true"
     assert len(outputs["plan_sha"]) == 64
+    assert outputs["changed_files"] == "null"
 
 
 def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
@@ -1146,19 +1325,17 @@ def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
 ) -> None:
     """The dynamic matrix's kill switch, pinned where it is actually visible.
 
-    On the real 180-job manifest every diff still fills all twelve packs, so
-    `active` and `shadow` emit the SAME matrix and a test against the manifest
-    alone would pass without exercising the mode at all. Only a no-work plan
-    separates them.
-
-    The hash must be identical across modes: it is a plan input, and the mode is
-    an emission policy. If the mode entered the hash, flipping the repository
-    variable mid-run would make every in-flight pack refuse its own plan.
+    After #5564, empty packs are omitted (`nonempty_pack_indices` only). A
+    no-work plan must emit ``{"include": []}`` in active mode — not pack 0 —
+    and shadow/off must still launch all twelve. The hash must be identical
+    across modes: it is a plan input, and the mode is an emission policy. If
+    the mode entered the hash, flipping the repository variable mid-run would
+    make every in-flight pack refuse its own plan.
     """
     _freeze_scope_inference(monkeypatch)
     jobs = [_plan_job("engine-owner", 0, paths=("engine/**",))]
     monkeypatch.setattr(PACK, "load_legacy_jobs", lambda path: list(jobs))
-    monkeypatch.setattr(PACK, "changed_files", lambda base: ["research/NOTE.md"])
+    _stub_planner_paths(monkeypatch, ["research/NOTE.md"])
     emitted: dict[str, dict[str, str]] = {}
     for mode in ("active", "shadow", "off"):
         path = tmp_path / mode
@@ -1317,6 +1494,11 @@ def test_workflow_scopes_only_pull_requests() -> None:
     assert "pull_request.base.sha" in scope_arg
     assert "github.base_ref" not in scope_arg
     assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    # A leftover `shadow` GitHub Actions variable must not hostage the fleet:
+    # anything other than exact `off` is active. Quote: before #5515 the var
+    # could sit at `shadow` and run the full 185-job suite while reporting a
+    # predicted subset; after, and still after this PR, the expression admits
+    # only `off` or `active`.
     plan = _yaml(WORKFLOW)["jobs"]["ci-plan"]
     plan_step = next(
         s for s in plan["steps"]
@@ -1407,12 +1589,13 @@ def test_ci_pack_uses_twelve_balanced_hosted_jobs() -> None:
     assert "macstudio" not in runs_on
     assert "render-linux" not in runs_on
     assert "self-hosted" not in runs_on
-    # PR abort-on-first-red; main workflow_dispatch keeps the rest of the pack.
-    # Must stay an unquoted boolean expression — quotes stringify "true"/"false"
-    # and can fail-fast main's heal-slow path (non-empty string is truthy).
-    assert pack["strategy"]["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
+    # Sibling packs must finish so their proofs survive a single red. fail-fast
+    # on pull_request cancelled the other eleven, ci-gate went red, and a heal
+    # had to rerun everything. A real red still fails ci-gate.
+    assert pack["strategy"]["fail-fast"] is False
     pack_src = WORKFLOW.read_text(encoding="utf-8")
-    assert "fail-fast: ${{ github.event_name == 'pull_request' }}" in pack_src
+    assert "fail-fast: false" in pack_src
+    assert "fail-fast: ${{ github.event_name == 'pull_request' }}" not in pack_src
     assert 'fail-fast: "${{ github.event_name == \'pull_request\' }}"' not in pack_src
     # No `max-parallel`: it existed only to stop main's packs from taking all four
     # `render-linux` runners. With no shared pool to protect, throttling would only
@@ -1501,13 +1684,13 @@ def test_company_intelligence_product_surfaces_reach_focused_ci_packs() -> None:
 
 
 def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> None:
-    """Full history is load-bearing; full historical blob transfer is not.
+    """ci-plan keeps full history; packs shallow-checkout the current tree.
 
-    The four #4053 hosted runners spent 6m45s-14m39s in checkout before tests.
-    ``filter: blob:none`` preserves the complete current working tree and commit
-    graph while omitting historical generated-site blobs from the initial fetch.
-    Do not replace this with sparse checkout: legacy suites legitimately inspect
-    current ``site/`` files.
+    Measured PR #5550 / run 31729769728: twelve packs fetching fetch-depth:0 at
+    once put ci-pack-1 in "Checking out the ref" for 31 minutes. Packs consume
+    ci-plan's changed-file list and only need the current working tree (legacy
+    suites inspect committed site/ artifacts, not historical blobs). Do not
+    replace this with sparse checkout.
     """
     workflow = _yaml(WORKFLOW)
     pack = workflow["jobs"]["ci-pack"]
@@ -1517,8 +1700,15 @@ def test_ci_pack_partial_clone_keeps_history_without_historical_site_blobs() -> 
         if str(step.get("uses", "")).startswith("actions/checkout@")
     )
     assert checkout["with"]["filter"] == "blob:none"
-    assert checkout["with"]["fetch-depth"] == 0
+    assert checkout["with"]["fetch-depth"] == 1
     assert "sparse-checkout" not in checkout["with"]
+    plan = workflow["jobs"]["ci-plan"]
+    plan_checkout = next(
+        step
+        for step in plan["steps"]
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    )
+    assert plan_checkout["with"]["fetch-depth"] == 0
 
 
 def test_same_repo_fences_share_one_runner_and_keep_required_contexts() -> None:

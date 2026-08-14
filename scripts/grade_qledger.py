@@ -98,10 +98,18 @@ def _load_qual_ladder_families(root: Path) -> list[str]:
 
 def _accrual_rate_per_day(grades: list[dict], claims: list[dict],
                           family: str, horizon: int,
-                          trailing_days: int = 14) -> float | None:
+                          trailing_days: int = 14,
+                          clock_basis: str | None = None) -> float | None:
     """Estimate the rate of NEW independent date clusters accruing per calendar day
     over the trailing `trailing_days` window. Returns None when insufficient data.
     Used for projected_ready_date linear extrapolation.
+
+    P0a: pass `clock_basis` to count only rows on the basis the gate evaluates.
+    Counting both bases would project a family onto a 25-date bar it is not
+    accruing toward — during the migration the legacy rows still land nightly
+    (unitless claims already registered keep maturing) while only the explicit
+    ones count, so a pooled rate reads roughly double and the projected ready
+    date lands early. None (the default) counts every row, unchanged.
     """
     cid_meta = {
         c["claim_id"]: c for c in claims
@@ -118,6 +126,8 @@ def _accrual_rate_per_day(grades: list[dict], claims: list[dict],
     recent_dates: set[str] = set()
     for g in grades:
         if int(g.get("horizon_d", -1)) != horizon:
+            continue
+        if clock_basis is not None and q.grade_clock_basis(g) != clock_basis:
             continue
         c = cid_meta.get(g.get("claim_id"))
         if c is None:
@@ -175,30 +185,80 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
     if families is None:
         families = _load_qual_ladder_families(root)
 
+    def _readiness_row(pr, fam: str, h: int) -> dict:
+        """One readiness row for a single PromotionResult. Factored out (round
+        5 / MAJOR 2) so a per-market sub-result gets IDENTICAL treatment to the
+        pooled-default one — same accrual-rate/projection/track-record read,
+        never a shortcut for the market that is not the headline."""
+        rate = _accrual_rate_per_day(grades, claims, fam, h,
+                                     clock_basis=pr.clock_basis)
+        proj = _projected_ready_date(pr.n_dates, rate)
+        approaching = (pr.n_dates >= 20 and not pr.eligible)
+
+        # hit_rate and excess_mean from track record aggregation.
+        # P0a: `_aggregate` is FAIL-CLOSED on a mixed grading-clock basis —
+        # calling it without a basis raises HorizonClockMismatch the first
+        # night any ladder family holds both the legacy and the explicit
+        # clock, which is this nightly step's normal state during the
+        # migration. The basis is therefore always named, and it is the SAME
+        # basis promotion_check just gated on (pr.clock_basis), so n_dates /
+        # wilson_ci_low / hit_rate / excess_mean in one row all describe one
+        # clock. None means there was nothing coherent to evaluate (no rows,
+        # or a family mixing two explicit clocks) — report the null, never a
+        # pooled number.
+        fam_stats: dict = {}
+        if pr.clock_basis is not None:
+            stats = q._aggregate(claims, grades, "family", h,
+                                 clock_basis=pr.clock_basis)
+            fam_stats = stats.get(fam, {})
+
+        return {
+            "n_dates": pr.n_dates,
+            "needed": q.PROMOTION_MIN_DATES,
+            "wilson_ci_low": pr.wilson_ci_low,
+            "hit_rate": fam_stats.get("hit_rate"),
+            "excess_mean": fam_stats.get("excess_mean"),
+            "ready": pr.eligible,
+            "approaching": approaching,
+            "projected_ready_date": proj,
+            "reason": pr.reason,
+            # The clock these four numbers were measured on. Same n_dates on
+            # a different clock is a different claim about the world.
+            "clock_basis": pr.clock_basis,
+            # P0a MIGRATION LEGIBILITY. A family whose first explicit-clock
+            # grade lands drops from (say) GRADED/n_dates=40 to
+            # ACCRUING/n_dates=1 in one night, because authority resets at a
+            # basis change rather than pooling across it (the CEO's ruling,
+            # unchanged). Without these three fields the readiness row, the
+            # alert and the admin tab all read that as evidence collapsing.
+            # The counts are NEVER combined — `clock_prior_n_dates` is the
+            # excluded basis's own number, published beside the live one.
+            "clock_migration": pr.clock_migration,
+            "clock_prior_n_dates": pr.clock_prior_n_dates,
+            "migration_note": pr.migration_note,
+        }
+
     result: dict[str, dict] = {}
     for fam in families:
         fam_res: dict[str, dict] = {}
         for h in q.GRADE_HORIZONS:
             pr = q.promotion_check(fam, h, root=root, control_only=True)
-            rate = _accrual_rate_per_day(grades, claims, fam, h)
-            proj = _projected_ready_date(pr.n_dates, rate)
-            approaching = (pr.n_dates >= 20 and not pr.eligible)
-
-            # hit_rate and excess_mean from track record aggregation
-            stats = q._aggregate(claims, grades, "family", h)
-            fam_stats = stats.get(fam, {})
-
-            fam_res[str(h)] = {
-                "n_dates": pr.n_dates,
-                "needed": q.PROMOTION_MIN_DATES,
-                "wilson_ci_low": pr.wilson_ci_low,
-                "hit_rate": fam_stats.get("hit_rate"),
-                "excess_mean": fam_stats.get("excess_mean"),
-                "ready": pr.eligible,
-                "approaching": approaching,
-                "projected_ready_date": proj,
-                "reason": pr.reason,
-            }
+            entry = _readiness_row(pr, fam, h)
+            # P0a MAJOR 2 (round 5): `promotion_check`'s pooled default refuses
+            # a bi-market family as STATE_MIXED_CLOCK, correctly — but this is
+            # a production call path that feeds the admin Experiments tab, so
+            # a family stuck here read as permanently un-promotable on EITHER
+            # market even though `clock_basis=...` reaches each one. Nothing
+            # is pooled: `by_clock_basis` adds each market's OWN readiness row
+            # beside the refused pooled one.
+            per_market = q.promotion_check_by_market(fam, h, pr, root=root,
+                                                      control_only=True)
+            if per_market:
+                entry["by_clock_basis"] = {
+                    b: _readiness_row(mpr, fam, h)
+                    for b, mpr in per_market.items()
+                }
+            fam_res[str(h)] = entry
         result[fam] = fam_res
 
     # Duel context: champion vs placebo |excess| at 5d from the track record
@@ -209,20 +269,100 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
         tr = json.loads(tr_path.read_text(encoding="utf-8")) if tr_path.exists() else {}
         placebo = (tr.get("placebo_magnitude") or {}).get("5", {})
         placebo_covered = (placebo.get("covered_ticker") or {}).get("mean_abs_excess")
+        # P0a — THE DUEL'S TWO SIDES ARE SELECTED INDEPENDENTLY, so they can
+        # land on DIFFERENT clock bases. `challenger_excess_mean_5d` comes from
+        # a `_select_single_clock_block` cell and `placebo_covered_abs_excess_5d`
+        # from `_placebo_magnitude`'s own separately-selected cell; each picks
+        # the basis with the most observations, and during a migration those are
+        # not the same basis at the same moment. Comparing a challenger measured
+        # on 5 exchange sessions against a placebo measured on 5 CALENDAR days
+        # is the pooling this contract forbids, wearing a comparison's clothes —
+        # and this pair is the D3 counterfactual, rendered verbatim into the
+        # admin Experiments tab. Neither basis used to be recorded at all, so
+        # the mismatch was not merely unguarded, it was invisible.
+        placebo_basis = placebo.get("clock_basis")
         by_family = tr.get("by_family") or {}
         for fam in families:
             h5 = (by_family.get(fam) or {}).get("5") or {}
+            challenger_basis = h5.get("clock_basis")
+            # Comparable only when BOTH sides name a basis and the bases match.
+            # Unknown-vs-anything is not comparable either: an unstamped side is
+            # a side whose clock we cannot name, and "unknown" matches nothing.
+            comparable = (challenger_basis is not None
+                          and placebo_basis is not None
+                          and challenger_basis == placebo_basis)
             duel_context[fam] = {
                 "challenger_excess_mean_5d": h5.get("excess_mean"),
                 "placebo_covered_abs_excess_5d": placebo_covered,
                 "n_dates_5d": h5.get("n_dates", 0),
                 "wilson_ci_low_5d": h5.get("wilson_ci_low"),
+                "challenger_clock_basis": challenger_basis,
+                "placebo_clock_basis": placebo_basis,
+                "duel_comparable": comparable,
             }
+            if not comparable:
+                # Say WHY, in the record, rather than leaving a reader to infer
+                # it from two basis strings. The numbers stay — they are each
+                # honest on their own basis — but the COMPARISON is withdrawn.
+                duel_context[fam]["duel_not_comparable_reason"] = (
+                    f"challenger measured on {challenger_basis or 'an unstamped clock'}, "
+                    f"placebo on {placebo_basis or 'an unstamped clock'}; a duel "
+                    f"across two grading clocks is not a comparison")
     except Exception as e:  # noqa: BLE001
         log.debug("compute_promotion_readiness: duel_context build failed: %s", e)
 
     result["_duel_context"] = duel_context
     return result
+
+
+def _summarise_readiness(readiness: dict) -> tuple[list[str], list[str]]:
+    """(families_ready, families_approaching) for `run_status.json` and the
+    first-cross operator alert.
+
+    EXTRACTED FROM `main()` DELIBERATELY. This was eight inline lines inside a
+    500-line entry point, which is why the defect below shipped: nothing could
+    reach it to test it, so "the per-market promotion fix works" was only ever
+    checked at the layer that produces the data, never at the layer that reads it.
+
+    P0a — READ THE PER-MARKET ROWS. `promotion_check_by_market` exists because
+    the pooled default refuses a bi-market family as STATE_MIXED_CLOCK, so
+    `rec["ready"]` is False for it even when BOTH markets have independently
+    cleared the 25-date bar. That fix wrote `by_clock_basis` into
+    track_record.json and stopped — this summary and the first-cross alert read
+    only the top-level `ready`, so a family promotable on two markets reported
+    nothing and no operator was ever told. Fixing it one layer up and leaving it
+    broken one layer down is not fixing it.
+
+    NOTHING IS POOLED OR SUMMED. Each basis contributes its OWN row under its
+    own key (`fam@21d[explicit_unit_v1:trading_days:CN]`), so the alert names
+    the market it crossed on, and the pooled key stays absent because the pooled
+    verdict is still a refusal. The key space is new, so a first cross alerts
+    once, exactly like any other new family×horizon.
+
+    THE LEGACY BASIS IS SKIPPED HERE TOO. `promotion_check_by_market` already
+    excludes it; this excludes it again rather than trusting an upstream filter
+    it does not own — a summary that would happily print a legacy `GRADED` cell
+    if the producer ever regressed is not a guard.
+    """
+    families_ready: list[str] = []
+    families_approaching: list[str] = []
+    for fam, horizons in readiness.items():
+        if fam.startswith("_"):
+            continue
+        for h_str, rec in (horizons or {}).items():
+            if rec.get("ready"):
+                families_ready.append(f"{fam}@{h_str}d")
+            elif rec.get("approaching"):
+                families_approaching.append(f"{fam}@{h_str}d")
+            for basis, brec in (rec.get("by_clock_basis") or {}).items():
+                if basis == q.CLOCK_LEGACY:
+                    continue      # authority is never granted on the legacy clock
+                key = f"{fam}@{h_str}d[{basis}]"
+                if brec.get("ready"):
+                    families_ready.append(key)
+                elif brec.get("approaching"):
+                    families_approaching.append(key)
+    return families_ready, families_approaching
 
 
 def _load_fired(root: Path) -> dict:
@@ -334,16 +474,7 @@ def run_readiness_post_step(root: Path, n_graded_today: int, n_open: int,
                                encoding="utf-8")
 
         # Summary for run_status.json
-        families_ready = []
-        families_approaching = []
-        for fam, horizons in readiness.items():
-            if fam.startswith("_"):
-                continue
-            for h_str, rec in horizons.items():
-                if rec.get("ready"):
-                    families_ready.append(f"{fam}@{h_str}d")
-                elif rec.get("approaching"):
-                    families_approaching.append(f"{fam}@{h_str}d")
+        families_ready, families_approaching = _summarise_readiness(readiness)
 
         # First-cross alert (two-sided dedup: a family×horizon that drops back
         # to ready=False releases its key, so a later genuine re-cross alerts
@@ -489,7 +620,25 @@ def run(root: Path | str | None = None, today: date | None = None,
                 continue
 
             legs = [subject, bench] + ([control] if control else [])
-            if not q._matured(root, start, h, today_dt, legs):
+            # P0a — THE PRE-GATE MUST USE THE CLAIM'S OWN CLOCK. This cheap
+            # "is it time yet" check exists so the loop skips immature claims
+            # without paying for grade_claim's price reads. It used to run the
+            # LEGACY calendar maturity function for EVERY claim, explicit-clock
+            # ones included, with no unit dispatch — so a `trading_days` h=21
+            # claim opened on roughly the calendar clock: it could be admitted
+            # up to ~9 days early (grade_claim then refused it and it counted as
+            # blocked), or, under `calendar_days`, held past its real exit.
+            # Dispatched here through the SAME `claim_window` grade_claim uses,
+            # so the pre-gate and the grader can never disagree about which
+            # window is being asked about. A declared-unit claim whose window
+            # cannot resolve is blocked, not silently skipped.
+            window = q.claim_window(claim, h, entry_anchor=start)
+            if q.claim_horizon_unit(claim) is None:
+                matured = q._matured(root, start, h, today_dt, legs)
+            else:
+                matured = (window is not None
+                           and q._matured_window(root, window, today_dt, legs))
+            if not matured:
                 # Not yet elapsed or price not yet available — count as blocked.
                 n_blocked_by_coverage += 1
                 continue
@@ -534,6 +683,15 @@ def run(root: Path | str | None = None, today: date | None = None,
             log.warning("run_readiness_post_step failed (non-fatal): %s", e)
             w6_readiness = {"error": str(e)}
 
+    # P0a — the refused-clock population, counted rather than invisible. A claim
+    # whose declared clock cannot resolve (unknown/mixed/uncalendared market, or
+    # an anchor outside the calendar's modelled span) is REJECTED at registration
+    # instead of registering open-forever with check_by=None. Publishing the count
+    # here is what makes "fail closed" auditable: a lane that starts refusing
+    # everything shows up as a number on the nightly instead of as claims that
+    # quietly never grade.
+    clock_refused = q.count_unresolvable_clock_claims(claims=claims)
+
     summary = {
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "as_of": today_dt.isoformat(),
@@ -542,6 +700,7 @@ def run(root: Path | str | None = None, today: date | None = None,
         "n_blocked_by_coverage": n_blocked_by_coverage,
         "n_ungradeable": n_ungradeable,
         "n_already_graded": n_already_graded,
+        "clock_unresolvable_claims": clock_refused,
         "dry_run": dry_run,
         "w6_readiness": w6_readiness,
         "regime_stamp_backfill": regime_backfill,
@@ -558,6 +717,7 @@ def run(root: Path | str | None = None, today: date | None = None,
         f"[grade_qledger] open={n_open} graded_today={n_graded_today} "
         f"blocked={n_blocked_by_coverage} ungradeable={n_ungradeable} "
         f"already_graded={n_already_graded} "
+        f"clock_unresolvable={clock_refused.get('n', 0)} "
         f"regime_backfilled={regime_backfill.get('n_backfilled', 0)} "
         f"regime_unstamped={regime_backfill.get('n_unstamped', 0)}"
         + (" [DRY RUN]" if dry_run else "")
