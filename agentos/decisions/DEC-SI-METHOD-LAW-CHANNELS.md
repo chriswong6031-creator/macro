@@ -46,3 +46,11 @@ review_by: 2026-09-15
 Masterplan §16.1 requests explicit Sol/operator ratification of this interpretation before
 W1; this record freezes the working law that governs design in the meantime. If the ruling
 amends it, supersede this record rather than editing it.
+
+## Ratification
+
+Ratified by explicit CEO/operator ruling 2026-08-14 (masterplan §16.1, overall verdict
+PROCEED): Channels A/B/C are the only lawful personalization paths for the first arc;
+per-name outcome argmax, best-of-grid, ticker-keyed strategy selection, or any disguised
+equivalent remains prohibited under DNR:KILL-OUTCOME-AUDITION; ticker is continuity/memory,
+never a model feature or strategy key.

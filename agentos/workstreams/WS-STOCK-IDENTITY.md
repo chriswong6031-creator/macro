@@ -30,12 +30,19 @@ waves:
     status: in_progress
     pr: 5583
     next_action: >
-      Merge via merge-on-green sweeper. Stop condition: no build wave launches from the
-      PR-0 session; W1 starts only after Sol/operator rules on masterplan §16.
+      §16 rulings RATIFIED by CEO/operator 2026-08-14 (overall PROCEED; folded into the
+      contract as §16/§16.9 on this PR). Merge via merge-on-green sweeper.
   - id: W1
     title: Identity Atlas v0 — fingerprints, state tagger, episode catalog, pilot dossiers
     status: todo
     depends_on: [W0]
+    next_action: >
+      AUTHORIZED (§16.9): launch after #5583 merges, exactly as masterplan §14 PR-1 —
+      descriptive/measurement-first; NO expert-fit result in W1; sealed calibration
+      partition drawn+hashed; stock-identity registry row minted (§16.7); v0 scope
+      US-listed incl. ADRs/dual-listed miners where data quality qualifies (§16.8);
+      large artifacts to R2/store-host, manifests in-repo (§16.3); return to operator
+      with the Atlas + dossiers before any expert replay/fit.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
     status: todo
@@ -75,8 +82,9 @@ artifacts:
   - research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md
   - research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md
 next_action: >
-  W0: land PR-0 via the sweeper; return masterplan §16 open rulings to Sol/operator.
-  No W1 work before that ruling.
+  §16 RATIFIED 2026-08-14 (PROCEED). Land PR-0 (#5583) via the sweeper; then a fresh
+  session launches W1 (Identity Atlas v0) per the §16.9 execution authorization —
+  descriptive only, no expert-fit results, understanding-before-backtest binding.
 ---
 
 ## Context

@@ -43,8 +43,8 @@ unverified:
 unresolved:
   - "Masterplan §16 open rulings (method-law ratification, ruler orientation, GO/NO-GO gate, Radar coupling, tops sibling, registry row, CN scope) — returned to Sol/operator; W1 is gated on them."
 next_actions:
-  - "Sol/operator: rule on masterplan §16 (esp. §16.1 method law and §16.4 PR-4 GO/NO-GO)."
-  - "W1 session (post-ruling): Identity Atlas v0 per masterplan §14 PR-1 row — resolve pilot data gates first."
+  - "DONE 2026-08-14: CEO/operator RATIFIED all eight §16 rulings (overall PROCEED) with two modifications (sealed-calibration-partition terminology; §16.3 storage hygiene) — folded into the contract §16/§16.9 on this PR by the orchestrating session, consistency-passed."
+  - "W1 session (after #5583 merges, per §16.9): Identity Atlas v0 per masterplan §14 PR-1 row — descriptive only, NO expert-fit results; resolve pilot data gates first; mint stock-identity registry row (§16.7); return to operator with Atlas + dossiers before expert replay/fit."
   - "Revalidate Live Entry Radar state (#5578 merge status, entry_event.v1 schema) at W1 start."
 do_not_redo:
   - "Do not re-run the five archaeology censuses — results + uncertainty lists are in research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md."
