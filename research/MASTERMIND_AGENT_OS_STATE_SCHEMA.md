@@ -22,7 +22,7 @@ is not a citation; it must be `depends_on: [WS:FOO]`. This is enforced rather th
 because the tolerant version failed silently in the worst available way: a bare key in
 `depends_on` was DROPPED with 0 errors and 0 warnings (verified — `depends_on:
 [TOTALLY-NONEXISTENT]` exited 0), while the same key written `WS:TOTALLY-NONEXISTENT`
-hard-errored. The dropped edge never reached the cycle check or the START NEXT readiness walk,
+hard-errored. The dropped edge never reached the cycle check or the readiness graph walk,
 so the dependency graph the whole design rests on was quietly incomplete with no signal.
 
 **Timestamps.** ISO-8601 UTC (`2026-08-12T14:00:00Z`). Dates alone as `YYYY-MM-DD`. Relative
@@ -55,7 +55,7 @@ action. Target cardinality **20–40 live**. This is the join key that makes eve
 | `objective` | ✅ | string | 1–3 sentences: what "done" means in observable terms. |
 | `status` | ✅ | enum | `proposed` · `active` · `blocked` · `awaiting_ci` · `awaiting_review` · `done` · `parked` · `killed` |
 | `program` | ✅ | string | Key from `config/mastermind_programs.yml`. Validated to exist. |
-| `p0` | ◻ | string | P0 id from Mastermind `config/strategic_state.yml`. Joined by `status` when that sibling checkout is present: an unknown id warns, an absent checkout populates `degraded` and leaves P0 ranking neutral (fail-open, I4). `validate` does not touch it — a record's validity must not depend on which checkouts exist on the machine. |
+| `p0` | ◻ | string | P0 id from Mastermind `config/strategic_state.yml`. Joined by `status` when that sibling checkout is present: an unknown id warns, an absent checkout populates `degraded` and leaves `p0_active` unknown (fail-open, I4). `validate` does not touch it — a record's validity must not depend on which checkouts exist on the machine. |
 | `repos` | ✅ | list | Any of `macro` · `terminal` · `mastermind`. |
 | `owner` | ✅ | string | Accountable seat/human — `chairman`, `coo-fable`, `codex`, `claude-fleet`. Not a session id. |
 | `class` | ✅ | enum | `research` · `build` · `design` · `adjudication` · `mechanical`. Routing input (§10 architecture). |
@@ -363,11 +363,22 @@ command produced it.
     }
   ],
   "needs_ceo": [
-    {"key": "WATCHLIST-PORTFOLIO-CEO",
+    {"workstream": "WATCHLIST-PORTFOLIO-CEO",
      "question": "Portfolio vs Watchlist persistence model",
      "recommendation": "Single positions table with a kind discriminator",
      "by_when": "2026-08-14"}
   ],
+  "readiness": {
+    "schema": "agentos.readiness.v1",
+    "records": [
+      {"workstream": "PROPHET-US-ENTRY-TIMING", "wave": null,
+       "state": "in_progress", "reason_code": "status_in_progress",
+       "reason": "Authored workstream status is active.",
+       "depends_on": [], "unmet_dependencies": [],
+       "source": "agentos/workstreams/WS-PROPHET-US-ENTRY-TIMING.md"}
+    ],
+    "degraded": []
+  },
   "warnings": ["DSC-OLD-FINDING uncited for 94d — GC candidate"]
 }
 ```
@@ -375,10 +386,24 @@ command produced it.
 `degraded` and `warnings` are first-class: a view that silently omits a missing input reads as
 "everything is fine," which is the failure I4 exists to prevent.
 
+The two degradation scopes are intentionally different. Parent `inputs.degraded` reports all
+missing or stale auxiliary joins used by the broader status view. `readiness.degraded` reports
+only hard workstream-authoring problems that excluded or made ambiguous a readiness identity;
+PR state, P0, and worktree health do not participate in readiness and therefore never appear
+there.
+For a wave, effective `depends_on` is the canonical sorted union of parent workstream edges
+(`WS:<KEY>`) and authored local wave edges (`WS:<CURRENT>#<WAVE>`). Terminal workstreams
+(`done`, `killed`) and waves (`done`, `dropped`) retain those edges but emit no
+`unmet_dependencies`. If a dependency target was excluded as malformed or retained under a
+duplicate identity, readiness cannot assert ordinary blocking: the ambiguous identity and its
+waves emit `unknown` / `status_unknown`, and any surviving proposed/todo dependent does the
+same with the unavailable canonical ref named.
+
 **Envelope vs pure section.** `generated_at`, `inputs.worktrees`,
-`inputs.active_builds_age_hours` and `inputs.degraded` are the ENVELOPE — volatile, and
-excluded from the byte-identity guarantee. `workstreams`, `needs_ceo`, `start_next` and
-`warnings` are a pure function of the authored records plus the join inputs, and are
+`inputs.active_builds_age_hours`, and `inputs.degraded` are the volatile ENVELOPE and are
+excluded from the byte-identity guarantee. `workstreams`, `needs_ceo`, the complete
+`readiness` envelope, and `warnings` are a pure function of the authored records plus the join
+inputs, and are
 compared byte-for-byte across runs by `tests/test_agentos_status.py`. The split is what
 makes the test meaningful: a byte-identity test that required a frozen clock to pass at
 all would hide real nondeterminism inside the records themselves. Both are proven — the
