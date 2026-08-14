@@ -29,10 +29,12 @@ waves:
     status: done
     next_action: >-
       SHIPPED (PR #5615): prereg frozen before outcomes; 17/17 checks + probes;
-      byte-identical runs. Verdict = NO DISCRIMINATOR at the preregistered bar —
-      placebo calibration failed 3/4 families, exposing name-level propensity
-      confounding (DSC:CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND); strong
-      holdout-consistent SUGGESTIVE structure recorded, nothing rescued.
+      byte-identical runs. Verdict = NO DISCRIMINATOR at the preregistered bar:
+      11 of 31 gated cells cleared every gate but the placebo calibration failed
+      3/4 families — a calibration-governed null, mechanism = persistent-state
+      placebo reproducibility (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT);
+      MA200/QB/VZ placebo-clean with strong holdout-consistent structure;
+      nothing rescued, frozen consequence applied unchanged.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -83,15 +85,16 @@ do_not_redo:
     Do not import China Intelligence composite scores (opportunity_score / conviction)
     into any Prophet-facing construction: display-tier composites; raw evidence
     producers only, each re-earning incremental value under its own preregistration.
-discoveries: ["DSC:CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND"]
+discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT"]
 next_action: >-
   Post-P-B2 order: (1) prospective/PIT evidence-accrual hardening for orthogonal
   China Intelligence families (broker jingu first-seen store; report_rc fix rides
-  its chip; per-name margin/block-trades/buybacks accrual); (2) a name-propensity-
-  controlled discrimination design that passes its own placebo (the reopen path for
-  P-B2's SUGGESTIVE structure); (3) P-C when its data gates open; (4) full-A
-  exact-plane re-measurement; (5) P-D ablation arena. No production scoring change
-  from P-B2 itself.
+  its chip; per-name margin/block-trades/buybacks accrual); (2) a persistence-robust
+  certification design — within-name state-transition contrasts or a
+  persistence-preserving permutation calibration — under a fresh prereg (the reopen
+  path for P-B2's placebo-clean MA200/QB/VZ structure and its indeterminate DD
+  cells); (3) P-C when its data gates open; (4) full-A exact-plane re-measurement;
+  (5) P-D ablation arena. No production scoring change from P-B2 itself.
 ---
 
 ## Context

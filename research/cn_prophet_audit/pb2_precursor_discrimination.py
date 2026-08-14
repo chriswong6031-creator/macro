@@ -1506,6 +1506,9 @@ def run_lead_curves(pl: Plane, ev: pd.DataFrame, controls: np.ndarray, boards) -
     ctrl_rows = np.flatnonzero(controls)
     curves, eligibility = OrderedDict(), OrderedDict()
     anchors_by_lead = {}
+    # A4 — the per-lead masks are kept so the SAME accounting can be re-scoped to each
+    # (board, split) cohort below. The global series is still emitted, unchanged.
+    inside_by_lead, keep_by_lead = {}, {}
     for L in LEAD_GRID:
         a = ev_rows - L
         same_name = pl.tcode[np.maximum(a, 0)] == pl.tcode[ev_rows]
@@ -1514,6 +1517,7 @@ def run_lead_curves(pl: Plane, ev: pd.DataFrame, controls: np.ndarray, boards) -
         keep = inside & (cand >= 0)
         keep &= np.where(keep, pl.U1[np.maximum(cand, 0)], False)
         anchors_by_lead[L] = cand[keep]
+        inside_by_lead[L], keep_by_lead[L] = inside, keep
         eligibility[str(L)] = OrderedDict([
             ("events_in_cohort", int(ev_rows.size)),
             ("excluded_no_bar_at_lead", int((~inside).sum())),
@@ -1527,6 +1531,9 @@ def run_lead_curves(pl: Plane, ev: pd.DataFrame, controls: np.ndarray, boards) -
         same = (a >= 0) & (pl.tcode[np.maximum(a, 0)] == pl.tcode[ev_rows])
         const_cohort &= same & np.where(same, pl.U1[np.maximum(a, 0)], False)
 
+    ev_board, ev_split = pl.board_code[ev_rows], pl.split_gcode[ev_rows]
+    elig_bs = OrderedDict()
+
     for b in boards:
         bi = BOARD_ORDER.index(b)
         for sg in GATED_SPLITS:
@@ -1537,6 +1544,29 @@ def run_lead_curves(pl: Plane, ev: pd.DataFrame, controls: np.ndarray, boards) -
                                 & (pl.split_gcode[ctrl_rows] == si)]
             anchors_bs = {L: v[(pl.board_code[v] == bi) & (pl.split_gcode[v] == si)]
                           for L, v in anchors_by_lead.items()}
+            # A4 — eligibility accounting scoped to THIS cohort. The case and control
+            # sets the curve tables describe are already per (board, split), so a global
+            # exclusion series printed beside them is wrong-scoped.
+            in_coh = (ev_board == bi) & (ev_split == si)
+            per_lead = OrderedDict()
+            for L in LEAD_GRID:
+                ins, kp = inside_by_lead[L], keep_by_lead[L]
+                cca = ev_rows - L
+                cca = cca[const_cohort & (cca >= 0)]
+                cca = cca[pl.U1[cca]]
+                cca = cca[(pl.board_code[cca] == bi) & (pl.split_gcode[cca] == si)]
+                no_bar = int((in_coh & ~ins).sum())
+                not_u1 = int((in_coh & ins & ~kp).sum())
+                per_lead[str(L)] = OrderedDict([
+                    ("events_in_cohort", int(in_coh.sum())),
+                    ("excluded_no_bar_at_lead", no_bar),
+                    ("excluded_not_u1_eligible", not_u1),
+                    ("excluded_total", no_bar + not_u1),
+                    ("case_anchors_full_cohort", int(anchors_bs[L].size)),
+                    ("case_anchors_constant_cohort", int(cca.size)),
+                    ("controls", int(ctrl_bs.size)),
+                ])
+            elig_bs[f"{b}|{sg}"] = per_lead
             for fk in FKEYS_ORDER:
                 fac = arm_factors(fk, "M1")
                 packed = pl.packed(fac)
@@ -1597,6 +1627,18 @@ def run_lead_curves(pl: Plane, ev: pd.DataFrame, controls: np.ndarray, boards) -
                     curves[f"{b}|{sg}|{fk}|{mode}"] = rows_out
     return {
         "curves": curves, "eligibility_per_lead": eligibility,
+        "eligibility_per_lead_by_board_split": elig_bs,
+        "eligibility_scope_note": (
+            "`eligibility_per_lead` is the GLOBAL series over the whole cohort. "
+            "`eligibility_per_lead_by_board_split` is the same accounting re-scoped to "
+            "each (board, split) cohort, and it is what the curve tables print. "
+            "EXCLUSIONS are keyed on the EVENT's own board and split — an excluded event "
+            "either has no anchor bar at that lead, or has one that is not U1-eligible "
+            "and may therefore carry no split assignment at all, so the event's own split "
+            "is the only defined key. CASE ANCHOR counts are keyed on the ANCHOR's own "
+            "split (reading note R3), which is the set the curves actually use. The two "
+            "keys disagree only for an anchor that crosses a split boundary, so a "
+            "cohort's rows are not required to sum exactly to its event count."),
         "lead_grid": list(LEAD_GRID),
         "narrative_windows": {k: list(v) for k, v in NARRATIVE_WINDOWS.items()},
         "bootstrap_draws": LEAD_CURVE_B,
@@ -2530,6 +2572,73 @@ AMENDMENTS = [
                            "including the ones it excludes, with the episode counts that "
                            "decided it, so the exclusion is auditable rather than "
                            "silent."},
+    {"id": "A4",
+     "what": "receipt-presentation repairs adjudicated by the round-2 adversarial "
+             "review; no verdict, gate or estimator changed",
+     "items": [
+         "**Per-cell placebo visibility (sec.5, sec.6).** The verdict tables gained "
+         "`placebo max|excess| pp` and `placebo max|z|` — the maximum over the three "
+         "sec.6.3 shifts for that exact cell — and sec.6 now prints every rejection "
+         "individually (shift, footprint, arm, excess, z) instead of only the per-family "
+         "count. The family rate was the only placebo number a reader could see, so a "
+         "family-level FAILED could not be read down to the cells that caused it.",
+         "**Mechanism evidence for the calibration failure (sec.6).** The measured "
+         "signature of the 26 rejections is printed and read, so the failure is bounded "
+         "rather than left as an unexplained machine fault.",
+         "**Headline fairness (sec.5).** The section now states how many gated cells "
+         "cleared G1-G5 and that every one was downgraded by the frozen sec.6.3 "
+         "consequence, BEFORE it states that no DISCRIMINATOR stands, and records that "
+         "sec.14's disposition precondition did not obtain on `main`.",
+         "**The SUGGESTIVE bar inherits the miscalibration (sec.6, sec.12).** Stated "
+         "explicitly: inside a family that failed calibration at the G2 bar, the |z| >= "
+         "1.96 bar is at least as uncalibrated.",
+         "**Lead-curve exclusions re-scoped (sec.8).** The per-lead exclusion counts are "
+         "computed inside each (board, split) cohort. The identical global series had "
+         "been printed under all four tables, whose case and control sets are already "
+         "per (board, split).",
+         "**Constant-cohort curves printed (sec.8).** They existed only in the JSON; the "
+         "six eligible footprints now carry a printed constant-cohort table beneath each "
+         "board x split full-cohort table. The DD-family absence statement is unchanged.",
+         "**Matched-N honesty in the lead curves (sec.8).** The `cases` / `controls` "
+         "columns were DD20's numbers standing in for every footprint; they are relabelled "
+         "`eligible cases (cohort)` / `eligible controls (cohort)`, computed for the "
+         "cohort itself, with the per-footprint matched N named in the JSON and one "
+         "worked example of the gap printed.",
+         "**R4's scope named (sec.10).** The reading note now names the exactly two cells "
+         "its convention moves, the direction of the move, and their H=5 fragility.",
+         "**Placebo subsample shrinkage disclosed (sec.6).** The shifted panel loses rows "
+         "as S grows (a name shorter than S vanishes); the series is printed and its "
+         "direction stated.",
+         "**Per-F-class censoring asymmetry printed (sec.2).** The counts were in the "
+         "JSON only; the widest imbalances are now printed with the JSON pointer kept.",
+         "**The sec.2 censoring-magnitude sentence corrected.** 'The values above are of "
+         "order several per cent' described neither the cells under the 1% trigger nor "
+         "the spread of the ones over it; the measured distribution replaces it.",
+         "**Survivorship stamp attributed (footer).** The kept-name count for THIS run is "
+         "printed, and W-P0's percentages are attributed to W-P0's own store snapshot "
+         "rather than reading as this run's N.",
+         "**Two-speed READING paragraph (sec.8).** A descriptive reading of the printed "
+         "curves — it gates nothing, adds no statistic, and does not cross the lead-21 "
+         "composition break.",
+     ],
+     "why": "The round-2 adversarial review found the receipt under-reporting its own "
+            "evidence rather than mis-computing it: per-cell placebo behaviour was "
+            "aggregated away behind four family rates, the null was stated in an order "
+            "that read as absence of structure, three bookkeeping series were printed at "
+            "the wrong scope or under the wrong label, and several quantities that "
+            "existed in the JSON were never surfaced. Each item is a presentation or "
+            "bookkeeping repair to what the receipt SAYS about numbers it already "
+            "computed.",
+     "risk_controlled_by": "nothing in the statistical machinery is touched: no stratum, "
+                           "gate, floor, SE, placebo draw or verdict rule moved, the "
+                           "frozen sec.6.3 consequence sentence is printed verbatim and "
+                           "applied as frozen, and the corrected counts are the ones this "
+                           "amendment names. The run is byte-deterministic, so the whole "
+                           "pass is auditable as a diff against the pre-A4 build in which "
+                           "every verdict, gate glyph, excess, z, Holm p and honest-N is "
+                           "identical. (The `A4 GUARD` string in the instrument's "
+                           "provenance check is prereg sec.11.16's own A4/A5 label and is "
+                           "unrelated to this amendment.)"},
 ]
 
 READING_NOTES = [
@@ -2647,6 +2756,11 @@ DOES_NOT_ESTABLISH = [
     "described as an early precursor.",
     "NOTHING ABOUT THE WITHDRAWN EARLIER-WAVE CONSTRUCTIONS. No number and no artifact "
     "from them is cited (grep-verified in verify.stop_ship_reference_scan).",
+    "A SUGGESTIVE INSIDE AN UNCALIBRATED FAMILY IS NOT A WEAKER VERDICT. Where a (board, "
+    "horizon) family failed its sec.6.3 placebo calibration at the G2 bar, the SUGGESTIVE "
+    "bar (|z| >= 1.96) is a LOWER bar on the same statistic and is therefore at least as "
+    "uncalibrated. Nothing in this receipt supports reading a SUGGESTIVE in a failed "
+    "family as a small, safe version of a DISCRIMINATOR.",
 ]
 
 
@@ -2660,6 +2774,42 @@ def _f(x, nd=2, plus=False):
         return "—"
     s = f"{x:+.{nd}f}" if plus else f"{x:.{nd}f}"
     return s
+
+
+def _placebo_extremes(p: dict, H, arm: str, board: str, fk: str):
+    """A4 — the worst placebo behaviour of ONE cell across the sec.6.3 shifts.
+
+    Returns (max |matched excess| pp, max |z|) over S in PLACEBO_SHIFTS for exactly this
+    (horizon, arm, board, footprint), or (None, None) where no shift computed it. The
+    family rejection rate is an average over 48 such cells and cannot be read down to
+    them; this is the per-cell view the verdict table needs.
+    """
+    ex, zz = [], []
+    for s in p["placebo"].get("shifts", PLACEBO_SHIFTS):
+        c = p["placebo"]["per_shift"].get(str(s), {}).get(f"H{H}|{arm}|{board}|{fk}")
+        if not c:
+            continue
+        e = c.get("estimate", {}).get("matched_excess_pp")
+        z = c.get("inference", {}).get("z_2way")
+        if e is not None:
+            ex.append(abs(float(e)))
+        if z is not None:
+            zz.append(abs(float(z)))
+    return (max(ex) if ex else None), (max(zz) if zz else None)
+
+
+def _r4_population(p: dict) -> list:
+    """A4 — the cells reading note R4's convention actually moves: G1 met, FIT |z| in
+    [1.96, G2_Z), and G3/G4/G5 all passed. Computed, never asserted."""
+    out = []
+    for k, v in p["verdicts"].items():
+        g, z = v["gates"], v.get("fit_z_2way")
+        if z is None or not g.get("G1_footprint"):
+            continue
+        if 1.96 <= abs(float(z)) < G2_Z and all(
+                g.get(x) for x in ("G3_thinned_sign", "G4_era_sign_2of3", "G5_holdout")):
+            out.append((k, v))
+    return out
 
 
 def build_md(p: dict, pb) -> str:
@@ -2728,6 +2878,7 @@ def build_md(p: dict, pb) -> str:
       "partition is exact everywhere (`verify.censoring_partition`).")
     A("")
     rows = []
+    bw = []
     for H in HORIZONS:
         for b in BOARD_ORDER:
             for sg in ("FIT", "HOLDOUT"):
@@ -2735,6 +2886,8 @@ def build_md(p: dict, pb) -> str:
                 c = p["labels"].get(k)
                 if not c:
                     continue
+                bw.append((f"H{H} {b} {sg}", float(c["broken_window_pct_of_positives"]),
+                           sg))
                 rows.append([H, b, sg, c["positive_episodes"], c["sessions"],
                              f"{c['positives']:,}", f"{c['negatives']:,}",
                              f"{c['censored']:,}", "yes" if c["partition_exact"] else "NO",
@@ -2744,10 +2897,21 @@ def build_md(p: dict, pb) -> str:
          "censored", "partition exact", "board visible in broken window",
          "% of positives"], rows))
     A("")
+    under = [x for x in bw if x[1] <= 1.0]
+    over = sorted((x for x in bw if x[1] > 1.0), key=lambda t: -t[1])
+    top = [x for x in over if x[1] >= 5.0]
     A("**The censoring diagnostic must be discussed, and here it is.** The prereg "
       "requires that if the count of rows where a board is visible inside a broken window "
-      "exceeds 1% of positives on any board, the receipt discuss it. It does, everywhere: "
-      "the values above are of order several per cent. The mechanism is W-P0's "
+      f"exceeds 1% of positives on any board, the receipt discuss it. **{len(under)} of "
+      f"the {len(bw)} board × split cells above sit under that 1% trigger** ("
+      + ", ".join(f"{n} {v}%" for n, v, _s in under)
+      + f"); the other {len(over)} run from {min(x[1] for x in over)}% to "
+      f"{max(x[1] for x in over)}% and are the cells the prereg requires discussed. The "
+      f"{len(top)} largest are "
+      + ", ".join(f"{n} {v}%" for n, v, _s in top)
+      + (" — every one of them a FIT cell, where the suspension-broken windows are "
+         "denser" if top and all(s == "FIT" for _n, _v, s in top) else "")
+      + ". The mechanism is W-P0's "
       "closure-tolerant completeness rule — a row whose forward chain breaks (a "
       "suspension gap over 21 calendar days) fails `win_ok_H` even when a tolerant board "
       "is visible inside the nominal window. Those rows are **censored, not negative**, "
@@ -2757,6 +2921,42 @@ def build_md(p: dict, pb) -> str:
       "the JSON for every footprint, and every DISCRIMINATOR carries the coarse Manski "
       "bound below.")
     A("")
+
+    # F10 — the per-F-class asymmetry itself, not only its existence
+    fam_k = f"H{H_PRIMARY}|M1|{p['verdict_summary']['verdict_boards'][0]}|FIT"
+    asym = []
+    for fk in FKEYS_ORDER:
+        c = p["primary"].get(f"{fam_k}|{fk}")
+        if not c or c.get("status") == "NOT_EVALUABLE":
+            continue
+        ct, cf = c["censored_rows_F_true"], c["censored_rows_F_false"]
+        nt = ct + c["honest_n_F_true"]["rows"]
+        nf = cf + c["honest_n_F_false"]["rows"]
+        if not nt or not nf:
+            continue
+        pt, pf = 100.0 * ct / nt, 100.0 * cf / nf
+        asym.append((pb.FSHORT[fk], pt, pf, pt / pf if pf else None))
+    if asym:
+        hi = max(asym, key=lambda t: t[3])
+        lo = min(asym, key=lambda t: t[3])
+        A("**How unbalanced that removal actually is.** Censoring is not guaranteed even "
+          f"across F-classes, so the measurement is printed rather than only stored. In "
+          f"the primary family (`{fam_k}`), as each class's own censored share, the widest "
+          f"imbalance is **{hi[0]}** ({hi[1]:.2f}% of F=TRUE rows vs {hi[2]:.2f}% of "
+          f"F=FALSE, ratio {hi[3]:.2f}) and the widest in the other direction is "
+          f"**{lo[0]}** (ratio {lo[3]:.2f}); every footprint in that family:")
+        A("")
+        A(T(["footprint", "censored share of F=TRUE rows", "censored share of F=FALSE "
+             "rows", "ratio T/F"],
+            [[n, f"{a:.2f}%", f"{b_:.2f}%", f"{r:.2f}"] for n, a, b_, r in asym]))
+        A("")
+        A("The same counts for every other cell — every footprint, board, split, arm and "
+          "horizon, in the primary and placebo batteries alike — are in the JSON under "
+          "`primary.*.censored_rows_F_true` / `censored_rows_F_false` beside each cell's "
+          "`honest_n_F_true` / `honest_n_F_false`. No DISCRIMINATOR stands here, so no "
+          "Manski bound was triggered; the asymmetry is printed anyway because it bounds "
+          "how a future verdict on this substrate would have to be read.")
+        A("")
 
     ov = [(k, v) for k, v in p["episode_overlap_with_pb_cohort"].items()
           if not k.startswith("_")]
@@ -2837,17 +3037,25 @@ def build_md(p: dict, pb) -> str:
                               "G4_era_sign_2of3", "G5_holdout"))
                 lab = pb.FSHORT[fk] + (f" ({v['band_local']})" if v.get("band_local")
                                        else "")
+                pex, pz = _placebo_extremes(p, H, v["arm"], b, fk)
                 rows.append([b, lab, v["arm"], v["honest_n"], _f(v.get("fit_excess_pp"),
                                                                  3, True),
                              _f(v.get("fit_z_2way"), 2), _f(v.get("holdout_excess_pp"),
                                                             3, True),
                              _f(v.get("holdout_z_2way"), 2), gs, v["verdict"],
                              _f(v.get("holm_p"), 4) if v.get("holm_p") is not None
-                             else "—"])
+                             else "—", _f(pex, 3), _f(pz, 2)])
         A(T(["board", "footprint", "arm", "honest-N (F=TRUE, retained)",
              "FIT excess pp", "FIT z₂ᵥᵥ", "HOLD excess pp", "HOLD z", "G1..G5", "verdict",
-             "Holm p (ref)"], rows))
+             "Holm p (ref)", "placebo max\\|excess\\| pp", "placebo max\\|z\\|"], rows))
         A("")
+    A("The two placebo columns are the maximum over the three §6.3 shifts (S ∈ {250, 500, "
+      "1000}) **for that exact cell** — the same footprint, arm, board and horizon, on the "
+      "shifted panel where no alignment with outcomes survives. They are printed beside "
+      "each verdict because a family-level calibration rate cannot tell a reader which "
+      "cells carried it; `—` means the placebo cell was not computed there. Read the DD "
+      "rows against their own FIT columns.")
+    A("")
     A("**Coincident-indicator stamps, which travel with every verdict on them.** "
       + " ".join(f"**{pb.FSHORT[k]}** — {v}" for k, v in COINCIDENT_STAMP.items()))
     A("")
@@ -2881,8 +3089,41 @@ def build_md(p: dict, pb) -> str:
              "all censored F=TRUE negative", "sign survives"], rows))
         A("")
     else:
-        A("**No DISCRIMINATOR verdict was reached anywhere**, so no Manski bound is "
-          "required; a null is a valid ship (prereg §14) and it ships as one.")
+        gk = ("G1_footprint", "G2_fit_z_ge_2.81", "G3_thinned_sign", "G4_era_sign_2of3",
+              "G5_holdout")
+        cleared = [(k, v) for k, v in p["verdicts"].items()
+                   if v["verdict"] != "NOT_EVALUABLE" and all(v["gates"].get(x)
+                                                              for x in gk)]
+        by_hb: "OrderedDict[str, list]" = OrderedDict()
+        for k, v in cleared:
+            by_hb.setdefault(f"H{v['horizon']} {v['board']}", []).append(
+                pb.FSHORT[v["footprint"]])
+        capped = sum(1 for _k, v in cleared if v["verdict"] != "DISCRIMINATOR")
+        A(f"**{len(cleared)} of the {p['verdict_summary']['gated_cells']} gated cells "
+          f"cleared G1–G5** — "
+          + "; ".join(f"{h} {'/'.join(f_)}" for h, f_ in by_hb.items())
+          + (" — and **every one of them was downgraded by the frozen §6.3 family "
+             "consequence**" if capped == len(cleared) else
+             f" — and **{capped} of those {len(cleared)} were downgraded by the frozen "
+             "§6.3 family consequence**")
+          + ", which is why **no DISCRIMINATOR verdict stands anywhere**. No Manski bound "
+          "is therefore required; a null is a valid ship (prereg §14) and it ships as "
+          "one.")
+        A("")
+        mb = p["verdict_summary"]["verdict_boards"][0]
+        per_h = {H: sum(1 for _k, v in cleared
+                        if v["board"] == mb and v["horizon"] == H) for H in HORIZONS}
+        A("**What that null is, stated precisely.** prereg §14 frames the disposition on "
+          "the precondition that *the footprints mostly fail these gates against matched "
+          f"controls*. That precondition did **not** obtain on `{mb}`: "
+          + " and ".join(f"{per_h[H]} of the {len(FKEYS_ORDER)} footprints at H={H}"
+                         for H in HORIZONS)
+          + " cleared every gate there, at honest-N in the millions of rows and thousands "
+          "of episodes. What removed those verdicts was the §6.3 calibration failure of "
+          "the inference machinery in the same families — so the shipped null is a "
+          "**calibration-governed null, not a measured absence of structure**. §6 states "
+          "what the calibration failure is evidence of and what it is not; the "
+          "consequence is applied as frozen either way.")
         A("")
 
     # §6 placebo
@@ -2903,7 +3144,122 @@ def build_md(p: dict, pb) -> str:
          "realised rate",
          "fail bar (5× nominal)", "calibration"], rows))
     A("")
-    A(_cap(p["placebo"]["consequence"]))
+
+    # F1 — the rejections themselves, not only their count
+    A("**Every rejection, individually.** A family rate is an average over its cells; "
+      "these are the cells that produced it. `excess pp` is the matched excess measured "
+      "on the SHIFTED panel, where no alignment with outcomes is supposed to survive.")
+    A("")
+    rows = []
+    for fam, v in p["placebo"]["family_calibration"].items():
+        fb_, fh_ = fam.split("|")
+        for r in v.get("rejections", []):
+            sh, arm, fk, _zs = r.split("|")
+            s = sh.replace("shift", "")
+            c = p["placebo"]["per_shift"].get(s, {}).get(f"{fh_}|{arm}|{fb_}|{fk}", {})
+            rows.append([fam.replace("|", " · "), s, pb.FSHORT[fk], arm,
+                         _f(c.get("estimate", {}).get("matched_excess_pp"), 3, True),
+                         _f(c.get("inference", {}).get("z_2way"), 2)])
+    A(T(["family (board · H)", "shift S", "footprint", "arm", "excess pp", "z₂ᵥᵥ"], rows))
+    A("")
+
+    # F2 — the measured signature of the failure, and what it does and does not mean
+    dd_fam = ("dd_le_m20", "dd_le_m35")
+    n_rej = n_pos = n_dd = nd_tested = nd_rej = 0
+    for _s, cells in p["placebo"]["per_shift"].items():
+        for key, c in cells.items():
+            fk = key.split("|")[3]
+            z = c.get("inference", {}).get("z_2way")
+            if z is None:
+                continue
+            hit = abs(float(z)) >= G2_Z
+            if fk not in dd_fam:
+                nd_tested += 1
+                nd_rej += int(hit)
+            if hit:
+                n_rej += 1
+                n_dd += int(fk in dd_fam)
+                e = c.get("estimate", {}).get("matched_excess_pp")
+                n_pos += int(e is not None and float(e) > 0)
+    mb = p["verdict_summary"]["verdict_boards"][0]
+    shifts = p["placebo"].get("shifts", list(PLACEBO_SHIFTS))
+
+    def _plseries(fk):
+        arm = VERDICT_ARM[fk]
+        real = (p["primary"].get(f"H{H_PRIMARY}|{arm}|{mb}|FIT|{fk}", {})
+                .get("estimate", {}).get("matched_excess_pp"))
+        vals = [(p["placebo"]["per_shift"].get(str(s), {})
+                 .get(f"H{H_PRIMARY}|{arm}|{mb}|{fk}", {})
+                 .get("estimate", {}).get("matched_excess_pp")) for s in shifts]
+        return real, vals
+    dd20_real, dd20_pl = _plseries("dd_le_m20")
+    dd35_real, dd35_pl = _plseries("dd_le_m35")
+    dd35_share = [100.0 * v / dd35_real for v in dd35_pl
+                  if v is not None and dd35_real] or [0.0]
+    plant = p["verify"]["checks"]["placebo_sensitivity"]["detail"]
+    pz = plant["shifted_planted_z"]
+    A("**What the failure is, measured.** The signature is not the shape of a broken "
+      f"standard error. All **{n_pos} of the {n_rej}** placebo rejections are "
+      f"**positive-signed**, and **{n_dd} of {n_rej}** sit in the DD family "
+      f"(`{pb.FSHORT['dd_le_m20']}` / `{pb.FSHORT['dd_le_m35']}`); across every non-DD "
+      f"footprint the realised rejection rate is **{nd_rej}/{nd_tested} = "
+      f"{100.0 * nd_rej / max(nd_tested, 1):.2f}%**, inside the "
+      f"{100 * PLACEBO_FAIL_MULT * PLACEBO_NOMINAL:.1f}% bar. The magnitudes say the same "
+      f"thing: on `{mb}` at H={H_PRIMARY}, {pb.FSHORT['dd_le_m20']}'s placebo excess "
+      f"({', '.join(_f(v, 3, True) for v in dd20_pl)} pp at S = "
+      f"{', '.join(str(s) for s in shifts)}) **reproduces its real excess** "
+      f"({_f(dd20_real, 3, True)} pp) essentially in full, and "
+      f"{pb.FSHORT['dd_le_m35']}'s reproduces "
+      f"{min(dd35_share):.0f}–{max(dd35_share):.0f}% of its real "
+      f"{_f(dd35_real, 3, True)} pp. And the sensitivity control agrees: a label planted "
+      f"EQUAL TO THE OUTCOME prints z = {_f(plant['unshifted_planted_z'], 2)} unshifted "
+      "and still carries z = "
+      + " / ".join(_f(pz.get(str(s)), 3) for s in shifts)
+      + f" **after** shifting — non-zero residual leak, under the soft ceiling "
+      f"max(G2 = {G2_Z}, |z₀|/10) = {_f(plant['calibration_ceiling'], 2)} the check is "
+      "measured against.")
+    A("")
+    A("**The reading.** That is the signature of **residual feature–outcome alignment for "
+      "multi-year persistent states**: `dd250` at t−250, t−500 and even t−1000 is still "
+      "correlated with `dd250` at t on the same name, so shifting the tape does not "
+      "break the alignment it is designed to break. For a persistent feature the placebo "
+      "**null itself is false**, and a rejection under it is not a false positive in the "
+      "sense the guard assumes. What this is **not**: it is not evidence of a symmetric "
+      "standard-error failure — a broken SE would reject in both signs and across "
+      "footprints, and neither happened — and on the non-DD footprints the same machinery "
+      "measured calibrated at nominal. That bounds the failure; it does not repair it, "
+      "and it changes no verdict here.")
+    A("")
+
+    # F4 — the SUGGESTIVE bar inherits the miscalibration
+    A(f"**The SUGGESTIVE bar inherits this.** Inside a family that failed calibration at "
+      f"the G2 bar (|z| ≥ {G2_Z}), the SUGGESTIVE bar (|z| ≥ 1.96) is a **lower** bar on "
+      "the same statistic and is therefore **at least as uncalibrated**. Every SUGGESTIVE "
+      "printed in a failed family carries that; none of them is a weaker but sounder "
+      "verdict.")
+    A("")
+
+    # F9 — the shifted panel is a shrinking subsample, and the direction of that
+    ukey = f"H{H_PRIMARY}|{VERDICT_ARM['dd_le_m20']}|{mb}"
+    useries = [(p["primary"].get(f"{ukey}|FIT|dd_le_m20", {})
+                .get("rows_excluded_unmeasurable"))]
+    useries += [(p["placebo"]["per_shift"].get(str(s), {})
+                 .get(f"{ukey}|dd_le_m20", {}).get("rows_excluded_unmeasurable"))
+                for s in shifts]
+    A("**The placebo subsample shrinks with S, and that is disclosed rather than "
+      "absorbed.** A shifted row whose source bar falls before its own name's first bar "
+      "carries no footprint value and is excluded and counted, so a name shorter than S "
+      f"vanishes entirely. On `{ukey}|FIT|{pb.FSHORT['dd_le_m20']}` the rows excluded as "
+      "unmeasurable run "
+      + " → ".join(f"{v:,}" if v is not None else "—" for v in useries)
+      + f" at S = 0 (unshifted), {', '.join(str(s) for s in shifts)}. The direction is "
+      "conservative for a false-positive guard: a smaller subsample means a larger "
+      "standard error and therefore FEWER rejections, so the measured rejection rate is "
+      "if anything an understatement of the miscalibration, never an inflation of it.")
+    A("")
+    A(_cap(p["placebo"]["consequence"]) + ". The consequence is applied as frozen; the "
+      "mechanism evidence above bounds what the failure means, and does not soften what "
+      "it costs.")
     A("")
 
     # §7 retention
@@ -2940,26 +3296,47 @@ def build_md(p: dict, pb) -> str:
     A("")
     A(p["lead_curves"]["constant_cohort_scope"])
     A("")
+    # F7 — the N columns say what they are, and the per-footprint matched N is named
+    lcv, elig_all = p["lead_curves"]["curves"], p["lead_curves"][
+        "eligibility_per_lead_by_board_split"]
+    A("**What the N columns are.** `eligible cases (cohort)` and `eligible controls "
+      "(cohort)` are the (board, split) cohort's own counts at that lead — every "
+      "U1-eligible case anchor and every verified-quiet control on that board and split, "
+      "**before** any footprint's measurability mask and **before** matching. They are "
+      "NOT any one footprint's N: each footprint then drops the rows its mask cannot "
+      "measure, and the estimator keeps only rows landing in a stratum that carries both "
+      "classes. `excluded` is this cohort's own per-lead exclusion count, not the "
+      "cohort-wide one.")
+    A("")
+    ex_b = p["verdict_summary"]["verdict_boards"][0]
+    ex_fk = "sector_deep35_ge40"
+    ex_c = lcv.get(f"{ex_b}|FIT|{ex_fk}|full_cohort", {}).get("1", {})
+    ex_e = elig_all.get(f"{ex_b}|FIT", {}).get("1", {})
+    if ex_c and ex_e:
+        A(f"**The gap is large enough to name.** `{ex_b} · FIT`, ℓ = 1, "
+          f"{pb.FSHORT[ex_fk]}: **{ex_e['case_anchors_full_cohort']:,}** cohort-eligible "
+          f"case anchors → **{ex_c['case_anchors']:,}** measurable for that footprint → "
+          f"**{ex_c['matched_case_anchors']:,}** actually matched into a contrast-bearing "
+          "stratum. Every footprint's matched N at every lead is in the JSON as "
+          "`lead_curves.curves.<board>|<split>|<footprint>|<mode>.<lead>."
+          "matched_case_anchors`, beside its own `case_anchors`.")
+        A("")
     for b in p["verdict_summary"]["verdict_boards"]:
         for sg in GATED_SPLITS:
-            any_row = any(f"{b}|{sg}|{fk}|full_cohort" in p["lead_curves"]["curves"]
-                          for fk in FKEYS_ORDER)
+            any_row = any(f"{b}|{sg}|{fk}|full_cohort" in lcv for fk in FKEYS_ORDER)
             if not any_row:
                 continue
+            elig = elig_all.get(f"{b}|{sg}", {})
             A(f"**{b} · {sg}** — excess prevalence of the footprint among case anchors vs "
               "matched quiet controls, pp, with a session-block 95% CI.")
             A("")
             rows = []
             for lead in LEAD_GRID:      # NEVER `L` here — `L` is the writeup's line list
-                el = p["lead_curves"]["eligibility_per_lead"][str(lead)]
-                r = [lead]
-                first = p["lead_curves"]["curves"].get(
-                    f"{b}|{sg}|{FKEYS_ORDER[0]}|full_cohort", {}).get(str(lead), {})
-                r += [first.get("case_anchors", "—"), first.get("controls", "—"),
-                      el["excluded_not_u1_eligible"] + el["excluded_no_bar_at_lead"]]
+                el = elig.get(str(lead), {})
+                r = [lead, f"{el.get('case_anchors_full_cohort', 0):,}",
+                     f"{el.get('controls', 0):,}", f"{el.get('excluded_total', 0):,}"]
                 for fk in FKEYS_ORDER:
-                    c = p["lead_curves"]["curves"].get(
-                        f"{b}|{sg}|{fk}|full_cohort", {}).get(str(lead), {})
+                    c = lcv.get(f"{b}|{sg}|{fk}|full_cohort", {}).get(str(lead), {})
                     if "excess_prevalence_pp" in c:
                         ci = c.get("ci95_pp")
                         r.append(f"{c['excess_prevalence_pp']:+.1f}"
@@ -2967,9 +3344,72 @@ def build_md(p: dict, pb) -> str:
                     else:
                         r.append("—")
                 rows.append(r)
-            A(T(["lead ℓ", "cases", "controls", "excluded"]
-                + [pb.FSHORT[k] for k in FKEYS_ORDER], rows))
+            A(T(["lead ℓ", "eligible cases (cohort)", "eligible controls (cohort)",
+                 "excluded"] + [pb.FSHORT[k] for k in FKEYS_ORDER], rows))
             A("")
+            # F6 — the constant-cohort curves, printed rather than JSON-only
+            cc_fks = [fk for fk in FKEYS_ORDER
+                      if f"{b}|{sg}|{fk}|constant_cohort" in lcv]
+            if not cc_fks:
+                continue
+            A(f"**{b} · {sg}, constant cohort** — the SAME events at every lead (an event "
+              "enters only if it is U1-eligible at all "
+              f"{len(LEAD_GRID)} grid leads), so the curve's shape cannot be a "
+              "composition change. Printed for the "
+              f"{len(cc_fks)} eligible footprints only; see the scope note above for why "
+              "the DD / depth / duration families are absent.")
+            A("")
+            rows = []
+            for lead in LEAD_GRID:
+                el = elig.get(str(lead), {})
+                r = [lead, f"{el.get('case_anchors_constant_cohort', 0):,}",
+                     f"{el.get('controls', 0):,}"]
+                for fk in cc_fks:
+                    c = lcv.get(f"{b}|{sg}|{fk}|constant_cohort", {}).get(str(lead), {})
+                    if "excess_prevalence_pp" in c:
+                        ci = c.get("ci95_pp")
+                        r.append(f"{c['excess_prevalence_pp']:+.1f}"
+                                 + (f" ({ci[0]:+.1f},{ci[1]:+.1f})" if ci else ""))
+                    else:
+                        r.append("—")
+                rows.append(r)
+            A(T(["lead ℓ", "eligible cases (constant cohort)",
+                 "eligible controls (cohort)"] + [pb.FSHORT[k] for k in cc_fks], rows))
+            A("")
+    A(p["lead_curves"]["eligibility_scope_note"])
+    A("")
+
+    # F13 — a descriptive reading of the printed curves. Gates nothing, adds no statistic.
+    def _lead(fk, lead, board, mode="full_cohort", sgp="FIT"):
+        return lcv.get(f"{board}|{sgp}|{fk}|{mode}", {}).get(
+            str(lead), {}).get("excess_prevalence_pp")
+    rb = p["verdict_summary"]["verdict_boards"][0]
+    d35 = [_lead("dd_le_m35", x, rb) for x in (1, 20, 30, 60)]
+    ma_1, ma_20 = _lead("under_ma200", 1, rb), _lead("under_ma200", 20, rb)
+    mac_1, mac_20 = (_lead("under_ma200", 1, rb, "constant_cohort"),
+                     _lead("under_ma200", 20, rb, "constant_cohort"))
+    vz = [_lead("volz_gt1", x, rb) for x in (1, 2, 3)]
+    if None not in (*d35, ma_1, ma_20, mac_1, mac_20, *vz):
+        A(f"**Reading these curves (descriptive — no gate, no statistic, `{rb} · FIT`).** "
+          f"{pb.FSHORT['dd_le_m35']} is flat-to-RISING with lead **inside** the pre-break "
+          f"window: {_f(d35[0], 1, True)} pp at ℓ = 1 against {_f(d35[1], 1, True)} pp at "
+          "ℓ = 20. That is the shape of a **persistent state**, not of a precursor "
+          "turning on before ignition — the same multi-year persistence §6 measures "
+          "defeating the placebo shift, seen from the other side. (Read on its own, the "
+          f"structural window sits at the same level — {_f(d35[2], 1, True)} pp at ℓ = 30, "
+          f"{_f(d35[3], 1, True)} pp at ℓ = 60 — but that is a level, **not** a "
+          "continuation of the series above: the ℓ = 21 composition break forbids reading "
+          f"across it.) {pb.FSHORT['under_ma200']} runs the other way, and entirely inside "
+          f"the same window: its deficit DEEPENS toward ignition ({_f(ma_20, 1, True)} pp "
+          f"at ℓ = 20 → {_f(ma_1, 1, True)} pp at ℓ = 1), so the reclaim is the fast leg — "
+          "and the constant-cohort curve, whose composition cannot change with lead at "
+          f"all, moves the same way ({_f(mac_20, 1, True)} → {_f(mac_1, 1, True)} pp). "
+          f"{pb.FSHORT['volz_gt1']} spikes only at ℓ ≤ 2 ({_f(vz[0], 1, True)} pp at "
+          f"ℓ = 1, {_f(vz[1], 1, True)} at ℓ = 2, {_f(vz[2], 1, True)} at ℓ = 3) — "
+          "coincident, exactly as its stamp says. **No reading here compares across the "
+          "ℓ = 21 boundary**; the mechanical composition break above forbids it, and none "
+          "of these three statements needs it.")
+        A("")
 
     # §9 flagged sets
     A("## 9. Flagged-set diagnostics (descriptive — explicitly not a ranker)")
@@ -3000,6 +3440,10 @@ def build_md(p: dict, pb) -> str:
     for a in AMENDMENTS:
         A(f"**{a['id']} — {a['what']}**")
         A("")
+        for it in a.get("items", ()):
+            A(f"- {it}")
+        if a.get("items"):
+            A("")
         A(f"*Why:* {a['why']}")
         A("")
         A(f"*Risk controlled by:* {a['risk_controlled_by']}")
@@ -3012,6 +3456,31 @@ def build_md(p: dict, pb) -> str:
         A("")
         A(f"*Reading taken:* {r['reading']} *Materiality:* {r['materiality']}")
         A("")
+        # F8 — R4's population is small enough to enumerate, so it is enumerated
+        if r["id"] == "R4":
+            pop = _r4_population(p)
+            sec = []
+            for _k, v in pop:
+                alt = (p["verdicts"].get(f"H{H_SECONDARY}|{v['board']}|{v['footprint']}")
+                       if v["horizon"] == H_PRIMARY else None)
+                if alt:
+                    sec.append(f"`{pb.FSHORT[v['footprint']]}` z = "
+                               f"{_f(alt.get('fit_z_2way'), 2)} → {alt['verdict']}")
+            if pop:
+                A(f"*Cells this convention actually moves — computed, not asserted:* "
+                  f"exactly {len(pop)}, "
+                  + ", ".join(f"`H{v['horizon']} · {v['board']} · "
+                              f"{pb.FSHORT[v['footprint']]}` (FIT z = "
+                              f"{_f(v.get('fit_z_2way'), 2)} → {v['verdict']})"
+                              for _k, v in pop)
+                  + ". The move is **upward only**: each is SUGGESTIVE under the reading "
+                  "taken and NULL under the literal alternative, and no other cell in the "
+                  "receipt sits in the 1.96–2.81 band with G3, G4 and G5 all passed."
+                  + (f" They are fragile at the secondary horizon — the same cells at "
+                     f"H = {H_SECONDARY} print " + ", ".join(sec)
+                     + ", below the SUGGESTIVE bar and therefore NULL under either "
+                     "reading." if sec else ""))
+                A("")
 
     # §11 verify
     A("## 11. Verification battery — every check paired with a mutation it must detect")
@@ -3053,7 +3522,26 @@ def build_md(p: dict, pb) -> str:
       f"`{p['pin']['w1_sha256'][:16]}…`, P-B pin `{p['pin']['pb_sha256'][:16]}…`, prereg "
       f"`{p['pin']['prereg_sha256'][:16]}…`. {v['determinism']}")
     A("")
-    A(f"Survivorship: {p['survivorship_stamp']}")
+    # F12 — this run's own N first; W-P0's percentages attributed to W-P0's own snapshot
+    fpm = p["footprint_plane"]
+    stamp = p["survivorship_stamp"]
+    try:
+        tk = stamp.split()
+        w1_n = tk[tk.index("curated") - 1]
+    except (ValueError, IndexError):
+        w1_n = "the curated-name count quoted inside it"
+    A(f"Survivorship, measured on THIS run: **{fpm['tickers_kept']:,} names kept of "
+      f"{fpm['files_found']:,} files** in `{fpm['raw_store'].split(' (')[0]}` — "
+      f"{fpm['tickers_skipped_st']:,} skipped as ST, "
+      f"{fpm['tickers_skipped_thin_or_unreadable']:,} as thin or unreadable — carrying "
+      f"{fpm['panel_rows']:,} live bars over {fpm['panel_sessions']:,} sessions. W-P0's "
+      "stamp follows verbatim; its counts and **every percentage in it were measured by "
+      f"W-P0 on W-P0's OWN store snapshot of {w1_n} curated names**, not on this run's "
+      f"{fpm['tickers_kept']:,}, and are quoted as W-P0 measured them rather than "
+      "re-derived here. The qualitative claim is what carries across — a large-cap, "
+      "survivors-only slice — and it carries at either N.")
+    A("")
+    A(f"W-P0's stamp: {stamp}")
     A("")
     return "\n".join(L) + "\n"
 

@@ -125376,6 +125376,413 @@
         "case_anchors": 9271
       }
     },
+    "eligibility_per_lead_by_board_split": {
+      "main|FIT": {
+        "1": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 1,
+          "excluded_total": 1,
+          "case_anchors_full_cohort": 10584,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "2": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 2,
+          "excluded_not_u1_eligible": 388,
+          "excluded_total": 390,
+          "case_anchors_full_cohort": 10196,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "3": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 3,
+          "excluded_not_u1_eligible": 687,
+          "excluded_total": 690,
+          "case_anchors_full_cohort": 9901,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "5": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 4,
+          "excluded_not_u1_eligible": 1106,
+          "excluded_total": 1110,
+          "case_anchors_full_cohort": 9490,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "7": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 5,
+          "excluded_not_u1_eligible": 1568,
+          "excluded_total": 1573,
+          "case_anchors_full_cohort": 9033,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "10": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 5,
+          "excluded_not_u1_eligible": 2170,
+          "excluded_total": 2175,
+          "case_anchors_full_cohort": 8449,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "15": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 9,
+          "excluded_not_u1_eligible": 2865,
+          "excluded_total": 2874,
+          "case_anchors_full_cohort": 7766,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "20": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 22,
+          "excluded_not_u1_eligible": 3407,
+          "excluded_total": 3429,
+          "case_anchors_full_cohort": 7248,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "30": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 64,
+          "excluded_not_u1_eligible": 3746,
+          "excluded_total": 3810,
+          "case_anchors_full_cohort": 6877,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "40": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 74,
+          "excluded_not_u1_eligible": 4017,
+          "excluded_total": 4091,
+          "case_anchors_full_cohort": 6626,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        },
+        "60": {
+          "events_in_cohort": 10580,
+          "excluded_no_bar_at_lead": 102,
+          "excluded_not_u1_eligible": 4335,
+          "excluded_total": 4437,
+          "case_anchors_full_cohort": 6437,
+          "case_anchors_constant_cohort": 3874,
+          "controls": 1172209
+        }
+      },
+      "main|HOLDOUT": {
+        "1": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 2,
+          "excluded_total": 2,
+          "case_anchors_full_cohort": 2437,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "2": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 92,
+          "excluded_total": 92,
+          "case_anchors_full_cohort": 2352,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "3": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 150,
+          "excluded_total": 150,
+          "case_anchors_full_cohort": 2295,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "5": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 252,
+          "excluded_total": 252,
+          "case_anchors_full_cohort": 2203,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "7": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 327,
+          "excluded_total": 327,
+          "case_anchors_full_cohort": 2140,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "10": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 425,
+          "excluded_total": 425,
+          "case_anchors_full_cohort": 2049,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "15": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 574,
+          "excluded_total": 574,
+          "case_anchors_full_cohort": 1917,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "20": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 721,
+          "excluded_total": 721,
+          "case_anchors_full_cohort": 1795,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "30": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 952,
+          "excluded_total": 952,
+          "case_anchors_full_cohort": 1580,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "40": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 1005,
+          "excluded_total": 1005,
+          "case_anchors_full_cohort": 1554,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        },
+        "60": {
+          "events_in_cohort": 2430,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 995,
+          "excluded_total": 995,
+          "case_anchors_full_cohort": 1461,
+          "case_anchors_constant_cohort": 747,
+          "controls": 198818
+        }
+      },
+      "chinext20|FIT": {
+        "1": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 0,
+          "excluded_total": 0,
+          "case_anchors_full_cohort": 228,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "2": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 8,
+          "excluded_total": 8,
+          "case_anchors_full_cohort": 220,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "3": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 11,
+          "excluded_total": 11,
+          "case_anchors_full_cohort": 217,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "5": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 16,
+          "excluded_total": 16,
+          "case_anchors_full_cohort": 212,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "7": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 20,
+          "excluded_total": 20,
+          "case_anchors_full_cohort": 207,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "10": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 26,
+          "excluded_total": 26,
+          "case_anchors_full_cohort": 203,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "15": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 30,
+          "excluded_total": 30,
+          "case_anchors_full_cohort": 198,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "20": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 37,
+          "excluded_total": 37,
+          "case_anchors_full_cohort": 193,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "30": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 50,
+          "excluded_total": 50,
+          "case_anchors_full_cohort": 178,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "40": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 51,
+          "excluded_total": 51,
+          "case_anchors_full_cohort": 176,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        },
+        "60": {
+          "events_in_cohort": 228,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 52,
+          "excluded_total": 52,
+          "case_anchors_full_cohort": 194,
+          "case_anchors_constant_cohort": 132,
+          "controls": 136813
+        }
+      },
+      "chinext20|HOLDOUT": {
+        "1": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 0,
+          "excluded_total": 0,
+          "case_anchors_full_cohort": 296,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "2": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 10,
+          "excluded_total": 10,
+          "case_anchors_full_cohort": 287,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "3": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 13,
+          "excluded_total": 13,
+          "case_anchors_full_cohort": 284,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "5": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 19,
+          "excluded_total": 19,
+          "case_anchors_full_cohort": 278,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "7": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 24,
+          "excluded_total": 24,
+          "case_anchors_full_cohort": 274,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "10": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 25,
+          "excluded_total": 25,
+          "case_anchors_full_cohort": 274,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "15": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 37,
+          "excluded_total": 37,
+          "case_anchors_full_cohort": 264,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "20": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 46,
+          "excluded_total": 46,
+          "case_anchors_full_cohort": 259,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "30": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 54,
+          "excluded_total": 54,
+          "case_anchors_full_cohort": 254,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "40": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 59,
+          "excluded_total": 59,
+          "case_anchors_full_cohort": 253,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        },
+        "60": {
+          "events_in_cohort": 296,
+          "excluded_no_bar_at_lead": 0,
+          "excluded_not_u1_eligible": 78,
+          "excluded_total": 78,
+          "case_anchors_full_cohort": 221,
+          "case_anchors_constant_cohort": 162,
+          "controls": 101642
+        }
+      }
+    },
+    "eligibility_scope_note": "`eligibility_per_lead` is the GLOBAL series over the whole cohort. `eligibility_per_lead_by_board_split` is the same accounting re-scoped to each (board, split) cohort, and it is what the curve tables print. EXCLUSIONS are keyed on the EVENT's own board and split \u2014 an excluded event either has no anchor bar at that lead, or has one that is not U1-eligible and may therefore carry no split assignment at all, so the event's own split is the only defined key. CASE ANCHOR counts are keyed on the ANCHOR's own split (reading note R3), which is the set the curves actually use. The two keys disagree only for an anchor that crosses a split boundary, so a cohort's rows are not required to sum exactly to its event count.",
     "lead_grid": [
       1,
       2,
@@ -126819,7 +127226,7 @@
         "why": "prereg sec.11.16 \u2014 a confident wrong vintage is worse than no vintage",
         "passed": true,
         "detail": {
-          "build_head": "355f7a5e81c4",
+          "build_head": "cd3489d77a2a",
           "stamps": {
             "raw_store_commit": "2c39d8afca95 ancestor=True",
             "members_commit": "2c39d8afca95 ancestor=True",
@@ -126947,7 +127354,8 @@
     "A NORMAL APPROXIMATION IS DOING WORK. The gates read z on a CGM two-way clustered SE under the normal approximation, stamped as such. The sec.6.3 placebo calibration is the empirical guard on that approximation, and a family that fails it has no DISCRIMINATOR.",
     "RETAINED SAMPLES ARE NOT THE FULL SAMPLE. Contrast-bearing strata are a non-random, density-biased subset; the retained fractions and their composition are printed on every cell, and a cell retaining under half of its F=TRUE positive episodes is NOT_EVALUABLE rather than a verdict.",
     "VZ AND CB ARE COINCIDENT INDICATORS, NOT PRECURSORS. Median arming leads of 1 and 5 sessions (P-B sec.5). Any verdict on them carries that stamp and neither is ever described as an early precursor.",
-    "NOTHING ABOUT THE WITHDRAWN EARLIER-WAVE CONSTRUCTIONS. No number and no artifact from them is cited (grep-verified in verify.stop_ship_reference_scan)."
+    "NOTHING ABOUT THE WITHDRAWN EARLIER-WAVE CONSTRUCTIONS. No number and no artifact from them is cited (grep-verified in verify.stop_ship_reference_scan).",
+    "A SUGGESTIVE INSIDE AN UNCALIBRATED FAMILY IS NOT A WEAKER VERDICT. Where a (board, horizon) family failed its sec.6.3 placebo calibration at the G2 bar, the SUGGESTIVE bar (|z| >= 1.96) is a LOWER bar on the same statistic and is therefore at least as uncalibrated. Nothing in this receipt supports reading a SUGGESTIVE in a failed family as a small, safe version of a DISCRIMINATOR."
   ],
   "ore_ledger": [
     "MARKET-TIMING / REGIME FORMS OF THE SAME FAMILIES. Every stratum here is within-session, so a 'boards cluster when the whole tape is washed out' mechanism is removed BY CONSTRUCTION. That form is untested here and a null here is not evidence against it. It is the single largest reserved question and it needs its own preregistration.",
@@ -126975,6 +127383,27 @@
       "what": "The three cluster bootstraps are computed only for cells whose BOARD passes the frozen G1 board floor; boards that fail it are DESCRIPTIVE_ONLY and carry point estimates, honest-N and retention diagnostics but no SE.",
       "why": "A DESCRIPTIVE_ONLY board can receive no verdict under prereg sec.8, so its z-statistic is unreadable by any gate. The floor is a FROZEN, pre-registered rule and skipping inference behind it is not a post-hoc selection.",
       "risk_controlled_by": "the floor result is printed for every board x horizon x arm including the ones it excludes, with the episode counts that decided it, so the exclusion is auditable rather than silent."
+    },
+    {
+      "id": "A4",
+      "what": "receipt-presentation repairs adjudicated by the round-2 adversarial review; no verdict, gate or estimator changed",
+      "items": [
+        "**Per-cell placebo visibility (sec.5, sec.6).** The verdict tables gained `placebo max|excess| pp` and `placebo max|z|` \u2014 the maximum over the three sec.6.3 shifts for that exact cell \u2014 and sec.6 now prints every rejection individually (shift, footprint, arm, excess, z) instead of only the per-family count. The family rate was the only placebo number a reader could see, so a family-level FAILED could not be read down to the cells that caused it.",
+        "**Mechanism evidence for the calibration failure (sec.6).** The measured signature of the 26 rejections is printed and read, so the failure is bounded rather than left as an unexplained machine fault.",
+        "**Headline fairness (sec.5).** The section now states how many gated cells cleared G1-G5 and that every one was downgraded by the frozen sec.6.3 consequence, BEFORE it states that no DISCRIMINATOR stands, and records that sec.14's disposition precondition did not obtain on `main`.",
+        "**The SUGGESTIVE bar inherits the miscalibration (sec.6, sec.12).** Stated explicitly: inside a family that failed calibration at the G2 bar, the |z| >= 1.96 bar is at least as uncalibrated.",
+        "**Lead-curve exclusions re-scoped (sec.8).** The per-lead exclusion counts are computed inside each (board, split) cohort. The identical global series had been printed under all four tables, whose case and control sets are already per (board, split).",
+        "**Constant-cohort curves printed (sec.8).** They existed only in the JSON; the six eligible footprints now carry a printed constant-cohort table beneath each board x split full-cohort table. The DD-family absence statement is unchanged.",
+        "**Matched-N honesty in the lead curves (sec.8).** The `cases` / `controls` columns were DD20's numbers standing in for every footprint; they are relabelled `eligible cases (cohort)` / `eligible controls (cohort)`, computed for the cohort itself, with the per-footprint matched N named in the JSON and one worked example of the gap printed.",
+        "**R4's scope named (sec.10).** The reading note now names the exactly two cells its convention moves, the direction of the move, and their H=5 fragility.",
+        "**Placebo subsample shrinkage disclosed (sec.6).** The shifted panel loses rows as S grows (a name shorter than S vanishes); the series is printed and its direction stated.",
+        "**Per-F-class censoring asymmetry printed (sec.2).** The counts were in the JSON only; the widest imbalances are now printed with the JSON pointer kept.",
+        "**The sec.2 censoring-magnitude sentence corrected.** 'The values above are of order several per cent' described neither the cells under the 1% trigger nor the spread of the ones over it; the measured distribution replaces it.",
+        "**Survivorship stamp attributed (footer).** The kept-name count for THIS run is printed, and W-P0's percentages are attributed to W-P0's own store snapshot rather than reading as this run's N.",
+        "**Two-speed READING paragraph (sec.8).** A descriptive reading of the printed curves \u2014 it gates nothing, adds no statistic, and does not cross the lead-21 composition break."
+      ],
+      "why": "The round-2 adversarial review found the receipt under-reporting its own evidence rather than mis-computing it: per-cell placebo behaviour was aggregated away behind four family rates, the null was stated in an order that read as absence of structure, three bookkeeping series were printed at the wrong scope or under the wrong label, and several quantities that existed in the JSON were never surfaced. Each item is a presentation or bookkeeping repair to what the receipt SAYS about numbers it already computed.",
+      "risk_controlled_by": "nothing in the statistical machinery is touched: no stratum, gate, floor, SE, placebo draw or verdict rule moved, the frozen sec.6.3 consequence sentence is printed verbatim and applied as frozen, and the corrected counts are the ones this amendment names. The run is byte-deterministic, so the whole pass is auditable as a diff against the pre-A4 build in which every verdict, gate glyph, excess, z, Holm p and honest-N is identical. (The `A4 GUARD` string in the instrument's provenance check is prereg sec.11.16's own A4/A5 label and is unrelated to this amendment.)"
     }
   ],
   "reading_notes": [
@@ -127006,7 +127435,7 @@
   "survivorship_stamp": "LARGE-CAP SLICE, SURVIVORS ONLY. The 1,842 curated names are 35.37% of active SH/SZ, 0 of 329 BSE, median cached cap 187.7 yi vs 37.85 yi omitted, and 36.09% of canonicalised zt-pool names. Delisted names are absent, so every rate here is measured on names that lived. NOTHING in this file supports extrapolation to small caps; that remains a sampling-gap prior, never proven alpha.",
   "vintage": {
     "base_sha": "106f3b22461b6339d84f01a8da3ccde7044b9439",
-    "build_head_sha": "355f7a5e81c4b575aad1feae4c1893caaee8f289",
+    "build_head_sha": "cd3489d77a2a430863f8c2e7b475f73aa07498bf",
     "raw_store_commit": "2c39d8afca95d1415648095a68d601c60bdb739b",
     "members_commit": "2c39d8afca95d1415648095a68d601c60bdb739b",
     "st_snapshot_commit": "212a640d50cc368782637912b0707ba1e83fe62a",

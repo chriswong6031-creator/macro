@@ -22,7 +22,7 @@ changed:
   - {path: research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_2026-08-14.md, what: "new — frozen receipt; verdict NO DISCRIMINATOR at the preregistered bar; 3 amendments + 4 reading notes declared"}
   - {path: research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_2026-08-14.json, what: "new — frozen numbers (3.8MB)"}
   - {path: research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md, what: "P-B2 wave row added then finalized with the shipped verdict"}
-  - {path: agentos/discoveries/DSC-CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND.md, what: "new — the load-bearing discovery from the placebo calibration failure"}
+  - {path: agentos/discoveries/DSC-CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT.md, what: "new — the load-bearing discovery from the placebo calibration failure, mechanism corrected by the round-2 review (persistent-state alignment, not established name fixed effects)"}
 verified:
   - {claim: "two consecutive full runs byte-identical (JSON + MD)", command: "cmp scratchpad/run1.{json,md} vs repo receipts after RUN2", result: "identical; sha256 97a11b77… / ab57aa3d…"}
   - {claim: "17/17 checks + 17/17 mutation probes + amendment control green", command: "TZ=UTC python3 research/cn_prophet_audit/pb2_precursor_discrimination.py (receipt §11)", result: "all detected; RUN1 wall time 667s"}
@@ -30,28 +30,28 @@ verified:
   - {claim: "agentos records valid", command: "python3 scripts/agentos.py validate", result: "0 errors (pre-existing WS-STOCK-IDENTITY warnings only)"}
   - {claim: "broker 金股 latest-month-only; report_rc overwrite defect; LHB append-only", command: "sed/grep collectors/tushare_broker.py, tushare_forecast.py:120-140, china_lhb.py:40,231-246", result: "as stated in the matrix"}
 unverified:
-  - {claim: "the SUGGESTIVE structure survives a name-propensity-controlled design", what_would_verify: "the DSC's falsifier: a design controlling name-level base rates whose placebo-shift rejection lands at nominal"}
+  - {claim: "the DD-family SUGGESTIVE structure is state-timing information rather than persistence-alignment artifact", what_would_verify: "the DSC's falsifier: a persistence-robust certification design (within-name transition contrasts or persistence-preserving permutation calibration) under a fresh prereg"}
 unresolved:
-  - "Round-2 adversarial results review (reviewer agent) was in flight at handoff-write time; its findings and any receipt amendments land in the same PR before merge."
+  - "None blocking: round-2 review findings were applied as receipt amendment A4 inside this PR before merge; the DD-cell indeterminacy is recorded as the DSC's open falsifier, owned by the next wave."
 next_actions:
   - "Prospective/PIT evidence-accrual hardening for orthogonal China Intelligence families (broker 金股 first-seen store; report_rc fix rides its chip — already started by the operator; per-name margin/block-trades/buybacks accrual)."
-  - "Name-propensity-controlled discrimination design that passes its own placebo — the reopen path for P-B2's SUGGESTIVE structure; needs its own preregistration."
+  - "Persistence-robust certification design — within-name state-transition contrasts or persistence-preserving permutation calibration — the reopen path for P-B2's placebo-clean MA200/QB/VZ structure and its indeterminate DD cells; needs its own preregistration."
   - "P-C when its data gates open (chips/auction/minute accrual + quota/authority decisions; full-A spine double-gate stays an operator decision)."
   - "Full-A exact-plane re-measurement per the reopen chain; then P-D pre-registered ablation arena (incremental over Prophet AND the carrier AND name propensity)."
   - "No self-promotion: the P-B2 verdict returns to the commissioning session; no production scoring change from P-B2."
 do_not_redo:
   - "Never cite/restore withdrawn W1-W3 artifacts (DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT)."
   - "Never read P-B winners-only numbers as selection skill; P-B2 is the comparison arm."
-  - "Never quote a cross-sectional lift/z on this panel as state-timing information without a passing placebo/name-propensity calibration (DSC:CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND)."
+  - "Never quote a cross-sectional lift/z on a PERSISTENT-state feature on this panel as state-timing information — the shift-placebo cannot certify it and P-B2's DD cells are placebo-reproducible (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). Non-persistent footprints' machinery measured calibrated (0.69% placebo rejections)."
   - "Never stamp historical broker 金股 months as PIT-known; prospective first-seen only."
   - "Never re-shop P-B2 gates/floors/strata post-hoc — deviations are numbered amendments in the receipt or they do not exist (A1-A3, R1-R4 exist)."
 danger_areas:
-  - "P-B2's permutation is DIAGNOSTIC ONLY (~10× episode design effect); gates read CGM two-way z whose empirical guard — the placebo battery — FAILED on main. Treat every P-B2 z accordingly."
+  - "P-B2's permutation is DIAGNOSTIC ONLY (~10x episode design effect); gates read CGM two-way z. The placebo battery FAILED on main but the round-2 dissection shows the failure is DD-family persistence alignment (25/26 rejections, one-signed), not a symmetric SE failure — treat DD-family z as uncertifiable and non-DD z as measured-calibrated, and note the SUGGESTIVE bar inside a failed family is at least as uncalibrated."
   - "All P-B2 verdicts are within-session cross-sectional; nulls are silent on market-timing/regime forms of the same families (instrument verdicts ≠ market verdicts)."
   - "chinext10 is DESCRIPTIVE_ONLY by construction (zero HOLDOUT rows forever); star failed the FIT floor as the prereg predicted."
   - "Session worktrees are sparse: materialize data/ (worktree_sparse.py add data) before any panel run."
 prs: [5615]
-discoveries: [DSC:CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND]
+discoveries: [DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT]
 ---
 
 Incident log: the opus builder hit an API session limit after RUN1 concluded
