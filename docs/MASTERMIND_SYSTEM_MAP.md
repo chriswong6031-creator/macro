@@ -3588,15 +3588,15 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
 | `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
-| `config/synapse.yml` | `dce0faebfdb5f98a54415f578be60f77a1d27074eaf189a4893996e35c5e9057` |
+| `config/synapse.yml` | `a4de7136003662aa6c89c13a8a93d794c35a7c661543e4c9a4b5882d01754f11` |
 
 ### Legacy registry compatibility notes
 
 The curated semantic registry rejects duplicate keys. These pre-existing operational-registry duplicates are nonblocking here so this architecture build does not mutate an unrelated authority source:
 
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 10429, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 10430, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12802, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 12803, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'external_consumers' at line 10431, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'notes' at line 10432, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12804, column 5; compatibility load kept the last value
+- config/synapse.yml: duplicate YAML key 'notes' at line 12805, column 5; compatibility load kept the last value
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.

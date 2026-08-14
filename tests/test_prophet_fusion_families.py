@@ -39,6 +39,19 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY_PATH = ROOT / "research" / "prophet_fusion" / "families.yml"
 CANDIDATES_PARQUET = ROOT / "data" / "us_prophet_rank" / "candidates" / "2026-08.parquet"
+LEDGER_PARQUET = ROOT / "data" / "us_board_ledger" / "retro_grades.parquet"
+
+#: PR-1b `wired_from` dating.  A member's `columns:` are checked against the schema of
+#: the store(s) it declares, defaulting to the candidates store — the original rule,
+#: unchanged, for every member that declares nothing.  This NARROWS the check per member
+#: rather than widening it globally: without it, a member wired from the graded-board
+#: frame had no green state at all (claim the column -> phantom-column red; omit it ->
+#: the column is unhomed and the harness refuses it as an unregistered feature).
+STORE_PARQUETS = {
+    "candidates": CANDIDATES_PARQUET,
+    "us_board_ledger/retro_grades.parquet": LEDGER_PARQUET,
+}
+DEFAULT_STORE = "candidates"
 
 PIT_STATUSES = {"pit", "forward_only", "snapshot_not_pit"}
 NULL_SEMANTICS = {"unmeasured", "measured_negative", "not_applicable"}
@@ -81,6 +94,32 @@ def store_schema() -> set[str]:
     if not CANDIDATES_PARQUET.exists():
         pytest.skip(f"candidates store not materialized at {CANDIDATES_PARQUET}")
     return set(pq.ParquetFile(CANDIDATES_PARQUET).schema_arrow.names)
+
+
+@pytest.fixture(scope="module")
+def store_schemas() -> dict[str, set[str]]:
+    """Real column names per declared store, for `wired_from` resolution.
+
+    Same skip law as :func:`store_schema`: a store that is not materialized is SKIPPED,
+    never silently treated as containing everything.
+    """
+    pq = pytest.importorskip("pyarrow.parquet")
+    out: dict[str, set[str]] = {}
+    for key, path in STORE_PARQUETS.items():
+        if not path.exists():
+            pytest.skip(f"store {key} not materialized at {path}")
+        out[key] = set(pq.ParquetFile(path).schema_arrow.names)
+    return out
+
+
+def _wired_from(member: dict) -> list[str]:
+    """The store(s) a member's columns are validated against. Default: candidates."""
+    declared = member.get("wired_from")
+    if not declared:
+        return [DEFAULT_STORE]
+    if isinstance(declared, str):
+        return [declared]
+    return [str(item) for item in declared]
 
 
 def _members(registry: dict):
@@ -324,21 +363,71 @@ class TestFieldLaw:
 # ---------------------------------------------------------------------------
 
 class TestColumnsExistInTheStore:
-    def test_every_claimed_column_exists_in_the_candidates_schema(
-        self, registry, store_schema
+    def test_every_claimed_column_exists_in_a_declared_store_schema(
+        self, registry, store_schemas
     ):
         """A phantom column reads as a clean null, which is indistinguishable from a
         measured null. Unwired members carry no `columns:` and are exempt by construction.
+
+        PR-1b: the schema a column is checked against is the one the member declares in
+        `wired_from` (default = the candidates store, i.e. the original rule). A
+        dual-wired member satisfies the check when EACH column is real in AT LEAST ONE
+        of the stores it names — never "in some store somewhere".
         """
         missing: dict[str, list[str]] = {}
         for fam_key, member in _members(registry):
             claimed = _member_columns(member)
             if not claimed:
                 continue
-            absent = sorted(c for c in claimed if c not in store_schema)
+            stores = _wired_from(member)
+            unknown = [s for s in stores if s not in store_schemas]
+            assert not unknown, (
+                f"{fam_key}.{member['name']} declares wired_from {unknown}, which is not "
+                f"in the registry's wired_from_stores block — an unknown store cannot be "
+                f"checked and is never assumed to contain the column"
+            )
+            allowed: set[str] = set()
+            for store in stores:
+                allowed |= store_schemas[store]
+            absent = sorted(c for c in claimed if c not in allowed)
             if absent:
                 missing[f"{fam_key}.{member['name']}"] = absent
-        assert not missing, f"registry claims columns the store does not have: {missing}"
+        assert not missing, f"registry claims columns no declared store has: {missing}"
+
+    def test_wired_from_stores_are_declared_in_the_registry(self, registry):
+        """Every store the test knows must be declared in the file, and vice versa —
+        so the two cannot drift apart silently."""
+        declared = set(registry["wired_from_stores"])
+        assert declared == set(STORE_PARQUETS), (
+            f"registry declares stores {sorted(declared)} but this test resolves "
+            f"{sorted(STORE_PARQUETS)}"
+        )
+        defaults = [k for k, v in registry["wired_from_stores"].items()
+                    if v.get("default")]
+        assert defaults == [DEFAULT_STORE], (
+            f"exactly one store may be the default; found {defaults}"
+        )
+
+    def test_ledger_wired_members_declare_the_ledger_availability_stamp(self, registry):
+        """§9.1: a PIT join uses the store's OWN availability field.
+
+        The graded-board ledger's is `as_of` — the frozen board's publication stamp.
+        A ledger-wired member must name it, either as its `availability_field` (when the
+        ledger is its only wiring) or as `ledger_availability_field` (when it is
+        dual-wired and its primary availability field belongs to the other store).
+        """
+        ledger = "us_board_ledger/retro_grades.parquet"
+        stamp = registry["wired_from_stores"][ledger]["availability_field"]
+        for fam_key, member in _members(registry):
+            if ledger not in _wired_from(member):
+                continue
+            fields = {member.get("availability_field"),
+                      member.get("ledger_availability_field")}
+            assert stamp in fields, (
+                f"{fam_key}.{member['name']} is wired from the ledger but names no "
+                f"{stamp!r} availability stamp — a PIT join with no availability field "
+                f"is a lag approximation in disguise (§9.1)"
+            )
 
     def test_unwired_members_claim_no_real_columns(self, registry):
         for fam_key, member in _members(registry):
@@ -475,7 +564,11 @@ class TestPitIntegrityFlags:
     def test_availability_fields_come_from_the_declared_vocabulary(self, registry, store_schema):
         """§9.1 names the lawful availability anchors. Anything else is a derived lag in
         disguise."""
-        allowed = {"filing_date", "available_date", "ReportDate", "fetch_date", None}
+        # `as_of` added in PR-1b: it is the graded-board ledger's OWN publication stamp
+        # (the frozen board payload's date), which is precisely what §9.1 asks a PIT
+        # join to key on. It is NOT a derived lag — the row was published that night.
+        allowed = {"filing_date", "available_date", "ReportDate", "fetch_date",
+                   "as_of", None}
         for fam_key, member in _members(registry):
             availability = member.get("availability_field")
             assert availability in allowed or availability in store_schema, (

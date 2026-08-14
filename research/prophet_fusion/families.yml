@@ -52,6 +52,49 @@ store_schema_pin:
   stamp: "2026-08-07"
   n_columns: 180
 
+# ---------------------------------------------------------------------------
+# WIRED-FROM DATING (PR-1b).  A member's `columns:` are validated against the schema of
+# the store(s) it is WIRED FROM, not against one hard-coded store.
+#
+# WHY THIS BLOCK EXISTS.  The `sue_surprise` note below records the trap it closes: the
+# planned-vs-real vise had NO GREEN STATE across a wiring transition.  A member wired
+# from a second store had to either claim a column the candidates store lacks (phantom
+# column -> red) or leave the column unhomed (unregistered feature -> the harness refuses
+# it).  The arena races on the GRADED-BOARD frame (§8.5 frame 2) whose columns live in
+# `data/us_board_ledger/retro_grades.parquet`; those columns are real evidence with a
+# real home, and pretending otherwise pushed them outside the anti-double-count budget.
+#
+# THE CHECK STAYS STRICT.  `wired_from` NARROWS, never widens: a member declaring a store
+# must have every claimed column in THAT store (or, for a dual-wired member, in one of
+# the stores it names).  A member declaring nothing keeps the original candidates-store
+# rule byte-for-byte.  A typo is still a red.
+wired_from_stores:
+  candidates:
+    file: data/us_prophet_rank/candidates/2026-08.parquet
+    default: true
+    note: "The wide-context PIT frame (§8.5 frame 1). The default for every member."
+  us_board_ledger/retro_grades.parquet:
+    file: data/us_board_ledger/retro_grades.parquet
+    default: false
+    availability_field: as_of
+    pit_rationale: >-
+      PIT for this frame BY CONSTRUCTION, verified not asserted: every column below is
+      read by `scripts/grade_us_board.py::_row_features` off `r`, the FROZEN PUBLISHED
+      BOARD PAYLOAD for that night (git-history boards unioned with snapshots.jsonl),
+      and stamped under the board's own `as_of`.  Nothing is re-derived from a mutable
+      latest.json, and no derived statutory lag is used as a join key (§9.1).  The
+      availability field is therefore the store's OWN publication stamp, `as_of`.
+    null_semantics_caveat: >-
+      The chip constructors coerce with `bool(...)`, so a missing KEY on a
+      schema-era board also lands as False — `bool(None)` is False — which means
+      the False-vs-NaN distinction in the parquet is PER-ERA, never per-name: whole
+      pre-schema dates (boards before 2026-06-30) read back NULL, while on any
+      schema-era date every name reads a bool and an individually-absent producer
+      is indistinguishable from measured_negative (verified 2026-08-14: coverage is
+      exactly 0.000 on 06-15..06-24 and exactly 1.000 on all 17 later dates — no
+      intra-date nulls exist anywhere).  The arena reports coverage per date so the
+      era boundary cannot masquerade as a measured null.
+
 # On the row but not evidence: board bookkeeping.  `sector` is identity — the sector
 # EVIDENCE column is `sector__sector_node`, homed in F3.
 frame_identity: [name, sector, lane, eligible, buyable]
@@ -122,6 +165,17 @@ excluded_columns:
       authority-fenced by its own `TestNoAuthorityLeak`.  It records how the board's
       admission machinery lost names — it is a description of the champion's selection,
       not independent evidence about the name.
+  - columns: [altdata_conv_gte2]
+    reason: >-
+      PR-1b.  An UNHOMED CROSS-DESK COUNT: the ledger column is
+      `bool(altdata.convergence_score >= 2)` (scripts/grade_us_board.py:766), i.e. "at
+      least two alt-data desks agreed".  It has no single family because its inputs
+      span several — which is exactly the shape §5.2 forbids as a vote.  A count of
+      agreeing evidence spends the whole anti-double-count budget in one ballot and
+      then hides which lobes were counted, so the correlated-evidence question (§16.3)
+      becomes unaskable.  Admissible only decomposed into the per-desk directions that
+      produced it, each routed to its own family.  NOT a statement that alt-data
+      convergence is uninformative — a statement that this SHAPE cannot vote.
   - columns: [forensics__workbench_url]
     reason: "Display URL. Not a measurement."
   - columns: [context_dims]
@@ -371,11 +425,18 @@ families:
 
       - name: relative_strength
         source: RS measures / distance from high
-        columns: []
-        planned_columns: [rs_63d, off_high]
-        wired: false
+        # PR-1b: `off_high` WIRED from the graded-board frame and raced by C1's F2 vote.
+        # Member semantics fix the SIGN with no help from any outcome: off_high is a
+        # non-positive percentage distance below the high, so nearer zero is nearer the
+        # high and is the stronger relative-strength read.  §6.6's rho -0.19/-0.23 is
+        # logged-not-claimed and is NOT the sign source.
+        columns: [off_high]
+        planned_columns: [rs_63d]
+        wired: true
+        wired_from: us_board_ledger/retro_grades.parquet
         pit_status: pit
-        availability_field: stamp_date
+        availability_field: as_of
+        producer_availability_field: stamp_date
         null_semantics: unmeasured
 
       - name: composite_momentum_leg
@@ -563,16 +624,21 @@ families:
 
       - name: sue_surprise
         source: sue_freshness_days() / data/edgar/sue_phase0.json
-        columns: []
         # sue_z was moved OUT of planned_columns in the same PR that wired it as a
         # store column (PR-1a): the planned-vs-real vise has no green state across a
-        # wiring transition until wired_from-dating lands (PR-1b).  Until the member
-        # is re-homed with wired_from, sue_z rides as an unhomed store column —
-        # harmless (the harness refuses only REQUESTED unregistered columns).
+        # wiring transition until wired_from-dating lands (PR-1b).  PR-1b landed it —
+        # see `wired_from_stores` at the top of this file — so the ledger wiring below
+        # is now homed and `sue_z` re-homes with the candidates store in PR-2.
+        # `sue_fresh` is the board's own chip: sue_z present AND sue_fresh_days <= 60
+        # (scripts/grade_us_board.py:767).  PEAD's a-priori direction is POSITIVE, which
+        # is what C1's F4 vote uses; the BINDING WARNING below rides with it.
+        columns: [sue_fresh]
         planned_columns: [catalyst_class]
-        wired: false
+        wired: true
+        wired_from: us_board_ledger/retro_grades.parquet
         pit_status: pit
-        availability_field: filing_date
+        availability_field: as_of
+        producer_availability_field: filing_date
         null_semantics: measured_negative
         note: >-
           BINDING WARNING (§4.1): `sue_phase0.json` records a shallow-panel "WIRE — survives
@@ -645,7 +711,15 @@ families:
     members:
       - name: options_state
         source: engine/options_flow.py + engine/gex_confirm.py -> Context Snapshot `options` dim
-        columns: [options__skew, options__gex]
+        # PR-1b: `gex_confirm_verdict` WIRED from the graded-board frame — the same
+        # producer (engine/gex_confirm.py) reaching the board as its published verdict.
+        # SIGN comes from the producer's own vocabulary, `_LABEL` + confirm_at/caution_at
+        # (gex_confirm.py:45-52, applied :177): confirm = +1, neutral = 0, caution = -1.
+        # There is NO "infirm" value.  The module's charter — "a confirmer can only LOWER
+        # confidence, never manufacture a buy" — is why this is a confirmer, not a ranker.
+        columns: [options__skew, options__gex, gex_confirm_verdict]
+        wired_from: [candidates, us_board_ledger/retro_grades.parquet]
+        ledger_availability_field: as_of
         pit_status: pit
         availability_field: options__as_of
         basis_field: options__basis
@@ -682,7 +756,16 @@ families:
 
       - name: insider_panel
         source: engine/insider_intel.py -> data/sec_insider/panel -> Context Snapshot `insider` dim
-        columns: []
+        # PR-1b: `insider_cluster` WIRED from the graded-board frame — the board's own
+        # chip, fired on >= 2 insider BUYERS (scripts/grade_us_board.py:764).  Cluster
+        # BUYING is the a-priori positive direction.  Read this together with
+        # `serving_dead: true` below: the HISTORICAL frame carries the chip alive (the
+        # panel was collecting through 2026q1), the SERVING frame does not, so §8.5's
+        # train/serve-skew warning binds any fitted rung.  C1 is unfitted and races it
+        # with the skew printed beside every number, never silently pre-excluded.
+        columns: [insider_cluster]
+        wired_from: [candidates, us_board_ledger/retro_grades.parquet]
+        ledger_availability_field: as_of
         missingness_field: insider__absent
         reason_field: insider__reason
         pit_status: pit
@@ -747,6 +830,33 @@ families:
           RICH raw (period_end 2022-09-30 ->) with the correct `filing_date`/`available_date`
           PIT pair, ABSENT from the CV — zero columns anywhere.  TWO parallel feeds exist;
           they are ONE family member, not two votes.
+
+      - name: smart_money_board_chip
+        source: >-
+          data/smart_money -> the board's `smartmoney_chip` -> ledger `smartmoney_add`
+          (scripts/grade_us_board.py:769)
+        columns: [smartmoney_add]
+        wired: true
+        wired_from: us_board_ledger/retro_grades.parquet
+        pit_status: pit
+        availability_field: as_of
+        producer_availability_field: available_date
+        max_staleness_sessions: 63   # quarterly 13F cycle, same producer clock
+        null_semantics: measured_negative
+        note: >-
+          PR-1b.  A SEPARATE MEMBER, not a `columns:` addition to `smart_money_13f`, and the
+          distinction is load-bearing in both directions.  (1) `smart_money_13f` is the RAW
+          holder/net-QoQ pair — rich, PIT, and still ZERO-CONSUMER; its `wired: false` is a
+          measured fact about the estate that a test pins BY NAME, and wiring a different
+          quantity into it would erase that fact.  (2) What the ledger carries is the
+          board's boolean CHIP, a derived ADD-direction read of the same producer, not the
+          pair.  Two wirings of one producer, one family, one vote: C1 votes per FAMILY, so
+          this cannot become a second F5 ballot.  SIGN: accumulation by the tracked cohort
+          is the a-priori positive direction.
+        max_staleness_note: >-
+          The 13F disclosure cycle, not the chip's refresh rate — the chip is restamped
+          nightly but the EVIDENCE under it is quarterly, and §7 O6 wants the evidence's
+          clock.
 
   # =========================================================================
   F6_MACRO_REGIME:
@@ -975,12 +1085,35 @@ families:
 
       - name: news_burst
         source: news-burst detector
-        columns: []
+        # PR-1b: `news_burst` WIRED from the graded-board frame — the board's own chip,
+        # fired on >= 3 recent items (scripts/grade_us_board.py:768).
+        columns: [news_burst]
         planned_columns: [news_burst_z]
-        wired: false
-        pit_status: forward_only
-        availability_field: null
+        wired: true
+        wired_from: us_board_ledger/retro_grades.parquet
+        pit_status: pit
+        availability_field: as_of
         null_semantics: measured_negative
+        pit_status_change_note: >-
+          PIT STATUS MOVED forward_only -> pit IN PR-1b, and the move is scoped to the
+          LEDGER WIRING ONLY.  `forward_only` was correct while this member's only route
+          to a frame was the host-only attention store, which a clone or a CI run cannot
+          see backwards — with no clone-visible history there is nothing to reconstruct.
+          The graded-board ledger is a DIFFERENT route with a different verdict: the chip
+          is a frozen published payload stamped under the board's own `as_of`, committed
+          to git, and reconstructible by anyone with the repo.  BINDING ON THE NEXT
+          EDITOR: `news_burst_z` is still planned and still routes through the host-only
+          store.  When it wires, it must carry its OWN pit verdict — it does not inherit
+          this one, and a member cannot launder a store's darkness by sharing a name with
+          a store that is lit.
+        sign_note: >-
+          THE WEAKEST A-PRIORI SIGN IN THE C1 SET, named as such rather than buried.  The
+          filed direction is POSITIVE (attention arriving with a catalyst on an
+          already-admitted name).  F8's charter also carries a CROWDING reading under
+          which a burst is NEGATIVE.  §5.1 forbids a second membership for the second
+          hypothesis, so the crowding read is a §10.7 registered interaction for a later
+          rung — never a rival sign here, and never a sign chosen by looking at which one
+          scored better.
 
       - name: blowoff_risk
         source: engine/roc_blowoff.py
@@ -1069,6 +1202,24 @@ forbidden_composites:
          constraint: "dedup against residual_alpha first — rho = 0.984"}
       - {input: revisions_leg, family: F4_CATALYST_EVENT}
       - {input: vol_leg, family: F8_ATTENTION_CROWDING}
+
+  - composite: confluence_k
+    owner: scripts/grade_us_board.py (`confluence_plus.k`)
+    reason: >-
+      PR-1b.  A COUNT OF AGREEING EVIDENCE, which is the anti-double-count budget spent
+      as a single ballot.  `k` says how many confirmers lit up; it does not say WHICH,
+      so a model reading it cannot be asked the §16.3 correlated-evidence question at
+      all, and two confirmers that share an upstream count as two.  §5.1's whole
+      construct is that agreement among lineage-sharing lobes is ONE fact, not N — a
+      raw k is that error in numeric form.  Admissible only decomposed into the
+      per-confirmer flags, each already homed below.
+    decompose_to:
+      - {input: signal_gate_cascade, family: F1_TECHNICAL_CONFLUENCE}
+      - {input: sue_surprise, family: F4_CATALYST_EVENT}
+      - {input: smart_money_board_chip, family: F5_FLOW_POSITIONING}
+      - {input: insider_panel, family: F5_FLOW_POSITIONING}
+      - {input: options_state, family: F5_FLOW_POSITIONING}
+      - {input: news_burst, family: F8_ATTENTION_CROWDING}
 
   - composite: potential_score
     owner: engine/name_score.py

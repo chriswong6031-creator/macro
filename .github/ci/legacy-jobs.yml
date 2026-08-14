@@ -7372,7 +7372,9 @@ jobs:
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
+      - "research/prophet_fusion/PR1B_BASELINE_RACE.md"
       - "research/prophet_fusion/families.yml"
+      - "research/prophet_fusion/pr1b_baseline_race/report.json"
       - "scripts/__init__.py"
       - "scripts/_active_render.py"
       - "scripts/backtest_ladder_history.py"
@@ -7431,6 +7433,7 @@ jobs:
       - "scripts/notify.py"
       - "scripts/prophet_fusion_arena.py"
       - "scripts/prophet_fusion_labels.py"
+      - "scripts/prophet_fusion_race.py"
       - "scripts/publish_earnings_r2.py"
       - "scripts/seed_china_ths_baskets.py"
       - "scripts/thematic_rotation_phase0.py"
@@ -7475,6 +7478,7 @@ jobs:
       - "tests/test_prophet_fusion_arena.py"
       - "tests/test_prophet_fusion_families.py"
       - "tests/test_prophet_fusion_labels.py"
+      - "tests/test_prophet_fusion_race.py"
       - "tests/test_prophet_verb_ink_contrast.py"
       - "tests/test_stage_analysis.py"
       - "tests/test_stock_board_v2.py"
@@ -7516,8 +7520,12 @@ jobs:
       # harness gets its own step below — research-tier scaffolding, zero authority,
       # every suite named because this repo has no catch-all pytest collector and
       # audit_unrun_tests reds any suite no run: step names.
-      - name: prophet conditional-fusion arena harness + evidence-family registry (PR-1a)
-        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py -q
+      # PR-1b (WS:PROPHET-CONDITIONAL-FUSION): the baseline-race suite joins the PR-1a
+      # step rather than opening a new one — same store cluster, same registry, and the
+      # race suite's own fixtures import the PR-1a harness, so a registry edit that reds
+      # one should red them together in ONE check rather than in two that can disagree.
+      - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race (PR-1a/PR-1b)
+        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py -q
       # G-D plan-book board read (#5541). Landed as a collecting suite named by
       # no run: step, so audit_unrun_tests.py painted pack-1 red on every PR.
       # It belongs in THIS job with the other prophet/board surfaces: the join
