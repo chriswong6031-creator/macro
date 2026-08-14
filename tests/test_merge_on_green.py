@@ -1069,6 +1069,154 @@ def test_a_real_pack_red_is_not_eligible_despite_skip_ci_ticks(monkeypatch):
     assert not [call for call in calls if call[1].endswith("/merge")]
 
 
+def _skip_ci_freshness():
+    """Main advanced past the proof by one earnings-wire [skip ci] tick only."""
+    return _freshness(
+        commits=(
+            (
+                "2026-08-14T01:00:00Z",
+                ["data/earnings/verified.json"],
+                "earnings-wire: publish current verified records [skip ci]",
+            ),
+        )
+    )
+
+
+def test_skip_ci_ticks_on_main_do_not_invalidate_a_previously_green_proof(
+    monkeypatch,
+):
+    """The common case: skip-ci is already IN the frozen snapshot, not after it.
+
+    A PR whose last concluded CI was green must still merge when the only new
+    main commits since that proof are [skip ci] data-bot ticks. Refreshing or
+    stamping merge-blocked here is the drain jam.
+    """
+    freshness = _skip_ci_freshness()
+    skip_sha = freshness.snapshot_tip
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        main_commits=(
+            (
+                "2026-08-14T01:00:00Z",
+                ["data/earnings/verified.json"],
+                "earnings-wire: publish current verified records [skip ci]",
+            ),
+        ),
+        compare_base_sha=skip_sha,
+        main_ref_sha=skip_sha,
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", freshness)
+        == "merged"
+    )
+    assert [call for call in calls if call[1].endswith("/merge")]
+    assert not [
+        call
+        for call in calls
+        if call[0] == "POST" and str(call[1]).endswith("/labels")
+    ], "skip-ci-only behind-ness must not stamp merge-blocked"
+
+
+def test_a_409_on_a_skip_ci_only_behind_is_retried_not_merge_blocked(
+    monkeypatch, capsys
+):
+    """GitHub often answers 409 'not mergeable' when main moved by a data tick.
+
+    That used to fall through to update-branch; a 422 there was labeled a REAL
+    content conflict. The next skip-ci tick repeated the cycle. Retry the squash
+    once; do not stamp merge-blocked.
+    """
+    freshness = _skip_ci_freshness()
+    skip_sha = freshness.snapshot_tip
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        main_commits=(
+            (
+                "2026-08-14T01:00:00Z",
+                ["data/earnings/verified.json"],
+                "earnings-wire: publish current verified records [skip ci]",
+            ),
+        ),
+        compare_base_sha=skip_sha,
+        main_ref_sha=skip_sha,
+        merge_status=(409, 200),
+        merge_message="Pull Request is not mergeable",
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(), "read", "write", freshness)
+        == "merged"
+    )
+    merges = [call for call in calls if call[1].endswith("/merge")]
+    assert len(merges) == 2
+    assert not [call for call in calls if call[1].endswith("/update-branch")]
+    assert not [
+        call
+        for call in calls
+        if call[0] == "POST" and str(call[1]).endswith("/labels")
+    ]
+    assert "skip-ci/data" in capsys.readouterr().out
+
+
+def test_stale_merge_blocked_is_cleared_and_merged_when_now_clean(
+    monkeypatch,
+):
+    """Packing-leak-era merge-blocked must not hostage a now-clean head."""
+    freshness = _skip_ci_freshness()
+    skip_sha = freshness.snapshot_tip
+    calls = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success")],
+            }
+        },
+        main_commits=(
+            (
+                "2026-08-14T01:00:00Z",
+                ["data/earnings/verified.json"],
+                "earnings-wire: publish current verified records [skip ci]",
+            ),
+        ),
+        compare_base_sha=skip_sha,
+        main_ref_sha=skip_sha,
+        merge_status=(409, 200),
+        merge_message="Pull Request is not mergeable",
+        pull_payload={
+            "labels": [
+                {"name": MOG.MERGE_ON_GREEN_LABEL},
+                {"name": MOG.MERGE_BLOCKED_LABEL},
+            ]
+        },
+    )
+    already = _pull(labels=("merge-on-green", "merge-blocked"))
+    assert (
+        MOG.sweep_pull("acme/widgets", already, "read", "write", freshness)
+        == "merged"
+    )
+    assert any(
+        call[0] == "DELETE" and "labels/merge-blocked" in call[1] for call in calls
+    ), "stale merge-blocked must be removed in the same wake as the merge"
+    assert [call for call in calls if call[1].endswith("/merge")]
+    assert not [
+        call
+        for call in calls
+        if call[0] == "POST" and str(call[1]).endswith("/labels")
+    ], "must not re-apply merge-blocked for skip-ci-only behind-ness"
+
+
 def test_a_405_base_modified_is_retried_once(monkeypatch, capsys):
     calls = _fake_api(
         monkeypatch,
@@ -2913,6 +3061,28 @@ def test_too_many_product_commits_to_classify_is_re_proven():
     assert stale and "product commits" in reason, reason
 
 
+def test_a_generic_409_is_retryable_only_when_main_moved_by_skip_ci():
+    freshness = _skip_ci_freshness()
+    skip_sha = freshness.snapshot_tip
+    assert MOG.is_retryable_base_tick(
+        "Pull Request is not mergeable", freshness, skip_sha
+    )
+    assert MOG.is_retryable_base_tick(
+        "Base branch was modified. Review and try the merge again.",
+        freshness,
+        "f" * 40,
+    )
+    assert not MOG.is_retryable_base_tick(
+        "merge conflict between base and head", freshness, skip_sha
+    )
+    product = _freshness(
+        commits=(("2026-08-14T01:00:00Z", ["engine/signal_quality.py"], "fix: product"),)
+    )
+    assert not MOG.is_retryable_base_tick(
+        "Pull Request is not mergeable", product, product.snapshot_tip
+    )
+
+
 def test_skip_ci_ticks_do_not_consume_the_commit_classification_cap():
     commits = [
         (
@@ -4448,6 +4618,80 @@ def test_a_successful_merge_continues_the_drain(
     assert "snapshot-deferred" not in out
 
 
+def test_a_skip_ci_behind_verdict_does_not_stop_the_drain(monkeypatch, capsys):
+    """A skip-ci/data tick refusal must not consume the immutable snapshot.
+
+    `main-moved` / `merge-unknown` end the wake so remaining PRs wait. A
+    skip-ci-only 409 that we classify as `base-modified` is the opposite: the
+    snapshot is still valid and every other eligible PR must still be judged.
+    """
+    seen = _main_harness(
+        monkeypatch, [_pull(1), _pull(2), _pull(3)], verdict="base-modified"
+    )
+    assert MOG.main() == 0
+    assert sorted(seen) == [1, 2, 3]
+    assert "snapshot-deferred" not in capsys.readouterr().out
+
+
+def test_two_skip_ci_eligible_pulls_both_merge_in_one_wake(monkeypatch):
+    """Shared freshness after the first squash must not stale the second PR."""
+    freshness = _skip_ci_freshness()
+    skip_sha = freshness.snapshot_tip
+    freshness._pr_files[1] = ["engine/alpha.py"]
+    freshness._pr_files[2] = ["scripts/beta.py"]
+    first = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success", pr_numbers=(1,))],
+            }
+        },
+        main_commits=(
+            (
+                "2026-08-14T01:00:00Z",
+                ["data/earnings/verified.json"],
+                "earnings-wire: publish current verified records [skip ci]",
+            ),
+        ),
+        compare_base_sha=skip_sha,
+        main_ref_sha=skip_sha,
+        merge_status=(409, 200),
+        merge_message="Pull Request is not mergeable",
+        pr_files=("engine/alpha.py",),
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(1), "read", "write", freshness)
+        == "merged"
+    )
+    assert [call for call in first if call[1].endswith("/merge")]
+    merged_sha = "c" * 40
+    second = _fake_api(
+        monkeypatch,
+        check_pages={
+            1: {
+                "total_count": 1,
+                "check_runs": [_run("ci-pack-1", conclusion="success", pr_numbers=(2,))],
+            }
+        },
+        main_commits=(
+            (
+                "2026-08-14T01:00:00Z",
+                ["data/earnings/verified.json"],
+                "earnings-wire: publish current verified records [skip ci]",
+            ),
+        ),
+        compare_base_sha=merged_sha,
+        main_ref_sha=merged_sha,
+        pr_files=("scripts/beta.py",),
+    )
+    assert (
+        MOG.sweep_pull("acme/widgets", _pull(2), "read", "write", freshness)
+        == "merged"
+    )
+    assert [call for call in second if call[1].endswith("/merge")]
+
+
 def test_a_starved_sweep_defers_with_a_notice_instead_of_going_red(monkeypatch, capsys):
     """(1) The preflight. `GET /rate_limit` does not count against the core budget,
     so asking "can I afford this" is free — and a sweep that cannot afford a useful
@@ -4927,6 +5171,47 @@ def test_a_live_inherited_red_is_merged_not_blocked(monkeypatch, capsys):
     )
     out = capsys.readouterr().out
     assert "live-inherited red" in out
+
+
+def test_merge_blocked_inherited_red_is_cleared_and_merged_in_the_same_wake(
+    monkeypatch,
+):
+    """A packing-leak merge-blocked stamp must not survive a live-inherited red."""
+    pages, annotations = _govrev_red_pages()
+    calls = _fake_api(
+        monkeypatch,
+        check_pages=pages,
+        annotations=annotations,
+        merge_status=200,
+        pull_payload={
+            "labels": [
+                {"name": MOG.MERGE_ON_GREEN_LABEL},
+                {"name": MOG.MERGE_BLOCKED_LABEL},
+            ]
+        },
+    )
+    already = _pull(labels=("merge-on-green", "merge-blocked"))
+    assert (
+        MOG.sweep_pull(
+            "acme/widgets",
+            already,
+            "read",
+            "write",
+            _freshness(),
+            _live_weather_proof(),
+            _authorized_budget(),
+        )
+        == "merged"
+    )
+    assert any(call[1].endswith("/merge") for call in calls)
+    assert any(
+        call[0] == "DELETE" and "labels/merge-blocked" in call[1] for call in calls
+    )
+    assert not [
+        call
+        for call in calls
+        if call[0] == "POST" and str(call[1]).endswith("/labels")
+    ], "must not re-apply merge-blocked for a live-inherited red"
 
 
 def test_a_live_inherited_red_survives_pack_rebalance(monkeypatch, capsys):
