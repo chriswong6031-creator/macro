@@ -6,12 +6,12 @@
    auto-adapt: dark tint + light text in dark mode, light tint + dark text in
    light mode. Nothing hard-codes a dark background. */
 
-/* Inter — the typeface used by the Bitcoin Vector dashboard and the landing
-   hub. SELF-HOSTED (was a Google Fonts web import): the Google Fonts CDN is
-   blocked in mainland China, so the WOFF2 files are vendored under site/fonts/
-   (source: templates/fonts/, copied by build_site) and served same-origin.
-   theme.css is linked by every page, so these @font-face rules give the whole
-   site Inter with no third-party request. */
+/* Inter — the cross-platform carrier of the house voice (San Francisco leads on
+   Apple; see --font-ui). SELF-HOSTED (was a Google Fonts web import): the Google
+   Fonts CDN is blocked in mainland China, so the WOFF2 files are vendored under
+   site/fonts/ (source: templates/fonts/, copied by build_site) and served
+   same-origin. theme.css is linked by every page, so these @font-face rules give
+   every non-Apple client the full 400–900 range with no third-party request. */
 @font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
@@ -20,14 +20,14 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 :root {
   /* ── font stacks ─────────────────────────────────────────────────────────────
-     --font-ui   : primary UI stack. Inter (self-hosted woff2) leads; the chain
-                   covers Windows (Segoe UI), Android (Roboto), and native CJK
-                   glyph coverage (PingFang SC / Hiragino / Microsoft YaHei) so
-                   mixed EN+ZH text renders cleanly without the zh-body override.
-     --font-mono : monospace for code, tickers, numeric labels. ui-monospace
-                   resolves to SF Mono (macOS/iOS), Consolas (Windows), or the
-                   platform mono — no external download needed. */
-  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+     --font-ui   : primary UI stack. San Francisco leads via the system keywords
+                   — SF cannot be self-hosted (Apple's licence bars webfont
+                   redistribution), and naming no optical variant lets SF pick
+                   Text/Display itself. Inter follows as the carrier elsewhere,
+                   AHEAD of Segoe UI / Roboto so non-Apple gets the house face.
+     --font-mono : figures, tickers, code, axis ticks. ui-monospace resolves to
+                   SF Mono (macOS/iOS), Consolas (Windows) — no download. */
+  --font-ui: -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto,
     "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
@@ -369,12 +369,12 @@ html[data-lang="zh"] :is(.igx, .igs) { --ok: var(--up); --ink-ok: var(--ink-up);
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
 /* CJK type: put the native CJK face first so Hanzi always uses a proper glyph
-   rather than Inter's Latin fallback, and drop wide tracking on headings (looks
-   wrong on Hanzi). Inter stays in the stack so any Latin mixed-in text still
-   picks up the branded weight. */
+   rather than a Latin fallback, and drop wide tracking on headings (looks wrong
+   on Hanzi). PingFang covers Latin too, so it wins there as well; SF then Inter
+   close the stack only for platforms missing every CJK face above. */
 html[data-lang="zh"] body {
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", Inter, sans-serif;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+    "Microsoft JhengHei", "Heiti SC", -apple-system, BlinkMacSystemFont, Inter, sans-serif;
 }
 html[data-lang="zh"] h2 { letter-spacing: 0; }
 
