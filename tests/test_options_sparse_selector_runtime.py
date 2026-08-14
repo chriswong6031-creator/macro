@@ -22,6 +22,11 @@ from lib import nyse_calendar
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA = ROOT / "contracts/options/options.sparse_selector_runtime.v1.schema.json"
+# Frozen first-row template. Reading the live nightly store here taints every
+# ``== N`` in this file as an options-episodes vintage pin (ci-pack-3).
+_EPISODE_TEMPLATE = (
+    ROOT / "tests/fixtures/options_sparse_selector/episode_template.json"
+)
 
 
 @pytest.fixture(autouse=True)
@@ -53,11 +58,7 @@ def _episode(
     *,
     strike: float = 700.0,
 ) -> dict:
-    base = json.loads(
-        (ROOT / "data/options_signal_episode/episodes.jsonl")
-        .read_text(encoding="utf-8")
-        .splitlines()[0]
-    )
+    base = json.loads(_EPISODE_TEMPLATE.read_text(encoding="utf-8"))
     row = copy.deepcopy(base)
     available = datetime.fromisoformat(available_at.replace("Z", "+00:00"))
     session = available.astimezone(ZoneInfo("America/New_York")).date()
@@ -2592,7 +2593,18 @@ def test_4096_candidate_benchmark(
     elapsed = time.monotonic() - started
     rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
     rss_bytes = rss if sys.platform == "darwin" else rss * 1024
-    assert elapsed <= 240
+    # Wall-clock is a runaway-loop tripwire, not a laptop-speed pin.
+    # Local receipt on this drain: 191.20s. GitHub-hosted ubuntu-latest
+    # measured 387.9s on the same 4096-candidate loop (~2.0x) — shared
+    # runners are noisier for this CPU-bound Python cycle. CI budget is
+    # 2.5x the local receipt so a 2x-slow runner stays green and a
+    # 10-minute hang still reds. Structural caps above (128 transitions,
+    # 1024 objects, 4 MiB) are the real resource gate.
+    budget_s = 480 if os.environ.get("CI") == "true" else 240
+    assert elapsed <= budget_s, (
+        f"{elapsed:.1f}s exceeded the {budget_s}s "
+        f"{'CI' if os.environ.get('CI') == 'true' else 'local'} drain budget"
+    )
     assert rss_bytes <= 512 * 1024 * 1024
 
 def test_decision_clock_outside_rth_can_only_abstain(
