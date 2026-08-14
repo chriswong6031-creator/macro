@@ -8,7 +8,10 @@ Coverage:
   (5)  archetype dimension — absent when parquet missing
   (6)  regime dimension — recomputed_history from regime_history.parquet
   (7)  regime dimension — absent when parquet missing
-  (8)  short_int dimension — snapshot_not_pit basis when date differs from settlement
+  (8)  short_int dimension — snapshot_not_pit for current dates; pit_settlement off
+       the history/panel union on knowable_date for historical ones; a historical
+       date never falls back to the snapshot (the leak); publication-lag honesty,
+       panel-preference, JSON-safety, and lag-constant drift
   (9)  short_int dimension — absent when parquet missing
   (10) insider dimension — trailing-90d aggregate
   (11) options dimension — absent-tolerant when no options data
@@ -107,6 +110,56 @@ def _write_si(root: Path, rows: list[dict], index_col: str = "ticker") -> Path:
     if index_col in df.columns:
         df = df.set_index(index_col)
     df.to_parquet(path)
+    return path
+
+
+def _write_si_history(root: Path, rows: list[dict]) -> Path:
+    """data/finra/short_interest_history.parquet with the collector's real dtypes.
+
+    settlement_date is a STRING and capture_date a tz-naive Timestamp, exactly as
+    fetch_short_interest() accrues them; the store carries NO publication field,
+    which is why the resolver has to derive knowable_date from the lag convention.
+    """
+    path = root / "data" / "finra" / "short_interest_history.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame([{
+        "ticker":            r["ticker"],
+        "short_shares":      int(r.get("short_shares", 1_000_000)),
+        "prev_short_shares": int(r.get("prev_short_shares", 900_000)),
+        "avg_daily_vol":     int(r.get("avg_daily_vol", 5_000_000)),
+        "days_to_cover":     float(r.get("days_to_cover", 2.0)),
+        "si_change_pct":     float(r.get("si_change_pct", 11.1)),
+        "settlement_date":   str(r["settlement_date"]),
+        "capture_date":      pd.Timestamp(r.get("capture_date", r["settlement_date"])),
+    } for r in rows])
+    df.to_parquet(path, index=False)
+    return path
+
+
+def _write_si_panel(root: Path, rows: list[dict]) -> Path:
+    """data/finra/short_interest_panel.parquet with the backfill's real dtypes.
+
+    settlement_date/knowable_date are datetimes and dtc_capped/is_listed are
+    numpy bools — the payload cleaner has to survive all three.
+    """
+    path = root / "data" / "finra" / "short_interest_panel.parquet"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df = pd.DataFrame([{
+        "ticker":            r["ticker"],
+        "settlement_date":   pd.Timestamp(r["settlement_date"]),
+        "knowable_date":     pd.Timestamp(r["knowable_date"]),
+        "short_shares":      int(r.get("short_shares", 2_000_000)),
+        "prev_short_shares": int(r.get("prev_short_shares", 1_900_000)),
+        "avg_daily_vol":     int(r.get("avg_daily_vol", 6_000_000)),
+        "days_to_cover":     float(r.get("days_to_cover", 3.0)),
+        "si_change_pct":     float(r.get("si_change_pct", 5.5)),
+        "dtc_capped":        bool(r.get("dtc_capped", False)),
+        "is_listed":         bool(r.get("is_listed", True)),
+        "revision_flag":     r.get("revision_flag", ""),
+        "market_class":      r.get("market_class", "NNM"),
+        "issue_name":        r.get("issue_name", "TEST ISSUE"),
+    } for r in rows])
+    df.to_parquet(path, index=False)
     return path
 
 
@@ -351,24 +404,153 @@ def test_regime_absent_missing(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# (8) Short interest — snapshot_not_pit basis
+# (8) Short interest — snapshot for current dates, PIT for historical ones
 # ---------------------------------------------------------------------------
 
-def test_short_int_snapshot_not_pit(tmp_path):
-    """Short interest with a different settlement date → snapshot_not_pit basis."""
-    root = _make_root(tmp_path)
-    _write_si(root, [
-        {"ticker": "AAPL", "short_shares": 1000000, "prev_short_shares": 900000,
-         "avg_daily_vol": 500000, "days_to_cover": 2.0,
-         "si_change_pct": 11.1, "settlement_date": "2026-05-29"},
-    ])
+_SI_SNAPSHOT_ROW = {
+    "ticker": "AAPL", "short_shares": 1000000, "prev_short_shares": 900000,
+    "avg_daily_vol": 500000, "days_to_cover": 2.0,
+    "si_change_pct": 11.1, "settlement_date": "2026-05-29",
+}
 
-    # Query date different from settlement → snapshot_not_pit
-    result = context_snapshot("AAPL", date="2026-06-15", root=root)
+
+def test_short_int_today_snapshot(tmp_path):
+    """A current-date query keeps the snapshot path and its snapshot_not_pit basis."""
+    root = _make_root(tmp_path)
+    _write_si(root, [dict(_SI_SNAPSHOT_ROW)])
+
+    today = pd.Timestamp.today().normalize()
+    result = context_snapshot("AAPL", date=str(today.date()), root=root)
     dim = result["dimensions"]["short_int"]
     assert dim.get("absent") is not True
     assert dim["basis"] == "snapshot_not_pit"
     assert dim["value"]["short_shares"] == 1000000
+
+
+def test_short_int_historical_snapshot_only_absent(tmp_path):
+    """A historical query must NOT fall through to the current snapshot.
+
+    The snapshot holds only the latest settlement, so serving it for a past date
+    is look-ahead by construction — this fallthrough was the leak.  Absent is the
+    correct answer even though the ticker IS in the snapshot.
+    """
+    root = _make_root(tmp_path)
+    _write_si(root, [dict(_SI_SNAPSHOT_ROW)])
+
+    result = context_snapshot("AAPL", date="2026-06-15", root=root)
+    dim = result["dimensions"]["short_int"]
+    assert dim.get("absent") is True
+
+
+def test_short_int_pit_mid_period(tmp_path):
+    """Between two settlements the resolver takes the newest KNOWABLE one."""
+    root = _make_root(tmp_path)
+    _write_si_history(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-06-30", "days_to_cover": 2.5,
+         "short_shares": 1_100_000},
+        {"ticker": "AAPL", "settlement_date": "2026-07-15", "days_to_cover": 4.5,
+         "short_shares": 2_200_000},
+    ])
+
+    # knowable dates are 07-10 and 07-25: on 07-20 only the 06-30 settlement exists.
+    result = context_snapshot("AAPL", date="2026-07-20", root=root)
+    dim = result["dimensions"]["short_int"]
+    assert dim.get("absent") is not True
+    assert dim["basis"] == "pit_settlement"
+    assert dim["as_of"] == "2026-06-30"
+    assert dim["value"]["short_shares"] == 1_100_000
+    assert dim["value"]["days_to_cover"] == pytest.approx(2.5)
+
+
+def test_short_int_pit_publication_lag_honest(tmp_path):
+    """A settled-but-unpublished figure stays invisible until its knowable_date.
+
+    2026-07-16 is AFTER the 07-15 settlement but BEFORE its 07-25 publication, so
+    a settlement-date join would hand back the 07-15 row here — 9 days of
+    look-ahead.  The resolver must still answer 06-30.
+    """
+    root = _make_root(tmp_path)
+    _write_si_history(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-06-30", "days_to_cover": 2.5},
+        {"ticker": "AAPL", "settlement_date": "2026-07-15", "days_to_cover": 4.5},
+    ])
+
+    dim = context_snapshot("AAPL", date="2026-07-16", root=root)["dimensions"]["short_int"]
+    assert dim.get("absent") is not True
+    assert dim["as_of"] == "2026-06-30"
+    assert dim["value"]["days_to_cover"] == pytest.approx(2.5)
+
+
+def test_short_int_pit_pre_history_absent(tmp_path):
+    """Before the first knowable settlement the dimension is absent, not snapshotted."""
+    root = _make_root(tmp_path)
+    _write_si(root, [dict(_SI_SNAPSHOT_ROW)])
+    _write_si_history(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-06-30"},
+    ])
+
+    dim = context_snapshot("AAPL", date="2026-06-01", root=root)["dimensions"]["short_int"]
+    assert dim.get("absent") is True
+
+
+def test_short_int_pit_ticker_missing_absent(tmp_path):
+    """A ticker absent from the PIT store cannot borrow the snapshot's row."""
+    root = _make_root(tmp_path)
+    _write_si(root, [dict(_SI_SNAPSHOT_ROW)])
+    _write_si_history(root, [
+        {"ticker": "MSFT", "settlement_date": "2026-06-30"},
+    ])
+
+    dim = context_snapshot("AAPL", date="2026-07-20", root=root)["dimensions"]["short_int"]
+    assert dim.get("absent") is True
+
+
+def test_short_int_panel_preferred_and_union(tmp_path):
+    """Panel wins an overlapping settlement; history keeps the newer tail."""
+    root = _make_root(tmp_path)
+    _write_si_panel(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-07-15",
+         "knowable_date": "2026-07-25", "days_to_cover": 9.9,
+         "dtc_capped": False, "is_listed": True},
+    ])
+    _write_si_history(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-07-15", "days_to_cover": 1.1},
+        {"ticker": "AAPL", "settlement_date": "2026-07-31", "days_to_cover": 7.7},
+    ])
+
+    overlap = context_snapshot("AAPL", date="2026-07-26", root=root)["dimensions"]["short_int"]
+    assert overlap["basis"] == "pit_settlement"
+    assert overlap["as_of"] == "2026-07-15"
+    assert overlap["value"]["days_to_cover"] == pytest.approx(9.9)
+
+    # The panel's tail lags the nightly accrual: 07-31 exists only in history.
+    tail = context_snapshot("AAPL", date="2026-08-12", root=root)["dimensions"]["short_int"]
+    assert tail["as_of"] == "2026-07-31"
+    assert tail["value"]["days_to_cover"] == pytest.approx(7.7)
+
+
+def test_short_int_pit_payload_json_safe(tmp_path):
+    """The brain gateway JSON-serialises dimension payloads: no Timestamp/NaN/numpy."""
+    root = _make_root(tmp_path)
+    _write_si_panel(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-07-15",
+         "knowable_date": "2026-07-25", "dtc_capped": True, "is_listed": True},
+    ])
+    _write_si_history(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-07-31"},
+    ])
+
+    dim = context_snapshot("AAPL", date="2026-08-12", root=root)["dimensions"]["short_int"]
+    assert dim.get("absent") is not True
+    json.dumps(dim)   # raises TypeError on a leaked Timestamp / numpy scalar
+
+
+def test_si_knowable_lag_matches_backfill_convention():
+    """The resolver's lag must not drift from the backfill's canonical constant."""
+    from scripts.backfill_finra_short_interest import KNOWABLE_LAG_DAYS
+    from engine.neuralweb.context_api import _SI_KNOWABLE_LAG_DAYS
+
+    assert _SI_KNOWABLE_LAG_DAYS == KNOWABLE_LAG_DAYS
 
 
 # ---------------------------------------------------------------------------
