@@ -59,7 +59,17 @@
   window.WL_STARTERS   = ["SPY", "QQQ", "BTC-USD", "GC=F"];
   // L3 regime input (baked risk_radar state + dominant label + vol regime).
   // null/absent => the book-read subline stays book-only. Book-derived text is client-side.
-  window.WRI_REGIME    = {"state": "caution", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "normalizing", "asof": "2026-08-13"};
+  window.WRI_REGIME    = {"state": "caution", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "calm-contango", "asof": "2026-08-13"};
+  // Sector / theme names arrive as raw English on each index record, so the rows
+  // this page paints client-side have no td() to reach. This is the glossary's
+  // answer for the finite vocabulary (engine.i18n.sector_lexicon); a name it does
+  // not carry keeps its English, in BOTH languages, rather than being guessed at.
+  // Absent entirely on a page baked before this shipped — the JS treats that the
+  // same as an empty map, which is the same honest English fallback. `default` is
+  // load-bearing for the crop/preview shooters, which render this template with
+  // their own context: undefined would emit a bare `=` and take every global in
+  // this block down with one SyntaxError.
+  window.WL_SECTOR_ZH  = {"Energy": "能源", "Materials": "原材料", "Industrials": "工业", "Consumer Discretionary": "可选消费", "Consumer Staples": "必需消费", "Health Care": "医疗保健", "Financials": "金融", "Information Technology": "信息技术", "Communication Services": "通信服务", "Utilities": "公用事业", "Real Estate": "房地产", "Basic Materials": "原材料", "Financial Services": "金融", "Consumer Cyclical": "可选消费", "Consumer Defensive": "必需消费", "Technology": "科技", "Healthcare": "医疗", "Nuclear & SMR Power": "核电与小型模块化反应堆", "Rare Earth & Critical Minerals": "稀土与关键矿产", "Data Center Power & Cooling": "数据中心供电与散热", "Memory, HBM & Storage": "存储、HBM 与存储设备", "AI Semiconductors": "AI 半导体", "Semiconductor Equipment (WFE)": "半导体设备（WFE）", "Cybersecurity": "网络安全", "GLP-1 / Obesity": "GLP-1／减肥药", "Defense & Aerospace": "国防与航空航天", "Copper, Steel & Electrification": "铜、钢与电气化", "Solar": "光伏", "Robotics & Automation": "机器人与自动化", "Fintech & Payments": "金融科技与支付", "Medical Devices": "医疗器械", "Diagnostics & Life-Science Tools": "诊断与生命科学工具", "Agriculture & Fertilizer": "农业与化肥", "Space & Satellites": "航天与卫星", "Grid & Electrification": "电网与电气化"};
 </script>
 <link rel="stylesheet" href="assets/css/6f6d37b1.css?v=6f6d37b1">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
@@ -575,7 +585,7 @@
      SD routes each per-ticker fetch to its market's store through window.MB. -->
 <script src="market_books.js?v=2"></script>
 <script src="stockdata.js?v=3"></script>
-<script src="watchlist.js?v=6"></script>
+<script src="watchlist.js?v=7"></script>
 <script src="factor_exposure.js?v=3"></script>
 <!-- pure book-structure math + the risk publisher. risk_core.js must precede
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
@@ -586,10 +596,9 @@
 <script src="portfolio.js?v=4"></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="theme.js?v=2a51e41d" defer></script>
-<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-14 03:45 UTC</p>
+<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-14 07:35 UTC</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>
-<script defer data-whb data-root="" src="wh_banner.js?v=4a53a176"></script>
 </body>
 </html>
