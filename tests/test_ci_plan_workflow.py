@@ -2,8 +2,9 @@
 
 WHAT CHANGED AND WHY THIS SUITE EXISTS.  Until 2026-08-11 `ci.yml` carried one job
 with a literal `matrix: pack: [0..11]`, and all twelve packs re-derived the same
-selection independently.  The matrix is now emitted by a new `ci-plan` job, which
-means two properties that used to be structurally impossible are now merely
+selection independently.  The matrix and an identity-bound plan artifact are now
+emitted by a new `ci-plan` job and consumed verbatim by each pack, which means two
+properties that used to be structurally impossible are now merely
 conventional — and a convention in a 4,000-line YAML file is not a guard:
 
   * A PR may publish a SUBSET of `ci-pack-0..11`, so "all twelve are green" is no
@@ -68,11 +69,21 @@ def _plan_step() -> dict[str, Any]:
 
 
 def _pack_step() -> dict[str, Any]:
-    return _step_running(_job("ci-pack"), "--execute")
+    return _step_running(_job("ci-pack"), "--consume-plan-json")
+
+
+def _fallback_pack_step() -> dict[str, Any]:
+    return _step_running(_job("ci-pack"), "--pack-count 12")
 
 
 def _preflight_step() -> dict[str, Any]:
     return _step_running(_job("ci-plan"), "ci_structural_preflight.py")
+
+
+def _step_using(job: dict[str, Any], action: str) -> dict[str, Any]:
+    matches = [step for step in job["steps"] if str(step.get("uses", "")).startswith(action)]
+    assert len(matches) == 1, f"expected exactly one {action!r} step, got {len(matches)}"
+    return matches[0]
 
 
 def _gate_script() -> str:
@@ -102,16 +113,15 @@ def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedPro
 # ─── ci-plan ────────────────────────────────────────────────────────────────────
 
 
-def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
+def test_ci_plan_job_exists_and_publishes_all_required_outputs() -> None:
     """`ci-pack` and `ci-gate` read these outputs by name.
 
     Drop or rename one and the consumer expression silently evaluates to the empty
     string: `matrix` breaks `fromJSON` outright, but `has_work` empty means the pack
     gate is never `'true'` so the ENTIRE matrix is skipped on every PR, and
-    `plan_sha` empty just unpins the parity check.  Two of those three failures are
-    green-looking. `changed_files` empty makes every pack re-diff a shallow clone
-    and fail-safe-widen to the full suite — the throughput hole this output exists
-    to close.
+    `plan_sha` empty prevents a pack from validating the artifact. Two of those
+    three failures can otherwise look green. `changed_files` remains a durable
+    diagnostic receipt even though packs no longer re-plan from it.
     """
     job = _job("ci-plan")
     assert job["outputs"] == {
@@ -120,6 +130,7 @@ def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
         "plan_sha": "${{ steps.plan.outputs.plan_sha }}",
         "reason": "${{ steps.plan.outputs.reason }}",
         "changed_files": "${{ steps.plan.outputs.changed_files }}",
+        "plan_artifact_name": "${{ steps.plan_artifact.outputs.name }}",
     }
 
 
@@ -145,29 +156,41 @@ def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
     assert checkouts[0]["with"]["fetch-depth"] == 0
 
 
-def test_ci_plan_passes_pack_count_twelve() -> None:
-    """The partition arithmetic is fixed at twelve and must match `ci-pack` exactly.
-
-    A plan built for a different `--pack-count` produces a different partition AND a
-    different plan hash, so every pack would refuse on `--expect-plan-sha` — a
-    fleet-wide red whose cause is one number in a folded scalar.
-    """
-    assert f"--pack-count {PACK_COUNT}" in _plan_step()["run"]
+def test_ci_plan_caps_dynamic_pr_workers_but_keeps_twelve_as_the_full_suite_ceiling() -> None:
+    """Only the planner chooses worker count; main retains the twelve-lane audit."""
+    run = _plan_step()["run"]
+    assert f"--pack-count {PACK_COUNT}" in run
+    assert "--dynamic-pack-count" in run
 
 
-def test_ci_plan_emits_the_plan_and_the_github_outputs() -> None:
-    """Planning must be plan-ONLY, must write `$GITHUB_OUTPUT`, and must log the plan.
+def test_ci_plan_emits_the_plan_file_and_the_github_outputs() -> None:
+    """Planning must be plan-only and publish both independent trust channels.
 
     `--plan-only` without `--github-output` publishes nothing, so `ci-pack` skips on
-    an empty `has_work` and the PR proves nothing.  `--emit-plan-json -` is the
-    house `KEY=<json>` receipt line: without it a disputed selection cannot be
-    reconstructed from the run log after the fact.
+    an empty `has_work` and the PR proves nothing. The plan body must go to a file,
+    while its SHA travels separately through `$GITHUB_OUTPUT`.
     """
     run = _plan_step()["run"]
     assert "--plan-only" in run
     assert '--github-output "$GITHUB_OUTPUT"' in run
-    assert "--emit-plan-json -" in run
+    assert '--emit-plan-json "$RUNNER_TEMP/ci-plan.json"' in run
     assert "--execute" not in run, "the planning job must never execute legacy jobs"
+
+    upload = _step_using(_job("ci-plan"), "actions/upload-artifact@")
+    producer = next(
+        step for step in _job("ci-plan")["steps"]
+        if step.get("id") == "plan_artifact"
+    )
+    assert "GITHUB_RUN_ID" in producer["run"]
+    assert "GITHUB_RUN_ATTEMPT" in producer["run"]
+    assert producer["if"] == "steps.plan.outputs.plan_sha != ''"
+    assert upload["uses"].endswith("ea165f8d65b6e75b540449e92b4886f43607fa02")
+    assert upload["with"]["path"] == "${{ runner.temp }}/ci-plan.json"
+    assert upload["with"]["if-no-files-found"] == "error"
+    assert upload["with"]["retention-days"] == 7
+    assert upload["with"]["name"] == "${{ steps.plan_artifact.outputs.name }}"
+    assert upload["if"] == "steps.plan.outputs.plan_sha != ''"
+    assert _job("ci-plan")["steps"].index(upload) > _job("ci-plan")["steps"].index(_plan_step())
 
 
 def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() -> None:
@@ -177,11 +200,10 @@ def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() 
     assert steps.index(preflight) < steps.index(_plan_step())
     assert '--changed-paths-file "$CI_CHANGED_PATHS_FILE"' in preflight["run"]
 
-    api_step = next(step for step in steps if step.get("id") == "pr_files")
-    assert api_step["uses"].startswith("actions/github-script@")
-    script = api_step["with"]["script"]
-    assert "github.paginate" in script and "pulls.listFiles" in script
-    assert "previous_filename" in script, "renames must preserve old and new ownership"
+    assert not any(
+        str(step.get("uses", "")).startswith("actions/github-script@")
+        for step in steps
+    ), "a live PR-files query can race the event head checked out by this run"
 
     materialize = next(
         step
@@ -190,8 +212,9 @@ def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() 
     )
     body = str(materialize["run"])
     assert "CI_CHANGED_FILES_JSON" in body
+    assert "PR_BASE_SHA" in materialize["env"]
     assert "MERGE_GROUP_BASE_SHA" in materialize["env"]
-    assert "changed_files(base)" in body
+    assert body.count("changed_files(base)") == 2
 
 
 def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
@@ -209,33 +232,43 @@ def test_ci_plan_scope_arg_uses_the_immutable_pull_request_base_sha() -> None:
         assert mutable not in scope_arg, f"ci-plan's diff base must not depend on {mutable}"
 
 
+def test_planner_and_pack_checkouts_are_pinned_to_the_event_sha() -> None:
+    for job_name in ("ci-plan", "ci-pack"):
+        checkout = _step_using(_job(job_name), "actions/checkout@")
+        assert checkout["with"]["ref"] == "${{ github.sha }}"
+
+
 def test_ci_plan_handles_native_merge_group_with_immutable_base_sha() -> None:
     workflow = _workflow()
     triggers = workflow.get("on") or workflow.get(True)
     assert triggers["merge_group"]["types"] == ["checks_requested"]
-    for step in (_plan_step(), _pack_step()):
-        scope_arg = step["env"]["CI_SCOPE_ARG"]
-        assert "github.event_name == 'merge_group'" in scope_arg
-        assert IMMUTABLE_MERGE_GROUP_BASE in scope_arg
+    planner_base = _plan_step()["env"]["CI_SCOPE_ARG"]
+    pack_base = _pack_step()["env"]["PLAN_BASE_SHA_ARG"]
+    assert "github.event_name == 'merge_group'" in planner_base
+    assert "github.event_name == 'merge_group'" in pack_base
+    assert IMMUTABLE_MERGE_GROUP_BASE in planner_base
+    assert IMMUTABLE_MERGE_GROUP_BASE in pack_base
 
 
 def test_workflow_dispatch_passes_no_changed_from_so_main_stays_full_suite() -> None:
     """Main's baseline is the audit backstop and must run the complete manifest.
 
     `--changed-from` may reach the planner ONLY through `$CI_SCOPE_ARG`, which is
-    conditioned on `github.event_name == 'pull_request'` and collapses to `''`
-    otherwise.  Hard-code the flag into either run scalar and main's dispatch starts
-    selecting — the one run that is supposed to prove everything proves a subset.
+    conditioned on PR/merge-group events and collapses to `''` otherwise. The pack
+    similarly omits `--expect-base-sha` on the complete-main plan.
     """
-    for job_name, step in (("ci-plan", _plan_step()), ("ci-pack", _pack_step())):
-        assert "--changed-from" not in step["run"], (
-            f"{job_name} names --changed-from literally; it must arrive via $CI_SCOPE_ARG"
-        )
-        scope_arg = step["env"]["CI_SCOPE_ARG"]
-        assert "github.event_name == 'pull_request'" in scope_arg
-        assert scope_arg.rstrip().endswith("|| '' }}"), (
-            f"{job_name}'s CI_SCOPE_ARG must fall back to the empty string on non-PR events"
-        )
+    planner = _plan_step()
+    assert "--changed-from" not in planner["run"]
+    scope_arg = planner["env"]["CI_SCOPE_ARG"]
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert scope_arg.rstrip().endswith("|| '' }}")
+
+    pack = _pack_step()
+    assert "--changed-from" not in pack["run"]
+    assert "--expect-base-sha" not in pack["run"]
+    base_arg = pack["env"]["PLAN_BASE_SHA_ARG"]
+    assert "github.event_name == 'pull_request'" in base_arg
+    assert base_arg.rstrip().endswith("|| '' }}")
 
 
 # ─── ci-pack ────────────────────────────────────────────────────────────────────
@@ -281,36 +314,43 @@ def test_ci_pack_is_gated_on_an_affirmative_has_work() -> None:
     assert "github.event.action != 'closed'" in condition
 
 
-def test_ci_pack_passes_pack_count_twelve() -> None:
-    """Execution must partition identically to the plan, or `--expect-plan-sha` reds.
+def test_ci_pack_downloads_and_consumes_the_exact_planner_artifact() -> None:
+    """Packs execute assignments; they never infer, diff, or partition again."""
+    download = _step_using(_job("ci-pack"), "actions/download-artifact@")
+    upload = _step_using(_job("ci-plan"), "actions/upload-artifact@")
+    assert download["uses"].endswith("d3f86a106a0bac45b974a628896c90dbdf5c8093")
+    assert download["with"]["name"] == "${{ needs.ci-plan.outputs.plan_artifact_name }}"
+    assert "github.run_attempt" not in download["with"]["name"]
+    assert download["with"]["path"] == "${{ runner.temp }}/ci-pack-plan"
+    assert download["if"] == "needs.ci-plan.outputs.plan_sha != ''"
+    run = _pack_step()["run"]
+    assert '--consume-plan-json "$RUNNER_TEMP/ci-pack-plan/ci-plan.json"' in run
+    assert "--pack-count" not in run
+    assert "--changed-from" not in run
+    assert "--dynamic-pack-count" not in run
 
-    The pack index it receives is meaningless without the same denominator: pack 3
-    of 12 and pack 3 of 8 are different job sets drawn from the same manifest.
-    """
-    assert f"--pack-count {PACK_COUNT}" in _pack_step()["run"]
 
-
-def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> None:
-    """Plan/execution parity is checked when there IS a plan, and never blocks when there is not.
-
-    `--expect-plan-sha` is what catches a pack that would have executed a different
-    partition than the one `ci-plan` published.  It has to disappear entirely on the
-    planner's fail-safe path (empty `plan_sha`), because a bare `--expect-plan-sha`
-    with no value would consume `--execute` as its argument and turn a planning
-    hiccup into twelve red packs.
-    """
+def test_ci_pack_pins_plan_sha_head_and_event_base_and_never_runs_unpinned() -> None:
+    """Every consumed artifact is bound to independent immutable identities."""
     env = _pack_step()["env"]
-    plan_sha_arg = env["PLAN_SHA_ARG"]
-    assert "needs.ci-plan.outputs.plan_sha" in plan_sha_arg
-    assert "format('--expect-plan-sha {0}'" in plan_sha_arg
-    assert plan_sha_arg.rstrip().endswith("|| '' }}"), (
-        "an empty plan_sha must word-split away, not emit a valueless --expect-plan-sha"
-    )
-    assert " $PLAN_SHA_ARG " in f" {_pack_step()['run']} ", "the argument must be unquoted so it can vanish"
-    assert env["CI_CHANGED_FILES_JSON"] == "${{ needs.ci-plan.outputs.changed_files }}"
-    assert "CI_CHANGED_FILES_JSON" not in _pack_step()["run"], (
-        "the changed-file list must travel via env, not the folded command line"
-    )
+    assert env["EXPECTED_PLAN_SHA"] == "${{ needs.ci-plan.outputs.plan_sha }}"
+    run = _pack_step()["run"]
+    assert '--expect-plan-sha "$EXPECTED_PLAN_SHA"' in run
+    assert '--expect-head-sha "$GITHUB_SHA"' in run
+    assert "$PLAN_BASE_SHA_ARG" in run
+    assert "CI_CHANGED_FILES_JSON" not in env
+    assert "CI_SCOPE_ARG" not in env
+
+
+def test_ci_pack_falls_back_explicitly_to_full_suite_when_planning_cannot_publish() -> None:
+    fallback = _fallback_pack_step()
+    assert fallback["if"] == "needs.ci-plan.outputs.plan_sha == ''"
+    run = fallback["run"]
+    assert "--pack-count 12" in run
+    assert "--consume-plan-json" not in run
+    assert "--changed-from" not in run
+    assert "--expect-plan-sha" not in run
+    assert "--execute" in run
 
 
 def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> None:
@@ -320,13 +360,13 @@ def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> No
     string as a positional argument instead of handing it nothing — argparse then
     errors, and main's baseline (the audit backstop) dies before it plans.
     """
-    for job_name, step in (("ci-plan", _plan_step()), ("ci-pack", _pack_step())):
+    for job_name, step, variable in (
+        ("ci-plan", _plan_step(), "$CI_SCOPE_ARG"),
+        ("ci-pack", _pack_step(), "$PLAN_BASE_SHA_ARG"),
+    ):
         run = step["run"]
-        for var in ("$CI_SCOPE_ARG", "$PLAN_SHA_ARG"):
-            if var not in run:
-                continue
-            assert f'"{var}"' not in run, f"{job_name} quotes {var}; it must word-split away when empty"
-            assert f"'{var}'" not in run, f"{job_name} quotes {var}; it must word-split away when empty"
+        assert f'"{variable}"' not in run, f"{job_name} quotes {variable}; it must vanish when empty"
+        assert f"'{variable}'" not in run, f"{job_name} quotes {variable}; it must vanish when empty"
 
 
 def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> None:
@@ -338,7 +378,11 @@ def test_folded_pack_commands_fold_to_one_line_and_carry_no_comment_marker() -> 
     shell line.  Both produce a workflow that parses cleanly and does the wrong
     thing, so the only detector is the folded RESULT: exactly one line, no `#`.
     """
-    for job_name, step in (("ci-plan", _plan_step()), ("ci-pack", _pack_step())):
+    for job_name, step in (
+        ("ci-plan", _plan_step()),
+        ("ci-pack", _pack_step()),
+        ("ci-pack fallback", _fallback_pack_step()),
+    ):
         run = str(step["run"]).strip()
         assert "\n" not in run, f"{job_name}'s command did not fold to one line: {run!r}"
         assert "#" not in run, f"{job_name}'s folded command contains a `#`, which truncates it"

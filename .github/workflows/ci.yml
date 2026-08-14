@@ -4046,7 +4046,6 @@ on:
 
 permissions:
   contents: read
-  pull-requests: read
 
 concurrency:
   # A newer commit on the same PR makes every older result obsolete.  Cancelling
@@ -4113,7 +4112,9 @@ jobs:
   # stable check name that branch protection or an external controller could read.
   # `ci-plan` computes the partition ONCE, hands `ci-pack` its matrix, and hands
   # every pack the plan's sha256 so a pack that would have executed a DIFFERENT
-  # partition refuses before running a single test.
+  # partition refuses before running a single test. The complete plan travels as
+  # an immutable run artifact; packs validate it against the separately published
+  # sha256 and consume its assignments without re-running inference.
   #
   # THIS JOB COSTS TIME TODAY. Do not read a saving into it, in either direction:
   #
@@ -4125,21 +4126,16 @@ jobs:
   #     12/12 packs, slowest pack 56 min of which 31 min was fetch-depth:0).
   #     `exclude_peer_test_ownership` strips those catch-alls from named pytest
   #     jobs; the dynamic matrix then emits only the packs that still carry work.
-  #   * It saves ZERO planning passes. `--expect-plan-sha` REQUIRES each pack to
-  #     recompute the plan, and a pack has always had to derive the partition to
-  #     know its own jobs, so all selected packs still re-infer. Measured on the
-  #     real manifest: `infer_job_scopes` 106.5s, `load_legacy_jobs` + partition 0.2s.
-  #     With checkout and setup, Wave B adds roughly one pack startup — about 4-5
-  #     minutes — to the critical path of every pull request.
+  #   * It now saves every pack-side planning pass. The planner alone infers and
+  #     partitions; packs validate HEAD/base/manifest/selector identities plus
+  #     exact-once assignments before executing the published job ids.
   #
   # What it buys is correctness, not speed: one planning authority instead of
   # twelve that could disagree, and `ci-gate` as a nameable aggregate (see the
   # bottom of this file — the sweeper needs an affirmative pass, #4779, and today
   # no single check name is guaranteed to be present on a PR head). The non-empty
-  # filter becomes load-bearing only once selection narrows. Making the packs
-  # CONSUME this plan instead of recomputing it would turn the cost into a saving,
-  # and is deliberately NOT done here: directive §6.6 wants the twelve independent
-  # recomputations as the drift guard. That trade is the operator's to revisit.
+  # filter becomes load-bearing only once selection narrows. Identity-bound plan
+  # consumption keeps the drift guard without repeating the expensive inference.
   ci-plan:
     # Same closed-event fence as `ci-pack` below: a closed PR needs only the
     # workflow-level concurrency side effect above.
@@ -4155,26 +4151,8 @@ jobs:
       plan_sha: ${{ steps.plan.outputs.plan_sha }}
       reason: ${{ steps.plan.outputs.reason }}
       changed_files: ${{ steps.plan.outputs.changed_files }}
+      plan_artifact_name: ${{ steps.plan_artifact.outputs.name }}
     steps:
-      - id: pr_files
-        name: read immutable PR file metadata
-        uses: actions/github-script@v7
-        with:
-          result-encoding: json
-          script: |
-            if (context.eventName !== 'pull_request') return null;
-            const files = await github.paginate(github.rest.pulls.listFiles, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-              per_page: 100,
-            });
-            const paths = [];
-            for (const file of files) {
-              if (file.previous_filename) paths.push(file.previous_filename);
-              paths.push(file.filename);
-            }
-            return [...new Set(paths)];
       # NO sparse-clear step and NO setup-node here, unlike `ci-pack` below. Both of
       # those exist for conditions this job cannot meet: the sparse-clear guards a
       # SHARED self-hosted workspace, and this job is hosted-only (one `runs-on`, no
@@ -4183,6 +4161,9 @@ jobs:
       # which planning never executes. Adding either would be cargo cult.
       - uses: actions/checkout@v4
         with:
+          # Pin the exact event merge commit. A PR-files API call can race a newer
+          # synchronize event and must never describe a different head than this.
+          ref: ${{ github.sha }}
           # `fetch-depth: 0` is REQUIRED, not an optimisation. `changed_files` diffs
           # against the immutable PR base SHA, and a shallow clone does not contain
           # that commit — the diff would fail, the planner would widen to the full
@@ -4201,7 +4182,7 @@ jobs:
       - name: materialize immutable changed-path decision
         env:
           EVENT_NAME: ${{ github.event_name }}
-          PR_FILES_JSON: ${{ steps.pr_files.outputs.result }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
         run: |
           "$RUNNER_TEMP/ci-plan-runner/bin/python" - <<'PY'
@@ -4213,12 +4194,8 @@ jobs:
 
           event = os.environ.get("EVENT_NAME", "")
           if event == "pull_request":
-              try:
-                  paths = json.loads(os.environ.get("PR_FILES_JSON") or "null")
-              except json.JSONDecodeError:
-                  paths = None
-              if not isinstance(paths, list) or not all(isinstance(path, str) for path in paths):
-                  paths = None
+              base = os.environ.get("PR_BASE_SHA") or ""
+              paths = changed_files(base) if base else None
           elif event == "merge_group":
               base = os.environ.get("MERGE_GROUP_BASE_SHA") or ""
               paths = changed_files(base) if base else None
@@ -4267,10 +4244,23 @@ jobs:
           "$RUNNER_TEMP/ci-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-count 12
+          --dynamic-pack-count
           --plan-only
           --github-output "$GITHUB_OUTPUT"
-          --emit-plan-json -
+          --emit-plan-json "$RUNNER_TEMP/ci-plan.json"
           $CI_SCOPE_ARG
+      - id: plan_artifact
+        name: bind the plan artifact name to this planner attempt
+        if: steps.plan.outputs.plan_sha != ''
+        run: echo "name=ci-pack-plan-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_OUTPUT"
+      - name: publish authoritative pack plan
+        if: steps.plan.outputs.plan_sha != ''
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ${{ steps.plan_artifact.outputs.name }}
+          path: ${{ runner.temp }}/ci-plan.json
+          if-no-files-found: error
+          retention-days: 7
   ci-pack:
     needs: ci-plan
     # A closed PR needs only the workflow-level concurrency side effect above.
@@ -4278,75 +4268,24 @@ jobs:
     #
     # The `has_work` clause is the Wave B addition, and it is safe only because
     # `has_work: false` is an AFFIRMATIVE planner proof that no legacy job is
-    # selected. Every uncertainty widens instead: a planner exception, an unknown
-    # top-level path, a global invalidator, or a failed git diff all emit all twelve
-    # indices with `has_work: true`. And a no-work PR is still PROVEN, because
+    # selected. An unknown top-level path or global invalidator widens the selected
+    # logical jobs; a planner exception publishes no artifact and explicitly falls
+    # back to the complete manifest. A no-work PR is still PROVEN, because
     # `ci-gate` below publishes a real success on that path — the merge-on-green
     # sweeper requires an affirmative pass, since absence of red is not a pass
     # (#4779), so a PR whose only packs were skipped would otherwise read unproven
     # and never merge.
     if: github.event.action != 'closed' && needs.ci-plan.outputs.has_work == 'true'
-    # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable
-    # source of truth, but GitHub sees only this matrix. Twelve pack runners
-    # execute every legacy run step against a clean working tree, sharing one
-    # checkout and reusing only identical dependency sets instead of
-    # provisioning more than one hundred separate VMs/check records.
-    #
-    # Four, up from two (operator 2026-07-28): two packs put ~35 minutes
-    # between a PR opening and a verdict, and the operator + sessions merge in
-    # 0-8 — the whole merge-outruns-CI class lives in that gap. The greedy
-    # partition balances 4x619 weight against 2x1238 (run_ci_pack.py
-    # --validate-only), so wall-clock to green roughly halves; GitHub-hosted
-    # pickup is 2-3 s per job, so two more runners cost queue nothing. These
-    # Twelve, up from four (operator 2026-08-10): paid Enterprise capacity now
-    # starts the whole hosted matrix within seconds, while four full packs still
-    # took 40-55 minutes. Twelve keeps every legacy job gated and cuts the
-    # measured balanced critical-path weight roughly in half; the remaining
-    # floor is one deliberately indivisible render-guard lane. These names are
-    # the intended required-checks set (ci-pack-0..11) for any future branch
-    # protection; renaming or renumbering them must update that setting too.
-    #
-    # AMENDED Wave B (2026-08-11), because the last two sentences are no longer the
-    # whole truth. The matrix is now the plan's, so a PR may legitimately publish a
-    # SUBSET of ci-pack-0..11 — a required-checks rule naming all twelve would hang
-    # forever on the packs the plan never launched. `ci-gate` (bottom of this file)
-    # is the stable aggregate name for any future branch protection; the per-pack
-    # names remain the useful diagnostics and are still what main's full-suite
-    # workflow_dispatch baseline publishes, all twelve of them, unchanged. Nothing
-    # about the twelve-way PARTITION moved: `--pack-count 12` is still passed here
-    # and in `ci-plan`, and the same greedy balance produces the same packs.
+    # The logical jobs in .github/ci/legacy-jobs.yml remain the reviewable source
+    # of truth. Scoped PRs use one to four weight-balanced packs; the deliberate
+    # main workflow_dispatch audit retains twelve. Per-pack names are diagnostics,
+    # not a required-check set: only `ci-gate` is guaranteed to conclude for every
+    # non-closed event and is suitable for branch protection or merge queue rules.
     name: ci-pack-${{ matrix.pack }}
     # EVERY event runs on the hosted pool. The self-hosted detour is retired.
     #
-    # History, because the reversal is the point: main's proof was moved to
-    # `["self-hosted","render-linux"]` earlier on 2026-08-09 because it sat `queued`
-    # 30+ minutes behind 133 queued runs and never started, while `pc-render-1..4`
-    # idled. That starved run blocked the whole fleet — `merge_on_green.main_proof`
-    # answers "is main green on ci-pack-N" from the newest CONCLUDED ci.yml run on
-    # main, so with no fresh proof the base-inherited-red refresh cannot fire and every
-    # armed pull request that inherited a since-healed red stays blocked.
-    #
-    # That fix was correct for its constraint, and the constraint is now GONE. The
-    # repository moved to the MastermindX enterprise organization on 2026-08-09 and its
-    # paid Enterprise plan now carries GitHub's 500-standard-hosted-job ceiling instead
-    # of the 20-job Free ceiling. The measured backlog that caused the starvation was
-    # ~195 hosted jobs, so it now fits inside one wave; observed four-pack jobs begin
-    # within the same second. There is no longer anything to escape.
-    #
-    # Routing back is strictly better than leaving it:
-    #   * `render-linux` is FOUR runners shared with `render.yml`, `engine-render.yml`
-    #     and, at the time, `merge-on-green.yml`. Main's four packs took the entire
-    #     pool, starving both renders and the sweeper. The packs and sweeper now use
-    #     hosted runners; all four self-hosted slots are back with render workloads.
-    #   * The `max-parallel: 2` that bounded that damage is deleted with it — on hosted
-    #     runners the hosted packs run concurrently again. With paid Enterprise
-    #     capacity, twelve balanced packs reduce the measured 40-55 minute
-    #     four-pack tail without competing with render workers.
-    #   * One `runs-on` for every event removes the event-dependent routing entirely,
-    #     so main's baseline and a pull request now prove the packs the SAME way.
-    #
-    # NOT the macstudio pool, unchanged: that is the render/nightly lane and is
-    # routinely saturated (CLAUDE.md — render budget is law).
+    # The packs stay on GitHub-hosted runners. The four-runner render-linux pool is
+    # reserved for render/deploy workloads and must not become a CI overflow lane.
     runs-on: ubuntu-latest
     timeout-minutes: 180
     strategy:
@@ -4364,21 +4303,16 @@ jobs:
       # to the strings "true"/"false"; some Actions parsers treat any non-empty
       # string as true.
       fail-fast: false
-      # Fleet admission, not self-hosted routing. The old max-parallel protected a
-      # four-runner render-linux pool and slowed main's proof; that pool is no longer
-      # used here. This cap instead bounds EACH hosted PR after the 2026-08-14 jam
+      # Fleet admission, not self-hosted routing. This cap bounds EACH hosted PR
+      # after the 2026-08-14 jam
       # reached 53 simultaneous PR-CI runs and 299 ci jobs queued/running. Forty PRs
       # can now request at most 160 pack workers, not 480. A deliberate main baseline
       # keeps all twelve lanes so recovery evidence is not needlessly serialized.
       max-parallel: ${{ github.event_name == 'workflow_dispatch' && 12 || 4 }}
       #
-      # The literal `pack: [0..11]` list that stood here until Wave B (2026-08-11) is
-      # now the PLAN's, emitted by `ci-plan` as {"include": [{"pack": N}, ...]} over
-      # the non-empty pack indices. `matrix.pack` keeps exactly the meaning the
-      # literal gave it — the index handed to `--pack-index` below — and the
-      # partition arithmetic is unchanged because `--pack-count 12` is still passed
-      # here and in `ci-plan`. Under `CI_DYNAMIC_MATRIX_MODE=active` the plan emits
-      # only the non-empty pack indices; `shadow`/`off` still launch all twelve.
+      # The planner emits {"include": [{"pack": N}, ...]} for the non-empty indices
+      # of its authoritative assignment. Dynamic active PR plans contain at most
+      # four packs; full main, scope-off and shadow plans retain twelve.
       matrix: ${{ fromJSON(needs.ci-plan.outputs.matrix) }}
     steps:
       # A self-hosted runner REUSES its workspace between jobs, and a sibling job that
@@ -4423,13 +4357,14 @@ jobs:
           fi
       - uses: actions/checkout@v4
         with:
-          # Packs consume ci-plan's changed-file list and only need the current
+          ref: ${{ github.sha }}
+          # Packs consume ci-plan's assignment artifact and need only the current
           # tree. fetch-depth: 0 on all twelve packs at once was the 56-minute
           # wall-clock: measured PR #5550 / run 31729769728, ci-pack-1 spent
           # 31 minutes in "Checking out the ref" (18:22:54Z–18:54:04Z) while
           # ci-plan, fetching the same history alone, finished in 7 minutes.
-          # A missed diff here would fail-safe-widen every PR; CI_CHANGED_FILES_JSON
-          # is the substitute, and an unset/malformed value still widens.
+          # No pack resolves a diff or history; it validates the artifact against
+          # this checkout's HEAD, manifest and selector before executing.
           filter: blob:none
           fetch-depth: 1
       - uses: actions/setup-python@v5
@@ -4442,52 +4377,57 @@ jobs:
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
           "$RUNNER_TEMP/ci-pack-runner/bin/pip" install pyyaml
-      # `--changed-from` is passed ONLY on pull requests, so a legacy job that
-      # has a proven derived/declared scope runs only when the immutable PR diff
-      # can reach it. Main's baseline and every workflow_dispatch omit the flag
-      # and therefore run the complete manifest (180 jobs at this revision). That
-      # full-main run is an audit/backstop,
-      # not permission to under-scope a PR: uncertain jobs remain always-on and
-      # any unknown path widens the PR back to the full suite.
+      - name: download authoritative pack plan
+        if: needs.ci-plan.outputs.plan_sha != ''
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: ${{ needs.ci-plan.outputs.plan_artifact_name }}
+          path: ${{ runner.temp }}/ci-pack-plan
+      # The planner is the only component allowed to infer scope or partition the
+      # manifest. Each pack consumes the exact artifact produced by ci-plan and
+      # independently pins it to the plan SHA carried through job outputs. HEAD,
+      # immutable PR/merge-group base, manifest bytes, selector bytes, weights,
+      # inventory and exact-once assignments are all checked before execution.
       #
-      # The scope flag is built in `env`, NOT inline in the folded scalar. A
+      # The optional base-pin flag is built in `env`, NOT inline in the folded scalar. A
       # more-indented continuation line inside `>-` keeps its newline instead of
       # folding to a space, which put `--execute` on its own line and silently
       # split one command into two. Same family as the `#`-in-a-folded-scalar
       # trap: no `#` may appear here either, and every line of the command must
       # sit at the SAME indent so folding joins them with spaces.
       #
-      # `$CI_SCOPE_ARG` is intentionally unquoted: it word-splits into
-      # `--changed-from <immutable-base-sha>` on a pull request and disappears
-      # entirely on every other event, which keeps main's baseline full-suite.
-      #
-      # `$PLAN_SHA_ARG` (Wave B, 2026-08-11) rides the identical idiom for the
-      # identical reason. It carries `--expect-plan-sha <sha>` when `ci-plan`
-      # published a hash, and word-splits away to NOTHING when it did not — which is
-      # the planner's fail-safe path, where the plan could not be computed and every
-      # pack was launched anyway. An unpinned pack there is correct: the pack
-      # recomputes and runs the full widened selection, and a genuine manifest defect
-      # still fails all twelve packs red on their own `run_ci_pack.py` invocation.
-      # Pinning is a PARITY check between plan and execution, never the only gate.
+      # `$PLAN_BASE_SHA_ARG` is intentionally unquoted: it word-splits into
+      # `--expect-base-sha <immutable-base-sha>` for a PR or merge group and
+      # disappears on workflow_dispatch, whose complete-main plan has no base.
+      # A planner fallback deliberately produces no artifact. Its separate step
+      # below runs the complete manifest with fixed twelve-way packing and no diff;
+      # an invalid manifest still fails those packs red.
       - name: validate and run legacy CI pack
+        if: needs.ci-plan.outputs.plan_sha != ''
         env:
           CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
-          # Active unless the repository variable is exactly `off` (2026-08-13).
-          # A leftover `shadow` from the first deployment would keep copying
-          # every main-red onto every pull request. `off` is the emergency
-          # full-suite kill switch.
-          CI_SCOPE_MODE: ${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}
-          CI_SCOPE_ARG: ${{ github.event_name == 'pull_request' && format('--changed-from {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--changed-from {0}', github.event.merge_group.base_sha) || '' }}
-          PLAN_SHA_ARG: ${{ needs.ci-plan.outputs.plan_sha && format('--expect-plan-sha {0}', needs.ci-plan.outputs.plan_sha) || '' }}
-          CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
+          EXPECTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
+          PLAN_BASE_SHA_ARG: ${{ github.event_name == 'pull_request' && format('--expect-base-sha {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--expect-base-sha {0}', github.event.merge_group.base_sha) || '' }}
+        run: >-
+          "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
+          --workflow .github/ci/legacy-jobs.yml
+          --pack-index ${{ matrix.pack }}
+          --consume-plan-json "$RUNNER_TEMP/ci-pack-plan/ci-plan.json"
+          --expect-plan-sha "$EXPECTED_PLAN_SHA"
+          --expect-head-sha "$GITHUB_SHA"
+          $PLAN_BASE_SHA_ARG
+          --execute
+      - name: fail-safe full suite when no authoritative plan was produced
+        if: needs.ci-plan.outputs.plan_sha == ''
+        env:
+          CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
+          CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
         run: >-
           "$RUNNER_TEMP/ci-pack-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
           --pack-index ${{ matrix.pack }}
           --pack-count 12
-          $CI_SCOPE_ARG
-          $PLAN_SHA_ARG
           --execute
   # ONE STABLE NAME FOR "CI SAID YES" (Wave B, 2026-08-11). Every other check name
   # in this workflow is now conditional: `ci-pack-N` exists only when the plan

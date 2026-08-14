@@ -1727,19 +1727,22 @@ def test_the_pack_report_survived_the_plan_refactor(
     assert selected == "Selected jobs: " + ", ".join(plan.pack_jobs[3])
 
 
-def test_workflow_scopes_only_pull_requests() -> None:
-    """Main's baseline must never pass --changed-from: it runs the full manifest."""
+def test_workflow_plans_scoped_events_and_packs_only_consume_the_plan() -> None:
+    """Main plans full; PR/merge-group packs pin, but never recompute, their base."""
     pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
     step = next(
         s for s in pack["steps"]
         if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
     )
-    scope_arg = str(step["env"]["CI_SCOPE_ARG"])
-    assert "github.event_name == 'pull_request'" in scope_arg
-    assert "--changed-from" in scope_arg
-    assert "pull_request.base.sha" in scope_arg
-    assert "github.base_ref" not in scope_arg
-    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    base_arg = str(step["env"]["PLAN_BASE_SHA_ARG"])
+    assert "github.event_name == 'pull_request'" in base_arg
+    assert "github.event_name == 'merge_group'" in base_arg
+    assert "--expect-base-sha" in base_arg
+    assert "pull_request.base.sha" in base_arg
+    assert "merge_group.base_sha" in base_arg
+    assert "github.base_ref" not in base_arg
+    assert "--consume-plan-json" in str(step["run"])
+    assert "--changed-from" not in str(step["run"])
     # A leftover `shadow` GitHub Actions variable must not hostage the fleet:
     # anything other than exact `off` is active. Quote: before #5515 the var
     # could sit at `shadow` and run the full 185-job suite while reporting a
@@ -1762,7 +1765,8 @@ def test_workflow_scopes_only_pull_requests() -> None:
     assert "worker/**" in pull_paths
     assert "content/**" in pull_paths
     assert "wrangler.toml" in pull_paths
-    assert "$CI_SCOPE_ARG" in str(step["run"])
+    assert "$CI_SCOPE_ARG" in str(plan_step["run"])
+    assert "$PLAN_BASE_SHA_ARG" in str(step["run"])
 
 
 def test_pack_command_folds_to_exactly_one_shell_command() -> None:
