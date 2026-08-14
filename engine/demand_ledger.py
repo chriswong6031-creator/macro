@@ -262,8 +262,21 @@ def _register_qledger_claims(written: list, root, today=None) -> dict | None:
     Gated by the SAME `_ledger_advance_enabled()` check as the theses.jsonl
     write above — a lane whose own thesis write is skipped (not the nightly
     lane) must not register a qledger claim for a thesis that will not
-    durably exist in this desk's own ledger. Never raises."""
+    durably exist in this desk's own ledger. Never raises.
+
+    THE CONTROL LEG (P0d C2.3). `demand_chain` is classified
+    `matched_control_required`, so its authority basis IS the matched control and
+    a claim registered without one can never carry evidence. `sector_of` is
+    `qledger.membership_gics_sector_of(root)`: subject ticker ->
+    `data/universe/membership.parquet` -> the CANONICAL GICS sector NAME, through
+    the explicit alias normalisation the census's D0-2 requires (the file mixes
+    GICS "Information Technology" with Yahoo-style "Technology" on different
+    names, so a naive join nulls on roughly half the universe and nothing
+    alarms). `make_claim` turns that name into the sector ETF. Passing NO
+    resolver — the state before this wiring — registered every demand_chain claim
+    uncontrolled forever and its control-evidence clock could never start."""
     try:
+        from engine import qledger as _q
         from engine import qledger_desk_adapter as _qadapt
         from engine import qledger_evidence_clock as _qclock
     except Exception as exc:  # noqa: BLE001
@@ -271,7 +284,8 @@ def _register_qledger_claims(written: list, root, today=None) -> dict | None:
         return None
     return _qadapt.register_prospective(
         written, family="demand_chain", timestamp_quality="CRAWL_BOUNDED",
-        root=root, today=today, git_sha=_qclock.git_sha(root))
+        root=root, today=today, sector_of=_q.membership_gics_sector_of(root),
+        git_sha=_qclock.git_sha(root))
 
 
 def score(root=None, today=None) -> dict:
