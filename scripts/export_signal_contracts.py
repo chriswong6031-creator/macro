@@ -280,9 +280,12 @@ ARTIFACT_MANIFEST = [
     # display-only US candidate-lane disclosure.  The board builder deliberately
     # wraps it in a fail-open try/except, so absence means the additive disclosure
     # failed; it cannot be promoted to a required field.
+    # 1.9.0 -> 1.10.0 (2026-08-14): `emit` is the board/signal-gate lineage stamp.
+    # The builder assigns it unconditionally immediately before the sole board
+    # write, so it is a required top-level field rather than an optional one.
     {"artifact": "site/factordata/us_standouts.json",
      "kind": "board",
-     "schema_version": "1.9.0",
+     "schema_version": "1.10.0",
      "schema_fields": [
          # 1.6.0 GRADUATION (2026-08-03): board_definition / ran / ranking /
          # themes_in_favour moved up from optional_fields after the first committed
@@ -290,7 +293,7 @@ ARTIFACT_MANIFEST = [
          # rank_by=us_prophet_v1) proved the builder emits all four unconditionally
          # — the same order china_standouts reached 2.0.0 in.
          "as_of", "board_definition", "buy", "concentration", "delta",
-         "dispersion_regime", "donor", "earnings_blackout_note", "eligible",
+         "dispersion_regime", "donor", "earnings_blackout_note", "eligible", "emit",
          "gate_go", "laggards", "lane_counts", "leaders", "pending_expired_count",
          "ran", "rank_by", "ranking", "staleness", "themes_in_favour", "universe",
          "watch",

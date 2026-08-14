@@ -95,7 +95,7 @@
   {
    "artifact": "site/factordata/us_standouts.json",
    "kind": "board",
-   "schema_version": "1.9.0",
+   "schema_version": "1.10.0",
    "schema_fields": [
     "as_of",
     "board_definition",
@@ -106,6 +106,7 @@
     "donor",
     "earnings_blackout_note",
     "eligible",
+    "emit",
     "gate_go",
     "laggards",
     "lane_counts",
