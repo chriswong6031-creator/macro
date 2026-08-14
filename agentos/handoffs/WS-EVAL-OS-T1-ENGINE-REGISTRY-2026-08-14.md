@@ -250,4 +250,4 @@ projections) + 4 descriptive recorders.
 - "Do not cite consumer COUNTS from synapse.yml section headers (39/64 stale) and do not
   cite desk hit_rate as a skill number anywhere user-facing or rationale-facing."
 
-prs: [5620, W3_PR_NUMBER]
+prs: [5620, 5679]
