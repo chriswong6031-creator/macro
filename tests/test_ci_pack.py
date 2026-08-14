@@ -2538,18 +2538,26 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     while a regression that gives the fallback tier back to the curated eight
     (~1,550 weight-seconds and three of twelve packs per shape) does.
 
-    The templates/index.html job ceiling is 128 rather than 126 because
+    The templates/index.html job ceiling is 129 rather than 126 because
     `engine-render-guards` split into three lanes (#5587 on top of #5586): the
     sweep still owned-matches this probe, and the two sibling lanes
     (`express-render-guards`, `attested-history-guards`) still fallback-match
-    it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
+    it. That is +2 jobs / +210 weight-seconds vs the single pre-split job. The
+    isolated `intelligence-registry` job added by #5620 is the sole 128 -> 129
+    membership delta and conservatively fallback-matches this probe. Neither is
     a return of the curated eight. Weight and pack ceilings are unchanged.
+
+    The other two probes each gained that isolated job plus
+    `options-estate-guards`, whose #5634 gap-discipline suite widened its
+    conservative fallback. Exact c879-to-current comparison measures 127 jobs /
+    5,029 weight-seconds for build_free_content.py and 121 / 5,015 for plan_book,
+    both nine packs. Their weight and pack ceilings also remain unchanged.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 128, 5_800),
-        ("scripts/build_free_content.py", 126, 5_600),
-        ("engine/prophet/plan_book.py", 120, 5_600),
+        ("templates/index.html", 129, 5_800),
+        ("scripts/build_free_content.py", 127, 5_600),
+        ("engine/prophet/plan_book.py", 121, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)

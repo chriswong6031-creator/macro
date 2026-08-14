@@ -4815,6 +4815,9 @@ jobs:
       - "scripts/build_themes_heatmap.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      # Full-tree import-closure evidence reaches this module. The W4 PR's sparse
+      # checkout omitted it, but an exclusive scope must retain every tracked edge.
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/close_pass_publish.py"
       - "scripts/close_pass_reconcile.py"
       - "scripts/notify.py"
@@ -7353,6 +7356,9 @@ jobs:
       - "scripts/build_vector.py"
       - "scripts/check_board_contradictions.py"
       - "scripts/check_signal_gate_coherence.py"
+      # Full-tree import-closure evidence reaches this module. The W4 PR's sparse
+      # checkout omitted it, but an exclusive scope must retain every tracked edge.
+      - "scripts/check_stretch_oracle_contract.py"
       - "scripts/check_title_i18n.py"
       # Import-closure entry for tests/test_us_board_grader_honesty.py, wired into this
       # job below.  That suite READS scripts/exit_policy_study.py's source directly to
