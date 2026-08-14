@@ -2867,8 +2867,8 @@ jobs:
       # is hermetic (tmp_path store + monkeypatched price layer, no data/** reads).
       - name: qledger contract regression suite
         run: python -m pytest tests/test_qledger.py -q
-      - name: qledger explicit horizon-clock contract (P0a)
-        run: python -m pytest tests/test_qledger_horizon_clock.py -q
+      - name: qledger explicit horizon-clock (P0a) + matched-control policy (P0d) contracts
+        run: python -m pytest tests/test_qledger_horizon_clock.py tests/test_qledger_control_policy.py -q
       # P3 — the forward-only desk adapters and the evidence-clock writer. These
       # sit in the qledger job because their subject IS the claim substrate: the
       # adapter's forward-only gate calls `qledger.claim_window` (the same
@@ -3424,7 +3424,7 @@ jobs:
         # which is how its render precondition shipped scoped to the whole session
         # range: on a shared main that sweeps in concurrent sessions' templates/
         # merges and demands a render on a merge commit that can never have one.
-        run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py -q
+        run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           BRANCH="${{ github.head_ref }}"

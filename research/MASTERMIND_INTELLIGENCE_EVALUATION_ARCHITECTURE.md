@@ -12,7 +12,9 @@ exists, measured), `MASTERMIND_EVALUATION_STANDARDS.md` (methodology policy),
 **Mastermind does not need an evaluation system built. It needs the six evaluation systems it
 already has to be joined, named, and made answerable to one question.**
 
-The reconnaissance (catalog §1–§5) found a matched-control grading substrate, a live placebo
+The reconnaissance (catalog §1–§5) found a control-capable grading substrate (matched controls
+supported in code; no live claim carried one until the P0d contract — prospective
+matched-control evidence begins only when controlled claims register), a live placebo
 tape, a prospective champion-vs-challenger harness, a code-enforced promotion lifecycle, a
 kill registry with receipts, a contradiction detector, and 16 freshness/health monitors under scripts/. What it did
 not find is anything that can answer *"which parts of Mastermind are working, and how do you
@@ -110,7 +112,9 @@ gate returns 18 findings across 11 families.
 
 The contracts to add, per class:
 
-- **Predictive** — hit rate + matched-control excess at the declared horizon; calibration curve;
+- **Predictive** — hit rate at the declared horizon, with matched-control excess where the
+  family's control policy requires it and benchmark-relative excess otherwise (P0d contract);
+  calibration curve;
   MFE/MAE; honest-N by independent date cluster (already in `qledger`).
 - **Ranking** — rank-IC, decile monotonicity, top-minus-bottom spread with date-blocked CIs.
   Never a hit rate.
