@@ -19,12 +19,15 @@ import functools
 import hashlib
 import io
 import json
+import os
 import re
 import shlex
+import subprocess
 import sys
 import tokenize
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Mapping
 
 # Direct file execution must resolve this checkout's ``scripts`` package before
 # any installed namesake.  The import-hygiene gate requires the unconditional
@@ -109,6 +112,89 @@ class DependencyClosure:
     @property
     def safe(self) -> bool:
         return not self.ambiguities
+
+
+class GitTreeError(RuntimeError):
+    """The exact submitted Git tree cannot safely answer path identity."""
+
+
+def git_head_entry_modes(repo_root: Path) -> dict[str, int]:
+    """Return exact-case non-tree entries from ``HEAD`` in one bounded read."""
+    try:
+        completed = subprocess.run(
+            [
+                "git", "-C", str(repo_root), "ls-tree", "-r", "-z",
+                "--full-tree", "HEAD",
+            ],
+            capture_output=True,
+            check=False,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise GitTreeError(f"cannot read exact Git HEAD tree: {exc}") from exc
+    if completed.returncode != 0:
+        detail = completed.stderr.decode("utf-8", "replace").strip()
+        raise GitTreeError(
+            "cannot read exact Git HEAD tree" + (f": {detail}" if detail else "")
+        )
+
+    entries: dict[str, int] = {}
+    for raw in (item for item in completed.stdout.split(b"\0") if item):
+        if b"\t" not in raw:
+            raise GitTreeError("exact Git HEAD tree contains a malformed entry")
+        metadata, encoded_path = raw.split(b"\t", 1)
+        fields = metadata.split()
+        if len(fields) != 3:
+            raise GitTreeError("exact Git HEAD tree contains malformed metadata")
+        path = os.fsdecode(encoded_path)
+        candidate = Path(path)
+        if (
+            candidate.is_absolute()
+            or candidate.as_posix() != path
+            or "\\" in path
+            or any(part in {"", ".", ".."} for part in candidate.parts)
+        ):
+            raise GitTreeError(f"Git HEAD path is not canonical POSIX: {path!r}")
+        if path in entries:
+            raise GitTreeError(f"duplicate exact Git HEAD path {path!r}")
+        try:
+            entries[path] = int(fields[0], 8)
+        except ValueError as exc:
+            raise GitTreeError(f"invalid Git mode for {path!r}") from exc
+    return entries
+
+
+def git_tree_regular_file(entry_modes: Mapping[str, int], relative: str) -> bool:
+    """Return exact regular-file presence; reject symlink/gitlink traversal."""
+    parts = Path(relative).parts
+    for index in range(len(parts)):
+        prefix = Path(*parts[: index + 1]).as_posix()
+        mode = entry_modes.get(prefix)
+        if mode is None:
+            continue
+        kind = mode & 0o170000
+        if kind == 0o120000:
+            raise GitTreeError(
+                f"Git path {relative!r} traverses symbolic link {prefix!r}"
+            )
+        if kind == 0o160000:
+            raise GitTreeError(f"Git path {relative!r} traverses gitlink {prefix!r}")
+        if kind != 0o100000:
+            raise GitTreeError(
+                f"Git path {relative!r} has unsafe mode {mode:o} at {prefix!r}"
+            )
+        return index == len(parts) - 1
+    return False
+
+
+@functools.lru_cache(maxsize=8)
+def _selector_git_tree(repo_root: str) -> dict[str, int]:
+    """One immutable exact tree per selector process/repository root."""
+    return git_head_entry_modes(Path(repo_root))
+
+
+def _selector_file_exists(relative: str) -> bool:
+    return git_tree_regular_file(_selector_git_tree(str(ROOT.resolve())), relative)
 
 
 def _join_segments(node: ast.BinOp) -> tuple[ast.expr, list[str]] | None:
@@ -279,7 +365,7 @@ def _resolve(module: str) -> list[str]:
     return [
         candidate
         for candidate in (f"{base}.py", f"{base}/__init__.py")
-        if (ROOT / candidate).is_file()
+        if _selector_file_exists(candidate)
     ]
 
 
@@ -335,10 +421,10 @@ def direct_reads(
 
     candidates, data_candidates = _static_path_candidate_provenance(source, tree)
     for (kind, rel), line in candidates.items():
-        if (ROOT / rel).is_file():
+        if _selector_file_exists(rel):
             record(rel, kind, line)
     for (kind, rel), line in data_candidates.items():
-        if (ROOT / rel).is_file():
+        if _selector_file_exists(rel):
             excused(rel, kind, line)
 
     kept = {rel: why for rel, why in files.items() if not rel.endswith("__init__.py")}
@@ -787,7 +873,7 @@ def suite_dependency_closure(
         rel = path.resolve().relative_to(ROOT.resolve()).as_posix()
     except ValueError:
         return DependencyClosure((), (f"suite is outside repository: {path}",))
-    if not path.is_file():
+    if not _selector_file_exists(rel):
         return DependencyClosure((), (f"suite does not exist: {rel}",))
 
     files: set[str] = {rel}
@@ -805,7 +891,7 @@ def suite_dependency_closure(
         reads = set(reads_raw)
         for dependency in reads:
             dependency_path = ROOT / dependency
-            if not dependency_path.is_file():
+            if not _selector_file_exists(dependency):
                 continue
             files.add(dependency)
             if dependency.endswith(".py") and dependency not in visited:

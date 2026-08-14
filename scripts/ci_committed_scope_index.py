@@ -21,8 +21,6 @@ import importlib
 import json
 import os
 import re
-import stat
-import subprocess
 import sys
 import tempfile
 import time
@@ -142,40 +140,18 @@ def _selector_receipts(repo_root: Path) -> list[dict[str, str]]:
     return receipts
 
 
-def _tracked_python_paths(repo_root: Path) -> tuple[str, ...]:
-    """Return the deterministic tracked Python inventory for offline indexing.
-
-    Generation runs in a full checkout.  Git owns the production inventory so
-    ignored caches and virtual environments can never enter the committed
-    contract.  The filesystem fallback exists only for hermetic unit fixtures
-    that intentionally are not Git repositories.
-    """
-    try:
-        completed = subprocess.run(
-            ["git", "-C", str(repo_root), "ls-files", "-z", "--", "*.py"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            check=False,
-            timeout=30,
-        )
-    except (OSError, subprocess.SubprocessError):
-        completed = None
-    if completed is not None and completed.returncode == 0:
-        candidates = [
-            item
-            for item in completed.stdout.decode("utf-8", "replace").split("\0")
-            if item
-        ]
-    else:
-        candidates = [
-            path.relative_to(repo_root).as_posix()
-            for path in repo_root.rglob("*.py")
-            if path.is_file()
-        ]
-
+def _tracked_python_paths(entry_modes: Mapping[str, int]) -> tuple[str, ...]:
+    """Return exact-case regular Python blobs from the submitted Git tree."""
     paths: list[str] = []
-    for candidate in sorted(set(candidates)):
+    for candidate, mode in sorted(entry_modes.items()):
+        if not candidate.endswith(".py"):
+            continue
         path = Path(candidate)
+        kind = mode & 0o170000
+        if kind != 0o100000:
+            raise ScopeIndexError(
+                f"tracked Python path has unsafe Git mode {mode:o}: {candidate!r}"
+            )
         if (
             path.is_absolute()
             or path.suffix != ".py"
@@ -186,11 +162,6 @@ def _tracked_python_paths(repo_root: Path) -> tuple[str, ...]:
             raise ScopeIndexError(
                 f"tracked Python path is not canonical repository-relative POSIX: {candidate!r}"
             )
-        source, label = _repo_file(
-            repo_root, candidate, label=f"tracked Python source {candidate}"
-        )
-        if label != candidate or source.suffix != ".py":
-            raise ScopeIndexError(f"tracked Python path is not canonical: {candidate!r}")
         paths.append(candidate)
     return tuple(paths)
 
@@ -221,41 +192,26 @@ def _canonical_static_candidate_path(value: Any, *, label: str) -> str:
     return value
 
 
-def _worktree_static_candidate_present(repo_root: Path, relative: str) -> bool:
-    """Whether ``relative`` is a regular file, rejecting symlink indirection."""
-    current = repo_root
-    parts = PurePosixPath(relative).parts
-    for index, part in enumerate(parts):
-        current /= part
-        try:
-            mode = current.lstat().st_mode
-        except FileNotFoundError:
-            return False
-        except OSError as exc:
-            raise ScopeIndexError(
-                f"cannot inspect static path candidate {relative}: {exc}"
-            ) from exc
-        if stat.S_ISLNK(mode):
-            raise ScopeIndexError(
-                f"static path candidate {relative!r} traverses symbolic link "
-                f"{current.relative_to(repo_root).as_posix()!r}"
-            )
-        if index < len(parts) - 1:
-            if stat.S_ISREG(mode):
-                return False
-            if not stat.S_ISDIR(mode):
-                raise ScopeIndexError(
-                    f"static path candidate {relative!r} traverses an unsafe file type"
-                )
-            continue
-        if stat.S_ISREG(mode):
-            return True
-        if stat.S_ISDIR(mode):
-            return False
-        raise ScopeIndexError(
-            f"static path candidate {relative!r} is not a regular file or directory"
-        )
-    return False
+def _exact_git_tree(repo_root: Path) -> dict[str, int]:
+    try:
+        from scripts.ci_scope_dependencies import GitTreeError, git_head_entry_modes
+    except (ImportError, OSError, SyntaxError) as exc:
+        raise ScopeIndexError(str(exc)) from exc
+    try:
+        return git_head_entry_modes(repo_root)
+    except GitTreeError as exc:
+        raise ScopeIndexError(str(exc)) from exc
+
+
+def _candidate_present(entry_modes: Mapping[str, int], relative: str) -> bool:
+    try:
+        from scripts.ci_scope_dependencies import GitTreeError, git_tree_regular_file
+    except (ImportError, OSError, SyntaxError) as exc:
+        raise ScopeIndexError(str(exc)) from exc
+    try:
+        return git_tree_regular_file(entry_modes, relative)
+    except GitTreeError as exc:
+        raise ScopeIndexError(str(exc)) from exc
 
 
 def _dependency_contract_receipts(
@@ -270,9 +226,11 @@ def _dependency_contract_receipts(
     except (ImportError, OSError, SyntaxError) as exc:
         raise ScopeIndexError(f"cannot import dependency analyzers: {exc}") from exc
 
+    entry_modes = _exact_git_tree(repo_root)
+
     records: list[dict[str, str]] = []
     candidate_paths: set[str] = set()
-    for relative in _tracked_python_paths(repo_root):
+    for relative in _tracked_python_paths(entry_modes):
         source, _label = _repo_file(
             repo_root, relative, label=f"tracked Python source {relative}"
         )
@@ -298,7 +256,7 @@ def _dependency_contract_receipts(
     candidates = [
         {
             "path": relative,
-            "present": _worktree_static_candidate_present(repo_root, relative),
+            "present": _candidate_present(entry_modes, relative),
         }
         for relative in sorted(candidate_paths)
     ]
@@ -785,6 +743,25 @@ def _verify_document(
     digest = _verify_digest_and_schema(document)
     dependency_inventory = _dependency_signature_inventory(document)
     candidate_inventory = _static_path_candidate_inventory(document)
+    entry_modes = _exact_git_tree(repo_root)
+
+    exact_python_paths = _tracked_python_paths(entry_modes)
+    indexed_python_paths = tuple(dependency_inventory)
+    if indexed_python_paths != exact_python_paths:
+        missing = sorted(set(exact_python_paths) - set(indexed_python_paths))
+        extra = sorted(set(indexed_python_paths) - set(exact_python_paths))
+        raise ScopeIndexError(
+            "dependency signature exact Git-tree inventory drift"
+            + (f"; missing from index: {missing[:10]}" if missing else "")
+            + (f"; absent from HEAD: {extra[:10]}" if extra else "")
+        )
+    for path, expected in candidate_inventory.items():
+        observed = _candidate_present(entry_modes, path)
+        if observed != expected:
+            raise ScopeIndexError(
+                "static path candidate exact Git-tree presence drift for "
+                f"{path}: index has {expected}, HEAD has {observed}"
+            )
 
     manifest_record = _require_exact_keys(
         document["manifest"], {"path", "sha256"}, label="manifest receipt"

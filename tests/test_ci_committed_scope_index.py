@@ -77,6 +77,15 @@ jobs:
     (root / "engine" / "worker.py").write_text(
         "def calculate():\n    return 1\n", encoding="utf-8"
     )
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "base fixture"], cwd=root, check=True)
     return root
 
 
@@ -142,6 +151,7 @@ def _install_static_candidate_fixture(tiny_repo: Path) -> tuple[Path, Path, Path
         "    return 1\n",
         encoding="utf-8",
     )
+    _commit_fixture(tiny_repo, "install static candidates")
     return present, missing, link
 
 
@@ -217,6 +227,92 @@ def test_generation_and_verify_bind_present_and_absent_static_path_candidates(
     ) == "absent"
 
 
+def test_exact_git_tree_case_identity_drives_candidates_jobs_and_verify(
+    tiny_repo: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from scripts import ci_scope_dependencies as dependencies
+
+    upper = tiny_repo / "research/winners/cases/NVDA_2023.md"
+    lower_rel = "research/winners/cases/nvda_2023.md"
+    upper.parent.mkdir(parents=True)
+    upper.write_text("# exact uppercase entry\n", encoding="utf-8")
+    worker = tiny_repo / "engine/worker.py"
+    worker.write_text(f"CASE = {lower_rel!r}\n", encoding="utf-8")
+    _commit_fixture(tiny_repo, "case-sensitive candidate fixture")
+
+    monkeypatch.setattr(dependencies, "ROOT", tiny_repo)
+
+    def infer(jobs):
+        reads = tuple(sorted(dependencies.direct_reads(worker)))
+        return [replace(jobs[0], paths=reads), replace(jobs[1], paths=())], "exact tree"
+
+    index = tiny_repo.parent / "case-index.json"
+    document = scope_index.generate_scope_index(
+        output_path=index,
+        repo_root=tiny_repo,
+        pack_module=ci_pack,
+        infer_scopes=infer,
+    )
+    inventory = scope_index.load_static_path_candidate_inventory(index)
+
+    assert inventory[lower_rel] is False
+    assert lower_rel not in document["jobs"][0]["paths"]
+    scope_index.verify_scope_index(index, repo_root=tiny_repo, pack_module=ci_pack)
+
+    tampered = _read(index)
+    record = next(
+        item
+        for item in tampered["static_path_candidates"]["candidates"]
+        if item["path"] == lower_rel
+    )
+    record["present"] = True
+    _write_and_reseal(index, tampered)
+    with pytest.raises(scope_index.ScopeIndexError, match="presence drift"):
+        scope_index.verify_scope_index(index, repo_root=tiny_repo, pack_module=ci_pack)
+
+    fresh = tiny_repo.parent / "case-index-fresh.json"
+    scope_index.generate_scope_index(
+        output_path=fresh,
+        repo_root=tiny_repo,
+        pack_module=ci_pack,
+        infer_scopes=infer,
+    )
+    temporary = "research/winners/cases/case-rename.tmp"
+    subprocess.run(
+        ["git", "mv", upper.relative_to(tiny_repo), temporary],
+        cwd=tiny_repo,
+        check=True,
+    )
+    subprocess.run(["git", "mv", temporary, lower_rel], cwd=tiny_repo, check=True)
+    _commit_fixture(tiny_repo, "make lowercase entry exact")
+    with pytest.raises(scope_index.ScopeIndexError, match="presence drift"):
+        scope_index.verify_scope_index(fresh, repo_root=tiny_repo, pack_module=ci_pack)
+
+
+def test_verify_rejects_exact_git_tree_python_inventory_drift(tiny_repo: Path) -> None:
+    index = _generate(tiny_repo)
+    added = tiny_repo / "engine/new_module.py"
+    added.write_text("VALUE = 1\n", encoding="utf-8")
+    _commit_fixture(tiny_repo, "add tracked Python source")
+
+    with pytest.raises(scope_index.ScopeIndexError, match="Git-tree inventory drift"):
+        scope_index.verify_scope_index(index, repo_root=tiny_repo, pack_module=ci_pack)
+
+
+@pytest.mark.parametrize(
+    ("mode", "expected"),
+    [(0o120000, "symbolic link"), (0o160000, "gitlink")],
+)
+def test_exact_git_tree_rejects_unsafe_candidate_modes(
+    mode: int, expected: str
+) -> None:
+    from scripts.ci_scope_dependencies import GitTreeError, git_tree_regular_file
+
+    with pytest.raises(GitTreeError, match=expected):
+        git_tree_regular_file({"config/link": mode}, "config/link/value.yml")
+
+
 def test_static_path_candidate_tamper_is_digest_bound(tiny_repo: Path) -> None:
     _install_static_candidate_fixture(tiny_repo)
     index = _generate(tiny_repo)
@@ -283,16 +379,6 @@ def test_preflight_checks_static_candidate_topology_from_submitted_head(
 ) -> None:
     present, missing, link = _install_static_candidate_fixture(tiny_repo)
     index = _generate(tiny_repo)
-    subprocess.run(["git", "init", "-q"], cwd=tiny_repo, check=True)
-    subprocess.run(
-        ["git", "config", "user.name", "CI Test"], cwd=tiny_repo, check=True
-    )
-    subprocess.run(
-        ["git", "config", "user.email", "ci-test@example.invalid"],
-        cwd=tiny_repo,
-        check=True,
-    )
-    _commit_fixture(tiny_repo, "indexed fixture")
 
     if mutation == "add":
         missing.write_text("value: added\n", encoding="utf-8")
@@ -324,6 +410,7 @@ def test_preflight_checks_static_candidate_topology_from_submitted_head(
 def test_generation_rejects_static_candidate_symlink(tiny_repo: Path) -> None:
     _present, _missing, link = _install_static_candidate_fixture(tiny_repo)
     link.symlink_to("present.yml")
+    _commit_fixture(tiny_repo, "add candidate symlink")
 
     with pytest.raises(scope_index.ScopeIndexError, match="symbolic link"):
         _generate(tiny_repo)
@@ -546,17 +633,6 @@ def test_sparse_preflight_reads_only_changed_python_blob_from_head(
     expected_status: str,
 ) -> None:
     index = _generate(tiny_repo)
-    subprocess.run(["git", "init", "-q"], cwd=tiny_repo, check=True)
-    subprocess.run(
-        ["git", "config", "user.name", "CI Test"], cwd=tiny_repo, check=True
-    )
-    subprocess.run(
-        ["git", "config", "user.email", "ci-test@example.invalid"],
-        cwd=tiny_repo,
-        check=True,
-    )
-    subprocess.run(["git", "add", "."], cwd=tiny_repo, check=True)
-    subprocess.run(["git", "commit", "-qm", "indexed fixture"], cwd=tiny_repo, check=True)
 
     worker = tiny_repo / "engine/worker.py"
     worker.write_text(submitted, encoding="utf-8")

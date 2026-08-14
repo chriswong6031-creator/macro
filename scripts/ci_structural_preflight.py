@@ -61,6 +61,11 @@ from scripts.check_conflict_markers import (  # noqa: E402
 )
 from scripts.check_workflow_yaml import check_file as check_workflow_file  # noqa: E402
 from scripts import ci_committed_scope_index as committed_scope_index  # noqa: E402
+from scripts.ci_scope_dependencies import (  # noqa: E402
+    GitTreeError,
+    git_head_entry_modes,
+    git_tree_regular_file,
+)
 from scripts.run_ci_pack import (  # noqa: E402
     GLOBAL_INVALIDATORS,
     OPAQUE_IO_ROOTS,
@@ -351,97 +356,14 @@ def _git_head_mode(root: Path, rel: str) -> int | None:
         return None
 
 
-def _filesystem_static_candidate_present(root: Path, rel: str) -> bool:
-    current = root
-    parts = PurePosixPath(rel).parts
-    for index, part in enumerate(parts):
-        current /= part
-        try:
-            mode = current.lstat().st_mode
-        except FileNotFoundError:
-            return False
-        except OSError as exc:
-            raise committed_scope_index.ScopeIndexError(
-                f"cannot inspect submitted static path candidate {rel}: {exc}"
-            ) from exc
-        if stat.S_ISLNK(mode):
-            raise committed_scope_index.ScopeIndexError(
-                f"submitted static path candidate {rel!r} traverses symbolic link "
-                f"{current.relative_to(root).as_posix()!r}"
-            )
-        if index < len(parts) - 1:
-            if stat.S_ISREG(mode):
-                return False
-            if not stat.S_ISDIR(mode):
-                raise committed_scope_index.ScopeIndexError(
-                    f"submitted static path candidate {rel!r} traverses an unsafe file type"
-                )
-            continue
-        if stat.S_ISREG(mode):
-            return True
-        if stat.S_ISDIR(mode):
-            return False
-        raise committed_scope_index.ScopeIndexError(
-            f"submitted static path candidate {rel!r} has an unsafe file type"
-        )
-    return False
-
-
-def _submitted_static_candidate_present(root: Path, rel: str) -> bool:
+def _submitted_static_candidate_present(
+    entry_modes: dict[str, int], rel: str
+) -> bool:
     """Read regular-file existence from submitted HEAD, never a sparse tree."""
     try:
-        probe = subprocess.run(
-            ["git", "-C", str(root), "rev-parse", "--verify", "HEAD^{commit}"],
-            capture_output=True,
-            check=False,
-            timeout=5,
-        )
-    except (OSError, subprocess.SubprocessError) as exc:
-        raise committed_scope_index.ScopeIndexError(
-            f"cannot identify submitted HEAD for static path candidate {rel}: {exc}"
-        ) from exc
-    if probe.returncode != 0:
-        stderr = probe.stderr.lower()
-        if b"not a git repository" in stderr or b"unknown revision" in stderr:
-            return _filesystem_static_candidate_present(root, rel)
-        raise committed_scope_index.ScopeIndexError(
-            f"cannot identify submitted HEAD for static path candidate {rel}"
-        )
-
-    parts = PurePosixPath(rel).parts
-    for index in range(len(parts)):
-        prefix = PurePosixPath(*parts[: index + 1]).as_posix()
-        contains = _git_head_contains(root, prefix)
-        if contains is False:
-            return False
-        mode = _git_head_mode(root, prefix) if contains else None
-        if contains is None or mode is None:
-            raise committed_scope_index.ScopeIndexError(
-                f"cannot inspect submitted HEAD mode for static path candidate {prefix}"
-            )
-        kind = mode & 0o170000
-        if kind == 0o120000:
-            raise committed_scope_index.ScopeIndexError(
-                f"submitted static path candidate {rel!r} traverses symbolic link "
-                f"{prefix!r}"
-            )
-        if index < len(parts) - 1:
-            if kind == 0o100000:
-                return False
-            if kind != 0o040000:
-                raise committed_scope_index.ScopeIndexError(
-                    f"submitted static path candidate {rel!r} traverses unsafe Git "
-                    f"mode {mode:o} at {prefix!r}"
-                )
-            continue
-        if kind == 0o100000:
-            return True
-        if kind == 0o040000:
-            return False
-        raise committed_scope_index.ScopeIndexError(
-            f"submitted static path candidate {rel!r} has unsafe Git mode {mode:o}"
-        )
-    return False
+        return git_tree_regular_file(entry_modes, rel)
+    except GitTreeError as exc:
+        raise committed_scope_index.ScopeIndexError(str(exc)) from exc
 
 
 def _is_controlled_text(root: Path, rel: str) -> bool:
@@ -691,10 +613,27 @@ def run_preflight(
                     for changed_path in changed
                 )
             )
+            submitted_entry_modes: dict[str, int] | None = {}
+            if affected_candidates:
+                try:
+                    submitted_entry_modes = git_head_entry_modes(root)
+                except GitTreeError as exc:
+                    dependency_signature_findings.append(
+                        _finding(
+                            "static_path_candidate_unsafe",
+                            "planner_configuration_failure",
+                            str(exc),
+                        )
+                    )
+                    submitted_entry_modes = None
             for rel in affected_candidates:
                 metrics["changed_static_path_candidates_examined"] += 1
+                if submitted_entry_modes is None:
+                    continue
                 try:
-                    submitted_present = _submitted_static_candidate_present(root, rel)
+                    submitted_present = _submitted_static_candidate_present(
+                        submitted_entry_modes, rel
+                    )
                     committed_scope_index.verify_changed_static_path_candidate(
                         candidate_inventory, rel, submitted_present
                     )
