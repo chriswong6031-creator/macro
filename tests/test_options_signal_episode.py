@@ -5526,8 +5526,33 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
     ] == [
         "scripts/build_options_signal_episode.py",
         "scripts/audit_options_market_memory_context.py",
+        # #5539's unlabelled-H+60 adjudication: the census that BOUNDS the hole
+        # outcomes_h60.jsonl leaves (a pending row is never appended, so an episode
+        # that never resolves never appears) and the classifier that splits it by
+        # remedy. Both READ — neither appears in `producer`/`known_extra_writers`,
+        # which the block just below now pins for these two artifacts.
+        "scripts/audit_options_episode_outcome_coverage.py",
         "engine/options_signal_campaign.py",
+        "engine/options_episode_coverage.py",
     ]
+
+    # The one-writer half of this test's NAME was only ever enforced for the campaign
+    # artifacts; the two episode ledgers had their `consumers` frozen and nothing else.
+    # That is the wrong way round — a frozen consumer list reds on every legitimate
+    # READER (as #5539's census just did) while a new WRITER or a scored surface, the
+    # things the law is actually about, could land silently. Pin them here.
+    for artifact_id in (
+        "options-signal-episodes",
+        "options-signal-episode-h60-outcomes",
+    ):
+        episode_artifact = registry["artifacts"][artifact_id]
+        assert episode_artifact["producer"] == (
+            "scripts/build_options_signal_episode.py"
+        ), artifact_id
+        assert episode_artifact["known_extra_writers"] == [], artifact_id
+        assert episode_artifact["external_consumers"] == [], artifact_id
+        assert episode_artifact["weights"] == "none", artifact_id
+        assert episode_artifact["scored_path_surfaces"] == [], artifact_id
 
     for artifact_id in (
         "options-signal-campaign-revisions",
