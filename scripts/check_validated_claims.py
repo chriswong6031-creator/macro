@@ -1258,6 +1258,12 @@ def selftest() -> int:
         ("prose beside a numeric validated JSON key still fires",
          '<script type="application/json">{"validated":0,"copy":"This signal is validated."}</script>',
          True, allow, S),
+        ("earned validated_tag enum value is data, not a claim",
+         '<script type="application/json">{"validated_tag":"validated"}</script>',
+         False, allow, S),
+        ("prose beside an earned validated_tag enum still fires",
+         '<script type="application/json">{"validated_tag":"validated",'
+         '"copy":"This signal is validated."}</script>', True, allow, S),
         # ── selector / identifier vs hyphenated PROSE (the _IDENT_MASK narrowing) ────
         ("CSS class selector is not a claim",
          "  .nbb-validated { color: var(--up); }", False, allow, S),
