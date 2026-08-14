@@ -2600,9 +2600,11 @@ jobs:
     paths:
       - config.yml
       - docs/HOUSE_LAW_CI_GUARD_SUITE.md
+      - scripts/check_append_only_assertions.py
       - scripts/check_claim_passport.py
       - scripts/check_house_law_registry.py
       - scripts/check_symbol_rename_drift.py
+      - tests/test_append_only_assertions.py
       - tests/test_dataos_security_master.py
       - tests/test_house_law_registry.py
       - tests/test_ticker_alias_boundary.py

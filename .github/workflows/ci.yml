@@ -1741,9 +1741,11 @@ on:
       # is complete and consistent.
       - "config/house_law_checks.yml"
       - "scripts/check_house_law_registry.py"
+      - "scripts/check_append_only_assertions.py"
       - "docs/HOUSE_LAW_CI_GUARD_SUITE.md"
       - "docs/**"
       - "tests/test_house_law_registry.py"
+      - "tests/test_append_only_assertions.py"
       # validated-claims guard: wire as PR gate so unearned 'validated' claims
       # are caught before merge (not just in the nightly calibration run).
       - "scripts/check_validated_claims.py"
