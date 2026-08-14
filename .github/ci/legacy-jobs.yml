@@ -475,8 +475,21 @@ jobs:
       # per-ticker schema + the nightly validator, which is precisely what this step runs.
       # A contract field whose pairing rule no job checks is a scheduled red the first time
       # a producer drifts.
+      # P1 unrun backfill 2026-08-14: tests/test_signal_date_family.py joins the step
+      # that already owns scripts/validate_signals.py (test_validate_signals.py) and the
+      # signal-date contract (test_early_signal_dates_contract.py).  It was named by no
+      # `run:` step in any workflow, so the DATE FAMILY law — which of a signal's dates
+      # may be derived from which, the thing engine/marker_integrity.py exists to pin —
+      # was dark on a publish pipeline.  It rides this existing step because a step is
+      # the masking unit (run_ci_pack.py returns on the first non-zero step, so a later
+      # step goes dark behind an earlier red) while pytest reports EVERY file inside ONE
+      # step, and no new job because the manifest is at the narrow-diff ceiling.
+      # Appended LAST so a validator or look-ahead regression is the first failure a
+      # reader sees rather than the date-family guard failing for a borrowed reason.
+      # No dependency widened: probed at RUN time it loads only pandas/numpy/pyarrow/
+      # pyyaml, all already on this job's install line.
       - name: signal §7 contract tests + the marker-date look-ahead guard
-        run: python -m pytest tests/test_validate_signals.py tests/test_signal_quality_no_leak.py tests/test_early_signal_dates_contract.py -q
+        run: python -m pytest tests/test_validate_signals.py tests/test_signal_quality_no_leak.py tests/test_early_signal_dates_contract.py tests/test_signal_date_family.py -q
       # drives the REAL engine.signal_quality._buy_filter and analyze() over synthetic
       # series, so it needs pandas + numpy + pyyaml (lib.config, via engine.technicals) —
       # all present in the install line above, so no importorskip is needed and none is
@@ -591,13 +604,29 @@ jobs:
           research/prophet_us_audit/test_price_ladder.py
           research/prophet_us_audit/test_stop_curvature_study.py
           research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py -q
+      # P1 unrun backfill 2026-08-14: the DISCLOSURE BUNDLE — the publish-side artifact
+      # built on top of the lineage/normalize/detector chain below — joins the step that
+      # already owns that chain.  tests/test_fundamental_forensics_disclosure_bundle.py
+      # was named by no `run:` step in any workflow, so scripts/fundamental_forensics_
+      # disclosure_bundle.py and engine/fundamental_forensics/disclosure_{bundle,
+      # projection}.py had no CI owner at all.  This job is the owner on the evidence:
+      # it already runs the ingest, normalize, detector and contract suites over
+      # engine/fundamental_forensics/models.py.  It rides this existing step because a
+      # step is the masking unit (run_ci_pack.py returns on the first non-zero step)
+      # while pytest reports EVERY file inside ONE step, and adds no job to a manifest
+      # already at the narrow-diff ceiling.  Appended LAST so an ingest/normalize/
+      # detector regression is the first failure a reader sees rather than the bundle
+      # failing for a borrowed reason.  No dependency widened: probed at RUN time it
+      # loads pandas/numpy/pyarrow/pyyaml/requests, every one already on the install
+      # line above.
       - name: fundamental forensics lineage, normalization, detector, and schema contracts
         run: >
           python -m pytest
           tests/test_fundamental_forensics_ingest.py
           tests/test_fundamental_forensics_normalize.py
           tests/test_fundamental_forensics_detectors.py
-          tests/test_fundamental_forensics_contract.py -q
+          tests/test_fundamental_forensics_contract.py
+          tests/test_fundamental_forensics_disclosure_bundle.py -q
       # Four detector ids exist as byte-identical strings in THREE implementations
       # with three separate threshold stores: scripts/build_fundamental_forensics.py
       # (inline FRACTION literals, Filing Forensics workbench),
@@ -1677,6 +1706,19 @@ jobs:
           python-version: "3.12"
       - name: install capital-structure test deps
         run: pip install pytest pandas numpy pyarrow jsonschema==4.26.0 requests pyyaml jinja2 fastapi httpx boto3
+      # P1 unrun backfill 2026-08-14: the REGISTRATION-LIFECYCLE compiler joins the step
+      # that already owns every other capital-structure compiler and contract.
+      # tests/test_compile_capital_structure_registration_lifecycles.py was named by no
+      # `run:` step in any workflow, so scripts/compile_capital_structure_registration_
+      # lifecycles.py and engine/capital_structure/registration_lifecycle.py had no CI
+      # owner, while the source_identity/source_ledger_io modules they build on were
+      # covered here.  Appended LAST in the list so a compiler, contract or source-store
+      # regression is the first failure a reader sees rather than the lifecycle compiler
+      # failing for a borrowed reason.  It rides this existing step because a step is the
+      # masking unit (run_ci_pack.py returns on the first non-zero step) while pytest
+      # reports every file inside one step, and adds no job to a manifest at the
+      # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads
+      # pandas/numpy/pyarrow/pyyaml/requests, all already on the install line above.
       - name: capital-structure contracts, compilers, projection, graph, source store, and legacy boundary
         # FOUR nightly-wiring suites ride HERE on purpose, and they only mean
         # anything together — each states one side of the same 2026-08-06 split:
@@ -1733,7 +1775,8 @@ jobs:
           tests/test_capital_structure_share_count_r2_concurrency_operator.py
           tests/test_sec_capital_structure.py
           tests/test_sec_capital_structure_companyfacts.py
-          tests/test_nwqs_c_dilution.py -q
+          tests/test_nwqs_c_dilution.py
+          tests/test_compile_capital_structure_registration_lifecycles.py -q
 
   stock-seasonality:
     if: ${{ false }}
@@ -5766,8 +5809,22 @@ jobs:
         run: python -m pytest tests/test_flow_leaders.py tests/test_build_flow_leaders.py -q
       - name: market-structure engine + nw-context + page suites (week_map emission pins)
         run: python -m pytest tests/test_market_structure.py tests/test_market_structure_nw.py tests/test_build_market_structure_page.py -q
+      # P1 unrun backfill 2026-08-14: tests/test_options_gap_discipline.py joins the
+      # options-screener step.  It was named by no `run:` step in any workflow, so the
+      # GAP DISCIPLINE law — what the screener and flow-leaders builders may publish
+      # across a session gap — was dark while both builders it constrains were covered.
+      # THIS step rather than the flow-leaders one above is deliberate: the suite reads
+      # scripts/build_flow_leaders.py AND scripts/build_options_screener.py, and this
+      # job runs flow-leaders (and market-structure) EARLIER in the step list, so
+      # landing here puts it downstream of both contract suites it depends on.  Within
+      # the step it is appended last for the same reason.  It rides an existing step
+      # because a step is the masking unit (run_ci_pack.py returns on the first non-zero
+      # step, so a later step goes dark behind an earlier red) while pytest reports
+      # every file inside one step; no new job — the manifest is at the narrow-diff
+      # ceiling.  No dependency widened: probed at RUN time it loads only pandas/numpy/
+      # pyarrow/pyyaml, and blocking openpyxl leaves it 38-passed.
       - name: options-screener builder suite (denominator pins)
-        run: python -m pytest tests/test_build_options_screener.py -q
+        run: python -m pytest tests/test_build_options_screener.py tests/test_options_gap_discipline.py -q
       - name: options workspace suite (OEU M-CMD — 4 modes, close-line honesty, payload law)
         run: python -m pytest tests/test_build_options_command.py -q
       - name: neural-web support-map suite (real-synapse census bands)
