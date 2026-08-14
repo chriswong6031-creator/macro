@@ -26,11 +26,13 @@ waves:
     status: done
   - id: P-B2
     title: Matched precursor discrimination (the preregistered comparison arm)
-    status: in_progress
+    status: done
     next_action: >-
-      Prereg frozen BEFORE outcomes (research/cn_prophet_audit/
-      PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md); instrument + receipts ride
-      the same PR.
+      SHIPPED (PR #5615): prereg frozen before outcomes; 17/17 checks + probes;
+      byte-identical runs. Verdict = NO DISCRIMINATOR at the preregistered bar —
+      placebo calibration failed 3/4 families, exposing name-level propensity
+      confounding (DSC:CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND); strong
+      holdout-consistent SUGGESTIVE structure recorded, nothing rescued.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -81,11 +83,15 @@ do_not_redo:
     Do not import China Intelligence composite scores (opportunity_score / conviction)
     into any Prophet-facing construction: display-tier composites; raw evidence
     producers only, each re-earning incremental value under its own preregistration.
+discoveries: ["DSC:CN-CROSS-SECTION-NAME-PROPENSITY-CONFOUND"]
 next_action: >-
-  Execute P-B2 per its frozen prereg and ship the receipts. Then: prospective/PIT
-  evidence-accrual hardening for orthogonal China Intelligence families -> P-C when its
-  data gates open -> full-A exact-plane re-measurement -> P-D ablation arena. No
-  production scoring change from P-B2 itself.
+  Post-P-B2 order: (1) prospective/PIT evidence-accrual hardening for orthogonal
+  China Intelligence families (broker jingu first-seen store; report_rc fix rides
+  its chip; per-name margin/block-trades/buybacks accrual); (2) a name-propensity-
+  controlled discrimination design that passes its own placebo (the reopen path for
+  P-B2's SUGGESTIVE structure); (3) P-C when its data gates open; (4) full-A
+  exact-plane re-measurement; (5) P-D ablation arena. No production scoring change
+  from P-B2 itself.
 ---
 
 ## Context
