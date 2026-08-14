@@ -39,7 +39,7 @@
 
 **Sequencing gates:**
 
-- [ ] G0-VIS: glyph identity confirmation (§3.3) closed before PR-2's parity freeze
+- [x] G0-VIS: glyph identity confirmation (§3.3) — **CLOSED 2026-08-13, operator confirmation (§18 A1)**
 - [ ] Parity fixtures green before any cross-repo G0 claim
 - [ ] Look ledger exists before the first replay read (PR-5 entry criterion)
 
@@ -113,7 +113,9 @@ Spec source = `charting-app` **`origin/master`** (the local checkout is a month 
 
 Code verdict **HIGH confidence** (Track A §2): the emitter comment names "the old **gray** side-channel dot" verbatim; the unpromoted dot renders as a 2.2px circle, 55% opacity, fill `#717a8e` (`--muted`), 9px below the bar low, behind the "Signals detail" chip; only washout-context dots are promoted to the amber `EARLY` marker (`#e8b339`), and grey remains the overwhelming form (29 dots ≥2025 across NVDA/TSLA/NFLX; only 3 promoted, all NFLX). No competing grey marker exists in the chart layer.
 
-**Closure protocol:** the operator names one remembered dot (symbol + approximate date); it is matched against the computed fired-date table in Track A §2.6 (NVDA: 2025-01-17, 03-12, 09-11, 09-29, 12-02, 12-18, 2026-01-21, 07-07 · TSLA: 2025-01-16, 02-12, 03-11, 04-09, 07-11, 08-11, 11-20, 2026-02-05, 02-24, 03-30 · NFLX: 11 dots incl. the 3 amber-promoted). One lookup, no code. Open until answered; blocks only PR-2's parity freeze.
+**Closure protocol:** the operator names one remembered dot (symbol + approximate date); it is matched against the computed fired-date table in Track A §2.6 (NVDA: 2025-01-17, 03-12, 09-11, 09-29, 12-02, 12-18, 2026-01-21, 07-07 · TSLA: 2025-01-16, 02-12, 03-11, 04-09, 07-11, 08-11, 11-20, 2026-02-05, 02-24, 03-30 · NFLX: 11 dots incl. the 3 amber-promoted).
+
+**→ CLOSED 2026-08-13 (§18 A1): the operator confirmed the raw grey anticipation-dot family. G0 = the exact raw grey-dot emitter; the amber-promoted `EARLY` is a distinct recorded family with a preserved promotion link.** PR-2's parity freeze is unblocked.
 
 ### 3.4 C5 — Terminal Bottom Watch (locked; receipts Track A §3)
 
@@ -145,7 +147,7 @@ Frozen arena (detector IDs are versioned; `spec_hash` per version; a spec change
 
 **Indicator-core law (Track B §1, binding on PR-2/PR-3):** the Macro repo carries **two incompatible RSI families** — canon's SMA-seeded RMA (`engine/canon.py:353-362`, == Pine `ta.rsi`, the cross-repo golden oracle; used by canon and `washout_turn`) and the bare-`ewm` variant (`engine/technicals.py:26-31`; what the shipped Prophet gate actually runs, under five wrong "== Pine" comments) — differing exactly where crosses flip. Nine StochRSI sites and five RSI-MACD sites exist with divergent NaN policies and `adjust` flags (RSI-MACD here means `EMA(RSI,14) − EMA(RSI,60)`, signal `EMA(·,5)` — never price MACD). Radar therefore: (a) computes its indicators in **its own modules only**, pinning **one named family** — default `engine/canon.py` (R-A) as the cross-repo parity substrate, confirmed against Track A's Terminal spec before PR-2; (b) never imports `engine/technicals.rsi` for any Radar detector (`engine/washout_turn.py:31-33` precedent); (c) uses a true Wilder ATR (`engine/stock_technicals.py:58-73` form, PIT-shifted per `engine/personality_relief_hazard.py:210-220`), **never** `entry_signal._atr_pct` (which is a close-only mean-abs-return misnomer, `engine/entry_signal.py:60-73`); (d) adopts the **absolute session anchor** for any 2D/3D bucketing (`engine/confluence_tiers.py:274-304`, `session_positions // n`, per-bucket last close indexed at bucket-last session date) with its own new era string — never first-bar-ordinal resampling (measured 12.83% verdict movement under leading-bar drops) and never calendar-anchored `resample("2W-FRI")` (the `htf_durability.py:102-115` vs `momentum_events.py:149` contradiction is not inherited).
 
-A ticker can occupy several lanes simultaneously; lanes are never blended behind one number without per-lane provenance (§9).
+A ticker can occupy several lanes simultaneously; lanes are never blended behind one number without per-lane provenance (§9). **Beyond the arena, Radar records Terminal's other entry-event families as distinct candidate experts with full identity preserved (§18 A1) — recorded ≠ graded; no flattening.**
 
 ---
 
@@ -327,7 +329,7 @@ Minimum cohort set: leader reset; partial/shallow washout; full daily washout; d
 
 Machine lifecycle per (ticker, detector): `PROBING → ARMED → TURNING → CANDIDATE → INVALIDATED | EXPIRED | RESOLVED` (append/history-preserving; user-facing simplification: Probing / Pre-candidate / Candidate). `detector_state`, `priority_score`, and `manual_state` are independent dimensions — a priority move from 91 to 63 changes no lifecycle fact.
 
-**Episode contract (frozen):** `mastermind.live_entry_episode.v1`: `episode_id, ticker, detector_id, detector_version, detector_spec_hash, state, first_armed_at, candidate_at, last_observed_at, market_session, bar_availability, feature_snapshot, universe_admission, lobe_nominations, price_at_signal, risk_geometry, detector_score, research_priority, opportunity_score, data_quality, freshness, evidence_refs` — plus the §5 availability block on every stored reading. A candidate leaving today's board still exists in the ledger forever.
+**Episode contract (frozen):** `mastermind.live_entry_episode.v1`: `episode_id, ticker, detector_id, detector_version, detector_spec_hash, state, first_armed_at, candidate_at, last_observed_at, market_session, bar_availability, feature_snapshot, universe_admission, lobe_nominations, price_at_signal, risk_geometry, detector_score, research_priority, opportunity_score, data_quality, freshness, evidence_refs` — plus the §5 availability block on every stored reading, **plus the A1 expert-provenance block (§18 A1): `producer, family, subtype, stage, quality, context, signal_ts, signal_known_ts, source_identity, scored_authority, promotion_of`** — preserved verbatim from the emitter wherever available, so no downstream program must reconstruct a lost distinction. A candidate leaving today's board still exists in the ledger forever.
 
 **Manual disposition (V1 or immediately after):** `Watch / Pass / Took / Rejected` + short reason tags (broken structure, earnings risk, too extended, great leader, bad liquidity, theme weak), timestamped. Not trained on in V1; first used to answer "what does the operator see that the model misses?"
 
@@ -391,4 +393,19 @@ At 11:35 ET the operator opens Live Entry Radar: ~900 probed, ~30 in washout, ~1
 
 ## §18. AMENDMENTS (append-only)
 
-*(none yet)*
+### A1 — 2026-08-13 — CEO amendment: G0-VIS closure + Expert Preservation ruling (pre-freeze; operator-directed)
+
+**A1.1 — G0-VIS is CLOSED.** The operator confirmed the raw grey anticipation-dot family against the computed fired-date evidence. G0 is frozen as **the exact raw grey-dot emitter already archaeologized** (`early_dots`, §3.1) — no spec change. The washout-promoted amber `EARLY` marker is **not** G0: it is a distinct recorded family (A1.2) whose promotion relationship to the underlying dot is preserved, exactly as fixtures F2/F3 already pin.
+
+**A1.2 — Expert Preservation ruling (architectural dependency, binding on PR-1..PR-9).** G0/grey is **not** the universal incumbent entry signal, and this program must not collapse Terminal's entry grammar into "grey versus challengers." Terminal currently exposes multiple **mechanistically distinct entry-event families** — at minimum: raw grey / early-dot anticipation; washout-promoted amber `EARLY`; `STARTER — awaiting confirmation`; `STARTER — confirmation failed`; `RE-ENTRY — trend reclaim`; `RE-ENTRY — block repair`; classic confirmed BUY/REBUY where applicable — alongside Radar's own C1–C5 detector families. **These are candidate experts, not synonyms.**
+
+Binding consequences:
+
+1. **Event-level provenance preservation.** Wherever available, every recorded entry event carries: `producer`, `detector_id`, `family`, `subtype`, `quality`/`stage`, `context`, signal `ts`, `known_ts`, source/spec identity (`source_hash`/`SIGNAL_ERA`/`detector_spec_hash`), `scored_authority`, and `promotion_relationship` (a link to the underlying event when one family promotes/de-duplicates another — a preserved edge, never a silent suppression). The §13 episode contract is extended accordingly (marked "A1").
+2. **No flattening.** Nothing downstream of Radar may be forced to reconstruct lost distinctions: `raw grey` vs `washout-promoted EARLY`, `STARTER pending` vs `STARTER failed`, and `RE-ENTRY trend-reclaim` vs `RE-ENTRY block-repair` must remain distinguishable in the ledger. No `entry_signal=true` boolean, no generic "Golden Oracle" category, anywhere in Radar's stores or payloads.
+3. **Adapter obligation (PR-2).** The Terminal adapter ingests the unified `mastermind.indicator/v1` signals stream **preserving the emitter's own type/subtype/quality/stage strings verbatim** plus artifact identity; exact family enumeration with emitter receipts for the STARTER/RE-ENTRY families is PR-2 archaeology (the artifact schema already carries these fields per Track A §4 — the obligation is to not drop them). Family keys are minted at PR-2 from receipts, never invented ahead of them.
+4. **Recorded ≠ arena.** These preserved families are ledger/display-tier recorded experts. The §11 confirmatory arena and its registered questions are unchanged; any promotion of a recorded family into the graded arena requires a further §18 amendment with look-budget registration.
+5. **Scope boundary (hard).** Radar does **not** expand into stock classification, personality modeling, per-stock strategy optimization, or adaptive routing. A separate **Stock Identity / Expert Routing** program (future; deliberately not created here — no such program exists in the registry as of this amendment) will test which event families best localize opportunities per security and identity epoch. Radar's whole obligation to it is provenance sufficiency: **Radar discovers and records experts; a separate system later learns which experts to trust for whom.** (`engine/stock_personality.py::setup_compatibility` is the already-identified natural describe-side consumer, §2 — the boundary there stands: Radar may be read, never written into.)
+6. **Motivating observation (display-tier, not a validated claim):** operator visual review across KRUS, MCK, NVDA, REGN and YELP suggests different securities respond to different entry mechanisms. Recorded here as the commissioning observation for the downstream program; Radar makes no per-security claim.
+
+The PR-1→PR-9 sequence continues as commissioned; this amendment adds recording obligations only.

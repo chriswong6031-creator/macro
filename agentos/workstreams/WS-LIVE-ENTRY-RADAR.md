@@ -44,6 +44,12 @@ waves:
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
     status: todo
     depends_on: [W0]
+    next_action: >
+      G0-VIS is CLOSED (operator confirmed the raw grey family 2026-08-13, contract §18
+      A1) — the parity freeze is unblocked. PR-2 additionally owns the A1 adapter
+      obligation: ingest the unified indicator/v1 signals stream preserving emitter
+      type/subtype/quality/stage verbatim, and mint expert-family keys from emitter
+      receipts (STARTER/RE-ENTRY enumerations are PR-2 archaeology).
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
     status: todo
@@ -79,6 +85,7 @@ landmines:
   - "One stock WebSocket owner estate-wide; no second market-data plane; GitHub cron is never product cadence (VPS-primary per prophet-live pattern)."
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
+  - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve producer/family/subtype/stage/known_ts/authority/promotion-links at event level. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection."
 next_action: Land PR-0 (W0); then W1 (universe/bus) and W2 (G0 parity) can start in parallel sessions off the frozen contract.
 ---
 

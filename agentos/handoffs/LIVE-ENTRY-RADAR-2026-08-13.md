@@ -58,12 +58,12 @@ unverified:
     what_would_verify: "Confirm expected early-accrual vs stalled pipeline before PR-5 treats the reconciler as a proven precedent (Track D flag)."
 
 unresolved:
-  - "G0-VIS: operator ratification of the grey-dot identity against the fired-date tables (PR body carries the ask). Blocks only PR-2's parity freeze."
   - "Probe-set hotness thresholds (Layer C) are PR-1 budget knobs, deliberately not frozen in PR-0."
+  - "STARTER/RE-ENTRY family enumeration with emitter receipts is PR-2 archaeology (contract §18 A1.3 — family keys minted from receipts, never invented)."
 
 next_actions:
-  - "W1 (PR-1): probe universe + enlistment bus per contract §6 + TRACK_C. Independent of G0-VIS. Named build items: wrapper classifier, hot_tape nomination tap, Supabase watchlist server-side adapter."
-  - "W2 (PR-2): detector framework + G0 artifact consumption + fixtures F1-F6 (G0-VIS must close before the parity freeze)."
+  - "W1 (PR-1): probe universe + enlistment bus per contract §6 + TRACK_C. Named build items: wrapper classifier, hot_tape nomination tap, Supabase watchlist server-side adapter, day-one nomination spool."
+  - "W2 (PR-2): detector framework + G0 artifact consumption + fixtures F1-F6. G0-VIS CLOSED by operator 2026-08-13 (contract §18 A1) — parity freeze unblocked; PR-2 also owns the A1 adapter obligation (verbatim family/subtype/stage preservation + expert-family keys from emitter receipts)."
   - "Every build session: fresh worktree off origin/main, read the contract + relevant track appendix, spawn Opus builder per §Model routing, arm merge-on-green, ci_handoff."
 
 do_not_redo:

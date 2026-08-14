@@ -42,6 +42,12 @@ confidence: verified
 
 ## Detail
 
+**Operator ratification, 2026-08-13:** the operator confirmed the identification for the
+raw grey anticipation-dot family (CEO amendment, contract §18 A1) — gate G0-VIS closed.
+The same amendment rules that the grey dot is one of several distinct Terminal entry-event
+families (candidate experts), all preserved with full provenance; it is not the universal
+incumbent.
+
 The 2026-08-11 Terminal commit 935389d4 (PR #392) introduced the washout-context
 promotion (amber EARLY + bottom-watch lane) and the PIT `known_ts` join that fixed the
 2B-left-edge-label leak. The grey render path itself is unchanged since the 9ef273b4 VPS
