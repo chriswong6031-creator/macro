@@ -144,7 +144,10 @@ def test_additive_schema_is_normalized_then_reopened_exactly(tmp_path):
         }
     )
     frozen_path = tmp_path / "frozen.parquet"
-    frozen.to_parquet(frozen_path, index=False)
+    # Reproduce the sealed episode artifact's accidental physical RangeIndex. The
+    # consumer-visible pandas schema excludes it, and an additive index=False file is
+    # still logically schema-compatible.
+    frozen.to_parquet(frozen_path, index=True)
     candidate = pd.DataFrame(
         {
             "when": pd.Series([pd.Timestamp("2026-08-13")], dtype="datetime64[ms]"),
@@ -160,11 +163,16 @@ def test_additive_schema_is_normalized_then_reopened_exactly(tmp_path):
     normalized.to_parquet(written, index=False)
     builder._validate_parquet_schema_like(written, frozen_path, "candidate")
 
+    import pyarrow.parquet as pq
+
+    assert "__index_level_0__" in pq.read_schema(frozen_path).names
+    assert "__index_level_0__" not in pq.read_schema(written).names
+
     wrong = normalized.copy()
     wrong["authority_can_rank"] = 0
     wrong_path = tmp_path / "wrong.parquet"
     wrong.to_parquet(wrong_path, index=False)
-    with pytest.raises(SystemExit, match="serialized logical-type drift"):
+    with pytest.raises(SystemExit, match="logical-type drift"):
         builder._validate_parquet_schema_like(wrong_path, frozen_path, "wrong")
 
 

@@ -457,20 +457,18 @@ def _schema_like(frame: pd.DataFrame, frozen_path: Path, label: str) -> pd.DataF
 def _validate_parquet_schema_like(
     path: Path, frozen_path: Path, label: str
 ) -> None:
-    """Require serialized column order and Arrow logical types to match W1."""
-    import pyarrow.parquet as pq
+    """Require the reopened logical data schema to match W1.
 
-    candidate = pq.read_schema(path)
-    frozen = pq.read_schema(frozen_path)
-    if candidate.names != frozen.names:
-        raise SystemExit(f"{label}: serialized column order drifted")
-    type_drift = {
-        name: (str(candidate.field(name).type), str(frozen.field(name).type))
-        for name in frozen.names
-        if candidate.field(name).type != frozen.field(name).type
-    }
-    if type_drift:
-        raise SystemExit(f"{label}: serialized logical-type drift: {type_drift}")
+    The frozen episode parquet accidentally persisted pandas' RangeIndex as a physical
+    ``__index_level_0__`` Arrow field.  That storage accident is not a program column
+    and A1 deliberately writes ``index=False``.  Conversely, an all-null W1 column has
+    Arrow type ``null`` even though its logical pandas dtype is ``object``.  Comparing
+    reopened data columns/dtypes therefore pins the consumer-visible contract without
+    elevating either serialization accident into a new amendment requirement.
+    """
+    candidate = pd.read_parquet(path)
+    frozen = pd.read_parquet(frozen_path)
+    _validate_schema_like(candidate, frozen, f"{label} serialized")
 
 
 def _gold_markdown_with_annotation() -> str:
@@ -643,7 +641,10 @@ def _build_and_stage(
         plane_id=PRICE_PLANE_ID,
         const=ec,
         states=states["state"],
-        terminated_reason="right_censored_at_asof (tape active through asof)",
+        # The tape is active. The sealed builder supplies a termination reason only
+        # when a tape actually ended; right-censoring remains disclosed in the dossier
+        # and receipt, not fabricated into the per-episode termination field.
+        terminated_reason=None,
     )
     raw = fp_mod.compute_raw(
         frame,
