@@ -2457,6 +2457,21 @@ jobs:
         run: python -m pytest tests/test_qledger_validity.py -q
       - name: qledger metric-validity guard selftest
         run: python scripts/check_qledger_metric_validity.py --selftest
+      # V1 ENFORCEMENT at the emitter. The two steps above prove the CONTRACT
+      # (engine/qledger_validity.py) is correct; this one proves engine.qledger
+      # ._aggregate — the single chokepoint feeding site/qledger/track_record.json
+      # and, via scripts/grade_qledger.compute_promotion_readiness, the admin
+      # Experiments tab — actually OBEYS it, and that a legal single-direction
+      # family is unchanged.
+      # PLACEMENT (run_ci_pack.py returns on the first non-zero step): deliberately
+      # LAST in this job. Placing it above the two metric-validity steps would let a
+      # break in the enforcement mask the contract's own verdict, which is the
+      # upstream authority; in the reverse order a red contract masks this step, and
+      # that is correct — an enforcement result is uninformative while the rule it
+      # enforces is itself red. It sits with the other _aggregate step (the
+      # cluster-honest CI test) in the same job, so it can never ship dark.
+      - name: qledger V1 excess-legality gate at the emitter
+        run: python -m pytest tests/test_qledger_excess_legality.py -q
 
   altdata-new-sources:
     if: ${{ false }}
