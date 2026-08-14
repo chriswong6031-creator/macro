@@ -286,3 +286,20 @@ ran only manually. New theses written by `altdata_ledger.build_theses()` after 2
 - Promotion-gate pre-registration studies (per-family at 63d for slow/mid; 21d for
   event/flow; 5d for attention)
 - China altdata family routing (separate adapter)
+
+---
+
+## 8. First matured convergence cohort (2026-08-13)
+
+The first broad spine roll-up matured 58 graded 21-day rows from two adjacent firing dates and
+printed `hit_rate=0.4483`, mean signed excess `-0.00103`, `wrong_sign=True`. Five same-ruler July 13
+theses were already due but ungraded because their ticker price caches ended early; committed
+alternate bars make all five negative (due-panel sensitivity: n=63, hit rate 41.27%, mean excess
+-0.507%). The display override correctly de-escalates the ledger it received. Program
+adjudication is **HOLD — ADVERSE FIRST MATURITY, NON-DECISION-GRADE**: the slice is
+instrument/epoch contaminated (two entry episodes, incomplete grading panel, legacy clock, later
+family-weight changes, raw-channel admission before the co-firing correction), so it neither
+falsifies the convergence search space nor establishes a bad regime. Event and flow remain
+display-tier and accrue under their unchanged family-specific qledger gates; no ex-post sign flip,
+channel tuning, or suppression is licensed. Full evidence and the binding next read:
+`research/ALTDATA_CONVERGENCE_FIRST_COHORT_ADJUDICATION_2026-08-13.md`.

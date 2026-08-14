@@ -148,3 +148,4 @@
 {"asof": "2026-08-13", "domain": "china", "field": "china_fe_band", "from_value": "Greed", "to_value": "Neutral", "macro_context_id": "1355416acc84f615"}
 {"asof": "2026-08-13", "domain": "canada", "field": "canada_overlay_state", "from_value": "Neutral", "to_value": "Risk-on", "macro_context_id": "1355416acc84f615"}
 {"asof": "2026-08-13", "domain": "canada", "field": "canada_cycle_tag", "from_value": "late", "to_value": "mid", "macro_context_id": "1355416acc84f615"}
+{"asof": "2026-08-14", "domain": "canada", "field": "canada_cycle_tag", "from_value": "mid", "to_value": "late", "macro_context_id": "52488ba0df26951f"}

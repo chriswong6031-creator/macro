@@ -23,8 +23,14 @@
   var LEX = {
     watch:       { en: "Watch",       zh: "观察",
                    gEn: "signal fired, nothing committed",  gZh: "已出现信号，尚未建仓" },
+    /* PRC-312: the gloss used to read "trigger not fired", which a sourced
+       ⚡ Triggered chip on the same card flatly contradicts (5 rows do exactly
+       that). Ready is a LIFECYCLE fact — the plan is armed and no position is
+       open yet — and the trigger is a separate, independently sourced event.
+       Restated as the lifecycle fact; the trigger claim is withdrawn from it.
+       Escalated to the owning lifecycle ruling in DESIGN_NOTES. */
     ready:       { en: "Ready",       zh: "就绪",
-                   gEn: "plan armed, trigger not fired",    gZh: "计划就位，尚未触发" },
+                   gEn: "plan armed, not yet entered",      gZh: "计划就位，尚未入场" },
     entered:     { en: "Entered",     zh: "入场",
                    gEn: "in the entry window",              gZh: "处于入场窗口内" },
     delivering:  { en: "Delivering",  zh: "达标",
@@ -91,6 +97,10 @@
   var isEmpty = S.state === "empty";
   var isAnon  = S.state === "anon";
   var isEps   = S.state === "episodes";
+  /* PRC-305: the behind-the-tape lens. Same population, same everything — the
+     ONE thing that changes is what the freshness producer reports, which is
+     the state the artifact previously had no way to express at all. */
+  var isStale = S.state === "stale";
   /* `fallback` is a mockup-gate lens showing ONLY rows the candidate join does
      not reach — no chart, no quote, no name/sector, no lane mark. It exists to
      prove the degraded card still reads, and to size the enrichment gap
@@ -128,6 +138,54 @@
   }
   function money(v) { return v == null ? "—" : "$" + Number(v).toFixed(2); }
 
+  /* PRC-318: a zone whose endpoints are equal is a PRICE, not a range. 4 of the
+     61 zone-bearing rows are zero-width (CENX, BKSY, FBRT, SBSI) and printed
+     "$46.46–$46.46"; a single price is a different instruction from a band. */
+  function zoneRange(lo, hi) {
+    if (lo == null && hi == null) return "—";
+    if (lo == null || hi == null) return money(lo == null ? hi : lo);
+    if (Number(lo) === Number(hi)) return money(lo);
+    return money(lo) + "&ndash;" + money(hi);
+  }
+
+  var NUMWORD = { 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven" };
+
+  /* ── FRESHNESS (PRC-305) ────────────────────────────────────────────────
+     Production's producer, not an invented one: _compute_board_staleness()
+     (scripts/build_stock_library.py:1469-1624, called :5734) emits
+     {price_through, sessions_behind, delayed, unknown} into wide["staleness"],
+     which reaches the template as _su.staleness. tools/gen_fixture.py mirrors
+     that shape into B.staleness, so the state here is read, never guessed.
+     `delayed` is production's own threshold: >= 2 sessions behind. */
+  function sessionShift(iso, back) {
+    var d = new Date(String(iso) + "T00:00:00Z"), n = 0;
+    while (n < back) {
+      d.setUTCDate(d.getUTCDate() - 1);
+      if (d.getUTCDay() !== 0 && d.getUTCDay() !== 6) n++;
+    }
+    return d.toISOString().slice(0, 10);
+  }
+  function freshness() {
+    var f = B.staleness;
+    if (!f) {
+      /* No staleness block on this fixture vintage: derive the same shape from
+         the two as-ofs the payload DOES carry — the plan book's date and the
+         ranking screen's date. Both are real payload facts. */
+      var pt = B.cand_asof || B.asof;
+      var n = 0, cur = String(B.asof);
+      while (n < 12 && cur > String(pt)) { cur = sessionShift(cur, 1); n++; }
+      f = { price_through: pt, sessions_behind: cur === String(pt) ? n : null,
+            unknown: !B.cand_asof };
+      f.delayed = f.sessions_behind != null && f.sessions_behind >= 2;
+    }
+    if (isStale) {
+      /* the harness lens, at production's own delayed threshold */
+      f = { price_through: sessionShift(B.asof, 2), sessions_behind: 2,
+            delayed: true, unknown: false, lens: true };
+    }
+    return f;
+  }
+
   /* ── row population ───────────────────────────────────────────────────── */
   function rows() {
     if (isEmpty) return [];
@@ -164,12 +222,20 @@
     var h = "";
     var total = liveTotal();
 
+    /* PRC-310 / VTC-312 — the claim is SCOPED to the cells that actually print
+       a value. The sub-line used to say "the six cells below add up to this
+       number" above a row whose first cell is a deliberate em dash, and the
+       artifact's own absence copy says that dash means NOT PUBLISHED, not zero.
+       So the sentence asked for a sum the surface cannot complete, and it would
+       read as an error on any night Watch is both unpublished and non-zero.
+       `published` is a computed difference of published values (COUNT LAW). */
+    var published = LIVE.length - (watchAbsent() ? 1 : 0);
     h += '<div class="ladder-headline">';
     h += '<span class="ladder-n fig">' + total + "</span>";
     h += '<span class="ladder-nl">' + t("live setups today", "个跟踪中计划") + "</span>";
     h += '<span class="ladder-sub">' + t(
-      "the six cells below add up to this number",
-      "下方 6 个状态合计") + "</span>";
+      "the " + (NUMWORD[published] || published) + " published cells below add up to this number",
+      "下方 " + published + " 个已发布状态合计") + "</span>";
     h += "</div>";
 
     h += '<div class="mx-ladder" role="group" aria-label="' +
@@ -272,79 +338,118 @@
     return ((h % 61) - 28) / 10;                       /* -2.8% .. +3.2% */
   }
 
-  function card(r) {
-    var L = LEX[r.life];
-    var v = r.stance && VERB[r.stance] ? r.stance : null;
-    var noRead = r.stance === "blocked_data";
-    var cls = "pvcard" + (v ? " pv-" + v : noRead ? " pv-noread" : "") +
-              (r.star ? " pv-featured" : "");
-    /* data-sym is what live.js keys on (.nb-px[data-sym]) to paint the quote and
-       the change client-side every ~60s. It is an ATTRIBUTE, not payload — so in
-       production the live quote works for 100% of plan rows regardless of the
-       candidate-join gap. Only name/sector/lane/spark need an enrichment path
-       (DESIGN_NOTES §6 Q1). */
-    var h = '<article class="' + cls + '" data-life="' + r.life + '" data-ticker="' +
-            esc(r.tk) + '" data-sym="' + esc(r.tk) + '" data-mkt="us" data-id="' + esc(r.id) + '">';
+  /* PRC-303 — A CAUTION MAY NOT NAME A ZONE THE CARD SAYS DOES NOT EXIST.
+     3 rows pair "Don't chase above the buy zone" with a "No zone — stand aside"
+     footer; 2 of them (GPCR, VSEC) are inside the visible 40 and both are
+     ★Featured, GPCR being the rank-1 card. The collision is NEW in R3 and was
+     created by curing R2's PRC-201 — restoring the risk ledger was right, and
+     this edge was not anticipated. The row is REWRITTEN to the zone-free
+     statement of the same fact: the risk is real and stays on the card. No zone
+     is fabricated to make the sentence true, and a row with no zone-free form
+     is dropped rather than reworded into something the payload never said. */
+  var CAUTION_NOZONE = {
+    "Already moving. Don't chase above the buy zone.":
+      ["Already moving. Treat any entry here as a chase.",
+       "已在异动。此处入场应视同追高。"]
+  };
+  function cautionRows(r, hasZone) {
+    var out = [], seen = {};
+    (r.flags || []).forEach(function (f) {
+      var en = f[0], zh = f[1];
+      if (!hasZone && (/buy zone/i.test(en) || zh.indexOf("买区") >= 0)) {
+        var alt = CAUTION_NOZONE[en];
+        if (!alt) return;
+        en = alt[0]; zh = alt[1];
+      }
+      if (seen[en]) return;                 /* a rewrite must not duplicate a row */
+      seen[en] = 1;
+      out.push([en, zh]);
+    });
+    return out;
+  }
 
-    /* ── chart hero, with the stance chip and the live quote overlaid ────── */
-    h += '<div class="pv-chart">';
-    h += r.spark ? r.spark : '<div class="pv-nochart"></div>';
-    h += '<span class="pv-ov pv-ovl">';
+  /* VTC-308 — WHICH ROWS GET THE COMPACT FORM.
+     A row with no chart, no quote, no stance rank and no priority has nothing
+     for the full card to show; 5-across, ~20 of them became near-identical
+     husks each printing "PRIORITY —", with no hierarchy for the eye to use.
+     Resolved is compact by definition (a closed plan is record, not inventory);
+     a live row is compact only when the enrichment gap has taken everything
+     the full form exists to display. */
+  function isCompact(r) {
+    if (r.life === "resolved") return true;
+    return !r.spark && r.px == null && r.pri == null && r.stance === "blocked_data";
+  }
+
+  /* PRC-301 — the card's route to the name's detail surface. `stock.html#TICKER`
+     is the live cross-market house convention (dashboard.html.j2:19285). The
+     anchor carries the ticker and, when the join supplied one, the company
+     name — so its accessible name is the name of the thing it opens. */
+  function idLink(r) {
+    var s = '<a class="pv-open" href="stock.html#' + esc(r.tk) + '">';
+    s += '<span class="pv-tk">' + esc(r.tk) + "</span>";
+    if (r.nm) s += '<span class="pv-nm">' + esc(r.nm) + "</span>";
+    return s + "</a>";
+  }
+
+  /* PRC-312 — the stance slot NAMES ITS AXIS.
+     27 rows are life=entered + stance=wait, and an unlabelled "WAIT" sitting
+     above "Entered" tells a user who is already in the trade not to enter. The
+     five sourced verbs are unchanged and there is no sixth; what changes is
+     that the card now says which question the verb answers. zh uses 买点, not
+     入场: 入场 IS the Entered cell word, and printing it twice is the collision. */
+  function stanceGroup(v, noRead) {
+    if (!v && !noRead) return "";
+    var s = '<span class="pv-stance"><span class="pv-axis">' + t("Entry", "买点") + "</span>";
     if (v) {
-      h += '<span class="pv-chip">' + t(VERB[v].en, VERB[v].zh) + "</span>";
-    } else if (noRead) {
-      h += '<span class="pv-chip pv-chip--noread" tabindex="0"' +
+      s += '<span class="pv-chip">' + t(VERB[v].en, VERB[v].zh) + "</span>";
+    } else {
+      s += '<span class="pv-chip pv-chip--noread" tabindex="0"' +
            ' data-tip-t-en="' + esc(NOREAD.tEn) + '" data-tip-t-zh="' + esc(NOREAD.tZh) + '"' +
            ' data-tip-en="' + esc(NOREAD.bEn) + '" data-tip-zh="' + esc(NOREAD.bZh) + '">' +
            t(NOREAD.en, NOREAD.zh) + "</span>";
     }
-    if (r.trg) {
-      /* the ⚡ chip carries a fact that appears nowhere else on the card, which
-         is the shipped rule for keeping it (and its tip) */
-      var tgEn = r.trg === "imminent"
-        ? "The entry trigger has not fired yet, but price is at the level where it would."
-        : "The entry trigger fired in the last few sessions.";
-      var tgZh = r.trg === "imminent"
-        ? "入场触发条件尚未满足，但价格已到达触发位附近。"
-        : "入场触发条件已在最近几个交易日内满足。";
-      h += '<span class="pv-trg" tabindex="0" data-tip-en="' + esc(tgEn) +
+    return s + "</span>";
+  }
+
+  /* the ⚡ chip carries a fact that appears nowhere else on the card, which is
+     the shipped rule for keeping it (and its tip). PRC-303: a no-read card
+     KEEPS it — the trigger has its own producer and refusing the stance does
+     not refuse the event. */
+  function triggerChip(r) {
+    if (!r.trg) return "";
+    var tgEn = r.trg === "imminent"
+      ? "The entry trigger has not fired yet, but price is at the level where it would."
+      : "The entry trigger fired in the last few sessions.";
+    var tgZh = r.trg === "imminent"
+      ? "入场触发条件尚未满足，但价格已到达触发位附近。"
+      : "入场触发条件已在最近几个交易日内满足。";
+    return '<span class="pv-trg" tabindex="0" data-tip-en="' + esc(tgEn) +
            '" data-tip-zh="' + esc(tgZh) + '">&#9889; ' +
            (r.trg === "imminent" ? t("Imminent", "即将触发") : t("Triggered", "已触发")) + "</span>";
-    }
-    h += "</span>";
-    /* THE QUOTE SLOT RENDERS ON EVERY CARD, with or without an SSR price.
-       live.js keys on `.nb-px[data-sym]` / `.nb-chg[data-sym]`, so the node must
-       EXIST for a quote to arrive — a card that only renders the slot when the
-       candidate join supplied a price can never hydrate, which is precisely the
-       bug this fixes. Un-hydrated it reads an em dash in muted ink, exactly as
-       the shipped card server-renders it. */
+  }
+
+  /* THE QUOTE SLOT RENDERS ON EVERY LIVE CARD, with or without an SSR price.
+     live.js keys on `.nb-px[data-sym]` / `.nb-chg[data-sym]`, so the node must
+     EXIST for a quote to arrive — a card that only renders the slot when the
+     candidate join supplied a price can never hydrate. That includes the
+     compact form: those rows are exactly the ones with no SSR price, so
+     dropping their slot would re-open the bug the slot exists to close.
+     PRC-314: a RESOLVED row gets no slot at all — a closed, graded plan has no
+     live tape, and printing one made it read as an open position with a gain. */
+  function quoteSlot(r) {
+    if (r.life === "resolved") return "";
     var c = r.px != null ? demoChange(r.tk) : null;
     var dir = c == null ? "" : c > 0.05 ? " up" : c < -0.05 ? " down" : "";
-    h += '<span class="pv-ov pv-ovr"><span class="pv-quote">' +
-         '<span class="nb-px pv-px" data-sym="' + esc(r.tk) + '" data-mkt="us">' +
-         (r.px != null ? money(r.px) : "&mdash;") + "</span>" +
-         '<span class="nb-chg pv-chg' + dir + '" data-sym="' + esc(r.tk) + '" data-mkt="us"' +
-         (c == null ? "" : ' data-mock-live="1"') + ">" +
-         (c == null ? "&mdash;" : (c > 0 ? "+" : "") + c.toFixed(1) + "%") +
-         "</span></span></span>";
-    h += "</div>";
+    return '<span class="pv-quote">' +
+      '<span class="nb-px pv-px" data-sym="' + esc(r.tk) + '" data-mkt="us">' +
+      (r.px != null ? money(r.px) : "&mdash;") + "</span>" +
+      '<span class="nb-chg pv-chg' + dir + '" data-sym="' + esc(r.tk) + '" data-mkt="us"' +
+      (c == null ? "" : ' data-mock-live="1"') + ">" +
+      (c == null ? "&mdash;" : (c > 0 ? "+" : "") + c.toFixed(1) + "%") +
+      "</span></span>";
+  }
 
-    /* ── identity + priority ────────────────────────────────────────────── */
-    h += '<div class="pv-bd">';
-    h += '<div class="pv-hd"><span class="pv-idw"><span class="pv-tk">' + esc(r.tk) + "</span>";
-    if (r.nm) h += '<span class="pv-nm">' + esc(r.nm) + "</span>";
-    h += "</span>";
-    h += '<span class="pv-pri" tabindex="0"' +
-         ' data-tip-t-en="Priority" data-tip-t-zh="优先级"' +
-         ' data-tip-en="Where this setup ranks in tonight’s Prophet set — how ready it is to act on today. It is not a win probability, an expected return, or a confidence score."' +
-         ' data-tip-zh="该计划在本次 Prophet 名单中的排序 — 表示目前有多接近可操作。它不是胜率，也不是预期收益或信心分数。">';
-    h += '<span class="pv-pril">' + t("Priority", "优先级") + "</span>";
-    h += '<span class="pv-prin' + (r.pri == null ? " pv-prin--na" : "") + ' fig">' +
-         (r.pri == null ? "&mdash;" : Math.round(r.pri)) + "</span></span>";
-    h += "</div>";
-    if (r.sec) h += '<div class="pv-ind">' + esc(r.sec) + "</div>";
-
-    /* ── marks: restrained, at most three ───────────────────────────────── */
+  function marksRow(r, flags) {
     var mk = "";
     if (r.star) mk += '<span class="pv-mk-i pv-mk-feat">&#9733; ' + t("Featured", "精选") + "</span>";
     if (r.new) mk += '<span class="pv-mk-i pv-mk-new">' + t("New", "新增") + "</span>";
@@ -361,15 +466,16 @@
        deeper, so the card never becomes a wall of warnings. Rows come from real
        candidate fields (blow-off, ext_z, anti-chase, earnings window).
        It sits in the MARKS row rather than the chart overlay: the overlay is
-       capped at 70% and already carries the stance and ⚡, so a third chip there
-       collided with the live quote. */
-    if (r.flags && r.flags.length) {
+       capped and already carries the stance and ⚡, so a third chip there
+       collided with the live quote. The count is flags.length AFTER the PRC-303
+       coherence pass, so the pill can never over-count its own sentences. */
+    if (flags.length) {
       mk += '<span class="pv-cau" tabindex="0" role="button" aria-label="' +
-            (S.lang === "zh" ? "风险提示 " : "Caution notes ") + r.flags.length + '">';
-      mk += '<span class="pv-cau-btn">&#9888; ' + r.flags.length + "</span>";
+            (S.lang === "zh" ? "风险提示 " : "Caution notes ") + flags.length + '">';
+      mk += '<span class="pv-cau-btn">&#9888; ' + flags.length + "</span>";
       mk += '<span class="pv-cau-pop" role="tooltip"><span class="pv-cau-hd">' +
             t("Before you act", "动手之前") + "</span>";
-      r.flags.forEach(function (f) {
+      flags.forEach(function (f) {
         mk += '<span class="pv-cau-row">' + t(esc(f[0]), esc(f[1])) + "</span>";
       });
       mk += "</span></span>";
@@ -380,44 +486,121 @@
         "Episode " + r.ep + " of " + r.eps + " &middot; " + d.en,
         "第 " + r.ep + " 轮（共 " + r.eps + " 轮）&middot; " + d.zh) + "</span>";
     }
-    if (mk) h += '<div class="pv-mk">' + mk + "</div>";
+    return mk;
+  }
 
-    /* ── lifecycle: the ruled mark + the cell word. No gloss sentence. ──── */
-    h += '<div class="pv-life"><span class="mx-mark mx-mark--' + r.life + '" aria-hidden="true"></span>' +
-         '<span class="pv-life-w">' + t(L.en, L.zh) + "</span>";
+  function lifeRow(r, L) {
+    var h = '<div class="pv-life"><span class="mx-mark mx-mark--' + r.life + '" aria-hidden="true"></span>' +
+            '<span class="pv-life-w">' + t(L.en, L.zh) + "</span>";
     if (r.newer) {
       h += '<a class="pv-newer" href="#id=' + esc(r.newer) + '" style="margin-left:auto">' +
            t("Newer plan &rarr;", "最新计划 &rarr;") + "</a>";
     }
-    h += "</div></div>";
+    return h + "</div>";
+  }
 
-    /* ── zone footer: the price AREA that matters ───────────────────────── */
-    /* R2-B: ZONE IS GEOGRAPHY, NOT AN INSTRUCTION. The band is shown whatever the
-       stance, but only an ACTIONABLE stance renders it in the active treatment
-       (.pv-znr). Wait/Avoid get the muted form, Hold gets "Re-add" — the shipped
-       zone_kind split (dashboard.html.j2:16183) that the first pass flattened,
-       which had made every card's zone read like a buy instruction. */
-    h += '<div class="pv-zn">';
-    var zk = r.zk || "none";
-    if (zk === "active") {
+  /* ── zone footer: the price AREA that matters ─────────────────────────────
+     R2-B: ZONE IS GEOGRAPHY, NOT AN INSTRUCTION. The band is shown whatever the
+     stance, but only an ACTIONABLE stance renders it in the active treatment
+     (.pv-znr). Wait/Avoid get the muted form, Hold gets "Re-add" — the shipped
+     zone_kind split (dashboard.html.j2:16183) that the first pass flattened,
+     which had made every card's zone read like a buy instruction.
+     PRC-314: RESOLVED IS TESTED FIRST. The branch order used to put zk ahead of
+     the lifecycle, so AGNT — a closed, graded plan — printed a live buy zone
+     while the other 19 read "Closed — in the record". A closed record wins
+     precedence over any zone treatment that implies an open plan. */
+  function zoneFooter(r, zk) {
+    var h = '<div class="pv-zn">';
+    if (r.life === "resolved") {
+      h += '<span class="pv-znm">' + t("Closed — in the record", "已平仓 — 计入战绩") + "</span>";
+    } else if (zk === "active") {
       h += '<span class="pv-znl">' + t("Zone", "买区") + "</span>";
-      h += '<span class="pv-znr fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+      h += '<span class="pv-znr fig">' + zoneRange(r.zlo, r.zhi) + "</span>";
     } else if (zk === "readd") {
       h += '<span class="pv-znl pv-znl--q">' + t("Re-add", "回补") + "</span>";
-      h += '<span class="pv-znm fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
+      h += '<span class="pv-znm fig">' + zoneRange(r.zlo, r.zhi) + "</span>";
     } else if (zk === "muted") {
       h += '<span class="pv-znl pv-znl--q">' + t("Zone", "买区") + "</span>";
-      h += '<span class="pv-znm fig">' + money(r.zlo) + "&ndash;" + money(r.zhi) + "</span>";
-    } else if (r.life === "resolved") {
-      h += '<span class="pv-znm">' + t("Closed — in the record", "已平仓 — 计入战绩") + "</span>";
+      h += '<span class="pv-znm fig">' + zoneRange(r.zlo, r.zhi) + "</span>";
     } else if (zk === "confirm") {
       h += '<span class="pv-znm">' + t("Zone sets on confirmation", "买区待确认后生成") + "</span>";
     } else {
       h += '<span class="pv-znm">' + t("No zone — stand aside", "无买区 — 观望") + "</span>";
     }
     if (r.opened) h += '<span class="pv-dt">' + t(r.opened.en, r.opened.zh) + "</span>";
-    h += "</div></article>";
-    return h;
+    return h + "</div>";
+  }
+
+  function card(r, hidden) {
+    var L = LEX[r.life];
+    var v = r.stance && VERB[r.stance] ? r.stance : null;
+    var noRead = r.stance === "blocked_data";
+    var resolved = r.life === "resolved";
+    var compact = isCompact(r);
+    var zk = r.zk || "none";
+    /* a zone is on the CARD only where the footer actually prints numbers */
+    var hasZone = !resolved && (zk === "active" || zk === "readd" || zk === "muted");
+    var flags = cautionRows(r, hasZone);
+    var cls = "pvcard" + (v ? " pv-" + v : noRead ? " pv-noread" : "") +
+              (r.star ? " pv-featured" : "") +
+              (compact ? " pvcard--compact" : "") +
+              (hidden ? " sm-hidden" : "");
+    /* data-sym is what live.js keys on (.nb-px[data-sym]) to paint the quote and
+       the change client-side every ~60s. It is an ATTRIBUTE, not payload — so in
+       production the live quote works for 100% of plan rows regardless of the
+       candidate-join gap. Only name/sector/lane/spark need an enrichment path
+       (DESIGN_NOTES §6 Q1). */
+    var h = '<article class="' + cls + '" data-life="' + r.life + '" data-ticker="' +
+            esc(r.tk) + '" data-sym="' + esc(r.tk) + '" data-mkt="us" data-id="' + esc(r.id) + '">';
+
+    if (compact) {
+      /* the compact archive row: same disclosures, empty slots removed rather
+         than drawn empty. No chart hero and no Priority label — those are the
+         two slots that had nothing to put in them. */
+      h += '<div class="pv-bd">';
+      h += '<div class="pv-hd"><span class="pv-idw">' + idLink(r) + "</span>";
+      h += quoteSlot(r);
+      h += "</div>";
+      var cmk = stanceGroup(v, noRead) + triggerChip(r) + marksRow(r, flags);
+      if (cmk) h += '<div class="pv-mk">' + cmk + "</div>";
+      h += lifeRow(r, L);
+      h += "</div>";
+      h += zoneFooter(r, zk);
+      return h + "</article>";
+    }
+
+    /* ── chart hero, with the stance chip and the live quote overlaid ────── */
+    h += '<div class="pv-chart">';
+    /* VTC-301 / PRC-309: the null is PRINTED, at the chart's own height. */
+    h += r.spark ? r.spark
+       : '<div class="pv-nochart"><span class="pv-nochart-l">' +
+         t("No chart yet", "暂无图表") + "</span></div>";
+    h += '<span class="pv-ov pv-ovl">' + stanceGroup(v, noRead) + triggerChip(r) + "</span>";
+    h += '<span class="pv-ov pv-ovr">' + quoteSlot(r) + "</span>";
+    h += "</div>";
+
+    /* ── identity + priority ────────────────────────────────────────────── */
+    h += '<div class="pv-bd">';
+    h += '<div class="pv-hd"><span class="pv-idw">' + idLink(r) + "</span>";
+    h += '<span class="pv-pri" tabindex="0"' +
+         ' data-tip-t-en="Priority" data-tip-t-zh="优先级"' +
+         ' data-tip-en="Where this setup ranks in tonight’s Prophet set — how ready it is to act on today. It is not a win probability, an expected return, or a confidence score."' +
+         ' data-tip-zh="该计划在本次 Prophet 名单中的排序 — 表示目前有多接近可操作。它不是胜率，也不是预期收益或信心分数。">';
+    h += '<span class="pv-pril">' + t("Priority", "优先级") + "</span>";
+    h += '<span class="pv-prin' + (r.pri == null ? " pv-prin--na" : "") + ' fig">' +
+         (r.pri == null ? "&mdash;" : Math.round(r.pri)) + "</span></span>";
+    h += "</div>";
+    if (r.sec) h += '<div class="pv-ind">' + esc(r.sec) + "</div>";
+
+    /* ── marks: restrained, at most three ───────────────────────────────── */
+    var mk = marksRow(r, flags);
+    if (mk) h += '<div class="pv-mk">' + mk + "</div>";
+
+    /* ── lifecycle: the ruled mark + the cell word. No gloss sentence. ──── */
+    h += lifeRow(r, L);
+    h += "</div>";
+    h += zoneFooter(r, zk);
+    return h + "</article>";
   }
 
 
@@ -434,9 +617,15 @@
     h += "<b>" + t(
       "You&rsquo;re seeing " + shown + " of " + total + " live setups",
       "您正在查看 " + total + " 个跟踪中计划中的 " + shown + " 个") + "</b>";
+    /* PRC-302 — THE GATE DESCRIBES WHAT A SUBSCRIBER LANDS ON.
+       It used to promise "entry, target and void levels included" — three
+       numbers no card at any tier renders, because the card tier bans them as
+       execution-prescriptive (auth.zone_vs_levels). Either the copy matches the
+       product or the ban is re-adjudicated, not both. The ban stands; the copy
+       moves. What is listed below is exactly what card() emits. */
     h += "<small>" + t(
-      "The rest are part of the live board — entry, target and void levels included. The counts above stay honest whether you subscribe or not.",
-      "其余计划同在这块看板上，含入场价、目标价与失效价。无论是否订阅，上方的计数都如实显示。") + "</small>";
+      "The rest are part of the live board — every setup with its stance, priority, lifecycle, live quote, buy zone and cautions. The counts above stay honest whether you subscribe or not.",
+      "其余计划同在这块看板上——每个计划都含判断、优先级、状态、实时报价、买区与风险提示。无论是否订阅，上方的计数都如实显示。") + "</small>";
     h += "</span>";
     h += '<span class="mx-tier-actions">';
     h += '<button class="mx-tier-primary" type="button">' + t("See the full board", "查看完整看板") + "</button>";
@@ -504,6 +693,18 @@
         "Mockup-gate lens: only names carrying more than one plan row. The shipped board has no such filter — these cards sit in the full grid under the same global sort.",
         "样稿评审视角：仅显示拥有一条以上计划的个股。正式看板没有这个筛选——这些卡片在完整网格中按同一排序规则排列。") + "</span>";
     }
+    if (isStale) {
+      h += '<span class="sort-rule">' + t(
+        "Mockup-gate lens: how the board reads when the ranking prices are behind the tape. Production computes this state from the board's own freshness check.",
+        "样稿评审视角：当排序所用的价格落后于行情时，看板会这样呈现。正式环境下这一状态由看板自身的数据新鲜度判定得出。") + "</span>";
+    }
+    /* PRC-304 — the ONE simulated number, disclosed where a crop can see it.
+       Every % change in every crop is a deterministic hash of the ticker, and
+       the DOM marks it data-mock-live — but that mark is invisible in a
+       screenshot, which is how the whole crop set could be read as a live tape. */
+    h += '<span class="mock-note">' + t(
+      "Quotes are wired to the live feed but not hydrated on this reference: each <b>% change</b> is a per-ticker demo overlay, not a live tape. It is the only simulated number on the page.",
+      "本页已接入实时报价接口但未取数：每张卡片的<b>涨跌幅</b>为按代码生成的演示数值，并非真实行情。这是全页唯一的模拟数字。") + "</span>";
     h += "</div>";
 
     /* A filter that yields nothing must say WHY — an empty grid under a pressed
@@ -532,22 +733,48 @@
        different number on every lens. Only the figure with a full-book producer
        is printed (see DESIGN_NOTES §6 Q3 — the entered/resolved transition counts
        have none). */
-    var fresh = B.rows.filter(function (x) {
-      return x.life !== "resolved" && x.age != null && x.age <= 1;
-    }).length;
-    h += '<div class="chg-strip">';
-    h += '<span class="chg-item">' + t("What changed today", "今日变化") + "</span>";
-    h += '<span class="chg-sep">&middot;</span>';
-    h += '<span class="chg-item">' + t("<b class=\"fig\">" + fresh + "</b> opened in the last day",
-         "过去 24 小时新增 <b class=\"fig\">" + fresh + "</b>") + "</span>";
-    h += '<span class="chg-sep">&middot;</span>';
-    h += '<a class="mx-sec-link" style="margin:0" href="#turnwatch">' + t("Turn Watch deck &rarr;", "拐点观察台 &rarr;") + "</a>";
-    h += "</div>";
+    /* PRC-311 — a BOARD-LEVEL fact belongs on the BOARD, not inside a frame the
+       user has narrowed. The count is right to compute over the whole book (a
+       number that moved with the visible rows would be a different number on
+       every lens, which is the defect this board exists to cure) — but printing
+       it above 2 invalidated cards, or above 20 closed plans, put the one
+       integer on the page that does not describe what is on screen. It renders
+       on the unfiltered Board and is withheld under a lifecycle filter. */
+    if (!S.life) {
+      var fresh = B.rows.filter(function (x) {
+        return x.life !== "resolved" && x.age != null && x.age <= 1;
+      }).length;
+      h += '<div class="chg-strip">';
+      h += '<span class="chg-item">' + t("What changed today", "今日变化") + "</span>";
+      h += '<span class="chg-sep">&middot;</span>';
+      h += '<span class="chg-item">' + t("<b class=\"fig\">" + fresh + "</b> opened in the last day",
+           "过去 24 小时新增 <b class=\"fig\">" + fresh + "</b>") + "</span>";
+      h += '<span class="chg-sep">&middot;</span>';
+      h += '<a class="mx-sec-link" style="margin:0" href="#turnwatch">' + t("Turn Watch deck &rarr;", "拐点观察台 &rarr;") + "</a>";
+      h += "</div>";
+    }
+
+    /* THE POPULATION IS THE CANONICAL COUNT, not however many cards this view
+       happens to draw. On the product states that is the published cell/live
+       total, so the expansion bar reconciles to the headline exactly. The
+       diagnostic lenses state their own scope in their header instead. */
+    var population = (isEps || isFall) ? r.length
+                   : (S.life ? cellCount(S.life) : liveTotal());
 
     if (isAnon) {
       /* anonymous: exactly ONE card's data in the DOM. The rest are contentless
-         skeletons — nothing withheld is present to view-source. */
-      h += '<div class="pv-grid">' + card(r[0]);
+         skeletons — nothing withheld is present to view-source.
+         VTC-306: the specimen has to be what the gate is ADVERTISING. It used
+         to be r[0] — the rank-1 card, which is a no-read row reading "No read
+         yet" and "No zone — stand aside" — so the shop window showed the one
+         card that carries none of the goods. The specimen is now the
+         highest-priority row that actually holds them: a published entry read,
+         a live quote and a zone. It is still ONE real payload row, chosen by
+         the board's own sort, with nothing fabricated. */
+      var spec = r.filter(function (x) {
+        return x.stance && VERB[x.stance] && x.zk === "active" && x.px != null;
+      })[0] || r[0];
+      h += '<div class="pv-grid">' + card(spec);
       for (var g = 0; g < 4; g++) h += ghost();   /* fills the row; the gate below says how many are withheld */
       h += "</div>";
       h += gate(1);
@@ -555,51 +782,86 @@
     }
 
     if (S.view === "table") {
-      /* table view renders EVERY row of the active filter — the surface where
-         rendered rows equal the cell count with no remainder. */
+      /* PRC-306 / PRC-313 — THE TABLE CARRIES THE BOARD'S OWN DECISION FIELDS.
+         It used to be Ticker · Lifecycle · Entry · Void · First target · Opened
+         · Episode: it kept the three execution numbers the card tier bans as
+         prescriptive, dropped every instrument a reader would need to judge
+         them (stance, priority, zone, caution, chart), applied no validation to
+         them (the fixture holds a BULL row whose void sits above its entry and
+         the reference published it unremarked) — and, before the grid became
+         fully expandable, it was the ONLY representation 77 rows ever got.
+         Exact execution geometry belongs in plan detail. What the board ranks
+         on belongs here, with honest dashes where a value has not published. */
       h += '<div class="st-wrap"><table class="st-table"><thead><tr>';
-      [["Ticker", "代码"], ["Lifecycle", "生命周期"], ["Entry", "入场价"], ["Void", "失效价"],
-       ["First target", "首个目标"], ["Opened", "启动日"], ["Episode", "轮次"]].forEach(function (c) {
+      [["Ticker", "代码"], ["Entry read", "买点"], ["Lifecycle", "生命周期"],
+       ["Priority", "优先级"], ["Quote", "报价"], ["Zone", "买区"],
+       ["Episode", "轮次"], ["Opened", "启动日"]].forEach(function (c) {
         h += "<th>" + t(c[0], c[1]) + "</th>";
       });
       h += "</tr></thead><tbody>";
       r.forEach(function (x) {
-        var L = LEX[x.life];
+        var xl = LEX[x.life];
+        var xv = x.stance && VERB[x.stance] ? x.stance : null;
+        var xres = x.life === "resolved";
+        var xzk = x.zk || "none";
+        var xc = (!xres && x.px != null) ? demoChange(x.tk) : null;
         h += "<tr><td><b>" + esc(x.tk) + "</b></td>";
+        h += "<td>" + (xv ? t(VERB[xv].en, VERB[xv].zh)
+                          : x.stance === "blocked_data" ? t(NOREAD.en, NOREAD.zh) : "—") + "</td>";
         h += '<td><span class="st-life"><span class="mx-mark mx-mark--' + x.life + '" aria-hidden="true"></span>' +
-             t(L.en, L.zh) + "</span></td>";
-        h += '<td class="fig">' + money(x.entry) + "</td>";
-        h += '<td class="fig">' + money(x.inval) + "</td>";
-        h += '<td class="fig">' + money(x.t1) + "</td>";
-        h += '<td class="fig">' + (x.opened ? t(x.opened.en, x.opened.zh) : "—") + "</td>";
+             t(xl.en, xl.zh) + "</span></td>";
+        h += '<td class="fig">' + (xres || x.pri == null ? "—" : Math.round(x.pri)) + "</td>";
+        h += '<td class="fig">' + (xres || x.px == null ? "—" : money(x.px) +
+             ' <span class="pv-chg' + (xc > 0.05 ? " up" : xc < -0.05 ? " down" : "") +
+             '" data-mock-live="1">' + (xc > 0 ? "+" : "") + xc.toFixed(1) + "%</span>") + "</td>";
+        h += '<td class="fig">' + (xres || !(xzk === "active" || xzk === "readd" || xzk === "muted")
+             ? "—" : zoneRange(x.zlo, x.zhi)) + "</td>";
         h += "<td>" + (x.eps ? t(x.ep + " of " + x.eps, "第 " + x.ep + " / 共 " + x.eps) : "—") + "</td>";
+        h += "<td>" + (x.opened ? t(x.opened.en, x.opened.zh) : "—") + "</td>";
         h += "</tr>";
       });
       h += "</tbody></table></div>";
       h += '<p class="mx-sec-note" style="margin-top:12px">' + t(
-        "Table view shows every row of the current filter: <b>" + r.length + "</b> rendered.",
-        "表格视图显示当前筛选下的全部条目：已渲染 <b>" + r.length + "</b> 条。") + "</p>";
+        "Table view shows every row of the current filter: <b>" + population + "</b> rendered. " +
+        "Exact entry, target and void levels live in plan detail, not on the board.",
+        "表格视图显示当前筛选下的全部条目：已渲染 <b>" + population + "</b> 条。" +
+        "具体的入场、目标与失效价位在计划详情页查看，不在看板上呈现。") + "</p>";
       return h;
     }
 
-    var shown = r.slice(0, GRID_CAP);
-    /* THE POPULATION IS THE CANONICAL COUNT, not however many cards this view
-       happens to draw. On the product states that is the published cell/live
-       total, so rendered + "+N more" reconciles to the headline exactly. The
-       diagnostic lenses state their own scope in their header instead. */
-    var population = (isEps || isFall) ? r.length
-                   : (S.life ? cellCount(S.life) : liveTotal());
-    h += '<div class="pv-grid">';
-    shown.forEach(function (x) { h += card(x); });
-    /* overflow is a computed DIFFERENCE of published values, never a recount */
-    if (population > shown.length) {
-      var more = population - shown.length;
-      h += '<a class="pv-more" href="?' + qsWith({ view: "table" }) + '">' +
-           t("+<b class=\"fig\">" + more + "</b> more<br>see them all in table view",
-             "另有 <b class=\"fig\">" + more + "</b> 条<br>可在表格视图中查看全部") + "</a>";
-    }
+    /* PRC-306 — EVERY ROW OF THE ACTIVE PARTITION IS A CARD.
+       GRID_CAP was a hard ceiling with no expander and a single overflow route
+       into the stripped table, so 77 of 179 rows were card-unreachable in every
+       state and every filter — and because null-priority rows sort last, the 86
+       unscored rows were pushed below the cap by construction. The cap is now
+       the INITIAL viewport only: the whole partition is in the DOM and the bar
+       below reveals it in place, exactly as production's own initShowMore does. */
+    h += '<div class="pv-grid" data-showmore-rows="3">';
+    r.forEach(function (x, i) { h += card(x, i >= GRID_CAP); });
     h += "</div>";
+    if (population > GRID_CAP) h += showMore(Math.min(GRID_CAP, population), population);
     return h;
+  }
+
+  /* ── the expansion bar (production's .sm-* component, theme.js:4784-4869) ──
+     COUNT LAW: `shown` and `total` are the canonical population or a computed
+     difference of it; `step` is a LAYOUT quantity (rows x the live column
+     count), which is where production's "Show 15 more" comes from. Nothing here
+     is recounted from rendered rows. */
+  function smCount(shown, total) {
+    return t('Showing <b class="fig">' + shown + '</b> of <b class="fig">' + total + "</b>",
+             '已显示 <b class="fig">' + shown + '</b> / <b class="fig">' + total + "</b>");
+  }
+  function showMore(shown, total) {
+    var h = '<div class="sm-bar" data-total="' + total + '" data-init="' + shown + '">';
+    h += '<span class="sm-count">' + smCount(shown, total) + "</span>";
+    h += '<span class="sm-btns">';
+    h += '<button class="sm-btn" type="button" data-sm="more"></button>';
+    h += '<button class="sm-btn sm-ghost" type="button" data-sm="all">' +
+         t("Show all " + total, "全部显示 " + total) + "</button>";
+    h += '<button class="sm-btn sm-collapse" type="button" data-sm="less" hidden>' +
+         t("Show fewer", "收起") + "</button>";
+    return h + "</span></div>";
   }
 
   /* ═══════════════ 3. CANDIDATES / 候选 ═════════════════════════════════
@@ -629,7 +891,17 @@
     });
     h += "</div>";
 
-    var cr = B.cand_rows.slice(0, 6);
+    /* VTC-309 — a section whose whole reason to exist is a SECOND population
+       may not illustrate itself with a 6-of-6 sample of the first one. All six
+       rendered candidates (DAR, MRK, GPCR, CVCO, KEYS, WBD) were setup cards
+       directly above. The sample now prefers names the plan book does not
+       already carry — a payload fact, not a recount of what the grid drew — and
+       the pool permits it (26 of the 70 screened names have no plan row). The
+       full population is unchanged and still printed once. */
+    var planTk = {};
+    B.rows.forEach(function (x) { planTk[x.tk] = 1; });
+    var pool = B.cand_rows.filter(function (x) { return !planTk[x.tk]; });
+    var cr = (pool.length >= 6 ? pool : B.cand_rows).slice(0, 6);
     h += '<div class="cand-rows">';
     cr.forEach(function (x) {
       h += '<div class="cand-row"><span class="cand-tk">' + esc(x.tk) + "</span>" +
@@ -638,8 +910,8 @@
     });
     h += "</div>";
     h += '<p class="mx-sec-note" style="margin:12px 0 0">' + t(
-      "Showing 6 of <b>" + B.cand_total + "</b> &middot; screened " + B.cand_asof,
-      "共 <b>" + B.cand_total + "</b> 只，显示前 6 只 &middot; 筛选日 " + B.cand_asof) + "</p>";
+      "Showing 6 that carry no plan yet &middot; <b>" + B.cand_total + "</b> screened " + B.cand_asof,
+      "显示其中 6 只尚未建立计划的 &middot; 本次共筛出 <b>" + B.cand_total + "</b> 只 &middot; 筛选日 " + B.cand_asof) + "</p>";
     return h;
   }
 
@@ -650,15 +922,34 @@
      recommendation, run length and member count all come from the payload. If
      the key is absent the section states that, rather than inventing a market
      call to keep the composition full. */
+  /* PRC-316 — EVERY SLUG THE PRODUCER CAN EMIT IS MAPPED IN BOTH LANGUAGES.
+     Binding the section to a real producer was the right cure for R2's invented
+     sector rows, and "straight from the payload" is exactly the path that leaks
+     an internal token: the payload carries `enter` (Space Economy) and the map
+     knew five values, so the card read "enter 5d up · 15 names" in English on
+     the CHINESE surface. The failure was silent by construction — any value the
+     map does not know reached the user verbatim. Two changes: `enter` (and the
+     rest of the producer's vocabulary) are mapped, and an unknown slug now
+     renders NOTHING rather than itself. A missing label is a disclosed gap; a
+     raw slug is an untranslated internal token wearing the costume of copy. */
   var RECO = {
     accumulate: { en: "Accumulate", zh: "逐步买入" },
+    enter:      { en: "Enter",      zh: "建仓" },
+    add:        { en: "Add",        zh: "加仓" },
     hold:       { en: "Hold",       zh: "持有" },
     watch:      { en: "Watch",      zh: "观察" },
-    avoid:      { en: "Avoid",      zh: "回避" },
-    trim:       { en: "Trim",       zh: "减仓" }
+    reduce:     { en: "Reduce",     zh: "减仓" },
+    trim:       { en: "Trim",       zh: "减仓" },
+    exit:       { en: "Exit",       zh: "离场" },
+    avoid:      { en: "Avoid",      zh: "回避" }
   };
   function groups() {
-    var T = B.themes || [];
+    /* rank order is the ordering the section ships; PRC-317 withholds the
+       ordinal itself, so the SEQUENCE has to carry it — pin it explicitly
+       rather than relying on the producer's array order. */
+    var T = (B.themes || []).slice().sort(function (a, b) {
+      return (a.rank == null ? 1e9 : a.rank) - (b.rank == null ? 1e9 : b.rank);
+    });
     var h = '<div class="mx-sec-hd">';
     h += '<h2 class="mx-sec-h2">' + t("Groups", "板块") + "</h2>";
     h += '<span class="mx-sec-total">' + (T.length
@@ -678,12 +969,20 @@
 
     h += '<div class="grp-grid">';
     T.forEach(function (g) {
-      var rc = RECO[g.reco] || { en: g.reco || "—", zh: g.reco || "—" };
+      var rc = RECO[g.reco];
       h += '<div class="grp">';
-      h += '<div class="grp-hd"><span class="grp-rank fig">' + g.rank + "</span>" +
+      /* PRC-317 — an ORDINAL WITHOUT ITS DENOMINATOR is a stronger claim than
+         the producer supports. The eight themes carry ranks 1, 5, 6, 7, 9, 11,
+         12, 19 beside a header reading "8 themes in favour", so the surface
+         exposed a scale of at least 19 while naming 8 members, and a reader
+         could not tell whether "7 · Gold Miners" was 7 of 8 or 7 of 40. The
+         payload carries no denominator, so the ordinal is withheld — the list
+         is already in rank order, and order carries the ranking without
+         asserting a population that is not published. */
+      h += '<div class="grp-hd">' +
            '<span class="grp-nm">' + t(esc(g.en), esc(g.zh || g.en)) + "</span></div>";
       h += '<div class="grp-meta">';
-      h += '<span class="grp-reco">' + t(rc.en, rc.zh) + "</span>";
+      if (rc) h += '<span class="grp-reco">' + t(rc.en, rc.zh) + "</span>";
       if (g.days != null) {
         h += '<span class="grp-fact fig">' + t(g.days + "d up", g.days + " 天走强") + "</span>";
       }
@@ -699,19 +998,101 @@
     return h;
   }
 
-  /* ═══════════════ 5 / 6 ═══════════════════════════════════════════════ */
-  function context() {
-    var tabs = [["Breadth", "市场宽度"], ["Indexes & mega-caps", "指数与大型股"],
-                ["Flow", "资金流"], ["Rates", "利率"], ["Regime", "市场状态"]];
-    var h = '<div class="mx-sec-hd"><h2 class="mx-sec-h2">' + t("Market context", "市场环境") + "</h2>" +
-            '<span class="mx-sec-total">' + t("the weather, not the trade", "环境参考，非交易信号") + "</span></div>";
-    h += '<div class="tabset">';
-    tabs.forEach(function (c) { h += '<a href="#ctx">' + t(c[0], c[1]) + "</a>"; });
-    h += "</div>";
-    return h;
-  }
+  /* ═══════════════ 5. EVIDENCE ═════════════════════════════════════════
+     VTC-307: the page used to end on two consecutive sections of pure
+     navigation furniture — "Market context · the weather, not the trade" over
+     five contentless pills, then four bare links with no number anywhere, as
+     the last things on a 2782px page. Deleting the producer-less regime chips
+     was right (R2's PRC-207); keeping their SECTION HEADER and turning the
+     chips into links was the defect. The Market context shell is removed
+     outright: there is no producer to bind it to, and a header retained over
+     deleted content reads as unfinished rather than as restraint.
+
+     PRC-307: the record comes back with NUMBERS, from its real producer —
+     engine/track_scoring.summarize() (track_scoring.py:330-392) ->
+     emit_ledger() (scripts/grade_us_board.py:2625) ->
+     site/factordata/us_track_ledger.json — vendored into the fixture by
+     tools/gen_fixture.py, so a rebake keeps it honest and nothing here is
+     typed by hand.
+
+     EPISTEMICS: the interval is printed BESIDE the rate, never under it. 58.6%
+     with a 50.4-64.4 interval straddles a coin flip on 18 boards over about
+     five weeks; a bare win rate here would be exactly the overclaim this review
+     cycle exists to catch. The maturity split (how many of the graded rows are
+     actually closed) and the window are glance-tier facts, not footnotes. */
   function evidence() {
-    var h = '<div class="mx-sec-hd"><h2 class="mx-sec-h2">' + t("Evidence &amp; record", "证据与战绩") + "</h2></div>";
+    var K = B.track;
+    var h = '<div class="mx-sec-hd"><h2 class="mx-sec-h2">' + t("Evidence &amp; record", "证据与战绩") + "</h2>";
+    if (K) {
+      h += '<span class="mx-sec-total">' + t(
+        "graded on closed plans &middot; as of " + esc(K.as_of),
+        "以已平仓计划评分 &middot; 数据日期 " + esc(K.as_of)) + "</span>";
+    }
+    h += "</div>";
+
+    if (!K) {
+      h += '<div class="mx-empty"><b>' + t("No graded record published", "暂无评分战绩") + "</b>" +
+        '<div class="mx-empty-why">' + t(
+          "The track ledger has not published. Nothing is asserted in its place.",
+          "战绩台账尚未发布。此处不作任何替代性判断。") + "</div></div>";
+      return h;
+    }
+
+    var sign = K.expectancy_pct > 0 ? "+" : "";
+    /* production's shipped strip copy, _track_record_dlg.html.j2:424 */
+    h += '<div class="trd-wrap"><span class="trd-btn">';
+    h += '<span class="trd-lead">' + t("Track record", "往绩") + "</span>";
+    h += '<span class="trd-sep">&middot;</span>';
+    h += '<span class="trd-stat">' + t(
+      "<b>" + K.win_pct + "% win</b>", "<b>胜率 " + K.win_pct + "%</b>") + "</span>";
+    h += '<span class="trd-sep">&middot;</span>';
+    h += '<span class="trd-stat">' + t(
+      "<b>" + sign + K.expectancy_pct + "%</b> a trade",
+      "每笔 <b>" + sign + K.expectancy_pct + "%</b>") + "</span>";
+    h += "</span></div>";
+
+    var cells = [
+      [t("Win rate", "胜率"), K.win_pct + "%",
+       t("95% CI " + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct,
+         "95% 置信区间 " + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct)],
+      [t("Per trade", "每笔盈亏"), sign + K.expectancy_pct + "%",
+       t("95% CI " + K.exp_lo_pct + "&ndash;" + (K.exp_hi_pct > 0 ? "+" : "") + K.exp_hi_pct,
+         "95% 置信区间 " + K.exp_lo_pct + "&ndash;" + (K.exp_hi_pct > 0 ? "+" : "") + K.exp_hi_pct)],
+      [t("Median trade", "中位数"), (K.median_pct > 0 ? "+" : "") + K.median_pct + "%",
+       t("half land above this", "一半的交易好于此值")],
+      [t("Profit factor", "盈亏比"), String(K.profit_factor),
+       t("gains over losses", "总盈利 / 总亏损")],
+      [t("Graded", "已评分"), K.n_matured + " / " + K.n_total,
+       t(K.n_inflight + " still open", "另有 " + K.n_inflight + " 笔未了结")],
+      [t("Median hold", "持有天数"), K.median_hold,
+       t(K.horizon + "-session verdict", "满 " + K.horizon + " 个交易日强制结算")]
+    ];
+    h += '<div class="trk-grid">';
+    cells.forEach(function (c) {
+      /* .fig is tabular numerals for FIGURES only, never words: the headline
+         value is a pure figure and takes it; the sub-line is prose carrying a
+         number and does not. */
+      h += '<div class="trk-i"><span class="trk-l">' + c[0] + "</span>" +
+           '<span class="trk-v fig">' + c[1] + "</span>" +
+           '<span class="trk-ci">' + c[2] + "</span></div>";
+    });
+    h += "</div>";
+
+    /* the honest read of the interval, in plain words — not a footnote */
+    h += '<p class="trk-note">' + t(
+      "Read it as an early record, not a settled edge: the win-rate interval " +
+      "(<b>" + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct + "</b>) still spans a coin flip, and it is built from " +
+      "<b>" + K.n_boards + "</b> boards since " + esc(K.first_board) + ". Every plan is scored against " +
+      t_bench(K) + " on the same rule for every name.",
+      "请把它当作一份仍在积累的早期记录，而不是已经确定的优势：胜率区间（<b>" + K.ci_lo_pct + "&ndash;" + K.ci_hi_pct +
+      "</b>）仍跨过 50% 一线，样本为 " + esc(K.first_board) + " 以来的 <b>" + K.n_boards + "</b> 期看板。" +
+      "所有计划都以同一规则对照" + t_bench_zh(K) + "评分。") + "</p>";
+    h += '<p class="trk-note">' + t(
+      "<b>" + K.n_skipped_no_price + "</b> of " + K.n_total + " rows had no usable price and are left out of the scoring; " +
+      "rows that have not been graded stay published rather than being dropped from the count.",
+      "共 " + K.n_total + " 条中有 <b>" + K.n_skipped_no_price + "</b> 条因缺少可用价格未纳入评分；" +
+      "尚未评分的条目照常发布，不会从计数中剔除。") + "</p>";
+
     h += '<div class="ev-links">';
     [["Track record", "历史战绩"], ["How Prophet works", "Prophet 运作方式"],
      ["Calibration lab", "校准实验室"], ["Closed plans archive", "已结计划存档"]]
@@ -719,6 +1100,8 @@
     h += "</div>";
     return h;
   }
+  function t_bench(K) { return esc(K.bench_en || K.bench || "the benchmark"); }
+  function t_bench_zh(K) { return esc(K.bench_zh || K.bench || "基准"); }
 
   /* ═══════════════ header ══════════════════════════════════════════════ */
   function header() {
@@ -731,10 +1114,33 @@
     /* exactly ONE as-of pair for the page — the ladder adds no second stamp */
     h += '<div class="bh-stamp">';
     h += '<span class="pbs">&#9680; ' + t("Tonight&rsquo;s book", "今晚的计划簿") + "</span>";
-    h += '<span class="dtp-token closed"><span class="dtp-dot"></span>' +
-         t("Settled close", "收盘结算") + "</span>";
+    /* PRC-305 — THE FRESHNESS SLOT. The header could previously only assert
+       "Settled close": there was no branch, so the one disclosure that exists
+       to stop a reader acting on stale prices could not be expressed in any
+       state. Fresh keeps the settled-close token; behind states the state. */
+    var fr = freshness();
+    if (fr.delayed) {
+      h += '<span class="pv-fresh pv-fresh--behind"><span class="dtp-dot"></span>' +
+           t("Delayed", "延迟") + "</span>";
+    } else {
+      h += '<span class="pv-fresh"><span class="dtp-token closed"><span class="dtp-dot"></span>' +
+           t("Settled close", "收盘结算") + "</span></span>";
+    }
     h += '<span class="dtp-asof">' + esc(B.asof) + "</span>";
     h += "</div></div>";
+
+    /* Production's behind-the-tape banner, verbatim (dashboard.html.j2:15784-89,
+       class .nb-stale-note). It already carries exactly the three things this
+       disclosure has to carry: the vintage the ranking is on, how far behind
+       that is, and what to do about it before acting. */
+    if (fr.delayed) {
+      var sb = fr.sessions_behind;
+      h += '<p class="nb-stale-note">' + t(
+        "Still ranked on prices as of " + esc(fr.price_through) + " &mdash; <b>" + sb +
+        "</b> session" + (sb === 1 ? "" : "s") + " behind. We&rsquo;re updating it; check a live quote before you act.",
+        "仍按截至 " + esc(fr.price_through) + " 的价格排序，落后 <b>" + sb +
+        "</b> 个交易日。数据正在更新，操作前请先看一下实时报价。") + "</p>";
+    }
 
     /* R2-D: the regime / breadth / posture chips are GONE. They asserted a market
        call ("Risk-on", "Broadening", "Act on the best few") with no canonical
@@ -757,7 +1163,7 @@
     var g = [
       ["theme", [["dark", "Dark"], ["light", "Light"]]],
       ["lang",  [["en", "EN"], ["zh", "中文"]]],
-      ["state", [["paid", "Reference"], ["today", "Today (actual)"], ["anon", "Anonymous"], ["empty", "Empty"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
+      ["state", [["paid", "Reference"], ["today", "Today (actual)"], ["anon", "Anonymous"], ["empty", "Empty"], ["stale", "Behind the tape"], ["episodes", "Multi-episode"], ["fallback", "No-enrichment"]]],
       ["view",  [["grid", "Grid"], ["table", "Table"]]]
     ];
     var h = '<div class="harness"><strong>Mockup harness</strong>';
@@ -791,8 +1197,69 @@
     '<section class="mx-sec" id="setups">' + setups() + "</section>" +
     '<section class="mx-sec" id="candidates">' + candidates() + "</section>" +
     '<section class="mx-sec" id="groups">' + groups() + "</section>" +
-    '<section class="mx-sec" id="context">' + context() + "</section>" +
+    /* VTC-307: no `context` section. It had no producer left after the regime
+       chips were (correctly) deleted, and a header kept over deleted content is
+       the defect the finding names. The page ends on evidence with numbers. */
     '<section class="mx-sec" id="evidence">' + evidence() + "</section>";
+
+  /* ── PRC-306: progressive in-place expansion ─────────────────────────────
+     Production's initShowMore (templates/theme.js:4784-4869): the page size is
+     the row step x the LIVE column count, which is where "Show 15 more" comes
+     from on a 5-column desktop and "Show 6 more" on mobile. Reveal is a class
+     toggle on rows already in the DOM, so nothing re-renders and nothing is
+     re-fetched.
+     COUNT LAW: `total` is the canonical population the renderer printed from
+     cellCount()/liveTotal(); `shown` moves by a computed difference of it. The
+     column count is a LAYOUT measurement, never a count of setups. */
+  (function initShowMore() {
+    var grid = document.querySelector(".pv-grid[data-showmore-rows]");
+    var bar = document.querySelector(".sm-bar");
+    if (!grid || !bar) return;
+    var cards = Array.prototype.slice.call(grid.children);
+    var total = parseInt(bar.getAttribute("data-total"), 10);
+    var init = parseInt(bar.getAttribute("data-init"), 10);
+    var step = parseInt(grid.getAttribute("data-showmore-rows"), 10) || 3;
+    var shown = init;
+    var moreBtn = bar.querySelector('[data-sm="more"]');
+    var allBtn = bar.querySelector('[data-sm="all"]');
+    var lessBtn = bar.querySelector('[data-sm="less"]');
+
+    function page() {
+      var cols = getComputedStyle(grid).gridTemplateColumns.split(/\s+/).filter(Boolean).length;
+      /* the floor keeps the mobile step usable: at 390w the grid is ONE column,
+         so a bare rows x cols would advance 3 at a time through a 159-row book.
+         Production reveals 6 on mobile and 15 on a 5-column desktop; this
+         reproduces both. */
+      return Math.max(6, step * Math.max(1, cols));
+    }
+    function paint(reveal) {
+      cards.forEach(function (c, i) {
+        var hide = i >= shown;
+        if (reveal && !hide && c.classList.contains("sm-hidden")) c.classList.add("sm-reveal");
+        c.classList.toggle("sm-hidden", hide);
+      });
+      bar.querySelector(".sm-count").innerHTML = smCount(shown, total);
+      var left = total - shown;
+      moreBtn.hidden = left <= 0;
+      allBtn.hidden = left <= 0;
+      lessBtn.hidden = shown <= init;
+      if (left > 0) {
+        var n = Math.min(page(), left);
+        moreBtn.innerHTML = t("Show " + n + " more", "再显示 " + n + " 个");
+      }
+    }
+    bar.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-sm]");
+      if (!b) return;
+      var k = b.getAttribute("data-sm");
+      if (k === "more") shown = Math.min(total, shown + page());
+      else if (k === "all") shown = total;
+      else if (k === "less") { shown = init; grid.scrollIntoView({ block: "start" }); }
+      paint(k !== "less");
+    });
+    window.addEventListener("resize", function () { paint(false); });
+    paint(false);
+  })();
 
   /* ladder cells filter in place and write #life=<cell> — never #stage= */
   document.addEventListener("click", function (e) {

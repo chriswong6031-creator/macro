@@ -1678,6 +1678,16 @@ def _project_snapshots(
                             impact_rows=current["_impact_rows"],
                             company_index=company_index,
                             is_correction=False,
+                            # The snapshot rail's literal stays put, unlike the
+                            # action rail's.  Here the flag is rendered as
+                            # binary copy ("Late discovery" vs "Observed in live
+                            # window", templates/government_revenue.html.j2), so
+                            # computing it would restate the meaning of already
+                            # published rows without the paired copy change that
+                            # owns them, and GRV-FA1 fences this rail out by
+                            # name (``family_rail_mismatch``) before it ever
+                            # reads the flag, so the literal carries no grader
+                            # exposure.  Display follow-up owns this line.
                             is_late_discovery=False,
                         )
                         if event:
@@ -1743,6 +1753,21 @@ def _project_actions(
                         )
                         if explicit_type and explicit_type not in {"action_retracted", "action_corrected"}:
                             secondary = [explicit_type, *secondary]
+                        # A revision is a new observation with its own clocks:
+                        # it is late exactly when this observation's known_at
+                        # postdates the action's own effective clock by more
+                        # than the window.  The literal ``False`` this replaces
+                        # was never computed, and GRV-FA1 admits a source event
+                        # only on ``is_late_discovery is False`` exactly, so
+                        # that literal would hand the graded cohort a stale
+                        # restatement of an old action dressed as a fresh
+                        # catalyst.  Computing it is strictly narrowing -- the
+                        # literal admitted every revision, so the computed flag
+                        # can only refuse more -- and no registered rule moves.
+                        late = _is_late_discovery(
+                            current,
+                            late_discovery_days=late_discovery_days,
+                        )
                         event = _make_event(
                             row=current,
                             before=prior,
@@ -1753,7 +1778,7 @@ def _project_actions(
                             impact_rows=current["_impact_rows"],
                             company_index=company_index,
                             is_correction=event_type in {"action_corrected", "action_retracted"},
-                            is_late_discovery=False,
+                            is_late_discovery=late,
                         )
                         if event:
                             events.append(event)

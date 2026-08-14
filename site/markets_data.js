@@ -6,7 +6,7 @@
 (function(){
   "use strict";
   window.MARKET_META = {
-  "asOf": "2026-08-13",
+  "asOf": "2026-08-14",
   "today": 2026.48,
   "xDomain": [
     2000,
@@ -209,11 +209,11 @@
       }
     ],
     "now": {
-      "level": 7748.5,
-      "asOf": "2026-08-12",
-      "ath": 7757.64,
+      "level": 7798.99,
+      "asOf": "2026-08-13",
+      "ath": 7798.99,
       "athDate": "2026-08",
-      "pctFromATH": -0.1,
+      "pctFromATH": 0.0,
       "ytd": 10.9,
       "ret1y": 25,
       "pos": 82,
@@ -388,9 +388,9 @@
       }
     ],
     "now": {
-      "level": 61.77,
-      "asOf": "2026-08-12",
-      "ath": 61.77,
+      "level": 62.1,
+      "asOf": "2026-08-13",
+      "ath": 62.1,
       "athDate": "2026-08",
       "pctFromATH": 0.0,
       "ytd": 9.9,
@@ -891,11 +891,11 @@
       }
     ],
     "now": {
-      "level": 68308.59,
-      "asOf": "2026-08-13",
+      "level": 69269.59,
+      "asOf": "2026-08-14",
       "ath": 72366.34,
       "athDate": "2026-06",
-      "pctFromATH": -5.6,
+      "pctFromATH": -4.3,
       "ytd": 43.8,
       "ret1y": 85,
       "pos": 93,
@@ -1075,11 +1075,11 @@
       }
     ],
     "now": {
-      "level": 9188.5,
-      "asOf": "2026-08-13",
+      "level": 9109.0,
+      "asOf": "2026-08-14",
       "ath": 9271.6,
       "athDate": "2026-08",
-      "pctFromATH": -0.9,
+      "pctFromATH": -1.8,
       "ytd": 1.3,
       "ret1y": 3.1,
       "pos": 80,
@@ -1397,11 +1397,11 @@
       }
     ],
     "now": {
-      "level": 6813.34,
-      "asOf": "2026-08-13",
+      "level": 6947.29,
+      "asOf": "2026-08-14",
       "ath": 9114.55,
       "athDate": "2026-06",
-      "pctFromATH": -25.2,
+      "pctFromATH": -23.8,
       "ytd": 62.5,
       "ret1y": 124.2,
       "pos": 97,
@@ -1754,11 +1754,11 @@
       }
     ],
     "now": {
-      "level": 22.45,
-      "asOf": "2026-08-12",
+      "level": 22.5,
+      "asOf": "2026-08-13",
       "ath": 24.16,
       "athDate": "2026-05",
-      "pctFromATH": -7.1,
+      "pctFromATH": -6.9,
       "ytd": -6.9,
       "ret1y": 4,
       "pos": 44,

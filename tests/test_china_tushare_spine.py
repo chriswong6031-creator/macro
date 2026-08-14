@@ -962,12 +962,13 @@ def test_end_to_end_bounded_collection_then_zero_call_resume(monkeypatch, tmp_pa
     assert resumed["manifest_complete"] is True
 
 
-def test_documented_row_cap_uses_resumable_per_ticker_fallback(monkeypatch, tmp_path):
+def test_documented_row_cap_uses_resumable_ticker_range_campaign(monkeypatch, tmp_path):
     _seed_spine(tmp_path)
     monkeypatch.setitem(spine.SOURCE_ROW_CAPS, "daily", 2)
 
     def fake(endpoint, fields="", **params):
-        whole = _daily_rows(params["trade_date"])
+        trade_date = params.get("trade_date") or params["start_date"]
+        whole = _daily_rows(trade_date)
         requested = params.get("ts_code")
         if not requested:
             return whole
@@ -981,10 +982,16 @@ def test_documented_row_cap_uses_resumable_per_ticker_fallback(monkeypatch, tmp_
     collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
     record = spine.load_state(tmp_path)["units"]["daily"]["20240102"]
     assert record["status"] == "complete"
-    assert record["collection_method"] == "per_ticker_shards"
+    assert record["collection_method"] == "per_ticker_range_shards"
     assert record["expected_ticker_count"] == 3
     assert record["source_accounting_complete"] is True
-    probe = record["request_receipts"][0]
+    state = spine.load_state(tmp_path)
+    campaign = state["range_campaigns"]["daily"]
+    assert campaign["status"] == "complete"
+    # Three canonical tickers plus the historical BSE query alias.
+    assert campaign["planned_leaf_count"] == 4
+    assert campaign["completed_leaf_count"] == 4
+    probe = campaign["cap_probe_receipt"]
     assert probe["response_status"] == "non_authoritative_cap_probe"
     assert probe["receipt_role"] == "discarded_non_authoritative_cap_probe"
     assert probe["discarded_probe_row_count"] == 2
@@ -997,34 +1004,34 @@ def test_documented_row_cap_uses_resumable_per_ticker_fallback(monkeypatch, tmp_
         spine.load_state(tmp_path), "daily", ["20240102"], tmp_path,
     )
     accounting = summary["unit_accounting"][0]
-    assert accounting["completed_ticker_count"] == accounting["expected_ticker_count"] == 3
-    assert accounting["observed_ticker_sha256"] == accounting["expected_ticker_sha256"]
-    assert accounting["shard_coverage_complete"] is True
+    assert accounting["collection_method"] == "per_ticker_range_shards"
+    assert accounting["request_bound"] is True
+    assert accounting["complete"] is True
     assert len(pd.read_parquet(
         tmp_path / "daily" / "year=2024" / "month=01" / "part.parquet"
     )) == 2
 
-    state = spine.load_state(tmp_path)
-    first_shard = min(state["units"]["daily_shard"])
-    state["units"]["daily_shard"][first_shard]["source_row_count"] += 1
-    assert spine._unit_done(state, tmp_path, "daily", "20240102") is False
-
-    state = spine.load_state(tmp_path)
-    first_shard = min(state["units"]["daily_shard"])
-    state["units"]["daily_shard"][first_shard]["status"] = "failed"
+    plan = spine.crs.load_plan(tmp_path, campaign["campaign_id"])
+    first_leaf = spine.crs.planned_leaves(plan)[0]
+    artifact = next(
+        (tmp_path / "source_range_shards" / "daily" / campaign["campaign_id"]).rglob(
+            f"{first_leaf.leaf_id}.parquet"
+        )
+    )
+    artifact.write_bytes(artifact.read_bytes() + b"tampered")
     assert spine._unit_done(state, tmp_path, "daily", "20240102") is False
     assert spine._state_unit_summary(
         state, "daily", ["20240102"], tmp_path,
-    )["unit_accounting"][0]["shard_coverage_complete"] is False
+    )["unit_accounting"][0]["request_bound"] is False
 
 
-def test_ticker_shard_fallback_converges_across_bounded_runs(monkeypatch, tmp_path):
+def test_ticker_range_campaign_converges_across_bounded_runs(monkeypatch, tmp_path):
     _seed_spine(tmp_path)
     monkeypatch.setitem(spine.SOURCE_ROW_CAPS, "daily", 2)
-    monkeypatch.setattr(spine, "SHARD_CALLS_PER_UNIT_SLICE", 1)
 
     def query(endpoint, fields="", **params):
-        whole = _daily_rows(params["trade_date"])
+        trade_date = params.get("trade_date") or params["start_date"]
+        whole = _daily_rows(trade_date)
         requested = params.get("ts_code")
         if not requested:
             return whole
@@ -1042,11 +1049,15 @@ def test_ticker_shard_fallback_converges_across_bounded_runs(monkeypatch, tmp_pa
         )
         collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
         per_run_calls.append(collector.requests_made)
-    assert per_run_calls == [2, 1, 1]
+    assert per_run_calls == [2, 2, 1]
     state = spine.load_state(tmp_path)
     assert spine._unit_done(state, tmp_path, "daily", "20240102") is True
-    assert len(state["units"]["daily_shard"]) == 3
-    assert len(state["units"]["daily"]["20240102"]["request_receipts"]) == 2
+    campaign = state["range_campaigns"]["daily"]
+    assert campaign["status"] == "complete"
+    assert campaign["completed_leaf_count"] == campaign["planned_leaf_count"] == 4
+    plan = spine.crs.load_plan(tmp_path, campaign["campaign_id"])
+    assert spine.crs.pending_leaves(tmp_path, plan) == []
+    assert "daily_shard" not in state["units"]
 
 
 def test_dense_endpoint_key_coverage_catches_silent_underfill(tmp_path):
@@ -1194,6 +1205,11 @@ def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     schema_path = Path(__file__).parents[1] / "contracts" / "cn_tushare_a_share_spine_manifest.v1.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
     Draft202012Validator(schema, format_checker=FormatChecker()).validate(manifest)
+    # No cap fired here, so this run only witnesses the null branch; the populated
+    # rangeCampaignSummary is proved by its own test below.
+    assert manifest["range_campaigns"] == {
+        endpoint: None for endpoint in spine.DENSE_ENDPOINTS
+    }
     identity = manifest["manifest_identity_sha256"]
     unsigned = dict(manifest)
     unsigned.pop("manifest_identity_sha256")
@@ -1276,6 +1292,64 @@ def test_manifest_hashes_coverage_ore_and_schema(monkeypatch, tmp_path):
     assert forged["authorization"] is None
     assert forged["authorization_ready"] is False
     assert forged["complete"] is False
+
+
+
+
+def test_populated_range_campaign_summary_matches_manifest_schema(monkeypatch, tmp_path):
+    """A live campaign is the only witness the rangeCampaigns $def is honest."""
+    _seed_spine(tmp_path)
+    monkeypatch.setattr(spine, "CALENDAR_HISTORY_START", date(2024, 1, 1))
+    monkeypatch.setattr(spine, "NAME_HISTORY_START_YEAR", 2024)
+    monkeypatch.setitem(spine.SOURCE_ROW_CAPS, "daily", 2)
+
+    def fake(endpoint, fields="", **params):
+        trade_date = params.get("trade_date") or params["start_date"]
+        whole = _daily_rows(trade_date)
+        requested = params.get("ts_code")
+        if not requested:
+            return whole
+        match = whole[
+            whole["ts_code"].map(spine._source_ts_code)
+            == spine._source_ts_code(requested)
+        ]
+        return match.reset_index(drop=True) if not match.empty else _empty("daily")
+
+    collector = spine.TushareAShareSpineCollector(
+        tmp_path, query=fake, now=lambda: NOW,
+        max_requests=20, authorization=_grant(),
+    )
+    collector.collect_daily(date(2024, 1, 2), date(2024, 1, 2), ("daily",))
+
+    manifest = spine.build_completeness_manifest(
+        tmp_path, date(2024, 1, 2), date(2024, 1, 2), spine.DEFAULT_ENDPOINTS,
+        generated_at=NOW.isoformat(),
+    )
+    schema_path = (
+        Path(__file__).parents[1]
+        / "contracts" / "cn_tushare_a_share_spine_manifest.v1.schema.json"
+    )
+    schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    Draft202012Validator(schema, format_checker=FormatChecker()).validate(manifest)
+
+    summary = manifest["range_campaigns"]["daily"]
+    assert summary is not None
+    assert manifest["range_campaigns"]["daily_basic"] is None
+    assert manifest["range_campaigns"]["stk_limit"] is None
+    assert summary["status"] == "complete"
+    assert summary["cap_probe_count"] == 1
+    assert summary["cap_probe_receipt"]["response_status"] == (
+        "non_authoritative_cap_probe"
+    )
+    assert summary["terminal_campaign_receipt"]["status"] == "complete"
+    assert summary["all_day_receipts_bound"] is True
+    assert summary["source_accounting_complete"] is True
+    # The paid raw payload never reaches the manifest; only receipts do.
+    assert "rows" not in summary["cap_probe_receipt"]
+    cap_fallback = manifest["contracts"]["cap_fallback"]
+    assert cap_fallback["split_rule"] == summary["split_rule"]
+    assert cap_fallback["licensed_live_canary_complete"] is False
+    assert cap_fallback["live_canary_required_for_promotion"] is True
 
 
 def test_underfilled_pit_and_matching_underfilled_daily_cannot_certify_full_a(

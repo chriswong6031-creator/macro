@@ -6,6 +6,21 @@
    * queue.  Discovery-company coverage intentionally lives in a separate
    * mode and is never used as a fallback here.
    */
+  /* /api/government-revenue/* is a paid (site_full) surface and authenticates on
+   * the Authorization header, not the session cookie, so every read has to carry
+   * the Supabase bearer token. Same shape as capital_structure.js. Resolved per
+   * call, not at load time, because theme.js (which defines MDXAuth) is loaded
+   * after this script. */
+  function withAuth(headers){
+    headers=headers||{};
+    if(!(global.MDXAuth&&global.MDXAuth.client))return Promise.resolve(headers);
+    return global.MDXAuth.client().then(function(client){return client.auth.getSession()}).then(function(result){
+      var token=result&&result.data&&result.data.session&&result.data.session.access_token;
+      if(token)headers.Authorization='Bearer '+token;
+      return headers;
+    }).catch(function(){return headers});
+  }
+
   global.createGovernmentRevenueCandidateRadar=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
     var epoch=0,listing=null,loadState='loading',MAX_PAGES=4;
@@ -59,7 +74,8 @@
       if(typeof api.onRows==='function')api.onRows(value.rows,{status:loadState,total:value.total,mapping_backlog_total:value.mappingBacklog,mapping_backlog_tickers:value.mappingBacklogTickers,mapping_backlog_states:value.mappingBacklogStates,content_id:value.contentId,known_at:value.knownAt,as_of:value.asOf,freshness:value.freshness,limitations:value.limitations});
       return value.rows;
     }
-    function unavailable(){listing=null;loadState='unavailable';if(typeof api.onRows==='function')api.onRows([],{status:'unavailable',total:0,mapping_backlog_total:0,mapping_backlog_tickers:null,mapping_backlog_states:null,content_id:null,freshness:{exact_candidate_availability:'unavailable'}});return[]}
+    function unavailable(reason){listing=null;loadState=reason==='locked'?'locked':'unavailable';if(typeof api.onRows==='function')api.onRows([],{status:loadState,total:0,mapping_backlog_total:0,mapping_backlog_tickers:null,mapping_backlog_states:null,content_id:null,freshness:{exact_candidate_availability:'unavailable'}});return[]}
+    function lockedFailure(error){var message=error&&error.message||'';return message==='http_401'||message==='http_403'}
     function pageEnvelope(value,kind){
       if(!obj(value)||value.contract!=='government_revenue_candidate_queue.v1'||value.schema_version!=='1.0.0'||!/^grcq1-[a-f0-9]{24}$/.test(requiredText(value.content_id))||!validAuthority(value.authority))throw new Error(kind+'_contract');
       var items=Array.isArray(value.items)?value.items:null,total=n(value.total),cursor=value.next_cursor;
@@ -73,7 +89,9 @@
         if(pages>=MAX_PAGES)throw new Error(kind+'_page_cap');
         pages++;
         var url=path+(cursor?'&cursor='+encodeURIComponent(cursor):'');
-        return global.fetch(url,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
+        return withAuth({Accept:'application/json'}).then(function(headers){
+          return global.fetch(url,{credentials:'same-origin',headers:headers});
+        }).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
           var page=pageEnvelope(value,kind);
           if(!first)first=page;else if(page.contentId!==first.contentId||page.total!==first.total)throw new Error(kind+'_generation_drift');
           all=all.concat(page.items);
@@ -97,7 +115,7 @@
         if(candidatePages.contentId!==mappingPages.contentId||expectedBacklog==null||expectedBacklog!==mappingPages.total)throw new Error('candidate_mapping_generation_drift');
         value.items=candidatePages.items;value.total=candidatePages.total;value.next_cursor=null;value.mapping_backlog_total=mappingPages.total;value.mapping_backlog_tickers=Array.from(new Set(mappingPages.items.map(function(row){return row.ticker}))).sort();value.mapping_backlog_states=mappingPages.items.reduce(function(states,row){states[row.ticker]=row.mapping_state;return states},{});
         return publish(queueRows(value));
-      }).catch(function(){if(ticket!==epoch)return[];return unavailable()});
+      }).catch(function(error){if(ticket!==epoch)return[];return unavailable(lockedFailure(error)?'locked':'')});
     }
     function crosscheckEntry(value){
       var state=typeof value==='string'?value:obj(value)?scalar(value.state||value.status||value.label,''):'';

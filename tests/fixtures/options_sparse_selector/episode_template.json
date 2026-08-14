@@ -1,0 +1,64 @@
+{
+  "anchor_strategy": "durable_available_at",
+  "available_at": "2026-08-10T14:08:43.566013Z",
+  "contract": {
+    "expiration": "2026-08-10",
+    "right": "C",
+    "strike": 225.0
+  },
+  "decision": {
+    "authority": {
+      "may_escalate": false,
+      "may_gate": false,
+      "may_originate": false,
+      "may_publish_pick": false,
+      "may_rank": false,
+      "may_size": false,
+      "may_trade": false,
+      "may_train_prophet": false
+    },
+    "disposition": "watch",
+    "option_action": "none",
+    "reason": "notable_flow_event",
+    "underlying_direction": "none"
+  },
+  "decision_at": "2026-08-10T14:07:02.487952Z",
+  "episode_id": "osep_78e0b09caebbedde9ae6b0bc",
+  "event_time": "2026-08-10T13:43:42Z",
+  "feature_snapshot": {
+    "avg_option_trade_price": 0.6165,
+    "contracts": 20652,
+    "dte": 0,
+    "flow_side": "mixed",
+    "moneyness_bucket": "atm",
+    "premium_usd": 1273116.0,
+    "repeated": false,
+    "selection_floor_usd": 1000000.0,
+    "selection_root_class": "etf_anchor",
+    "selection_rule": "premium_floor/v1",
+    "swept": false,
+    "vol_gt_prior_oi": true
+  },
+  "observed_at": "2026-08-10T13:44:43.964276Z",
+  "provenance": {
+    "feature_cutoff": "2026-08-10T14:08:43.566013Z",
+    "oi_vintage": "2026-08-07",
+    "oi_vintage_rule": "latest_available_chain_before_session",
+    "signing_source": "tape",
+    "source_artifact": "live_flow/events/2026-08-10.jsonl",
+    "source_schema": "live_flow.event_stage/v1",
+    "source_snapshot_asof": "2026-08-10T14:08:43.566013Z"
+  },
+  "published_at": null,
+  "quality": {
+    "availability_exact": true,
+    "option_quote_outcome_eligible": false,
+    "source_baseline": "floor",
+    "trade_direction_reliability": "soft"
+  },
+  "schema": "options.signal_episode/v1",
+  "session_date": "2026-08-10",
+  "source": "live_flow.notable_contract",
+  "source_event_id": "d18750cca7fe53a0",
+  "ticker": "NVDA"
+}

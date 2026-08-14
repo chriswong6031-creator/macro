@@ -415,11 +415,20 @@
         {%- endfor %}
         {#- The remainder. ONE shared reason, stated once, never invented per name:
             the ledger scored no setup for these, so there is no per-name verdict to
-            report and writing one would be a fabricated rejection. -#}
+            report and writing one would be a fabricated rejection.
+            THE RESTRAINT IS ON THE REASON, NOT ON THE NAME — these render ticker + zh
+            exactly like the buckets above, from the same `{t, zh}` entries, because a
+            name is not a verdict. A CN ticker is a numeric code that names nothing in
+            either language on the page, so the ticker-only form this shipped with left
+            the reader of a bilingual roster one line that was not in either language —
+            and on Gold Miners it landed on 002155.SZ 湖南黄金, the 2026-08-04 incident's
+            own name, alone among five labelled basket-mates. Width is not the trade it
+            looks like: capped at 6 the longest quiet line is narrower than the widest
+            named group the same panel already ships (cn_banks `ran` ×7, uncapped). -#}
         {%- if _r.get('quiet_sample') %}
         <div class="ctt-g">
           <span class="ctt-gk">{{ ct_t('quiet', '未触发') }}</span>
-          <span class="ctt-names">{% for _q in _r.quiet_sample %}<span class="ctt-n"><span class="ctt-sym">{{ _q }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="ctt-n ctt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="ctt-why">{{ ct_t(_r.get('quiet_why') or 'no setup here yet', _r.get('quiet_why_zh') or '此处尚无形态') }}</span></span>
+          <span class="ctt-names">{% for _q in _r.quiet_sample %}<span class="ctt-n"><span class="ctt-sym">{{ _q.t }}</span><span class="ctt-zh">{{ _q.zh }}</span></span>{% endfor %}{% if _r.get('quiet_more') %}<span class="ctt-n ctt-more">+{{ _r.quiet_more }}</span>{% endif %}<span class="ctt-why">{{ ct_t(_r.get('quiet_why') or 'no setup here yet', _r.get('quiet_why_zh') or '此处尚无形态') }}</span></span>
         </div>
         {%- endif %}
         {#- THE THEME VEHICLE — only on a turned theme, and only where the basket

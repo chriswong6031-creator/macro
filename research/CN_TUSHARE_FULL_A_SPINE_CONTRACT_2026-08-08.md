@@ -40,7 +40,7 @@ All links are primary TuShare or exchange documentation checked 2026-08-08/09.
 | `trade_cal` | <https://tushare.pro/document/2?doc_id=26> | Exact exchange/range/day response; SSE and SZSE must have identical open-session sets. |
 | `bak_basic` | <https://tushare.pro/document/2?doc_id=262> | Exact-date historical stock-list witness from 2016; 7,000 cap. Pre-2016 stays an explicit gap. |
 | `namechange` | <https://tushare.pro/document/2?doc_id=100> | Active year is refreshed to the actual end-date anchor; announcement dates must stay inside the request; orphans block. |
-| `daily` | <https://tushare.pro/document/2?doc_id=27> | Direct unadjusted nominal OHLCV, exact date, 6,000 cap; the deterministic date×ticker fallback is correctness-tested but not operationally scalable. |
+| `daily` | <https://tushare.pro/document/2?doc_id=27> | Direct unadjusted nominal OHLCV, exact date, 6,000 cap; on cap the endpoint's requested interval switches to the bounded ticker×date-range campaign (amended 2026-08-13), correctness-tested synthetically and still gated. |
 | `daily_basic` | <https://tushare.pro/document/2?doc_id=32> | Exact date/ticker; 6,000 cap; `limit_status` domain 0–6 and close/limit semantics are audited. |
 | `stk_limit` | <https://tushare.pro/document/2?doc_id=183> | Exact source pre-close/up/down limits; 5,800 cap; non-A rows require independent exclusion or quarantine. |
 | `suspend_d` | <https://tushare.pro/document/2?doc_id=214> | Successful empty days are checkpointed; only a full-day `S` with no timing explains a missing daily row. |
@@ -120,7 +120,9 @@ Responses must bind exactly to the request:
 - `stock_basic`: requested exchange/status plus CNY/A-market/symbol/code;
 - `trade_cal`: returned exchange and every requested calendar day;
 - `namechange`: announcement anchor within the requested range;
-- daily/PIT endpoints: exact trade date, and exact ticker for a shard; and
+- daily/PIT endpoints: exact trade date, and for a range-campaign leaf the exact
+  ticker plus dates inside the leaf's bounds, at most one row per market session
+  (amended 2026-08-13); and
 - all endpoints: returned column order exactly equals requested fields.
 
 Every source unit records and exposes this equation:
@@ -177,24 +179,69 @@ effective-dated IPO/ST/board/no-limit state must not be guessed from one ratio.
 
 ## Cap fallback, scheduling, and resumability
 
+> **Amended 2026-08-13.** The original 2026-08-08 text specified an exact
+> **date×ticker** fallback: one request per ticker per trade date. That design was
+> named in the same paragraph as combinatorially unsuitable for a 2011-present
+> full-A backfill, and it has been **superseded in code** by the bounded
+> **ticker×date-range campaign** the original text named as the promotion
+> prerequisite. The paragraphs below describe the design as implemented in
+> `collectors/china_tushare_range_shards.py`. The gate itself is unchanged:
+> `BULK_HISTORICAL_BACKFILL_READY` remains code-reviewed `False`. The superseded
+> date-by-ticker wording is retained in this note only so the amendment is legible;
+> it is no longer the contract.
+
 Whole-market responses at the documented limit are potentially truncated. For
 `daily`/`daily_basic` (6,000) and `stk_limit` (5,800), the collector freezes the
-exact lifecycle-eligible union PIT ticker set and switches to per-ticker shards.
-Each shard must return zero or one exact ticker/date row. The union is normalized,
-deduplicated, and cannot close until the completed-ticker count and ticker-set hash
-equal the frozen expectation. Only a small shard slice is attempted per unit per
-pass, so one dense day cannot monopolize a bounded run.
+exact lifecycle-eligible union PIT ticker set and switches the **entire requested
+interval for that endpoint** to an immutable per-ticker **date-range campaign**.
+The switch is per endpoint and per interval, not per day: once a cap is documented,
+the whole-market fast path is abandoned for that endpoint's requested range rather
+than retried day by day.
+
+A campaign freezes a plan (`plan.json`) whose identity hash binds the endpoint,
+the requested fields, the source row cap, the canonical market-session list, the
+frozen query-identity set, and the reference generation that produced it. The plan
+is immutable: re-entering `ensure_campaign` with different inputs is rejected
+rather than silently re-planned. The plan splits each query identity's requested
+interval into deterministic contiguous market-session chunks of at most
+`cap - 1` sessions (`deterministic_contiguous_market_session_chunks_cap_minus_one_v1`),
+so a single leaf response can never itself sit at the cap and be ambiguously
+truncated. Each such chunk is a **leaf**, keyed by a hash of its own contract.
+
+Each leaf carries its own atomic state file and an immutable numbered attempt
+receipt per physical request, so a bounded run resumes with zero redundant calls.
+Retries are deterministic: unattempted leaves precede previously attempted ones,
+and among attempted leaves the fewest-attempts leaf goes first
+(`unattempted_then_fewest_attempts`). A leaf response is bound before it lands —
+exact requested columns, no rows crossing the requested ts_code or date bounds, no
+duplicate ticker/date keys, and at most one row per requested market session.
+
+Terminal leaves are transposed back to exact source days: the campaign resolves
+BSE old/new code aliases (canonical preferred when the rows are equal; conflicting
+rows are retained in their own artifact and **block** rather than being silently
+picked), writes a terminal index, and only then normalizes and replaces each exact
+day, binding the day's receipt to the campaign. A campaign cannot close while any
+alias conflict stands.
 
 The capped whole-market response is atomically relabeled
 `non_authoritative_cap_probe`; its observed rows are exposed as discarded probe
 rows and never enter the authoritative source equation. The parent source count
-must equal the sum of request-bound terminal child rows. This exact-date×ticker
-fallback is nevertheless combinatorially unsuitable for a 2011-present full-A
-backfill. `BULK_HISTORICAL_BACKFILL_READY` therefore remains code-reviewed `False`,
-network and injected collection fail before store mutation, and manifest
-completeness cannot close. Promotion requires a bounded ticker×date-range
-shard/transposition design (with time splitting at a per-ticker cap) and throughput
-evidence.
+must equal the sum of request-bound terminal child rows. Expected request volume
+for endpoint `e` is `H_e + I_e * ceil(S/(C_e-1)) + R_e` for `S` requested sessions,
+`I_e` query identities, cap `C_e`, whole-market probes `H_e`, and retries `R_e` —
+bounded, and the basis on which throughput is to be judged.
+
+**The gate is unchanged and this design does not open it.**
+`BULK_HISTORICAL_BACKFILL_READY` remains code-reviewed `False` and
+`CODE_REVIEWED_AUTHORIZATION_TRUST_ALLOWLIST_SHA256` remains empty; network and
+injected collection still fail before store mutation, and manifest completeness
+still cannot close. The range-shard campaign is verified **synthetically only** —
+every test injects responses, none contacts the vendor. Promotion additionally
+requires a licensed live canary against real quota, which has not been run; the
+manifest states this directly as
+`cap_fallback.licensed_live_canary_complete: false` alongside
+`live_canary_required_for_promotion: true`. Opening the gate is a separate,
+separately reviewed authority change.
 
 Unattempted source units precede retries; retries are deterministic. Active-year
 name history uses an end-date-qualified unit so a partial-year success cannot
@@ -223,7 +270,13 @@ The default store is outside Git:
   name_history/year=YYYY.parquet
   {daily,daily_basic,stk_limit,suspend_d,stock_st}/year=YYYY/month=MM/part.parquet
   source_row_classification/{known_excluded,quarantined_unknown}/...
-  source_shards/{daily,daily_basic,stk_limit}/...
+  source_shards/{daily,daily_basic,stk_limit}/...   # legacy date x ticker; read-only
+  range_campaigns/<campaign-id>/plan.json           # amended 2026-08-13
+  range_campaigns/<campaign-id>/leaves/<xx>/<leaf-id>.json
+  range_campaigns/<campaign-id>/terminal_index.parquet
+  range_campaigns/<campaign-id>/campaign_receipt.json
+  range_campaigns/<campaign-id>/alias_conflicts.parquet
+  source_range_shards/{daily,daily_basic,stk_limit}/<campaign-id>/<xx>/<leaf-id>.parquet
   receipts/requests/<endpoint>/<unit>/<request-hash>.json
   event_daily/year=YYYY/month=MM/part.parquet
   coverage/daily_security_coverage.parquet
@@ -250,7 +303,8 @@ bytes are scanned before hashing.
 3. the current reference generation, exact calendar, active-year name unit, and
    every required source unit are request-bound and complete;
 4. all per-unit source equations hold, unknown count is zero, name orphan count is
-   zero, and any shard ticker-set receipt closes;
+   zero, and any range campaign is terminal with every leaf verified, every day
+   receipt bound, and no standing alias conflict (amended 2026-08-13);
 5. every requested post-2016 session has a `bak_basic` witness, lifecycle and PIT
    sets reconcile exactly, and every requested daily endpoint unit is complete
    (pre-start endpoints are explicitly N/A);
@@ -285,14 +339,17 @@ part of content identity. Artifacts are private and must not be committed.
 
 Constructed: authorization gate; atomic lifecycle/reference generations; BSE 920
 aliases; PIT 2016+ universe; exact session positions; lossless source classification;
-request-bound schemas/receipts; deterministic but operationally gated cap shards;
+request-bound schemas/receipts; bounded ticker×date-range cap campaigns, synthetically
+verified and still operationally gated (amended 2026-08-13);
 multi-artifact terminal binding; discarded cap-probe accounting; nominal OHLCV and
 positive-volume state; daily-basic/limit/suspension/ST/name provenance; lifecycle
 and coverage reconciliation; integer-cent exact-source event rows; half-up
 validator; exact equality and vendor-bound checks.
 
 Not tested: live vendor access, adjusted `pro_bar`, pre-2016 exact universe/ST,
-direct BSE calendar, scalable ticker-range cap recovery and vendor retry throughput,
+direct BSE calendar, **licensed live cap-trigger parity for the ticker×date-range
+campaign** (the mechanism is verified synthetically only — no test contacts the
+vendor; amended 2026-08-13), vendor retry throughput and paid request cost,
 historical calculated-band parity across rule eras, minute/
 auction/order-book/seal-time/fillability histories, and actual bulk throughput.
 Any future null must name which of those construction spaces was not measured.
