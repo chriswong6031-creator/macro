@@ -2824,6 +2824,7 @@ def main() -> int:
     # ETF weight max per ticker from newest data/etf_holdings/<ETF>/*.parquet snapshots.
     _sp_etf_wt: "dict[str, float]" = {}         # ticker -> max weight_pct across all ETFs
     try:
+        from collectors.holdings import drop_non_equity as _drop_non_equity  # noqa: PLC0415
         _etf_dir = config.data_dir() / "etf_holdings"
         if _etf_dir.exists():
             _etf_frames: list["pd.DataFrame"] = []
@@ -2835,6 +2836,14 @@ def main() -> int:
                     continue
                 try:
                     _df = pd.read_parquet(_snaps[-1])
+                    # Stored snapshots RETAIN the sponsor's cash/FX/derivative
+                    # sleeve rows, so every reader weeds them itself. This map is
+                    # only ever read as `.get(ticker)` against the stock universe,
+                    # which makes a stray `USD` key inert TODAY — but `CASH` is
+                    # both a cash sentinel and a live published ticker (Pathward
+                    # Financial), so one sponsor filing its sleeve as `CASH` would
+                    # hand a real stock a cash weight through the groupby-max.
+                    _df = _drop_non_equity(_df)
                     if "ticker" in _df.columns and "weight_pct" in _df.columns:
                         _etf_frames.append(_df[["ticker", "weight_pct"]])
                 except Exception:  # noqa: BLE001
