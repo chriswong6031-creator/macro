@@ -151,6 +151,24 @@ danger_areas:
     from the absorbed records below"
 ---
 
+**Post-merge addendum (same session, ~22Z).** The operator merged #5667 directly at
+21:16:57Z while its packs were mid-flight; the surviving evidence is the main-ref
+ci.yml baseline dispatched on 622aeb30 (a descendant of the merge) — watched to
+conclusion by this session. Because the PR edited `.github/ci/legacy-jobs.yml` (a
+global invalidator), its full-suite runs surfaced four latent reds, all diagnosed
+by job NAME: (1) house-law census — `check_stretch_oracle_contract.py` shipped by
+#5574 unregistered; HEALED IN #5667 (registry entry + emitted-doc regen);
+(2) neural-web — `docs/MASTERMIND_SYSTEM_MAP.md` stale vs `config/synapse.yml`
+after #5655×#5625 crossed; HEALED IN #5667; (3) packing-contract ceiling —
+`intelligence-registry` (#5620) curated scope carries a `scripts/*` smear (probe
+127 > 126); a sibling re-opened headroom first, the verified 39-file narrowing is
+chipped to the CI lane (task_68ce1829); (4) entry-radar W1 ownership guard
+(#5625) asserted every PR's whole diff is radar-only — a sibling landed the
+self-scoping heal in parallel (both diff guards now skip non-radar diffs). This
+session's own miss, fixed on the branch pre-merge by a parallel actor and
+verified on main: the race runner's conditional repo-root pin (import-pinning
+law wants unconditional).
+
 Cold-stranger summary: PR-0 froze the arena, PR-1a restored the sensory spine and
 built the harness, PR-1b ran the first race. The race's one strengthened hypothesis:
 the champion's 25-pt edge leg points the wrong way at H=10 on the only graded frame —

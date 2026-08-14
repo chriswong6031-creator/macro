@@ -1399,6 +1399,7 @@ jobs:
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
+          tests/test_prophet_overtime_horizon_reconciliation.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -3315,6 +3316,7 @@ jobs:
         run: python -m pytest tests/test_evidence_clock.py -q
 
   vintage-pin-fence:
+    scope: exclusive
     if: ${{ false }}
     # Fail-closed: a PR must not equality-pin a live nightly store. Measured
     # 2026-08-13: govrev latest/candidates ``assert 23 == 8``, options
@@ -7455,6 +7457,14 @@ jobs:
       - "site/flowleaders/**"
       - "site/leaderradar/**"
       - "site/marketdata/**"
+      # Claimed for tests/test_prophet_overtime_horizon_reconciliation.py, wired
+      # into this job with the other prophet board surfaces: its population check
+      # reads the COMMITTED payload — site/prophet/index.json AND the
+      # site/prophet/states/ directory beside it. The closure scanner names only
+      # the index (the states read is a directory traversal), so pinning the one
+      # file would leave the states half unclaimed and this job would not rerun
+      # for an edit to it. `**` matches the sibling biocatalyst-serving claim.
+      - "site/prophet/**"
       - "site/sectordata/**"
       - "site/stocktable.js"
       - "templates/_prophet_card.html.j2"
@@ -9117,6 +9127,7 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_capture_page_evidence.py -q
 
   momoedge-browser-observe:
+    scope: exclusive
     # Observe-only authenticated-page companion. Tests are synthetic/static and
     # never contact MomoEdge, inspect browser authentication, or write cohort
     # coverage. Exact source bytes remain host-private outside git.
@@ -9211,6 +9222,7 @@ jobs:
       - name: reference-integrity mutation / anti-vacuity suite
         run: python -m pytest tests/test_check_reference_integrity.py -q
   dataos-foundation:
+    scope: exclusive
     # Mastermind Data OS foundation library (lib/dataos/**) — the canonical identity,
     # temporal, price-basis, null, registry and quality spine every later Data OS wave
     # builds on. WITHOUT THIS JOB the six suites are dead code: there is no broad
@@ -9236,6 +9248,12 @@ jobs:
     # pandas/numpy import creeping into lib/dataos/ breaks HERE first.
     if: ${{ false }}  # executed inside ci-pack — NOT a disabled gate.
     paths:
+      - config/delisted_symbols.yml
+      - lib/__init__.py
+      - lib/config.py
+      - lib/delisted_symbols.py
+      - lib/ticker_aliases.py
+      - scripts/build_security_master.py
       - .github/ci/legacy-jobs.yml
       - .github/workflows/ci.yml
       - config/dataset_registry.yml
