@@ -312,6 +312,12 @@ def main(argv: list[str] | None = None) -> int:
                 f"from {revision}: {exc}",
                 file=sys.stderr,
             )
+            print(
+                "::error title=legacy-job-conflict-markers::"
+                "conflict-markers: cannot classify files changed from origin/ — "
+                f"{exc}",
+                flush=True,
+            )
             return 2
     else:
         root = argv[0] if argv else "."

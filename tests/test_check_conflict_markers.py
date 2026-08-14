@@ -53,6 +53,21 @@ def test_unset_env_still_uses_git_changed_from(tmp_path: Path, monkeypatch: pyte
     assert rc == 2
 
 
+def test_git_classify_failure_emits_line_starting_annotation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Sweeper live-inherited-red matches this string; it must start the line."""
+    monkeypatch.delenv("CI_CHANGED_FILES_JSON", raising=False)
+    monkeypatch.chdir(tmp_path)
+    assert MARKERS.main(["--changed-from", "origin/main"]) == 2
+    lines = [
+        line for line in capsys.readouterr().out.splitlines() if line.startswith("::")
+    ]
+    assert lines, "classify failure must emit a GitHub workflow command"
+    assert lines[0].startswith("::error title=legacy-job-conflict-markers::")
+    assert "cannot classify files changed from origin/" in lines[0]
+
+
 def test_planner_paths_helpers() -> None:
     assert MARKERS.planner_changed_paths(None) is None
     assert MARKERS.planner_changed_paths("") is None
