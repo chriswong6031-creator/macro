@@ -20,7 +20,7 @@ Enforced by `scripts/check_stretch_oracle_contract.py` (nightly counter + gate) 
 | **O3** | scoring clamp | `engine/stock_score.py` `_overextended(rec)` | Pure distance: `pct_vs_200dma ≥ +30`. Same function name as O1, different definition. |
 | **O4** | `ext.grade in ("stretched","parabolic")` | `engine/extension.py` `grade()` | **Self-relative** stretch: `ext_z`, the z-score of `price/SMA200 − 1` against the name's own history. `stretched` = 1–2σ, `parabolic` = >2σ. US listings only. |
 
-### O1 — what fires, in practice
+#### O1 — what fires, in practice
 
 Measured on the served US store (1,628 names, vintage 2026-07-02), re-derived under
 current code:
@@ -34,7 +34,7 @@ current code:
 **76% of O1 flags carry no distance leg.** O1 is oscillator-DOMINANT. It answers
 "is momentum hot right now?", not "how far above trend is this?".
 
-### O2 — a bucket, not a reading
+#### O2 — a bucket, not a reading
 
 `urgency == "caution"` is assigned from at least four structurally different places in
 `engine/cycles.py`:
@@ -173,7 +173,7 @@ Additional standing rules:
   `templates/portfolio.js` `roleOf` renders that same badge. So an O2 mis-read does not
   stop at one chip — it changes the stance the user is shown.
 
-### Fields (added 2026-08-13, additive — `overextended` itself is unchanged)
+#### Fields (added 2026-08-13, additive — `overextended` itself is unchanged)
 
 ```
 ladder.alignment.overextended        bool        unchanged; still the strip's SELECTION gate
