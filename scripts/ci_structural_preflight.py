@@ -864,6 +864,14 @@ def run_preflight(
             )
         elif not known:
             metrics["unowned_non_executable_paths"] += 1
+            findings.append(
+                _finding(
+                    "unknown_path_ownership",
+                    "planner_configuration_failure",
+                    "path is outside every configured planner surface and manifest ownership pattern",
+                    path=rel,
+                )
+            )
 
         with _submitted_file(root, rel) as path:
             if path is None:
@@ -919,7 +927,10 @@ def run_preflight(
         "workflow_unknown_dependency",
     }
     test_codes = {"changed_test_unreadable", "unwired_changed_test"}
-    ownership_codes = {"unknown_executable_ownership"}
+    ownership_codes = {
+        "unknown_executable_ownership",
+        "unknown_path_ownership",
+    }
     conflict_codes = {"changed_blob_unreadable", "conflict_marker"}
     dependency_signature_codes = {
         "dependency_signature_blob_unreadable",

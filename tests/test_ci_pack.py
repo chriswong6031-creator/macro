@@ -2616,15 +2616,37 @@ def test_structural_preflight_passes_wired_suite_and_explicit_passive_doc(
         "def test_wired():\n    assert True\n", encoding="utf-8"
     )
     (root / "DESIGN_NOTES.md").write_text("narrative only\n", encoding="utf-8")
+    passive_path = "/".join(("research", "HANDOFF.md"))
+    (root / "research").mkdir()
+    (root / passive_path).write_text("narrative handoff\n", encoding="utf-8")
 
     result = PREFLIGHT.run_preflight(
-        root, ["tests/test_wired.py", "DESIGN_NOTES.md"]
+        root,
+        ["tests/test_wired.py", "DESIGN_NOTES.md", passive_path],
     )
 
     assert result["status"] == "pass"
     assert result["classification"] == "clean"
     assert result["metrics"]["changed_tests_wired"] == 1
-    assert result["metrics"]["passive_paths"] == 1
+    assert result["metrics"]["passive_paths"] == 2
+
+
+def test_structural_preflight_refuses_unknown_non_executable_ownership(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    unknown_path = "/".join(("newroot", "config.json"))
+    unknown = root / unknown_path
+    unknown.parent.mkdir()
+    unknown.write_text("{}\n", encoding="utf-8")
+
+    result = PREFLIGHT.run_preflight(root, [unknown_path])
+
+    assert result["status"] == "fail"
+    assert result["classification"] == "planner_configuration_failure"
+    assert _finding_codes(result) == {"unknown_path_ownership"}
+    assert result["checks"]["ownership"]["status"] == "fail"
+    assert result["metrics"]["unowned_non_executable_paths"] == 1
 
 
 def test_structural_preflight_refuses_unwired_changed_pytest_suite(
