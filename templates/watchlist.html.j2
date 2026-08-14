@@ -346,6 +346,29 @@
     .wri-lrow .rs { grid-column:1/-1; }
   }
 
+  /* ── W4: the Intelligence Drawer's Tier 1 ────────────────────────────────
+     Tier 1 is the GLANCE read and it gets exactly two things: one plain sentence and
+     one stance word. The stance chip is `.att-stance` — the same grammar the attention
+     stack uses, because it is the same vocabulary (§7(b): Watch · Get ready · No
+     action), and a second chip style for one vocabulary is how two surfaces start
+     disagreeing about what a word looks like. `.drw-full` exists because the watchlist
+     drawer's container IS the `.drw` grid, so a block that must span it says so with a
+     class rather than an inline style. */
+  .drw-full { grid-column:1/-1; }
+  .drw-t1 { grid-column:1/-1; display:flex; gap:12px; align-items:flex-start;
+    justify-content:space-between; padding-bottom:2px; }
+  .drw-lead { font-size:14px; font-weight:650; color:var(--text); line-height:1.4;
+    letter-spacing:-.01em; }
+  .drw-t1 .att-stance { flex:none; }
+  /* the honest "nothing" — muted, and never dressed up as a finding */
+  .drw-quiet { grid-column:1/-1; font-size:12px; color:var(--muted); line-height:1.5;
+    padding-bottom:2px; }
+  /* a lock shell inside a drawer is a full-width block, never a column */
+  .drw .lockshell, tr.row-drawer .lockshell { grid-column:1/-1; margin-top:4px; }
+  @media (max-width:720px){
+    .drw-t1 { flex-direction:column; gap:7px; align-items:flex-start; }
+  }
+
   .drw-act { grid-column:1/-1; display:flex; gap:12px; flex-wrap:wrap; align-items:center;
     margin-top:2px; padding-top:9px; border-top:1px solid var(--line); font-size:12px; }
   .drw-act a { font-weight:650; }
@@ -1044,9 +1067,9 @@
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
      boots without them and the Risk rails render as lock shells (packet A9). -->
 <script src="risk_core.js?v=2"></script>
-<script src="watchlist_risk.js?v=4"></script>
+<script src="watchlist_risk.js?v=5"></script>
 <script src="watchstore.js?v=5"></script>
-<script src="portfolio.js?v=4"></script>
+<script src="portfolio.js?v=5"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px; text-align:center">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>

@@ -517,3 +517,69 @@ engines that already existed. No estimator changed. The rulings a later wave inh
 - **Fix the dead class in the file you are already editing.** Deferring a three-line CSS
   fix to a later wave while editing the exact template it lands in costs more than taking
   it, and ships a known defect in the meantime.
+
+---
+
+### (h) W4 — the per-ticker Intelligence Drawer
+
+W4 composed the drawer out of artifacts that already exist: no estimator changed, no
+engine was added, and — the property that decides whether a 100-name list survives it —
+no fetch was added. Every field it reads comes out of the same `stockdata/<T>.json` the
+row already hydrated for its own cells, so opening a drawer is string concatenation over
+an object the page is holding anyway. The rulings a later wave inherits:
+
+- **Honest absence is a MECHANISM, not a habit.** Every section builder returns a ROW,
+  never `''`, and the row names WHAT is missing ("no options plane for this name
+  tonight") rather than saying nothing. A section that renders nothing and a section
+  with nothing to report are the same pixels, and only one of them is information.
+  `tests/test_watchlist_drawer_js.py` runs every builder over an EMPTY payload and reds
+  if any returns a blank, so the next person to add a section cannot quietly skip theirs.
+- **And the gate is TWO-SIDED, or it certifies its own failure.** Because every section
+  degrades honestly, a drawer composed over no artifacts renders thirteen well-worded
+  rows all saying "not covered" — a screenshot indistinguishable from a working drawer
+  on a quiet name. The wave's success criterion and its total failure look identical.
+  So the crop harness asserts a rich name renders almost NO absent rows and a sparse one
+  renders SOME BUT NOT ALL. **Any later gate over an honest-degradation surface needs
+  both halves**; the "it degrades honestly" half alone is satisfied by having no data.
+- **A surface may only name what it renders — including what it MEASURED.** The CEO's
+  Tier-2 list asks for USD, oil, China and BTC/Gold sensitivity, and for retail flow and
+  Congress trades. No per-name artifact carries any of them, so the drawer does not
+  mention them and each row's tip states the set that WAS measured. Naming an exposure
+  we did not measure is the failure this rule exists to prevent.
+- **A LANE reports a state; a SECTION may report the mechanism behind it.** The `rates`
+  lane says "not very rate-sensitive"; Macro sensitivity says "rate risk runs through
+  its market / growth beta, not a distinct duration leg". Those are different claims and
+  may sit together. Two rows repeating one claim may not — the §7(g) no-duplicate-claim
+  rule is about the CLAIM, not the topic.
+- **Two escaping rules, because the two slots are different languages.** The row
+  painter's `en`/`zh` slots are MARKUP and stay caller-escaped (callers interpolate
+  `<span class="fig">`). The `tip` slots are ATTRIBUTE TEXT and are escaped BY THE
+  PAINTER. "Callers escape" is a fine rule where a mistake prints a stray tag; it is the
+  wrong rule where a mistake breaks OUT of `data-tip-en="…"` and turns the rest of the
+  row into attributes — a failure with no visible symptom, in the slot nobody looks at.
+- **An engine string written as an instruction is not display copy.**
+  `entry_signal.action` reads "take a half position here, or wait for the weekly to
+  turn". Holdings surfaces are descriptive only, so Tier 1 reads `headline`. Check any
+  new engine field for the imperative voice before surfacing it.
+- **A route that 200s is not a route that works.** `stock.html?t=<T>` shipped for a
+  wave: a real page, a real 200, an empty dossier, and nothing a link checker can see
+  (`stock.html` reads `location.hash`, plus `?ticker=` via a boot shim). Canonical links
+  are verified against the TARGET'S OWN READER, and the accepted parameter set is pinned
+  by a test so a change there fails loudly.
+- **A hide that was never verified is not a hide.** The W2/W3 crop harnesses hide the
+  chat launcher with four selectors, none of which it carries — the widget is
+  `#mmb-launch`, and that rule has been a no-op in every crop those harnesses took. W4's
+  harness derives the id from the rendered page and then asserts the computed style went
+  to `none`. **Any harness that suppresses something for a screenshot must prove the
+  suppression worked**, or the crop silently documents whatever it failed to hide.
+- **The stance vocabulary is ONE vocabulary in two files.** §7(b)'s Watch · Get ready ·
+  No action lives in `portfolio.js` (which runs signed-out) and in `watchlist_risk.js`
+  (which never does), so neither can import the other. A test asserts the two literal
+  sets are byte-equal rather than trusting them to stay in step. The event carve-out is
+  part of the precedence: an earnings date inside five days raises the events lane to
+  `elev`, but that is something to BE READY for, not something wrong — the same way the
+  book-level attention stack files it.
+- **A one-name factor group is a FINDING, not a label.** `clusterLabel` returns
+  `members[0]` for a group of one, so passing its label through printed "filed under
+  AAPL" inside AAPL's own drawer. Carry the facts (which force, how many names) and word
+  them at the surface: "moves on its own — nothing else here is grouped with it".

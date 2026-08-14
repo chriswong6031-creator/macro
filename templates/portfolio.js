@@ -336,14 +336,42 @@
   // =========================================================================
   //  Drawer — the per-name detail, and the ONE place a lane failure is spoken
   // =========================================================================
+  /* Row painter. Delegates to `WRI.lrowHTML` when the gated risk layer is present, so
+     the drawer has ONE row grammar rather than two that drift; the local fallback keeps
+     the stateless rows rendering when it is not (an anonymous visitor, or a 401 on the
+     gated bundle). Both emit the EMPTY `.st` cell: the row is a three-column grid, and
+     the old local version omitted it, which dropped every stateless row's read into the
+     state column. */
   function lrow(labEn, labZh, stCls, stTok, readEn, readZh) {
+    if (window.WRI && window.WRI.lrowHTML) {
+      return window.WRI.lrowHTML({ lab: { en: labEn, zh: labZh },
+        state: stCls, token: stTok, en: readEn, zh: readZh });
+    }
     return '<div class="wri-lrow"><span class="ln">' + te(labEn, labZh) + '</span>' +
-      (stCls ? '<span class="st ' + stCls + '">' + stTok + '</span>' : '') +
+      (stCls ? '<span class="st ' + stCls + '">' + stTok + '</span>' : '<span class="st"></span>') +
       '<span class="rs">' + te(readEn, readZh) + '</span></div>';
   }
   function terminalHref(t) {
     // verified route (charting-app terminal/app/terminal/page.tsx reads ?symbol ?? ?sym)
     return 'https://app.mastermind-x.com/terminal?sym=' + encodeURIComponent(t) + '&from=macro';
+  }
+  /* The dossier. `stock.html` reads its ticker from `location.hash` and from nothing
+     else (templates/stock.html.j2 — four separate readers, all `location.hash`), so the
+     hash form is the only one that arrives carrying a name. */
+  function dossierHref(t) { return 'stock.html#' + encodeURIComponent(t); }
+
+  /* The drawer's anonymous body. Not a shorter drawer and not a blurred one: the gated
+     bundle never reaches an anonymous visitor at all (packet §14 A9), so the honest
+     shape is the page's own lock grammar saying what an account delivers. Nothing
+     board-tier is named, and the count ladder stays where it belongs — this is a
+     `.lockshell`, the same one the Risk Center uses signed-out. */
+  function lockedDrawerHTML() {
+    return '<div class="lockshell"><span class="lk">◇</span><span>' +
+      '<b>' + te('What we know about this name', '我们对这只票的了解') + '</b>' +
+      te('Where it sits in its own cycle, what its checks say, what is coming, and how it fits the rest of your book — all of it arrives with a free account.',
+         '它处在自己周期的哪一段、各项检查怎么说、接下来有什么事件、以及它和你账簿其余部分的关系 —— 这些都随免费账户一起提供。') +
+      '<button class="cta" type="button" data-gate-save="1">' +
+      te('Save + get alerts — Free', '保存并接收提醒 —— 免费') + '</button></span></div>';
   }
 
   /* The drawer is where the 390px demotions live (Day, Since entry, Risk share,
@@ -380,18 +408,27 @@
     }
     out += '</div>';
 
-    if (j === null || j === undefined) {
+    if (!window.WRI || !window.WRI.intelSections) {
+      /* The gated intelligence layer is not on the page. Anonymously that is the
+         DESIGNED state (packet §14 A9) and the lock shell is the honest read; signed in
+         it means the bundle failed, and saying "free account" to someone who has one
+         would be a lie, so the two cases get different sentences. */
+      out += (wsState() === 'signed')
+        ? '<div class="drw-honest">' + te(
+            'The detail layer for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
+            '这只票的详情层没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>'
+        : lockedDrawerHTML();
+    } else if (j === null || j === undefined) {
       /* Truly uncovered, or not read yet — either way we have no lanes. One honest
          line, never an empty drawer that reads as "all clear". */
       out += '<div class="drw-honest">' + (j === null
         ? te(esc(T.en.notInLibrary), esc(T.zh.notInLibrary))
         : te('Reading this name&rsquo;s detail…', '正在读取该股详情…')) + '</div>';
     } else {
-      var es = j.entry_signal || {};
-      var headEn = es.headline || '', headZh = es.headline_zh || es.headline || '';
-      out += headEn
-        ? '<div class="pfx-lead">' + te(esc(headEn), esc(headZh)) + '</div>'
-        : '<div class="drw-honest">' + te(esc(T.en.noEntryRead), esc(T.zh.noEntryRead)) + '</div>';
+      // ---- Tier 1: the instant read, in plain words ----------------------
+      try { out += window.WRI.intelTier1(t, j) || ''; } catch (e) {
+        out += '<div class="drw-honest">' + te(esc(T.en.noEntryRead), esc(T.zh.noEntryRead)) + '</div>';
+      }
 
       var stg = ctxStage(t);
       if (stg) {
@@ -409,19 +446,25 @@
       var ext = extensionSentence(extGradeOf(t, j), num(pct));
       if (ext) out += lrow(T.en.lblExtension, T.zh.lblExtension, '', '', esc(ext.en), esc(ext.zh));
 
-      // the seven lane rows — the SAME engine the workspace uses, never duplicated
-      var lanes = '';
-      if (window.WRI && window.WRI.laneRows) {
-        try { lanes = window.WRI.laneRows(j) || ''; } catch (e) { lanes = ''; }
+      /* ---- Tier 2: every section, from the ONE composer ------------------
+         The weight is this position's value over its OWN market book's total — the
+         same denominator the row's weight cell uses, and never a cross-currency one.
+         One failed section cannot empty the drawer: the composer is a string builder,
+         so a throw here loses Tier 2 and says so, and Tier 1 above is already painted. */
+      var wPct = null;
+      if (v.value != null) {
+        var bt = bookValueTotals(openRows())[b];
+        if (bt && bt.value > 0) wPct = v.value / bt.value * 100;
       }
-      if (lanes) out += lanes;
+      var sections = '';
+      try {
+        sections = window.WRI.intelSections(t, j, { inBook: true, weightPct: wPct }) || '';
+      } catch (e) { sections = ''; }
+      if (sections) out += sections;
       else out += '<div class="drw-honest">' + te(
         'The per-lane checks for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
         '这只票的各项检查没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>';
 
-      if (window.WRI && window.WRI.chainRows) {
-        try { out += window.WRI.chainRows(t) || ''; } catch (e) {}
-      }
       if (j.asof) {
         out += '<div class="asof mut" style="font-size:11px;margin-top:7px">' +
           te('signals as of ' + esc(j.asof), '信号截至 ' + esc(j.asof)) + '</div>';
@@ -429,7 +472,7 @@
     }
 
     out += '<div class="drw-act">' +
-      '<a href="stock.html#' + encodeURIComponent(t) + '">' + te(T.en.dossier, T.zh.dossier) + '</a>' +
+      '<a href="' + esc(dossierHref(t)) + '">' + te(T.en.dossier, T.zh.dossier) + '</a>' +
       '<a href="' + esc(terminalHref(t)) + '" target="_blank" rel="noopener noreferrer">' +
         te(T.en.terminal, T.zh.terminal) + '</a>' +
       '<button class="drw-rm" type="button" data-edit="' + esc(String(r.id)) + '">' +
@@ -1300,7 +1343,17 @@
           if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
           return;
         }
-        // a click anywhere on the row (but not on a link/button) toggles the drawer
+        /* The ⌄ affordance, handled BEFORE the generic link/button bail — because it IS
+           a button, and the bail below was swallowing it. The chevron rotated (it is
+           driven by `aria-expanded` on the row, which the renderer sets from
+           `openDrawers`) while clicking it did nothing at all: the drawer could only be
+           opened by clicking some OTHER part of the row. The one control the design
+           points at was the one control that did not work, and it looked live because
+           the rotation is CSS. The watchlist table's own delegation already handles
+           `[data-exp]` first, which is why only this half was dark. */
+        var expBtn = tgt.closest ? tgt.closest('[data-row-exp]') : null;
+        if (expBtn) { toggleDrawer(expBtn.getAttribute('data-row-exp')); return; }
+        // a click anywhere else on the row (but not on a link/button) toggles it too
         if (tgt.closest && (tgt.closest('a') || tgt.closest('button'))) return;
         var row = tgt.closest ? tgt.closest('tr.pfx-row') : null;
         if (row) toggleDrawer(row.getAttribute('data-row'));
