@@ -2689,6 +2689,59 @@ def test_structural_preflight_refuses_symlink_inside_established_surface(
     assert result["metrics"]["unsupported_tree_entries"] == 1
 
 
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "indicators.cpython-312-x86_64-linux-gnu.so",
+        "indicators.pyd",
+        "indicators.pyc",
+    ],
+)
+def test_structural_preflight_refuses_importable_binary_artifacts_in_known_surfaces(
+    tmp_path: Path,
+    filename: str,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    artifact = "/".join(("engine", filename))
+    compiled = root / artifact
+    compiled.parent.mkdir(parents=True, exist_ok=True)
+    compiled.write_bytes(b"submitted executable module")
+
+    result = PREFLIGHT.run_preflight(root, [artifact])
+
+    assert result["status"] == "fail"
+    assert result["classification"] == "planner_configuration_failure"
+    assert _finding_codes(result) == {"unsupported_import_artifact"}
+    assert result["checks"]["ownership"]["status"] == "fail"
+    assert result["metrics"]["unsupported_import_artifacts"] == 1
+
+
+def test_structural_preflight_reads_sparse_native_extension_mode_from_head(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    artifact = "/".join(("engine", "indicators.cpython-312-x86_64-linux-gnu.so"))
+    compiled = root / artifact
+    compiled.parent.mkdir(parents=True, exist_ok=True)
+    compiled.write_bytes(b"submitted executable module")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+    compiled.unlink()  # planner sparse checkout omitted this submitted blob
+
+    result = PREFLIGHT.run_preflight(root, [artifact])
+
+    assert result["status"] == "fail"
+    assert _finding_codes(result) == {"unsupported_import_artifact"}
+    assert result["metrics"]["unsupported_import_artifacts"] == 1
+
+
 def test_structural_preflight_refuses_unwired_changed_pytest_suite(
     tmp_path: Path,
 ) -> None:

@@ -106,6 +106,13 @@ _EXECUTABLE_SUFFIXES = frozenset(
         ".zsh",
     }
 )
+# Python's import machinery can execute source-less bytecode and native extension
+# modules before an adjacent ``.py`` module. The committed scope index deliberately
+# models Python source and static path topology, not platform-specific executable
+# binaries. Keep the contract simple and fail closed: these artifacts must be
+# built outside the submitted Git tree until a separately reviewed binary
+# provenance/index contract exists.
+_UNSUPPORTED_IMPORT_ARTIFACT_SUFFIXES = (".pyc", ".pyd", ".so")
 
 # ``*`` is intentionally excluded: it would make every new root-level program
 # look configured.  The remaining patterns are the planner's explicit,
@@ -524,6 +531,7 @@ def run_preflight(
         "known_executable_paths": 0,
         "manifest_jobs": 0,
         "passive_paths": 0,
+        "unsupported_import_artifacts": 0,
         "unsupported_tree_entries": 0,
         "unowned_non_executable_paths": 0,
         "workflow_files_checked": 0,
@@ -811,6 +819,20 @@ def run_preflight(
                 )
             )
             continue
+        if submitted_mode is not None and rel.lower().endswith(
+            _UNSUPPORTED_IMPORT_ARTIFACT_SUFFIXES
+        ):
+            metrics["unsupported_import_artifacts"] += 1
+            findings.append(
+                _finding(
+                    "unsupported_import_artifact",
+                    "planner_configuration_failure",
+                    "changed path is executable Python bytecode or a native "
+                    "extension outside the source scope-index contract",
+                    path=rel,
+                )
+            )
+            continue
         if _matches_any(PASSIVE_UNOWNED_PATTERNS, rel):
             metrics["passive_paths"] += 1
             continue
@@ -900,6 +922,7 @@ def run_preflight(
         "changed_tree_entry_unreadable",
         "unknown_executable_ownership",
         "unknown_path_ownership",
+        "unsupported_import_artifact",
         "unsupported_tree_entry",
     }
     conflict_codes = {"changed_blob_unreadable", "conflict_marker"}
