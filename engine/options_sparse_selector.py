@@ -5359,20 +5359,18 @@ def _reference_for_candidate(
         or owner["event_time"] != episode["event_time"]
         or owner["requested_as_of"] != episode["available_at"]
         or owner["requested_as_of_basis"] != "durable_available_at"
-        or owner["evidence_phase"]
-        != candidate["campaign_row"]["evidence_phase"]
+        # Episode-owned W1A receipts retain their owner contract phase.  The
+        # candidate's campaign phase is independently prospective and must not
+        # be substituted for this literal owner value.
+        or owner["evidence_phase"] != "decision_time_actual_output"
         or query["subject"] != expected_subject
         or query["identity_config_sha256"] != identity["identity_config_sha256"]
         or query["event_time"] != episode["event_time"]
         or query["as_known_at"] != episode["available_at"]
         or query["mode"] != "operational_pit"
         or query["fallback_policy"] != "exact_no_fallback"
-        or reference["authority"].get("may_select_options_candidate") is not False
-        or any(
-            value is not False
-            for key, value in reference["authority"].items()
-            if isinstance(value, bool)
-        )
+        or reference["authority"]
+        != dict(context_bridge.market_memory.AUTHORITY)
     ):
         return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
     evidence = _evidence_object(

@@ -936,6 +936,128 @@ def test_w1a_compact_source_reauthenticates_after_current_head_advances(
     assert historical_source["head"] == publication_a["head"]
 
 
+def test_w1a_exact_asof_absence_is_evidence_while_missing_owner_is_not(
+    tmp_path: Path,
+) -> None:
+    referenced_episode = _episode(
+        "real-exact-asof-absence",
+        "2026-08-12T13:31:00Z",
+        strike=700.0,
+    )
+    missing_episode = _episode(
+        "real-missing-owner",
+        "2026-08-12T13:31:00Z",
+        strike=701.0,
+    )
+    source = _source([[referenced_episode], [missing_episode]])
+    raw_by_episode = {
+        episode["episode_id"]: line
+        for episode, line in zip(
+            (referenced_episode, missing_episode),
+            source.episodes_raw.splitlines(),
+            strict=True,
+        )
+    }
+    identity = selector.prereg.SELECTOR_RULE["required_truth_receipts"]["konseki"][
+        "subject_identity"
+    ]
+    absent_reference = selector.context_bridge._reference(
+        owner={
+            "schema": "options.signal_episode/v1",
+            "id": referenced_episode["episode_id"],
+            "record_sha256": hashlib.sha256(
+                raw_by_episode[referenced_episode["episode_id"]]
+            ).hexdigest(),
+            "ticker": referenced_episode["ticker"],
+            "event_time": referenced_episode["event_time"],
+            "requested_as_of": referenced_episode["available_at"],
+            "requested_as_of_basis": "durable_available_at",
+            "evidence_phase": "decision_time_actual_output",
+        },
+        subject={
+            "subject_id": identity["subject_id"],
+            "instrument_id": identity["instrument_id"],
+        },
+        identity_config_sha256=identity["identity_config_sha256"],
+        disposition="abstained",
+        reason="exact_requested_as_of_context_absent",
+        context=None,
+    )
+    w1a_root = tmp_path / "absence-w1a-receipts"
+    _publish_w1a(w1a_root, [absent_reference])
+    selector_root = tmp_path / "absence-selector"
+    head = _commit_first(selector_root, source)
+    manifest = selector._load_pointer(
+        selector_root, head["pending_manifest"], label="absence manifest"
+    )
+    assert manifest["candidate_count"] == 2
+    inputs = selector.EvidenceInputs(w1a_receipt_root=w1a_root)
+    plan = selector.plan_cycle(
+        root=selector_root,
+        source=_pinned_source(source, head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    source_receipt = next(
+        item.value
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    )
+    descriptor_by_owner = {
+        item["owner_id"]: item for item in source_receipt["descriptors"]
+    }
+    referenced_descriptor = descriptor_by_owner[referenced_episode["episode_id"]]
+    missing_descriptor = descriptor_by_owner[missing_episode["episode_id"]]
+    assert referenced_descriptor["reference_ordinal"] == 1
+    assert referenced_descriptor["reference_id"] == absent_reference["reference_id"]
+    assert referenced_descriptor["reference_sha256"] == hashlib.sha256(
+        selector.canonical_bytes(absent_reference)
+    ).hexdigest()
+    assert missing_descriptor["reference_ordinal"] is None
+    assert missing_descriptor["reference_id"] is None
+    assert missing_descriptor["reference_sha256"] is None
+
+    committed = selector.commit_cycle(selector_root, plan)
+    _authenticated, decisions, _body = selector.authenticate_store(
+        selector_root, evidence_inputs=inputs
+    )
+    assert _authenticated == committed
+    decision_by_owner: dict[str, dict] = {}
+    for decision in decisions:
+        candidate = selector._load_pointer(
+            selector_root, decision["candidate"], label="absence decided candidate"
+        )
+        assert candidate["campaign_row"]["evidence_phase"] == (
+            "prospective_after_rule_freeze"
+        )
+        decision_by_owner[candidate["final_episode_row"]["episode_id"]] = decision
+    referenced_decision = decision_by_owner[referenced_episode["episode_id"]]
+    missing_decision = decision_by_owner[missing_episode["episode_id"]]
+    assert referenced_decision["evidence"]["konseki"] is not None
+    assert "KONSEKI_EXACT_ASOF_CONTEXT_ABSENT" in referenced_decision["reason_codes"]
+    assert (
+        "KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"
+        not in referenced_decision["reason_codes"]
+    )
+    compact = selector._load_pointer(
+        selector_root,
+        referenced_decision["evidence"]["konseki"],
+        label="exact-asof compact Konseki evidence",
+    )
+    assert compact["reference_ordinal"] == 1
+    assert compact["reference_id"] == absent_reference["reference_id"]
+    assert missing_decision["evidence"]["konseki"] is None
+    assert "KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED" in missing_decision[
+        "reason_codes"
+    ]
+    assert "KONSEKI_EXACT_ASOF_CONTEXT_ABSENT" not in missing_decision[
+        "reason_codes"
+    ]
+
+
 def test_w1a_five_megabyte_publication_projects_only_manifest_descriptors(
     tmp_path: Path,
 ) -> None:
