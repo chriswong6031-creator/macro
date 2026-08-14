@@ -756,6 +756,13 @@ def _branch_diff_vs_base() -> list[str] | None:
         return None
     got = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
                          cwd=ROOT, capture_output=True, text=True, check=False)
+    if got.returncode != 0 and "no merge base" in (got.stderr or ""):
+        # A depth-limited CI checkout can hold the ref while lacking the history
+        # that joins it to HEAD (`fatal: origin/main...HEAD: no merge base`) —
+        # the same environmental impossibility as the missing-ref case, with the
+        # same answer: the git-independent import guard still carries
+        # non-interference. Receipt: run 31838336391 pack-4, hosted runner.
+        return None
     assert got.returncode == 0, got.stderr
     return [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
 
