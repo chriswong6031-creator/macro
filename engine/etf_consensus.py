@@ -499,7 +499,7 @@ def _fund_snapshot_dir(fund: str) -> Path | None:
     return None
 
 
-def _trajectory_snapshots(d: Path, k: int) -> list[Path]:
+def _trajectory_snapshots(d: Path, k: int, fund: str = "") -> list[Path]:
     """The ``k`` newest snapshot files under ``d`` that the SCORED path would also
     accept, oldest→newest (m12).
 
@@ -510,12 +510,17 @@ def _trajectory_snapshots(d: Path, k: int) -> list[Path]:
     it deny. `_usable_snapshots` is the shared gate that resolves both, and it
     reads through the same per-process snapshot cache the scoring path filled, so
     routing through it costs no extra parse. Degrades to the raw tail if the
-    engine import fails — a missing sparkline is worse than an unfiltered one."""
+    engine import fails — a missing sparkline is worse than an unfiltered one.
+
+    `fund` must reach the gate for the same reason it must reach the scored path:
+    a fund with a declared `nav_equity_frac` is judged against its equity sleeve,
+    and a sparkline that quarantined snapshots the numbers beside it accepted would
+    re-open exactly the picture-denies-the-number gap this helper closed."""
     paths = sorted(d.glob("*.parquet"))
     try:
         from engine.holdings_signals import _usable_snapshots
         by_stem = {p.stem: p for p in paths}
-        keep, _quarantined = _usable_snapshots(paths, k)
+        keep, _quarantined = _usable_snapshots(paths, k, fund=fund or d.name)
         return [by_stem[s["path"]] for s in keep if s.get("path") in by_stem]
     except Exception as e:  # noqa: BLE001 — the sparkline is additive, never fatal
         log.warning("weight_trajectory: snapshot hygiene unavailable (%s) — raw tail", e)
@@ -541,7 +546,7 @@ def weight_trajectory(fund: str, ticker: str, k: int = 12) -> list[dict]:
     except Exception:  # noqa: BLE001 — hygiene is additive, never fatal
         def _drop_non_equity(df):
             return df
-    snaps = _trajectory_snapshots(d, k)
+    snaps = _trajectory_snapshots(d, k, fund=str(fund))
     tk = str(ticker)
     pts: list[dict] = []
     for p in snaps:
