@@ -205,9 +205,23 @@ PIP_INSTALL_RE = re.compile(
 # (legacy-job groups only; checkout excluded). Pack 1's 56-minute wall-clock
 # was 31 minutes of fetch-depth:0 stampede plus these underweighted heavies
 # sitting together because the 2026-08-11 local Mac weights were stale.
+#
+# 2026-08-14: `engine-render-guards` (1036) was split into three lanes. Its 1036
+# was a hosted measurement of the whole job, and no hosted per-STEP breakdown
+# exists, so the three weights below are that hosted total re-apportioned by the
+# per-step shares measured locally in
+# research/CI_RENDER_GUARD_TIMING_RECEIPT_2026-08-12.md (427.6s wall, twelve
+# steps): rot sweep + statement-tape 83.4%, the express guards 10.8%, the
+# B4/attested-history cluster 5.8%. Two express steps (market-score authority,
+# China Policy Watch) were wired AFTER that receipt and are unmeasured, so
+# express carries an explicit allowance above its 112s share. These are
+# estimates from a measured shape, not a second hosted run — replace them from
+# a green post-split run's step timings when one exists.
 PACK_TARGET_SECONDS = 600
 OBSERVED_COMMAND_SECONDS = {
-    "engine-render-guards": 1036,
+    "engine-render-guards": 860,
+    "express-render-guards": 150,
+    "attested-history-guards": 60,
     "workflow-yaml": 438,
     "market-memory-contract": 416,
     "unrun-government-revenue-grader": 322,
