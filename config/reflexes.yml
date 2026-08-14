@@ -128,11 +128,22 @@ reflexes:
     claim_family: reflex.commodity_shock
     tier: shadow
     push_tier: false
-    graded: true
+    graded: false
     graded_note: >
-      Shadow tier — each shock event carries a directional lean (shock=bearish
-      risk-appetite context for the commodity, direction=-1 by convention) and
-      a scope_type=macro. Graded at 1d/5d horizon vs commodity ETF bench.
+      NOT GRADED TODAY — declaration corrected 2026-08-14 (W3 review, PR #5679,
+      reviewer R3). This entry read graded: true while nothing implemented it:
+      commodity_sentinel.py records firings, adapt_reflexes() folds every one of
+      them into the spine with outcome_graded=False, and no grader anywhere reads
+      data/reflexes/commodity_shock/firings.jsonl. Firings accrue nightly, so the
+      false declaration claimed a forward meter that was never running.
+      GRADING DESIGN retained as future work (unbuilt, not promised): each shock
+      event carries a directional lean (shock=bearish risk-appetite context for
+      the commodity, direction=-1 by convention) at scope_type=macro; grade at
+      1d/5d horizon vs a commodity ETF bench. Prerequisites before graded: true
+      may return — (1) a declared per-asset bench map (GC=F/SI=F/HG=F/CL=F → ETF);
+      no config carries one today; (2) the firing payload emits horizon_d=1 only,
+      so the 5d leg needs it widened; (3) a single-writer grader + grades.jsonl on
+      the cortex_attention/factor_attention pattern, named in `grader:` below.
       SHADOW: n_dates>=25 + wilson_ci_low>0 vs matched control required before
       any surface renders this as conviction.
     migration_status: mirroring
@@ -170,10 +181,13 @@ reflexes:
     tier: shadow
     push_tier: false
     graded: true
+    grader: scripts/grade_qledger.py
     graded_note: >
       Shadow tier (existing whitehouse claim family in qual_ladder.yml).
       Each activated alert registers a qledger claim with direction from tone
-      and horizon = banner_days. Grading is already wired via grade_qledger.
+      and horizon = banner_days (scripts/build_whitehouse.py:_register_wh_claim),
+      so the generic claim grader owns it — grade_qledger.py names no reflex,
+      it grades the claim rows the alert registered. Grading is already wired.
       The firings.jsonl mirror is a W6b migration — not done in W6a to avoid
       the whitehouse single-writer contract. WHITEHOUSE UNTOUCHED in W6a.
     migration_status: registered
@@ -204,10 +218,16 @@ reflexes:
     claim_family: reflex.btc_flash_crash
     tier: shadow
     push_tier: false
-    graded: true
+    graded: false
     graded_note: >
-      Shadow tier — flash_crash fires are directional (state change to crash =
-      direction=-1; recovery = direction=+1). Graded vs BTC at 1d/5d horizon.
+      NOT GRADED TODAY — declaration corrected 2026-08-14 alongside
+      commodity_shock (same defect class, same review). Nothing fires this
+      reflex yet: migration_status is 'registered', no producer calls
+      record_firing() for it, and no grader exists.
+      GRADING DESIGN retained as future work: flash_crash fires are directional
+      (state change to crash = direction=-1; recovery = direction=+1), graded vs
+      BTC at 1d/5d horizon. Flip to graded: true only in the PR that ships BOTH
+      the W6b firings append AND the grader that reads it.
     migration_status: registered
     producer: scripts/vector_sentinel.py
     w6b_note: >
@@ -503,6 +523,7 @@ reflexes:
     tier: shadow
     push_tier: false
     graded: true
+    grader: scripts/grade_cortex_attention.py
     graded_note: >
       Shadow tier — each attention item carries direction and horizon_d.
       Graded via adapt_reflexes() fold into spine (ledger=cortex_attention).
@@ -548,6 +569,7 @@ reflexes:
     tier: shadow
     push_tier: false
     graded: true
+    grader: scripts/grade_factor_attention.py
     graded_note: >
       Shadow tier — each firing carries direction=-1, horizon_d=21, scope_type=entity.
       Graded by scripts/grade_factor_attention.py (parallel grader, RULING-G):
@@ -716,11 +738,17 @@ reflexes:
     claim_family: reflex.shock_deescalation
     tier: shadow
     push_tier: false
-    graded: true
+    graded: false
     graded_note: >
-      Shadow tier — each firing carries direction=0 (de-escalation only; no
-      directional bet per PS-R3). Graded for operational quality (did the active
-      window cover the actual coherence episode?). PS-R8: no directional gauntlet
+      NOT GRADED TODAY — declaration corrected 2026-08-14 alongside
+      commodity_shock (same defect class, same review): firings accrue nightly
+      (engine/shock_deescalation.py is their sole writer) but no grader reads
+      data/reflexes/shock_deescalation/firings.jsonl.
+      GRADING DESIGN retained as future work: each firing carries direction=0
+      (de-escalation only; no directional bet per PS-R3), so the gradeable
+      question is operational quality (did the active window cover the actual
+      coherence episode?) — NOT a directional hit rate.
+      PS-R8: no directional gauntlet
       before n>=8 distinct shock episodes. Forward accrual only from ship date.
       Would-have-fired backscan (2026-06-25, 2026-07-07) included in site
       artifact as descriptive — NOT backfilled into firings ledger (PS-R7/PS-R8).
