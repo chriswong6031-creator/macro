@@ -161,7 +161,7 @@ def cofiring_adjusted_score(chans: list) -> int:
     return len(clusters)
 
 
-def convergence_tier(chans: list, trump: bool) -> dict:
+def convergence_tier(chans: list, trump: bool, *, root=None) -> dict:
     """Accrual-aware, co-firing-penalized tier (#23). Returns::
 
         {"tier", "raw_score", "cofiring_score", "n_scored", "hit_rate", "basis"}
@@ -169,7 +169,8 @@ def convergence_tier(chans: list, trump: bool) -> dict:
     ``tier`` is built on the CO-FIRING-ADJUSTED score (independent events), not the raw
     channel count. ``basis`` is 'prior' until the spine's convergence ledger has n>0 matured
     outcomes — then it becomes 'measured' and cites the real hit-rate. The 'weight by track
-    record' language is only honest once n_scored>0, so the caller can gate it."""
+    record' language is only honest once n_scored>0, so the caller can gate it. ``root``
+    optionally selects an isolated spine tree; the default remains the live ledger."""
     raw = len(chans or [])
     cof = cofiring_adjusted_score(chans or [])
     # tier off the ADJUSTED score: 'high' needs >=3 INDEPENDENT events (or 2 + a distinct
@@ -178,7 +179,7 @@ def convergence_tier(chans: list, trump: bool) -> dict:
     n_scored, hit_rate, basis = 0, None, "prior"
     try:
         from engine import spine
-        m = spine.measured_ic(engine="altdata_conv", family="altdata:convergence")
+        m = spine.measured_ic(root=root, engine="altdata_conv", family="altdata:convergence")
         n_scored = int(m.get("n") or 0)
         if n_scored > 0:
             hit_rate = m.get("hit_rate")
@@ -192,8 +193,11 @@ def convergence_tier(chans: list, trump: bool) -> dict:
             "n_scored": n_scored, "hit_rate": hit_rate, "basis": basis}
 
 
-def chip(rec: dict | None) -> dict | None:
-    """Shape a by_ticker record into a display-only stock-page chip, or None."""
+def chip(rec: dict | None, *, root=None) -> dict | None:
+    """Shape a by_ticker record into a display-only stock-page chip, or None.
+
+    ``root`` is forwarded to the spine-backed convergence tier lookup.
+    """
     if not rec:
         return None
     chans = rec.get("channels") or []
@@ -202,7 +206,7 @@ def chip(rec: dict | None) -> dict | None:
     score = int(rec.get("convergence_score", 0) or 0)
     trump = bool(rec.get("trump_linked"))
     # #23: tier off the co-firing-adjusted independent-event count, accrual-aware.
-    tinfo = convergence_tier(chans, trump)
+    tinfo = convergence_tier(chans, trump, root=root)
     tier = tinfo["tier"]
     cof = tinfo["cofiring_score"]
     labels = [{"en": _CH.get(c, (c, c))[0], "zh": _CH.get(c, (c, c))[1]} for c in chans]

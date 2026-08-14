@@ -90,9 +90,29 @@ python3 scripts/agentos.py status --dry-run
 python3 scripts/agentos.py brief           # the CEO view
 python3 scripts/agentos.py brief --full --since 7d
 python3 scripts/agentos.py brief --json    # ceo_brief.v1
+
+python3 scripts/agentos.py compile-context --workstream PROPHET-US-ENTRY-TIMING
+python3 scripts/agentos.py compile-context "reduce prophet late entry" --text --budget 4000
 ```
 
-Both **always exit 0** (invariant I1) and make **zero network calls**: PR state comes only
+`compile-context` is what a session picking up work should read first: a **bounded,
+cited, read-only** `context_bundle.v1` — higher law (DNR rows, the P0, the program row)
+above the workstream state, then current decisions, fresh discoveries, the latest
+handoff, and artifact pointers, with every excluded, budget-omitted and unreadable input
+named rather than silently dropped. It exits **0** with honest degradation (an ambiguous
+task, an unbuilt index, an absent sibling repo, a citation that no longer resolves, and —
+for a free-text task — an absent store all report and carry on) and exits 1 only when
+`--workstream` NAMES a workstream that does not exist, whose OWN frontmatter is malformed,
+or whose store is absent. Naming is an assertion and gets the strict answer; free text is a
+question and gets an honest one.
+
+`token_estimate` prices the whole payload — every item's citation fields, not just its
+prose, plus the `excluded`/`omitted_due_to_budget`/`degraded` tails — so it may exceed
+`--budget`: the workstream block, higher law and those tails are never dropped. Whenever it
+does, the overrun and its composition are named in `degraded`, so the number is never bare.
+
+Both `status` and `brief` **always exit 0** (invariant I1), and all three make **zero
+network calls**: PR state comes only
 from the local `data/governance/active_builds.json` written by the nightly ABM sweep. The
 5,000/hr REST bucket is shared with `ship_loop_guard.py`, which fails CLOSED when it is
 exhausted, so a status command that burned quota could block the Stop it was reporting on.

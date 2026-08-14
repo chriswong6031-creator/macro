@@ -11,8 +11,11 @@ cites it in `source_evidence`, or is supplied by the hand-maintained overlay
 string "unknown".  Nothing is guessed.  "unknown" is a first-class value: a
 census whose gaps are visible is worth more than one that fills them in.
 
-Judgment fields (priority, archetype, primary_user_question, owner) are NEVER
-derived — they come from the overrides file or keep their unclassified default.
+Judgment fields (priority, archetype, design_system, primary_user_question,
+owner) are NEVER derived — they come from the overrides file or keep their
+unclassified default.  `archetype` is drawn from a CLOSED vocabulary
+(``ARCHETYPES``) and `design_system` from a shape-checked schema, so neither can
+be widened by an overlay edit alone.
 
 Derivation sources
 ------------------
@@ -78,8 +81,8 @@ DEFAULT_MASTERMIND_ROOT = Path("/Users/chriswong/Documents/Cluade/Mastermind")
 FIELD_ORDER: tuple[str, ...] = (
     "page_id", "repo", "route", "route_kind", "source_template", "builder",
     "data_sources", "access_shell", "payload_tier", "nav_family", "archetype",
-    "primary_user_question", "owner", "lifecycle", "priority", "generated",
-    "bilingual", "themes", "locales", "known_contracts", "open_prs",
+    "design_system", "primary_user_question", "owner", "lifecycle", "priority",
+    "generated", "bilingual", "themes", "locales", "known_contracts", "open_prs",
     "source_evidence", "notes",
 )
 
@@ -91,14 +94,37 @@ PAYLOAD_TIERS = ("public", "public_shell_premium_payload", "premium", "internal"
 LIFECYCLES = ("live", "lab", "internal", "parked", "dev_only", UNKNOWN)
 PRIORITIES = ("P0", "P1", "P2", "P3", "unclassified")
 
+# The design-system archetype vocabulary (research/MASTER_PRODUCT_DESIGN_SYSTEM_V1
+# §10).  An archetype names the CANONICAL COMPOSITION a route must follow, so the
+# vocabulary is CLOSED: a value outside it is a hard error rather than a new
+# archetype invented by whoever ran the script last.  "unclassified" is retained
+# as the honest default for a row nobody has ruled on yet.
+ARCHETYPES = ("command_center", "discovery_board", "instrument_analyzer",
+              "regime_dashboard", "intelligence_desk", "editorial", "monitor",
+              "marketing", "utility", "chart_workspace", "unclassified")
+
+# `design_system` shape.  Keys are exhaustive on purpose (see
+# _design_system_problems): an unknown key is a typo'd claim, and a typo'd
+# governance claim reads as governance while governing nothing.
+#
+# `migrated_pr` and `evidence` exist because the design-migration factory's §0
+# gate 8 requires a migrating packet to record WHICH PR made the surface
+# compliant and WHERE its evidence matrix lives.  `evidence` here is the
+# migration's own artifact path(s) and is deliberately SEPARATE from the row's
+# `source_evidence`, which cites what the census derived.
+DESIGN_SYSTEM_KEYS = ("compliant", "governed_regions", "exempt", "migrated_pr",
+                      "evidence")
+DESIGN_SYSTEM_REGION_KEYS = ("template", "region")
+DESIGN_SYSTEM_EXEMPT_KEYS = ("reason", "expires")
+
 # Fields the overrides overlay may set.  Judgment fields plus the access facts
 # that no static reader can honestly derive (a gate enforced in middleware, a
 # guest mode, an entitlement resolved at request time).  Everything else is
 # derived-only, so an override can never quietly fabricate a builder or a route.
 OVERRIDABLE: frozenset[str] = frozenset({
-    "priority", "archetype", "primary_user_question", "owner", "lifecycle",
-    "access_shell", "payload_tier", "nav_family", "bilingual", "themes",
-    "locales", "known_contracts", "data_sources",
+    "priority", "archetype", "design_system", "primary_user_question", "owner",
+    "lifecycle", "access_shell", "payload_tier", "nav_family", "bilingual",
+    "themes", "locales", "known_contracts", "data_sources",
 })
 # Extra keys an override entry may carry that are not registry fields.
 OVERRIDE_META: frozenset[str] = frozenset({"evidence", "note", "why"})
@@ -122,6 +148,10 @@ def blank_row(page_id: str, repo: str, route: str) -> dict[str, Any]:
         "payload_tier": UNKNOWN,
         "nav_family": UNKNOWN,
         "archetype": "unclassified",
+        # Honest default: nothing is design-system compliant until a migration
+        # PR proves it and flips this flag.  A row with no `governed_regions`
+        # puts its WHOLE `source_template` under governance once compliant.
+        "design_system": {"compliant": False},
         "primary_user_question": "",
         "owner": "unowned",
         "lifecycle": UNKNOWN,
@@ -1072,6 +1102,130 @@ def load_overrides(path: Path) -> dict[str, dict]:
     return pages
 
 
+def _is_calendar_date(value: str) -> bool:
+    """True only for a real ``YYYY-MM-DD`` day.
+
+    The regex alone would accept 2026-13-45, so the day is parsed as well: an
+    expiry that cannot happen is an exemption that never expires.
+    """
+    if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
+        return False
+    try:
+        datetime.strptime(value, "%Y-%m-%d")
+    except ValueError:
+        return False
+    return True
+
+
+def _design_system_problems(value: Any, where: str) -> list[str]:
+    """Shape law for the `design_system` field; empty list means valid.
+
+    FAIL CLOSED on everything: an unknown key, a wrong type and a malformed date
+    are all errors, never coerced.  The field is a GOVERNANCE claim — "this
+    region of this template is design-system compliant" — and a claim that is
+    silently repaired is a claim nobody can audit.
+    """
+    problems: list[str] = []
+    if not isinstance(value, dict):
+        return [f"{where}: design_system must be a mapping, got {type(value).__name__}"]
+
+    # One fact, one home: `archetype` is a top-level row field.  A copy nested
+    # here would be a second place to read it from, and two homes for one fact is
+    # how they start disagreeing — so this is an error with a teaching message
+    # rather than a generic "unknown key".
+    if "archetype" in value:
+        problems.append(
+            f"{where}: design_system.archetype is not allowed — archetype is a "
+            f"top-level registry field; set it on the row/override directly, "
+            f"not inside design_system")
+    unknown = sorted(set(value) - set(DESIGN_SYSTEM_KEYS) - {"archetype"})
+    if unknown:
+        problems.append(
+            f"{where}: design_system has unknown key(s) {unknown}; allowed: "
+            f"{list(DESIGN_SYSTEM_KEYS)}")
+    if "compliant" not in value:
+        problems.append(f"{where}: design_system is missing required key 'compliant'")
+    elif not isinstance(value["compliant"], bool):
+        problems.append(f"{where}: design_system.compliant must be a bool")
+
+    if "governed_regions" in value:
+        regions = value["governed_regions"]
+        if not isinstance(regions, list):
+            problems.append(f"{where}: design_system.governed_regions must be a list")
+        else:
+            for i, region in enumerate(regions):
+                at = f"{where}: design_system.governed_regions[{i}]"
+                if not isinstance(region, dict):
+                    problems.append(f"{at} must be a mapping")
+                    continue
+                if set(region) != set(DESIGN_SYSTEM_REGION_KEYS):
+                    problems.append(
+                        f"{at} must have exactly the keys "
+                        f"{sorted(DESIGN_SYSTEM_REGION_KEYS)}, got {sorted(region)}")
+                    continue
+                for key in DESIGN_SYSTEM_REGION_KEYS:
+                    if not isinstance(region[key], str) or not region[key].strip():
+                        problems.append(f"{at}.{key} must be a non-empty string")
+
+    if "exempt" in value:
+        exempt = value["exempt"]
+        at = f"{where}: design_system.exempt"
+        if not isinstance(exempt, dict):
+            problems.append(f"{at} must be a mapping")
+        elif set(exempt) != set(DESIGN_SYSTEM_EXEMPT_KEYS):
+            problems.append(
+                f"{at} must have exactly the keys "
+                f"{sorted(DESIGN_SYSTEM_EXEMPT_KEYS)}, got {sorted(exempt)}")
+        else:
+            if not isinstance(exempt["reason"], str) or not exempt["reason"].strip():
+                problems.append(f"{at}.reason must be a non-empty string")
+            expires = exempt["expires"]
+            if not isinstance(expires, str):
+                # Unquoted YAML dates parse to datetime.date, which is not even
+                # JSON-serialisable — say so rather than letting json.dumps raise.
+                problems.append(
+                    f"{at}.expires must be a QUOTED \"YYYY-MM-DD\" string, got "
+                    f"{type(expires).__name__}")
+            elif not _is_calendar_date(expires):
+                problems.append(f"{at}.expires must be a YYYY-MM-DD date, got {expires!r}")
+
+    if "migrated_pr" in value:
+        number = value["migrated_pr"]
+        # `isinstance(True, int)` is True in Python, so bools are excluded by
+        # name: `migrated_pr: true` is a mistake, not PR number 1.
+        if isinstance(number, bool) or not isinstance(number, int):
+            problems.append(
+                f"{where}: design_system.migrated_pr must be an int PR number, "
+                f"got {type(number).__name__}")
+        elif number <= 0:
+            problems.append(
+                f"{where}: design_system.migrated_pr must be a positive PR "
+                f"number, got {number}")
+
+    if "evidence" in value:
+        evidence = value["evidence"]
+        at = f"{where}: design_system.evidence"
+        if isinstance(evidence, str):
+            if not evidence.strip():
+                problems.append(f"{at} must be a non-empty string")
+        elif isinstance(evidence, list):
+            for i, item in enumerate(evidence):
+                if not isinstance(item, str) or not item.strip():
+                    problems.append(f"{at}[{i}] must be a non-empty string")
+        else:
+            problems.append(
+                f"{at} must be a string or a list of strings, got "
+                f"{type(evidence).__name__}")
+    return problems
+
+
+def _archetype_problems(value: Any, where: str) -> list[str]:
+    """The archetype vocabulary is closed (see ARCHETYPES)."""
+    if value not in ARCHETYPES:
+        return [f"{where}: archetype {value!r} is not one of {list(ARCHETYPES)}"]
+    return []
+
+
 def apply_overrides(rows: list[dict], overrides: dict[str, dict],
                     *, source_name: str) -> list[str]:
     """Merge the overlay onto derived rows; return the list of hard errors.
@@ -1097,6 +1251,18 @@ def apply_overrides(rows: list[dict], overrides: dict[str, dict],
                 errors.append(
                     f"{source_name}: override {page_id!r} sets non-overridable "
                     f"field {key!r} (derived-only)")
+                continue
+            # Shape-checked fields are rejected WITHOUT being written: a
+            # malformed governance claim must not reach the artifact at all.
+            shape: list[str] = []
+            if key == "design_system":
+                shape = _design_system_problems(
+                    value, f"{source_name}: override {page_id!r}")
+            elif key == "archetype":
+                shape = _archetype_problems(
+                    value, f"{source_name}: override {page_id!r}")
+            if shape:
+                errors.extend(shape)
                 continue
             row[key] = value
         evidence = entry.get("evidence") or []
@@ -1208,6 +1374,10 @@ def validate(doc: Any) -> list[str]:
             problems.append(f"{where}: lifecycle {row['lifecycle']!r} invalid")
         if row["priority"] not in PRIORITIES:
             problems.append(f"{where}: priority {row['priority']!r} invalid")
+        # Applied to the DERIVED row too, not just to overrides: --check reads a
+        # committed artifact that a hand edit can reach without the overlay.
+        problems.extend(_archetype_problems(row["archetype"], where))
+        problems.extend(_design_system_problems(row["design_system"], where))
         if not (isinstance(row["generated"], bool) or row["generated"] == UNKNOWN):
             problems.append(f"{where}: generated must be a bool or \"unknown\"")
         if not (isinstance(row["bilingual"], bool) or row["bilingual"] == UNKNOWN):

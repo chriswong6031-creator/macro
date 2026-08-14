@@ -30,15 +30,36 @@
   /* THE STANCE FAMILY. R2-E: stance must stay semantically distinct from
      DIRECTION. theme.css ships --pv-buy identical to --up, so a Buy chip and a
      positive change were the same ink and the card carried one colour meaning
-     two things. Stance now sits a deliberate tone deeper than the direction ink
-     it belongs to: same semantic family (and it still flips with the zh
+     two things. Stance now sits a deliberate tone off the direction ink it
+     belongs to: same semantic family (and it still flips with the zh
      convention, because it is derived FROM --up/--down), visibly not the same
-     colour as the tape. Pinned by verify.py N9. */
-  --pv-buy:   color-mix(in srgb, var(--up) 80%, #063a24);
-  --pv-near:  color-mix(in srgb, var(--up) 55%, #0d4a30);
-  --pv-wait:  #e0a030;
-  --pv-hold:  #8b93a1;
-  --pv-avoid: color-mix(in srgb, var(--down) 80%, #3d1414);
+     colour as the tape. Pinned by verify.py R-E2/R-E3 and R9.
+
+     VTC-302 / DA-002 — THE RAMP IS LUMINANCE-ORDERED, and the order is the
+     design: BUY > WAIT > NO-READ against the card plane, in all four
+     theme x language quadrants. Measured (contrast vs the card background):
+       dark+en  BUY 7.0  WAIT 4.0  NO-READ 3.5
+       dark+zh  BUY 5.4  WAIT 4.0  NO-READ 3.5
+       light+en BUY 6.3  WAIT 4.8  NO-READ 3.1
+       light+zh BUY 7.9  WAIT 4.8  NO-READ 3.1
+     Deepening toward --text (not toward a hand-picked dark green) is what makes
+     the ramp survive the zh flip structurally: --pv-buy still derives from --up,
+     so 红涨绿跌 needs no second table. Pinned by verify.py R7/R7b. */
+  --pv-buy:   color-mix(in srgb, var(--up) 82%, var(--text));
+  --pv-near:  color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
+  /* VTC-304: WAIT is decoupled from --warn. Amber now means caution and only
+     caution; a stance may not share one semantic ink with the risk carrier. */
+  --pv-wait:  #a8761f;
+  /* --pv-hold and no-read used to BOTH resolve to --muted, so "we read it and
+     say hold" painted identically to "we have no read". Separate rungs now, and
+     HOLD sits ABOVE Wait rather than between Wait and no-read: with the ruled
+     ramp pinning WAIT at 4.0 and NO-READ at 3.5, there is no room for a fourth
+     rung between them that a reader could actually tell apart, and a published
+     read must not paint quieter than an absent one. HOLD stays achromatic, so
+     the stance ramp's chroma still belongs to Buy/Near/Avoid alone. */
+  --pv-hold:  #888f9c;
+  --pv-noread: #6e7684;
+  --pv-avoid: color-mix(in srgb, var(--down) 82%, var(--text));
   --prov: #62a0e8; --prov-ink: var(--prov);
   --card-shadow: 0 1px 0 rgba(255,255,255,.02);
   --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
@@ -53,11 +74,18 @@ html[data-theme="light"] {
   --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
   --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
   --info: #285fff; --link: #285fff;
-  --pv-buy:   color-mix(in srgb, var(--up) 84%, #05301d);
-  --pv-near:  color-mix(in srgb, var(--up) 58%, #0b3f27);
-  --pv-wait:  #b9791a;
-  --pv-hold:  #5d6b7e;
-  --pv-avoid: color-mix(in srgb, var(--down) 84%, #3a1010);
+  /* Light plane: the same ramp, re-authored for a WHITE card (see :root).
+     The mix is 54%, NOT the 62% that would mirror --ink-mix-up: at 62% the
+     stance token resolves byte-identically to --ink-up (light --ink-mix-up is
+     also 62%), so the solid BUY badge and the live +N% change on the same card
+     would be one colour again — DA-002 in the other theme. 54% separates them
+     (dE 9.9 en / 14.6 zh) and RAISES contrast at the same time: 7.12 / 8.75. */
+  --pv-buy:   color-mix(in srgb, var(--up) 54%, var(--text));
+  --pv-near:  color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
+  --pv-wait:  #a2650f;
+  --pv-hold:  #55616f;
+  --pv-noread: #8794a6;
+  --pv-avoid: color-mix(in srgb, var(--down) 54%, var(--text));
   --prov: #2f6fd0; --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text));
   --card-shadow: 0 1px 3px rgba(20,30,50,.07);
   --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
@@ -66,14 +94,26 @@ html[data-theme="light"] {
 }
 /* zh flips direction inks (Asia convention: red = up). Lifecycle marks never
    reference these, which is the whole point of weight encoding. */
+/* zh flips DIRECTION only (红涨绿跌). The stance family needs no zh table at all:
+   --pv-buy/--pv-avoid derive FROM --up/--down, so the flip is structural and a
+   zh Buy chip is red by construction, not by a second hand-tuned palette. */
 html[data-lang="zh"] {
   --up: #e06464; --down: #45b873; --q1: #d04545; --q3: #2e9e4f;
-  /* zh still flips (bullish = red) — the offset rides the flipped ink */
-  --pv-buy:   color-mix(in srgb, var(--up) 80%, #4a0f0f);
-  --pv-near:  color-mix(in srgb, var(--up) 58%, #5a1616);
-  --pv-avoid: color-mix(in srgb, var(--down) 80%, #06331f);
 }
-html[data-theme="light"][data-lang="zh"] { --up: #cf4040; --down: #1f9a55; --q1: #c12f2f; --q3: #1f8b41; }
+/* VTC-311 — light+zh is AUTHORED, not a cascade side effect. html[data-lang="zh"]
+   and html[data-theme="light"] have equal specificity, so whichever is written
+   last used to win and this quadrant inherited the dark-plane deepeners. The
+   values below are the light ramp restated deliberately; they are what this
+   quadrant is designed to be, and they no longer depend on source order. */
+html[data-theme="light"][data-lang="zh"] {
+  --up: #cf4040; --down: #1f9a55; --q1: #c12f2f; --q3: #1f8b41;
+  --pv-buy:   color-mix(in srgb, var(--up) 54%, var(--text));
+  --pv-near:  color-mix(in srgb, var(--pv-buy) 70%, var(--muted));
+  --pv-wait:  #a2650f;
+  --pv-hold:  #55616f;
+  --pv-noread: #8794a6;
+  --pv-avoid: color-mix(in srgb, var(--down) 54%, var(--text));
+}
 :root {
   --ink-up:   color-mix(in srgb, var(--up)   var(--ink-mix-up),   var(--text));
   --ink-down: color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
@@ -255,33 +295,50 @@ a { color: inherit; }
   position: absolute; top: 0; left: 0; right: 0; height: 3px;
   color: var(--text); pointer-events: none;
 }
+/* VTC-305: 4px was decorative at shipped size. 8px gives the weights room to
+   read at 1x without turning the mark into a second chroma channel. */
 .mx-mark {
-  position: relative; display: inline-block; width: 26px; height: 4px; flex: none;
+  position: relative; display: inline-block; width: 26px; height: 8px; flex: none;
   color: var(--text); vertical-align: middle;
 }
 .mx-cap::before, .mx-mark::before { content: ""; position: absolute; inset: 0; }
 
 /* Watch — dashed hairline: a signal fired, nothing is committed */
 .mx-cap--watch::before  { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 9px); }
-.mx-mark--watch::before { top: 1.5px; height: 1px;
+.mx-mark--watch::before { top: 3px; height: 2px;
   background: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 6.5px); }
 
-/* Ready — half filled: the plan is armed, the trigger has not fired */
+/* Ready — half filled: the plan is armed, the position is not open yet */
 .mx-cap--ready::before  { background: linear-gradient(90deg, currentColor 0 50%,
                           color-mix(in srgb, currentColor 16%, transparent) 50%); }
-.mx-mark--ready::before { top: .5px; height: 3px;
+.mx-mark--ready::before { top: 2.5px; height: 3px;
   background: linear-gradient(90deg, currentColor 0 50%,
-              color-mix(in srgb, currentColor 22%, transparent) 50%); }
+              color-mix(in srgb, currentColor 20%, transparent) 50%); }
 
-/* Entered + Delivering — solid: a live commitment. Deliberately IDENTICAL: the
-   grammar encodes commitment CLASS, not per-cell identity; the two solid cells
-   are told apart by label and count, which the partition law guarantees. */
-.mx-cap--entered::before, .mx-cap--delivering::before { background: currentColor; }
-.mx-mark--entered::before, .mx-mark--delivering::before { top: .5px; height: 3px; background: currentColor; }
+/* Entered — solid: a live commitment. */
+.mx-cap--entered::before { background: currentColor; }
+.mx-mark--entered::before { top: 2.5px; height: 3px; background: currentColor; }
+
+/* Delivering — VTC-305: it used to render from the SAME rule as Entered, so the
+   one distinction a holder cares about most had no visual difference at all.
+   The ruling's grammar is preserved — Delivering is still the solid
+   commitment weight, it is not re-encoded as a different class — and the
+   first target it has reached is marked at the end of the run. Entered is a
+   plain bar; Delivering is a bar that arrives somewhere. */
+.mx-cap--delivering::before { background: currentColor; }
+.mx-cap--delivering::after {
+  content: ""; position: absolute; right: 0; top: 0; width: 22%; height: 6px;
+  background: currentColor;
+}
+.mx-mark--delivering::before { top: 2.5px; height: 3px; background: currentColor; }
+.mx-mark--delivering::after {
+  content: ""; position: absolute; right: 0; top: 0; width: 5px; height: 8px;
+  border-radius: 1px; background: currentColor;
+}
 
 /* Overtime — solid muted: the declared window expired, the plan is still open */
 .mx-cap--overtime::before  { background: color-mix(in srgb, currentColor 34%, transparent); }
-.mx-mark--overtime::before { top: .5px; height: 3px; background: color-mix(in srgb, currentColor 38%, transparent); }
+.mx-mark--overtime::before { top: 2.5px; height: 3px; background: color-mix(in srgb, currentColor 42%, transparent); }
 
 /* Invalidated — hollow + struck: the plan's own stated void level was hit */
 .mx-cap--invalidated::before {
@@ -294,11 +351,11 @@ a { color: inherit; }
   background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 10px);
 }
 .mx-mark--invalidated::before {
-  top: .5px; height: 3px; background: transparent;
+  top: 2.5px; height: 3px; background: transparent;
   border: 1px solid color-mix(in srgb, currentColor 62%, transparent);
 }
 .mx-mark--invalidated::after {
-  content: ""; position: absolute; left: -1px; right: -1px; top: 1.5px; height: 1px;
+  content: ""; position: absolute; left: -1px; right: -1px; top: 3.5px; height: 1px;
   background: currentColor; transform: rotate(-9deg);
 }
 
@@ -311,7 +368,7 @@ a { color: inherit; }
   border-bottom: 1px solid color-mix(in srgb, var(--muted) 52%, transparent);
 }
 .mx-mark--resolved::before {
-  top: .5px; height: 3px; background: transparent;
+  top: 2.5px; height: 3px; background: transparent;
   border: 1px solid color-mix(in srgb, var(--muted) 55%, transparent);
 }
 
@@ -388,21 +445,28 @@ a { color: inherit; }
   transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,.22);
   border-color: color-mix(in srgb, var(--pvh, var(--text)) 45%, var(--line));
 }
-/* stance hues — the card's one deliberate chroma channel */
-.pv-buy   { --pvh: var(--pv-buy);   --pvh-ink: var(--ink-up); }
-.pv-near  { --pvh: var(--pv-near);  --pvh-ink: var(--ink-up); }
-.pv-wait  { --pvh: var(--pv-wait);  --pvh-ink: var(--ink-warn); }
-.pv-hold  { --pvh: var(--pv-hold);  --pvh-ink: var(--muted); }
-.pv-avoid { --pvh: var(--pv-avoid); --pvh-ink: var(--ink-down); }
+/* stance hues — the card's one deliberate chroma channel.
+   DA-002: the STANCE channel points at the STANCE token, on BOTH surfaces.
+   It used to route --pvh-ink through --ink-up, and dark's --ink-mix-up:100%
+   makes --ink-up === --up, so the solid BUY badge was byte-identical to the
+   live positive-change text: one card, one colour, two meanings. The direction
+   inks (--ink-up / --ink-down) now serve the TAPE only (.pv-chg). */
+.pv-buy   { --pvh: var(--pv-buy);    --pvh-ink: var(--pv-buy); }
+.pv-near  { --pvh: var(--pv-near);   --pvh-ink: var(--pv-near); }
+.pv-wait  { --pvh: var(--pv-wait);   --pvh-ink: var(--pv-wait); }
+.pv-hold  { --pvh: var(--pv-hold);   --pvh-ink: var(--pv-hold); }
+.pv-avoid { --pvh: var(--pv-avoid);  --pvh-ink: var(--pv-avoid); }
 /* BLOCKED_DATA: the entry read has not published. It takes NO stance hue —
-   an unavailable read is not a cautious read (operator ruling 2026-08-13). */
-.pv-noread { --pvh: var(--muted); --pvh-ink: var(--muted); }
+   an unavailable read is not a cautious read (operator ruling 2026-08-13) — and
+   its own rung, distinct from --muted, so "no read" and Hold no longer paint
+   identically. Bottom of the luminance ramp, by design. */
+.pv-noread { --pvh: var(--pv-noread); --pvh-ink: var(--pv-noread); }
 /* raised specificity: .pv-chip is defined later and would otherwise re-impose
    uppercase. Sentence case is deliberate — it reads as an absence, not a verdict,
    and it is the one chip in this slot that is not a stance. */
 .pv-chip.pv-chip--noread {
-  color: var(--muted); background: transparent; cursor: help;
-  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  color: var(--pvh-ink, var(--muted)); background: transparent; cursor: help;
+  border: 1px dashed color-mix(in srgb, var(--pvh, var(--muted)) 55%, transparent);
   font-weight: 700; letter-spacing: .01em; text-transform: none;
   padding: 1.5px 6px;
 }
@@ -424,11 +488,16 @@ html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
               0 0 20px -6px color-mix(in srgb, var(--pv-buy) 40%, transparent),
               0 8px 22px -8px rgba(0,0,0,.5);
 }
+/* VTC-303 — the rail belongs to the FEATURED cohort, not to the card's stance.
+   Ring, glow and lift are all pinned to --pv-buy; the rail was still reading
+   --pvh, so a Featured no-read card wore a grey stance rail inside a green
+   (zh: red) Featured aura — two hues 1px apart. The whole treatment is one
+   cohort mark now. */
 .pvcard.pv-featured::before {
   content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 3;
   pointer-events: none; border-radius: 12px 12px 0 0;
-  background: linear-gradient(90deg, var(--pvh), color-mix(in srgb, var(--pvh) 55%, transparent));
-  box-shadow: 0 1px 10px color-mix(in srgb, var(--pvh) 40%, transparent);
+  background: linear-gradient(90deg, var(--pv-buy), color-mix(in srgb, var(--pv-buy) 55%, transparent));
+  box-shadow: 0 1px 10px color-mix(in srgb, var(--pv-buy) 40%, transparent);
 }
 /* light: no tint — a clean white card; featured reads through ring + whisper aura */
 html[data-theme="light"] .pvcard.pv-featured {
@@ -451,14 +520,25 @@ html[data-theme="light"] .pvcard.pv-featured {
    also means the spark inherits the zh flip through --pvh, for free. */
 .pv-chart svg * { stroke: var(--pvh) !important; }
 .pv-chart svg [fill]:not([fill="none"]) { fill: var(--pvh) !important; stroke: none !important; }
-/* Graceful missing-enrichment fallback. The stance chip must sit in the SAME
-   place on every card, so the hero collapses to a quiet strip rather than
-   disappearing — but it stays near-invisible: an absent chart is a data gap to
-   close (DESIGN_NOTES §6 Q1), not a texture to decorate. */
+/* VTC-301 + PRC-309 — THE EQUALISED, PRINTED NULL.
+   The chartless hero used to be a 24px strip against a 74px chart, so the card
+   below it stretched (.pv-grid align-items:stretch + .pv-zn margin-top:auto)
+   and ~97px of uniform void opened up on 20 of the 40 canonical cards. The
+   void was a LAYOUT choice, not a data consequence — the same content renders
+   as a clean card at 720px, where this file already equalises both to 58px.
+   Desktop now does the same thing at 74px.
+   And the null is PRINTED, not hidden: an empty rectangle cannot be told from
+   flat price or a broken render, so the slot states its own absence in plain
+   words. It states it; it does not decorate it. */
 .pv-nochart {
-  height: 24px; border-radius: 11px 11px 0 0;
-  background: color-mix(in srgb, var(--muted) 5%, transparent);
+  height: 74px; border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--muted) 4%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+  display: flex; align-items: flex-end; justify-content: center; padding-bottom: 9px;
+}
+.pv-nochart-l {
+  font-size: 10px; font-weight: 600; letter-spacing: .02em;
+  color: var(--muted); opacity: .72; line-height: 1;
 }
 .pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; }
 /* The left overlay must never reach the quote. A flat 70% did on a narrow card
@@ -483,11 +563,31 @@ html[data-theme="light"] .pvcard.pv-featured {
   background: var(--pvh-ink, var(--pvh, var(--up)));
   color: var(--panel, #fff); border-color: transparent;
 }
+/* ── PRC-312: NAME THE AXIS ────────────────────────────────────────────────
+   27 rows are life=entered + stance=wait, and an unlabelled "WAIT" above
+   "Entered" reads as a verdict on a position the user already holds. The chip
+   answers ONE question — should you enter here today — so the slot says which
+   question it is answering. The lifecycle word answers a different one, and
+   with the axis named the two stop contradicting.
+   The zh label is 买点 (entry point), deliberately not 入场: 入场 is the Entered
+   CELL word, and printing it twice on one card is the collision, not the cure. */
+.pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.pv-axis {
+  font-size: 7.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
+  color: var(--muted); white-space: nowrap; flex: none; line-height: 1;
+  padding: 1px 0;
+}
+/* VTC-304 — ⚡ Triggered takes the VERB hue, as production ships it. Amber was
+   carrying three meanings on one card (Wait, Triggered, caution); it now means
+   caution and nothing else. On a no-read card the trigger renders in the
+   neutral --pvh: the event is sourced and real, but there is no verb to hue it
+   with, and it stays clearly distinct from the amber ⚠ carrier. */
 .pv-trg {
   padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: 750;
-  white-space: nowrap; cursor: help;
-  color: var(--ink-warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel));
-  border: 1px solid color-mix(in srgb, var(--warn) 42%, transparent);
+  white-space: nowrap; cursor: help; position: relative; z-index: 2;
+  color: var(--pvh-ink, var(--muted));
+  background: color-mix(in srgb, var(--pvh, var(--muted)) 15%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--pvh, var(--muted)) 42%, transparent);
 }
 /* QUOTE — _prophet_card.html.j2:179-189, verbatim. The slot is rendered on
    EVERY card and bound by data-sym; live.js paints it. Un-hydrated it reads an
@@ -511,6 +611,23 @@ html[data-theme="light"] .pvcard.pv-featured {
 .pv-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
 .pv-idw { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .pv-tk { font-size: 13.5px; font-weight: 800; letter-spacing: .01em; white-space: nowrap; flex: none; }
+
+/* ── PRC-301: the card routes to the name's detail surface ────────────────
+   Production makes the WHOLE CARD an <a href="stock.html#TICKER">. This card
+   cannot copy that shape: it carries interactive descendants production's does
+   not — .pv-newer is itself an <a>, and the caution / trigger / priority / lane
+   controls are tabindex'd — and the HTML <a> content model excludes interactive
+   content. So the anchor is a SIBLING that stretches over the card with a
+   pseudo-element, and the controls sit above it on z-index. Same destination,
+   same whole-card click target, legal markup, and every control stays
+   keyboard-reachable in DOM order. */
+.pv-open { color: inherit; text-decoration: none; display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; }
+.pv-open::after { content: ""; position: absolute; inset: 0; z-index: 1; }
+.pvcard:hover .pv-tk { text-decoration: underline; text-underline-offset: 2px; }
+/* everything the reader can still operate has to out-rank the stretched hit area */
+.pv-chip--noread, .pv-trg, .pv-cau, .pv-pri, .pv-mk-lane, .pv-newer {
+  position: relative; z-index: 2;
+}
 .pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pv-ind { font-size: 9.5px; color: var(--muted); opacity: .85; }
 /* PRIORITY — readiness rank within tonight's set. Deliberately quiet: visible
@@ -567,13 +684,36 @@ html[data-theme="light"] .pvcard.pv-featured {
 .pvcard[data-life="resolved"] { background: color-mix(in srgb, var(--panel2) 55%, var(--bg)); border-style: dashed; }
 .pvcard[data-life="resolved"] .pv-tk { color: var(--muted); }
 
-.pv-more {
-  display: flex; align-items: center; justify-content: center; min-height: 96px;
-  border: 1px dashed var(--line); border-radius: 12px; color: var(--muted);
-  font-size: 12px; font-weight: 650; text-decoration: none; text-align: center; padding: 14px;
+/* ── PRC-306: PROGRESSIVE IN-PLACE EXPANSION ─────────────────────────────
+   The 40-card viewport is the initial density budget, not a ceiling. It used to
+   be a ceiling: overflow routed to a stripped table, so 77 of 179 plan rows had
+   no card representation in ANY state or filter. Production's own mechanism is
+   initShowMore() (theme.js:4784-4869) driven by data-showmore-rows on the grid,
+   and its class names and copy are reused verbatim here. Every row of the
+   active partition is now in the DOM and one click away; the table went back to
+   being an alternate representation instead of the only route to the tail. */
+.sm-hidden { display: none !important; }
+.sm-reveal { animation: sm-in .18s ease both; }
+@keyframes sm-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+.sm-bar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 12px 0 0; padding: 9px 13px;
+  border: 1px dashed var(--line); border-radius: 11px;
+  background: color-mix(in srgb, var(--panel) 45%, transparent);
+  font-size: 11.5px; color: var(--muted);
 }
-.pv-more:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); }
-.pv-more b { color: var(--text); font-variant-numeric: tabular-nums; }
+.sm-count b { color: var(--text); font-weight: 800; }
+.sm-btns { display: flex; gap: 7px; flex-wrap: wrap; margin-left: auto; }
+.sm-btn {
+  font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  padding: 5px 13px; border-radius: 999px; line-height: 1.25;
+  border: 1px solid color-mix(in srgb, var(--text) 26%, var(--line));
+  background: var(--panel); color: var(--text);
+}
+.sm-btn:hover { border-color: color-mix(in srgb, var(--text) 42%, var(--line)); }
+.sm-btn.sm-ghost, .sm-btn.sm-collapse { background: transparent; color: var(--muted); border-color: var(--line); }
+.sm-btn.sm-ghost:hover, .sm-btn.sm-collapse:hover { color: var(--text); }
+.sm-btn[hidden] { display: none; }
 
 /* table view — the surface where rendered rows equal the cell count exactly */
 .st-table { width: 100%; border-collapse: collapse; font-size: 12px; }
@@ -611,49 +751,14 @@ html[data-theme="light"] .pvcard.pv-featured {
 .cand-nm { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cand-px { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; flex: none; }
 
-/* ═══════════════════ 4. GROUPS (five stance lanes — idiom untouched) ═════ */
-.actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: start; }
-.actcol {
-  background: var(--panel); border: 1px solid var(--line); min-width: 0;
-  border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;
-  --act-accent: var(--muted);
-}
-.act-buy  { --act-accent: var(--up);   --act-accent-ink: var(--ink-up); }
-.act-soon { --act-accent: var(--info); --act-accent-ink: var(--ink-info); }
-.act-run  { --act-accent: #8b5cf6;     --act-accent-ink: color-mix(in srgb, #8b5cf6 80%, var(--text)); }
-.act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn); }
-.act-hold { --act-accent: var(--muted);--act-accent-ink: var(--muted); }
-.acth { padding: 10px 13px 9px; border-bottom: 1px solid var(--line); position: relative; }
-.acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; background: var(--act-accent); }
-.acth-title-row { display: flex; align-items: center; gap: 5px; }
-.acth-name {
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
-  color: var(--act-accent-ink, var(--act-accent)); min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
-.acth-count::before { content: "("; } .acth-count::after { content: ")"; }
-.acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-top: 3px; }
-.actbody { padding: 7px 0; flex: 1; }
-.act-row { display: flex; align-items: baseline; gap: 7px; padding: 4px 13px; font-size: 11.5px; }
-.act-row b { font-weight: 700; }
-.act-row span { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-/* mobile: five lanes become a segmented stance selector (lane names ARE stances) */
-.stance-sel { display: none; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.stance-sel button {
-  font: inherit; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 999px;
-  border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer;
-}
-.stance-sel button[aria-pressed="true"] { background: color-mix(in srgb, var(--text) 11%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); }
+/* ═══════════════════ 4. GROUPS ═══════════════════════════════════════════
+   VTC-310: the five-lane .actiongrid / .actcol block that used to sit here
+   (~35 lines, plus its 1100px and 720px breakpoints and the .stance-sel mobile
+   selector) described a component this artifact never rendered — groups() emits
+   .grp-grid / .grp. It is deleted rather than kept as "idiom": a stylesheet
+   that describes a component the page does not have is not a reference. */
 
-/* ═══════════════════ 5/6. MARKET CONTEXT + EVIDENCE ═════════════════════ */
-.tabset { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
-.tabset a {
-  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
-  border: 1px solid var(--line); border-radius: 8px; font-size: 11.5px; font-weight: 650;
-  color: var(--muted); text-decoration: none; background: color-mix(in srgb, var(--panel2) 55%, transparent);
-}
-.tabset a:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 28%, var(--line)); }
+/* ═══════════════════ 5. EVIDENCE ════════════════════════════════════════ */
 .ev-links { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
 .ev-links a { color: var(--ink-link); text-decoration: none; font-weight: 650; }
 .ev-links a:hover { text-decoration: underline; }
@@ -746,8 +851,6 @@ html[data-theme="light"] .pv-ghost { filter: blur(5px) saturate(.35); opacity: .
 }
 
 /* ═══════════════════ RESPONSIVE ════════════════════════════════════════ */
-@media (max-width: 1100px) { .actiongrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-
 @media (max-width: 720px) {
   .wrap { padding: 0 14px 60px; }
   .bh-title { font-size: 21px; }
@@ -755,21 +858,25 @@ html[data-theme="light"] .pv-ghost { filter: blur(5px) saturate(.35); opacity: .
   .ladder-n { font-size: 34px; }
 
   /* seven cells wrap 4 + 3 with the total pinned above — never a horizontal
-     scroll on a filter control (a scroll hides active-filter state). */
+     scroll on a filter control (a scroll hides active-filter state).
+     PRC-321: the divider SURVIVES here. It used to be display:none, so the
+     terminal cell became the third cell of an ordinary row and "Resolved sits
+     outside the total" rested on a caption alone — on the viewport where a
+     count claim is most likely to be misread. The gap keeps its own 1fr slot
+     in row 2 (cells 5, 6, [divider], Resolved), so the wrap stays 4 + 3 and
+     Resolved is still physically outside the live run. */
   .mx-ladder { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .mx-ladder-gap { display: none; }
+  .mx-ladder-gap { display: block; }
+  .mx-ladder-gap::before { top: 4px; bottom: 4px; }
   .mx-cell { border-right-width: 1px; border-radius: 9px; }
   .mx-cell:first-child, .mx-cell--last-live { border-radius: 9px; }
   .mx-ladder { gap: 5px; }
   .mx-cell-n { font-size: 18px; }
   .mx-cell-l { font-size: 10.5px; white-space: normal; }
-  .ladder-termnote { grid-column: 1 / -1; text-align: center; padding-top: 2px; }
+  .ladder-termnote { grid-column: 4; text-align: left; padding: 4px 2px 0; }
 
   .pv-grid { grid-template-columns: 1fr; }
   .cand-rows { grid-template-columns: 1fr; }
-  .actiongrid { grid-template-columns: 1fr; }
-  .stance-sel { display: flex; }
-  .actcol[data-lane]:not([data-lane="buy"]) { display: none; }
   .mx-tier-gate { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
   .mx-tier-actions { width: 100%; min-width: 0; }
   .mx-tier-primary { width: 100%; }
@@ -895,4 +1002,103 @@ html[data-theme="light"] .mx-cell { background: #fff; }
   .chg-strip { margin-bottom: 6px; padding: 5px 10px; }
   .pvcard .pv-chart svg, .pvcard .pv-nochart { height: 58px; }   /* production parity */
   .grp-grid { grid-template-columns: 1fr; }
+}
+
+/* ═══════════════ R4 CLOSURE ADDITIONS ══════════════════════════════════ */
+
+/* ── PRC-305: the freshness slot ────────────────────────────────────────
+   The header could only ever assert "Settled close" — there was no branch, so
+   the one disclosure that exists to stop a reader acting on stale prices could
+   not be expressed at all. The producer is production's own
+   _compute_board_staleness() (build_stock_library.py:1469-1624): it emits
+   price_through / sessions_behind / delayed (true at >= 2 sessions), and the
+   board reads it. Fresh keeps the settled-close token; behind swaps the pill
+   and raises production's .nb-stale-note banner verbatim. */
+.pv-fresh { display: inline-flex; align-items: center; gap: 5px; flex: none; }
+.pv-fresh--behind {
+  font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  padding: 2.5px 9px; border-radius: 6px; white-space: nowrap; line-height: 1.35;
+  color: var(--ink-warn, var(--warn));
+  background: color-mix(in srgb, var(--warn) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 45%, transparent);
+}
+.nb-stale-note {
+  display: flex; align-items: flex-start; gap: 8px;
+  margin: 11px 0 0; padding: 9px 13px; border-radius: 10px;
+  font-size: 12px; line-height: 1.5; font-weight: 600;
+  color: var(--ink-warn, var(--warn));
+  background: color-mix(in srgb, var(--warn) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warn) 34%, transparent);
+}
+.nb-stale-note::before { content: "\26A0"; flex: none; opacity: .85; font-weight: 700; }
+.nb-stale-note b { font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ── PRC-304: the simulated number, disclosed on the SURFACE ─────────────
+   Every % change in every crop is a deterministic per-ticker demo overlay, and
+   a reader of a crop could not tell. It stays the only simulated number on the
+   page and it stays marked data-mock-live in the DOM — but the page now says so
+   where the crop can see it, not only in DESIGN_NOTES. */
+.mock-note { font-size: 11px; color: var(--muted); line-height: 1.5; flex-basis: 100%; }
+.mock-note b { color: color-mix(in srgb, var(--text) 80%, var(--muted)); font-weight: 700; }
+
+/* ── VTC-308: the compact archive row ───────────────────────────────────
+   Resolved rows and severely data-sparse rows have no chart, no quote, no
+   stance rank and no priority. Rendered as full 5-across cards they became ~20
+   near-identical husks each repeating "PRIORITY —", with no hierarchy for the
+   eye to use. This is the compact row the fallback lens already proves: same
+   card, same disclosures, the empty slots removed rather than drawn empty. */
+.pvcard--compact { min-height: 0; }
+.pvcard--compact .pv-bd { padding: 9px 11px 8px; gap: 5px; }
+.pvcard--compact .pv-hd { align-items: center; }
+.pvcard--compact .pv-tk { font-size: 12.5px; }
+.pvcard--compact .pv-life { margin-top: 0; }
+.pvcard--compact .pv-life-w { font-size: 10.5px; color: var(--muted); font-weight: 700; }
+.pvcard--compact .pv-zn { padding: 4px 11px 5px; font-size: 9.5px; }
+.pvcard--compact .pv-chip { font-size: 9px; padding: 1.5px 7px; }
+.pvcard--compact .pv-axis { font-size: 7px; }
+.pvcard--compact .pv-mk-i, .pvcard--compact .pv-ep { font-size: 8.5px; }
+
+/* ── PRC-307 / VTC-307: the page ends on EVIDENCE, with numbers ──────────
+   It used to end on five contentless "market context" pills and four bare
+   links — two consecutive sections of pure navigation furniture as the last
+   thing on a 2782px page. The empty shell is gone (a header kept over deleted
+   content is the defect, not the cure) and the record is bound to its real
+   producer: engine/track_scoring.summarize() -> scripts/grade_us_board.py
+   emit_ledger() -> site/factordata/us_track_ledger.json.
+   The interval is printed BESIDE the rate, never under it: 58.6% with a
+   50.4-64.4 interval on 18 boards is an early record, and a bare win rate here
+   would be exactly the overclaim this review cycle exists to catch. */
+.trd-wrap { display: flex; margin-bottom: 12px; }
+.trd-btn {
+  display: inline-flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 8px 15px; border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--prov) 40%, var(--line));
+  background: color-mix(in srgb, var(--prov) 8%, transparent);
+  font-size: 12.5px; color: var(--muted);
+}
+.trd-lead { font-weight: 800; color: var(--prov-ink); letter-spacing: .02em; }
+.trd-sep { color: var(--line); }
+.trd-stat { font-weight: 650; }
+.trd-stat b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+
+.trk-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(178px, 1fr)); gap: 9px; }
+.trk-i {
+  border: 1px solid var(--line); border-radius: 10px; padding: 9px 11px; min-width: 0;
+  background: color-mix(in srgb, var(--panel) 70%, transparent);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.trk-l { font-size: 8.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.trk-v { font-size: 17px; font-weight: 800; color: var(--text); line-height: 1.1; letter-spacing: -.02em; }
+.trk-ci { font-size: 10px; color: var(--muted); line-height: 1.4; }
+.trk-note { font-size: 11.5px; color: var(--muted); line-height: 1.55; margin: 11px 0 0; max-width: 78ch; }
+.trk-note b { color: color-mix(in srgb, var(--text) 82%, var(--muted)); font-weight: 700; font-variant-numeric: tabular-nums; }
+.ev-links { margin-top: 14px; }
+html[data-theme="light"] .trk-i { background: #fff; }
+
+@media (max-width: 720px) {
+  .sm-bar { padding: 9px 11px; }
+  .sm-btns { margin-left: 0; width: 100%; }
+  .sm-btn { flex: 1 1 auto; text-align: center; }
+  .trk-grid { grid-template-columns: 1fr 1fr; }
+  .trk-v { font-size: 15px; }
 }

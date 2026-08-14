@@ -375,14 +375,13 @@ MAX_REFRESHES_PER_SWEEP = 8
 # sessions the controller exists to serve.  This is intentionally conservative:
 # an ordinary in-flight proof consumes the same runners as a controller-created one.
 MAX_IN_FLIGHT_PR_PROOFS = 8
-# Measured 2026-08-13 run 31736859799: six check-clean PRs were stale together
-# (`1/1 effective refresh slot used`, 7 CI runs indexed, global cap 8).
-# HIGH_LOAD_FAIR_REFRESHES=1 refreshed one (#5528) while the other five sat
-# refresh-deferred until a human squash-merged them. A leftover global slot
-# of 1 is the same jam as an at-cap lease of 1: raise the floor so a batch of
-# stale-but-green heads drains in the same sweep. REST cost is 8 update-branch
-# writes, inside the GITHUB_TOKEN per-repo budget.
-HIGH_LOAD_FAIR_REFRESHES = 8
+# At the last free proof slot, use the durable lease so racing sweep generations
+# cannot both spend it.  This is a serialization THRESHOLD, never a workload floor:
+# run 31768097165 saw 49 active PR proofs against the cap of 8 and nevertheless
+# advertised eight new refresh slots because the former "fair refresh" clamp raised
+# a negative allowance back to eight.  That directly defeated the repo-wide circuit
+# breaker and re-created the CI stampede it was meant to stop.
+HIGH_LOAD_LEASE_THRESHOLD = 1
 ACTIVE_PR_PROOF_STATUSES = ("queued", "in_progress", "pending", "requested", "waiting")
 # The rotation advances by the live pull cap every bucket, so every armed pull
 # request enters the window within ceil(N / cap) buckets — ~40 minutes for a
@@ -746,10 +745,12 @@ def proof_anchor_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     scheduled anchors are incomplete, never a pass and never a code accusation.
     """
     anchors = proof_anchor_runs(runs)
-    published = {str(run.get("name") or "") for run in runs}
-    required = scheduled_ci_pack_names(runs)
-    if REQUIRED_CI_GATE in published or "ci-plan" in published:
-        required.add(REQUIRED_CI_GATE)
+    # `ci-gate` is the stable, affirmative CI verdict for EVERY non-closed PR event.
+    # Require it even before GitHub has registered the ci workflow's first check run.
+    # Otherwise a faster fences workflow can be the only repository proof visible on
+    # the head and read clean: that exact race merged #5555 at 03:53:19Z while its
+    # ci-plan/packs were still queued (runs 31768097165 / 31767764521).
+    required = scheduled_ci_pack_names(runs) | {REQUIRED_CI_GATE}
     standard_fence = anchors.get(REQUIRED_FENCE_ANCHOR)
     fork_fences_present = REQUIRED_FORK_FENCE_ANCHORS <= anchors.keys()
     if standard_fence is not None and (
@@ -5974,30 +5975,18 @@ def main() -> int:
         available_refreshes = max(
             0, MAX_IN_FLIGHT_PR_PROOFS - int(effective_active_proofs or 0)
         )
-        # Measured 2026-08-13 run 31736859799: 7 indexed / cap 8 left ONE slot,
-        # HIGH_LOAD_FAIR_REFRESHES was 1, and #5528 took it while five other
-        # check-clean heads sat refresh-deferred. The leftover-global-slot
-        # clamp is the same jam as the at-cap lease: a stale-green *batch*
-        # must drain in one sweep. REST cost is the update-branch writes.
-        if available_refreshes < HIGH_LOAD_FAIR_REFRESHES:
-            budget.max_refreshes = HIGH_LOAD_FAIR_REFRESHES
-            budget.requires_refresh_lease = False
-            refresh_load_detail = (
-                f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-                f"{reservation_count} unindexed durable "
-                f"reservation(s), global cap "
-                f"{MAX_IN_FLIGHT_PR_PROOFS}; {HIGH_LOAD_FAIR_REFRESHES} stale-green "
-                "refresh slot(s) this sweep (batch drain)"
-            )
-        else:
-            budget.max_refreshes = min(budget.max_refreshes, available_refreshes)
-            refresh_load_detail = (
-                f"{active_pr_proofs} indexed pull-request ci run(s) plus "
-                f"{reservation_count} unindexed durable "
-                f"reservation(s), global cap "
-                f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} CI workload slot(s) "
-                "available this sweep"
-            )
+        budget.max_refreshes = min(budget.max_refreshes, available_refreshes)
+        budget.requires_refresh_lease = (
+            0 < budget.max_refreshes <= HIGH_LOAD_LEASE_THRESHOLD
+        )
+        refresh_load_detail = (
+            f"{active_pr_proofs} indexed pull-request ci run(s) plus "
+            f"{reservation_count} unindexed durable "
+            f"reservation(s), global cap "
+            f"{MAX_IN_FLIGHT_PR_PROOFS}, {budget.max_refreshes} CI workload slot(s) "
+            "available this sweep"
+            + (" (durable lease required)" if budget.requires_refresh_lease else "")
+        )
     budget.refresh_context = refresh_load_detail
     print(f"PR proof load: {refresh_load_detail}.", flush=True)
 

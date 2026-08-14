@@ -151,6 +151,15 @@ KNOWN_UNMIGRATED = {
     # either noticing the other. The surviving text is unchanged; only the dead twin went.
     "scripts/measure_cycles_anchor_blast_radius.py": "BENIGN: the instrument that MEASURES cross-basis divergence — it holds the three loaders apart on as-of-aligned reads by design",
     "scripts/measure_coiled_mtf_anchor_blast_radius.py": "BENIGN: same instrument class as measure_cycles_anchor_blast_radius.py above — it reads deep stocks/, 2014-start baskets/ohlcv and the breadth caches at their NATIVE depth as SEPARATE, as-of-aligned universes and REPORTS the per-loader disagreement as its output. Holding the bases apart is the measurement, not a defect",
+    "scripts/backfill_prophet_outage_20260811.py": (
+        "NO PAIRING: force-majeure reconstruction harness. It truncates BOTH "
+        "families (adjusted ticker stores + unadjusted breadth panels) to the "
+        "same as-of so the 2026-08-11 board can be rebuilt from a vintage that "
+        "never collected that session. It does not compute a name-vs-benchmark "
+        "return, residual, or excess. The two bases are listed together because "
+        "truncation must cover the whole price surface, not because a raw name "
+        "leg is differenced against an adjusted bench."
+    ),
     # ---- reaches both families; combining expression NOT hand-verified by this PR ------
     "engine/altdata_picks.py":                "not triaged",
     "engine/foresight_earliness.py":          "not triaged",

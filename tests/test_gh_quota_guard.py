@@ -669,3 +669,68 @@ def test_prose_about_the_handoff_is_not_an_observation(tmp_path):
     repo = _handoff_repo(tmp_path)
     assert not _denied("echo 'do not gh run watch after the handoff'", cwd=repo)
     assert not _denied('git commit -m "deny gh pr checks once CI is handed off"', cwd=repo)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Shape 6 — production lanes a session may not stop
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# Prose forbade this from 2026-08-12 and did not bind: a live fleet session
+# force-cancelled the US nightly's recovery dispatches SIX times (receipt: POST
+# /actions/runs/31583415065/force-cancel), and stacked on the #5362 workflow-size
+# strand the night before, Prophet US served Aug-10 picks for two full sessions.
+#
+# The 2026-08-14 addition is the WATCHDOG half. daily.yml and the render lanes are
+# protected because killing one destroys data; nightly-liveness.yml and
+# prophet-rescue.yml are protected because killing one destroys the only thing that
+# would have NOTICED. That is the strictly worse outcome: a silenced alarm and a
+# healthy night leave the same trace, which is the equivalence the whole outage
+# turned on.
+
+KILL_RECEIPT = "31583415065"          # the real run id from the 2026-08-12 receipt
+
+
+def _lane(monkeypatch, workflow: str) -> None:
+    """Make the guard's one `gh api … --jq .path` probe answer for `workflow`."""
+    monkeypatch.setenv("GH_SHIM_PAYLOAD", f".github/workflows/{workflow}\n")
+
+
+@pytest.mark.parametrize("workflow", sorted(GUARD.PROTECTED_LANES))
+def test_no_protected_lane_may_be_stopped(monkeypatch, workflow):
+    _lane(monkeypatch, workflow)
+    assert _denied(f"gh run cancel {KILL_RECEIPT}"), workflow
+
+
+@pytest.mark.parametrize("workflow", ["nightly-liveness.yml", "prophet-rescue.yml"])
+def test_the_prophet_watchdog_lanes_are_protected(monkeypatch, workflow):
+    """Named rather than only swept by the parametrize above: removing either entry
+    from PROTECTED_LANES must red a test that says WHY it was there."""
+    assert workflow in GUARD.PROTECTED_LANES
+    _lane(monkeypatch, workflow)
+    reason = GUARD.protected_cancel_reason(KILL_RECEIPT)
+    assert reason and workflow in reason
+    assert _denied(f"gh run cancel {KILL_RECEIPT}")
+
+
+@pytest.mark.parametrize("cmd", [
+    f"gh api -X POST repos/o/r/actions/runs/{KILL_RECEIPT}/cancel",
+    f"gh api --method POST /repos/o/r/actions/runs/{KILL_RECEIPT}/force-cancel",
+])
+def test_both_rest_spellings_are_denied_for_a_watchdog_lane(monkeypatch, cmd):
+    """The force-cancel spelling IS the 2026-08-12 receipt, so it is pinned by
+    example rather than by inference."""
+    _lane(monkeypatch, "prophet-rescue.yml")
+    assert _denied(cmd)
+
+
+def test_an_unprotected_lane_may_still_be_stopped(monkeypatch):
+    """Control: without this, every test above could pass by denying everything."""
+    _lane(monkeypatch, "ci.yml")
+    assert not _denied(f"gh run cancel {KILL_RECEIPT}")
+
+
+def test_an_unresolvable_run_fails_open(monkeypatch):
+    """Fail-open like every other rule in this guard: if the probe cannot say which
+    workflow a run belongs to, the guard must not brick the harness."""
+    monkeypatch.setenv("GH_SHIM_EXIT", "1")
+    assert not _denied(f"gh run cancel {KILL_RECEIPT}")

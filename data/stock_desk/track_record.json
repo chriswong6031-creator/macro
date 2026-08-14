@@ -1,23 +1,23 @@
 {
   "schema": "stock_desk.v1",
-  "as_of": "2026-08-13",
-  "scored_total": 110,
-  "open": 85,
+  "as_of": "2026-08-14",
+  "scored_total": 115,
+  "open": 80,
   "unscored_neutral": 156,
   "overall": {
-    "n": 110,
-    "hits": 76,
-    "misses": 34,
-    "hit_rate": 0.691,
-    "dir_accuracy": 0.427
+    "n": 115,
+    "hits": 80,
+    "misses": 35,
+    "hit_rate": 0.696,
+    "dir_accuracy": 0.426
   },
   "by_lean": {
     "constructive": {
-      "n": 65,
-      "hits": 43,
-      "misses": 22,
-      "hit_rate": 0.662,
-      "dir_accuracy": 0.4
+      "n": 69,
+      "hits": 46,
+      "misses": 23,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.391
     },
     "neutral": {
       "n": 0,
@@ -27,11 +27,11 @@
       "dir_accuracy": null
     },
     "cautious": {
-      "n": 45,
-      "hits": 33,
+      "n": 46,
+      "hits": 34,
       "misses": 12,
-      "hit_rate": 0.733,
-      "dir_accuracy": 0.467
+      "hit_rate": 0.739,
+      "dir_accuracy": 0.478
     },
     "avoid": {
       "n": 0,
@@ -43,11 +43,11 @@
   },
   "by_conviction": {
     "low": {
-      "n": 94,
-      "hits": 62,
-      "misses": 32,
-      "hit_rate": 0.66,
-      "dir_accuracy": 0.383
+      "n": 99,
+      "hits": 66,
+      "misses": 33,
+      "hit_rate": 0.667,
+      "dir_accuracy": 0.384
     },
     "medium": {
       "n": 14,
@@ -64,8 +64,53 @@
       "dir_accuracy": 0.0
     }
   },
-  "calibration_note": "110 leans scored, hit-rate 0.691 (directional accuracy 0.427). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
+  "calibration_note": "115 leans scored, hit-rate 0.696 (directional accuracy 0.426). The no-skill base rate for these exact conditions is not yet measured \u2014 read the hit-rate as unbenchmarked, not as evidence of skill.",
   "recent": [
+    {
+      "id": "2026-07-02-CVSA-2",
+      "ticker": "CVSA",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.029,
+      "check_by": "2026-08-13"
+    },
+    {
+      "id": "2026-07-02-SBUX-1",
+      "ticker": "SBUX",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.0034,
+      "check_by": "2026-08-13"
+    },
+    {
+      "id": "2026-07-02-REZI-5",
+      "ticker": "REZI",
+      "lean": "cautious",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.3771,
+      "check_by": "2026-08-13"
+    },
+    {
+      "id": "2026-07-02-FTV-6",
+      "ticker": "FTV",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0579,
+      "check_by": "2026-08-13"
+    },
+    {
+      "id": "2026-07-09-IVZ-5",
+      "ticker": "IVZ",
+      "lean": "constructive",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0963,
+      "check_by": "2026-08-13"
+    },
     {
       "id": "2026-07-15-TGT-1",
       "ticker": "TGT",
@@ -128,51 +173,6 @@
       "outcome": "hit",
       "realized": -0.0285,
       "check_by": "2026-08-10"
-    },
-    {
-      "id": "2026-07-20-WT-4",
-      "ticker": "WT",
-      "lean": "cautious",
-      "conviction": "low",
-      "outcome": "miss",
-      "realized": 0.0547,
-      "check_by": "2026-08-10"
-    },
-    {
-      "id": "2026-06-26-PRDO-1",
-      "ticker": "PRDO",
-      "lean": "constructive",
-      "conviction": "high",
-      "outcome": "hit",
-      "realized": -0.0324,
-      "check_by": "2026-08-07"
-    },
-    {
-      "id": "2026-06-26-STRA-2",
-      "ticker": "STRA",
-      "lean": "constructive",
-      "conviction": "medium",
-      "outcome": "hit",
-      "realized": 0.0128,
-      "check_by": "2026-08-07"
-    },
-    {
-      "id": "2026-06-26-COKE-4",
-      "ticker": "COKE",
-      "lean": "constructive",
-      "conviction": "high",
-      "outcome": "hit",
-      "realized": -0.0454,
-      "check_by": "2026-08-07"
-    },
-    {
-      "id": "2026-06-26-ELS-5",
-      "ticker": "ELS",
-      "lean": "cautious",
-      "conviction": "low",
-      "outcome": "hit",
-      "realized": -0.047,
-      "check_by": "2026-08-07"
     }
   ]
 }
