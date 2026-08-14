@@ -463,30 +463,48 @@ def main() -> int:
     cutoff = cal["calibration_history_cutoff"]
     planes = manifest["universe"]["plane_by_symbol"]
 
-    ineligible = [s for s in members if s in pilot or s in blind or s in COMPUTE_BLOCKLIST]
-    if ineligible:
+    # A drawn member that is ALSO pilot or blind means the draw itself is broken — that
+    # is a partition violation and there is nothing to do but stop.
+    contaminated = [s for s in members if s in pilot or s in blind]
+    if contaminated:
         raise SystemExit(
-            f"REFUSING to calibrate: {len(ineligible)} drawn name(s) are not calibration-"
-            f"eligible ({ineligible[:10]}). Pilot and blind names contribute nothing to "
-            "constant-setting under any clause (§16.2)."
+            f"REFUSING to calibrate: {len(contaminated)} drawn name(s) are also pilot or "
+            f"blind members ({contaminated[:10]}). Pilot and blind names contribute nothing "
+            "to constant-setting under any clause (§16.2), so the draw is invalid."
         )
+    # A hygiene-blocked member is different: the DRAW is valid (the universe keeps
+    # hygiene-flagged names — censored-never-dropped), but the name must not be READ.
+    # Skipping it here rather than re-drawing keeps calibration_sha256 a pure function of
+    # (snapshot, seed); silently re-drawing would make the seal unreproducible.
+    skipped = [s for s in members if s in COMPUTE_BLOCKLIST]
+    eligible = [s for s in members if s not in COMPUTE_BLOCKLIST]
+    for s in skipped:
+        print(f"[gate] SKIPPING drawn member {s}: {COMPUTE_BLOCKLIST[s]}", flush=True)
     print(
-        f"[gate] manifest ok · partition={cal['name']} · n_calibration={len(members)} · "
+        f"[gate] manifest ok · partition={cal['name']} · n_drawn={len(members)} · "
+        f"n_readable={len(eligible)} · skipped_on_hygiene={skipped or 'none'} · "
         f"history cutoff={cutoff} (asof - 126td) · calibration_sha256="
         f"{cal['calibration_sha256'][:16]}…",
         flush=True,
     )
 
     # ---- pass A: partition material -------------------------------------
-    tasks = [(s, planes[s], cutoff) for s in members if s in planes]
+    tasks = [(s, planes[s], cutoff) for s in eligible if s in planes]
     with mp.Pool(processes=max(1, args.workers)) as pool:
         parts = [p for p in pool.imap_unordered(extract_one, tasks, chunksize=8) if p]
     print(f"[extract] {len(parts)}/{len(tasks)} calibration names produced material", flush=True)
     if not parts:
         raise SystemExit("no calibration material extracted — refusing to freeze constants")
 
+    # Gate 3, the read-side half: every symbol whose data reached this aggregation must
+    # be a drawn, hygiene-eligible calibration member and nothing else.
     read_syms = {p["symbol"] for p in parts}
-    assert read_syms <= set(members), "read a symbol outside the sealed partition"
+    stray = read_syms - set(eligible)
+    if stray:
+        raise SystemExit(
+            f"REFUSING to freeze constants: read {len(stray)} symbol(s) outside the sealed "
+            f"partition ({sorted(stray)[:10]})"
+        )
 
     # ---- apply the rules --------------------------------------------------
     values, receipts = choose_constants(parts)
@@ -522,8 +540,8 @@ def main() -> int:
     sensitivity: list[dict[str, Any]] = []
     if not args.skip_sensitivity:
         rng = np.random.default_rng(20260814)
-        pick = sorted(rng.permutation(len(members))[: args.sensitivity_names])
-        sample = [members[i] for i in pick if members[i] in planes]
+        pick = sorted(rng.permutation(len(eligible))[: args.sensitivity_names])
+        sample = [eligible[i] for i in pick if eligible[i] in planes]
         frames = []
         for s in sample:
             try:
@@ -569,7 +587,9 @@ def main() -> int:
             "pre-boundary history of undrawn pool names was NOT consumed; using less "
             "than the permitted material is strictly conservative and is recorded here."
         ),
+        "n_calibration_names_drawn": len(members),
         "n_calibration_names_read": len(parts),
+        "skipped_on_hygiene": {s: COMPUTE_BLOCKLIST[s] for s in skipped},
         "values": values,
         "rules": RULES,
         "receipts": receipts,

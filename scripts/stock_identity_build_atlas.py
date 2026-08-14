@@ -182,12 +182,23 @@ def stage_snapshot(workers: int) -> pd.DataFrame:
     print(f"[snapshot] last_date by plane: {dict(last_by_plane)} -> asof={asof.date()}", flush=True)
 
     hyg_rows = []
+    asof_pos = int(calendar.searchsorted(pd.Timestamp(asof)))
     for r in snap.itertuples(index=False):
         h = hyg_mod.check_symbol(r.symbol, repo_root=REPO_ROOT, first_date=r.first_date)
-        tape_ended = bool(
-            calendar.searchsorted(pd.Timestamp(asof)) - calendar.searchsorted(pd.Timestamp(r.last_date))
-            >= DEAD_TAPE_END_SESSIONS
-        )
+        lag = asof_pos - int(calendar.searchsorted(pd.Timestamp(r.last_date)))
+        tape_ended = bool(lag >= DEAD_TAPE_END_SESSIONS)
+        # The truncation reason is stated at the confidence the evidence supports. A tape
+        # that runs to asof is right-censored by the build date and nothing more; a tape
+        # that stops a few weeks short is stale-vs-ceased UNRESOLVED, and calling that a
+        # death would be the "delisted is not stale" error the ledger exists to prevent.
+        if tape_ended:
+            reason = hyg_mod.dead_name_reason(r.symbol, REPO_ROOT)
+        elif lag > 0:
+            reason = (
+                f"store tape ends {lag} session(s) before asof; stale-vs-ceased unresolved"
+            )
+        else:
+            reason = "right_censored_at_asof (tape active through asof)"
         hyg_rows.append(
             {
                 "symbol": r.symbol,
@@ -196,10 +207,9 @@ def stage_snapshot(workers: int) -> pd.DataFrame:
                 "first_print_note": h["first_print_note"],
                 "compute_eligible": h["compute_eligible"],
                 "blind_eligible": h["blind_eligible"],
+                "tape_end_lag_sessions": lag,
                 "tape_ended": tape_ended,
-                "terminated_reason": (
-                    hyg_mod.dead_name_reason(r.symbol, REPO_ROOT) if tape_ended else None
-                ),
+                "terminated_reason": reason,
             }
         )
     snap = snap.merge(pd.DataFrame(hyg_rows), on="symbol", how="left")
@@ -293,77 +303,145 @@ def stage_pilot(snap: pd.DataFrame) -> dict[str, Any]:
 
     ledger_syms = sorted(hyg_mod._load_delisted(str(REPO_ROOT)).keys())
     ledger_on_plane = [s for s in ledger_syms if s in present]
+    max_lag = int(snap["tape_end_lag_sessions"].max())
+    lag_top = (
+        snap.nlargest(8, "tape_end_lag_sessions")[["symbol", "last_date", "tape_end_lag_sessions"]]
+        .assign(last_date=lambda d: d["last_date"].astype(str).str[:10])
+        .to_dict("records")
+    )
 
-    # --- secular decliner: deepest final-1260-session drawdown in the dead pool
+    # --- secular decliner ---------------------------------------------------
+    # Masterplan §13 sources this pick from the "delisted/**damaged** cohort ... subject
+    # to data". The delisted half is empty here (see dead_names below), so the damaged
+    # half supplies it, by the same deterministic depth rule, and the substitution is
+    # logged. Membership choice is design-touched and is never evidence.
+    decliner_pool = snap[
+        (snap["n_rows"] >= DECLINER_MIN_SESSIONS)
+        & (snap["compute_eligible"])
+        & (~snap["symbol"].isin(set(fixed)))
+    ]
+    used_ceased_pool = bool(dead_pool)
+    if used_ceased_pool:
+        decliner_pool = decliner_pool[decliner_pool["symbol"].isin(dead_pool)]
     dd_rows = []
-    for s in dead_pool:
-        if int(snap.loc[snap["symbol"] == s, "n_rows"].iloc[0]) < DECLINER_MIN_SESSIONS:
-            continue
-        plane = str(snap.loc[snap["symbol"] == s, "price_plane_id"].iloc[0])
+    for r in decliner_pool.itertuples(index=False):
         try:
-            dd_rows.append((s, _max_drawdown_final_window(s, plane, DECLINER_WINDOW)))
+            dd_rows.append((r.symbol, _max_drawdown_final_window(
+                r.symbol, r.price_plane_id, DECLINER_WINDOW)))
         except Exception as exc:  # noqa: BLE001
-            log.warning("decliner scan: %s unreadable (%s)", s, exc)
+            log.warning("decliner scan: %s unreadable (%s)", r.symbol, exc)
     dd_rows = [(s, d) for s, d in dd_rows if np.isfinite(d)]
     dd_rows.sort(key=lambda t: t[1])
     if not dd_rows:
-        raise SystemExit("no ceased-tape name qualifies for the secular-decliner rule")
+        raise SystemExit("no name qualifies for the secular-decliner rule")
     decliner = dd_rows[0][0]
     receipts["secular_decliner"] = {
         "pick": decliner,
         "rule": (
-            "among ceased-tape names with >=1,000 sessions, the deepest close-to-close max "
-            "drawdown over the final 1,260 sessions (damaged-cohort rule; a membership "
-            "choice is design-touched and is never evidence)"
+            "deepest close-to-close max drawdown over the final 1,260 sessions among "
+            "names with >=1,000 sessions (damaged-cohort rule)"
+        ),
+        "cohort_used": "ceased-tape (delisted)" if used_ceased_pool else "damaged (live tape)",
+        "logged_substitution": None if used_ceased_pool else (
+            "registration §2 narrows this pick to the ceased-tape pool, which is EMPTY on "
+            "the allowed planes (see dead_names). Masterplan §13's own wording sources the "
+            "pick from the 'delisted/damaged cohort ... subject to data', so the damaged "
+            "half supplies it under the identical depth rule. Substitution logged; nothing "
+            "about the pick is evidence."
         ),
         "max_drawdown_final_1260": float(dd_rows[0][1]),
         "pool_size": len(dd_rows),
         "runners_up": [{"symbol": s, "max_drawdown": float(d)} for s, d in dd_rows[1:4]],
     }
 
-    # --- dead names: ledger rows first, then seeded draws --------------------
-    draw = part_mod.draw_dead_names(
-        [s for s in dead_pool if s != decliner], need=DEAD_NEED, ledger_first=ledger_on_plane
-    )
-    receipts["dead_names"] = {
-        "members": draw["members"],
-        "ledger_rows_in_config": ledger_syms,
-        "ledger_rows_present_on_an_allowed_plane": ledger_on_plane,
-        "logged_substitution": (
-            "config/delisted_symbols.yml holds exactly 2 rows (CTRA, TPH) and NEITHER is "
-            "present on data/stocks or data/baskets/ohlcv, so no ledger row can supply a "
-            "dead name here. Per registration §2's own substitution clause the pool is "
-            "baskets-plane names whose tape ended >=126 sessions before asof with >=756 "
-            "sessions of history (tape-end = ceased-trading proxy). The production ledger "
-            "is NOT edited by this program."
-        ),
-        "pool_size": draw["pool_size"],
-        "seed_string": draw["seed_string"],
-        "seed": draw["seed"],
-        "draw_order_head": draw["draw_order"][:20],
-        "terminated_reasons": {
-            s: hyg_mod.dead_name_reason(s, REPO_ROOT) for s in draw["members"]
-        },
-        "note": (
-            "the secular-decliner pick is itself a ceased-tape name and is excluded from "
-            "this draw so it is not counted twice; it carries a terminated_reason too."
-        ),
-    }
+    # --- dead names ---------------------------------------------------------
+    if dead_pool:
+        draw = part_mod.draw_dead_names(
+            [s for s in dead_pool if s != decliner], need=DEAD_NEED,
+            ledger_first=ledger_on_plane,
+        )
+        dead_members = draw["members"]
+        dead_receipt: dict[str, Any] = {
+            "status": "SATISFIED",
+            "members": dead_members,
+            "pool_size": draw["pool_size"],
+            "seed_string": draw["seed_string"],
+            "seed": draw["seed"],
+            "draw_order_head": draw["draw_order"][:20],
+            "terminated_reasons": {
+                s: hyg_mod.dead_name_reason(s, REPO_ROOT) for s in dead_members
+            },
+        }
+    else:
+        dead_members = []
+        dead_receipt = {
+            "status": "BLOCKED — no dead name is obtainable from any allowed source",
+            "members": [],
+            "requirement": (
+                "masterplan §13 / review finding 18: >=5 names that ceased trading, with "
+                "terminated_reason recorded, so cohort-level statements can name who is missing"
+            ),
+            "sources_checked": {
+                "config/delisted_symbols.yml": (
+                    f"holds exactly {len(ledger_syms)} row(s) {ledger_syms}; "
+                    f"present on an allowed plane: {ledger_on_plane or 'NONE'}"
+                ),
+                "allowed-plane tape-end proxy (>=126 sessions before asof, >=756 rows)": (
+                    f"ZERO candidates. The largest tape-end lag anywhere in the "
+                    f"{len(snap)}-name universe is {max_lag} session(s), and the names at "
+                    f"that lag are plainly still trading — stale feeds or index-membership "
+                    f"drops, not deaths. Treating them as dead names would be exactly the "
+                    f"'delisted is not stale' error the exit ledger exists to prevent, and "
+                    f"index-exit is not death (masterplan §9.5)."
+                ),
+                "data/edgar/dead_name_prices.parquet": (
+                    "close-only third plane — PROHIBITED for fingerprints and catalogs by "
+                    "the price-plane law (masterplan §9.7); not read"
+                ),
+            },
+            "largest_tape_end_lags": lag_top,
+            "consequence": (
+                "W1 ships with NO dead names in the pilot. Every cohort-level statement in "
+                "this wave is therefore survivor-only and must say so; the survivorship "
+                "stratification substrate (sp1500 PIT membership) is unaffected. Supplying "
+                "dead names needs an operator decision on a source: extending "
+                "config/delisted_symbols.yml, or admitting a close-only plane for catalog "
+                "work under a fresh registration. Neither is a builder's call."
+            ),
+            "not_done": (
+                "no substitute was invented. A live name relabeled 'dead' would corrupt "
+                "every survivorship read this cohort exists to enable."
+            ),
+        }
+    receipts["dead_names"] = dead_receipt
 
-    members = sorted(set(fixed) | {ipo, decliner} | set(draw["members"]))
+    members = sorted(set(fixed) | {ipo, decliner} | set(dead_members))
     members = [m for m in members if m in present]
     receipts["final"] = {"n_members": len(members), "members": members}
 
     roles = dict(PILOT_ROLES)
     roles[ipo] = "stressor — recent IPO (rule-chosen at PR-1)"
-    roles[decliner] = "stressor — secular decliner (rule-chosen at PR-1); ceased tape"
-    for s in draw["members"]:
+    roles[decliner] = (
+        "stressor — secular decliner (rule-chosen at PR-1, damaged cohort)"
+        if not used_ceased_pool
+        else "stressor — secular decliner (rule-chosen at PR-1); ceased tape"
+    )
+    for s in dead_members:
         roles[s] = roles.get(s, "") + ("; " if roles.get(s) else "") + "dead name (ceased tape)"
 
     payload = {"members": members, "roles": roles, "receipts": receipts}
     _scratch("pilot.json").write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
     print(f"[pilot] {len(members)} names: {members}", flush=True)
-    print(f"[pilot] IPO={ipo} decliner={decliner} dead={draw['members']}", flush=True)
+    print(f"[pilot] IPO={ipo} decliner={decliner} dead={dead_members or 'BLOCKED (none obtainable)'}",
+          flush=True)
+    if not dead_members:
+        print(
+            "::warning title=stock-identity-dead-names::W1 pilot ships with ZERO dead names — "
+            f"the delisted ledger's {len(ledger_syms)} row(s) are absent from both allowed "
+            f"planes and the largest tape-end lag in the universe is {max_lag} sessions "
+            "(stale feeds, not deaths). Cohort statements in W1 are survivor-only.",
+            flush=True,
+        )
     return payload
 
 
