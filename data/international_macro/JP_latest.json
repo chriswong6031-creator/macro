@@ -7,26 +7,26 @@
   "flag": "🇯🇵",
   "scope_en": "Japan national economy; Nikkei 225 is market context, not the macro universe.",
   "scope_zh": "日本全国经济；日经225仅作市场背景，并非宏观统计范围。",
-  "asof": "2026-08-13",
-  "built": "2026-08-13 13:29 UTC",
+  "asof": "2026-08-14",
+  "built": "2026-08-14 05:11 UTC",
   "regime": {
     "quad": "Q3",
     "name": "Stagflation",
-    "growth_score": -0.2,
+    "growth_score": 0.333,
     "inflation_score": 0.0,
-    "confidence": 0.1,
+    "confidence": 0.083,
     "liquidity": "neutral",
-    "recession_score": 13.0,
+    "recession_score": 11.0,
     "recession_band": "low",
     "data_limited": false
   },
   "decision": {
-    "score": 43,
-    "state": "defensive",
-    "state_en": "Defensive",
-    "state_zh": "防御",
-    "action_en": "Defend capital: favour quality balance sheets and avoid unhedged yen assumptions.",
-    "action_zh": "以保本为先：偏好优质资产负债表，避免无对冲日元假设。",
+    "score": 55,
+    "state": "balanced",
+    "state_en": "Balanced",
+    "state_zh": "均衡",
+    "action_en": "Keep duration and currency risk balanced while growth is soft and inflation pressure persists.",
+    "action_zh": "增长偏软且通胀压力仍在时，均衡久期与汇率风险。",
     "transitions_en": [
       "Upgrade: activity and wage breadth turn positive while services inflation remains orderly.",
       "Policy turn: BoJ guidance and the JGB curve reprice together, not on one headline.",
@@ -39,9 +39,9 @@
     ],
     "parts": {
       "base": 50.0,
-      "growth": -4.4,
+      "growth": 7.33,
       "inflation": -0.0,
-      "recession": -2.34,
+      "recession": -1.98,
       "liquidity": 0.0,
       "risk_state": 0.0
     },
@@ -50,7 +50,6 @@
   },
   "history": {
     "values": [
-      65,
       65,
       65,
       70,
@@ -109,10 +108,10 @@
       43,
       43,
       43,
-      43
+      43,
+      55
     ],
     "dates": [
-      "2026-05-22",
       "2026-05-25",
       "2026-05-26",
       "2026-05-27",
@@ -171,27 +170,28 @@
       "2026-08-10",
       "2026-08-11",
       "2026-08-12",
-      "2026-08-13"
+      "2026-08-13",
+      "2026-08-14"
     ],
-    "points": "0.00,35.00 1.69,35.00 3.39,35.00 5.08,30.00 6.78,30.00 8.47,35.00 10.17,35.00 11.86,35.00 13.56,35.00 15.25,35.00 16.95,35.00 18.64,42.00 20.34,36.00 22.03,42.00 23.73,42.00 25.42,35.00 27.12,35.00 28.81,35.00 30.51,35.00 32.20,35.00 33.90,35.00 35.59,35.00 37.29,35.00 38.98,36.00 40.68,35.00 42.37,36.00 44.07,48.00 45.76,42.00 47.46,48.00 49.15,51.00 50.85,42.00 52.54,45.00 54.24,45.00 55.93,46.00 57.63,45.00 59.32,52.00 61.02,49.00 62.71,49.00 64.41,48.00 66.10,55.00 67.80,64.00 69.49,61.00 71.19,60.00 72.88,60.00 74.58,60.00 76.27,61.00 77.97,64.00 79.66,65.00 81.36,62.00 83.05,62.00 84.75,64.00 86.44,64.00 88.14,64.00 89.83,49.00 91.53,49.00 93.22,68.00 94.92,57.00 96.61,57.00 98.31,57.00 100.00,57.00",
+    "points": "0.00,35.00 1.69,35.00 3.39,30.00 5.08,30.00 6.78,35.00 8.47,35.00 10.17,35.00 11.86,35.00 13.56,35.00 15.25,35.00 16.95,42.00 18.64,36.00 20.34,42.00 22.03,42.00 23.73,35.00 25.42,35.00 27.12,35.00 28.81,35.00 30.51,35.00 32.20,35.00 33.90,35.00 35.59,35.00 37.29,36.00 38.98,35.00 40.68,36.00 42.37,48.00 44.07,42.00 45.76,48.00 47.46,51.00 49.15,42.00 50.85,45.00 52.54,45.00 54.24,46.00 55.93,45.00 57.63,52.00 59.32,49.00 61.02,49.00 62.71,48.00 64.41,55.00 66.10,64.00 67.80,61.00 69.49,60.00 71.19,60.00 72.88,60.00 74.58,61.00 76.27,64.00 77.97,65.00 79.66,62.00 81.36,62.00 83.05,64.00 84.75,64.00 86.44,64.00 88.14,49.00 89.83,49.00 91.53,68.00 93.22,57.00 94.92,57.00 96.61,57.00 98.31,57.00 100.00,45.00",
     "min": 32,
     "max": 70,
-    "start": "2026-05-22",
-    "end": "2026-08-13"
+    "start": "2026-05-25",
+    "end": "2026-08-14"
   },
   "market": {
     "index_label": "Nikkei 225",
     "currency_label": "USD/JPY",
     "equity": {
-      "price": 68308.59,
-      "off_52w_high": -5.6,
+      "price": 69269.59,
+      "off_52w_high": -4.3,
       "above_50d": true,
       "above_200d": true,
-      "realvol": 35.7,
-      "rsi": 58.0,
-      "ext_z": -0.24,
+      "realvol": 36.0,
+      "rsi": 61.0,
+      "ext_z": -0.02,
       "ext_grade": "intrend",
-      "drawdown_risk": 28.0,
+      "drawdown_risk": 25.0,
       "drawdown_band": "low",
       "bubble_flag": false
     }
@@ -204,25 +204,24 @@
   },
   "risk": {
     "state": "calm",
-    "top_score": 55,
+    "top_score": 57,
     "dominant_en": "Calm — no driver elevated",
     "dominant_zh": "平静 — 无驱动升高",
     "h21": 0.307,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 55.2,
-      "peak": 95.2,
-      "peak_days_ago": 29,
-      "off_peak": 40.1,
-      "velocity": -3.0,
-      "phase": "receding",
+      "intensity": 56.9,
+      "peak": 93.7,
+      "peak_days_ago": 23,
+      "off_peak": 36.7,
+      "velocity": 2.0,
+      "phase": "rising",
       "reached_risk": true,
       "state_now": "calm",
       "odds_now": 0.307,
       "odds_peak": 0.307,
       "odds_delta": 0.0,
       "spark": [
-        80.0,
         93.7,
         91.7,
         93.7,
@@ -244,17 +243,18 @@
         55.0,
         51.6,
         58.1,
-        61.3,
-        55.2
+        55.8,
+        51.7,
+        56.9
       ],
-      "spark_pts": "3.0,9.5 6.9,3.0 10.8,4.0 14.7,3.0 18.7,5.2 22.6,14.5 26.5,17.4 30.4,9.2 34.3,10.0 38.2,8.9 42.1,5.7 46.0,5.9 50.0,13.1 53.9,15.4 57.8,11.7 61.7,18.1 65.6,21.4 69.5,21.7 73.4,19.9 77.3,21.4 81.3,23.0 85.2,19.9 89.1,18.4 93.0,21.3",
+      "spark_pts": "3.0,3.0 6.9,4.0 10.8,3.0 14.7,5.2 18.7,14.5 22.6,17.4 26.5,9.2 30.4,10.0 34.3,8.9 38.2,5.7 42.1,5.9 46.0,13.1 50.0,15.4 53.9,11.7 57.8,18.1 61.7,21.4 65.6,21.7 69.5,19.9 73.4,21.4 77.3,23.0 81.3,19.9 85.2,21.0 89.1,23.0 93.0,20.5",
       "spark_peak": {
-        "x": 6.9,
+        "x": 3.0,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 21.3
+        "y": 20.5
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -266,17 +266,17 @@
         "tier": "A",
         "label_en": "Parabolic extension / exhaustion",
         "label_zh": "抛物线伸展／透支",
-        "score": 90.5,
+        "score": 92.5,
         "band": "risk-off",
         "firing_legs": [
           {
             "leg": "ext_etf",
-            "pctile": 0.911,
+            "pctile": 0.926,
             "confirmed": true
           },
           {
             "leg": "ext_idx",
-            "pctile": 0.9,
+            "pctile": 0.925,
             "confirmed": true
           }
         ]
@@ -286,7 +286,7 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 61.4,
+        "score": 64.3,
         "band": "watch",
         "firing_legs": [
           {
@@ -296,7 +296,12 @@
           },
           {
             "leg": "us_real_rate",
-            "pctile": 0.638,
+            "pctile": 0.667,
+            "confirmed": false
+          },
+          {
+            "leg": "us_rate_2y",
+            "pctile": 0.586,
             "confirmed": false
           }
         ]
@@ -306,7 +311,7 @@
         "tier": "A",
         "label_en": "Yen depreciation / outflows",
         "label_zh": "日元贬值／资金外流",
-        "score": 25.0,
+        "score": 22.2,
         "band": "calm",
         "firing_legs": []
       }
@@ -372,8 +377,8 @@
       "key": "fx",
       "label_en": "FX reference",
       "label_zh": "汇率参考",
-      "raw": 159.341,
-      "value": "159.34",
+      "raw": 159.398,
+      "value": "159.40",
       "unit": "",
       "asof": null
     },
@@ -381,8 +386,8 @@
       "key": "fx_strength_3m",
       "label_en": "Currency strength, 3m",
       "label_zh": "货币强弱，3个月",
-      "raw": 0.41,
-      "value": "0.41%",
+      "raw": 0.58,
+      "value": "0.58%",
       "unit": "%",
       "asof": null
     },
@@ -390,8 +395,8 @@
       "key": "drawdown",
       "label_en": "Index from 52w high",
       "label_zh": "指数距52周高点",
-      "raw": -5.6,
-      "value": "-5.60%",
+      "raw": -4.3,
+      "value": "-4.30%",
       "unit": "%",
       "asof": null
     },
@@ -399,8 +404,8 @@
       "key": "realvol",
       "label_en": "Realized volatility",
       "label_zh": "实现波动率",
-      "raw": 35.7,
-      "value": "35.70%",
+      "raw": 36.0,
+      "value": "36.00%",
       "unit": "%",
       "asof": null
     }
@@ -464,7 +469,7 @@
       "title_zh": "日元压力",
       "why_en": "Imported inflation, funding and foreign-flow pressure.",
       "why_zh": "输入性通胀、融资与外资流动压力。",
-      "value": "159.34",
+      "value": "159.40",
       "available": true,
       "metric": "fx",
       "source_key": "boj",
@@ -554,7 +559,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2021-06",
-      "age_days": 1899,
+      "age_days": 1900,
       "state": "stale",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -562,7 +567,7 @@
     {
       "metric": "gdp",
       "asof": "2026-01",
-      "age_days": 224,
+      "age_days": 225,
       "state": "stale",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -570,7 +575,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-05",
-      "age_days": 104,
+      "age_days": 105,
       "state": "stale",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -578,7 +583,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-06",
-      "age_days": 73,
+      "age_days": 74,
       "state": "fresh",
       "label_en": "Rates",
       "label_zh": "利率"

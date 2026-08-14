@@ -1,8 +1,8 @@
 {
   "schema": "macro_snapshot.v1.2",
-  "asof": "2026-08-13",
-  "oldest_component_asof": "2026-08-12",
-  "macro_context_id": "1355416acc84f615",
+  "asof": "2026-08-14",
+  "oldest_component_asof": "2026-08-13",
+  "macro_context_id": "52488ba0df26951f",
   "labels": {
     "us": {
       "us_quad": "Q2",
@@ -82,7 +82,7 @@
     "canada": {
       "canada_quad": "Q2",
       "canada_overlay_state": "Risk-on",
-      "canada_cycle_tag": "mid"
+      "canada_cycle_tag": "late"
     },
     "dispersion": {
       "dispersion_state": "lean_in"
@@ -98,22 +98,22 @@
     }
   },
   "sources": {
-    "data/regime/latest.json": "2026-08-12",
-    "data/market_state/latest.json": "2026-08-12",
-    "data/transmission/latest.json": "2026-08-12",
-    "data/forex/latest.json": "2026-08-13",
-    "data/bonds/bond_health.json": "2026-08-12",
+    "data/regime/latest.json": "2026-08-13",
+    "data/market_state/latest.json": "2026-08-13",
+    "data/transmission/latest.json": "2026-08-13",
+    "data/forex/latest.json": "2026-08-14",
+    "data/bonds/bond_health.json": "2026-08-13",
     "data/commodity/latest.json": "2026-08-13",
     "data/china_regime/latest.json": "2026-08-13",
     "data/hk_regime/latest.json": "2026-08-13",
-    "data/canada_regime/latest.json": "2026-08-12",
+    "data/canada_regime/latest.json": "2026-08-13",
     "data/dispersion/regime.json": "2026-08-13",
-    "data/intl_regime/AU_history.parquet": "2026-08-13",
+    "data/intl_regime/AU_history.parquet": "2026-08-14",
     "data/intl_regime/EZ_history.parquet": "2026-08-13",
     "data/intl_regime/GB_history.parquet": "2026-08-13",
     "data/intl_regime/IN_history.parquet": "2026-08-13",
-    "data/intl_regime/JP_history.parquet": "2026-08-13",
-    "data/intl_regime/KR_history.parquet": "2026-08-13",
+    "data/intl_regime/JP_history.parquet": "2026-08-14",
+    "data/intl_regime/KR_history.parquet": "2026-08-14",
     "data/intl_regime/TW_history.parquet": "2026-08-13"
   },
   "gaps": [],

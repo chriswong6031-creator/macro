@@ -1,0 +1,86 @@
+name: tushare-spine-backfill
+
+# CN TuShare full-A spine range-shard backfill lane.
+#
+# OFF THE RENDER PATH by construction: workflow_dispatch ONLY — no cron, no push
+# trigger — so it can never enter the nightly render budget. It writes only to the
+# private store below and never to `data/`, `site/`, or the repo.
+#
+# WHY THIS EXISTS WHILE THE GATE IS SHUT
+# `collect()` refuses every execute run today: `BULK_HISTORICAL_BACKFILL_READY` is
+# code-reviewed `False` in collectors/china_tushare_spine.py, so an `execute`
+# dispatch raises SpineError before any store or network use (and refuses earlier
+# still without an authorization receipt + separately controlled trust allowlist).
+# THAT REFUSAL IS THE CORRECT AND EXPECTED RESULT — a red `execute` run here is the
+# gate working, not a broken lane. The lane is pre-wired so the licensed live canary
+# can be dispatched the moment a SEPARATE, separately reviewed authority change opens
+# the gate. Do not "fix" an execute failure by touching the gate constants.
+#
+# SELF-HOSTED IS LOAD-BEARING, NOT A PREFERENCE: the store root
+# ~/.local/share/macro-dashboard/china_tushare_spine/ must PERSIST across runs for the
+# campaign to resume with zero redundant paid calls. Hosted runners are ephemeral, so
+# a hosted run would re-pay for every leaf it had already bought.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "plan = network-free dry run; execute = real collection (refused while the gate is False)"
+        type: choice
+        options: [plan, execute]
+        default: plan
+        required: true
+      max_requests:
+        description: "bounded calls this run (safety ceiling is 100)"
+        required: false
+        default: "50"
+      start:
+        description: "first requested session, YYYY-MM-DD"
+        required: false
+        default: "2024-01-02"
+      end:
+        description: "last requested session, YYYY-MM-DD (empty = start)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read   # the store is outside the repo; this lane commits nothing
+
+concurrency:
+  # One writer per store. The collector also holds a local advisory lock, but
+  # serializing here turns a lock collision into a queue instead of a failure.
+  group: tushare-spine-backfill
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: [self-hosted, macstudio]
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: python 3.12 (Homebrew venv - self-hosted runner)
+        run: |
+          VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
+          [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
+          echo "$VENV/bin" >> "$GITHUB_PATH"
+          "$VENV/bin/python" -m pip install --quiet --upgrade pip
+      - run: pip install -r requirements.txt
+      - name: spine range-shard campaign
+        env:
+          TUSHARE_TOKEN: ${{ secrets.TUSHARE_TOKEN }}
+          MODE: ${{ github.event.inputs.mode }}
+          MAX_REQUESTS: ${{ github.event.inputs.max_requests }}
+          START: ${{ github.event.inputs.start }}
+          END: ${{ github.event.inputs.end }}
+        run: |
+          set -euo pipefail
+          ARGS=(--start "$START" --max-requests "$MAX_REQUESTS")
+          # A bare `[ -n "$END" ] && ARGS+=(...)` would return 1 on an empty END and
+          # `set -e` would kill the step; use a full if.
+          if [ -n "$END" ]; then
+            ARGS+=(--end "$END")
+          fi
+          if [ "$MODE" = "plan" ]; then
+            ARGS+=(--dry-run)
+          fi
+          python -m collectors.china_tushare_spine "${ARGS[@]}"

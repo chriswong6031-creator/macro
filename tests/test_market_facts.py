@@ -216,12 +216,31 @@ def test_breadth_facts_failsoft_missing_root(tmp_path):
 
 
 def test_breadth_facts_real_data_has_digit():
+    """Live tape: a digit when the screen is a real fraction; empty when saturated.
+
+    Overnight 2026-08-14 the committed confluence file sat at 239/239 active —
+    structurally saturated, so the producer correctly dropped every breadth
+    fact and this pin (written as "real data always has a digit") took main
+    red. The rule under test is the producer's drop law, not a data-day
+    count. Saturated → empty facts is the correct output; a non-saturated
+    tape must still ship a digit. Fixture tests pin both arms independently.
+    """
     tc_path = ROOT / "site" / "factordata" / "tech_confluence.json"
     if not tc_path.exists():
         pytest.skip("site/factordata/tech_confluence.json not present")
-    from engine.marketing.market_facts import breadth_facts
+    from engine.marketing.market_facts import _is_vacuous_count, breadth_facts
+    raw = json.loads(tc_path.read_text(encoding="utf-8"))
+    now = raw.get("now") or {}
+    active = len([t for t, v in now.items() if isinstance(v, list) and v])
+    universe = int(raw.get("universe_n") or 0)
     fd = breadth_facts(ROOT)
     texts = " ".join(f.get("text", "") for f in fd["facts"])
+    if _is_vacuous_count(active, universe):
+        assert fd["facts"] == [], (
+            f"saturated tape ({active} of {universe}) still shipped breadth facts: "
+            f"{[f['text'] for f in fd['facts']]}"
+        )
+        return
     assert re.search(r"\d", texts), (
         f"No digit in any breadth fact. Facts: {[f['text'] for f in fd['facts']]}"
     )

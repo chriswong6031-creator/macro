@@ -1,7 +1,21 @@
 {
-  "schema_version": "1.1.0",
-  "purpose": "Plans minted by the 2026-08-11 force-majeure replay of the receipted 2026-08-09 origination refusal, and every candidate the replay did NOT mint. A plan listed in `minted` did not originate on the night its recorded_at names \u2014 it was reconstructed afterwards from that weekend's pinned board. Any consumer that computes a rate, hit-rate, calibration number or Prophet training input over the forward ledger MUST be able to split these rows out, which is why every minted plan carries origination_mode on the plan, on its index row, and on its forward-ledger row at close.",
-  "why_a_file_and_not_a_comment": "The standing law is that the forward ledger is never backfilled (research/PROPHET_LEDGER_SCHEMA.md). This event is a single operator-ordered exception, not a repeal. A file makes the exception enumerable and test-pinned: tests/test_prophet_outage_backfill.py asserts that the set of plans stamped origination_mode=outage_backfill* and the set listed here are the SAME set, in both directions, so a later silent backfill cannot hide inside this precedent.",
+  "schema_version": "1.2.0",
+  "purpose": "Every operator-ordered force-majeure origination window, and for each one both the plans it minted and the candidates it did NOT. A plan listed under `minted` did not originate on the night its recorded_at names. The windows are not all the same kind: `replay` re-ran a bake that HAD run, against a board that survives in git; `reconstruction` rebuilt a night that produced nothing at all, against a board that never existed until the lane built it from a truncated price store \u2014 each row says which it is under `kind`, and a reconstruction additionally carries the measured fidelity of the harness that built its board. Any consumer that computes a rate, hit-rate, calibration number or Prophet training input over the forward ledger MUST be able to split these rows out, which is why every minted plan carries origination_mode on the plan, on its index row, and on its forward-ledger row at close.",
+  "why_a_file_and_not_a_comment": "The standing law is that the forward ledger is never backfilled (research/PROPHET_LEDGER_SCHEMA.md). These windows are individually operator-ordered exceptions, not a repeal, and each one is chartered on its own terms \u2014 there is deliberately no generic backfill lane. A file makes the exceptions enumerable and test-pinned: the segregation tests assert that the set of plans stamped origination_mode=outage_backfill* and the set listed here are the SAME set, in both directions, so a later silent backfill cannot hide inside this precedent.",
+  "windows": [
+    {
+      "id": "prophet-us-outage-backfill-2026-08-09",
+      "recorded_at": "2026-08-09",
+      "kind": "replay",
+      "authority": "operator force-majeure 2026-08-11"
+    },
+    {
+      "id": "prophet-us-outage-backfill-2026-08-11",
+      "recorded_at": "2026-08-11",
+      "kind": "reconstruction",
+      "authority": "operator force-majeure 2026-08-13"
+    }
+  ],
   "backfills": [
     {
       "id": "prophet-us-outage-backfill-2026-08-09",
@@ -434,6 +448,616 @@
         "ruling": "us-board-frozen-alpha-2026-08",
         "ruling_path": "data/us_board_ledger/disclosed_gaps.json",
         "reason": "Those boards ranked on a factor panel frozen at 2026-07-31 (gradeable: false, backfillable: false). A vintage-correct replay needs a point-in-time board harness that does not exist; reconstructing from the frozen boards would mint picks a correct engine would never have picked."
+      }
+    },
+    {
+      "id": "prophet-us-outage-backfill-2026-08-11",
+      "market": "US",
+      "kind": "reconstruction",
+      "kind_note": "RECONSTRUCTION, not a replay. The 2026-08-09 window in this same file replayed a bake that ran and left a receipt against a board that survives in git. This night produced none of those: daily.yml was stranded by the #5362 workflow-size cap and its recovery dispatches were force-cancelled, so there was no collect, no board, no intake receipt and no refusal set. The board below was BUILT for this purpose and has never existed before.",
+      "board_definition": "us_prophet_v2",
+      "engine_selection_era": "anticipation-v1-2026-08-08",
+      "window": {
+        "from": "2026-08-11",
+        "to": "2026-08-11"
+      },
+      "recorded_at": "2026-08-11",
+      "origination_mode": "outage_backfill_2026_08_11",
+      "authority": "operator force-majeure 2026-08-13",
+      "executed_at": "2026-08-13T13:31:33.990596+00:00",
+      "design_doc": "research/PROPHET_OUTAGE_BACKFILL_2026_08.md",
+      "headline": "The 2026-08-11 22:30Z bake never ran, so nothing was collected, no board was built and no plan was minted. This lane rebuilt that night's board inside a worktree pinned to the main commit the bake would have loaded, from a price store carrying the 2026-08-11 session and truncated at its close, and originated against it with the engine of that same commit.",
+      "disclosure_copy": {
+        "headline": {
+          "en": "Rebuilt after an outage",
+          "zh": "\u65ad\u66f4\u540e\u8865\u8bb0"
+        },
+        "body": {
+          "en": "The 11 Aug evening run never completed, so nothing was published that night. This pick was rebuilt afterwards using only data up to the 11 Aug close.",
+          "zh": "8\u670811\u65e5\u665a\u95f4\u7684\u4f8b\u884c\u8fd0\u884c\u6ca1\u6709\u8dd1\u5b8c\uff0c\u5f53\u665a\u4ec0\u4e48\u90fd\u6ca1\u6709\u53d1\u5e03\u3002\u8fd9\u6761\u662f\u4e8b\u540e\u8865\u8bb0\u7684\uff0c\u53ea\u7528\u4e86\u622a\u81f38\u670811\u65e5\u6536\u76d8\u4e3a\u6b62\u7684\u6570\u636e\u3002"
+        },
+        "not_a_live_call": {
+          "en": "It was not shown to anyone that night, and it stays out of the record.",
+          "zh": "\u5b83\u5f53\u665a\u6ca1\u6709\u51fa\u73b0\u5728\u4efb\u4f55\u9875\u9762\u4e0a\uff0c\u4e5f\u4e0d\u8ba1\u5165\u6218\u7ee9\u3002"
+        }
+      },
+      "code_vintage": {
+        "vintage_commit": "7ba57221ddec19cc478273d285f69a09d2924f48",
+        "vintage_committed_utc": "2026-08-11T22:26:39Z",
+        "bake_cron_utc": "2026-08-11T22:30:00Z",
+        "path_taken": "replayed at the pre-#5370 vintage tree",
+        "pr5370": {
+          "merge_commit": "f079300a74c0ad2df63cc2867b882ece50668db8",
+          "merged_utc": "2026-08-11T23:52:22Z",
+          "minutes_after_bake_slot": 82,
+          "excluded": true,
+          "why": "#5370 (union admission on the EARLY-TURN starter tier) edits engine/prophet_bridge.py, engine/us_early_turn.py and engine/signal_quality.py \u2014 the origination module itself. Its review holds that the two-surface ruling cannot move plan minting (naked union fires never mint; starter origination keeps #5105 context licensing), but this lane does not need that claim to be true: it runs the tree that predates the merge, so no minting predicate from #5370 is in scope either way."
+        }
+      },
+      "inputs": {
+        "board": {
+          "sha256": "85022762b9dc9475b5b025baa17aaa5a47b48cf5881d00eed6da000e3cf0ddaf",
+          "as_of": "2026-08-11",
+          "rank_by": "us_prophet_v2",
+          "board_definition": "us_prophet_v2",
+          "price_through": "2026-08-11",
+          "size_bytes": 2005949,
+          "buy_rows": 69,
+          "panel": {
+            "through": "2026-08-11",
+            "through_raw": "2026-08-11",
+            "majority_through": "2026-08-11",
+            "members_at_through": 3035,
+            "members_total": 3041,
+            "mixed_vintage": false,
+            "off_majority_tickers": [
+              "CTRA",
+              "CWEN-A",
+              "EA",
+              "MDV",
+              "RUSHA",
+              "TPH"
+            ]
+          },
+          "synthetic": true,
+          "synthetic_note": "No as_of=2026-08-11 board has ever existed. This one was rebuilt on 7ba57221ddec from a price store truncated at the 2026-08-11 close; it is deliberately NOT published to site/factordata."
+        },
+        "alpha_stamp": {
+          "as_of": "2026-08-11",
+          "names": 1609,
+          "path": "site/factordata/alpha.json",
+          "sha256": "5b75e2533860721c20ec2a1fe66871e044c7d5d46042eb8dae87d3b818cefa18",
+          "why": "rebuilt from the truncated panel because the board publishes this stamp as its own as_of and anchors the earnings-blackout gate to it"
+        },
+        "price_truncation": {
+          "ceiling": "2026-08-11",
+          "method": "structural \u2014 the reconstruction tree is the pinned vintage, whose committed price store ends 2026-08-10 because the stranded collect never wrote 08-11; only the missing sessions up to the ceiling are overlaid, so a later bar is never written rather than filtered at read time",
+          "live_price_source_commit": "079e39fa052b31d84f4d695ac01cbb63c2538d79",
+          "files_written": 3596,
+          "session_rows_added": 3596,
+          "files_unchanged": 10,
+          "fence": {
+            "files_scanned": 4392,
+            "ceiling": "2026-08-11",
+            "max_date_found": "2026-08-11",
+            "violations": 0,
+            "state_digest": "7b15a7eedaf7",
+            "pass_ceiling": "2026-08-11",
+            "ahead_of_pass": [],
+            "ahead_of_pass_count": 0,
+            "ahead_of_pass_note": "round-the-clock instruments (FX crosses, crypto) whose bar for a later calendar date already existed in the pinned vintage at bake time. Not lookahead \u2014 the bake read exactly these \u2014 and never equities."
+          }
+        },
+        "plans_baseline_commit": "079e39fa052b31d84f4d695ac01cbb63c2538d79",
+        "plans_baseline_count": 201,
+        "plans_baseline_ancestry": "ancestor_of_origin_main",
+        "plans_baseline_post_bake_proof": {
+          "required": "at least one plan with recorded_at >= 2026-08-12",
+          "found": 25,
+          "sample": [
+            "ALB-BULL-20260805",
+            "AMR-BULL-20260810",
+            "ASTS-BULL-20260805",
+            "BKSY-BULL-20260805",
+            "BNY-BULL-20260810"
+          ]
+        },
+        "live_wins_from": "2026-08-12",
+        "option_resolution": {
+          "thetadata_store": null,
+          "note": "Recorded because an absent option store would normally be a silent difference from the live path. Measured on the shipped tree: 199 of 201 plans carry option_contract=null, including ALL 25 plans the live 2026-08-12 nightly originated and all 25 from 2026-08-10. Null is the live behaviour here, so the reconstruction matches it rather than being degraded by it."
+        }
+      },
+      "harness_fidelity": {
+        "reference_as_of": "2026-08-10",
+        "reference_rank_by": "us_prophet_v2",
+        "reference_buy_rows": 69,
+        "rebuilt_buy_rows": 66,
+        "jaccard": 0.875,
+        "exact_order_match": false,
+        "missing_from_rebuild": [
+          "ALB",
+          "BKSY",
+          "JOBY",
+          "SMR",
+          "UEC",
+          "UUUU"
+        ],
+        "extra_in_rebuild": [
+          "BLDR",
+          "KALU",
+          "RDW"
+        ],
+        "floor": 0.85,
+        "passes_floor": true,
+        "measured": true,
+        "method": "the same tree, alpha rebuild and builder, run one session earlier and scored against the board the pinned vintage already ships",
+        "measures": [
+          "that supplying the gitignored Russell close panel reproduces the board built with the lane's own copy of it",
+          "that the alpha rebuild lands on the tree's own session",
+          "that build_stock_library is deterministic over unchanged inputs"
+        ],
+        "does_not_measure": [
+          "the price overlay \u2014 the vintage store already ends 2026-08-10, so no tracked file gains a session on this pass",
+          "truncation of a bar past the ceiling \u2014 computed, then discarded unwritten",
+          "the minted plan set \u2014 originate_plans is not called on the control pass"
+        ],
+        "reference_sha256": "3e86c1088fbafa8124e6753035072bfde19cfbb4e2ea01a606f8edfe065cf65e",
+        "waived": false
+      },
+      "wall_clock_exposure": {
+        "measurable": true,
+        "admission_gate": {
+          "reads_wall_clock": false,
+          "anchor": "_eb_board_session_date -> alpha.json as_of, then the price panel's trading-day calendar",
+          "anchored_to": "2026-08-11",
+          "note": "the #5289/#5304 timezone lookahead is fixed on this path; verified at the pinned vintage, not assumed"
+        },
+        "residual_wall_clock_inputs": [
+          {
+            "site": "build_stock_library.main()'s days-to-next-earnings closure",
+            "reaches": "per-row earnings_days / days_to_earnings context \u2014 a size-down chip, not an admission test",
+            "status": "measured; every row whose value moved is named below"
+          },
+          {
+            "site": "_next_monthly_opex_days() -> gex_confirm.assess(opex_days=)",
+            "reaches": "pre-OPEX suppression",
+            "status": "measured null for THIS date pair: August 2026 monthly opex is the 21st, so 10 days out at the bake date and 8 at the run date \u2014 both outside the last-2-sessions window the suppression uses"
+          },
+          {
+            "site": "current_risk_overlay()'s FOMC leg -> stock_score verb veto",
+            "reaches": "T3 macro tax and the verb veto",
+            "status": "measured null for THIS date pair: the next FOMC is 2026-09-16, so 36 days out at the bake date and 34 at the run date \u2014 both bucket to 0.0"
+          }
+        ],
+        "residual_channel_note": "Three channels, not one. The two beyond the earnings chip are inert for this particular date pair rather than structurally unreachable, and they are named with the measurement that makes them inert so a reader can re-check it for a different night instead of inheriting the claim.",
+        "bake_date": "2026-08-11",
+        "run_date": "2026-08-13",
+        "timezone_half": "pinned \u2014 every vintage subprocess runs TZ=UTC",
+        "date_half": "not pinnable from outside the builder's closure; measured instead",
+        "calendar_names": 1978,
+        "rows_affected": [
+          {
+            "ticker": "KEYS",
+            "days_to_earnings_at_bake_date": 7.0,
+            "days_to_earnings_at_run_date": 5.0
+          },
+          {
+            "ticker": "ORCL",
+            "days_to_earnings_at_bake_date": 28.0,
+            "days_to_earnings_at_run_date": 26.0
+          },
+          {
+            "ticker": "HEI",
+            "days_to_earnings_at_bake_date": 13.0,
+            "days_to_earnings_at_run_date": 11.0
+          },
+          {
+            "ticker": "RBRK",
+            "days_to_earnings_at_bake_date": 16.0,
+            "days_to_earnings_at_run_date": 14.0
+          }
+        ],
+        "rows_affected_count": 4
+      },
+      "executing_commit": "af8a0a360fefc5afabc3824ddf1e13257255141a",
+      "receipt": "data/prophet/origination_receipts/backfill-20260811-682443a04f695bc9.json",
+      "counts": {
+        "buy_rows": 69,
+        "admitted": 46,
+        "duplicate_id_blocked": 36,
+        "reorigination_blocked": 0,
+        "reorigination_blocked_rows": 0,
+        "eligible_after_skips": 10,
+        "minted": 3,
+        "collided": 0,
+        "chronology_refused": 7,
+        "still_refused": 0
+      },
+      "reconciliation": {
+        "admission_identity": {
+          "statement": "admitted == duplicate_id_blocked + reorigination_blocked_rows + eligible_after_skips",
+          "lhs": 46,
+          "rhs": 46,
+          "holds": true
+        },
+        "disposition_identity": {
+          "statement": "eligible_after_skips + reorigination_blocked == minted + collided + chronology_refused + still_refused",
+          "lhs": 10,
+          "rhs": 10,
+          "holds": true
+        }
+      },
+      "minted": [
+        {
+          "plan_id": "HCC-BULL-20260805",
+          "ticker": "HCC",
+          "direction": "BULL",
+          "recorded_at": "2026-08-11",
+          "price_basis_date": "2026-08-11",
+          "entry": 97.79,
+          "trigger": 97.79,
+          "invalidation": 75.41,
+          "admission_class": "patience",
+          "entry_status": "hold",
+          "entry_zone": {
+            "schema": "prophet.entry_zone/v1",
+            "low": 85.99,
+            "high": 85.99,
+            "chase_above": 97.79,
+            "pct_from_entry": -12.07,
+            "zone_class": "reset_band",
+            "stance": "wait",
+            "basis": "the 10- and 20-day average band under the last price, from the entry ladder",
+            "basis_zh": "\u6700\u65b0\u4ef7\u4e0b\u65b9\u7684 10 \u65e5\u4e0e 20 \u65e5\u5747\u7ebf\u533a\u95f4\uff0c\u6765\u81ea\u5165\u573a\u9636\u68af",
+            "price_basis_date": "2026-08-11",
+            "expiry_sessions": 19,
+            "expiry_date": "2026-09-07",
+            "conversion_class": "pullback",
+            "conversion_evidence": "nothing here says this name has sold off hard first",
+            "conversion_evidence_zh": "\u6ca1\u6709\u8ff9\u8c61\u663e\u793a\u8be5\u80a1\u5148\u7ecf\u5386\u8fc7\u6df1\u5ea6\u56de\u843d",
+            "converts_on_expiry": false,
+            "extension": {
+              "daily_stoch_k": 100.0,
+              "htf_stoch_k": 75.37,
+              "daily_extended": true,
+              "htf_extended": false,
+              "both_extended": false,
+              "threshold": 80.0,
+              "htf_timeframe": 3,
+              "source": "price_store_stoch_rsi",
+              "reason": null,
+              "asof": "2026-08-11"
+            },
+            "leader_pullback": {
+              "leader_pullback": false,
+              "state": null,
+              "pullback_high": null,
+              "days_in_state": null,
+              "construction_era": null,
+              "state_asof": null,
+              "context_states": [
+                "PULLBACK",
+                "RESET_TURN"
+              ],
+              "source": "unavailable",
+              "reason": "ticker is outside the leader-pullback organ's universe"
+            },
+            "era": "anticipation-v1-2026-08-08"
+          },
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/HCC-BULL-20260805.json"
+        },
+        {
+          "plan_id": "LNG-BULL-20260707",
+          "ticker": "LNG",
+          "direction": "BULL",
+          "recorded_at": "2026-08-11",
+          "price_basis_date": "2026-08-11",
+          "entry": 265.4,
+          "trigger": 265.4,
+          "invalidation": 213.56,
+          "admission_class": "patience",
+          "entry_status": "hold",
+          "entry_zone": {
+            "schema": "prophet.entry_zone/v1",
+            "low": 260.3,
+            "high": 261.3,
+            "chase_above": 265.4,
+            "pct_from_entry": -1.73,
+            "zone_class": "reset_band",
+            "stance": "wait",
+            "basis": "the 10- and 20-day average band under the last price, from the entry ladder",
+            "basis_zh": "\u6700\u65b0\u4ef7\u4e0b\u65b9\u7684 10 \u65e5\u4e0e 20 \u65e5\u5747\u7ebf\u533a\u95f4\uff0c\u6765\u81ea\u5165\u573a\u9636\u68af",
+            "price_basis_date": "2026-08-11",
+            "expiry_sessions": 34,
+            "expiry_date": "2026-09-28",
+            "conversion_class": "pullback",
+            "conversion_evidence": "nothing here says this name has sold off hard first",
+            "conversion_evidence_zh": "\u6ca1\u6709\u8ff9\u8c61\u663e\u793a\u8be5\u80a1\u5148\u7ecf\u5386\u8fc7\u6df1\u5ea6\u56de\u843d",
+            "converts_on_expiry": false,
+            "extension": {
+              "daily_stoch_k": 30.85,
+              "htf_stoch_k": 68.36,
+              "daily_extended": false,
+              "htf_extended": false,
+              "both_extended": false,
+              "threshold": 80.0,
+              "htf_timeframe": 3,
+              "source": "price_store_stoch_rsi",
+              "reason": null,
+              "asof": "2026-08-11"
+            },
+            "leader_pullback": {
+              "leader_pullback": false,
+              "state": "NONE",
+              "pullback_high": null,
+              "days_in_state": 31.0,
+              "construction_era": "leader-pullback-v0-2026-08-08",
+              "state_asof": "2026-08-07",
+              "context_states": [
+                "PULLBACK",
+                "RESET_TURN"
+              ],
+              "source": "us_leader_pullback",
+              "reason": "organ state NONE is not an open controlled pullback"
+            },
+            "era": "anticipation-v1-2026-08-08"
+          },
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/LNG-BULL-20260707.json"
+        },
+        {
+          "plan_id": "NXPI-BULL-20260811",
+          "ticker": "NXPI",
+          "direction": "BULL",
+          "recorded_at": "2026-08-11",
+          "price_basis_date": "2026-08-11",
+          "entry": 236.4,
+          "trigger": 236.4,
+          "invalidation": 224.17,
+          "admission_class": "patience",
+          "entry_status": "bounce_wait",
+          "entry_zone": {
+            "schema": "prophet.entry_zone/v1",
+            "low": 235.0,
+            "high": 235.0,
+            "chase_above": 236.4,
+            "pct_from_entry": -0.59,
+            "zone_class": "reset_band",
+            "stance": "wait",
+            "basis": "the 10- and 20-day average band under the last price, from the entry ladder",
+            "basis_zh": "\u6700\u65b0\u4ef7\u4e0b\u65b9\u7684 10 \u65e5\u4e0e 20 \u65e5\u5747\u7ebf\u533a\u95f4\uff0c\u6765\u81ea\u5165\u573a\u9636\u68af",
+            "price_basis_date": "2026-08-11",
+            "expiry_sessions": 10,
+            "expiry_date": "2026-08-25",
+            "conversion_class": "washout",
+            "conversion_evidence": "the board reads this as a name coming off a low",
+            "conversion_evidence_zh": "\u770b\u677f\u628a\u5b83\u5f52\u5165\u4f4e\u4f4d\u56de\u5347\u7684\u4e00\u7c7b",
+            "converts_on_expiry": true,
+            "extension": {
+              "daily_stoch_k": 56.47,
+              "htf_stoch_k": 0.93,
+              "daily_extended": false,
+              "htf_extended": false,
+              "both_extended": false,
+              "threshold": 80.0,
+              "htf_timeframe": 3,
+              "source": "price_store_stoch_rsi",
+              "reason": null,
+              "asof": "2026-08-11"
+            },
+            "leader_pullback": {
+              "leader_pullback": false,
+              "state": null,
+              "pullback_high": null,
+              "days_in_state": null,
+              "construction_era": null,
+              "state_asof": null,
+              "context_states": [
+                "PULLBACK",
+                "RESET_TURN"
+              ],
+              "source": "unavailable",
+              "reason": "ticker is outside the leader-pullback organ's universe"
+            },
+            "era": "anticipation-v1-2026-08-08"
+          },
+          "horizon_days": 45,
+          "option_contract": null,
+          "plan_path": "site/prophet/plans/NXPI-BULL-20260811.json"
+        }
+      ],
+      "collided": [],
+      "chronology_refused": [
+        {
+          "ticker": "ARR",
+          "plan_id": "ARR-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-07'"
+          ],
+          "class": "chronology"
+        },
+        {
+          "ticker": "MP",
+          "plan_id": "MP-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-05'"
+          ],
+          "class": "chronology"
+        },
+        {
+          "ticker": "MTDR",
+          "plan_id": "MTDR-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-07'"
+          ],
+          "class": "chronology"
+        },
+        {
+          "ticker": "ORA",
+          "plan_id": "ORA-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-07'"
+          ],
+          "class": "chronology"
+        },
+        {
+          "ticker": "SPHR",
+          "plan_id": "SPHR-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-05'"
+          ],
+          "class": "chronology"
+        },
+        {
+          "ticker": "SSD",
+          "plan_id": "SSD-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-07'"
+          ],
+          "class": "chronology"
+        },
+        {
+          "ticker": "TREX",
+          "plan_id": "TREX-BULL-20260810",
+          "reason": "engine_refusal:clock_provenance",
+          "detail": [
+            "formation_date '2026-08-10' postdates tier_event_date '2026-08-07'"
+          ],
+          "class": "chronology"
+        }
+      ],
+      "still_refused": [],
+      "already_published": {
+        "count": 36,
+        "plan_ids": [
+          "AGNT-BULL-20260406",
+          "ALB-BULL-20260805",
+          "AMR-BULL-20260810",
+          "APH-BULL-20260731",
+          "ASTS-BULL-20260805",
+          "AYI-BULL-20260731",
+          "BKSY-BULL-20260805",
+          "CENX-BULL-20260805",
+          "CRC-BULL-20260805",
+          "CRCL-BULL-20260810",
+          "CVCO-BULL-20260810",
+          "DHR-BULL-20260521",
+          "DXYZ-BULL-20260810",
+          "ENR-BULL-20260731",
+          "EU-BULL-20260805",
+          "EW-BULL-20260810",
+          "FANG-BULL-20260810",
+          "FBRT-BULL-20260805",
+          "FSLR-BULL-20260805",
+          "FTI-BULL-20260810",
+          "GNL-BULL-20260805",
+          "HEI-BULL-20260723",
+          "HRMY-BULL-20260731",
+          "KEYS-BULL-20260810",
+          "META-BULL-20260810",
+          "OKLO-BULL-20260805",
+          "ORCL-BULL-20260810",
+          "PTEN-BULL-20260810",
+          "RES-BULL-20260805",
+          "STLD-BULL-20260805",
+          "STZ-BULL-20260805",
+          "TKO-BULL-20260810",
+          "URG-BULL-20260805",
+          "VAL-BULL-20260805",
+          "WBD-BULL-20260805",
+          "XPEL-BULL-20260805"
+        ],
+        "note": "36 id(s) already published on main \u2014 the SAME episode, not a refusal and not a collision",
+        "live_wins_within_window": [
+          {
+            "plan_id": "ALB-BULL-20260805",
+            "ticker": "ALB",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "AMR-BULL-20260810",
+            "ticker": "AMR",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "ASTS-BULL-20260805",
+            "ticker": "ASTS",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "BKSY-BULL-20260805",
+            "ticker": "BKSY",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "CRC-BULL-20260805",
+            "ticker": "CRC",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "CVCO-BULL-20260810",
+            "ticker": "CVCO",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "DXYZ-BULL-20260810",
+            "ticker": "DXYZ",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "FANG-BULL-20260810",
+            "ticker": "FANG",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "HEI-BULL-20260723",
+            "ticker": "HEI",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "KEYS-BULL-20260810",
+            "ticker": "KEYS",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          },
+          {
+            "plan_id": "URG-BULL-20260805",
+            "ticker": "URG",
+            "reason": "live_origination_wins_duplicate_id",
+            "live_recorded_at": "2026-08-12"
+          }
+        ],
+        "live_wins_within_window_count": 11
+      },
+      "never_reconstructed": {
+        "dates": [
+          "2026-08-03",
+          "2026-08-04",
+          "2026-08-05",
+          "2026-08-06"
+        ],
+        "ruling": "us-board-frozen-alpha-2026-08",
+        "ruling_path": "data/us_board_ledger/disclosed_gaps.json",
+        "reason": "Those boards ranked on a factor panel frozen at 2026-07-31 (gradeable: false, backfillable: false). That ruling is untouched by this window: the 2026-08-11 panel is not frozen, and its one missing session is recoverable from the store the 2026-08-12 collect wrote."
       }
     }
   ]

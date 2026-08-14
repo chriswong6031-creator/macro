@@ -8,7 +8,7 @@
   "scope_en": "Euro area aggregate (current EA21 composition), not the European Union. STOXX Europe 600 is broader market context only.",
   "scope_zh": "欧元区当前21国总量（EA21），并非欧盟整体。STOXX Europe 600仅作更广泛市场背景。",
   "asof": "2026-08-13",
-  "built": "2026-08-13 13:29 UTC",
+  "built": "2026-08-14 05:11 UTC",
   "regime": {
     "quad": "Q1",
     "name": "Goldilocks",
@@ -204,17 +204,17 @@
   },
   "risk": {
     "state": "watch",
-    "top_score": 68,
+    "top_score": 65,
     "dominant_en": "Parabolic extension / exhaustion",
     "dominant_zh": "抛物线伸展／透支",
     "h21": 0.2,
     "measure": ">=5% index pullback within h business days (measured on this market's own history)",
     "trajectory": {
-      "intensity": 68.5,
+      "intensity": 65.1,
       "peak": 96.2,
       "peak_days_ago": 22,
-      "off_peak": 27.8,
-      "velocity": 7.7,
+      "off_peak": 31.2,
+      "velocity": 4.4,
       "phase": "rising",
       "reached_risk": true,
       "state_now": "watch",
@@ -228,33 +228,33 @@
         73.8,
         65.7,
         67.7,
-        66.9,
-        78.6,
+        67.9,
+        80.4,
         76.6,
         85.3,
         85.9,
         89.7,
-        79.8,
+        79.6,
         75.0,
-        70.2,
-        71.0,
+        70.4,
+        70.8,
         76.0,
         60.3,
         60.7,
         63.7,
-        65.3,
+        65.1,
         51.2,
-        58.1,
-        68.5
+        53.8,
+        65.1
       ],
-      "spark_pts": "3.0,3.3 6.9,3.0 10.8,4.7 14.7,13.0 18.7,16.6 22.6,15.7 26.5,16.0 30.4,10.8 34.3,11.7 38.2,7.8 42.1,7.6 46.0,5.9 50.0,10.3 53.9,12.4 57.8,14.6 61.7,14.2 65.6,12.0 69.5,19.0 73.4,18.8 77.3,17.4 81.3,16.7 85.2,23.0 89.1,19.9 93.0,15.3",
+      "spark_pts": "3.0,3.3 6.9,3.0 10.8,4.7 14.7,13.0 18.7,16.6 22.6,15.7 26.5,15.6 30.4,10.0 34.3,11.7 38.2,7.8 42.1,7.6 46.0,5.9 50.0,10.4 53.9,12.4 57.8,14.5 61.7,14.3 65.6,12.0 69.5,19.0 73.4,18.8 77.3,17.4 81.3,16.8 85.2,23.0 89.1,21.8 93.0,16.8",
       "spark_peak": {
         "x": 6.9,
         "y": 3.0
       },
       "spark_last": {
         "x": 93.0,
-        "y": 15.3
+        "y": 16.8
       },
       "spark_w": 96,
       "spark_h": 26,
@@ -286,22 +286,22 @@
         "tier": "A",
         "label_en": "US rate shock",
         "label_zh": "美债利率冲击",
-        "score": 72.8,
+        "score": 69.2,
         "band": "caution",
         "firing_legs": [
           {
             "leg": "us_rate_10y",
-            "pctile": 0.779,
+            "pctile": 0.737,
             "confirmed": false
           },
           {
             "leg": "us_real_rate",
-            "pctile": 0.718,
+            "pctile": 0.688,
             "confirmed": false
           },
           {
             "leg": "us_rate_2y",
-            "pctile": 0.687,
+            "pctile": 0.652,
             "confirmed": false
           }
         ]
@@ -546,7 +546,7 @@
     {
       "metric": "cpi_yoy",
       "asof": "2026-06",
-      "age_days": 73,
+      "age_days": 74,
       "state": "fresh",
       "label_en": "Inflation",
       "label_zh": "通胀"
@@ -554,7 +554,7 @@
     {
       "metric": "gdp",
       "asof": "2026-04",
-      "age_days": 134,
+      "age_days": 135,
       "state": "fresh",
       "label_en": "Growth",
       "label_zh": "增长"
@@ -562,7 +562,7 @@
     {
       "metric": "unemployment",
       "asof": "2026-06",
-      "age_days": 73,
+      "age_days": 74,
       "state": "fresh",
       "label_en": "Labour",
       "label_zh": "就业"
@@ -570,7 +570,7 @@
     {
       "metric": "yield_10y",
       "asof": "2026-01",
-      "age_days": 224,
+      "age_days": 225,
       "state": "stale",
       "label_en": "Rates",
       "label_zh": "利率"

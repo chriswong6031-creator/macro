@@ -289,6 +289,23 @@ def _git_output(repo: Path, *args: str, input_text: str | None = None) -> str:
     ).stdout.strip()
 
 
+def _logging_git(tmp_path: Path, log: Path) -> Path:
+    """Put a transparent git wrapper on PATH and record one command name per call."""
+    fakebin = tmp_path / "logging-bin"
+    fakebin.mkdir(exist_ok=True)
+    real_git = subprocess.run(
+        ["which", "git"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    wrapper = fakebin / "git"
+    wrapper.write_text(
+        "#!/usr/bin/env bash\n"
+        f"printf '%s\\n' \"$1\" >> {str(log)!r}\n"
+        f'exec {real_git!r} "$@"\n'
+    )
+    wrapper.chmod(0o755)
+    return fakebin
+
+
 def _untracked_collision_fixture(tmp_path: Path, *, collision: bool) -> tuple[Path, str]:
     """A lane behind origin/main with either an exact local collision or a no-op."""
     bare = tmp_path / "origin.git"
@@ -402,6 +419,42 @@ def test_ignored_collision_reproduces_detach_failure_then_quarantines_safely(tmp
     assert (lane / path).read_text() == "main"
     assert runner_only.read_text() == "keep"
     assert (lane / "README").read_text() == "runner dirt"
+
+
+def test_untracked_collision_scan_uses_one_target_tree_process_for_many_paths(tmp_path):
+    """Regression for the four-minute render retry setup measured on 2026-08-13.
+
+    The retained runner had about 15k ignored outputs. The old helper launched
+    `git ls-tree` once per path, then repeated the loop while moving collisions.
+    The target tree must be enumerated once regardless of candidate count.
+    """
+    lane, collision_path = _untracked_collision_fixture(tmp_path, collision=True)
+    noise_dir = lane / "data/generated/noise"
+    noise_dir.mkdir(parents=True)
+    for i in range(400):
+        (noise_dir / f"ignored-{i:04d}.json").write_text("runner-only")
+    info_exclude = lane / ".git" / "info" / "exclude"
+    with info_exclude.open("a") as f:
+        f.write("data/generated/noise/\n")
+
+    runner_temp = tmp_path / "runner-temp"
+    runner_temp.mkdir()
+    command_log = tmp_path / "git-commands.log"
+    fakebin = _logging_git(tmp_path, command_log)
+    result = run_sh(
+        "push_quarantine_untracked_collisions origin/main",
+        env={
+            "GITHUB_ACTIONS": "true",
+            "RUNNER_TEMP": str(runner_temp),
+            "PATH": f"{fakebin}:{os.environ['PATH']}",
+        },
+        cwd=lane,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    commands = command_log.read_text().splitlines()
+    assert commands.count("ls-tree") == 1, commands
+    assert not (lane / collision_path).exists()
+    assert (noise_dir / "ignored-0399.json").read_text() == "runner-only"
 
 
 def _daily_engine_commit_step() -> tuple[dict, dict]:
@@ -587,6 +640,74 @@ def test_metadata_replay_preserves_new_main_without_fetching_promised_blobs(tmp_
     assert _git_output(bare, "show", f"{published}:code.txt") == "new code"
     assert not index_path.exists()
     assert not _object_is_local(lane, stable_blob)
+
+
+def test_metadata_replay_batches_git_processes_for_large_render_delta(tmp_path):
+    """A large render delta must not translate into per-path Git processes.
+
+    Run 31728157679 changed 2,817 paths; the old helper launched three ls-tree
+    calls and one update-index call for every path, so each metadata retry took
+    about four minutes and repeatedly lost to the five-minute hot-tape writer.
+    """
+    repo = tmp_path / "repo"
+    _init_repo(repo)
+    site = repo / "site"
+    site.mkdir()
+    for i in range(400):
+        (site / f"page {i:04d}.html").write_text(f"base {i}\n")
+    odd_paths = ["space name.html", "tab\tname.html", "line\nname.html"]
+    for path in odd_paths:
+        (site / path).write_text("base odd\n")
+    _git_output(repo, "add", "site")
+    _git_output(repo, "commit", "-m", "base")
+    base = _git_output(repo, "rev-parse", "HEAD")
+
+    for i in range(400):
+        (site / f"page {i:04d}.html").write_text(f"render {i}\n")
+    for path in odd_paths:
+        (site / path).write_text("render odd\n")
+    _git_output(repo, "commit", "-am", "render")
+    render_commit = _git_output(repo, "rev-parse", "HEAD")
+
+    _git_output(repo, "checkout", "-q", "-b", "onto", base)
+    (repo / "concurrent.txt").write_text("main survives\n")
+    _git_output(repo, "add", "concurrent.txt")
+    _git_output(repo, "commit", "-m", "advance main")
+    onto = _git_output(repo, "rev-parse", "HEAD")
+
+    command_log = tmp_path / "git-commands.log"
+    fakebin = _logging_git(tmp_path, command_log)
+    result = run_sh(
+        """
+        replay=$(push_metadata_replay_commit "$BASE" "$ONTO" "$RENDER" \
+          "render: batched metadata replay" "$INDEX")
+        echo "replay=$replay"
+        """,
+        env={
+            "BASE": base,
+            "ONTO": onto,
+            "RENDER": render_commit,
+            "INDEX": str(tmp_path / "publish.index"),
+            "RUNNER_TEMP": str(tmp_path),
+            "PATH": f"{fakebin}:{os.environ['PATH']}",
+        },
+        cwd=repo,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    replay = next(
+        line.removeprefix("replay=")
+        for line in result.stdout.splitlines()
+        if line.startswith("replay=")
+    )
+    commands = command_log.read_text().splitlines()
+    assert commands.count("diff-tree") == 2, commands
+    assert commands.count("ls-tree") == 0, commands
+    assert commands.count("update-index") == 1, commands
+    assert _git_output(repo, "rev-parse", f"{replay}^") == onto
+    assert _git_output(repo, "show", f"{replay}:site/page 0399.html") == "render 399"
+    for path in odd_paths:
+        assert _git_output(repo, "show", f"{replay}:site/{path}") == "render odd"
+    assert _git_output(repo, "show", f"{replay}:concurrent.txt") == "main survives"
 
 
 def test_metadata_replay_reports_a_real_same_path_conflict(tmp_path):
