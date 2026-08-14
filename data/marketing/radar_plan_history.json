@@ -2,6 +2,42 @@
   "schema": "marketing.radar_plan_history/v1",
   "plans": [
     {
+      "as_of": "2026-08-13",
+      "tickers": [
+        "AMRC",
+        "APO",
+        "AVGO",
+        "BIIB",
+        "BRK.B",
+        "BRVE",
+        "CARR",
+        "CMC",
+        "CVCO",
+        "DAR",
+        "ENR",
+        "EU",
+        "FANG",
+        "FCX",
+        "FTI",
+        "GTES",
+        "HD",
+        "HRMY",
+        "KALU",
+        "MGY",
+        "NGVT",
+        "PEP",
+        "PNAQ",
+        "QUBT",
+        "SMR",
+        "SOFI",
+        "STWI",
+        "TTC",
+        "TTD",
+        "VAL",
+        "XLV"
+      ]
+    },
+    {
       "as_of": "2026-08-11",
       "tickers": [
         "AGNT",
@@ -67,13 +103,6 @@
         "LPG",
         "SSPC",
         "XIIIU"
-      ]
-    },
-    {
-      "as_of": "2026-08-05",
-      "tickers": [
-        "SOC",
-        "TEAM"
       ]
     }
   ]

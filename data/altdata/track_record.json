@@ -1,16 +1,16 @@
 {
   "schema": "altdata_track_record.v1",
-  "as_of": "2026-08-09",
-  "scored_total": 0,
-  "open": 468,
+  "as_of": "2026-08-13",
+  "scored_total": 58,
+  "open": 424,
   "unscored_soft": 0,
   "expired": 0,
   "overall": {
-    "n": 0,
-    "hits": 0,
-    "misses": 0,
-    "hit_rate": null,
-    "dir_accuracy": null
+    "n": 58,
+    "hits": 38,
+    "misses": 20,
+    "hit_rate": 0.655,
+    "dir_accuracy": 0.448
   },
   "by_conviction": {
     "high": {
@@ -28,20 +28,20 @@
       "dir_accuracy": null
     },
     "low": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 58,
+      "hits": 38,
+      "misses": 20,
+      "hit_rate": 0.655,
+      "dir_accuracy": 0.448
     }
   },
   "by_kind": {
     "rel_return": {
-      "n": 0,
-      "hits": 0,
-      "misses": 0,
-      "hit_rate": null,
-      "dir_accuracy": null
+      "n": 58,
+      "hits": 38,
+      "misses": 20,
+      "hit_rate": 0.655,
+      "dir_accuracy": 0.448
     },
     "level": {
       "n": 0,
@@ -52,8 +52,99 @@
     }
   },
   "by_regime": {},
-  "calibration_note": "No theses scored yet \u2014 the track record begins once the first check-by dates pass. Keep conviction modest until it does.",
-  "recent": [],
-  "calibration_note_zh": "\u5c1a\u65e0\u5224\u65ad\u88ab\u8bc4\u5206 \u2014\u2014 \u5f85\u9996\u6279\u6838\u67e5\u65e5\u5230\u671f\u540e\u5f00\u59cb\u7d2f\u79ef\u6218\u7ee9\uff1b\u5728\u6b64\u4e4b\u524d\u7f6e\u4fe1\u4fdd\u6301\u514b\u5236\u3002",
+  "calibration_note": "58 scored, hit-rate 0.655 (directional accuracy 0.448).",
+  "recent": [
+    {
+      "id": "2026-07-14-AEP-altconv",
+      "subject": "AEP alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1121,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-POWL-altconv",
+      "subject": "POWL alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.1095,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-CCJ-altconv",
+      "subject": "CCJ alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0668,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-QUBT-altconv",
+      "subject": "QUBT alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0839,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-C-altconv",
+      "subject": "C alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.0534,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-COF-altconv",
+      "subject": "COF alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0645,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-ADSK-altconv",
+      "subject": "ADSK alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.1446,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-HRL-altconv",
+      "subject": "HRL alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": -0.034,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-14-IBM-altconv",
+      "subject": "IBM alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "miss",
+      "realized": -0.218,
+      "check_by": "2026-08-12"
+    },
+    {
+      "id": "2026-07-13-LULU-altconv",
+      "subject": "LULU alt-data convergence",
+      "lean": "overweight",
+      "conviction": "low",
+      "outcome": "hit",
+      "realized": 0.0326,
+      "check_by": "2026-08-11"
+    }
+  ],
+  "calibration_note_zh": "\u5df2\u8bc4\u5206 58 \u6761\uff0c\u547d\u4e2d\u7387 0.655\uff08\u65b9\u5411\u51c6\u786e\u7387 0.448\uff09\u3002",
   "note": "Alt-data convergence theses graded vs SPY. Context-only \u2014 the signal earns a scored vote only once this track record shows forward edge."
 }

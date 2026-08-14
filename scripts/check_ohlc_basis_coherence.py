@@ -62,7 +62,8 @@ night for a documented property.
 A marker JSON (data/quality/ohlc_basis_coherence.json) records every evaluation.
 
 Exit codes: 0 coherent (noise tier allowed), 3 split detected (annotated), 2 unexpected
-error. ``--selftest`` runs synthetic assertions over the classifier and exits 0/1.
+error OR a refusal (no panel found AND data/ is sparse-omitted — see scripts/sparse_guard.py).
+``--selftest`` runs synthetic assertions over the classifier and exits 0/1.
 """
 from __future__ import annotations
 
@@ -74,6 +75,9 @@ from pathlib import Path
 import pandas as pd
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
 
 # float-comparison floor: below this a "violation" is parquet round-tripping, not data.
 EPS = 1e-6
@@ -164,6 +168,15 @@ def run(data_dir: Path, panels: list[str] | None = None, hard_tol: float = HARD_
         share_tol: float = SHARE_TOL, min_bad_bars: int = MIN_BAD_BARS) -> int:
     names = panels if panels is not None else discover_panels(data_dir)
     if not names:
+        # A sparse session worktree omits data/, so discover_panels sees no namespace
+        # and this path exits 0 over nothing — a vacuous pass on the split-basis
+        # tripwire. Refuse BEFORE the marker write: a write into an omitted tree does
+        # not MODIFY the committed artifact, it REPLACES it (measured 2026-08-13 in
+        # this very repo — data/quality/ohlc_basis_coherence.json 7,901 bytes -> 58,
+        # the same shape that truncated a 7.3 MB parquet to 45 KB).
+        refusal = refuse_if_vacuous(0, trees_for(data_dir), "ohlc-basis-coherence-vacuous")
+        if refusal:
+            return 2
         print("::warning title=ohlc-basis-coherence::no breadth panel carries the "
               "closes+high+low triple — nothing to check", flush=True)
         _write_marker(data_dir, {"panels": {}, "splits": 0, "status": "no_panels"})

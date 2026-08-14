@@ -32,9 +32,9 @@
 })();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Technical Lab — Macro Dashboard</title>
-<script>try{var th=localStorage.getItem('theme');if(th)document.documentElement.setAttribute('data-theme',th);var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var th=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',th||'dark');var l=localStorage.getItem('lang');if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=90137296">
-<link rel="stylesheet" href="assets/css/1b876be2.css?v=1b876be2">
+<link rel="stylesheet" href="assets/css/ce97faa0.css?v=ce97faa0">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 
@@ -293,7 +293,7 @@
   <p class="tl-sub"><span class="l-en">Signal screener + descriptive backtest profiles. Build confluence filters to find names where multiple signals align. Drill into any ticker for a per-stock signal breakdown. Descriptive framing — survivor mega-cap universe, not a verdict.</span><span class="l-zh">信号筛选器 + 描述性回测档案。构建多因子共振筛选条件，聚焦多信号同向股票。点击任意标的查看个股信号分解。描述性研究框架 — 幸存大盘股宇宙，非结论性研究。</span></p>
   <div class="tl-meta">
     <span class="chip tag-equities"><span class="l-en">Technical Signals</span><span class="l-zh">技术信号</span></span>
-    <span class="chip" id="hero-ts">2026-08-11 05:31 UTC</span>
+    <span class="chip" id="hero-ts">2026-08-13 15:30 UTC</span>
     <span class="chip" id="hero-n-signals">195 <span class="l-en">signals</span><span class="l-zh">信号</span></span>
     <span class="chip" id="hero-n-stocks">239 <span class="l-en">universe</span><span class="l-zh">覆盖标的</span></span>
     
@@ -515,7 +515,7 @@
   <!-- Combo detail (hidden until row clicked) -->
   <div id="cb-detail" style="display:none;">
     <div style="margin:0 0 10px;">
-      <button onclick="tlComboBack()" style="font-size:12px;color:var(--link);background:none;border:none;cursor:pointer;padding:0;">
+      <button onclick="tlComboBack()" style="font-size:12px;color:var(--ink-link, var(--link));background:none;border:none;cursor:pointer;padding:0;">
         ← <span class="l-en">Back to leaderboard</span><span class="l-zh">返回排行榜</span>
       </button>
     </div>
@@ -688,7 +688,7 @@
       <!-- Signal detail pane (hidden until row clicked) -->
       <div id="lab-detail" style="display:none;">
         <div style="margin-bottom:10px;">
-          <button onclick="tlShowCatalog()" style="font-size:12px;color:var(--link);background:none;border:none;cursor:pointer;padding:0;">
+          <button onclick="tlShowCatalog()" style="font-size:12px;color:var(--ink-link, var(--link));background:none;border:none;cursor:pointer;padding:0;">
             ← <span class="l-en">Back to catalog</span><span class="l-zh">返回目录</span>
           </button>
         </div>
@@ -792,7 +792,7 @@
             <span class="l-en">Active Buy</span>
             <span class="l-zh">活跃买入</span>
           </div>
-          <div class="pv" id="prof-active" style="color:var(--link)">—</div>
+          <div class="pv" id="prof-active" style="color:var(--ink-link, var(--link))">—</div>
         </div>
         <div class="perf-cell">
           <div class="pk">
@@ -1648,7 +1648,7 @@ function tlBuilderUpdate() {
       '<div class="row"><span class="k">' + L('vs random','对比随机') + '</span><b>' + _per10Edge(hit.edge_wr_test) + '</b></div>' +
       '<div class="row"><span class="k">' + L('Entries/yr','年均进场') + '</span><b>' + (hit.fires_per_year || 0).toFixed(1) + '</b></div>' +
       '<div class="row"><span class="k">' + L('Both eras?','两期均稳?') + '</span><b>' + (hit.consistent ? L('yes','是') : L('recent only','仅近期')) + '</b></div>';
-    noteEl.innerHTML = '<a style="color:var(--link);cursor:pointer;" onclick="tlCombosSide(\'' + side + '\');tlOpenCombo(\'' + hit.id + '\')">' +
+    noteEl.innerHTML = '<a style="color:var(--ink-link, var(--link));cursor:pointer;" onclick="tlCombosSide(\'' + side + '\');tlOpenCombo(\'' + hit.id + '\')">' +
       L('full record →','完整记录 →') + '</a>';
     return;
   }
@@ -2108,7 +2108,7 @@ window.tlOpenProfile = function(tk) {
   Object.keys(famGroups).sort().forEach(function(fam) {
     var isFundamental = fam.indexOf('fundamental') >= 0 || fam.indexOf('insider') >= 0;
     listHtml += '<div class="family-divider">' + esc(_familyLabel(fam));
-    if (isFundamental) listHtml += ' <span style="color:var(--warn);font-size:9.5px;">' + L('(display-only)','（仅供展示）') + '</span>';
+    if (isFundamental) listHtml += ' <span style="color:var(--ink-warn, var(--warn));font-size:9.5px;">' + L('(display-only)','（仅供展示）') + '</span>';
     listHtml += '</div><div class="sig-state-list">';
     famGroups[fam].forEach(function(sig) {
       var isOn = !!sig.state;

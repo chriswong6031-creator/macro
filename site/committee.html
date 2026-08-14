@@ -48,13 +48,13 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
+<script>try{var t=localStorage.getItem('theme');document.documentElement.setAttribute('data-theme',t||'dark');var l=localStorage.getItem('lang')||(function(){try{var L=navigator.languages||[navigator.language||navigator.userLanguage||''],i;for(i=0;i<L.length;i++)if((L[i]||'').toLowerCase().slice(0,2)==='zh')return'zh';if(/Shanghai|Hong_Kong|Macau|Urumqi|Chongqing|Harbin|Kashgar|Chungking/.test(Intl.DateTimeFormat().resolvedOptions().timeZone||''))return'zh';}catch(e){}return'';})();if(l)document.documentElement.setAttribute('data-lang',l);}catch(e){}</script>
 <link rel="stylesheet" href="theme.css?v=90137296">
 <script>
   window.SUPABASE_CFG = {"url": "https://fsldfzlxyavsuwqbceod.supabase.co", "anonKey": "sb_publishable_f33VG8fZuyIZPl_lZIDX3w_RFuuZtpv", "ref": "fsldfzlxyavsuwqbceod"};
-  window.COMMITTEE_GENERATED = "2026-08-12 23:24";
+  window.COMMITTEE_GENERATED = "2026-08-13 23:13";
 </script>
-<link rel="stylesheet" href="assets/css/e754f2e0.css?v=e754f2e0">
+<link rel="stylesheet" href="assets/css/0d2e90ad.css?v=0d2e90ad">
 <link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
 <link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
 </head>
@@ -499,7 +499,7 @@
     </div>
     <div class="plain-eng">
       <strong><span class="l-en">In plain English:</span><span class="l-zh">用白话说：</span></strong>
-      <span class="l-en">This is a curated map of the brain — engines grouped into four regions (US Equity, China &amp; Intl, Signals &amp; Options, Macro &amp; Meta), each linked to the sectors, regimes, and theses they reason about. Bright <span style="color:var(--up)">green</span> and <span style="color:var(--down)">red</span> pulses are the only <em>graded</em> signals (co-firing confirms / contradictions). Thin structural links are for legibility (display-only). Toggle "all nodes" to bring back every other node — the full radar thesis fan and the raw data-plumbing underlay. Zoom and pan to explore; click any node for its connections.</span><span class="l-zh">这是大脑的精选地图——引擎分为四个区域（美股、中国及国际、信号与期权、宏观与元），分别连接至其推理的板块、周期和论点。亮<span style="color:var(--up)">绿色</span>和<span style="color:var(--down)">红色</span>脉冲是唯一<em>评分</em>信号（共触发确认/矛盾）。细结构连线仅供展示。切换"全部节点"可显示所有其他节点——完整的雷达论点扇形和原始数据管道底层。缩放平移以探索；点击任意节点查看其连接。</span>
+      <span class="l-en">This is a curated map of the brain — engines grouped into four regions (US Equity, China &amp; Intl, Signals &amp; Options, Macro &amp; Meta), each linked to the sectors, regimes, and theses they reason about. Bright <span style="color:var(--ink-up, var(--up))">green</span> and <span style="color:var(--ink-down, var(--down))">red</span> pulses are the only <em>graded</em> signals (co-firing confirms / contradictions). Thin structural links are for legibility (display-only). Toggle "all nodes" to bring back every other node — the full radar thesis fan and the raw data-plumbing underlay. Zoom and pan to explore; click any node for its connections.</span><span class="l-zh">这是大脑的精选地图——引擎分为四个区域（美股、中国及国际、信号与期权、宏观与元），分别连接至其推理的板块、周期和论点。亮<span style="color:var(--ink-up, var(--up))">绿色</span>和<span style="color:var(--ink-down, var(--down))">红色</span>脉冲是唯一<em>评分</em>信号（共触发确认/矛盾）。细结构连线仅供展示。切换"全部节点"可显示所有其他节点——完整的雷达论点扇形和原始数据管道底层。缩放平移以探索；点击任意节点查看其连接。</span>
     </div>
     <div class="cm-loading" id="graph_loading"><span class="l-en">Loading synapse map…</span><span class="l-zh">加载突触地图中…</span></div>
     <div class="graph-wrap" id="graph_wrap">
@@ -865,7 +865,7 @@
 </div><!-- #cm_content -->
 
 <script src="supabase.js?v=8596965f" defer></script>
-<script src="watchstore.js?v=2"></script>
+<script src="watchstore.js?v=5"></script>
 <!-- Shared nav chrome: settings-gear (theme + language live inside it), account system, mega-menu. -->
 <script src="theme.js?v=2a51e41d" defer></script>
 <script>
@@ -2589,14 +2589,14 @@
         + '<div style="font-size:10px;color:var(--muted);word-break:break-all;margin-bottom:6px">'+esc(n.id)+'</div>';
 
       if (conns.confirms.length) {
-        html += '<div class="graph-info-section" style="color:var(--up)">'+(isZhS?'确认（评分）':'Confirms (graded)')+'</div>';
+        html += '<div class="graph-info-section" style="color:var(--ink-up, var(--up))">'+(isZhS?'确认（评分）':'Confirms (graded)')+'</div>';
         conns.confirms.slice(0,8).forEach(function(nb){
           html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
         });
         if (conns.confirms.length > 8) html += '<span class="graph-nbr-chip" style="color:var(--muted)">+' + (conns.confirms.length-8) + '</span>';
       }
       if (conns.contradicts.length) {
-        html += '<div class="graph-info-section" style="color:var(--down)">'+(isZhS?'矛盾（评分）':'Contradicts (graded)')+'</div>';
+        html += '<div class="graph-info-section" style="color:var(--ink-down, var(--down))">'+(isZhS?'矛盾（评分）':'Contradicts (graded)')+'</div>';
         conns.contradicts.slice(0,8).forEach(function(nb){
           html += '<span class="graph-nbr-chip" data-id="'+esc(nb.id)+'">'+esc(nb.label)+'</span>';
         });
@@ -3209,9 +3209,9 @@
       if (regimeItem) {
         if (regimeChipEl) {
           regimeChipEl.textContent = '';
-          regimeChipEl.innerHTML = '<span class="l-en" style="color:var(--warn,#e6a817)">'
+          regimeChipEl.innerHTML = '<span class="l-en" style="color:var(--ink-warn, var(--warn,#e6a817))">'
             + escB(regimeItem.summary_en) + '</span>'
-            + '<span class="l-zh" style="color:var(--warn,#e6a817)">'
+            + '<span class="l-zh" style="color:var(--ink-warn, var(--warn,#e6a817))">'
             + escB(regimeItem.summary_zh) + '</span>';
         }
         if (regimeRowEl) regimeRowEl.classList.add('tr-regime-low');
@@ -3347,7 +3347,7 @@
         var staleEl = document.getElementById('brief_stale_list');
         if (staleEl && (d.what_is_stale || []).length) {
           var r2 = renderItems(d.what_is_stale, 3, function (s) {
-            return '<div style="font-size:13px;margin-bottom:3px;color:var(--down)">'
+            return '<div style="font-size:13px;margin-bottom:3px;color:var(--ink-down, var(--down))">'
               + escB(s.id || '') + ': ' + escB(s.age_hours != null ? s.age_hours + 'h old' : 'age unknown') + '</div>';
           });
           staleEl.innerHTML = '<div style="font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px"><span class="l-en">Stale</span><span class="l-zh">过期</span></div>' + r2.html;
@@ -3447,7 +3447,7 @@
         if (covEl) {
           covEl.innerHTML = '<span class="l-en">Coverage: </span><span class="l-zh">覆盖率: </span>'
             + escB(String(cov))
-            + (staleCount ? ' &bull; <span style="color:var(--down)">' + staleCount + '<span class="l-en"> stale leg(s)</span><span class="l-zh"> 个过期腿</span></span>' : '');
+            + (staleCount ? ' &bull; <span style="color:var(--ink-down, var(--down))">' + staleCount + '<span class="l-en"> stale leg(s)</span><span class="l-zh"> 个过期腿</span></span>' : '');
         }
 
         var legsEl = document.getElementById('brief_pathway_legs');
@@ -3549,7 +3549,7 @@
       // rs.status === 'warn': context may be stale — amber notice, not a failure
       var rs = memo.run_status || {};
       html += '<div style="margin-bottom:10px;padding:6px 10px;border-radius:6px;font-size:12px;'
-        + 'border:1px solid var(--warn,#e6a817);color:var(--warn,#e6a817)">'
+        + 'border:1px solid var(--warn,#e6a817);color:var(--ink-warn, var(--warn,#e6a817))">'
         + '<span class="l-en"><strong>Context notice:</strong> '
         + esc(rs.degradation_reason || 'Cortex context may be stale.')
         + (rs.context_stale ? ' Context as-of: ' + esc(rs.context_as_of || '') + '.' : '')
@@ -4161,7 +4161,7 @@
     var walclStale = (d.quality && d.quality.walcl_stale_days != null) ? d.quality.walcl_stale_days
                    : (d.fed && d.fed.walcl_stale_days != null) ? d.fed.walcl_stale_days : null;
     var walclChip = (walclStale != null && walclStale > 5)
-      ? '<span class="lq-state-chip" style="color:var(--warn);background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
+      ? '<span class="lq-state-chip" style="color:var(--ink-warn, var(--warn));background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
         + '<span class="l-en">WALCL ' + walclStale + 'd stale</span>'
         + '<span class="l-zh">WALCL 数据滞后 ' + walclStale + ' 天</span></span>'
       : '';
@@ -4175,7 +4175,7 @@
         + '<span class="l-en">' + escT(stateEnLabel) + '</span>'
         + '<span class="l-zh">' + escT(stateZhLabel) + '</span>'
         + '</span>'
-        + (d.degraded ? '<span style="font-size:11px;font-weight:700;color:var(--warn);padding:2px 8px;border-radius:5px;background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
+        + (d.degraded ? '<span style="font-size:11px;font-weight:700;color:var(--ink-warn, var(--warn));padding:2px 8px;border-radius:5px;background:color-mix(in srgb,var(--warn) 12%,var(--panel2))">'
             + '<span class="l-en">DEGRADED</span><span class="l-zh">数据降级</span></span>' : '')
         + walclChip
         + '</div>'
@@ -4558,7 +4558,7 @@
           + '</div>'
           + '<div style="display:flex;flex-wrap:wrap;gap:6px">'
           + activeFlags.map(function (f) {
-              return '<span style="background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;color:var(--warn)">'
+              return '<span style="background:color-mix(in srgb,var(--warn) 12%,var(--panel2));border:1px solid color-mix(in srgb,var(--warn) 30%,transparent);border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;color:var(--ink-warn, var(--warn))">'
                 + '<span class="l-en">' + f.en + '</span><span class="l-zh">' + f.zh + '</span>'
                 + '</span>';
             }).join('')
@@ -4605,7 +4605,7 @@
             return '<div style="font-size:12px;display:flex;align-items:center;gap:10px">'
               + '<span style="font-weight:600;color:var(--text)">' + escT(ev.date) + '</span>'
               + '<span style="color:var(--muted)">' + escT(types) + '</span>'
-              + (ev.td_to != null ? '<span style="color:var(--info);font-size:11px">+' + ev.td_to + 'd</span>' : '')
+              + (ev.td_to != null ? '<span style="color:var(--ink-info, var(--info));font-size:11px">+' + ev.td_to + 'd</span>' : '')
               + '</div>';
           }).join('')
         + '</div>';
@@ -4738,7 +4738,7 @@
     // Stale marker: grey the whole strip
     if (d.stale === true) {
       el.classList.add('mp-stale');
-      html += '<span class="mp-chip" style="color:var(--warn);opacity:1">'
+      html += '<span class="mp-chip" style="color:var(--ink-warn, var(--warn));opacity:1">'
         + '<span class="l-en">stale</span><span class="l-zh">已过期</span></span>';
     } else {
       el.classList.remove('mp-stale');

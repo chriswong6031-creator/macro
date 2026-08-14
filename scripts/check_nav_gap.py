@@ -31,6 +31,10 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from scripts.sparse_guard import refuse_if_vacuous, trees_for  # noqa: E402
+
 # A menu with less declared breathing room than this (px) above the bar reads as
 # "no padding". Healthy pages sit at 18-26px; the jammed ones at 0-8px. 14px is a
 # comfortable floor between the two populations.
@@ -257,14 +261,24 @@ def _gap_for_page(path: str):
     return (gap, kind)
 
 
-def find_jammed(site_dir: str = "site"):
-    """Return [(file, gap_px, kind)] for every menu page whose top gap < MIN_GAP."""
+def find_pages(site_dir: str = "site"):
+    """Return every HTML page under `site_dir` — the set this guard walks.
+
+    Split out from `find_jammed` so `main` can tell "no page is jammed" (the
+    normal green) from "no page was read at all" (a tree that isn't there).
+    """
     files = []
     for root, _dirs, names in os.walk(site_dir):
         for n in names:
             if n.endswith(".html"):
                 files.append(os.path.join(root, n))
     files.sort()
+    return files
+
+
+def find_jammed(site_dir: str = "site"):
+    """Return [(file, gap_px, kind)] for every menu page whose top gap < MIN_GAP."""
+    files = find_pages(site_dir)
     jammed = []
     for path in files:
         res = _gap_for_page(path)
@@ -279,6 +293,15 @@ def find_jammed(site_dir: str = "site"):
 def main(argv: list[str] | None = None) -> int:
     argv = argv if argv is not None else sys.argv[1:]
     site_dir = argv[0] if argv else "site"
+
+    # A sparse session worktree omits site/, so the walk reads zero pages and the
+    # OK below certifies a ≥14px gap on a set that is empty — a vacuous pass.
+    # "Nothing is jammed" is only a green when something was actually measured.
+    pages = find_pages(site_dir)
+    refusal = refuse_if_vacuous(len(pages), trees_for(site_dir), "check-nav-gap-vacuous")
+    if refusal:
+        print(f"check_nav_gap: REFUSED — {refusal}", file=sys.stderr)
+        return 1
 
     jammed = find_jammed(site_dir)
     if jammed:

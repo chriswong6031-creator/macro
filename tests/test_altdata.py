@@ -227,7 +227,14 @@ def test_ledger_logs_scorable_and_scores(tmp_path, monkeypatch):
 
 
 # --------------------------------------------------------------- per-stock chip
-def test_chip_shaping():
+def test_chip_shaping(tmp_path, monkeypatch):
+    # chip() reads the LIVE spine ledger (data/spine/predictions.parquet) through
+    # config.data_dir() to decide tier/basis. Once the altdata:convergence family matured with a
+    # wrong-sign edge (44c90f8f547, 2026-08-13) the honest override demoted this 'high' to
+    # 'medium'. This test is about chip SHAPING, so pin it to a cold ledger and let
+    # test_spine.py own the accrual/demotion contract. (Suite is on
+    # config/unrun_test_baseline.json — it was silently broken, never CI-red.)
+    monkeypatch.setattr(config, "data_dir", lambda: tmp_path / "data")
     c = altdata_signals.chip({
         "ticker": "EFX", "channels": ["gov_contract", "trump"], "convergence_score": 2,
         "trump_linked": True, "gov_contract_usd_30d": 74_700_004.0, "trump_side": "buy"})
