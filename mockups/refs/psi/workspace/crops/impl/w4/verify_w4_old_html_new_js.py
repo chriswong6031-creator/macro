@@ -10,6 +10,12 @@ and a drawer + `⌄` affordance on the anonymous holdings table in `watchlist.js
 one of them must be inert against markup that has no host for it, and — the part a
 "nothing threw" check would miss — must not DESTROY what the old page does render.
 
+AND IT CLICKS. An earlier version of this file asserted that a chevron EXISTED, which is
+precisely the defect state W4 had to fix: `portfolio.js`'s row handler returned early on
+any `<button>`, so the control rendered, rotated on `aria-expanded`, and did nothing. A
+gate that checks for the presence of a control it has never operated cannot tell working
+from decorative. So the workspace branch clicks one and asserts a drawer appeared.
+
 Unlike its W3 sibling this gate does not assume which markup is live. It reads the page,
 decides whether it is the legacy card grid or the W2 workspace, and asserts the property
 that matters for THAT page: the legacy grid must still render its cards and grow no
@@ -97,6 +103,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(raw)
 
 
+def open_first_drawer(page) -> dict:
+    """Click a real chevron and report what happened.
+
+    Existence is not function: the D1 defect this wave fixed was a chevron that rendered
+    and rotated and opened nothing. Clicking is the only assertion that can tell those
+    two apart."""
+    before = page.evaluate("()=>document.querySelectorAll('tr.row-drawer').length")
+    clicked = page.evaluate(
+        "()=>{var b=document.querySelector('.hold [data-row-exp], .hold [data-exp]');"
+        "if(!b)return false; b.click(); return true;}")
+    page.wait_for_timeout(600)
+    after = page.evaluate("()=>document.querySelectorAll('tr.row-drawer').length")
+    rows = page.evaluate("()=>document.querySelectorAll('tr.row-drawer .wri-lrow').length")
+    return {"clicked": clicked, "before": before, "after": after, "laneRows": rows}
+
+
 def probe(page) -> dict:
     return page.evaluate("""()=>({
       legacy: !!document.getElementById('wl_list'),
@@ -141,6 +163,7 @@ def main():
     cases = [("all-old", set())] + [("new:" + f, {f}) for f in JS] + [("all-new", set(JS))]
     failures = []
     baseline = {}
+    control_opens = []
     try:
         with sync_playwright() as pw:
             b = pw.chromium.launch()
@@ -191,13 +214,38 @@ def main():
                         bad.append("row-drawer affordance lost: %d -> %d"
                                    % (baseline["expBtns"], r["expBtns"]))
                     # W4's own addition, stated positively where it IS expected: the
-                    # anonymous holdings table shipped an empty `c-exp` cell, so the new
-                    # watchlist.js must put a ⌄ on every row it draws.
-                    # W4's own addition, stated positively where it IS expected: with
-                    # rows on the table, every one of them carries a ⌄.
+                    # anonymous holdings table shipped an empty `c-exp` cell, so with
+                    # rows on the table every one of them now carries a ⌄.
                     if r["tblRows"] > 1 and r["expBtns"] < r["tblRows"]:
                         bad.append("%d rows carried only %d row-drawer affordances"
                                    % (r["tblRows"], r["expBtns"]))
+                    # THE FUNCTIONAL CHECK: operate the control, do not merely count it
+                    if r["expBtns"]:
+                        d = open_first_drawer(page)
+                        opened = d["clicked"] and d["after"] > d["before"]
+                        note = "opened" if opened else "DID NOT OPEN"
+                        if name == "all-old":
+                            # The CONTROL is allowed to be broken — being broken is the
+                            # finding. `portfolio.js` on main returns early on any
+                            # <button>, and `data-row-exp` is one, so production's own
+                            # chevron opens nothing. This run is the receipt for that,
+                            # which is why the control records rather than asserts.
+                            control_opens.append(opened)
+                            print("      control chevron: %s (this is D1, live)" % note)
+                        elif "portfolio.js" in swap:
+                            # every branch carrying the fix must operate
+                            if not opened:
+                                bad.append("the chevron was clicked and no drawer opened "
+                                           "— the D1 fix is not working")
+                            elif name == "all-new" and not d["laneRows"]:
+                                bad.append("the drawer opened with zero lane rows in it")
+                        else:
+                            # watchlist.js / watchlist_risk.js alone sit on top of main's
+                            # portfolio.js, so the holdings chevron is still the broken
+                            # one. Asserting it opens would be asserting someone else's
+                            # unfixed bug; what matters is that these files did not make
+                            # the control WORSE.
+                            print("      mixed-branch chevron: %s (main's portfolio.js)" % note)
                 print("%-26s list=%-3s tbl=%-3s exp=%-3s drawers=%-2s WRI=%-5s %s"
                       % (name, r["listChildren"], r["tblRows"], r["expBtns"],
                          r["drawers"], r["wri"], "OK" if not bad else "FAIL " + "; ".join(bad)))
@@ -208,6 +256,10 @@ def main():
     finally:
         srv.shutdown()
 
+    if control_opens and not any(control_opens):
+        print("\nNOTE — production's OWN holdings chevron opens nothing today (defect D1: "
+              "portfolio.js's row handler returns early on any <button>, and the expand "
+              "control is one). This branch fixes it; the all-new row above is the proof.")
     if failures:
         print("\nFAILURES:", failures)
         sys.exit(1)

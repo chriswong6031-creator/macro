@@ -365,6 +365,13 @@
     padding-bottom:2px; }
   /* a lock shell inside a drawer is a full-width block, never a column */
   .drw .lockshell, tr.row-drawer .lockshell { grid-column:1/-1; margin-top:4px; }
+  /* The regime rail's appended cascade sentence. Emitted by `watchlist_risk.js` since
+     #3527 and styled NOWHERE — same defect class as the five `.wri-*` classes W3 found,
+     and the same remedy: it lands in the template that renders it. Muted, because the
+     rail's base read is the sentence that must survive the glance and this rides after
+     it (display-only WATCH context, never a signal). */
+  .wri-rail-chain { color:var(--muted); }
+  .wri-rail-chain a { font-weight:650; white-space:nowrap; }
   @media (max-width:720px){
     .drw-t1 { flex-direction:column; gap:7px; align-items:flex-start; }
   }

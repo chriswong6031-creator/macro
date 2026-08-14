@@ -29,7 +29,7 @@ screen is the page composing over those artifacts.
 |---|---|---|
 | 01 | Tier 1, alone | the glance read is one plain sentence + one stance word, and nothing else |
 | 02 | Tier 2, expanded (AAPL) | every section renders real data from an artifact that has it |
-| 03 | degraded name (TLT) | honest absence — five sections say what is missing, eight say something real |
+| 03 | degraded name (RIVN) | honest absence — nine sections say what is missing, five say something real |
 | 04 | the same name from a WATCHLIST row | one composer, two modes; and "not a position" instead of an invented weight |
 | 05 | the anonymous drawer | a lock shell, zero lane rows, zero gated signal |
 
@@ -44,8 +44,9 @@ than things a reviewer must re-check:
   under it.
 - **No drawer row renders a blank read.** A `.wri-lrow` with an empty `.rs` is the
   silent-empty failure this whole wave is about.
-- **The rich name's drawer contains at most 3 not-covered rows**, and
-- **the sparse name's drawer contains some, but not all.**
+- **The rich name's drawer contains at most `RICH_MAX_NA` (3) not-covered rows** — AAPL measures 2, and
+- **the sparse name's contains at least `SPARSE_MIN_NA` (5), but not all** — RIVN measures 9 of 14.
+- **Neither scene is shot over a stub.** `assert_not_stub_grade` refuses any artifact under 20KB or missing a `tech` block, before the browser starts.
 - **The large-list law, measured on a 100-name list** (no crop): twenty drawers opened
   and closed again. `100 -> 100` rows, 20 drawers open at once, 0 surviving their own
   close. Asserted because the failure here is gradual rather than obvious — the drawer
@@ -77,10 +78,24 @@ with nothing behind it, and it exits 1. `link_nightly_artifacts()` borrows the 1
 per-ticker JSONs from the main checkout for the duration of the shoot and removes the
 symlink afterwards (an untracked symlink blocks the ship-loop guard).
 
-TLT was chosen as the sparse name by **reading the artifacts**, not by guessing: it
-carries macro sensitivity and ownership filings and carries no options plane, no theme
-membership and no note trail. AAPL carries all six. Both are in the seeded book, so
-neither is a special case constructed for the shot.
+**The first version of this scene was shot over a stub, and the crop could not show it.**
+TLT's artifact in this directory is **1,354 bytes against a 59,273-byte median** — one of
+16 stub-grade files here — so the "degraded name" scene was photographing a broken FILE
+rather than a sparse name. The rationale written in this README for choosing it ("carries
+macro sensitivity and ownership filings") was falsified by its own crop: the stub has
+those KEYS but not the nested fields the rows read (`macro_sensitivity.headline.en`,
+`smart_money.n_holders`), so both rendered n/a. A plausible ticker name and a plausible
+crop hid a scene with no data in it.
+
+The replacement is chosen by **measuring every artifact in the library** with the same
+composer the DOM gets, not by picking a plausible ticker. Over the 1,613 real-size
+artifacts the absent-section count runs 2..13. **RIVN** is a real 50KB artifact that
+renders 5 real rows and 9 honest-absence rows (Events, Estimates, Balance sheet, Who's
+selling, Rate sensitivity, Options, Macro sensitivity, Ownership, Transmission);
+**AAPL** renders 12 real and 2 absent. Both counts are asserted, and
+`assert_not_stub_grade()` now refuses the whole class of file that made the first attempt
+meaningless — size AND field presence, because a file can be big and still not carry what
+a scene claims.
 
 ---
 
@@ -140,6 +155,80 @@ figures only. Dropped from the Company-notes date.
 the same string. `scripts/check_title_i18n` scans `.j2`/`.html` only, so a JS file that
 EMITS the attribute is outside its reach. Removed; the suite now pins its absence in all
 three files.
+
+---
+
+## 3a. Round 2 — what the commissioning review found, and what changed
+
+Verdict: BLOCK. Two blockers, three evidence-integrity majors, twelve minors. Every
+finding was confirmed by execution against all 1,629 production artifacts, and the two
+that mattered most were invisible to every fixture-based test in this file **for the same
+reason**: a fixture only ever contains the cases whoever wrote it thought of.
+
+**W4-R1 — the Tier-1 lead was a trade imperative on 66.6% of the library.** The lead
+rendered `entry_signal.headline` raw, and that field is written in the engine's trading
+voice: "Extended — wait for a pullback" ×588, "Buy soon — on confirmation" ×252, "Hold —
+don't add here" ×104, "Topping — protect gains" ×50 — 1,085 of 1,629 names. Packet §0
+bars imperatives outright and §7(b) bars the gain-protection phrasing by name. Cured with
+a **total de-imperative map keyed on `status`** (the engine's enum, eleven values, 1:1
+with the eleven headlines) so a reworded headline still lands on descriptive copy instead
+of falling through to passthrough. An unmapped status falls back to a trend-derived state
+line, never to the engine string. `headline` and `action` now reach the DOM at no tier.
+
+**W4-R2 — the same defect, in the tooltip slot.** The Company-notes tip quoted
+`alerts.pinned`, and 1,292 of the 1,611 names carrying a pinned note (80.2%) include a
+banned token ("BUY ZONE", "BUY SETUP", "take profit", "half size"). The row now counts
+and dates the trail and quotes none of it; the trail's canonical home is the dossier.
+
+**W4-R3 — the ENB cure covered one of the three routes it named.** `shown` had no floor,
+so the floored route printed "0.8" beside a whole number that said 1; and the capped
+route (calm 9.0 / stress 7.0, six names) printed "6.0 … 6.0" under "tightens, but not by a
+whole direction" — a false quantitative claim hiding two whole directions behind the
+display cap. `shown` now carries the same floor as `bets`, and the two BOUND cases get a
+sentence that names the bound and makes no numeric claim. All three routes tested.
+
+**W4-R4 — the stance was a constant, not a partition.** Measured: Watch **93.5%** /
+Get ready 3.6% / No action 2.9%, while this file's own prose claimed "No finding is the
+most common" — false by ~32×. The cause is visible in the per-lane rates (`selling` runs
+`elev` on 74% of the library, `estimates` on 55%), so "≥1 elevated lane → Watch" is very
+nearly "has data". The fix is not a threshold: `roleBadge` **already grades severity into
+three rungs** and an `if (role)` was flattening them. Watch is now the two severe rungs,
+Get ready the review rung or any lane signal below it. Measured after:
+**Watch 50.0% · Get ready 47.0% · No action 2.9%**.
+
+**W4-R5 — ownership severity discriminated nothing.** `insider.cluster === true` fired on
+1,133 of the 1,221 names carrying ownership data (92.8%). The row is now NEUTRAL, and not
+because a better threshold was unavailable: the `selling` LANE already owns severity on
+exactly this topic and is the calibrated surface for it. Ownership reports who and how
+many, which the lane never states, and reports no severity at all.
+
+**W4-R6 — past earnings dates read as forward-looking.** `earnings.next_date` is already
+past on **1,197 of the 1,205** names carrying one, because the artifacts bake on a cadence
+the calendar outruns. The chip was guarded for this; the state and the sentence were not,
+so the lane read "reports Jul 30" in a confident `ok` about a date that had gone. Past
+dates now report what happened and drop to `na`.
+
+**W4-R7 — the harness overwrote committed evidence before judging it.** All 25 PNGs were
+written straight into the committed directory and only then asserted over, so a failing
+run replaced good evidence with bad — and a bare `main()` at module scope meant `--help`
+did it too. It now shoots to a temp dir and promotes only on full success.
+
+**W4-R8 — the old-HTML gate checked that a chevron EXISTED.** That is precisely the D1
+defect state: a control that renders, rotates, and does nothing. It now clicks one and
+asserts a drawer opened — and in doing so produced the receipt that **D1 is live in
+production today**: the `all-old` control clicks production's own chevron and no drawer
+opens.
+
+**W4-R9 — `.wri-rail-chain` had no rule anywhere**, emitted since #3527. Styled, same
+in-file law as the five classes W3 found.
+
+**W4-R10 — three test-suite defects.** The job comment claimed the suite "skips loudly"
+without node; it exited 0 with 35 of 45 skipped, so a missing node is now a FAILURE on
+CI. The stamp test hardcoded `?v=7/5/5`, a wave-boundary latch that would red the next
+legitimate bump; it now asserts a monotonic increase against `origin/main` and retires
+itself on merge. The class-coverage test iterated a hand-written list while claiming
+derivation; it now harvests the emitted class set from the source, which is what would
+have caught `.wri-rail-chain`.
 
 ---
 

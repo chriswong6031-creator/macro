@@ -579,6 +579,46 @@ an object the page is holding anyway. The rulings a later wave inherits:
   part of the precedence: an earnings date inside five days raises the events lane to
   `elev`, but that is something to BE READY for, not something wrong — the same way the
   book-level attention stack files it.
+**Round-2 rulings absorbed into (h), binding on later waves:**
+
+- **An engine field written in the trading voice is not display copy, and it is not an
+  edge case.** `entry_signal.headline` carries an imperative on **66.6%** of the library;
+  `alerts.pinned` on **80.2%** of the names that have one. Any engine string reaching a
+  user surface needs a TOTAL de-imperative map keyed on the engine's own **enum**, not on
+  the text — a text key silently falls through to passthrough the day someone fixes a
+  typo upstream — and its fallback must be derived from other fields, never the string
+  itself. A map with a passthrough fallback is not a map.
+- **A severity mark that fires on most rows is not a mark, it is the background.** Check
+  the DISTRIBUTION of any state token before shipping it: Watch measured 93.5%, ownership
+  `watch` 92.8%. And when a mark needs re-deriving, look first for an instrument that is
+  ALREADY graded — `roleBadge` had three rungs and an `if (role)` was flattening them —
+  rather than inventing a threshold.
+- **One topic, one severity owner.** If a lane already reports severity on a subject, a
+  section about the same subject reports FACTS and no state. Two severity claims about
+  one topic dilute each other and neither can be trusted.
+- **A staleness guard on the chip is not a staleness guard on the read.** A past
+  `earnings.next_date` was correctly kept out of the countdown chip and still rendered
+  "reports <date>" in a confident `ok` — on 1,197 of 1,205 names. Guard the state and the
+  sentence, not just the decoration.
+- **A harness must not write into committed evidence before it has judged it.** Shoot to
+  a temp dir, assert, promote on success. A failing run must leave the committed crops
+  untouched, and a module-scope `main()` means even `--help` overwrites them.
+- **A gate that checks a control EXISTS has not checked the control.** The chevron that
+  rendered, rotated and opened nothing would pass any existence check. Operate it.
+- **Choose an evidence artifact by MEASURING, and refuse stub-grade inputs.** The
+  "degraded name" crop was shot over a 1,354-byte stub against a 59,273-byte median, and
+  the crop could not show it — an honest-degradation scene and a no-data scene are the
+  same picture. Size AND field presence, asserted before the browser starts.
+- **A guard must be able to tell a rule from its explanation.** Three tests in this wave
+  failed on their own comments (`stock.html?t=`, `title=`, the gain-protection phrase).
+  Match the EMIT shape, not the prose.
+- **A SKIP is not a PASS.** A node-shelled suite with node absent exits 0 having proved
+  nothing. On CI, absent tooling is a failure.
+- **Derive the set a coverage test iterates.** A hand-written class list covers exactly
+  what its author thought of, which is how `.wri-rail-chain` sat unstyled from #3527.
+- **Never latch a wave boundary into a test.** Hardcoding `?v=7` reds the NEXT legitimate
+  bump; assert monotonicity against `origin/main` so the check retires itself on merge.
+
 - **A one-name factor group is a FINDING, not a label.** `clusterLabel` returns
   `members[0]` for a group of one, so passing its label through printed "filed under
   AAPL" inside AAPL's own drawer. Carry the facts (which force, how many names) and word
