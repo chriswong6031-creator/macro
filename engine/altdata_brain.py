@@ -50,6 +50,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 from datetime import date, datetime, timezone, timedelta
 from pathlib import Path
 
@@ -179,6 +180,9 @@ _SYSTEM = (
     "     falsifier_text: string — one concrete condition that would prove this wrong, "
     "phrased as the plain condition itself. This text is shown to users under a 'Changes "
     "this read' label: never write the words 'falsified', 'falsify' or 'refuted' in it.\n"
+    "  Never write the word 'validated' in regime_read or any thesis field; say "
+    "'measured' or 'confirmed' instead. The platform reserves that word for backed "
+    "artifacts (BC-2).\n"
     "  confidence: one of \"low\",\"medium\",\"high\"."
 )
 
@@ -444,6 +448,20 @@ def _reconcile(t: dict, min_weighted: float = 0.9) -> dict:
     return t
 
 
+# BC-2: the platform reserves 'validated' for backed artifacts. LLM prose that
+# uses the word as ordinary English (even in a hedge) still trips the gate on
+# the rendered page — main went red 2026-08-14 on "rather than validated
+# capital flows". Rewrite the token; do not skip the line.
+_VALIDATED_TOKEN = re.compile(r"\bvalidated\b", re.IGNORECASE)
+
+
+def _scrub_unearned_validated(text: object) -> object:
+    """Replace the reserved token in LLM prose. Non-strings pass through."""
+    if not isinstance(text, str) or not text:
+        return text
+    return _VALIDATED_TOKEN.sub("measured", text)
+
+
 def _build_thesis(t: dict, cluster_index: dict, asof: str, cfg: dict) -> dict | None:
     if not isinstance(t, dict):
         return None
@@ -464,10 +482,13 @@ def _build_thesis(t: dict, cluster_index: dict, asof: str, cfg: dict) -> dict | 
     out = {
         "ticker": tk, "lean": lean, "conviction": conv, "action": action,
         "horizon_d": horizon,
-        "thesis": t.get("thesis"), "thesis_zh": t.get("thesis_zh"),
-        "second_order": [str(s) for s in (t.get("second_order") or []) if s][:6],
+        "thesis": _scrub_unearned_validated(t.get("thesis")),
+        "thesis_zh": t.get("thesis_zh"),
+        "second_order": [
+            str(_scrub_unearned_validated(s)) for s in (t.get("second_order") or []) if s
+        ][:6],
         "evidence": [str(e) for e in (t.get("evidence") or []) if e][:8],
-        "dissent": t.get("dissent"),
+        "dissent": _scrub_unearned_validated(t.get("dissent")),
         "weighted_score": cl.get("weighted_score"),
         "channels": cl.get("channels"),
         "rs_vs_spy_60d": cl.get("rs_vs_spy_60d"),
@@ -688,7 +709,7 @@ def synthesize(state: dict, cfg: dict | None = None, call=None,
     if not isinstance(parsed, dict):
         brief["degraded_reason"] = reason or "unparseable_reply"
         return brief
-    brief["regime_read"] = parsed.get("regime_read")
+    brief["regime_read"] = _scrub_unearned_validated(parsed.get("regime_read"))
     brief["regime_read_zh"] = parsed.get("regime_read_zh")
     conf = str(parsed.get("confidence") or "low").strip().lower()
     brief["confidence"] = conf if conf in _CONV else "low"
