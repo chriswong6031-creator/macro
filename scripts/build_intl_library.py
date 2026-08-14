@@ -412,8 +412,13 @@ def main(alpha: dict | None = None) -> dict | None:
             _icalls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
     try:
         if _icalls:
-            name_score_grader.append_name_calls(_icalls, market="INTL",
-                                                asof=str(pd.Timestamp.utcnow().date()))
+            # session stamp, not host clock — same date key the board publishes
+            # (US measured board(D)≡store(D+1) under utcnow stamping;
+            # DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES)
+            _intl_asof = (alpha or {}).get("as_of")
+            name_score_grader.append_name_calls(
+                _icalls, market="INTL",
+                asof=str(_intl_asof) if _intl_asof else str(pd.Timestamp.utcnow().date()))
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("INTL name-score grader append failed (%s)", e)
     # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-

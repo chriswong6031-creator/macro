@@ -3729,6 +3729,19 @@ CURATED_EXCLUSIVE = {
     "inline-js",
     "unrun-picks-boards",
     "intelligence-registry",
+    # 2026-08-14 wave 2: the manifest grew 180→193 jobs and the new fallback
+    # riders pushed scripts/build_free_content.py to 127 > 126, redding pack-1
+    # fleet-wide. Curated: the three NEW subject-guards whose owner-written
+    # `paths:` cover their measured import closure (dataos-foundation widened
+    # by 6 files per the audit below; momoedge/vintage covered as written).
+    # dataos-identity-seams was EVALUATED AND REJECTED — its genuine closure
+    # spans 43 files across engine/, so exclusivity would either lie about
+    # coverage or degenerate to fallback breadth; it stays inferred, like the
+    # other new riders without paths (options-estate-guards,
+    # product-experience-capture/-registry, wri-risk-core).
+    "dataos-foundation",
+    "momoedge-browser-observe",
+    "vintage-pin-fence",
 }
 
 

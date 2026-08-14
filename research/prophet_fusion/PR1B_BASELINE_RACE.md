@@ -662,6 +662,20 @@ actually showed. It says the two writes of one producer are not the same series,
 **a future rung reading the STORE would be racing a different quantity than G2 does
 here**. Filed as a §6.7.5-class provenance fact for the owning lane.
 
+**ADDENDUM 2026-08-14 — root-caused and fixed forward by the owning lane.** The two
+memories were ONE quantity under TWO DATE KEYS: the store append stamped
+`pd.Timestamp.utcnow().date()` at append time (the nightly's library band runs after
+00:00 UTC), so session D's calls landed under calendar D+1 — joining the published
+board(D) to store(D+1 **calendar**) gives close-`level` match **1.000 on all 20
+snapshot dates** and score match 1.000 on nightly-only dates. The ±6-day sweep above
+missed it because it swept session offsets while the store's keys are wall-clock
+calendar dates (the store carries 11 weekend stamps). The 22-29% same-date agreement
+is adjacent-session score autocorrelation. Fixed forward 2026-08-14 (session stamping
+via `build_stock_library._name_score_asof`; first clean session-keyed stamp
+2026-08-17); historical store rows keep wall-clock keys, so any join on THIS section's
+dates must apply the +1-calendar transform. G2 unchanged — it already races the
+published value. Full record: `DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES`.
+
 ### 12.3 `name_score` PIT-append receipt
 
 `git show <sha>:data/name_score/us_calls.parquet` into a temp file, then assert

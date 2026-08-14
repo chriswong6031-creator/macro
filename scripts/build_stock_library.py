@@ -476,6 +476,32 @@ def _collect_potential_calls(to_write) -> list[dict]:
     return calls
 
 
+def _name_score_asof(alpha_asof) -> str:
+    """The name-score ledger stamp = the board's OWN session date (the same value
+    ``wide["as_of"]`` publishes and grade_us_board.snapshot_today() keys the board
+    fossil on) — never the render host's wall clock.
+
+    Until 2026-08-14 this stamp was ``pd.Timestamp.utcnow().date()`` at append
+    time. The nightly's library band runs after 00:00 UTC, so session D's calls
+    landed under calendar date D+1 (weekend lanes minted Sat/Sun stamps), and a
+    (date, ticker) join of data/name_score/us_calls.parquet against the published
+    board compared ADJACENT SESSIONS: 22-29% agreement, |Δ| up to 99 — measured
+    board(D) ≡ store(D+1 calendar) with close-level match 1.000 on all 20 snapshot
+    dates (DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES). One quantity, two date
+    keys. Session stamping also dedupes weekend-lane echo appends into the Friday
+    stamp instead of minting thin Sat/Sun stamps (keep-FIRST PIT).
+
+    Fallback is wall-clock UTC ONLY when the session anchor is unavailable or
+    corrupt (loud — the divergence this fixed comes back for that build)."""
+    _d = _eb_board_session_date(alpha_asof, None)
+    if _d is not None:
+        return str(_d)
+    log.warning("US name-score ledger: no board session date (alpha.json as_of "
+                "missing/corrupt) — stamping with the render host's UTC date; the "
+                "store's date key may diverge from the published board for this build")
+    return str(pd.Timestamp.utcnow().date())
+
+
 _FEED_DEMOTION_BREAKER = 0.20  # R2: >20% of full recs demoting reads as a collector
 # outage, not per-name staleness — the gate disarms rather than blank most of the site.
 
@@ -4364,7 +4390,11 @@ def main() -> int:
         if _notes:
             _c["notes"] = [n for n in _notes if n.get("kind") != "rank"] or None
     try:
-        _asof = str(pd.Timestamp.utcnow().date())
+        # Stamp = the board's session date (wide["as_of"]), NOT the host clock —
+        # the store row and the snapshot fossil must share one date key
+        # (DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES; pinned by
+        # tests/test_name_score.py::test_us_store_stamp_wired_to_session_asof).
+        _asof = _name_score_asof(alpha_asof)
         _calls = _collect_potential_calls(to_write)
         if _calls:
             _n = name_score_grader.append_name_calls(_calls, market="US", asof=_asof)
