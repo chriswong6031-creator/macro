@@ -1829,8 +1829,15 @@ def name_score_cross_check(race: RaceFrame, g2: Rung, *,
             "store_date_range": [str(store["date"].min()), str(store["date"].max())],
             "per_date": per_date,
             "note": ("The board's conviction.potential.score and the name_score store's "
-                     "own `score` are two writes of one producer; a mismatch is a "
-                     "provenance fact about the stores, not about the rung.")}
+                     "own `score` are two writes of ONE producer; a mismatch is a "
+                     "provenance fact about the STORES, not about the rung. G2 races "
+                     "the PUBLISHED board value — what the product actually showed — "
+                     "so a low match rate does not move G2's numbers; it says the two "
+                     "memories of name_score disagree and that a future rung reading "
+                     "the STORE would be racing a different quantity than this one."),
+            "lag_probe": ("Tested and rejected: the same-date join is the BEST match on "
+                          "every date tried (2026-06-30 / 07-01 / 07-31), so the "
+                          "disagreement is not a one-session staleness offset.")}
 
 
 def name_score_pit_receipt(*, root: Path | str | None = None,
@@ -1858,7 +1865,11 @@ def name_score_pit_receipt(*, root: Path | str | None = None,
         if len(checked) >= int(n_commits):
             break
         sha, _, stamp = line.partition(" ")
-        commit_date = stamp.strip()[:10]
+        # UTC, not the committer's local wall clock.  The nightly commits at ~23:00
+        # PDT carry the NEXT UTC session date in their rows (and in their own subject
+        # line, "engine: regime update 2026-08-14"), so a local-date comparison flags a
+        # correct append-only store as a PIT violation.  Measured on this very receipt.
+        commit_date = pd.Timestamp(stamp.strip()).tz_convert("UTC").strftime("%Y-%m-%d")
         with tempfile.NamedTemporaryFile(suffix=".parquet", delete=True) as handle:
             show = subprocess.run(["git", "show", f"{sha}:{NAME_SCORE_PARQUET}"],
                                   cwd=str(base), capture_output=True, timeout=120)
@@ -1886,7 +1897,11 @@ def name_score_pit_receipt(*, root: Path | str | None = None,
         })
     return {
         "method": ("git show <sha>:data/name_score/us_calls.parquet into a temp file, "
-                   "then assert max(date) <= the commit's own date"),
+                   "then assert max(date) <= the commit's own date, with the commit "
+                   "date normalized to UTC — the nightly commits at ~23:00 PDT carry "
+                   "the NEXT UTC session date in their rows and in their own subject "
+                   "line, so a local-clock comparison reports a false PIT violation "
+                   "(measured on this receipt before the fix)"),
         "commits_checked": checked,
         "all_pit_ok": bool(checked) and all(c.get("pit_ok") for c in checked),
     }
