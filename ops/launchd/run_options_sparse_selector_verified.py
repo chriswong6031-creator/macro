@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Sealed, code-unarmed runtime carrier for the sparse selector.
+"""Sealed runtime carrier and explicit installer for the sparse selector.
 
-This module deliberately does *not* install a launchd job, create a production
-root, invoke git, import a selector producer, or advance a ledger.  Its only
-operational surface is an explicit, disposable-root proof used to make a later
-Mac13,1 installation reviewable.  A normal invocation is permanently refused
-before it probes the host or performs any external I/O.
+This module deliberately does *not* install or load a launchd job, create a
+selector state root, import a selector producer in this process, or advance a
+ledger.  Its two operational surfaces are explicit: a disposable-root proof
+and a persistent-runtime installation into one fixed private root.  A normal
+invocation is permanently refused before it probes the host or performs any
+external I/O.
 
 The carrier is stdlib-only so the proof boundary itself does not depend on the
 mutable conda environment it is measuring.
@@ -18,6 +19,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import socket
 import stat
 import subprocess
@@ -39,6 +41,12 @@ EXPECTED_MACHINE = "arm64"
 THETA_HOST = "127.0.0.1"
 THETA_PORT = 25503
 EXPECTED_RUNTIME_SOURCE = Path("/Users/chriswong/miniconda3/envs/plane")
+CANONICAL_ORIGIN_URL = "git@github.com:mastermindx-market-intelligence/macro.git"
+CANONICAL_ORIGIN_REF = "refs/remotes/origin/main"
+DEPLOY_KEY = Path("/Users/chriswong/.ssh/macro_dashboard_deploy")
+GIT_SSH_COMMAND = (
+    f"/usr/bin/ssh -i {DEPLOY_KEY} -o IdentitiesOnly=yes -o BatchMode=yes"
+)
 RUNTIME_PYTHON_RELATIVE = Path("bin/python3.12")
 RUNTIME_STDLIB_RELATIVE = Path("lib/python3.12")
 RUNTIME_SITE_PACKAGES_RELATIVE = RUNTIME_STDLIB_RELATIVE / "site-packages"
@@ -83,16 +91,26 @@ RUNTIME_AUXILIARY_PATHS = (
 )
 DISPOSABLE_MARKER = ".options_sparse_selector_disposable_root"
 DISPOSABLE_MARKER_BODY = b"options.sparse_selector.disposable_root/v1\n"
+PERSISTENT_RUNTIME_ROOT = Path(
+    "/Users/chriswong/.mastermind_private/options_sparse_selector_runtime_v1"
+)
+PERSISTENT_REPO_ROOT = Path("/Users/chriswong/options-sparse-selector-ops-wt")
+PERSISTENT_MARKER = ".options_sparse_selector_persistent_runtime_root"
+PERSISTENT_MARKER_BODY = b"options.sparse_selector.persistent_runtime_root/v1\n"
 MANIFEST_NAME = "runtime_closure.json"
 RUNTIME_DIRECTORY = "runtime"
 MANIFEST_SCHEMA = "options.sparse_selector_runtime_carrier/v2"
 REPO_IMPORT_SOURCE_PATHS = (
     Path("engine/options_sparse_selector.py"),
     Path("engine/private_auth_dict.py"),
+    Path("scripts/run_options_sparse_selector.py"),
+    Path("ops/launchd/run_options_sparse_selector_verified.py"),
 )
 MAX_FILE_BYTES = 512 * 1024 * 1024
+MAX_REPO_SOURCE_BYTES = 16 * 1024 * 1024
 MAX_FILES = 100_000
 MAX_TREE_BYTES = 8 * 1024 * 1024 * 1024
+MIN_PERSISTENT_FREE_BYTES = 10 * 1024 * 1024 * 1024
 
 
 class BootstrapError(RuntimeError):
@@ -965,10 +983,258 @@ def _attest_disposable_root(root: Path) -> None:
         raise BootstrapError("disposable target root contains an unexpected entry")
 
 
+def _attest_persistent_root(root: Path) -> None:
+    """Accept only the caller-created, empty, fixed persistent runtime root."""
+
+    if root != PERSISTENT_RUNTIME_ROOT:
+        raise BootstrapError("persistent target is not the fixed reviewed root")
+    if root.resolve(strict=True) != root:
+        raise BootstrapError("persistent target path contains a redirect")
+    metadata = _lstat_directory(
+        root, label="persistent target root", owner_uid=os.geteuid()
+    )
+    if stat.S_IMODE(metadata.st_mode) != 0o700:
+        raise BootstrapError("persistent target root must have mode 0700")
+    marker = root / PERSISTENT_MARKER
+    marker_metadata = _lstat_regular(
+        marker, label="persistent target marker", owner_uid=os.geteuid()
+    )
+    if stat.S_IMODE(marker_metadata.st_mode) != 0o600:
+        raise BootstrapError("persistent target marker must have mode 0600")
+    if (
+        _read_exact(marker, label="persistent target marker", maximum=256)
+        != PERSISTENT_MARKER_BODY
+    ):
+        raise BootstrapError("persistent target marker is not exact")
+    try:
+        entries = sorted(path.name for path in root.iterdir())
+    except OSError as exc:
+        raise BootstrapError("persistent target root cannot be enumerated") from exc
+    if entries != [PERSISTENT_MARKER]:
+        raise BootstrapError("persistent target root contains an unexpected entry")
+
+
+def _attest_staged_persistent_root(root: Path) -> None:
+    """Recheck the fixed marker/root after sealing and before receipt commit."""
+
+    if root != PERSISTENT_RUNTIME_ROOT:
+        raise BootstrapError("persistent target is not the fixed reviewed root")
+    if root.resolve(strict=True) != root:
+        raise BootstrapError("persistent target path contains a redirect")
+    metadata = _lstat_directory(
+        root, label="staged persistent target root", owner_uid=os.geteuid()
+    )
+    if stat.S_IMODE(metadata.st_mode) != 0o700:
+        raise BootstrapError("persistent target root must have mode 0700")
+    marker = root / PERSISTENT_MARKER
+    marker_metadata = _lstat_regular(
+        marker, label="staged persistent target marker", owner_uid=os.geteuid()
+    )
+    if (
+        stat.S_IMODE(marker_metadata.st_mode) != 0o600
+        or _read_exact(marker, label="staged persistent target marker", maximum=256)
+        != PERSISTENT_MARKER_BODY
+    ):
+        raise BootstrapError("persistent target marker changed during installation")
+    runtime = root / RUNTIME_DIRECTORY
+    runtime_metadata = _lstat_directory(
+        runtime, label="staged sealed runtime", owner_uid=os.geteuid()
+    )
+    if stat.S_IMODE(runtime_metadata.st_mode) != 0o555:
+        raise BootstrapError("staged sealed runtime mode is unsafe")
+    try:
+        entries = sorted(path.name for path in root.iterdir())
+    except OSError as exc:
+        raise BootstrapError("staged persistent target cannot be enumerated") from exc
+    if entries != [PERSISTENT_MARKER, RUNTIME_DIRECTORY]:
+        raise BootstrapError("staged persistent target contains an unexpected entry")
+
+
+def _run_git(
+    repo_root: Path, *arguments: str, timeout: int = 30
+) -> subprocess.CompletedProcess[str]:
+    try:
+        return subprocess.run(
+            [
+                "/usr/bin/git",
+                "-C",
+                str(repo_root),
+                "-c",
+                "core.hooksPath=/dev/null",
+                "-c",
+                "protocol.file.allow=never",
+                "-c",
+                f"core.sshCommand={GIT_SSH_COMMAND}",
+                *arguments,
+            ],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            cwd="/",
+            env={"LANG": "C", "LC_ALL": "C", "PATH": "/usr/bin:/bin"},
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise BootstrapError("clean release provenance cannot be read") from exc
+
+
+def _fetch_canonical_origin(repo_root: Path) -> str:
+    """Fetch only canonical ``main`` through the fixed read-only deploy key."""
+
+    key_before = _lstat_regular(
+        DEPLOY_KEY, label="selector Git deploy key", owner_uid=os.geteuid()
+    )
+    if stat.S_IMODE(key_before.st_mode) not in {0o400, 0o600}:
+        raise BootstrapError("selector Git deploy key mode is unsafe")
+    key_body = _read_exact(
+        DEPLOY_KEY, label="selector Git deploy key", maximum=64 * 1024
+    )
+    if not key_body:
+        raise BootstrapError("selector Git deploy key is empty")
+    key_after = _lstat_regular(
+        DEPLOY_KEY, label="selector Git deploy key", owner_uid=os.geteuid()
+    )
+    if _identity(key_before) != _identity(key_after):
+        raise BootstrapError("selector Git deploy key changed during attestation")
+    origin = _run_git(repo_root, "remote", "get-url", "origin")
+    if origin.returncode != 0 or origin.stdout.strip() != CANONICAL_ORIGIN_URL:
+        raise BootstrapError("selector release origin is not canonical")
+    fetched = _run_git(
+        repo_root,
+        "fetch",
+        "--quiet",
+        "--no-tags",
+        "origin",
+        f"+refs/heads/main:{CANONICAL_ORIGIN_REF}",
+        timeout=120,
+    )
+    if fetched.returncode != 0:
+        raise BootstrapError("canonical selector release fetch failed")
+    origin_after = _run_git(repo_root, "remote", "get-url", "origin")
+    if (
+        origin_after.returncode != 0
+        or origin_after.stdout.strip() != CANONICAL_ORIGIN_URL
+    ):
+        raise BootstrapError("selector release origin changed during fetch")
+    final_key = _read_exact(
+        DEPLOY_KEY, label="selector Git deploy key after fetch", maximum=64 * 1024
+    )
+    final_key_metadata = _lstat_regular(
+        DEPLOY_KEY, label="selector Git deploy key after fetch", owner_uid=os.geteuid()
+    )
+    if (
+        final_key != key_body
+        or _identity(final_key_metadata) != _identity(key_after)
+    ):
+        raise BootstrapError("selector Git deploy key changed during fetch")
+    return hashlib.sha256(key_body).hexdigest()
+
+
+def _attest_clean_release(repo_root: Path, expected_release_sha: str) -> str:
+    """Bind an installation to one clean checkout of exact ``origin/main``."""
+
+    if re.fullmatch(r"[0-9a-f]{40}", expected_release_sha) is None:
+        raise BootstrapError("expected release SHA must be 40 lowercase hex characters")
+    _lstat_directory(
+        repo_root, label="persistent release checkout", owner_uid=os.geteuid()
+    )
+    commands = (
+        ("show-toplevel", ("rev-parse", "--show-toplevel")),
+        ("origin-url", ("remote", "get-url", "origin")),
+        ("HEAD", ("rev-parse", "--verify", "HEAD^{commit}")),
+        (
+            "origin/main",
+            ("rev-parse", "--verify", "refs/remotes/origin/main^{commit}"),
+        ),
+        (
+            "worktree",
+            ("diff", "--no-ext-diff", "--quiet", "--ignore-submodules", "--"),
+        ),
+        (
+            "index",
+            (
+                "diff",
+                "--cached",
+                "--no-ext-diff",
+                "--quiet",
+                "--ignore-submodules",
+                "--",
+            ),
+        ),
+        ("status", ("status", "--porcelain=v1", "--untracked-files=all")),
+    )
+    observed: dict[str, str] = {}
+    for label, arguments in commands:
+        result = _run_git(repo_root, *arguments)
+        if result.returncode != 0:
+            raise BootstrapError(f"clean release {label} attestation failed")
+        observed[label] = result.stdout.strip()
+    try:
+        top = Path(observed["show-toplevel"]).resolve(strict=True)
+    except OSError as exc:
+        raise BootstrapError("clean release checkout root is unavailable") from exc
+    repo_real = repo_root.resolve(strict=True)
+    if repo_real != repo_root:
+        raise BootstrapError("persistent release checkout path contains a redirect")
+    if top != repo_real:
+        raise BootstrapError("repo root is not the exact Git checkout root")
+    if observed["origin-url"] != CANONICAL_ORIGIN_URL:
+        raise BootstrapError("persistent release origin is not canonical")
+    if observed["HEAD"] != expected_release_sha:
+        raise BootstrapError("checkout HEAD differs from expected release SHA")
+    if observed["origin/main"] != expected_release_sha:
+        raise BootstrapError("expected release is not the fetched origin/main")
+    if observed["status"]:
+        raise BootstrapError("persistent installation requires a clean release checkout")
+    return expected_release_sha
+
+
+def _committed_release_source_sha256(
+    repo_root: Path, release_sha: str
+) -> dict[str, str]:
+    """Hash the exact committed selector/runner sources without worktree trust."""
+
+    hashes: dict[str, str] = {}
+    for relative in REPO_IMPORT_SOURCE_PATHS:
+        object_name = f"{release_sha}:{relative.as_posix()}"
+        size_result = _run_git(repo_root, "cat-file", "-s", object_name)
+        if size_result.returncode != 0:
+            raise BootstrapError(
+                f"release source {relative.as_posix()} is unavailable at expected SHA"
+            )
+        try:
+            size = int(size_result.stdout.strip())
+        except ValueError as exc:
+            raise BootstrapError("release source size is not canonical") from exc
+        if (
+            size <= 0 or size > MAX_REPO_SOURCE_BYTES
+        ):
+            raise BootstrapError(
+                f"release source {relative.as_posix()} exceeds its byte envelope"
+            )
+        try:
+            result = subprocess.run(
+                ["/usr/bin/git", "-C", str(repo_root), "cat-file", "blob", object_name],
+                check=False,
+                capture_output=True,
+                timeout=30,
+                cwd="/",
+                env={"LANG": "C", "LC_ALL": "C", "PATH": "/usr/bin:/bin"},
+            )
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise BootstrapError("release source provenance cannot be read") from exc
+        if result.returncode != 0 or len(result.stdout) != size:
+            raise BootstrapError(
+                f"release source {relative.as_posix()} is unavailable at expected SHA"
+            )
+        hashes[relative.as_posix()] = hashlib.sha256(result.stdout).hexdigest()
+    return hashes
+
+
 def _isolated_import_acceptance(
     *, python: Path, repo_root: Path, site_packages: Path
 ) -> dict[str, str]:
-    """Use isolated mode to accept the current selector core/private auth only."""
+    """Accept the current selector core, private auth, and one-shot runner."""
 
     repo_root = repo_root.resolve(strict=True)
     _lstat_directory(repo_root, label="selector import root")
@@ -1021,7 +1287,12 @@ def _isolated_import_acceptance(
         "    location.relative_to(sealed)\n"
         "from engine import options_sparse_selector as selector\n"
         "from engine import private_auth_dict\n"
-        "assert selector.SELECTOR_RUNTIME_ARMED is False\n"
+        "from ops.launchd import run_options_sparse_selector_verified as carrier\n"
+        "from scripts import run_options_sparse_selector as runner\n"
+        "assert selector.SELECTOR_RUNTIME_ARMED is True\n"
+        "assert selector.SELECTOR_PROPOSALS_ARMED is False\n"
+        "assert carrier.SELECTOR_RUNTIME_ARMED is False\n"
+        "assert runner.PROPOSALS_ARMED is False\n"
         "assert private_auth_dict.__name__ == 'engine.private_auth_dict'\n"
         "for module in tuple(sys.modules.values()):\n"
         "    raw = getattr(module, '__file__', None)\n"
@@ -1056,33 +1327,42 @@ def _isolated_import_acceptance(
     return before
 
 
-def prove_disposable_target(
-    *,
-    source_root: Path,
-    target_root: Path,
-    repo_root: Path,
-    native_reader: Callable[[Path], NativeRecord] = _native_record,
-) -> dict[str, Any]:
-    """Snapshot and attest one caller-created disposable runtime target.
-
-    This is intentionally not an installer: it cannot write a private selector
-    root, change launchd, invoke git, or call/import selector ``advance``.
-    """
-
-    if not source_root.is_absolute() or not target_root.is_absolute() or not repo_root.is_absolute():
+def _attest_distinct_target_roots(
+    *, source_root: Path, target_root: Path, repo_root: Path
+) -> None:
+    if (
+        not source_root.is_absolute()
+        or not target_root.is_absolute()
+        or not repo_root.is_absolute()
+    ):
         raise BootstrapError("runtime source, target, and repo roots must be absolute")
-    source_real = source_root.resolve(strict=True)
-    target_real = target_root.resolve(strict=True)
-    repo_real = repo_root.resolve(strict=True)
+    try:
+        source_real = source_root.resolve(strict=True)
+        target_real = target_root.resolve(strict=True)
+        repo_real = repo_root.resolve(strict=True)
+    except OSError as exc:
+        raise BootstrapError("runtime source, target, or repo root is unavailable") from exc
     if (
         _contains(source_real, target_real)
         or _contains(target_real, source_real)
         or _contains(repo_real, target_real)
         or _contains(target_real, repo_real)
     ):
-        raise BootstrapError("disposable target must be a distinct absolute root")
-    _attest_disposable_root(target_root)
-    attest_target_profile()
+        raise BootstrapError("runtime target must be a distinct absolute root")
+
+
+def _provision_runtime_target(
+    *,
+    source_root: Path,
+    target_root: Path,
+    repo_root: Path,
+    installation: Mapping[str, str] | None = None,
+    expected_repo_import_source_sha256: Mapping[str, str] | None = None,
+    pre_manifest_attestor: Callable[[], None] | None = None,
+    native_reader: Callable[[Path], NativeRecord] = _native_record,
+) -> dict[str, Any]:
+    """Copy and seal a runtime after its target and provenance were attested."""
+
     components = _selected_source_components(source_root)
     runtime_root = target_root / RUNTIME_DIRECTORY
     runtime_root.mkdir(mode=0o700)
@@ -1129,6 +1409,12 @@ def prove_disposable_target(
             repo_root=repo_root,
             site_packages=runtime_root / RUNTIME_SITE_PACKAGES_RELATIVE,
         )
+        if (
+            expected_repo_import_source_sha256 is not None
+            and repo_import_source_sha256
+            != dict(expected_repo_import_source_sha256)
+        ):
+            raise BootstrapError("selector import sources differ from expected release")
         receipt = {
             "schema": MANIFEST_SCHEMA,
             "authority": False,
@@ -1149,6 +1435,10 @@ def prove_disposable_target(
             "native_dyld_loaded": len(natives) - 1,
             "native_files": [path.relative_to(runtime_root).as_posix() for path in natives],
         }
+        if installation is not None:
+            receipt["installation"] = dict(installation)
+        if pre_manifest_attestor is not None:
+            pre_manifest_attestor()
         manifest = target_root / MANIFEST_NAME
         _write_exclusive(manifest, _canonical_json(receipt))
         return receipt
@@ -1156,6 +1446,88 @@ def prove_disposable_target(
         # The caller owns deletion of its explicit disposable root.  The carrier
         # never recursively deletes a path supplied by an operator.
         raise
+
+
+def prove_disposable_target(
+    *,
+    source_root: Path,
+    target_root: Path,
+    repo_root: Path,
+    native_reader: Callable[[Path], NativeRecord] = _native_record,
+) -> dict[str, Any]:
+    """Snapshot and attest one caller-created disposable runtime target."""
+
+    _attest_distinct_target_roots(
+        source_root=source_root, target_root=target_root, repo_root=repo_root
+    )
+    _attest_disposable_root(target_root)
+    attest_target_profile()
+    return _provision_runtime_target(
+        source_root=source_root,
+        target_root=target_root,
+        repo_root=repo_root,
+        native_reader=native_reader,
+    )
+
+
+def install_persistent_target(
+    *,
+    source_root: Path,
+    repo_root: Path,
+    expected_release_sha: str,
+    target_root: Path | None = None,
+    native_reader: Callable[[Path], NativeRecord] = _native_record,
+) -> dict[str, Any]:
+    """Seal a clean exact release into the one caller-created private root.
+
+    The installer writes only the runtime closure and its receipt.  It never
+    creates selector state, installs/loads launchd, or invokes selector code.
+    """
+
+    target = PERSISTENT_RUNTIME_ROOT if target_root is None else target_root
+    if repo_root != PERSISTENT_REPO_ROOT:
+        raise BootstrapError("persistent repo is not the fixed dedicated checkout")
+    _attest_distinct_target_roots(
+        source_root=source_root, target_root=target, repo_root=repo_root
+    )
+    _attest_persistent_root(target)
+    try:
+        filesystem = os.statvfs(target)
+    except OSError as exc:
+        raise BootstrapError("persistent target capacity cannot be read") from exc
+    if filesystem.f_bavail * filesystem.f_frsize < MIN_PERSISTENT_FREE_BYTES:
+        raise BootstrapError("persistent target lacks the 10 GiB safety floor")
+    attest_target_profile()
+    deploy_key_sha256 = _fetch_canonical_origin(repo_root)
+    release_sha = _attest_clean_release(repo_root, expected_release_sha)
+    expected_source_sha256 = _committed_release_source_sha256(
+        repo_root, release_sha
+    )
+
+    def attest_release_unchanged() -> None:
+        _attest_clean_release(repo_root, expected_release_sha)
+        _attest_staged_persistent_root(target)
+
+    return _provision_runtime_target(
+        source_root=source_root,
+        target_root=target,
+        repo_root=repo_root,
+        installation={
+            "kind": "persistent",
+            "target_root": str(PERSISTENT_RUNTIME_ROOT),
+            "repo_root": str(PERSISTENT_REPO_ROOT),
+            "origin_url": CANONICAL_ORIGIN_URL,
+            "deploy_key": str(DEPLOY_KEY),
+            "deploy_key_sha256": deploy_key_sha256,
+            "marker": PERSISTENT_MARKER,
+            "marker_sha256": hashlib.sha256(PERSISTENT_MARKER_BODY).hexdigest(),
+            "expected_release_sha": expected_release_sha,
+            "release_sha": release_sha,
+        },
+        expected_repo_import_source_sha256=expected_source_sha256,
+        pre_manifest_attestor=attest_release_unchanged,
+        native_reader=native_reader,
+    )
 
 
 def _proof_parser(arguments: Sequence[str]) -> argparse.Namespace:
@@ -1170,20 +1542,43 @@ def _proof_parser(arguments: Sequence[str]) -> argparse.Namespace:
     return parsed
 
 
+def _persistent_parser(arguments: Sequence[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="run_options_sparse_selector_verified.py")
+    parser.add_argument("--install-persistent-target", action="store_true")
+    parser.add_argument("--source-root", type=Path, required=True)
+    parser.add_argument("--repo-root", type=Path, required=True)
+    parser.add_argument("--expected-release-sha", required=True)
+    parsed = parser.parse_args(list(arguments))
+    if not parsed.install_persistent_target:
+        raise BootstrapError("ordinary selector invocation is code-unarmed")
+    return parsed
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     arguments = tuple(sys.argv[1:] if argv is None else argv)
-    # The one explicit proof command is not a selector invocation.  Every other
-    # argv variant fails before a host probe, network/Git/SSH call, private-root
-    # creation, producer import, or external write.
-    if not arguments or arguments[0] != "--prove-disposable-target":
+    # Neither explicit carrier command is a selector invocation.  Every other
+    # argv variant fails before a host probe, Git call, private-root creation,
+    # producer import, or external write.
+    if not arguments or arguments[0] not in {
+        "--prove-disposable-target",
+        "--install-persistent-target",
+    }:
         print("options sparse selector runtime is code-unarmed", file=sys.stderr)
         return 3
-    parsed = _proof_parser(arguments)
-    receipt = prove_disposable_target(
-        source_root=parsed.source_root,
-        target_root=parsed.target_root,
-        repo_root=parsed.repo_root,
-    )
+    if arguments[0] == "--prove-disposable-target":
+        parsed = _proof_parser(arguments)
+        receipt = prove_disposable_target(
+            source_root=parsed.source_root,
+            target_root=parsed.target_root,
+            repo_root=parsed.repo_root,
+        )
+    else:
+        parsed = _persistent_parser(arguments)
+        receipt = install_persistent_target(
+            source_root=parsed.source_root,
+            repo_root=parsed.repo_root,
+            expected_release_sha=parsed.expected_release_sha,
+        )
     print(_canonical_json(receipt).decode("utf-8"))
     return 0
 

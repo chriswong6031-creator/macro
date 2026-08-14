@@ -1084,7 +1084,9 @@ jobs:
       - "ops/LIVE_FLOW_RUNBOOK.md"
       - "ops/launchd/com.mastermind.chainsnapshots.plist"
       - "ops/launchd/com.mastermind.liveflow.plist"
+      - "ops/launchd/com.mastermind.optionssparseselector.plist"
       - "ops/launchd/com.mastermind.prophetmarks.plist"
+      - "ops/launchd/run_options_sparse_selector_loop.sh"
       - "ops/launchd/run_options_sparse_selector_verified.py"
       - "ops/launchd/run_prophet_marks_loop.sh"
       - "research/DO_NOT_REBUILD.md"
@@ -1116,6 +1118,7 @@ jobs:
       - "scripts/mirror_flow_idx.py"
       - "scripts/mirror_terminal_context_r2.py"
       - "scripts/rerun_options_gates_thetadata.py"
+      - "scripts/run_options_sparse_selector.py"
       - "scripts/research/momoedge_oracle_history_replay.py"
       - "scripts/validate_options_ivspread.py"
       - "scripts/validate_options_skew.py"
@@ -1158,6 +1161,7 @@ jobs:
       - "tests/test_options_sparse_selector_prereg.py"
       - "tests/test_options_sparse_selector_bootstrap.py"
       - "tests/test_options_sparse_selector_runtime.py"
+      - "tests/test_run_options_sparse_selector.py"
       - "tests/test_options_structure_intraday.py"
       - "tests/test_private_auth_dict.py"
       - "tests/test_thetadata_store.py"
@@ -1198,14 +1202,17 @@ jobs:
         run: python -m pytest tests/test_options_episode_outcome_coverage.py -q
       - name: sparse exact-option selector preregistration (zero denominator, permanent retrospective fence, no authority)
         run: python -m pytest tests/test_options_sparse_selector_prereg.py -q
-      - name: inert sparse selector runtime + private authenticated dictionary (fail-closed authority and cache forgery)
+      - name: bounded sparse selector runtime + private authenticated dictionary (fail-closed authority and cache forgery)
         run: >-
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
           tests/test_private_auth_dict.py -q -rs
-      - name: unarmed sparse selector sealed runtime carrier (disposable proof only)
-        run: python -m pytest tests/test_options_sparse_selector_bootstrap.py -q
-      - name: inert sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
+      - name: sparse selector sealed runtime carrier + bounded paper-only canary runner
+        run: >-
+          python -m pytest
+          tests/test_options_sparse_selector_bootstrap.py
+          tests/test_run_options_sparse_selector.py -q
+      - name: sparse selector 4,096-candidate full-drain benchmark (1,024 objects, 4 MiB intent caps)
         run: >-
           SPARSE_SELECTOR_PERF=1 python -m pytest
           tests/test_options_sparse_selector_runtime.py::test_4096_candidate_benchmark
