@@ -131,13 +131,20 @@ def _normalize_paths(raw_paths: Iterable[str]) -> list[str]:
     for raw in raw_paths:
         if not isinstance(raw, str):
             raise ValueError("changed paths must be strings")
-        candidate = raw.strip().replace("\\", "/")
-        if not candidate:
+        if not raw or raw != raw.strip():
             raise ValueError("changed paths must be non-empty strings")
-        path = PurePosixPath(candidate)
-        if path.is_absolute() or ".." in path.parts:
+        if "\\" in raw or any(
+            ord(character) < 32
+            or ord(character) == 127
+            or character in {"\u0085", "\u2028", "\u2029"}
+            for character in raw
+        ):
+            raise ValueError(f"changed path {raw!r} contains an unsafe character")
+        path = PurePosixPath(raw)
+        if path.is_absolute() or ".." in path.parts or path.as_posix() != raw:
             raise ValueError(
-                f"changed path {raw!r} must be repository-relative and contain no '..'"
+                f"changed path {raw!r} must be canonical, repository-relative, "
+                "and contain no '..'"
             )
         rendered = path.as_posix()
         if rendered == ".":
@@ -161,8 +168,9 @@ def _read_paths_file(path: str) -> list[str]:
         payload = payload.get("paths")
     if not isinstance(payload, list) or not all(isinstance(item, str) for item in payload):
         raise ValueError(
-            "changed-paths file must contain a JSON string array, a {paths: [...]} "
-            "object, or one path per line"
+            "changed-paths file must contain a JSON string array, a "
+            "{paths: [...]} object, or one path per line; null is an "
+            "unknowable diff and fails closed"
         )
     return payload
 
@@ -289,9 +297,43 @@ def _is_executable(root: Path, rel: str) -> bool:
         return True
     path = root / rel
     try:
-        return bool(path.stat().st_mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
+        mode = path.lstat().st_mode
+        if not stat.S_ISREG(mode):
+            return True
+        return bool(mode & (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH))
     except OSError:
-        return False
+        mode = _git_head_mode(root, rel)
+        if mode is None:
+            return False
+        # A symlink or gitlink is an executable indirection even though its tree
+        # mode carries no ordinary x bit. Unknown non-regular entries must be
+        # reviewed, not misreported as harmless unowned text.
+        if mode & 0o170000 != 0o100000:
+            return True
+        return bool(mode & 0o111)
+
+
+def _git_head_mode(root: Path, rel: str) -> int | None:
+    """Read one submitted-tree mode even when sparse checkout omitted its blob."""
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(root), "ls-tree", "-z", "HEAD", "--", rel],
+            capture_output=True,
+            check=True,
+            timeout=10,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    entries = [entry for entry in completed.stdout.split(b"\0") if entry]
+    if len(entries) != 1 or b"\t" not in entries[0]:
+        return None
+    metadata, encoded_path = entries[0].split(b"\t", 1)
+    if os.fsdecode(encoded_path) != rel:
+        return None
+    try:
+        return int(metadata.split(b" ", 1)[0], 8)
+    except (ValueError, IndexError):
+        return None
 
 
 def _is_controlled_text(root: Path, rel: str) -> bool:

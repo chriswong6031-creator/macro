@@ -41,7 +41,7 @@ import shutil
 import subprocess
 import sys
 from dataclasses import dataclass, field, replace
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 import yaml
@@ -515,7 +515,8 @@ def resolve_changed_files(
         except json.JSONDecodeError:
             return None
         if not isinstance(parsed, list) or not all(
-            isinstance(path, str) for path in parsed
+            isinstance(path, str) and _changed_path_is_safe(path)
+            for path in parsed
         ):
             return None
         return [path for path in parsed if path] or None
@@ -565,11 +566,39 @@ def changed_files(base_ref: str) -> list[str] | None:
         except (IndexError, ValueError):
             return None
         changed = list(dict.fromkeys(path for path in changed if path))
+        # Git permits line breaks and other control characters in filenames.
+        # They cannot be transported safely through GitHub's line-oriented
+        # environment/output files and preflight's normalized path contract.
+        # Treat such a diff as unknowable so every caller fails closed instead
+        # of letting a hostile path split the scope decision or an output
+        # heredoc into attacker-chosen records.
+        if not all(_changed_path_is_safe(path) for path in changed):
+            return None
         # An empty PR comparison is unusual (ancestry-only rewrite, missing
         # objects, or wrong base). It is not proof that only always-on jobs are
         # sufficient, so widen just like a failed diff.
         return changed or None
     return None
+
+
+def _changed_path_is_safe(path: str) -> bool:
+    """Whether a Git path can cross the planner's line-oriented boundaries."""
+    if not path or path != path.strip() or "\\" in path:
+        return False
+    if any(
+        ord(character) < 32
+        or ord(character) == 127
+        or character in {"\u0085", "\u2028", "\u2029"}
+        for character in path
+    ):
+        return False
+    pure = PurePosixPath(path)
+    return (
+        not pure.is_absolute()
+        and ".." not in pure.parts
+        and pure.as_posix() == path
+        and path != "."
+    )
 
 
 def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
@@ -1828,21 +1857,29 @@ def _write_github_output(
 
     `name=value` cannot carry a newline and `reason` is free prose (a manifest
     error message reaches it verbatim on the fallback path), so every value uses
-    the heredoc form.  The delimiter is derived from the plan hash: it cannot
-    appear in compact JSON, in "true"/"false", in a hexdigest, or in prose about
-    job counts and paths.
+    the heredoc form. Each delimiter is deterministic but collision-checked
+    against every line of its value. A PR controls manifest diagnostics and Git
+    filenames, so no hash-derived delimiter may merely assume the prose cannot
+    contain it.
     """
-    delimiter = "ci_plan_" + (plan_sha[:32] or "planner_fallback")
-    payload = "".join(
-        f"{name}<<{delimiter}\n{value}\n{delimiter}\n"
-        for name, value in (
-            ("matrix", json.dumps(matrix, sort_keys=True, separators=(",", ":"))),
-            ("has_work", "true" if has_work else "false"),
-            ("plan_sha", plan_sha),
-            ("reason", reason),
-            ("changed_files", changed_files_json),
-        )
+    records = (
+        ("matrix", json.dumps(matrix, sort_keys=True, separators=(",", ":"))),
+        ("has_work", "true" if has_work else "false"),
+        ("plan_sha", plan_sha),
+        ("reason", reason),
+        ("changed_files", changed_files_json),
     )
+    payload_parts: list[str] = []
+    for name, value in records:
+        stem = f"ci_plan_{plan_sha[:32] or 'planner_fallback'}_{name}"
+        delimiter = stem
+        value_lines = set(value.splitlines())
+        suffix = 0
+        while delimiter in value_lines:
+            suffix += 1
+            delimiter = f"{stem}_{suffix}"
+        payload_parts.append(f"{name}<<{delimiter}\n{value}\n{delimiter}\n")
+    payload = "".join(payload_parts)
     # ONE append, never five: a failure between writes would leave GitHub parsing
     # a half-declared output, and the fallback path would then append a second,
     # contradicting `matrix` behind it.

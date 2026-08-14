@@ -4212,12 +4212,21 @@ jobs:
               paths = None
 
           payload = "null" if paths is None else json.dumps(paths, separators=(",", ":"))
+          # workflow_dispatch deliberately has no changed-path decision: the
+          # planner receives null and widens to the full suite. Preflight still
+          # needs a canonical, known-empty list so it can audit trusted metadata.
+          # A PR/merge-group null means the immutable diff was unknowable and
+          # must remain null so preflight refuses before any scope decision.
+          preflight_payload = "[]" if event == "workflow_dispatch" else payload
           artifact = Path(os.environ["RUNNER_TEMP"]) / "ci-changed-paths.json"
-          artifact.write_text(payload + "\n", encoding="utf-8")
+          artifact.write_text(preflight_payload + "\n", encoding="utf-8")
           with Path(os.environ["GITHUB_ENV"]).open("a", encoding="utf-8") as handle:
               handle.write(f"CI_CHANGED_FILES_JSON={payload}\n")
               handle.write(f"CI_CHANGED_PATHS_FILE={artifact}\n")
-          print(f"changed-path metadata: {payload}")
+          print(
+              f"changed-path metadata: planner={payload} "
+              f"preflight={preflight_payload}"
+          )
           PY
       - name: fast structural preflight
         run: >-

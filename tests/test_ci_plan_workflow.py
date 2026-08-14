@@ -239,6 +239,9 @@ def test_structural_preflight_runs_before_expensive_plan_and_uses_exact_paths() 
     )
     body = str(materialize["run"])
     assert "CI_CHANGED_FILES_JSON" in body
+    assert 'preflight_payload = "[]" if event == "workflow_dispatch" else payload' in body
+    assert "artifact.write_text(preflight_payload" in body
+    assert "handle.write(f\"CI_CHANGED_FILES_JSON={payload}" in body
     assert "PR_BASE_SHA" in materialize["env"]
     assert "MERGE_GROUP_BASE_SHA" in materialize["env"]
     assert body.count("changed_files(base)") == 2

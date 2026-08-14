@@ -466,6 +466,28 @@ def test_resolve_changed_files_prefers_planner_json(
     assert PACK.resolve_changed_files(None) is None
 
 
+@pytest.mark.parametrize(
+    "hostile_path",
+    [
+        "tests/safe.py\nhas_work=false",
+        "tests/safe.py\rhas_work=false",
+        "tests/safe.py\thas_work=false",
+        "tests/safe.py\u0085has_work=false",
+        "tests/safe.py\u2028has_work=false",
+        r"scripts\evil.py",
+        " scripts/evil.py",
+        "scripts/evil.py ",
+        "scripts//evil.py",
+        "./scripts/evil.py",
+    ],
+)
+def test_resolve_changed_files_rejects_unsafe_or_noncanonical_paths(
+    hostile_path: str,
+) -> None:
+    hostile = json.dumps([hostile_path])
+    assert PACK.resolve_changed_files("abc123", explicit_json=hostile) is None
+
+
 def test_plan_publishes_changed_paths_for_pack_shallow_checkout(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -724,6 +746,18 @@ def test_name_status_diff_preserves_copy_spaces_and_unicode(
     )
     assert PACK.changed_files("deadbeef") == ["docs/old name.md", "docs/新 name.md"]
     assert "--find-copies" in commands[0]
+
+
+def test_name_status_diff_rejects_control_character_filename(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    payload = "A\0tests/safe.py\nhas_work=false\0"
+    monkeypatch.setattr(
+        PACK.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(stdout=payload),
+    )
+    assert PACK.changed_files("deadbeef") is None
 
 
 def test_empty_successful_diff_fails_closed(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1798,6 +1832,27 @@ def test_github_output_is_byte_stable_and_parses_as_heredoc(tmp_path: Path) -> N
     assert outputs["changed_files"] == "null"
 
 
+def test_github_output_delimiter_cannot_be_injected_from_reason(tmp_path: Path) -> None:
+    output = tmp_path / "github_output"
+    plan_sha = "a" * 64
+    stem = f"ci_plan_{plan_sha[:32]}_reason"
+    hostile_reason = (
+        f"controlled prose\n{stem}\n{stem}_1\n"
+        "has_work<<injected\nfalse\ninjected"
+    )
+    PACK._write_github_output(
+        output,
+        matrix={"include": [{"pack": 0}]},
+        has_work=True,
+        plan_sha=plan_sha,
+        reason=hostile_reason,
+    )
+    outputs = _parse_github_output(output.read_text())
+    assert outputs["has_work"] == "true"
+    assert outputs["reason"] == hostile_reason
+    assert set(outputs) == {"matrix", "has_work", "plan_sha", "reason", "changed_files"}
+
+
 def test_matrix_mode_overrules_a_no_work_plan_without_changing_its_hash(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -2610,6 +2665,75 @@ def test_structural_preflight_reads_changed_test_from_head_outside_sparse_tree(
     assert result["metrics"]["changed_tests_examined"] == 1
 
 
+def test_structural_preflight_reads_extensionless_executable_mode_from_head(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    executable = root / "newroot" / "tool"
+    executable.parent.mkdir()
+    executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    executable.chmod(0o755)
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+    executable.unlink()  # planner sparse checkout omitted this submitted blob
+
+    result = PREFLIGHT.run_preflight(root, ["newroot/tool"])
+
+    assert result["status"] == "fail"
+    assert "unknown_executable_ownership" in _finding_codes(result)
+
+
+def test_structural_preflight_treats_sparse_symlink_as_executable_indirection(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    link = root / "newroot" / "tool"
+    link.parent.mkdir()
+    link.symlink_to("../scripts/unknown-authority")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+    link.unlink()  # planner sparse checkout omitted this submitted tree entry
+
+    result = PREFLIGHT.run_preflight(root, ["newroot/tool"])
+
+    assert result["status"] == "fail"
+    assert "unknown_executable_ownership" in _finding_codes(result)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        r"scripts\evil.py",
+        " scripts/evil.py",
+        "scripts/evil.py ",
+        "scripts//evil.py",
+        "./scripts/evil.py",
+        "scripts/evil.py\nsecond.py",
+    ],
+)
+def test_structural_preflight_rejects_noncanonical_git_paths(
+    tmp_path: Path,
+    raw: str,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    with pytest.raises(ValueError, match="changed path"):
+        PREFLIGHT.run_preflight(root, [raw])
+
+
 def test_structural_preflight_ignores_test_shaped_non_suite(tmp_path: Path) -> None:
     root = _preflight_repo(tmp_path, manifest_run="echo no pytest here")
     (root / "tests" / "test_probe.py").write_text(
@@ -2693,6 +2817,38 @@ def test_structural_preflight_cli_consumes_json_path_artifact(
     payload = json.loads(capsys.readouterr().out)
     assert payload["schema"] == PREFLIGHT.SCHEMA
     assert payload["status"] == "pass"
+
+
+def test_structural_preflight_cli_accepts_full_suite_empty_path_artifact(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    paths = tmp_path / "changed-paths.json"
+    paths.write_text("[]\n", encoding="utf-8")
+
+    assert PREFLIGHT.main(
+        ["--root", str(root), "--changed-paths-file", str(paths)]
+    ) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "pass"
+    assert payload["changed_path_count"] == 0
+
+
+def test_structural_preflight_cli_rejects_unknowable_null_path_artifact(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    paths = tmp_path / "changed-paths.json"
+    paths.write_text("null\n", encoding="utf-8")
+
+    assert PREFLIGHT.main(
+        ["--root", str(root), "--changed-paths-file", str(paths)]
+    ) == 2
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "fail"
+    assert payload["classification"] == "input_failure"
 
 
 def test_structural_preflight_cli_returns_nonzero_json_refusal(

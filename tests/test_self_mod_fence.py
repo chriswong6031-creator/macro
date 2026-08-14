@@ -20,6 +20,7 @@ import pytest
 import yaml
 
 from scripts.check_self_mod_fence import (
+    changed_files_from_git,
     check,
     selftest,
     IMMUTABLE_PATTERNS,
@@ -245,6 +246,20 @@ def test_immutable_patterns_cover_all_required_paths():
         "engine/neuralweb/capability_broker.py",
         "scripts/check_self_mod_fence.py",
         "scripts/check_grader_manifest.py",
+        "scripts/audit_unrun_tests.py",
+        "scripts/check_capability_redline.py",
+        "scripts/check_ci_trigger_closure.py",
+        "scripts/check_conflict_markers.py",
+        "scripts/check_workflow_yaml.py",
+        "scripts/ci_cancelled_run_completion.py",
+        "scripts/ci_collect_pack_evidence.py",
+        "scripts/ci_committed_scope_index.py",
+        "scripts/ci_failure_summary.py",
+        "scripts/ci_scope_dependencies.py",
+        "scripts/ci_structural_preflight.py",
+        "scripts/merge_on_green.py",
+        "scripts/run_ci_pack.py",
+        "scripts/workflow_run_source.py",
         "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
         # SA-R2/SA-R4 standout ruler files
         "engine/standout_audit.py",
@@ -498,6 +513,9 @@ def test_fences_workflow_live_check_covers_pr_and_merge_group_but_not_push():
     body = str(step["run"])
     assert "github.event.pull_request.base.sha" in body
     assert "github.event.merge_group.base_sha" in body
+    assert "--base-sha" in body
+    assert "--files " not in body
+    assert "--name-only" not in body
 
 
 def test_packed_live_check_reads_ci_changed_files_json():
@@ -505,6 +523,9 @@ def test_packed_live_check_reads_ci_changed_files_json():
     step = _fence_step_run(".github/ci/legacy-jobs.yml", LIVE_CHECK_STEP)
     body = str(step["run"])
     assert "--print-planner-files" in body
+    assert "--planner-files" in body
+    assert '"${FILE_SOURCE[@]}"' in body
+    assert "--files " not in body
     assert "CI_CHANGED_FILES_JSON malformed" in body
 
 
@@ -611,3 +632,50 @@ def test_live_check_planner_json_still_blocks_loop_plus_immutable(tmp_path):
     )
     assert result.returncode != 0
     assert "BLOCKED" in result.stderr
+
+
+def test_live_check_option_like_filename_cannot_override_loop_branch(tmp_path):
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "metabolism/argv-injection", cwd=work)
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="metabolism/argv-injection",
+        extra_env={
+            "CI_CHANGED_FILES_JSON": (
+                '["--branch","human/override","scripts/run_ci_pack.py"]'
+            )
+        },
+    )
+    assert result.returncode != 0
+    assert "BLOCKED" in result.stderr
+
+
+def test_git_file_source_preserves_immutable_side_of_rename(tmp_path, monkeypatch):
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "metabolism/rename-fence", cwd=work)
+    _git(
+        "mv",
+        "scripts/check_self_mod_fence.py",
+        "scripts/ordinary_name.py",
+        cwd=work,
+    )
+    _git("commit", "-m", "rename immutable authority away", cwd=work)
+
+    monkeypatch.chdir(work)
+    changed = changed_files_from_git("main")
+    assert changed == [
+        "scripts/check_self_mod_fence.py",
+        "scripts/ordinary_name.py",
+    ]
+    rc, message = check("metabolism/rename-fence", changed)
+    assert rc == 1
+    assert "scripts/check_self_mod_fence.py" in message
+
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="metabolism/rename-fence",
+    )
+    assert result.returncode != 0
+    assert "scripts/check_self_mod_fence.py" in result.stderr

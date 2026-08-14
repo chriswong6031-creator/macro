@@ -55,6 +55,7 @@ import argparse
 import fnmatch
 import json
 import os
+import subprocess
 import sys
 from pathlib import Path
 
@@ -75,6 +76,23 @@ IMMUTABLE_PATTERNS: list[str] = [
     "engine/neuralweb/capability_broker.py",
     "scripts/check_self_mod_fence.py",
     "scripts/check_grader_manifest.py",
+    # CI proof authorities. A loop that can edit the selector, committed index,
+    # fast refusal lane, terminal evidence, or merger can manufacture its own
+    # green proof just as surely as one that edits the workflow/manifest.
+    "scripts/audit_unrun_tests.py",
+    "scripts/check_capability_redline.py",
+    "scripts/check_ci_trigger_closure.py",
+    "scripts/check_conflict_markers.py",
+    "scripts/check_workflow_yaml.py",
+    "scripts/ci_cancelled_run_completion.py",
+    "scripts/ci_collect_pack_evidence.py",
+    "scripts/ci_committed_scope_index.py",
+    "scripts/ci_failure_summary.py",
+    "scripts/ci_scope_dependencies.py",
+    "scripts/ci_structural_preflight.py",
+    "scripts/merge_on_green.py",
+    "scripts/run_ci_pack.py",
+    "scripts/workflow_run_source.py",
     "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
     # V2-A additions (R-V2-8)
     "config/metabolism_anomaly.yml",
@@ -420,9 +438,64 @@ def parse_ci_changed_files_json(raw: str | None) -> tuple[str, list[str]]:
         parsed = json.loads(stripped)
     except json.JSONDecodeError:
         return "malformed", []
-    if not isinstance(parsed, list) or not all(isinstance(path, str) for path in parsed):
+    if not isinstance(parsed, list) or not all(
+        isinstance(path, str)
+        and path
+        and not any(
+            ord(character) < 32
+            or ord(character) == 127
+            or character in {"\u0085", "\u2028", "\u2029"}
+            for character in path
+        )
+        for path in parsed
+    ):
         return "malformed", []
-    return "ok", [path for path in parsed if path]
+    return "ok", parsed
+
+
+def changed_files_from_git(base_ref: str) -> list[str] | None:
+    """Read both sides of a rename/copy through Git's NUL-safe status stream."""
+    if not base_ref:
+        return None
+    try:
+        result = subprocess.run(
+            [
+                "git",
+                "diff",
+                "--name-status",
+                "-z",
+                "--find-renames",
+                "--find-copies",
+                f"{base_ref}...HEAD",
+            ],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    fields = result.stdout.split("\0")
+    if fields and fields[-1] == "":
+        fields.pop()
+    paths: list[str] = []
+    index = 0
+    try:
+        while index < len(fields):
+            status = fields[index]
+            index += 1
+            if not status:
+                raise ValueError("empty status")
+            if status[0] in {"R", "C"}:
+                paths.extend((fields[index], fields[index + 1]))
+                index += 2
+            else:
+                paths.append(fields[index])
+                index += 1
+    except (IndexError, ValueError):
+        return None
+    paths = list(dict.fromkeys(path for path in paths if path))
+    status, safe_paths = parse_ci_changed_files_json(json.dumps(paths))
+    return safe_paths if status == "ok" and safe_paths else None
 
 
 def print_planner_files(raw: str | None = None) -> int:
@@ -456,6 +529,16 @@ def main(argv: list[str] | None = None) -> int:
         help="List of changed files (relative paths).",
     )
     ap.add_argument(
+        "--planner-files",
+        action="store_true",
+        help="Read the exact changed paths from CI_CHANGED_FILES_JSON.",
+    )
+    ap.add_argument(
+        "--base-sha",
+        default="",
+        help="Discover both sides of changed paths from BASE...HEAD using NUL-safe git output.",
+    )
+    ap.add_argument(
         "--trailers",
         default="",
         help="Raw commit-trailer text from the PR's commits.",
@@ -480,10 +563,31 @@ def main(argv: list[str] | None = None) -> int:
     if args.print_planner_files:
         return print_planner_files()
 
+    if args.planner_files and args.base_sha:
+        print("BLOCKED: choose one changed-file authority — fail-closed.", file=sys.stderr)
+        return 1
+    if args.planner_files:
+        source_status, changed_files = parse_ci_changed_files_json(
+            os.environ.get("CI_CHANGED_FILES_JSON")
+        )
+        if source_status == "malformed":
+            print("BLOCKED: CI_CHANGED_FILES_JSON is malformed — fail-closed.", file=sys.stderr)
+            return 1
+        if source_status == "unset":
+            print("BLOCKED: CI_CHANGED_FILES_JSON is unset — fail-closed.", file=sys.stderr)
+            return 1
+    elif args.base_sha:
+        changed_files = changed_files_from_git(args.base_sha)
+        if not changed_files:
+            print("BLOCKED: could not determine changed files — fail-closed.", file=sys.stderr)
+            return 1
+    else:
+        changed_files = args.files or []
+
     # Fail-closed: if we can't even parse the arguments, block.
     exit_code, message = check(
         branch=args.branch,
-        changed_files=args.files or [],
+        changed_files=changed_files,
         trailers_text=args.trailers or "",
     )
 

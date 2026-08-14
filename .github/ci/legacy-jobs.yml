@@ -2970,9 +2970,10 @@ jobs:
         run: |
           BRANCH="${{ github.head_ref }}"
           TRAILERS=""
-          FILES=""
+          FILES_PREVIEW=""
+          FILE_SOURCE=()
           PARSE_RC=0
-          FILES=$(python3 scripts/check_self_mod_fence.py --print-planner-files) || PARSE_RC=$?
+          FILES_PREVIEW=$(python3 scripts/check_self_mod_fence.py --print-planner-files) || PARSE_RC=$?
           if [ "$PARSE_RC" -eq 2 ]; then
             echo "::error:: self-mod-fence: CI_CHANGED_FILES_JSON malformed — fail-closed (exit 1)." >&2
             exit 1
@@ -2980,17 +2981,17 @@ jobs:
           if [ "$PARSE_RC" -eq 0 ]; then
             # ci-plan already listed the diff (packs are fetch-depth:1 after #5564;
             # origin/main...HEAD is often a bad revision — measured #5556/#5519/#5499).
-            if [ -z "$FILES" ]; then
+            if [ -z "$FILES_PREVIEW" ]; then
               echo "self-mod-fence: ci-plan reported no changed files — zero changes to classify (pass)"
               exit 0
             fi
+            FILE_SOURCE=(--planner-files)
           else
             # Unset env (local / pre-#5564): fall back to git. Fail-closed only when
             # that fallback cannot determine files either.
             git fetch origin ${{ github.base_ref || 'main' }}
             TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-            FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
-            if [ -z "$FILES" ]; then
+            if git diff --quiet origin/${{ github.base_ref || 'main' }}...HEAD; then
               if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ] && \
                  git merge-base --is-ancestor HEAD "origin/${{ github.base_ref || 'main' }}" 2>/dev/null; then
                 # Dispatch on main itself (the ship-loop guard's E1 unblock lever,
@@ -3012,11 +3013,12 @@ jobs:
               echo "Possible causes: CI_CHANGED_FILES_JSON unset/malformed, git diff error, or base_ref resolution failure." >&2
               exit 1
             fi
+            FILE_SOURCE=(--base-sha "origin/${{ github.base_ref || 'main' }}")
           fi
           TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
-            --files $FILES \
+            "${FILE_SOURCE[@]}" \
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
         run: python -m pytest tests/test_self_mod_fence.py -q

@@ -101,14 +101,9 @@ jobs:
           BASE_SHA="${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
           BRANCH="${{ github.head_ref || github.event.merge_group.head_ref }}"
           TRAILERS=$(git log --format="%B" "$BASE_SHA"..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only "$BASE_SHA"...HEAD 2>/dev/null || echo "")
-          if [ -z "$FILES" ]; then
-            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-            exit 1
-          fi
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
-            --files $FILES \
+            --base-sha "$BASE_SHA" \
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
         id: self_mod_tests
@@ -274,14 +269,9 @@ jobs:
           git fetch origin ${{ github.base_ref || 'main' }}
           BRANCH="${{ github.head_ref }}"
           TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
-          FILES=$(git diff --name-only origin/${{ github.base_ref || 'main' }}...HEAD 2>/dev/null || echo "")
-          if [ -z "$FILES" ]; then
-            echo "::error:: self-mod-fence: could not determine changed files — fail-closed (exit 1)." >&2
-            exit 1
-          fi
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
-            --files $FILES \
+            --base-sha "origin/${{ github.base_ref || 'main' }}" \
             --trailers "$TRAILERS"
       - run: python -m pytest tests/test_self_mod_fence.py -q
 

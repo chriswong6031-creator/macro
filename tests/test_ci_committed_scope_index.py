@@ -412,6 +412,33 @@ def test_sparse_preflight_reads_only_changed_python_blob_from_head(
     assert bool(stale) is (expected_status == "fail")
 
 
+def test_unsafe_companion_path_cannot_hide_python_dependency_drift(
+    tiny_repo: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    index = _generate(tiny_repo)
+    (tiny_repo / "engine/worker.py").write_text(
+        "import engine.helper\n\ndef calculate():\n    return 1\n",
+        encoding="utf-8",
+    )
+
+    assert structural_preflight.main(
+        [
+            "--root",
+            str(tiny_repo),
+            "--changed-path",
+            "engine/worker.py",
+            "--changed-path",
+            "scripts/decoy.py\nhas_work=false",
+            "--scope-index",
+            str(index),
+        ]
+    ) == 2
+    result = json.loads(capsys.readouterr().out)
+    assert result["status"] == "fail"
+    assert result["classification"] == "input_failure"
+
+
 @pytest.mark.parametrize("defect", ["duplicate", "missing"])
 def test_duplicate_or_missing_job_inventory_fails_closed(
     tiny_repo: Path,
