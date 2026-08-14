@@ -19,7 +19,14 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.check_self_mod_fence import check, selftest, IMMUTABLE_PATTERNS, LOOP_BRANCH_PREFIXES
+from scripts.check_self_mod_fence import (
+    check,
+    selftest,
+    IMMUTABLE_PATTERNS,
+    LOOP_BRANCH_PREFIXES,
+    parse_ci_changed_files_json,
+    print_planner_files,
+)
 from scripts.run_ci_pack import render_command
 
 
@@ -346,7 +353,12 @@ def _seed_repo(tmp_path: Path) -> Path:
 
 
 def _run_live_check(
-    work: Path, *, event: str, head_ref: str, base_ref: str = "main"
+    work: Path,
+    *,
+    event: str,
+    head_ref: str,
+    base_ref: str = "main",
+    extra_env: dict[str, str] | None = None,
 ) -> subprocess.CompletedProcess:
     """Render the manifest step exactly as ci-pack does, then run it."""
     command = render_command(
@@ -355,7 +367,13 @@ def _run_live_check(
         head_ref=head_ref,
     )
     env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+    # Pack jobs export CI_CHANGED_FILES_JSON. These tests seed their own git
+    # history; inheriting the pack runner's list would skip the git fallback
+    # the historical cases pin.
+    env.pop("CI_CHANGED_FILES_JSON", None)
     env["GITHUB_EVENT_NAME"] = event
+    if extra_env:
+        env.update(extra_env)
     # ci-pack runs every legacy step through this exact interpreter invocation.
     return subprocess.run(
         ["bash", "-eo", "pipefail", "-c", command],
@@ -480,3 +498,116 @@ def test_fences_workflow_live_check_is_pull_request_only():
         "fences.yml's live check must stay gated to pull_request events (or grow "
         f"the same verified-empty dispatch arm ci.yml has). Found if: {condition!r}"
     )
+
+
+def test_packed_live_check_reads_ci_changed_files_json():
+    """After #5564 the packed fence must not require origin/main...HEAD."""
+    step = _fence_step_run(".github/ci/legacy-jobs.yml", LIVE_CHECK_STEP)
+    body = str(step["run"])
+    assert "--print-planner-files" in body
+    assert "CI_CHANGED_FILES_JSON malformed" in body
+
+
+@pytest.mark.parametrize(
+    "raw,status,paths",
+    [
+        (None, "unset", []),
+        ("", "unset", []),
+        ("null", "ok", []),
+        ('["engine/a.py","docs/b.md"]', "ok", ["engine/a.py", "docs/b.md"]),
+        ("{nope}", "malformed", []),
+        ("[1, 2]", "malformed", []),
+        ('"engine/a.py"', "malformed", []),
+    ],
+)
+def test_parse_ci_changed_files_json(raw, status, paths):
+    got_status, got_paths = parse_ci_changed_files_json(raw)
+    assert (got_status, got_paths) == (status, paths)
+
+
+def test_print_planner_files_exit_codes(monkeypatch, capsys):
+    monkeypatch.delenv("CI_CHANGED_FILES_JSON", raising=False)
+    assert print_planner_files() == 3
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", "{nope}")
+    assert print_planner_files() == 2
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", "null")
+    assert print_planner_files() == 0
+    assert capsys.readouterr().out == ""
+    monkeypatch.setenv("CI_CHANGED_FILES_JSON", '["a.py","b.md"]')
+    assert print_planner_files() == 0
+    assert capsys.readouterr().out == "a.py\nb.md"
+
+
+def test_live_check_uses_planner_json_without_origin_main(tmp_path):
+    """The #5556/#5519/#5499 hole: fetch-depth:1, origin/main...HEAD is a bad revision.
+
+    ci-plan already listed the files. The fence must classify those, not fail-closed.
+    """
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "claude/human-docs", cwd=work)
+    (work / "note.md").write_text("docs\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "docs", cwd=work)
+    _git("remote", "remove", "origin", cwd=work)
+
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="claude/human-docs",
+        extra_env={"CI_CHANGED_FILES_JSON": '["note.md"]'},
+    )
+    assert result.returncode == 0, (
+        "planner JSON must classify a human PR even when origin/main is missing.\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "PASS" in result.stdout
+
+
+def test_live_check_malformed_planner_json_fail_closed(tmp_path):
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "claude/human-docs", cwd=work)
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="claude/human-docs",
+        extra_env={"CI_CHANGED_FILES_JSON": "{nope"},
+    )
+    assert result.returncode == 1
+    assert "malformed" in result.stderr
+
+
+def test_live_check_null_planner_json_is_verified_empty(tmp_path):
+    """Well-formed null from ci-plan is determined-empty, not unclassifiable."""
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "claude/empty", cwd=work)
+    _git("remote", "remove", "origin", cwd=work)
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="claude/empty",
+        extra_env={"CI_CHANGED_FILES_JSON": "null"},
+    )
+    assert result.returncode == 0, (
+        "null JSON must pass (ci-plan already classified the diff).\n"
+        f"stdout: {result.stdout}\nstderr: {result.stderr}"
+    )
+    assert "ci-plan reported no changed files" in result.stdout
+
+
+def test_live_check_planner_json_still_blocks_loop_plus_immutable(tmp_path):
+    work = _seed_repo(tmp_path)
+    _git("checkout", "-b", "metabolism/self-edit", cwd=work)
+    (work / ".github/workflows").mkdir(parents=True, exist_ok=True)
+    (work / ".github/workflows/ci.yml").write_text("jobs: {}\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "loop edits an immutable path", cwd=work)
+    _git("remote", "remove", "origin", cwd=work)
+
+    result = _run_live_check(
+        work,
+        event="pull_request",
+        head_ref="metabolism/self-edit",
+        extra_env={"CI_CHANGED_FILES_JSON": '[".github/workflows/ci.yml"]'},
+    )
+    assert result.returncode != 0
+    assert "BLOCKED" in result.stderr
