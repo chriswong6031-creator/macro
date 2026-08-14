@@ -6891,7 +6891,7 @@
       },
       {
         "path": "engine/us_context_vector.py",
-        "signature_sha256": "25b4af52a5b8771d815bb18cdfa481b2eb4a362185b7c3a642bdd9a9d78ec0dc"
+        "signature_sha256": "ce0bab1fdd65832e2e7a97e6b47eea98b6c92f188f8740b8fed33aa8beeb868a"
       },
       {
         "path": "engine/us_early_turn.py",
@@ -10114,6 +10114,10 @@
         "signature_sha256": "42e34b8c444f803be68af56cf2ea467d59b40175d02913720f5b2e6fc5c248f1"
       },
       {
+        "path": "scripts/check_nightly_liveness.py",
+        "signature_sha256": "2d4e686257c8c558e40c5ed665f2cbba4dae4e520e5234361e7a28c28287a012"
+      },
+      {
         "path": "scripts/check_nw_health_escalation.py",
         "signature_sha256": "74eb7bbef37761a56ac6880d8199f598b2876a82cc6086bec25db08d72550e5d"
       },
@@ -10827,7 +10831,7 @@
       },
       {
         "path": "scripts/grade_us_prophet_candidates.py",
-        "signature_sha256": "6ec565570206373891fddbe934b7d37ae044959e0a10d2e5ea67b07593577234"
+        "signature_sha256": "dd33cd39f6dea304c08301b81ec96f55eee5f0aafa621965743d404a9bd5d23a"
       },
       {
         "path": "scripts/group_flow_validation.py",
@@ -11516,6 +11520,14 @@
       {
         "path": "scripts/promote_trumpflow_candidates.py",
         "signature_sha256": "4e3c76abfa68f3561f89f807d1d3bf27682b006aa049319979ec7ffc667e7809"
+      },
+      {
+        "path": "scripts/prophet_fusion_arena.py",
+        "signature_sha256": "828fdc36ee5011db017bd3d210a4bfdd97ac5f128e9d0fe6b6867377eafa2775"
+      },
+      {
+        "path": "scripts/prophet_fusion_labels.py",
+        "signature_sha256": "3833b053c3495fd8fb7501f7d95574109125fe27bbd804b68ff5406e8579988c"
       },
       {
         "path": "scripts/prophet_live_evaluator.py",
@@ -15202,6 +15214,10 @@
         "signature_sha256": "5c3fbc44f23550eb3e2082ad902ec3ac46c09cbe6919ad10fc696da7f69a2a2a"
       },
       {
+        "path": "tests/test_confluence_veto_leg_telemetry.py",
+        "signature_sha256": "151a07ea17432f700c2609b2780203c1e7af61eb8513f867017587a693ebf495"
+      },
+      {
         "path": "tests/test_confluence_warmup_floor.py",
         "signature_sha256": "bf1eb2a2ebd48937ea44a8113e7c5a36588162ca34b906c1ba4067e308bd2f7f"
       },
@@ -15636,6 +15652,10 @@
       {
         "path": "tests/test_deploy_update_self_heal.py",
         "signature_sha256": "42c74829ae99dac8abba381850a7284c43b39b2c1e13fb2c4f8732dc34168aed"
+      },
+      {
+        "path": "tests/test_design_system_foundations.py",
+        "signature_sha256": "3fb9db00ce8244c9f56c2d3ec3777024e3814a63a9015094c48f8e05ee0107da"
       },
       {
         "path": "tests/test_desk_grader.py",
@@ -18902,6 +18922,10 @@
         "signature_sha256": "beaf429d96e095b8213cd2b62f6185e2aa8fcefbd0de7ac41df297b1c579bf9d"
       },
       {
+        "path": "tests/test_nightly_liveness.py",
+        "signature_sha256": "9033390f5de0dd79182adb5b2e8a711128ef5b043dcced5ae0a8b496102ae685"
+      },
+      {
         "path": "tests/test_nightly_timings.py",
         "signature_sha256": "c4e0a182473af5e8d9478429fb396a548df3896303cdfa16237dc6413bd29e1f"
       },
@@ -19688,6 +19712,18 @@
       {
         "path": "tests/test_prophet_earnings_split_brain.py",
         "signature_sha256": "93d9788f1eb1a17ceccca9813e69eb7e5f0704f40b675d06f35ba470e2e637ff"
+      },
+      {
+        "path": "tests/test_prophet_fusion_arena.py",
+        "signature_sha256": "f4444a6b3cbccb716c630a0e7687bb3a886d5d8820af760719ecdc817bd49bbd"
+      },
+      {
+        "path": "tests/test_prophet_fusion_families.py",
+        "signature_sha256": "4d8ab316197f8f493aa17a76cbed4671606956f2d30b8796e1fa2821b5dd1807"
+      },
+      {
+        "path": "tests/test_prophet_fusion_labels.py",
+        "signature_sha256": "053fb38bc0efac6a750c8221a4947c20740a5a119a4ef0fae5a82bf6d3353755"
       },
       {
         "path": "tests/test_prophet_government_revenue_context.py",
@@ -21859,7 +21895,11 @@
       },
       {
         "path": "tests/test_us_context_vector.py",
-        "signature_sha256": "87c27ac619bf89e881cfd4d08efde39f4026a15233a9c8d08c04460083f12919"
+        "signature_sha256": "8d04330b99bffe439aa771740e43ba86158fb96f551ca850222dc6a70670ee1e"
+      },
+      {
+        "path": "tests/test_us_context_vector_accrual.py",
+        "signature_sha256": "476a7d526393d600202774a385c0a0392db6f165eb211938f2f9fb6f76a56bb4"
       },
       {
         "path": "tests/test_us_context_vector_payload_containment.py",
@@ -21887,7 +21927,7 @@
       },
       {
         "path": "tests/test_us_prophet_grades.py",
-        "signature_sha256": "eb7cc88f167215b2a120bdc421a33ddfff92ce68f0aecdfa2b1b5cd56c7b4ed0"
+        "signature_sha256": "2dde1d50f12a83a33404994c8e9970e7b2f542ad9a41b03355ec1b2efa1644da"
       },
       {
         "path": "tests/test_us_reclaim_veto_packet.py",
@@ -22382,10 +22422,10 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5595,
+    "python_count": 5605,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "5f7d3fcc7543218d8cb90108a0cac4bf69dc728bf80496a12279d23bbc32b08e",
+  "index_sha256": "65b00627f1162b5995c6f271bc5d8aad06d0f644cdb9eb394a15bf9aa2a1b73f",
   "job_count": 194,
   "job_inventory": [
     "inline-js",
@@ -33581,6 +33621,7 @@
       "paths": [
         ".claude/hooks/gh_quota_guard.py",
         ".claude/hooks/model_routing_guard.py",
+        ".claude/hooks/worktree_create_sparse.py",
         ".claude/settings.json",
         "admin/**",
         "admin/**/*.yml",
@@ -34492,6 +34533,7 @@
         "scripts/check_signal_gate_coherence.py",
         "scripts/check_site_js.py",
         "scripts/check_skip_only_suites.py",
+        "scripts/check_template_site_sync.py",
         "scripts/check_workflow_yaml.py",
         "scripts/ci_authority.py",
         "scripts/ci_authority_paths.py",
@@ -34614,6 +34656,7 @@
         "tests/test_render_options_workspace_scope.py",
         "tests/test_render_run_size_cap.py",
         "tests/test_sparse_guard_refusals.py",
+        "tests/test_sparse_worktree_profile.py",
         "tools/**",
         "tools/**/*.html",
         "tools/**/*.html/**",
@@ -34991,6 +35034,7 @@
         "config/delisted_symbols.yml",
         "config/government_revenue/candidate_historical_suppressions.v1.json",
         "config/government_revenue/candidate_issuance_corrections.v1.json",
+        "config/house_law_checks.yml",
         "config/metabolism_budget.yml",
         "content/**/*.json",
         "content/**/*.json/**",
@@ -35380,6 +35424,7 @@
         "scripts/build_theme_detail.py",
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_dag_conformance.py",
+        "scripts/check_nightly_liveness.py",
         "scripts/check_surface_freshness.py",
         "scripts/ci/daily_engine_regional_desk_builders.sh",
         "scripts/ci/nightly_timings_finish.sh",
@@ -35451,6 +35496,7 @@
         "site/government-revenue-data/workspace.json",
         "site/marketdata/experiments.json",
         "site/og/confluence_screener.png",
+        "site/prophet/index.json",
         "site/rr_banner.json",
         "site/wh_banner.json",
         "templates/**",
@@ -35472,13 +35518,14 @@
         "tests/**/*.yml/**",
         "tests/test_dag_conformance.py",
         "tests/test_daily_et_gate.py",
+        "tests/test_nightly_liveness.py",
         "tests/test_nightly_timings.py",
         "tests/test_tech_lab_offrender_budget.py",
         "tests/test_workflow_file_size.py",
         "tools/**",
         "worker/**"
       ],
-      "weight": 17
+      "weight": 21
     },
     {
       "job_id": "push-retry-policy",
@@ -38248,6 +38295,8 @@
         "templates/**/*.css/**",
         "templates/**/*.html",
         "templates/**/*.html/**",
+        "templates/**/*.j2",
+        "templates/**/*.j2/**",
         "templates/**/*.js",
         "templates/**/*.js/**",
         "templates/**/*.md",
@@ -38259,11 +38308,14 @@
         "templates/_interfonts.html.j2",
         "templates/chat.html",
         "templates/index.html",
+        "templates/intraday_flow.html.j2",
+        "templates/leader_radar.html.j2",
         "templates/theme.css",
         "tests/test_asset_stamp_lane_order.py",
         "tests/test_asset_stamp_refresh.py",
         "tests/test_chat_nav_sync.py",
         "tests/test_closingbell_dedup_contract.py",
+        "tests/test_design_system_foundations.py",
         "tests/test_externalize_css.py",
         "tests/test_optimize_assets.py",
         "tests/test_site_shim.py",
@@ -38273,7 +38325,7 @@
         "tools/**/*.md",
         "tools/**/*.md/**"
       ],
-      "weight": 26
+      "weight": 29
     },
     {
       "job_id": "data-base-shim",
@@ -64901,10 +64953,13 @@
         "engine/postcross.py",
         "engine/press/earnings_adapter.py",
         "engine/price_ladder.py",
+        "engine/prophet_arena.py",
+        "engine/prophet_board_read.py",
         "engine/prophet_bridge.py",
         "engine/prophet_doors.py",
         "engine/prophet_integrity.py",
         "engine/prophet_live/interval.py",
+        "engine/prophet_management.py",
         "engine/prophet_stage_inputs.py",
         "engine/provenance_sidecar.py",
         "engine/provider_health.py",
@@ -64983,6 +65038,7 @@
         "engine/theme_scoring.py",
         "engine/theme_validation.py",
         "engine/thesis_funnel.py",
+        "engine/thetadata_store.py",
         "engine/ticker_alerts.py",
         "engine/ticker_shape.py",
         "engine/total_return.py",
@@ -64998,6 +65054,7 @@
         "engine/us_candidate_lanes.py",
         "engine/us_context_vector.py",
         "engine/us_early_turn.py",
+        "engine/us_prophet_grades.py",
         "engine/validation.py",
         "engine/valuation.py",
         "engine/velocity.py",
@@ -65035,9 +65092,11 @@
         "research/**/*.json/**",
         "research/**/*.parquet",
         "research/**/*.parquet/**",
+        "research/PROPHET_ARENA_REGISTRATION.md",
         "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md",
         "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
+        "research/prophet_fusion/families.yml",
         "scripts/**",
         "scripts/**/*.json",
         "scripts/**/*.json/**",
@@ -65067,6 +65126,7 @@
         "scripts/build_opportunity_timeline.py",
         "scripts/build_override_shadow.py",
         "scripts/build_pick_lab.py",
+        "scripts/build_prophet.py",
         "scripts/build_reports.py",
         "scripts/build_spvector.py",
         "scripts/build_stage_analysis.py",
@@ -65081,9 +65141,12 @@
         "scripts/freshness_sentinel.py",
         "scripts/grade_bottom_calls.py",
         "scripts/grade_us_board.py",
+        "scripts/grade_us_prophet_candidates.py",
         "scripts/heal_stage_forward_ledger.py",
         "scripts/measure_us_track_era_recompute.py",
         "scripts/notify.py",
+        "scripts/prophet_fusion_arena.py",
+        "scripts/prophet_fusion_labels.py",
         "scripts/publish_earnings_r2.py",
         "scripts/seed_china_ths_baskets.py",
         "scripts/thematic_rotation_phase0.py",
@@ -65143,6 +65206,7 @@
         "tests/test_cn_board_unified_grid.py",
         "tests/test_cn_prophet_candidates_schema.py",
         "tests/test_cn_track_ledger_eras.py",
+        "tests/test_confluence_veto_leg_telemetry.py",
         "tests/test_dashboard_template_render.py",
         "tests/test_grade_us_board.py",
         "tests/test_heal_stage_forward_ledger.py",
@@ -65151,8 +65215,12 @@
         "tests/test_pick_lab_cn_runner.py",
         "tests/test_pick_lab_render.py",
         "tests/test_pick_lab_runner.py",
+        "tests/test_prophet_board_read.py",
         "tests/test_prophet_card_live_change.py",
         "tests/test_prophet_card_shared.py",
+        "tests/test_prophet_fusion_arena.py",
+        "tests/test_prophet_fusion_families.py",
+        "tests/test_prophet_fusion_labels.py",
         "tests/test_prophet_verb_ink_contrast.py",
         "tests/test_stage_analysis.py",
         "tests/test_stock_board_v2.py",
@@ -65165,6 +65233,7 @@
         "tests/test_us_board_rank.py",
         "tests/test_us_board_w3_evidence.py",
         "tests/test_us_context_vector.py",
+        "tests/test_us_context_vector_accrual.py",
         "tests/test_weinstein_stage.py",
         "tools/**",
         "worker/**"
@@ -65699,6 +65768,7 @@
         "scripts/marketing_media_backfill.py",
         "scripts/marketing_publisher.py",
         "scripts/optimize_assets.py",
+        "scripts/prophet_fusion_labels.py",
         "scripts/run_prophet_miss_audit.py",
         "scripts/run_us_scan_tier.py",
         "scripts/thematic_rotation_phase0.py",
@@ -74796,7 +74866,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "b6e4d4008ed53ccd15d3ced6fa7d570bd94482451b2ae93e564339631caedac2"
+    "sha256": "2be94967d8832fc7c9168edaeb59280e3b678e729fedf42802f6451b7a91fd28"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
@@ -74818,7 +74888,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2205,
+    "candidate_count": 2210,
     "candidates": [
       {
         "path": ".claude",
@@ -79401,6 +79471,14 @@
         "present": false
       },
       {
+        "path": "research/prophet_fusion",
+        "present": false
+      },
+      {
+        "path": "research/prophet_fusion/families.yml",
+        "present": true
+      },
+      {
         "path": "research/prophet_us_audit",
         "present": false
       },
@@ -80305,6 +80383,10 @@
         "present": true
       },
       {
+        "path": "scripts/check_nightly_liveness.py",
+        "present": true
+      },
+      {
         "path": "scripts/check_ohlc_basis_coherence.py",
         "present": true
       },
@@ -80978,6 +81060,10 @@
       },
       {
         "path": "scripts/project_market_memory_context.py",
+        "present": true
+      },
+      {
+        "path": "scripts/prophet_fusion_labels.py",
         "present": true
       },
       {
@@ -82603,6 +82689,10 @@
       {
         "path": "site/rr_banner.json",
         "present": true
+      },
+      {
+        "path": "site/scratch_from_a_test",
+        "present": false
       },
       {
         "path": "site/screenerdata",
