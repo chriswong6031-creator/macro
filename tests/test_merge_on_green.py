@@ -5011,6 +5011,279 @@ def test_a_live_inherited_red_with_an_extra_job_is_still_blocked(monkeypatch):
     assert not any(call[1].endswith("/merge") for call in calls)
 
 
+def test_pack_annotation_parser_ignores_template_site_sync_refused_synthetic():
+    """workflow-yaml's packing-contract selftest is not a legacy job id.
+
+    Measured 2026-08-13 on main pack-1 (94604278264) and every PR that ran it:
+    ``title=template-site-sync wrong-direction fix refused`` /
+    ``REFUSED: templates/wrongway.html ...`` used to parse as job ``REFUSED``.
+    """
+    ids = MOG._legacy_job_ids_from_annotations(
+        [
+            {"title": "", "message": "Process completed with exit code 1."},
+            {
+                "title": "chat-nav-sync drift",
+                "message": "templates/chat.html's header no longer matches.",
+            },
+            {
+                "title": "template-site-sync wrong-direction fix refused",
+                "message": (
+                    "REFUSED: templates/wrongway.html carries a ?v= stamp "
+                    "that disagrees with the file on disk"
+                ),
+            },
+            {
+                "title": "legacy-job-workflow-yaml",
+                "message": (
+                    "workflow-yaml: step 'hosted-runner packing contract' exited 1"
+                ),
+            },
+            {
+                "title": "ci-pack-scope",
+                "message": "full suite: changed-file set unavailable; scope inference not needed",
+            },
+        ]
+    )
+    assert ids == {"workflow-yaml"}
+
+
+def _workflow_yaml_weather_proof():
+    """Main dispatch 31746772926: only workflow-yaml is red on main."""
+    return _proof(
+        "ci-pack-0",
+        failed_names=("ci-pack-1", "ci-gate"),
+        failed_legacy_jobs=("workflow-yaml",),
+    )
+
+
+def _fleet_shallow_plus_yaml_pages(*, extra_job=None):
+    """#5519-shaped head: pack-1 workflow-yaml, pack-2 fence, pack-7 markers, ci-gate."""
+    pack1 = _run("ci-pack-1", conclusion="failure", check_id=8001)
+    pack2 = _run("ci-pack-2", conclusion="failure", check_id=8002)
+    pack7 = _run("ci-pack-7", conclusion="failure", check_id=8007)
+    gate = _run("ci-gate", conclusion="failure", check_id=8010)
+    runs = [pack1, pack2, pack7, gate]
+    annotations = {
+        8001: [
+            {
+                "title": "template-site-sync wrong-direction fix refused",
+                "message": "REFUSED: templates/wrongway.html carries a ?v= stamp",
+            },
+            {
+                "title": "legacy-job-workflow-yaml",
+                "message": (
+                    "workflow-yaml: step 'hosted-runner packing contract' exited 1"
+                ),
+            },
+        ],
+        8002: [
+            {
+                "title": "legacy-job-self-mod-fence",
+                "message": (
+                    "self-mod-fence: step 'self-mod-fence live check "
+                    "(loop PR + immutable → BLOCKED)' exited 1"
+                ),
+            },
+            {
+                "title": "",
+                "message": (
+                    " self-mod-fence: could not determine changed files — "
+                    "fail-closed (exit 1)."
+                ),
+            },
+        ],
+        8007: [
+            {
+                "title": "legacy-job-conflict-markers",
+                "message": (
+                    "conflict-markers: step 'no new git conflict markers "
+                    "in PR content' exited 2"
+                ),
+            },
+        ],
+    }
+    if extra_job:
+        pack8 = _run("ci-pack-8", conclusion="failure", check_id=8008)
+        runs.append(pack8)
+        annotations[8008] = [
+            {
+                "title": f"legacy-job-{extra_job}",
+                "message": f"{extra_job}: step 'pytest' exited 1",
+            }
+        ]
+    pages = {1: {"total_count": len(runs), "check_runs": runs}}
+    return pages, annotations
+
+
+def test_a_live_inherited_red_subtracts_shallow_clone_fence_and_markers(
+    monkeypatch, capsys
+):
+    """Fleet 2026-08-13: remaining identity is workflow-yaml, which is on main.
+
+    Pack numbers differ per PR; ci-gate is the aggregate. self-mod-fence and
+    conflict-markers are the #5564 fetch-depth:1 pair, not product reds.
+    """
+    pages, annotations = _fleet_shallow_plus_yaml_pages()
+    calls = _fake_api(
+        monkeypatch, check_pages=pages, annotations=annotations, merge_status=200
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _workflow_yaml_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "merged"
+    assert any(call[1].endswith("/merge") for call in calls)
+    out = capsys.readouterr().out
+    assert "live-inherited red" in out
+    assert "workflow-yaml" in out
+    assert "self-mod-fence" not in out
+    assert "conflict-markers" not in out
+    assert "REFUSED" not in out
+
+
+def test_a_unique_product_job_is_still_blocked_after_shallow_subtract(monkeypatch):
+    """#5478 also failed marketing-data / tier-gate — those are this PR's own."""
+    pages, annotations = _fleet_shallow_plus_yaml_pages(extra_job="marketing-data")
+    calls = _fake_api(monkeypatch, check_pages=pages, annotations=annotations)
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _workflow_yaml_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/merge") for call in calls)
+
+
+def test_a_fence_only_head_is_not_main_weather(monkeypatch):
+    """#5556 pack-0 was self-mod-fence only — not on main, so do not waive."""
+    pack0 = _run("ci-pack-0", conclusion="failure", check_id=9000)
+    gate = _run("ci-gate", conclusion="failure", check_id=9010)
+    pages = {1: {"total_count": 2, "check_runs": [pack0, gate]}}
+    annotations = {
+        9000: [
+            {
+                "title": "legacy-job-self-mod-fence",
+                "message": (
+                    "self-mod-fence: step 'self-mod-fence live check "
+                    "(loop PR + immutable → BLOCKED)' exited 1"
+                ),
+            },
+            {
+                "title": "",
+                "message": (
+                    " self-mod-fence: could not determine changed files — "
+                    "fail-closed (exit 1)."
+                ),
+            },
+        ]
+    }
+    calls = _fake_api(monkeypatch, check_pages=pages, annotations=annotations)
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _workflow_yaml_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/merge") for call in calls)
+
+
+def test_conflict_markers_alone_without_fence_sibling_is_still_blocked(monkeypatch):
+    """A real marker hit uses the same step-exited-2 annotation; do not guess."""
+    pack7 = _run("ci-pack-7", conclusion="failure", check_id=8007)
+    pack1 = _run("ci-pack-1", conclusion="failure", check_id=8001)
+    gate = _run("ci-gate", conclusion="failure", check_id=8010)
+    pages = {1: {"total_count": 3, "check_runs": [pack1, pack7, gate]}}
+    annotations = {
+        8001: [
+            {
+                "title": "legacy-job-workflow-yaml",
+                "message": (
+                    "workflow-yaml: step 'hosted-runner packing contract' exited 1"
+                ),
+            },
+        ],
+        8007: [
+            {
+                "title": "legacy-job-conflict-markers",
+                "message": (
+                    "conflict-markers: step 'no new git conflict markers "
+                    "in PR content' exited 2"
+                ),
+            },
+        ],
+    }
+    calls = _fake_api(monkeypatch, check_pages=pages, annotations=annotations)
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _workflow_yaml_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "blocked"
+    assert not any(call[1].endswith("/merge") for call in calls)
+
+
+def test_distinctive_markers_classify_text_is_infra_without_the_fence_sibling(
+    monkeypatch, capsys
+):
+    """Once conflict-markers emits the classify-failure annotation, subtract it."""
+    pack1 = _run("ci-pack-1", conclusion="failure", check_id=8001)
+    pack7 = _run("ci-pack-7", conclusion="failure", check_id=8007)
+    gate = _run("ci-gate", conclusion="failure", check_id=8010)
+    pages = {1: {"total_count": 3, "check_runs": [pack1, pack7, gate]}}
+    annotations = {
+        8001: [
+            {
+                "title": "legacy-job-workflow-yaml",
+                "message": (
+                    "workflow-yaml: step 'hosted-runner packing contract' exited 1"
+                ),
+            },
+        ],
+        8007: [
+            {
+                "title": "legacy-job-conflict-markers",
+                "message": (
+                    "conflict-markers: cannot classify files changed from origin/ — "
+                    "fatal: bad revision 'origin/main...HEAD'"
+                ),
+            },
+        ],
+    }
+    calls = _fake_api(
+        monkeypatch, check_pages=pages, annotations=annotations, merge_status=200
+    )
+    verdict = MOG.sweep_pull(
+        "acme/widgets",
+        _pull(),
+        "read",
+        "write",
+        _freshness(),
+        _workflow_yaml_weather_proof(),
+        _authorized_budget(),
+    )
+    assert verdict == "merged"
+    out = capsys.readouterr().out
+    assert "workflow-yaml" in out
+    assert "conflict-markers" not in out
+
+
 def test_a_control_plane_diff_never_gets_the_live_inherited_waiver(monkeypatch):
     """A CI invalidator can change what any pack means; never waive those."""
     pages, annotations = _govrev_red_pages()
