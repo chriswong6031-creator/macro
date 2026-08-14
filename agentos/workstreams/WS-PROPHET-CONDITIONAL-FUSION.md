@@ -46,11 +46,12 @@ artifacts:
 waves:
   - id: w0
     title: "PR-0 — architecture, census, frozen arena, adversarial review"
-    status: awaiting_ci
+    status: done
+    pr: "#5593"
   - id: w1
     depends_on: [w0]
-    title: "PR-1 — arena harness + G0/G1/G2/C1 baselines + telemetry accrual columns"
-    status: todo
+    title: "PR-1a — accrual restoration + telemetry columns + families.yml + arena harness skeleton"
+    status: awaiting_ci
   - id: w2
     depends_on: [w1]
     title: "PR-2 — C2 regularized family stack + redundancy matrices + incremental harness"
@@ -76,8 +77,9 @@ waves:
     title: "PR-7 — promotion prereg + DNR amendments + operator/CEO adjudication"
     status: todo
 next_action: >
-  Land PR-0 via merge-on-green; verify the context-vector accrual chip was picked up
-  (or fold the diagnosis into PR-1's first commit); then build PR-1 per masterplan §14.
+  Land PR-1a via merge-on-green; verify tonight's nightly stamps a fresh context-vector
+  date with the fixed producer (the first true forward proof); then PR-1b (baseline
+  race, counterfactual-replay-labelled, non-promotion-bearing) per masterplan §14.
 ---
 
 ## Context
