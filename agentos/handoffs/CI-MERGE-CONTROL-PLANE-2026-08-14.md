@@ -54,7 +54,7 @@ verified:
     result: 122s cold, 0-1s warm across five shapes
   - claim: an unwired new pytest suite reds in ~10s at preflight
     command: git add tests/test_zz_preflight_probe_unwired.py && python3 scripts/audit_unrun_tests.py
-    result: exit 1, "::error title=unrun-suite::...named by no run: step"
+    result: exit 1 with an unrun-suite error annotation naming the probe file
   - claim: packs execute exactly the published plan slice via the real CLI
     command: synthetic-manifest round trip (GITHUB_ACTIONS=true GITHUB_WORKSPACE=... run_ci_pack.py --execute --plan-json --expect-plan-sha)
     result: exit 0, pack 0 ran exactly plan.pack_jobs[0]; wrong sha exit 2; drifted manifest exit 2

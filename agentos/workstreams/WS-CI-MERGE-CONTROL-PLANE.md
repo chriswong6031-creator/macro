@@ -24,7 +24,7 @@ waves:
       DEC:CI-NATIVE-MERGE-QUEUE-REJECTED.
   - id: W1
     title: Heavy-tail curation (scope exclusive) + engine-render-guards split
-    status: proposed
+    status: todo
     note: chipped as standalone tasks 2026-08-14; mechanism already shipped in W0.
 next_action: >
   Verify PR #5585's own full-suite run (31777710942), arm merge-on-green, then
