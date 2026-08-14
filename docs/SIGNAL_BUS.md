@@ -901,8 +901,8 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 5 | 0 |
 | options-signal-episodes | `data/options_signal_episode/episodes.jsonl` | jsonl | daily-engine | shadow | 4 | 0 |
-| options-signal-episode-h60-outcomes | `data/options_signal_episode/outcomes_h60.jsonl` | jsonl | daily-engine | shadow | 3 | 0 |
 | live-flow-dte-tide-dated | `live_flow/dte_tide/<DATE>.json` | json | intraday | display | 1 | 1 |
 | live-flow-surface-dated | `live_flow/surface/<ROOT>/<DATE>/idx.json` | json | intraday | display | 1 | 1 |
 | live-flow-tide-dated | `live_flow/tide/<DATE>.json` | json | intraday | display | 1 | 1 |
