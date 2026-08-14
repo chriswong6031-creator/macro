@@ -6506,6 +6506,46 @@
         "signature_sha256": "c054639575e7d956146fcc94af776d309123aab7a29835788ae0b48ba29eaf7c"
       },
       {
+        "path": "engine/stock_identity/__init__.py",
+        "signature_sha256": "3dbf5c096614a363b182fc1d462e1064f0ee42d5ae11c9a4390a60ea670e68d5"
+      },
+      {
+        "path": "engine/stock_identity/authority.py",
+        "signature_sha256": "cf9b05d41e5eec017688bb3f224ab8ccb6134ef3926337d4c37e43f2fa92c904"
+      },
+      {
+        "path": "engine/stock_identity/census.py",
+        "signature_sha256": "4a498ddf0027c106669214bada35400412e0c158cf695ef9642c5fd414944051"
+      },
+      {
+        "path": "engine/stock_identity/dossier.py",
+        "signature_sha256": "a02b91d9fb52d14460599a84391ef48f664166a74fbb175c9396204cde5fbfa1"
+      },
+      {
+        "path": "engine/stock_identity/episodes.py",
+        "signature_sha256": "4d733d38bf7833e4ee496d60d4af34610bb8ad62c36174b761c5f13f00f17acd"
+      },
+      {
+        "path": "engine/stock_identity/fingerprint.py",
+        "signature_sha256": "f409fd57169591ff55920c7b6ffb7e34156634eec168eef047866098c537e64f"
+      },
+      {
+        "path": "engine/stock_identity/hygiene.py",
+        "signature_sha256": "72e6b66f4857d23082b745dee47995b58366be96089eb892603a33aca31d470c"
+      },
+      {
+        "path": "engine/stock_identity/partition.py",
+        "signature_sha256": "43b675bd6e295aba1975b4974cf73286900e0fe5df2fb94195831dbcf187d47e"
+      },
+      {
+        "path": "engine/stock_identity/plane.py",
+        "signature_sha256": "5974bc2526f49031ae7c94b652033c231c9ab72cfb7d8ed87c94e1cff7c8a88d"
+      },
+      {
+        "path": "engine/stock_identity/state.py",
+        "signature_sha256": "751fd70b56423c981b140dbd5f845e3b0a4067da237f4276b35bd40e5ae12933"
+      },
+      {
         "path": "engine/stock_macro_sensitivity.py",
         "signature_sha256": "da6ec4d32b9e58345664fbd899632652d46322bde5f2a7e5e90315c0f193d168"
       },
@@ -12530,6 +12570,18 @@
         "signature_sha256": "face388920e83d827ad1eb88132f6085d68452b7a29bf30bca598ee5b50b2a3b"
       },
       {
+        "path": "scripts/stock_identity_build_atlas.py",
+        "signature_sha256": "e9ae0034599f7dad984cb67512d888adafb7747a83e8876811f00eae4378ff07"
+      },
+      {
+        "path": "scripts/stock_identity_calibrate.py",
+        "signature_sha256": "44e0cd9aa6ab7c279bcddcef2000a81f29784e7871e7398ae425b723a187e86d"
+      },
+      {
+        "path": "scripts/stock_identity_collect_missing.py",
+        "signature_sha256": "40ecdacb816db1db179d3684bfdfd7717e3529c2d06cd3c69d868574e3e613a8"
+      },
+      {
         "path": "scripts/strategy_lab.py",
         "signature_sha256": "5d4ac1195648d9a5433223ca64cbc70c7eb20618dd074ed98848203606962afa"
       },
@@ -14891,7 +14943,7 @@
       },
       {
         "path": "tests/test_ci_pack.py",
-        "signature_sha256": "93561adc2a68e44f1b5c7100aacc4816870189965217679d99c2d7e3b55cc4b4"
+        "signature_sha256": "82fa6fc6772d857d23658cd4596851f404c2c81a3029b15b04e06605fc54b7fa"
       },
       {
         "path": "tests/test_ci_plan_workflow.py",
@@ -20715,7 +20767,7 @@
       },
       {
         "path": "tests/test_self_mod_fence.py",
-        "signature_sha256": "010bcd518ccfe74298dbbd7d8dbeb352315083809da304a702a7f9375cf9210c"
+        "signature_sha256": "a01238aa41893b3c008e4abc0cd8758bb73126679b65c8508b55f2efd18720f2"
       },
       {
         "path": "tests/test_sentiment_aaii.py",
@@ -21112,6 +21164,22 @@
       {
         "path": "tests/test_stock_fundamentals.py",
         "signature_sha256": "6ae7f5f7f33c391162fb4ca991ba61f5637acf59df3d392aa091b160f3139d69"
+      },
+      {
+        "path": "tests/test_stock_identity_atlas.py",
+        "signature_sha256": "5e0631fffb5b6da3ef92599daa5248220ca2148f0ff8fefd15b83f12ad1a873c"
+      },
+      {
+        "path": "tests/test_stock_identity_fingerprint.py",
+        "signature_sha256": "ab1d16d94f545a800d3eb507ce2eb469e268e97f7e2b225506ac432f7f4e26c4"
+      },
+      {
+        "path": "tests/test_stock_identity_partition.py",
+        "signature_sha256": "d339b83964e96bee92ed5a920fca5849fb4ab4ec20413a617577cb0b9af8d51d"
+      },
+      {
+        "path": "tests/test_stock_identity_state_episodes.py",
+        "signature_sha256": "448700afb632c0c6e00aa26af79cd3547fc9e0ed1c3a76476005a3eb7ec326de"
       },
       {
         "path": "tests/test_stock_iflow_panel_js.py",
@@ -22422,10 +22490,10 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5605,
+    "python_count": 5622,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "3070b8d06a74ee93917edc2e8628bd0eeee693abf5b6ca6e5371f737404206c5",
+  "index_sha256": "b74bdad7d7430600037d1600dd2d7a46b8086fb42b8b4525c11cb7c5e3690cd6",
   "job_count": 194,
   "job_inventory": [
     "inline-js",
@@ -23342,6 +23410,7 @@
         "engine/election_cycle.py",
         "engine/emergence_alerts.py",
         "engine/entity_resolver.py",
+        "engine/entry_primitives.py",
         "engine/entry_signal.py",
         "engine/equity_alloc.py",
         "engine/equity_factors.py",
@@ -23409,6 +23478,8 @@
         "engine/oracle/__init__.py",
         "engine/oracle/washout_counterread.py",
         "engine/passport.py",
+        "engine/path_personality.py",
+        "engine/path_risk_signals.py",
         "engine/pit.py",
         "engine/pit_lag_recorder.py",
         "engine/playbook.py",
@@ -23453,6 +23524,13 @@
         "engine/smart_money.py",
         "engine/spine.py",
         "engine/spvector_overlay.py",
+        "engine/stock_identity/__init__.py",
+        "engine/stock_identity/authority.py",
+        "engine/stock_identity/episodes.py",
+        "engine/stock_identity/fingerprint.py",
+        "engine/stock_identity/partition.py",
+        "engine/stock_identity/plane.py",
+        "engine/stock_identity/state.py",
         "engine/stock_score.py",
         "engine/stock_technicals.py",
         "engine/stock_view.py",
@@ -23500,6 +23578,7 @@
         "research/COMMODITY_CARRY_PHASE0.md",
         "research/INDEX_DIRECTION_PHASE0.md",
         "research/US_BOARD_MEASUREMENT.md",
+        "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md",
         "scripts/__init__.py",
         "scripts/_active_render.py",
         "scripts/active_commodity_lev_phase0.py",
@@ -23570,11 +23649,15 @@
         "tests/test_ledger_identity.py",
         "tests/test_no_literal_ntrials.py",
         "tests/test_signal_lab_vector_display.py",
+        "tests/test_stock_identity_atlas.py",
+        "tests/test_stock_identity_fingerprint.py",
+        "tests/test_stock_identity_partition.py",
+        "tests/test_stock_identity_state_episodes.py",
         "tests/test_trial_ledger.py",
         "tests/test_trial_registration_lint.py",
         "tests/test_universe_history.py"
       ],
-      "weight": 20
+      "weight": 29
     },
     {
       "job_id": "breakdown-control-seed-determinism",
@@ -64311,13 +64394,13 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "73c915deca635fa41389f3816dc8eebfbed11d22a9c1aa977b5ce2619d18a559"
+    "sha256": "902d721dee35c6bebdae1d59532d8f07d3bc332208759b1e954510aee5cde8e5"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
     {
       "path": "scripts/run_ci_pack.py",
-      "sha256": "948b35a48c7bdbda15bcec8540d6785ab7d7ce62902249ec035734d2cf8b5e4c"
+      "sha256": "0079e245f23360a9c7aca5f3efe0747441e1b076453c62053d9884a25009f9af"
     },
     {
       "path": "scripts/ci_scope_dependencies.py",
@@ -64333,7 +64416,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2211,
+    "candidate_count": 2215,
     "candidates": [
       {
         "path": ".claude",
@@ -66252,6 +66335,10 @@
         "present": false
       },
       {
+        "path": "engine/decoy.py",
+        "present": false
+      },
+      {
         "path": "engine/deep/nested/thing.py",
         "present": false
       },
@@ -67736,6 +67823,10 @@
         "present": true
       },
       {
+        "path": "engine/stock_identity",
+        "present": false
+      },
+      {
         "path": "engine/stock_score.py",
         "present": true
       },
@@ -69125,6 +69216,14 @@
       },
       {
         "path": "research/species/_s13_phase0_out.json",
+        "present": true
+      },
+      {
+        "path": "research/stock_identity",
+        "present": false
+      },
+      {
+        "path": "research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md",
         "present": true
       },
       {
