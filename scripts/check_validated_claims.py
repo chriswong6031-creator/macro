@@ -233,6 +233,9 @@ _STRUCTURAL_MASKS = [
     # engine.cn_ai_semis_confirmer (only where t=3.27 survives the horse race, #773). Its
     # template plumbing — the {{ ... }} interpolation, the {% set %}, and the {% if == %}
     # comparison — is code, not a displayed prose claim (the displayed prose IS gated).
+    # Generated board rows serialize the key and its earned enum value together. Mask the
+    # exact pair before masking the bare identifier; one-line JSON siblings remain gated.
+    re.compile(r'(["\'])validated_tag\1\s*:\s*(["\'])validated\2'),
     re.compile(r"\bvalidated_tag\b"),                         # jinja var / attr interpolation
     re.compile(r"[=!]=\s*'validated'"),                       # {% if htag == 'validated' %}
     # i18n token-map / lexicon dictionary entries: 'key': ['Validated','已验证'] (a label pair).
