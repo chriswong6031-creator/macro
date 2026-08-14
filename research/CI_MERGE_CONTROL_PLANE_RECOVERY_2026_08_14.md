@@ -261,7 +261,7 @@ jobs. Classification — the exercise the incident says must be first-class:
 
 | legacy job | verdict | evidence |
 |---|---|---|
-| `workflow-yaml` (unrun-census unit tests) | **PR-caused** | `test_the_census_runs_in_a_ci_job` asserted the armed census lives in the MANIFEST; this PR moved it to ci-plan preflight. Mirrored-guard trap: the assertion pinned the LOCATION, not the property. Fixed + mutation-checked. |
+| `workflow-yaml` (unrun-census + trigger-closure unit tests) | **PR-caused ×2, same class** | Both `test_the_census_runs_in_a_ci_job` and `test_the_guard_runs_in_a_ci_job` asserted their armed gate lives in the MANIFEST; this PR moved those gates to ci-plan preflight. Mirrored-guard trap: the assertions pinned the LOCATION, not the property — and fixing the first left the silent sibling dark for one more CI cycle (the loud-failure/silent-sibling class, called in advance by the memory index). Both fixed to read BOTH homes, both mutation-checked (deleting a preflight invocation reds them). |
 | `validated-claims` | inherited | 100+ violations in `templates/china.html.j2`, `templates/baskets_china_factorwatch.html.j2` — trees this diff never touches |
 | `engine-render-guards` | inherited | render-guard rot sweep; no templates/site/engine change here |
 | `unrun-subsector-themes` | inherited | themes heatmap / Theme Tracker suites |

@@ -285,21 +285,34 @@ def test_guard_selftest_passes() -> None:
 
 
 def test_the_guard_runs_in_a_ci_job() -> None:
-    """An unrun guard is a comment with a shebang."""
-    manifest = yaml.safe_load(MANIFEST.read_text())
-    commands = {
-        " ".join(str(step.get("run", "")).split())
-        for job in manifest["jobs"].values()
-        if isinstance(job, dict)
-        for step in job.get("steps") or []
-        if isinstance(step, dict)
-    }
+    """An unrun guard is a comment with a shebang.
+
+    BOTH homes since 2026-08-14: the armed gate moved into ci.yml's ci-plan
+    fast preflight (a trigger-closure defect must red in ~2 minutes, not at
+    minute 40+ of a pack), while the selftest and this unit suite stay in the
+    legacy manifest as the deep line. Same mirrored-guard repair as
+    tests/test_audit_unrun_tests.py::test_the_census_runs_in_a_ci_job — the
+    assertion pins the PROPERTY (each invocation runs somewhere CI executes on
+    a pull request), never the location, and matches by suffix because ci.yml
+    runs the preflight from its isolated `$RUNNER_TEMP` venv.
+    """
+    commands: set[str] = set()
+    for path in (MANIFEST, ROOT / ".github" / "workflows" / "ci.yml"):
+        document = yaml.safe_load(path.read_text()) or {}
+        for job in (document.get("jobs") or {}).values():
+            if not isinstance(job, dict):
+                continue
+            for step in job.get("steps") or []:
+                if isinstance(step, dict):
+                    commands.add(" ".join(str(step.get("run", "")).split()))
     for required in (
-        "python scripts/check_ci_trigger_closure.py --selftest",
-        "python scripts/check_ci_trigger_closure.py",          # the gate itself
-        "python -m pytest tests/test_ci_trigger_closure.py -q",
+        "scripts/check_ci_trigger_closure.py --selftest",
+        "scripts/check_ci_trigger_closure.py",          # the gate itself
+        "-m pytest tests/test_ci_trigger_closure.py -q",
     ):
-        assert required in commands, f"no CI step runs `{required}`"
+        assert any(
+            command.endswith(required) for command in commands
+        ), f"no CI step runs `... {required}`"
 
 
 def test_both_halves_of_this_guard_can_start_ci() -> None:
