@@ -524,8 +524,12 @@ def _publish_file(source: Path, destination: Path) -> None:
     temporary = destination.with_name(destination.name + ".w1a1.tmp")
     if temporary.exists():
         raise SystemExit(f"stale publication temporary exists: {temporary}")
-    shutil.copyfile(source, temporary)
-    os.replace(temporary, destination)
+    try:
+        shutil.copyfile(source, temporary)
+        os.replace(temporary, destination)
+    finally:
+        # A failed copy/replace must not poison the next registered attempt.
+        temporary.unlink(missing_ok=True)
 
 
 def _build_and_stage(
@@ -762,6 +766,7 @@ def _build_and_stage(
             ),
         },
         "sealed_w1_sha256": FROZEN_SHA256,
+        "registered_output_paths": list(OUTPUT_PATHS),
         "generated_output_sha256": generated_hashes,
         "disclosure_only": {
             "path": DISCLOSURE_ONLY_PATH,
@@ -808,11 +813,29 @@ def _validate_staged(stage_root: Path, receipt: dict[str, Any], staged_gold: Pat
 def _publish(stage_root: Path, staged_gold: Path) -> None:
     _validate_outputs_absent()
     _validate_frozen_hashes()
-    for relative in OUTPUT_PATHS[1:]:
-        _publish_file(stage_root / relative, REPO_ROOT / relative)
-    _publish_file(staged_gold, REPO_ROOT / DISCLOSURE_ONLY_PATH)
-    # Receipt last: its presence means every governed output and disclosure landed.
-    _publish_file(stage_root / RECEIPT_RELATIVE_PATH, REPO_ROOT / RECEIPT_RELATIVE_PATH)
+    gold_path = REPO_ROOT / DISCLOSURE_ONLY_PATH
+    original_gold = gold_path.read_bytes()
+    try:
+        for relative in OUTPUT_PATHS[1:]:
+            _publish_file(stage_root / relative, REPO_ROOT / relative)
+        _publish_file(staged_gold, gold_path)
+        # Receipt last: its presence means every governed output and disclosure landed.
+        _publish_file(stage_root / RECEIPT_RELATIVE_PATH, REPO_ROOT / RECEIPT_RELATIVE_PATH)
+    except BaseException:
+        # Every registered additive target was absent at preflight, so removing them
+        # is a true rollback, never deletion of a pre-existing user artifact.
+        for relative in OUTPUT_PATHS:
+            (REPO_ROOT / relative).unlink(missing_ok=True)
+            (REPO_ROOT / relative).with_name(
+                (REPO_ROOT / relative).name + ".w1a1.tmp"
+            ).unlink(missing_ok=True)
+        rollback_source = gold_path.with_name("GOLD.md.w1a1.rollback-source")
+        rollback_source.write_bytes(original_gold)
+        try:
+            _publish_file(rollback_source, gold_path)
+        finally:
+            rollback_source.unlink(missing_ok=True)
+        raise
 
 
 def main() -> int:
