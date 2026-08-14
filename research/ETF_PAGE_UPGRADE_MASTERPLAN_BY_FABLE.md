@@ -110,8 +110,51 @@ W4 fix wave, binding:
 - **M6**: publish `window_days_min/max` on consensus rows; glossary states the 40-snapshot window spans 25–64 calendar days by fund; per-day aggregation deferred (future work note).
 - **M7**: §5 designer pin (already in the designer brief, now standing): any weighted ordering excludes net_conviction_pp<0 and renders n_accum/n_trim inline.
 - **Minors folded in**: m10 (n_immature vs n_unpriceable), m11 (bench freeze gated on bench_ret), m16 (drop engine_head from fixture provenance), m18 (corrupt artifact renders the same collecting state as missing), m20 (usd_stale_excluded receipt key), m12 (weight_trajectory routed through the same hygiene filters), m9 (tile copy disclosing pooled overlapping windows; n_names stays visible).
-- **Documented, not changed**: m8 (sum-vs-median estimator gap → glossary + future reconciliation decision), m13/m14/m15 (inert factors, sector flattening, discount-dominance — glossary honesty notes), m17/futures class (follow-up chip), m19 (fund_flows.json publicness kept; docstring corrected).
+- **Documented, not changed**: m8 (sum-vs-median estimator gap → glossary + future reconciliation decision), m13/m14/m15 (inert factors, sector flattening, discount-dominance — glossary honesty notes), m17/futures class (follow-up chip — **now CLOSED, see below**), m19 (fund_flows.json publicness kept; docstring corrected).
 - **M21**: rebase onto fresh origin/main before PR (upstream workflow-yaml job moved).
+
+### m17 — index-futures class: CLOSED 2026-08-12 (was "documented, not changed")
+
+Chipped as a latent risk on the reading that the futures-carrying funds (QQQ,
+RSP, MDY) sit outside the universe. **That reading was incomplete: the defect is
+already shipping.** A sweep of all 55,612 rows in `data/etf_holdings` +
+`data/holdings` finds futures overlays in five funds, and **BOTZ, BUG and XOP are
+in the universe today** — BOTZ on both sides of the gate:
+
+| fund | ticker | name | weight | in universe |
+|---|---|---|---|---|
+| BOTZ | `NQM6 Index` → `NQU6 Index` | NASDAQ 100 E-MINI JUN26 → SEP26 | 0.43% → 0.44% | **yes** |
+| BUG | `NQM6 Index` → `NQU6 Index` | same | 0.12% → 0.10% | yes (under `min_position_pct`) |
+| XOP | `IXPM6` → `IXPU6` | XAE ENERGY JUN26 → SEP26 | negative-weight legs | yes |
+| QQQ | `NQM6`, `NQM6_` | CME E-Mini NASDAQ 100 Index Future | ±0.111% (offsetting pair) | no |
+| RSP | `LWEM6` | E-mini S&P 500 Equal Weight Futures | 0.226%, $208.7M | no |
+
+The harm is not R1's: the contract count is too small to move the denominator.
+It lands on the **lifecycle path**. The contract ROLLS quarterly, and a ticker
+that vanishes while another appears is exactly the shape of a full exit plus a
+brand-new position — the two strongest signals the board publishes. BOTZ's
+2026-06-16 roll is live in the engine right now as a 0.43%-weight EXIT and a
+0.44% NEW position, both above `min_position_pct`, off a rollover that moved no
+money and changed no exposure. Between rolls the count still moves (BOTZ 28 → 25
+contracts on 2026-06-26), which publishes as a −10.7% "manager trim".
+
+FIX (shipped): `_FUTURES_NAME_RE` + `_FUTURES_TICKER_RE` in `collectors/holdings.py`,
+inside the shared `is_non_equity_holding` predicate, so the collector and the diff
+engine agree as they do for cash. Verified delta over the full corpus: **7 rows
+newly dropped, all seven genuine futures, zero real issuers affected.**
+
+**Conservatism ruling — the shape rule is refused.** A bare CME
+root+month+year ticker (`^[A-Z]{2,4}[FGHJKMNQUVXZ]\d$`) would catch
+NQM6/LWEM6/IXPM6 directly, and it is tempting because it needs no name. It is
+**not to be added**: Latin-American local tickers share the shape exactly —
+`CMIG4` (Cemig) and `BRKM5` (Braskem) are letters + a CME month code + a digit.
+Wrongly dropping a real equity is strictly worse than keeping a futures line,
+because a dropped name leaves no trace in any output, whereas a surviving
+futures line is visible and gradeable. Every futures row in the live corpus is
+already caught by name, so the shape rule buys nothing for that risk. The
+name rule likewise never keys on a bare `future`/`option` substring, and never
+on the singular `future` alone — `FutureFuel Corp` and `Option Care Health Inc`
+are live holdings and `Future plc` is a listed issuer.
 
 ## §7 Rollout & verification
 
