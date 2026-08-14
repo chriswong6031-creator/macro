@@ -2544,39 +2544,43 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     sweep still owned-matches this probe, and the two sibling lanes
     (`express-render-guards`, `attested-history-guards`) still fallback-match
     it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
-    a return of the curated eight. Weight and pack ceilings are unchanged.
+    a return of the curated nine. `intelligence-registry` is the ninth
+    exclusive: it only fallback-matched this probe, so curating it keeps the
+    ceiling at 128 rather than raising it. Weight and pack ceilings are
+    unchanged.
 
-    JOB COUNTS RE-BASED +1 (129/127/121) for #5620, which added ONE new job,
-    `intelligence-registry` (Eval OS T1). Measured against the pre-#5620
-    manifest, it is the sole newcomer on all three probes and the ONLY delta:
+    THE OTHER TWO PROBES STILL TAKE THAT JOB, so their counts are 127/121.
+    Curating `intelligence-registry` removed its `templates/**` smear — which is
+    why the ceiling above holds at 128 — but its DECLARED exclusive paths still
+    name `scripts/*` and `engine/**`, and those are real: the Eval OS T1 checker
+    resolves the intelligence registry against engine/ and scripts/ modules, so
+    a job that did not rerun for them would be the silent-narrowing failure this
+    suite exists to catch. Measured on the full checkout against the pre-#5620
+    manifest, it is the sole newcomer on both, and the ONLY set change:
 
-        templates/index.html          128 -> 129 jobs, 5,253 -> 5,266 weight
-        scripts/build_free_content.py 126 -> 127 jobs, 5,016 -> 5,029 weight
-        engine/prophet/plan_book.py   120 -> 121 jobs, 5,002 -> 5,015 weight
+        scripts/build_free_content.py 126 -> 127 jobs
+        engine/prophet/plan_book.py   120 -> 121 jobs
+        templates/index.html          128 -> 128 jobs (curation absorbed it)
 
-    +13 weight-seconds per probe. The WEIGHT and PACK ceilings are deliberately
-    NOT moved: they are what bound the incident this wave exists to prevent, and
-    a regression that gave the fallback tier back to the curated eight would be
-    ~1,550 weight-seconds and three of twelve packs — two orders of magnitude
-    above this, so it still reds here. What moved is only the job count, and only
-    because the previous bounds carried zero headroom on that axis: 128/126/120
-    were the exact pre-#5620 measurements, so the very first honest new job
-    breached all three. The docstring above promises headroom "so an unrelated
-    job gaining or losing a scope does not red this"; `intelligence-registry` is
-    exactly such a job, and that promise was not funded. Re-based to the new
-    measurement rather than padded, so the next new job is again a visible event.
+    The job's own weight is 7 weight-seconds — 0.45% of the ~1,550 the regression
+    target above describes — so the WEIGHT and PACK ceilings stay untouched and
+    still red on the shape that matters. (The probes' totals moved +13, not +7:
+    the remaining +6 is weight drift in jobs already selected, visible above as
+    templates/index.html gaining weight with no set change at all.)
 
-    This re-base is the same change carried by PR #5669 (authored there first).
-    It is duplicated here because both fixes land in the SAME `workflow-yaml`
-    job: run_ci_pack abandons a job's remaining steps on the first non-zero
-    exit, so this assertion (step 5) masks `audit_unrun_tests.py` (step 12).
-    A PR that healed only one of the two would leave `ci-pack-1` red and neither
-    PR could ever merge — the two-partial-heals deadlock. Whichever lands second
-    resolves to an identical tree.
+    NOT a newcomer since f96aa3f6, which re-measured these pins: that tree and
+    this one select byte-identical job sets for all three probes. 126/120 were
+    the pre-#5620 numbers, so the two probes f96aa3f6's curation did not cover
+    were left one short of their own measurement rather than newly breached.
+
+    MEASURE THESE ON A FULL CHECKOUT. `templates/index.html` is site/-sensitive:
+    a sparse worktree (site/ omitted, the fleet default per
+    config/sparse_worktree.json) selects 127 rather than 128 for it, so pins
+    taken there under-count by one and land back here as a red.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 129, 5_800),
+        ("templates/index.html", 128, 5_800),
         ("scripts/build_free_content.py", 127, 5_600),
         ("engine/prophet/plan_book.py", 121, 5_600),
     ):
