@@ -254,6 +254,48 @@ Honest scoping of these numbers:
   itself the proof that plan consumption works: a parity failure refuses in
   seconds, and nine did not.
 
+## §5b The producer-regression blind spot (found by this PR's own run)
+
+Run 31780141959 (this PR, full suite as a global invalidator) failed six legacy
+jobs. Classification — the exercise the incident says must be first-class:
+
+| legacy job | verdict | evidence |
+|---|---|---|
+| `workflow-yaml` (unrun-census unit tests) | **PR-caused** | `test_the_census_runs_in_a_ci_job` asserted the armed census lives in the MANIFEST; this PR moved it to ci-plan preflight. Mirrored-guard trap: the assertion pinned the LOCATION, not the property. Fixed + mutation-checked. |
+| `validated-claims` | inherited | 100+ violations in `templates/china.html.j2`, `templates/baskets_china_factorwatch.html.j2` — trees this diff never touches |
+| `engine-render-guards` | inherited | render-guard rot sweep; no templates/site/engine change here |
+| `unrun-subsector-themes` | inherited | themes heatmap / Theme Tracker suites |
+| `stock-seasonality` | inherited | seasonality engine suites |
+| `contract-drift` | inherited | reads `site/factordata/contracts/artifact_manifest.json` |
+
+**Main's last full baseline (31767934869, 03:49Z) was GREEN, and main regressed
+after it.** `git log 491bcdd2d45e..origin/main` over the failing subjects shows
+`render: site re-render (scope=all)`, `engine-render: regime recompute` ×2,
+`factor-intelligence nightly`, `engine: regime update`, plus merged product PRs
+(#5575 portfolio, CN Theme Tape, cn-tushare, govrev).
+
+**The structural defect this exposes: `ci.yml` has no `push` trigger, so a
+producer bake that reds main's own suite is INVISIBLE until some
+global-invalidator PR runs the full 188 jobs hours later — and then every such
+PR inherits all of it and cannot go green.** That is a standing feeder of the
+jam, independent of everything else in this document: the nightly lanes can
+break the suite and the only detector is a PR that had nothing to do with it.
+Two consequences worth acting on separately (heal chipped 2026-08-14):
+
+* The repair in this PR SHRINKS this blast radius substantially — a narrow PR
+  now selects ~3 jobs instead of ~120, so it is far less likely to inherit an
+  unrelated red at all. Only global invalidators still eat the full set.
+* The durable fix is a main-side detector that runs on producer pushes (or a
+  post-bake baseline), so main's own red is discovered by the lane that caused
+  it rather than by the next unrelated PR. NOT attempted here — it is a
+  different workstream and this session must not grow a second control plane.
+
+Merge path for this PR is therefore the documented inherited-red route, never
+`--admin`: a fresh main baseline (dispatched 08:09Z, run 31782771758, over a
+clear field — no in-flight main run) postdates these failures and shows the
+same jobs red on main, which is what lets `merge_on_green` exclude them BY NAME
+and merge. No product test was weakened and no red was bypassed.
+
 ## §6 Live probes (post-merge)
 
 - Probe A — narrow PR (one research `.md`): expect ci-plan ~1–2 min, 3 jobs /
