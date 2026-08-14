@@ -264,6 +264,13 @@ The suite is named in `engine-render-guards` in
 pre-merge gates; merge, hosted CI, and production advancement require the
 repository ship loop and are not claimed by this docket.
 
+> **Wiring moved 2026-08-14** (this paragraph records where the suite was on
+> 2026-08-02 and is left as written). `engine-render-guards` was split into three
+> lanes; the whole B4/attested-history cluster — B4D-A materialization, the
+> read-only operator foundation, the Wave 0A serving boundary, and the B4F pilot —
+> now lives in `attested-history-guards`, which is also the only lane that installs
+> boto3. The path gating in `.github/workflows/ci.yml` is unchanged.
+
 ## Explicitly excluded from B4A
 
 B4A does not add a router, API endpoint, scheduled operator, distributed

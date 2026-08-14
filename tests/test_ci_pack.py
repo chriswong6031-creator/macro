@@ -2465,10 +2465,17 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     headroom so an unrelated job gaining or losing a scope does not red this,
     while a regression that gives the fallback tier back to the curated eight
     (~1,550 weight-seconds and three of twelve packs per shape) does.
+
+    The templates/index.html job ceiling is 128 rather than 126 because
+    `engine-render-guards` split into three lanes (#5587 on top of #5586): the
+    sweep still owned-matches this probe, and the two sibling lanes
+    (`express-render-guards`, `attested-history-guards`) still fallback-match
+    it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
+    a return of the curated eight. Weight and pack ceilings are unchanged.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 126, 5_800),
+        ("templates/index.html", 128, 5_800),
         ("scripts/build_free_content.py", 126, 5_600),
         ("engine/prophet/plan_book.py", 120, 5_600),
     ):
