@@ -974,6 +974,40 @@ def test_b_dossier_prologue_uses_the_complete_identity_heading_boundary():
     assert "## Identity-episode catalog" in inserted
 
 
+def test_gold_annotation_uses_complete_heading_and_restores_exactly(tmp_path, monkeypatch):
+    relative = "research/stock_identity/dossiers/GOLD.md"
+    original = "\n".join(
+        (
+            "# GOLD — Identity Atlas v0 dossier",
+            "",
+            "standing authority",
+            "",
+            "## Identity",
+            "",
+            "identity body",
+            "",
+            "## Identity-episode catalog",
+        )
+    )
+    path = tmp_path / relative
+    path.parent.mkdir(parents=True)
+    path.write_text(original, encoding="utf-8")
+    expected = hashlib.sha256(original.encode("utf-8")).hexdigest()
+    monkeypatch.setattr(amendment_builder, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(amendment_builder, "DISCLOSURE_ONLY_PATH", relative)
+    monkeypatch.setattr(amendment_builder, "FROZEN_SHA256", {relative: expected})
+
+    annotated = amendment_builder._gold_markdown_with_annotation()
+    assert annotated.count(amendment_builder.GOLD_ANNOTATION_BEGIN) == 1
+    assert "## Identity-episode catalog" in annotated
+    restored = annotated.replace(
+        f"\n\n{amendment_builder.GOLD_ANNOTATION}\n\n",
+        "\n\n",
+        1,
+    )
+    assert hashlib.sha256(restored.encode("utf-8")).hexdigest() == expected
+
+
 def test_post_publish_validation_failure_rolls_back_the_whole_amendment(
     tmp_path, monkeypatch
 ):

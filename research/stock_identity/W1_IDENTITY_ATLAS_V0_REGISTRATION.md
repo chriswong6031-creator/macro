@@ -386,3 +386,13 @@ was clean, and the pinned GOLD markdown/SVG hashes remained exact. The retry cha
 that syntactic insertion boundary to the complete `## Identity\n` heading. It changes no
 source, cohort, constant, rank method, output path, acceptance rule, or interpretation;
 this log is committed and pushed before the retry.
+
+That retry ran at pushed draft-PR head
+`2bcf6c988ce1e97625233e973254431b25ed5804` and stopped at the second, independent
+insertion guard: `GOLD.md standing authority/Identity boundary is ambiguous`. The GOLD
+annotator used the same incomplete heading prefix and therefore also saw
+`## Identity-episode catalog`. Again no registered output existed afterward, the
+worktree was clean, both pinned GOLD hashes were exact, and no B metric or count was
+printed. The next retry applies the already-registered complete-heading rule to both
+inserters and adds a direct reversible GOLD-annotation regression before execution;
+no analytical or publication choice changes.

@@ -633,7 +633,8 @@ def _gold_markdown_with_annotation() -> str:
         raise SystemExit("GOLD.md no longer matches the registered pre-annotation hash")
     if GOLD_ANNOTATION_BEGIN in original or GOLD_ANNOTATION_END in original:
         raise SystemExit("GOLD.md already carries an A1 marker")
-    anchor = "\n\n## Identity"
+    # Match the complete heading, not the later ``## Identity-episode`` prefix.
+    anchor = "\n\n## Identity\n"
     if original.count(anchor) != 1:
         raise SystemExit("GOLD.md standing authority/Identity boundary is ambiguous")
     annotated = original.replace(anchor, f"\n\n{GOLD_ANNOTATION}{anchor}", 1)
