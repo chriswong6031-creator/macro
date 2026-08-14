@@ -41,15 +41,20 @@ Usage:
         [--trailers <raw_trailer_text>]
 
     python3 scripts/check_self_mod_fence.py --selftest
+    python3 scripts/check_self_mod_fence.py --print-planner-files
 
 Exit codes:
     0   OK (human PR, or loop PR touching no immutable path)
     1   BLOCKED (loop PR touching immutable path, or unclassifiable input)
+    2   --print-planner-files: CI_CHANGED_FILES_JSON is malformed
+    3   --print-planner-files: CI_CHANGED_FILES_JSON is unset
 """
 from __future__ import annotations
 
 import argparse
 import fnmatch
+import json
+import os
 import sys
 from pathlib import Path
 
@@ -389,6 +394,50 @@ def selftest() -> int:
     return 0
 
 
+# ── CI planner file list (packs are fetch-depth:1 after #5564) ────────────────
+
+
+def parse_ci_changed_files_json(raw: str | None) -> tuple[str, list[str]]:
+    """Decode ci-plan's ``CI_CHANGED_FILES_JSON`` without touching git.
+
+    Returns ``(status, paths)``:
+      * ``ok`` — well-formed JSON array of strings, or the token ``null``
+        (planner-verified empty / main dispatch). ``paths`` may be empty.
+      * ``unset`` — env missing or blank; caller may fall back to ``git diff``.
+      * ``malformed`` — present but not a JSON array of strings.
+
+    Fail-closed belongs to the caller, and only for ``malformed`` / a failed
+    git fallback after ``unset``. A depth-1 clone that cannot see
+    ``origin/main...HEAD`` is not unclassifiable when ci-plan already listed
+    the files (measured 2026-08-13: #5556/#5519/#5499 after #5564).
+    """
+    if raw is None or raw == "":
+        return "unset", []
+    stripped = raw.strip()
+    if stripped == "null":
+        return "ok", []
+    try:
+        parsed = json.loads(stripped)
+    except json.JSONDecodeError:
+        return "malformed", []
+    if not isinstance(parsed, list) or not all(isinstance(path, str) for path in parsed):
+        return "malformed", []
+    return "ok", [path for path in parsed if path]
+
+
+def print_planner_files(raw: str | None = None) -> int:
+    """CLI for the packed live-check shell. See module docstring for exit codes."""
+    status, paths = parse_ci_changed_files_json(
+        os.environ.get("CI_CHANGED_FILES_JSON") if raw is None else raw
+    )
+    if status == "unset":
+        return 3
+    if status == "malformed":
+        return 2
+    sys.stdout.write("\n".join(paths))
+    return 0
+
+
 # ── CLI ──────────────────────────────────────────────────────────────────────
 
 def main(argv: list[str] | None = None) -> int:
@@ -416,10 +465,20 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Run synthetic selftest; exit 0 on pass, 1 on failure.",
     )
+    ap.add_argument(
+        "--print-planner-files",
+        action="store_true",
+        help=(
+            "Print CI_CHANGED_FILES_JSON paths (one per line). "
+            "Exit 0 if well-formed, 2 if malformed, 3 if unset."
+        ),
+    )
     args = ap.parse_args(argv)
 
     if args.selftest:
         return selftest()
+    if args.print_planner_files:
+        return print_planner_files()
 
     # Fail-closed: if we can't even parse the arguments, block.
     exit_code, message = check(
