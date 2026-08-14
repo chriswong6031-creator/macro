@@ -22649,7 +22649,7 @@
     "python_count": 5661,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "997948c044be553a7faf4a108f9c6d8c0d9a778ba9a12a2312d3565f1ed890e2",
+  "index_sha256": "6c8a0650cac67006000fe29aecdb85c2c36f369b37d811f35ff76d4e4744a797",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -26055,7 +26055,6 @@
         "site/news/by_ticker.json",
         "site/policy_intent.json",
         "site/premiumdata/etfs.json",
-        "site/prophet/index.json",
         "site/qledger/track_record.json",
         "site/risk_state_live.js",
         "site/sectordata/sector_central.json",
@@ -26122,7 +26121,6 @@
         "tests/test_price_basis_flip.py",
         "tests/test_prophet_governor.py",
         "tests/test_prophet_options_context.py",
-        "tests/test_prophet_overtime_horizon_reconciliation.py",
         "tests/test_prophet_showcase.py",
         "tests/test_risk_lead_lag.py",
         "tests/test_risk_radar_dlg_country_wiring.py",
@@ -64055,7 +64053,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "fbb7c2dbf97b2f75d44feef35a56599cfb9826d10298a6a9cf21d907b6430e48"
+    "sha256": "36ec6b8ef6643417a12f9444c82b7a6b49c3da10cedb7e0584b4b1bc04e43269"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
