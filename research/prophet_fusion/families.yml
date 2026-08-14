@@ -223,6 +223,43 @@ semantics:
     evidence CHANNEL is live, not whether its evidence happened to fire.  "Board-adjacent"
     = `tier == "curated"`; the on-board subset (`eligible == True`) is reported beside it,
     never instead of it.
+  variance_floor: >-
+    PR-2, the registered floor-law amendment (DSC:COVERAGE-FLOOR-MEASURES-PRESENCE-NOT-
+    VARIANCE).  The coverage floor measures PRESENCE and cannot see a member whose values
+    are almost all the same value: presence ~100%, information ~0 (PR-1b measured it —
+    news_burst fired on 19 of 1,493 graded-frame rows, its within-date percentile was a
+    near-constant, and F8's leave-one-family-out delta was exactly 0.000 with CI [0,0],
+    yet the 0.50 presence floor admitted it).  The amendment adds a VARIANCE axis beside
+    the presence axis, defined GENERALLY on features alone — no outcome data enters the
+    rule, so it cannot be tuned to results: for each wired member on an evaluation frame,
+    count per date the DISTINCT non-null sign-oriented values among that date's rows; a
+    date "carries variation" when that count is >= 2 (a single measured value cannot
+    order a cross-section, and rank-of-one is degenerate).  The member is VOTE-INERT on
+    that frame when the share of frame dates carrying variation falls below
+    `min_dates_with_variation_share` (registered default 0.50; per-family and per-member
+    overrides permitted, same override ladder as `max_staleness_sessions`).  A
+    vote-inert member still appears in every census, coverage table and redundancy
+    matrix — inertness is DISCLOSED, never hidden — but it carries no vote in any family
+    aggregation and is excluded from every fitted design matrix, with the exclusion and
+    its per-date variation share printed.  Genuinely sparse-but-VARIABLE members (an
+    event flag firing on a few percent of rows most dates) pass, which is the DSC
+    falsifier's own acceptance test and is pinned by suite.  Vote-inertness is
+    FRAME-RELATIVE and computed by the harness at evaluation time — it is never a
+    registry constant, because a member inert on one frame may be live on the next, and
+    a PROSPECTIVE evaluation must compute it as-of each night (the PR-1b whole-frame
+    floor look-ahead lesson applies to this axis identically).
+  variance_floor_spec:
+    axis: within_date_distinct_nonnull_oriented_values
+    min_distinct_values_per_date: 2
+    min_dates_with_variation_share: 0.50
+    excluded_from: [family_vote_aggregation, fitted_design_matrices]
+    retained_in: [census, coverage_tables, redundancy_matrices, display]
+    structural_note: >-
+      F6's `cross_sectional: false` members read 0.00 on this axis by construction; the
+      STRUCTURAL exclusion remains the named reason for F6 (row-constant per night), and
+      reports keep "structurally excluded" and "vote-inert on this frame" apart — the
+      first is a property of the family's design, the second a measured property of a
+      member on a frame.
   staleness_definition: >-
     `max_staleness_sessions` bounds how many sessions a member's value may be carried
     forward from its PRODUCER's last refresh before that member abstains.  It is not a
@@ -628,7 +665,12 @@ families:
         # store column (PR-1a): the planned-vs-real vise has no green state across a
         # wiring transition until wired_from-dating lands (PR-1b).  PR-1b landed it —
         # see `wired_from_stores` at the top of this file — so the ledger wiring below
-        # is now homed and `sue_z` re-homes with the candidates store in PR-2.
+        # is now homed.  The sue_z candidates-store re-home stays DEFERRED as of PR-2
+        # (2026-08-14): the PR-1a telemetry columns enter the store by forward schema
+        # union and NO post-#5604 nightly has stamped yet, so `sue_z` exists in no
+        # stamped row and claiming it now would be a phantom column (wired_from
+        # validates against the store's real schema).  Re-home it in the wave that
+        # first observes a stamped row carrying it.
         # `sue_fresh` is the board's own chip: sue_z present AND sue_fresh_days <= 60
         # (scripts/grade_us_board.py:767).  PEAD's a-priori direction is POSITIVE, which
         # is what C1's F4 vote uses; the BINDING WARNING below rides with it.
@@ -738,7 +780,7 @@ families:
         source: FINRA backfill -> data/finra/short_interest.parquet -> Context Snapshot `short_int` dim
         columns: [short_int__short_shares, short_int__prev_short_shares, short_int__avg_daily_vol,
                   short_int__days_to_cover, short_int__si_change_pct]
-        pit_status: snapshot_not_pit
+        pit_status: pit_settlement
         availability_field: short_int__settlement_date
         timestamp_columns: [short_int__as_of, short_int__asof]
         basis_field: short_int__basis
@@ -746,13 +788,33 @@ families:
         reason_field: short_int__reason
         max_staleness_sessions: 21   # monthly FINRA settlement cycle
         null_semantics: unmeasured
+        pit_status_change_note: >-
+          PIT STATUS MOVED snapshot_not_pit -> pit_settlement IN PR-2, on #5602's merged
+          fix (2026-08-14).  The old note here read "PIT-BROKEN BY CONSTRUCTION:
+          `_short_int_dim` IGNORES the query date" — that was true when written and is
+          now FALSE: `context_api._short_int_dim` resolves a HISTORICAL query date
+          against the history+panel union gated on `knowable_date` (= settlement + 10
+          calendar days, the publication-lag guard), emitting basis `pit_settlement`
+          with as_of = the settlement actually knowable on the query date; a current
+          date (within 1 day) keeps the snapshot path and its `snapshot_not_pit` basis,
+          which is the correct live read and is what the nightly stamps.
+          `pit_settlement` is BACKTEST-LAWFUL in the arena: the §9.1 availability gate
+          is enforced INSIDE the producer, on the store's own knowable_date — never a
+          derived statutory lag applied at join time.  Two caveats BIND every consumer.
+          (1) DEPTH: committed history is 3 settlements (first knowable 2026-07-10);
+          re-run scripts/backfill_finra_short_interest.py before any deep historical
+          join (the 2018+ panel parquet is absent on the primary checkout) — a
+          three-settlement series supports coverage receipts, not inference.
+          (2) BASIS MIXING: the five stamped store columns above are the snapshot-era
+          emission; `short_int__knowable_date` joins the store schema only when
+          reconstruction rows stamp.  Key on `basis_field` — a frame mixing
+          `pit_settlement` and `snapshot_not_pit` bases without disclosure is not a
+          PIT frame.
         note: >-
-          PIT-BROKEN BY CONSTRUCTION (§4.2 flag 2): `context_api._short_int_dim` IGNORES the
-          query date and returns the CURRENT snapshot; the history file (2 settlements:
-          06-30, 07-31) is never read.  Any historical use is leakage.  The harness HARD-
-          REFUSES this member in every backtest frame — forward accrual only.  Separately,
           `settlement_date` is the OBSERVATION date, not the publication date (FINRA
-          publishes ~8 sessions later), so even a repaired reader must join on publication.
+          publishes ~8 sessions later) — the reader's knowable_date gate is what makes a
+          historical resolution lawful, and any deep join must keep joining on
+          publication knowability, never on settlement alone.
 
       - name: insider_panel
         source: engine/insider_intel.py -> data/sec_insider/panel -> Context Snapshot `insider` dim

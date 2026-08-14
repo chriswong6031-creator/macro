@@ -85,9 +85,20 @@ REGISTRY_SCHEMA = "prophet_fusion.families.v1"
 DEFAULT_COVERAGE_FLOOR = 0.50
 
 PIT_OK = "pit"
+#: PR-2, on #5602's merged fix: the short-interest dim resolves HISTORICAL query dates
+#: against the history+panel union gated on the store's own ``knowable_date``
+#: (= settlement + publication lag), basis ``pit_settlement``.  The §9.1 availability
+#: gate is enforced INSIDE the producer, so the status is backtest-lawful — with the
+#: registry's own depth caveat (3 committed settlements) binding every consumer.
+PIT_SETTLEMENT = "pit_settlement"
 PIT_FORWARD_ONLY = "forward_only"
 PIT_SNAPSHOT = "snapshot_not_pit"
-PIT_STATUSES = (PIT_OK, PIT_FORWARD_ONLY, PIT_SNAPSHOT)
+PIT_STATUSES = (PIT_OK, PIT_SETTLEMENT, PIT_FORWARD_ONLY, PIT_SNAPSHOT)
+
+#: The statuses a BACKTEST frame may join.  ``pit_settlement`` qualifies because its
+#: producer performs the availability join itself (knowable_date), never a derived
+#: statutory lag at join time; ``forward_only`` and ``snapshot_not_pit`` stay refused.
+BACKTEST_LAWFUL_STATUSES = frozenset({PIT_OK, PIT_SETTLEMENT})
 
 #: A backtest frame may only join ``pit`` members; a LIVE (serving) read has no future
 #: to leak, so a snapshot is lawful there.  The distinction is a parameter rather than
@@ -234,7 +245,8 @@ class Registry:
 
     def pit_columns(self) -> tuple[str, ...]:
         return tuple(sorted(c for c, m in self.columns.items()
-                            if m.pit_status == PIT_OK and c not in self.forbidden))
+                            if m.pit_status in BACKTEST_LAWFUL_STATUSES
+                            and c not in self.forbidden))
 
 
 def _entries(node: Any, key_names: Sequence[str], what: str) -> list[tuple[str, dict]]:
@@ -458,7 +470,7 @@ def check_features(registry: Registry, columns: Iterable[str], *,
     if frame_kind == FRAME_KIND_BACKTEST:
         for column in wanted:
             member = registry.columns[column]
-            if member.pit_status != PIT_OK:
+            if member.pit_status not in BACKTEST_LAWFUL_STATUSES:
                 raise PITRefusal(column, member.key, member.family,
                                  member.pit_status, frame_kind)
     members = tuple(sorted({f"{registry.columns[c].family}.{registry.columns[c].key}"
