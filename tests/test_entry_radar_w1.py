@@ -768,10 +768,14 @@ def test_radar_owns_only_its_declared_paths():
                         "agentos/",
                         # CI-hygiene touches MANDATED by repo checkers, not scope creep:
                         # audit_unrun_tests.py errors on any suite named by no run: step
-                        # (wired into signal-contract), and check_synapse_reads.py warns
-                        # on undeclared artifact readers (producers declared). Neither
-                        # grants behavior; the Prophet-path guard above stays absolute.
-                        ".github/ci/legacy-jobs.yml", "config/synapse.yml")
+                        # (wired into signal-contract), check_synapse_reads.py warns on
+                        # undeclared artifact readers (producers declared), and
+                        # docs/SIGNAL_BUS.md is GENERATED from synapse.yml (drift-checked)
+                        # so the consumer declarations require its regeneration in the
+                        # same PR. None grant behavior; the Prophet-path guard above
+                        # stays absolute.
+                        ".github/ci/legacy-jobs.yml", "config/synapse.yml",
+                        "docs/SIGNAL_BUS.md")
     strays = [p for p in changed if not p.startswith(allowed_prefixes)]
     assert not strays, f"PR-1 touched paths outside the Radar-owned set: {strays}"
 
