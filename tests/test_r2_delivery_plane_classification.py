@@ -16,6 +16,7 @@ PUBLISHER_PATH = ROOT / "scripts" / "publish_r2.py"
 DATA_BASE_PATH = ROOT / "templates" / "data_base.js"
 EXTERNAL_EVIDENCE_PATH = ROOT / "tests" / "fixtures" / "r2_delivery_external_evidence.v1.json"
 MACRO_RECEIPTS_PATH = ROOT / "tests" / "fixtures" / "r2_delivery_macro_evidence_files.v1.tsv"
+MACRO_ANCHOR_LINES_PATH = ROOT / "tests" / "fixtures" / "r2_delivery_macro_anchor_lines.v1.tsv"
 TERMINAL_PATHS_PATH = ROOT / "tests" / "fixtures" / "terminal_public_data_b383.paths"
 TERMINAL_FIXTURE_TAXONOMY_PATH = (
     ROOT / "tests" / "fixtures" / "terminal_fixture_taxonomy_b383.tsv"
@@ -165,6 +166,16 @@ def _macro_receipts() -> tuple[str, dict[str, tuple[int, str]]]:
         path, line_count, digest = raw.split("\t")
         receipts[path] = (int(line_count), digest)
     return snapshot, receipts
+
+
+def _macro_anchor_fingerprints() -> dict[tuple[str, int], str]:
+    fingerprints: dict[tuple[str, int], str] = {}
+    for raw in MACRO_ANCHOR_LINES_PATH.read_text(encoding="utf-8").splitlines():
+        if raw.startswith("#"):
+            continue
+        path, line, text = raw.split("\t", 2)
+        fingerprints[(path, int(line))] = text
+    return fingerprints
 
 
 def _terminal_fixture_taxonomy() -> tuple[str, list[dict[str, str]]]:
@@ -626,6 +637,37 @@ def test_all_evidence_anchors_are_pinned_to_reproducible_file_receipts() -> None
     for occurrence in external["terminal_fixture_controls"]["terminal_e2e_fixture_occurrences"]:
         receipt = external["files"][f"terminal:{occurrence['path']}"]
         assert all(1 <= line <= receipt["line_count"] for line in occurrence["lines"])
+
+
+def test_content_pinned_anchors_match_their_line_fingerprints() -> None:
+    # A line_count bound alone lets an insertion above an anchor silently re-point
+    # it: #5625 shifted config/synapse.yml anchors while the suite stayed green
+    # (macro:config/synapse.yml:6135 ended up on a blank line). Every anchor into
+    # a content-pinned macro file therefore also pins the exact text it targets.
+    fingerprints = _macro_anchor_fingerprints()
+    pinned: dict[tuple[str, int], list[str]] = {}
+    for family_id, anchor in _all_anchors():
+        repo, path, line = _parse_anchor(anchor)
+        if repo == "macro" and not path.startswith(("data/", "site/")):
+            pinned.setdefault((path, line), []).append(family_id)
+    assert set(fingerprints) == set(pinned)
+
+    file_lines: dict[str, list[str]] = {}
+    for (path, line), expected in sorted(fingerprints.items()):
+        families = pinned[(path, line)]
+        # A blank or unstripped fingerprint carries no evidentiary content.
+        assert expected == expected.strip() and expected, (path, line, families)
+        if path not in file_lines:
+            file_lines[path] = (ROOT / path).read_text(encoding="utf-8").splitlines()
+        lines = file_lines[path]
+        assert line <= len(lines), (path, line, families)
+        assert lines[line - 1].strip() == expected, (
+            path, line, families, lines[line - 1].strip(), expected,
+        )
+        # An ambiguous target cannot be text-verified: re-anchor to a unique line.
+        assert sum(1 for text in lines if text.strip() == expected) == 1, (
+            path, line, families,
+        )
 
 
 def test_terminal_inventory_and_resolver_are_complete_and_non_overlapping() -> None:
