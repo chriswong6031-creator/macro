@@ -284,6 +284,31 @@ class TestIdenticalCandidateSets:
     def test_the_report_verifies_candidate_set_equality(self, report):
         assert report["exhibits"]["candidate_sets_identical"]["verified"]["ok"] is True
 
+    def test_a_date_with_no_computable_stage_is_dropped_from_the_deployed_cell(
+        self, frame, synthetic, registry
+    ):
+        """NOT degraded to raw order under the deployed label (§8.3).
+
+        G1/G2/C1 borrow stage buckets from the G0 adapter. Starve G0 of one date's
+        payload and that date must LEAVE the deployed cell by name — a constant-filled
+        stage rank would silently publish a RAW ordering as a DEPLOYED primary, which is
+        the one comparison §8.3 says must never be blurred.
+        """
+        _raw, snapshots = synthetic
+        victim = frame.dates[2]
+        thinned = {k: v for k, v in snapshots.items() if k != victim}
+        g0 = race_mod.rung_g0(frame, thinned)
+        stages = g0.scores[["date", "ticker", "stage"]]
+        c1 = race_mod.build_c1(frame, registry).rung
+
+        deployed = race_mod.score_rung(c1, frame, horizon=10, composition="deployed",
+                                       stages=stages)
+        raw = race_mod.score_rung(c1, frame, horizon=10, composition="raw")
+        assert victim in deployed["composition_unavailable_dates"]
+        assert victim not in {row["date"] for row in deployed["per_date"]}
+        assert victim in {row["date"] for row in raw["per_date"]}, (
+            "the raw diagnostic still sees the date — only the deployed cell refuses it")
+
 
 # --------------------------------------------------------------------------- #
 # 3. family-vote law

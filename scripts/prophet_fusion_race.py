@@ -1126,11 +1126,15 @@ def compose(rung: Rung, *, composition: str,
     else:
         frame["stage_rank"] = np.nan
         return frame
-    ranks = source.astype("string").map(
-        lambda s: ubr.stage_rank(str(s)) if isinstance(s, str) else np.nan)
+    text = source.astype("string")
+    ranks = text.map(lambda s: ubr.stage_rank(str(s)) if isinstance(s, str) else np.nan)
     # 'published' is G0''s own marker: the rung IS the deployed order, so every row
-    # shares one bucket and the sort collapses to the published sequence.
-    ranks = ranks.where(source.astype("string") != "published", 0)
+    # shares one bucket and the sort collapses to the published sequence.  `.fillna`
+    # on the CONDITION is load-bearing: a null stage makes the comparison pd.NA, and
+    # `.where` treats a NA condition as False — which would have quietly assigned rank
+    # 0 to exactly the rows that have NO computable stage, publishing a raw order under
+    # the deployed label.
+    ranks = ranks.where((text != "published").fillna(True), 0)
     frame["stage_rank"] = pd.to_numeric(ranks, errors="coerce")
     return frame
 
@@ -1242,6 +1246,28 @@ def score_rung(rung: Rung, race: RaceFrame, *, horizon: int, composition: str,
                 "unavailable": ("no stage bucketing is computable for this rung on this "
                                 "frame — the deployed composition needs the G0 adapter's "
                                 "stages and the date carries no frozen payload")}
+
+    # A DATE WITH NO COMPUTABLE STAGE IS DROPPED FROM THE DEPLOYED CELL, not degraded.
+    # G1/G2/C1 borrow their stage buckets from the G0 adapter, which needs a frozen
+    # payload; on the 7 dates that have none, filling the missing rank with a constant
+    # would silently produce a RAW ordering wearing the DEPLOYED label — the one
+    # comparison §8.3 says must never be blurred. So the date is refused here and named
+    # in `composition_unavailable_dates`, and the pairwise comparisons (which pair on
+    # common dates) shrink accordingly and print their n.
+    unavailable_dates: list[str] = []
+    if composition == PRIMARY_COMPOSITION:
+        by_date = composed.groupby("date")["stage_rank"].apply(lambda s: s.isna().any())
+        unavailable_dates = sorted(str(d) for d, bad in by_date.items() if bool(bad))
+        if unavailable_dates:
+            composed = composed[~composed["date"].astype(str).isin(unavailable_dates)]
+        if composed.empty:
+            return {"rung": rung.key, "horizon": int(horizon),
+                    "composition": composition, "n_dates": 0, "per_date": [],
+                    "aggregate": {},
+                    "composition_unavailable_dates": unavailable_dates,
+                    "unavailable": ("every date lacks a computable stage bucket; a "
+                                    "constant-filled rank would be a RAW order wearing "
+                                    "the DEPLOYED label")}
     outcome = _outcome_slice(race, horizon)
     rng = np.random.default_rng(tiebreak_seed) if tiebreak_seed is not None else None
     per_date: list[dict[str, Any]] = []
@@ -1264,6 +1290,7 @@ def score_rung(rung: Rung, race: RaceFrame, *, horizon: int, composition: str,
         aggregate[f"{column}__n_dates"] = int(len(series))
     return {
         "rung": rung.key, "horizon": int(horizon), "composition": composition,
+        "composition_unavailable_dates": unavailable_dates,
         "composition_note": (
             "DEPLOYED: the rung's score substituted into the champion's own "
             "(stage_rank, -score, ticker) sort (§8.3 primary surface)."

@@ -33,7 +33,8 @@ replay** on this frame, and its own ablation says only one of its four families 
 distinguishable work. The most decision-relevant output of this exercise is not a
 leaderboard at all — it is the measured **minimum detectable ΔP@5 of ~17.4pp**, which is
 1.7× the ~10pp §8.7 registered in advance, and the receipts in §12 about which stores
-disagree with each other.
+disagree with each other. Seven of the 24 dates carry no frozen board payload, so the
+apples-to-apples window every rung shares is **15 nights**.
 
 ---
 
@@ -175,15 +176,30 @@ intersection.
 
 ### 4.2 On each rung's own dates (n printed)
 
-| Rung | P@5 | top-5 mean | n dates |
-|---|---|---|---|
-| G0 | 0.493 | +0.06pp | 15 |
-| G0′ | 0.435 | −1.55pp | 17 |
-| G1 | 0.424 | −1.00pp | 17 |
-| G2 | 0.477 | +0.18pp | 15 |
-| G3 | 0.568 | +1.26pp | 15 |
-| G4 | 0.560 | −0.14pp | 15 |
-| C1 | 0.447 | −0.64pp | 17 |
+| Rung | P@5 | top-5 mean | n dates with a measured H=10 | dates refused by the DEPLOYED cell |
+|---|---|---|---|---|
+| G0 | 0.493 | +0.06pp | 15 | 0 |
+| G0′ | 0.435 | −1.55pp | 17 | 0 |
+| G1 | 0.440 | −0.45pp | 15 | 7 |
+| G2 | 0.477 | +0.18pp | 15 | 0 |
+| G3 | 0.568 | +1.26pp | 15 | 0 |
+| G4 | 0.560 | −0.14pp | 15 | 0 |
+| C1 | 0.453 | −0.51pp | 15 | 7 |
+
+**Why G1 and C1 refuse 7 dates in the DEPLOYED cell even though they race 24.** G1, G2
+and C1 have no stage of their own — §8.3's deployed composition substitutes their score
+into the CHAMPION's bucketing, which they borrow from the G0 adapter, which needs a
+frozen payload. On the 7 dates that have none there is no stage to borrow, so those
+dates leave the deployed cell and are named in `composition_unavailable_dates`. Filling
+the missing rank with a constant would have published a RAW ordering under the DEPLOYED
+label — the one comparison §8.3 says must never be blurred. G0′ keeps all its dates
+because it IS the deployed order rather than a score substituted into one.
+
+*(This was a real defect in the first cut of this race and is recorded rather than
+quietly corrected: `pandas.Series.where` treats a `pd.NA` condition as False, so the
+null stage ranks were being assigned bucket 0. It moved G1's headline P@5 from a
+raw-contaminated 0.424 to 0.440 and C1's from 0.447 to 0.453, and it is now pinned by
+`test_a_date_with_no_computable_stage_is_dropped_from_the_deployed_cell`.)*
 
 ### 4.3 Deltas vs BOTH anchors — date-blocked paired bootstrap (B=2000, seed 20260814)
 
@@ -193,7 +209,7 @@ statistic is the mean per-date difference.
 | Rung | vs | ΔP@5 | 95% CI | excl. 0 | Δtop-5 mean | 95% CI | excl. 0 | n common |
 |---|---|---|---|---|---|---|---|---|
 | G1 | G0 | −0.053 | [−0.147, +0.053] | no | −0.51pp | [−2.06, +1.00] | no | 15 |
-| G1 | G0′ | −0.012 | [−0.153, +0.129] | no | +0.55pp | [−1.64, +2.84] | no | 17 |
+| G1 | G0′ | +0.000 | [−0.160, +0.160] | no | +0.94pp | [−1.49, +3.32] | no | 15 |
 | G2 | G0 | −0.017 | [−0.123, +0.077] | no | +0.12pp | [−2.24, +2.25] | no | 15 |
 | G2 | G0′ | +0.037 | [−0.103, +0.187] | no | +1.57pp | [−0.94, +4.17] | no | 15 |
 | G3 | G0 | **+0.074** | [−0.050, +0.199] | no | +1.20pp | [−1.57, +3.98] | no | 15 |
@@ -201,7 +217,7 @@ statistic is the mean per-date difference.
 | G4 | G0 | +0.067 | [−0.027, +0.174] | no | −0.20pp | [−1.28, +0.93] | no | 15 |
 | G4 | G0′ | +0.120 | [−0.040, +0.293] | no | +1.26pp | [−1.23, +3.94] | no | 15 |
 | C1 | G0 | −0.040 | [−0.133, +0.053] | no | −0.58pp | [−2.06, +1.01] | no | 15 |
-| C1 | G0′ | +0.012 | [−0.118, +0.129] | no | +0.91pp | [−1.12, +2.83] | no | 17 |
+| C1 | G0′ | +0.013 | [−0.133, +0.147] | no | +0.88pp | [−1.41, +3.21] | no | 15 |
 
 **Every interval includes zero.** §8.1's registered minimum increment (ΔP@5 ≥ +3pp with
 the CI excluding zero) is met by no rung against either anchor.
@@ -217,11 +233,11 @@ whole frame and only **7 dates** carry an H=21 grade.
 |---|---|---|---|---|---|
 | G0 | 0.518 | −0.05pp | 0.514 | +2.23pp | 0.100 |
 | G0′ | 0.442 | −0.57pp | 0.536 | +1.41pp | 0.133 |
-| G1 | 0.442 | −0.50pp | 0.429 | −0.46pp | 0.114 |
+| G1 | 0.435 | −0.60pp | 0.429 | −0.46pp | 0.114 |
 | G2 | 0.518 | +0.17pp | 0.571 | +0.95pp | 0.186 |
 | G3 | 0.529 | +0.01pp | 0.571 | +2.87pp | 0.143 |
 | G4 | 0.541 | −0.45pp | 0.543 | +1.50pp | 0.159 |
-| C1 | 0.433 | −0.85pp | 0.429 | −1.88pp | 0.114 |
+| C1 | 0.400 | −1.18pp | 0.429 | −1.88pp | 0.114 |
 
 **H=42 and H=63: ZERO graded rows.** Printed as explicit nulls in `report.json`, never
 omitted and never proxied by a neighbouring horizon. No `basing`-class claim is possible
@@ -239,12 +255,12 @@ H=10 at −3pp and H=21 at −10pp), so that cell is null rather than handed H=1
 | Rung | MFE median | MFE coverage | MDD median | MDD coverage | expected shortfall (worst decile of top-10) |
 |---|---|---|---|---|---|
 | G0 | +4.11pp | 0.88 | −3.86pp | 0.88 | −11.10pp |
-| G0′ | +3.19pp | 0.71 | −4.20pp | 0.71 | −12.55pp |
-| G1 | +3.68pp | 0.71 | −3.89pp | 0.71 | −11.21pp |
+| G0′ | +3.19pp | 0.62 | −4.20pp | 0.71 | −12.55pp |
+| G1 | +3.68pp | 0.88 | −3.91pp | 0.88 | −11.20pp |
 | G2 | +4.46pp | 0.87 | −4.29pp | 0.87 | −12.92pp |
 | G3 | +4.77pp | 0.86 | −3.29pp | 0.86 | −11.55pp |
 | G4 | +4.32pp | 0.87 | −3.61pp | 0.87 | −11.53pp |
-| C1 | +3.63pp | 0.71 | −3.67pp | 0.71 | −10.79pp |
+| C1 | +3.63pp | 0.88 | −3.92pp | 0.88 | −10.81pp |
 
 > **`mdd_basis = mae_close_excess_spy`. This is NOT a true intrabar maximum drawdown.**
 > On this frame `mdd` resolves to a **close-based maximum adverse excursion measured on
@@ -262,16 +278,16 @@ a real ordering authority, so it is measured rather than assumed.
 
 | Rung | distinct-score ratio (mean/date) | dates with top-5 boundary ties | P@5 alphabetic | P@5 random-tiebreak min / max | spread |
 |---|---|---|---|---|---|
-| G0 | 0.845 | 0 | 0.493 | — | — |
-| G0′ | 1.000 | 0 | 0.440 | — | — |
-| G1 | 0.885 | 4 | 0.424 | 0.412 / 0.424 | 0.012 |
-| G2 | 0.565 | 5 | 0.477 | 0.477 / 0.493 | 0.017 |
-| G3 | 0.862 | 0 | 0.568 | — | — |
-| **G4** | **0.422** | **11** | 0.560 | **0.520 / 0.613** | **0.093** |
-| C1 | 0.883 | 5 | 0.447 | 0.447 / 0.447 | 0.000 |
+| G0 | 0.853 | 0 | 0.493 | — | — |
+| G0′ | 1.000 | 0 | 0.435 | — | — |
+| G1 | 0.882 | 2 | 0.440 | — | — |
+| G2 | 0.541 | 5 | 0.477 | 0.477 / 0.493 | 0.017 |
+| G3 | 0.866 | 0 | 0.568 | — | — |
+| **G4** | **0.449** | **11** | 0.560 | **0.520 / 0.613** | **0.093** |
+| C1 | 0.883 | 2 | 0.453 | 0.453 / 0.453 | 0.000 |
 
 (B=200 random tie-breaks, seed 20260816; triggered for C1 always plus any rung with
-boundary ties on ≥3 dates.)
+boundary ties on ≥3 dates — so G2, G4 and C1 were re-run and the rest were not.)
 
 **The load-bearing row is G4.** Deleting the edge leg leaves the entry leg — which the
 ANTICIPATION-v1 ladder made **flat at 1.0 across all five admissible statuses** — so G4's
@@ -280,7 +296,7 @@ tiebreak on 11 of 15 dates. Its headline 0.560 could have been anywhere in
 **[0.520, 0.613]** on a different tiebreak. G4's point estimate is not a clean reading of
 the deletion hypothesis; it is partly an artifact of which tickers sort first.
 
-C1's spread is exactly 0.000 despite ties on 5 dates: its tied groups sit entirely inside
+C1's spread is exactly 0.000 despite ties on 2 dates: its tied groups sit entirely inside
 or entirely outside the top-5, so the alphabet is not doing work there.
 
 ---
@@ -298,11 +314,11 @@ better than an arbitrary order of the same names?" — a floor, claimable for no
 |---|---|---|---|---|
 | G0 | +0.06pp | −0.07pp | 0.90pp | 0.436 |
 | G0′ | −1.55pp | +0.45pp | 1.02pp | **0.974** |
-| G1 | −1.00pp | +0.05pp | 0.85pp | 0.902 |
+| G1 | −0.45pp | +0.05pp | 0.85pp | 0.711 |
 | G2 | +0.18pp | −0.12pp | 0.92pp | 0.371 |
 | G3 | +1.26pp | −0.13pp | 0.92pp | **0.067** |
 | G4 | −0.14pp | −0.24pp | 0.90pp | 0.426 |
-| C1 | −0.64pp | +0.06pp | 0.84pp | 0.797 |
+| C1 | −0.51pp | +0.06pp | 0.84pp | 0.747 |
 
 G3 is the only rung within sight of the floor, and it does not clear 0.05. **G0′ at
 p=0.974** says the published order's top-5 sat below 97% of random orderings of the same
@@ -377,31 +393,34 @@ identical).
 
 | Family removed | ΔP@5 (base − without) | 95% CI | Δtop-5 mean |
 |---|---|---|---|
-| F2 MOMENTUM-EXTENSION | **−0.082** | [−0.188, +0.024] | −0.48pp |
-| F4 CATALYST-EVENT | +0.012 | [−0.024, +0.047] | −0.33pp |
-| F5 FLOW-POSITIONING | +0.024 | [+0.000, +0.059] | +0.11pp |
+| F2 MOMENTUM-EXTENSION | **−0.040** | [−0.133, +0.067] | −0.10pp |
+| F4 CATALYST-EVENT | +0.013 | [−0.040, +0.054] | −0.38pp |
+| F5 FLOW-POSITIONING | +0.027 | [+0.000, +0.067] | +0.13pp |
 | F8 ATTENTION-CROWDING | **+0.000** | [+0.000, +0.000] | +0.00pp |
 
 Read the signs carefully: a **negative** Δ means C1 scored *better without that family*.
-**F2 is the only family whose removal improves C1**, by 8.2pp of P@5 — consistent with
-§6.6's alpha finding and with G1's own position in §4.
+**F2 is the only family whose removal improves C1**, by 4.0pp of P@5 (CI still spanning
+zero) — the same direction as §6.6's alpha finding and as G1's own position in §4.
 
-**F8's LOFO delta is exactly zero, on every date.** That is not a rounding artifact and
-it is worth stating plainly: `news_burst` fires True on **19 of 1,493** measured rows, so
-its within-date percentile is a near-constant, and adding a per-date constant to a mean
-cannot reorder anything. The 19 True rows never crossed a top-5 boundary. The coverage
+**F8's LOFO delta is exactly zero, on every date, with a CI of [0.000, 0.000].** That is
+not a rounding artifact and it is worth stating plainly: `news_burst` fires True on
+**19 of 1,493** measured rows, so its within-date percentile is a near-constant, and
+adding a per-date constant to a mean cannot reorder anything. The 19 True rows never
+crossed a top-5 boundary. The coverage
 floor let F8 in on non-null share (0.663 — the Falses are measured negatives) and the
 tape shows it cast no distinguishing vote. **A coverage floor measures presence, not
 cross-sectional variance**, and this is the frame's demonstration of the gap.
 
-### 9.3 Single-family-only rankers (each family alone, 24 dates)
+### 9.3 Single-family-only rankers (each family alone)
 
 | Family alone | P@5 | top-5 mean | top-5 median | large-loser | Spearman |
 |---|---|---|---|---|---|
-| F2 | 0.435 | −0.26pp | −1.63pp | 0.371 | **−0.076** |
-| F4 | 0.494 | −0.90pp | −0.47pp | 0.392 | +0.010 |
-| F5 | **0.506** | −0.10pp | −0.36pp | 0.373 | **+0.073** |
-| F8 | 0.488 | −0.45pp | −0.68pp | 0.385 | +0.075 |
+| F2 | 0.440 | −0.08pp | −1.65pp | 0.373 | **−0.082** |
+| F4 | 0.453 | −1.25pp | −1.09pp | 0.424 | +0.010 |
+| F5 | **0.467** | −0.34pp | −0.97pp | 0.402 | **+0.073** |
+| F8 | 0.447 | −0.74pp | −1.33pp | 0.416 | +0.075 |
+
+(15 dates each — the deployed composition, same window as §4.1.)
 
 ### 9.4 Incremental over the champion replay (partial Spearman | G0)
 
@@ -453,7 +472,7 @@ doing distinguishable work, one (F2) pointing the wrong way, one (F4) at zero, a
 (F8) cross-sectionally degenerate.** The cross-family correlations are small (|ρ| ≤ 0.25),
 so the four are not correlated siblings *of each other*; the redundancy that matters here
 is **within** F2. C1's equal-weight construction spends a quarter of its vote on a family
-whose LOFO says it subtracts 8.2pp and a quarter on a family that does literally nothing.
+whose LOFO says it subtracts 4.0pp and a quarter on a family that does literally nothing.
 That is an argument about C1's WEIGHTS, which is exactly the question C2 is registered to
 ask — and it is not an argument that breadth of evidence fails, because the breadth here
 is four families of which two are unreadable.
@@ -515,8 +534,8 @@ calibration exercise is allowed to be.
 
 | date | n | G0 | G0′ | G1 | G2 | G3 | G4 | C1 |
 |---|---|---|---|---|---|---|---|---|
-| 2026-06-15 | 97 | — | 0.60 / +0.06 | 0.40 / −4.16 | — | — | — | 0.60 / +0.01 |
-| 2026-06-16 | 95 | — | 0.20 / −5.59 | 0.20 / −6.15 | — | — | — | 0.20 / −3.26 |
+| 2026-06-15 | 97 | — | 0.60 / +0.06 | — | — | — | — | — |
+| 2026-06-16 | 95 | — | 0.20 / −5.59 | — | — | — | — | — |
 | 2026-06-17 | 113 | — | — | — | — | — | — | — |
 | 2026-06-18 | 107 | — | — | — | — | — | — | — |
 | 2026-06-22 | 117 | — | — | — | — | — | — | — |
@@ -541,7 +560,9 @@ calibration exercise is allowed to be.
 | 2026-07-31 | 142 | — | — | — | — | — | — | — |
 
 Nine dates carry no H=10 grade at all (2026-06-17..06-24 and 07-30/07-31 — the tail has
-not matured). Seven carry no frozen payload. The intersection is the 15 dates §4.1 uses.
+not matured). Seven carry no frozen payload, which costs G0/G2/G3/G4 the date outright
+and costs G1/C1 their DEPLOYED cell for it (§4.2). Only G0′ scores 2026-06-15/06-16, and
+the intersection every rung shares is the 15 dates §4.1 uses.
 **A leaderboard built on 15 nights is a leaderboard built on 15 nights**, and the spread
 of individual cells above (from −8.93pp to +10.67pp on one rung-date) is the honest
 picture of how much any of these means.
