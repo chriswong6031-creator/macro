@@ -5,6 +5,7 @@ import copy
 import hashlib
 import json
 from pathlib import Path
+import tempfile
 
 import pytest
 import pandas as pd
@@ -219,3 +220,5 @@ def test_post_publish_validation_failure_rolls_back_the_whole_amendment(
 
     assert original_gold.read_text(encoding="utf-8") == "sealed"
     assert all(not (repo / relative).exists() for relative in outputs)
+    lock_key = hashlib.sha256(str(repo.resolve()).encode("utf-8")).hexdigest()[:16]
+    assert (Path(tempfile.gettempdir()) / f"stock-identity-w1a1-{lock_key}.lock").exists()

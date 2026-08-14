@@ -999,8 +999,9 @@ def _publish(stage_root: Path, staged_gold: Path, receipt: dict[str, Any]) -> No
                 fcntl.flock(lock_handle.fileno(), fcntl.LOCK_UN)
         finally:
             lock_handle.close()
-            if lock_acquired:
-                lock_path.unlink(missing_ok=True)
+            # Keep the stable per-repository inode. Unlinking after unlock lets a
+            # waiter acquire the old inode while a third process creates and locks a
+            # new one at the same path, defeating mutual exclusion.
 
 
 def main() -> int:
