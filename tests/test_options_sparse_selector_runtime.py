@@ -380,8 +380,10 @@ def _last_cycle(root: Path, head: dict) -> dict:
     return selector._load_pointer(root, head["last_cycle"], label="test cycle")
 
 
-def _decision_rows(root: Path) -> list[dict]:
-    return selector.authenticate_store(root)[1]
+def _decision_rows(
+    root: Path, evidence_inputs: selector.EvidenceInputs | None = None
+) -> list[dict]:
+    return selector.authenticate_store(root, evidence_inputs=evidence_inputs)[1]
 
 
 def _cycle_rows(root: Path, head: dict) -> list[dict]:
@@ -424,7 +426,119 @@ def _context_head(references: list[dict], *, published_at: str) -> dict:
     )
 
 
+def _publish_w1a(
+    root: Path,
+    references: list[dict],
+    *,
+    published_at: str = "2026-08-12T14:00:00Z",
+    salt: str = "a",
+) -> dict:
+    def digest(label: str) -> str:
+        return hashlib.sha256(label.encode("utf-8")).hexdigest()
+
+    sources = []
+    for path in selector.context_bridge._SOURCE_PATHS:
+        count = 1 if path == "config/market_memory_canary.v1.json" else 0
+        if path == "data/options_signal_episode/episodes.jsonl":
+            count = sum(
+                item["owner"]["schema"] == "options.signal_episode/v1"
+                for item in references
+            )
+        if path == "data/options_signal_episode/campaigns.jsonl":
+            count = sum(
+                item["owner"]["schema"] == "options.signal_campaign/v2"
+                for item in references
+            )
+        sources.append(
+            {
+                "path": path,
+                "sha256": digest(path),
+                "bytes": 1,
+                "record_count": count,
+            }
+        )
+    generations = []
+    for ordinal, profile in enumerate(
+        selector.context_bridge._GENERATION_PROFILES, start=1
+    ):
+        token = digest(f"{profile}-{ordinal}-{salt}")
+        generations.append(
+            {
+                "profile": profile,
+                "store_id": f"mmstore_{token}",
+                "generation_id": f"mmgeneration_{digest('generation-' + token)}",
+                "generation_sha256": digest("sha-" + token),
+                "capture_count": 0,
+            }
+        )
+    audit = selector.context_bridge.build_audit_receipt(
+        references=references,
+        source_artifacts=sources,
+        context_generations=generations,
+        audited_at=published_at,
+    )
+    head = context_store.publish_receipt_set(
+        root,
+        deployed_commit=("d" if salt == "a" else "e") * 40,
+        references=references,
+        audit=audit,
+    )
+    return context_store.read_current_publication(root) | {"head": head}
+
+
+def _bound_w1a_reference(
+    *,
+    owner_id: str,
+    record_sha256: str,
+    padding_items: int = 0,
+) -> dict:
+    identity = selector.prereg.SELECTOR_RULE["required_truth_receipts"]["konseki"][
+        "subject_identity"
+    ]
+    token = hashlib.sha256(owner_id.encode("utf-8")).hexdigest()
+    source_ids = sorted(
+        f"mmsrc_{hashlib.sha256(f'{token}-source-{index}'.encode()).hexdigest()}"
+        for index in range(padding_items)
+    )
+    artifact_ids = sorted(
+        hashlib.sha256(f"{token}-artifact-{index}".encode()).hexdigest()
+        for index in range(padding_items)
+    )
+    return selector.context_bridge._reference(
+        owner={
+            "schema": "options.signal_episode/v1",
+            "id": owner_id,
+            "record_sha256": record_sha256,
+            "ticker": "SPY",
+            "event_time": "2026-08-12T13:30:59Z",
+            "requested_as_of": "2026-08-12T13:31:00Z",
+            "requested_as_of_basis": "durable_available_at",
+            "evidence_phase": "decision_time_actual_output",
+        },
+        subject={
+            "subject_id": identity["subject_id"],
+            "instrument_id": identity["instrument_id"],
+        },
+        identity_config_sha256=identity["identity_config_sha256"],
+        disposition="bound",
+        reason=None,
+        context={
+            "context_id": f"mmctx_{token}",
+            "packet_sha256": token,
+            "capture_id": f"mmcapture_{token}",
+            "capture_schema": "market_memory.capture_receipt.v1",
+            "query_id": f"mmquery_{token}",
+            "basis": "exact_requested_as_of_capture",
+            "source_receipt_ids": source_ids,
+            "source_artifact_sha256s": artifact_ids,
+            "missing_feature_ids": [],
+            "domain_coverage_sha256": token,
+        },
+    )
+
+
 def _passing_evidence(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     source: selector.SourceSnapshot,
     *,
@@ -473,15 +587,8 @@ def _passing_evidence(
         references.append(reference)
         by_episode[episode["episode_id"]] = (reference,)
     references.sort(key=lambda row: (row["owner"]["schema"], row["owner"]["id"]))
-    export = selector._make_w1a_export_for_test(
-        {
-            "head": _context_head(
-                references, published_at="2026-08-12T14:00:00Z"
-            ),
-            "references": references,
-        },
-        exported_at="2026-08-12T14:00:00Z",
-    )
+    w1a_root = tmp_path / "w1a-receipts"
+    publication = _publish_w1a(w1a_root, references)
 
     enrollments: dict[tuple[str, str, str, str], tuple[tuple, ...]] = {}
     enrollment_pointers: dict[str, dict] = {}
@@ -560,7 +667,12 @@ def _passing_evidence(
         "latest_marks": latest_marks,
     }
     snapshot = selector.EvidenceSnapshot(
-        w1a_export=export,
+        w1a_head=publication["head"],
+        w1a_audit=publication["audit"],
+        w1a_references=tuple(publication["references"]),
+        w1a_root_path_sha256=hashlib.sha256(
+            os.fsencode(str(w1a_root.absolute()))
+        ).hexdigest(),
         w1a_by_episode=by_episode,
         lifecycle_state=state,
         enrollments_by_contract=enrollments,
@@ -578,7 +690,7 @@ def _passing_evidence(
     monkeypatch.setattr(
         selector,
         "_build_evidence_snapshot",
-        lambda inputs: snapshot if inputs.w1a_export == export else pytest.fail(
+        lambda inputs: snapshot if inputs.w1a_receipt_root == w1a_root else pytest.fail(
             "passing evidence inputs changed"
         ),
     )
@@ -598,8 +710,7 @@ def _passing_evidence(
         return selector._evidence_object(
             {
                 "schema": "options.sparse_selector_konseki_evidence/v1",
-                "export_id": export["export_id"],
-                "head": export["head"],
+                "source_publication_id": publication["head"]["publication_id"],
                 "reference": reference,
                 "authority": dict(selector.FALSE_AUTHORITY),
             }
@@ -608,7 +719,7 @@ def _passing_evidence(
     monkeypatch.setattr(
         selector, "_reference_for_candidate", reference_for_candidate
     )
-    return selector.EvidenceInputs(w1a_export=export)
+    return selector.EvidenceInputs(w1a_receipt_root=w1a_root)
 
 
 def test_schema_and_frozen_digests_are_valid() -> None:
@@ -729,20 +840,20 @@ def _empty_context_head(*, published_at: str) -> dict:
     return _context_head([], published_at=published_at)
 
 
-def test_w1a_export_clock_is_causal_to_head_and_evidence_probe(
+def test_w1a_receipt_root_replaces_caller_export_and_preserves_clock_causality(
+    tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    head = _empty_context_head(published_at="2026-08-12T14:00:00Z")
-    with pytest.raises(selector.SparseSelectorError, match="predates"):
-        selector._make_w1a_export_for_test(
-            {"head": head, "references": []},
-            exported_at="2026-08-12T13:59:59Z",
-        )
-    export = selector._make_w1a_export_for_test(
-        {"head": head, "references": []},
-        exported_at="2026-08-12T14:00:01Z",
+    root = tmp_path / "w1a-clock"
+    publication = _publish_w1a(root, [])
+    snapshot = selector._build_evidence_snapshot(
+        selector.EvidenceInputs(w1a_receipt_root=root)
     )
-    assert selector.validate_w1a_export(export) == export
+    assert snapshot.w1a_head == publication["head"]
+    assert snapshot.w1a_references == ()
+    assert snapshot.w1a_error is False
+    assert not hasattr(selector.EvidenceInputs(), "w1a_export")
+    assert not hasattr(selector, "validate_w1a_export")
 
     episode = _episode("future-export", "2026-08-12T13:31:00Z")
     candidate = {
@@ -750,30 +861,165 @@ def test_w1a_export_clock_is_causal_to_head_and_evidence_probe(
         "final_episode_row_sha256": "a" * 64,
         "campaign_row": {"group": {"ticker": "SPY"}},
     }
-    fake_export = {
-        "exported_at": "2026-08-12T14:05:01Z",
-        "references": [
-            {
-                "owner": {
-                    "schema": "options.signal_episode/v1",
-                    "id": episode["episode_id"],
-                }
-            }
-        ],
-    }
-    monkeypatch.setattr(selector, "validate_w1a_export", lambda _value: fake_export)
     monkeypatch.setattr(
         selector.context_bridge,
         "validate_context_reference",
-        lambda _value: pytest.fail("future export must refuse before reference use"),
+        lambda _value: pytest.fail("future publication must refuse before reference use"),
     )
     evidence, reasons = selector._reference_for_candidate(
         candidate,
-        fake_export,
-        evidence_available_at=datetime(2026, 8, 12, 14, 5, 0, tzinfo=timezone.utc),
+        snapshot,
+        evidence_available_at=datetime(2026, 8, 12, 13, 59, 59, tzinfo=timezone.utc),
     )
     assert evidence is None
     assert reasons == ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
+
+
+def test_w1a_compact_source_reauthenticates_after_current_head_advances(
+    tmp_path: Path,
+) -> None:
+    episode = _episode("historical-w1a", "2026-08-12T13:31:00Z")
+    source = _source([[episode]])
+    episode_body = source.episodes_raw.splitlines()[0]
+    reference = _bound_w1a_reference(
+        owner_id=episode["episode_id"],
+        record_sha256=hashlib.sha256(episode_body).hexdigest(),
+    )
+    w1a_root = tmp_path / "historical-w1a-receipts"
+    publication_a = _publish_w1a(w1a_root, [reference])
+    selector_root = tmp_path / "historical-selector"
+    head = _commit_first(selector_root, source)
+    inputs = selector.EvidenceInputs(w1a_receipt_root=w1a_root)
+    plan = selector.plan_cycle(
+        root=selector_root,
+        source=_pinned_source(source, head),
+        evidence_inputs=inputs,
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    source_receipt = next(
+        item
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    )
+    assert source_receipt.value["head"] == publication_a["head"]
+    assert "references" not in source_receipt.value
+    committed = selector.commit_cycle(selector_root, plan)
+    assert committed["w1a_publication_high_water"]["publication_id"] == publication_a[
+        "head"
+    ]["publication_id"]
+
+    publication_b = _publish_w1a(
+        w1a_root,
+        [reference],
+        published_at="2026-08-12T14:01:00Z",
+        salt="b",
+    )
+    assert publication_b["head"] != publication_a["head"]
+    authenticated, decisions, _body = selector.authenticate_store(
+        selector_root, evidence_inputs=inputs
+    )
+    assert authenticated == committed
+    assert len(decisions) == 1
+    historical_generation = selector._load_pointer(
+        selector_root,
+        decisions[0]["evidence"]["generation"],
+        label="historical W1A generation",
+    )
+    historical_source = selector._load_pointer(
+        selector_root,
+        historical_generation["w1a_source_receipt"],
+        label="historical W1A source receipt",
+    )
+    assert historical_source["head"] == publication_a["head"]
+
+
+def test_w1a_five_megabyte_publication_projects_only_manifest_descriptors(
+    tmp_path: Path,
+) -> None:
+    identities = sorted(
+        (
+            _stable_id(
+                "osep",
+                "options.signal_episode/v1",
+                "live_flow.notable_contract",
+                f"edge-{index}",
+            ),
+            f"edge-{index}",
+        )
+        for index in range(20_000)
+    )
+    chosen = (identities[0], identities[len(identities) // 2], identities[-1])
+    episodes = [
+        _episode(
+            source_event_id,
+            "2026-08-12T13:31:00Z",
+            strike=700.0 + ordinal,
+        )
+        for ordinal, (_episode_id, source_event_id) in enumerate(chosen)
+    ]
+    source = _source([[episode] for episode in episodes])
+    source_hashes = {
+        episode["episode_id"]: hashlib.sha256(line).hexdigest()
+        for episode, line in zip(
+            episodes, source.episodes_raw.splitlines(), strict=True
+        )
+    }
+    max_owner = (1 << 96) - 1
+    dummy_ids = {
+        f"osep_{(index * max_owner // 1198):024x}"
+        for index in range(1, 1198)
+    } - set(source_hashes)
+    references = [
+        _bound_w1a_reference(
+            owner_id=owner_id,
+            record_sha256=(
+                source_hashes.get(owner_id)
+                or hashlib.sha256(owner_id.encode("utf-8")).hexdigest()
+            ),
+            padding_items=30,
+        )
+        for owner_id in sorted(dummy_ids | set(source_hashes))
+    ]
+    reference_body = selector.context_bridge.canonical_reference_set_bytes(
+        references
+    )
+    assert 5 * 1024 * 1024 <= len(reference_body) <= 8 * 1024 * 1024
+    w1a_root = tmp_path / "large-w1a-receipts"
+    _publish_w1a(w1a_root, references)
+    selector_root = tmp_path / "large-w1a-selector"
+    head = _commit_first(selector_root, source)
+    plan = selector.plan_cycle(
+        root=selector_root,
+        source=_pinned_source(source, head),
+        evidence_inputs=selector.EvidenceInputs(w1a_receipt_root=w1a_root),
+        scheduled_at="2026-08-12T14:05:00Z",
+        clock=_clock("2026-08-12T14:05:00Z"),
+        runtime_armed=True,
+    )
+    source_receipt = next(
+        item
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    )
+    assert len(source_receipt.body) < 32 * 1024
+    assert "references" not in source_receipt.value
+    descriptors = source_receipt.value["descriptors"]
+    manifest = selector._load_pointer(
+        selector_root, head["pending_manifest"], label="large W1A manifest"
+    )
+    assert [item["candidate"] for item in descriptors] == manifest["candidates"]
+    ordinal_by_owner = {
+        item["owner_id"]: item["reference_ordinal"] for item in descriptors
+    }
+    edge_owner_ids = [item[0] for item in chosen]
+    assert ordinal_by_owner[edge_owner_ids[0]] is not None
+    assert ordinal_by_owner[edge_owner_ids[0]] <= 3
+    assert 500 <= ordinal_by_owner[edge_owner_ids[1]] <= 700
+    assert ordinal_by_owner[edge_owner_ids[2]] >= len(references) - 2
 
 
 def test_first_observed_revision_is_frozen_and_settled_exactly_once(
@@ -1267,7 +1513,7 @@ def test_passing_order_applies_three_proposal_cap_without_ranking(
         for strike in (700, 701, 702, 703)
     ]
     source = _source(groups)
-    evidence_inputs = _passing_evidence(monkeypatch, source)
+    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
     root = tmp_path / "selector"
     _commit_first(root, source)
     plan = selector.plan_cycle(
@@ -1279,7 +1525,7 @@ def test_passing_order_applies_three_proposal_cap_without_ranking(
         runtime_armed=True,
     )
     selector.commit_cycle(root, plan)
-    rows = _decision_rows(root)
+    rows = _decision_rows(root, evidence_inputs)
     assert [row["action"] for row in rows] == [
         "propose",
         "propose",
@@ -2087,7 +2333,7 @@ def test_recovery_seal_rejects_self_consistent_alternate_evidence_intent(
         clock=_clock("2026-08-12T14:05:00Z"),
         runtime_armed=True,
     )
-    passing = _passing_evidence(monkeypatch, source)
+    passing = _passing_evidence(tmp_path, monkeypatch, source)
     passing_plan = selector.plan_cycle(
         root=root,
         source=pinned,
@@ -2278,6 +2524,7 @@ def test_large_source_evidence_is_shared_and_compact_while_null_fails_closed(
     root = tmp_path / "large-evidence"
     head = _commit_first(root, source)
     evidence_inputs = _passing_evidence(
+        tmp_path,
         monkeypatch,
         source,
         padding_bytes=selector.MAX_EVIDENCE_OBJECT_BYTES,
@@ -2328,11 +2575,17 @@ def test_large_source_evidence_is_shared_and_compact_while_null_fails_closed(
         "options.sparse_selector_konseki_evidence/v1",
         "options.sparse_selector_mark_evidence/v1",
         "options.sparse_selector_lifecycle_evidence/v1",
+        "options.sparse_selector_w1a_source_receipt/v1",
     }
     generation = evidence_objects[
         "options.sparse_selector_evidence_generation/v1"
     ]
     assert decision["evidence"]["generation"] == generation.pointer
+    source_receipt = evidence_objects[
+        "options.sparse_selector_w1a_source_receipt/v1"
+    ]
+    assert len(source_receipt.body) <= selector.MAX_W1A_SOURCE_RECEIPT_BYTES
+    assert generation.value["w1a_source_receipt"] == source_receipt.pointer
     for schema in (
         "options.sparse_selector_konseki_evidence/v1",
         "options.sparse_selector_mark_evidence/v1",
@@ -2381,9 +2634,10 @@ def test_large_source_evidence_is_shared_and_compact_while_null_fails_closed(
     null_evidence_objects = [
         item for item in null_plan.objects if item.key.startswith("evidence/")
     ]
-    assert [item.value["schema"] for item in null_evidence_objects] == [
-        "options.sparse_selector_evidence_generation/v1"
-    ]
+    assert {item.value["schema"] for item in null_evidence_objects} == {
+        "options.sparse_selector_w1a_source_receipt/v1",
+        "options.sparse_selector_evidence_generation/v1",
+    }
 
 
 def test_cycle_decision_cap_and_evidence_recovery_are_fail_closed(
@@ -2612,7 +2866,7 @@ def test_decision_clock_outside_rth_can_only_abstain(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _source([[_episode("after-hours", "2026-08-12T13:31:00Z")]])
-    evidence_inputs = _passing_evidence(monkeypatch, source)
+    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
     root = tmp_path / "selector"
     _commit_first(root, source)
     plan = selector.plan_cycle(
@@ -2624,7 +2878,7 @@ def test_decision_clock_outside_rth_can_only_abstain(
         runtime_armed=True,
     )
     selector.commit_cycle(root, plan)
-    decision = _decision_rows(root)[0]
+    decision = _decision_rows(root, evidence_inputs)[0]
     assert decision["action"] == "abstain"
     assert decision["reason_codes"] == ["DECISION_OUTSIDE_NYSE_RTH"]
     assert decision["proposal_ordinal"] is None
@@ -2719,7 +2973,7 @@ def test_decision_evidence_and_cycle_clocks_remain_authenticated(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = _source([[_episode("auth-evidence", "2026-08-12T13:31:00Z")]])
-    evidence_inputs = _passing_evidence(monkeypatch, source)
+    evidence_inputs = _passing_evidence(tmp_path, monkeypatch, source)
     root = tmp_path / "selector"
     _commit_first(root, source)
     instants = iter(
@@ -2759,10 +3013,12 @@ def test_decision_evidence_and_cycle_clocks_remain_authenticated(
         runtime_armed=True,
     )
     selector.commit_cycle(root, good_plan)
-    decision = selector.authenticate_store(root)[1][0]
+    decision = selector.authenticate_store(
+        root, evidence_inputs=evidence_inputs
+    )[1][0]
     evidence_pointer = decision["evidence"]["mark"]
     assert evidence_pointer is not None
     evidence_path = selector._object_path(root, evidence_pointer["key"])
     os.link(evidence_path, tmp_path / "linked-evidence")
     with pytest.raises(selector.SparseSelectorError, match="metadata is unsafe"):
-        selector.authenticate_store(root)
+        selector.authenticate_store(root, evidence_inputs=evidence_inputs)

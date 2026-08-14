@@ -2,10 +2,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://mastermind-x.com/contracts/options/options.sparse_selector_runtime.v1.schema.json",
   "title": "Host-private sparse exact-option selector runtime objects",
-  "description": "Immutable candidate, manifest, decision, cycle, head, and sanitized W1A-export objects. Proposal means private research review only. Every authority flag is false.",
+  "description": "Immutable candidate, manifest, decision, cycle, head, and compact historical W1A source-receipt objects. Proposal means private research review only. Every selector authority flag is false.",
   "oneOf": [
     {"$ref": "#/$defs/candidate"},
     {"$ref": "#/$defs/manifest"},
+    {"$ref": "#/$defs/w1aSourceReceipt"},
     {"$ref": "#/$defs/evidenceGeneration"},
     {"$ref": "#/$defs/konsekiEvidence"},
     {"$ref": "#/$defs/markEvidence"},
@@ -13,8 +14,7 @@
     {"$ref": "#/$defs/decision"},
     {"$ref": "#/$defs/cycle"},
     {"$ref": "#/$defs/handoffQueueItem"},
-    {"$ref": "#/$defs/head"},
-    {"$ref": "#/$defs/w1aExport"}
+    {"$ref": "#/$defs/head"}
   ],
   "$defs": {
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
@@ -89,6 +89,17 @@
         "key": {"type": "string", "pattern": "^evidence/[a-f0-9]{64}\\.json$"},
         "sha256": {"$ref": "#/$defs/sha256"},
         "bytes": {"type": "integer", "minimum": 1, "maximum": 16777216}
+      }
+    },
+    "w1aSourcePointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "key", "sha256", "bytes"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^ossw_[a-f0-9]{64}$"},
+        "key": {"type": "string", "pattern": "^evidence/[a-f0-9]{64}\\.json$"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "bytes": {"type": "integer", "minimum": 1, "maximum": 1048576}
       }
     },
     "compactEvidencePointer": {
@@ -235,7 +246,7 @@
       "additionalProperties": false,
       "required": [
         "schema", "generation_id", "settled_manifest", "fenced_at",
-        "w1a_export", "lifecycle_state", "w1a_error", "mark_error",
+        "w1a_source_receipt", "lifecycle_state", "w1a_error", "mark_error",
         "lifecycle_error", "digests", "authority"
       ],
       "properties": {
@@ -243,7 +254,7 @@
         "generation_id": {"type": "string", "pattern": "^osseg_[a-f0-9]{64}$"},
         "settled_manifest": {"$ref": "#/$defs/manifestPointer"},
         "fenced_at": {"$ref": "#/$defs/utc"},
-        "w1a_export": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/w1aExport"}]},
+        "w1a_source_receipt": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/w1aSourcePointer"}]},
         "lifecycle_state": {"oneOf": [{"type": "null"}, {"type": "object"}]},
         "w1a_error": {"type": "boolean"},
         "mark_error": {"type": "boolean"},
@@ -263,7 +274,7 @@
         "schema": {"const": "options.sparse_selector_konseki_evidence/v1"},
         "generation": {"$ref": "#/$defs/generationPointer"},
         "candidate": {"$ref": "#/$defs/candidatePointer"},
-        "reference_ordinal": {"type": "integer", "minimum": 1, "maximum": 16384},
+        "reference_ordinal": {"type": "integer", "minimum": 1, "maximum": 4096},
         "reference_id": {"type": "string", "pattern": "^omctxref_[a-f0-9]{64}$"},
         "reference_sha256": {"$ref": "#/$defs/sha256"},
         "authority": {"$ref": "#/$defs/authority"}
@@ -497,7 +508,7 @@
         "pending_manifest", "last_cycle",
         "cycle_count", "handoff_queue_count", "last_handoff_queue",
         "last_candidate", "candidate_count", "candidate_index", "last_decision", "decision_count",
-        "proposal_session_date", "proposal_session_count", "digests", "authority"
+        "proposal_session_date", "proposal_session_count", "w1a_publication_high_water", "digests", "authority"
       ],
       "properties": {
         "schema": {"const": "options.sparse_selector_head/v1"},
@@ -615,20 +626,69 @@
         "decision_count": {"type": "integer", "minimum": 0},
         "proposal_session_date": {"oneOf": [{"type": "null"}, {"type": "string", "format": "date"}]},
         "proposal_session_count": {"type": "integer", "minimum": 0, "maximum": 3},
+        "w1a_publication_high_water": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/w1aHighWater"}]},
         "digests": {"$ref": "#/$defs/digests"},
         "authority": {"$ref": "#/$defs/authority"}
       }
     },
-    "w1aExport": {
+    "w1aHighWater": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schema", "export_id", "exported_at", "head", "references", "authority"],
+      "required": ["root_path_sha256", "published_at", "publication_id", "head_sha256"],
       "properties": {
-        "schema": {"const": "options.sparse_selector_w1a_receipt_export/v1"},
-        "export_id": {"type": "string", "pattern": "^ossw_[a-f0-9]{64}$"},
-        "exported_at": {"$ref": "#/$defs/utc"},
+        "root_path_sha256": {"$ref": "#/$defs/sha256"},
+        "published_at": {"$ref": "#/$defs/utc"},
+        "publication_id": {"type": "string", "pattern": "^omctxpub_[a-f0-9]{64}$"},
+        "head_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "w1aDescriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "descriptor_ordinal", "candidate", "candidate_id", "owner_schema",
+        "owner_id", "owner_record_sha256", "reference_ordinal",
+        "reference_id", "reference_sha256"
+      ],
+      "properties": {
+        "descriptor_ordinal": {"type": "integer", "minimum": 1, "maximum": 128},
+        "candidate": {"$ref": "#/$defs/candidatePointer"},
+        "candidate_id": {"type": "string", "pattern": "^ossc_[a-f0-9]{64}$"},
+        "owner_schema": {"const": "options.signal_episode/v1"},
+        "owner_id": {"type": "string", "pattern": "^osep_[a-f0-9]{24}$"},
+        "owner_record_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_ordinal": {"oneOf": [{"type": "null"}, {"type": "integer", "minimum": 1, "maximum": 4096}]},
+        "reference_id": {"oneOf": [{"type": "null"}, {"type": "string", "pattern": "^omctxref_[a-f0-9]{64}$"}]},
+        "reference_sha256": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/sha256"}]}
+      }
+    },
+    "w1aSourceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema", "receipt_id", "captured_at", "root_path_sha256",
+        "settled_manifest", "head", "head_sha256", "head_bytes",
+        "audit_id", "audit_object_key", "audit_sha256",
+        "reference_set_object_key", "reference_set_object_sha256",
+        "reference_set_sha256", "reference_count", "descriptors", "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.sparse_selector_w1a_source_receipt/v1"},
+        "receipt_id": {"type": "string", "pattern": "^ossw_[a-f0-9]{64}$"},
+        "captured_at": {"$ref": "#/$defs/utc"},
+        "root_path_sha256": {"$ref": "#/$defs/sha256"},
+        "settled_manifest": {"$ref": "#/$defs/manifestPointer"},
         "head": {"type": "object"},
-        "references": {"type": "array", "maxItems": 4096, "items": {"type": "object"}},
+        "head_sha256": {"$ref": "#/$defs/sha256"},
+        "head_bytes": {"type": "integer", "minimum": 1, "maximum": 16384},
+        "audit_id": {"type": "string", "pattern": "^omctxaudit_[a-f0-9]{64}$"},
+        "audit_object_key": {"type": "string", "pattern": "^audits/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"},
+        "audit_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_set_object_key": {"type": "string", "pattern": "^reference_sets/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"},
+        "reference_set_object_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_set_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "descriptors": {"type": "array", "minItems": 1, "maxItems": 128, "items": {"$ref": "#/$defs/w1aDescriptor"}},
         "authority": {"$ref": "#/$defs/authority"}
       }
     }

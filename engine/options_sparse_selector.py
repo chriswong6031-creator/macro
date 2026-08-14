@@ -128,6 +128,10 @@ MAX_EVIDENCE_OBJECT_BYTES = 4 * 1024
 MAX_EVIDENCE_GENERATION_BYTES = 16 * 1024 * 1024
 MAX_EVIDENCE_SNAPSHOT_BYTES = 32 * 1024 * 1024
 MAX_EVIDENCE_SNAPSHOT_RECORDS = 16_384
+MAX_W1A_HEAD_BYTES = 16 * 1024
+MAX_W1A_AUDIT_BYTES = 64 * 1024
+MAX_W1A_REFERENCE_SET_OBJECT_BYTES = 8 * 1024 * 1024 + 16 * 1024
+MAX_W1A_SOURCE_RECEIPT_BYTES = 1 * 1024 * 1024
 # Source projection work is segmented independently from candidate admission.
 # This bounds a single scheduled transaction without imposing a lifetime/source
 # ceiling or forcing the same immutable Git blobs to be rescanned.
@@ -178,7 +182,7 @@ RUNTIME_OBJECT_SCHEMAS = frozenset(
         "options.sparse_selector_cycle_receipt/v1",
         "options.sparse_selector_handoff_queue_item/v1",
         "options.sparse_selector_head/v1",
-        "options.sparse_selector_w1a_receipt_export/v1",
+        "options.sparse_selector_w1a_source_receipt/v1",
         "options.sparse_selector_evidence_generation/v1",
         "options.sparse_selector_konseki_evidence/v1",
         "options.sparse_selector_mark_evidence/v1",
@@ -503,16 +507,14 @@ def validate_runtime_object(value: Mapping[str, Any], *, label: str) -> dict[str
             ):
                 _fail(f"{label} manifest identity or count drifted")
         elif schema == "options.sparse_selector_evidence_generation/v1":
-            export = clean["w1a_export"]
+            source_receipt = clean["w1a_source_receipt"]
             state = clean["lifecycle_state"]
-            if export is not None:
-                validate_w1a_export(export)
             if state is not None:
                 lifecycle._validate_state_shape(state)
             if (
                 clean["generation_id"]
                 != _content_id("osseg_", clean, field="generation_id")
-                or clean["w1a_error"] != (export is None)
+                or clean["w1a_error"] != (source_receipt is None)
                 or clean["lifecycle_error"] != (state is None)
                 or (clean["mark_error"] and state is not None)
                 or len(canonical_bytes(clean)) > MAX_EVIDENCE_GENERATION_BYTES
@@ -810,9 +812,61 @@ def validate_runtime_object(value: Mapping[str, Any], *, label: str) -> dict[str
                 or next_byte != clean["source_episode_cursor_bytes"]
             ):
                 _fail(f"{label} episode chunk cursor drifted")
-        elif schema == "options.sparse_selector_w1a_receipt_export/v1":
-            if clean["export_id"] != _content_id("ossw_", clean, field="export_id"):
-                _fail(f"{label} W1A export identity drifted")
+        elif schema == "options.sparse_selector_w1a_source_receipt/v1":
+            head = context_store.validate_head(clean["head"])
+            head_body = canonical_bytes(head)
+            descriptors = clean["descriptors"]
+            ordinals = [item["descriptor_ordinal"] for item in descriptors]
+            candidate_ids = [item["candidate_id"] for item in descriptors]
+            candidate_pointers = [item["candidate"] for item in descriptors]
+            reference_ordinals = [
+                item["reference_ordinal"]
+                for item in descriptors
+                if item["reference_ordinal"] is not None
+            ]
+            if (
+                clean["receipt_id"]
+                != _content_id("ossw_", clean, field="receipt_id")
+                or clean["head_sha256"] != _sha256(head_body)
+                or clean["head_bytes"] != len(head_body)
+                or clean["audit_id"] != head["audit_id"]
+                or clean["audit_object_key"] != head["audit_object_key"]
+                or clean["audit_sha256"] != head["audit_sha256"]
+                or clean["reference_set_object_key"]
+                != head["reference_set_object_key"]
+                or clean["reference_set_object_sha256"]
+                != head["reference_set_object_sha256"]
+                or clean["reference_set_sha256"] != head["reference_set_sha256"]
+                or clean["reference_count"] != head["reference_count"]
+                or ordinals != list(range(1, len(descriptors) + 1))
+                or len(candidate_ids) != len(set(candidate_ids))
+                or len({canonical_bytes(item) for item in candidate_pointers})
+                != len(candidate_pointers)
+                or len(reference_ordinals) != len(set(reference_ordinals))
+                or any(
+                    item["candidate"]["id"] != item["candidate_id"]
+                    or (
+                        item["reference_ordinal"] is None
+                        and (
+                            item["reference_id"] is not None
+                            or item["reference_sha256"] is not None
+                        )
+                    )
+                    or (
+                        item["reference_ordinal"] is not None
+                        and (
+                            item["reference_id"] is None
+                            or item["reference_sha256"] is None
+                            or item["reference_ordinal"] > clean["reference_count"]
+                        )
+                    )
+                    for item in descriptors
+                )
+                or _utc(clean["captured_at"], label="W1A source capture")
+                < _utc(head["published_at"], label="W1A publication")
+                or len(canonical_bytes(clean)) > MAX_W1A_SOURCE_RECEIPT_BYTES
+            ):
+                _fail(f"{label} W1A source receipt binding drifted")
     except (KeyError, TypeError, campaign_contract.CampaignContractError) as exc:
         raise SparseSelectorError(f"{label} semantic validation failed") from exc
     return clean
@@ -859,14 +913,17 @@ class SourceProjectionBatch:
 
 @dataclass(frozen=True)
 class EvidenceInputs:
-    w1a_export: Mapping[str, Any] | None = None
+    w1a_receipt_root: Path | None = None
     mark_root: Path | None = None
     lifecycle_root: Path | None = None
 
 
 @dataclass(frozen=True)
 class EvidenceSnapshot:
-    w1a_export: Mapping[str, Any] | None
+    w1a_head: Mapping[str, Any] | None
+    w1a_audit: Mapping[str, Any] | None
+    w1a_references: tuple[Mapping[str, Any], ...]
+    w1a_root_path_sha256: str | None
     w1a_by_episode: Mapping[str, tuple[Mapping[str, Any], ...]]
     lifecycle_state: Mapping[str, Any] | None
     enrollments_by_contract: Mapping[
@@ -947,7 +1004,7 @@ def object_identity(value: Mapping[str, Any]) -> str:
         "observation_id",
         "event_id",
         "state_id",
-        "export_id",
+        "receipt_id",
     ):
         item = value.get(field)
         if isinstance(item, str) and item:
@@ -3597,6 +3654,8 @@ def _authenticate_selector_state(
 
 def authenticate_store(
     root: Path,
+    *,
+    evidence_inputs: EvidenceInputs | None = None,
 ) -> tuple[dict[str, Any] | None, list[dict[str, Any]], bytes]:
     state = _authenticate_selector_state(root)
     if state is None:
@@ -3681,6 +3740,9 @@ def authenticate_store(
     proposed_by_session: dict[str, list[int]] = {}
     previous_available: datetime | None = None
     by_decision_id: dict[str, dict[str, Any]] = {}
+    w1a_cache: dict[str, _W1APublication] = {}
+    w1a_seen: set[str] = set()
+    reconstructed_w1a_high_water: Mapping[str, Any] | None = None
     for decision in decisions:
         candidate_pointer = decision["candidate"]
         candidate = _load_pointer(root, candidate_pointer, label="decided candidate")
@@ -3693,7 +3755,29 @@ def authenticate_store(
             _fail("decision candidate is not the frozen chained object")
         if decision["evidence"]["options"] != candidate_pointer:
             _fail("selector decision options evidence drifted")
-        _validate_decision_evidence_objects(root, decision, candidate=candidate)
+        _validate_decision_evidence_objects(
+            root,
+            decision,
+            candidate=candidate,
+            evidence_inputs=evidence_inputs or EvidenceInputs(),
+            w1a_cache=w1a_cache,
+        )
+        generation = _load_pointer(
+            root,
+            decision["evidence"]["generation"],
+            label="authenticated selector evidence generation",
+        )
+        source_pointer = generation["w1a_source_receipt"]
+        if source_pointer is not None and source_pointer["key"] not in w1a_seen:
+            source_receipt = _load_pointer(
+                root,
+                source_pointer,
+                label="authenticated selector W1A source receipt",
+            )
+            reconstructed_w1a_high_water = _advance_w1a_high_water(
+                reconstructed_w1a_high_water, source_receipt
+            )
+            w1a_seen.add(source_pointer["key"])
         available = _utc(
             decision["decision_available_at"], label="decision chain availability"
         )
@@ -3713,6 +3797,8 @@ def authenticate_store(
             or len(ordinals) > PROPOSAL_CAP
         ):
             _fail("selector proposal ordinals or per-session cap drifted")
+    if reconstructed_w1a_high_water != head["w1a_publication_high_water"]:
+        _fail("selector W1A publication high-water does not reconcile")
     if pending is None and head["source_phase"] == "DRAINED":
         candidate_pointers = [receipt["pointer"] for receipt in candidate_receipts]
         if (
@@ -3989,6 +4075,7 @@ def _evidence_object(value: Mapping[str, Any]) -> PlannedObject:
 def _make_evidence_generation(
     *,
     snapshot: EvidenceSnapshot,
+    w1a_source_receipt: PlannedObject | None,
     manifest_pointer: Mapping[str, Any],
     fenced_at: str,
 ) -> PlannedObject:
@@ -3997,10 +4084,10 @@ def _make_evidence_generation(
         "generation_id": "",
         "settled_manifest": copy.deepcopy(dict(manifest_pointer)),
         "fenced_at": fenced_at,
-        "w1a_export": (
+        "w1a_source_receipt": (
             None
-            if snapshot.w1a_export is None
-            else copy.deepcopy(dict(snapshot.w1a_export))
+            if w1a_source_receipt is None
+            else copy.deepcopy(w1a_source_receipt.pointer)
         ),
         "lifecycle_state": (
             None
@@ -4032,13 +4119,12 @@ def _compact_konseki_evidence(
 ) -> PlannedObject | None:
     if full is None:
         return None
-    export = snapshot.w1a_export
-    if export is None:
-        _fail("selector Konseki evidence lacks its generation export")
+    if snapshot.w1a_head is None:
+        _fail("selector Konseki evidence lacks its W1A source publication")
     reference = full.value["reference"]
     matches = [
         index
-        for index, item in enumerate(export["references"])
+        for index, item in enumerate(snapshot.w1a_references)
         if canonical_bytes(item) == canonical_bytes(reference)
     ]
     if len(matches) != 1:
@@ -4131,6 +4217,7 @@ def _validate_decision_evidence_objects(
     planned_by_key: Mapping[str, PlannedObject] | None = None,
     candidate: Mapping[str, Any] | None = None,
     evidence_inputs: EvidenceInputs | None = None,
+    w1a_cache: dict[str, _W1APublication] | None = None,
 ) -> set[str]:
     def load(pointer: Mapping[str, Any], *, label: str) -> tuple[Mapping[str, Any], bytes]:
         planned = None if planned_by_key is None else planned_by_key.get(pointer["key"])
@@ -4167,12 +4254,53 @@ def _validate_decision_evidence_objects(
         > _utc(decision["decision_event_at"], label="decision event")
     ):
         _fail("selector decision evidence generation binding drifted")
+    source_pointer = generation["w1a_source_receipt"]
+    source_receipt: Mapping[str, Any] | None = None
+    w1a_publication: _W1APublication | None = None
+    used: set[str] = {generation_pointer["key"]}
+    if source_pointer is not None:
+        if evidence_inputs is None or evidence_inputs.w1a_receipt_root is None:
+            _fail("selector decision W1A source lacks its trusted receipt root")
+        source_value, source_body = load(
+            source_pointer, label="decision W1A source receipt"
+        )
+        source_receipt = validate_runtime_object(
+            source_value, label="decision W1A source receipt"
+        )
+        if (
+            source_pointer["key"] != f"evidence/{_sha256(source_body)}.json"
+            or source_receipt["settled_manifest"] != generation["settled_manifest"]
+            or _utc(source_receipt["captured_at"], label="W1A capture")
+            > _utc(generation["fenced_at"], label="evidence generation fence")
+        ):
+            _fail("selector decision W1A source binding drifted")
+        used.add(source_pointer["key"])
+        cache = {} if w1a_cache is None else w1a_cache
+        w1a_publication = cache.get(source_pointer["key"])
+        if w1a_publication is None:
+            candidate_rows = [
+                (
+                    copy.deepcopy(dict(pointer)),
+                    _load_pointer(
+                        root, pointer, label="W1A source manifested candidate"
+                    ),
+                )
+                for pointer in settled_manifest["candidates"]
+            ]
+            w1a_publication = _authenticate_historical_w1a_source(
+                source_receipt,
+                receipt_root=Path(evidence_inputs.w1a_receipt_root),
+                manifest=settled_manifest,
+                candidate_rows=candidate_rows,
+            )
+            cache[source_pointer["key"]] = w1a_publication
+    elif generation["w1a_error"] is not True:
+        _fail("selector decision W1A absence is not fail-closed")
     expected_schemas = {
         "konseki": "options.sparse_selector_konseki_evidence/v1",
         "mark": "options.sparse_selector_mark_evidence/v1",
         "lifecycle": "options.sparse_selector_lifecycle_evidence/v1",
     }
-    used: set[str] = {generation_pointer["key"]}
     for slot, schema in expected_schemas.items():
         pointer = decision["evidence"][slot]
         if pointer is None:
@@ -4191,17 +4319,17 @@ def _validate_decision_evidence_objects(
         used.add(pointer["key"])
         if candidate is not None and slot == "konseki":
             try:
-                export = generation["w1a_export"]
                 ordinal = value["reference_ordinal"]
                 if (
-                    export is None
+                    source_receipt is None
+                    or w1a_publication is None
                     or generation["w1a_error"] is not False
                     or type(ordinal) is not int
-                    or not 1 <= ordinal <= len(export["references"])
+                    or not 1 <= ordinal <= len(w1a_publication.references)
                 ):
                     _fail("selector Konseki evidence generation is unavailable")
                 reference = context_bridge.validate_context_reference(
-                    export["references"][ordinal - 1]
+                    w1a_publication.references[ordinal - 1]
                 )
                 owner = reference["owner"]
                 if (
@@ -4297,86 +4425,464 @@ def _validate_decision_evidence_objects(
     return used
 
 
-def _make_w1a_export_for_test(
-    publication: Mapping[str, Any], *, exported_at: str
-) -> dict[str, Any]:
-    head = publication.get("head") if isinstance(publication, Mapping) else None
-    references = (
-        publication.get("references") if isinstance(publication, Mapping) else None
-    )
-    if not isinstance(head, Mapping) or not isinstance(references, list):
-        _fail("W1A publication is incomplete")
-    clean_head = context_store.validate_head(head)
-    context_bridge.canonical_reference_set_bytes(references)
-    if clean_head["reference_count"] != len(references):
-        _fail("W1A export reference count differs from HEAD")
-    export_clock = _utc(exported_at, label="W1A export clock")
-    if export_clock < _utc(clean_head["published_at"], label="W1A HEAD clock"):
-        _fail("W1A export clock predates its authenticated HEAD")
-    export: dict[str, Any] = {
-        "schema": "options.sparse_selector_w1a_receipt_export/v1",
-        "export_id": "",
-        "exported_at": exported_at,
-        "head": clean_head,
-        "references": copy.deepcopy(references),
-        "authority": dict(FALSE_AUTHORITY),
-    }
-    export["export_id"] = _content_id("ossw_", export, field="export_id")
-    return validate_runtime_object(export, label="W1A selector export")
+@dataclass(frozen=True)
+class _W1ALane:
+    root: Path
+    descriptors: tuple[int, ...]
+    bindings: tuple[tuple[int, str, int, int], ...]
+
+    @property
+    def root_fd(self) -> int:
+        return self.descriptors[-1]
 
 
-def validate_w1a_export(value: Mapping[str, Any]) -> dict[str, Any]:
-    clean = validate_runtime_object(value, label="W1A selector export")
-    if clean.get("schema") != "options.sparse_selector_w1a_receipt_export/v1":
-        _fail("W1A selector export schema drifted")
-    if clean["export_id"] != _content_id("ossw_", clean, field="export_id"):
-        _fail("W1A selector export identity drifted")
-    head = context_store.validate_head(clean["head"])
-    if _utc(clean["exported_at"], label="W1A export clock") < _utc(
-        head["published_at"], label="W1A HEAD clock"
-    ):
-        _fail("W1A export clock predates its authenticated HEAD")
-    references = clean["references"]
-    canonical = context_bridge.canonical_reference_set_bytes(references)
+@dataclass(frozen=True)
+class _W1APublication:
+    root_path_sha256: str
+    head: Mapping[str, Any]
+    head_body: bytes
+    audit: Mapping[str, Any]
+    references: tuple[Mapping[str, Any], ...]
+
+
+def _assert_w1a_lane_identity(lane: _W1ALane) -> None:
+    for parent_fd, name, device, inode in lane.bindings:
+        try:
+            bound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError as exc:
+            raise SparseSelectorError(
+                "W1A receipt root was renamed during authenticated read"
+            ) from exc
+        if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+            device,
+            inode,
+        ):
+            _fail("W1A receipt root or ancestor was rebound during authenticated read")
+    _validate_directory_metadata(os.fstat(lane.root_fd), private=True)
+
+
+@contextmanager
+def _open_w1a_lane(root: Path) -> Iterator[_W1ALane]:
+    """Open a W1A root by anchored components without touching selector lane state."""
+
+    absolute = _absolute_private_path(Path(root))
+    if absolute in {Path("/"), Path.home().resolve()}:
+        _fail("W1A receipt root is too broad")
+    repository = ROOT.resolve()
+    if absolute == repository or repository in absolute.parents:
+        _fail("W1A receipt root cannot be inside the repository")
+    descriptors: list[int] = []
+    bindings: list[tuple[int, str, int, int]] = []
+    try:
+        current = os.open("/", _DIRECTORY_FLAGS)
+        descriptors.append(current)
+        rendered: list[str] = []
+        for index, part in enumerate(absolute.parts[1:]):
+            rendered.append(part)
+            child = _open_directory_component(
+                current,
+                part,
+                create=False,
+                private=index == len(absolute.parts[1:]) - 1,
+                label="/" + "/".join(rendered),
+            )
+            metadata = os.fstat(child)
+            bindings.append((current, part, metadata.st_dev, metadata.st_ino))
+            descriptors.append(child)
+            current = child
+        lane = _W1ALane(absolute, tuple(descriptors), tuple(bindings))
+        _assert_w1a_lane_identity(lane)
+        yield lane
+        _assert_w1a_lane_identity(lane)
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+@contextmanager
+def _open_w1a_directory(
+    lane: _W1ALane, parts: Sequence[str]
+) -> Iterator[int]:
+    descriptors: list[int] = []
+    bindings: list[tuple[int, str, int, int]] = []
+    current = os.dup(lane.root_fd)
+    descriptors.append(current)
+    try:
+        for part in parts:
+            child = _open_directory_component(
+                current,
+                part,
+                create=False,
+                private=True,
+                label="W1A receipt namespace",
+            )
+            metadata = os.fstat(child)
+            bindings.append((current, part, metadata.st_dev, metadata.st_ino))
+            descriptors.append(child)
+            current = child
+        yield current
+        _assert_w1a_lane_identity(lane)
+        for parent_fd, name, device, inode in bindings:
+            bound = os.stat(name, dir_fd=parent_fd, follow_symlinks=False)
+            if stat.S_ISLNK(bound.st_mode) or (bound.st_dev, bound.st_ino) != (
+                device,
+                inode,
+            ):
+                _fail("W1A receipt namespace was rebound during authenticated read")
+    finally:
+        for descriptor in reversed(descriptors):
+            os.close(descriptor)
+
+
+def _read_w1a_key(
+    lane: _W1ALane, key: str, *, limit: int, label: str
+) -> tuple[dict[str, Any], bytes]:
+    parts = key.split("/")
+    if len(parts) != 3 or parts[0] not in {"audits", "reference_sets"}:
+        _fail(f"{label} key is malformed")
+    digest = parts[2].removesuffix(".json")
     if (
-        len(references) != head["reference_count"]
-        or _sha256(canonical) != head["reference_set_sha256"]
+        not re.fullmatch(r"[a-f0-9]{2}", parts[1])
+        or not _SHA256_RE.fullmatch(digest)
+        or parts[1] != digest[:2]
+        or parts[2] != f"{digest}.json"
     ):
-        _fail("W1A selector export does not bind the current reference set")
-    return clean
+        _fail(f"{label} key is not content addressed")
+    with _open_w1a_directory(lane, parts[:2]) as parent_fd:
+        body = _read_regular_at(
+            parent_fd,
+            parts[2],
+            limit=limit,
+            required=True,
+            label=label,
+        )
+    assert body is not None
+    value = strict_json(body, label=label)
+    if not isinstance(value, dict) or canonical_bytes(value) != body:
+        _fail(f"{label} is not canonical")
+    return value, body
+
+
+def _read_w1a_head(lane: _W1ALane) -> tuple[dict[str, Any], bytes]:
+    body = _read_regular_at(
+        lane.root_fd,
+        "HEAD.json",
+        limit=MAX_W1A_HEAD_BYTES,
+        required=True,
+        label="W1A receipt HEAD",
+    )
+    assert body is not None
+    value = strict_json(body, label="W1A receipt HEAD")
+    if not isinstance(value, dict) or canonical_bytes(value) != body:
+        _fail("W1A receipt HEAD is not canonical")
+    return context_store.validate_head(value), body
+
+
+def _authenticate_w1a_head(
+    lane: _W1ALane, head: Mapping[str, Any], head_body: bytes
+) -> _W1APublication:
+    clean_head = context_store.validate_head(head)
+    if canonical_bytes(clean_head) != head_body:
+        _fail("W1A historical HEAD bytes are not exact canonical bytes")
+    audit_value, audit_body = _read_w1a_key(
+        lane,
+        clean_head["audit_object_key"],
+        limit=MAX_W1A_AUDIT_BYTES,
+        label="W1A historical audit object",
+    )
+    reference_value, reference_body = _read_w1a_key(
+        lane,
+        clean_head["reference_set_object_key"],
+        limit=MAX_W1A_REFERENCE_SET_OBJECT_BYTES,
+        label="W1A historical reference-set object",
+    )
+    if (
+        _sha256(audit_body) != clean_head["audit_sha256"]
+        or _sha256(reference_body)
+        != clean_head["reference_set_object_sha256"]
+    ):
+        _fail("W1A historical object differs from its HEAD")
+    try:
+        reference_set = context_store._validate_reference_set_object(reference_value)
+        references = tuple(
+            context_bridge.validate_context_reference(item)
+            for item in reference_set["references"]
+        )
+        audit = context_bridge.validate_audit_receipt(
+            audit_value, references=references
+        )
+    except (
+        context_bridge.OptionsMarketMemoryContextError,
+        context_store.OptionsMarketMemoryReceiptStoreError,
+    ) as exc:
+        raise SparseSelectorError("W1A historical publication is invalid") from exc
+    if (
+        audit["audit_id"] != clean_head["audit_id"]
+        or audit["audited_at"] != clean_head["published_at"]
+        or reference_set["reference_set_sha256"]
+        != clean_head["reference_set_sha256"]
+        or reference_set["reference_count"] != clean_head["reference_count"]
+    ):
+        _fail("W1A historical publication does not reconcile to its HEAD")
+    return _W1APublication(
+        root_path_sha256=_sha256(os.fsencode(str(lane.root))),
+        head=clean_head,
+        head_body=head_body,
+        audit=audit,
+        references=references,
+    )
+
+
+def _assert_w1a_lock_identity(lane: _W1ALane, descriptor: int) -> None:
+    _assert_w1a_lane_identity(lane)
+    opened = os.fstat(descriptor)
+    try:
+        bound = os.stat(".publish.lock", dir_fd=lane.root_fd, follow_symlinks=False)
+    except FileNotFoundError as exc:
+        raise SparseSelectorError("W1A publication lock was renamed") from exc
+    for metadata in (opened, bound):
+        if (
+            stat.S_ISLNK(metadata.st_mode)
+            or not stat.S_ISREG(metadata.st_mode)
+            or metadata.st_nlink != 1
+            or metadata.st_uid != os.getuid()
+            or stat.S_IMODE(metadata.st_mode) != 0o600
+        ):
+            _fail("W1A publication lock metadata is unsafe")
+    if (opened.st_dev, opened.st_ino) != (bound.st_dev, bound.st_ino):
+        _fail("W1A publication lock path no longer names the locked inode")
+
+
+@contextmanager
+def _locked_w1a_publication(root: Path) -> Iterator[_W1APublication]:
+    """Authenticate one current W1A publication under its existing lock."""
+
+    with _open_w1a_lane(root) as lane:
+        try:
+            descriptor = os.open(
+                ".publish.lock",
+                os.O_RDWR
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=lane.root_fd,
+            )
+        except OSError as exc:
+            raise SparseSelectorError(
+                "W1A publication lock must already exist"
+            ) from exc
+        locked = False
+        try:
+            _assert_w1a_lock_identity(lane, descriptor)
+            fcntl.flock(descriptor, fcntl.LOCK_EX)
+            locked = True
+            _assert_w1a_lock_identity(lane, descriptor)
+            head, head_body = _read_w1a_head(lane)
+            publication = _authenticate_w1a_head(lane, head, head_body)
+            yield publication
+            _assert_w1a_lock_identity(lane, descriptor)
+            final_head, final_body = _read_w1a_head(lane)
+            final_publication = _authenticate_w1a_head(
+                lane, final_head, final_body
+            )
+            if final_publication != publication:
+                raise EvidenceGenerationDrift(
+                    "W1A publication changed during selector capture"
+                )
+        finally:
+            try:
+                if locked:
+                    fcntl.flock(descriptor, fcntl.LOCK_UN)
+            finally:
+                os.close(descriptor)
 
 
 def _w1a_snapshot(
-    export: Mapping[str, Any] | None,
+    receipt_root: Path | None,
 ) -> tuple[
     Mapping[str, Any] | None,
+    Mapping[str, Any] | None,
+    tuple[Mapping[str, Any], ...],
+    str | None,
     Mapping[str, tuple[Mapping[str, Any], ...]],
     bool,
 ]:
-    if export is None:
-        return None, {}, True
-    try:
-        clean = validate_w1a_export(export)
-        if (
-            len(clean["references"]) > MAX_EVIDENCE_SNAPSHOT_RECORDS
-            or len(canonical_bytes(clean)) > MAX_EVIDENCE_SNAPSHOT_BYTES
-        ):
-            _fail("selector W1A snapshot exceeds its bounded index")
+    if receipt_root is None:
+        return None, None, (), None, {}, True
+    with _locked_w1a_publication(Path(receipt_root)) as publication:
         grouped: dict[str, list[Mapping[str, Any]]] = {}
-        for raw in clean["references"]:
-            reference = context_bridge.validate_context_reference(raw)
-            owner = reference.get("owner")
-            if isinstance(owner, Mapping) and owner.get("schema") == "options.signal_episode/v1":
-                episode_id = owner.get("id")
-                if isinstance(episode_id, str):
-                    grouped.setdefault(episode_id, []).append(reference)
-        return clean, {key: tuple(value) for key, value in grouped.items()}, False
-    except (
-        SparseSelectorError,
-        context_bridge.OptionsMarketMemoryContextError,
-        context_store.OptionsMarketMemoryReceiptStoreError,
+        for reference in publication.references:
+            owner = reference["owner"]
+            if owner["schema"] == "options.signal_episode/v1":
+                grouped.setdefault(owner["id"], []).append(reference)
+        return (
+            copy.deepcopy(dict(publication.head)),
+            copy.deepcopy(dict(publication.audit)),
+            tuple(copy.deepcopy(dict(item)) for item in publication.references),
+            publication.root_path_sha256,
+            {key: tuple(value) for key, value in grouped.items()},
+            False,
+        )
+
+
+def _w1a_descriptors(
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+    references: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    by_owner: dict[tuple[str, str], tuple[int, Mapping[str, Any]]] = {}
+    for ordinal, raw in enumerate(references, start=1):
+        reference = context_bridge.validate_context_reference(raw)
+        owner = reference["owner"]
+        key = (owner["schema"], owner["id"])
+        if key in by_owner:
+            _fail("W1A reference set repeats an owner identity")
+        by_owner[key] = (ordinal, reference)
+    descriptors: list[dict[str, Any]] = []
+    for descriptor_ordinal, (pointer, candidate) in enumerate(
+        candidate_rows, start=1
     ):
-        return None, {}, True
+        clean_candidate = validate_runtime_object(
+            candidate, label="W1A manifested selector candidate"
+        )
+        if pointer != _pointer_for(
+            f"candidates/{clean_candidate['candidate_id']}.json", clean_candidate
+        ):
+            _fail("W1A descriptor candidate pointer differs from exact bytes")
+        episode = clean_candidate["final_episode_row"]
+        owner_key = ("options.signal_episode/v1", episode["episode_id"])
+        found = by_owner.get(owner_key)
+        descriptor: dict[str, Any] = {
+            "descriptor_ordinal": descriptor_ordinal,
+            "candidate": copy.deepcopy(dict(pointer)),
+            "candidate_id": clean_candidate["candidate_id"],
+            "owner_schema": owner_key[0],
+            "owner_id": owner_key[1],
+            "owner_record_sha256": clean_candidate["final_episode_row_sha256"],
+            "reference_ordinal": None,
+            "reference_id": None,
+            "reference_sha256": None,
+        }
+        if found is not None:
+            reference_ordinal, reference = found
+            descriptor.update(
+                {
+                    "reference_ordinal": reference_ordinal,
+                    "reference_id": reference["reference_id"],
+                    "reference_sha256": _sha256(canonical_bytes(reference)),
+                }
+            )
+        descriptors.append(descriptor)
+    return descriptors
+
+
+def _make_w1a_source_receipt(
+    *,
+    snapshot: EvidenceSnapshot,
+    manifest_pointer: Mapping[str, Any],
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+    captured_at: str,
+) -> PlannedObject | None:
+    if snapshot.w1a_error:
+        if any(
+            item is not None
+            for item in (
+                snapshot.w1a_head,
+                snapshot.w1a_audit,
+                snapshot.w1a_root_path_sha256,
+            )
+        ) or snapshot.w1a_references:
+            _fail("unavailable W1A snapshot retains publication truth")
+        return None
+    if (
+        snapshot.w1a_head is None
+        or snapshot.w1a_audit is None
+        or snapshot.w1a_root_path_sha256 is None
+    ):
+        _fail("W1A snapshot lacks its authenticated publication")
+    head = context_store.validate_head(snapshot.w1a_head)
+    head_body = canonical_bytes(head)
+    value: dict[str, Any] = {
+        "schema": "options.sparse_selector_w1a_source_receipt/v1",
+        "receipt_id": "",
+        "captured_at": captured_at,
+        "root_path_sha256": snapshot.w1a_root_path_sha256,
+        "settled_manifest": copy.deepcopy(dict(manifest_pointer)),
+        "head": copy.deepcopy(head),
+        "head_sha256": _sha256(head_body),
+        "head_bytes": len(head_body),
+        "audit_id": head["audit_id"],
+        "audit_object_key": head["audit_object_key"],
+        "audit_sha256": head["audit_sha256"],
+        "reference_set_object_key": head["reference_set_object_key"],
+        "reference_set_object_sha256": head["reference_set_object_sha256"],
+        "reference_set_sha256": head["reference_set_sha256"],
+        "reference_count": head["reference_count"],
+        "descriptors": _w1a_descriptors(candidate_rows, snapshot.w1a_references),
+        "authority": dict(FALSE_AUTHORITY),
+    }
+    value["receipt_id"] = _content_id("ossw_", value, field="receipt_id")
+    clean = validate_runtime_object(value, label="selector W1A source receipt")
+    item = _evidence_object(clean)
+    if len(item.body) > MAX_W1A_SOURCE_RECEIPT_BYTES:
+        _fail("selector W1A source receipt exceeds its compact bound")
+    return item
+
+
+def _w1a_high_water_from_receipt(receipt: Mapping[str, Any]) -> dict[str, Any]:
+    clean = validate_runtime_object(receipt, label="selector W1A high-water source")
+    return {
+        "root_path_sha256": clean["root_path_sha256"],
+        "published_at": clean["head"]["published_at"],
+        "publication_id": clean["head"]["publication_id"],
+        "head_sha256": clean["head_sha256"],
+    }
+
+
+def _advance_w1a_high_water(
+    prior: Mapping[str, Any] | None,
+    receipt: Mapping[str, Any] | None,
+) -> Mapping[str, Any] | None:
+    if receipt is None:
+        return None if prior is None else copy.deepcopy(dict(prior))
+    next_value = _w1a_high_water_from_receipt(receipt)
+    if prior is None:
+        return next_value
+    if prior["root_path_sha256"] != next_value["root_path_sha256"]:
+        _fail("selector W1A receipt root changed after its first publication")
+    prior_clock = _utc(prior["published_at"], label="prior W1A high-water")
+    next_clock = _utc(next_value["published_at"], label="next W1A high-water")
+    if next_clock < prior_clock or (next_clock == prior_clock and dict(prior) != next_value):
+        _fail("selector W1A publication rolled back or forked at its high-water")
+    return next_value
+
+
+def _authenticate_historical_w1a_source(
+    receipt: Mapping[str, Any],
+    *,
+    receipt_root: Path,
+    manifest: Mapping[str, Any],
+    candidate_rows: Sequence[tuple[Mapping[str, Any], Mapping[str, Any]]],
+) -> _W1APublication:
+    clean = validate_runtime_object(receipt, label="historical selector W1A source")
+    if clean["settled_manifest"] != _pointer_for(
+        f"manifests/{manifest['manifest_id']}.json", manifest
+    ):
+        _fail("selector W1A source escaped its settled manifest")
+    with _open_w1a_lane(receipt_root) as lane:
+        if _sha256(os.fsencode(str(lane.root))) != clean["root_path_sha256"]:
+            _fail("selector W1A source root differs from its configuration binding")
+        head = context_store.validate_head(clean["head"])
+        head_body = canonical_bytes(head)
+        publication = _authenticate_w1a_head(lane, head, head_body)
+    expected_descriptors = _w1a_descriptors(candidate_rows, publication.references)
+    if (
+        clean["head_sha256"] != _sha256(publication.head_body)
+        or clean["head_bytes"] != len(publication.head_body)
+        or clean["descriptors"] != expected_descriptors
+        or clean["audit_id"] != publication.audit["audit_id"]
+        or clean["reference_count"] != len(publication.references)
+    ):
+        _fail("selector W1A source does not rederive from historical publication")
+    return publication
 
 
 def _lifecycle_contract_key(contract: Mapping[str, Any]) -> tuple[str, str, str, str]:
@@ -4398,10 +4904,60 @@ def _campaign_contract_key(campaign: Mapping[str, Any]) -> tuple[str, str, str, 
     )
 
 
+def _assert_evidence_roots_distinct(
+    selector_root: Path, inputs: EvidenceInputs
+) -> None:
+    configured = [
+        ("selector", _absolute_private_path(selector_root)),
+        *[
+            (label, _absolute_private_path(Path(value)))
+            for label, value in (
+                ("W1A", inputs.w1a_receipt_root),
+                ("mark", inputs.mark_root),
+                ("lifecycle", inputs.lifecycle_root),
+            )
+            if value is not None
+        ],
+    ]
+    identities: dict[tuple[int, int], str] = {}
+    for index, (label, path) in enumerate(configured):
+        for other_label, other_path in configured[index + 1 :]:
+            if (
+                path == other_path
+                or path in other_path.parents
+                or other_path in path.parents
+            ):
+                _fail(
+                    f"selector evidence roots are not pairwise separate: "
+                    f"{label}/{other_label}"
+                )
+        try:
+            metadata = os.stat(path, follow_symlinks=False)
+        except FileNotFoundError:
+            continue
+        if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISDIR(metadata.st_mode):
+            _fail(f"selector {label} evidence root is not a directory")
+        identity = (metadata.st_dev, metadata.st_ino)
+        prior = identities.get(identity)
+        if prior is not None:
+            _fail(f"selector evidence root aliases {prior} and {label}")
+        identities[identity] = label
+
+
 def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
-    clean_export, by_episode, w1a_error = _w1a_snapshot(inputs.w1a_export)
+    (
+        w1a_head,
+        w1a_audit,
+        w1a_references,
+        w1a_root_path_sha256,
+        by_episode,
+        w1a_error,
+    ) = _w1a_snapshot(inputs.w1a_receipt_root)
     empty = EvidenceSnapshot(
-        w1a_export=clean_export,
+        w1a_head=w1a_head,
+        w1a_audit=w1a_audit,
+        w1a_references=w1a_references,
+        w1a_root_path_sha256=w1a_root_path_sha256,
         w1a_by_episode=by_episode,
         lifecycle_state=None,
         enrollments_by_contract={},
@@ -4525,7 +5081,10 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
                     "lifecycle state changed during selector evidence snapshot"
                 )
             return EvidenceSnapshot(
-                w1a_export=clean_export,
+                w1a_head=w1a_head,
+                w1a_audit=w1a_audit,
+                w1a_references=w1a_references,
+                w1a_root_path_sha256=w1a_root_path_sha256,
                 w1a_by_episode=by_episode,
                 lifecycle_state=copy.deepcopy(state),
                 enrollments_by_contract={
@@ -4548,6 +5107,9 @@ def _build_evidence_snapshot(inputs: EvidenceInputs) -> EvidenceSnapshot:
 def _evidence_snapshot_from_generation(
     generation: Mapping[str, Any],
     inputs: EvidenceInputs,
+    *,
+    root: Path,
+    planned_by_key: Mapping[str, PlannedObject] | None = None,
 ) -> EvidenceSnapshot:
     """Rebuild one captured evidence generation from immutable producer bytes.
 
@@ -4561,17 +5123,77 @@ def _evidence_snapshot_from_generation(
     clean_generation = validate_runtime_object(
         generation, label="captured selector evidence generation"
     )
-    clean_export, by_episode, w1a_error = _w1a_snapshot(
-        clean_generation["w1a_export"]
-    )
+    source_pointer = clean_generation["w1a_source_receipt"]
+    w1a_head: Mapping[str, Any] | None = None
+    w1a_audit: Mapping[str, Any] | None = None
+    w1a_references: tuple[Mapping[str, Any], ...] = ()
+    w1a_root_path_sha256: str | None = None
+    by_episode: dict[str, tuple[Mapping[str, Any], ...]] = {}
+    w1a_error = source_pointer is None
     if w1a_error != clean_generation["w1a_error"]:
-        _fail("captured selector W1A generation cannot be replayed")
+        _fail("captured selector W1A generation availability drifted")
+    if source_pointer is not None:
+        if inputs.w1a_receipt_root is None:
+            _fail("captured selector W1A generation lacks its trusted source root")
+        source_item = (
+            None
+            if planned_by_key is None
+            else planned_by_key.get(source_pointer["key"])
+        )
+        if source_item is None:
+            source_value = _load_pointer(
+                root, source_pointer, label="captured selector W1A source receipt"
+            )
+        else:
+            if source_item.pointer != source_pointer:
+                _fail("captured selector W1A source pointer differs from planned bytes")
+            source_value = source_item.value
+        manifest = _load_pointer(
+            root,
+            clean_generation["settled_manifest"],
+            label="captured selector W1A settled manifest",
+        )
+        candidate_rows = [
+            (
+                copy.deepcopy(dict(pointer)),
+                _load_pointer(root, pointer, label="captured W1A manifested candidate"),
+            )
+            for pointer in manifest["candidates"]
+        ]
+        publication = _authenticate_historical_w1a_source(
+            source_value,
+            receipt_root=Path(inputs.w1a_receipt_root),
+            manifest=manifest,
+            candidate_rows=candidate_rows,
+        )
+        source = validate_runtime_object(
+            source_value, label="captured selector W1A source receipt"
+        )
+        if _utc(source["captured_at"], label="W1A capture") > _utc(
+            clean_generation["fenced_at"], label="evidence generation fence"
+        ):
+            _fail("captured selector W1A source follows its generation fence")
+        w1a_head = copy.deepcopy(dict(publication.head))
+        w1a_audit = copy.deepcopy(dict(publication.audit))
+        w1a_references = tuple(
+            copy.deepcopy(dict(item)) for item in publication.references
+        )
+        w1a_root_path_sha256 = publication.root_path_sha256
+        grouped: dict[str, list[Mapping[str, Any]]] = {}
+        for reference in w1a_references:
+            owner = reference["owner"]
+            if owner["schema"] == "options.signal_episode/v1":
+                grouped.setdefault(owner["id"], []).append(reference)
+        by_episode = {key: tuple(value) for key, value in grouped.items()}
     state = clean_generation["lifecycle_state"]
     if state is None:
         if not clean_generation["lifecycle_error"]:
             _fail("captured selector lifecycle absence is inconsistent")
         return EvidenceSnapshot(
-            w1a_export=clean_export,
+            w1a_head=w1a_head,
+            w1a_audit=w1a_audit,
+            w1a_references=w1a_references,
+            w1a_root_path_sha256=w1a_root_path_sha256,
             w1a_by_episode=by_episode,
             lifecycle_state=None,
             enrollments_by_contract={},
@@ -4581,18 +5203,32 @@ def _evidence_snapshot_from_generation(
             lifecycle_error=True,
             lifecycle_publishable=False,
         )
-    # The normal recovery path first re-acquires the producer generation.  If
-    # it is still current, exact equality is the strongest and cheapest proof.
-    # Historical reconstruction below is used only after mutable heads advance.
     current_snapshot = _build_evidence_snapshot(inputs)
     if (
         current_snapshot.lifecycle_state == state
-        and current_snapshot.w1a_export == clean_export
-        and current_snapshot.w1a_error == clean_generation["w1a_error"]
         and current_snapshot.mark_error == clean_generation["mark_error"]
         and current_snapshot.lifecycle_error == clean_generation["lifecycle_error"]
     ):
-        return current_snapshot
+        return EvidenceSnapshot(
+            w1a_head=w1a_head,
+            w1a_audit=w1a_audit,
+            w1a_references=w1a_references,
+            w1a_root_path_sha256=w1a_root_path_sha256,
+            w1a_by_episode=by_episode,
+            lifecycle_state=current_snapshot.lifecycle_state,
+            enrollments_by_contract=current_snapshot.enrollments_by_contract,
+            mark_rows_by_plan_session=current_snapshot.mark_rows_by_plan_session,
+            w1a_error=w1a_error,
+            mark_error=current_snapshot.mark_error,
+            lifecycle_error=current_snapshot.lifecycle_error,
+            lifecycle_publishable=current_snapshot.lifecycle_publishable,
+            lifecycle_unpublishable_contracts=(
+                current_snapshot.lifecycle_unpublishable_contracts
+            ),
+            mark_unpublishable_plan_sessions=(
+                current_snapshot.mark_unpublishable_plan_sessions
+            ),
+        )
     if inputs.mark_root is None or inputs.lifecycle_root is None:
         _fail("captured selector lifecycle generation lacks trusted producer roots")
     mark_root = Path(inputs.mark_root).expanduser()
@@ -4672,7 +5308,10 @@ def _evidence_snapshot_from_generation(
                     copy.deepcopy(row),
                 )
     return EvidenceSnapshot(
-        w1a_export=clean_export,
+        w1a_head=w1a_head,
+        w1a_audit=w1a_audit,
+        w1a_references=w1a_references,
+        w1a_root_path_sha256=w1a_root_path_sha256,
         w1a_by_episode=by_episode,
         lifecycle_state=copy.deepcopy(clean_state),
         enrollments_by_contract={key: tuple(value) for key, value in enrollments.items()},
@@ -4686,41 +5325,19 @@ def _evidence_snapshot_from_generation(
 
 def _reference_for_candidate(
     candidate: Mapping[str, Any],
-    export: Mapping[str, Any] | EvidenceSnapshot | None,
+    snapshot: EvidenceSnapshot | None,
     *,
     evidence_available_at: datetime,
 ) -> tuple[PlannedObject | None, list[str]]:
-    if isinstance(export, EvidenceSnapshot):
-        clean = export.w1a_export
-        matching = list(
-            export.w1a_by_episode.get(
-                candidate["final_episode_row"]["episode_id"], ()
-            )
+    if snapshot is None or snapshot.w1a_head is None:
+        return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
+    clean = snapshot.w1a_head
+    matching = list(
+        snapshot.w1a_by_episode.get(
+            candidate["final_episode_row"]["episode_id"], ()
         )
-    elif export is None:
-        return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-    else:
-        try:
-            clean = validate_w1a_export(export)
-        except (
-            SparseSelectorError,
-            context_bridge.OptionsMarketMemoryContextError,
-            context_store.OptionsMarketMemoryReceiptStoreError,
-        ):
-            return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-        if _utc(clean["exported_at"], label="W1A export clock") > evidence_available_at:
-            return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-        matching = [
-            context_bridge.validate_context_reference(reference)
-            for reference in clean["references"]
-            if isinstance(reference, Mapping)
-            and reference.get("owner", {}).get("schema") == "options.signal_episode/v1"
-            and reference.get("owner", {}).get("id")
-            == candidate["final_episode_row"]["episode_id"]
-        ]
-    if clean is None:
-        return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
-    if _utc(clean["exported_at"], label="W1A export clock") > evidence_available_at:
+    )
+    if _utc(clean["published_at"], label="W1A publication clock") > evidence_available_at:
         return None, ["KONSEKI_CONTEXT_RECEIPT_MISSING_OR_MISMATCHED"]
     episode = candidate["final_episode_row"]
     if len(matching) != 1:
@@ -4761,8 +5378,7 @@ def _reference_for_candidate(
     evidence = _evidence_object(
         {
             "schema": "options.sparse_selector_konseki_evidence/v1",
-            "export_id": clean["export_id"],
-            "head": clean["head"],
+            "source_publication_id": clean["publication_id"],
             "reference": reference,
             "authority": dict(FALSE_AUTHORITY),
         }
@@ -5243,10 +5859,20 @@ def _settle_manifest(
     ):
         _fail("selector proposal session state is malformed")
     if evidence_snapshot is None:
+        _assert_evidence_roots_distinct(root, evidence_inputs)
         evidence_snapshot = _build_evidence_snapshot(evidence_inputs)
     generation_fenced = _aware_utc(clock(), label="evidence generation fence")
+    w1a_source_receipt = _make_w1a_source_receipt(
+        snapshot=evidence_snapshot,
+        manifest_pointer=manifest_pointer,
+        candidate_rows=candidate_rows,
+        captured_at=utc_text(generation_fenced),
+    )
+    if w1a_source_receipt is not None:
+        objects[w1a_source_receipt.key] = w1a_source_receipt
     generation_object = _make_evidence_generation(
         snapshot=evidence_snapshot,
+        w1a_source_receipt=w1a_source_receipt,
         manifest_pointer=manifest_pointer,
         fenced_at=utc_text(generation_fenced),
     )
@@ -5855,6 +6481,11 @@ def _base_source_head(
         ),
         "proposal_session_count": (
             0 if head is None else head["proposal_session_count"]
+        ),
+        "w1a_publication_high_water": (
+            None
+            if head is None
+            else copy.deepcopy(head["w1a_publication_high_water"])
         ),
         "digests": dict(DIGESTS),
         "authority": dict(FALSE_AUTHORITY),
@@ -6915,6 +7546,9 @@ def _plan_cycle_once(
         None if head is None else head["proposal_session_date"]
     )
     proposal_session_count = 0 if head is None else head["proposal_session_count"]
+    w1a_publication_high_water = copy.deepcopy(
+        head["w1a_publication_high_water"]
+    )
     if head["pending_manifest"] is not None:
         settled_manifest_pointer = copy.deepcopy(head["pending_manifest"])
         if settlement_cache:
@@ -6962,6 +7596,18 @@ def _plan_cycle_once(
         ) = settlement
         for item in settled_objects:
             objects[item.key] = item
+        source_receipts = [
+            item.value
+            for item in settled_objects
+            if item.value.get("schema")
+            == "options.sparse_selector_w1a_source_receipt/v1"
+        ]
+        if len(source_receipts) > 1:
+            _fail("selector settlement repeats its W1A source receipt")
+        w1a_publication_high_water = _advance_w1a_high_water(
+            w1a_publication_high_water,
+            None if not source_receipts else source_receipts[0],
+        )
 
     new_candidate_objects: list[PlannedObject] = []
     pending_candidate_objects: list[PlannedObject] = []
@@ -7223,6 +7869,7 @@ def _plan_cycle_once(
         "decision_count": decision_count_after,
         "proposal_session_date": proposal_session_date,
         "proposal_session_count": proposal_session_count,
+        "w1a_publication_high_water": w1a_publication_high_water,
         "digests": dict(DIGESTS),
         "authority": dict(FALSE_AUTHORITY),
     }
@@ -7455,6 +8102,7 @@ def _runtime_expected_state(head: Mapping[str, Any] | None) -> dict[str, Any]:
             "decision_count": 0,
             "proposal_session_date": None,
             "proposal_session_count": 0,
+            "w1a_publication_high_water": None,
         }
     return {
         "pending_manifest": copy.deepcopy(head["pending_manifest"]),
@@ -7469,6 +8117,9 @@ def _runtime_expected_state(head: Mapping[str, Any] | None) -> dict[str, Any]:
         "decision_count": head["decision_count"],
         "proposal_session_date": head["proposal_session_date"],
         "proposal_session_count": head["proposal_session_count"],
+        "w1a_publication_high_water": copy.deepcopy(
+            head["w1a_publication_high_water"]
+        ),
     }
 
 
@@ -8609,6 +9260,13 @@ def _plan_from_intent(
                 item.value, label="selector advance intent evidence generation"
             )
             expected_key = f"evidence/{_sha256(item.body)}.json"
+        elif schema == "options.sparse_selector_w1a_source_receipt/v1":
+            if len(item.body) > MAX_W1A_SOURCE_RECEIPT_BYTES:
+                _fail("selector advance intent W1A source exceeds its compact bound")
+            validate_runtime_object(
+                item.value, label="selector advance intent W1A source receipt"
+            )
+            expected_key = f"evidence/{_sha256(item.body)}.json"
         elif schema in {
             "options.sparse_selector_konseki_evidence/v1",
             "options.sparse_selector_mark_evidence/v1",
@@ -8849,6 +9507,7 @@ def _plan_from_intent(
         decision_predecessor = pointer
 
     used_evidence_keys: set[str] = set()
+    w1a_cache: dict[str, _W1APublication] = {}
     planned_candidates_by_pointer = {
         canonical_bytes(item.pointer): item.value for item in candidate_objects
     }
@@ -8868,6 +9527,7 @@ def _plan_from_intent(
                 planned_by_key=planned_by_key,
                 candidate=candidate,
                 evidence_inputs=evidence_inputs,
+                w1a_cache=w1a_cache,
             )
         )
     intent_evidence_keys = {
@@ -8875,6 +9535,21 @@ def _plan_from_intent(
     }
     if intent_evidence_keys != used_evidence_keys:
         _fail("selector advance intent contains orphan or missing evidence")
+    source_receipts = [
+        item.value
+        for item in objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    ]
+    if len(source_receipts) > 1:
+        _fail("selector advance intent repeats its W1A source receipt")
+    if parent_is_live:
+        expected_w1a_high_water = _advance_w1a_high_water(
+            prior_head["w1a_publication_high_water"],
+            None if not source_receipts else source_receipts[0],
+        )
+        if next_head["w1a_publication_high_water"] != expected_w1a_high_water:
+            _fail("selector advance intent W1A high-water is not monotone")
 
     if parent_is_live:
         proposal_session = prior_head["proposal_session_date"]
@@ -9132,6 +9807,8 @@ def _plan_from_intent(
             replay_snapshot = _evidence_snapshot_from_generation(
                 generation_item.value,
                 evidence_inputs,
+                root=root,
+                planned_by_key=planned_by_key,
             )
         replay_index = 0
 
@@ -9365,6 +10042,56 @@ def _publish_advance_intent(root: Path, intent: Mapping[str, Any]) -> None:
         _discard_staged_write(temporary)
 
 
+@contextmanager
+def _w1a_commit_fence(
+    root: Path, plan: CyclePlan, inputs: EvidenceInputs
+) -> Iterator[None]:
+    receipts = [
+        item.value
+        for item in plan.objects
+        if item.value.get("schema")
+        == "options.sparse_selector_w1a_source_receipt/v1"
+    ]
+    if not receipts:
+        yield
+        return
+    if len(receipts) != 1 or inputs.w1a_receipt_root is None:
+        _fail("selector transition lacks one trusted W1A source root")
+    _assert_evidence_roots_distinct(root, inputs)
+    receipt = validate_runtime_object(
+        receipts[0], label="selector final W1A source fence"
+    )
+    with _locked_w1a_publication(Path(inputs.w1a_receipt_root)) as publication:
+        manifest = _load_pointer(
+            root,
+            receipt["settled_manifest"],
+            label="selector final W1A settled manifest",
+        )
+        candidate_rows = [
+            (
+                copy.deepcopy(dict(pointer)),
+                _load_pointer(root, pointer, label="selector final W1A candidate"),
+            )
+            for pointer in manifest["candidates"]
+        ]
+        if (
+            receipt["root_path_sha256"] != publication.root_path_sha256
+            or receipt["head"] != publication.head
+            or receipt["head_sha256"] != _sha256(publication.head_body)
+            or receipt["head_bytes"] != len(publication.head_body)
+            or receipt["audit_id"] != publication.audit["audit_id"]
+            or receipt["reference_count"] != len(publication.references)
+            or receipt["descriptors"]
+            != _w1a_descriptors(candidate_rows, publication.references)
+        ):
+            raise EvidenceGenerationDrift(
+                "W1A publication changed before selector intent seal"
+            )
+        # The durable intent and its parent-keyed seal are published while the
+        # exact source HEAD remains locked and fully re-authenticated.
+        yield
+
+
 def _commit_cycle_locked(
     root: Path,
     plan: CyclePlan | None,
@@ -9442,7 +10169,10 @@ def _commit_cycle_locked(
             )
         ):
             _fail("selector plan parent changed before intent publication")
-        _publish_advance_intent(private_root, active.intent)
+        with _w1a_commit_fence(
+            private_root, active, plan_evidence_inputs
+        ):
+            _publish_advance_intent(private_root, active.intent)
         if hook is not None:
             hook("after_intent")
 
@@ -9460,7 +10190,10 @@ def _commit_cycle_locked(
             )
             if body != item.body:
                 _fail("selector adopted intent object differs from durable bytes")
-        authenticated, _decisions, _body = authenticate_store(private_root)
+        authenticated, _decisions, _body = authenticate_store(
+            private_root,
+            evidence_inputs=evidence_inputs or active.evidence_inputs,
+        )
         if authenticated != active.head:
             _fail("selector adopted intent HEAD does not authenticate exactly")
         _clear_advance_intent(private_root, active.intent)
@@ -9684,5 +10417,4 @@ __all__ = [
     "utc_text",
     "validate_runtime_object",
     "validate_source_snapshot",
-    "validate_w1a_export",
 ]
