@@ -334,6 +334,15 @@
   .wri-lrow .st.elev  { color:var(--act); }
   .wri-lrow .st.info  { color:var(--ink-link); }
   .wri-lrow .st.na    { opacity:.62; }
+  /* THREE coverage meanings, three marks (W4 m8). `na` is dimmed because it is an
+     ABSENCE — we could not read it. `none` and `n/app` are ANSWERS ("we looked, there is
+     none" / "this does not apply here"), so they sit at full muted weight: the
+     nulls-printed law is exactly the distinction between not measuring and measuring a
+     negative, and one dimmed mark for all three erased it. Muted ramp only — a coverage
+     state is not a price direction, so the direction tokens (which swap under
+     红涨绿跌) have no business here — the same law as the severity tokens above. */
+  .wri-lrow .st.none  { color:var(--muted); }
+  .wri-lrow .st.n\/app { color:var(--muted); letter-spacing:0; }
   .wri-lrow .rs { color:var(--text); line-height:1.45; }
   /* the Tier-2 receipt mark: a real affordance, not a stray question mark */
   .wri-q { display:inline-grid; place-items:center; width:13px; height:13px; margin-left:5px;
@@ -344,6 +353,36 @@
   @media (max-width:720px){
     .wri-lrow { grid-template-columns:1fr auto; gap:3px 8px; }
     .wri-lrow .rs { grid-column:1/-1; }
+  }
+
+  /* ── W4: the Intelligence Drawer's Tier 1 ────────────────────────────────
+     Tier 1 is the GLANCE read and it gets exactly two things: one plain sentence and
+     one stance word. The stance chip is `.att-stance` — the same grammar the attention
+     stack uses, because it is the same vocabulary (§7(b): Watch · Get ready · No
+     action), and a second chip style for one vocabulary is how two surfaces start
+     disagreeing about what a word looks like. `.drw-full` exists because the watchlist
+     drawer's container IS the `.drw` grid, so a block that must span it says so with a
+     class rather than an inline style. */
+  .drw-full { grid-column:1/-1; }
+  .drw-t1 { grid-column:1/-1; display:flex; gap:12px; align-items:flex-start;
+    justify-content:space-between; padding-bottom:2px; }
+  .drw-lead { font-size:14px; font-weight:650; color:var(--text); line-height:1.4;
+    letter-spacing:-.01em; }
+  .drw-t1 .att-stance { flex:none; }
+  /* the honest "nothing" — muted, and never dressed up as a finding */
+  .drw-quiet { grid-column:1/-1; font-size:12px; color:var(--muted); line-height:1.5;
+    padding-bottom:2px; }
+  /* a lock shell inside a drawer is a full-width block, never a column */
+  .drw .lockshell, tr.row-drawer .lockshell { grid-column:1/-1; margin-top:4px; }
+  /* The regime rail's appended cascade sentence. Emitted by `watchlist_risk.js` since
+     #3527 and styled NOWHERE — same defect class as the five `.wri-*` classes W3 found,
+     and the same remedy: it lands in the template that renders it. Muted, because the
+     rail's base read is the sentence that must survive the glance and this rides after
+     it (display-only WATCH context, never a signal). */
+  .wri-rail-chain { color:var(--muted); }
+  .wri-rail-chain a { font-weight:650; white-space:nowrap; }
+  @media (max-width:720px){
+    .drw-t1 { flex-direction:column; gap:7px; align-items:flex-start; }
   }
 
   .drw-act { grid-column:1/-1; display:flex; gap:12px; flex-wrap:wrap; align-items:center;
@@ -1038,15 +1077,15 @@
      SD routes each per-ticker fetch to its market's store through window.MB. -->
 <script src="market_books.js?v=2"></script>
 <script src="stockdata.js?v=3"></script>
-<script src="watchlist.js?v=7"></script>
+<script src="watchlist.js?v=8"></script>
 <script src="factor_exposure.js?v=3"></script>
 <!-- pure book-structure math + the risk publisher. risk_core.js must precede
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
      boots without them and the Risk rails render as lock shells (packet A9). -->
 <script src="risk_core.js?v=2"></script>
-<script src="watchlist_risk.js?v=4"></script>
+<script src="watchlist_risk.js?v=5"></script>
 <script src="watchstore.js?v=5"></script>
-<script src="portfolio.js?v=4"></script>
+<script src="portfolio.js?v=5"></script>
 <script src="mtf.js"></script>
 <script src="theme.js"></script>
 <p class="muted" style="font-size:12px; text-align:center">{{ t('Generated', '生成于') }} {{ generated_utc }} UTC</p>

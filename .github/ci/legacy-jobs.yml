@@ -3106,6 +3106,22 @@ jobs:
       # handing the map over, the lookup itself, and a print site that bypasses it.
       - name: watchlist sector names — glossary, build wiring, print sites (zh)
         run: python -m pytest tests/test_watchlist_sector_i18n.py -q
+      # W4 per-ticker Intelligence Drawer over that workspace. The load-bearing gate is
+      # honest absence: every section builder is run over an EMPTY payload and must
+      # return a row that NAMES what is missing, because a section that renders nothing
+      # and a section with nothing to report are the same screenshot. Also pins the
+      # attribute-escaping slot in the shared row painter (a silent breakout), the
+      # dossier route (`stock.html` reads location.hash only — `?t=` is a 200 that opens
+      # empty), and the anonymous lock shell.
+      - name: watchlist drawer — honest absence, glance vocabulary, canonical routes (W4)
+        run: python -m pytest tests/test_watchlist_drawer_js.py -q
+      # Repo hygiene, wired here because this wave introduced the class it closes: a crop
+      # harness borrows site/stockdata/ from the main checkout for the duration of a
+      # shoot, and an aborted run once left the symlink behind long enough for a broad
+      # `git add` to commit a machine-local ABSOLUTE path into the shipping tree. It
+      # needs no node and no artifacts, so it is cheap wherever it runs.
+      - name: repo hygiene — no tracked absolute-path symlinks
+        run: python -m pytest tests/test_no_absolute_path_symlinks.py -q
       - name: factor-exposure engine — orthogonalization, betas, crypto universe (W6.1)
         run: python -m pytest tests/test_factor_exposure.py tests/test_factor_exposure_stress.py -q
 

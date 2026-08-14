@@ -64,7 +64,7 @@
       notInLibrary: "This name isn't in tonight's library — value shown at cost.",
       dossier: 'Full dossier →',
       terminal: 'Chart in Terminal →',
-      lblStage: 'Stage', lblExtension: 'Extension'
+      lblStage: 'Stage'
     },
     zh: {
       emptyHeading: '暂无开仓持仓。',
@@ -99,10 +99,13 @@
       notInLibrary: '该名称不在今晚的库中——数值按成本显示。',
       dossier: '完整档案 →',
       terminal: '在终端查看图表 →',
-      // 偏离度, NOT 拉伸度: the existing Stretch lane already owns 拉伸度, and two
-      // drawer rows carrying the same zh label with different readings is unreadable.
-      // 偏离 is the house word for distance-from-a-norm (偏离200日均线 / 极端偏离).
-      lblStage: '阶段', lblExtension: '偏离度'
+      /* This comment used to sit here explaining the DISTANCE row's zh label (偏离度,
+         not 拉伸度). That row moved into the shared composer in round 3 and the note
+         stayed behind attached to Stage, describing a key it has nothing to do with —
+         so it is retired here. The live version of the ruling, now that the lane is
+         labelled 入场拉伸 and the row 偏离度, lives beside each of them in
+         `watchlist_risk.js`. */
+      lblStage: '阶段'
     }
   };
   function L(k) { return (T[lang()] || T.en)[k]; }
@@ -283,33 +286,6 @@
     return null;
   }
 
-  /* Extension sentence for the drawer. The number is `tech.pct_vs_200dma` — verified
-     the same quantity `ext.ext` carries (engine/extension.py: ext = price/SMA200 − 1,
-     emitted ×100), so the two can never disagree; the named field is used. */
-  function extensionSentence(grade, pct) {
-    if (!isNum(pct)) return null;
-    var below = pct < 0, p = Math.abs(Math.round(pct * 10) / 10);
-    var lineEn = below ? 'about ' + p + '% below its 200-day line'
-                       : 'about ' + p + '% above its 200-day line';
-    var lineZh = below ? '低于200日线约' + p + '%' : '高于200日线约' + p + '%';
-    if (grade === 'parabolic') {
-      return { en: 'Parabolic — extreme extension, ' + lineEn + '. Protect gains.',
-               zh: '抛物线拉伸——极端偏离，' + lineZh + '。注意保护利润。' };
-    }
-    if (grade === 'stretched') {
-      return { en: 'Stretched — ran hard, ' + lineEn + '. Entries here have chased before.',
-               zh: '过度拉伸——涨势过快，' + lineZh + '。此位追入历史上多为追高。' };
-    }
-    if (grade === 'steady') {
-      return { en: 'Steady — ' + lineEn + '.', zh: '平稳——' + lineZh + '。' };
-    }
-    // No trailing "not stretched": the entry-signal headline directly above is a
-    // DIFFERENT engine and may legitimately read "Extended — wait for a pullback" on
-    // the same card. The grade word already carries the read; two engines measuring
-    // different things must not textually contradict each other one line apart.
-    return { en: 'In trend — ' + lineEn + '.',
-             zh: '趋势内——' + lineZh + '。' };
-  }
   function extGradeOf(t, j) {
     if (isModeled(t) && j && j.ext && j.ext.grade) return j.ext.grade;
     var al = j && j.ladder && j.ladder.alignment;
@@ -336,15 +312,29 @@
   // =========================================================================
   //  Drawer — the per-name detail, and the ONE place a lane failure is spoken
   // =========================================================================
+  /* Row painter. Delegates to `WRI.lrowHTML` when the gated risk layer is present, so
+     the drawer has ONE row grammar rather than two that drift; the local fallback keeps
+     the stateless rows rendering when it is not (an anonymous visitor, or a 401 on the
+     gated bundle). Both emit the EMPTY `.st` cell: the row is a three-column grid, and
+     the old local version omitted it, which dropped every stateless row's read into the
+     state column. */
   function lrow(labEn, labZh, stCls, stTok, readEn, readZh) {
+    if (window.WRI && window.WRI.lrowHTML) {
+      return window.WRI.lrowHTML({ lab: { en: labEn, zh: labZh },
+        state: stCls, token: stTok, en: readEn, zh: readZh });
+    }
     return '<div class="wri-lrow"><span class="ln">' + te(labEn, labZh) + '</span>' +
-      (stCls ? '<span class="st ' + stCls + '">' + stTok + '</span>' : '') +
+      (stCls ? '<span class="st ' + stCls + '">' + stTok + '</span>' : '<span class="st"></span>') +
       '<span class="rs">' + te(readEn, readZh) + '</span></div>';
   }
   function terminalHref(t) {
     // verified route (charting-app terminal/app/terminal/page.tsx reads ?symbol ?? ?sym)
     return 'https://app.mastermind-x.com/terminal?sym=' + encodeURIComponent(t) + '&from=macro';
   }
+  /* The dossier. `stock.html` reads its ticker from `location.hash` and from nothing
+     else (templates/stock.html.j2 — four separate readers, all `location.hash`), so the
+     hash form is the only one that arrives carrying a name. */
+  function dossierHref(t) { return 'stock.html#' + encodeURIComponent(t); }
 
   /* The drawer is where the 390px demotions live (Day, Since entry, Risk share,
      Sector) AND where the per-name detail appears. Its honesty rule: when a lane the
@@ -380,18 +370,28 @@
     }
     out += '</div>';
 
-    if (j === null || j === undefined) {
+    if (!window.WRI || !window.WRI.intelSections) {
+      /* The gated intelligence layer is not on the page — which here can only mean the
+         bundle failed, never that the visitor is anonymous. `render()` returns early on
+         every `anon*` state, so this file NEVER paints a drawer for a signed-out
+         visitor; that path belongs to watchlist.js, which draws the lock shell. This
+         branch used to carry a lock shell of its own for the anonymous case, and it was
+         unreachable code telling an audience it could not have that they needed a free
+         account they already had. */
+      out += '<div class="drw-honest">' + te(
+        'The detail layer for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
+        '这只票的详情层没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>';
+    } else if (j === null || j === undefined) {
       /* Truly uncovered, or not read yet — either way we have no lanes. One honest
          line, never an empty drawer that reads as "all clear". */
       out += '<div class="drw-honest">' + (j === null
         ? te(esc(T.en.notInLibrary), esc(T.zh.notInLibrary))
         : te('Reading this name&rsquo;s detail…', '正在读取该股详情…')) + '</div>';
     } else {
-      var es = j.entry_signal || {};
-      var headEn = es.headline || '', headZh = es.headline_zh || es.headline || '';
-      out += headEn
-        ? '<div class="pfx-lead">' + te(esc(headEn), esc(headZh)) + '</div>'
-        : '<div class="drw-honest">' + te(esc(T.en.noEntryRead), esc(T.zh.noEntryRead)) + '</div>';
+      // ---- Tier 1: the instant read, in plain words ----------------------
+      try { out += window.WRI.intelTier1(t, j) || ''; } catch (e) {
+        out += '<div class="drw-honest">' + te(esc(T.en.noEntryRead), esc(T.zh.noEntryRead)) + '</div>';
+      }
 
       var stg = ctxStage(t);
       if (stg) {
@@ -405,23 +405,30 @@
           '这只票的阶段判断暂时读不到。本行其余内容不依赖它。') + '</div>';
       }
 
-      var pct = j.tech && j.tech.pct_vs_200dma;
-      var ext = extensionSentence(extGradeOf(t, j), num(pct));
-      if (ext) out += lrow(T.en.lblExtension, T.zh.lblExtension, '', '', esc(ext.en), esc(ext.zh));
+      /* The distance-from-trend row moved into the shared composer (WRI.intelSections),
+         so the holdings drawer and the watchlist drawer now render it identically. It
+         used to live here, which meant one name read differently depending on which mode
+         you opened it from. `extGradeOf` stays — the attention stack still uses it. */
 
-      // the seven lane rows — the SAME engine the workspace uses, never duplicated
-      var lanes = '';
-      if (window.WRI && window.WRI.laneRows) {
-        try { lanes = window.WRI.laneRows(j) || ''; } catch (e) { lanes = ''; }
+      /* ---- Tier 2: every section, from the ONE composer ------------------
+         The weight is this position's value over its OWN market book's total — the
+         same denominator the row's weight cell uses, and never a cross-currency one.
+         One failed section cannot empty the drawer: the composer is a string builder,
+         so a throw here loses Tier 2 and says so, and Tier 1 above is already painted. */
+      var wPct = null;
+      if (v.value != null) {
+        var bt = bookValueTotals(openRows())[b];
+        if (bt && bt.value > 0) wPct = v.value / bt.value * 100;
       }
-      if (lanes) out += lanes;
+      var sections = '';
+      try {
+        sections = window.WRI.intelSections(t, j, { inBook: true, weightPct: wPct }) || '';
+      } catch (e) { sections = ''; }
+      if (sections) out += sections;
       else out += '<div class="drw-honest">' + te(
         'The per-lane checks for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
         '这只票的各项检查没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>';
 
-      if (window.WRI && window.WRI.chainRows) {
-        try { out += window.WRI.chainRows(t) || ''; } catch (e) {}
-      }
       if (j.asof) {
         out += '<div class="asof mut" style="font-size:11px;margin-top:7px">' +
           te('signals as of ' + esc(j.asof), '信号截至 ' + esc(j.asof)) + '</div>';
@@ -429,7 +436,7 @@
     }
 
     out += '<div class="drw-act">' +
-      '<a href="stock.html#' + encodeURIComponent(t) + '">' + te(T.en.dossier, T.zh.dossier) + '</a>' +
+      '<a href="' + esc(dossierHref(t)) + '">' + te(T.en.dossier, T.zh.dossier) + '</a>' +
       '<a href="' + esc(terminalHref(t)) + '" target="_blank" rel="noopener noreferrer">' +
         te(T.en.terminal, T.zh.terminal) + '</a>' +
       '<button class="drw-rm" type="button" data-edit="' + esc(String(r.id)) + '">' +
@@ -1300,7 +1307,17 @@
           if (window.MDXAuth && window.MDXAuth.open) window.MDXAuth.open('signin');
           return;
         }
-        // a click anywhere on the row (but not on a link/button) toggles the drawer
+        /* The ⌄ affordance, handled BEFORE the generic link/button bail — because it IS
+           a button, and the bail below was swallowing it. The chevron rotated (it is
+           driven by `aria-expanded` on the row, which the renderer sets from
+           `openDrawers`) while clicking it did nothing at all: the drawer could only be
+           opened by clicking some OTHER part of the row. The one control the design
+           points at was the one control that did not work, and it looked live because
+           the rotation is CSS. The watchlist table's own delegation already handles
+           `[data-exp]` first, which is why only this half was dark. */
+        var expBtn = tgt.closest ? tgt.closest('[data-row-exp]') : null;
+        if (expBtn) { toggleDrawer(expBtn.getAttribute('data-row-exp')); return; }
+        // a click anywhere else on the row (but not on a link/button) toggles it too
         if (tgt.closest && (tgt.closest('a') || tgt.closest('button'))) return;
         var row = tgt.closest ? tgt.closest('tr.pfx-row') : null;
         if (row) toggleDrawer(row.getAttribute('data-row'));

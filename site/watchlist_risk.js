@@ -134,8 +134,17 @@
   // state 'na' + plain "not covered"; never invents a read. Lane names + chip
   // vocabulary are the pinned W2 §7 plain words.
   var LANES = ['price_trend', 'stretch', 'events', 'estimates', 'balance', 'selling', 'rates'];
+  /* `stretch` is labelled ENTRY stretch, not "Stretch". The bare word named a second
+     measurement: a few rows below sits "Distance from trend", which grades how far the
+     price is from its 200-day line, and a reader met "Stretch: OK — not stretched" a
+     few rows under "Distance from trend: Well above its own trend" as one English word
+     answering itself. They are different questions from different oracles — this lane
+     reads `entry_signal.status` (has the move run past the level you would enter at?),
+     the distance row reads `ext.grade` / the ladder flag (how far from the 200-day
+     line?) — so each label now names its OWN dimension and neither can be read as the
+     negation of the other. Label + sentence only; the lane's read is unchanged. */
   var LANE_LABEL = {
-    price_trend: { en: 'Price & trend', zh: '价格与趋势' }, stretch: { en: 'Stretch', zh: '拉伸度' },
+    price_trend: { en: 'Price & trend', zh: '价格与趋势' }, stretch: { en: 'Entry stretch', zh: '入场拉伸' },
     events: { en: 'Events', zh: '事件' }, estimates: { en: 'Estimates', zh: '盈利预期' },
     balance: { en: 'Balance sheet', zh: '资产负债' }, selling: { en: "Who's selling", zh: '谁在卖出' },
     rates: { en: 'Rate sensitivity', zh: '利率敏感' }
@@ -166,30 +175,56 @@
     var stretched = es && es.status === 'extended';
     var hv = tech && tech.hv20;
     if (es && es.status != null) {
+      /* Both branches are phrased against the ENTRY, which is the only thing this lane
+         measured. The negative used to read "not stretched" — three rows from a distance
+         row saying "Well above its own trend", which made one word negate the other (in
+         ZH, 未过度拉伸 under 明显高于自身趋势, a flat self-negation). It now says what
+         `status !== 'extended'` actually means: entering here is not chasing a move that
+         has already gone. */
       out.stretch = { state: stretched ? 'watch' : 'ok',
-        en: stretched ? 'ran hard; entries here have chased before' : 'not stretched',
-        zh: stretched ? '涨势过快；此位追入历史上多为追高' : '未过度拉伸',
+        en: stretched ? 'has run well past its entry level; entries here have chased before'
+                      : 'entries here are not chasing a move that already ran',
+        zh: stretched ? '已远离入场位置；此位入场历史上多为追高'
+                      : '此位入场不属于追涨已走完的行情',
         chip: stretched ? { cls: '', en: 'Stretched', zh: '过度拉伸' } : null };
     } else if (tech && isNum(hv)) {
+      /* NO entry read exists for this name, so this branch cannot answer the lane's own
+         question and says so before reporting the one thing it can (recent swing size).
+         Reporting a volatility read silently under an ENTRY label is the same mislabel
+         the rename above exists to remove. State unchanged. */
       var hot = hv > 0.6;
       out.stretch = { state: hot ? 'watch' : 'ok',
-        en: hot ? 'very volatile lately' : 'volatility contained',
-        zh: hot ? '近期波动很大' : '波动可控', chip: null };
+        en: hot ? 'no entry read tonight; it has been swinging hard lately'
+                : 'no entry read tonight; its swings have stayed contained',
+        zh: hot ? '今晚没有入场读数；近期波动很大'
+                : '今晚没有入场读数；波动幅度可控', chip: null };
     } else out.stretch = { state: 'na', en: NA.en, zh: NA.zh, chip: null };
     // --- events (earnings window) --------------------------------------
     var earn = (j && j.earnings) || null;
     if (earn && earn.next_date) {
       var days = daysUntil(earn.next_date);
       var when = earn.next_time ? (' ' + timeWord(earn.next_time)) : '';
+      var past = isNum(days) && days < 0;
       var hot2 = isNum(days) && days <= 5 && days >= 0;
-      var chipEn = isNum(days) ? (days < 0 ? null : 'Earnings in ' + days + 'd') : null;
-      var chipZh = isNum(days) ? (days < 0 ? null : '财报 ' + days + '天内') : null;
-      out.events = {
-        state: hot2 ? 'elev' : (isNum(days) && days <= 14 && days >= 0 ? 'watch' : 'ok'),
-        en: 'reports ' + fmtDate(earn.next_date) + when,
-        zh: fmtDateZh(earn.next_date) + timeWordZh(earn.next_time) + '发布',
-        chip: chipEn ? { cls: hot2 ? 'hot' : '', en: chipEn, zh: chipZh } : null
-      };
+      var chipEn = past || !isNum(days) ? null : 'Earnings in ' + days + 'd';
+      var chipZh = past || !isNum(days) ? null : '财报 ' + days + '天内';
+      /* A PAST `next_date` is not a forward event, and it is not the edge case it looks
+         like: measured across the library, 1,197 of the 1,205 names carrying a
+         `next_date` are already past it, because the per-ticker artifacts bake on a
+         cadence the earnings calendar outruns. The CHIP was already guarded for this;
+         the STATE and the SENTENCE were not — so the lane read "reports Jul 30" in a
+         confident `ok` about a date that had come and gone, a stale fact wearing the
+         grammar of a fresh one. Past dates now report what HAPPENED and drop to `na`,
+         because a calendar we cannot see forward on is a coverage gap, not an all-clear. */
+      out.events = past
+        ? { state: 'na',
+            en: 'last reported ' + fmtDate(earn.next_date) + '; no confirmed next date',
+            zh: '最近一次财报为' + fmtDateZh(earn.next_date) + '；下一次日期尚未确认',
+            chip: null }
+        : { state: hot2 ? 'elev' : (isNum(days) && days <= 14 ? 'watch' : 'ok'),
+            en: 'reports ' + fmtDate(earn.next_date) + when,
+            zh: fmtDateZh(earn.next_date) + timeWordZh(earn.next_time) + '发布',
+            chip: chipEn ? { cls: hot2 ? 'hot' : '', en: chipEn, zh: chipZh } : null };
     } else out.events = { state: 'na', en: NA.en, zh: NA.zh, chip: null };
     // --- estimates (revisions + surprise) ------------------------------
     var rev = (j && j.revisions) || null, sue = earn && earn.sue_z;
@@ -316,7 +351,57 @@
     if (s === 'ok') return 'OK';
     if (s === 'watch') return te('WATCH', '关注');
     if (s === 'elev') return te('ELEVATED', '升高');
+    /* THREE MEANINGS, THREE TOKENS (m8). `n/a` was carrying all of them, so a coverage
+       gap, an evaluated negative and a structural non-applicability rendered as the same
+       mark — and the nulls-printed law is precisely the distinction between "we did not
+       measure" and "we measured; the answer is no".
+         na    — we could not read it. A gap in what we can show, not an all-clear.
+         none  — we DID read it and the answer is none. A finding.
+         n/app — the dimension does not apply to this row at all.
+       All three paint from the muted/health ramp, never `--up`/`--down`: a coverage
+       state is not a price direction. `none` and `n/app` sit at full opacity because
+       they are answers; only `na` is dimmed, because only `na` is an absence. */
+    if (s === 'none') return te('NONE', '无');
+    if (s === 'n/app') return te('—', '—');
     return te('n/a', '未覆盖');
+  }
+
+  /* ★ THE DRAWER ROW PAINTER ★ (W4)
+     ONE function paints every `.wri-lrow` on this page — the seven lanes, the chain
+     rows, and every section W4 added. It lives here, beside the lane engine, for the
+     same reason `WS.seam` lives in watchlist.js: a grammar with two painters is a
+     grammar that drifts, and this one already drifted once (the chain row grew a
+     `.wri-q` receipt the lane rows never got).
+
+     TWO ESCAPING RULES, deliberately different, because the two slots are different
+     languages:
+
+       `en`/`zh` — MARKUP. Callers interpolate `<span class="fig">` and `&rsquo;` here,
+       so the painter cannot escape it; each caller escapes its own data values. That is
+       the pre-existing contract and it is unchanged.
+
+       `tip.en`/`tip.zh` — ATTRIBUTE TEXT, escaped HERE. An attribute value is never
+       markup, so there is no legitimate reason for a caller to pass tags — and a caller
+       that forgets `esc()` on a read carrying an apostrophe or a quote does not print a
+       stray tag, it BREAKS OUT of `data-tip-en="…"` and the rest of the row becomes
+       attributes. "Callers escape" is a fine rule for a slot where a mistake is visible;
+       it is the wrong rule for the slot where a mistake is silent. Callers pass tips RAW.
+
+     A `state` of null/'' still emits an EMPTY `.st` cell rather than omitting it: the row
+     is a three-column grid (`116px 74px 1fr`), so a missing middle cell drops the read
+     into the state column. portfolio.js's own `lrow()` omitted it and mis-laid every
+     stateless row (Stage, Extension) in the shipped drawer. */
+  function lrowHTML(spec) {
+    if (!spec) return '';
+    var lab = spec.lab || {}, tip = spec.tip || null;
+    var st = spec.state
+      ? '<span class="st ' + spec.state + '">' +
+        (spec.token != null ? spec.token : stateToken(spec.state)) + '</span>'
+      : '<span class="st"></span>';
+    return '<div class="wri-lrow"><span class="ln">' + te(lab.en, lab.zh) +
+      (tip ? '<span class="wri-q" tabindex="0" data-tip-en="' + esc(tip.en) +
+             '" data-tip-zh="' + esc(tip.zh || tip.en) + '">?</span>' : '') + '</span>' +
+      st + '<span class="rs">' + te(spec.en, spec.zh) + '</span></div>';
   }
 
   // The seven lane rows as HTML — the ONE renderer, shared by the watchlist cards and
@@ -326,10 +411,568 @@
     var lanes = laneRead(j);
     return LANES.map(function (k) {
       var L = lanes[k], lbl = LANE_LABEL[k];
-      return '<div class="wri-lrow"><span class="ln">' + te(lbl.en, lbl.zh) + '</span>' +
-        '<span class="st ' + L.state + '">' + stateToken(L.state) + '</span>' +
-        '<span class="rs">' + te(esc(L.en), esc(L.zh)) + '</span></div>';
+      return lrowHTML({ lab: lbl, state: L.state, en: esc(L.en), zh: esc(L.zh) });
     }).join('');
+  }
+
+  // =========================================================================
+  //  W4 — the per-ticker INTELLIGENCE DRAWER
+  // =========================================================================
+  /* Composed from artifacts that ALREADY EXIST. No new estimator, no new engine, and
+     — the part that decides whether a 100-name list survives it — NO NEW FETCH: every
+     field read below comes out of the same `stockdata/<T>.json` the row already
+     hydrated for its own cells. Opening a drawer is string concatenation over an
+     object the page is holding anyway, so a hundred of them cost a hundred string
+     builds and zero requests.
+
+     THE HONESTY RULE, written as a mechanism rather than a habit: every builder here
+     returns a ROW, never ''. A lane with no data says so, in words that name WHAT is
+     missing — "no options plane for this name" — because a section that renders
+     nothing and a section that has nothing to report are the same pixels, and only one
+     of them is information. `tests/test_watchlist_drawer_js.py` runs every builder over
+     an EMPTY payload and reds if any of them returns a blank, so the next person to add
+     a section cannot quietly skip theirs.
+
+     Everything here is PURE (payload in, string out) and exported for the node shell.
+     Nothing consults the DOM, the network, or the clock beyond `daysUntil`. */
+
+  // ticker -> {riskShare, factor:{en,zh}|null, twin}, filled by the publisher (below)
+  var ROLE_FACTS = {};
+
+  var W4_LABEL = {
+    role:    { en: 'Portfolio role',    zh: '组合角色' },
+    options: { en: 'Options',           zh: '期权' },
+    macro:   { en: 'Macro sensitivity', zh: '宏观敏感' },
+    theme:   { en: 'Sector & theme',    zh: '行业与主题' },
+    owners:  { en: 'Ownership',         zh: '持股与内部人' },
+    notes:   { en: 'Company notes',     zh: '公司动态' }
+  };
+
+  /* The stance vocabulary. §7(b) of the pinned design ratifies exactly these three for
+     holdings surfaces — "Act" and "Protect gains" are barred here — and portfolio.js
+     carries the same literals for the attention stack. Two copies of one vocabulary
+     across the anonymous/gated boundary (portfolio.js runs signed-out, this file never
+     does), so `tests/test_watchlist_drawer_js.py` asserts the two lists are byte-equal
+     rather than trusting them to stay in step. */
+  var W4_STANCE = {
+    watch: { en: 'Watch', zh: '留意' },
+    ready: { en: 'Get ready', zh: '做好准备' },
+    none:  { en: 'No action', zh: '暂不需要动作' }
+  };
+
+  /* Which of the three, for ONE name. Deterministic precedence over outputs that already
+     exist — no score, no weights, nothing fused (packet §9 allows exactly this shape and
+     forbids the other one).
+
+     THE TOP TIER IS THE LADDER'S OWN TOP RUNGS, and that is the whole design. The first
+     version read "any elevated lane, or any badge → Watch", which measured **93.5% Watch**
+     across the 1,629 production artifacts — a mark on nineteen names in twenty is not a
+     mark, it is the background. The cause is visible in the per-lane rates: `selling`
+     runs `elev` on 74% of the library (the insider-cluster flag) and `estimates` on 55%,
+     so "≥1 elevated lane" is very nearly "has data".
+
+     The fix is not a threshold I invent. `roleBadge` is the Risk Desk role ladder and it
+     ALREADY grades severity into three rungs — `exit_review` > `trim_review` > `review`
+     — so the calibration exists and was simply being flattened by an `if (role)`. Watch
+     is the two severe rungs; Get ready is the review rung or any lane signal below it;
+     No action is a name with neither. Measured on the same 1,629, the ladder partition
+     alone gives Watch 50.0% · Get ready 47.0% · No action 2.9% — a partition rather than
+     a constant. AS SHIPPED the numbers are **Watch 52.0% · Get ready 47.0% · No action
+     1.0%**: the overextended floor below moves 32 names off the all-clear. Quote the
+     shipped figures, not these two, when comparing against a live sweep.
+
+     No action stays genuinely rare, and that is honest rather than tuned: on this
+     library almost every name has at least one elevated lane, so claiming otherwise
+     would be the lie. The library sweep in the test suite prints the live distribution
+     so the next wave sees drift instead of inheriting a number. PURE. */
+  var STANCE_SEVERE = { exit: 1, trim: 1 };
+
+  /* THE OVEREXTENDED FLOOR (M2a). Two oracles on this page answer "is it stretched" and
+     they disagree on 607 of 1,629 names (37.3%): the `stretch` LANE reads
+     `entry_signal.status === 'extended'`, while the ladder carries
+     `ladder.alignment.overextended`. Reconciling them is an engine question, chipped as
+     its own wave — but the stance READS the lane, so on a name the ladder flags and the
+     lane does not, the drawer printed "No action / Nothing here needs a decision today."
+     over a position the other oracle calls overextended. That is a display tier making a
+     confident all-clear out of an unreconciled disagreement.
+
+     The floor is a one-way clamp over an existing boolean — no weights, no composite,
+     and it can only ever RAISE attention, never lower it. When the oracles disagree the
+     drawer says the more cautious of the two things it knows. */
+  function intelStance(lanes, role, flags) {
+    if (!lanes) return 'none';
+    if (role && STANCE_SEVERE[role.kind]) return 'watch';
+    if (role) return 'ready';
+    for (var i = 0; i < LANES.length; i++) {
+      var L = lanes[LANES[i]];
+      if (L && (L.state === 'elev' || L.state === 'watch')) return 'ready';
+    }
+    /* The floor applies to THIS branch only — the all-clear. A name the ladder flags may
+       not be told "nothing needs a decision today"; a name already at Get ready is
+       already carrying attention and does not need raising on a disagreement.
+       Deliberately minimal: clamping every tier moved 549 names and put Watch back to
+       83.7%, undoing the partition the previous round established. This moves the 32
+       names where the disagreement actually produces a false all-clear. */
+    return (flags && flags.overextended) ? 'watch' : 'none';
+  }
+
+  /* The ladder's own overextension bool, read defensively — it is a different block from
+     the one the stretch lane reads, and it is absent on a quarter of the library. PURE. */
+  function overextendedFlag(j) {
+    var al = j && j.ladder && j.ladder.alignment;
+    return !!(al && al.overextended === true);
+  }
+
+  // ---- Tier 2, one builder per section ------------------------------------
+
+  /* Distance from trend. Lived in `portfolio.js` and so appeared in the HOLDINGS drawer
+     only, which meant one name read differently depending on which mode you opened it
+     from — the exact drift a single composer exists to prevent. It reads nothing but the
+     per-ticker JSON, so there was no reason for it to be caller-side.
+
+     It does NOT reuse the `stretch` lane's vocabulary. The two are different oracles
+     (this reads `ext.grade` / `ladder.alignment.overextended`, the lane reads
+     `entry_signal.status`) and they disagree on 607 of 1,629 names in the direction that
+     matters, so they must not appear to be answering the same question in the same
+     words. This row talks about DISTANCE; the lane talks about entry stretch.
+
+     THE SENTENCE NAMES ITS OWN YARDSTICK, and that is the whole shape of this builder.
+     Round 3 rendered `<word> — about <p>% above its 200-day line.`, which welds a graded
+     word to a RAW number and offers the number as the word's evidence. It is not:
+     `ext.grade` is a grade of `ext_z`, the z-score of that same gap against the name's
+     OWN 252-day history, so a name that habitually runs 20% clear of its line is "in
+     line with its own trend" at +9% while a name that never leaves it is "well above"
+     at +8.9%. Measured over the 1,621 artifacts carrying a gap, 33.6% of ordered pairs
+     invert — the word and the number really do disagree about which name is further
+     out, and the em dash claimed they agreed. So the NUMBER leads as a plain fact and
+     the WORD follows behind the measure it was actually taken against.
+
+     THE TWO SOURCES ARE MEASURED AGAINST DIFFERENT THINGS, so the yardstick clause is
+     branch-specific rather than one sentence covering both. `ext.grade` exists on 1,260
+     of 1,621; on the other 361 (including BOTH crop exemplars — AAPL and RIVN carry no
+     `ext` block at all) the word comes from `ladder.alignment.overextended`, which
+     `engine/cycles.py::_overextended` computes from daily/3-day StochRSI + RSI14
+     overbought or a >=30% gap. That is "how hard it has run lately", NOT a
+     volatility-normalised distance — and printing the normalised claim over it would be
+     naming a measure we did not take, the same defect one rung down. PURE. */
+  function distanceRowHTML(j) {
+    var lab = { en: 'Distance from trend', zh: '偏离度' };
+    var pct = j && j.tech && j.tech.pct_vs_200dma;
+    if (!isNum(pct)) {
+      return lrowHTML({ lab: lab, state: 'na',
+        en: 'We could not measure this name&rsquo;s distance from its own trend line.',
+        zh: '无法测量这只票相对自身趋势线的偏离程度。' });
+    }
+    var byExt = !!(j && j.ext && j.ext.grade);
+    var grade = byExt ? j.ext.grade
+      : (j && j.ladder && j.ladder.alignment && j.ladder.alignment.overextended === true)
+        ? 'stretched' : 'intrend';
+    var below = pct < 0, p = Math.abs(Math.round(pct * 10) / 10);
+    var gapEn = 'About ' + p + '% ' + (below ? 'below' : 'above') + ' its 200-day line.';
+    var gapZh = (below ? '低于' : '高于') + '200日线约' + p + '%。';
+    var word = grade === 'parabolic'
+        ? { en: 'far above its own trend — an extreme reading', zh: '极端偏离——远高于自身趋势' }
+      : grade === 'stretched'
+        ? { en: 'well above its own trend', zh: '明显高于自身趋势' }
+      : grade === 'steady'
+        ? { en: 'close to its own trend', zh: '贴近自身趋势' }
+        : { en: 'in line with its own trend', zh: '与自身趋势一致' };
+    var basis = byExt
+      ? { en: 'Against how far this name usually runs from that line, that is ',
+          zh: '以这只票惯常偏离该均线的幅度衡量，属于' }
+      : { en: 'Against how hard it has run lately, that reads as ',
+          zh: '以它近期走势的急缓衡量，属于' };
+    return lrowHTML({ lab: lab, state: '',
+      en: gapEn + ' ' + basis.en + esc(word.en) + '.',
+      zh: gapZh + basis.zh + esc(word.zh) + '。' });
+  }
+
+
+  /* Portfolio role. The only section fed from BOOK state rather than the per-name JSON,
+     because weight and risk share are properties of the book, not of the name — the
+     caller passes what it already computed for the row's own cells so the drawer and the
+     row can never disagree. On a watchlist (no position) that is not a gap to apologise
+     for, it is the answer: this name is being watched, not held. */
+  function roleRowHTML(opts) {
+    var o = opts || {};
+    if (!o.inBook) {
+      return lrowHTML({ lab: W4_LABEL.role, state: 'n/app',
+        en: 'Not a position — this name is on a watchlist, so it carries no weight and no share of your book&rsquo;s risk.',
+        zh: '不是持仓——这只票在自选列表里，因此不占用你账簿的权重，也不占用风险。' });
+    }
+    var parts = [], partsZh = [];
+    if (isNum(o.weightPct)) {
+      parts.push('<span class="fig">' + o.weightPct.toFixed(1) + '%</span> of this book&rsquo;s money');
+      partsZh.push('占本账簿资金 <span class="fig">' + o.weightPct.toFixed(1) + '%</span>');
+    }
+    if (isNum(o.riskShare)) {
+      parts.push('<span class="fig">' + Math.round(Math.abs(o.riskShare) * 100) + '%</span> of its modelled risk');
+      partsZh.push('占已建模风险 <span class="fig">' + Math.round(Math.abs(o.riskShare) * 100) + '%</span>');
+    } else {
+      parts.push('the nightly risk model does not cover it, so it has no risk share');
+      partsZh.push('每晚的风险模型未覆盖它，因此没有风险占比');
+    }
+    /* The grouping, in plain words. A one-name group is a real finding — nothing else in
+       the book moves with it — and saying so is more useful than naming the force behind
+       a group of one. `IDEA` is the same plain-word force map the seam's because-line
+       uses, so the two surfaces name a force identically. */
+    var grp = o.group || null;
+    if (grp && grp.n >= 2 && grp.fk && IDEA[grp.fk]) {
+      parts.push('moves with ' + (grp.n - 1) + ' other name' + (grp.n === 2 ? '' : 's') +
+                 ' here on ' + esc(IDEA[grp.fk][0]));
+      partsZh.push('与此处另外 ' + (grp.n - 1) + ' 只一起随' + esc(IDEA[grp.fk][1]) + '波动');
+    } else if (grp && grp.n === 1) {
+      parts.push('moves on its own — nothing else here is grouped with it');
+      partsZh.push('独立波动——此处没有其他持仓与它同组');
+    }
+    if (o.twin) {
+      parts.push('moves closely with ' + esc(o.twin));
+      partsZh.push('与 ' + esc(o.twin) + ' 高度同步');
+    }
+    if (!parts.length) {
+      return lrowHTML({ lab: W4_LABEL.role, state: 'na',
+        en: 'This position has no saved size and is not in the risk model, so there is no role to describe yet.',
+        zh: '这笔持仓没有保存仓位规模，也不在风险模型内，因此暂时说不出它的角色。' });
+    }
+    var tip = {
+      en: 'Weight is this position’s value over the value of its own market book — books never add across currencies. Risk share is its share of the book’s modelled variance (MCTR), which is not the same thing as its weight.',
+      zh: '权重＝该仓位市值占其所属市场账簿市值的比例——不同币种的账簿从不相加。风险占比＝它在账簿已建模波动中的占比（MCTR），与权重并不是同一件事。'
+    };
+    return lrowHTML({ lab: W4_LABEL.role, state: o.role ? 'watch' : '', tip: tip,
+      token: o.role ? te(esc(o.role.en), esc(o.role.zh)) : null,
+      en: parts.join(' · ') + '.', zh: partsZh.join(' · ') + '。' });
+  }
+
+  /* Options & positioning. The CEO list asks for gamma regime, walls, IV rank and flow;
+     the artifacts carry the first three through `gex` + the two `*_confirm` blocks, and
+     nothing carries retail flow — so flow is not mentioned. A surface may only name what
+     it renders. Coverage is 39% of the library, so the honest-absence branch here is the
+     COMMON one, not the edge case. */
+  function optionsRowHTML(j) {
+    var g = (j && j.gex) || null;
+    var gc = (j && j.gex_confirm) || null;
+    var ic = (j && j.iv_spread_confirm) || null;
+    if (!g && !gc && !ic) {
+      return lrowHTML({ lab: W4_LABEL.options, state: 'na',
+        en: 'No options plane for this name tonight — that is a gap in what we can read, not a quiet options market.',
+        zh: '今晚这只票没有期权数据面——这是我们读不到，而不是期权市场很平静。' });
+    }
+    var en = [], zh = [];
+    var reg = g && (g.gamma_regime || g.regime);
+    if (reg === 'long') {
+      en.push('dealers are positioned to damp moves');
+      zh.push('做市商的持仓倾向于压制波动');
+    } else if (reg === 'short') {
+      en.push('dealers are positioned to amplify moves');
+      zh.push('做市商的持仓倾向于放大波动');
+    }
+    var walls = [];
+    if (g && isNum(g.put_wall)) walls.push({ en: 'a floor has formed near <span class="fig">' + g.put_wall + '</span>', zh: '下方在 <span class="fig">' + g.put_wall + '</span> 附近形成支撑' });
+    if (g && isNum(g.call_wall)) walls.push({ en: 'a ceiling near <span class="fig">' + g.call_wall + '</span>', zh: '上方在 <span class="fig">' + g.call_wall + '</span> 附近形成阻力' });
+    if (walls.length) {
+      en.push(walls.map(function (w) { return w.en; }).join(' and '));
+      zh.push(walls.map(function (w) { return w.zh; }).join('，'));
+    }
+    if (g && isNum(g.opex_days)) {
+      en.push('<span class="fig">' + Math.round(g.opex_days) + '</span> days to the next monthly expiry');
+      zh.push('距下一个月度到期还有 <span class="fig">' + Math.round(g.opex_days) + '</span> 天');
+    }
+    if (!en.length) {
+      // the confirm blocks exist but carry no levels — say which read survived
+      var lab = (gc && gc.label) || (ic && ic.label);
+      var labZh = (gc && gc.label_zh) || (ic && ic.label_zh) || lab;
+      if (!lab) {
+        return lrowHTML({ lab: W4_LABEL.options, state: 'na',
+          en: 'The options read for this name did not resolve tonight. Nothing else in this drawer depends on it.',
+          zh: '今晚这只票的期权读数没有出来。本抽屉其余内容不依赖它。' });
+      }
+      en.push(esc(lab)); zh.push(esc(labZh));
+    }
+    var reason = gc && gc.reasons && gc.reasons.length ? gc.reasons[0] : null;
+    var tip = {
+      en: 'Dealer gamma positioning and the strikes carrying the most open interest, from last night’s chain. Levels are where options hedging has concentrated, not price targets.' +
+        (reason ? ' Tonight: ' + reason.en : '') + (gc && isNum(gc.score) ? ' Options score ' + gc.score + '.' : '') +
+        (ic && isNum(ic.ivspread) ? ' Call−put IV spread ' + (ic.ivspread * 100).toFixed(1) + '%.' : ''),
+      zh: '来自昨夜期权链的做市商 Gamma 持仓与未平仓量最集中的行权价。这些位置是期权对冲的聚集处，不是价格目标。' +
+        (reason ? ' 今晚：' + (reason.zh || reason.en) : '') + (gc && isNum(gc.score) ? ' 期权评分 ' + gc.score + '。' : '') +
+        (ic && isNum(ic.ivspread) ? ' 认购减认沽隐含波动率价差 ' + (ic.ivspread * 100).toFixed(1) + '%。' : '')
+    };
+    var caution = gc && gc.verdict === 'caution';
+    return lrowHTML({ lab: W4_LABEL.options, state: caution ? 'watch' : 'ok', tip: tip,
+      en: en.join('; ') + '.', zh: zh.join('；') + '。' });
+  }
+
+  /* Macro sensitivity. The engine already writes this as a bilingual PLAIN SENTENCE
+     (`headline`), which is a mechanism claim — "rate risk runs through its growth beta,
+     not a distinct duration leg" — and therefore a different statement from the `rates`
+     LANE two rows up, which reports a state. Mechanism and state are allowed to sit
+     together; two rows repeating one claim would not be.
+
+     The CEO list also asks for USD, oil, China and BTC/Gold sensitivity. No per-name
+     artifact carries them, so this row does not mention them and the tip states exactly
+     what WAS measured. Naming an exposure we did not measure is the failure this rule
+     exists to prevent. */
+  function macroRowHTML(j) {
+    var ms = (j && j.macro_sensitivity) || null;
+    var head = ms && ms.headline;
+    if (!ms || !head || !head.en) {
+      return lrowHTML({ lab: W4_LABEL.macro, state: 'na',
+        en: 'No macro sensitivity measured for this name — we have not established how it moves with rates or inflation.',
+        zh: '这只票没有测到宏观敏感性——我们尚未确定它与利率、通胀之间的关系。' });
+    }
+    var extra = [], extraZh = [];
+    if (ms.duration_label && ms.duration_label.en) { extra.push(ms.duration_label.en); extraZh.push(ms.duration_label.zh || ms.duration_label.en); }
+    if (ms.inflation_label && ms.inflation_label.en) { extra.push(ms.inflation_label.en); extraZh.push(ms.inflation_label.zh || ms.inflation_label.en); }
+    var det = ms.detail || {}, cav = ms.caveat || {};
+    var tip = {
+      en: 'Measured against the rate proxy and a sector anchor — rates and inflation only. ' +
+          (det.en || '') + (cav.en ? ' ' + cav.en : ''),
+      zh: '以利率代理与板块锚测得——仅覆盖利率与通胀。' + (det.zh || det.en || '') + (cav.zh ? ' ' + cav.zh : '')
+    };
+    var hot = ms.tier === 'high' && ms.regime === 'headwind';
+    return lrowHTML({ lab: W4_LABEL.macro, state: hot ? 'watch' : 'ok', tip: tip,
+      en: esc(head.en) + (extra.length ? ' <span class="mut">' + esc(extra.join(' · ')) + '</span>' : ''),
+      zh: esc(head.zh || head.en) + (extraZh.length ? ' <span class="mut">' + esc(extraZh.join(' · ')) + '</span>' : '') });
+  }
+
+  /* Sector & theme. Context, not severity — so the state cell is deliberately EMPTY
+     rather than borrowing OK, which would read as a health verdict on a name's sector. */
+  function themeRowHTML(j) {
+    var sect = (j && j.sector) || (j && j.profile && j.profile.sector) || '';
+    var bm = (j && j.baskets_membership) || [];
+    var names = [], namesZh = [];
+    for (var i = 0; i < bm.length && i < 3; i++) {
+      var b = bm[i] || {};
+      if (!b.name) continue;
+      names.push(b.name); namesZh.push(b.name_zh || b.name);
+    }
+    if (!sect && !names.length) {
+      return lrowHTML({ lab: W4_LABEL.theme, state: 'na',
+        en: 'We could not place this name in a sector or a theme from last night&rsquo;s build.',
+        zh: '昨夜的构建里没能把这只票归入任何行业或主题。' });
+    }
+    var en = sect ? esc(sect) : 'sector not recorded';
+    var zh = sect ? esc(sect) : '未记录行业';
+    if (names.length) {
+      en += ' — in ' + esc(names.join(', '));
+      zh += ' —— 属于' + esc(namesZh.join('、'));
+    } else {
+      en += ' — in none of the themes we track';
+      zh += ' —— 不属于我们跟踪的任何主题';
+    }
+    return lrowHTML({ lab: W4_LABEL.theme, state: '', en: en + '.', zh: zh + '。',
+      tip: { en: 'Theme membership is the basket list this name belongs to in the nightly build. Baskets are groupings, not recommendations.',
+             zh: '主题归属＝每晚构建中这只票所属的篮子列表。篮子是分组，不是推荐。' } });
+  }
+
+  /* Ownership. The `selling` LANE reports a state ("insider selling cluster"); this row
+     reports WHO and HOW MANY, which the lane never says. Congress is in the CEO list and
+     in no per-name artifact, so it is not mentioned. */
+  function ownersRowHTML(j) {
+    var sm = (j && j.smart_money) || null;
+    var ins = (j && j.positioning && j.positioning.insider) || null;
+    if (!sm && !ins) {
+      return lrowHTML({ lab: W4_LABEL.owners, state: 'na',
+        en: 'No institutional or insider filings for this name in last night&rsquo;s build.',
+        zh: '昨夜的构建里没有这只票的机构或内部人披露数据。' });
+    }
+    var en = [], zh = [];
+    if (sm && isNum(sm.n_holders)) {
+      en.push('<span class="fig">' + sm.n_holders + '</span> of the funds we track hold it');
+      zh.push('我们跟踪的基金中有 <span class="fig">' + sm.n_holders + '</span> 家持有');
+      if (isNum(sm.n_buying) || isNum(sm.n_selling)) {
+        en.push('<span class="fig">' + (sm.n_buying || 0) + '</span> adding, <span class="fig">' + (sm.n_selling || 0) + '</span> trimming');
+        zh.push('<span class="fig">' + (sm.n_buying || 0) + '</span> 家增持、<span class="fig">' + (sm.n_selling || 0) + '</span> 家减持');
+      }
+    }
+    if (ins && (isNum(ins.n_sellers) || isNum(ins.n_buyers))) {
+      en.push('insiders: <span class="fig">' + (ins.n_sellers || 0) + '</span> selling, <span class="fig">' + (ins.n_buyers || 0) + '</span> buying');
+      zh.push('内部人：<span class="fig">' + (ins.n_sellers || 0) + '</span> 人卖出、<span class="fig">' + (ins.n_buyers || 0) + '</span> 人买入');
+    }
+    if (!en.length) {
+      return lrowHTML({ lab: W4_LABEL.owners, state: 'na',
+        en: 'The ownership filings for this name carry no counts we can read.',
+        zh: '这只票的持股披露里没有我们能读出的计数。' });
+    }
+    var period = (ins && ins.quarter) || (sm && sm.as_of) || '';
+    var tip = {
+      en: 'Institutional holdings are the latest 13F filings from the funds we follow; insider counts are reported transactions over the filing window' +
+          (period ? ' (' + period + ')' : '') + '. Filings lag the market by weeks.',
+      zh: '机构持股来自我们跟踪的基金最新 13F 披露；内部人计数为披露窗口内的报备交易' +
+          (period ? '（' + period + '）' : '') + '。披露数据滞后市场数周。'
+    };
+    /* NEUTRAL state, deliberately. This row painted `watch` from
+       `insider.cluster === true`, which measured 1,133 of the 1,221 names carrying
+       ownership data — 92.8% — so the token discriminated nothing and diluted a mark the
+       reader is supposed to be able to trust two rows up.
+
+       The cure is not a better threshold, it is recognising that this row was making a
+       claim that is not its own. The `selling` LANE already reports severity on exactly
+       this topic ("insider selling cluster", state `elev`) and it is the calibrated
+       surface for it. Ownership reports WHO and HOW MANY — facts the lane never states —
+       and reports no severity at all. One claim, one owner (§7(g)). */
+    return lrowHTML({ lab: W4_LABEL.owners, state: '', tip: tip,
+      en: en.join(' · ') + '.', zh: zh.join(' · ') + '。' });
+  }
+
+  /* Company notes. The nightly per-name alert trail — what actually happened to this
+     name recently. The pinned headline is an ENGINE STRING ("DOWNTREND → BOTTOMING"),
+     so it rides the TIP; the row itself counts and dates in plain words. The full trail
+     has a canonical home (the dossier), which the drawer's link row points at. */
+  function notesRowHTML(j) {
+    var a = (j && j.alerts) || null;
+    var tl = (a && a.timeline) || [];
+    var n = a && isNum(a.n_recent) ? a.n_recent : null;
+    if (!a || (!tl.length && n == null)) {
+      return lrowHTML({ lab: W4_LABEL.notes, state: 'na',
+        en: 'No notes recorded for this name in last night&rsquo;s build.',
+        zh: '昨夜的构建里没有记录这只票的任何动态。' });
+    }
+    var last = tl.length ? tl[0] : null;
+    var en = [], zh = [];
+    if (n != null) {
+      en.push('<span class="fig">' + n + '</span> ' + (n === 1 ? 'note' : 'notes') + ' recently');
+      zh.push('近期 <span class="fig">' + n + '</span> 条动态');
+    }
+    if (last && last.daylabel) {
+      en.push('the most recent on ' + esc(last.daylabel));
+      zh.push('最近一条在 ' + esc(last.daylabel_zh || last.daylabel));
+    }
+    if (!en.length) {
+      return lrowHTML({ lab: W4_LABEL.notes, state: 'na',
+        en: 'This name has a note trail we could not date.', zh: '这只票有动态记录，但读不出日期。' });
+    }
+    /* The pinned note is NOT quoted, and this is the same law as the Tier-1 map above.
+       `alerts.pinned` is written in the engine's trading voice: measured across the
+       library, 1,292 of 1,611 pinned notes — 80.2% — carry a banned token ("BUY ZONE",
+       "BUY SETUP", "take profit", "chase", "half size"). Piping it into `data-tip-en`
+       put those instructions in the DOM on four names in five, in the one slot nobody
+       reviews. The row counts and dates the trail; the trail itself has a canonical
+       home, and the drawer's link row points at it. */
+    var tip = {
+      en: 'The nightly note trail for this name — how many notes were recorded recently, ' +
+          'and when the most recent one was. The notes themselves are on the full dossier.',
+      zh: '这只票每晚的动态记录 —— 近期记录了多少条、最近一条在什么时候。动态内容本身在完整档案页。'
+    };
+    return lrowHTML({ lab: W4_LABEL.notes, state: '', tip: tip,
+      en: en.join(' · ') + '.', zh: zh.join(' · ') + '。' });
+  }
+
+  /* ---- the two exported compositions ------------------------------------
+     Tier 1 is the GLANCE read: plain words under a hard budget, no internal vocabulary
+     (ENB / MCTR / WRI / lane and study names live in the tips and the method detail).
+     Tier 2 is every section above, in a fixed order, each honest about its own absence. */
+  /* ★ THE DE-IMPERATIVE MAP ★
+     The entry engine writes its headline as a TRADE INSTRUCTION, and it is not an edge
+     case: measured across all 1,629 production artifacts, 1,085 of them — 66.6% — carry
+     an imperative. "Extended — wait for a pullback" ×588. "Buy soon — on confirmation"
+     ×252. "Hold — don't add here" ×104. "Topping — protect gains" ×50. Rendering
+     `headline` raw put a trade instruction at the glance tier of two thirds of the
+     library, against packet §0 ("descriptive language only — no buy/sell/add/hedge
+     imperatives") and against §7(b), which additionally bars "protect gains" by name.
+
+     The map is keyed on `status`, not on the headline text. Status is the engine's own
+     enum — eleven values across the whole library, 1:1 with the eleven headlines — so a
+     reworded headline still lands on the right descriptive copy, whereas a text key
+     would silently fall through to passthrough the day someone fixes a typo upstream.
+
+     Each entry says WHAT IS TRUE about the name, in the same plain words the lanes use,
+     and says nothing about what anyone should do with it. `entry_signal.action` is never
+     read at any tier; neither is `headline`. An unmapped status does NOT fall back to
+     the engine's string — it falls back to a state line derived from the trend fields,
+     because a passthrough fallback is how a total map stops being total.
+
+     `tests/test_watchlist_drawer_js.py` sweeps every string this table can emit for
+     banned tokens, and a local-only sweep re-runs it over the real library. */
+  var T1_STATE = {
+    extended:         { en: 'Extended — no pullback yet',
+                        zh: '过度拉伸 —— 尚未出现回撤' },
+    wait_pullback:    { en: 'Extended from its setup — no pullback yet',
+                        zh: '偏离其形态 —— 回撤尚未出现' },
+    await_confluence: { en: 'Turning, but not confirmed yet',
+                        zh: '已在转向，但尚未确认' },
+    buy_soon:         { en: 'Setup forming — confirmation not in yet',
+                        zh: '形态成形中 —— 确认尚未出现' },
+    partial:          { en: 'Setup in place — conviction is partial',
+                        zh: '形态已成立 —— 但信心仅为部分' },
+    buy_now:          { en: 'In its setup zone now',
+                        zh: '当前处于其形态区间内' },
+    hold:             { en: 'In trend — no fresh setup here',
+                        zh: '趋势之中 —— 此处没有新的形态' },
+    watch:            { en: 'A cycle low is approaching',
+                        zh: '周期低点正在临近' },
+    topping:          { en: 'Topping pattern — risk building',
+                        zh: '见顶形态 —— 风险正在累积' },
+    exit:             { en: 'Rolling over',
+                        zh: '正在掉头向下' },
+    blocked:          { en: 'Blocked — the last cycle failed',
+                        zh: '受阻 —— 上一轮周期失败' }
+  };
+
+  /* The fallback for an unmapped or absent status. Derived from the trend fields the
+     price lane already reads, so it is a real state read rather than a shrug — and when
+     even those are absent it says so instead of inventing one. PURE. */
+  function t1Fallback(j) {
+    var tech = (j && j.tech) || null;
+    if (tech && tech.above200 != null) {
+      return tech.above200
+        ? { en: 'Holding above its 200-day line', zh: '仍处于200日线上方' }
+        : { en: 'Below its 200-day line', zh: '位于200日线下方' };
+    }
+    return { en: 'No state read for this name tonight.', zh: '今晚这只票没有状态读数。' };
+  }
+
+  /* The Tier-1 lead, as a PURE pair — exported so the ban-token sweep can walk every
+     name in the library through the same function the DOM gets. */
+  function intelLead(j) {
+    var es = (j && j.entry_signal) || {};
+    var m = es.status ? T1_STATE[es.status] : null;
+    return m || t1Fallback(j);
+  }
+
+  function intelTier1HTML(t, j) {
+    var lanes = laneRead(j);
+    var role = roleBadge(lanes);
+    var stance = intelStance(lanes, role, { overextended: overextendedFlag(j) });
+    var sw = W4_STANCE[stance];
+    var m = intelLead(j);
+    var lead = te(esc(m.en), esc(m.zh));
+    var stanceCls = stance === 'watch' ? 's-watch' : stance === 'ready' ? 's-ready' : '';
+    var out = '<div class="drw-t1">' +
+      '<span class="drw-lead">' + lead + '</span>' +
+      '<span class="att-stance ' + stanceCls + '">' + te(sw.en, sw.zh) + '</span>' +
+      '</div>';
+    if (stance === 'none') {
+      out += '<div class="drw-quiet">' +
+        te('Nothing here needs a decision today.', '这里今天不需要做任何决定。') + '</div>';
+    }
+    return out;
+  }
+
+  /* The caller knows two things this file does not — whether the name is a POSITION and
+     what its money weight is (weights are a property of the row's own market book, and
+     books never add across currencies). Everything else about the name's role comes from
+     `ROLE_FACTS`, the cache the publisher fills, so the drawer and the Risk Center can
+     never be describing two different books. */
+  function intelSectionsHTML(t, j, opts) {
+    var o = opts || {};
+    var rf = ROLE_FACTS[t] || null;
+    return laneRowsHTML(j) +
+      distanceRowHTML(j) +
+      roleRowHTML({
+        inBook: !!o.inBook,
+        weightPct: isNum(o.weightPct) ? o.weightPct : null,
+        riskShare: rf && isNum(rf.riskShare) ? rf.riskShare : null,
+        group: rf ? rf.group : null,
+        twin: rf ? rf.twin : null,
+        role: roleBadge(laneRead(j))
+      }) +
+      optionsRowHTML(j) +
+      macroRowHTML(j) +
+      themeRowHTML(j) +
+      ownersRowHTML(j) +
+      notesRowHTML(j) +
+      chainSectionHTML(CHAINS_IDX[t]);
   }
 
   // ---- date helpers ---------------------------------------------------
@@ -465,6 +1108,27 @@
   // HTML string of .wri-lrow rows (empty when the name is in no armed chain). PURE.
   function chainDrawerRows(memberships) {
     if (!memberships || !memberships.length) return '';
+    return chainRowsBody(memberships);
+  }
+
+  /* The DRAWER's transmission row. Same body, but it never returns '' — §7(h) makes
+     honest absence a mechanism, and this section was the one exception, which is exactly
+     how an invariant stops being one. "In no armed chain tonight" is a real finding
+     about a name, not the absence of one, and it is what a reader who saw the row
+     yesterday needs to see today. `chainDrawerRows` keeps the old contract because the
+     rail and the card path rely on '' meaning "draw nothing here". */
+  function chainSectionHTML(memberships) {
+    if (memberships && memberships.length) return chainRowsBody(memberships);
+    return lrowHTML({
+      lab: { en: 'Transmission', zh: '传导链' }, state: 'none',
+      en: 'Not downstream of any chain that is armed tonight.',
+      zh: '目前不处于任何已触发传导链的下游。',
+      tip: { en: 'Transmission chains are display-only WATCH context — a named channel screen places a name in a chain\'s blast radius. Being in none tonight is a state, not a gap.',
+             zh: '传导链仅为观察用的上下文 —— 由命名通道筛选判断某只票是否处于链条波及范围内。今晚不在任何链中是一种状态，而非数据缺失。' }
+    });
+  }
+
+  function chainRowsBody(memberships) {
     var ms = memberships.slice().sort(function (a, b) {
       var r = CHAIN_RANK[a.state] - CHAIN_RANK[b.state];
       return r !== 0 ? r : (b.links_confirmed || 0) - (a.links_confirmed || 0);
@@ -483,14 +1147,19 @@
         ' links confirmed (' + esc(chn) + ', ' + esc(cov) + '). Early monitor — not a signal.';
       var readZh = '处于' + esc(nmz) + '传导下游——已确认 ' + k + '/' + n + ' 环节（' + esc(chnz) +
         '，' + esc(covz) + '）。早期监测——非信号。';
-      var tipEn = 'The chain is ' + esc(sw.en) + '. A named channel screen (' + esc(chn) +
+      /* Tips go through `lrowHTML` RAW — it owns attribute escaping (see the painter).
+         These two strings used to carry their own `esc()` on the interpolated parts;
+         keeping them would double-escape and print `&amp;quot;` inside the tooltip. */
+      var tipEn = 'The chain is ' + sw.en + '. A named channel screen (' + chn +
         ') places this name in the blast radius; a missing field is neither in nor out. Display-only WATCH context — never a signal, size, or call.';
-      var tipZh = '该链' + esc(sw.zh) + '。命名通道筛选（' + esc(chnz) +
+      var tipZh = '该链' + sw.zh + '。命名通道筛选（' + chnz +
         '）将此股纳入波及范围；字段缺失既不纳入也不排除。仅供观察的上下文——绝非信号、仓位或指令。';
-      out += '<div class="wri-lrow"><span class="ln">' + te('Transmission', '传导链') +
-        '<span class="wri-q" tabindex="0" data-tip-en="' + tipEn + '" data-tip-zh="' + tipZh + '">?</span></span>' +
-        '<span class="st info">' + te('WATCH', '关注') + '</span>' +
-        '<span class="rs">' + te(readEn, readZh) + '</span></div>';
+      out += lrowHTML({
+        lab: { en: 'Transmission', zh: '传导链' },
+        tip: { en: tipEn, zh: tipZh },
+        state: 'info', token: te('WATCH', '关注'),
+        en: readEn, zh: readZh
+      });
     }
     return out;
   }
@@ -681,6 +1350,31 @@
        the items in portfolio.js. Computing the money side off the modeled weight
        map here produced a caption that said 51% over a bracket that drew 40%: one
        claim, two denominators, one line apart. */
+
+    /* W4 — the per-name role facts the Intelligence Drawer reads, cached HERE in the
+       same pass that builds `cluster`/`ballast` rather than re-derived when a drawer
+       opens. Two reasons, and the second is the one that matters: `clustersFor()` runs
+       the factor-bet grouping, so re-deriving it per drawer would cost that pass once
+       per open on a 100-name list; and a second derivation is a second book, which is
+       exactly how the seam's caption once said 51% over a bracket drawing 40%. */
+    ROLE_FACTS = {};
+    (active.held || []).forEach(function (tk) {
+      ROLE_FACTS[tk] = { riskShare: active.mctrShare[tk], factor: null, twin: null };
+    });
+    /* The GROUP, carried as `{fk, n}` rather than as `clusterLabel`'s string. That label
+       is `members[0]` for a one-name group — its own bet — so passing it through printed
+       "filed under AAPL" inside AAPL's own drawer: a tautology that reads as a bug. The
+       drawer needs the two facts behind the label (which force, how many names), and it
+       words them itself. */
+    groups.forEach(function (g) {
+      (g.members || []).forEach(function (tk) {
+        if (ROLE_FACTS[tk]) ROLE_FACTS[tk].group = { fk: g.fk || null, n: (g.members || []).length };
+      });
+    });
+    (active.twinPairs || []).forEach(function (p) {
+      if (ROLE_FACTS[p.a] && !ROLE_FACTS[p.a].twin) ROLE_FACTS[p.a].twin = p.b;
+      if (ROLE_FACTS[p.b] && !ROLE_FACTS[p.b].twin) ROLE_FACTS[p.b].twin = p.a;
+    });
 
     var out = {
       shares: shares, covered: covered,
@@ -1011,9 +1705,40 @@
     }
     var st = RR.stress;
     var nNames = calm.held.length;
-    var cB = enbClamp(calm.enb, nNames).bets, sB = enbClamp(st.enb, nNames).bets;
+    var cInfo = enbClamp(calm.enb, nNames), sInfo = enbClamp(st.enb, nNames);
+    var cB = cInfo.bets, sB = sInfo.bets;
     var cTop = calm.topFactorShare || 0, sTop = st.topFactorShare || 0;
     var tightens = st.enb < calm.enb - 1e-9;
+
+    /* W3's disclosed residual, cured here (W4) — on ALL THREE routes, not the one the
+       first attempt tested.
+
+       Both figures are `enbClamp(...).bets` — rounded, floored at 1, capped at the name
+       count — so two DIFFERENT raw ENBs can land on one integer three ways:
+
+         PLAIN   2.4 vs 2.2 → both round to 2. Decimals carry the difference, so the
+                 claim is restated at 1dp and says the whole-number read did not move.
+         CAPPED  9.0 vs 7.0 with six names → both cap at 6. Decimals DO NOT help: `shown`
+                 caps too, so 1dp prints "6.0 … 6.0" and the sentence "tightens, but not
+                 by a whole direction" becomes FALSE — it is hiding two whole directions
+                 behind the display cap. This case needs a different sentence, one that
+                 names the cap as the thing obscuring the change and makes no
+                 quantitative claim at all.
+         FLOORED 0.8 vs 0.4 → both floor at 1. Same shape as CAPPED once `shown` carries
+                 the floor it was missing, so it resolves the same way.
+
+       A whole number stays the right unit for "how many separate directions", so the
+       ordinary case is untouched. The counts line under the bars follows whatever
+       precision the claim used, because two lines about one comparison printing
+       different-looking numbers is the defect one level up. */
+    var atCap = cInfo.clamped && sInfo.clamped;
+    var atFloor = cInfo.floored && sInfo.floored;
+    var sameBets = tightens && cB === sB;
+    // the display bound, not the arithmetic, is what collapses these two
+    var bounded = sameBets && (atCap || atFloor);
+    var degenerate = sameBets && !bounded;
+    var cFig = degenerate ? cInfo.shown.toFixed(1) : String(cB);
+    var sFig = degenerate ? sInfo.shown.toFixed(1) : String(sB);
 
     // pairs that only move together when it matters — the finding this lens exists for
     var only = (RR.stressOnlyPairs || []).slice(0, 3);
@@ -1026,7 +1751,25 @@
        about 3, not 2" directly above a counts line saying the opposite. The count
        claim now requires the count predicate; the pair finding gets its own sentence. */
     var claim;
-    if (RR.diverges && tightens) {
+    if (RR.diverges && tightens && bounded) {
+      /* Both sides sit on the display bound, so every figure this tab could print is the
+         bound rather than the measurement. Naming the bound is the only honest move:
+         the tightening is real and is stated, and NO number is attached to it. */
+      claim = atCap
+        ? te('On the days the market falls, this book tightens. Both readings sit at the display limit of <span class="fig">' +
+               nNames + '</span> — the number of names you hold — so the size of the change is not something this view can show.',
+             '在市场下跌的日子里，这本账簿会收紧。两个读数都处在展示上限 <span class="fig">' + nNames +
+               '</span>（也就是你的持仓数量），因此这个视图无法呈现收紧的幅度。')
+        : te('On the days the market falls, this book tightens. Both readings are already at the floor of one direction, so the size of the change is not something this view can show.',
+             '在市场下跌的日子里，这本账簿会收紧。两个读数都已触及「一个方向」的下限，因此这个视图无法呈现收紧的幅度。');
+    } else if (RR.diverges && tightens && degenerate) {
+      claim = te('On the days the market falls, this book tightens — but not by a whole direction: your <span class="fig">' +
+          nNames + '</span> names move like about <span class="fig">' + cFig +
+          '</span> on an average day and <span class="fig">' + sFig + '</span> on the falling ones.',
+        '在市场下跌的日子里，这本账簿会收紧 —— 但收紧幅度不足一个方向：你的 <span class="fig">' + nNames +
+          '</span> 只持仓在平均日约为 <span class="fig">' + cFig +
+          '</span> 个方向，在下跌日约为 <span class="fig">' + sFig + '</span> 个。');
+    } else if (RR.diverges && tightens) {
       claim = te('On the days the market falls, this book tightens: your <span class="fig">' + nNames +
           '</span> names move like about <span class="fig">' + sB + '</span>, not <span class="fig">' + cB + '</span>.',
         '在市场下跌的日子里，这本账簿会收紧：你的 <span class="fig">' + nNames +
@@ -1065,11 +1808,14 @@
        claim sentence above can only lead with ONE of the three outcomes; a reader who
        gets the "does not tighten" wording would otherwise never see the two numbers
        that sentence is about. Nulls printed — and so are unremarkable results. */
+    // "about 1 separate directions" — the floored route reaches 1 and the noun has to
+    // follow the number it is attached to.
+    var dirWord = (cFig === '1') ? ' separate direction' : ' separate directions';
     var counts = '<p class="rc-note">' + te(
-      'On an average day this book moves in about <span class="fig">' + cB +
-        '</span> separate directions; on the falling days, about <span class="fig">' + sB + '</span>.',
-      '在平均日，这本账簿约有 <span class="fig">' + cB +
-        '</span> 个独立方向；在下跌日，约有 <span class="fig">' + sB + '</span> 个。') + '</p>';
+      'On an average day this book moves in about <span class="fig">' + cFig +
+        '</span>' + dirWord + '; on the falling days, about <span class="fig">' + sFig + '</span>.',
+      '在平均日，这本账簿约有 <span class="fig">' + cFig +
+        '</span> 个独立方向；在下跌日，约有 <span class="fig">' + sFig + '</span> 个。') + '</p>';
     var body = '<div class="conc is-worded">' +
       lensRow(te('Average day', '平均日'), cTop) +
       lensRow(te('Falling days', '下跌日'), sTop) +
@@ -1474,9 +2220,14 @@
     var n = Math.max(1, nNames || 0);
     return {
       raw: raw,
-      shown: Math.min(raw, n),                          // the 1dp footer figure
+      /* `shown` carries the SAME floor as `bets`, and it was missing one. A book cannot
+         move in fewer than one direction, so a raw ENB below 1 printed a 1dp figure the
+         whole-number figure beside it had already refused ("0.8" over "1"). The floor is
+         the claim; the precision is only how it is written. */
+      shown: Math.max(1, Math.min(raw, n)),             // the 1dp footer figure
       bets: Math.max(1, Math.min(Math.round(raw), n)),  // the whole-number verdict figure
-      clamped: raw > n + 1e-9
+      clamped: raw > n + 1e-9,
+      floored: raw < 1 - 1e-9
     };
   }
   /* The one dynamic sentence the method tip gains when the clamp engages. Returns null
@@ -1633,6 +2384,14 @@
       laneRows: laneRowsHTML,
       chainRows: function (t) { return chainDrawerRows(CHAINS_IDX[t]); },
       noteJson: noteJson,
+      /* W4 — the Intelligence Drawer's two compositions. The workspace owns where the
+         drawer opens and what surrounds it; this owns what it SAYS. Same split as the
+         tabs and the seam, and the same reason: one composer means the holdings drawer
+         and the watchlist drawer cannot describe the same name differently. Both are
+         absent for an anonymous visitor — this whole file is, per packet §14 A9 — and
+         both callers render a lock shell in their place. */
+      intelTier1: intelTier1HTML,
+      intelSections: intelSectionsHTML,
       /* The Scenario Lab's engine seam. The workspace owns the form and the pixels;
          this owns the model. Same split as the tabs, and the same reason: two places
          that could compute a book read are two places that can disagree about one. */
@@ -1657,6 +2416,21 @@
       railChainSentence: railChainSentence, chainDrawerRows: chainDrawerRows,
       chainDriver: chainDriver,
       enbClamp: enbClamp, enbTipSuffix: enbTipSuffix, betCount: betCount,
+      /* W4 drawer — every section builder individually, so the honest-absence gate can
+         run each one over an empty payload rather than inferring it from the whole. */
+      lrowHTML: lrowHTML, intelStance: intelStance,
+      roleRow: roleRowHTML, optionsRow: optionsRowHTML, macroRow: macroRowHTML,
+      themeRow: themeRowHTML, ownersRow: ownersRowHTML, notesRow: notesRowHTML,
+      chainSection: chainSectionHTML, intelLead: intelLead,
+      distanceRow: distanceRowHTML,
+      overextendedFlag: overextendedFlag,
+      /* the lane engine itself — the library sweeps walk every real artifact
+         through the SAME functions the DOM gets, which is the only way a
+         distribution measurement means anything */
+      laneRead: laneRead, roleBadge: roleBadge, laneRows: laneRowsHTML,
+      T1_STATE: T1_STATE, t1Fallback: t1Fallback,
+      intelTier1: intelTier1HTML, intelSections: intelSectionsHTML,
+      W4_STANCE: W4_STANCE, W4_LABEL: W4_LABEL,
       /* W3 Risk Center tab builders — PURE string builders over a RiskCore result, so
          the node shell can hand them a crafted book (a stress lens that really does
          converge, a book with an unmodeled name, an empty event calendar) and assert
