@@ -151,7 +151,19 @@ def test_ci_plan_is_fenced_against_closed_events() -> None:
     only product is a check nobody reads, and — worse — `ci-gate` is fenced the same
     way, so the two conditions must agree or a close publishes half the graph.
     """
-    assert _job("ci-plan")["if"] == "github.event.action != 'closed'"
+    condition = str(_job("ci-plan")["if"])
+    assert "github.event.action != 'closed'" in condition
+    assert "github.event_name != 'workflow_dispatch'" in condition
+    assert "github.ref == 'refs/heads/main'" in condition
+
+
+def test_workflow_dispatch_is_globally_deduplicated_and_main_only() -> None:
+    workflow = _workflow()
+    group = str(workflow["concurrency"]["group"])
+    assert "github.event_name == 'workflow_dispatch'" in group
+    assert "workflow-dispatch" in group
+    condition = str(_job("ci-plan")["if"])
+    assert "github.ref == 'refs/heads/main'" in condition
 
 
 def test_ci_plan_uses_an_exact_blobless_sparse_checkout() -> None:
@@ -381,7 +393,7 @@ def test_ci_pack_pins_plan_sha_head_and_event_base_and_never_runs_unpinned() -> 
     assert '--expect-plan-sha "$EXPECTED_PLAN_SHA"' in run
     assert '--expect-head-sha "$GITHUB_SHA"' in run
     assert "$PLAN_BASE_SHA_ARG" in run
-    assert "CI_CHANGED_FILES_JSON" not in env
+    assert env["CI_CHANGED_FILES_JSON"] == "${{ needs.ci-plan.outputs.changed_files }}"
     assert "CI_SCOPE_ARG" not in env
 
 
@@ -394,6 +406,9 @@ def test_ci_pack_falls_back_explicitly_to_full_suite_when_planning_cannot_publis
     assert "--changed-from" not in run
     assert "--expect-plan-sha" not in run
     assert "--execute" in run
+    assert fallback["env"]["CI_CHANGED_FILES_JSON"] == (
+        "${{ needs.ci-plan.outputs.changed_files }}"
+    )
 
 
 def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> None:

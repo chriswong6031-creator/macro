@@ -2968,7 +2968,7 @@ jobs:
         run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
-          BRANCH="${{ github.head_ref }}"
+          BRANCH="${CI_HEAD_REF:-}"
           TRAILERS=""
           FILES_PREVIEW=""
           FILE_SOURCE=()

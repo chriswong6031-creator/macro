@@ -387,6 +387,7 @@ def _run_live_check(
     # the historical cases pin.
     env.pop("CI_CHANGED_FILES_JSON", None)
     env["GITHUB_EVENT_NAME"] = event
+    env["CI_HEAD_REF"] = head_ref
     if extra_env:
         env.update(extra_env)
     # ci-pack runs every legacy step through this exact interpreter invocation.
@@ -511,8 +512,11 @@ def test_fences_workflow_live_check_covers_pr_and_merge_group_but_not_push():
     assert "github.event_name == 'merge_group'" in condition
     assert "push" not in condition
     body = str(step["run"])
-    assert "github.event.pull_request.base.sha" in body
-    assert "github.event.merge_group.base_sha" in body
+    base_source = step["env"]["SELF_MOD_BASE_SHA"]
+    assert "github.event.pull_request.base.sha" in base_source
+    assert "github.event.merge_group.base_sha" in base_source
+    assert "github.head_ref" not in body
+    assert "SELF_MOD_HEAD_REF" in step["env"]
     assert "--base-sha" in body
     assert "--files " not in body
     assert "--name-only" not in body
@@ -526,6 +530,8 @@ def test_packed_live_check_reads_ci_changed_files_json():
     assert "--planner-files" in body
     assert '"${FILE_SOURCE[@]}"' in body
     assert "--files " not in body
+    assert "${{ github.head_ref }}" not in body
+    assert 'BRANCH="${CI_HEAD_REF:-}"' in body
     assert "CI_CHANGED_FILES_JSON malformed" in body
 
 
@@ -647,6 +653,21 @@ def test_live_check_option_like_filename_cannot_override_loop_branch(tmp_path):
             )
         },
     )
+    assert result.returncode != 0
+    assert "BLOCKED" in result.stderr
+
+
+def test_live_check_hostile_branch_name_is_data_not_shell(tmp_path):
+    work = _seed_repo(tmp_path)
+    hostile = 'metabolism/evil";exit${IFS}0;#x'
+    _git("checkout", "-b", hostile, cwd=work)
+    (work / ".github/workflows").mkdir(parents=True, exist_ok=True)
+    (work / ".github/workflows/ci.yml").write_text("jobs: {}\n")
+    _git("add", "-A", cwd=work)
+    _git("commit", "-m", "hostile ref edits immutable workflow", cwd=work)
+
+    result = _run_live_check(work, event="pull_request", head_ref=hostile)
+
     assert result.returncode != 0
     assert "BLOCKED" in result.stderr
 

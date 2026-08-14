@@ -97,9 +97,12 @@ jobs:
         # Main pushes carry no review diff. Pull requests and native merge groups
         # do; the latter must prove the queued latest-main synthetic commit too.
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+        env:
+          SELF_MOD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
+          SELF_MOD_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref }}
         run: |
-          BASE_SHA="${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}"
-          BRANCH="${{ github.head_ref || github.event.merge_group.head_ref }}"
+          BASE_SHA="$SELF_MOD_BASE_SHA"
+          BRANCH="$SELF_MOD_HEAD_REF"
           TRAILERS=$(git log --format="%B" "$BASE_SHA"..HEAD 2>/dev/null || echo "")
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \
@@ -265,9 +268,11 @@ jobs:
       - run: python3 scripts/check_self_mod_fence.py --selftest
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         if: github.event_name == 'pull_request'
+        env:
+          SELF_MOD_HEAD_REF: ${{ github.head_ref }}
         run: |
           git fetch origin ${{ github.base_ref || 'main' }}
-          BRANCH="${{ github.head_ref }}"
+          BRANCH="$SELF_MOD_HEAD_REF"
           TRAILERS=$(git log --format="%B" origin/${{ github.base_ref || 'main' }}..HEAD 2>/dev/null || echo "")
           python3 scripts/check_self_mod_fence.py \
             --branch "$BRANCH" \

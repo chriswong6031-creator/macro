@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import importlib.util
 import json
 import re
@@ -2736,6 +2737,60 @@ def test_structural_preflight_treats_pathspec_magic_as_literal_git_path(
 
     assert result["status"] == "fail"
     assert "unknown_executable_ownership" in _finding_codes(result)
+
+
+def test_structural_preflight_refuses_changed_workflow_symlink(
+    tmp_path: Path,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    linked = root / ".github" / "workflows" / "linked.yml"
+    linked.symlink_to("ci.yml")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
+    subprocess.run(
+        ["git", "config", "user.email", "ci-test@example.invalid"],
+        cwd=root,
+        check=True,
+    )
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
+    subprocess.run(["git", "commit", "-qm", "fixture"], cwd=root, check=True)
+
+    result = PREFLIGHT.run_preflight(
+        root, [".github/workflows/linked.yml"]
+    )
+
+    assert result["status"] == "fail"
+    assert "workflow_invalid" in _finding_codes(result)
+
+
+def test_structural_preflight_git_metadata_error_is_not_deletion(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    root = _preflight_repo(tmp_path, manifest_run="echo valid")
+    submitted_file = PREFLIGHT._submitted_file
+    head_contains = PREFLIGHT._git_head_contains
+
+    @contextlib.contextmanager
+    def missing_blob(candidate_root: Path, rel: str):
+        if rel == "engine/unreadable.py":
+            yield None
+        else:
+            with submitted_file(candidate_root, rel) as path:
+                yield path
+
+    def unknown_presence(candidate_root: Path, rel: str):
+        if rel == "engine/unreadable.py":
+            return None
+        return head_contains(candidate_root, rel)
+
+    monkeypatch.setattr(PREFLIGHT, "_submitted_file", missing_blob)
+    monkeypatch.setattr(PREFLIGHT, "_git_head_contains", unknown_presence)
+
+    result = PREFLIGHT.run_preflight(root, ["engine/unreadable.py"])
+
+    assert result["status"] == "fail"
+    assert "changed_blob_unreadable" in _finding_codes(result)
 
 
 @pytest.mark.parametrize(

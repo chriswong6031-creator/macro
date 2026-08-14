@@ -4065,7 +4065,7 @@ concurrency:
   # 100 ci.yml runs in 8h, 6 successes, 67 cancelled/skipped. A close WITHOUT
   # merge keeps the old behaviour — its packs are obsolete and cancelling them
   # is pure savings; only a merge's evidence is worth finishing.
-  group: ci-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
+  group: ci-${{ github.event_name == 'workflow_dispatch' && 'workflow-dispatch' || github.event.pull_request.number || github.ref }}${{ github.event.action == 'closed' && github.event.pull_request.merged && '-merged' || '' }}
   # cancel-in-progress became EVENT-CONDITIONAL 2026-08-09, after the flat `true`
   # livelocked main's proof path fleet-wide (12 merge-blocked + 56 cap-deferred
   # pull requests; sweep run 31311549150 reported "0 main commit(s) classified …
@@ -4139,7 +4139,9 @@ jobs:
   ci-plan:
     # Same closed-event fence as `ci-pack` below: a closed PR needs only the
     # workflow-level concurrency side effect above.
-    if: github.event.action != 'closed'
+    if: >-
+      github.event.action != 'closed' &&
+      (github.event_name != 'workflow_dispatch' || github.ref == 'refs/heads/main')
     name: ci-plan
     runs-on: ubuntu-latest
     # Planning loads one manifest and diffs one base; 30 minutes is a hang bound,
@@ -4438,6 +4440,7 @@ jobs:
         if: needs.ci-plan.outputs.plan_sha != ''
         env:
           CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
+          CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
           EXPECTED_PLAN_SHA: ${{ needs.ci-plan.outputs.plan_sha }}
           PLAN_BASE_SHA_ARG: ${{ github.event_name == 'pull_request' && format('--expect-base-sha {0}', github.event.pull_request.base.sha) || github.event_name == 'merge_group' && format('--expect-base-sha {0}', github.event.merge_group.base_sha) || '' }}
@@ -4456,6 +4459,7 @@ jobs:
         if: needs.ci-plan.outputs.plan_sha == ''
         env:
           CI_BASE_REF: ${{ github.base_ref || github.event.merge_group.base_ref || 'main' }}
+          CI_CHANGED_FILES_JSON: ${{ needs.ci-plan.outputs.changed_files }}
           CI_HEAD_REF: ${{ github.head_ref || github.event.merge_group.head_ref || github.ref_name }}
         shell: bash
         run: |

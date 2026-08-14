@@ -210,7 +210,11 @@ def _git_head_contains(root: Path, rel: str) -> bool | None:
 def _submitted_file(root: Path, rel: str) -> Iterator[Path | None]:
     """Yield a changed HEAD file without requiring it in the sparse worktree."""
     materialized = root / rel
-    if materialized.is_file():
+    try:
+        materialized_mode = materialized.lstat().st_mode
+    except OSError:
+        materialized_mode = None
+    if materialized_mode is not None and stat.S_ISREG(materialized_mode):
         yield materialized
         return
     try:
@@ -304,7 +308,9 @@ def _is_executable(root: Path, rel: str) -> bool:
     except OSError:
         mode = _git_head_mode(root, rel)
         if mode is None:
-            return False
+            # Only a successful literal ls-tree miss proves absence. Any Git
+            # error is conservative: the unknown sparse entry may be executable.
+            return _git_head_contains(root, rel) is not False
         # A symlink or gitlink is an executable indirection even though its tree
         # mode carries no ordinary x bit. Unknown non-regular entries must be
         # reviewed, not misreported as harmless unowned text.
@@ -533,7 +539,8 @@ def run_preflight(
                 with _submitted_file(root, rel) as submitted:
                     source: bytes | None
                     if submitted is None:
-                        if _git_head_contains(root, rel) is True:
+                        presence = _git_head_contains(root, rel)
+                        if presence is not False:
                             dependency_signature_findings.append(
                                 _finding(
                                     "dependency_signature_blob_unreadable",
@@ -544,6 +551,7 @@ def run_preflight(
                                 )
                             )
                             continue
+                        # A successful literal HEAD miss proves deletion.
                         source = None
                     else:
                         try:
@@ -580,6 +588,9 @@ def run_preflight(
     try:
         os.chdir(root)
         try:
+            manifest_mode = _git_head_mode(root, CI_MANIFEST)
+            if manifest_mode is not None and manifest_mode & 0o170000 != 0o100000:
+                raise ManifestError("legacy manifest must be a regular file in HEAD")
             jobs = load_legacy_jobs(manifest_path)
             metrics["manifest_jobs"] = len(jobs)
             packs = partition_jobs(jobs, PACK_COUNT)
@@ -626,7 +637,8 @@ def run_preflight(
     for rel in sorted(workflow_paths):
         with _submitted_file(root, rel) as path:
             if path is None:
-                if rel == CI_WORKFLOW or _git_head_contains(root, rel) is True:
+                presence = _git_head_contains(root, rel)
+                if rel == CI_WORKFLOW or presence is not False:
                     findings.append(
                         _finding(
                             "workflow_unreadable",
@@ -656,7 +668,8 @@ def run_preflight(
     for rel in sorted(path for path in changed if _is_test_candidate(path)):
         with _submitted_file(root, rel) as path:
             if path is None:
-                if _git_head_contains(root, rel) is True:
+                presence = _git_head_contains(root, rel)
+                if presence is not False:
                     findings.append(
                         _finding(
                             "changed_test_unreadable",
@@ -707,10 +720,8 @@ def run_preflight(
 
         with _submitted_file(root, rel) as path:
             if path is None:
-                if (
-                    _git_head_contains(root, rel) is True
-                    and _is_controlled_text(root, rel)
-                ):
+                presence = _git_head_contains(root, rel)
+                if presence is not False and _is_controlled_text(root, rel):
                     findings.append(
                         _finding(
                             "changed_blob_unreadable",
