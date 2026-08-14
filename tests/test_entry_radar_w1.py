@@ -728,8 +728,23 @@ def test_no_radar_module_imports_a_protected_module(path):
         assert banned not in code, f"{path.name} imports protected module {banned!r}"
 
 
-def test_branch_diff_touches_no_protected_path():
-    """``git diff --name-only <base>...HEAD`` must not name a protected path."""
+# The two diff guards below are RADAR-LANE boundary contracts, and they must
+# SELF-SCOPE to diffs that actually touch Radar code. They run inside the shared
+# always-on signal-contract job, where CI checks out the PR *merge ref* — so an
+# unscoped ``git diff base...HEAD`` names EVERY pr's own files. Unscoped, these
+# asserts red ci-pack-4 for every non-Radar PR in the fleet (measured 2026-08-14:
+# a research-only PR's files printed as "strays"; main's own baseline passes only
+# because its diff is empty). A per-lane scope guard wired into an always-on job
+# is a fleet control plane — it may only bind the lane it governs.
+# Triggers are the RUNTIME surfaces only. Deliberately NOT ``tests/test_entry_
+# radar_``: the guards contain runtime scope, which a tests-only diff cannot
+# stray from — and a fleet heal of these very guards must not re-trigger them.
+_RADAR_CODE_PREFIXES = ("engine/entry_radar/", "scripts/entry_radar_",
+                        "config/entry_radar.yml")
+
+
+def _branch_diff_vs_base() -> list[str] | None:
+    """Changed paths vs origin/main (merge-base three-dot), or None if no base."""
     base = None
     for candidate in ("origin/main", "main"):
         probe = subprocess.run(["git", "rev-parse", "--verify", candidate],
@@ -738,30 +753,34 @@ def test_branch_diff_touches_no_protected_path():
             base = candidate
             break
     if base is None:
-        pytest.skip("no origin/main or main ref in this checkout — the import guard "
-                    "above still covers non-interference")
+        return None
     got = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
                          cwd=ROOT, capture_output=True, text=True, check=False)
     assert got.returncode == 0, got.stderr
-    changed = [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
+    return [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
+
+
+def test_branch_diff_touches_no_protected_path():
+    """``git diff --name-only <base>...HEAD`` must not name a protected path."""
+    changed = _branch_diff_vs_base()
+    if changed is None:
+        pytest.skip("no origin/main or main ref in this checkout — the import guard "
+                    "above still covers non-interference")
+    if not any(p.startswith(_RADAR_CODE_PREFIXES) for p in changed):
+        pytest.skip("diff touches no Radar code — the boundary guard binds Radar "
+                    "lanes only; the import guard above still covers non-interference")
     offenders = [p for p in changed if any(p.startswith(x) for x in PROTECTED_PATHS)]
     assert not offenders, f"Radar PR touched protected Prophet paths: {offenders}"
 
 
 def test_radar_owns_only_its_declared_paths():
-    """§16: new paths only."""
-    base = None
-    for candidate in ("origin/main", "main"):
-        probe = subprocess.run(["git", "rev-parse", "--verify", candidate],
-                               cwd=ROOT, capture_output=True, text=True, check=False)
-        if probe.returncode == 0:
-            base = candidate
-            break
-    if base is None:
+    """§16: new paths only — enforced on diffs that touch Radar code."""
+    changed = _branch_diff_vs_base()
+    if changed is None:
         pytest.skip("no base ref in this checkout")
-    got = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
-                         cwd=ROOT, capture_output=True, text=True, check=False)
-    changed = [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
+    if not any(p.startswith(_RADAR_CODE_PREFIXES) for p in changed):
+        pytest.skip("diff touches no Radar code — §16 containment binds Radar "
+                    "lanes only")
     allowed_prefixes = ("engine/entry_radar/", "scripts/entry_radar_",
                         "tests/test_entry_radar_", "config/entry_radar.yml",
                         "research/LIVE_ENTRY_RADAR_", "research/live_entry_radar/",
