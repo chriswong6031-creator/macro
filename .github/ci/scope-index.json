@@ -1191,7 +1191,7 @@
       },
       {
         "path": "collectors/sec_insider.py",
-        "signature_sha256": "672f1e0b709a7ba63775582f376929c7776594ae96346048587763bfb2d47985"
+        "signature_sha256": "02927a90b863ae1637cedf3f80235539daf1631fdbd013989370eeb4f03f67a2"
       },
       {
         "path": "collectors/sector_holdings.py",
@@ -2830,6 +2830,54 @@
         "signature_sha256": "d1425c27e216c51029a6b0da947acfb64bee5299c53891e1206015139de880a8"
       },
       {
+        "path": "engine/entry_radar/__init__.py",
+        "signature_sha256": "ceae5718d2452681a2f500207d67d0bea815ea86622a772a17227e67defe1827"
+      },
+      {
+        "path": "engine/entry_radar/contracts.py",
+        "signature_sha256": "9cd61f3acc32e9df3b9352e0e3c5a5dc6d08592544b272f578673c5d8fe4494e"
+      },
+      {
+        "path": "engine/entry_radar/nomination_bus.py",
+        "signature_sha256": "0dfd550604822176be31576f0e1aa2735f70d9495936b2d40eece3af925f2d71"
+      },
+      {
+        "path": "engine/entry_radar/producers/__init__.py",
+        "signature_sha256": "481501a614443d2ce27004ff81105cb2359c66f1875712fade383e500ea53173"
+      },
+      {
+        "path": "engine/entry_radar/producers/base.py",
+        "signature_sha256": "52b6390dc8b79d279009202329445bbd38c4c45e39bdab8d1ca994d6ec02dfb9"
+      },
+      {
+        "path": "engine/entry_radar/producers/baskets.py",
+        "signature_sha256": "1fed6bc46013b22c2edd0f3a9d6f401f67ce73f3a54308aa967ac7a3ce0a904e"
+      },
+      {
+        "path": "engine/entry_radar/producers/boards.py",
+        "signature_sha256": "ac9067a80740de05bf00b2f0b9849fe45f824658f13ec1e41dd996808f93ce40"
+      },
+      {
+        "path": "engine/entry_radar/producers/constituents.py",
+        "signature_sha256": "835853a5d02a421647701fddffe2a527e6424dd4476470c6534a9607170b54bd"
+      },
+      {
+        "path": "engine/entry_radar/producers/ipo.py",
+        "signature_sha256": "beb1f4d7024c01a7f611575a4d103ad16232a8a6cc2963730e4afc03c0ad70fd"
+      },
+      {
+        "path": "engine/entry_radar/producers/live_flow.py",
+        "signature_sha256": "5d2391aec43fe37b787e7f22f33d64de7fe620d14d93ae235fd2386ed5f5b7db"
+      },
+      {
+        "path": "engine/entry_radar/spool.py",
+        "signature_sha256": "8d0098eb69ad661a2ce28ea044fc1b84e06be02574bba562443d3252d76d4d7c"
+      },
+      {
+        "path": "engine/entry_radar/universe.py",
+        "signature_sha256": "ad9acb48a356affa69a8357a65f5c77be4c16e2079a7cc4a5074688a06998aeb"
+      },
+      {
         "path": "engine/entry_signal.py",
         "signature_sha256": "6c77786c8e0ffc954a951b4a93e97c7b0603728c40f583a9db05f9f1f1b7591e"
       },
@@ -3696,6 +3744,10 @@
       {
         "path": "engine/intelligence.py",
         "signature_sha256": "75155a7b7b0ccdf599c9ba004edf15dc210049791c6b5a4ceface9123b49b710"
+      },
+      {
+        "path": "engine/intelligence_registry.py",
+        "signature_sha256": "a3eedcf1ea7aa37d21754f49c71b39316c85a8b97738e4d99049c476a67ced09"
       },
       {
         "path": "engine/international_macro_dashboard.py",
@@ -5759,7 +5811,7 @@
       },
       {
         "path": "engine/qledger.py",
-        "signature_sha256": "b19ae336d1bba0e1aa4670cf363a22a035935846c25c4bdbd9445b79eaba2c3a"
+        "signature_sha256": "223021ca06f8123b6da001b5963013c52c9c1a4262f04b0cc815f690f68ced5e"
       },
       {
         "path": "engine/qledger_desk_adapter.py",
@@ -7310,12 +7362,24 @@
         "signature_sha256": "017effc21a4004d219ebba89e451700b878ae3ce1bb574acc8425fc8ad0ee315"
       },
       {
+        "path": "mockups/refs/psi/workspace/crops/impl/w4/shoot_w4_crops.py",
+        "signature_sha256": "76dcd26af981ecdb9e15c96828de02ba72c7c4131bc1caa1279b9b52fb2bf919"
+      },
+      {
+        "path": "mockups/refs/psi/workspace/crops/impl/w4/verify_w4_old_html_new_js.py",
+        "signature_sha256": "22dd24f79a6037d99f8efa503eac395d8f67954fc4769e82d8a2122ab49e4079"
+      },
+      {
         "path": "mockups/stocks/market_hub_src/gen_mockup.py",
         "signature_sha256": "15ce7402cc28fe909e4420c3cad96a5394124e1be0cb44d84b2984daee0e253f"
       },
       {
         "path": "mockups/support_email/render_w3_samples.py",
         "signature_sha256": "0f0fefd9083225126d69cafde3a633155e6de5f662982200aac659e6cf795d95"
+      },
+      {
+        "path": "ops/launchd/run_options_sparse_selector_verified.py",
+        "signature_sha256": "8293a718f8bf19718278f63a245f8ea346c3387cf3d5b0fba57060899ca5bf9b"
       },
       {
         "path": "research/blocked_entry_study/ci_bootstrap.py",
@@ -8199,7 +8263,7 @@
       },
       {
         "path": "scripts/audit_reused_tickers.py",
-        "signature_sha256": "ab61abcd46b39282ca6ab9eb623976b3f0a5047a3b4a8d0f4e6d7779c7ab01ef"
+        "signature_sha256": "3ff2ac8bf79f468059c2a658bfdf292d610242b8cffb1d9e9e250c819c0caa6d"
       },
       {
         "path": "scripts/audit_sizes.py",
@@ -9058,6 +9122,10 @@
         "signature_sha256": "ab238420020dbf7bc8efc29f4e68fef68981ea0683226d566a41b34bc59111a6"
       },
       {
+        "path": "scripts/build_intelligence_registry.py",
+        "signature_sha256": "7e1a788e3eae7b436d1400bc253417b98e1daea33d189d9f6db64a52557c446f"
+      },
+      {
         "path": "scripts/build_international_macro.py",
         "signature_sha256": "823c05dc1edfb90649df6a2ac8e89873a8e0730026a4488fac18dbd325d52b4d"
       },
@@ -9579,7 +9647,7 @@
       },
       {
         "path": "scripts/build_smart_money.py",
-        "signature_sha256": "6c82b43c2bca2797cd05166df75bb276ea2f43ede91d5d5fe11e750a744731df"
+        "signature_sha256": "97429a8dd3b1a760b62b0d70ebcc2b3050b5a55852f624d6e3bdd177c2928bd1"
       },
       {
         "path": "scripts/build_sp500_heatmap.py",
@@ -9627,7 +9695,7 @@
       },
       {
         "path": "scripts/build_stock_library.py",
-        "signature_sha256": "744ba751e780f54d3c26666594c7ee5ac92a7624837a48ef3430a20aa6bdbfc5"
+        "signature_sha256": "a6016f535c7d265b6b9307bcbda6f55a09343fcf32daaa42993355ec2c2f4d1e"
       },
       {
         "path": "scripts/build_stock_personality.py",
@@ -10126,6 +10194,10 @@
         "signature_sha256": "01fbe83e51348b9b5e55701743626454c34873f9adca41602e7eec3e9548f58a"
       },
       {
+        "path": "scripts/check_intelligence_registry.py",
+        "signature_sha256": "37f145b0be65d88be6e6cbddce53f932ecb64d16468114c82d99e47a6dfa6ae9"
+      },
+      {
         "path": "scripts/check_interfonts_sync.py",
         "signature_sha256": "babea8d4ac09c18e0a9988193b622c2a37ee999507769f390d25db4a3d524da3"
       },
@@ -10222,8 +10294,12 @@
         "signature_sha256": "71e8f60a321e25461eedc8ae83fa21a4ccf5e99f65acd9d547bcac18d59f9a13"
       },
       {
+        "path": "scripts/check_stretch_oracle_contract.py",
+        "signature_sha256": "9306adc82c0449667b3182a5b305ecb58fcaebf306a7e3765208cf91e04328ac"
+      },
+      {
         "path": "scripts/check_surface_freshness.py",
-        "signature_sha256": "0f14375c2f4595e6f691a1066909f302af30341775aff79db13d2117dc367b39"
+        "signature_sha256": "dbfd16ad481861133d8b5a14050225084c93d728e1d792ab73a7f2fb29d0c34e"
       },
       {
         "path": "scripts/check_symbol_rename_drift.py",
@@ -10676,6 +10752,10 @@
       {
         "path": "scripts/entry_gate_phase0.py",
         "signature_sha256": "e1104214268af6f843b1eeee3ec0932f26b1018471e6d1053dafbdaabce5feca"
+      },
+      {
+        "path": "scripts/entry_radar_universe.py",
+        "signature_sha256": "0f94d5b07ec33bee3d6ca3d6f377d932779c1b35e57bccf7691ec6aeb3041f15"
       },
       {
         "path": "scripts/eth_vector_phase0.py",
@@ -13311,7 +13391,7 @@
       },
       {
         "path": "tests/test_audit_reused_tickers.py",
-        "signature_sha256": "9456837bdc45eb2bc725983856a666167520e8876d478e04390a91723d8ca209"
+        "signature_sha256": "7e1c7ca6c48bb7f61393acf51a454abf9ffaafa2924052e09cddd0e2307fb326"
       },
       {
         "path": "tests/test_audit_stocks_freshness.py",
@@ -13403,7 +13483,7 @@
       },
       {
         "path": "tests/test_basket_membership_stamps.py",
-        "signature_sha256": "940387de6e90dce113c94b48f18b2a6de78a55d1849c2c9ad34a35ab7aac29d7"
+        "signature_sha256": "368d41cd9fbf4ed22c984ea560675c8fa7085679de5fc19683a68634624a772d"
       },
       {
         "path": "tests/test_basket_ohlcv_freshness.py",
@@ -13975,7 +14055,7 @@
       },
       {
         "path": "tests/test_build_institutional_13f_census.py",
-        "signature_sha256": "071c0216ce80b9eb8004294012cba81efeedd1b4252d90da6e135fd58fcdc882"
+        "signature_sha256": "9de8c80d40e8f151750ca8f64e0767e8a830564133562548c43afc3592aed443"
       },
       {
         "path": "tests/test_build_leader_radar.py",
@@ -14452,6 +14532,10 @@
       {
         "path": "tests/test_check_inline_js.py",
         "signature_sha256": "1c4bffa17d4d98da2b13bbf693ee17beacb1332f5d884fa32916efccc3c11530"
+      },
+      {
+        "path": "tests/test_check_intelligence_registry.py",
+        "signature_sha256": "2ed252cef7444801bb9eabd631e9d640df989a17ec998b9b4b266245df650b97"
       },
       {
         "path": "tests/test_check_ledger_advance.py",
@@ -15303,7 +15387,7 @@
       },
       {
         "path": "tests/test_content_stamp_freshness.py",
-        "signature_sha256": "cdd7c4a9e05c856ee9e7eb7eeb8da2dd8576dc52a7b255c4ea57e39c0b115a11"
+        "signature_sha256": "2dd899d7ff6ae067542af5d989a3e6fc4f3b60b00cd70db310a434c9e75032a9"
       },
       {
         "path": "tests/test_content_stamp_freshness_sweep2.py",
@@ -15311,7 +15395,7 @@
       },
       {
         "path": "tests/test_context_api.py",
-        "signature_sha256": "d092f7572c970ec2d8d3b55ac8a37efe67ceca3d4b9857a7049373b95e4f0970"
+        "signature_sha256": "4ee0fd0725620aace34c9bf032bff735c118535b33d474c223afdc752f8799d2"
       },
       {
         "path": "tests/test_context_candidates.py",
@@ -15811,7 +15895,7 @@
       },
       {
         "path": "tests/test_earnings_evidence_graph_deps.py",
-        "signature_sha256": "e56101ad03e0d1162293155bf932055a0cae50d91eb51b1dc0bfd11011fb795a"
+        "signature_sha256": "5bd8a03f7e77dffd50a3524e61ba4ea0c3425f94c036a04e6688ab9ae1dc105d"
       },
       {
         "path": "tests/test_earnings_private_store.py",
@@ -16004,6 +16088,14 @@
       {
         "path": "tests/test_entry_primitives_a3.py",
         "signature_sha256": "d67c686fdd98c9622e6d65913dbd76ba2e1ab982fb379fccc8ec4405a1b3e312"
+      },
+      {
+        "path": "tests/test_entry_radar_producers.py",
+        "signature_sha256": "3e5fdf785006e191f4b301b36b0b1d472dac1db0297b17bb2be962ac6d3a7bf7"
+      },
+      {
+        "path": "tests/test_entry_radar_w1.py",
+        "signature_sha256": "3801000d060cde723384a5170b7d97bcd0b1d53c6eeb1539a95b84f6b566fbe9"
       },
       {
         "path": "tests/test_entry_signal.py",
@@ -16303,7 +16395,7 @@
       },
       {
         "path": "tests/test_finra_short_interest_pit.py",
-        "signature_sha256": "3d4cc4878c24ad4c50f33c9f9dd36c245d12b17efd1723db808f16197d3a4e7e"
+        "signature_sha256": "abdbaef4b1a9613db85c6d14e5b0211856971d504e5dc76b85af69cb4cefcd1a"
       },
       {
         "path": "tests/test_finviz_archival.py",
@@ -16819,7 +16911,7 @@
       },
       {
         "path": "tests/test_government_revenue_candidate_grader.py",
-        "signature_sha256": "da8a5389b7707b87a0912c53f7cffeaaa5f6a7cbb6fa17261156e8a22aba989d"
+        "signature_sha256": "7e08a1e0c13e44cb45c464af07cbdd3c34df48a3c4b0e2a72ac4f97a19ff542b"
       },
       {
         "path": "tests/test_government_revenue_candidate_projection.py",
@@ -17458,6 +17550,10 @@
         "signature_sha256": "7a067a3ae909e054a5ad4e8a04d62506c90560a5d224a983544a0aa52e6d1238"
       },
       {
+        "path": "tests/test_intelligence_registry.py",
+        "signature_sha256": "14f9cf91f901d10c95338316ce7c247bd080ef5ba6e81c82ee1f373a7c4576ca"
+      },
+      {
         "path": "tests/test_international_macro_dashboards.py",
         "signature_sha256": "239e18277199914d7dc259f9c91b514b826b1fef316251c36b42dd836b86623a"
       },
@@ -17739,7 +17835,7 @@
       },
       {
         "path": "tests/test_live_flow.py",
-        "signature_sha256": "3cb5e82235e7aab34be68c3f36e5810d40984c1674f3275edf2b701aadaa4ea8"
+        "signature_sha256": "5ba67db1b113075e31c291ca3f0653775a846046b573883e3feb502aed9569d8"
       },
       {
         "path": "tests/test_live_flow_tiering.py",
@@ -18986,6 +19082,10 @@
         "signature_sha256": "ab0aa41e7ad22996e19c73f450e552ac3878655a1f16eccb0fcbf2276b629cf1"
       },
       {
+        "path": "tests/test_no_absolute_path_symlinks.py",
+        "signature_sha256": "f6d5468f7b0d7d8d662d4f7a77fa17db7834b218c845241f08bc77194af746ab"
+      },
+      {
         "path": "tests/test_no_literal_ntrials.py",
         "signature_sha256": "0b5d8cab3859d0244b7112439ff0d7e3d8b0bc43975889707e4f1af488156d54"
       },
@@ -19208,6 +19308,10 @@
       {
         "path": "tests/test_options_skew.py",
         "signature_sha256": "a5e779dd6722bf0406bfe699414ca229d7cef508dc8f4d8fa29c7aeb9dddebba"
+      },
+      {
+        "path": "tests/test_options_sparse_selector_bootstrap.py",
+        "signature_sha256": "1b159f3c8a381ec4c1874d1f31c6030e5535f664e71ca3f5b5e1d817d7f5f8b4"
       },
       {
         "path": "tests/test_options_sparse_selector_prereg.py",
@@ -19842,6 +19946,10 @@
         "signature_sha256": "1671a2ce325178f12d65cf0b30d0d7a07b16ccdab6b76f69f08bb88a8d886793"
       },
       {
+        "path": "tests/test_prophet_overtime_horizon_reconciliation.py",
+        "signature_sha256": "78ac30fa0affd0d0ece842b339fa1cd131e420a86dbcd1d8e87781684fbe5324"
+      },
+      {
         "path": "tests/test_prophet_plan_chronology_audit.py",
         "signature_sha256": "80b72e2740474a4c12e55c1554eea6e1ac25a2731dbb52c344a9a6660679da33"
       },
@@ -19992,6 +20100,10 @@
       {
         "path": "tests/test_qledger_cluster_honest_ci.py",
         "signature_sha256": "25b86fdd2542a9bbd614279311582831d58635a892b79a2edce030e57b91f338"
+      },
+      {
+        "path": "tests/test_qledger_control_policy.py",
+        "signature_sha256": "302c91adaebbe8e5ba0573604c4167e8b400dc978d6eb1251df7c1a4bbca0e60"
       },
       {
         "path": "tests/test_qledger_desk_adapter.py",
@@ -21003,7 +21115,7 @@
       },
       {
         "path": "tests/test_smart_money_census_surface.py",
-        "signature_sha256": "a8c886300a8e0bf20cf6448262b823fa92f15e226379fa6462f275b2c6759560"
+        "signature_sha256": "8f9cf3ec9e0b375fe6bfcd17d87dcb6eae3675a46aa4f62a3add24e1d37aab33"
       },
       {
         "path": "tests/test_smart_money_v3.py",
@@ -21167,7 +21279,7 @@
       },
       {
         "path": "tests/test_stock_identity_atlas.py",
-        "signature_sha256": "5e0631fffb5b6da3ef92599daa5248220ca2148f0ff8fefd15b83f12ad1a873c"
+        "signature_sha256": "e0d2783cb01f0aba65e1e64ec39ceef9850a4e749cd2aa298fc3661ea9915ebb"
       },
       {
         "path": "tests/test_stock_identity_fingerprint.py",
@@ -21292,6 +21404,10 @@
       {
         "path": "tests/test_strategy_signals.py",
         "signature_sha256": "c6c41dafa4cb31e47c5df9a3a73731a751b65aeb7ca60a5818ca0d5f52f9048b"
+      },
+      {
+        "path": "tests/test_stretch_oracle_contract.py",
+        "signature_sha256": "291f49db75438f51d59472d3f8ff254a111e4114fffbb3c864386f884db39867"
       },
       {
         "path": "tests/test_strip_conflict_markers.py",
@@ -22075,7 +22191,7 @@
       },
       {
         "path": "tests/test_validated_claims_structural_scope.py",
-        "signature_sha256": "33079412f93e4ff1dda22332fb4a35c0b1b211a21410e266fc891bb22da89c76"
+        "signature_sha256": "79173237ed51e41be9232cd3c99b049bfb1547063d8188414359e8142c3c7e8c"
       },
       {
         "path": "tests/test_validated_claims_surfaces.py",
@@ -22318,6 +22434,10 @@
         "signature_sha256": "fdfca2f3f2a6b0a790561fd45d7a534f26687d30447657be12c4fe6afefa06b5"
       },
       {
+        "path": "tests/test_watchlist_drawer_js.py",
+        "signature_sha256": "dce82e6741c5133d1758a143fc59e91bfbd15aaba1ab8aa1c64861189483b631"
+      },
+      {
         "path": "tests/test_watchlist_logo_contrast.py",
         "signature_sha256": "94ab1738d19e630c4756b2cc7fe06a8fde0e1afb9f509a9ce2d75d94fdb489e0"
       },
@@ -22490,11 +22610,11 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5622,
+    "python_count": 5652,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "463578e510f4273305495d2e3ca5d986eaab9fa2859699249a2483b2c6c5304d",
-  "job_count": 194,
+  "index_sha256": "807d8551446b10845ed810de5d0aff0d08d30deaf28a175d3ea1c4045efb7bae",
+  "job_count": 195,
   "job_inventory": [
     "inline-js",
     "nav-gap",
@@ -22538,6 +22658,7 @@
     "cycle-consistency",
     "synapse-read-gate",
     "neural-web",
+    "intelligence-registry",
     "neural-web-core",
     "cn-standout-audit",
     "workflow-yaml",
@@ -23176,11 +23297,20 @@
       "job_id": "signal-contract",
       "ordinal": 15,
       "paths": [
+        "collectors/edgar.py",
+        "collectors/edgar_deadname_prices.py",
+        "collectors/edgar_deadnames.py",
+        "collectors/edgar_delisting.py",
+        "collectors/edgar_eps.py",
+        "collectors/edgar_flow_quality.py",
         "collectors/edgar_forensics.py",
+        "collectors/edgar_share_quality.py",
+        "collectors/edgar_stock_quality.py",
         "collectors/fundamental_forensics_acquisition.py",
         "collectors/fundamental_forensics_companyfacts.py",
         "collectors/sec_document_spine.py",
         "collectors/sec_filing_parser.py",
+        "config/entry_radar.yml",
         "config/fundamental_forensics.yml",
         "config/fundamental_forensics_disclosure_diff.v1.json",
         "config/synapse.yml",
@@ -23189,8 +23319,25 @@
         "engine/canon.py",
         "engine/conditions.py",
         "engine/confluence_tiers.py",
+        "engine/cycles.py",
+        "engine/entry_radar/contracts.py",
+        "engine/entry_radar/nomination_bus.py",
+        "engine/entry_radar/producers/__init__.py",
+        "engine/entry_radar/producers/base.py",
+        "engine/entry_radar/producers/baskets.py",
+        "engine/entry_radar/producers/boards.py",
+        "engine/entry_radar/producers/constituents.py",
+        "engine/entry_radar/producers/ipo.py",
+        "engine/entry_radar/producers/live_flow.py",
+        "engine/entry_radar/spool.py",
+        "engine/entry_radar/universe.py",
+        "engine/entry_signal.py",
+        "engine/equity_factors.py",
+        "engine/etf_registry.py",
+        "engine/factor_exposure.py",
         "engine/fundamental_forensics/__init__.py",
         "engine/fundamental_forensics/detectors.py",
+        "engine/fundamental_forensics/disclosure_bundle.py",
         "engine/fundamental_forensics/disclosure_diff.py",
         "engine/fundamental_forensics/disclosure_projection.py",
         "engine/fundamental_forensics/filing_attestation.py",
@@ -23203,20 +23350,33 @@
         "engine/fundamental_forensics/sec_companyfacts.py",
         "engine/fundamental_forensics/sec_document_spine.py",
         "engine/fundamental_forensics/source_sync.py",
+        "engine/grading.py",
+        "engine/htf_durability.py",
         "engine/hysteresis.py",
         "engine/indicators.py",
+        "engine/ledger_lane.py",
+        "engine/marker_integrity.py",
         "engine/moat_falsifiers.py",
+        "engine/mtf_upturn.py",
+        "engine/name_score_grader.py",
         "engine/research_vault/r2_store.py",
         "engine/session_anchor.py",
         "engine/signal_gate.py",
         "engine/signal_quality.py",
+        "engine/sue.py",
         "engine/technicals.py",
+        "engine/universe_history.py",
         "engine/us_board_rank.py",
+        "engine/vol_forecast.py",
+        "engine/vol_regime.py",
+        "engine/washout_turn.py",
         "lib/__init__.py",
+        "lib/closes_panel.py",
         "lib/config.py",
         "lib/nyse_calendar.py",
         "lib/pages.py",
         "lib/store.py",
+        "lib/ticker_aliases.py",
         "research/prophet_us_audit/reclaim_veto_packet.py",
         "research/prophet_us_audit/test_earnings_ignition_measurement.py",
         "research/prophet_us_audit/test_label_grading_battery.py",
@@ -23228,8 +23388,13 @@
         "research/signal_engine/test_buy_filters.py",
         "scripts/__init__.py",
         "scripts/build_fundamental_forensics.py",
+        "scripts/build_fundamental_forensics_disclosures.py",
+        "scripts/entry_radar_universe.py",
         "scripts/export_signal_contracts.py",
+        "scripts/fundamental_forensics_disclosure_bundle.py",
+        "scripts/run_fundamental_forensics_wave2.py",
         "scripts/validate_signals.py",
+        "site/basketdata/fear_greed.json",
         "site/chart.js",
         "site/china_regime_timeline.json",
         "site/data/portfolio_ctx.json",
@@ -23241,17 +23406,21 @@
         "site/hk_regime_timeline.json",
         "site/regime_timeline.json",
         "tests/test_early_signal_dates_contract.py",
+        "tests/test_entry_radar_producers.py",
+        "tests/test_entry_radar_w1.py",
         "tests/test_forensic_detector_crosspin.py",
         "tests/test_fundamental_forensics_contract.py",
         "tests/test_fundamental_forensics_detectors.py",
+        "tests/test_fundamental_forensics_disclosure_bundle.py",
         "tests/test_fundamental_forensics_ingest.py",
         "tests/test_fundamental_forensics_normalize.py",
+        "tests/test_signal_date_family.py",
         "tests/test_signal_quality_no_leak.py",
         "tests/test_us_reclaim_veto_packet.py",
         "tests/test_us_reclaim_waiver_prophet_v2.py",
         "tests/test_validate_signals.py"
       ],
-      "weight": 29
+      "weight": 38
     },
     {
       "job_id": "session-anchor-era",
@@ -23528,6 +23697,7 @@
         "engine/stock_identity/authority.py",
         "engine/stock_identity/episodes.py",
         "engine/stock_identity/fingerprint.py",
+        "engine/stock_identity/hygiene.py",
         "engine/stock_identity/partition.py",
         "engine/stock_identity/plane.py",
         "engine/stock_identity/state.py",
@@ -23583,6 +23753,8 @@
         "scripts/_active_render.py",
         "scripts/active_commodity_lev_phase0.py",
         "scripts/anticipation_phase0.py",
+        "scripts/audit_common.py",
+        "scripts/audit_reused_tickers.py",
         "scripts/backtest_ladder_history.py",
         "scripts/btc_onchain_dd_phase0.py",
         "scripts/btc_vector_optimal_phase0.py",
@@ -23645,6 +23817,7 @@
         "scripts/value_growth_phase0.py",
         "site/btc_strategy.html",
         "site/factordata/basket_washout_state.json",
+        "tests/test_audit_reused_tickers.py",
         "tests/test_grading.py",
         "tests/test_ledger_identity.py",
         "tests/test_no_literal_ntrials.py",
@@ -23657,7 +23830,7 @@
         "tests/test_trial_registration_lint.py",
         "tests/test_universe_history.py"
       ],
-      "weight": 29
+      "weight": 31
     },
     {
       "job_id": "breakdown-control-seed-determinism",
@@ -23861,6 +24034,7 @@
         "tests/test_calibration_hub.py",
         "tests/test_demand_ledger.py",
         "tests/test_desk_placebo.py",
+        "tests/test_desk_thesis_ids.py",
         "tests/test_narrative_brain.py",
         "tests/test_policy_intent_desk.py",
         "tests/test_pooling.py",
@@ -23869,7 +24043,7 @@
         "tests/test_stock_desk.py",
         "tests/test_thematic_desk.py"
       ],
-      "weight": 30
+      "weight": 32
     },
     {
       "job_id": "conviction-profile",
@@ -24756,6 +24930,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -24846,6 +25021,7 @@
         "config/**",
         "contracts/**",
         "data/**",
+        "docs/runbooks/OPTIONS_SPARSE_SELECTOR.md",
         "engine/*",
         "engine/biocatalyst/**",
         "engine/capital_structure/**",
@@ -24869,6 +25045,7 @@
         "ops/launchd/com.mastermind.chainsnapshots.plist",
         "ops/launchd/com.mastermind.liveflow.plist",
         "ops/launchd/com.mastermind.prophetmarks.plist",
+        "ops/launchd/run_options_sparse_selector_verified.py",
         "ops/launchd/run_prophet_marks_loop.sh",
         "research/DO_NOT_REBUILD.md",
         "research/momoedge/completion_benchmark_prereg_v1.json",
@@ -24938,6 +25115,7 @@
         "tests/test_options_matrix.py",
         "tests/test_options_signal_campaign.py",
         "tests/test_options_signal_episode.py",
+        "tests/test_options_sparse_selector_bootstrap.py",
         "tests/test_options_sparse_selector_prereg.py",
         "tests/test_options_sparse_selector_runtime.py",
         "tests/test_options_structure_intraday.py",
@@ -25767,6 +25945,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
         "scripts/check_statement_tape.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -26228,6 +26407,7 @@
         "lib/user_prefs.py",
         "research/DO_NOT_REBUILD.md",
         "scripts/__init__.py",
+        "scripts/backfill_finra_short_interest.py",
         "scripts/build_fundamental_forensics.py",
         "scripts/build_fundamental_forensics_disclosures.py",
         "scripts/publish_r2.py",
@@ -26903,6 +27083,7 @@
         "scripts/build_vector.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_surface_freshness.py",
         "scripts/check_validated_claims.py",
         "scripts/freshness_sentinel.py",
@@ -26994,6 +27175,7 @@
         "tests/test_seo_meta_rollout.py",
         "tests/test_standout_audit.py",
         "tests/test_stock_technicals.py",
+        "tests/test_stretch_oracle_contract.py",
         "tests/test_t0_indicator.py",
         "tests/test_track_record_page.py",
         "tests/test_us_act_now.py",
@@ -27069,6 +27251,7 @@
         "site/basket_china/cn_autos.html",
         "site/china.html",
         "site/china_news.html",
+        "site/china_stocks.html",
         "site/cycle_app.js",
         "site/factordata/etf_board_track.json",
         "site/forex.html",
@@ -27406,6 +27589,7 @@
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/prophet_live_evaluator.py",
         "scripts/reconcile_prophet_live.py",
         "scripts/thematic_rotation_phase0.py",
@@ -27865,6 +28049,7 @@
         "contracts/capital_structure_event.schema.json",
         "contracts/capital_structure_instrument_candidate_term.schema.json",
         "contracts/capital_structure_projection.schema.json",
+        "contracts/capital_structure_registration_lifecycle.schema.json",
         "contracts/capital_structure_retrieval_queue_receipt.schema.json",
         "contracts/capital_structure_share_count_ledger_receipt.schema.json",
         "contracts/capital_structure_share_count_observation.schema.json",
@@ -27947,6 +28132,7 @@
         "engine/capital_structure/instrument_candidates.py",
         "engine/capital_structure/legacy.py",
         "engine/capital_structure/projection.py",
+        "engine/capital_structure/registration_lifecycle.py",
         "engine/capital_structure/share_count_materializer.py",
         "engine/capital_structure/share_count_publication.py",
         "engine/capital_structure/share_count_r2_concurrency.py",
@@ -28472,6 +28658,7 @@
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/ci/push_retry.sh",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -28482,6 +28669,7 @@
         "scripts/compile_capital_structure_document_terms.py",
         "scripts/compile_capital_structure_events.py",
         "scripts/compile_capital_structure_instrument_candidate_terms.py",
+        "scripts/compile_capital_structure_registration_lifecycles.py",
         "scripts/compile_capital_structure_share_counts.py",
         "scripts/fetch_basket_extras.py",
         "scripts/fetch_basket_ohlcv.py",
@@ -28572,6 +28760,7 @@
         "tests/test_capital_structure_source_identity.py",
         "tests/test_capital_structure_source_manifest.py",
         "tests/test_collect_staging_globs.py",
+        "tests/test_compile_capital_structure_registration_lifecycles.py",
         "tests/test_daily_capital_structure_job.py",
         "tests/test_daily_collect_commit_path.py",
         "tests/test_nwqs_c_dilution.py",
@@ -29072,6 +29261,7 @@
         "scripts/build_polygon_intraday.py",
         "scripts/build_subsector_membership.py",
         "scripts/cctv_finalize_watcher.py",
+        "scripts/check_tushare_freshness.py",
         "scripts/collect.py",
         "scripts/collect_nyfed_cmdi.py",
         "scripts/collect_redfin_hf.py",
@@ -29131,9 +29321,10 @@
         "tests/test_cn_newswires.py",
         "tests/test_tushare_addons.py",
         "tests/test_tushare_chips_distribution.py",
+        "tests/test_tushare_freshness_tripwire.py",
         "tests/test_tushare_minutes_plane.py"
       ],
-      "weight": 36
+      "weight": 38
     },
     {
       "job_id": "china-board-breadth",
@@ -30116,6 +30307,7 @@
         "scripts/check_evidence_clock.py",
         "scripts/check_factor_boundaries.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_synapse_reads.py",
         "scripts/check_synapse_registry.py",
         "scripts/close_pass_publish.py",
@@ -30848,8 +31040,497 @@
       "weight": 37
     },
     {
-      "job_id": "neural-web-core",
+      "job_id": "intelligence-registry",
       "ordinal": 42,
+      "paths": [
+        "collectors/__init__.py",
+        "collectors/_drip.py",
+        "collectors/base.py",
+        "collectors/cboe.py",
+        "collectors/china_analyst.py",
+        "collectors/china_credit.py",
+        "collectors/china_news.py",
+        "collectors/edgar.py",
+        "collectors/edgar_13f.py",
+        "collectors/edgar_deadname_prices.py",
+        "collectors/edgar_deadnames.py",
+        "collectors/edgar_delisting.py",
+        "collectors/edgar_eps.py",
+        "collectors/edgar_facts.py",
+        "collectors/edgar_flow_quality.py",
+        "collectors/edgar_headcount.py",
+        "collectors/edgar_rpo.py",
+        "collectors/edgar_share_quality.py",
+        "collectors/edgar_stock_quality.py",
+        "collectors/equity_profile.py",
+        "collectors/equity_revisions.py",
+        "collectors/fda_shortages.py",
+        "collectors/finra.py",
+        "collectors/fred.py",
+        "collectors/holdings.py",
+        "collectors/openfigi.py",
+        "collectors/polygon_options.py",
+        "collectors/sec_document_spine.py",
+        "collectors/sec_insider.py",
+        "collectors/sector_holdings.py",
+        "collectors/sponsors.py",
+        "collectors/treasury.py",
+        "collectors/us_names_zh.py",
+        "config/ai_pricing.yml",
+        "config/capability_manifest.yml",
+        "config/delisted_symbols.yml",
+        "config/earnings_story_promotion.yml",
+        "config/flow_score.yml",
+        "config/fundamental_forensics_disclosure_diff.v1.json",
+        "config/house_law_checks.yml",
+        "config/intelligence_registry_overlay.yml",
+        "config/lobe_charters.yml",
+        "config/metabolism_budget.yml",
+        "config/qual_ladder.yml",
+        "config/sector_legs.json",
+        "config/site_access.yml",
+        "config/sparse_worktree.json",
+        "config/synapse.yml",
+        "config/us_names_zh.json",
+        "config/us_search_aliases_zh.json",
+        "engine/__init__.py",
+        "engine/active_alloc.py",
+        "engine/activist.py",
+        "engine/advanced_breadth.py",
+        "engine/ai_desk.py",
+        "engine/ai_desk_scorer.py",
+        "engine/alert_triage.py",
+        "engine/alerts.py",
+        "engine/altdata_confirmers.py",
+        "engine/altdata_ledger.py",
+        "engine/altdata_models.py",
+        "engine/altdata_picks.py",
+        "engine/altdata_signals.py",
+        "engine/analyst_revisions.py",
+        "engine/anticipation.py",
+        "engine/axes.py",
+        "engine/bar_derive.py",
+        "engine/base_effect.py",
+        "engine/basket_behaves_as.py",
+        "engine/basket_breadth_divergence.py",
+        "engine/basket_index.py",
+        "engine/basket_mtf.py",
+        "engine/basket_score.py",
+        "engine/basket_tape.py",
+        "engine/baskets.py",
+        "engine/baskets_canada.py",
+        "engine/baskets_china.py",
+        "engine/baskets_hk.py",
+        "engine/baskets_intl.py",
+        "engine/baskets_region.py",
+        "engine/beneficial_ownership.py",
+        "engine/bottleneck.py",
+        "engine/bottom_radar.py",
+        "engine/btc_mtf.py",
+        "engine/canon.py",
+        "engine/capital_allocation.py",
+        "engine/catalyst_stock.py",
+        "engine/catalyst_tone.py",
+        "engine/china_altdata.py",
+        "engine/china_basket_spine.py",
+        "engine/china_conviction.py",
+        "engine/china_crowding.py",
+        "engine/china_discovery.py",
+        "engine/china_event_calendar.py",
+        "engine/china_extras.py",
+        "engine/china_intel_bus.py",
+        "engine/china_masterminds.py",
+        "engine/china_news.py",
+        "engine/china_news_intel.py",
+        "engine/china_pboc_stance.py",
+        "engine/china_radar.py",
+        "engine/china_radar_ledger.py",
+        "engine/china_signal_lab.py",
+        "engine/china_strategies.py",
+        "engine/china_validation.py",
+        "engine/close_pass/__init__.py",
+        "engine/close_pass/board.py",
+        "engine/close_pass/reconcile.py",
+        "engine/cn_ai_semis_confirmer.py",
+        "engine/cn_newswires.py",
+        "engine/codex_lane/runner.py",
+        "engine/codex_provider.py",
+        "engine/coiled.py",
+        "engine/composite_score.py",
+        "engine/conditions.py",
+        "engine/confluence_tiers.py",
+        "engine/conviction_accrual.py",
+        "engine/conviction_delta.py",
+        "engine/cross_asset.py",
+        "engine/cross_asset_trend.py",
+        "engine/crowding.py",
+        "engine/cycles.py",
+        "engine/dannytrades.py",
+        "engine/dannytrades_chip.py",
+        "engine/demand_capex.py",
+        "engine/demand_chain.py",
+        "engine/demand_ledger.py",
+        "engine/desk_ledger.py",
+        "engine/desk_scorer.py",
+        "engine/deterioration_cascade.py",
+        "engine/dislocation.py",
+        "engine/dispersion.py",
+        "engine/donor.py",
+        "engine/earnings_blackout.py",
+        "engine/earnings_catalyst.py",
+        "engine/earnings_narrative/context_packets.py",
+        "engine/earnings_narrative/contracts.py",
+        "engine/earnings_narrative/digest.py",
+        "engine/earnings_narrative/private_publication.py",
+        "engine/earnings_narrative/promotion.py",
+        "engine/earnings_narrative/public_wire.py",
+        "engine/earnings_narrative/story.py",
+        "engine/earnings_narrative/story_packets.py",
+        "engine/election_cycle.py",
+        "engine/entity_resolver.py",
+        "engine/entry_primitives.py",
+        "engine/entry_signal.py",
+        "engine/equity_alloc.py",
+        "engine/equity_factors.py",
+        "engine/etf_board.py",
+        "engine/etf_consensus.py",
+        "engine/etf_pulse.py",
+        "engine/etf_registry.py",
+        "engine/event_atlas.py",
+        "engine/event_calendar.py",
+        "engine/event_landmine.py",
+        "engine/event_risk.py",
+        "engine/expectation_state.py",
+        "engine/experiments_registry.py",
+        "engine/extension.py",
+        "engine/factor_exposure.py",
+        "engine/factor_seasonality.py",
+        "engine/fda_scarcity.py",
+        "engine/fear_greed.py",
+        "engine/filing_transition.py",
+        "engine/flip_confirmation.py",
+        "engine/foresight_cascade.py",
+        "engine/foresight_earliness.py",
+        "engine/foresight_enb.py",
+        "engine/foresight_score.py",
+        "engine/foresight_sizing.py",
+        "engine/forward_calendar_context.py",
+        "engine/forward_dist.py",
+        "engine/froth_fragility.py",
+        "engine/fundamental_forensics/context_projection.py",
+        "engine/fundamental_forensics/disclosure_diff.py",
+        "engine/fundamental_forensics/disclosure_projection.py",
+        "engine/fundamental_forensics/models.py",
+        "engine/fundamental_forensics/private_state.py",
+        "engine/fundamental_forensics/sec_document_spine.py",
+        "engine/gdelt_client.py",
+        "engine/gex_confirm.py",
+        "engine/gex_engine.py",
+        "engine/global_liquidity.py",
+        "engine/glut_watch.py",
+        "engine/gov_exposure.py",
+        "engine/government_revenue/federation.py",
+        "engine/government_revenue/freshness.py",
+        "engine/government_revenue/prophet_annotation.py",
+        "engine/grading.py",
+        "engine/greeks.py",
+        "engine/group_flow.py",
+        "engine/guidance_gap.py",
+        "engine/hold.py",
+        "engine/holdings_signals.py",
+        "engine/htf_durability.py",
+        "engine/hysteresis.py",
+        "engine/i18n.py",
+        "engine/ignition_features.py",
+        "engine/index_direction.py",
+        "engine/index_leadership.py",
+        "engine/index_leadership_track.py",
+        "engine/indicators.py",
+        "engine/inputs.py",
+        "engine/intelligence_registry.py",
+        "engine/intl_inputs.py",
+        "engine/intl_market_state.py",
+        "engine/intl_recovery_quality.py",
+        "engine/leadership_crack.py",
+        "engine/ledger_identity.py",
+        "engine/ledger_lane.py",
+        "engine/liquidity_chip.py",
+        "engine/live_overlay.py",
+        "engine/live_quotes.py",
+        "engine/llm_auth.py",
+        "engine/long_hold_clocks.py",
+        "engine/macro_news.py",
+        "engine/macro_surprise.py",
+        "engine/manager_lag.py",
+        "engine/manager_quality.py",
+        "engine/manager_trades.py",
+        "engine/marker_integrity.py",
+        "engine/market_gamma.py",
+        "engine/market_heatmap.py",
+        "engine/market_state.py",
+        "engine/market_state_audit.py",
+        "engine/market_state_tune.py",
+        "engine/master_brain.py",
+        "engine/masterminds.py",
+        "engine/metabolism/__init__.py",
+        "engine/metabolism/budget_gate.py",
+        "engine/moat_falsifiers.py",
+        "engine/momentum_display.py",
+        "engine/mtf_monitor.py",
+        "engine/mtf_upturn.py",
+        "engine/name_direction.py",
+        "engine/name_resolver.py",
+        "engine/name_score.py",
+        "engine/name_score_grader.py",
+        "engine/narrative_regime.py",
+        "engine/narrative_rotation.py",
+        "engine/neuralweb/__init__.py",
+        "engine/neuralweb/brief_context.py",
+        "engine/neuralweb/capability_broker.py",
+        "engine/neuralweb/constitution.py",
+        "engine/neuralweb/context_api.py",
+        "engine/neuralweb/earnings_context_reader.py",
+        "engine/neuralweb/envelope.py",
+        "engine/neuralweb/governance.py",
+        "engine/neuralweb/key_pool.py",
+        "engine/neuralweb/metabolism.py",
+        "engine/neuralweb/read.py",
+        "engine/neuralweb/sector_map.py",
+        "engine/neuralweb/synapse.py",
+        "engine/news_common.py",
+        "engine/news_events.py",
+        "engine/news_flow.py",
+        "engine/news_translate.py",
+        "engine/news_vector.py",
+        "engine/ohlc_reconstruct.py",
+        "engine/ollama_provider.py",
+        "engine/opex.py",
+        "engine/options_dislocation.py",
+        "engine/options_ivspread.py",
+        "engine/options_structure.py",
+        "engine/oracle/__init__.py",
+        "engine/oracle/tilt.py",
+        "engine/oracle/washout_counterread.py",
+        "engine/ownership_event_wire.py",
+        "engine/passport.py",
+        "engine/path_personality.py",
+        "engine/pick_lab/__init__.py",
+        "engine/pick_lab/candidates.py",
+        "engine/pick_lab/registry.py",
+        "engine/pick_lab/signals_1d.py",
+        "engine/pick_lab/snapshot.py",
+        "engine/pit.py",
+        "engine/pit_lag_recorder.py",
+        "engine/playbook.py",
+        "engine/policy_calendar.py",
+        "engine/pooling.py",
+        "engine/portfolio.py",
+        "engine/postcross.py",
+        "engine/prediction_markets.py",
+        "engine/press/earnings_adapter.py",
+        "engine/prophet_bridge.py",
+        "engine/prophet_doors.py",
+        "engine/prophet_integrity.py",
+        "engine/prophet_live/__init__.py",
+        "engine/prophet_live/interval.py",
+        "engine/prophet_live/r2io.py",
+        "engine/prophet_stage_inputs.py",
+        "engine/provenance_sidecar.py",
+        "engine/provider_health.py",
+        "engine/pullback_zone.py",
+        "engine/qbus.py",
+        "engine/qkernel.py",
+        "engine/qledger.py",
+        "engine/qledger_desk_adapter.py",
+        "engine/qledger_evidence_clock.py",
+        "engine/qledger_validity.py",
+        "engine/quant_lab/__init__.py",
+        "engine/quant_lab/legs.py",
+        "engine/quant_lab/page.py",
+        "engine/quant_lab/score.py",
+        "engine/quant_lab/specs.py",
+        "engine/quant_lab/study.py",
+        "engine/rate_inflation_transmission.py",
+        "engine/rebalance_calendar.py",
+        "engine/regime.py",
+        "engine/regime_conditioning_coverage.py",
+        "engine/regime_label.py",
+        "engine/regime_one.py",
+        "engine/regime_snap.py",
+        "engine/regime_snap_veto.py",
+        "engine/regime_vector.py",
+        "engine/research_vault/r2_store.py",
+        "engine/residual_alpha.py",
+        "engine/risk_radar.py",
+        "engine/risk_radar_backtest.py",
+        "engine/risk_radar_intl.py",
+        "engine/risk_radar_intl_audit.py",
+        "engine/risk_radar_market_catalysts.py",
+        "engine/risk_radar_recovery.py",
+        "engine/risk_sizing.py",
+        "engine/risk_state.py",
+        "engine/roc_blowoff.py",
+        "engine/sector_legs.py",
+        "engine/sector_pulse.py",
+        "engine/sector_rate_inflation.py",
+        "engine/sector_signals.py",
+        "engine/session_anchor.py",
+        "engine/setup_tier.py",
+        "engine/setups.py",
+        "engine/shadow_book.py",
+        "engine/short_volume.py",
+        "engine/signal_archive.py",
+        "engine/signal_foundry/results.py",
+        "engine/signal_foundry/spec.py",
+        "engine/signal_foundry/transforms.py",
+        "engine/signal_frontier_docket.py",
+        "engine/signal_gate.py",
+        "engine/signal_lab.py",
+        "engine/signal_quality.py",
+        "engine/signal_stack.py",
+        "engine/smart_money.py",
+        "engine/sp500_heatmap.py",
+        "engine/special_arb.py",
+        "engine/special_situations.py",
+        "engine/species_registry.py",
+        "engine/spine.py",
+        "engine/spotlight.py",
+        "engine/stock_dossier.py",
+        "engine/stock_events.py",
+        "engine/stock_fundamentals.py",
+        "engine/stock_macro_sensitivity.py",
+        "engine/stock_personality.py",
+        "engine/stock_score.py",
+        "engine/stock_technicals.py",
+        "engine/stock_view.py",
+        "engine/strategies.py",
+        "engine/subsector_confluence.py",
+        "engine/subsector_rotation.py",
+        "engine/subsector_rotation_alerts.py",
+        "engine/subsector_rotation_china.py",
+        "engine/subsector_scan.py",
+        "engine/subsector_track_record.py",
+        "engine/subsector_turn.py",
+        "engine/sue.py",
+        "engine/t0_indicator.py",
+        "engine/technicals.py",
+        "engine/theme_crowding.py",
+        "engine/theme_emergence.py",
+        "engine/theme_fingerprint.py",
+        "engine/theme_revisions.py",
+        "engine/theme_scoring.py",
+        "engine/theme_tape.py",
+        "engine/theme_validation.py",
+        "engine/themes_heatmap.py",
+        "engine/thesis_funnel.py",
+        "engine/ticker_alerts.py",
+        "engine/ticker_shape.py",
+        "engine/total_return.py",
+        "engine/track_record.py",
+        "engine/translate.py",
+        "engine/transmission_publish.py",
+        "engine/treasury_watch.py",
+        "engine/trial_ledger.py",
+        "engine/tushare_freshness.py",
+        "engine/universe_history.py",
+        "engine/us_board_rank.py",
+        "engine/us_candidate_lanes.py",
+        "engine/us_context_vector.py",
+        "engine/us_early_turn.py",
+        "engine/validation.py",
+        "engine/valuation.py",
+        "engine/velocity.py",
+        "engine/vol_forecast.py",
+        "engine/vol_regime.py",
+        "engine/vol_shock_scorecard.py",
+        "engine/vol_squeeze.py",
+        "engine/washout_turn.py",
+        "engine/weinstein_stage.py",
+        "engine/whitehouse_brain.py",
+        "engine/whitehouse_feed.py",
+        "lib/__init__.py",
+        "lib/ai_costs.py",
+        "lib/board_state.py",
+        "lib/chat_allowance.py",
+        "lib/closes_panel.py",
+        "lib/cn_calendar.py",
+        "lib/config.py",
+        "lib/delisted_symbols.py",
+        "lib/filing_value_units.py",
+        "lib/forex_link.py",
+        "lib/hk_calendar.py",
+        "lib/nyse_calendar.py",
+        "lib/options_context.py",
+        "lib/pages.py",
+        "lib/seo.py",
+        "lib/site_assets.py",
+        "lib/store.py",
+        "lib/ticker_aliases.py",
+        "lib/ticker_popularity.py",
+        "research/REGIME_RELIABILITY_FACTOR_CROWDING_ADJUDICATION.md",
+        "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md",
+        "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
+        "research/US_BOARD_MEASUREMENT.md",
+        "scripts/__init__.py",
+        "scripts/build_biocatalyst.py",
+        "scripts/build_capital_structure_page.py",
+        "scripts/build_chart_data.py",
+        "scripts/build_fundamental_forensics.py",
+        "scripts/build_index_leadership.py",
+        "scripts/build_intelligence_registry.py",
+        "scripts/build_live_overlay.py",
+        "scripts/build_market_heatmap.py",
+        "scripts/build_market_memory_page.py",
+        "scripts/build_market_structure_page.py",
+        "scripts/build_rr_banner.py",
+        "scripts/build_site.py",
+        "scripts/build_sp500_heatmap.py",
+        "scripts/build_state_of_themes.py",
+        "scripts/build_stock_library.py",
+        "scripts/build_subsector_confluence.py",
+        "scripts/build_subsector_rotation.py",
+        "scripts/build_subsector_rotation_china.py",
+        "scripts/build_subsector_rotation_china_pages.py",
+        "scripts/build_subsector_rotation_pages.py",
+        "scripts/build_themes_heatmap.py",
+        "scripts/build_whitehouse.py",
+        "scripts/check_board_contradictions.py",
+        "scripts/check_intelligence_registry.py",
+        "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
+        "scripts/check_synapse_reads.py",
+        "scripts/check_template_site_sync.py",
+        "scripts/close_pass_publish.py",
+        "scripts/close_pass_reconcile.py",
+        "scripts/inject_wh_banner.py",
+        "scripts/notify.py",
+        "scripts/optimize_assets.py",
+        "scripts/regime_reliability_phase0.py",
+        "scripts/thematic_rotation_phase0.py",
+        "scripts/translate_profiles.py",
+        "scripts/validate_regime_fwd.py",
+        "scripts/worktree_sparse.py",
+        "site/basketdata/fear_greed.json",
+        "site/factordata/basket_washout_state.json",
+        "site/factordata/dna_class.json",
+        "site/factordata/reflexivity_overlay.json",
+        "site/factordata/signal_gate.json",
+        "site/factordata/stock_personality.json",
+        "site/factordata/us_standouts.json",
+        "site/factordata/us_standouts_v2.json",
+        "site/flowleaders/leaders.json",
+        "site/leaderradar/radar.json",
+        "site/master_brief.json",
+        "site/neuralwebdata/liquidity_plumbing.json",
+        "site/qledger/track_record.json",
+        "tests/test_check_intelligence_registry.py",
+        "tests/test_intelligence_registry.py"
+      ],
+      "weight": 7
+    },
+    {
+      "job_id": "neural-web-core",
+      "ordinal": 43,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -31463,7 +32144,7 @@
     },
     {
       "job_id": "cn-standout-audit",
-      "ordinal": 43,
+      "ordinal": 44,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -31611,7 +32292,7 @@
     },
     {
       "job_id": "workflow-yaml",
-      "ordinal": 44,
+      "ordinal": 45,
       "paths": [
         ".claude/hooks/gh_quota_guard.py",
         ".claude/hooks/model_routing_guard.py",
@@ -32415,6 +33096,7 @@
         "scripts/check_signal_gate_coherence.py",
         "scripts/check_site_js.py",
         "scripts/check_skip_only_suites.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/check_workflow_yaml.py",
         "scripts/ci_authority.py",
@@ -32526,7 +33208,7 @@
     },
     {
       "job_id": "causal-factory",
-      "ordinal": 45,
+      "ordinal": 46,
       "paths": [
         "admin/causal_lab.py",
         "admin/paths.py",
@@ -32719,7 +33401,7 @@
     },
     {
       "job_id": "rlt-rebalance-calendar-pulse",
-      "ordinal": 46,
+      "ordinal": 47,
       "paths": [
         "engine/opex.py",
         "engine/rebalance_calendar.py",
@@ -32733,7 +33415,7 @@
     },
     {
       "job_id": "nyse-calendar-freshness",
-      "ordinal": 47,
+      "ordinal": 48,
       "paths": [
         "lib/__init__.py",
         "lib/nyse_calendar.py",
@@ -32744,7 +33426,7 @@
     },
     {
       "job_id": "dag-conformance",
-      "ordinal": 48,
+      "ordinal": 49,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -33209,7 +33891,7 @@
     },
     {
       "job_id": "push-retry-policy",
-      "ordinal": 49,
+      "ordinal": 50,
       "paths": [
         "scripts/ci/push_retry.sh",
         "site/index.html",
@@ -33220,7 +33902,7 @@
     },
     {
       "job_id": "transmission-chains",
-      "ordinal": 50,
+      "ordinal": 51,
       "paths": [
         "config/causal_llm.yml",
         "config/transmission_proposals.yml",
@@ -33269,7 +33951,7 @@
     },
     {
       "job_id": "research-factory-authority",
-      "ordinal": 51,
+      "ordinal": 52,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -33726,6 +34408,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_research_factory_authority.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -33755,7 +34438,7 @@
     },
     {
       "job_id": "cycle-pattern-authority",
-      "ordinal": 52,
+      "ordinal": 53,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -34081,6 +34764,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_cycle_pattern_authority.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/fit_cycle_hazard.py",
         "scripts/notify.py",
         "scripts/run_falsosc_trial_v1.py",
@@ -34107,7 +34791,7 @@
     },
     {
       "job_id": "private-boundary",
-      "ordinal": 53,
+      "ordinal": 54,
       "paths": [
         "scripts/check_private_boundary.py",
         "site/mastermind/mastermind_snapshot.json",
@@ -34118,7 +34802,7 @@
     },
     {
       "job_id": "ruling-graph",
-      "ordinal": 54,
+      "ordinal": 55,
       "paths": [
         ".claude/hooks/model_routing_guard.py",
         "config/ruling_graph.yml",
@@ -34132,7 +34816,7 @@
     },
     {
       "job_id": "contract-drift",
-      "ordinal": 55,
+      "ordinal": 56,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -34153,7 +34837,7 @@
     },
     {
       "job_id": "flow-cohorts",
-      "ordinal": 56,
+      "ordinal": 57,
       "paths": [
         "engine/flow_cohorts.py",
         "engine/ledger_lane.py",
@@ -34166,7 +34850,7 @@
     },
     {
       "job_id": "flow-signals-ledger",
-      "ordinal": 57,
+      "ordinal": 58,
       "paths": [
         "collectors/flow_signals.py",
         "config/flow_detector.yml",
@@ -34188,7 +34872,7 @@
     },
     {
       "job_id": "flow-signal-cohorts",
-      "ordinal": 58,
+      "ordinal": 59,
       "paths": [
         "collectors/flow_signals.py",
         "collectors/thetadata.py",
@@ -34216,7 +34900,7 @@
     },
     {
       "job_id": "broad-etf-flows",
-      "ordinal": 59,
+      "ordinal": 60,
       "paths": [
         "collectors/base.py",
         "collectors/sponsors.py",
@@ -34231,7 +34915,7 @@
     },
     {
       "job_id": "qledger-cluster-honest-ci",
-      "ordinal": 60,
+      "ordinal": 61,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -34371,19 +35055,22 @@
         "site/qledger/track_record.json",
         "tests/test_altdata_reboot_families.py",
         "tests/test_communique_diff.py",
+        "tests/test_grade_qledger.py",
         "tests/test_qledger.py",
         "tests/test_qledger_cluster_honest_ci.py",
+        "tests/test_qledger_control_policy.py",
         "tests/test_qledger_desk_adapter.py",
         "tests/test_qledger_evidence_clock.py",
         "tests/test_qledger_excess_legality.py",
         "tests/test_qledger_horizon_clock.py",
-        "tests/test_qledger_validity.py"
+        "tests/test_qledger_validity.py",
+        "tests/test_w6_readiness_monitor.py"
       ],
-      "weight": 28
+      "weight": 34
     },
     {
       "job_id": "altdata-new-sources",
-      "ordinal": 61,
+      "ordinal": 62,
       "paths": [
         "collectors/__init__.py",
         "collectors/base.py",
@@ -34400,7 +35087,7 @@
     },
     {
       "job_id": "china-native-w2",
-      "ordinal": 62,
+      "ordinal": 63,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -34720,7 +35407,7 @@
     },
     {
       "job_id": "wri-risk-core",
-      "ordinal": 63,
+      "ordinal": 64,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -35158,6 +35845,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -35183,24 +35871,28 @@
         "templates/market_books.js",
         "templates/portfolio.js",
         "templates/risk_core.js",
+        "templates/stock.html.j2",
+        "templates/theme.css",
         "templates/watchlist.html.j2",
         "templates/watchlist.js",
         "templates/watchlist_risk.js",
         "templates/watchstore.js",
         "tests/test_factor_exposure.py",
         "tests/test_factor_exposure_stress.py",
+        "tests/test_no_absolute_path_symlinks.py",
         "tests/test_risk_core_js.py",
         "tests/test_watchlist_books_js.py",
         "tests/test_watchlist_chains_js.py",
+        "tests/test_watchlist_drawer_js.py",
         "tests/test_watchlist_sector_i18n.py",
         "tests/test_watchlist_workspace_js.py",
         "tests/test_watchstore_multilist_js.py"
       ],
-      "weight": 24
+      "weight": 30
     },
     {
       "job_id": "house-law-registry",
-      "ordinal": 64,
+      "ordinal": 65,
       "paths": [
         "admin/**",
         "app/**",
@@ -35359,7 +36051,7 @@
     },
     {
       "job_id": "leader-radar-unit",
-      "ordinal": 65,
+      "ordinal": 66,
       "paths": [
         "engine/__init__.py",
         "engine/analyst_revisions.py",
@@ -35393,7 +36085,7 @@
     },
     {
       "job_id": "evidence-clock",
-      "ordinal": 66,
+      "ordinal": 67,
       "paths": [
         "config/evidence_clock.yml",
         "engine/neuralweb/evidence_clock.py",
@@ -35405,7 +36097,7 @@
     },
     {
       "job_id": "vintage-pin-fence",
-      "ordinal": 67,
+      "ordinal": 68,
       "paths": [
         "scripts/check_vintage_pin_fence.py",
         "tests/**",
@@ -35415,7 +36107,7 @@
     },
     {
       "job_id": "validated-claims",
-      "ordinal": 68,
+      "ordinal": 69,
       "paths": [
         "engine/dislocation.py",
         "engine/ledger_lane.py",
@@ -35444,7 +36136,7 @@
     },
     {
       "job_id": "template-site-sync",
-      "ordinal": 69,
+      "ordinal": 70,
       "paths": [
         "config/site_access.yml",
         "config/sparse_worktree.json",
@@ -35487,7 +36179,7 @@
     },
     {
       "job_id": "data-base-shim",
-      "ordinal": 70,
+      "ordinal": 71,
       "paths": [
         "lib/__init__.py",
         "lib/config.py",
@@ -35499,7 +36191,7 @@
     },
     {
       "job_id": "grader-manifest",
-      "ordinal": 71,
+      "ordinal": 72,
       "paths": [
         "config/grader_manifest.yml",
         "engine/__init__.py",
@@ -35521,13 +36213,13 @@
     },
     {
       "job_id": "self-mod-fence",
-      "ordinal": 72,
+      "ordinal": 73,
       "paths": [],
-      "weight": 22
+      "weight": 24
     },
     {
       "job_id": "capability-broker",
-      "ordinal": 73,
+      "ordinal": 74,
       "paths": [
         ".claude/hooks/model_routing_guard.py",
         ".claude/settings.json",
@@ -35962,7 +36654,7 @@
     },
     {
       "job_id": "hub-a11y",
-      "ordinal": 74,
+      "ordinal": 75,
       "paths": [
         "scripts/check_hub_a11y.py",
         "site/mm_brain.js",
@@ -35974,7 +36666,7 @@
     },
     {
       "job_id": "font-ui-defined",
-      "ordinal": 75,
+      "ordinal": 76,
       "paths": [
         "scripts/check_font_ui_defined.py",
         "site/index.html",
@@ -35989,7 +36681,7 @@
     },
     {
       "job_id": "ratio-lens",
-      "ordinal": 76,
+      "ordinal": 77,
       "paths": [
         "engine/oracle/ratio_lens.py",
         "lib/__init__.py",
@@ -36004,7 +36696,7 @@
     },
     {
       "job_id": "hk-confirming-turn",
-      "ordinal": 77,
+      "ordinal": 78,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -36026,7 +36718,7 @@
     },
     {
       "job_id": "hk-cycle-ontology",
-      "ordinal": 78,
+      "ordinal": 79,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -36048,7 +36740,7 @@
     },
     {
       "job_id": "hk-leadership",
-      "ordinal": 79,
+      "ordinal": 80,
       "paths": [
         "engine/hk_leadership.py",
         "engine/hk_southbound_stocks.py",
@@ -36062,7 +36754,7 @@
     },
     {
       "job_id": "hk-context-chips",
-      "ordinal": 80,
+      "ordinal": 81,
       "paths": [
         "engine/__init__.py",
         "engine/hk_context_chips.py",
@@ -36076,7 +36768,7 @@
     },
     {
       "job_id": "hk-robustness-w5",
-      "ordinal": 81,
+      "ordinal": 82,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -36328,7 +37020,7 @@
     },
     {
       "job_id": "hk-integration-seams",
-      "ordinal": 82,
+      "ordinal": 83,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -36350,7 +37042,7 @@
     },
     {
       "job_id": "hkrv-w3-banner",
-      "ordinal": 83,
+      "ordinal": 84,
       "paths": [
         "engine/__init__.py",
         "engine/i18n.py",
@@ -36361,7 +37053,7 @@
     },
     {
       "job_id": "regen-hk-g1-fixture-guard",
-      "ordinal": 84,
+      "ordinal": 85,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -36386,7 +37078,7 @@
     },
     {
       "job_id": "basket-staleness-warn",
-      "ordinal": 85,
+      "ordinal": 86,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -36643,7 +37335,7 @@
     },
     {
       "job_id": "ftr-tape-surfaces",
-      "ordinal": 86,
+      "ordinal": 87,
       "paths": [
         "tests/test_ftr_w1_template_markup.py",
         "tests/test_ftr_w3_ui.py"
@@ -36652,7 +37344,7 @@
     },
     {
       "job_id": "live-flow-ops",
-      "ordinal": 87,
+      "ordinal": 88,
       "paths": [
         "collectors/__init__.py",
         "collectors/edgar.py",
@@ -36720,7 +37412,7 @@
     },
     {
       "job_id": "ird-substrate-engines",
-      "ordinal": 88,
+      "ordinal": 89,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -36966,7 +37658,7 @@
     },
     {
       "job_id": "itr-turn-rotation",
-      "ordinal": 89,
+      "ordinal": 90,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -36987,7 +37679,7 @@
     },
     {
       "job_id": "altdata-brain-govern",
-      "ordinal": 90,
+      "ordinal": 91,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -37117,7 +37809,7 @@
     },
     {
       "job_id": "nw-lobe-unfreeze",
-      "ordinal": 91,
+      "ordinal": 92,
       "paths": [
         "engine/__init__.py",
         "engine/basket_index.py",
@@ -37139,7 +37831,7 @@
     },
     {
       "job_id": "sa-w4-improvement-lanes",
-      "ordinal": 92,
+      "ordinal": 93,
       "paths": [
         "collectors/base.py",
         "collectors/fred.py",
@@ -37203,7 +37895,7 @@
     },
     {
       "job_id": "rc-r14-china-rotation-events",
-      "ordinal": 93,
+      "ordinal": 94,
       "paths": [
         "config/sector_legs.json",
         "config/sector_legs_china.json",
@@ -37230,7 +37922,7 @@
     },
     {
       "job_id": "codex-research-engine",
-      "ordinal": 94,
+      "ordinal": 95,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -37729,7 +38421,7 @@
     },
     {
       "job_id": "metab-throttle-ux",
-      "ordinal": 95,
+      "ordinal": 96,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -38216,7 +38908,7 @@
     },
     {
       "job_id": "admin-live-runs",
-      "ordinal": 96,
+      "ordinal": 97,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -38698,7 +39390,7 @@
     },
     {
       "job_id": "cbf-regime",
-      "ordinal": 97,
+      "ordinal": 98,
       "paths": [
         "engine/flow_regime.py",
         "engine/ird_velocity.py",
@@ -38711,7 +39403,7 @@
     },
     {
       "job_id": "ccw-w1-data-spine",
-      "ordinal": 98,
+      "ordinal": 99,
       "paths": [
         "collectors/base.py",
         "collectors/corp_bond_holdings.py",
@@ -38730,7 +39422,7 @@
     },
     {
       "job_id": "ccw-w2-gspread-engine",
-      "ordinal": 99,
+      "ordinal": 100,
       "paths": [
         "engine/corp_credit.py",
         "lib/__init__.py",
@@ -38742,7 +39434,7 @@
     },
     {
       "job_id": "ccw-w3-credit-momentum",
-      "ordinal": 100,
+      "ordinal": 101,
       "paths": [
         "collectors/base.py",
         "collectors/corp_bond_holdings.py",
@@ -38767,7 +39459,7 @@
     },
     {
       "job_id": "ccw-w4-credit-desk",
-      "ordinal": 101,
+      "ordinal": 102,
       "paths": [
         "collectors/base.py",
         "collectors/fred.py",
@@ -38806,7 +39498,7 @@
     },
     {
       "job_id": "ccw-w6-study-s1",
-      "ordinal": 102,
+      "ordinal": 103,
       "paths": [
         "lib/__init__.py",
         "lib/config.py",
@@ -38818,7 +39510,7 @@
     },
     {
       "job_id": "support-email-spine",
-      "ordinal": 103,
+      "ordinal": 104,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -39576,6 +40268,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -39639,7 +40332,7 @@
     },
     {
       "job_id": "billing-emails",
-      "ordinal": 104,
+      "ordinal": 105,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -39945,7 +40638,7 @@
     },
     {
       "job_id": "billing-offers",
-      "ordinal": 105,
+      "ordinal": 106,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -40253,7 +40946,7 @@
     },
     {
       "job_id": "site-gate",
-      "ordinal": 106,
+      "ordinal": 107,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -40736,7 +41429,7 @@
     },
     {
       "job_id": "pick-lab-liquidity",
-      "ordinal": 107,
+      "ordinal": 108,
       "paths": [
         "engine/__init__.py",
         "engine/canon.py",
@@ -40778,7 +41471,7 @@
     },
     {
       "job_id": "ric-w2-surface",
-      "ordinal": 108,
+      "ordinal": 109,
       "paths": [
         "engine/gex_engine.py",
         "engine/greeks.py",
@@ -40792,7 +41485,7 @@
     },
     {
       "job_id": "collect-identity",
-      "ordinal": 109,
+      "ordinal": 110,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -41096,7 +41789,7 @@
     },
     {
       "job_id": "research-vault",
-      "ordinal": 110,
+      "ordinal": 111,
       "paths": [
         "config/site_access.yml",
         "engine/research_vault/__init__.py",
@@ -41126,7 +41819,7 @@
     },
     {
       "job_id": "research-vault-api",
-      "ordinal": 111,
+      "ordinal": 112,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -41430,7 +42123,7 @@
     },
     {
       "job_id": "biocatalyst-serving",
-      "ordinal": 112,
+      "ordinal": 113,
       "paths": [
         "app/*",
         "collectors/*",
@@ -41522,7 +42215,7 @@
     },
     {
       "job_id": "biocatalyst-evidence",
-      "ordinal": 113,
+      "ordinal": 114,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -41850,7 +42543,7 @@
     },
     {
       "job_id": "biocatalyst-worker",
-      "ordinal": 114,
+      "ordinal": 115,
       "paths": [
         "collectors/biocatalyst/**",
         "config/**",
@@ -41872,7 +42565,7 @@
     },
     {
       "job_id": "biocatalyst-history",
-      "ordinal": 115,
+      "ordinal": 116,
       "paths": [
         "app/*",
         "collectors/*",
@@ -41918,7 +42611,7 @@
     },
     {
       "job_id": "biocatalyst-contracts",
-      "ordinal": 116,
+      "ordinal": 117,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -42289,7 +42982,7 @@
     },
     {
       "job_id": "biocatalyst-deploy-integration",
-      "ordinal": 117,
+      "ordinal": 118,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -43093,6 +43786,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -43147,7 +43841,7 @@
     },
     {
       "job_id": "biocatalyst-regulatory",
-      "ordinal": 118,
+      "ordinal": 119,
       "paths": [
         "collectors/biocatalyst/drugs_at_fda.py",
         "config/biocatalyst_sources.yml",
@@ -43182,7 +43876,7 @@
     },
     {
       "job_id": "marketing-social-publisher",
-      "ordinal": 119,
+      "ordinal": 120,
       "paths": [
         "admin/__init__.py",
         "admin/allies_store.py",
@@ -43497,7 +44191,7 @@
     },
     {
       "job_id": "marketing-media-pipeline",
-      "ordinal": 120,
+      "ordinal": 121,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -43723,7 +44417,7 @@
     },
     {
       "job_id": "marketing-engine",
-      "ordinal": 121,
+      "ordinal": 122,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -44374,7 +45068,7 @@
     },
     {
       "job_id": "marketing-scoring-optional",
-      "ordinal": 122,
+      "ordinal": 123,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -44610,7 +45304,7 @@
     },
     {
       "job_id": "marketing-data",
-      "ordinal": 123,
+      "ordinal": 124,
       "paths": [
         "admin/__init__.py",
         "admin/allies_store.py",
@@ -44945,7 +45639,7 @@
     },
     {
       "job_id": "publish-r2-client",
-      "ordinal": 124,
+      "ordinal": 125,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -45224,7 +45918,7 @@
     },
     {
       "job_id": "chart-render",
-      "ordinal": 125,
+      "ordinal": 126,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -45453,7 +46147,7 @@
     },
     {
       "job_id": "chart-render-data",
-      "ordinal": 126,
+      "ordinal": 127,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -45682,7 +46376,7 @@
     },
     {
       "job_id": "portfolio-ctx",
-      "ordinal": 127,
+      "ordinal": 128,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -46042,25 +46736,32 @@
     },
     {
       "job_id": "options-estate-guards",
-      "ordinal": 128,
+      "ordinal": 129,
       "paths": [
         "config/site_access.yml",
         "config/synapse.yml",
         "engine/__init__.py",
+        "engine/altdata.py",
+        "engine/altdata_models.py",
+        "engine/altdata_picks.py",
+        "engine/analyst_revisions.py",
         "engine/canon.py",
         "engine/china_regime_store.py",
         "engine/china_standout_track.py",
         "engine/conditions.py",
         "engine/cycles.py",
         "engine/flow_leaders.py",
+        "engine/gex_confirm.py",
         "engine/government_revenue/federation.py",
         "engine/government_revenue/freshness.py",
         "engine/grading.py",
+        "engine/greeks.py",
         "engine/htf_durability.py",
         "engine/htf_oscillators.py",
         "engine/i18n.py",
         "engine/indicators.py",
         "engine/market_structure_context.py",
+        "engine/neuralweb/__init__.py",
         "engine/neuralweb/_dates.py",
         "engine/neuralweb/_law.py",
         "engine/neuralweb/brief_context.py",
@@ -46076,6 +46777,11 @@
         "engine/neuralweb/support_map.py",
         "engine/neuralweb/synapse.py",
         "engine/neuralweb/world_state.py",
+        "engine/opex.py",
+        "engine/options_dislocation.py",
+        "engine/options_entry_state.py",
+        "engine/options_ivspread.py",
+        "engine/options_stamp.py",
         "engine/pick_lab/candidates.py",
         "engine/pick_lab/registry.py",
         "engine/regime_vector.py",
@@ -46085,7 +46791,9 @@
         "engine/signal_quality.py",
         "engine/systematic_flows.py",
         "engine/technicals.py",
+        "engine/ticker_shape.py",
         "engine/universe_history.py",
+        "engine/validation.py",
         "engine/vol_forecast.py",
         "engine/vol_regime.py",
         "lib/__init__.py",
@@ -46096,11 +46804,14 @@
         "lib/pages.py",
         "lib/seo.py",
         "lib/store.py",
+        "lib/ticker_aliases.py",
+        "scripts/__init__.py",
         "scripts/build_flow_leaders.py",
         "scripts/build_market_structure.py",
         "scripts/build_market_structure_page.py",
         "scripts/build_options_command.py",
         "scripts/build_options_screener.py",
+        "scripts/validate_gex.py",
         "site/altdata/mastermind.json",
         "site/basketdata/fear_greed.json",
         "site/basketdata/oracle_state.json",
@@ -46124,13 +46835,14 @@
         "tests/test_flow_leaders.py",
         "tests/test_market_structure.py",
         "tests/test_market_structure_nw.py",
+        "tests/test_options_gap_discipline.py",
         "tests/test_support_map.py"
       ],
-      "weight": 22
+      "weight": 24
     },
     {
       "job_id": "prelaunch-hardening",
-      "ordinal": 129,
+      "ordinal": 130,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -46440,7 +47152,7 @@
     },
     {
       "job_id": "free-content-estate",
-      "ordinal": 130,
+      "ordinal": 131,
       "paths": [
         "config/site_access.yml",
         "config/sparse_worktree.json",
@@ -46467,7 +47179,7 @@
     },
     {
       "job_id": "public-render-fastlane",
-      "ordinal": 131,
+      "ordinal": 132,
       "paths": [
         "config/plans.yml",
         "lib/__init__.py",
@@ -46491,7 +47203,7 @@
     },
     {
       "job_id": "press-lane",
-      "ordinal": 132,
+      "ordinal": 133,
       "paths": [
         "admin/__init__.py",
         "admin/paths.py",
@@ -46741,7 +47453,7 @@
     },
     {
       "job_id": "unrun-vector-dsr",
-      "ordinal": 133,
+      "ordinal": 134,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -47078,17 +47790,19 @@
         "tests/test_crypto_wave2.py",
         "tests/test_crypto_wave3.py",
         "tests/test_deflated_sharpe.py",
+        "tests/test_hub_alerts_explanation.py",
+        "tests/test_hub_market_card_labels.py",
         "tests/test_settled_close_tape.py",
         "tests/test_vector_catalyst.py",
         "tests/test_vector_forward_risk.py",
         "tests/test_vector_kelly.py",
         "tests/test_vector_timeline_gated.py"
       ],
-      "weight": 27
+      "weight": 31
     },
     {
       "job_id": "unrun-oracle-desk",
-      "ordinal": 134,
+      "ordinal": 135,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -47262,7 +47976,7 @@
     },
     {
       "job_id": "unrun-marketing-desk",
-      "ordinal": 135,
+      "ordinal": 136,
       "paths": [
         "app/deploy/marketing-press-feeds.service",
         "app/deploy/marketing-reply-desk.service",
@@ -47541,7 +48255,7 @@
     },
     {
       "job_id": "unrun-grading-board",
-      "ordinal": 136,
+      "ordinal": 137,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -47813,6 +48527,7 @@
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/grade_us_board.py",
         "scripts/thematic_rotation_phase0.py",
         "site/basketdata/fear_greed.json",
@@ -47835,6 +48550,7 @@
         "tests/test_board_tenure_stamp.py",
         "tests/test_claim_accountability.py",
         "tests/test_dashboard_template_render.py",
+        "tests/test_entry_status_stamping.py",
         "tests/test_grade_us_board.py",
         "tests/test_onboard_compare_matrix.py",
         "tests/test_track_record_dlg.py",
@@ -47842,14 +48558,15 @@
         "tests/test_us_board_ledger_continuity.py",
         "tests/test_us_board_outcomes.py",
         "tests/test_us_board_outcomes_strip.py",
+        "tests/test_us_board_price_basis_era.py",
         "tests/test_us_board_priority_ui.py",
         "tests/test_us_board_zero_accrual_alarm.py"
       ],
-      "weight": 23
+      "weight": 27
     },
     {
       "job_id": "unrun-intl-libraries",
-      "ordinal": 137,
+      "ordinal": 138,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -48367,7 +49084,7 @@
     },
     {
       "job_id": "unrun-data-plane",
-      "ordinal": 138,
+      "ordinal": 139,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -48518,6 +49235,7 @@
         "engine/llm_auth.py",
         "engine/long_hold_clocks.py",
         "engine/macro_surprise.py",
+        "engine/mag7_regime.py",
         "engine/manager_lag.py",
         "engine/manager_quality.py",
         "engine/manager_trades.py",
@@ -48672,6 +49390,7 @@
         "scripts/check_builder_failstreaks.py",
         "scripts/check_ledger_advance.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_surface_freshness.py",
         "scripts/fetch_finviz_themes.py",
         "scripts/fetch_r2.py",
@@ -48709,6 +49428,7 @@
         "tests/test_fetch_r2.py",
         "tests/test_finviz_archival.py",
         "tests/test_heal_subsector_rotation_ledgers.py",
+        "tests/test_mag7_events.py",
         "tests/test_notify_turn_events.py",
         "tests/test_polygon_intraday.py",
         "tests/test_stock_library_freshness.py",
@@ -48717,11 +49437,11 @@
         "tests/test_subsector_track_record.py",
         "tests/test_thetadata_tape_sessions.py"
       ],
-      "weight": 46
+      "weight": 48
     },
     {
       "job_id": "unrun-government-revenue",
-      "ordinal": 139,
+      "ordinal": 140,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -49414,7 +50134,7 @@
     },
     {
       "job_id": "unrun-government-revenue-candidate-projection",
-      "ordinal": 140,
+      "ordinal": 141,
       "paths": [
         "collectors/__init__.py",
         "collectors/base.py",
@@ -49467,7 +50187,7 @@
     },
     {
       "job_id": "unrun-factor-research",
-      "ordinal": 141,
+      "ordinal": 142,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -49713,7 +50433,7 @@
     },
     {
       "job_id": "unrun-serving-admin",
-      "ordinal": 142,
+      "ordinal": 143,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -50204,7 +50924,7 @@
     },
     {
       "job_id": "unrun-ops-workers",
-      "ordinal": 143,
+      "ordinal": 144,
       "paths": [
         "admin/static/app.js",
         "admin/static/styles.css",
@@ -50644,7 +51364,7 @@
     },
     {
       "job_id": "unrun-builders-render",
-      "ordinal": 144,
+      "ordinal": 145,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -50918,7 +51638,7 @@
     },
     {
       "job_id": "unrun-nav-chrome",
-      "ordinal": 145,
+      "ordinal": 146,
       "paths": [
         "app/deploy/update.sh",
         "collectors/__init__.py",
@@ -51450,6 +52170,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
         "scripts/check_start_runtime.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -51522,7 +52243,7 @@
     },
     {
       "job_id": "unrun-builders-stores",
-      "ordinal": 146,
+      "ordinal": 147,
       "paths": [
         "admin/__init__.py",
         "admin/actions.py",
@@ -51938,6 +52659,10 @@
         "engine/forward_calendar_context.py",
         "engine/forward_dist.py",
         "engine/froth_fragility.py",
+        "engine/fund_boards.py",
+        "engine/fund_followability.py",
+        "engine/fund_intelligence.py",
+        "engine/fund_memory.py",
         "engine/fundamental_forensics/attested_history_credentials.py",
         "engine/fundamental_forensics/attested_history_store.py",
         "engine/fundamental_forensics/attested_query_snapshots.py",
@@ -52002,6 +52727,15 @@
         "engine/indicators.py",
         "engine/indicators_m2.py",
         "engine/inputs.py",
+        "engine/insider_intel.py",
+        "engine/insider_power.py",
+        "engine/institutional_census/aggregate.py",
+        "engine/institutional_census/catalog.py",
+        "engine/institutional_census/models.py",
+        "engine/institutional_census/reconciliation.py",
+        "engine/institutional_census/research_bench.py",
+        "engine/institutional_census/sec_sources.py",
+        "engine/institutional_census/storage.py",
         "engine/intl_feed.py",
         "engine/intl_inputs.py",
         "engine/intl_market_state.py",
@@ -52024,6 +52758,7 @@
         "engine/macro_news.py",
         "engine/macro_surprise.py",
         "engine/macro_thesis.py",
+        "engine/manager_history.py",
         "engine/manager_lag.py",
         "engine/manager_quality.py",
         "engine/manager_trades.py",
@@ -52210,7 +52945,10 @@
         "engine/oracle/__init__.py",
         "engine/oracle/tilt.py",
         "engine/oracle/washout_counterread.py",
+        "engine/ownership_crowding.py",
         "engine/ownership_event_wire.py",
+        "engine/ownership_flow.py",
+        "engine/ownership_ledger.py",
         "engine/passport.py",
         "engine/path_personality.py",
         "engine/pick_lab/__init__.py",
@@ -52456,6 +53194,7 @@
         "scripts/build_free_content.py",
         "scripts/build_fundamental_forensics.py",
         "scripts/build_index_leadership.py",
+        "scripts/build_institutional_13f_census.py",
         "scripts/build_ipo.py",
         "scripts/build_live_overlay.py",
         "scripts/build_m2_profiles.py",
@@ -52469,6 +53208,7 @@
         "scripts/build_reports.py",
         "scripts/build_rr_banner.py",
         "scripts/build_site.py",
+        "scripts/build_smart_money.py",
         "scripts/build_sp500_heatmap.py",
         "scripts/build_spvector.py",
         "scripts/build_state_of_themes.py",
@@ -52489,6 +53229,7 @@
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/check_vps_live_health.py",
         "scripts/close_pass_mirror.py",
@@ -52568,6 +53309,8 @@
         "site/vol/regime.json",
         "templates/dashboard.html.j2",
         "templates/news.html.j2",
+        "templates/smart_money.html.j2",
+        "templates/theme.css",
         "tests/test_append_sync_gauge.py",
         "tests/test_audit_fred_groups.py",
         "tests/test_audit_massive_store.py",
@@ -52610,15 +53353,18 @@
         "tests/test_sf_harness_runner.py",
         "tests/test_slf031.py",
         "tests/test_slf051_cn_margin.py",
+        "tests/test_smart_money.py",
+        "tests/test_smart_money_census_surface.py",
+        "tests/test_smart_money_v3.py",
         "tests/test_tech_lab_cli.py",
         "tests/test_tech_parity_fixtures.py",
         "tests/test_vps_live_orchestration.py"
       ],
-      "weight": 99
+      "weight": 106
     },
     {
       "job_id": "unrun-site-surfaces",
-      "ordinal": 147,
+      "ordinal": 148,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -53063,6 +53809,7 @@
         "scripts/c4_reer_value.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_title_i18n.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -53094,6 +53841,7 @@
         "tests/test_c4_dollar.py",
         "tests/test_dashboard_template_render.py",
         "tests/test_factor_ic_panel.py",
+        "tests/test_inflation_units.py",
         "tests/test_macro_glance.py",
         "tests/test_macro_signals_vm.py",
         "tests/test_market_gamma.py",
@@ -53107,11 +53855,11 @@
         "tests/test_wiki_pageviews.py",
         "tests/test_wl1_board_state_surface.py"
       ],
-      "weight": 38
+      "weight": 40
     },
     {
       "job_id": "unrun-release-forecast",
-      "ordinal": 148,
+      "ordinal": 149,
       "paths": [
         "app/deploy/Caddyfile",
         "collectors/__init__.py",
@@ -53334,7 +54082,7 @@
     },
     {
       "job_id": "unrun-brain-desks",
-      "ordinal": 149,
+      "ordinal": 150,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -53525,7 +54273,7 @@
     },
     {
       "job_id": "unrun-register-honesty",
-      "ordinal": 150,
+      "ordinal": 151,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -54025,7 +54773,7 @@
     },
     {
       "job_id": "unrun-neuralweb-cortex",
-      "ordinal": 151,
+      "ordinal": 152,
       "paths": [
         "admin/__init__.py",
         "admin/neural_web.py",
@@ -54367,7 +55115,7 @@
     },
     {
       "job_id": "unrun-vector-baskets",
-      "ordinal": 152,
+      "ordinal": 153,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -54714,7 +55462,7 @@
     },
     {
       "job_id": "washout-turn-organ",
-      "ordinal": 153,
+      "ordinal": 154,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -55024,6 +55772,7 @@
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/grade_prophet_doors.py",
         "scripts/notify_turn_events.py",
         "scripts/oracle_nightly.py",
@@ -55063,7 +55812,7 @@
     },
     {
       "job_id": "prophet-anticipation-intake",
-      "ordinal": 154,
+      "ordinal": 155,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -55628,6 +56377,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -55679,7 +56429,7 @@
     },
     {
       "job_id": "coiled-mtf-anchor-era",
-      "ordinal": 155,
+      "ordinal": 156,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -55825,7 +56575,7 @@
     },
     {
       "job_id": "unrun-page-guards",
-      "ordinal": 156,
+      "ordinal": 157,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -56397,7 +57147,7 @@
     },
     {
       "job_id": "unrun-picks-boards",
-      "ordinal": 157,
+      "ordinal": 158,
       "paths": [
         "app/__init__.py",
         "app/mailer.py",
@@ -56460,6 +57210,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
         "scripts/check_title_i18n.py",
+        "scripts/exit_policy_study.py",
         "scripts/freshness_sentinel.py",
         "scripts/grade_bottom_calls.py",
         "scripts/grade_us_board.py",
@@ -56520,6 +57271,7 @@
         "tests/test_track_ledger_era.py",
         "tests/test_track_record_dlg.py",
         "tests/test_us_board_fail_closed_freshness.py",
+        "tests/test_us_board_grader_honesty.py",
         "tests/test_us_board_lanes.py",
         "tests/test_us_board_priority_ui.py",
         "tests/test_us_board_rank.py",
@@ -56532,7 +57284,7 @@
     },
     {
       "job_id": "prophet-us-context-and-grades",
-      "ordinal": 158,
+      "ordinal": 159,
       "paths": [
         "admin/__init__.py",
         "admin/allies_store.py",
@@ -56952,6 +57704,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_dag_conformance.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/export_signal_contracts.py",
         "scripts/externalize_css.py",
@@ -56959,6 +57712,7 @@
         "scripts/grade_us_board.py",
         "scripts/grade_us_prophet_candidates.py",
         "scripts/heal_candidates_archetype.py",
+        "scripts/heal_shallow_caches.py",
         "scripts/inject_data_base.py",
         "scripts/marketing_media_backfill.py",
         "scripts/marketing_publisher.py",
@@ -57004,13 +57758,14 @@
         "tests/test_us_context_vector.py",
         "tests/test_us_context_vector_payload_containment.py",
         "tests/test_us_entry_status_remeasure.py",
-        "tests/test_us_prophet_grades.py"
+        "tests/test_us_prophet_grades.py",
+        "tests/test_us_scan_tier.py"
       ],
-      "weight": 25
+      "weight": 27
     },
     {
       "job_id": "unrun-prophet-learning-loop",
-      "ordinal": 159,
+      "ordinal": 160,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -57182,12 +57937,13 @@
     },
     {
       "job_id": "unrun-intl-collectors",
-      "ordinal": 160,
+      "ordinal": 161,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
         "collectors/base.py",
         "collectors/breadth.py",
+        "collectors/canada_macro.py",
         "collectors/cboe.py",
         "collectors/cboe_indices.py",
         "collectors/china_analyst.py",
@@ -57222,6 +57978,7 @@
         "collectors/hk_names_zh.py",
         "collectors/hk_placements.py",
         "collectors/holdings.py",
+        "collectors/intl_macro.py",
         "collectors/ipo_calendar.py",
         "collectors/ipo_prospectus.py",
         "collectors/massive_flatfiles.py",
@@ -57854,6 +58611,7 @@
         "scripts/cctv_finalize_watcher.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/collect.py",
         "scripts/collect_nyfed_cmdi.py",
@@ -57937,6 +58695,7 @@
         "tests/test_build_earnings_scores_from_history.py",
         "tests/test_china_alpha_w3c_infra.py",
         "tests/test_china_fundamentals_collector.py",
+        "tests/test_collect_failfast.py",
         "tests/test_content_stamp_freshness.py",
         "tests/test_data_quality_audit.py",
         "tests/test_earnings_qual.py",
@@ -57948,11 +58707,11 @@
         "tests/test_hk_track_record_vm.py",
         "tests/test_housing_hf.py"
       ],
-      "weight": 30
+      "weight": 32
     },
     {
       "job_id": "unrun-russell-breadth",
-      "ordinal": 161,
+      "ordinal": 162,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -58269,7 +59028,7 @@
     },
     {
       "job_id": "unrun-brain-gateway",
-      "ordinal": 162,
+      "ordinal": 163,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -58578,7 +59337,7 @@
     },
     {
       "job_id": "unrun-macro-panels",
-      "ordinal": 163,
+      "ordinal": 164,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -58830,6 +59589,7 @@
         "templates/us_stocks_v2.html.j2",
         "tests/test_build_dispersion_regime.py",
         "tests/test_build_factor_panel.py",
+        "tests/test_commodities_ignition_copy.py",
         "tests/test_commodity_mtf_verdict_honesty.py",
         "tests/test_congress_score.py",
         "tests/test_context_risk.py",
@@ -58849,11 +59609,11 @@
         "tests/test_validation.py",
         "tests/test_whitehouse_build.py"
       ],
-      "weight": 42
+      "weight": 45
     },
     {
       "job_id": "unrun-market-plumbing",
-      "ordinal": 164,
+      "ordinal": 165,
       "paths": [
         "app/tape_symbols.py",
         "collectors/__init__.py",
@@ -59162,6 +59922,7 @@
         "engine/market_gamma.py",
         "engine/market_state.py",
         "engine/market_state_ca.py",
+        "engine/market_structure_context.py",
         "engine/master_brain.py",
         "engine/masterminds.py",
         "engine/metabolism/__init__.py",
@@ -59324,6 +60085,7 @@
         "engine/strategy_signals.py",
         "engine/subsector_scan.py",
         "engine/sue.py",
+        "engine/systematic_flows.py",
         "engine/t0_indicator.py",
         "engine/tape_flow.py",
         "engine/tape_flow_stamp.py",
@@ -59443,6 +60205,7 @@
         "scripts/build_levels_track_record.py",
         "scripts/build_live_overlay.py",
         "scripts/build_live_quotes.py",
+        "scripts/build_market_structure.py",
         "scripts/build_masterminds.py",
         "scripts/build_options_flow_attention.py",
         "scripts/build_options_hub_nightly.py",
@@ -59464,7 +60227,9 @@
         "scripts/build_vector.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_synapse_registry.py",
+        "scripts/ci/chain_snapshot_salvage.py",
         "scripts/ci/retry_daily_engine_setup_cancel.py",
         "scripts/complete_polygon_gex_session_stamps.py",
         "scripts/grade_thematic.py",
@@ -59512,12 +60277,14 @@
         "tests/test_attention_deterministic.py",
         "tests/test_build_live_quotes.py",
         "tests/test_cboe_chain_coverage.py",
+        "tests/test_chain_session_hole_disclosure.py",
         "tests/test_clinicaltrials_themes.py",
         "tests/test_daily_engine_setup_retry.py",
         "tests/test_event_priors.py",
         "tests/test_flow_desk.py",
         "tests/test_foresight_ledger_lane_gates.py",
         "tests/test_gex_archive_snapshot.py",
+        "tests/test_gex_board_session_date.py",
         "tests/test_gex_board_state_merge.py",
         "tests/test_gex_engine.py",
         "tests/test_gex_js_iv_rank_color.py",
@@ -59536,10 +60303,13 @@
         "tests/test_polygon_gex.py",
         "tests/test_polygon_gex_session_stamps.py",
         "tests/test_positioning_persistence.py",
+        "tests/test_prophet_arena_clock_parity.py",
         "tests/test_prophet_bridge.py",
         "tests/test_prophet_bridge_order_invariance.py",
         "tests/test_prophet_durable_checkpoint.py",
         "tests/test_prophet_earnings_split_brain.py",
+        "tests/test_prophet_overtime_horizon_reconciliation.py",
+        "tests/test_prophet_plan_clock.py",
         "tests/test_prophet_stage_shadow.py",
         "tests/test_prophet_stage_tilt.py",
         "tests/test_prophet_w1_intake_repair.py",
@@ -59560,7 +60330,7 @@
     },
     {
       "job_id": "unrun-publish-ops",
-      "ordinal": 165,
+      "ordinal": 166,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -59774,6 +60544,7 @@
         "engine/earnings_narrative/digest.py",
         "engine/earnings_narrative/extract.py",
         "engine/earnings_narrative/generation.py",
+        "engine/earnings_narrative/health.py",
         "engine/earnings_narrative/private_publication.py",
         "engine/earnings_narrative/promotion.py",
         "engine/earnings_narrative/public_wire.py",
@@ -60198,6 +60969,7 @@
         "scripts/check_board_contradictions.py",
         "scripts/check_price_store_freshness.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/check_template_site_sync.py",
         "scripts/demand_chain_phase0.py",
         "scripts/export_signal_contracts.py",
@@ -60216,9 +60988,11 @@
         "scripts/oracle_reversion_screen.py",
         "scripts/oracle_reversion_state.py",
         "scripts/oracle_screen.py",
+        "scripts/publish_earnings_evidence_graph_r2.py",
         "scripts/publish_earnings_r2.py",
         "scripts/publish_oracle_panels.py",
         "scripts/publish_r2.py",
+        "scripts/refresh_earnings_evidence_graph.py",
         "scripts/refresh_regime_if_stale.py",
         "scripts/report_importance_duel.py",
         "scripts/research/ptt_w1_persistence_of_fit.py",
@@ -60309,6 +61083,7 @@
         "tests/test_seo_foundation.py",
         "tests/test_signal_contracts_wiring.py",
         "tests/test_signal_sanity.py",
+        "tests/test_stocks_hub.py",
         "tests/test_ticker_dossier_render_lane.py",
         "tests/test_ticker_pages.py",
         "tests/test_ts_u1_session_date.py",
@@ -60318,11 +61093,11 @@
         "tests/test_world_state_migrations.py",
         "tools/earnings_worker/run_worker.py"
       ],
-      "weight": 59
+      "weight": 61
     },
     {
       "job_id": "unrun-inline-js-guard",
-      "ordinal": 166,
+      "ordinal": 167,
       "paths": [
         "scripts/__init__.py",
         "scripts/check_inline_js.py",
@@ -60332,7 +61107,7 @@
     },
     {
       "job_id": "unrun-import-hygiene",
-      "ordinal": 167,
+      "ordinal": 168,
       "paths": [
         "collectors/__init__.py",
         "collectors/base.py",
@@ -60571,7 +61346,7 @@
     },
     {
       "job_id": "price-basis-census",
-      "ordinal": 168,
+      "ordinal": 169,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -61018,6 +61793,7 @@
         "scripts/calibrate_bottom_radar.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/fetch_basket_extras.py",
         "scripts/fund_crowding_phase0.py",
         "scripts/grade_us_board.py",
@@ -61058,7 +61834,7 @@
     },
     {
       "job_id": "unrun-scoring-engine",
-      "ordinal": 169,
+      "ordinal": 170,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -61515,6 +62291,7 @@
         "scripts/build_themes_heatmap.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
         "scripts/notify.py",
@@ -61555,7 +62332,7 @@
     },
     {
       "job_id": "unrun-template-chips",
-      "ordinal": 170,
+      "ordinal": 171,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -61915,7 +62692,7 @@
     },
     {
       "job_id": "unrun-pit-probes",
-      "ordinal": 171,
+      "ordinal": 172,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -62279,6 +63056,7 @@
         "scripts/build_stock_library.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/research/freeze_pss_followon_gates.py",
         "scripts/research/pss_sr3_participation_feasibility.py",
         "scripts/research/ptt_w1_persistence_of_fit.py",
@@ -62303,7 +63081,7 @@
     },
     {
       "job_id": "unrun-dark-guards",
-      "ordinal": 172,
+      "ordinal": 173,
       "paths": [
         ".claude/hooks/gh_quota_guard.py",
         "lib/nyse_calendar.py",
@@ -62318,7 +63096,7 @@
     },
     {
       "job_id": "unrun-hk-board",
-      "ordinal": 173,
+      "ordinal": 174,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -62571,7 +63349,7 @@
     },
     {
       "job_id": "unrun-subsector-themes",
-      "ordinal": 174,
+      "ordinal": 175,
       "paths": [
         "collectors/base.py",
         "collectors/fda_shortages.py",
@@ -62600,7 +63378,7 @@
     },
     {
       "job_id": "ohlc-basis-coherence",
-      "ordinal": 175,
+      "ordinal": 176,
       "paths": [
         "config/sparse_worktree.json",
         "scripts/check_ohlc_basis_coherence.py",
@@ -62612,7 +63390,7 @@
     },
     {
       "job_id": "unrun-government-revenue-grader",
-      "ordinal": 176,
+      "ordinal": 177,
       "paths": [
         "app/*",
         "collectors/*",
@@ -62663,7 +63441,7 @@
     },
     {
       "job_id": "research-price-panel",
-      "ordinal": 177,
+      "ordinal": 178,
       "paths": [
         "research/prophet_us_audit/price_ladder.py",
         "research/research_panels/price_panel.py",
@@ -62673,7 +63451,7 @@
     },
     {
       "job_id": "zh-filing-term",
-      "ordinal": 178,
+      "ordinal": 179,
       "paths": [
         "collectors/bls_work_stoppages.py",
         "config/zh_filing_term_allowlist.json",
@@ -62688,7 +63466,7 @@
     },
     {
       "job_id": "earnings-release-identity",
-      "ordinal": 179,
+      "ordinal": 180,
       "paths": [
         "collectors/edgar_earnings_8k.py",
         "config/fundamental_forensics_disclosure_diff.v1.json",
@@ -62727,7 +63505,7 @@
     },
     {
       "job_id": "market-memory-contract",
-      "ordinal": 180,
+      "ordinal": 181,
       "paths": [
         "app/__init__.py",
         "app/account_prefs.py",
@@ -63488,6 +64266,7 @@
         "scripts/capture_market_memory_technicals.py",
         "scripts/check_board_contradictions.py",
         "scripts/check_signal_gate_coherence.py",
+        "scripts/check_stretch_oracle_contract.py",
         "scripts/ci/options_signal_nightly.sh",
         "scripts/close_pass_publish.py",
         "scripts/close_pass_reconcile.py",
@@ -63576,7 +64355,7 @@
     },
     {
       "job_id": "group-pulse",
-      "ordinal": 181,
+      "ordinal": 182,
       "paths": [
         "collectors/edgar.py",
         "collectors/edgar_deadname_prices.py",
@@ -63627,7 +64406,7 @@
     },
     {
       "job_id": "group-read-surface",
-      "ordinal": 182,
+      "ordinal": 183,
       "paths": [
         "collectors/edgar.py",
         "collectors/edgar_deadname_prices.py",
@@ -63679,7 +64458,7 @@
     },
     {
       "job_id": "group-earnings-pulse",
-      "ordinal": 183,
+      "ordinal": 184,
       "paths": [
         "collectors/edgar.py",
         "collectors/edgar_deadname_prices.py",
@@ -63714,7 +64493,7 @@
     },
     {
       "job_id": "group-linked-outsiders",
-      "ordinal": 184,
+      "ordinal": 185,
       "paths": [
         "collectors/__init__.py",
         "collectors/base.py",
@@ -63779,7 +64558,7 @@
     },
     {
       "job_id": "falsifier-tripwires",
-      "ordinal": 185,
+      "ordinal": 186,
       "paths": [
         "collectors/__init__.py",
         "collectors/_drip.py",
@@ -64163,7 +64942,7 @@
     },
     {
       "job_id": "options-nbbo-cohort",
-      "ordinal": 186,
+      "ordinal": 187,
       "paths": [
         "config/dag.yml",
         "contracts/options/options.prospective_nbbo_cohort.v1.schema.json",
@@ -64184,7 +64963,7 @@
     },
     {
       "job_id": "product-experience-registry",
-      "ordinal": 187,
+      "ordinal": 188,
       "paths": [
         "config/product_experience/page_registry_overrides.yml",
         "config/sparse_worktree.json",
@@ -64218,7 +64997,7 @@
     },
     {
       "job_id": "product-experience-capture",
-      "ordinal": 188,
+      "ordinal": 189,
       "paths": [
         "scripts/capture_page_evidence.py",
         "tests/test_capture_page_evidence.py"
@@ -64227,7 +65006,7 @@
     },
     {
       "job_id": "momoedge-browser-observe",
-      "ordinal": 189,
+      "ordinal": 190,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -64248,7 +65027,7 @@
     },
     {
       "job_id": "mastermindx-selector-capture-attestation",
-      "ordinal": 190,
+      "ordinal": 191,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -64265,7 +65044,7 @@
     },
     {
       "job_id": "reference-integrity",
-      "ordinal": 191,
+      "ordinal": 192,
       "paths": [
         "config/product_experience/page_registry_overrides.yml",
         "research/reference_integrity/prophet-board-5514-r3/continuity.yml",
@@ -64276,7 +65055,7 @@
     },
     {
       "job_id": "dataos-foundation",
-      "ordinal": 192,
+      "ordinal": 193,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -64306,7 +65085,7 @@
     },
     {
       "job_id": "dataos-identity-seams",
-      "ordinal": 193,
+      "ordinal": 194,
       "paths": [
         ".github/ci/legacy-jobs.yml",
         ".github/workflows/ci.yml",
@@ -64396,7 +65175,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "902d721dee35c6bebdae1d59532d8f07d3bc332208759b1e954510aee5cde8e5"
+    "sha256": "cd7b82f968a650ed87c0b9eaff1c45dba7d90f31ba69a1f00a37371d1cb45344"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
@@ -64418,7 +65197,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2218,
+    "candidate_count": 2266,
     "candidates": [
       {
         "path": ".claude",
@@ -65025,6 +65804,10 @@
         "present": true
       },
       {
+        "path": "config/entry_radar.yml",
+        "present": true
+      },
+      {
         "path": "config/evidence_clock.yml",
         "present": true
       },
@@ -65118,6 +65901,10 @@
       },
       {
         "path": "config/institutional_13f.yml",
+        "present": true
+      },
+      {
+        "path": "config/intelligence_registry_overlay.yml",
         "present": true
       },
       {
@@ -66145,6 +66932,10 @@
         "present": true
       },
       {
+        "path": "engine/c.py",
+        "present": false
+      },
+      {
         "path": "engine/calibration_hub.py",
         "present": true
       },
@@ -66215,6 +67006,10 @@
       {
         "path": "engine/china_standout_track.py",
         "present": true
+      },
+      {
+        "path": "engine/chip.py",
+        "present": false
       },
       {
         "path": "engine/close_pass",
@@ -66329,6 +67124,10 @@
         "present": true
       },
       {
+        "path": "engine/d.py",
+        "present": false
+      },
+      {
         "path": "engine/dannytrades_chip.py",
         "present": true
       },
@@ -66370,6 +67169,10 @@
       },
       {
         "path": "engine/does_not_exist.py",
+        "present": false
+      },
+      {
+        "path": "engine/e.py",
         "present": false
       },
       {
@@ -66417,12 +67220,20 @@
         "present": true
       },
       {
+        "path": "engine/earnings_transcript_intake.py",
+        "present": true
+      },
+      {
         "path": "engine/edgar_phrase_velocity.py",
         "present": true
       },
       {
         "path": "engine/entity_resolver.py",
         "present": true
+      },
+      {
+        "path": "engine/entry_radar",
+        "present": false
       },
       {
         "path": "engine/entry_signal.py",
@@ -66489,6 +67300,14 @@
         "present": true
       },
       {
+        "path": "engine/feed.py",
+        "present": false
+      },
+      {
+        "path": "engine/fixture_gate.py",
+        "present": false
+      },
+      {
         "path": "engine/flare_persistence.py",
         "present": true
       },
@@ -66538,6 +67357,14 @@
       },
       {
         "path": "engine/fundamentals.py",
+        "present": false
+      },
+      {
+        "path": "engine/g.py",
+        "present": false
+      },
+      {
+        "path": "engine/gate.py",
         "present": false
       },
       {
@@ -66658,6 +67485,10 @@
       },
       {
         "path": "engine/intel_hub.py",
+        "present": true
+      },
+      {
+        "path": "engine/intelligence_registry.py",
         "present": true
       },
       {
@@ -67073,6 +67904,10 @@
         "present": true
       },
       {
+        "path": "engine/mtf_upturn.py",
+        "present": true
+      },
+      {
         "path": "engine/my_sensor.py",
         "present": false
       },
@@ -67429,6 +68264,10 @@
         "present": true
       },
       {
+        "path": "engine/options_sparse_selector.py",
+        "present": true
+      },
+      {
         "path": "engine/options_stamp.py",
         "present": true
       },
@@ -67486,6 +68325,10 @@
       },
       {
         "path": "engine/price_ladder.py",
+        "present": true
+      },
+      {
+        "path": "engine/private_auth_dict.py",
         "present": true
       },
       {
@@ -67873,6 +68716,10 @@
         "present": true
       },
       {
+        "path": "engine/this_module_does_not_exist_anywhere.py",
+        "present": false
+      },
+      {
         "path": "engine/til_sensor.py",
         "present": false
       },
@@ -67965,7 +68812,15 @@
         "present": false
       },
       {
+        "path": "engine/x_ledger.py",
+        "present": false
+      },
+      {
         "path": "engine/z.py",
+        "present": false
+      },
+      {
+        "path": "engine/zz.py",
         "present": false
       },
       {
@@ -67975,6 +68830,10 @@
       {
         "path": "lib/__init__.py",
         "present": true
+      },
+      {
+        "path": "lib/a.dylib",
+        "present": false
       },
       {
         "path": "lib/ai_costs.py",
@@ -67991,6 +68850,38 @@
       {
         "path": "lib/delisted_symbols.py",
         "present": true
+      },
+      {
+        "path": "lib/libescape.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libneeded.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libowner.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libpython3.12.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libtarget.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libunrelated.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libz.1.3.2.dylib",
+        "present": false
+      },
+      {
+        "path": "lib/libz.1.dylib",
+        "present": false
       },
       {
         "path": "lib/mastermind_response_log.py",
@@ -68011,6 +68902,10 @@
       {
         "path": "lib/project_runtime_state.py",
         "present": true
+      },
+      {
+        "path": "lib/python3.12",
+        "present": false
       },
       {
         "path": "lib/seo.py",
@@ -68083,6 +68978,10 @@
       {
         "path": "ops/launchd/com.mastermind.optionsnbbocohort.plist",
         "present": true
+      },
+      {
+        "path": "ops/launchd/com.mastermind.optionssparseselector.plist",
+        "present": false
       },
       {
         "path": "ops/launchd/com.mastermind.prophetmarks.plist",
@@ -68313,12 +69212,20 @@
         "present": true
       },
       {
+        "path": "research/P.md",
+        "present": false
+      },
+      {
         "path": "research/PICK_FORWARD_DIST_PHASE0.md",
         "present": true
       },
       {
         "path": "research/PICK_FORWARD_DIST_PHASE1_HAR.md",
         "present": true
+      },
+      {
+        "path": "research/PREREG.md",
+        "present": false
       },
       {
         "path": "research/PROPHET_ARENA_REGISTRATION.md",
@@ -68402,6 +69309,10 @@
       },
       {
         "path": "research/UNOWNED_HANDOFF.md",
+        "present": false
+      },
+      {
+        "path": "research/UNRELATED_DISPLAY_NOTE.md",
         "present": false
       },
       {
@@ -68862,6 +69773,10 @@
       },
       {
         "path": "research/locator_test.md",
+        "present": false
+      },
+      {
+        "path": "research/lol_does_not_exist_anywhere.md",
         "present": false
       },
       {
@@ -69597,6 +70512,10 @@
         "present": true
       },
       {
+        "path": "scripts/build_intelligence_registry.py",
+        "present": true
+      },
+      {
         "path": "scripts/build_intl.py",
         "present": true
       },
@@ -69809,6 +70728,10 @@
         "present": true
       },
       {
+        "path": "scripts/build_whitehouse.py",
+        "present": true
+      },
+      {
         "path": "scripts/build_winner_health_page.py",
         "present": true
       },
@@ -69945,6 +70868,10 @@
         "present": true
       },
       {
+        "path": "scripts/check_intelligence_registry.py",
+        "present": true
+      },
+      {
         "path": "scripts/check_nightly_liveness.py",
         "present": true
       },
@@ -69982,6 +70909,10 @@
       },
       {
         "path": "scripts/check_start_runtime.py",
+        "present": true
+      },
+      {
+        "path": "scripts/check_stretch_oracle_contract.py",
         "present": true
       },
       {
@@ -70341,6 +71272,10 @@
         "present": true
       },
       {
+        "path": "scripts/grade_x.py",
+        "present": false
+      },
+      {
         "path": "scripts/group_flow_validation.py",
         "present": true
       },
@@ -70678,6 +71613,10 @@
       },
       {
         "path": "scripts/reconcile_prophet_live.py",
+        "present": true
+      },
+      {
+        "path": "scripts/refresh_earnings_evidence_graph.py",
         "present": true
       },
       {
@@ -71153,6 +72092,10 @@
         "present": false
       },
       {
+        "path": "site/b.so",
+        "present": false
+      },
+      {
         "path": "site/bar.html",
         "present": false
       },
@@ -71359,6 +72302,10 @@
       {
         "path": "site/chinastatedata/policy_transmission.json",
         "present": true
+      },
+      {
+        "path": "site/chip.json",
+        "present": false
       },
       {
         "path": "site/clean.html",
@@ -71613,6 +72560,10 @@
         "present": true
       },
       {
+        "path": "site/factordata/x.json",
+        "present": false
+      },
+      {
         "path": "site/feeds/risk_radar.json",
         "present": false
       },
@@ -71659,6 +72610,10 @@
       {
         "path": "site/forex.html",
         "present": true
+      },
+      {
+        "path": "site/g.json",
+        "present": false
       },
       {
         "path": "site/gamma.html",
@@ -71773,6 +72728,10 @@
         "present": true
       },
       {
+        "path": "site/libowner.dylib",
+        "present": false
+      },
+      {
         "path": "site/live",
         "present": false
       },
@@ -71830,6 +72789,10 @@
       },
       {
         "path": "site/macrodata/release_forecast_fixture_v2.json",
+        "present": false
+      },
+      {
+        "path": "site/manual.json",
         "present": false
       },
       {
@@ -72193,6 +73156,10 @@
         "present": true
       },
       {
+        "path": "site/prophet/states",
+        "present": false
+      },
+      {
         "path": "site/prophet/turn_watch.json",
         "present": false
       },
@@ -72251,6 +73218,10 @@
       {
         "path": "site/rr_banner.json",
         "present": true
+      },
+      {
+        "path": "site/s.json",
+        "present": false
       },
       {
         "path": "site/scratch_from_a_test",
