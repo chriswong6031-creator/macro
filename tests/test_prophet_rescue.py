@@ -134,6 +134,51 @@ def dispatched(actions) -> bool:
     return any(a.kind == RESCUE.DISPATCH for a in actions)
 
 
+def _module_ast() -> ast.Module:
+    return ast.parse(SCRIPT.read_text(encoding="utf-8"))
+
+
+def _docstrings(tree: ast.Module) -> set[str]:
+    out = set()
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Module, ast.FunctionDef, ast.AsyncFunctionDef,
+                             ast.ClassDef)):
+            doc = ast.get_docstring(node, clean=False)
+            if doc is not None:
+                out.add(doc)
+    return out
+
+
+def _url_templates() -> set[str]:
+    """Every URL the module can build, f-string holes rendered as ``{expr}``.
+
+    Whole f-strings are unparsed as one unit and their constant fragments are then
+    skipped, so ``"https://…/repos/" + repo + "/issues"`` cannot smuggle an endpoint
+    past the census as three innocuous pieces.
+    """
+    tree = _module_ast()
+    docs = _docstrings(tree)
+    joined = [n for n in ast.walk(tree) if isinstance(n, ast.JoinedStr)]
+    inner = {id(sub) for j in joined for sub in ast.walk(j) if sub is not j}
+
+    urls: set[str] = set()
+    for node in ast.walk(tree):
+        if id(node) in inner:
+            continue
+        if isinstance(node, ast.JoinedStr):
+            text = ast.unparse(node)
+            text = text[2:-1] if text.startswith(("f'", 'f"')) else text
+        elif isinstance(node, ast.Constant) and isinstance(node.value, str):
+            if node.value in docs:
+                continue
+            text = node.value
+        else:
+            continue
+        if text.startswith("http"):
+            urls.add(text)
+    return urls
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # calendar anchoring — §0.3
 # ─────────────────────────────────────────────────────────────────────────────
@@ -482,17 +527,42 @@ def test_no_stop_run_code_path_exists():
 
 
 def test_the_only_pipeline_write_is_a_dispatch():
-    """Companion to the pin above: enumerate every URL this module can POST to, and
-    assert the only Actions endpoint among them starts work rather than stopping it."""
-    source = SCRIPT.read_text(encoding="utf-8")
-    actions_endpoints = set(re.findall(r"/actions/[a-z/{}_.\-]+", source))
-    assert actions_endpoints == {
-        "/actions/workflows/{repo}/actions/workflows/",   # f-string fragment artifact
-    } or all(
-        not ep.rstrip("/").endswith(("cancel", "force-cancel"))
-        for ep in actions_endpoints
-    ), f"unexpected Actions endpoints: {sorted(actions_endpoints)}"
-    assert "/dispatches" in source
+    """Companion to the pin above, from the other direction: enumerate EVERY URL
+    this module can construct and assert the whole network surface is the intended
+    one. A new endpoint of any kind reds this test — including a stop-run one, which
+    the AST pin above would also catch, and including a paginated read, which is how
+    the shared 5,000/hr REST pool was emptied on 2026-07-26."""
+    surface = _url_templates()
+    assert surface, "the URL census matched nothing — the extractor is broken"
+
+    github = {u for u in surface if "api.github.com" in u}
+    paths = {u.split("/repos/{repo}", 1)[1] for u in github}
+    assert paths == {
+        "/contents/site/prophet/index.json?ref=main",
+        "/actions/workflows/{WORKFLOW_FILE}/runs?per_page={RUNS_PER_PAGE}",
+        "/actions/workflows/{WORKFLOW_FILE}/runs"
+        "?event=workflow_dispatch&per_page={RUNS_PER_PAGE}&created={created}",
+        "/actions/workflows/{WORKFLOW_FILE}/dispatches",
+        "/labels",
+        "/issues?labels={urllib.parse.quote(ISSUE_LABEL)}&state=open&per_page=50",
+        "/issues",
+        "/issues/{number}/comments",
+    }, f"the GitHub surface changed: {sorted(paths)}"
+
+    writes = {p for p in paths if p.startswith("/actions/") and "?" not in p}
+    assert writes == {"/actions/workflows/{WORKFLOW_FILE}/dispatches"}, (
+        f"the only write to the pipeline may be a dispatch, saw {sorted(writes)}"
+    )
+    for url in surface:
+        assert "cancel" not in url.lower(), f"a stop-run URL appeared: {url}"
+        assert "&page=" not in url and "?page=" not in url, (
+            f"pagination in {url} — one page per wake, always"
+        )
+    assert {u for u in surface if "api.github.com" not in u} == {
+        RESCUE.R2_INDEX_URL,
+        RESCUE.VPS_STATUS_URL,
+        "https://api.telegram.org/bot{tg_token}/sendMessage",
+    }, "an unexpected external host appeared"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
