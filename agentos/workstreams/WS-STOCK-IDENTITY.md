@@ -28,6 +28,7 @@ waves:
   - id: W0
     title: PR-0 archaeology + frozen research contract (docs only)
     status: in_progress
+    pr: 5583
     next_action: >
       Merge via merge-on-green sweeper. Stop condition: no build wave launches from the
       PR-0 session; W1 starts only after Sol/operator rules on masterplan §16.
@@ -44,11 +45,11 @@ waves:
     status: todo
     depends_on: [W2]
   - id: W4
-    title: Fit read #1 on pilot — registered Q1-Q4, nulls, plateau, red-team, GO/NO-GO readout
+    title: Epoch detector v1 (synthetic calibration, PIT/final duality) — before the fit read
     status: todo
     depends_on: [W3]
   - id: W5
-    title: Epoch detector v1 + fingerprint v1
+    title: Fit read #1 (pilot + blind) — power gate, Q1-Q3 graded, Q4 descriptive, red-team, §14.1 consequence matrix
     status: todo
     depends_on: [W4]
   - id: W6
