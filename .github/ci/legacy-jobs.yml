@@ -597,6 +597,18 @@ jobs:
       # this job's install string is already proven sufficient for both.
       - name: forensic detector cross-pin (three implementations, one detector id)
         run: python -m pytest tests/test_forensic_detector_crosspin.py -q
+      # Live Entry Radar W1 (PR-1, 2026-08-14): the probe-universe funnel + enlistment-bus
+      # contracts (engine/entry_radar/**) — frozen nomination schema, no-flattening bus,
+      # layer A-D assembly, prospective spool, missing≠negative retention, and the
+      # Prophet-clean-diff guard. Registered HERE and not in a new job: the suites are
+      # HERMETIC (synthetic fixtures only, zero third-party imports — pure stdlib, no
+      # pandas/no boto3, verified by import audit), so they ride this job's existing
+      # install line with no new wheel; and this job already owns the adjacent
+      # signal-layer contract surface the Radar seam feeds (entry_event.v1 lands beside
+      # the §7 contract at Radar PR-2). Cost: 93 tests in ~7s steady-state. Radar earns
+      # its own job when the live evaluator lands (PR-4), not before.
+      - name: entry-radar W1 — probe universe funnel + enlistment bus contracts
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
