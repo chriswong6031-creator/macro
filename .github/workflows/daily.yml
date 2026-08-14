@@ -2314,6 +2314,11 @@ jobs:
           exact = {
               "site/prophet/index.json",
               "site/prophet/showcase.json",
+              # G-D board read: the ticker-keyed spark bodies that
+              # index.json plans[].board_read.fields.spark reference. Build-owned
+              # like showcase.json; without this entry the artifact is
+              # runner-local and the references resolve to nothing on main.
+              "site/prophet/board_read_sparks.json",
               "data/prophet/ledger.jsonl",
               "data/prophet/ledger_quarantine.json",
               "data/prophet_arena/scoreboard.json",
@@ -2531,6 +2536,11 @@ jobs:
           exact = {
               "site/prophet/index.json",
               "site/prophet/showcase.json",
+              # G-D board read: the ticker-keyed spark bodies that
+              # index.json plans[].board_read.fields.spark reference. Build-owned
+              # like showcase.json; without this entry the artifact is
+              # runner-local and the references resolve to nothing on main.
+              "site/prophet/board_read_sparks.json",
               "data/prophet/ledger.jsonl",
               "data/prophet/ledger_quarantine.json",
               "data/prophet_arena/scoreboard.json",
@@ -2694,6 +2704,7 @@ jobs:
             esac
             case "$rel" in
               site/prophet/index.json|site/prophet/showcase.json|\
+              site/prophet/board_read_sparks.json|\
               data/prophet/ledger.jsonl|data/prophet/ledger_quarantine.json|\
               data/prophet_arena/scoreboard.json|\
               data/prophet/origination_receipts/*.json|\

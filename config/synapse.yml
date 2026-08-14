@@ -15278,7 +15278,9 @@ artifacts:
     consumers:
       - scripts/build_options_signal_episode.py
       - scripts/audit_options_market_memory_context.py
+      - scripts/audit_options_episode_outcome_coverage.py
       - engine/options_signal_campaign.py
+      - engine/options_episode_coverage.py
     external_consumers: []
     notes: >
       Append-only H+60 research outcomes keyed to immutable option-flow episodes.
@@ -15292,6 +15294,16 @@ artifacts:
       terminal session-boundary gaps are recorded incomplete. Option PnL stays
       unavailable until an executable bid/ask quote path exists. All decision
       authority remains false and only the nightly lane may append rows.
+      NOT THE EPISODE POPULATION — read with the coverage census. Pending rows
+      are never appended, so an episode that never resolves never appears here
+      at all. Measured 2026-08-13: 237 of 1,206 episodes (19.7%) carry no row.
+      223 of those are 26 tickers outside the intraday price universe whose
+      "retryable" pending can never actually succeed, so the labelled set is
+      biased toward deep-history mega-caps and away from recent high-beta
+      listings. Bound and classify with
+      scripts/audit_options_episode_outcome_coverage.py before computing any
+      cross-sectional statistic; ruling in research/options_estate/
+      OPTIONS_EPISODE_OUTCOME_COVERAGE_ADJUDICATION_2026-08-13.md.
 
   options-signal-episode-session-outcomes:
     path: data/options_signal_episode/outcomes_session.jsonl

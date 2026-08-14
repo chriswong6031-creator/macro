@@ -450,7 +450,7 @@
     // Keep the dynamic dependency cache-safe too. theme.js itself is
     // content-hashed in every page; this explicit release key prevents a
     // year-cached account.js from pinning an older navigation loader.
-    s.src = pfx + 'account.js?v=20260812-ui-audit-ink-grades'; s.async = true;
+    s.src = pfx + 'account.js?v=20260814-sf-inter-font-upgrade'; s.async = true;
     document.head.appendChild(s);
   })();
 
@@ -4007,7 +4007,7 @@
     /* frosted glass — matches the --glass-* dropdown system in theme.css; written
        inline (with --x,--y fallbacks) so the self-contained vector family, which
        never loads theme.css, gets the identical glass on its gear popover too. */
-    '.settings-pop{position:absolute;top:calc(100% + 9px);right:0;z-index:100000;width:min(340px,calc(100vw - 20px));box-sizing:border-box;background:color-mix(in srgb,var(--panel,var(--card)) 76%,transparent);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border:1px solid color-mix(in srgb,var(--text,#e7ecf6) 16%,transparent);border-radius:16px;box-shadow:0 24px 64px -18px rgba(3,7,18,.62),0 8px 22px -10px rgba(3,7,18,.4),inset 0 1px 0 color-mix(in srgb,var(--text,#fff) 9%,transparent);padding:13px;transform-origin:top right;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.97);transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s linear .2s;font-family:Inter,-apple-system,"Segoe UI",Roboto,sans-serif}',
+    '.settings-pop{position:absolute;top:calc(100% + 9px);right:0;z-index:100000;width:min(340px,calc(100vw - 20px));box-sizing:border-box;background:color-mix(in srgb,var(--panel,var(--card)) 76%,transparent);-webkit-backdrop-filter:saturate(180%) blur(22px);backdrop-filter:saturate(180%) blur(22px);border:1px solid color-mix(in srgb,var(--text,#e7ecf6) 16%,transparent);border-radius:16px;box-shadow:0 24px 64px -18px rgba(3,7,18,.62),0 8px 22px -10px rgba(3,7,18,.4),inset 0 1px 0 color-mix(in srgb,var(--text,#fff) 9%,transparent);padding:13px;transform-origin:top right;opacity:0;visibility:hidden;pointer-events:none;transform:translateY(-8px) scale(.97);transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s linear .2s;font-family:var(--font-ui,Inter,-apple-system,"Segoe UI",Roboto,sans-serif)}',
     '.settings-pop.open{opacity:1;visibility:visible;pointer-events:auto;transform:none;transition:opacity .16s ease,transform .2s cubic-bezier(.32,1.3,.5,1),visibility 0s}',
     /* HOVER DROPDOWN (desktop): the gear now opens on hover like the top-nav .nav-dd
        menus — hovering it (or keyboard-focusing into the wrapper) reveals the panel

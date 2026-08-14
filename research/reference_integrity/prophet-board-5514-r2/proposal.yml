@@ -1,0 +1,271 @@
+# Proposal ledger — REVISED Prophet Board reference (PR #5514 head 0fc975a, G-C
+# correction pass 2026-08-13). Fresh cycle: dispositions recorded exactly as this
+# artifact treats each baseline capability, evidence-cited to the frozen files.
+# Where the artifact still leaves a baseline capability without a treatment, NO
+# row exists — the checker derives the omission; nothing is papered over.
+schema: mastermind.rig_proposal.v1
+reference_id: prophet-board-5514-r2
+
+proposed_artifact:
+  frozen_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+  source_pr: 5514
+  note: "third revision, MERGEABLE head at freeze; 'G-C correction pass — sourced badges, restored card grammar, enriched reference'"
+  paths:
+    - research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/index.html
+    - research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/board.css
+    - research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/board.js
+    - research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/board-data.js
+    - research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/compare.html
+    - research/reference_integrity/prophet-board-5514-r2/evidence/revised_0fc975a/DESIGN_NOTES.md
+  screenshots:
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/00-FREEZE-dark-en.png, viewport: desktop, theme: dark, locale: en, note: canonical reference view (state=paid)}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/00-FREEZE-dark-en--full.png, viewport: desktop, theme: dark, locale: en, note: full-page rhythm}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/00-FREEZE-light-zh.png, viewport: desktop, theme: light, locale: zh}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/01-desktop-dark-en.png, viewport: desktop, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/03-desktop-dark-zh.png, viewport: desktop, theme: dark, locale: zh}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/05-mobile390-dark-en.png, viewport: mobile390, theme: dark, locale: en}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/08-today-actual-dark-en.png, viewport: desktop, theme: dark, locale: en, note: honesty state — actual payload incl. 60% no-read}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/10-fallback-dark-en.png, viewport: desktop, theme: dark, locale: en, note: un-enriched degraded card lens}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/70-compare-dark-en.png, viewport: desktop, theme: dark, locale: en, note: three-way card adjudication (production · v1 · revised)}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/71-compare-light-en.png, viewport: desktop, theme: light, locale: en, note: three-way adjudication}
+    - {path: mockups/refs/reference_integrity/prophet-board-5514-r2/proposal/72-compare-dark-zh.png, viewport: desktop, theme: dark, locale: zh, note: three-way adjudication, zh flip}
+
+# ── Dispositions ───────────────────────────────────────────────────────────────
+# Baseline ids with NO row: card.caution_popover — the ⚠N risk ledger has no
+# carrier in the revised card (board.js card() 279-385 renders stance/trigger/
+# quote/chart/identity/priority/marks/lifecycle/zone; no caution chip, no
+# caution popover; DESIGN_NOTES never dispositions it). Founding PRC-003 stands.
+dispositions:
+  - id: card.chart_hero
+    disposition: BLOCKED_DATA
+    rationale: >
+      Restored as the card's hero at shipped height (74px, spark zone band, verb-hue
+      recolour law restored — board.js:293-295, DESIGN_NOTES §1 'Preserved from
+      production'); coverage remains partial: spark_svg arrives via the candidate join
+      on 45/179 rows; un-enriched rows render a quiet .pv-nochart slot.
+    dependency: "per-plan enrichment block on index.json.plans[] keyed by ticker over the full plan book (name/sector/lane/spark) — today 45/179 (DESIGN_NOTES §6 Q1)"
+    escalation: "spawn gate G-D minted in DESIGN_NOTES §7 (operator-ruled 2026-08-13: hard implementation dependency before MP-1 production migration, 'not another reason to weaken the reference'); PR #5514 body carries the gate table"
+    interim: "state=fallback lens committed (crops 10-12) so the degraded card is reviewable: it still answers ticker, stance, priority, lifecycle, zone, date; state=paid renders only contract-met rows (33) as the canonical reference view"
+
+  - id: card.live_quote
+    disposition: RETAIN
+    target: "unconditional quote slot overlaid top-right of the chart (board.js:319-333) — .nb-px[data-sym] node EXISTS on every card so live.js hydrates 100% of rows; un-hydrated reads an em dash exactly as the shipped card server-renders"
+
+  - id: card.live_change
+    disposition: RETAIN
+    target: >
+      .nb-chg pill beside the quote, direction ink (the one place direction ink
+      appears on the card), zh flip pinned by verify G2-G4. Crop values are a
+      disclosed deterministic demo overlay marked data-mock-live (DESIGN_NOTES §6
+      Q10 — no committed artifact carries per-ticker intraday change; production
+      value is real and client-painted).
+
+  - id: card.priority_score
+    disposition: RETAIN
+    target: "PRIORITY label + 0-100 value in the shipped slot (board.js:341-347), honest non-win-probability tooltip restored; quiet by design, never hued; ruled by Priority Engine masterplan §3.8 (DESIGN_NOTES §6 Q8 — Edge stays the legacy fail-soft)"
+
+  - id: card.zone_chip
+    disposition: RETAIN
+    target: "zone footer restored as the glance-tier abstraction — ZONE $lo–$hi with date pinned right (DESIGN_NOTES §2 anatomy); Entry/T1/Void three-number footer removed ('it framed Prophet as an order-execution oracle'); exact levels live in plan detail"
+
+  - id: card.stance_verb
+    disposition: IMPROVE
+    rationale: >
+      One-word stance chip restored top-left (Buy/Near/Wait/Hold/Avoid ·
+      买入/临近/等待/持有/回避) with its producer now RULED: projected from Prophet's
+      entry/actionability axis only, factored from the shipped engine buckets
+      (us_board_rank.py:365-368 → four buckets → five verbs, DESIGN_NOTES §6 Q7);
+      the prior fallthrough to the management engine's recommended_action was
+      rejected as an authority violation. Drift mechanically prevented
+      (gen_fixture refusal + verify M1-M4, mutation-tested). Unobtainable stance
+      renders a disclosed hue-free "No read yet" chip — BLOCKED_DATA, never a
+      guessed Wait (§6 Q7b).
+    target: "stance chip, chart overlay top-left; solid badge for Buy only, tint+border for the rest (shipped hierarchy restored — correction pass §0b.3)"
+
+  - id: card.verb_hue_identity
+    disposition: IMPROVE
+    rationale: >
+      Restored with a deliberately reduced budget: chroma is spent on the stance chip
+      and the chart (spark + zone band recoloured to --pvh via the shipped recolour
+      law), direction ink only on the live change; the full-card verb wash
+      (::before accent bar, verb-tinted border) is removed. zh 红涨绿跌 flip pinned by
+      verify G2-G4 after the correction pass found the --pv-* family missing
+      (DESIGN_NOTES §6 Q10 'fidelity bug found and fixed'). Lifecycle stays hue-free
+      per ruling — hue on the stance channel, weight on the lifecycle channel, the
+      two never collide (the founding verdict's reconciliation condition).
+    target: "stance chip + chart hue; Featured is a ring, never a container wash; violet lock-only"
+
+  - id: card.compact_glance_geometry
+    disposition: IMPROVE
+    rationale: >
+      "Everything a reader needs is answerable without opening the card, and no
+      paragraph is required for any of it" (DESIGN_NOTES §2). Plan-clock telemetry,
+      paragraph what_to_do copy, and the Entry/T1/Void rows are all removed from the
+      grid; vertical footprint reduced so three card rows are visible above the fold
+      (§3, no semantics reduced).
+    target: "card anatomy §2 — chip/trigger/quote row, chart, identity+priority, marks ≤3, lifecycle mark+word, zone footer"
+
+  - id: card.stage_tracker
+    disposition: IMPROVE
+    rationale: >
+      The producer-less four-dot rail stays retired (two of four steps structurally
+      unreachable); replaced by the ruled seven-cell lifecycle, now compact on-card:
+      weight mark + cell word, no gloss sentence (board.js:370-377). The card's top
+      weight cap from v1 is removed so the mark does not compete with the chart —
+      the ladder↔card link is carried by the inline mark.
+    target: "ruled lifecycle mark + word in the card body; ladder cells with identity/selection on different geometric channels"
+
+  - id: card.asof_stamp
+    disposition: RETAIN
+    target: "per-card as-of restored — the zone footer pins the signal date right (ZONE $70.66–$72.35 · Aug 10)"
+
+  - id: board.triage_shelves
+    disposition: IMPROVE
+    rationale: >
+      Candidates preserved as the second population with the shipped triage shelves,
+      one printed total (69 = 28+27+10+2+2), two shipped sub-lines relabelled under
+      the one-referent-per-page law (DESIGN_NOTES §5). Founding PRC-010 residue: the
+      shelves render as pills without the production filter affordance.
+    target: "Candidates section, pill shelves, non-adjacent to Setups"
+
+  - id: board.track_record_strip
+    disposition: RELOCATE
+    destination: "§Evidence & record section (board.js:691-696: Track record / How Prophet works / Stage definitions / Past boards links)"
+    reachability: >
+      Section links render in the artifact, but the quantitative proof strip itself
+      (59% win · +0.45% a trade · fired/passed-on rows) is NOT rendered anywhere in
+      the mockup — the links are placeholders to surfaces outside this artifact's
+      scope. Founding PRC-011 is not cured by this artifact; carried as an open
+      finding for the critics/verdict.
+
+additions:
+  - id: add.sourced_badges
+    what: "★ Featured / New / ⚡ Triggered·Imminent now SOURCED from real producers (featured flag, sig_date==board_date contract, setups.json.buy + T3 cascade) instead of approximated; Imminent honestly 0 today (correction pass §0b.4)"
+  - id: add.noread_chip
+    what: "disclosed BLOCKED_DATA no-read chip for the 60% of live rows whose entry/actionability axis has not published — dashed, hue-free, LENS-explained, internal token never user-facing (Q7b); replaces the prior mapping that covered the gap via a disclaimed engine"
+  - id: add.reference_lens_system
+    what: "state=paid (canonical reference: 33 contract-met rows, zero no-reads) vs state=today (honesty: actual payload) vs state=fallback (degraded card) — committed so the difference is reviewable rather than argued (§0b.1)"
+  - id: add.compare_adjudication
+    what: "compare.html + crops 70-73: one real plan row rendered three ways (production · v1 · revised) with per-variant right/wrong lists"
+  - id: add.gd_gate
+    what: "spawn gate G-D minted: MP-1 production builder may not be commissioned until the plan book publishes entry_status (61/179 today) and name/sector/lane/spark (45/179) for the full universe; Overtime Q2 held UNRESOLVED and production-blocking separately"
+
+# ── User-Task Regression Matrix (production vs r2) ─────────────────────────────
+user_tasks:
+  - id: task.glance_scan
+    task: scan the grid and shortlist the 2-3 most actionable names in seconds
+    critical: true
+    production: "verb pill + verb hue + chart shape + PRIORITY + zone — pre-attentive"
+    proposal: "same instruments restored (chip/hue/chart/priority/zone) at reduced chroma budget + lifecycle word + sourced badges; three rows above the fold vs two"
+    verdict: EQUIVALENT
+    notes: "parity restored by design; the deliberate chroma reduction (chip+chart only) trades grid-level hue saturation for per-card coherence — critics judge whether scanning survives"
+
+  - id: task.price_now
+    task: know where price is now relative to the zone before acting
+    critical: true
+    production: "live quote + change on-card beside the zone"
+    proposal: "identical instruments, unconditional slot (100% of rows hydrate vs SSR-only-when-joined)"
+    verdict: BETTER
+
+  - id: task.momentum_context
+    task: detect chase/momentum context
+    critical: true
+    production: "live change pill + sparkline"
+    proposal: "identical instruments restored; sourced ⚡ recency chips added (10/179, honest)"
+    verdict: EQUIVALENT
+
+  - id: task.readiness_rank
+    task: judge which setups are most ready today
+    critical: true
+    production: "PRIORITY 0-100 + honest gloss + Featured cohort"
+    proposal: "PRIORITY restored with the ruled tooltip; Featured now sourced from the engine's own gated cohort flag (10 rows); priority sort retained"
+    verdict: BETTER
+
+  - id: task.lifecycle_position
+    task: know where each setup sits in its lifecycle, with counts that reconcile
+    critical: true
+    production: "4-stage rail with producer-less states + duplicated count vocabulary"
+    proposal: "ruled seven-cell lifecycle, exact reconciliation (62+96+0+0+4=162), ladder=filter, Resolved outside the count"
+    verdict: BETTER
+
+  - id: task.population_truth
+    task: trust that the board's numbers describe one real population
+    critical: true
+    production: "'69 shown · 93 setups' beside five shelf counts"
+    proposal: "one canonical total; every setup integer a ladder value or difference; 116/116 mutation-tested checks"
+    verdict: BETTER
+
+  - id: task.duplicate_episodes
+    task: understand a name that appears twice
+    critical: false
+    production: "not represented"
+    proposal: "one card per plan row + dated Episode N of M chips + forward links"
+    verdict: BETTER
+
+  - id: task.act_today_boundary
+    task: know which names I am allowed to act on today
+    critical: true
+    production: "Live now shelf + ⚡ chips + zone states; stance effectively sourced from entry statuses"
+    proposal: "ruled stance projection from the same engine buckets + sourced ⚡ + no-read honesty (60% disclosed as unavailable rather than covered by a disclaimed engine)"
+    verdict: BETTER
+    notes: "the disclosed no-read is an honesty gain; whether a 60%-no-read board is shippable is a G-D data question, not a reference-design question — the reference view renders the contract-met cohort"
+
+  - id: task.risk_before_acting
+    task: read the risk sentences (cautions, chase warnings, earnings windows) before acting
+    critical: true
+    production: "⚠N hover popover on the card (8 caution classes)"
+    proposal: "no carrier anywhere in the artifact"
+    verdict: WORSE
+
+  - id: task.open_name_detail
+    task: open a name from its card to the deeper read (receipts, plan, dossier)
+    critical: true
+    production: "the whole card is a link (stock.html#TICKER)"
+    proposal: "card is an <article>; only multi-episode cards carry a pv-newer hash link; no route to any per-name detail"
+    verdict: WORSE
+
+  - id: task.staleness_awareness
+    task: know when the board's ranking prices are behind the tape
+    critical: true
+    production: "prominent degraded-freshness banner ('2 sessions behind — check a live quote before you act') + per-header dots disclaimer"
+    proposal: "single settled-close stamp; no degraded/behind state anywhere"
+    verdict: WORSE
+    notes: "partially mitigated vs v1 by the restored live quote (the card itself now shows the tape), but the board-level behind-state disclosure has no slot"
+
+  - id: task.anon_proof
+    task: anonymous visitor judges whether the machine is real
+    critical: false
+    production: "track record 59% win · +0.45%/trade, fired +40.9% rows, passed-on counts"
+    proposal: "honest counts + skeleton gate preserved; quantitative proof strip absent (bare links)"
+    verdict: WORSE
+
+# ── Authority Delta (production vs r2) ─────────────────────────────────────────
+authority_delta:
+  - id: auth.zone_vs_levels
+    production_claim: "ZONE range, presentation-tier"
+    proposal_claim: "ZONE range restored; Entry/T1/Void removed to plan detail"
+    direction: equal
+    warranted: true
+    evidence: "the founding cycle's tier adjudication implemented exactly (DESIGN_NOTES §1 'Removed from #5514 v1')"
+  - id: auth.window_position
+    production_claim: "no holding-period claim on-card"
+    proposal_claim: "plan-clock telemetry removed ('the horizon is an internal pacing parameter; showing it reads as a holding-period promise')"
+    direction: equal
+    warranted: true
+  - id: auth.stance_source
+    production_claim: "verb derived from entry statuses (us_board_rank buckets)"
+    proposal_claim: "same buckets, factored not re-mapped; unobtainable → disclosed absence instead of the v1/legacy fallthrough to a disclaimed management engine"
+    direction: weaker
+    warranted: true
+    evidence: "an unavailable read is rendered as unavailable — the artifact REDUCES claimed authority relative to both v1 and the previous mapping (Q7/Q7b); LLM/engine-authority law respected"
+
+information_economics:
+  words_per_card:
+    production: "≈18 visible words at rest"
+    proposal: "≈16-22 visible words at rest (chip, quote, ticker+name+sector, PRIORITY+value, ≤3 marks, lifecycle word, zone+date) — estimate from crops 00/01; no paragraph anywhere"
+  findings:
+    - "chart restored as the pre-attentive carrier; prose eliminated; glance tier preserved"
+    - "three card rows above the fold vs production's two (vertical tightening, no semantic loss)"
+    - "per-card LENS receipt density substantially restored (priority, lane, trigger, no-read tips) though still below production's full receipt surface (score/marks/stage-chip tips)"
+  preserved:
+    - "count reconciliation and absence discipline carried over from v1 (em-dash key-absent, honest zeros, disclosed simulated changes)"

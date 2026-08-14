@@ -277,11 +277,38 @@ def selftest() -> int:
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def _sparse_refusal(root: Path) -> str | None:
+    """The remedy line when this checkout cannot see the trees the law covers.
+
+    ``find_pairs`` enumerates the pair list by walking BOTH templates/ and site/.
+    A sparse session worktree (policy R8, .claude/hooks/worktree_create_sparse.py)
+    omits site/, so the walk yields nothing and this guard would print
+    "template↔site sync OK (0 pairs checked)" and exit 0 — a vacuous pass on the
+    exact law that protects the render lanes from a truncated publish. Refuse
+    instead, and name the one command that fixes it. Full checkouts (every CI
+    lane that runs this guard, and the render lanes, which explicitly clear any
+    inherited sparse state) are unaffected: missing_dirs() returns [].
+    """
+    try:
+        from scripts.worktree_sparse import missing_dirs, remedy_line
+    except Exception:  # noqa: BLE001 — never let the detector break the guard
+        return None
+    try:
+        absent = [d for d in missing_dirs(root) if d in {"site", "templates"}]
+    except Exception:  # noqa: BLE001
+        return None
+    return remedy_line(absent) if absent else None
+
+
 def main(argv: list[str]) -> int:
     if "--selftest" in argv:
         return selftest()
     fix = "--fix" in argv
     root = Path(__file__).resolve().parent.parent
+    refusal = _sparse_refusal(root)
+    if refusal:
+        print(f"template↔site sync REFUSED: {refusal}")
+        return 1
     diverged = check(root, fix=fix)
     n_pairs = sum(1 for _ in find_pairs(root))
     if not diverged:

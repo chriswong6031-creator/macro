@@ -494,6 +494,116 @@ jobs:
           assert_issuance_correction_source_clean
           assert_reviewed_controls_unchanged
 
+      # ── The producer proves itself ───────────────────────────────────────────
+      # The step above is the candidate projection's ONLY producer
+      # (`build_government_revenue.py:941` -> `project_candidate_artifacts`), and
+      # until now it published the candidate ledger with no test ever run against
+      # what it wrote.  The suites that assert over these artifacts live in
+      # `unrun-government-revenue` / `unrun-government-revenue-candidate-projection`,
+      # both `if: ${{ false }}` — so they execute only on a FULL-SUITE run, which
+      # happens when someone edits a global invalidator.  Producer and proof sat on
+      # different schedules, and the gap is where govrev breakage lives:
+      #
+      #   1. this lane rewrites data/government_revenue/            (no test runs)
+      #   2. the break is invisible for hours or days
+      #   3. an unrelated PR touches a global invalidator -> full suite fires
+      #   4. that author inherits a red they did not cause and burns a session on it
+      #
+      # Measured 2026-08-13: commit 40baa147fa2 broke main at 02:18Z; PR #5472
+      # (agent-os, unrelated) surfaced it at 02:50Z.  The same shape produced the
+      # 2026-08-06 `ledger_write_failed` break — see the comment on the
+      # `award-event spine` step in .github/ci/legacy-jobs.yml, which enumerated
+      # these suites precisely because "the lobe looked green because its on-point
+      # guards were invisible, not because they passed".  Enumerating them into an
+      # `if: false` job was half that fix: they became listed, and stayed unrun
+      # here, where the bytes are actually minted.
+      #
+      # Cost is near zero because the gate is the CANDIDATE artifacts, not the
+      # lane: this workflow polls every 30 minutes, but candidate_ledger.jsonl has
+      # moved 3 times in the measured window (2026-08-03, -09, -12) — roughly once
+      # a day, only when a candidate actually issues.
+      #
+      # NON-FATAL BY CONSTRUCTION, deliberately, and this ratchet is the whole
+      # sequencing argument: the suites still carry hand-typed GRAPH-VINTAGE
+      # constants (`reviewed_issuer_company_count == 19`, `mapping_needed == 21`,
+      # a literal 19-ticker list).  Those detonate on a CORRECT republish, so a
+      # fatal gate today would convert a random-PR ambush into a BLOCKED NIGHTLY —
+      # strictly worse.  Flip GOVREV_CANDIDATE_PROOF_FATAL to "1" once those
+      # constants are derived the way `canonical_frozen_at()` and
+      # `canonical_candidate_census()` already are; until then this step's job is
+      # to make the break VISIBLE at the source, minutes after it is minted and
+      # attributed to the commit that caused it, instead of days later on a
+      # stranger's pull request.
+      - name: prove the candidate projection before publishing it
+        if: ${{ steps.gate.outputs.publish == 'yes' }}
+        env:
+          GOVREV_CANDIDATE_PROOF_FATAL: "0"
+          PYTHONDONTWRITEBYTECODE: "1"
+        run: |
+          set -uo pipefail
+          candidate_paths=(
+            data/government_revenue/candidate_ledger.jsonl
+            data/government_revenue/candidate_queue.json
+            data/government_revenue/candidate_projection_state.json
+            data/government_revenue/candidate_projection_status.json
+          )
+          if [ -z "$(git status --porcelain -- "${candidate_paths[@]}")" ]; then
+            echo "govrev candidate proof: candidate artifacts unchanged this run — nothing to prove." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # An absent prover is NOT a pass. Say so at the same volume as a failure.
+          # requirements.txt carries no pytest -- this venv is the collector's, not
+          # a pack's -- so probe each import rather than assuming the pair.  xdist
+          # absent must degrade to a SERIAL run, never to `-n 2` failing and being
+          # reported as a broken projection: a tooling gap is not a data defect.
+          have() { python -c "import $1" >/dev/null 2>&1; }
+          have pytest || pip install --quiet pytest >/dev/null 2>&1 || true
+          have xdist  || pip install --quiet pytest-xdist >/dev/null 2>&1 || true
+          if ! have pytest; then
+            echo "::warning title=govrev candidate proof unavailable::pytest could not be installed on this runner; tonight's candidate projection is publishing UNPROVEN"
+            exit 0
+          fi
+          parallel=""
+          if have xdist; then
+            parallel="-n 2 --dist load --max-worker-restart=0"
+          else
+            echo "govrev candidate proof: pytest-xdist unavailable — running serially." \
+              >> "$GITHUB_STEP_SUMMARY"
+          fi
+          # `-p no:cacheprovider`: never let the prover leave a .pytest_cache in a
+          # tree that is about to be inspected and committed by the next step.
+          before="$(git status --porcelain -- data/government_revenue)"
+          log="${RUNNER_TEMP}/govrev-candidate-proof.log"
+          set +e
+          # shellcheck disable=SC2086 -- $parallel is an intentional argument list
+          python -m pytest -p no:cacheprovider ${parallel} \
+            tests/test_government_revenue_candidates.py \
+            tests/test_government_revenue_candidate_projection.py \
+            tests/test_government_revenue_candidate_fixture.py \
+            -q >"$log" 2>&1
+          status=$?
+          set -e
+          tail -n 40 "$log" >> "$GITHUB_STEP_SUMMARY" || true
+          # The prover must not become a writer. `data/` writes belong to the
+          # builder above, never to a test run.
+          after="$(git status --porcelain -- data/government_revenue)"
+          if [ "$before" != "$after" ]; then
+            echo "::warning title=govrev candidate proof mutated the tree::the proof step changed data/government_revenue; a prover that writes what it checks cannot prove it"
+          fi
+          if [ "$status" -eq 0 ]; then
+            echo "govrev candidate proof: PASSED against the artifacts about to be committed." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          summary="$(grep -E '^[0-9]+ (failed|error)|failed,|error' "$log" | tail -n 1)"
+          echo "::warning title=govrev candidate proof failed::the candidate projection about to be published does not pass its own suites (${summary:-see step summary}) — this is the break that would otherwise surface days later on an unrelated pull request"
+          if [ "${GOVREV_CANDIDATE_PROOF_FATAL}" = "1" ]; then
+            echo "::error title=govrev candidate proof failed::refusing to publish an unproven candidate projection"
+            exit 1
+          fi
+          exit 0
+
       # Checkout is pinned to main, every collector-owned source bundle is
       # verified and kept clean, and only governed source/output paths may be
       # staged. The retry loop rebuilds after each rebase so a concurrent daily

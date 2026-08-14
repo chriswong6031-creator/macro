@@ -398,17 +398,39 @@ def test_every_shipped_exemplar_clears_the_v5_screen(register, index):
 
 
 def test_the_wire_exemption_is_scoped_and_does_not_leak():
-    """A relayed source headline may carry "?" or a quoted "I" (2 of the 4
-    breaking items with "?" in the census are relayed headlines). No analytical
-    kind gets that, and every OTHER v5 ban still applies to the wire."""
-    relayed = "$400 Billion Pharma Megadeal? Jefferies Calls It A Head Scratcher"
-    assert cw.voice_v5_violations(relayed, {"type": "breaking"}) == []
-    assert cw.voice_v5_violations(relayed, {"type": "chart"}) != []
+    """The wire exemption covers the relayed PRONOUN and nothing else.
+
+    IT USED TO COVER THE QUESTION MARK TOO, and that is how this reached the
+    flagship account on 2026-08-11 (W2E):
+
+        "US Economy Loses 23,000 Jobs, Gold Jumps 3%: What Do Prediction Markets
+         Say About Rate Hikes?"
+
+    The screen RAN on it — kind="breaking" reaches this function at every send —
+    and passed it, because `breaking` is in WIRE_KINDS. A quote is the source
+    speaking, so a relayed "I" still passes; a headline that ASKS is engagement
+    bait whoever wrote it, and v5 bans the interrogative outright.
+    """
+    relayed_q = "$400 Billion Pharma Megadeal? Jefferies Calls It A Head Scratcher"
+    for kind in ("breaking", "press", "hot_tape", "wire", "chart"):
+        assert any("question mark" in row
+                   for row in cw.voice_v5_violations(relayed_q, {"type": kind})), kind
+    # The pronoun half of the exemption is untouched: a relay may carry the
+    # source's own first person, an analytical desk may not.
+    relayed_i = 'Powell: "I would not call this a soft landing."'
+    assert not any("first person" in row for row in
+                   cw.voice_v5_violations(relayed_i, {"type": "breaking"}))
+    assert any("first person" in row for row in
+               cw.voice_v5_violations(relayed_i, {"type": "chart"}))
     wire_ctx = {"type": "breaking"}
     assert cw.voice_v5_violations("Nasdaq is up. Watching, no position.",
                                   wire_ctx) != []
     assert cw.voice_v5_violations("Nasdaq is up 2% so far today.", wire_ctx) != []
     assert cw.voice_v5_violations("Nasdaq is up 2%!", wire_ctx) != []
+    # A composed relay with no question mark is untouched.
+    assert cw.voice_v5_violations(
+        "July payrolls: -23k against +85k expected. Prior month: +20k.",
+        wire_ctx) == []
 
 
 def test_first_person_screen_does_not_mistake_cashtags_for_pronouns():

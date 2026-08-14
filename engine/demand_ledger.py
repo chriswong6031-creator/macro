@@ -232,12 +232,46 @@ def emit(root=None, today=None) -> list[dict]:
             with open(d / "theses.jsonl", "a", encoding="utf-8") as f:
                 for t in fresh:
                     f.write(json.dumps(t, ensure_ascii=False) + "\n")
+            # Thread the SAME `today` build_theses() resolved (its own `today or
+            # date.today()`, mirrored here since that resolution is local to
+            # build_theses and never returned) so the forward-only gate judges
+            # freshness against the run's OWN notion of "today" — never a
+            # wall-clock read that silently disagrees with a caller-supplied
+            # (e.g. test-injected) date.
+            _register_qledger_claims(fresh, root, today=today or date.today())
         else:
             log.debug(
                 "demand_ledger.emit: theses write skipped (COLLECT_LANE != nightly)"
             )
     log.info("demand-ledger: +%d new theses (%d already logged)", len(fresh), len(ledger))
     return fresh
+
+
+def _register_qledger_claims(written: list, root, today=None) -> dict | None:
+    """Mirror THIS RUN's theses into the Universal Scoreboard (Eval OS P3).
+
+    demand_chain declares its OWN ruler at 126 trading days (see CEO §3): this
+    registers the prospective claim at that true 126d horizon, verbatim, never
+    shortened to reach a faster verdict. It does NOT authorize a live 126-
+    session own-ruler GRADE — qledger.in_scope_horizons still grades at
+    [5, 21, 63] today (that ladder is P0b's file region, not touched here), so
+    the claim accrues on the existing <=63-session ladder and the 126-session
+    grade stays off-render/research scope by construction, with no extra gate
+    needed here.
+
+    Gated by the SAME `_ledger_advance_enabled()` check as the theses.jsonl
+    write above — a lane whose own thesis write is skipped (not the nightly
+    lane) must not register a qledger claim for a thesis that will not
+    durably exist in this desk's own ledger. Never raises."""
+    try:
+        from engine import qledger_desk_adapter as _qadapt
+        from engine import qledger_evidence_clock as _qclock
+    except Exception as exc:  # noqa: BLE001
+        log.warning("demand_ledger: qledger adapter import failed: %s", exc)
+        return None
+    return _qadapt.register_prospective(
+        written, family="demand_chain", timestamp_quality="CRAWL_BOUNDED",
+        root=root, today=today, git_sha=_qclock.git_sha(root))
 
 
 def score(root=None, today=None) -> dict:

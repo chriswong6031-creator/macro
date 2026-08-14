@@ -1,0 +1,177 @@
+# Critic receipt — Reviewer B (Visual / Taste), r2 cycle (revised Prophet Board).
+# Two-pass; pass 1 quarantined from DESIGN_NOTES.md AND the designer's compare.html
+# self-adjudication set. Findings recorded verbatim from the independent reviewer.
+schema: mastermind.rig_review.v1
+reference_id: prophet-board-5514-r2
+role: visual_taste
+artifact_sha: 0fc975acfe97a7b208e294528af76c8431a7beef
+
+reviewer:
+  identity: "independent opus designer agent — RIG r2 review B"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job
+    - production-before artifact (live screenshots + _prophet_card.html.j2 hue/identity system)
+    - proposed-after artifact (46 rendered crops excluding the compare set + frozen code)
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "2026-08-13T12:35:00Z"
+  verdict: PASS_WITH_CONDITIONS
+  findings:
+    - id: VTC-201
+      severity: major
+      finding: >
+        The zh flip collapses the board's primary scan channel — measured mean-block
+        ΔE76 between a WAIT card and a BUY card falls from 12.1 (01-desktop-dark-en) to
+        8.6 (03-desktop-dark-zh) and 8.3 (04-desktop-light-zh), because board.css:61-64
+        aliases --pv-buy to --up (green→red) while --pv-wait stays --warn amber, so "can
+        I act" becomes two adjacent warm hues; the lifecycle grammar was deliberately
+        hue-neutralised to survive the flip but the stance channel a paying user
+        actually sweeps for was given no equivalent protection.
+    - id: VTC-202
+      severity: major
+      finding: >
+        The spark is painted in the direction tokens but keyed to stance, so a BUY card
+        at −2.8% draws a green price line above a red −2.8% in the same 200px and the
+        exact inverse under zh; the recolour law is inherited verbatim (board.css:409-411
+        citing _prophet_card.html.j2:162-163) but the proposal roughly doubles the
+        chart's mass and adds a filled wash, promoting a hairline ambiguity to the
+        card's dominant surface — the system's real payoff (grey spark = no read)
+        survives an independent stance palette that is not literally --up/--down.
+    - id: VTC-203
+      severity: major
+      finding: >
+        Light is a token swap, not a design: sampled card body #eef1f6 sits on canvas
+        #f7f8fa — the panel is 9 levels DARKER than the page and the zone footer
+        (≈#fafbfc) is lighter than the body it belongs to, so cards read as recessed
+        smudges with a highlighted foot, the failure DESIGN_DOCTRINE §5.8 names; the
+        light board reads beige and muddy where dark reads crisp and premium.
+    - id: VTC-204
+      severity: major
+      finding: >
+        Featured — the board's flagship "these are the picks" affordance — is reduced to
+        a bare 1px inset ring keyed to --pvh, dropping the outer aura, the border-color
+        shift and the --pv-buy pin; the shipped template's own operator-tuning note
+        records that a bare ring was tried FIRST and vanished "in a dense 5-column grid
+        where every card is already tinted by its own verb hue … Do not clean this up
+        back to a bare ring" — the proposal's grid is exactly that dense and tinted, so
+        this reverts a dated operator correction and should be a merge condition.
+    - id: VTC-205
+      severity: major
+      finding: >
+        The page's loudest element answers an operator's question, not the buyer's: the
+        30px hero and seven-cell ladder report the shape of the book (96 of 162 Entered
+        — already committed, unactionable today) while the actual stance sits in an 11px
+        "Posture Act on the best few" chip; production's equivalent band read "LIVE NOW
+        28 · entry window is open" — literally the answer to "what am I allowed to act
+        on today"; doctrine Law 1 asks the primary panel for a stance and the ladder
+        carries none.
+    - id: VTC-206
+      severity: major
+      finding: >
+        Mobile 390 gives the whole first screen to chrome — the first card's ticker row
+        lands at y=810 of an 844px viewport against production's first card at ≈460px;
+        the ladder alone costs ~240px; the remaining fix is ordering or a collapsed
+        mobile ladder, not more leading trims.
+    - id: VTC-207
+      severity: major
+      finding: >
+        The count-integrity thesis visibly breaks under its own signature control:
+        filtering to Invalidated in the canonical reference state prints "SETUPS 4 in
+        Invalidated" above one rendered card, and the table reconciles with "Table view
+        shows every row of the current filter: 1 rendered" — naming the rendering rather
+        than accounting for the three missing plans on the page that just told the user
+        six cells add up.
+    - id: VTC-208
+      severity: minor
+      finding: >
+        One page, two grammars at identical geometry: a 3px full-bleed cap means
+        LIFECYCLE-by-weight on ladder cells and STANCE-by-hue on the GROUPS columns,
+        teaching then contradicting the signature within one scroll; and violet #8b5cf6
+        is spent on the IN FAVOUR lane on a page whose own CSS declares violet
+        lock-only, with the violet lock gate visible on the same scroll.
+    - id: VTC-209
+      severity: minor
+      finding: >
+        The "⚡ Triggered" chip is pinned to --warn amber, the same hue, weight, radius
+        and size as the WAIT stance chip beside it, so on every WAIT card the two read
+        as one two-part amber label and the stance loses primacy in the slot the design
+        reserved for it.
+    - id: VTC-210
+      severity: minor
+      finding: >
+        The card's lifecycle mark is 26×4px and Ready (half-filled) vs Entered (solid)
+        is not separable at that size — the word carries the fact; worse, board.css
+        documents .mx-cap as a shared cap on ladder cells AND cards ("what makes the
+        ladder and the grid read as one population") but board.js emits it only on
+        ladder cells — the shared token the signature is built on is not rendered on
+        the grid.
+    - id: VTC-211
+      severity: minor
+      finding: >
+        The track record loses its number: production surfaces "Track record · 59% win ·
+        +0.45% a trade" as a mid-page chip; the proposal demotes it to a bare text link
+        in a four-link row at the page floor — on a page whose whole pitch is verifiable
+        honesty, the one visible proof-of-skill costs a line and buys the most trust.
+    - id: VTC-212
+      severity: minor
+      finding: >
+        In the today (actual) state, mixed rows stretch no-read cards to their enriched
+        neighbours' height, leaving a 40-60px void that reads as broken/loading rather
+        than designed absence — the fallback state, where every card is uniformly
+        short, is the shape the mixed grid should borrow.
+    - id: VTC-213
+      severity: minor
+      finding: >
+        Internal vocabulary sits in the canonical view's own header slot: "33 setups ·
+        the enrichment contract met" renders in .mx-sec-total in the FREEZE crops, and
+        the reference/fallback lens paragraphs style as page copy — every frozen crop of
+        the intended experience shows build vocabulary as product copy.
+  strengths:
+    - "The weight grammar is a genuine signature: lifecycle as dashed/half/solid/muted/hollow-struck/outline in currentColor only, byte-identical under the zh flip — a deliberate answer to the house trap of hue-keyed state breaking under 红涨绿跌, reading as one system from ladder cap to table cell."
+    - "The count ladder fuses headline stat, partition proof and filter control; the terminal cell is pushed outside the sum by a real gap, dashed border and 'not in today's count' rather than a footnote."
+    - "Key-absence is designed rather than faked: Watch em-dash + legend line; no-read cards take a hollow sentence-case chip, no stance hue, grey spark, 'Zone sets on confirmation' instead of an invented zone."
+    - "The empty state is best-in-class product writing — honest, teaches the taxonomy, ends in an action."
+    - "The lock gate sells honesty instead of FOMO — contentless skeletons, real counts, 'The counts above stay honest whether you subscribe or not' — and obeys the light-mode ghosting rule."
+    - "Real information compression in GROUPS (22 sectors in five stance columns with plain reasons) and CANDIDATES keeps the ratified lane glosses."
+    - "Deliberate restraint at the card: production's per-card hue rail + glow dropped so chroma is spent on chip and chart; PRIORITY quiet, never hued, with its one honest interpretation line."
+    - "The zone band baked into the sparkline answers 'where is price relative to the plan' by picture — strictly more per pixel than production's text-only zone."
+
+second_pass:
+  amended_at: "2026-08-13T13:05:00Z"
+  amendments:
+    - {finding: VTC-201, action: downgraded, note: "Root cause is shipped theme.css (--pv-wait=--warn, --pv-buy=--up) under §7's explicit no-new-token bind, so the artifact inherits rather than causes the amber-vs-red collapse; the ΔE measurement stands as a token-layer ask, and only the wash-size amplification is this artifact's to mitigate."}
+    - {finding: VTC-202, action: upheld, note: "§0b.3 legitimately defends stance-hued spark for intra-card coherence, but cannot excuse §2's claim that 'direction ink appears only on the live change' — board.css:62 binds --pv-buy to var(--up) itself, so a Buy card at −2.8% paints its price series in the up ink and its change in the down ink; stance values adjacent to but distinct from --up/--down preserve the goal and cost no new token."}
+    - {finding: VTC-203, action: upheld, note: "The rationale shows a real light pass so 'token swap' overstated, and the compare confirms production is equally flat — but the measured card/canvas inversion is the failure doctrine §5.8 names, and a reference that becomes law freezes it; the fix is var(--panel) under light, which mints nothing."}
+    - {finding: VTC-204, action: upheld, note: "STRENGTHENED by the reveal: DESIGN_NOTES cites the half of the operator correction the design survives ('ring, never a container wash') and is silent on the operative half ('a rim glow ALONE was tried first and vanished … Do not clean this up back to a bare ring'); no keep/drop line and no compare row mentions the aura — dropped silently rather than adjudicated."}
+    - {finding: VTC-205, action: downgraded, note: "The seven cells and the ladder's headline role are ruled upstream (J9C/J10, binding authority #1) and §0b records the composition as operator-passed 'not revisited' — re-litigating the hero is out of my lane; the unruled residue is cheap: promote the existing posture line to the headline so Law 1's stance sits with the count."}
+    - {finding: VTC-206, action: upheld, note: "§3's fold claim is desktop-only and holds there; mobile is never addressed, and the measured 390×844 result stands (~660px of chrome after discounting the lens paragraph); a collapsed mobile ladder is responsive CSS, inside scope."}
+    - {finding: VTC-207, action: downgraded, note: "§0b.1 + §7/G-D fully explain it: state=paid is a pre-G-D preview lens, the count law is verified against state=today, and post-G-D a filter of 4 renders 4 — the defect lives in the lens, not the product; residual ask is one plain line under a filtered count so no reviewer crop reads as a broken count."}
+    - {finding: VTC-208, action: upheld, note: "§7 binds Groups to the shipped .actcol idiom unchanged, explaining the collision and the violet lane — but the ladder cap is the new device and could have chosen different geometry, and §2's 'Violet remains lock-only' is contradicted on the same scroll; reword the claim or re-key the new cap, don't recolour the shipped lane."}
+    - {finding: VTC-209, action: upheld, note: "Q9/§0b.4 make the collision rarer (⚡ sourced, 10/179 rows) but nothing addresses the hue itself — on a WAIT card the trigger chip still matches the stance chip's hue, weight and radius so the two read as one label."}
+    - {finding: VTC-210, action: downgraded, note: "Half withdrawn: §1 shows the card's top cap was deliberately removed (a ruled trade); what survives is a documentation fix (board.css's .mx-cap comment still describes a cap on cards board.js no longer emits) plus the standing observation that Ready vs Entered is not separable at 26×4px."}
+    - {finding: VTC-211, action: upheld, note: "The rationale never engages it — §1 preserves '#5514's Evidence organisation' wholesale and no keep/drop line covers the track-record figure — so the demotion of the one visible proof-of-skill is undiscussed rather than justified."}
+    - {finding: VTC-212, action: downgraded, note: "Q1 + Q7b + G-D disclose the gaps as gated dependencies and state=today exists to make them visible — the voids are a deliberately shown transitional symptom; one line of care on the mixed row is polish, not a condition."}
+    - {finding: VTC-213, action: upheld, note: "Narrowed to one string: the lens paragraphs are self-labelled and fine, but 00-FREEZE — the canonical frozen reference — renders 'the enrichment contract met' in the product's own .mx-sec-total slot; the artifact of record exemplifies that slot with build vocabulary."}
+  verdict: PASS_WITH_CONDITIONS
+  closing_note: >
+    The rationale is unusually honest and it legitimately dissolves or narrows five
+    findings: the ladder and cell grammar are ruled upstream, state=paid is a disclosed
+    pre-G-D preview lens whose count law is verified against state=today, the card's top
+    cap was deliberately traded away, and the enrichment voids are a gated dependency
+    the artifact exists to make visible — it even self-reports fabricated change values
+    (Q10), an unresolved Overtime producer defect (Q2), and a --pv-* fidelity bug it
+    found and fixed. What it cannot excuse is asserting compliance it does not have:
+    §2's colour budget says direction ink appears only on the live change while
+    --pv-buy is bound to var(--up) itself (VTC-202), and §2 cites the operator's "ring,
+    never a container wash" while the same shipped note says a bare ring was already
+    tried and rejected as invisible in exactly this grid density (VTC-204). Four
+    conditions before this is frozen as law — restore the featured aura and its
+    --pv-buy pin, give the stance palette values distinct from the direction tokens,
+    fix the light card/canvas inversion with the existing --panel, and get one
+    opportunity above the fold at 390 — of which VTC-204 is the one that must not be
+    waived.

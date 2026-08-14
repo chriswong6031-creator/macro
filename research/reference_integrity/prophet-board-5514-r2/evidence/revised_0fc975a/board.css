@@ -1,0 +1,753 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   PROPHET BOARD — mockup gate reference (MP-1 / gate G-C)
+   Conforms to: PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §6/§5/§10
+                P0_REFERENCE_EXPERIENCE_DESIGN_PACKET.md §0 + §B (amended 2026-08-13)
+
+   TOKEN POLICY: every token below the "SHIPPED TOKENS" banner is copied verbatim
+   from templates/theme.css. Nothing is re-minted. The only new custom properties
+   are the lifecycle weight variables, and they are deliberately WEIGHT-ONLY —
+   no --up/--down/--q* hue ever touches a lifecycle mark, so the grammar survives
+   the zh direction flip unchanged (§0 palette law).
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─────────────────────── SHIPPED TOKENS (theme.css verbatim) ─────────────── */
+/* Dark IS the :root plane — deliberately not html[data-theme="dark"], because a
+   first-time visitor renders dark with no data-theme attribute at all.
+   Light overrides on specificity. (theme.css:21, :251-259) */
+:root {
+  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Noto Sans CJK SC", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
+    Menlo, Consolas, "DejaVu Sans Mono", monospace;
+  --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
+  --muted: #8b93a1;
+  --line: #3a4150;
+  --q1: #2e9e4f; --q2: #d4a017; --q3: #d04545; --q4: #3f78d8;
+  --warn: #e0a030; --act: #e05555; --ok: #3da564;
+  --up: #45b873; --down: #e06464; --orange: #e08b45;
+  --info: #5b9bf0; --link: #7aa7e0;
+  /* the stance family — theme.css:21 block. The card's one chroma channel. */
+  --pv-buy: #45b873; --pv-near: #63c08d; --pv-wait: #e0a030;
+  --pv-hold: #8b93a1; --pv-avoid: #e06464;
+  --prov: #62a0e8; --prov-ink: var(--prov);
+  --card-shadow: 0 1px 0 rgba(255,255,255,.02);
+  --popover-shadow: 0 6px 18px rgba(0,0,0,.5);
+  --ink-mix-up: 100%; --ink-mix-down: 100%; --ink-mix-warn: 100%; --ink-mix-ok: 100%;
+  --ink-mix-act: 100%; --ink-mix-link: 100%; --ink-mix-info: 100%;
+}
+html[data-theme="light"] {
+  --bg: #f7f8fa; --panel: #ffffff; --panel2: #eef1f6; --text: #1c2430;
+  --muted: #5d6b7e;
+  --line: color-mix(in srgb, #1c2430 16%, #eaecf0);
+  --q1: #1f8b41; --q2: #b07d05; --q3: #c12f2f; --q4: #2f63c4;
+  --warn: #b9791a; --act: #c43d3d; --ok: #2f8a52;
+  --up: #1f9a55; --down: #cf4040; --orange: #c4781f;
+  --info: #285fff; --link: #285fff;
+  --pv-buy: #1f9a55; --pv-near: #3aad72; --pv-wait: #b9791a;
+  --pv-hold: #5d6b7e; --pv-avoid: #cf4040;
+  --prov: #2f6fd0; --prov-ink: color-mix(in srgb, var(--prov) 82%, var(--text));
+  --card-shadow: 0 1px 3px rgba(20,30,50,.07);
+  --popover-shadow: 0 4px 10px rgba(20,30,50,.06), 0 12px 28px rgba(20,30,50,.14);
+  --ink-mix-up: 62%; --ink-mix-down: 84%; --ink-mix-warn: 62%; --ink-mix-ok: 70%;
+  --ink-mix-act: 88%; --ink-mix-link: 88%; --ink-mix-info: 88%;
+}
+/* zh flips direction inks (Asia convention: red = up). Lifecycle marks never
+   reference these, which is the whole point of weight encoding. */
+html[data-lang="zh"] {
+  --up: #e06464; --down: #45b873; --q1: #d04545; --q3: #2e9e4f;
+  --pv-buy: var(--up);
+  --pv-near: color-mix(in srgb, var(--up) 82%, #fff);
+  --pv-avoid: var(--down);
+}
+html[data-theme="light"][data-lang="zh"] { --up: #cf4040; --down: #1f9a55; --q1: #c12f2f; --q3: #1f8b41; }
+:root {
+  --ink-up:   color-mix(in srgb, var(--up)   var(--ink-mix-up),   var(--text));
+  --ink-down: color-mix(in srgb, var(--down) var(--ink-mix-down), var(--text));
+  --ink-warn: color-mix(in srgb, var(--warn) var(--ink-mix-warn), var(--text));
+  --ink-ok:   color-mix(in srgb, var(--ok)   var(--ink-mix-ok),   var(--text));
+  --ink-act:  color-mix(in srgb, var(--act)  var(--ink-mix-act),  var(--text));
+  --ink-link: color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
+  --ink-info: color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
+}
+/* Bilingual switch — theme.css:337-338 verbatim. Both languages ship inline. */
+html:not([data-lang="zh"]) .l-zh { display: none; }
+html[data-lang="zh"] .l-en { display: none; }
+
+/* ───────────────────────────── page shell ───────────────────────────────── */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg); color: var(--text);
+  font-family: var(--font-ui); font-size: 15px;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;                    /* acceptance 11: never a horizontal page scroll */
+}
+.wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 80px; }
+a { color: inherit; }
+
+/* Figures get tabular numerals; words never do. */
+.fig { font-variant-numeric: tabular-nums; }
+
+/* ── section anatomy (.mx-sec — NEW primitive, lands in DS-PR-0) ─────────── */
+.mx-sec { margin: 24px 0 0; }
+.mx-sec-hd {
+  display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+  padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 12px;
+}
+.mx-sec-h2 {
+  margin: 0; font-size: 13px; font-weight: 800; letter-spacing: .085em;
+  text-transform: uppercase; color: var(--text);
+}
+.mx-sec-total {
+  font-size: 12.5px; color: var(--muted); font-weight: 600;
+}
+.mx-sec-total b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; }
+.mx-sec-link { margin-left: auto; font-size: 11.5px; color: var(--ink-link); text-decoration: none; font-weight: 650; }
+.mx-sec-link:hover { text-decoration: underline; }
+.mx-sec-note { font-size: 11.5px; color: var(--muted); line-height: 1.5; margin: -6px 0 14px; }
+
+/* ═══════════════════════ 1. BOARD HEADER ════════════════════════════════ */
+.bh { padding: 18px 0 0; }
+.bh-top { display: flex; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+.bh-title { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -.02em; line-height: 1.1; }
+.bh-purpose { margin: 5px 0 0; font-size: 13px; color: var(--muted); line-height: 1.5; max-width: 60ch; }
+.bh-stamp { margin-left: auto; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* the single as-of stamp — .dtp + .pbs, one pair, no second stamp beside the
+   ladder (§G.4 / acceptance: one as-of per panel) */
+.dtp-token {
+  display: inline-flex; align-items: center; gap: 5px; flex: none;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  color: var(--muted);
+}
+.dtp-token.closed .dtp-dot { animation: none; opacity: .45; }
+.dtp-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.dtp-asof { font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pbs {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 800;
+  letter-spacing: .06em; text-transform: uppercase; line-height: 1.35; padding: 2.5px 9px;
+  border-radius: 6px; white-space: nowrap; flex: none;
+  color: var(--prov-ink); background: color-mix(in srgb, var(--prov) 11%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--prov) 62%, transparent);
+}
+
+/* regime / posture chips (compressed Market State strip) */
+.bh-chips { display: flex; gap: 7px; flex-wrap: wrap; margin: 10px 0 0; }
+.rchip {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: color-mix(in srgb, var(--panel2) 70%, transparent);
+  font-size: 11px; font-weight: 600; color: var(--muted);
+}
+.rchip b { color: var(--text); font-weight: 700; }
+
+/* ═══════════════════ THE COUNT LADDER (the page's signature) ════════════
+   Two devices are fused here: the headline statistic AND the filter control.
+   Cell IDENTITY and SELECTION STATE are carried on deliberately separate
+   channels so they can never collide (ruling §10.6 / §0 selection law):
+     · identity  = the weight MARK — a short, inset rule under the label
+     · selection = the CELL CHROME — background fill + full-bleed heavier rule
+   Different width, different position, different property. A selected Watch
+   cell still reads as dashed; an unselected Entered cell still reads as solid.
+   ══════════════════════════════════════════════════════════════════════════ */
+/* Vertical footprint is deliberately tight (handoff §10): the ladder stays the
+   Board's signature control and every count stays canonical, but the product
+   hero is the opportunity grid, so the first cards must arrive early. Nothing
+   semantic is reduced here — only leading, type size and padding. */
+.ladder-block { margin: 14px 0 0; }
+
+.ladder-headline { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 7px; }
+.ladder-n {
+  font-size: 30px; font-weight: 800; letter-spacing: -.035em; line-height: 1;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.ladder-nl { font-size: 14.5px; font-weight: 650; color: var(--text); }
+.ladder-sub { font-size: 11.5px; color: var(--muted); margin-left: 2px; }
+
+.mx-ladder {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr)) 15px minmax(0, .9fr);
+  align-items: stretch; gap: 0;
+}
+/* the live enclosure: cells 1–6 share one recessed band, so "these six sum to
+   the headline" is a visual fact rather than a caption. */
+.mx-cell {
+  position: relative; display: flex; flex-direction: column; gap: 2px;
+  padding: 11px 10px 8px; min-width: 0;      /* top padding clears the weight cap */
+  background: color-mix(in srgb, var(--panel) 72%, transparent);
+  border: 1px solid var(--line); border-right-width: 0;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+  transition: background .13s, border-color .13s;
+  overflow: hidden;
+}
+.mx-cell:first-child { border-radius: 11px 0 0 11px; }
+.mx-cell--last-live { border-right-width: 1px; border-radius: 0 11px 11px 0; }
+.mx-cell:hover { background: color-mix(in srgb, var(--text) 6%, var(--panel)); }
+.mx-cell:focus-visible { outline: 2px solid var(--ink-link); outline-offset: 2px; z-index: 3; }
+
+.mx-cell-n {
+  font-size: 18px; font-weight: 800; line-height: 1; letter-spacing: -.025em;
+  font-variant-numeric: tabular-nums; color: var(--text);
+}
+.mx-cell-l {
+  font-size: 11.5px; font-weight: 650; line-height: 1.25; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* zero is honest inventory for a producing cell — it recedes, it does not vanish */
+.mx-cell[data-zero="1"] .mx-cell-n { color: var(--muted); opacity: .75; }
+/* key-absence is NOT zero (ruling §6 fn.1) — an em dash, never a silent 0 */
+.mx-cell[data-absent="1"] .mx-cell-n { color: var(--muted); opacity: .6; }
+
+/* ── the terminal cell: visibly OUTSIDE the live sum ─────────────────────── */
+.mx-ladder-gap { position: relative; }
+.mx-ladder-gap::before {
+  content: ""; position: absolute; left: 50%; top: 9px; bottom: 9px; width: 1px;
+  background: var(--line);
+}
+.mx-cell--term {
+  background: transparent; border: 1px dashed var(--line); border-radius: 11px;
+}
+.mx-cell--term .mx-cell-n { color: var(--muted); }
+.ladder-termnote {
+  grid-column: 8; font-size: 9.5px; line-height: 1.3; color: var(--muted);
+  padding: 5px 3px 0; text-align: left;
+}
+
+/* ── SELECTION (never violet — violet is lock-only) ─────────────────────── */
+.mx-cell[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--text) 11%, var(--panel));
+  border-color: color-mix(in srgb, var(--text) 34%, var(--line));
+  z-index: 2;
+}
+.mx-cell[aria-pressed="true"]::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: var(--text);
+}
+.mx-cell[aria-pressed="true"] .mx-cell-l { color: var(--text); }
+
+/* ── THE WEIGHT GRAMMAR (identity channel) ──────────────────────────────────
+   Re-issued over the ruled seven cells per ruling §10.6. Direction-neutral by
+   construction: currentColor / --muted only — no --up/--down/--q* hue ever
+   touches a lifecycle mark, so the grammar is byte-identical under the zh flip.
+
+   ONE definition serves two sizes:
+     .mx-cap  — full-bleed 3px cap at the top of a ladder cell AND at the top of
+                a card. Identical geometry in both places, which is what makes
+                the ladder and the grid read as one population.
+     .mx-mark — the same six weights at inline scale (26px), for the card's
+                lifecycle fact column, the table, and the absence line.
+   ─────────────────────────────────────────────────────────────────────────── */
+.mx-cap {
+  position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  color: var(--text); pointer-events: none;
+}
+.mx-mark {
+  position: relative; display: inline-block; width: 26px; height: 4px; flex: none;
+  color: var(--text); vertical-align: middle;
+}
+.mx-cap::before, .mx-mark::before { content: ""; position: absolute; inset: 0; }
+
+/* Watch — dashed hairline: a signal fired, nothing is committed */
+.mx-cap--watch::before  { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 9px); }
+.mx-mark--watch::before { top: 1.5px; height: 1px;
+  background: repeating-linear-gradient(90deg, currentColor 0 3px, transparent 3px 6.5px); }
+
+/* Ready — half filled: the plan is armed, the trigger has not fired */
+.mx-cap--ready::before  { background: linear-gradient(90deg, currentColor 0 50%,
+                          color-mix(in srgb, currentColor 16%, transparent) 50%); }
+.mx-mark--ready::before { top: .5px; height: 3px;
+  background: linear-gradient(90deg, currentColor 0 50%,
+              color-mix(in srgb, currentColor 22%, transparent) 50%); }
+
+/* Entered + Delivering — solid: a live commitment. Deliberately IDENTICAL: the
+   grammar encodes commitment CLASS, not per-cell identity; the two solid cells
+   are told apart by label and count, which the partition law guarantees. */
+.mx-cap--entered::before, .mx-cap--delivering::before { background: currentColor; }
+.mx-mark--entered::before, .mx-mark--delivering::before { top: .5px; height: 3px; background: currentColor; }
+
+/* Overtime — solid muted: the declared window expired, the plan is still open */
+.mx-cap--overtime::before  { background: color-mix(in srgb, currentColor 34%, transparent); }
+.mx-mark--overtime::before { top: .5px; height: 3px; background: color-mix(in srgb, currentColor 38%, transparent); }
+
+/* Invalidated — hollow + struck: the plan's own stated void level was hit */
+.mx-cap--invalidated::before {
+  top: 1px; bottom: 0; background: transparent;
+  border-top: 1px solid color-mix(in srgb, currentColor 60%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, currentColor 60%, transparent);
+}
+.mx-cap--invalidated::after {
+  content: ""; position: absolute; left: 0; right: 0; top: 1.5px; height: 1px;
+  background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 10px);
+}
+.mx-mark--invalidated::before {
+  top: .5px; height: 3px; background: transparent;
+  border: 1px solid color-mix(in srgb, currentColor 62%, transparent);
+}
+.mx-mark--invalidated::after {
+  content: ""; position: absolute; left: -1px; right: -1px; top: 1.5px; height: 1px;
+  background: currentColor; transform: rotate(-9deg);
+}
+
+/* Resolved — neutral outline: graded out, archive weight */
+.mx-cap--resolved  { color: var(--muted); }
+.mx-mark--resolved { color: var(--muted); }
+.mx-cap--resolved::before {
+  top: 1px; bottom: 0; background: transparent;
+  border-top: 1px solid color-mix(in srgb, var(--muted) 52%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--muted) 52%, transparent);
+}
+.mx-mark--resolved::before {
+  top: .5px; height: 3px; background: transparent;
+  border: 1px solid color-mix(in srgb, var(--muted) 55%, transparent);
+}
+
+/* the disclosed-absence line for the watch cell (key absent ≠ zero) */
+.ladder-absence {
+  margin: 7px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+  display: flex; align-items: baseline; gap: 7px;
+}
+.ladder-absence .mx-mark { display: inline-block; transform: translateY(-2px); }
+
+.ladder-foot {
+  display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  margin: 8px 0 0; font-size: 11.5px; color: var(--muted); line-height: 1.5;
+}
+.ladder-clear {
+  border: 1px solid var(--line); background: transparent; color: var(--muted);
+  border-radius: 999px; padding: 3px 11px; font: inherit; font-size: 11px;
+  font-weight: 650; cursor: pointer;
+}
+.ladder-clear:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 34%, var(--line)); }
+
+/* ═══════════════════════ 2. SETUPS ══════════════════════════════════════ */
+.setups-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.st-view-toggle {
+  display: inline-flex; gap: 3px; padding: 3px; border-radius: 8px;
+  background: var(--panel2); border: 1px solid var(--line);
+}
+.st-view-toggle button {
+  font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+  border: 1px solid transparent; background: transparent; color: var(--muted);
+  padding: 4px 9px; border-radius: 5px; line-height: 1; transition: all .12s;
+}
+.st-view-toggle button[aria-selected="true"] {
+  background: var(--panel); color: var(--text); border-color: var(--line);
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+}
+.sort-rule { font-size: 11.5px; color: var(--muted); }
+
+/* "What changed today" — a labelled slice of today's lifecycle transitions */
+.chg-strip {
+  display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
+  padding: 7px 11px; margin-bottom: 12px;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 60%, transparent);
+  font-size: 11.5px; color: var(--muted);
+}
+.chg-strip b { color: var(--text); font-variant-numeric: tabular-nums; font-weight: 800; }
+.chg-item { display: inline-flex; align-items: center; gap: 6px; }
+.chg-sep { color: var(--line); }
+
+.pv-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
+  gap: 12px; align-items: stretch;
+}
+
+/* ── the plan-row card (revised at the G-C amalgamation gate) ─────────────
+   DNA is the shipped, operator-ratified Prophet card: chart-first hero, live
+   quote overlaid top-right, one-word stance chip top-left, compact identity,
+   restrained marks, Zone footer. What changes for the plan-row board is only
+   what the ruling changed: the four-dot rail is gone, replaced by the ruled
+   hue-neutral lifecycle mark + word.
+
+   COLOUR BUDGET (handoff §7 — "institutional, but alive"): chroma is spent on
+   the stance chip and on the chart (which paints itself in --up/--down and so
+   flips correctly under zh). It is NOT spent on a full-width card accent bar,
+   a green border, or any lifecycle mark. Lifecycle stays weight-only. */
+.pvcard {
+  position: relative; display: flex; flex-direction: column; min-width: 0;
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 12px;
+  overflow: hidden; text-decoration: none; color: var(--text);
+  transition: transform .12s, box-shadow .12s, border-color .12s;
+}
+.pvcard:hover {
+  transform: translateY(-2px); box-shadow: 0 5px 18px rgba(0,0,0,.22);
+  border-color: color-mix(in srgb, var(--pvh, var(--text)) 45%, var(--line));
+}
+/* stance hues — the card's one deliberate chroma channel */
+.pv-buy   { --pvh: var(--pv-buy);   --pvh-ink: var(--ink-up); }
+.pv-near  { --pvh: var(--pv-near);  --pvh-ink: var(--ink-up); }
+.pv-wait  { --pvh: var(--pv-wait);  --pvh-ink: var(--ink-warn); }
+.pv-hold  { --pvh: var(--pv-hold);  --pvh-ink: var(--muted); }
+.pv-avoid { --pvh: var(--pv-avoid); --pvh-ink: var(--ink-down); }
+/* BLOCKED_DATA: the entry read has not published. It takes NO stance hue —
+   an unavailable read is not a cautious read (operator ruling 2026-08-13). */
+.pv-noread { --pvh: var(--muted); --pvh-ink: var(--muted); }
+/* raised specificity: .pv-chip is defined later and would otherwise re-impose
+   uppercase. Sentence case is deliberate — it reads as an absence, not a verdict,
+   and it is the one chip in this slot that is not a stance. */
+.pv-chip.pv-chip--noread {
+  color: var(--muted); background: transparent; cursor: help;
+  border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+  font-weight: 700; letter-spacing: .01em; text-transform: none;
+  padding: 1.5px 6px;
+}
+html[data-theme="light"] .pv-chip--noread { box-shadow: none; }
+/* Featured is a RING, never a container wash (operator ruling). */
+.pv-featured { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pvh, var(--text)) 52%, transparent); }
+
+/* ── chart hero ─────────────────────────────────────────────────────────── */
+.pv-chart {
+  position: relative; min-width: 0; border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--pvh, var(--muted)) 3%, transparent);
+}
+.pv-chart svg { display: block; width: 100%; height: 74px; border-radius: 11px 11px 0 0; }
+/* THE SPARK-RECOLOUR LAW — _prophet_card.html.j2:162-163, verbatim.
+   The whole spark AND its baked zone band take the stance hue, so a Buy card is
+   one coherent bullish system rather than a red chip beside an amber chart. It
+   also means the spark inherits the zh flip through --pvh, for free. */
+.pv-chart svg * { stroke: var(--pvh) !important; }
+.pv-chart svg [fill]:not([fill="none"]) { fill: var(--pvh) !important; stroke: none !important; }
+/* Graceful missing-enrichment fallback. The stance chip must sit in the SAME
+   place on every card, so the hero collapses to a quiet strip rather than
+   disappearing — but it stays near-invisible: an absent chart is a data gap to
+   close (DESIGN_NOTES §6 Q1), not a texture to decorate. */
+.pv-nochart {
+  height: 24px; border-radius: 11px 11px 0 0;
+  background: color-mix(in srgb, var(--muted) 5%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent);
+}
+.pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; max-width: 70%; }
+.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; }
+.pv-ovl { left: 9px; }
+.pv-ovr { right: 9px; }
+/* STANCE CHIP HIERARCHY — _prophet_card.html.j2:174,178, verbatim.
+   Only BUY is a solid badge. Every other verb is a quiet tint + coloured text +
+   40% border, so the board does not read as five equally loud calls. */
+.pv-chip {
+  font-size: 10px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+  line-height: 1.35; padding: 2px 9px; border-radius: 999px; white-space: nowrap;
+  background: color-mix(in srgb, var(--pvh, var(--muted)) 13%, var(--panel, #fff));
+  color: var(--pvh-ink, var(--pvh, var(--muted)));
+  border: 1px solid color-mix(in srgb, var(--pvh-ink, var(--pvh, var(--muted))) 40%, transparent);
+}
+.pv-buy .pv-chip {
+  background: var(--pvh-ink, var(--pvh, var(--up)));
+  color: var(--panel, #fff); border-color: transparent;
+}
+.pv-trg {
+  padding: 2px 6px; border-radius: 5px; font-size: 9px; font-weight: 750;
+  white-space: nowrap; cursor: help;
+  color: var(--ink-warn); background: color-mix(in srgb, var(--warn) 15%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--warn) 42%, transparent);
+}
+/* QUOTE — _prophet_card.html.j2:179-189, verbatim. The slot is rendered on
+   EVERY card and bound by data-sym; live.js paints it. Un-hydrated it reads an
+   em dash in muted ink, which is why it needs no payload price to exist. */
+.pvcard .pv-quote {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  background: color-mix(in srgb, var(--panel) 86%, transparent);
+  border: 1px solid var(--line); border-radius: 7px; padding: 1px 6px; white-space: nowrap;
+}
+.pvcard .nb-px.pv-px, .pvcard .nb-chg.pv-chg {
+  font-size: 10.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  line-height: 1.35; white-space: nowrap; margin: 0;
+}
+.pvcard .nb-px.pv-px { color: var(--text); }
+.pvcard .pv-quote .pv-chg { color: var(--muted); }
+.pvcard .pv-quote .pv-chg.up { color: var(--ink-up, var(--up)); }
+.pvcard .pv-quote .pv-chg.down { color: var(--ink-down, var(--down)); }
+
+/* ── body ───────────────────────────────────────────────────────────────── */
+.pv-bd { padding: 8px 10px 9px; display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0; }
+.pv-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
+.pv-idw { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.pv-tk { font-size: 13.5px; font-weight: 800; letter-spacing: .01em; white-space: nowrap; flex: none; }
+.pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pv-ind { font-size: 9.5px; color: var(--muted); opacity: .85; }
+/* PRIORITY — readiness rank within tonight's set. Deliberately quiet: visible
+   for scanning, never louder than ticker, stance or price. Never hued: it is
+   not a win probability and must not read as a quality colour. */
+.pv-pri { display: flex; align-items: baseline; gap: 4px; flex: none; cursor: help; }
+.pv-pril { font-size: 8px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+.pv-prin { font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); line-height: 1; }
+.pv-prin--na { color: var(--muted); font-weight: 700; }
+
+.pv-mk { display: flex; gap: 4px; flex-wrap: wrap; }
+.pv-mk-i {
+  padding: 1.5px 6px; border-radius: 4px; font-size: 9px; font-weight: 700;
+  white-space: nowrap; border: 1px solid var(--line); color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 55%, transparent);
+}
+.pv-mk-feat {
+  color: var(--pvh-ink, var(--text));
+  border-color: color-mix(in srgb, var(--pvh, var(--text)) 45%, transparent);
+  background: color-mix(in srgb, var(--pvh, var(--text)) 10%, transparent);
+}
+.pv-mk-new { color: var(--ink-info); border-color: color-mix(in srgb, var(--info) 42%, transparent); }
+/* the lane mark: a static admission classification, never a progress device */
+.pv-mk-lane { cursor: help; }
+
+/* lifecycle fact — the ruled mark + the cell word. No gloss sentence: the
+   vocabulary is taught at the ladder and in its LENS, not re-explained 40x. */
+.pv-life { display: flex; align-items: center; gap: 6px; margin-top: 1px; }
+.pv-life-w { font-size: 11px; font-weight: 750; color: var(--text); white-space: nowrap; }
+.pv-ep {
+  display: inline-flex; align-items: center; padding: 1.5px 6px;
+  border: 1px dashed color-mix(in srgb, var(--muted) 45%, transparent); border-radius: 4px;
+  font-size: 9px; font-weight: 650; color: var(--muted); white-space: nowrap;
+}
+.pv-newer { font-size: 10px; font-weight: 650; color: var(--ink-link); text-decoration: none; }
+.pv-newer:hover { text-decoration: underline; }
+
+/* ── zone footer: the price AREA that matters, not an execution instruction ── */
+.pv-zn {
+  display: flex; align-items: baseline; gap: 6px; margin-top: auto;
+  background: color-mix(in srgb, var(--panel) 55%, var(--bg));
+  border-top: 1px solid var(--line); padding: 5px 10px 6px;
+  font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden;
+}
+.pv-znl {
+  font-size: 8.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
+  color: var(--pvh-ink, var(--muted)); flex: none;
+}
+.pv-znr { font-weight: 700; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pv-znm { color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.pv-dt { margin-left: auto; color: var(--muted); flex: none; font-size: 9px; padding-left: 5px; }
+
+/* resolved cards carry archive weight — record, not inventory */
+.pvcard[data-life="resolved"] { background: color-mix(in srgb, var(--panel2) 55%, var(--bg)); border-style: dashed; }
+.pvcard[data-life="resolved"] .pv-tk { color: var(--muted); }
+
+.pv-more {
+  display: flex; align-items: center; justify-content: center; min-height: 96px;
+  border: 1px dashed var(--line); border-radius: 12px; color: var(--muted);
+  font-size: 12px; font-weight: 650; text-decoration: none; text-align: center; padding: 14px;
+}
+.pv-more:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); }
+.pv-more b { color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* table view — the surface where rendered rows equal the cell count exactly */
+.st-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.st-table th {
+  text-align: left; font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase;
+  color: var(--muted); font-weight: 800; padding: 7px 9px; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+.st-table td { padding: 7px 9px; border-bottom: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.st-table tbody tr:hover { background: color-mix(in srgb, var(--text) 4%, transparent); }
+.st-table .fig { font-variant-numeric: tabular-nums; }
+.st-life { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.st-wrap { overflow-x: auto; }         /* wide content scrolls in its own box, never the page */
+
+/* ═══════════════════ 3. CANDIDATES / 候选 ═══════════════════════════════
+   A SECOND population with a different noun, a different form, and its own
+   printed-once total. Deliberately NOT the ladder: pill shelves, no weight
+   marks, no lifecycle vocabulary of any kind inside this section. */
+.cand-shelves { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 13px; }
+.cand-shelf {
+  display: inline-flex; align-items: baseline; gap: 7px; padding: 6px 12px;
+  border: 1px solid var(--line); border-radius: 999px;
+  background: color-mix(in srgb, var(--panel2) 65%, transparent);
+  font-size: 11.5px; font-weight: 650; color: var(--muted);
+}
+.cand-shelf b { color: var(--text); font-weight: 800; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.cand-shelf i { font-style: normal; font-size: 10px; opacity: .8; }
+.cand-rows { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.cand-row {
+  display: flex; align-items: baseline; gap: 8px; padding: 8px 11px;
+  border: 1px solid var(--line); border-radius: 9px; background: var(--panel);
+  font-size: 12px; min-width: 0;
+}
+.cand-tk { font-weight: 800; font-size: 12.5px; flex: none; }
+.cand-nm { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cand-px { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 700; font-size: 11.5px; flex: none; }
+
+/* ═══════════════════ 4. GROUPS (five stance lanes — idiom untouched) ═════ */
+.actiongrid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; align-items: start; }
+.actcol {
+  background: var(--panel); border: 1px solid var(--line); min-width: 0;
+  border-radius: 14px; overflow: hidden; display: flex; flex-direction: column;
+  --act-accent: var(--muted);
+}
+.act-buy  { --act-accent: var(--up);   --act-accent-ink: var(--ink-up); }
+.act-soon { --act-accent: var(--info); --act-accent-ink: var(--ink-info); }
+.act-run  { --act-accent: #8b5cf6;     --act-accent-ink: color-mix(in srgb, #8b5cf6 80%, var(--text)); }
+.act-trim { --act-accent: var(--warn); --act-accent-ink: var(--ink-warn); }
+.act-hold { --act-accent: var(--muted);--act-accent-ink: var(--muted); }
+.acth { padding: 10px 13px 9px; border-bottom: 1px solid var(--line); position: relative; }
+.acth::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 14px 14px 0 0; background: var(--act-accent); }
+.acth-title-row { display: flex; align-items: center; gap: 5px; }
+.acth-name {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--act-accent-ink, var(--act-accent)); min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.acth-count { flex: none; font-size: 11px; font-weight: 400; color: var(--muted); font-variant-numeric: tabular-nums; }
+.acth-count::before { content: "("; } .acth-count::after { content: ")"; }
+.acth-sub { font-size: 10.5px; color: var(--muted); line-height: 1.4; margin-top: 3px; }
+.actbody { padding: 7px 0; flex: 1; }
+.act-row { display: flex; align-items: baseline; gap: 7px; padding: 4px 13px; font-size: 11.5px; }
+.act-row b { font-weight: 700; }
+.act-row span { color: var(--muted); font-size: 10.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* mobile: five lanes become a segmented stance selector (lane names ARE stances) */
+.stance-sel { display: none; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.stance-sel button {
+  font: inherit; font-size: 11px; font-weight: 700; padding: 5px 11px; border-radius: 999px;
+  border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer;
+}
+.stance-sel button[aria-pressed="true"] { background: color-mix(in srgb, var(--text) 11%, var(--panel)); color: var(--text); border-color: color-mix(in srgb, var(--text) 30%, var(--line)); }
+
+/* ═══════════════════ 5/6. MARKET CONTEXT + EVIDENCE ═════════════════════ */
+.tabset { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 12px; }
+.tabset a {
+  display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px;
+  border: 1px solid var(--line); border-radius: 8px; font-size: 11.5px; font-weight: 650;
+  color: var(--muted); text-decoration: none; background: color-mix(in srgb, var(--panel2) 55%, transparent);
+}
+.tabset a:hover { color: var(--text); border-color: color-mix(in srgb, var(--text) 28%, var(--line)); }
+.ev-links { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; }
+.ev-links a { color: var(--ink-link); text-decoration: none; font-weight: 650; }
+.ev-links a:hover { text-decoration: underline; }
+
+/* ═══════════════════ LOCK (violet = locked, its only meaning) ═══════════ */
+.mx-tier-gate {
+  --mx-tier-accent: var(--link);
+  position: relative; isolation: isolate; overflow: hidden;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 24px;
+  margin: 16px 0 2px; padding: 21px 23px;
+  border: 1px solid color-mix(in srgb, var(--mx-tier-accent) 34%, var(--line));
+  border-radius: 15px;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--mx-tier-accent) 11%, var(--panel)), var(--panel) 68%);
+  box-shadow: 0 16px 40px -28px color-mix(in srgb, var(--mx-tier-accent) 72%, transparent);
+}
+.mx-tier-gate::after {
+  content: ""; position: absolute; left: 23px; right: 23px; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--mx-tier-accent) 75%, transparent), transparent);
+}
+.mx-tier-gate--prophet {
+  --mx-tier-accent: #7c5cff;
+  background: linear-gradient(120deg, color-mix(in srgb, #7c5cff 12%, var(--panel)), var(--panel) 70%);
+}
+.mx-tier-copy { display: flex; min-width: 0; flex-direction: column; align-items: flex-start; gap: 5px; }
+.mx-tier-eyebrow {
+  display: flex; align-items: center; gap: 7px; color: var(--mx-tier-accent);
+  font: 750 10px/1 var(--font-ui); letter-spacing: .09em; text-transform: uppercase;
+}
+.mx-tier-mark {
+  display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px;
+  background: color-mix(in srgb, var(--mx-tier-accent) 13%, var(--panel));
+  border: 1px solid color-mix(in srgb, var(--mx-tier-accent) 28%, var(--line));
+  font-size: 11px; letter-spacing: 0;
+}
+.mx-tier-copy b { font-size: 18px; line-height: 1.2; letter-spacing: -.015em; color: var(--text); }
+.mx-tier-copy small { max-width: 650px; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.mx-tier-actions { position: relative; z-index: 1; display: flex; flex-direction: column; align-items: stretch; gap: 7px; min-width: 174px; }
+.mx-tier-primary {
+  border: 1px solid var(--mx-tier-accent); border-radius: 10px; background: var(--mx-tier-accent);
+  color: #fff; font: inherit; font-size: 12.5px; font-weight: 760; line-height: 1; padding: 12px 17px;
+  cursor: pointer; box-shadow: 0 9px 22px -12px color-mix(in srgb, var(--mx-tier-accent) 85%, transparent);
+}
+.mx-tier-signin { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 10.5px; font-weight: 650; padding: 2px 4px; cursor: pointer; }
+
+/* the ghost: locked cards carry NO data — they are contentless skeletons, so
+   "view source" shows exactly the visible rows and nothing withheld. */
+.pv-ghost {
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel2);
+  min-height: 168px; padding: 14px 12px; display: flex; flex-direction: column; gap: 9px;
+  filter: blur(5px); opacity: .34; pointer-events: none; user-select: none;
+}
+html[data-theme="light"] .pv-ghost { filter: blur(5px) saturate(.35); opacity: .46; }
+.pv-ghost i { display: block; height: 9px; border-radius: 3px; background: var(--line); }
+.pv-ghost i:nth-child(1) { width: 38%; height: 13px; }
+.pv-ghost i:nth-child(2) { width: 72%; }
+.pv-ghost i:nth-child(3) { width: 54%; }
+.pv-ghost i:nth-child(4) { width: 84%; margin-top: auto; }
+
+/* ═══════════════════ EMPTY STATE (.mx-empty — NEW, DS-PR-0) ════════════ */
+.mx-empty {
+  border: 1px dashed var(--line); border-radius: 12px; padding: 30px 22px;
+  text-align: center; background: color-mix(in srgb, var(--panel) 45%, transparent);
+}
+.mx-empty b { display: block; font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+.mx-empty-why { font-size: 12px; color: var(--muted); line-height: 1.55; }
+
+/* ═══════════════════ LENS (Tier-2 receipts) ════════════════════════════ */
+.lens-pop {
+  position: fixed; z-index: 999; width: min(300px, calc(100vw - 24px));
+  border-radius: 15px; background: var(--panel);
+  border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+  box-shadow: var(--popover-shadow);
+  opacity: 0; pointer-events: none; transform: translateY(6px) scale(.97);
+  transition: opacity .12s ease, transform .12s ease; text-align: left;
+}
+.lens-pop.open { opacity: 1; transform: none; }
+.lens-ttl { display: block; padding: 13px 15px 0; font: 700 12.5px/1.38 var(--font-ui); color: var(--text); }
+.lens-body { padding: 6px 15px 13px; font: 450 12.5px/1.6 var(--font-ui); color: color-mix(in srgb, var(--text) 88%, var(--muted)); }
+.lens-receipt {
+  margin: 0 15px; padding: 9px 0 12px;
+  border-top: 1px dashed color-mix(in srgb, var(--text) 17%, transparent);
+  font: 600 10px/1.5 var(--font-ui); letter-spacing: .02em; color: var(--muted);
+}
+.lens-q {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; height: 16px; border-radius: 50%; margin: 0 2px; vertical-align: middle;
+  font: 600 10px/1 var(--font-ui); color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 9%, transparent);
+  border: 1px solid color-mix(in srgb, var(--muted) 42%, transparent); cursor: help;
+}
+
+/* ═══════════════════ RESPONSIVE ════════════════════════════════════════ */
+@media (max-width: 1100px) { .actiongrid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+@media (max-width: 720px) {
+  .wrap { padding: 0 14px 60px; }
+  .bh-title { font-size: 21px; }
+  .bh-stamp { margin-left: 0; width: 100%; }
+  .ladder-n { font-size: 34px; }
+
+  /* seven cells wrap 4 + 3 with the total pinned above — never a horizontal
+     scroll on a filter control (a scroll hides active-filter state). */
+  .mx-ladder { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .mx-ladder-gap { display: none; }
+  .mx-cell { border-right-width: 1px; border-radius: 9px; }
+  .mx-cell:first-child, .mx-cell--last-live { border-radius: 9px; }
+  .mx-ladder { gap: 5px; }
+  .mx-cell-n { font-size: 18px; }
+  .mx-cell-l { font-size: 10.5px; white-space: normal; }
+  .ladder-termnote { grid-column: 1 / -1; text-align: center; padding-top: 2px; }
+
+  .pv-grid { grid-template-columns: 1fr; }
+  .cand-rows { grid-template-columns: 1fr; }
+  .actiongrid { grid-template-columns: 1fr; }
+  .stance-sel { display: flex; }
+  .actcol[data-lane]:not([data-lane="buy"]) { display: none; }
+  .mx-tier-gate { grid-template-columns: 1fr; gap: 16px; padding: 18px; }
+  .mx-tier-actions { width: 100%; min-width: 0; }
+  .mx-tier-primary { width: 100%; }
+}
+
+/* ═══════════════════ HARNESS (mockup chrome — not part of the page) ════ */
+.harness {
+  position: sticky; top: 0; z-index: 500; display: flex; gap: 14px; flex-wrap: wrap;
+  align-items: center; padding: 8px 16px; margin-bottom: 4px;
+  background: color-mix(in srgb, var(--panel) 94%, transparent);
+  border-bottom: 1px solid var(--line);
+  font-size: 11px; color: var(--muted);
+  backdrop-filter: blur(8px);
+}
+.harness strong { color: var(--text); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+.harness a {
+  color: var(--muted); text-decoration: none; padding: 3px 8px; border-radius: 5px;
+  border: 1px solid transparent;
+}
+.harness a.on { color: var(--text); background: color-mix(in srgb, var(--text) 10%, transparent); border-color: var(--line); }
+.harness a:hover { color: var(--text); }
+.harness-g { display: flex; gap: 3px; align-items: center; }
+html[data-chrome="0"] .harness { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  .pvcard:hover { transform: none; }
+}

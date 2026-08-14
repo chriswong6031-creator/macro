@@ -1,0 +1,36 @@
+# Critic receipt (RIG V1 §6) — one per role; two-pass with rationale quarantine.
+schema: mastermind.rig_review.v1
+reference_id: <same as manifest>
+role: product_regression     # product_regression | visual_taste
+artifact_sha: <the proposal frozen_sha this review judged — binds receipt to bytes>
+
+reviewer:
+  identity: "<independent reviewer identity — must differ from author and from the other critic>"
+  model: opus
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - user/business job
+    - production-before artifact (screenshots + source)
+    - proposed-after artifact (frozen files + crops)
+    - capability ledger (baseline.yml)
+  rationale_received_after_first_pass: true
+
+first_pass:
+  frozen_at: "<ISO timestamp — findings frozen BEFORE rationale reveal>"
+  verdict: BLOCK             # PASS | PASS_WITH_CONDITIONS | BLOCK
+  findings:
+    - id: PRC-001            # PRC-nnn for product_regression, VTC-nnn for visual_taste
+      severity: blocker      # blocker | major | minor
+      capability: <baseline capability id, where applicable>
+      finding: <one dense sentence with evidence pointer>
+  strengths:
+    - <what the proposal genuinely improves — anti-strawman record>
+
+second_pass:                 # after the designer rationale/constraints are revealed
+  amended_at: "<ISO timestamp>"
+  amendments:
+    - {finding: PRC-001, action: upheld, note: "<why the rationale does/doesn't change it>"}
+      # action: upheld | downgraded | withdrawn
+  verdict: BLOCK             # the critic's final verdict, post-rationale

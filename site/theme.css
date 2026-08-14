@@ -6,12 +6,12 @@
    auto-adapt: dark tint + light text in dark mode, light tint + dark text in
    light mode. Nothing hard-codes a dark background. */
 
-/* Inter — the typeface used by the Bitcoin Vector dashboard and the landing
-   hub. SELF-HOSTED (was a Google Fonts web import): the Google Fonts CDN is
-   blocked in mainland China, so the WOFF2 files are vendored under site/fonts/
-   (source: templates/fonts/, copied by build_site) and served same-origin.
-   theme.css is linked by every page, so these @font-face rules give the whole
-   site Inter with no third-party request. */
+/* Inter — the cross-platform carrier of the house voice (San Francisco leads on
+   Apple; see --font-ui). SELF-HOSTED (was a Google Fonts web import): the Google
+   Fonts CDN is blocked in mainland China, so the WOFF2 files are vendored under
+   site/fonts/ (source: templates/fonts/, copied by build_site) and served
+   same-origin. theme.css is linked by every page, so these @font-face rules give
+   every non-Apple client the full 400–900 range with no third-party request. */
 @font-face{font-family:Inter;font-style:normal;font-weight:400;font-display:swap;src:url("fonts/Inter-400.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:500;font-display:swap;src:url("fonts/Inter-500.woff2") format("woff2");}
 @font-face{font-family:Inter;font-style:normal;font-weight:600;font-display:swap;src:url("fonts/Inter-600.woff2") format("woff2");}
@@ -20,14 +20,14 @@
 @font-face{font-family:Inter;font-style:normal;font-weight:900;font-display:swap;src:url("fonts/Inter-900.woff2") format("woff2");}
 :root {
   /* ── font stacks ─────────────────────────────────────────────────────────────
-     --font-ui   : primary UI stack. Inter (self-hosted woff2) leads; the chain
-                   covers Windows (Segoe UI), Android (Roboto), and native CJK
-                   glyph coverage (PingFang SC / Hiragino / Microsoft YaHei) so
-                   mixed EN+ZH text renders cleanly without the zh-body override.
-     --font-mono : monospace for code, tickers, numeric labels. ui-monospace
-                   resolves to SF Mono (macOS/iOS), Consolas (Windows), or the
-                   platform mono — no external download needed. */
-  --font-ui: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+     --font-ui   : primary UI stack. San Francisco leads via the system keywords
+                   — SF cannot be self-hosted (Apple's licence bars webfont
+                   redistribution), and naming no optical variant lets SF pick
+                   Text/Display itself. Inter follows as the carrier elsewhere,
+                   AHEAD of Segoe UI / Roboto so non-Apple gets the house face.
+     --font-mono : figures, tickers, code, axis ticks. ui-monospace resolves to
+                   SF Mono (macOS/iOS), Consolas (Windows) — no download. */
+  --font-ui: -apple-system, BlinkMacSystemFont, Inter, "Segoe UI", Roboto,
     "Helvetica Neue", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
     "Noto Sans CJK SC", sans-serif;
   --font-mono: ui-monospace, "SF Mono", SFMono-Regular, "Cascadia Mono",
@@ -37,6 +37,29 @@
      own scope. This :root default keeps the token valid everywhere else (a bare
      `font-family:var(--num)` is otherwise an invalid decl on non-macro pages). */
   --num: var(--font-ui);
+  /* ── type ramp — the SITE type scale (design-system packet PR-0(a)) ─────────
+     11 deliberate steps, promoted VERBATIM out of body.page-macro
+     (dashboard.html.j2) where it was born; body.estate (seo_base) carried a
+     byte-identical copy and leader_radar/intraday_flow carried near-copies.
+     Promotion only — no value was retuned; the pages that differ keep a
+     documented local override rather than being silently re-sized.
+
+     It must live at :root, NOT on a body class. body.page-stocks (the Prophet
+     board) never declared the ramp and inherits it ONLY through :root — a
+     body-class home would leave every Prophet surface off the scale. Same for
+     the calculators and the seo_* estate children, which use var(--fs-*)
+     without declaring it and today resolve it through their base template. */
+  --fs-display:46px;   /* hero verdict word          */
+  --fs-num-xl:38px;    /* the big board scores        */
+  --fs-h1:28px;        /* page / hero title           */
+  --fs-num-lg:22px;    /* secondary big numerals      */
+  --fs-h2:17px;        /* panel section titles        */
+  --fs-md:15px;        /* lead body / strong figures  */
+  --fs-body:14px;      /* base copy                   */
+  --fs-h3:14px;        /* subsection titles           */
+  --fs-sm:12.5px;      /* secondary copy / table body */
+  --fs-label:11px;     /* MONO eyebrows · caps        */
+  --fs-micro:10px;     /* dense ticks · table heads   */
   --bg: #0f1115; --panel: #181b21; --panel2: #1e222a; --text: #d7dce3;
   --muted: #8b93a1;
   /* Estate contrast pass 2026-08-03: #2a2f3a measured 1.13–1.29:1 against the
@@ -369,12 +392,12 @@ html[data-lang="zh"] :is(.igx, .igs) { --ok: var(--up); --ink-ok: var(--ink-up);
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
 /* CJK type: put the native CJK face first so Hanzi always uses a proper glyph
-   rather than Inter's Latin fallback, and drop wide tracking on headings (looks
-   wrong on Hanzi). Inter stays in the stack so any Latin mixed-in text still
-   picks up the branded weight. */
+   rather than a Latin fallback, and drop wide tracking on headings (looks wrong
+   on Hanzi). PingFang covers Latin too, so it wins there as well; SF then Inter
+   close the stack only for platforms missing every CJK face above. */
 html[data-lang="zh"] body {
-  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
-    "Noto Sans CJK SC", "Microsoft JhengHei", "Heiti SC", Inter, sans-serif;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans CJK SC",
+    "Microsoft JhengHei", "Heiti SC", -apple-system, BlinkMacSystemFont, Inter, sans-serif;
 }
 html[data-lang="zh"] h2 { letter-spacing: 0; }
 
@@ -1868,3 +1891,73 @@ span.help.help-upgraded { font-size: 9.5px; font-weight: 700;
 .public-nav a.public-nav-login:hover, .public-nav a.public-nav-login:focus { color: #1c2430; }
 html[data-theme="dark"] .public-nav a.public-nav-login:link,
 html[data-theme="dark"] .public-nav a.public-nav-login:visited { color: var(--muted); }
+
+/* ═══ design-system shared primitives (packet PR-0(b)) ═════════════════════════
+   Canonical source: mockups/design_system/specimen.html — the visual
+   constitution (research/MASTER_PRODUCT_DESIGN_SYSTEM_V1.md). These live HERE,
+   not in a page template, so build_site.py and build_vector.py templates consume
+   ONE definition instead of re-inventing a local family each.
+
+   NAMESPACE LAW (red-team 2026-08-12): every new primitive is .mx-*. The
+   unprefixed names these were drafted under (.ladder / .chg-row / .empty)
+   collide with 11+ existing page-local class families across templates/.
+
+   DS-PR-0 FORWARD-COMPAT: the specimen styles these with the proposed token
+   scales (--sp-*, --r-*). Those scales are NOT part of this PR, so each such
+   reference carries the specimen's own value as a var() fallback. When DS-PR-0
+   lands the scales at :root the tokens win and the fallbacks go inert — no
+   follow-up edit needed here. */
+
+/* DecisionRow — one scannable "what changed" line. */
+.mx-chg-row { display:flex; align-items:center; gap:10px; padding:9px 2px;
+  border-bottom:1px solid var(--line); text-decoration:none; color:inherit; }
+.mx-chg-row:last-child { border-bottom:none; }
+.mx-chg-name { font-weight:700; font-size:var(--fs-md); flex:none; }
+.mx-chg-what { color:var(--text); font-size:var(--fs-sm); flex:1; min-width:0; }
+/* inert until .mx-stance itself lands; kept so the row's contract stays whole */
+.mx-chg-row .mx-stance { flex:none; font-size:var(--fs-label); padding:3px 9px; }
+.mx-chg-chev { color:var(--muted); flex:none; }
+@media (max-width:640px) {
+  .mx-chg-row { flex-wrap:wrap; row-gap:4px; }
+  .mx-chg-what { flex-basis:100%; order:3; }
+}
+
+/* Empty state — never a bare blank. .mx-empty-why is REQUIRED alongside
+   .mx-empty: doctrine says a null is disclosed in plain words, so the state
+   always carries its reason. */
+.mx-empty { padding:var(--sp-6,24px) var(--sp-4,16px); text-align:center; }
+.mx-empty-line { font-size:var(--fs-md); font-weight:600; }
+.mx-empty-why { color:var(--muted); font-size:var(--fs-sm); margin-top:4px; }
+
+/* Count ladder — control form; the active cell reads as WEIGHT (solid underline
+   + 800), never as hue.
+
+   SCOPE RIDER — binding (Sol §J.9 ruling, 2026-08-12): .mx-ladder is scoped to
+   Prophet / lifecycle-derived surfaces and MUST NOT proliferate as a generic
+   site-wide control. It is the signature device of one archetype, not a general
+   segmented-control primitive; reach for it only where the counts it ladders are
+   lifecycle-derived. */
+.mx-ladder { display:flex; align-items:stretch; gap:0; border:1px solid var(--line);
+  border-radius:var(--r-btn,10px); overflow:hidden; }
+.mx-ladder .mx-lad-total { padding:8px 14px; font-weight:800; font-size:var(--fs-md);
+  border-right:1px solid var(--line); background:var(--panel2); }
+.mx-ladder .mx-lad-total small { display:block; font-size:var(--fs-micro);
+  font-weight:600; color:var(--muted); }
+/* The display:block above ties the language toggle on specificity — both land at
+   (0,2,1) — and this file's toggle sits EARLIER (see "language visibility
+   toggle"), so source order hands the tie to the rule above and BOTH language
+   labels printed in the total cell under zh. Restore the toggle explicitly. */
+html:not([data-lang="zh"]) .mx-ladder .mx-lad-total small.l-zh,
+html[data-lang="zh"] .mx-ladder .mx-lad-total small.l-en { display:none; }
+.mx-ladder button { appearance:none; background:none; border:none;
+  border-right:1px solid var(--line); padding:8px 12px;
+  font:600 var(--fs-sm)/1.2 var(--font-ui); color:var(--muted); cursor:pointer; }
+.mx-ladder button:last-child { border-right:none; }
+.mx-ladder button b { display:block; font-size:var(--fs-md); color:var(--text);
+  font-variant-numeric:tabular-nums; }
+.mx-ladder button[aria-pressed="true"] { color:var(--text); font-weight:800;
+  box-shadow:inset 0 -3px 0 var(--text); }
+
+/* keyboard affordance for the two interactive primitives landed here */
+:where(.mx-chg-row, .mx-ladder button):focus-visible {
+  outline:2px solid color-mix(in srgb, var(--link) 70%, transparent); outline-offset:2px; }

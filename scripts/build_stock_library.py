@@ -19,7 +19,8 @@ import logging
 import os
 import sys
 import time
-from datetime import date, timedelta
+import uuid
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -66,6 +67,20 @@ from lib.ticker_popularity import attach_latest_volume, latest_volume_map  # noq
 from collectors.us_names_zh import load_aliases_zh as _load_us_aliases_zh  # noqa: E402
 from collectors.us_names_zh import load_names_zh as _load_us_names_zh  # noqa: E402
 from collectors.us_names_zh import lookup as _us_name_zh  # noqa: E402
+
+# Lineage stamp for the artifact PAIR this module writes: signal_gate.json (the gate) and
+# us_standouts.json (the board, whose rows embed a superset copy of each gate verdict).
+# Computed once per PROCESS, so both files written by one run carry the same pair_id — and
+# a differing pair_id on disk therefore means a later run advanced one side without the
+# other. That is not hypothetical: the gate write is guarded (`if sig_verdict:` + a
+# try/except that logs and continues) while the board write is not, and on 2026-08-12 a
+# `scope=all` re-render shipped a fresh board against an unchanged gate (8 of 69 buy rows
+# skewed). `as_of` cannot reveal it — both stamp the DATA date, not the write time.
+_PAIR_EMIT_STAMP = {
+    "pair_id": uuid.uuid4().hex,
+    "at_utc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+    "writer": "build_stock_library",
+}
 
 # Loaded once at module level — small committed JSONs, no I/O on re-import.
 # Feed the search manifest so a Chinese query (苹果 / 英伟达) reaches US names, the
@@ -2809,6 +2824,7 @@ def main() -> int:
     # ETF weight max per ticker from newest data/etf_holdings/<ETF>/*.parquet snapshots.
     _sp_etf_wt: "dict[str, float]" = {}         # ticker -> max weight_pct across all ETFs
     try:
+        from collectors.holdings import drop_non_equity as _drop_non_equity  # noqa: PLC0415
         _etf_dir = config.data_dir() / "etf_holdings"
         if _etf_dir.exists():
             _etf_frames: list["pd.DataFrame"] = []
@@ -2820,6 +2836,14 @@ def main() -> int:
                     continue
                 try:
                     _df = pd.read_parquet(_snaps[-1])
+                    # Stored snapshots RETAIN the sponsor's cash/FX/derivative
+                    # sleeve rows, so every reader weeds them itself. This map is
+                    # only ever read as `.get(ticker)` against the stock universe,
+                    # which makes a stray `USD` key inert TODAY — but `CASH` is
+                    # both a cash sentinel and a live published ticker (Pathward
+                    # Financial), so one sponsor filing its sleeve as `CASH` would
+                    # hand a real stock a cash weight through the groupby-max.
+                    _df = _drop_non_equity(_df)
                     if "ticker" in _df.columns and "weight_pct" in _df.columns:
                         _etf_frames.append(_df[["ticker", "weight_pct"]])
                 except Exception:  # noqa: BLE001
@@ -3981,6 +4005,29 @@ def main() -> int:
                     rec["flow_score"] = _fs_block
             except Exception as _fs_e:  # noqa: BLE001 — additive; never fatal
                 log.debug("flow_score block skipped for %s (%s)", ticker, _fs_e)
+        # ── G-D: carry the sparkline and the gauge's disclosed null onto the
+        # per-name record, not just onto board rows ─────────────────────────────
+        # `disp_map` and `entry_sig_null` are both computed in THIS loop, for every
+        # universe name, and until now were published only where a name reached a board
+        # bucket (:4940 / :4935).  The plan book is a LEDGER population, not a screener
+        # one, so joining it against those buckets reached 45/179 rows — the enrichment
+        # was discarded at the publication boundary, never missing.  Stamping it here
+        # makes this record the single canonical per-ticker source
+        # (engine/prophet_board_read.LibraryIndex).  Board rows are untouched: they keep
+        # reading `disp_map` directly, so one field still means one thing.
+        #
+        # `spark_svg` ONLY — deliberately not disp_map's `price`/`off_high`: `price`
+        # would shadow the existing `tech.price` for every stockdata reader, and the
+        # quote half of the card is not this lane's (the plan row already carries
+        # `last_price`, and the live quote is the page's `data-sym` path).
+        _spark = (disp_map.get(ticker) or {}).get("spark_svg")
+        if _spark:
+            rec["spark_svg"] = _spark
+        if not rec.get("entry_signal"):
+            # Same disclosure law the board row obeys: a record never ships a SILENT
+            # gauge absence, so a downstream reader can name the cause instead of
+            # inventing a stance for it.
+            rec["entry_signal_null_reason"] = entry_sig_null.get(ticker, "not_assessed")
         safe = ticker.replace("=", "_").replace("^", "_")
         to_write.append((safe, rec))            # deferred: write after percentile scoring
         idx = {"t": ticker, "n": name, "s": sector, "st": rec["ladder"]["state"]}
@@ -4369,7 +4416,8 @@ def main() -> int:
         try:
             sig_out = {t: signal_gate.buy_signal(v) for t, v in sig_verdict.items()}
             (site / "factordata" / "signal_gate.json").write_text(
-                json.dumps({"as_of": alpha_asof, "verdicts": sig_out},
+                json.dumps({"as_of": alpha_asof, "verdicts": sig_out,
+                            "emit": _PAIR_EMIT_STAMP},
                            separators=(",", ":"), default=str, allow_nan=False))
             log.info("wrote signal_gate.json (%d verdicts, %d buyable)", len(sig_out),
                      sum(1 for v in sig_verdict.values() if signal_gate.is_buyable(v)))
@@ -5968,6 +6016,9 @@ def main() -> int:
         except Exception as _pool_e:  # noqa: BLE001 — display tier is never fatal
             log.warning("candidate pool skipped (%s)", _pool_e)
 
+        # Same lineage stamp the gate write carries: one pair_id per writer process, so a
+        # skew between the two files is readable off the artifacts themselves.
+        wide["emit"] = _PAIR_EMIT_STAMP
         (site / "factordata" / "us_standouts.json").write_text(
             json.dumps(_json_safe(wide), separators=(",", ":"), default=str, allow_nan=False))
         log.info("wrote us_standouts.json (%d buy · rank_by=%s · %d eligible / %d universe)",
@@ -5995,6 +6046,29 @@ def main() -> int:
                       f"us_standouts.json: {'; '.join(_bc_viol)}", flush=True)
         except Exception as _bc_e:  # noqa: BLE001 — guard must never break the render
             log.debug("board-contradictions self-check skipped (%s)", _bc_e)
+        # Pair-coherence self-check, at the exact moment the #5490 skew is CREATED: the
+        # board has just been written, so if the gate write above was skipped (its
+        # `if sig_verdict:` was false, or its try/except swallowed a failure) the two
+        # files on disk now disagree and this is the only place that can say so. Same
+        # bare-print-at-line-start rule as the block above (this module's logger prefixes
+        # every record, so a logged "::warning" is silently dropped by GitHub); warn-only,
+        # because a display-tier guard must never fail the render.
+        try:
+            from scripts.check_signal_gate_coherence import _check as _sg_coherence
+            _sg_viol = _sg_coherence(
+                str(site / "factordata" / "us_standouts.json"),
+                str(site / "factordata" / "signal_gate.json"))
+            if _sg_viol:
+                # The last violation can be the lineage line, not a ticker — count rows only.
+                _sg_rows = [v for v in _sg_viol if not v.startswith("lineage:")]
+                _sg_names = [v.split(":", 1)[0] for v in _sg_rows[:8]]
+                print(f"::warning title=signal-gate-coherence::"
+                      f"{len(_sg_rows)} board row(s) disagree with signal_gate.json "
+                      f"({', '.join(_sg_names)}) — the gate write was skipped or stale "
+                      f"this run; downstream readers demote the gate for these names",
+                      flush=True)
+        except Exception as _sg_e:  # noqa: BLE001 — guard must never break the render
+            log.debug("signal-gate coherence self-check skipped (%s)", _sg_e)
         # forward shadow book — freeze the live score at build time so it can be graded on
         # REALIZED forward returns later (engine/shadow_book; research/MEASUREMENT_FLOOR.md).
         # Additive + display-only + append-only; never fatal.
@@ -6361,11 +6435,32 @@ def main() -> int:
                     closes=_ext_closes if "_ext_closes" in dir() else None,
                     gate_go=wide.get("gate_go"),
                     pool_columns=_ucv_pool,
+                    # §13 telemetry: two producer outputs this run ALREADY holds.
+                    # `sue_z` is the factors table's winsorized earnings-momentum z
+                    # (the raw one, not the display-gated `sue_confirmer` chip);
+                    # `short_flow` is engine.short_volume.signal_map, folded into the
+                    # fundamental panels. Handed in rather than re-read, so the store
+                    # stamps the same numbers this night's board saw.
+                    sue_z=sue_z,
+                    short_flow={
+                        _sf_t: ((_sf_p.get("positioning") or {}).get("short_flow") or {})
+                        for _sf_t, _sf_p in (fpanels or {}).items()
+                        if isinstance(_sf_p, dict)
+                    },
                 )
                 if _ucv_n:
                     log.info("us_context_vector: store now %d rows (stamped %s, %.1fs)",
                              _ucv_n, _ucv_asof, time.time() - _ucv_t0)
         except Exception as _ucv_e:  # noqa: BLE001 — research telemetry is never fatal
+            # Line-start bare print, never only the logger: a prefixing formatter
+            # turns ::warning into "WARNING ::warning" and GitHub drops it — which
+            # is exactly how six dead nights went unseen (masterplan §4.0).  This
+            # caller-side wrap is one frame ABOVE append_candidates' own warning,
+            # so a raise in the assembly kwargs (asof/board/meta/pool/short_flow)
+            # is loud too, not just a raise inside the writer.
+            print("::warning title=us-context-vector-stamp-skipped::us_context_vector "
+                  f"stamp skipped before the writer ran: {_ucv_e} — the PIT store did "
+                  "not advance tonight", flush=True)
             log.warning("us_context_vector stamp skipped (%s)", _ucv_e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)

@@ -34,9 +34,10 @@ landmines:
 do_not_redo:
   - "Do not restore the additive potential_score, a confirming-desk-count score, or any
     unconditional composite — the CEO ruling explicitly does not authorize them."
-  - "Do not edit DNR rows in PR-0; the two row amendments (KILL-FUSED-COMPOSITE
-    authority half, KILL-POSITIONING-FUSION) land as their own registry PR after
-    adversarial review + ratification (masterplan §12)."
+  - "The two DNR row amendments LANDED in PR-0 (#5593):
+    DNR:KILL-FUSED-COMPOSITE Amendment 3 and DNR:KILL-POSITIONING-FUSION Amendment 1,
+    with compiled blocklists regenerated per masterplan §12 and §17 attack 13; do not
+    re-defer or re-litigate absent new evidence."
   - "Do not register anything inside Live Entry Radar's detector arena — entry-detector
     fusion is its reserved F1_FUSION slot; this program fuses cross-family only."
   - "Do not build a rival fingerprint/epoch/personality stack — consume
@@ -46,11 +47,12 @@ artifacts:
 waves:
   - id: w0
     title: "PR-0 — architecture, census, frozen arena, adversarial review"
-    status: awaiting_ci
+    status: done
+    pr: "#5593"
   - id: w1
     depends_on: [w0]
-    title: "PR-1 — arena harness + G0/G1/G2/C1 baselines + telemetry accrual columns"
-    status: todo
+    title: "PR-1a — accrual restoration + telemetry columns + families.yml + arena harness skeleton"
+    status: awaiting_ci
   - id: w2
     depends_on: [w1]
     title: "PR-2 — C2 regularized family stack + redundancy matrices + incremental harness"
@@ -76,8 +78,9 @@ waves:
     title: "PR-7 — promotion prereg + DNR amendments + operator/CEO adjudication"
     status: todo
 next_action: >
-  Land PR-0 via merge-on-green; verify the context-vector accrual chip was picked up
-  (or fold the diagnosis into PR-1's first commit); then build PR-1 per masterplan §14.
+  Land PR-1a via merge-on-green; verify tonight's nightly stamps a fresh context-vector
+  date with the fixed producer (the first true forward proof); then PR-1b (baseline
+  race, counterfactual-replay-labelled, non-promotion-bearing) per masterplan §14.
 ---
 
 ## Context

@@ -166,6 +166,21 @@ def test_flow_lean_both_covered_reflects_net():
     assert result["lean"] == 1
 
 
+def test_flow_lean_excludes_split_adjusted_legs():
+    """A positively-identified split is a re-denomination, not a manager decision,
+    so it must not vote in this lean — `breadth` is a RANKED input."""
+    ff = {"CRWD": [{"direction": "accumulating", "split_adjusted": True},
+                   {"direction": "distributing"}]}
+    # without the exclusion this is 1 vs 1 => lean 0; with it, the real trim wins
+    assert rp._flow_lean(["CRWD"], ff) == {"present": True, "lean": -1,
+                                           "accumulating": 0, "distributing": 1}
+    # a leg that is ONLY a split leaves no lean at all
+    assert rp._flow_lean(["CRWD"], {"CRWD": [{"direction": "accumulating",
+                                              "split_adjusted": True}]}) == {"present": False}
+    # absent flag => counted, so the read is inert until the flag ships
+    assert rp._flow_lean(["CRWD"], {"CRWD": [{"direction": "accumulating"}]})["lean"] == 1
+
+
 def test_flow_lean_empty_covered():
     result = rp._flow_lean([], _SYNTH_FF)
     assert result == {"present": False}

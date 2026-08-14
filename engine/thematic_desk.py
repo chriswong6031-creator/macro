@@ -504,10 +504,14 @@ def _entry_levels(check: dict, asof, root) -> dict:
     return out
 
 
-def _append_ledger(brief: dict, root) -> None:
+def _append_ledger(brief: dict, root) -> list:
+    """Append this run's theses to the desk ledger. Returns exactly the rows
+    that SURVIVED the id-immutability gate — i.e. the rows actually written
+    this run — so the caller (Eval OS P3 qledger registration) mirrors THOSE
+    and nothing else. `[]` on any failure or when there is nothing to write."""
     theses = brief.get("theses") or []
     if not theses:
-        return
+        return []
     try:
         d = Path(root).joinpath(*_LEDGER_DIR)
         d.mkdir(parents=True, exist_ok=True)
@@ -524,8 +528,29 @@ def _append_ledger(brief: dict, root) -> None:
         with open(lp, "a") as fh:
             for row in rows:
                 fh.write(json.dumps(row, default=str) + "\n")
+        return rows
     except Exception as e:  # noqa: BLE001
         log.warning("thematic_desk ledger append failed: %s", e)
+        return []
+
+
+def _register_qledger_claims(written: list, root) -> dict | None:
+    """Mirror THIS RUN's theses into the Universal Scoreboard (Eval OS P3).
+
+    US region only (`engine.qledger_desk_adapter`'s own region filter): the
+    canada/hk/china proxies have no price parquet here, and the CN leg needs
+    its own ruling against DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT — both stay
+    out of scope. FORWARD-ONLY: a thesis whose graded window has already begun
+    is refused and counted, never filed. Never raises."""
+    try:
+        from engine import qledger_desk_adapter as _qadapt
+        from engine import qledger_evidence_clock as _qclock
+    except Exception as exc:  # noqa: BLE001
+        log.warning("thematic_desk: qledger adapter import failed: %s", exc)
+        return None
+    return _qadapt.register_prospective(
+        written, family="thematic_desk", timestamp_quality="CRAWL_BOUNDED",
+        root=root, git_sha=_qclock.git_sha(root))
 
 
 def run(market: str = "us", persist: bool = True, root=None, call=None) -> dict | None:
@@ -547,7 +572,9 @@ def run(market: str = "us", persist: bool = True, root=None, call=None) -> dict 
             site = Path(root) / "site" / "allocationdata"
             site.mkdir(parents=True, exist_ok=True)
             (site / f"ai_desk_{region}.json").write_text(json.dumps(brief, default=str))
-            _append_ledger(brief, root)
+            written = _append_ledger(brief, root)
+            if written:
+                _register_qledger_claims(written, root)
         return brief
     except Exception as e:  # noqa: BLE001 — additive, never fatal
         log.error("thematic_desk run[%s] failed: %s", region, e)

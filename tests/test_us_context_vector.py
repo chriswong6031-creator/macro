@@ -17,6 +17,8 @@ Hermetic by construction: every test passes ``root=tmp_path`` and
 """
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 import pytest
 
@@ -345,6 +347,11 @@ CONTRACT: dict[str, str] = {
     "regime_dispersion_state": "O", "regime_market_quad": "O",
     "regime_quad_name": "O", "regime_vol_regime": "O",
     "context_dims": "O",
+    # §13 telemetry (masterplan §13.1/§13.2/§13.3) — additive, zero authority.
+    "sue_z": "f", "gex_confirm_verdict": "O", "flow_attention_z": "f",
+    "short_vol_ratio": "f",
+    "hub_edge_remaining": "f", "hub_lifecycle": "O", "hub_leading_gap": "f",
+    "hub_governor_trust": "f", "hub_contradictions": "f",
 }
 
 #: Tri-state columns: a real bool or None, NEVER coerced to False (#4485).
@@ -352,6 +359,13 @@ NULLABLE_BOOL_COLUMNS = (
     "featured", "reports_within_7", "earnings_stale",
     "in_blackout", "antichase_shadow_blocked", "regime_gate_go",
     "theme_clean_entry",
+    # The veto legs and their null states: a False here would claim the leg was
+    # checked and clean, which is precisely what `macd_bear` cannot claim below
+    # its warmup. `hub_isolated` likewise — off-hub is unmeasured, not "not
+    # isolated".
+    "stoch_ob", "stoch_bear", "macd_bear",
+    "stoch_ob_null", "stoch_bear_null", "macd_bear_null",
+    "hub_isolated",
 )
 
 
@@ -395,6 +409,16 @@ class TestSchemaContract:
 
     def test_dedupe_key_is_the_documented_triple(self):
         assert ucv.DEDUPE_KEY == ("stamp_date", "ticker", "board_definition")
+
+    def test_every_declared_telemetry_column_is_actually_stamped(
+        self, verdicts, append_kwargs, tmp_path
+    ):
+        """Pins the SET, not a hand-copied list: a §13 column declared in the
+        module constant but never written would be schema that lies."""
+        ucv.append_candidates(verdicts, "2026-07-31", **append_kwargs)
+        frame = ucv.load_candidates(tmp_path)
+        missing = sorted(set(ucv.TELEMETRY_COLUMNS) - set(frame.columns))
+        assert not missing, f"declared but never stamped: {missing}"
 
     def test_nullable_bools_stay_null_not_false(
         self, verdicts, append_kwargs, tmp_path
@@ -515,6 +539,117 @@ class TestBuildRecords:
         by_ticker = {r["ticker"]: r for r in records}
         assert by_ticker["AAA"]["turnover_pctile_20d"] == 0.85
         assert by_ticker["AAA"]["turnover_pctile_60d"] is None
+
+
+class TestTelemetryColumns:
+    """§13 columns are READ OFF producers — never originated, never imputed."""
+
+    def test_the_veto_legs_are_read_off_the_verdict(self, verdicts):
+        verdicts = dict(verdicts)
+        verdicts["AAA"] = dict(verdicts["AAA"], stoch_ob=True, stoch_bear=False,
+                               macd_bear=False, veto_legs_null={})
+        rows = {r["ticker"]: r for r in ucv.build_records(
+            verdicts, stamp_date="2026-07-31", board_definition="us_prophet_v1",
+            is_buyable=_is_buyable)}
+        assert rows["AAA"]["stoch_ob"] is True
+        assert rows["AAA"]["stoch_bear"] is False
+        assert rows["AAA"]["macd_bear"] is False
+
+    def test_an_unknowable_leg_is_marked_null_not_merely_false(self, verdicts):
+        """The whole point of the companion column: `macd_bear` reads False from
+        `float(nan) < float(nan)` on a short-history name, so False alone cannot
+        say whether the leg was checked."""
+        verdicts = dict(verdicts)
+        verdicts["AAA"] = dict(
+            verdicts["AAA"], stoch_ob=False, stoch_bear=False, macd_bear=False,
+            veto_legs_null={"macd_bear": "needs 232 daily bars, has 210"})
+        row = {r["ticker"]: r for r in ucv.build_records(
+            verdicts, stamp_date="2026-07-31", board_definition="us_prophet_v1",
+            is_buyable=_is_buyable)}["AAA"]
+
+        assert row["macd_bear"] is False and row["macd_bear_null"] is True
+        assert row["stoch_ob"] is False and row["stoch_ob_null"] is False
+
+    def test_a_verdict_with_no_disclosure_nulls_the_marker_rather_than_zeroing_it(
+        self, verdicts
+    ):
+        row = {r["ticker"]: r for r in ucv.build_records(
+            verdicts, stamp_date="2026-07-31", board_definition="us_prophet_v1",
+            is_buyable=_is_buyable)}["AAA"]
+        for leg in ucv.VETO_LEG_COLUMNS:
+            assert row[leg] is None and row[f"{leg}_null"] is None
+
+    def test_the_gex_verdict_is_read_off_the_board_row(self, verdicts):
+        rows = {r["ticker"]: r for r in ucv.build_records(
+            verdicts, stamp_date="2026-07-31", board_definition="us_prophet_v1",
+            is_buyable=_is_buyable,
+            board_rows={"AAA": {"gex_confirm": {"verdict": "caution", "score": -1.0}}})}
+        assert rows["AAA"]["gex_confirm_verdict"] == "caution"
+        assert rows["BBB"]["gex_confirm_verdict"] is None
+
+    def test_the_producer_maps_are_read_not_recomputed(self, verdicts):
+        rows = {r["ticker"]: r for r in ucv.build_records(
+            verdicts, stamp_date="2026-07-31", board_definition="us_prophet_v1",
+            is_buyable=_is_buyable,
+            sue_z={"AAA": 1.84},
+            attention_z={"AAA": -0.72},
+            short_flow={"AAA": {"short_ratio": 0.418, "ratio_z": 1.1}})}
+        assert rows["AAA"]["sue_z"] == 1.84
+        assert rows["AAA"]["flow_attention_z"] == -0.72
+        assert rows["AAA"]["short_vol_ratio"] == 0.418
+        # Unmeasured for a name the producer never saw — never 0.0 (#4485).
+        for column in ("sue_z", "flow_attention_z", "short_vol_ratio"):
+            assert rows["BBB"][column] is None
+
+    def test_hub_columns_are_null_off_hub_and_measured_on_it(self, verdicts):
+        rows = {r["ticker"]: r for r in ucv.build_records(
+            verdicts, stamp_date="2026-07-31", board_definition="us_prophet_v1",
+            is_buyable=_is_buyable,
+            hub_rows={"AAA": {
+                "hub_edge_remaining": 0.733, "hub_lifecycle": "emerging",
+                "hub_leading_gap": 1.0, "hub_isolated": True,
+                "hub_governor_trust": 1.0, "hub_contradictions": 0.0}})}
+        assert rows["AAA"]["hub_lifecycle"] == "emerging"
+        assert rows["AAA"]["hub_isolated"] is True
+        assert rows["AAA"]["hub_contradictions"] == 0.0     # measured zero
+        for column in ucv.HUB_COLUMNS:
+            assert rows["BBB"][column] is None              # not on tonight's hub
+
+    def test_a_hub_row_without_the_flag_is_a_measured_false(self, tmp_path):
+        """`hub_isolated` distinguishes three states, and the middle one is the
+        reason the column is tri-state rather than boolean."""
+        hub = tmp_path / "site" / "intel_hub"
+        hub.mkdir(parents=True)
+        (hub / "hub.json").write_text(json.dumps({"command": [
+            {"ticker": "AAA", "edge_remaining": 0.7, "stage": "early",
+             "leading_gap": 1, "flags": ["catalyst"], "n_dissent": 2},
+            {"ticker": "BBB", "edge_remaining": 0.9, "stage": "emerging",
+             "leading_gap": 0, "flags": ["isolated"], "n_dissent": 0},
+        ], "signal_governor": {"trust": {"hub": 0.8}}}))
+
+        columns = ucv.hub_columns(tmp_path)
+        assert columns["AAA"]["hub_isolated"] is False      # on the hub, not flagged
+        assert columns["BBB"]["hub_isolated"] is True
+        assert "CCC" not in columns                          # off-hub stays absent
+        assert columns["AAA"]["hub_governor_trust"] == 0.8
+        assert columns["AAA"]["hub_contradictions"] == 2.0
+
+    def test_the_standalone_governor_file_outranks_the_embedded_copy(self, tmp_path):
+        hub = tmp_path / "site" / "intel_hub"
+        hub.mkdir(parents=True)
+        (hub / "hub.json").write_text(json.dumps({
+            "command": [{"ticker": "AAA", "flags": []}],
+            "signal_governor": {"trust": {"hub": 0.8}}}))
+        gov = tmp_path / "data" / "hub"
+        gov.mkdir(parents=True)
+        (gov / "signal_governor.json").write_text(
+            json.dumps({"trust": {"hub": 0.55, "radar": 1.0}}))
+
+        assert ucv.hub_columns(tmp_path)["AAA"]["hub_governor_trust"] == 0.55
+
+    def test_an_absent_hub_artifact_yields_no_rows_rather_than_zeros(self, tmp_path):
+        assert ucv.hub_columns(tmp_path) == {}
+        assert ucv.attention_z_map(tmp_path) == {}
 
 
 class TestRelayFeatures:

@@ -14,26 +14,40 @@ OUT.mkdir(parents=True, exist_ok=True)
 theme_css = (ROOT / "templates" / "theme.css").read_text()
 card_j2 = (ROOT / "templates" / "_prophet_card.html.j2").read_text()
 
-# ---- token layer: :root .. end of the ink-token block (theme.css 21..295) ----
-# Line-indexed slices, so they move whenever theme.css does. Re-anchored 2026-08-09
-# when the W-L1 --prov/--prov-ink pair landed in the ink block (+14 lines); the pair now
-# falls INSIDE the TOKENS slice, which is the point — the mockup then reads the shipped
-# token rather than its own copy of it and the two cannot drift.
-# Re-anchored again 2026-08-10 (+15) for the --ink-pv-near comment, and again the same
-# day (+34) for the dark --ink-pv-avoid re-key. Note the pattern: these indices move on
-# PROSE edits inside the token block, not just structural ones, and this file's comment
-# density makes that routine — expect to re-anchor on most theme.css token edits. The
-# asserts are what keep that loud instead of silent.
-#
-# Anchoring method, so the next re-anchor is mechanical rather than a hunt: both slices
-# END where they do for content reasons, so re-derive each index by SEARCHING for its
-# anchor line and keep the asserts pointing at the same two landmarks.
+# ---- token layer: :root .. end of the ink-token block ----
+# These slices used to be HARD-CODED line indices, and they moved whenever theme.css
+# did — on PROSE edits inside the token block, not just structural ones, which this
+# file's comment density makes routine (re-anchored 2026-08-09 +14, 2026-08-10 +15,
+# then +34 the same day). The asserts were supposed to keep that loud, but nothing in
+# CI runs this generator, so the drift was only ever loud to whoever ran it next: by
+# 2026-08-12 both asserts were failing on a pristine main (+58) and had been for some
+# time. The indices are now DERIVED by searching for the same landmarks the asserts
+# already named — the anchoring method this file's own comment prescribed — so an
+# insertion above a slice no longer silently moves it. The asserts stay as the
+# fail-loud backstop for a landmark that genuinely disappears.
 tl = theme_css.splitlines()
-assert tl[294].lstrip().startswith("--prov-ink"), "TOKENS slice moved — re-anchor it"
-TOKENS = "\n".join(tl[20:295])
-# language visibility toggle + CJK face + body font
-assert tl[309].startswith("/* ---- language visibility"), "LANGCSS slice moved — re-anchor it"
-LANGCSS = "\n".join(tl[309:320] + tl[345:349])
+
+
+def _anchor(pred, what):
+    """Index of the first line matching pred; the slices are derived from these."""
+    for i, line in enumerate(tl):
+        if pred(line):
+            return i
+    raise AssertionError(f"{what} landmark not found in theme.css — re-anchor gen_wl1.py")
+
+
+# TOKENS: the :root token block through the end of the ink-token block. The mockup
+# then reads the SHIPPED tokens rather than its own copy, so the two cannot drift.
+_tok_start = _anchor(lambda s: s.startswith(":root"), "TOKENS start (:root)")
+_tok_end = _anchor(lambda s: s.lstrip().startswith("--prov-ink"), "TOKENS end (--prov-ink)")
+assert tl[_tok_end].lstrip().startswith("--prov-ink"), "TOKENS slice moved — re-anchor it"
+TOKENS = "\n".join(tl[_tok_start:_tok_end + 1])
+# language visibility toggle + CJK face (11 lines from the toggle comment), then the
+# `html body` base font rule with its preceding comment tail.
+_lang = _anchor(lambda s: s.startswith("/* ---- language visibility"), "LANGCSS (toggle)")
+_bodyfont = _anchor(lambda s: s.startswith("html body {"), "LANGCSS (html body font)")
+assert tl[_lang].startswith("/* ---- language visibility"), "LANGCSS slice moved — re-anchor it"
+LANGCSS = "\n".join(tl[_lang:_lang + 11] + tl[_bodyfont - 1:_bodyfont + 3])
 
 # ---- .pvcard CSS verbatim from the partial's pv_css() macro ----
 m = re.search(r"\{% macro pv_css\(\) %\}\s*<style>(.*?)</style>\s*\{% endmacro %\}", card_j2, re.S)
