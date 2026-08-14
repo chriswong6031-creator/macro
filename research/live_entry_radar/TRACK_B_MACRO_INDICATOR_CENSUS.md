@@ -247,59 +247,75 @@ delistings/gitignored). These two loaders are known to have **disagreed on live 
 same night** (NUE/PEP/WMT buyable from one only; ECL/SW inverted) — the disagreement the absolute
 anchor was built to fix (`engine/session_anchor.py:5-12`). Pin and disclose which store is read.
 
-**Intraday bar data: NO — not for US equities.** Verified three ways: (1) interval-argument sweep
-of `engine/`+`scripts/`+`collectors/`+`lib/` → exactly **one** hit,
-`scripts/commodity_sentinel.py:40` (`interval="60m"`, commodities); (2) the store's intraday
-affordance (`normalize_index=False`, "preserves intraday timestamps (hourly candles)",
-`lib/store.py:63`) has exactly **two** callers — `scripts/vector_sentinel.py:63` →
-`coinbase/btc_hourly` and `scripts/commodity_sentinel.py:75` → `commodity/{asset}_hourly`;
-(3) `engine/thetadata_store.py` is **EOD options**, not equity bars — layout
-`{THETADATA_STORE}/eod/{ROOT}/{YYYY}.parquet`, tiers `("eod","oi","greeks")` (`:4`, `:96`).
-Hourly bars exist for **BTC and commodities only**; the live equity plane is delayed quote
-**snapshots**, not bars (§6).
+**Intraday bar data: YES — a US-equity HOURLY store exists, and it already names the 4H
+timeframe.** (An earlier pass of this census wrongly concluded "no"; a keyword sweep for
+`interval="60m"` misses it because Polygon is a REST aggregates path, not a kwarg. Corrected.)
 
-**Consequence:** the requested **4H timeframe has no data source in this repo today**. It must be
-sourced new (a vendor decision carrying its own adjustment basis to reconcile against the adjusted
-daily plane) or dropped/deferred from the frozen contract. **PR-0 blocking finding.**
+- **Producer** `scripts/build_polygon_intraday.py` → `data/intraday/<T>.parquet`; docstring `:1-7`:
+  "Intraday (hourly) US price accrual via Polygon / massive.com … **Powers the 4H timeframe** on US
+  single-stock charts and the 2D/3D intraday bar-derivation hooks (`engine/bar_derive.py`)".
+- **Vendor/freshness:** Polygon **STANDARD** — **15-MIN DELAYED**, `DELAYED_MIN = 15` (`:38`),
+  stamped to a `data/intraday/_meta.json` sidecar (`:9-13`). **Not real-time.**
+- **Granularity** `multiplier: 1`, `timespan: hour` (`config.yml:597-598`); **4H is aggregated
+  client-side by chart.js** (`config.yml:590-591`) — no stored 4H bar exists.
+- **Coverage** US-only by entitlement, curated to `data/stocks/*` + sector/factor ETFs
+  (`config.yml:592`) — ~240 names, **not** the 2,779-name `baskets/ohlcv` universe.
+- **Retention** `lookback_days: 180` cold-start; hourly cron `--lookback-days 5`; append-only,
+  2-day overlap, dedup on bar ts (`config.yml:598`).
+- **Schedule** `.github/workflows/intraday.yml` (`intraday-bars`), cron `35 13-21 * * 1-5`,
+  self-hosted, `POLYGON_API_KEY` a CI secret (`:15,55-60`).
+- **Persistence — this matters:** **gitignored** (`.gitignore:66`), persisted only via
+  `actions/cache` under the `intraday-` namespace (`.gitignore:63-65`); `site/intraday/<T>.json` is
+  the shipped artifact. So it is **CI-cache-resident, not committed** — 0 tracked files, absent
+  from the primary checkout. **UNVERIFIED:** live population (needs the CI-only key, `:24-25`).
+
+Out of scope but present: `commodity/{asset}_hourly` (`scripts/commodity_sentinel.py:40,75`) and
+`coinbase/btc_hourly` (`scripts/vector_sentinel.py:63`) — the two callers of the store's intraday
+affordance (`lib/store.py:63`). `engine/thetadata_store.py` is **EOD options** (`:4`, `:96`).
+
+**Two hard caveats** — `engine/bar_derive.py:1-4, 20-23`: (1) "Nothing here is wired into a
+production build by default — **it is additive plumbing**" — `derive_daily_close`,
+`derive_2d_ohlcv`, `derive_3d_ohlcv` feed no scored signal today; (2) **basis mismatch**: "The
+intraday store carries **raw** prices; the nightly `data/stocks` close is dividend/total-return
+ADJUSTED. Confluence run on a raw intraday-derived close is **NOT directly comparable** to
+confluence on the adjusted daily store." `bar_derive` further warns `derive_2d/3d_ohlcv` are **not**
+inputs to `signal_frame` — that "would double-resample and break faithfulness".
 
 ---
 
 ## 5 · Session calendar
 
 All calendar logic is **hand-rolled stdlib**; `pandas_market_calendars` / `exchange_calendars` are
-used nowhere and are in no `requirements.txt`. Timezones are stdlib `zoneinfo` — "repo convention
-— no pytz" (`scripts/live_breadth_poller.py:69`).
+used nowhere and are in no `requirements.txt`. Timezones are stdlib `zoneinfo` (`scripts/live_breadth_poller.py:69`).
 
 - **`lib/nyse_calendar.py`** (625 ln) — **real**: rule-computed NYSE holidays + observance shifts,
   `ONE_OFF_CLOSURES` (2012 Sandy, 2018 Bush, 2025 Carter), session-gap API `session_n_back/forward`,
   `sessions_between` (`:469-624`). Explicitly does **not** model early closes (`:10-13`).
-- **`engine/session_digest.py`** — **real, DST-safe**, the *only* early-close model:
-  `SESSION_OPEN_ET` 9:30 / `CLOSE` 16:00 / `EARLY_CLOSE_ET` 13:00 (`:170-176`), `is_early_close()`
-  (`:199-226`), `session_window_et()` (`:229-239`).
+- **`engine/session_digest.py`** — **real, DST-safe**, the *only* early-close model: open 9:30 /
+  close 16:00 / `EARLY_CLOSE_ET` 13:00 (`:170-176`), `is_early_close()` (`:199-226`),
+  `session_window_et()` (`:229-239`).
 - `lib/hk_calendar.py` (283) · `lib/cn_calendar.py` (202) — mirror the `is_session`/`holidays`
   shape but are **separate modules with no shared rule engine**; CN deliberately minimal plus a
   `MAX_LEGIT_CLOSURE_DAYS = 11` backstop (`cn_calendar.py:16-28,53`).
-- Real session arithmetic on `lib.nyse_calendar`: `engine/marketing/market_clock.py:108-217`,
-  `engine/rebalance_calendar.py`, `engine/source_registry.py:236-249`.
-- `pd.offsets.BDay()` (dozens of sites) — holiday-**blind**, self-labelled
-  (`engine/earnings_blackout.py:102` "KNOWN IMPRECISION").
+- Real session arithmetic on it: `engine/marketing/market_clock.py:108-217`,
+  `engine/rebalance_calendar.py`, `engine/source_registry.py:236-249`. `pd.offsets.BDay()` (dozens
+  of sites) is holiday-**blind**, self-labelled (`engine/earnings_blackout.py:102`).
 
 **Reach:** ~110 files import `lib.nyse_calendar` (404 occurrences) — the nightly directly
-(`scripts.build_session_digest`, `daily.yml:3622`) and transitively, the render lane
-(`scripts/build_site.py:74`), and Prophet (`engine/prophet_bridge.py`,
-`engine/prophet_live/{armed_pack,live_states}.py`, raising `ContractError` on "not an NYSE
-session", e.g. `engine/options_signal_episode.py:620`). It is also the reference behind the 2D/3D
-anchor (§2).
+(`scripts.build_session_digest`, `daily.yml:3622`), the render lane (`scripts/build_site.py:74`),
+and Prophet (`engine/prophet_bridge.py`, `engine/prophet_live/{armed_pack,live_states}.py`, raising
+`ContractError` on "not an NYSE session", e.g. `engine/options_signal_episode.py:620`). It is also
+the reference behind the 2D/3D anchor (§2).
 
 **Intraday session clock: YES, but fragmented and partly holiday-blind.** Holiday-aware
 `pre|rth|post|closed` machines at `scripts/build_basket_pulse.py:158-214` (US+HK),
 `scripts/chain_snapshot_poller.py:1462-1541` (bar-close bucket boundaries + sub-minute grace),
-`scripts/build_prophet_marks.py:206-213`. **Holiday-BLIND** RTH checks — I verified directly — at
+`scripts/build_prophet_marks.py:206-213`. **Holiday-BLIND** RTH checks — verified directly — at
 `scripts/live_breadth_poller.py:138-169` (`session_tag` is bare `et.weekday() >= 5` plus minute
 arithmetic; the file **does not import `nyse_calendar` at all**),
 `scripts/live_flow_poller.py:2712-2725`, `engine/live_quotes.py:51-66`, and
-`engine/live_overlay.py:129-160` (self-labelled "ADVISORY hint only — no exchange holiday calendar
-and no half-days"). These treat a weekday market holiday as open.
+`engine/live_overlay.py:129-160` ("ADVISORY hint only — no exchange holiday calendar and no
+half-days"). These treat a weekday market holiday as open.
 
 **No canonical "now in ET" helper:** 27+ modules independently define
 `ET = ZoneInfo("America/New_York")`, several re-implementing a private `_et()`/`_now_et()`.
@@ -404,12 +420,18 @@ not write into their scoring".
    claiming it is Pine `ta.rsi`. The shipped gate runs R-B; canon and `washout_turn` run R-A. Any
    new "StochRSI" that does not name its family will silently match one and diverge from the other
    near threshold crosses — exactly where entries fire.
-2. **No 4H equity data exists (§4).** The contract's 4H tier has no source in this repo; the only
-   hourly bars are BTC and commodities. Source it or drop it — do not assume it.
-3. **Adjusted-vs-raw price basis.** Nightly closes are split+dividend adjusted; live quotes are
-   raw. A re-adjustment can "fabricate MACD/StochRSI crosses" (`lib/store.py:73-76`), and any
-   genuinely intraday indicator must reconcile per name — the existing lane escapes this only
+2. **Adjusted-vs-raw basis — the deepest hazard, and the 4H tier sits on the wrong side of it.**
+   The daily plane is split+dividend adjusted; the hourly `data/intraday` store is **raw**, and
+   `engine/bar_derive.py:20-23` states outright that confluence on a raw intraday-derived close is
+   "NOT directly comparable" to confluence on the adjusted daily store. Separately, a re-adjustment
+   on the daily plane can "fabricate MACD/StochRSI crosses" (`lib/store.py:73-76`). Any 1D-live or
+   4H indicator must pick one basis and reconcile per name; Prophet's live lane escapes this only
    because it never recomputes (`live_states.py:136-147`).
+3. **The 4H tier's supply is thinner than it looks (§4).** Hourly bars exist, but: 15-min delayed
+   by plan, ~240 names (not the 2,779 basket universe), no stored 4H bar (chart.js aggregates
+   client-side), CI-cache-resident and gitignored rather than committed, live population
+   **UNVERIFIED**, and `bar_derive` is explicitly "additive plumbing" wired to nothing. Treat 4H as
+   a build item with a data-availability spike, not a solved input.
 4. Secondary: two legitimate session anchors (12.83% vs 0.00% verdict movement — adopt the absolute
    one, mint a new era string); `postcross`'s `+1e-10` false-oversold (§1.2); `adjust=True` in
    `coiled` and missing `min_periods` in `postcross` (§1.3); the `_atr_pct` misnomer (§1.5 A-6);

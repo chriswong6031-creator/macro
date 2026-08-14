@@ -86,24 +86,38 @@ This program starts display-tier/accruing (free to build under house epistemics)
 
 **Identity hypothesis (to be confirmed, not assumed):** the operator's "grey dot" = Terminal's early anticipation dot in `charting-app/signal_layer/confluence_v2.py` — 3D StochRSI bullish cross from oversold AND 2D RSI-MACD histogram rising before the main cross, with point-in-time handling of 2D bar availability and a docstring claiming ~4.6 days of lead; the current emitter renders it as the amber EARLY marker and removes the old gray side-channel dot underneath.
 
-### 3.1 Exact specification
+### 3.1 Exact specification (locked; full receipts in `research/live_entry_radar/TRACK_A_GREY_DOT_FORENSICS.md` §1)
 
-> PENDING(TRACK-A): constant-by-constant spec — StochRSI implementation (RSI period/source, stoch window, K/D smoothing, NaN policy), 2D/3D bar construction and anchor, oversold definition, cross/turn definition, RSI-MACD histogram parameters and "rising" definition, known_at mapping rule — each with file:line receipts. This subsection becomes the locked spec text from which `spec_hash` is computed.
+Spec source = `charting-app` **`origin/master`** (the local checkout is a month stale and still carries the pre-#392 *leaking* 2D→3D map — it must never be read as spec). Close-only inputs from the **shared** store `$MACRO_REPO/data/stocks/<SYM>.parquet` — the two repos already share this data plane.
 
-### 3.2 Parity strategy
+- **3D bars:** per-symbol **session grid** anchored at the symbol's first listed session (`gi = arange(n) + bar_anchor`; a new bar opens the session after any `gi % 3 == 0`; bar value = close of its last session; frame indexed by the bar's **OPEN** date; ≥90 bars required). Deliberately not calendar resampling.
+- **2D bars:** calendar `resample("2B").last().dropna()` on the daily close (left-edge label), with availability computed separately as each bucket's **last actual session**.
+- **Oscillators (constants 14/14/60/5; stoch 14/14/3/3; OB/OS 80/20; CONF_W 8):** Wilder RSI(14) on the 3D close series via **SMA-seeded RMA** (same family as Macro `canon.rsi`); StochRSI = stoch(14) of that RSI, flat window → NaN, %K = SMA(3), %D = SMA(3), pandas-default min_periods, NaN rows dropped; RSI-MACD = `ema(RSI,14) − ema(RSI,60)` with `adjust=False`, signal `ema(·,5)` — never price MACD.
+- **The three legs:** `stoch_bull = crossover(K, D)` (strict `>` now, non-strict prior bar); `from_os = D.rolling(8).min() < 20` (**D line only**, window inclusive of current bar); `rising2 = 2D hist > 2D hist.shift(1)` (strictly greater, exactly one bar, no magnitude/sign requirement). `dot = stoch_bull & from_os & PIT-mapped(rising2)`.
+- **PIT law:** every bar carries `known_ts` = its CLOSE session; the 2D→3D join takes, per 3D row, the newest 2D state whose availability date ≤ that row's `known_ts` (searchsorted). **The emitted event `ts` is the 3D OPEN date — up to 2 sessions before `known_ts`. Radar consumes `known_ts` as the decision date, never `ts`** (measured backdating examples: NVDA 2026-01-21→known 01-23; NFLX 2026-06-26→known 06-30).
+- **Identity:** `SIGNAL_ERA = gc_v2_wo2`; params hashed via the Terminal's own `source_hash`/`strategy_spec_hash` conventions.
 
-> PENDING(TRACK-A recommendation; orchestrator decision recorded here): consume versioned Terminal artifact vs shared pure implementation vs Macro reproduction under locked spec + known-answer fixtures + `spec_hash` + parity tests. Whatever is chosen: **no silent drift** — two implementations may exist only under fixture-enforced equality, and the fixtures are committed known-answer cases extracted from Terminal data.
+**Lead-time honesty (frozen):** the "~4.6d lead" docstring is an unsourced paraphrase. The published figure is **+4.89d matched-pair mean at 49.9% coverage** vs the confirmed buy (`research/signal_engine/CONFLUENCE_TUNING.md:105`); charging every dot to the next confirmed buy gives **mean 12.7 sessions** (Track A §2.6, n=190). No Radar surface or result doc may quote a G0 lead without deriving it under a declared matching rule. Terminal's own charter further records that acting on the early dot was **empirically worse entry quality** (deeper drawdown) than the confirmed buy — the champion enters this program with an adverse prior on raw earliness, and §10's false-start/asymmetry ruler exists precisely to test whether structure + turn conditioning overcomes it.
 
-### 3.3 Glyph confirmation (gate G0-VIS)
+### 3.2 Parity strategy (DECIDED)
 
-Code-identity evidence this session, plus:
-> PENDING(TRACK-A): emitter/glyph trace (marker shape/color, gray→amber history), fired-date list for NVDA/NFLX/TSLA 2025–2026 if cheaply computable.
-Closure of G0-VIS = operator confirms the fired-date/glyph evidence matches the dots they have been trading off ("these are the dots I mean"). G0-VIS must close before PR-2 freezes the parity fixtures. This is the only gate in the program that requires operator input rather than code evidence.
+**Primary: consume the versioned Terminal artifact.** `mastermind.indicator/v1` (`<SYM>.slice.json`) already carries `early_dots`, `BOTTOM_WATCH` events, `known_ts`, `source_hash`, `SIGNAL_ERA` — Radar pins on `(source_hash, SIGNAL_ERA)` and reads the **raw emission**, not the capped model slice (`early_dots` is capped at 40/12 in doc/model slices). A **freshness gate is mandatory**: the deep store read at census showed last bar 2026-07-08 (~5 weeks stale — possibly the reading checkout, not production; PR-2 verifies against the production store and hard-gates on `feed_end`).
 
-### 3.4 C5 — Terminal Bottom Watch
+**Fallback: locked-spec reproduction in Macro** = §3.1 + fixtures F1–F6 + `spec_hash`, seeded from `origin/master` only. Never seed from Macro's `research/signal_engine/confluence.py` — a **verified silent fork** (byte-identical oscillator math but zero `known_ts`, no v2 layer; the Terminal header's "corrected vs that copy" claim is stale) — and never from the stale checkout. **Shared-lib extraction is rejected**: no installable package boundary exists on either side (`sys.path.insert` bootstrapping), `confluence_v2` hard-imports the 1107-line washout_override machinery, and the silent fork above is the standing evidence of what un-fixtured extraction produces.
 
-Adopted as a research lane exactly as implemented in Terminal (deep-washout watch/display events, never scored entries).
-> PENDING(TRACK-A): exact factors, thresholds, emission semantics.
+**Anchor caveat:** G0's 3D grid is **per-symbol listing-anchored** — not Macro's absolute session anchor. The G0 adapter follows the Terminal grid exactly; Radar's own C4 constructions use the absolute anchor with a Radar era string (§4). The two grids never mix inside one detector.
+
+**Fixtures (committed at PR-2):** F1 NVDA full-history (8 dots ≥2025, zero watch events; pins grid phase from a 1999 IPO); F2 NFLX (11 dots, 4 watch events, emitter de-dup in both directions); F3 blocked_trigger precedence over early_dot; F4 TSLA (2010 IPO — warm-up/anchor drift); F5 `known_ts` exact values; **F6 feed-truncation leak test** (truncate the feed to each dot's `ts` before its `known_ts` → the dot must vanish — the exact pre-#392 bug, and the highest-value case).
+
+### 3.3 Glyph confirmation (gate G0-VIS) — code identity CONFIRMED, operator ratification open
+
+Code verdict **HIGH confidence** (Track A §2): the emitter comment names "the old **gray** side-channel dot" verbatim; the unpromoted dot renders as a 2.2px circle, 55% opacity, fill `#717a8e` (`--muted`), 9px below the bar low, behind the "Signals detail" chip; only washout-context dots are promoted to the amber `EARLY` marker (`#e8b339`), and grey remains the overwhelming form (29 dots ≥2025 across NVDA/TSLA/NFLX; only 3 promoted, all NFLX). No competing grey marker exists in the chart layer.
+
+**Closure protocol:** the operator names one remembered dot (symbol + approximate date); it is matched against the computed fired-date table in Track A §2.6 (NVDA: 2025-01-17, 03-12, 09-11, 09-29, 12-02, 12-18, 2026-01-21, 07-07 · TSLA: 2025-01-16, 02-12, 03-11, 04-09, 07-11, 08-11, 11-20, 2026-02-05, 02-24, 03-30 · NFLX: 11 dots incl. the 3 amber-promoted). One lookup, no code. Open until answered; blocks only PR-2's parity freeze.
+
+### 3.4 C5 — Terminal Bottom Watch (locked; receipts Track A §3)
+
+Washout context = **W1 ∧ (W2a ∨ W2b) ∧ W3**: W1 `bear_block` (monthly RSI-MACD bear ∧ below 200DMA ∧ 2W RSI-MACD not bull); W2a 252-session drawdown ≤ −35% (84 3D bars); W2b prior-closed **monthly** StochRSI-D < 20 for ≥3 consecutive months; W3 3D StochRSI-D oversold visit within 8 bars (`min_periods=1`, unlike G0's `from_os`). Candidates = `(early_dot | blocked CB/revBuy trigger) & washed`; `kind ∈ {early_dot, blocked_trigger}` with blocked_trigger taking precedence and de-duplicating the dot; every event `scored: False` with `known_ts`, PIT `sweep_low`, `atr14`, `stop_level`, and `risk_basis` flagging close-proxy substitution. Monthly buckets are PIT-relabelled to the last actual session and searchsorted-joined — same discipline as §3.1.
 
 ---
 
@@ -179,7 +193,12 @@ Funnel (all admissions carry machine-readable **admission reasons**; hotness adm
 
 One ticker may carry many nominations; all provenance preserved. Producers group into source families (market/price, theme/sector, fund/ETF flow, smart money, options, off-exchange/dark-pool, news/catalyst, fundamental, special situation) so correlated producers cannot be double-counted: **nomination guarantees probing; predictive weight must be earned independently per family (§11). No "+5 points per page."** Nominations come from producer artifacts only — **never from scraping HTML pages.**
 
-> PENDING(TRACK-C): producer census table (module, artifact, ticker field, cadence, asof semantics, family, shared-cause notes) + universe-machinery census + gaps.
+**Census results (full table: `research/live_entry_radar/TRACK_C_LOBE_PRODUCER_CENSUS.md`):** ~32 producers across 9 families. Binding consequences for PR-1:
+
+- **Universe machinery that already exists and is reused, never rebuilt:** the canonical ~2,966-name U.S. universe (`scripts/build_stock_library.py:830`, S&P 1500 + Russell 2000); index membership (`data/breadth/constituents.parquet` + siblings); the GICS/SIC sector map (`data/breadth/ticker_sectors.parquet`); market cap; `dollar_vol_20d` / `rel_volume` / intraday `rvol_tod`; realized vol/ATR; sector-neutral momentum (`engine/residual_alpha.py`); the IPO calendar with listing dates (`data/ipo/calendar.parquet`).
+- **Missing pieces PR-1 must build or explicitly defer:** an ETF/ETN/leveraged-wrapper classifier for arbitrary tickers (only narrow curated lists exist today — Layer A classification is a build item); float-based share turnover (no float data — declared out until sourced); gap detection (`engine/entry_primitives.py:651` is appendix-locked DORMANT — do not silently resurrect it; a Radar gap feature is a new, boundary-clean construction).
+- **Highest-value nomination sources:** the 5-min `hot_tape` detector (`engine/marketing/hot_tape.py` — currently writes only to the marketing outbox; a nomination tap is new PR-1 work, not a file read); `site/live/flow_pulse.json` (30-min, per-ticker vwap/rvol/higher-lows, ~360 names); the nightly stock-library master (~2,966 names, carries entry_signal/setups/name_score reads); `us_standouts`/`setups` boards; basket `pulse` + `linked_outsiders` (filing-linked counterparties — a genuinely distinct catalyst-adjacent path).
+- **Structural facts the bus design must respect:** theme/basket surfaces (`state_of_themes`, `radar`, `foresight`) are **not** single-name producers — a basket-membership expansion is a *different admission reason* (`reason_code` must say so; a basket-level fact must never launder into a single-name fact); `capital_structure` is API-gated, not artifact-based; the **operator watchlist/portfolio lives in Supabase** (`watchlists`/`watchlist_symbols`/`portfolio_positions`, RLS owner-scoped) — its adapter is a server-side DB read on the VPS lane, architecturally unlike every file-based producer, and its provenance field records that.
 
 ---
 

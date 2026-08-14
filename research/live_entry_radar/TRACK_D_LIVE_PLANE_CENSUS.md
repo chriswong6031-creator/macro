@@ -54,24 +54,22 @@ hourly bars).
 **Event spool** — `engine/prophet_live/r2io.py:34`:
 `EVENTS_PREFIX = "live_flow/prophet_live_events"`; `events_key(session,stamp)`
 (157) mints one R2 object per pass-with-a-transition. Confirmed live:
-`research/R2_AND_DELIVERY_PLANE_TRUTH_CENSUS_2026-08.md:127-128` lists R2
-keys `live_flow/{prophet_live,prophet_marks}.json`, `prophet_live_armed.json`,
-`prophet_live_events/**` as `PRIVATE_OPERATIONAL`.
-
-**No-intraday-ledger-writes enforcement** (three layers): (1) workflow
-`permissions: contents: read` + zero git steps; (2) VPS service also runs no
-git command; (3) `scripts/prophet_live_evaluator.py:27-33` docstring law —
-"writes NOTHING under `data/` and commits nothing... outside the git
-work-tree... never under `data/`."
+`R2_AND_DELIVERY_PLANE_TRUTH_CENSUS_2026-08.md:127-128` lists R2 keys
+`live_flow/{prophet_live,prophet_marks}.json`, `prophet_live_armed.json`,
+`prophet_live_events/**` as `PRIVATE_OPERATIONAL`. **No-intraday-ledger-
+writes enforcement** (three layers): workflow `permissions: contents: read`
++ zero git steps; the VPS service also runs no git command; and
+`prophet_live_evaluator.py:27-33` docstring law — "writes NOTHING under
+`data/`... outside the git work-tree... never under `data/`."
 
 **Nightly reconciliation entry point** — `scripts/reconcile_prophet_live.py`
-(1-38 read). `python -m scripts.reconcile_prophet_live --nightly`. Turns the
+(1-38 read): `python -m scripts.reconcile_prophet_live --nightly`. Turns the
 R2 event spool into `data/prophet_live/forward.parquet` — "the ENTIRE
 evidence base" for the intraday-cross-vs-next-close-fill hypothesis (joins
 session-correct `confirmed`, `next_close_fill`, first-cross dedup, one price
 basis). "Sole writer... intraday lane writes R2 only" (32-34, G0.2/RUL-P10).
-**`git ls-tree -r HEAD -- data/prophet_live` returns zero tracked files** —
-not gitignored either — so no `forward.parquet` has ever been committed to
+**`git ls-tree -r HEAD -- data/prophet_live` returns zero tracked files**,
+and it is not gitignored — no `forward.parquet` has ever been committed to
 `main`. UNVERIFIED whether the ledger has zero accrued rows yet, or accrual
 awaits an unmerged PR.
 
@@ -117,11 +115,10 @@ visibility-gated with a `PLV_FLOOR=30000`ms floor (19129-19137). One shared
 artifact, one poll, two panels.
 
 **Client precedent #2 — `templates/live.js:1-60`** (of 573): `POLL =
-(LIVE_POLL_SEC || 60) * 1000` (41, default 60s). 3 price sources in priority:
-Worker `/quotes` → static full-universe snapshot (keyless,
-raw.githubusercontent) → `live/overlay.json`. Also opens `/ws/tape` directly
-for 6 macro instruments (57). `templates/china_risk_state_live.js:29,232,243`
-mirrors the same 60s-poll, `cache:"no-store"` pattern.
+(LIVE_POLL_SEC || 60) * 1000` (41, default 60s); 3 price sources in priority
+(Worker `/quotes` → static full-universe snapshot → `live/overlay.json`);
+also opens `/ws/tape` directly for 6 macro instruments (57, §4).
+`china_risk_state_live.js:29,232,243` mirrors the same 60s-poll pattern.
 
 **Conclusion:** house idiom = one small gated JSON at `live/<name>.json`
 (atomic-rename into `$MACRO_LIVE_DIR`, deliberately omitted from the Caddy
@@ -138,7 +135,8 @@ Primary source: `research/MASSIVE_ADVANCED_INTEGRATION_MASTERPLAN_BY_FABLE.md`
 (894 lines; §1,§1.1,§2,§3,§4.3,§5,§12 read). Massive = rebranded Polygon.io
 (PyPI now `massive` v2.8.x; `polygon-api-client` frozen 1.16.3; hosts
 `api.massive.com`/`socket.massive.com` canonical, `*.polygon.io` still
-honored — 234-238).
+honored — 234-238). Licensing resolved 2026-08-09 (Enterprise Market Data
+License + Redistribution Addendum executed, §0 gate CLOSED, 146-150).
 
 **Entitlement verdicts** (TP-0 probe, `scripts/massive_entitlement_probe.py`,
 table 159-176, run 2026-08-08T11:44Z market closed):
@@ -155,9 +153,8 @@ table 159-176, run 2026-08-08T11:44Z market closed):
 | Options trades/WS/realtime | **not entitled** (403) |
 | Indices (`v3/snapshot`, WS) | **not entitled** |
 
-Licensing resolved 2026-08-09 (executed Enterprise Market Data License +
-Redistribution Addendum, §0 gate CLOSED, 146-150) — record at
-`research/licenses/MASSIVE_ENTITLEMENT_RECORD.md`, not read this session.
+(Licensing record: `research/licenses/MASSIVE_ENTITLEMENT_RECORD.md`, not
+read this session.)
 
 **Binding vendor facts** (§1.1, 196-238): **ONE simultaneous WebSocket
 connection per cluster per product** on individual plans — "the single most
@@ -167,10 +164,9 @@ from 2006-03-15+, **`minute_aggs_v1` from ≥2010-06-15**; `trades_v1`/
 `quotes_v1` LIST-verified to **2005-06**, 2024 `quotes_v1` at **~4.8GB/day gz
 market-wide** — "a blanket multi-year quote backfill is TB-scale," so
 strategy is episode-windowed files + per-name REST, never a bulk crawl.
-
-**TP-0.5 measured semantics** (§12, run 2026-08-08~13:05Z): delayed/real-time
-**ARE separate WS buckets**, but **overflow EVICTS THE OLDEST connection** —
-a full slot silently kills the incumbent rather than refusing the newcomer
+**TP-0.5 measured** (§12, 2026-08-08~13:05Z): delayed/real-time **ARE
+separate WS buckets**, but **overflow EVICTS THE OLDEST connection** — a
+full slot silently kills the incumbent rather than refusing the newcomer
 (§3.1b.4, 381-399). Load-bearing for any future WS client: singleton
 discipline is existential; a `1008 max_connections` near a reconnect signals
 a slot fight, not a benign retry.
@@ -184,16 +180,16 @@ repo today.** `git ls-tree -r HEAD -- data/massive` → only
 `capability_manifest.json` (the probe's output, not a data store).
 
 **Daily OHLCV, today** — `collectors/massive_stock_day.py:1-50`. Derived
-per-ticker `data/massive_stock_day/<TICKER>.parquet`, sourced from
-`day_aggs_v1`, a **rolling ~5-year window**. R2 is canonical (~617MB, ~20k
-parquets); git tracks only `_manifest.json`+`_backfill_state.json`.
+per-ticker `data/massive_stock_day/<TICKER>.parquet` from `day_aggs_v1`, a
+**rolling ~5-year window**. R2 is canonical (~617MB, ~20k parquets); git
+tracks only `_manifest.json`+`_backfill_state.json`.
 
 **Intraday, today — HOURLY ONLY, not minute.**
 `scripts/build_polygon_intraday.py:1-70`: `data/intraday/<T>.parquet`,
-explicitly **15-min delayed** (`DELAYED_MIN=15`, 63), curated universe (not
-full-market), powers the 4H chart timeframe only. Gitignored
-(`.gitignore:66`). Distinct from the VPS-side, mutable, also-hourly
-`/var/lib/macro-live/data/intraday` — same name, two stores; do not conflate.
+explicitly **15-min delayed** (`DELAYED_MIN=15`, 63), curated universe,
+powers only the 4H chart timeframe. Gitignored (`.gitignore:66`). Distinct
+from the VPS-side, mutable, also-hourly `/var/lib/macro-live/data/intraday`
+— same name, two stores; do not conflate.
 
 **Minute-bar historical store — DOES NOT EXIST.** Entitlement is proven deep
 (minute flat files to 2010, tick history to 2005), but no code turns that
@@ -220,21 +216,19 @@ existing lanes in both size and per-name compute weight.
 Massive/Polygon), 6 symbols (ES=F, NQ=F, YM=F, RTY=F, ^TNX, DX-Y.NYB per
 `live.js:57`), fans out over same-origin `GET /ws/tape` (`Caddyfile:146`).
 "No browser talks to the unofficial upstream directly... one shared upstream
-connection" (6-9). Different vendor, different socket — no competition for
-the Massive slot.
-
-**Massive/Polygon stocks WebSocket — UNOWNED in Macro.** No process connects
-to `socket.polygon.io/stocks` or `socket.massive.com` today; TP-1 is unbuilt
-(§3). `massive_entitlement_probe.py` opens only a transient probe connection.
+connection" (6-9) — different vendor, different socket, no competition for
+the Massive slot. **The Massive/Polygon stocks WebSocket is UNOWNED in
+Macro**: no process connects to `socket.polygon.io/stocks` or
+`socket.massive.com` today; TP-1 is unbuilt (§3);
+`massive_entitlement_probe.py` opens only a transient probe connection.
 
 **Terminal's Quote Hub (charting-app, out of scope — relayed from the Macro
-masterplan, UNVERIFIED independently):** masterplan §2.1/§3.1b name
-`hub/lib/polygon.js` as the second candidate client, today subscribing
-`AM.*` on the delayed cluster with auto-demote-to-delayed. Recorded law (not
-yet exercised): once built, TP-1 is sole owner of the real-time cluster; the
-hub migrates to TP-1's derived stream later. Since TP-0.5 showed delayed/
-real-time are separate buckets, this migration does not fold into TP-1
-automatically.
+masterplan, UNVERIFIED independently):** §2.1/§3.1b name `hub/lib/polygon.js`
+as the second candidate client, today subscribing `AM.*` on the delayed
+cluster with auto-demote-to-delayed. Recorded (not yet exercised) law: once
+built, TP-1 is sole owner of the real-time cluster; the hub migrates to
+TP-1's derived stream later — and since TP-0.5 showed delayed/real-time are
+separate buckets, that migration does NOT fold into TP-1 automatically.
 
 **Mastermind — verified directly, `data_layer/polygon.py:1-90`** (canonical
 checkout): REST-only, `grep -n -i websocket` → zero hits. Thin wrapper over
@@ -275,22 +269,21 @@ to plug into.
 
 **Status as of SESSION4 (2026-08-10):** four PRs (#5217/#5220/#5222/#5223,
 payload/receipt/SLA/renderer) built+reviewed, disarmed mid-session by an
-unrelated repair, meant to re-arm as one wave; #5223 inert until #5217 lands.
-**"The evening lane has NEVER RUN... `close-pass.yml`'s `publish` job has
-never fired... both FAILED with `ModuleNotFoundError: No module named
-'pandas'`"** — invisible for a day (read downstream as absent data, not a
-fault); fixed incidentally by #5220. **W-L1's gate needs five consecutive
-green sessions, which "cannot be built; it accrues"** — unproven end-to-end
-as of that doc.
+unrelated repair, meant to re-arm as one wave. **"The evening lane has NEVER
+RUN... `close-pass.yml`'s `publish` job has never fired... both FAILED with
+`ModuleNotFoundError: No module named 'pandas'`"** — invisible for a day
+(read downstream as absent data, not a fault); fixed incidentally by #5220.
+**W-L1's gate needs five consecutive green sessions, which "cannot be built;
+it accrues"** — unproven end-to-end as of that doc.
 
 **Fresher in-repo signal (today):** `close-pass.yml`'s header carries a
-**"CORRECTED 2026-08-13"** note stating the lane "has never been green" until
-a `git checkout -- .` discard step was added beside the `--heal` prefetch —
-i.e. the specific pandas/discard defect reads as addressed today, though no
-`gh` call confirmed current CI/merge state this session. **Read status as:
-architecture ratified and mostly built; W-L1 evening-SLA lane not proven
-green end-to-end as of the last narrative doc, with today's in-repo comment
-suggesting the known defect is fixed. Treat "is W-L1 live" as OPEN.**
+**"CORRECTED 2026-08-13"** note: the lane "has never been green" until a
+`git checkout -- .` discard step was added beside `--heal` — i.e. the
+pandas/discard defect reads as addressed today, though no `gh` call
+confirmed current CI/merge state this session. **Read status as:
+architecture ratified and mostly built; W-L1 not proven green end-to-end as
+of the last narrative doc, with today's comment suggesting the known defect
+is fixed. Treat "is W-L1 live" as OPEN.**
 
 **Evening render cadence** (`closing-bell.yml`): fires **16:05 ET** both DST
 regimes (68-69) — "Build A," full provisional EOD render, non-ledger,
@@ -323,8 +316,7 @@ artifact ships `stale_pack`. Why the two-layer design: "systemd calendars
 have no ET" (`macro-live-prophet.timer:1-10`) — the timer's `OnCalendar`
 spans a UTC range covering both DST regimes, and `in_window()` is the only
 thing that knows what "9:25 ET" means on a given day. Same module anchors
-`macro-sentinel`'s staleness budgets (`docs/VPS_LIVE_ORCHESTRATION.md:161`)
-and `closing-bell.yml`'s own session gate.
+`macro-sentinel` (`VPS_LIVE_ORCHESTRATION.md:161`) and `closing-bell.yml`.
 
 ---
 
@@ -334,22 +326,21 @@ All three OPEN per `docs/ACTIVE_BUILD_MAP.md` (generated 2026-08-14T03:07:03Z;
 no `gh` calls made, snapshot only):
 
 - **#5555** — `prophet: stale-frame action safety — no current instruction
-  off a dead tape` (`engine/prophet_management.py`, `scripts/build_prophet.py`).
-  Not yet on `main` (`grep stale engine/prophet_management.py` → no hits).
+  off a dead tape` (`engine/prophet_management.py`, `build_prophet.py`). Not
+  yet on `main` (`grep stale engine/prophet_management.py` → no hits).
   Implication: gate the *action* surface on frame freshness separately from
-  whether the display renders — a Radar entry signal needs the same
-  discipline (never emit a live "enter now" off a stale/dead-tape frame).
+  the display — a Radar entry signal needs the same discipline (never emit a
+  live "enter now" off a stale/dead-tape frame).
 - **#5571** — `ops(prophet-us): availability hardening — bounded self-heal
   rescue lane + resilience layers` (mostly CI plumbing). Implication: an
-  established idiom exists for "the nightly bake died, self-heal within a
-  bound" that a new live lane should register with, not reinvent.
+  idiom already exists for "the nightly bake died, self-heal within a bound"
+  that a new live lane should register with, not reinvent.
 - **#5487** — `ops: nightly-liveness dead-man switch — the US bake went dark
   for two sessions and nothing reported it`. Implication: silence is the
   default failure mode here (this outage and the Breathing Platform's pandas
   failure, §5, both went undetected until named) — a new 5-min lane MUST
   register a positive liveness signal (content-advanced, not
-  process-exited-0) with `macro-sentinel`/`freshness_sentinel.py` rather than
-  assume absence-of-alert means health.
+  process-exited-0) with `macro-sentinel`/`freshness_sentinel.py`.
 
 ---
 
