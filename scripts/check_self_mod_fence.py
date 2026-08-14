@@ -52,19 +52,25 @@ Exit codes:
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+try:
+    from scripts.ci_authority_paths import (
+        CI_AUTHORITY_PATTERNS,
+        matches_pattern_set,
+    )
+except ModuleNotFoundError:  # Direct ``python scripts/check_self_mod_fence.py``.
+    from ci_authority_paths import CI_AUTHORITY_PATTERNS, matches_pattern_set
+
 # ── Immutable path patterns (glob-style) ─────────────────────────────────────
 
 IMMUTABLE_PATTERNS: list[str] = [
+    *CI_AUTHORITY_PATTERNS,
     ".claude/hooks/**",
-    ".github/ci/**",
-    ".github/workflows/**",
     "config/grader_manifest.yml",
     "config/capability_manifest.yml",
     # V11 addition: metabolism budget + gate policy.
@@ -74,25 +80,6 @@ IMMUTABLE_PATTERNS: list[str] = [
     # manual-run hard floor — operator T2 action required for any change.
     "config/metabolism_budget.yml",
     "engine/neuralweb/capability_broker.py",
-    "scripts/check_self_mod_fence.py",
-    "scripts/check_grader_manifest.py",
-    # CI proof authorities. A loop that can edit the selector, committed index,
-    # fast refusal lane, terminal evidence, or merger can manufacture its own
-    # green proof just as surely as one that edits the workflow/manifest.
-    "scripts/audit_unrun_tests.py",
-    "scripts/check_capability_redline.py",
-    "scripts/check_ci_trigger_closure.py",
-    "scripts/check_conflict_markers.py",
-    "scripts/check_workflow_yaml.py",
-    "scripts/ci_cancelled_run_completion.py",
-    "scripts/ci_collect_pack_evidence.py",
-    "scripts/ci_committed_scope_index.py",
-    "scripts/ci_failure_summary.py",
-    "scripts/ci_scope_dependencies.py",
-    "scripts/ci_structural_preflight.py",
-    "scripts/merge_on_green.py",
-    "scripts/run_ci_pack.py",
-    "scripts/workflow_run_source.py",
     "research/AUTONOMIC_LOOP_MASTERPLAN_BY_FABLE.md",
     # V2-A additions (R-V2-8)
     "config/metabolism_anomaly.yml",
@@ -189,17 +176,7 @@ def _matches_immutable(file_path: str) -> bool:
     norm = file_path.replace("\\", "/").lstrip("/")
     if norm.startswith("./"):
         norm = norm[2:]
-    for pattern in IMMUTABLE_PATTERNS:
-        # fnmatch handles * and ** matching
-        if fnmatch.fnmatch(norm, pattern):
-            return True
-        # Also handle ** as "any depth" by trying with partial prefix
-        if "**" in pattern:
-            # Simple sub-match: strip the trailing /** and check prefix
-            base = pattern.replace("/**", "").replace("**", "")
-            if base and norm.startswith(base.rstrip("/")):
-                return True
-    return False
+    return matches_pattern_set(norm, IMMUTABLE_PATTERNS)
 
 
 # ── Main check ───────────────────────────────────────────────────────────────

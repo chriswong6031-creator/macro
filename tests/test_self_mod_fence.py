@@ -360,6 +360,10 @@ def _seed_repo(tmp_path: Path) -> Path:
         REPO_ROOT / "scripts/check_self_mod_fence.py",
         work / "scripts/check_self_mod_fence.py",
     )
+    shutil.copy2(
+        REPO_ROOT / "scripts/ci_authority_paths.py",
+        work / "scripts/ci_authority_paths.py",
+    )
     (work / "README.md").write_text("base\n")
     _git("add", "-A", cwd=work)
     _git("commit", "-m", "base", cwd=work)
