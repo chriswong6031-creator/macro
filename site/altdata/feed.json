@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-08-13T19:29:53.618598+00:00",
+  "generated_utc": "2026-08-13T23:10:54.949620+00:00",
   "as_of": "2026-08-13",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
@@ -7172,11 +7172,11 @@
       },
       {
         "ticker": "CPRX",
-        "category": "Going-Private",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Delistings"
       },
       {
         "ticker": "CRDL",
@@ -8452,11 +8452,11 @@
       },
       {
         "ticker": "CCRN",
-        "category": "Going-Private",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Delistings"
       },
       {
         "ticker": "CULT",
@@ -9892,11 +9892,11 @@
       },
       {
         "ticker": "WSR",
-        "category": "Going-Private",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Delistings"
       },
       {
         "ticker": "ZAL",
@@ -12588,11 +12588,11 @@
       },
       {
         "ticker": "KORE",
-        "category": "Going-Private",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Going-Private"
+        "detail": "Delistings"
       },
       {
         "ticker": "NSR",
@@ -17076,11 +17076,11 @@
       },
       {
         "ticker": "NSA",
-        "category": "Acquisitions",
+        "category": "Delistings",
         "confidence": "high",
         "activist": false,
         "filer": null,
-        "detail": "Acquisitions"
+        "detail": "Delistings"
       },
       {
         "ticker": "SWICH",
@@ -22403,6 +22403,14 @@
         "detail": "Acquisitions"
       },
       {
+        "ticker": "GTLS",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
         "ticker": "QBTS",
         "category": "Delistings",
         "confidence": "high",
@@ -22428,6 +22436,14 @@
       },
       {
         "ticker": "TRNZ",
+        "category": "Delistings",
+        "confidence": "high",
+        "activist": false,
+        "filer": null,
+        "detail": "Delistings"
+      },
+      {
+        "ticker": "NFBK",
         "category": "Delistings",
         "confidence": "high",
         "activist": false,
