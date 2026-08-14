@@ -403,20 +403,17 @@ nulls printed, not hidden. It is the sole metric only because this seeded row ca
 
 ---
 
-## 4. One honest limitation, stated plainly
+## 4. Sector localization now closes the recorded limitation
 
-**Sector names render in English under `zh`.** `stockdata/<T>.json` carries `sector` as
-an English string with no `_zh` sibling, and the watchlist table's own "Sector / theme"
-column has always rendered it raw in both languages. The drawer matches the table rather
-than diverging from it, because a drawer and a table disagreeing about one field is
-worse than a known gap.
+`stockdata/<T>.json` still carries one raw English `sector` string, but the page now
+bakes `engine.i18n.sector_lexicon()` into `window.WL_SECTOR_ZH`. The shared
+`secCell()` painter uses that map for the watchlist row, the drawer and search results,
+so `zh` renders the Chinese sector/theme label while `en` retains the source string.
+An absent map or an unmapped name falls back to English instead of hiding the field.
 
-The remedy exists and is one wave's work, not this one's: `templates/options.html.j2`
-already receives a build-time `sector_zh_json` context and does
-`(window.OEW_SECTOR_ZH || {})[r.sector] || r.sector`. Injecting the same context into
-`watchlist.html.j2` would fix the column and the drawer together. Recorded here rather
-than taken, because it is a builder change in a presentation wave and it belongs to the
-whole page, not to the drawer.
+`tests/test_watchlist_sector_i18n.py` pins the glossary, build wiring, page global,
+helper and every print site. This is presentation-only localization; it does not alter
+the underlying record, its signal state, or any ranking, trading or training authority.
 
 ---
 

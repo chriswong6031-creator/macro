@@ -12,6 +12,14 @@ from ops.launchd import run_options_sparse_selector_verified as bootstrap
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_REPO_IMPORT_SOURCE_SHA256 = {
+    "engine/options_sparse_selector.py": (
+        "f535bf10c651a1817efa6100c4b46dcff677d4e6a255fa08174981f115a825f6"
+    ),
+    "engine/private_auth_dict.py": (
+        "55e73e3086de01e3d06204a0638f3665fc2b4fa64e0d00b0c9893886c9cad220"
+    ),
+}
 
 
 def _write(path: Path, body: bytes = b"x", *, executable: bool = False) -> Path:
@@ -55,7 +63,11 @@ def _system_native(_path: Path) -> bootstrap.NativeRecord:
 
 def _mock_safe_proof(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(bootstrap, "attest_target_profile", lambda: None)
-    monkeypatch.setattr(bootstrap, "_isolated_import_acceptance", lambda **_kwargs: None)
+    monkeypatch.setattr(
+        bootstrap,
+        "_isolated_import_acceptance",
+        lambda **_kwargs: dict(EXPECTED_REPO_IMPORT_SOURCE_SHA256),
+    )
     monkeypatch.setattr(bootstrap, "_seal_native_signatures", lambda _paths: None)
     monkeypatch.setattr(bootstrap, "_native_dyld_acceptance", lambda **_kwargs: None)
 
@@ -157,12 +169,15 @@ def test_provision_disposable_target_seals_exact_closure_and_keeps_python_execut
     )
     runtime = target / bootstrap.RUNTIME_DIRECTORY
     python = runtime / bootstrap.RUNTIME_PYTHON_RELATIVE
+    manifest = target / bootstrap.MANIFEST_NAME
+    assert receipt["schema"] == "options.sparse_selector_runtime_carrier/v2"
     assert receipt["authority"] is False
     assert receipt["training"] is False
+    assert receipt["repo_import_source_sha256"] == EXPECTED_REPO_IMPORT_SOURCE_SHA256
     assert receipt["imports"] == list(bootstrap.RUNTIME_REQUIRED_IMPORTS)
     assert stat.S_IMODE(os.lstat(python).st_mode) == 0o555
     assert stat.S_IMODE(os.lstat(runtime / bootstrap.RUNTIME_DEPENDENCY_PATHS[-1]).st_mode) == 0o444
-    assert (target / bootstrap.MANIFEST_NAME).is_file()
+    assert manifest.read_bytes() == bootstrap._canonical_json(receipt)
     bootstrap._attest_sealed_tree(runtime, receipt["files"])
 
 
@@ -536,9 +551,10 @@ def test_isolated_import_acceptance_uses_isolated_flags_and_current_core(
         return subprocess.CompletedProcess(argv, 0, "", "")
 
     monkeypatch.setattr(bootstrap.subprocess, "run", fake_run)
-    bootstrap._isolated_import_acceptance(
+    source_sha256 = bootstrap._isolated_import_acceptance(
         python=python, repo_root=ROOT, site_packages=site_packages
     )
+    assert source_sha256 == EXPECTED_REPO_IMPORT_SOURCE_SHA256
     assert observed["argv"][1:4] == ["-I", "-S", "-B"]  # type: ignore[index]
     assert "engine import options_sparse_selector" in observed["script"]  # type: ignore[operator]
     for name in bootstrap.RUNTIME_REQUIRED_IMPORTS:
@@ -549,6 +565,35 @@ def test_isolated_import_acceptance_uses_isolated_flags_and_current_core(
     assert "str(source) not in str(location)" in observed["script"]  # type: ignore[operator]
     assert "zoneinfo.reset_tzpath" in observed["script"]  # type: ignore[operator]
     assert "America/New_York" in observed["script"]  # type: ignore[operator]
+
+
+def test_repo_import_source_mutation_fails_before_manifest_write(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = _source_runtime(tmp_path, monkeypatch)
+    target = _marked_target(tmp_path)
+    repo = tmp_path / "repo"
+    selector = _write(repo / "engine/options_sparse_selector.py", b"selector-before")
+    _write(repo / "engine/private_auth_dict.py", b"private-auth")
+    monkeypatch.setattr(bootstrap, "attest_target_profile", lambda: None)
+    monkeypatch.setattr(bootstrap, "_seal_native_signatures", lambda _paths: None)
+    monkeypatch.setattr(bootstrap, "_native_dyld_acceptance", lambda **_kwargs: None)
+
+    def mutate_during_import(
+        argv: list[str], **_kwargs: object
+    ) -> subprocess.CompletedProcess[str]:
+        selector.write_bytes(b"selector-after")
+        return subprocess.CompletedProcess(argv, 0, "", "")
+
+    monkeypatch.setattr(bootstrap.subprocess, "run", mutate_during_import)
+    with pytest.raises(bootstrap.BootstrapError, match="sources changed"):
+        bootstrap.prove_disposable_target(
+            source_root=source,
+            target_root=target,
+            repo_root=repo,
+            native_reader=_system_native,
+        )
+    assert not (target / bootstrap.MANIFEST_NAME).exists()
 
 
 @pytest.mark.parametrize("unsafe", ["root-mode", "marker-mode"])
