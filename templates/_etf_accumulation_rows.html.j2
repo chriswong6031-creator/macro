@@ -5,14 +5,14 @@
    to the entitled build's.
 
    Params: `rows` (accumulation). No tier logic. #}
-{% from "_etf_macros.html.j2" import t, logo, spark, stance, help %}
-<div class="card" style="padding:8px 14px">
+{% from "_etf_macros.html.j2" import t, logo, spark, stance, help, money, srcword, persist %}
+<div class="card atbl-card">
   <div class="atbl-wrap">
   <table class="atbl">
     <thead><tr>
       <th>{{ t('stock', '个股') }}</th>
       <th>{{ t('fund · theme', '基金 · 主题') }}</th>
-      <th class="r">{{ t('conviction', '信念') }}{{ help("The percentage POINTS of the fund's weight the manager actively committed to this name, after stripping out price moves and creation/redemption flow. We rank on this, not raw % change — a real add to a meaningful position beats a tiny position doubling.", '经理人在剔除价格变动与申购／赎回资金流后，主动投入该股的权重百分点。我们据此排序，而非原始百分比变化——对有意义仓位的真实增持胜过微小仓位的翻倍。') }}</th>
+      <th class="r">{{ t('conviction', '信念') }}{{ help("The percentage POINTS of the fund's weight the manager actively committed to this name, after stripping out price moves and creation/redemption flow. We rank on this, not raw % change — a real add to a meaningful position beats a tiny position doubling. Underneath it: roughly how many dollars that was, and which kind of buying it was — money arriving in the fund, or the manager choosing this name.", '经理人在剔除价格变动与申购／赎回资金流后，主动投入该股的权重百分点。我们据此排序，而非原始百分比变化——对有意义仓位的真实增持胜过微小仓位的翻倍。下方为该动作对应的大致金额，以及买入的性质——是资金流入基金，还是经理人主动选择该个股。') }}</th>
       <th class="hide-sm">{{ t('trend', '走势') }}</th>
       <th>{{ t('what to do', '如何应对') }}</th>
     </tr></thead>
@@ -26,10 +26,15 @@
             <span class="nm">{{ clean_name(r.name) }}</span></span>
         </div>
       </td>
-      <td class="fundcell"><b>{{ r.etf }}</b>{% if r.is_active %} <span class="mini active">{{ t('ACTIVE', '主动') }}</span>{% endif %}<br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
+      {# The fund's own identity, and — where it matters — the fact that its
+         last filing is behind the fleet, so a row is never read as "this
+         cycle" on week-old evidence. #}
+      <td class="fundcell"><b>{{ r.etf }}</b>{% if r.is_active %} <i class="am" data-tip-en="Actively managed fund — a person chooses the holdings, so its moves are picks rather than flows" data-tip-zh="主动管理基金——持仓由经理人挑选，其动作属于选股而非资金流">{{ t('active', '主动') }}</i>{% endif %}{% if r.is_stale %} <span class="mini old" data-tip-en="This fund's newest filing is {{ r.stale_days }} days behind the freshest fund we read" data-tip-zh="该基金最新披露比我们读取的最新基金落后 {{ r.stale_days }} 天">{{ r.stale_days }}{{ t('d old', '天前') }}</span>{% endif %}<br><span class="themetag">{{ td(r.category) if r.category else (td(r.sector) if r.sector else '—') }}</span></td>
       <td class="r">
-        <span class="conv {{ 'u' if cp >= 0 else 'd' }}">{{ "%+.2f" | format(cp) }}pp</span>
-        {% if r.is_new %} <span class="mini new">{{ t('NEW', '新建') }}</span>{% endif %}
+        <span class="conv {{ 'u' if cp >= 0 else 'd' }}">{{ "%+.2f" | format(cp) }}<i>pp</i></span>
+        {% if r.is_new %} <span class="mini new">{{ t('new', '新建') }}</span>{% endif %}
+        {{ persist(r.get('streak'), r.get('accel_pct_per_day')) }}
+        <div class="tsz">{{ money(r.get('total_usd'), r.get('mv_available', true)) }}{{ srcword(r.get('driver')) }}</div>
       </td>
       <td class="hide-sm">{{ spark(r.weight_series) }}</td>
       <td>{{ stance(r.stance) }}</td>

@@ -1,0 +1,346 @@
+#!/usr/bin/env python3
+"""Sparse session-worktree profile — detector + one-command opt-in (policy R8).
+
+WHY THIS EXISTS
+---------------
+`research/WORKTREE_GC_POLICY.md` §0 R8: a full checkout of this repo is ~3.8 GiB,
+of which `data/` 2.3 + `site/` 0.73 + `mockups/` 0.23 + `verify_shots/` 0.05 =
+**87 %** is generated artifacts that a typical session never reads. At the
+measured fleet cadence (~40 session worktrees/day) the 0-3 d ACTIVE window is a
+~330 GiB standing working set that the GC sweeper structurally cannot reduce —
+it only reclaims trees that are already finished.
+
+On 2026-08-13 the Studio hit 1.7 Ti / 1.8 Ti (~100 GiB free) and self-hosted
+runners ENOSPC-crashed twice. Arming the GC (#5502) drains the finished pool;
+only a thinner per-tree footprint shrinks the active window. This module is that
+second half: new session worktrees check out every directory EXCEPT the heavy
+generated ones, and this CLI is the one command that opts back in.
+
+THE HONESTY RULE (why this is a detector and not just a setup script)
+--------------------------------------------------------------------
+A sparse tree must never make a guard or a test read GREEN for the wrong reason.
+Two measured ways it silently can:
+
+  * `scripts/check_template_site_sync.py` enumerates its own pair list by
+    walking `site/`. With `site/` absent, `find_pairs` yields nothing and the
+    paired plain-copy asset law reports "sync OK (0 pairs checked)" and exits 0
+    — a vacuous pass on the exact guard that protects the render lanes.
+    `render.yml` carries a long comment about the same failure mode reaching the
+    lane itself ("would render, guard and COMMIT whatever subset of the tree it
+    found — a truncated publish, not a red X").
+  * tests that read the committed `site/`/`data/` trees fail with a confusing
+    FileNotFoundError that reads like a real regression.
+
+So every caller that needs a heavy tree asks `missing_dirs()` FIRST and refuses
+or skips with `remedy_line()` in the message. Nothing is silently greened.
+
+DETECTION IS NOT A DIRECTORY CHECK
+----------------------------------
+`(root / "data").is_dir()` lies in both directions, measured on this tree:
+
+  * `site/` is absent entirely -> is_dir() False (correct, by luck)
+  * `data/` survives as a 0-byte HUSK after `git reset --hard` -> is_dir() True
+    while holding none of the 2.3 GiB it tracks.
+
+The husk is why `git reset --hard` cannot be trusted to restore the profile
+either. The authoritative signal is git's own sparse state: cone-mode
+`git sparse-checkout list` is the include set, and anything HEAD tracks that is
+not in it is omitted. The emptiness heuristic is only the non-cone fallback.
+
+Usage:
+    python3 scripts/worktree_sparse.py status        # what is / is not materialized
+    python3 scripts/worktree_sparse.py full          # opt IN to a full checkout
+    python3 scripts/worktree_sparse.py sparse        # re-apply the configured profile
+    python3 scripts/worktree_sparse.py add site      # materialize ONE excluded dir
+    python3 scripts/worktree_sparse.py clean         # report stray writes into an
+    python3 scripts/worktree_sparse.py clean --force # omitted tree, and delete them
+Exit codes: 0 = success · 1 = failure (not a git worktree, git error, bad dir).
+"""
+from __future__ import annotations
+
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parent.parent
+CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
+
+# Fallback when config/sparse_worktree.json is unreadable. Kept in step with that
+# file by tests/test_sparse_worktree_profile.py so the two can never drift.
+DEFAULT_EXCLUDE_DIRS = ("data", "site", "mockups", "verify_shots")
+
+FULL_CHECKOUT_CMD = "python3 scripts/worktree_sparse.py full"
+
+
+def remedy_line(dirs: list[str] | tuple[str, ...] | None = None) -> str:
+    """The one-line remedy every refusal/skip message must carry."""
+    what = ", ".join(sorted(dirs)) if dirs else "heavy generated trees"
+    return (
+        f"sparse worktree — {what} not checked out; "
+        f"opt into a full checkout with: {FULL_CHECKOUT_CMD}"
+    )
+
+
+def load_profile(config_path: Path | None = None) -> dict:
+    """Return {'enabled': bool, 'exclude_dirs': [...]}, falling back to defaults."""
+    path = config_path or CONFIG_PATH
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 — a missing/broken config must not break the hook
+        return {"enabled": True, "exclude_dirs": list(DEFAULT_EXCLUDE_DIRS)}
+    excludes = raw.get("exclude_dirs")
+    if not isinstance(excludes, list) or not all(isinstance(d, str) for d in excludes):
+        excludes = list(DEFAULT_EXCLUDE_DIRS)
+    return {"enabled": bool(raw.get("enabled", True)), "exclude_dirs": excludes}
+
+
+def _git(root: Path, *args: str) -> str | None:
+    """Run a git command in ``root``; None when git is unavailable or it fails."""
+    try:
+        out = subprocess.run(
+            ("git", "-C", str(root)) + args,
+            capture_output=True, text=True, timeout=60, check=False,
+        )
+    except Exception:  # noqa: BLE001 — git missing, or a hung filesystem
+        return None
+    return out.stdout.strip() if out.returncode == 0 else None
+
+
+def sparse_enabled(root: Path = ROOT) -> bool:
+    """True when this worktree has sparse-checkout switched on."""
+    return (_git(root, "config", "--get", "core.sparseCheckout") or "").lower() == "true"
+
+
+def _cone_included(root: Path) -> list[str]:
+    """Cone-mode include set (top-level directory names); [] when not cone mode."""
+    if (_git(root, "config", "--get", "core.sparseCheckoutCone") or "").lower() != "true":
+        return []
+    listed = _git(root, "sparse-checkout", "list")
+    return [ln.strip() for ln in listed.splitlines() if ln.strip()] if listed else []
+
+
+def tracked_top_level_dirs(root: Path = ROOT, ref: str = "HEAD") -> list[str]:
+    """Top-level directories the given ref tracks (sparse state is irrelevant here)."""
+    listed = _git(root, "ls-tree", "-d", "--name-only", ref)
+    return sorted(ln.strip() for ln in listed.splitlines() if ln.strip()) if listed else []
+
+
+def _has_content(path: Path) -> bool:
+    """True when the directory exists AND holds at least one entry (husk-aware)."""
+    try:
+        return path.is_dir() and any(path.iterdir())
+    except OSError:
+        return False
+
+
+def missing_dirs(root: Path = ROOT) -> list[str]:
+    """Top-level dirs that HEAD tracks but this working tree does not materialize.
+
+    Cone mode (what our WorktreeCreate hook sets) is answered exactly from git's
+    include set. Non-cone / no-git checkouts fall back to the husk-aware
+    emptiness probe. A full checkout returns [] under both paths.
+    """
+    tracked = tracked_top_level_dirs(root)
+    if not tracked:
+        return []
+    if sparse_enabled(root):
+        included = _cone_included(root)
+        if included:
+            return [d for d in tracked if d not in included]
+    return [d for d in tracked if not _has_content(root / d)]
+
+
+def is_sparse(root: Path = ROOT) -> bool:
+    """True when at least one tracked top-level directory is not materialized."""
+    return bool(missing_dirs(root))
+
+
+def require_full_checkout(dirs: list[str], root: Path = ROOT) -> None:
+    """Raise RuntimeError naming the remedy when any of ``dirs`` is sparse-omitted.
+
+    Callers that would otherwise produce a vacuous result (an empty pair list, an
+    empty glob) use this so the sparse tree fails LOUD instead of passing empty.
+    """
+    absent = [d for d in missing_dirs(root) if d in set(dirs)]
+    if absent:
+        raise RuntimeError(remedy_line(absent))
+
+
+def _drop_husks(root: Path, dirs: list[str]) -> list[str]:
+    """Remove 0-entry husk directories left behind by `git reset --hard`."""
+    dropped = []
+    for name in dirs:
+        path = root / name
+        if path.is_dir() and not any(path.iterdir()):
+            try:
+                path.rmdir()
+                dropped.append(name)
+            except OSError:
+                pass
+    return dropped
+
+
+def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> int:
+    """(Re-)apply the sparse profile to an existing worktree."""
+    excludes = set(exclude_dirs if exclude_dirs is not None else load_profile()["exclude_dirs"])
+    tracked = tracked_top_level_dirs(root)
+    if not tracked:
+        print("worktree-sparse: not a git worktree (or HEAD is unreadable)", file=sys.stderr)
+        return 1
+    include = [d for d in tracked if d not in excludes]
+    if not include:
+        print("worktree-sparse: refusing to exclude every tracked directory", file=sys.stderr)
+        return 1
+    if _git(root, "sparse-checkout", "init", "--cone") is None:
+        print("worktree-sparse: `git sparse-checkout init --cone` failed", file=sys.stderr)
+        return 1
+    if _git(root, "sparse-checkout", "set", "--cone", "--", *include) is None:
+        print("worktree-sparse: `git sparse-checkout set` failed", file=sys.stderr)
+        return 1
+    _drop_husks(root, sorted(excludes))
+    print(f"worktree-sparse: profile applied — omitting {', '.join(sorted(excludes))}")
+    return 0
+
+
+def disable_profile(root: Path = ROOT) -> int:
+    """Opt in to a full checkout. Worktree-scoped: siblings are untouched."""
+    if not sparse_enabled(root):
+        print("worktree-sparse: already a full checkout")
+        return 0
+    if _git(root, "sparse-checkout", "disable") is None:
+        print("worktree-sparse: `git sparse-checkout disable` failed", file=sys.stderr)
+        return 1
+    still = missing_dirs(root)
+    if still:
+        print(f"worktree-sparse: WARNING — still missing {', '.join(still)}", file=sys.stderr)
+        return 1
+    print("worktree-sparse: full checkout restored (this worktree only)")
+    return 0
+
+
+def add_dirs(names: list[str], root: Path = ROOT) -> int:
+    """Materialize specific excluded directories, keeping the rest sparse."""
+    tracked = set(tracked_top_level_dirs(root))
+    unknown = [n for n in names if n not in tracked]
+    if unknown:
+        print(f"worktree-sparse: not tracked at HEAD: {', '.join(unknown)}", file=sys.stderr)
+        return 1
+    if not sparse_enabled(root):
+        print("worktree-sparse: already a full checkout — nothing to add")
+        return 0
+    _drop_husks(root, names)
+    if _git(root, "sparse-checkout", "add", "--", *names) is None:
+        print("worktree-sparse: `git sparse-checkout add` failed", file=sys.stderr)
+        return 1
+    print(f"worktree-sparse: materialized {', '.join(names)}")
+    return 0
+
+
+def stray_content(root: Path, dirs: list[str], limit: int = 20) -> list[str]:
+    """Files sitting inside a sparse-OMITTED tree — i.e. written by something local.
+
+    An omitted tree should hold nothing. Anything here was produced by a tool or
+    a test whose output dir was not redirected. It matters because git compares
+    such a file against the committed blob and reports ` M`, so it lands in
+    `git status` and in ship_loop_guard's dirty snapshot — which is the desired
+    behaviour (nothing is silently committable) but reads as a mystery diff on a
+    path the session never opened. Naming the files makes the cause obvious.
+    """
+    found: list[str] = []
+    for name in dirs:
+        base = root / name
+        if not base.is_dir():
+            continue
+        for path in base.rglob("*"):
+            if path.is_file():
+                found.append(str(path.relative_to(root)))
+                if len(found) >= limit:
+                    return found
+    return found
+
+
+def clean_stray(root: Path = ROOT, force: bool = False) -> int:
+    """Report — and with force, delete — content written into a sparse-OMITTED tree.
+
+    Measured 2026-08-13, and the reason this command exists: running the test
+    suite in a sparse worktree with the MM_DATA_GUARD tripwire disabled left
+    `data/hk_southbound/holdings.parquet` at 45,157 bytes against the 7,295,941
+    committed — because the real content was never on disk, an unredirected
+    writer does not *modify* the artifact, it *replaces* it. `git diff` showed a
+    7 MB truncation and `data/trial_ledger.jsonl` shorter by 1,411 lines. A
+    `git add -A` there ships catastrophic data loss to main.
+
+    Deleting a stray is safe: the committed content is in git and the path is
+    sparse-omitted, so removing the file restores the tree to exactly the state
+    the profile asks for. It is still report-first (worktree_gc.py's idiom) —
+    a session may have written into an omitted tree on purpose.
+    """
+    absent = missing_dirs(root)
+    stray = stray_content(root, absent, limit=10_000)
+    if not stray:
+        print("worktree-sparse: no stray content inside an omitted tree")
+        return 0
+    verb = "removing" if force else "would remove"
+    print(f"worktree-sparse: {verb} {len(stray)} stray file(s) inside "
+          f"{', '.join(absent)}:")
+    for rel in stray[:40]:
+        print(f"  {rel}")
+    if len(stray) > 40:
+        print(f"  … and {len(stray) - 40} more")
+    if not force:
+        print("worktree-sparse: re-run with --force to delete them "
+              "(the committed content stays in git and is restored by `full`)")
+        return 0
+    for name in absent:
+        shutil.rmtree(root / name, ignore_errors=True)
+    _git(root, "sparse-checkout", "reapply")
+    remaining = stray_content(root, missing_dirs(root))
+    if remaining:
+        print(f"worktree-sparse: WARNING — {len(remaining)} file(s) survived", file=sys.stderr)
+        return 1
+    print("worktree-sparse: omitted trees are empty again")
+    return 0
+
+
+def status(root: Path = ROOT) -> int:
+    absent = missing_dirs(root)
+    if not absent:
+        print("worktree-sparse: FULL checkout — every tracked directory is present")
+        return 0
+    print(f"worktree-sparse: SPARSE checkout — omitting {', '.join(absent)}")
+    print(f"worktree-sparse: {remedy_line(absent)}")
+    print(f"worktree-sparse: one directory only, e.g. "
+          f"`python3 scripts/worktree_sparse.py add {absent[0]}`")
+    stray = stray_content(root, absent)
+    if stray:
+        print(f"worktree-sparse: WARNING — {len(stray)} file(s) exist inside an omitted "
+              f"tree; a local tool or test wrote them and git will report them modified "
+              f"against the committed blob: {', '.join(stray[:5])}"
+              f"{' …' if len(stray) > 5 else ''}")
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    cmd = argv[0] if argv else "status"
+    if cmd == "status":
+        return status()
+    if cmd == "full":
+        return disable_profile()
+    if cmd == "sparse":
+        return apply_profile()
+    if cmd == "clean":
+        return clean_stray(force="--force" in argv)
+    if cmd == "add":
+        names = [a for a in argv[1:] if not a.startswith("-")]
+        if not names:
+            print("worktree-sparse: `add` needs at least one directory", file=sys.stderr)
+            return 1
+        return add_dirs(names)
+    print(__doc__.split("Usage:")[-1].strip(), file=sys.stderr)
+    return 1
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

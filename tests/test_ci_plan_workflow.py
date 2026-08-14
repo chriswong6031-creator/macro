@@ -98,13 +98,15 @@ def _run_gate(*, plan: str, pack: str, has_work: str) -> subprocess.CompletedPro
 
 
 def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
-    """`ci-pack` and `ci-gate` read these four by name.
+    """`ci-pack` and `ci-gate` read these outputs by name.
 
     Drop or rename one and the consumer expression silently evaluates to the empty
     string: `matrix` breaks `fromJSON` outright, but `has_work` empty means the pack
     gate is never `'true'` so the ENTIRE matrix is skipped on every PR, and
     `plan_sha` empty just unpins the parity check.  Two of those three failures are
-    green-looking.
+    green-looking. `changed_files` empty makes every pack re-diff a shallow clone
+    and fail-safe-widen to the full suite — the throughput hole this output exists
+    to close.
     """
     job = _job("ci-plan")
     assert job["outputs"] == {
@@ -112,6 +114,7 @@ def test_ci_plan_job_exists_and_publishes_all_four_outputs() -> None:
         "has_work": "${{ steps.plan.outputs.has_work }}",
         "plan_sha": "${{ steps.plan.outputs.plan_sha }}",
         "reason": "${{ steps.plan.outputs.reason }}",
+        "changed_files": "${{ steps.plan.outputs.changed_files }}",
     }
 
 
@@ -223,7 +226,7 @@ def test_ci_pack_matrix_comes_from_the_plan_and_no_static_pack_list_remains() ->
     matrix = strategy["matrix"]
     assert isinstance(matrix, str), f"ci-pack's matrix must be an expression, got {type(matrix).__name__}"
     assert "fromJSON(needs.ci-plan.outputs.matrix)" in matrix
-    assert strategy["fail-fast"] == "${{ github.event_name == 'pull_request' }}"
+    assert strategy["fail-fast"] is False
 
 
 def test_ci_pack_is_gated_on_an_affirmative_has_work() -> None:
@@ -265,6 +268,10 @@ def test_ci_pack_pins_the_plan_hash_and_unpins_itself_when_there_is_none() -> No
         "an empty plan_sha must word-split away, not emit a valueless --expect-plan-sha"
     )
     assert " $PLAN_SHA_ARG " in f" {_pack_step()['run']} ", "the argument must be unquoted so it can vanish"
+    assert env["CI_CHANGED_FILES_JSON"] == "${{ needs.ci-plan.outputs.changed_files }}"
+    assert "CI_CHANGED_FILES_JSON" not in _pack_step()["run"], (
+        "the changed-file list must travel via env, not the folded command line"
+    )
 
 
 def test_pack_shell_arguments_stay_unquoted_so_an_empty_value_disappears() -> None:
@@ -371,6 +378,10 @@ def test_ci_gate_fails_when_a_selected_pack_did_not_succeed() -> None:
     Every non-success shape must red: `failure` for a genuine break, and
     `skipped`/`cancelled` because a matrix that never ran proves nothing — treating
     either as a pass reproduces #4779 inside the aggregate that exists to prevent it.
+
+    `cancelled` is a workflow cancel (new SHA), not fail-fast wiping siblings:
+    the pack matrix is `fail-fast: false` so one red pack cannot destroy the
+    other eleven proofs. ci-gate still must not pass a cancelled matrix.
     """
     for result in ("failure", "cancelled", "skipped"):
         proc = _run_gate(plan="success", pack=result, has_work="true")
