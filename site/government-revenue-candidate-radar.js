@@ -6,6 +6,21 @@
    * queue.  Discovery-company coverage intentionally lives in a separate
    * mode and is never used as a fallback here.
    */
+  /* /api/government-revenue/* is a paid (site_full) surface and authenticates on
+   * the Authorization header, not the session cookie, so every read has to carry
+   * the Supabase bearer token. Same shape as capital_structure.js. Resolved per
+   * call, not at load time, because theme.js (which defines MDXAuth) is loaded
+   * after this script. */
+  function withAuth(headers){
+    headers=headers||{};
+    if(!(global.MDXAuth&&global.MDXAuth.client))return Promise.resolve(headers);
+    return global.MDXAuth.client().then(function(client){return client.auth.getSession()}).then(function(result){
+      var token=result&&result.data&&result.data.session&&result.data.session.access_token;
+      if(token)headers.Authorization='Bearer '+token;
+      return headers;
+    }).catch(function(){return headers});
+  }
+
   global.createGovernmentRevenueCandidateRadar=function(api){
     var obj=api.obj,arr=api.arr,esc=api.esc,text=api.text,n=api.n,money=api.money,date=api.date,tr=api.tr,safeUrl=api.safeUrl,hostFor=api.host;
     var epoch=0,listing=null,loadState='loading',MAX_PAGES=4;
@@ -73,7 +88,9 @@
         if(pages>=MAX_PAGES)throw new Error(kind+'_page_cap');
         pages++;
         var url=path+(cursor?'&cursor='+encodeURIComponent(cursor):'');
-        return global.fetch(url,{credentials:'same-origin',headers:{Accept:'application/json'}}).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
+        return withAuth({Accept:'application/json'}).then(function(headers){
+          return global.fetch(url,{credentials:'same-origin',headers:headers});
+        }).then(function(response){if(!response.ok)throw new Error('http_'+response.status);return response.json()}).then(function(value){
           var page=pageEnvelope(value,kind);
           if(!first)first=page;else if(page.contentId!==first.contentId||page.total!==first.total)throw new Error(kind+'_generation_drift');
           all=all.concat(page.items);
