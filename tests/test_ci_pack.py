@@ -323,12 +323,22 @@ def test_derived_closure_follows_relative_first_party_imports() -> None:
 
 
 def test_whole_tree_glob_job_owns_every_scanned_code_root() -> None:
-    """A tree scan cannot be narrowed to the scanner suite's import closure."""
+    """A tree scan cannot be narrowed to the scanner suite's import closure.
+
+    These roots are opaque traversal evidence, so the tier split keeps them in
+    ``fallback_paths`` rather than promoting them to named ownership.  They must
+    still select the guard for code changes; narrative-only edits deliberately do
+    not match the fallback tier.
+    """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     export_guard = next(job for job in jobs if job.job_id == "all-exports-resolve")
-    assert "engine/**" in export_guard.paths
-    assert "scripts/**" in export_guard.paths
-    assert "research/**" in export_guard.paths
+    assert "engine/**" in export_guard.fallback_paths
+    assert "scripts/**" in export_guard.fallback_paths
+    assert "research/**" in export_guard.fallback_paths
+    assert PACK._job_diff_match(export_guard, ["engine/market_state.py"]) == (
+        "engine/market_state.py",
+        "fallback",
+    )
     selected, _ = PACK.select_jobs(jobs, ["engine/market_state.py"])
     assert export_guard in selected
 
