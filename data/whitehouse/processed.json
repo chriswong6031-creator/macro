@@ -668,39 +668,39 @@
     },
     "https://www.whitehouse.gov/?p=48352": {
       "id": "wh-2026-08-14-presidential-message-on-the-anniversary-of-winning-world-war-ii",
-      "at": "2026-08-14T23:21:36.606754+00:00",
+      "at": "2026-08-14T23:44:31.835508+00:00",
       "activated": false,
       "importance": 2
     },
     "https://www.whitehouse.gov/?p=48350": {
       "id": "wh-2026-08-14-presidential-message-on-the-anniversary-of-the-social-security-act",
-      "at": "2026-08-14T23:21:42.689366+00:00",
+      "at": "2026-08-14T23:44:39.186200+00:00",
       "activated": false,
       "importance": 18
     },
     "https://www.whitehouse.gov/?p=48307": {
       "id": "wh-2026-08-13-fact-sheet-president-donald-j-trump-rebuilds-the-u-s-navy-and-americas-shipbuild",
-      "at": "2026-08-14T23:22:16.068064+00:00",
+      "at": "2026-08-14T23:45:08.419813+00:00",
       "activated": true,
-      "importance": 72
+      "importance": 70
     },
     "https://www.whitehouse.gov/?p=48309": {
       "id": "wh-2026-08-13-fact-sheet-president-donald-j-trump-bolsters-national-security-and-strengthens-u",
-      "at": "2026-08-14T23:22:42.184122+00:00",
+      "at": "2026-08-14T23:45:40.486230+00:00",
       "activated": true,
       "importance": 68
     },
     "https://www.whitehouse.gov/?p=48301": {
       "id": "wh-2026-08-13-adjusting-imports-of-unmanned-aircraft-systems-and-unmanned-aircraft-systems-com",
-      "at": "2026-08-14T23:23:12.585100+00:00",
+      "at": "2026-08-14T23:46:09.293945+00:00",
       "activated": true,
-      "importance": 78
+      "importance": 74
     },
     "https://www.whitehouse.gov/?p=48299": {
       "id": "wh-2026-08-13-rebuilding-the-united-states-navy-and-americas-shipbuilding-industrial-base",
-      "at": "2026-08-14T23:23:37.536285+00:00",
+      "at": "2026-08-14T23:46:37.083351+00:00",
       "activated": true,
-      "importance": 68
+      "importance": 74
     }
   },
   "_note": "W5 baseline \u2014 no items evaluated yet; provider absent in build env (no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY / DEEPSEEK_API_KEY). Created 2026-07-02 to make dark-vs-quiet distinguishable: an empty seen={} here means the desk ran but had no provider, not that it was never invoked."

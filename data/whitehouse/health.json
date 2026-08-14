@@ -1,6 +1,6 @@
 {
   "schema": "wh_health.v1",
-  "as_of": "2026-08-14T23:23:38.815402+00:00",
+  "as_of": "2026-08-14T23:46:38.755313+00:00",
   "posts_seen": 12,
   "seen_total": 117,
   "evaluated": 6,
@@ -21,7 +21,7 @@
     },
     {
       "id": "wh-2026-08-13-fact-sheet-president-donald-j-trump-rebuilds-the-u-s-navy-and-americas-shipbuild",
-      "importance": 72,
+      "importance": 70,
       "activated": true,
       "degraded_reason": null
     },
@@ -33,13 +33,13 @@
     },
     {
       "id": "wh-2026-08-13-adjusting-imports-of-unmanned-aircraft-systems-and-unmanned-aircraft-systems-com",
-      "importance": 78,
+      "importance": 74,
       "activated": true,
       "degraded_reason": null
     },
     {
       "id": "wh-2026-08-13-rebuilding-the-united-states-navy-and-americas-shipbuilding-industrial-base",
-      "importance": 68,
+      "importance": 74,
       "activated": true,
       "degraded_reason": null
     }
