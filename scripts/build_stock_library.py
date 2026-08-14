@@ -6464,11 +6464,32 @@ def main() -> int:
                     closes=_ext_closes if "_ext_closes" in dir() else None,
                     gate_go=wide.get("gate_go"),
                     pool_columns=_ucv_pool,
+                    # §13 telemetry: two producer outputs this run ALREADY holds.
+                    # `sue_z` is the factors table's winsorized earnings-momentum z
+                    # (the raw one, not the display-gated `sue_confirmer` chip);
+                    # `short_flow` is engine.short_volume.signal_map, folded into the
+                    # fundamental panels. Handed in rather than re-read, so the store
+                    # stamps the same numbers this night's board saw.
+                    sue_z=sue_z,
+                    short_flow={
+                        _sf_t: ((_sf_p.get("positioning") or {}).get("short_flow") or {})
+                        for _sf_t, _sf_p in (fpanels or {}).items()
+                        if isinstance(_sf_p, dict)
+                    },
                 )
                 if _ucv_n:
                     log.info("us_context_vector: store now %d rows (stamped %s, %.1fs)",
                              _ucv_n, _ucv_asof, time.time() - _ucv_t0)
         except Exception as _ucv_e:  # noqa: BLE001 — research telemetry is never fatal
+            # Line-start bare print, never only the logger: a prefixing formatter
+            # turns ::warning into "WARNING ::warning" and GitHub drops it — which
+            # is exactly how six dead nights went unseen (masterplan §4.0).  This
+            # caller-side wrap is one frame ABOVE append_candidates' own warning,
+            # so a raise in the assembly kwargs (asof/board/meta/pool/short_flow)
+            # is loud too, not just a raise inside the writer.
+            print("::warning title=us-context-vector-stamp-skipped::us_context_vector "
+                  f"stamp skipped before the writer ran: {_ucv_e} — the PIT store did "
+                  "not advance tonight", flush=True)
             log.warning("us_context_vector stamp skipped (%s)", _ucv_e)
     # multi-timeframe Bottom-Confidence per-band held-rate (stock.html shows the
     # measured "this band held the low ~N%" line; see research/BOTTOM_CONFIDENCE.md)

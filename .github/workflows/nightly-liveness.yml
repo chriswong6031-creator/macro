@@ -1,0 +1,74 @@
+name: nightly-liveness
+# Dead-man switch for the authoritative US nightly (daily.yml / Build B).
+#
+# WHY A SECOND WATCHDOG.  heartbeat.yml already exists, and it did not fire during
+# the 2026-08-11/12 two-session outage. It could not: scripts.healthcheck measures
+# run_status.json against max_age_hours=96, a budget sized so a Friday bake still
+# looks alive at the Monday 14:30Z check. It is a four-day instrument, and no amount
+# of tuning fixes that without red-flagging every Monday. The VPS freshness_sentinel
+# is likewise capped at PROPHET_MAX_SESSIONS_BEHIND=1 for a correct reason (between
+# the 20:00Z close and the 22:30Z bake, "1 behind" IS healthy), which costs it ~24h
+# of designed blindness. Both measure DATA. The thing that actually broke was the
+# SCHEDULE: daily.yml crossed GitHub's silent ~512,000-byte processing cap (#5362)
+# and simply stopped producing runs. Asking GitHub "was a run created?" sees that in
+# hours instead of days. Full rationale: scripts/check_nightly_liveness.py.
+#
+# WHY ubuntu-latest AND NOT macstudio. heartbeat.yml runs on the same self-hosted
+# pool as the lane it watches, so a pool outage silences the alarm and the subject
+# together. This lane is deliberately GitHub-hosted so it shares no fate with the
+# nightly, the render lanes, or the runner host. The repo is public, so the runner
+# is free (CI self-hosted migration Wave 1, #5465).
+on:
+  schedule:
+    # The nightly fires 22:30Z (EDT) / 23:30Z (EST) and legitimately runs for hours.
+    # 08:00Z is ~8.5-9.5h after the fire — comfortably past a healthy bake, so an
+    # in-flight run at this hour is unusual but still only INDETERMINATE, never an
+    # alarm. 14:00Z is the second look: it catches a bake that was still running at
+    # 08:00Z and then died. Both fire 7 days a week; the NYSE calendar anchor inside
+    # the check is what makes weekends and market holidays incapable of manufacturing
+    # a breach, so there is no weekday filter to keep in sync here.
+    - cron: "0 8 * * *"
+    - cron: "0 14 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read          # list daily.yml workflow runs (check A + B)
+
+concurrency:
+  # Its own lane. Never share a group with the pipeline lanes it watches — a watchdog
+  # that can be queue-cancelled by its subject is not a watchdog.
+  group: nightly-liveness
+  cancel-in-progress: false
+
+jobs:
+  liveness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Only what the check imports plus the artifact it reads. site/ is large and
+          # this lane must stay cheap enough to run twice a day forever.
+          filter: blob:none
+          sparse-checkout: |
+            scripts
+            lib
+            engine
+            config
+            site/prophet/index.json
+          sparse-checkout-cone-mode: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: nightly liveness (fails if the bake did not run, did not finish, or did not advance)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same push spine healthcheck uses, so a failure reaches a phone rather
+          # than only the Actions tab. DISCORD_WEBHOOK_WATCHLIST is the fallback
+          # transport that is actually provisioned on this account.
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          DISCORD_WEBHOOK_WATCHLIST: ${{ secrets.DISCORD_WEBHOOK_WATCHLIST }}
+        run: python3 scripts/check_nightly_liveness.py
