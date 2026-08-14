@@ -31,6 +31,13 @@ CI_AUTHORITY_PATTERNS: tuple[str, ...] = (
     # authority ever starts. Protect the whole executable directory; enumerating
     # today's entrypoints is structurally bypassable by tomorrow's import name.
     "scripts/**",
+    # Pack commands run from the repository root, which is also importable.
+    # A candidate ``json.py`` can therefore shadow the stdlib, while a new
+    # top-level ``yaml/__init__.py`` can shadow an installed dependency before
+    # any protected authority code gets control. Keep these patterns
+    # deliberately shallow so ordinary nested product modules remain ordinary.
+    "*.py",
+    "*/__init__.py",
     # Pytest startup hooks and dependency/bootstrap manifests can make every
     # logical test return success without changing the protected planner. Treat
     # them as executable CI authority, not ordinary full-suite invalidators.
@@ -98,6 +105,18 @@ def matches_pattern_set(path: str, patterns: Iterable[str]) -> bool:
         if pattern.endswith("/**"):
             root = pattern[:-3].rstrip("/")
             if path == root or path.startswith(root + "/"):
+                return True
+        elif "**" not in pattern:
+            # ``fnmatch`` lets ``*`` consume ``/``. Authority patterns use
+            # ``**`` for recursive matching, so compare ordinary globs one
+            # path segment at a time. This makes ``*.py`` repository-root-only
+            # and ``*/__init__.py`` exactly one top-level package deep.
+            path_parts = path.split("/")
+            pattern_parts = pattern.split("/")
+            if len(path_parts) == len(pattern_parts) and all(
+                fnmatch.fnmatchcase(path_part, pattern_part)
+                for path_part, pattern_part in zip(path_parts, pattern_parts)
+            ):
                 return True
         elif fnmatch.fnmatchcase(path, pattern):
             return True

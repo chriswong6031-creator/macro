@@ -229,6 +229,31 @@ def test_loop_pr_non_immutable_is_allowed(branch, files, label):
     )
 
 
+@pytest.mark.parametrize("shadow", ["shlex.py", "yaml/__init__.py", "json.py"])
+def test_loop_pr_python_import_shadow_is_blocked_by_shared_inventory(shadow):
+    rc, msg = check(
+        branch="metabolism/python-shadow",
+        changed_files=[shadow],
+        trailers_text="",
+    )
+    assert rc != 0, f"Expected shared authority path {shadow!r} to be immutable"
+    assert "BLOCKED" in msg
+    assert shadow in msg
+
+
+@pytest.mark.parametrize(
+    "product_path",
+    ["engine/json.py", "engine/yaml/__init__.py"],
+)
+def test_loop_pr_nested_product_python_path_remains_non_immutable(product_path):
+    rc, msg = check(
+        branch="metabolism/nested-product-module",
+        changed_files=[product_path],
+        trailers_text="",
+    )
+    assert rc == 0, f"Nested product module {product_path!r} was over-classified: {msg}"
+
+
 # ── 4. Unclassifiable → BLOCKED (fail-closed) ────────────────────────────────
 
 def test_empty_branch_is_fail_closed():

@@ -174,7 +174,16 @@ def test_fork_authority_change_fails_and_publishes_failure_on_exact_head() -> No
     assert all(item["conclusion"] == "failure" for item in api.checks)
 
 
-@pytest.mark.parametrize("shadow", ["scripts/argparse.py", "scripts/yaml.py"])
+@pytest.mark.parametrize(
+    "shadow",
+    [
+        "scripts/argparse.py",
+        "scripts/yaml.py",
+        "shlex.py",
+        "yaml/__init__.py",
+        "json.py",
+    ],
+)
 def test_fork_cannot_add_python_import_shadow_that_self_greens_ci(shadow: str) -> None:
     fork = "contributor/macro"
     api = FakeApi(
@@ -217,10 +226,20 @@ def test_fork_cannot_change_test_runtime_control(control_path: str) -> None:
     assert check["conclusion"] == "failure"
 
 
-def test_ordinary_fork_change_passes_without_an_authority_query() -> None:
+@pytest.mark.parametrize(
+    "ordinary_path",
+    [
+        "docs/ordinary-note.md",
+        "engine/json.py",
+        "engine/yaml/__init__.py",
+    ],
+)
+def test_ordinary_fork_change_passes_without_an_authority_query(
+    ordinary_path: str,
+) -> None:
     fork = "contributor/macro"
     api = FakeApi(
-        [_file("docs/ordinary-note.md")],
+        [_file(ordinary_path)],
         head_repository=fork,
         author="contributor",
     )
@@ -584,6 +603,8 @@ def test_shared_ci_authority_inventory_cannot_drift_from_self_mod_fence() -> Non
         ".github/ci/**",
         ".github/workflows/**",
         "scripts/**",
+        "*.py",
+        "*/__init__.py",
     }
     assert required <= set(CI_AUTHORITY_PATTERNS)
     assert len(CI_AUTHORITY_PATTERNS) == len(set(CI_AUTHORITY_PATTERNS))
@@ -601,6 +622,9 @@ def test_shared_ci_authority_inventory_cannot_drift_from_self_mod_fence() -> Non
         "scripts/check_self_mod_fence.py",
         "scripts/argparse.py",
         "scripts/yaml.py",
+        "shlex.py",
+        "yaml/__init__.py",
+        "json.py",
         "tests/conftest.py",
         "pyproject.toml",
         "requirements-ci.txt",
@@ -609,6 +633,8 @@ def test_shared_ci_authority_inventory_cannot_drift_from_self_mod_fence() -> Non
     ):
         assert is_ci_authority_path(path), path
     assert not is_ci_authority_path("docs/ordinary-note.md")
+    assert not is_ci_authority_path("engine/json.py")
+    assert not is_ci_authority_path("engine/yaml/__init__.py")
 
 
 def test_merge_group_envelope_produces_stable_trusted_verdict() -> None:
