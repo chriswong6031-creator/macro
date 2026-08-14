@@ -17,7 +17,7 @@ reference_id: prophet-board-5514-r3
 predecessors:
   - reference_id: prophet-board-5514-r2
     verdict: REVISE
-    source: snapshot
+    source: on_disk
     source_ref: >
       PR #5533 (rig: r2 cycle on revised Prophet reference 0fc975a), artifact set
       research/reference_integrity/prophet-board-5514-r2/verdict.yml at PR head
