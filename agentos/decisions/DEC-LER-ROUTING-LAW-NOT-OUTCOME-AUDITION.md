@@ -54,11 +54,12 @@ evidence:
   - "research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md §18 A2 (the full five-question adjudication + verdict)"
   - "research/DO_NOT_REBUILD.md §2 DNR:KILL-OUTCOME-AUDITION + config/compiled_kill_registry.yml (verbatim-consistent compiled entry)"
   - "research/PERSONALITY_TIMING_TAILORING_HANDOFF_FOR_FABLE.md §6 (W1 verdict, R-W1-1..5) + §8 (W1-T two-ruler re-grade, R-W1T-1..5)"
-  - "reports/ptt_w1_persistence_of_fit.md (arms, pairwise CIs, persistence measures, W1b rung map, stationarity strata)"
+  - "reports/ptt_w1_persistence_of_fit.md (arms, pairwise CIs, persistence measures, W1b rung map, stationarity strata incl. the §E 44/21/17 rung-reproducibility disclosure)"
+  - "reports/ptt_w1_timing_regrade.md (the timing-ruler decision block — source of every U_MAE/U_W5 CI cited)"
 affects: ["research/LIVE_ENTRY_RADAR_PR0_RESEARCH_CONTRACT.md", "engine/entry_radar/", "agentos/decisions/DEC-LER-EXPERT-EVENT-FAMILIES-PRESERVED.md"]
 confidence: high
 reversibility: costly
-decided_by: chairman
+decided_by: coo-fable
 decided_at: 2026-08-13
 ---
 
