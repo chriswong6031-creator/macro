@@ -7,7 +7,9 @@ import subprocess
 import sys
 import threading
 import time
+from collections.abc import Iterator
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from copy import deepcopy
 from pathlib import Path
 from threading import BoundedSemaphore
@@ -567,14 +569,69 @@ def test_symbol_cache_keeps_only_validated_detached_projection(monkeypatch, tmp_
     api._reset_symbol_rate_limit_for_tests()
 
 
-def _wait_for_symbol_fetches_to_finish(timeout: float = 2.0) -> None:
+def _wait_for_symbol_fetches_to_finish(
+    timeout: float = 2.0, *, strict: bool = True
+) -> bool:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
         with api._symbol_data_lock:
             if not api._symbol_fetch_inflight:
-                return
+                return True
         time.sleep(0.01)
-    raise AssertionError("symbol fetch lane did not drain")
+    if strict:
+        raise AssertionError("symbol fetch lane did not drain")
+    return False
+
+
+@contextmanager
+def _drains_the_symbol_fetch_lane(*parked: threading.Event) -> Iterator[None]:
+    """Release every parked work item and drain the lane, failure path included.
+
+    ``api._symbol_fetch_executor`` is a module-level pool that is never shut
+    down, so ``concurrent.futures`` joins its worker threads at interpreter exit
+    with NO timeout — and a still-QUEUED item is executed during that shutdown,
+    by which point ``monkeypatch`` has restored the real ``_fetch_stock_record``.
+    That real path calls ``_require_public_hostname`` -> ``socket.getaddrinfo``,
+    which takes no timeout, runs before the ``requests`` connect timeout, and is
+    outside ``_SYMBOL_FETCH_TOTAL_DEADLINE_SECONDS``.  One stranded item
+    therefore blocks the interpreter forever, AFTER pytest has already printed
+    its summary: ``market-memory-contract`` burned its whole 10-minute budget
+    that way twice on a docs-only PR that could not have influenced it (#5367,
+    2026-08-11T21:02Z and 2026-08-12T00:09Z), hanging rather than failing.
+
+    The tests below park a work item and then assert timing budgets
+    (``started.wait(1.0)``, ``time.monotonic() - before < 0.25``) BEFORE their
+    ``release.set()``.  Those budgets are the first thing to blow on a loaded
+    4-core runner, and the bare ``AssertionError`` then skips the release and
+    the drain.  Releasing here keeps every one of those assertions exactly as
+    strict while making the strand impossible.
+
+    A drain failure never masks a real one: when the body raised, the drain is
+    best-effort so the original assertion is what the report shows.
+    """
+    failed = False
+    try:
+        yield
+    except BaseException:
+        failed = True
+        raise
+    finally:
+        for event in parked:
+            event.set()
+        _wait_for_symbol_fetches_to_finish(5.0, strict=not failed)
+
+
+@pytest.fixture(autouse=True)
+def _symbol_fetch_lane_must_not_outlive_the_test() -> Iterator[None]:
+    """Tripwire: no test may leave work on the module-level fetch executor.
+
+    A strand is invisible while the tests pass — it costs the JOB, not the
+    assertion — so name the responsible test here instead of letting the pack
+    die on its wall clock with no output.  See ``_drains_the_symbol_fetch_lane``
+    for why a survivor hangs interpreter exit outright.
+    """
+    yield
+    _wait_for_symbol_fetches_to_finish(10.0)
 
 
 def test_symbol_fetch_singleflight_rejects_duplicate_cold_waiters(
@@ -597,19 +654,19 @@ def test_symbol_fetch_singleflight_rejects_duplicate_cold_waiters(
 
     monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
     with ThreadPoolExecutor(max_workers=8) as callers:
-        first = callers.submit(api._load_symbol_context, tmp_path, "AAPL")
-        assert started.wait(1.0)
-        duplicates = [
-            callers.submit(api._load_symbol_context, tmp_path, "AAPL")
-            for _ in range(7)
-        ]
-        for duplicate in duplicates:
-            with pytest.raises(api._SymbolDataBusy, match="already in progress"):
-                duplicate.result(timeout=1.0)
-        release.set()
-        assert first.result(timeout=1.0)["available"] is True
+        with _drains_the_symbol_fetch_lane(release):
+            first = callers.submit(api._load_symbol_context, tmp_path, "AAPL")
+            assert started.wait(1.0)
+            duplicates = [
+                callers.submit(api._load_symbol_context, tmp_path, "AAPL")
+                for _ in range(7)
+            ]
+            for duplicate in duplicates:
+                with pytest.raises(api._SymbolDataBusy, match="already in progress"):
+                    duplicate.result(timeout=1.0)
+            release.set()
+            assert first.result(timeout=1.0)["available"] is True
 
-    _wait_for_symbol_fetches_to_finish()
     assert calls == 1
     api._reset_symbol_rate_limit_for_tests()
 
@@ -628,16 +685,16 @@ def test_symbol_fetch_lane_saturation_fails_fast(monkeypatch, tmp_path) -> None:
 
     monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
     with ThreadPoolExecutor(max_workers=1) as caller:
-        first = caller.submit(api._load_symbol_context, tmp_path, "AAPL")
-        assert started.wait(1.0)
-        before = time.monotonic()
-        with pytest.raises(api._SymbolDataBusy, match="saturated"):
-            api._load_symbol_context(tmp_path, "MSFT")
-        assert time.monotonic() - before < 0.25
-        release.set()
-        assert first.result(timeout=1.0)["available"] is True
+        with _drains_the_symbol_fetch_lane(release):
+            first = caller.submit(api._load_symbol_context, tmp_path, "AAPL")
+            assert started.wait(1.0)
+            before = time.monotonic()
+            with pytest.raises(api._SymbolDataBusy, match="saturated"):
+                api._load_symbol_context(tmp_path, "MSFT")
+            assert time.monotonic() - before < 0.25
+            release.set()
+            assert first.result(timeout=1.0)["available"] is True
 
-    _wait_for_symbol_fetches_to_finish()
     api._reset_symbol_rate_limit_for_tests()
 
 
@@ -655,13 +712,43 @@ def test_symbol_fetch_caller_has_a_real_wall_clock_deadline(
         return _stock_record(symbol)
 
     monkeypatch.setattr(api, "_fetch_stock_record", blocked_fetch)
-    before = time.monotonic()
-    with pytest.raises(api._SymbolDataBusy, match="caller deadline"):
-        api._load_symbol_context(tmp_path, "AAPL")
-    assert time.monotonic() - before < 0.25
-    release.set()
-    _wait_for_symbol_fetches_to_finish()
+    with _drains_the_symbol_fetch_lane(release):
+        before = time.monotonic()
+        with pytest.raises(api._SymbolDataBusy, match="caller deadline"):
+            api._load_symbol_context(tmp_path, "AAPL")
+        assert time.monotonic() - before < 0.25
+        release.set()
     api._reset_symbol_rate_limit_for_tests()
+
+
+def test_a_parked_fetch_is_released_when_a_timing_budget_blows() -> None:
+    """A blown timing assertion must never strand a queued work item.
+
+    Pins the ``market-memory-contract`` 10-minute CI hang directly: the three
+    tests above park an item on the never-shut-down module executor and assert
+    wall-clock budgets before releasing it, so on a loaded runner the assertion
+    fired first and the release never ran.  The stranded item was then picked up
+    after the test ended — past ``monkeypatch`` teardown, so through the real
+    ``_fetch_stock_record`` and its unbounded ``socket.getaddrinfo`` — and the
+    process hung with the pytest summary already printed.  Deterministically
+    reproduced (resolver blackholed, all six executor workers held busy so the
+    singleflight item was still queued when ``started.wait(1.0)`` blew):
+    unpatched, pytest printed ``1 failed`` and interpreter exit then hung
+    forever in ``_python_exit``'s join — a watchdog killed it at 30s with the
+    worker parked inside ``getaddrinfo`` under the real ``_fetch_stock_record``;
+    with this file's finally-release, the identical failing run exited cleanly
+    in 8s.
+    """
+    release = threading.Event()
+
+    with pytest.raises(AssertionError, match="starved runner"):
+        with _drains_the_symbol_fetch_lane(release):
+            assert False, "starved runner blew a timing budget"
+
+    assert release.is_set(), (
+        "the parked work item was left blocked — it will outlive the session "
+        "and hang interpreter exit"
+    )
 
 
 def test_symbol_transport_enforces_total_deadline_on_trickling_body(
