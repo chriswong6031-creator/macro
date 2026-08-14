@@ -702,15 +702,15 @@ def infer_job_scopes(jobs: Iterable[LegacyJob]) -> tuple[list[LegacyJob], str]:
             # test via ``tests/**``). Strip catch-alls from the FINAL set whenever
             # the job named specific pytest files.
             fallback = set(exclude_peer_test_ownership(fallback))
-        # A suffix-narrowed fallback that NAMES `.md` is a deliberate
-        # markdown-kind claim (a `glob("*.md")` census), not smear — it must
-        # keep selecting on markdown edits, so it rides in the owned tier.
-        md_kind = {pattern for pattern in fallback if ".md" in pattern}
-        owned.update(md_kind)
-        fallback -= md_kind
-        # Likewise a job whose commands mention markdown reads narrative files
-        # on purpose (doc linters, handoff censuses). ALL its opaque claims
-        # keep matching `.md` edits via the owned tier.
+        # A job whose commands mention markdown reads narrative files on
+        # purpose (doc linters, handoff censuses). ALL its opaque claims keep
+        # matching `.md` edits via the owned tier. Deliberately NOT extended
+        # to every `.md`-suffixed traversal pattern: the suffix is honest but
+        # the ROOT set it rides on is smeared from module string literals, and
+        # promoting the pair re-selected 55/188 jobs for an unowned handoff
+        # note (measured 2026-08-14). A job whose md-reading is real but
+        # textually invisible declares `paths:` in the manifest instead —
+        # declared paths always live in the owned tier.
         if ".md" in "\n".join(commands):
             owned.update(fallback)
             fallback = set()

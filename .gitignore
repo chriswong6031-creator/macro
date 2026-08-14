@@ -705,3 +705,7 @@ data/product_experience/evidence/
 # Agent OS CEO-brief check-in marker — a local pointer to "when did I last look",
 # not organizational state.  Machine-local by construction; never committed.
 data/governance/.ceo_brief_last
+
+# ci-plan runner-side working dirs (scope-map cache, plan artifact staging)
+.ci-plan-cache/
+ci-plan-artifact/

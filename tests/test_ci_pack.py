@@ -2083,7 +2083,10 @@ def test_plan_document_round_trips_through_the_pack_digest() -> None:
     document = plan.to_dict()
     assert PACK._plan_digest_from_document(document) == plan.plan_sha256
     tampered = json.loads(json.dumps(document))
-    tampered["packs"][0]["jobs"] = list(tampered["packs"][0]["jobs"])[::-1] or ["x"]
+    # Replace outright rather than permute: a singleton pack (a heavy job
+    # alone, e.g. engine-render-guards) reverses to itself and would make
+    # this assertion vacuous.
+    tampered["packs"][0]["jobs"] = ["tampered-job"]
     assert PACK._plan_digest_from_document(tampered) != plan.plan_sha256
 
 

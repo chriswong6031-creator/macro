@@ -1812,7 +1812,7 @@ jobs:
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py tests/test_ci_plan_changed_files.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
       # the two steps above are: its subject IS .github/workflows/ — specifically the
       # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one
@@ -5237,6 +5237,19 @@ jobs:
 
   free-content-estate:
     if: ${{ false }}  # executed inside ci-pack; keep the legacy status definition runner-free
+    # Declared (non-exclusive) ownership: the estate is BUILT from content/**
+    # markdown, but that read lives inside the builder's traversal code, where
+    # the 2026-08-14 narrative tier no longer lets an opaque claim select on
+    # `.md` edits. Declared paths ride the owned tier, so a content edit
+    # always re-runs this job. Union semantics: this can only ADD selection.
+    # The two named files satisfy the declared-scope coverage audit (a
+    # declared scope must cover every path the job's own commands name).
+    paths:
+      - "content/**"
+      - "scripts/build_free_content.py"
+      - "tests/test_free_content.py"
+      - "tests/test_i18n_split_tag_guard.py"
+      - "tests/test_externalize_css.py"
     # Free acquisition estate drift law (2026-07-26). scripts/build_free_content.py
     # and tests/test_free_content.py were wired into ZERO workflows — the D12/W1
     # masterplan flagged `--check` as "currently a manual command" and it was never

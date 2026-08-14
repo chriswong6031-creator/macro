@@ -187,19 +187,38 @@ idempotent operations; durable per-PR wake.
   classification (`CI_CLASS=pr-caused|infra|planner|…`, first failing legacy
   jobs named) into the run summary.
 
-**PR-2 merge controller v2 — stop re-proving the universe, keep every safety**
-- Overlap-gated staleness: a PR is stale ONLY if a main-moved file since its
-  proof matches the PR's OWN proven plan surface (downloaded from the plan
-  artifact), or check definitions changed. Data ticks stop staling code PRs;
-  `DESIGN_NOTES.md`-class unowned files stop staling anything (they select ~2
-  always-on jobs post-PR-1 and are excluded from surfaces).
-- Inherited-red classification keeps the postdating law; the load that made it
-  a deadlock (65–73-min baselines + constant re-reds) collapses via PR-1.
-- Wake diet: skipped-conclusion completions stop scheduling sweeps; verified
-  marker writes (read-after-write); refresh/in-flight caps retained (#5580).
-- All existing invariants preserved: affirmative ci-gate requirement (#4779),
+**PR-2 merge controller — wake diet + verified markers (CORRECTED SCOPE)**
+Code reading during the build corrected the §4 draft: `stale_for` in
+`scripts/merge_on_green.py` is ALREADY overlap-gated as of #5562 (2026-08-13):
+skip-ci ticks and data/site bakes are excluded, unowned files do not stale
+anyone, and staleness requires a main-moved file to intersect the PR's OWN
+surface. Phase 9's classifier therefore already exists at pattern granularity;
+what made it a treadmill was the COST of each re-proof (PR-1's job) and the
+freshness deadlock (PR-1 shrinks baselines and re-proof latency). PR-2 keeps
+the controller small instead of growing it:
+- Wake diet: `skipped`-conclusion workflow_run completions (measured 20/44 of
+  ci.yml runs — closed-PR zero-runs) no longer schedule sweeper runs at all.
+- Verified marker writes: `mark_only_pass` now read-after-writes the label so
+  "already labeled" and "both writes silently failed" — opposite outcomes,
+  previously logged identically — are distinguished, and a verifiably absent
+  marker annotates at error level (the #5291 invisible-red class).
+- Everything else stands untouched: affirmative ci-gate requirement (#4779),
   never merge red/pending/conflicting/empty, concluded-checks-only, spurious
-  Workers X exclusion, `[skip ci]` noise filter, capacity caps.
+  Workers X exclusion, capacity caps (#5580), lease machinery.
+- The plan-document artifact (PR-1) is published for future per-job-granular
+  surface refinement but deliberately NOT consumed yet — simplicity outranks.
+
+**Local proof measurements (pre-push)**
+- Unwired-test probe: `audit_unrun_tests` exits 1 in **10s** naming the file.
+- Preflight stack: workflow-yaml parse 0.7s + unrun audit 10s + trigger
+  closure 20s + conflict scan ~1s ≈ **32s** on a dev Mac.
+- Scope inference: 122s cold, **~1s on scope-cache hit**; plan service time on
+  a warm cache ≈ 1s.
+- Shapes (jobs / packs): research md 118/12 → **3/1** · docs md → 2/1 · new
+  test 3/1 · config.yml 4/4→4/1-ish · engine module 121/12 → 121/**11** ·
+  template 129/12 → 129/12 · full suite/invalidator unchanged 188/12 (the
+  sweeper's ci-pack-0..11 main-proof anchor preserved). Code-file fanout
+  awaits the curated `scope: exclusive` tier for the heavy tail.
 
 ## §5 Live evidence targets (to fill in during verification)
 

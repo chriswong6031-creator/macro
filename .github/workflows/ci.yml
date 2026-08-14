@@ -4457,6 +4457,18 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      # The legacy jobs inside a pack create their own venvs and pip-install
+      # their own dependency sets (execute_pack groups identical sets, but a
+      # pack still downloads pandas/pyarrow/jinja2 fresh per run). Caching
+      # pip's DOWNLOAD cache — never an environment — keeps hermetic installs
+      # while cutting the repeated network fetch. Keyed on the manifest: the
+      # install lines live in it, and a stale hit only costs a re-download.
+      - name: restore the pip download cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pack-pip-${{ hashFiles('.github/ci/legacy-jobs.yml') }}
+          restore-keys: pack-pip-
       - name: install isolated pack runner
         run: |
           python -m venv "$RUNNER_TEMP/ci-pack-runner"
