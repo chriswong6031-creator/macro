@@ -133,6 +133,21 @@ def test_authority_frame_rejects_nulls_and_integer_zero():
         builder._assert_zero_authority_frame(integer_zero, "integer")
 
 
+def test_b_only_dossier_overrides_disclose_rank_and_open_gap_semantics():
+    generic = "\n".join(
+        (
+            "# B — Identity Atlas v0 dossier",
+            builder._GENERIC_PERCENTILE_PROSE,
+            builder._GENERIC_B_GAP_PROSE,
+        )
+    )
+    amended = builder._apply_b_dossier_disclosures(generic)
+    assert "W1-A1 addendum" in amended
+    assert "only B was ranked and no W1 row was recomputed or rewritten" in amended
+    assert "opening print is compared with the previous close" in amended
+    assert "close-to-close proxy" not in amended
+
+
 def test_post_publish_validation_failure_rolls_back_the_whole_amendment(
     tmp_path, monkeypatch
 ):

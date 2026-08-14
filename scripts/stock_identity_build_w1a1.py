@@ -146,6 +146,23 @@ B_DOSSIER_PROLOGUE = (
     "Barrick's birth, and it cannot cover the pre-2014 portion of the 2011-2015 gold bear."
 )
 
+_GENERIC_PERCENTILE_PROSE = (
+    "Percentiles are PIT ranks against the contemporaneous evaluated universe."
+)
+_B_PERCENTILE_PROSE = (
+    "Percentiles are B's hypothetical insertion ranks against the frozen 2,780-name "
+    "W1 reference; only B was ranked and no W1 row was recomputed or rewritten."
+)
+_GENERIC_B_GAP_PROSE = (
+    "Gap basis on this plane: `open_vs_prev_close` — a close-to-close proxy absorbs "
+    "the whole session's move, not just the overnight jump, so cross-plane comparisons "
+    "of the dislocation share carry that caveat."
+)
+_B_GAP_PROSE = (
+    "Gap basis on this plane: `open_vs_prev_close` — the opening print is compared "
+    "with the previous close, isolating the overnight jump."
+)
+
 
 def _sha256(path: Path) -> str:
     h = hashlib.sha256()
@@ -153,6 +170,34 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: fh.read(1024 * 1024), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _replace_once(text: str, old: str, new: str, *, label: str) -> str:
+    if text.count(old) != 1:
+        raise SystemExit(f"B dossier {label} boundary is ambiguous")
+    return text.replace(old, new, 1)
+
+
+def _apply_b_dossier_disclosures(markdown: str) -> str:
+    """Correct A1-only prose without changing the frozen W1 dossier renderer."""
+    markdown = _replace_once(
+        markdown,
+        "# B — Identity Atlas v0 dossier",
+        "# B — Identity Atlas v0 dossier (W1-A1 addendum)",
+        label="title",
+    )
+    markdown = _replace_once(
+        markdown,
+        _GENERIC_PERCENTILE_PROSE,
+        _B_PERCENTILE_PROSE,
+        label="percentile",
+    )
+    return _replace_once(
+        markdown,
+        _GENERIC_B_GAP_PROSE,
+        _B_GAP_PROSE,
+        label="gap-basis",
+    )
 
 
 def _git(*args: str, check: bool = True) -> str:
@@ -508,17 +553,7 @@ def _build_dossier(
             "the sealed W1 pilot)"
         ),
     )
-    markdown = markdown.replace(
-        "# B — Identity Atlas v0 dossier",
-        "# B — Identity Atlas v0 dossier (W1-A1 addendum)",
-        1,
-    )
-    markdown = markdown.replace(
-        "Percentiles are PIT ranks against the contemporaneous evaluated universe.",
-        "Percentiles are B's hypothetical insertion ranks against the frozen 2,780-name "
-        "W1 reference; only B was ranked and no W1 row was recomputed or rewritten.",
-        1,
-    )
+    markdown = _apply_b_dossier_disclosures(markdown)
     identity = "\n## Identity"
     if markdown.count(identity) != 1:
         raise SystemExit("B dossier Identity boundary is ambiguous")
