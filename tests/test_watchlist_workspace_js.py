@@ -1699,3 +1699,50 @@ def test_stretch_basis_reads_the_same_two_sources_as_the_grade_it_qualifies():
         assert probe in basis_fn, (
             "stretchBasis no longer reads `%s`, which extGradeOf branches on — the two "
             "have drifted and the basis no longer describes the grade" % probe, basis_fn)
+
+
+def _engine_grades_caution() -> dict:
+    """{grade word -> is_caution} from engine/extension.py GRADES. Parsed with ast
+    so this suite still imports nothing the pack lacks."""
+    import ast
+
+    tree = ast.parse((ROOT / "engine" / "extension.py").read_text())
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign) and any(
+                isinstance(t, ast.Name) and t.id == "GRADES" for t in node.targets):
+            return {k: v[3] for k, v in ast.literal_eval(node.value).items()}
+    raise AssertionError("engine/extension.py no longer defines GRADES at module level")
+
+
+def _pf_code() -> str:
+    """portfolio.js with comments stripped."""
+    import re
+
+    src = re.sub(r"/\*.*?\*/", "", PORTFOLIO.read_text(), flags=re.S)
+    return re.sub(r"//[^\n]*", "", src)
+
+
+def test_elevated_is_the_engines_own_caution_set_and_has_exactly_one_definition():
+    """PR #5575 structural half: elevated is named once and read by all three sites.
+
+    Main already pins the vocabulary and the rule-3 oracle gate. This pin is the
+    remaining unique claim: one definition, three readers."""
+    import re
+
+    caution = {g for g, is_caution in _engine_grades_caution().items() if is_caution}
+    assert caution == {"stretched", "parabolic"}, caution
+
+    code = _pf_code()
+    m = re.search(r"function isElevatedGrade\s*\([^)]*\)\s*\{(.*?)\}", code, re.S)
+    assert m, ("the single definition of 'elevated' is gone — its readers have drifted "
+               "back apart, which is how the 'high'/'extreme' comparison survived")
+    assert set(re.findall(r"'([^']*)'", m.group(1))) == caution, m.group(1)
+
+    flag = code[code.index("function attentionFlag"):]
+    flag = flag[:flag.index("function eventDays")]
+    assert "isElevatedGrade(" in flag, "the row flag stopped reading the shared definition"
+
+    stack = code[code.index("function attentionStack"):]
+    assert stack.count("isElevatedGrade(") == 2, (
+        "rules 1 and 3 are the two elevated-grade stack rules and both must read the "
+        "shared definition; found %d call(s)" % stack.count("isElevatedGrade("))

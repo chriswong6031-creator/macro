@@ -524,6 +524,7 @@ class TestLedger:
         row = rows[0]
         assert row["row_type"] == "grade"
         assert row["grade_status"] == "graded"
+        assert row["tier"] == "shadow"
         assert row["realized_log_return"] == pytest.approx(
             round(math.log(110.0 / 100.0), 6)
         )
