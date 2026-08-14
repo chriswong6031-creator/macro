@@ -311,21 +311,92 @@ from `us_board_rank` / `prophet_bridge`; nothing on the admission path imports i
 sweep (over every `pool_*` column name, not just the module), an import-closure walk and
 a behavioural invariance check on `prophet_bridge.select_candidates`.
 
+## The 2026-08-08 → 08-13 accrual outage, and what now makes it loud
+
+The store stamped **nothing for six nights** while the board ran normally, inside a
+GREEN engine job. Chain: `context_api._regime_dim` has a merge path that fires when
+`regime_history.parquet` resolves as-of the date **and** `data/regime/latest.json`
+is current — it returned `value={"history": {...}, "live": {...}}`; `context_frame`
+flattens a dimension's value dict generically, so that became the dict-valued columns
+`regime__history` / `regime__live`; the schema-union append reindexes prior rows of a
+new column to float NaN, and pyarrow refuses to unify a struct with a non-null float
+(`cannot mix struct and non-struct, non-null values`); `append_candidates` catches
+everything, logs through a prefixing formatter, and returns 0. The only trace was a
+log line GitHub drops. No committed part ever carried either column — the store never
+survived them.
+
+Four things changed on 2026-08-14, and the last three are the durable ones:
+
+| Fix | Where |
+|---|---|
+| The merge path emits **scalars only** — the recomputed-history row (the committed column shape) plus two scalar provenance fields, `history_as_of` and `live_quad` | `engine/neuralweb/context_api.py::_regime_dim` |
+| **Every** object-dtype column's NaN → None before the write, not just the named ones — the ~120 flattened `<dim>__<field>` columns are by construction on no hand-written list | `_coerce_nullable_objects` |
+| An **unclassified container-valued column is DROPPED** with a line-start `::warning title=us-context-vector-unclassified-nonscalar`, so one bad column costs that column and never the night. The classification law itself is unchanged and still hard-fails in `tests/test_us_context_vector_payload_containment.py` | `_contain_unclassified_nonscalars` |
+| A failed append, a night that added **0 rows**, and a store/board buy-lane disagreement each print a line-start `::warning` (`…-append-failed`, `…-quiet`, `…-board-mismatch`); the grader lane additionally prints `…-stale` when the newest stamp trails its as-of by more than 2 sessions | `append_candidates`, `scripts/grade_us_prophet_candidates.py` |
+
+**`regime__basis` reads `pit_live` from 2026-08-14 forward** on any night both
+sources resolve (it read `recomputed_history` through 08-07, when `latest.json` was
+not resolving). The VALUE fields are the recomputed-history row in both eras, so the
+numeric series is continuous; `regime__history_as_of` and `regime__live_quad`
+disambiguate, and a source disagreement shows up as `regime__live_quad != regime__quad`
+instead of being merged away.
+
+## `sue_z` … `hub_*` — the §13 telemetry columns (2026-08-14)
+
+Masterplan §13 (`research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md`), R2
+pattern: additive, **zero authority**, schema-union self-healing. Every one is READ
+from a producer that already ran that night — this store still originates nothing.
+
+| Column | Type | Producer |
+|---|---|---|
+| `sue_z` | float ~[-3,+3] | the factors table's winsorized earnings-momentum z (`engine/sue.py` → `engine/equity_factors.py` → `site/factordata/factors.json`), handed in by `build_stock_library`. NOT `setups.sue_confirmer`, which is a display chip that nulls everything below z=1.0 |
+| `gex_confirm_verdict` | `confirm` · `neutral` · `caution` | `engine/gex_confirm.py::assess()['verdict']`, read off the board row |
+| `flow_attention_z` | float [-3,+6] | `site/factordata/attention.json` (`build_site._attention_z`, causal robust z over log1p views) |
+| `short_vol_ratio` | float [0,1] | `engine/short_volume.py::signal_map()['short_ratio']` via the fundamental panels — FINRA daily consolidated short **volume**, a different quantity from `short_int__*` (the bi-monthly short **interest** settlement) |
+| `stoch_ob` · `stoch_bear` · `macd_bear` | bool·null | the not-topped veto's own legs, `engine/confluence_tiers.py::cascade()`, surfaced onto the `signal_gate` verdict |
+| `stoch_ob_null` · `stoch_bear_null` · `macd_bear_null` | bool·null | True = that leg's warmup was not met, so its boolean is FAIL-OPEN rather than measured |
+| `hub_edge_remaining` · `hub_lifecycle` · `hub_leading_gap` · `hub_isolated` · `hub_contradictions` | float · str · float · bool · float | `site/intel_hub/hub.json` `command[]` — typed **decomposed** fields only (§5.2). `hub_lifecycle` = `stage` ∈ emerging·early·consensus·building·distribution·exhausted·faltering; `hub_isolated` = the `isolated` flag; `hub_contradictions` = `n_dissent` |
+| `hub_governor_trust` | float [0,1] | `data/hub/signal_governor.json` `trust.hub` (fallback: hub.json's embedded copy) |
+
+**Why the gex column is not called `gex_state`.** The §13 debt names it that, but
+`engine/gex_state.py` is a live, different schema with a six-word vocabulary
+(`PIN`/`DRIFT`/`RANGE`/`TRANSITION`/`TREND`/`CASCADE`, per-symbol under
+`site/options_structure/`), and `options__gex.gamma_regime` in this same row is a
+third. One name over three vocabularies is how a cohort silently splits, so the
+column is named for the producer it actually reads.
+
+**Why the hub columns exclude `opportunity_score` / `composite_conviction`**: §5.2's
+composite-decomposition law. The hub's feeders already overlap this store's other
+families — one of them literally reads the board's own population — so ingesting the
+blend would be self-agreement wearing a second name.
+
+**`hub_governor_trust` is the governor's trust in the HUB FEEDER**, not in the
+ticker: the governor grades feeders, and `command[].governed_by` is null across the
+whole current snapshot (30/30 rows), so a per-row governing-feeder join would ship a
+permanently dead column. It is stamped on hub rows only, so all six `hub_*` columns
+share one null meaning — "not on tonight's hub".
+
+**Not shipped, and why** (carried-columns law — no dead schema):
+`catalyst_class` (`earnings_catalyst.board_row_fields` exposes no class/category key
+at all); `psq_stage` (`prophet_stage_shadow` is a forward ledger over Prophet's own
+plan entries and publishes one aggregate summary, not a per-ticker stage;
+`prophet_stage_inputs.stage_at_entry` needs an actual entry date); `day3_mark_class`
+(no producer exists anywhere in `engine/` or `scripts/`).
+
 ## Named debts
 
 1. **`turnover_pctile_60d` — DATA-BLOCKED, stamped null.** The volume caches carry
    only ~51 non-null sessions (backfilled 2026-05-19). The column self-heals with
    **no code change** once the cache deepens (~mid-Aug 2026).
-2. **`stoch_ob` / `stoch_bear` / `macd_bear` — NOT SHIPPED.** These are computed as
-   inline locals in `engine/confluence_tiers.py::cascade()` (lines 230-235) and
-   discarded; only their OR-negation `not_topped` survives, and that is not on the
-   `signal_gate` verdict either. Stamping them needs a 3-line additive change to a
-   scored-gate module, which this PR's fence forbids. Deliberately **omitted** rather
-   than shipped as three permanently-dead columns (carried-columns law, roadmap §2:
-   never leave schema that lies). Schema union makes adding them later free.
+2. ~~**`stoch_ob` / `stoch_bear` / `macd_bear` — NOT SHIPPED.**~~ **SHIPPED
+   2026-08-14** with their null-state companions (see §13 above). The scored-gate
+   edit is fenced by `tests/test_confluence_veto_leg_telemetry.py`, which pins the
+   cascade decision and the gate verdict against digests recorded from the
+   pre-change module and is mutation-verified.
 3. **`sue_z`, `catalyst_class`, `gex_state`, `flow_attention_z`, `short_vol_ratio`,
-   `psq_stage`, `day3_mark_class`** — named in the roadmap §2 sketch, not built here.
-   No dead columns were reserved for them.
+   `psq_stage`, `day3_mark_class`** — four of the seven **shipped 2026-08-14**
+   (`sue_z`, `gex_confirm_verdict`, `flow_attention_z`, `short_vol_ratio`); the other
+   three have no same-night producer and are still not reserved as columns.
 
 ## Divergences from neighbouring implementations (deliberate, documented)
 
