@@ -45,6 +45,11 @@ import pandas as pd
 from engine.ai_desk import _GICS_ETF, _level_asof
 from engine import ai_desk as _aidesk  # module ref: tests monkeypatch ai_desk._close_series
 from engine.ai_desk_scorer import _close_at, _covers
+# V1 metric-validity contract (engine/qledger_validity.py, PR #5471). _aggregate
+# is the single chokepoint every published excess figure passes through, so the
+# legality gate is ENFORCED here rather than re-derived per consumer — one
+# implementation of the invariant, so the emitter and the auditor cannot drift.
+from engine.qledger_validity import FamilyProfile, may_pool_signed_excess, profile_families
 from lib import config
 # The canonical session rulers — ONE PER MARKET. Rule-computed sessions,
 # stdlib-only, holiday aware. See `resolve_horizon_window` for why the
@@ -2252,6 +2257,50 @@ def _family_key(claim: dict, by: str) -> str | None:
     return None
 
 
+# The two legal bases for an excess figure out of _aggregate. `pooled_signed` is
+# the historical `excess_mean`; `magnitude_only` is the V1-legal replacement for a
+# family that holds calls in both directions.
+EXCESS_BASIS_POOLED = "pooled_signed"
+EXCESS_BASIS_MAGNITUDE = "magnitude_only"
+
+
+def _group_profiles(claims: list[dict], by: str) -> dict[str, FamilyProfile]:
+    """FamilyProfile per _aggregate group key, keyed exactly as `_family_key`.
+
+    `profile_families` keys on ``claim_family or desk`` — identical to
+    ``_family_key(c, 'family')`` but NOT to the ``by='desk'`` grouping. Rather
+    than re-deriving the profile (a second implementation of the invariant is how
+    two copies drift), project each claim onto the group key and hand the
+    projection to the contract's own builder, so direction coercion and the
+    placebo exclusion stay owned by engine/qledger_validity.py.
+    """
+    projected = (
+        {
+            "claim_family": _family_key(c, by),
+            "direction": c.get("direction"),
+            "horizon_d": c.get("horizon_d"),
+            "is_placebo": c.get("is_placebo"),
+        }
+        for c in claims
+    )
+    return profile_families(projected)
+
+
+def _coerce_direction(raw: Any) -> int | None:
+    """Coerce ONE stored direction through the CONTRACT's own parser.
+
+    Stores hold both ``1`` and ``"1"``. Re-implementing that coercion here would
+    let the per-direction split disagree with the V1 gate about what a direction
+    IS, so the value is run through `profile_families` and read back out. Callers
+    memoise: the corpus holds a handful of distinct raw direction values, so this
+    is called ~3 times per aggregation, not once per row.
+    """
+    prof = profile_families([{"claim_family": "_", "direction": raw}]).get("_")
+    if prof is None or len(prof.directions) != 1:
+        return None
+    return next(iter(prof.directions))
+
+
 def _aggregate(claims: list[dict], grades: list[dict],
                by: str, horizon_d: int,
                clock_basis: str | None = None) -> dict[str, dict]:
@@ -2263,8 +2312,27 @@ def _aggregate(claims: list[dict], grades: list[dict],
     to select one (`grade_clock_basis` values); leave it None and a mixed input
     raises `HorizonClockMismatch` rather than pooling. The default is fail-closed
     on purpose — a caller that never heard of the clock cannot silently blend a
-    legacy 21-calendar-day observation with a 21-session one."""
+    legacy 21-calendar-day observation with a 21-session one.
+
+    METRIC-VALIDITY GATE (V1 SIGNED_EXCESS_POOLED_ACROSS_DIRECTIONS). `grades.excess`
+    is RAW subject-minus-control return and is NOT direction-signed — `hit` is what
+    carries direction. A correct BEARISH call therefore contributes a NEGATIVE
+    excess, so pooling signed excess over a family holding both directions measures
+    the drift of the subject universe, not skill. This function is the single
+    chokepoint feeding compute_track_record() (site/qledger/track_record.json) and
+    scripts/grade_qledger.compute_promotion_readiness() (-> the admin Experiments
+    tab), so the gate lives here: `excess_mean` is emitted ONLY when
+    `engine.qledger_validity.may_pool_signed_excess` allows it. Mixed-direction
+    groups get the legal replacements instead — `mean_abs_excess` (the magnitude
+    form `_placebo_magnitude` already uses, which is also what the placebo duel
+    compares against) and `excess_mean_by_direction` (the per-direction split).
+    `excess_basis` names which reading is live so an emitter can label it honestly
+    rather than render an ambiguous dash. hit_rate needs no gate: grade_claim()
+    stores hit=None for direction==0, so a salience family resolves to None already.
+    """
     cid_meta = {c["claim_id"]: c for c in claims if c.get("claim_id")}
+    profiles = _group_profiles(claims, by)
+    dir_cache: dict[Any, int | None] = {}
 
     at_h = [g for g in grades if int(g.get("horizon_d", -1)) == horizon_d]
     if clock_basis is None:
@@ -2272,7 +2340,7 @@ def _aggregate(claims: list[dict], grades: list[dict],
     else:
         at_h = [g for g in at_h if grade_clock_basis(g) == clock_basis]
 
-    # group -> {n_obs, hits, excess_sum, date_set}
+    # group -> {n_obs, hits, excess_sum, abs_excess_sum, n_abs, per-direction, date_set}
     acc: dict[str, dict] = {}
     for g in at_h:
         c = cid_meta.get(g.get("claim_id"))
@@ -2282,9 +2350,31 @@ def _aggregate(claims: list[dict], grades: list[dict],
         if key is None:
             continue
         a = acc.setdefault(key, {"n_obs": 0, "hits": 0, "graded_hits": 0,
-                                 "excess_sum": 0.0, "dates": set()})
+                                 "excess_sum": 0.0, "abs_excess_sum": 0.0,
+                                 "n_abs": 0, "by_dir": {}, "dates": set()})
         a["n_obs"] += 1
-        a["excess_sum"] += float(g.get("excess") or 0.0)
+        excess = g.get("excess")
+        # Pooled sum keeps its historical `or 0.0` convention so a single-direction
+        # family's excess_mean is bit-identical to the pre-gate value.
+        a["excess_sum"] += float(excess or 0.0)
+        if excess is not None:
+            # Magnitude leg mirrors _placebo_magnitude: null excess is SKIPPED, not
+            # counted as a zero move, so the two sides of the duel are comparable.
+            a["abs_excess_sum"] += abs(float(excess))
+            a["n_abs"] += 1
+        raw_dir = c.get("direction")
+        try:
+            d = dir_cache[raw_dir]
+        except (KeyError, TypeError):       # unseen value, or an unhashable one
+            d = _coerce_direction(raw_dir)
+            try:
+                dir_cache[raw_dir] = d
+            except TypeError:
+                pass
+        if d is not None:
+            dacc = a["by_dir"].setdefault(d, {"n": 0, "sum": 0.0})
+            dacc["n"] += 1
+            dacc["sum"] += float(excess or 0.0)
         a["dates"].add(_date_cluster(c.get("asof")))
         hit = g.get("hit")
         if hit is not None:                 # directional claim contributes a hit
@@ -2298,7 +2388,14 @@ def _aggregate(claims: list[dict], grades: list[dict],
         n_dates = len(a["dates"])
         gh = a["graded_hits"]
         hit_rate = round(a["hits"] / gh, 6) if gh else None
-        excess_mean = round(a["excess_sum"] / n_obs, 6) if n_obs else None
+        # V1: absent a profile the group is UNKNOWN, so refuse the signed pool
+        # (fail closed) rather than publish an uninterpretable number.
+        prof = profiles.get(key)
+        poolable = prof is not None and may_pool_signed_excess(prof)
+        excess_mean = (round(a["excess_sum"] / n_obs, 6)
+                       if (n_obs and poolable) else None)
+        mean_abs_excess = (round(a["abs_excess_sum"] / a["n_abs"], 6)
+                           if a["n_abs"] else None)
         # Cluster-honest Wilson CI: project the pooled hit rate onto the date-cluster n
         # so that n_dates (distinct asof clusters) — not the correlated n_obs — drives
         # the confidence interval.  This matches the altdata_brain.py article3 convention
@@ -2310,14 +2407,27 @@ def _aggregate(claims: list[dict], grades: list[dict],
             ci_low = wilson_ci_low(cluster_hits, n_dates)
         else:
             ci_low = None
-        out[key] = {
+        row = {
             "n_obs": n_obs,
             "n_dates": n_dates,          # the honest n
             "hit_rate": hit_rate,
             "excess_mean": excess_mean,
+            "mean_abs_excess": mean_abs_excess,
+            "excess_basis": (EXCESS_BASIS_POOLED if poolable
+                             else EXCESS_BASIS_MAGNITUDE),
             "wilson_ci_low": ci_low,
             "state": derive_state(n_dates),
         }
+        if not poolable:
+            # The per-direction split is the OTHER legal reading of a mixed family;
+            # published only where the pooled mean is refused, so its presence in the
+            # payload is itself the marker that the pooled figure was withheld.
+            row["excess_mean_by_direction"] = {
+                str(d): round(v["sum"] / v["n"], 6)
+                for d, v in sorted(a["by_dir"].items()) if v["n"]
+            }
+            row["excess_directions"] = sorted(prof.directions) if prof else []
+        out[key] = row
     return out
 
 
