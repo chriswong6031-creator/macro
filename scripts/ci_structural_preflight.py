@@ -635,6 +635,22 @@ def run_preflight(
     workflow_paths = {CI_WORKFLOW}
     workflow_paths.update(rel for rel in changed if _is_workflow(rel))
     for rel in sorted(workflow_paths):
+        try:
+            materialized_mode = (root / rel).lstat().st_mode
+        except OSError:
+            materialized_mode = None
+        head_mode = _git_head_mode(root, rel)
+        submitted_mode = head_mode if head_mode is not None else materialized_mode
+        if submitted_mode is not None and not stat.S_ISREG(submitted_mode):
+            findings.append(
+                _finding(
+                    "workflow_invalid",
+                    "planner_configuration_failure",
+                    "workflow must be a regular file in the submitted tree",
+                    path=rel,
+                )
+            )
+            continue
         with _submitted_file(root, rel) as path:
             if path is None:
                 presence = _git_head_contains(root, rel)

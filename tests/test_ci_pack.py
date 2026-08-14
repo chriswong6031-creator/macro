@@ -2744,7 +2744,12 @@ def test_structural_preflight_refuses_changed_workflow_symlink(
 ) -> None:
     root = _preflight_repo(tmp_path, manifest_run="echo valid")
     linked = root / ".github" / "workflows" / "linked.yml"
-    linked.symlink_to("ci.yml")
+    # The symlink blob itself is valid workflow YAML. Parsing exact HEAD bytes
+    # is therefore insufficient: the submitted tree mode must also be regular.
+    linked.symlink_to(
+        "on: {workflow_dispatch: {}}\n"
+        "jobs: {probe: {runs-on: ubuntu-latest, steps: [{run: 'true'}]}}"
+    )
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "config", "user.name", "CI Test"], cwd=root, check=True)
     subprocess.run(
