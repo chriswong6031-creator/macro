@@ -11,6 +11,14 @@ This document is the contract. The implementation may not weaken any numbered cl
 later change to a clause is a governed act (PR + updated pinning test + this file), never
 a drive-by.
 
+**Amendment log.** Review round 1 (2026-08-14, pre-merge): C3.1/C3.2(d)/C4.2 — clock
+stamped with its trigger's own timestamp, cohort boundary at UTC-date granularity,
+coverage = min(date, row). P0d follow-up (2026-08-14, post-merge): C2.4 implementation
+note (demand_chain wired), **C4.4 added** (maturity-aware accounting of rowless cohort
+members — an unpriceable control is counted as uncovered, not as absent), C7 controls
+9-14. Every amendment so far has been strictly strengthening: each one can only lower a
+reported coverage or narrow an eligible verdict, never the reverse.
+
 ---
 
 ## C1. The classification and its home
@@ -68,6 +76,26 @@ control-selection engine):
 callers depend on null-tolerance), but every **required-family registrar path** must
 count its refusals (vocabulary_unmapped vs sector_absent) into its run stats. Silence
 was how D0-1 stayed dead for four months.
+
+> **IMPLEMENTATION NOTE, 2026-08-14 (P0d follow-up).** `demand_chain` is now WIRED, which
+> is what makes C2.3's second bullet a live construction rather than a described one.
+> `engine/demand_ledger.py::_register_qledger_claims` passes
+> `sector_of=qledger.membership_gics_sector_of(root)`, the composition
+> `gics_sector_name(sector_of_ticker(ticker))` — membership lookup, then the explicit
+> alias normalisation. It returns the canonical GICS sector **NAME**, never the ETF,
+> because `make_claim` itself resolves `control = control_for_sector(sector)`: handing it
+> an ETF ticker would be D0-1 exactly, in reverse. The invariant
+> `control_for_sector(gics_sector_name(v)) == sector_gics_etf(v)` is pinned by test.
+>
+> The C2.4 refusal counting lives in `qledger_desk_adapter.register_prospective`, which
+> classifies EVERY candidate it is about to register from the claim itself —
+> `n_control_valid`, and `n_control_missing` split into `sector_absent` (no sector
+> resolved), `vocabulary_unmapped` (a sector the alias table does not map), and
+> `control_equals_subject_or_bench` (C2.2). A required family registering any
+> uncontrolled claim emits one GitHub `::warning` per run carrying the split and a sample
+> of the offending vocabulary values — the sample is the part that would have caught D0-1
+> and D0-2 in a nightly log, where a null control looked exactly like a family that had
+> nothing to say.
 
 ## C3. The matched-control cohort and its clock (prospective-only, D3)
 
@@ -172,6 +200,38 @@ projection inside `promotion_check(control_only=True)` becomes unreachable from
 production paths (C5.4) and its remaining direct-call use is documented as
 subset-projecting.
 
+**C4.4 (added 2026-08-14, P0d follow-up — strengthening).** A cohort member with **no
+grade row** at the evaluated horizon/basis is CLASSIFIED, never lumped, and the class
+decides whether it is part of the denominator:
+
+| class | in coverage denominator? | why |
+|---|---|---|
+| `control_leg_refused` | **YES — as UNCOVERED** | a DECLARED control that cannot price over the claim's own shared window (`grade_claim` rule 5 refuses the whole row) |
+| `not_yet_matured` | no | the window has not closed; not evidence yet, on either basis |
+| `matured_awaiting_grading` | no | priceable and matured; the grader has simply not written the row yet |
+| `primary_leg_refused` | no | the SUBJECT or BENCH cannot price the window — the claim is ungradeable on every basis, and the benchmark record does not count it either; it is not a control failure |
+| `horizon_out_of_scope` | no | `in_scope_horizons` can never produce a row at this horizon for this claim |
+| `window_unresolvable` / `ungradeable_embargo` | no | refused before any leg is read; fail-closed and disclosed |
+| `other_basis` | no | it is counted under its own clock basis, never pooled (P0a) |
+
+**THE DEFECT THIS REPAIRS.** Rule 5 refuses the entire grade row when a declared control
+cannot be measured over the shared window, so that claim produced no row and left the
+coverage denominator **entirely** — while a claim declaring NO control produced a row and
+counted, honestly, as uncovered. The arithmetic therefore rewarded exactly the wrong
+thing: **declaring an unpriceable control reported BETTER coverage than declaring no
+control at all.** A control that cannot be priced is not evidence; it is an uncovered
+claim, and it is now counted as one. `n_cohort_rows` adds the control-refused members and
+`n_cohort_dates` unions their `asof` date clusters. The numerators are untouched (C4.3
+still projects onto controlled rows only), so this can only ever LOWER a reported
+coverage — the bar moves up, never down.
+
+The full classification is published as `cohort_rowless` beside
+`n_control_refused_rows` / `n_control_refused_dates`, and the refusal strings name the
+control-refused counts whenever they are non-zero. A cohort whose controls ALL fail to
+price reports `control_coverage = 0.0` and refuses **naming the control-leg refusal** —
+never "the cohort is EMPTY, still accruing", which is what a graded-rows-only denominator
+said about a family whose every control was broken.
+
 ## C5. Gate semantics (fail-closed matrix)
 
 **C5.1** `matched_control_required` — the family's **authority basis is matched
@@ -269,6 +329,28 @@ sufficient and not counted):
    test.
 8. **The gate cannot pass under a coverage violation**: all-else-green at coverage 0.94
    refuses; mutation = drop the coverage clause.
+9. **An unpriceable control cannot buy coverage** (C4.4): two otherwise-identical
+   cohorts — one claim declaring NO control, the same claim declaring a control whose
+   price series is absent — report the SAME `control_coverage`, and both refuse.
+   Mutation = restore the graded-rows-only denominator → the unpriceable-control world
+   reports better coverage → test fails.
+10. **Immaturity is not refusal**: a controlled cohort member whose window has not closed
+    leaves coverage untouched and is disclosed under `cohort_rowless.not_yet_matured`.
+    Mutation = classify every rowless member as `control_leg_refused` → test fails.
+11. **A primary-leg refusal is not blamed on the control**: a claim whose SUBJECT cannot
+    price is classified `primary_leg_refused` and enters no denominator. Mutation =
+    attribute primary refusals to the control class → test fails.
+12. **An all-refused cohort says so**: every control unpriceable ⇒ `control_coverage=0.0`
+    and a refusal naming the control-leg refusal, never "the cohort is EMPTY, accruing".
+    Mutation = restore the plain empty-cohort early return → test fails.
+13. **demand_chain's control survives the vocabulary gap** (C2.3): a membership store
+    mixing GICS and Yahoo vocabularies registers the right sector ETF on every mappable
+    subject. Mutation = drop the alias normalisation (wire `sector_of_ticker` raw) → the
+    Yahoo-vocabulary rows register `control=None` → test fails. This is
+    DSC:CONTROL-VOCABULARY-MISMATCH-KILLED-EVERY-WIRED-CONTROL pinned as a test.
+14. **Refusals are counted, never silent** (C2.4): the registrar path's run stats split
+    `sector_absent` / `vocabulary_unmapped` / `control_equals_subject_or_bench`.
+    Mutation = collapse the buckets or drop the counting → test fails.
 Plus: control-clock write-once (second write is a no-op); clock never pre-created;
 `control==subject`/`control==bench` count as missing (C2.2); the alias normalisation
 refuses unknown vocabulary loudly (D0-2).
@@ -285,7 +367,9 @@ Government-Revenue failures stay in their owning lanes.
 At registration of this contract: **zero matched-control evidence exists anywhere.** The
 first possible accrual is stock_desk's first post-merge nightly that registers a
 prospective, control-carrying claim (#5577's wiring + this contract), and demand_chain's
-after its `sector_of` wiring lands. The evidence clock files will say when that happened;
+first such nightly after the follow-up wiring of C2.4's implementation note (both
+producers are wired as of 2026-08-14; neither has yet registered a controlled claim, and
+the clock files are still the only thing that may say when one does). The evidence clock files will say when that happened;
 until they exist, every surface says the evidence has not begun. A reader in six months
 should be able to reconstruct: classification date (this file's git history), clock start
 (the write-once artifacts), and every coverage number in between (nightly readiness
