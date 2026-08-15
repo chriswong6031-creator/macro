@@ -602,15 +602,6 @@ jobs:
       # therefore reds current main. It belongs with the Prophet audit guards whose
       # horizon/price-basis contracts it reconciles; the existing dependencies suffice
       # and the focused suite is 23/23 green.
-      # Base-closure 2026-08-14, same shape one commit later: #5506 added the §J.9(c)
-      # lifecycle-projection suite under tests/ and named it in no workflow, so the bare
-      # unrun audit reds current main a second time. It belongs on this line on the
-      # evidence — its subjects are scripts/build_prophet.py and engine/prophet_management.py,
-      # exactly the pair tests/test_prophet_overtime_horizon_reconciliation.py above already
-      # imports, and its import-time third-party closure (pandas, pytest) is identical to
-      # that sibling's, so this step's existing deps suffice. The two modules it reaches
-      # lazily inside test bodies (engine.us_early_turn, engine.prophet_bridge) need only
-      # numpy/pandas, both installed here. Measured: 66 passed, 0 skipped, ~3.8s.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
@@ -618,8 +609,7 @@ jobs:
           research/prophet_us_audit/test_price_ladder.py
           research/prophet_us_audit/test_stop_curvature_study.py
           research/prophet_us_audit/test_veto_leg_isolation_adjusted_rerun.py
-          tests/test_prophet_overtime_horizon_reconciliation.py
-          tests/test_prophet_lifecycle_state.py -q
+          tests/test_prophet_overtime_horizon_reconciliation.py -q
       # P1 unrun backfill 2026-08-14: the DISCLOSURE BUNDLE — the publish-side artifact
       # built on top of the lineage/normalize/detector chain below — joins the step that
       # already owns that chain.  tests/test_fundamental_forensics_disclosure_bundle.py
@@ -2194,6 +2184,46 @@ jobs:
     # jobs to 129. The job does not read the landing page; it only
     # fallback-matched it. The declaration is the owned import closure,
     # compacted to directory globs. Do not add templates/**.
+    #
+    # `scripts/` IS ENUMERATED, NOT GLOBBED (2026-08-14 follow-up). The first
+    # curation shipped a whole-directory `scripts/*`, which re-created inside
+    # the CURATED tier the very behaviour `scope: exclusive` exists to end: a
+    # directory glob makes EVERY ordinary code PR touching ANY script select
+    # this job, on no evidence that the job reads it. Measured the same day —
+    # `scripts/build_free_content.py` is NOT in this job's import closure, yet
+    # `scripts/*` selected it, and that smear alone put the build_free_content
+    # probe at 127 jobs against the then-126 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs.
+    # A sibling heal re-based that ceiling elsewhere, so this is an
+    # OPTIMIZATION rather than a red — but the smear was structural and is what
+    # the enumeration removes. The 39 entries below ARE the job's own scripts/
+    # import closure, re-derived on this commit via
+    # tests/test_ci_pack.py::_inferred_as_if_not_exclusive.
+    #
+    # WIDENING IS THE SAFE DIRECTION. Exclusivity SKIPS inference, so a closure
+    # file with no matching pattern is a job that stops running when its own
+    # dependency changes and reports green forever. Do not hand-prune this
+    # list: when a new import lands,
+    # test_curated_exclusive_scopes_cover_their_own_import_closure names the
+    # exact uncovered file — add it here.
+    #
+    # THE REMAINING GLOBS ARE NOT ALL EQUALLY EARNED, and this comment will not
+    # pretend otherwise. Measured 2026-08-14 — tracked files the glob matches /
+    # of those, how many are in this job's concrete import closure:
+    #
+    #   engine/**     1462 / 355   enumeration would genuinely rot: 355 entries
+    #                              that churn on every engine import
+    #   config/**      133 /  17   the registry's DECLARED INPUT SURFACE
+    #                              (synapse.yml, qual_ladder.yml, the overlay) —
+    #                              a config edit SHOULD select this job
+    #   collectors/*   237 /  33   NOT earned by either argument above
+    #   lib/*           33 /  19   NOT earned by either argument above
+    #
+    # `collectors/*` and `lib/*` are the same shape `scripts/*` was: small
+    # enough to enumerate, and mostly smear. They are left alone HERE only to
+    # keep this change to the one tree that was measured against a ceiling.
+    # They are the next candidates — NOT a justified baseline, and not
+    # precedent for adding another directory glob to a curated job.
     scope: exclusive
     paths:
       - "collectors/*"
@@ -2204,7 +2234,45 @@ jobs:
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
-      - "scripts/*"
+      - "scripts/__init__.py"
+      - "scripts/build_biocatalyst.py"
+      - "scripts/build_capital_structure_page.py"
+      - "scripts/build_chart_data.py"
+      - "scripts/build_fundamental_forensics.py"
+      - "scripts/build_index_leadership.py"
+      - "scripts/build_intelligence_registry.py"
+      - "scripts/build_live_overlay.py"
+      - "scripts/build_market_heatmap.py"
+      - "scripts/build_market_memory_page.py"
+      - "scripts/build_market_structure_page.py"
+      - "scripts/build_rr_banner.py"
+      - "scripts/build_site.py"
+      - "scripts/build_sp500_heatmap.py"
+      - "scripts/build_state_of_themes.py"
+      - "scripts/build_stock_library.py"
+      - "scripts/build_subsector_confluence.py"
+      - "scripts/build_subsector_rotation.py"
+      - "scripts/build_subsector_rotation_china.py"
+      - "scripts/build_subsector_rotation_china_pages.py"
+      - "scripts/build_subsector_rotation_pages.py"
+      - "scripts/build_themes_heatmap.py"
+      - "scripts/build_whitehouse.py"
+      - "scripts/check_board_contradictions.py"
+      - "scripts/check_intelligence_registry.py"
+      - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
+      - "scripts/check_synapse_reads.py"
+      - "scripts/check_template_site_sync.py"
+      - "scripts/close_pass_publish.py"
+      - "scripts/close_pass_reconcile.py"
+      - "scripts/inject_wh_banner.py"
+      - "scripts/notify.py"
+      - "scripts/optimize_assets.py"
+      - "scripts/regime_reliability_phase0.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "scripts/translate_profiles.py"
+      - "scripts/validate_regime_fwd.py"
+      - "scripts/worktree_sparse.py"
       - "site/basketdata/**"
       - "site/factordata/**"
       - "site/flowleaders/**"
@@ -6030,6 +6098,89 @@ jobs:
     # site/ writes). The support-map smoke reads only committed inputs
     # (config/synapse.yml + data/neuralweb/confluence_graph.json), so its
     # census bands move only via PRs that themselves trigger this job.
+    #
+    # CURATED SCOPE (2026-08-14 wave 3). `scope: exclusive` makes the paths
+    # below REPLACE inference instead of being unioned under it, so the opaque
+    # fallback tier this job used to carry — whole-tree `engine/**`,
+    # `scripts/**`, `site/**`, `templates/**`, `tools/**` claims smeared out of
+    # a subprocess or traversal deep in its closure — stops selecting it. Every
+    # pattern here was generated from the job's OWN import closure (100 files
+    # across eleven directories) and audited for zero misses: no file this job
+    # demonstrably reads lost its owner.
+    #
+    # NOTE for anyone re-deriving this in a SPARSE worktree: `site` is in
+    # `audit_unrun_tests.FIRST_PARTY`, so site/ path literals ARE closure
+    # members — but every literal is admitted through `(ROOT / rel).is_file()`,
+    # which answers False for an omitted tree. Derived sparse, this closure is
+    # 85 files and silently loses all 15 site/ members; derived against a full
+    # checkout it is 100. `data/` is genuinely absent from the closure either
+    # way (the builder excludes it from LITERAL_DIRS by policy), which is why
+    # the `data/**` row below is hand-declared rather than derived.
+    #
+    # This job was named in the wave-2 note in tests/test_ci_pack.py as a rider
+    # that would "stay inferred" alongside dataos-identity-seams. That call is
+    # superseded here, and for the opposite reason to the one that spared
+    # dataos-identity-seams: an `engine/`-heavy closure only degenerates to
+    # fallback breadth when it needs `engine/**`. This one does not. Its 35
+    # engine files are all TOP-LEVEL modules plus four whole subpackages, so
+    # `engine/*` + four `engine/<pkg>/**` covers the closure exactly while
+    # leaving every other engine subpackage — `engine/prophet/**` among them —
+    # outside the declaration. `scripts/` is enumerated file-by-file for the
+    # same reason: `scripts/*` would re-acquire `scripts/build_free_content.py`,
+    # one of the two probes this curation exists to release.
+    #
+    # Measured on the pre-curation manifest (193 jobs), this job matched all
+    # THREE ratchet probes on the fallback tier and none on the owned tier:
+    # templates/index.html, scripts/build_free_content.py, and
+    # engine/prophet/plan_book.py each drop it, -1 job / -13 weight-seconds per
+    # probe. The `site/...` and `data/**` rows are NOT smear carried forward:
+    # engine/neuralweb/*, engine/pick_lab/registry.py, engine/signal_quality.py
+    # and config/synapse.yml name those artifact trees in literal reads. The
+    # site/ rows are DERIVED closure members (see the sparse note above); the
+    # two top-level files are enumerated exactly rather than folded into a
+    # `site/*` glob, matching how flow-surface declares site/coming-soon.html
+    # and site/master_brief.json. `data/**` is hand-declared: the builder
+    # excludes `data` from LITERAL_DIRS by policy, so no data path can ever
+    # appear in the derived tier, and the support-map smoke's committed input
+    # (data/neuralweb/confluence_graph.json) would otherwise lose its owner.
+    scope: exclusive
+    paths:
+      - "config/**"
+      - "data/**"
+      - "engine/*"
+      - "engine/government_revenue/**"
+      - "engine/neuralweb/**"
+      - "engine/pick_lab/**"
+      - "engine/seasonality/**"
+      - "lib/*"
+      - "scripts/__init__.py"
+      - "scripts/build_flow_leaders.py"
+      - "scripts/build_market_structure.py"
+      - "scripts/build_market_structure_page.py"
+      - "scripts/build_options_command.py"
+      - "scripts/build_options_screener.py"
+      - "scripts/validate_gex.py"
+      - "site/altdata/**"
+      - "site/basketdata/**"
+      - "site/chinastatedata/**"
+      - "site/factordata/**"
+      - "site/flow_desk.json"
+      - "site/flowleaders/**"
+      - "site/intelligence/**"
+      - "site/leaderradar/**"
+      - "site/neuralwebdata/**"
+      - "site/options.html"
+      - "templates/options.html.j2"
+      - "tests/test_build_flow_leaders.py"
+      - "tests/test_build_market_structure_page.py"
+      - "tests/test_build_options_command.py"
+      - "tests/test_build_options_screener.py"
+      - "tests/test_flow_leaders.py"
+      - "tests/test_market_structure.py"
+      - "tests/test_market_structure_nw.py"
+      - "tests/test_options_gap_discipline.py"
+      - "tests/test_support_map.py"
+      - "tools/index.html"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:
@@ -7883,6 +8034,14 @@ jobs:
       # Verified 23 passed on a checkout carrying site/: two of these tests read the
       # committed site/prophet payload and SKIP without it, so a sparse agent worktree
       # scores them 21 passed / 2 skipped — a green that never ran the assertions.
+      # Lifecycle dependency evidence was measured at RUN time, not collection:
+      # packages_distributions over sys.modules plus a MetaPathFinder.find_spec blocker.
+      # The blocker controls are live — pandas and numpy each error collection — while
+      # the broad optional group and pyarrow leave all 66 tests green.  PyYAML is truly
+      # required: blocking it fails the two late us_early_turn tests through lib.config.
+      # Every required distribution is already on the unchanged install line above.
+      # Full checkout verified 66 passed with no skips.  This job declares no scope key,
+      # so it is not exclusive and needs no paths import-closure declaration.
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
         run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_cortex_attention.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py tests/test_prophet_overtime_horizon_reconciliation.py tests/test_prophet_lifecycle_state.py -q
       # Daily engine setup-race recovery (2026-08-09): GitHub delivered engine and
