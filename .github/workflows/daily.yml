@@ -1,4 +1,8 @@
 name: daily
+# Embed the fired cron (or event) so watchdogs can tell a real slot from an
+# et_gate no-op without a second jobs API call. 2026-08-14/15: the EST-guard
+# survivor concluded success and read as "the nightly ran".
+run-name: daily ${{ github.event.schedule || github.event_name }}
 on:
   schedule:
     # Build B — the sole authoritative / ledger-advancing build (two-build design 2026-07).
@@ -21,11 +25,10 @@ on:
     # The off-regime firing costs one ~15-second ubuntu job, because every downstream job
     # takes `needs: [et_gate, ...]` and gates on `needs.et_gate.outputs.run != 'false'`.
     # That comparison is deliberately fail-OPEN: a broken or errored gate makes BOTH
-    # firings run, the pipeline-daily concurrency group serializes them, and two
-    # simultaneous dailies simply dedup to the latest (see the concurrency block below) —
-    # so a gate outage can double-run a night but can never silently zero-run one.
-    # During EDT the 23:30Z no-op typically sits PENDING behind the real run and skips
-    # when it finally starts; regime (not clock) decides, so that is still correct.
+    # firings run (each cron has its own concurrency group, so they cannot supersede
+    # each other — see the concurrency block). A gate outage can double-run a night
+    # but can never silently zero-run one. The off-regime firing is a ~15s ubuntu
+    # no-op in its OWN group; it must never share a group with the real slot.
     # Known accepted edge: a firing whose START is delayed ACROSS the 02:00-ET flip itself
     # resolves to the NEW regime — worst case one skipped or one doubled run on flip
     # weekend, backstopped by the next evening's run and by workflow_dispatch.
@@ -40,30 +43,25 @@ permissions:
   id-token: write
 
 concurrency:
-  # Daily runs in its OWN lane so a long-running backfill / weekly job can never
-  # queue-cancel or starve the daily data refresh (the bug: a 2-3h special-sits
-  # backfill held the shared "pipeline" lane and the data on the site froze for
-  # hours while feature deploys kept happening). Every push step in this workflow
-  # uses a rebase-retry loop, so running concurrently with a batch job is race-safe.
-  # cancel-in-progress stays false: a queued daily still runs (two simultaneous
-  # dailies would simply dedup to the latest).
-  # 2026-08-12 incident note: when this FILE exceeds ~512,000 bytes GitHub stops
-  # processing the workflow SILENTLY — cron does not fire and dispatched runs sit
-  # queued with zero jobs forever (uncancellable, HTTP 500). Guard:
-  # tests/test_workflow_file_size.py. Shrink by extraction, never by deleting docs.
-  # Versioned away from "pipeline-daily" by #5422 on the theory that the group's
-  # unkillable zombie records (oversized-file era) made the server cancel every new
-  # run placed in it. That theory is REFUTED and this rename is not load-bearing:
-  # run 31583415065 — the first dispatch into "-3", 09:32:58Z 2026-08-12 — was killed
-  # anyway at 09:44:12Z, 11 min into collect, by an explicit
-  # `POST /actions/runs/31583415065/force-cancel` from a live FLEET session (receipt:
-  # PR #5422 review comment). All five dead bakes that night share that one cause.
-  # Kept only because renaming back is pointless churn. Lesson for the next lane that
-  # keeps dying: kill delays that VARY (20s/90s/6min/11min) are a poll cycle, not a
-  # server rule — grep the fleet's session transcripts for the run id before ever
-  # concluding "no canceller exists"; the repo grep only clears repo automation, and
-  # an agent conflict is fixed by arbitration, never by editing this file.
-  group: pipeline-daily-3
+  # Daily stays off the shared "pipeline" lane (a 2-3h backfill once starved it).
+  # Push steps rebase-retry, so overlap with a batch job is race-safe.
+  #
+  # THE 2026-08-14/15 KILL. Both DST crons used to share one group. GitHub still
+  # cancels a PENDING run in a group even when cancel-in-progress is false
+  # (fences.yml 2026-08-09 measured the same pending-supersede). EDT run
+  # 31848262472 sat queued from 22:52Z and was CANCELLED ("superseded") at ~23:45Z
+  # when EST-guard 31851452961 entered the group; the survivor then skipped every
+  # real job (wrong slot). Event-conditional cancel-in-progress (the fences.yml
+  # fix) cannot save a queued slot — only distinct groups can. Each cron gets its
+  # own group; workflow_dispatch stays on pipeline-daily-3 so manuals serialize
+  # with each other, never with a cron. cancel-in-progress stays false so a
+  # second fire of the SAME slot cannot kill a running bake.
+  #
+  # File-size cliff (~512,000 bytes, silent strand): tests/test_workflow_file_size.py.
+  # #5422 renamed pipeline-daily → pipeline-daily-3 on a now-refuted zombie-group
+  # theory; kept to avoid churn. Varying kill delays are a poll cycle — grep
+  # session transcripts for the run id before concluding "no canceller exists".
+  group: ${{ github.event_name == 'schedule' && format('pipeline-daily-3-cron-{0}', github.event.schedule) || 'pipeline-daily-3' }}
   cancel-in-progress: false
 
 jobs:

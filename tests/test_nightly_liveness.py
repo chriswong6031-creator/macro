@@ -112,6 +112,49 @@ def test_one_success_among_failures_is_healthy():
     assert report["ok"] is True
 
 
+def test_cancelled_real_plus_surviving_gate_skip_is_not_a_bake():
+    """2026-08-14/15: EDT 31848262472 cancelled/superseded, EST-guard
+    31851452961 concluded success in ~5s and skipped every real job.
+
+    A gate-skip success must not set baked=True. That misread is
+    ``RAN GREEN BUT DID NOT ADVANCE`` — i.e. "the nightly ran".
+    """
+    cancelled = _run(
+        id=31848262472, created_at="2026-08-14T22:52:00Z",
+        event="schedule", conclusion="cancelled",
+        display_title="daily 30 22 * * *",
+    )
+    skip = _run(
+        id=31851452961, created_at="2026-08-14T23:45:00Z",
+        event="schedule", conclusion="success",
+        display_title="daily 30 23 * * *",
+        run_started_at="2026-08-15T02:16:00Z",
+        updated_at="2026-08-15T02:16:05Z",
+    )
+    later = datetime(2026, 8, 15, 8, 0, tzinfo=timezone.utc)
+    frozen = {"source_asof": "2026-08-13"}
+    report = evaluate([cancelled, skip], frozen, later)
+    assert report["ok"] is False
+    assert any("NO SUCCESS" in f for f in report["fail_reasons"])
+    assert not any("DID NOT ADVANCE" in f for f in report["fail_reasons"]), (
+        "a gate-skip success must not count as the nightly having run"
+    )
+    assert 31851452961 in (report["facts"].get("gate_skips") or [])
+
+    # The live API shape: display_title was just "daily", run_started_at == created_at.
+    unlabelled = evaluate([
+        _run(id=31848262472, created_at="2026-08-14T22:52:07Z",
+             event="schedule", conclusion="cancelled", display_title="daily"),
+        _run(id=31851452961, created_at="2026-08-14T23:45:40Z",
+             event="schedule", conclusion="success", display_title="daily",
+             run_started_at="2026-08-14T23:45:40Z",
+             updated_at="2026-08-15T02:16:21Z"),
+    ], frozen, later)
+    assert unlabelled["ok"] is False
+    assert any("NO SUCCESS" in f for f in unlabelled["fail_reasons"])
+    assert not any("DID NOT ADVANCE" in f for f in unlabelled["fail_reasons"])
+
+
 # ── check C: green run, store stood still ───────────────────────────────────
 def test_green_run_that_did_not_advance_the_store_fails():
     """#4779: an absence of red is not a pass. A success whose store did not move
