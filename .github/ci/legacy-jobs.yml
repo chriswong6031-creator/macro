@@ -2859,7 +2859,10 @@ jobs:
     # `from lib.logging import get_logger` (never existed), plus a permanently-skipped
     # test and a dead fixture branch. The single-module guard is retired; its
     # calendar public-API check moved into test_nyse_calendar.py.
-    # Both suites are stdlib-only (ast + pathlib); pytest is the whole dependency set.
+    # The first two suites are stdlib-only (ast + pathlib). The third
+    # (test_sp1_trading_day_index.py, SP1-B 2026-08-15) imports the study
+    # module and needs pandas/numpy/pyyaml; those join the install line
+    # below. A suite named by no run: step reds workflow-yaml.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2867,9 +2870,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest
+        run: pip install pytest pandas numpy pyyaml
       - name: nyse calendar rules + first-party imported-name resolution
         run: python -m pytest tests/test_nyse_calendar.py tests/test_first_party_import_names.py -q
+      # SP1-B: restrict_to_nyse_sessions must refuse a weekend-contaminated
+      # price index. Belongs HERE — the filter is session_rows + is_session,
+      # which this job already owns. Hermetic (synthetic dates, no data/).
+      - name: SP1-B trading-day price index refuses a contaminated calendar
+        run: python -m pytest tests/test_sp1_trading_day_index.py -q
 
   dag-conformance:
     if: ${{ false }}
