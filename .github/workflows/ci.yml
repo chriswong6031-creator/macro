@@ -3714,6 +3714,9 @@ on:
       # A2 earn-in path. Both halves are wired here: the script so a grader-only edit
       # starts the pack, and the suite below so a suite-only edit does too.
       - "scripts/grade_cortex_attention.py"
+      # Factor attention grader (sibling of cortex #5693). Named so a grader-only
+      # edit starts the pack; the suite half is in the unrun-market-plumbing block.
+      - "scripts/grade_factor_attention.py"
       - "scripts/grade_news_events.py"
       - "scripts/inject_wh_banner.py"
       # unrun-market-plumbing
@@ -3724,6 +3727,7 @@ on:
       - "tests/test_foresight_ledger_lane_gates.py"
       - "tests/test_gex_archive_snapshot.py"
       - "tests/test_grade_cortex_attention.py"
+      - "tests/test_grade_factor_attention.py"
       - "tests/test_grade_thematic.py"
       - "tests/test_live_delay_labeling.py"
       - "tests/test_options_flow_attention_reflex.py"
