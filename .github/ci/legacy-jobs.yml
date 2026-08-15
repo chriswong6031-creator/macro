@@ -8426,8 +8426,10 @@ jobs:
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
       - "research/prophet_fusion/PR1B_BASELINE_RACE.md"
+      - "research/prophet_fusion/PR2_C2_REDUNDANCY.md"
       - "research/prophet_fusion/families.yml"
       - "research/prophet_fusion/pr1b_baseline_race/report.json"
+      - "research/prophet_fusion/pr2_c2/report.json"
       - "scripts/__init__.py"
       - "scripts/_active_render.py"
       - "scripts/backtest_ladder_history.py"
@@ -8485,6 +8487,7 @@ jobs:
       - "scripts/measure_us_track_era_recompute.py"
       - "scripts/notify.py"
       - "scripts/prophet_fusion_arena.py"
+      - "scripts/prophet_fusion_c2.py"
       - "scripts/prophet_fusion_labels.py"
       - "scripts/prophet_fusion_race.py"
       - "scripts/publish_earnings_r2.py"
@@ -8537,6 +8540,7 @@ jobs:
       - "tests/test_prophet_card_live_change.py"
       - "tests/test_prophet_card_shared.py"
       - "tests/test_prophet_fusion_arena.py"
+      - "tests/test_prophet_fusion_c2.py"
       - "tests/test_prophet_fusion_families.py"
       - "tests/test_prophet_fusion_labels.py"
       - "tests/test_prophet_fusion_race.py"
@@ -8563,7 +8567,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn scipy
       # P1 unrun backfill 2026-08-14: tests/test_us_board_grader_honesty.py joins the
       # step that already owns engine/us_board_rank.py (test_us_board_rank.py) and the
       # track ledgers it grades into.  It was named by no `run:` step in any workflow,
@@ -8585,8 +8589,17 @@ jobs:
       # step rather than opening a new one — same store cluster, same registry, and the
       # race suite's own fixtures import the PR-1a harness, so a registry edit that reds
       # one should red them together in ONE check rather than in two that can disagree.
-      - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race (PR-1a/PR-1b)
-        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py -q
+      # PR-2 (WS:PROPHET-CONDITIONAL-FUSION): the C2/redundancy suite joins the same
+      # step for the same reason — it imports the race's signs and the arena's fold/PIT
+      # machinery, so the five suites red together on any registry or harness edit.
+      # scipy is pinned EXPLICITLY in this step's install line (not inherited through
+      # scikit-learn's dependency tree): scripts/prophet_fusion_c2.py imports
+      # scipy.optimize for the bounded elastic-net fit and scipy.stats for the t
+      # reference, and a scikit-learn drop must not silently take those imports with
+      # it (requirements.txt:17 declares scipy a direct dependency and names this
+      # module as a consumer).
+      - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race + C2/redundancy (PR-1a/PR-1b/PR-2)
+        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py tests/test_prophet_fusion_c2.py -q
       # G-D plan-book board read (#5541). Landed as a collecting suite named by
       # no run: step, so audit_unrun_tests.py painted pack-1 red on every PR.
       # It belongs in THIS job with the other prophet/board surfaces: the join
