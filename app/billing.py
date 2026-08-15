@@ -56,6 +56,15 @@ from lib.tiers import normalize_tier
 log = logging.getLogger("macro.billing")
 router = APIRouter()
 
+
+def _commercial_emit(kind: str, **fields) -> None:
+    """GATE-4 emit. Never raises — alerting must not break checkout or webhooks."""
+    try:
+        from lib.commercial_path import emit
+        emit(kind, **fields)
+    except Exception:  # noqa: BLE001
+        pass
+
 # --------------------------------------------------------------------------- #
 # Config / environment
 # --------------------------------------------------------------------------- #
@@ -980,9 +989,13 @@ def checkout(body: CheckoutRequest, user: dict = Depends(_current_user)) -> dict
         session = stripe.checkout.Session.create(**args)
     except Exception as exc:  # noqa: BLE001
         log.warning("billing: checkout create failed (%s)", exc)
+        _commercial_emit("checkout.fail", reason=type(exc).__name__, tier=tier,
+                         interval=interval)
         if _offer_sold_out_after_error(offer_key):
             raise HTTPException(410, f"{_catalog()['offers'][offer_key]['name']} is sold out") from None
         raise HTTPException(502, "checkout failed, please try again") from None
+    _commercial_emit("checkout.ok", session_id=getattr(session, "id", ""),
+                     tier=tier, interval=interval)
     return {"url": session.url, "id": session.id}
 
 
@@ -1582,8 +1595,10 @@ async def webhook(request: Request) -> dict:
     try:
         event = stripe.Webhook.construct_event(payload, sig, secret)
     except ValueError:
+        _commercial_emit("webhook.error", reason="invalid_payload")
         raise HTTPException(400, "invalid payload") from None
     except stripe.error.SignatureVerificationError:
+        _commercial_emit("webhook.error", reason="invalid_signature")
         raise HTTPException(400, "invalid signature") from None
 
     event = dict(event)
@@ -1596,8 +1611,13 @@ async def webhook(request: Request) -> dict:
     # other request on this single-process API, not just the webhook. run_in_threadpool
     # is the house-standard hop for a blocking call inside an async route.
     # raises -> 500 -> Stripe retries (no record written); the recompute is idempotent.
-    await run_in_threadpool(_handle_event, event)
+    try:
+        await run_in_threadpool(_handle_event, event)
+    except Exception:
+        _commercial_emit("webhook.error", reason="handler_failed", event_type=etype)
+        raise
     _record_event(event_id, etype)
+    _commercial_emit("webhook.ok", event_type=etype, event_id=event_id)
     return {"status": "ok", "id": event_id, "type": etype}
 
 

@@ -117,6 +117,24 @@ def test_verify_uid_cached(monkeypatch):
     assert m._mm_verify_uid_cached("bad-token") is None
 
 
+def test_require_user_502_emits_commercial_path_event(monkeypatch, tmp_path):
+    """GATE-4: a Supabase outage on require_user must land on the commercial ledger."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
+
+    def boom(req, timeout=0):
+        raise TimeoutError("supabase down")
+
+    monkeypatch.setattr(m.urllib.request, "urlopen", boom)
+    from fastapi import HTTPException
+    import pytest
+    with pytest.raises(HTTPException) as ei:
+        m.require_user("Bearer sometoken")
+    assert ei.value.status_code == 502
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "auth.502" and r.get("reason") == "TimeoutError" for r in rows)
+
+
 if __name__ == "__main__":
     import pytest
     raise SystemExit(pytest.main([__file__, "-q"]))

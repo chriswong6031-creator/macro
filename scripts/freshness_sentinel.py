@@ -1098,13 +1098,18 @@ def send_discord(msg: str) -> bool:
     return _post_json(url, {"content": msg[:1990]})
 
 
-def send_email(msg: str, now: datetime) -> bool:
+def send_email(msg: str, now: datetime, *, subject: str | None = None,
+               template: str = "freshness_sentinel") -> bool:
     """Operator email through the estate's one send path (app.mailer, stdlib-only).
 
     Lazy, failure-guarded import: the sentinel must survive a broken app tree.
     idem_key = (message digest, REALERT_HOURS bucket): a crash-loop resending the
     SAME alert in one window collapses to a single email via the ledger, while a
     different alert in the same window (breach then recovery) still goes out.
+
+    ``subject`` / ``template`` default to the freshness sentinel. The commercial-
+    path sibling reuses this function with its own names so GATE-4 does not
+    mint a second mail vendor.
     """
     to_addr = (
         os.environ.get("MAIL_SENTINEL_TO") or os.environ.get("MAIL_SUPPORT_TO") or ""
@@ -1120,14 +1125,15 @@ def send_email(msg: str, now: datetime) -> bool:
 
     bucket = int(now.timestamp()) // int(REALERT_HOURS * 3600)
     digest = hashlib.sha256(msg.encode()).hexdigest()[:12]
+    subject = subject or "Mastermind freshness sentinel alert"
     status = mailer.send(
-        template="freshness_sentinel",
+        template=template,
         cls="transactional",
         to_email=to_addr,
-        subject="Mastermind freshness sentinel alert",
+        subject=subject,
         html="",
         text=msg,
-        idem_key=f"freshness-sentinel:{bucket}:{digest}",
+        idem_key=f"{template}:{bucket}:{digest}",
     )
     return status in ("sent", "duplicate")
 

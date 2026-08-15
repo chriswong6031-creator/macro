@@ -755,6 +755,11 @@ def require_user(authorization: str | None = Header(default=None)) -> dict:
         raise HTTPException(401, f"invalid token ({e.code})") from None
     except Exception as e:  # noqa: BLE001 - network/upstream failure, not the user's fault
         log.warning("auth check upstream failure (%s)", e)
+        try:
+            from lib.commercial_path import emit as _commercial_emit
+            _commercial_emit("auth.502", reason=type(e).__name__)
+        except Exception:  # noqa: BLE001 — alerting must not mask the 502
+            pass
         raise HTTPException(502, "auth check failed, please try again") from None
 
 

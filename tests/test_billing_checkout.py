@@ -52,6 +52,33 @@ def test_founding_checkout_uses_regular_price_plus_capped_promotion(monkeypatch)
         "mm_user_id": "user_1", "mm_offer": "founding_pro"}
 
 
+def test_checkout_failure_emits_commercial_path_event(monkeypatch, tmp_path):
+    """GATE-4: a Stripe create failure must land on the commercial-path ledger."""
+    monkeypatch.setenv("MACRO_API_STATE_DIR", str(tmp_path))
+
+    class _Boom:
+        class Session:
+            @staticmethod
+            def create(**kwargs):
+                raise RuntimeError("stripe down")
+
+        checkout = type("checkout", (), {"Session": Session})()
+
+    monkeypatch.setattr(billing, "_stripe", lambda: _Boom())
+    monkeypatch.setattr(billing, "_existing_customer", lambda uid: None)
+    monkeypatch.setattr(billing, "_price_id", lambda lk: f"price_{lk}")
+    from fastapi import HTTPException
+    import pytest
+    with pytest.raises(HTTPException) as ei:
+        billing.checkout(
+            billing.CheckoutRequest(tier="pro", interval="monthly"), user=USER)
+    assert ei.value.status_code == 502
+    from lib.commercial_path import load_events
+    rows = load_events(root=tmp_path / "commercial_path")
+    assert any(r.get("kind") == "checkout.fail" and r.get("reason") == "RuntimeError"
+               for r in rows)
+
+
 def test_regular_checkout_does_not_expose_manual_promotion_code_entry(monkeypatch):
     fake = _FakeStripe()
     monkeypatch.setattr(billing, "_stripe", lambda: fake)
