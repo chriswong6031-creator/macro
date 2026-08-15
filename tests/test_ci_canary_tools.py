@@ -240,6 +240,8 @@ def test_runner_service_seals_runtime_and_binds_host_admission() -> None:
     assert "ReadOnlyPaths=__RUNNER_ROOT__ /var/cache/mastermind-ci/macro.git" in unit
     assert "ReadWritePaths=__RUNNER_ROOT__/_work __RUNNER_ROOT__/_diag" in unit
     assert "ReadWritePaths=__RUNNER_ROOT__ " not in unit
+    assert "UMask=0022" in unit
+    assert "UMask=0027" not in unit
     pc_wrapper = (
         ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_runner.sh"
     ).read_text(encoding="utf-8")
