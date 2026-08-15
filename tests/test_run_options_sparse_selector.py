@@ -431,9 +431,7 @@ def test_runner_boundary_is_stdlib_only_and_proposals_are_structurally_absent() 
     assert "pandas" not in imported
     assert runner.W1A_RECEIPT_ROOT is None
     assert runner.PROPOSALS_ARMED is False
-    assert runner.EXPECTED_REPO_ROOT == Path(
-        "/Users/chriswong/options-sparse-selector-ops-wt"
-    )
+    assert runner.EXPECTED_REPO_ROOT == Path(runner.__file__).resolve().parents[1]
     assert runner.MAX_HEAD_GENERATIONS == 128
     inputs = runner._evidence_inputs(FakeCore())
     assert inputs.w1a_receipt_root is None
