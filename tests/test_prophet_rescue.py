@@ -65,8 +65,9 @@ def at(day: date, hour: int, minute: int = 0) -> datetime:
 
 
 def run_row(status: str = "completed", conclusion: str | None = "success", *,
-            created: datetime, event: str = "schedule", run_id: int = 31753425298):
-    return {
+            created: datetime, event: str = "schedule", run_id: int = 31753425298,
+            **extra):
+    row = {
         "id": run_id,
         "status": status,
         "conclusion": conclusion,
@@ -74,6 +75,8 @@ def run_row(status: str = "completed", conclusion: str | None = "success", *,
         "event": event,
         "html_url": f"https://example.test/run/{run_id}",
     }
+    row.update(extra)
+    return row
 
 
 def index(*, source_asof: str, cohort_date: str | None = None, cohort_n: int = 25,
@@ -360,6 +363,76 @@ def test_a_newest_cancelled_run_with_stale_data_is_re_armed():
     assert verdicts(actions) == [RESCUE.STALE]
     assert dispatched(actions)
     assert "cancelled" in actions[0].message
+
+
+def test_cancelled_real_plus_surviving_gate_skip_is_not_a_bake():
+    """2026-08-14/15: EDT 31848262472 sat queued and was superseded by EST-guard
+    31851452961, which then skipped every real job and concluded success.
+
+    At 02:40Z (past STRAND_AFTER, before STALE_AFTER) the old detector printed
+    WAIT because a success existed. A gate-skip success is not a bake: the night
+    is owed, and the 02:40Z wake must re-arm rather than wait until 09:40Z.
+    """
+    cancelled = run_row(
+        status="completed", conclusion="cancelled",
+        created=at(THU, 22, 52), run_id=31848262472,
+        display_title="daily 30 22 * * *",
+    )
+    skip = run_row(
+        status="completed", conclusion="success",
+        created=at(THU, 23, 45), run_id=31851452961,
+        display_title="daily 30 23 * * *",
+        run_started_at="2026-08-13T02:16:00Z",
+        updated_at="2026-08-13T02:16:05Z",
+    )
+    # August 13 02:16 is Thursday morning — THU is 2026-08-13. The skip ran
+    # after midnight UTC; duration is what classifies it, not the calendar day.
+    snapshot = state(
+        now=at(FRI, 2, 40), session=THU,
+        main_index=index(source_asof=WED.isoformat()),
+        r2_index=index(source_asof=WED.isoformat()),
+        runs=[cancelled, skip],
+    )
+    facts = RESCUE.run_facts(snapshot.runs, at(THU, 22, 0), now=snapshot.now)
+    assert facts.any_success is False, "a gate-skip success must not count as a bake"
+    assert [r.get("id") for r in facts.gate_skips] == [31851452961]
+    actions = RESCUE.decide(snapshot)
+    assert verdicts(actions) == [RESCUE.STALE]
+    assert dispatched(actions)
+    assert RESCUE.exit_code(actions) != 0
+    assert "31848262472" in actions[0].message or "no-op" in actions[0].message
+
+
+def test_unlabelled_success_beside_a_cancelled_sibling_is_not_a_bake():
+    """31851452961's display_title was just ``daily``; run_started_at equalled
+    created_at (23:45:40Z) while et_gate waited until 02:16:14Z. Duration cannot
+    identify that skip. The cancelled EDT sibling is the signal."""
+    cancelled = run_row(
+        status="completed", conclusion="cancelled",
+        created=at(THU, 22, 52), run_id=31848262472,
+        display_title="daily",
+    )
+    skip = run_row(
+        status="completed", conclusion="success",
+        created=at(THU, 23, 45), run_id=31851452961,
+        display_title="daily",
+        run_started_at=at(THU, 23, 45).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        updated_at=at(FRI, 2, 16).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    )
+    recent = [cancelled, skip]
+    now = at(FRI, 2, 40)
+    assert RESCUE.is_et_gate_skip(skip, now=now) is False
+    assert RESCUE.counts_as_bake(skip, recent, now=now) is False
+    lone = [skip]
+    assert RESCUE.counts_as_bake(skip, lone, now=now) is True, (
+        "a lone unlabelled success is a pre-run-name real bake"
+    )
+    manual = run_row(
+        status="completed", conclusion="success",
+        created=at(THU, 23, 45), event="workflow_dispatch",
+        display_title="daily",
+    )
+    assert RESCUE.counts_as_bake(manual, [cancelled, manual], now=now) is True
 
 
 # ─────────────────────────────────────────────────────────────────────────────

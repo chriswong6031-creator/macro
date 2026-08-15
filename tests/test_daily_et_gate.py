@@ -174,6 +174,77 @@ def test_annotation_starts_the_line_exactly_once(tmp_path, monkeypatch, capsys):
 # wiring — daily.yml anti-drift pins
 # ---------------------------------------------------------------------------
 
+def test_dst_cron_slots_do_not_share_a_concurrency_group():
+    """2026-08-14/15: shared group + pending-supersede cancelled the EDT nightly.
+
+    GitHub still replaces the one PENDING run in a concurrency group even when
+    ``cancel-in-progress`` is false (fences.yml 2026-08-09). Distinct groups are
+    the only lever that stops a gate-skip slot from eating a queued real slot.
+    Event-conditional cancel-in-progress cannot: the killed run was queued, not
+    in progress. Pin the shipped expression, then evaluate it for both crons.
+    """
+    conc = _workflow()["concurrency"]
+    group_expr = conc["group"]
+    assert conc["cancel-in-progress"] is False, (
+        "cancel-in-progress must stay false — a second fire of the SAME slot "
+        "must not kill a running bake"
+    )
+    assert "github.event.schedule" in group_expr, (
+        "concurrency.group must key on the fired cron; a static group lets the "
+        "EST-guard supersede a queued EDT nightly"
+    )
+    assert "format(" in group_expr
+
+    def eval_group(event_name: str, schedule: str = "") -> str:
+        """Tiny GitHub-expression subset for this one shipped line."""
+        inner = group_expr.strip()
+        if inner.startswith("${{") and inner.endswith("}}"):
+            inner = inner[3:-2].strip()
+        inner = inner.replace("github.event_name", repr(event_name))
+        inner = inner.replace("github.event.schedule", repr(schedule))
+        # GitHub expressions use JS-style && / ||; Python's and / or match
+        # the same truthy-return semantics for this line.
+        inner = inner.replace("&&", " and ").replace("||", " or ")
+
+        def _format(template: str, *args: object) -> str:
+            out = template
+            for i, arg in enumerate(args):
+                out = out.replace("{" + str(i) + "}", str(arg))
+            return out
+
+        return eval(inner, {"__builtins__": {}}, {"format": _format})  # noqa: S307
+
+    edt = eval_group("schedule", EDT_CRON)
+    est = eval_group("schedule", EST_CRON)
+    manual = eval_group("workflow_dispatch")
+    assert edt != est, (
+        f"EDT cron and EST-guard share group {edt!r} — the 2026-08-14/15 kill"
+    )
+    assert edt != manual and est != manual, (
+        "a workflow_dispatch must not share a cron group (it would supersede "
+        "a queued real slot the same way the EST-guard did)"
+    )
+    assert "30 22" in edt and "30 23" in est
+    run_name = _workflow().get("run-name") or ""
+    assert "github.event.schedule" in run_name, (
+        "run-name must embed the fired cron so watchdogs can tell a gate-skip "
+        "from a real bake without a jobs API call"
+    )
+
+
+def test_watchdog_cron_constants_lockstep_with_daily_yml():
+    """Rescue and liveness classify slots by these strings — they must match."""
+    from scripts.check_nightly_liveness import (  # noqa: PLC0415
+        EDT_CRON as LIVE_EDT,
+        EST_CRON as LIVE_EST,
+    )
+    from scripts.prophet_rescue import (  # noqa: PLC0415
+        EDT_CRON as RESCUE_EDT,
+        EST_CRON as RESCUE_EST,
+    )
+    assert {LIVE_EDT, LIVE_EST, RESCUE_EDT, RESCUE_EST} == {EDT_CRON, EST_CRON}
+
+
 def test_cron_pair_and_script_constants_move_in_lockstep():
     crons = [s["cron"] for s in _on_block(_workflow())["schedule"]]
     assert crons == [EDT_CRON, EST_CRON], (
