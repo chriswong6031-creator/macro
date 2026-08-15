@@ -68,7 +68,7 @@ PB2_PRESERVATION_SENTENCE = (
 PIN_PREFIXES = OrderedDict([
     ("washout_onset_w1.py", "11ac61de71f0f595"),
     ("pb_case_decomposition.py", "f42b0566beb60bec"),
-    ("PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md", "043a85d69f76ea86"),
+    ("PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md", "36a1c2484ca47bbb"),
 ])
 
 # ── frozen constants (prereg §9) ──────────────────────────────────────────────
@@ -213,6 +213,17 @@ AMENDMENTS = [
      "risk_controlled_by": "tests/test_pb3_persistence_robust_cert.py "
                            "test_diagnostic_shift_does_not_require_pb2_main "
                            "and test_regime_probe_fires_on_visible_transitions."},
+    {"id": "A12",
+     "what": "PIN_PREFIXES for the P-B2 prereg is 36a1c2484ca47bbb. Main "
+             "#5754 appended a 10-line 2026-08-15 annotation that says it "
+             "does not amend that prereg. The shipped P-B3 receipt still "
+             "records the run-time pin 043a85d69f76ea86. No estimand, gate, "
+             "cell, or headline moved.",
+     "why": "CI merges this branch with main; the annotation changes the "
+            "sha and the pin test would red a valid receipt. Re-pinning to "
+            "the annotated file is an instrument heal, not a re-run.",
+     "risk_controlled_by": "test_pin_prefixes_match_prereg_section_3; the "
+                           "annotation text is 'does not amend this prereg'."},
 ]
 
 
