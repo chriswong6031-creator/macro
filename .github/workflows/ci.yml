@@ -1495,10 +1495,6 @@ on:
       # by path), which is the guard closing its own loop.
       - "config/unrun_test_baseline.json"
       - "config/unrun_test_waivers.yml"
-      # Same shape, different ratchet: sealed-runtime entry scripts that must
-      # not carry a module-load repo pin (T2b). A PR that adds a row while
-      # starting no job would be the exception nobody checked.
-      - "config/script_import_pin_sealed_runtime_waivers.yml"
       # ── the 31 subjects that guard found unreachable on its first run ──────
       # Each line is a file some suite in the packed legacy jobs actually reads
       # (import, whole-string path literal, or a __file__-rooted path join) and
