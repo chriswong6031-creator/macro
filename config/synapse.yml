@@ -10365,12 +10365,6 @@ artifacts:
       - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
-      PR-D compact history of daily brief snapshots. One row per as_of date;
-      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
-      Chronologically sorted. Used for delta detection in next run. Display/ops only.
-      - scripts/build_measurement.py
-    external_consumers: []
-    notes: >
       CPI substrate v0 — 15-seed truth ledger (truths.jsonl) for cycle-pattern
       claims. Fields: truth_id, statement, target, scope, effect_class, status,
       n_summary, ci_summary, pit_class, era_stability, evidence_refs, falsifiers,
@@ -12732,16 +12726,6 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/query.py
-    external_consumers: []
-    notes: >
-      DARK (NW context feed — Wave-2 tech-signal suite). Display-only descriptive
-      fire-metrics from engine.tech_catalog over the mega-cap survivor universe.
-      Registered and plumbed into the NW spine index as direction=0 / is_context=True
-      rows; NOT consumed by any Article-2 surface (alert_triage, board_ordering,
-      top_setups, attention_queue, push_floor). Promotion gate: Article-3 gauntlet
-      with n_dates>=25 and Wilson CI lower-bound > 0 vs matched control. Until that
-      gate fires, these rows are pure display context.
-      - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >
       R5 macro context rail — daily intelligence briefing snapshot.
