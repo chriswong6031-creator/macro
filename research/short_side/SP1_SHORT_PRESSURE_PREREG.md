@@ -545,6 +545,132 @@ that the retired rule was **measured wrong and in which direction**, never merel
 its numbers, in its verdict, or in both. Superseding is reserved for changes to the
 *design* — hypotheses, conditioners, horizons, universe, controls, statistics, or
 the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
+The complementary case — a post-outcome change that *does* move a design surface,
+including a calendar that redefines what a horizon label measures — is §5C /
+`DEC:PREREG-DESIGN-CHANGE-SUPERSEDES`.
+
+## §5C. SUPERSESSION 1 — the price index is not a trading-day index (pre-run of THIS fix, 2026-08-15)
+
+Committed BEFORE the code fix is applied and BEFORE this design is re-run. That
+order is load-bearing. A weekday-only counterfactual was already computed in the
+2026-08-15 §7 entry (counterfactual D: H0 21-row **+0.702pp / t 1.92 / q 0.0551**).
+That measurement is why this cannot be an in-place amendment: the outcome of the
+proposed change is already known. Applying the filter as a correction of SP1-A,
+having seen it halve the t, is the goalpost move prereg immutability exists to
+forbid. This section locks the successor design so the official run cannot be
+chosen after further fishing.
+
+### RULING — supersede; do not amend in place
+
+**Supersession.** This is a design change. §5B's standing rule
+(`DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`) reserves supersession for
+changes to the *design* — hypotheses, conditioners, **horizons**, **universe**,
+controls, statistics, or the promotion bar. Two of those surfaces move:
+
+- **Horizons.** SP1-A applied `HORIZONS = (21, 63)` as positional row offsets on
+  a calendar-union index. A 21-row step spanned exactly 15 weekday sessions; a
+  63-row step spanned exactly 45. After this fix, `HORIZONS` **keeps its numeric
+  labels** and those labels become **true NYSE sessions**. That is a different
+  estimand — a different forward-return window — not a gloss on the same one.
+- **Sample.** Restricting the index to NYSE sessions changes which dates
+  `searchsorted` returns and which settlements survive `MIN_NAMES_PER_DATE`.
+  Counterfactual D used 188 entry dates against the contaminated run's 193.
+
+What does **not** move: hypotheses H0/H1/H2; the price-action conditioner
+(trailing 63-session return percentile); the universe *of names* (FINRA listed ∩
+ADV ≥ 100k ∩ yahoo close — the 35 non-equity files are not study names);
+within-date demeaning; Newey-West t / split-half / BH-FDR; the promotion bar
+(≥5pp, q ≤ 0.10, both halves sign-stable, n ≥ 300 per side).
+
+**Why this is not a data-availability convention.** A data-availability
+convention answers "when is a fact knowable?" The lag correction was that. The
+price-index calendar answers "what is a day?" and "what is a 21-day horizon?"
+Those are design parameters of the experiment. The original prereg said "21d and
+63d" and "first trading day" — the *intent* was trading days — but the study
+that *ran* used a different estimand. Correcting the implementation changes the
+measured window from 15/45 weekday sessions to 21/63. That is a new experiment,
+not a corrected gloss on the same one.
+
+**Why the lag-correction licenses do not apply.**
+
+1. The lag correction made the test strictly harder and was not authored by
+   looking at SP1 outcomes (PR #5705). This change was discovered by looking at
+   SP1 outcomes and seeing t drop from 3.06 to 1.92. That is exactly the
+   goalpost hazard.
+2. "Nobody moves a goalpost toward themselves" does not license this: the
+   direction the t moves is already known, and applying it as an amendment
+   would let the official record absorb a seen result.
+3. In-place amendment would rewrite what "21d" meant in the 2026-08-05 and
+   2026-08-15 entries, destroying the audit trail of what those runs actually
+   measured.
+
+**SP1-A is not rewritten.** Its two published runs stay the record of the
+contaminated-calendar design. Their numbers remain non-quotable. This section
+pre-registers the successor **SP1-B**. Recorded as
+`DEC:PREREG-DESIGN-CHANGE-SUPERSEDES`.
+
+### SP1-B, exactly
+
+- **Universe:** same as SP1-A — FINRA exchange-listed ∩ not sentinel-capped ∩
+  ADV ≥ 100k ∩ has a `data/yahoo/` close at the entry date. Non-equity files in
+  `data/yahoo/` are not study names. Expected name count is the 2026-08-15
+  SP1-A count minus the handful of non-equities that overlapped (counterfactual
+  D: 1,723 → 1,718 if only those files are dropped; NYSE intersection may move
+  it slightly).
+- **Price index:** the wide close panel is restricted to **weekday NYSE
+  sessions**. Implementation: `load_prices()` intersects the unioned index with
+  `lib/nyse_calendar` (house helper: `session_rows`). Weekend rows contributed
+  by crypto / FX / futures must be **0**. Rows that are not NYSE sessions
+  (weekends *and* full-day holidays) must be **0**.
+- **Entry:** first NYSE session at/after `knowable_date` (8 NYSE sessions after
+  settlement, stored column). The binding clause is unchanged; on a trading-day
+  index, `searchsorted` now rolls forward off a weekend rather than landing on
+  it.
+- **Horizons:** 21 and 63, **true NYSE sessions**. `HORIZONS` keeps its numeric
+  labels. A 21-row step on the filtered index is 21 sessions; a 63-row step is
+  63. The trailing conditioner `pos - 63` is likewise 63 sessions. We do **not**
+  relabel to (15, 45) to preserve the old window — that would preserve the bug.
+- **H0 / H1 / H2:** unchanged from §5A, including H2's pre-declared expectation
+  of null and the H0-must-replicate-negative-and-significant interpretability
+  gate.
+- **Statistics / promotion bar:** unchanged from §5 / §5A.
+
+### Pre-declared expected outcome
+
+This is **not a blind test**. Counterfactual D in the 2026-08-15 §7 entry
+already measured a weekday-only index (drop the 35 non-equity files; no
+NYSE-holiday intersection) at H0 21-row: **+0.702pp / t 1.92 / q 0.0551**,
+216,488 events, 188 entry dates. SP1-B's official run is expected to land in
+that neighborhood:
+
+- H0 remains **POSITIVE** (wrong direction vs Hong-Li-Ni-Scheinkman-Yan).
+- H0 does **not** clear the §5A replication gate (negative AND q ≤ 0.10).
+- No test clears the promotion bar (≥5pp, q ≤ 0.10, both halves, n ≥ 300).
+- `calendar_audit` reads **0 weekend rows** and **21/63 true sessions**.
+
+A result in that neighborhood is **confirmation of a seen counterfactual, not a
+discovery**, and remains non-quotable (survivorship, §5A). A material deviation
+— H0 flipping negative-and-significant, or any |mean| ≥ 5pp — is a **new
+finding requiring its own adjudication** and does not retroactively validate
+SP1-A.
+
+### Citation ban
+
+**Not lifted.** The 2026-08-15 §7 entry listed three independent reasons. This
+supersession, once run, discharges only the third (calendar). Survivorship
+(§5A) is unfixed — the named fix is still a delisting-inclusive panel
+(`collectors/edgar_delisting.py` + `edgar_deadname_prices.py`). The PIT lag is
+already discharged. No effect size from SP1-B may be cited in a successor
+study, an adjudication, a masterplan, or any user-facing surface.
+
+### What this does not do
+
+- Does not lift the citation ban.
+- Does not file a `DO_NOT_REBUILD` row.
+- Does not change sibling studies that glob `data/yahoo/` or treat a DataFrame
+  row offset as a trading-day horizon. Those need their own prereg if they are
+  the same class (wide-panel union of every yahoo file + positional horizons).
+- Does not rebuild the FINRA panel (already on the 8-session rule).
 
 ## §6. Graveyard seeded at charter
 
@@ -701,6 +827,10 @@ the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
   not in-place amendment, so it needs its own pre-registration. Recorded here so the
   next actor inherits it rather than rediscovering it.
 
+  **DISCHARGED as a pre-registration obligation by §5C (same day).** The successor
+  study is SP1-B. This entry is left intact so the contaminated-calendar numbers
+  stay attributable to the design that produced them.
+
   **Report generator hardened (not entry logic).** The 2026-08-05 template hardcoded
   that run's effect sizes into its **prose** while the table was computed, and
   hardcoded a verdict reading "sign is positive, not significant" — so this re-run
@@ -709,3 +839,10 @@ the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
   derived from `results`; the report additionally prints the panel's lag convention
   (read from the sidecar, never assumed) and a measured calendar audit, so neither
   the convention nor the horizon distortion can go unstated again.
+
+- 2026-08-15: **§5C SUPERSESSION 1 committed — SP1-B pre-registered; NOT YET RUN.**
+  The trading-day price-index fix is locked in §5C before any code change and
+  before any official re-run. Counterfactual D in the entry above is the
+  *expected* neighborhood, not a result of this study. Official numbers follow
+  in a later §7 line after the run. Citation ban still stands (survivorship
+  unfixed).
