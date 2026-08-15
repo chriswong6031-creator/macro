@@ -476,10 +476,12 @@ def _collect_potential_calls(to_write) -> list[dict]:
     return calls
 
 
-def _name_score_asof(alpha_asof) -> str:
+def _name_score_asof(alpha_asof) -> "tuple[str, bool]":
     """The name-score ledger stamp = the board's OWN session date (the same value
     ``wide["as_of"]`` publishes and grade_us_board.snapshot_today() keys the board
-    fossil on) — never the render host's wall clock.
+    fossil on) — never the render host's wall clock. Returns (stamp,
+    session_keyed): the flag is persisted onto the store rows so the pre/post
+    cutover eras and any wall-clock fallback stay partitionable forever.
 
     Until 2026-08-14 this stamp was ``pd.Timestamp.utcnow().date()`` at append
     time. The nightly's library band runs after 00:00 UTC, so session D's calls
@@ -491,15 +493,27 @@ def _name_score_asof(alpha_asof) -> str:
     keys. Session stamping also dedupes weekend-lane echo appends into the Friday
     stamp instead of minting thin Sat/Sun stamps (keep-FIRST PIT).
 
+    A resolved-but-STALE anchor gets a loud annotation instead of silence: with a
+    session key, a frozen alpha.json makes every nightly append dedupe into the
+    stale session and land 0 rows — a failure mode wall-clock stamping could not
+    have (adversarial review D4b, PR #5674). Weekends/holidays keep the anchor
+    ≤4 days behind the clock, so >5 is a frozen upstream, not a calendar.
+
     Fallback is wall-clock UTC ONLY when the session anchor is unavailable or
-    corrupt (loud — the divergence this fixed comes back for that build)."""
+    corrupt (loud, and session_keyed=False marks the rows)."""
     _d = _eb_board_session_date(alpha_asof, None)
     if _d is not None:
-        return str(_d)
+        _lag = (pd.Timestamp.utcnow().date() - _d).days
+        if _lag > 5:
+            print(f"::warning title=name-score stale session anchor::US name-score "
+                  f"stamp {_d} is {_lag}d behind the host clock — alpha.json looks "
+                  f"frozen; appends dedupe into the stale session and land 0 rows",
+                  flush=True)
+        return str(_d), True
     log.warning("US name-score ledger: no board session date (alpha.json as_of "
                 "missing/corrupt) — stamping with the render host's UTC date; the "
                 "store's date key may diverge from the published board for this build")
-    return str(pd.Timestamp.utcnow().date())
+    return str(pd.Timestamp.utcnow().date()), False
 
 
 _FEED_DEMOTION_BREAKER = 0.20  # R2: >20% of full recs demoting reads as a collector
@@ -4394,10 +4408,11 @@ def main() -> int:
         # the store row and the snapshot fossil must share one date key
         # (DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES; pinned by
         # tests/test_name_score.py::test_us_store_stamp_wired_to_session_asof).
-        _asof = _name_score_asof(alpha_asof)
+        _asof, _session_keyed = _name_score_asof(alpha_asof)
         _calls = _collect_potential_calls(to_write)
         if _calls:
-            _n = name_score_grader.append_name_calls(_calls, market="US", asof=_asof)
+            _n = name_score_grader.append_name_calls(_calls, market="US", asof=_asof,
+                                                     session_keyed=_session_keyed)
             log.info("US name-score grader: submitted %d calls for %s (ledger=%d; "
                      "refused calls are warned by the grader)", len(_calls), _asof, _n)
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal

@@ -987,7 +987,8 @@ def main(alpha: dict | None = None) -> dict | None:
             _ca_asof = (alpha or {}).get("as_of")
             name_score_grader.append_name_calls(
                 _cacalls, market="CA",
-                asof=str(_ca_asof) if _ca_asof else str(pd.Timestamp.utcnow().date()))
+                asof=str(_ca_asof) if _ca_asof else str(pd.Timestamp.utcnow().date()),
+                session_keyed=bool(_ca_asof))
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("CA name-score grader append failed (%s)", e)
     # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-

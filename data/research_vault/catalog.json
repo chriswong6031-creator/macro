@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-15T01:00:27.274298+00:00",
-  "count": 1103,
+  "generated_at": "2026-08-15T01:15:51.779336+00:00",
+  "count": 1104,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -372,6 +372,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ct6towzzybo-6b9e97",
+      "title": "The Point for Europe Friday, 14 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T10:23:19Z",
+      "summary_points": [
+        "**BASF SE: EU Protectionism Risk vs.",
+        "Resilient Valuation**: EU protectionism risk in H2 could trigger re-rating; shares at €50 (5-yr upper half) with supportive macro data and management momentum commentary leaving room for upside.",
+        "**Infineon Technologies: AI Power Infrastructure Catalyst**: Structural beneficiary confirmed; FY26 AI revenue target raised to >€1.6bn due to demand-supply imbalance, improving bookings, and rising lead times across end markets.",
+        "**SCHOTT Pharma AG Revised Estimates & Target Price**: FY26-31E revenue +c.5% and EBITDA +c.4-6% with glass syringe customer; trades at >30% discount to peer STVN, Buy rating, and target price up +28.6%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },

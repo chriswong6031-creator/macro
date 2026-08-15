@@ -5,8 +5,8 @@
 # fingerprint to whatever a stale line number currently points at. Targets must be
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
-.github/workflows/daily.yml	2747	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	4999	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+.github/workflows/daily.yml	2749	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
+.github/workflows/daily.yml	5001	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/biocatalyst.py	2331	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
@@ -88,9 +88,9 @@ scripts/build_prophet_marks.py	82	SCHEMA = "prophet.live_marks/v1"
 scripts/build_prophet_marks.py	83	R2_KEY = "live_flow/prophet_marks.json"
 scripts/build_prophet_marks.py	1152	def _private_observation_path(
 scripts/build_session_digest.py	104	R2_SURFACE_PREFIX = "live_flow/surface/"
-scripts/build_stock_library.py	3601	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
-scripts/build_stock_library.py	4021	# amended at FS-5.
-scripts/build_stock_library.py	4398	_calls = _collect_potential_calls(to_write)
+scripts/build_stock_library.py	3615	dchread = dchain.hiring_read(headcount_by_ticker[ticker], rec.get("revisions"))
+scripts/build_stock_library.py	4035	# amended at FS-5.
+scripts/build_stock_library.py	4412	_calls = _collect_potential_calls(to_write)
 scripts/build_tape_flow_daily.py	12	Storage:
 scripts/build_tape_flow_daily.py	18	State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 scripts/calibrate_thetadata_tape_sessions.py	12	to data/options_flow/tape_signing_sessions.jsonl (append-only; never rewritten).

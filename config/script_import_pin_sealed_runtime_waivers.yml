@@ -1,0 +1,32 @@
+# Sealed-runtime entry scripts that MUST NOT carry a module-load repo pin.
+#
+# SCHEMA: repo-relative path -> reason (one non-empty string). Same shape as
+# config/unrun_test_waivers.yml. An empty reason is a hard red: a waiver
+# without an argument is a baseline row wearing a disguise.
+#
+# This is NOT a dumping ground and it is NOT the T2 burn-down list. The
+# default for a new scripts/** entry that imports repo packages is a strong
+# module-load pin (tests/test_check_script_import_pinning.py). A row here is
+# an EXCEPTION: the script's threat model forbids adding any repository path
+# until after authentication (python -I -S sealed runtime). Each row must
+# remain in the T2 "affected" set (still no strong pin), must not appear in
+# the T2 baseline, and must have a dedicated proof that attestation precedes
+# path install and repo import.
+#
+# --emit-baseline excludes these paths, so regenerating the T2 list cannot
+# silently grandfather a waived script. Delete a row only when the script is
+# rewritten to a strong module-load pin that still satisfies its own security
+# boundary, or when it leaves scripts/**.
+#
+# Ruling: DEC:SEALED-RUNTIME-WINS-OVER-MODULE-LOAD-PIN
+
+scripts/run_options_sparse_selector.py: >-
+  Sealed-runtime canary launched as `python -I -S` from
+  ops/launchd/run_options_sparse_selector_loop.sh. Authenticates the sealed
+  runtime and the exact clean checkout BEFORE installing trusted paths and
+  importing engine/lib (scripts/run_options_sparse_selector.py::_load_runtime).
+  A module-load `__file__`-derived pin would add an unauthenticated tree to
+  sys.path and invert that boundary (PR #5696 docstring; #5046 is the generic
+  ambient-hijack defense, not this threat model). Remove this row only if the
+  runner grows a strong pin that still attests first — which the current
+  design forbids — or the entrypoint leaves scripts/**.
