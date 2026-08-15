@@ -1,0 +1,11 @@
+[Unit]
+Description=Keep the Mastermind shared CI Git cache near current main
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=3min
+AccuracySec=30s
+Persistent=true
+
+[Install]
+WantedBy=timers.target
