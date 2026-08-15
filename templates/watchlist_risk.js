@@ -448,6 +448,28 @@
     notes:   { en: 'Company notes',     zh: '公司动态' }
   };
 
+  /* Position-scoped lanes. On a watchlist name they are not-applicable, not missing
+     and not NONE — W4 2026-08-15 acceptance: silent omission of Book Risk / Risk Desk
+     / Stage while Portfolio role spoke. n/app, never a fabricated score. */
+  var W4_NAPP = {
+    bookRisk: { en: 'Book Risk', zh: '账簿风险' },
+    riskDesk: { en: 'Risk Desk', zh: '风险台' },
+    stage:    { en: 'Stage',     zh: '阶段' }
+  };
+
+  function positionScopedRows(inBook) {
+    if (inBook) return '';
+    return lrowHTML({ lab: W4_NAPP.bookRisk, state: 'n/app',
+        en: 'Not a position — Book Risk is a share of a held book, so it does not apply to a watchlist name.',
+        zh: '不是持仓——账簿风险是持仓账簿的占比，因此不适用于自选名单上的名字。' }) +
+      lrowHTML({ lab: W4_NAPP.riskDesk, state: 'n/app',
+        en: 'Not a position — Risk Desk roles are assigned to holdings, not to names you are watching.',
+        zh: '不是持仓——风险台角色只分配给持仓，不分配给你在盯的名字。' }) +
+      lrowHTML({ lab: W4_NAPP.stage, state: 'n/app',
+        en: 'Not a position — the holdings Stage lane does not apply here. This name&rsquo;s own cycle still shows in the Signal column.',
+        zh: '不是持仓——持仓的阶段栏不适用于此。这只票自身的周期仍显示在「信号」列。' });
+  }
+
   /* The stance vocabulary. §7(b) of the pinned design ratifies exactly these three for
      holdings surfaces — "Act" and "Protect gains" are barred here — and portfolio.js
      carries the same literals for the attention stack. Two copies of one vocabulary
@@ -967,6 +989,7 @@
         twin: rf ? rf.twin : null,
         role: roleBadge(laneRead(j))
       }) +
+      positionScopedRows(!!o.inBook) +
       optionsRowHTML(j) +
       macroRowHTML(j) +
       themeRowHTML(j) +
@@ -2430,7 +2453,8 @@
       laneRead: laneRead, roleBadge: roleBadge, laneRows: laneRowsHTML,
       T1_STATE: T1_STATE, t1Fallback: t1Fallback,
       intelTier1: intelTier1HTML, intelSections: intelSectionsHTML,
-      W4_STANCE: W4_STANCE, W4_LABEL: W4_LABEL,
+      W4_STANCE: W4_STANCE, W4_LABEL: W4_LABEL, W4_NAPP: W4_NAPP,
+      positionScopedRows: positionScopedRows,
       /* W3 Risk Center tab builders — PURE string builders over a RiskCore result, so
          the node shell can hand them a crafted book (a stress lens that really does
          converge, a book with an unmodeled name, an empty event calendar) and assert
