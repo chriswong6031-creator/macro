@@ -58,6 +58,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 2
       - name: preserve trusted control helpers outside the candidate workspace
@@ -80,6 +81,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ steps.ref.outputs.tested_sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 0
       - name: prove the planner is on the frozen tree
@@ -131,6 +133,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.plan.outputs.control_sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 1
       - name: preserve trusted receipt helpers outside the candidate workspace
@@ -147,6 +150,7 @@ jobs:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
         with:
           ref: ${{ needs.plan.outputs.tested_sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 1
       - name: close candidate checkout timing
@@ -269,6 +273,7 @@ jobs:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
         with:
           ref: ${{ needs.plan.outputs.tested_sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 1
       - name: verify exact checkout and close timing
@@ -406,6 +411,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ needs.plan.outputs.contamination_sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 1
       - name: prove the persistent workspace is clean and isolated
@@ -461,6 +467,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: ${{ needs.plan.outputs.control_sha }}
+          persist-credentials: false
           filter: blob:none
           fetch-depth: 1
       - uses: actions/download-artifact@v4

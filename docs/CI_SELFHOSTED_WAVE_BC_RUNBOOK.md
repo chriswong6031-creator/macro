@@ -91,9 +91,11 @@ cleanliness claim. The design trades action/tool cache warmth for a clean next-j
 boundary; Git objects remain fast because the shared alternate is outside candidate
 write authority.
 
-The pre-start resource guard refuses a job at 85% disk use or below 100 GiB free,
-below 4 GiB available memory, or under combined high swap/low-memory pressure. It
-fails the candidate job; it never kills unrelated Windows/GPU work.
+The pre-start resource guard keeps the listener offline at 85% disk use or below
+100 GiB free, below 4 GiB available memory, or under combined high swap/low-memory
+pressure. A refusal waits five minutes before returning to systemd, bounding an
+unsafe-host retry loop without rate-limiting normal one-job listener turnover. It
+never kills unrelated Windows/GPU work.
 
 WSL was measured at 24 logical CPUs and about 31 GiB despite 64 GiB physical RAM.
 The Wave B candidate is 44 GiB / 16 CPUs / 8 GiB swap: 44 rather than 48 GiB leaves

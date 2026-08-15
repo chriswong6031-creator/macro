@@ -252,6 +252,19 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         findings.append(Finding("R9", "self-hosted canary is not bound to the host prewarm"))
     if "cache-negative-control" not in (canary.get("jobs") or {}):
         findings.append(Finding("R9", "cache-disabled negative-control job is missing"))
+    for job_id, job in (canary.get("jobs") or {}).items():
+        if not isinstance(job, dict):
+            continue
+        for index, step in enumerate(job.get("steps") or []):
+            if not isinstance(step, dict) or step.get("uses") != "actions/checkout@v4":
+                continue
+            if (step.get("with") or {}).get("persist-credentials") is not False:
+                findings.append(
+                    Finding(
+                        "R10",
+                        f"self-hosted-ci-canary.yml:{job_id}:step-{index} must disable checkout credential persistence",
+                    )
+                )
     return findings
 
 

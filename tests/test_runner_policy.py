@@ -156,6 +156,23 @@ def test_pull_request_job_cannot_delegate_to_a_reusable_workflow(tmp_path: Path)
     assert "may not delegate" in result.stdout
 
 
+def test_canary_candidate_checkout_cannot_persist_the_job_token(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "selfhosted-ci-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    checkout = next(
+        step
+        for step in document["jobs"]["selfhosted-pack"]["steps"]
+        if step.get("uses") == "actions/checkout@v4"
+    )
+    checkout["with"].pop("persist-credentials")
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R10" in result.stdout
+    assert "credential persistence" in result.stdout
+
+
 def test_migration_job_cannot_bypass_hosted_main_trust_gate(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     path = workflows / "m1-runner-canary.yml"

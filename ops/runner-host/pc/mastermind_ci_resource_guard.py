@@ -6,10 +6,17 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from pathlib import Path
 
 
 GIB = 1024**3
+
+
+def refusal_backoff(reasons: list[str], seconds: int, *, sleep=time.sleep) -> None:
+    """Bound unsafe-host retries without delaying an allowed listener start."""
+    if reasons and seconds:
+        sleep(seconds)
 
 
 def meminfo(path: Path = Path("/proc/meminfo")) -> dict[str, int]:
@@ -23,6 +30,14 @@ def meminfo(path: Path = Path("/proc/meminfo")) -> dict[str, int]:
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--path", type=Path, required=True)
+    parser.add_argument(
+        "--refusal-backoff-seconds",
+        type=int,
+        default=0,
+        choices=range(0, 3601),
+        metavar="0..3600",
+        help="wait before returning refusal status 78 (default: no wait)",
+    )
     args = parser.parse_args()
     disk = os.statvfs(args.path)
     total = disk.f_blocks * disk.f_frsize
@@ -55,6 +70,7 @@ def main() -> int:
         "reasons": reasons,
     }
     print("CI_RESOURCE_GUARD=" + json.dumps(result, sort_keys=True), flush=True)
+    refusal_backoff(reasons, args.refusal_backoff_seconds)
     return 0 if not reasons else 78
 
 

@@ -28,6 +28,10 @@ ADMISSION = load(
 CLEANUP = load(
     "runner_cleanup", ROOT / "ops" / "runner-host" / "common" / "runner_cleanup.py"
 )
+RESOURCE_GUARD = load(
+    "mastermind_ci_resource_guard",
+    ROOT / "ops" / "runner-host" / "pc" / "mastermind_ci_resource_guard.py",
+)
 
 
 def git(cwd: Path, *args: str) -> str:
@@ -228,6 +232,10 @@ def test_runner_service_seals_runtime_and_binds_host_admission() -> None:
     assert "ACTIONS_RUNNER_HOOK_JOB_COMPLETED" not in unit
     assert "Restart=always" in unit
     assert "RestartSec=5" in unit
+    assert "StartLimitIntervalSec=0" in unit
+    assert "StartLimitBurst" not in unit
+    assert "--refusal-backoff-seconds 300" in unit
+    assert "TimeoutStartSec=10min" in unit
     assert "MASTERMIND_CI_RUNNER_ROOT=__RUNNER_ROOT__" in unit
     assert "ReadOnlyPaths=__RUNNER_ROOT__ /var/cache/mastermind-ci/macro.git" in unit
     assert "ReadWritePaths=__RUNNER_ROOT__/_work __RUNNER_ROOT__/_diag" in unit
@@ -250,6 +258,14 @@ def test_runner_service_seals_runtime_and_binds_host_admission() -> None:
     assert 'spawnSync("/usr/bin/python3", ["-I", script]' in hook
     assert "process.env.PATH" not in hook
     assert "process.env.MASTERMIND_CI_PROFILE" not in hook
+
+
+def test_resource_refusal_backoff_only_delays_an_unsafe_retry() -> None:
+    sleeps: list[int] = []
+    RESOURCE_GUARD.refusal_backoff([], 300, sleep=sleeps.append)
+    assert sleeps == []
+    RESOURCE_GUARD.refusal_backoff(["critical disk pressure"], 300, sleep=sleeps.append)
+    assert sleeps == [300]
 
 
 def test_listener_startup_cleanup_scrubs_all_pc_job_state_and_recreates_runtime_dirs(
