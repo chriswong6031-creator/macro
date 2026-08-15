@@ -1,0 +1,212 @@
+schema: mastermind.rig_review.v1
+reference_id: entry-radar-w8
+role: visual_taste
+artifact_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+
+reviewer:
+  identity: "independent visual-taste critic B — PR #5737 commissioning pass (not author cursor-cloud-w8-entry-radar-9f9d)"
+  role: visual_taste_critic
+  model: cursor-grok-4.6
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - "user job from baseline.yml"
+    - "frozen artifact HTML/CSS/JS + 24 crops"
+    - "Prophet Board sister crops at mockups/refs/prophet_board_priority/ (production family, not Radar)"
+    - "docs/DESIGN_DOCTRINE.md glance budgets + banned vocab"
+  rationale_received_after_first_pass: true
+  not_opened_in_first_pass:
+    - mockups/refs/entry_radar/DESIGN_NOTES.md
+    - mockups/refs/entry_radar/CRITIQUE.md
+    - mockups/refs/entry_radar/FINDING_DISPOSITIONS.md
+    - mockups/refs/entry_radar/W9_IMPLEMENTATION_HANDOFF.md
+    - research/reference_integrity/entry-radar-w8/proposal.yml
+
+first_pass:
+  frozen_at: "2026-08-15T08:40:00Z"
+  verdict: PASS_WITH_CONDITIONS
+  coverage:
+    crops_reviewed:
+      - 01-desktop-dark-en.png
+      - 02-desktop-light-en.png
+      - 03-desktop-dark-zh.png
+      - 04-desktop-light-zh.png
+      - 05-mobile390-dark-en.png
+      - 06-mobile390-dark-zh.png
+      - 07-mobile390-light-en.png
+      - 08-mobile390-light-zh.png
+      - 10-quiet-dark-en.png
+      - 20-stale-dark-en.png
+      - 21-degraded-dark-en.png
+      - 30-multi-dark-en.png
+      - 50-unavailable-dark-en.png
+      - 60-c1-provisional-dark-en.png
+      - 70-anon-dark-en.png
+    computed_checks:
+      - "crop pixel sizes: desktop 1440×1476 (EN) / 1440×1404 (ZH); 390 crops are 390×3913 (EN) and 390×3688 (ZH) — single-column, very tall chrome+cards."
+      - "body { overflow-x: hidden } (radar.css:90) and .pv-zn { white-space: nowrap; overflow: hidden } (radar.css:515). verify.py P8 measures scrollWidth, which overflow-x:hidden zeros. Clip ≠ fit."
+      - "390 hides .bh-purpose (radar.css:594) — the job sentence is gone; .er-sister remains."
+      - "candidate/featured bind --ok (#3da564), not --pv-buy. ZH --down is #45b873. Two greens in one family."
+      - "Light cards: html[data-theme=light] .pvcard { background: #fff } — R4 white-plane lesson kept."
+  findings:
+    - id: VTC-001
+      severity: major
+      finding: >
+        Desktop flagship (01) is a report stacked on a board: purpose + sister
+        line + in-flow REFERENCE note + 30px Probe Set + 5-cell ladder + 8
+        lane pills + stale banner, then cards. Doctrine glance budget is a
+        title and one sentence. Sister language copied Prophet chrome and
+        then added a second essay. Scanning for "which expert, how fresh"
+        starts below the fold of the header.
+    - id: VTC-002
+      severity: major
+      finding: >
+        PRIORITY ACCRUING repeats on every card in 01/02/03/04 — sixteen
+        identical muted labels. A slot that never varies trains the eye to
+        skip it, which is the opposite of reserving the W6 place. Honest
+        emptiness should be quieter (one board-level line, em-dash on the card).
+    - id: VTC-003
+      severity: major
+      finding: >
+        Two cards (FIX.WASH, FIX.TURN) carry an unlabeled --ok aura + 3px
+        crown (radar.css .pvcard.pv-featured). On a candidate-heavy board
+        they read as "more true" than G0/C3 confirmed cards that do not glow.
+        Featured-as-conviction was the Prophet inheritance this surface
+        claimed not to take; the glow is that inheritance without the word.
+    - id: VTC-004
+      severity: major
+      finding: >
+        Candidate / featured / C3 expert chip all sit on --ok / --ink-ok
+        green. Under html[data-lang=zh], tape --down is also green
+        (radar.css:60-61). Direction-neutral was the right rule vs --pv-buy;
+        the leftover is that ZH down-ink and "this is a candidate" are the
+        same family. Crop 03: up-moves are red (correct 红涨) while candidate
+        chrome stays green — a skim can read candidates as the down/avoid set.
+    - id: VTC-005
+      severity: major
+      finding: >
+        390 crops are 390px wide and 3.7–3.9k px tall. Purpose is display:none.
+        Ladder reflows to 3+2 (good — they tried not to hide the live/terminal
+        split). Page overflow-x is hidden, freshness footer is nowrap+clip
+        (.pv-zn). I could not run Playwright this session; I will not claim
+        a horizontal scroll. I will claim the instrument that pins "no
+        hscroll" (verify.py P8 + overflow-x:hidden) cannot see clipped type.
+        06/08 ZH chips (生命周期 预候选, 5分钟前 · 1D LIVE · 临时) are the
+        overflow risk.
+    - id: VTC-006
+      severity: major
+      finding: >
+        Overlay row on a 232px card is lifecycle chip + EXPERT + optional C2
+        variant against a quote reserved 122px (radar.css:419). C2 cards wrap
+        the overlay across the 74px spark (visible on 01 FIX.TURN / 61).
+        Sister geometry is real; so is the collision. 390 being 1-col does
+        not excuse the desktop card, which is the density the grid uses.
+    - id: VTC-007
+      severity: minor
+      finding: >
+        Lifecycle is painted three times: overlay chip, weight-mark + word
+        row, and card hue. Prophet could afford a stance chip plus a rail
+        because they were different vocabularies. Here they are the same
+        word. Density spent on an echo.
+    - id: VTC-008
+      severity: minor
+      finding: >
+        C4 · context only sits in the lane row with the same pill geometry
+        as All/Best/Grey Dot (crop 01). Dashed + aria-disabled is correct;
+        the skim still reads a filter. Better than hiding C4; still a
+        filter-shaped object that does not filter.
+    - id: VTC-009
+      severity: minor
+      finding: >
+        ZH 首选 (Best) and 累计中 (Priority) are visually the same weight
+        as live facts. Hierarchy match EN→ZH is structural (.l-en/.l-zh) and
+        that is right; the ZH words are the stronger claims. 首选 especially
+        outranks the ACCRUING slot next to it.
+    - id: VTC-010
+      severity: minor
+      finding: >
+        Anon (70) is a sparse gate on an empty canvas. Honest copy; it
+        forfeits the board silhouette, so a visitor cannot see the sister
+        product they would pay for. Prophet at least showed one unlocked
+        card. Not a lie — a missed proof.
+  strengths:
+    - "This is actually a sister of the R4 Prophet card — 12px radius, 74px hero, 232px min, chip anatomy, white light plane, weight-only lifecycle marks — not a class-name cargo cult on a new layout."
+    - "Stale / unavailable / degraded / raw are dashed, unlifted, unfeatured. FIX.OLD on crop 01 is visibly not a live candidate. That is the #5555 lesson kept."
+    - "REFERENCE banner is a full-width hashed strip, not a tooltip. Synthetic session pill is the same grammar as Prophet's freshness token."
+    - "Light (02/04) is a white card on a tinted canvas, not the inverted grey plane R3 shipped. ZH tape flip is implemented (03/04 change pills)."
+    - "Printed chart null is 74px with words (REF.ECHO, FIX.HALF) — VTC-301 equal-height lesson kept, when the fixture actually intends a null."
+    - "Quiet empty well is a dashed result, not a broken-page illustration. The copy fight with the 0 Probe Set is a product finding; the well itself is the right object."
+    - "No emoji icons, visible :focus-visible, prefers-reduced-motion kills hover lift."
+
+second_pass:
+  amended_at: "2026-08-15T08:50:00Z"
+  revealed_inputs:
+    - mockups/refs/entry_radar/DESIGN_NOTES.md
+    - mockups/refs/entry_radar/CRITIQUE.md
+    - mockups/refs/entry_radar/FINDING_DISPOSITIONS.md
+    - mockups/refs/entry_radar/W9_IMPLEMENTATION_HANDOFF.md
+  amendments:
+    - finding: VTC-001
+      action: upheld
+      note: >
+        DESIGN_NOTES treat purpose + sister as load-bearing so a Prophet
+        reader does not read Own-It. That sentence earns its place. The
+        in-flow mock-note duplicating the banner, plus eight lanes plus a
+        stale banner on the default board, is still a report. Purpose on
+        desktop can stay; the duplicate REFERENCE paragraph can go.
+    - finding: VTC-002
+      action: upheld
+      note: >
+        Notes say the slot exists so W9 does not invent layout. A board-level
+        "Priority ACCRUING — W6 has not measured" line plus an em-dash on the
+        card keeps the slot without sixteen identical shouts.
+    - finding: VTC-003
+      action: upheld
+      note: >
+        Author VTC-W8-002 RETAIN ("Featured = Best-lane live candidate only")
+        is false against the fixtures (see PRC-004). I will not accept a
+        RETAIN of a glow whose own rule the bytes break.
+    - finding: VTC-004
+      action: upheld
+      note: >
+        Author PRC-W8-002 FIXED the --pv-buy ZH flip and that fix is real
+        (M13). I credit it. The remaining --ok vs ZH --down collision is a
+        different defect and was not in their list.
+    - finding: VTC-005
+      action: upheld
+      note: >
+        Author lists "390px is one column; page overflow-x: hidden" as a
+        strength. That is the instrument I am rejecting as proof. Overlay
+        wrap (their VTC-W8-001 RETAIN) is the same class of "sister geometry
+        excuses a clip."
+    - finding: VTC-006
+      action: upheld
+      note: >
+        This is their VTC-W8-001. I reached it from the CSS and crop 01/61
+        before opening their critique. RETAIN "do not invent a third card
+        width" is a real constraint; it does not make a wrapped overlay on
+        the flagship card good. Condition: drop the C2 variant from the
+        overlay (it already lives on the cohort row / drawer) or drop the
+        quote reservation on C2 cards.
+    - finding: VTC-007
+      action: upheld
+      note: "Unaddressed. One lifecycle carrier on glance is enough."
+    - finding: VTC-008
+      action: upheld
+      note: "Author VTC-W8-004 RETAIN — I agree C4 must stay visible. Held at minor."
+    - finding: VTC-009
+      action: upheld
+      note: "Unaddressed. Structural bilingualism is a strength; 首选/累计中 are the visual authority problem."
+    - finding: VTC-010
+      action: upheld
+      note: "Unaddressed. Not a condition for freeze; a W9 paid-gate crop should show the board silhouette."
+  verdict: PASS_WITH_CONDITIONS
+  closing_note: >
+    As a product this would feel like the Prophet Board's sibling, which is
+    the operator directive, and it would feel slightly more like a research
+    memo than a scan board. The honesty work (banner, demotion, no fake
+    numbers) is visible and good. I would not freeze the unlabeled featured
+    glow, the sixteen ACCRUING stamps, or overflow-x:hidden-as-390-proof as
+    canonical law. I would freeze the card geometry, the weight marks, the
+    light plane, and the demotion language.

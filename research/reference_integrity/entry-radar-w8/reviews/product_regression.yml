@@ -1,0 +1,302 @@
+schema: mastermind.rig_review.v1
+reference_id: entry-radar-w8
+role: product_regression
+artifact_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
+
+reviewer:
+  identity: "independent product-regression critic A — PR #5737 commissioning pass (not author cursor-cloud-w8-entry-radar-9f9d)"
+  role: product_regression_critic
+  model: cursor-grok-4.6
+  independent_of_author: true
+
+quarantine:
+  first_pass_inputs:
+    - "user job + capability ledger: research/reference_integrity/entry-radar-w8/baseline.yml"
+    - "frozen artifact: mockups/refs/entry_radar/{index.html,radar.css,radar.js,radar-data.js}"
+    - "24 committed crops under mockups/refs/entry_radar/crops/"
+    - "contract §13–§15 / §18 A1 (expert preservation, lifecycle ≠ priority)"
+    - "DEC:LER-PROPHET-BOARD-IS-DESIGN-REFERENCE"
+    - "pinned Prophet Board tree d540f493a097 / merge 168a9be00691"
+  rationale_received_after_first_pass: true
+  not_opened_in_first_pass:
+    - mockups/refs/entry_radar/DESIGN_NOTES.md
+    - mockups/refs/entry_radar/CRITIQUE.md
+    - mockups/refs/entry_radar/FINDING_DISPOSITIONS.md
+    - mockups/refs/entry_radar/W9_IMPLEMENTATION_HANDOFF.md
+    - research/reference_integrity/entry-radar-w8/proposal.yml
+  note: >
+    Founding surface — there is no production entry_radar.html to regress against.
+    Judged against the contracted user job, §14 page contract, and Prophet-sister
+    non-inheritance (not against the author's self-critique).
+
+first_pass:
+  frozen_at: "2026-08-15T08:40:00Z"
+  verdict: PASS_WITH_CONDITIONS
+  coverage:
+    crops_reviewed:
+      - 01-desktop-dark-en.png
+      - 02-desktop-light-en.png
+      - 03-desktop-dark-zh.png
+      - 04-desktop-light-zh.png
+      - 05-mobile390-dark-en.png
+      - 06-mobile390-dark-zh.png
+      - 07-mobile390-light-en.png
+      - 08-mobile390-light-zh.png
+      - 10-quiet-dark-en.png
+      - 11-quiet-light-zh.png
+      - 20-stale-dark-en.png
+      - 21-degraded-dark-en.png
+      - 30-multi-dark-en.png
+      - 40-invalidated-dark-en.png
+      - 41-history-dark-en.png
+      - 50-unavailable-dark-en.png
+      - 51-partial-dark-en.png
+      - 52-raw-dark-en.png
+      - 60-c1-provisional-dark-en.png
+      - 61-c2-variant-dark-en.png
+      - 70-anon-dark-en.png
+      - 80-ipo-dark-en.png
+      - 81-lobe-dark-en.png
+    source_files_read:
+      - mockups/refs/entry_radar/index.html
+      - mockups/refs/entry_radar/radar.js
+      - mockups/refs/entry_radar/radar.css
+      - mockups/refs/entry_radar/radar-data.js
+    fixture_checks_run:
+      - "board universe = 16 keys; lifecycle 2 probing + 3 pre_candidate + 11 candidate + 0 invalidated + 0 expired. Arithmetic holds."
+      - "lane counts g0=3 c1=5 c2=3 c3=2 c5=3 = 16. Best filter (candidate ∧ firing ∧ ¬stale ∧ ¬unavailable ∧ ¬degraded ∧ ¬raw) = 10. Matches crop 01."
+      - "featured: true appears on exactly 2 fixtures (c1, c2). Best-eligible candidates = 10. Featured ≠ Best."
+      - "no rows.sort / Array.sort in radar.js. Printed sort rule is not implemented."
+      - "quiet forces probeSet=0 (radar.js:83) while RADAR_COPY.empty says the Probe Set can still be live. Crop 10 shows both sentences."
+      - "stale fixture ep-stale has no spark key; renderer prints 'No path yet' (radar.js:94-96). Stale ≠ missing path."
+      - "card href is #${ticker}; no element id equals a ticker. Dead fragment."
+      - "git ls-tree HEAD templates/entry_radar.html.j2 site/entry_radar.html is empty."
+      - "C4 row expert throws (radar.js:59-61); C4 lane is not a button filter; firing:false in RADAR_EXPERTS."
+      - "research_priority.value is null; data-priority=accruing; no /\\d{2}% likely/; Own-It absent from js/html; no data-life=delivering."
+  findings:
+    - id: PRC-001
+      severity: major
+      capability: contract.freshness_honesty
+      finding: >
+        Required quiet crop (10-quiet-dark-en.png) prints "0 in the Probe Set" because
+        radar.js:83 special-cases quiet to 0, while the empty well (RADAR_COPY.empty)
+        says "The Probe Set can still be live — quiet is a state, not a broken page."
+        The required no-candidates crop teaches two opposite facts on one screen.
+    - id: PRC-002
+      severity: major
+      capability: contract.no_fabricated_edge
+      finding: >
+        Every non-empty crop prints "Sorted by lifecycle, then expert identity" but
+        radar.js never sorts — rows follow authored RADAR_STATES order. A printed
+        ranking rule that the renderer does not implement is a fabricated order.
+    - id: PRC-003
+      severity: major
+      capability: contract.no_fabricated_edge
+      finding: >
+        The Best lane (crop 01 "Best 10"; ZH "首选 10") is an unmeasured rank —
+        all non-stale firing candidates — sitting next to Priority ACCRUING.
+        Contract §14 names the lane; it does not license a counted "best" without W6.
+        首选 is stronger than Best.
+    - id: PRC-004
+      severity: major
+      capability: contract.no_fabricated_edge
+      finding: >
+        Silent pv-featured aura on FIX.WASH and FIX.TURN only (radar-data.js
+        featured:true ×2). Ten cards pass the Best filter; two glow. No Featured
+        label. Fabricated importance without a measured Priority.
+    - id: PRC-005
+      severity: major
+      capability: contract.freshness_honesty
+      finding: >
+        Provisional C1 and confirmed C3/G0 share the same filled-green CANDIDATE
+        chip and --ok spark (radar.css .er-cand .pv-chip.er-lifechip). Distinction
+        lives on the cohort/footer line only. Contract §14: 1D LIVE · provisional
+        never masquerades as Daily confirmed. Footer is honest; the strongest
+        glance mark is not.
+    - id: PRC-006
+      severity: major
+      capability: contract.freshness_honesty
+      finding: >
+        state=stale / FIX.OLD (crop 20) renders "No path yet" because the stale
+        fixture omits spark. Stale is a freshness fact, not a missing path.
+        Demotion CSS is correct (dashed, no lift); the null is the wrong null.
+    - id: PRC-007
+      severity: major
+      capability: sister.prophet_card_language
+      finding: >
+        Contract §14 glance anatomy requires component states (1D Stoch / MACD-RSI /
+        Structure / Lobe evidence) and a zone + invalidation footer. Neither slot
+        exists, even as UNAVAILABLE / ACCRUING. Footer is freshness-only.
+        Invalidation is drawer-only. A founding reference that omits contracted
+        slots teaches W9 the reduced card as law.
+    - id: PRC-008
+      severity: major
+      capability: sister.prophet_card_language
+      finding: >
+        Contract §14 drawer order requires why-now, what is recovering, still
+        structurally strong, risk geometry / asymmetry, what else sees it (lobes),
+        trustworthiness / sample, and a fire-path mini chart (arm / trough / turn /
+        promotion). The drawer is why-here / why-armed / why-candidate / C2 / C4 /
+        invalidation / expiry / Opportunity / clocks / history / siblings.
+        Opportunity is the only honest empty slot; the rest were never reserved.
+    - id: PRC-009
+      severity: minor
+      capability: contract.expert_identities
+      finding: >
+        Arena experts G0/C1/C2/C3/C5 are unflat (one card per ticker×expert;
+        FIX.MANY = three episodes). Recorded Terminal families from §18 A1
+        (amber EARLY, STARTER pending/failed, RE-ENTRY reclaim/repair) have no
+        lane or card identity. Intelligence = C5 only. No slot means W9 can
+        flatten those families by omission.
+    - id: PRC-010
+      severity: major
+      capability: surface.absent
+      finding: >
+        Cards are full-hit-target links to #${ticker} (radar.js:179;
+        .pv-open::after inset:0) with hover underline + lift. No element carries
+        id=ticker. This is Prophet PRC-301 (affordance without destination)
+        restated as an in-page hash. Founding surface has no stock.html — the
+        honest form is no link, not a fake one.
+    - id: PRC-011
+      severity: minor
+      capability: contract.no_fabricated_edge
+      finding: >
+        Priority prints ACCRUING on unavailable, stale, probing, and degraded
+        cards (crop 50 FIX.VOID, crop 20 FIX.OLD). The number is correctly
+        absent; the word implies a live measurement on a null reading. W6 has
+        not started.
+    - id: PRC-012
+      severity: minor
+      capability: contract.no_fabricated_edge
+      finding: >
+        ZH Priority slot is 累计中 (RADAR_COPY.pri_accruing). That reads as a
+        running total being summed, not "not yet measured." Opportunity's
+        尚未测量 is the honest twin.
+    - id: PRC-013
+      severity: minor
+      capability: contract.freshness_honesty
+      finding: >
+        Drawer heading "Why candidate / fired" (RADAR_COPY.drawer.why_cand)
+        renders on probing / unavailable / pre-candidate cards whose body says
+        they have not fired (crop 50, C5). The heading overclaims; the body does not.
+    - id: PRC-014
+      severity: minor
+      capability: contract.freshness_honesty
+      finding: >
+        Default-board Candidate cell is 11 and includes FIX.OLD (stale). Best
+        excludes it (10). Lifecycle≠freshness is correct per §13, but the
+        Candidate cell does not disclose that 1 of 11 is demoted. The page
+        banner does; the integer does not.
+  strengths:
+    - "G0/C1/C2/C3/C5 stay distinct; C2 variants are inspectable; FIX.MANY is three episode cards with three freshness clocks — not one entry_signal."
+    - "C4 cannot be a row expert (throw), cannot be a lane filter, and renders as dashed context only. DNR:KILL-WASHOUT-TURN is respected on the surface."
+    - "No Priority number, no Opportunity number, no 92% likely, no Own-It, no seven-cell plan ladder, no entry/target/void on the card or in the anon gate."
+    - "Provisional / nightly-confirmed / confirmed-4H / STALE / UNAVAILABLE / raw-basis / DEGRADED are distinct footer strings, not tooltip-only."
+    - "False-start count is on the card (FIX.AGAIN); invalidated episode is retained (FIX.FAKE)."
+    - "REFERENCE · SYNTHETIC · NOT PRODUCTION banner is on every state including anon. Tickers are REF.*/FIX.*. No templates/entry_radar.html.j2 or site/entry_radar.html on the branch."
+    - "Anon gate lists what the paid board shows and explicitly refuses levels and win probability — the inverse of Prophet PRC-302."
+
+second_pass:
+  amended_at: "2026-08-15T08:50:00Z"
+  revealed_inputs:
+    - mockups/refs/entry_radar/DESIGN_NOTES.md
+    - mockups/refs/entry_radar/CRITIQUE.md
+    - mockups/refs/entry_radar/FINDING_DISPOSITIONS.md
+    - mockups/refs/entry_radar/W9_IMPLEMENTATION_HANDOFF.md
+    - research/reference_integrity/entry-radar-w8/proposal.yml
+  amendments:
+    - finding: PRC-001
+      action: upheld
+      note: >
+        Author PRC-W8-005 ACCEPT_FOR_W8 records that quiet forces 0 and treats
+        it as fixture metadata. It does not address the empty-well sentence that
+        contradicts the 0. DESIGN_NOTES §2 says "Probe Set may still be non-zero
+        on other states" and the empty copy still claims the Probe Set can be
+        live on this view. Revealed rationale confirms the contradiction was
+        seen and filed as acceptable. I do not accept a required crop that
+        argues with itself.
+    - finding: PRC-002
+      action: upheld
+      note: >
+        Unmentioned in the author critique. DESIGN_NOTES do not claim a sort
+        implementation. The lie is only in the user-facing setups-bar copy.
+    - finding: PRC-003
+      action: upheld
+      note: >
+        Contract §14 names Best; I do not ask the lane to disappear. What the
+        rationale does not justify is a counted 首选/Best without W6 and without
+        an ACCRUING qualifier on the lane itself.
+    - finding: PRC-004
+      action: upheld
+      note: >
+        Aggravated by the reveal. DESIGN_NOTES §0 and author VTC-W8-002 claim
+        featured aura is "a Best-lane mark only" / "Featured = Best-lane live
+        candidate only." Fixtures refute that: Best=10, featured=2, and the
+        glow has no label. A documented rule that the bytes do not implement
+        is worse than an undocumented glow.
+    - finding: PRC-005
+      action: upheld
+      note: >
+        Author did not raise this. DESIGN_NOTES §2 says provisional treatment
+        is "dashed provisional freshness; never Daily confirmed." Footer/cohort
+        satisfy the letter. The filled CANDIDATE chip + --ok spark still give
+        provisional and confirmed the same glance authority. Held at major.
+    - finding: PRC-006
+      action: upheld
+      note: >
+        Unmentioned. Stale fixture simply has no spark; the 74px printed-null
+        lesson (VTC-301) was applied to the wrong absence.
+    - finding: PRC-007
+      action: upheld
+      note: >
+        Aggravated. DESIGN_NOTES §1 redefines glance anatomy downward (no
+        component states, no zone/invalidation footer). W9_IMPLEMENTATION_HANDOFF
+        CAN COPY NOW lists that reduced card as copyable law. proposal.yml has
+        no BLOCKED_DATA row for the omitted §14 slots. This is how a contract
+        page is laundered into a smaller one.
+    - finding: PRC-008
+      action: upheld
+      note: >
+        Same laundering. Drawer order in DESIGN_NOTES §1 is the reduced list.
+        W4 wait-list names live fields, not "do not reserve the slots."
+        Priority/Opportunity show they know how to reserve an honest empty;
+        they reserved only those two.
+    - finding: PRC-009
+      action: downgraded
+      note: >
+        W8 scope is the arena (G0/C1–C5). A1 is ledger law; a UI reference
+        that does not invent STARTER/RE-ENTRY lanes before PR-2 family keys
+        is correct. Residual, still minor: W9 handoff must say recorded
+        Terminal families are not Intelligence synonyms when they appear.
+    - finding: PRC-010
+      action: upheld
+      note: >
+        Aggravated. DESIGN_NOTES §5 claims Radar refuses Prophet PRC-301
+        because "ticker is a real in-page link." The bytes are href="#FIX.WASH"
+        with no matching id. They named the R4 defect, claimed it closed, and
+        shipped the same shape. Founding BLOCKED_DATA (no stock.html) would
+        have been an honest no-link card.
+    - finding: PRC-011
+      action: upheld
+      note: "Unaddressed. ACCRUING as the W6 slot preview is fine; printing it on UNAVAILABLE is not."
+    - finding: PRC-012
+      action: upheld
+      note: "Unaddressed. 尚未测量 already exists on the Opportunity slot."
+    - finding: PRC-013
+      action: upheld
+      note: "Unaddressed. Branch the heading on lifecycle or say Why this row."
+    - finding: PRC-014
+      action: upheld
+      note: "Author banner is the disclosure; the Candidate integer still includes the stale row. Held at minor."
+  verdict: PASS_WITH_CONDITIONS
+  closing_note: >
+    I did not rubber-stamp the author pass. The attack list the commissioning
+    brief named is mostly clean: sister language without Own-It or seven-cell
+    plans; experts unflat; C4 not a fire; no fabricated Priority/Opportunity
+    number; stale/unavailable/raw/degraded are not live fires; no production
+    entry_radar.html; ACCRUING / NOT YET MEASURED slots exist. What fails
+    freeze-as-W9-law is a set of copy and slot lies — quiet crop vs 0 Probe
+    Set, a sort rule that is not a sort, Best/首选 as an unmeasured rank,
+    featured documented as Best and implemented as two silent glows, §14
+    anatomy omitted then listed as CAN COPY, and a dead #ticker link claimed
+    as the PRC-301 close. Conditions, not a rewrite.
