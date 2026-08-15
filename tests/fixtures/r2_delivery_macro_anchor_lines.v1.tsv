@@ -7,6 +7,7 @@
 # path	line	text
 .github/workflows/daily.yml	2747	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
 .github/workflows/daily.yml	4999	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
 app/biocatalyst.py	2331	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
@@ -60,6 +61,8 @@ engine/research_vault/ingest.py	55	VAULT_PREFIX = "research_vault/"
 engine/research_vault/ingest.py	56	CORPUS_KEY = "research_vault/corpus.sqlite"
 engine/research_vault/ingest.py	142	def _receipt_key(item_id: str) -> str:
 engine/research_vault/r2_store.py	1	"""research_vault.r2_store — object store for the PRIVATE research bucket.
+lib/commercial_path.py	75	return Path(os.environ.get("MACRO_API_STATE_DIR", "/var/lib/macro-api")) / "commercial_path"
+lib/commercial_path.py	79	return state_dir(root) / "events" / f"{_utc(day).strftime('%Y-%m-%d')}.jsonl"
 lib/mastermind_response_log.py	1	"""Mastermind AI response log — the shared write contract for every user-facing
 lib/mastermind_response_log.py	318	"""R2 key for a row: mastermind_response_logs/<surface>/<date>/<id>.json.
 ops/THETADATA_R2_SYNC_RUNBOOK.md	1	# ThetaData EOD store — nightly R2 offsite sync
@@ -96,6 +99,7 @@ scripts/build_tape_flow_daily.py	18	State file      : data/tape_flow/_state.json
 scripts/calibrate_thetadata_tape_sessions.py	12	to data/options_flow/tape_signing_sessions.jsonl (append-only; never rewritten).
 scripts/close_pass_publish.py	50	BOARD_KEY = "live_flow/us_board_provisional.json"
 scripts/close_pass_reconcile.py	39	RECEIPT_KEY = "live_flow/us_board_confirmation.json"
+scripts/commercial_path_sentinel.py	59	def _transports(now: datetime):
 scripts/freshness_sentinel.py	49	Read from the served tree on disk (SERVED_DIR, default the Caddyfile's
 scripts/institutional_13f_r2_conformance.py	36	CONFORMANCE_KEY_PREFIX = f"{EVIDENCE_PREFIX}/conformance/v1"
 scripts/live_flow_poller.py	30	New R2 objects emitted each cycle (live_flow/ prefix):

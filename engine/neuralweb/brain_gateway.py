@@ -68,6 +68,15 @@ def _brain_quota_dir() -> Path:
     return _STATE_DIR / "brain_quota"
 
 
+def _commercial_emit(kind: str, **fields) -> None:
+    """GATE-4 emit. Never raises — alerting must not break a paying turn."""
+    try:
+        from lib.commercial_path import emit
+        emit(kind, **fields)
+    except Exception:  # noqa: BLE001
+        pass
+
+
 # ---------------------------------------------------------------------------
 # Config loader (MNZ-R12: config-not-literals; hardcoded fallbacks if absent)
 # ---------------------------------------------------------------------------
@@ -4473,6 +4482,7 @@ def _write_quota(path: Path, data: dict) -> None:
         # never lock out paying users), but make it LOUD so ops sees it, not a swallowed warn.
         log.error("::error::brain_gateway: QUOTA WRITE FAILED (%s) — ledger not advancing, "
                   "usage uncapped until the state dir is writable", exc)
+        _commercial_emit("quota.fail_open", reason="write_failed")
 
 
 def _check_and_increment_quota(
@@ -4513,6 +4523,7 @@ def _check_and_increment_quota(
     except Exception as exc:  # noqa: BLE001
         log.error("::error::brain_gateway: QUOTA DIR UNAVAILABLE (%s) — fail-open, usage "
                   "uncapped until the state dir is writable", exc)
+        _commercial_emit("quota.fail_open", reason="dir_unavailable", lane=lane)
         return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "unknown"}
 
     allowance = _get_allowance(tier, status, lane, root)
@@ -4618,6 +4629,7 @@ def _check_and_increment_guest_quota(
         _brain_quota_dir().mkdir(parents=True, exist_ok=True)
     except Exception as exc:  # noqa: BLE001
         log.error("::error::brain_gateway: GUEST QUOTA DIR UNAVAILABLE (%s) — fail-open", exc)
+        _commercial_emit("quota.fail_open", reason="guest_dir_unavailable", lane=lane)
         return True, {"lane": lane, "remaining": -1, "limit": -1, "period": "day"}
 
     pk = _period_key("day", "active", None)
@@ -4667,6 +4679,24 @@ def _record_token_usage(user_id: str, lane: str, input_tokens: int, output_token
         _write_quota(tf, tdata)
     except Exception as exc:  # noqa: BLE001
         log.warning("brain_gateway: token ceiling record failed (%s)", exc)
+    try:
+        usd = None
+        try:
+            from lib.ai_costs import estimate_cost_usd
+            model = "claude-haiku-4-5" if lane == "fast" else "claude-opus-5"
+            usd = estimate_cost_usd(model, int(input_tokens or 0), int(output_tokens or 0))
+        except Exception:  # noqa: BLE001
+            usd = None
+        if usd is None:
+            usd = (int(input_tokens or 0) * 3 + int(output_tokens or 0) * 15) / 1_000_000
+        _commercial_emit(
+            "llm.spend",
+            usd=round(float(usd), 6),
+            lane=lane,
+            tokens=int(input_tokens or 0) + int(output_tokens or 0),
+        )
+    except Exception:  # noqa: BLE001
+        pass
 
 
 # ---------------------------------------------------------------------------

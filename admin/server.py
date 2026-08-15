@@ -35,7 +35,8 @@ from . import (actions, ai_cost, alerts as _alerts_mod, allies_store, analytics_
                codex_panel,
                config_store,
                content, context_lobe, edge_trust, email_center, entitlements, experiments,
-               flags, ga4, github_api, github_config, gitops, health, key_alerts, long_hold,
+               flags, ga4, github_api, github_config, gitops, health, intelligence_os,
+               key_alerts, long_hold,
                live_runs,
                macro_thesis,
                marketing,
@@ -1028,6 +1029,18 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json(
                         {"error": f"achievements unavailable: {_ae}", "cycles": []}, 503
                     )
+
+            # Eval OS — the derived T1 (engine census) + T4 (output health) estate.
+            # Read-only and derived on demand: the module writes nothing, ever, and holds
+            # its own 5-minute in-process cache keyed on the registry's mtimes. That
+            # cache, not the 15s HTTP one above, is what keeps a click off a full
+            # 642-artifact walk; `?force=1` bypasses BOTH, which is the only combination
+            # that actually re-derives.
+            if path == "/api/intelligence_os":
+                return self._json(intelligence_os.panel(
+                    force=(q.get("force") or ["0"])[0].lower() in {"1", "true", "yes", "on"}))
+            if path == "/api/intelligence_os/engine":
+                return self._json(intelligence_os.engine_detail((q.get("id") or [""])[0]))
 
             return self._json({"error": f"unknown route {path}"}, 404)
         except Exception as e:  # noqa: BLE001

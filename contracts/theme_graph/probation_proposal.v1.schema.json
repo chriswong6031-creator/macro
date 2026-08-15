@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/probation_proposal.v1.schema.json",
+  "title": "GMI theme-graph probation proposal v1",
+  "description": "One LINE of data/theme_graph/probation/proposals.jsonl (append-only JSONL). NOTHING HERE IS PRODUCTION VOCABULARY: the graph build ignores every row whose status is not 'ratified', and ratification is a curated act (G0.6/G0.13 — a string match or an overlap statistic may never promote itself into an edge). Rows are keep-first on proposal_id, a deterministic hash of the proposal's subject, so re-running a proposer re-proposes nothing and never overwrites a curator's decision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal_id", "kind", "subject", "proposed_by", "created", "status"],
+  "properties": {
+    "proposal_id": {
+      "type": "string",
+      "pattern": "^prop:[0-9a-f]{16}$",
+      "description": "'prop:' + sha1(kind|subject)[:16]. Deterministic: the same finding on the same subject is the same row."
+    },
+    "kind": {
+      "enum": ["new_theme", "merge", "split", "mapping", "key_rename", "identity_continuity"],
+      "description": "What is being proposed. key_rename and identity_continuity come from the refresh path (a source key or a ticker that may have been renamed rather than deleted-and-added); mapping and new_theme from the overlap and coverage-gap diagnostics."
+    },
+    "subject": {
+      "type": "object",
+      "description": "What the proposal is about — the ids/keys involved. Hashed into proposal_id, so it is the row's identity, not commentary."
+    },
+    "evidence": {
+      "type": "object",
+      "description": "The statistics or observations behind the proposal (overlap counts, Jaccard, containments, member-set signatures). Free-form by design: a curator needs the numbers that were actually computed, not a lowest-common-denominator subset of them."
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {"type": "string", "minLength": 1},
+      "description": "evidence_id values or artifact paths supporting the proposal."
+    },
+    "proposed_by": {
+      "enum": ["coverage_gap", "overlap_stats", "refresh_identity", "llm_proposed"],
+      "description": "Which organ proposed it. A proposal whose origin is not named cannot be audited later. llm_proposed is registered here so an LLM proposal is visibly a PROPOSAL and can never be mistaken for a minted fact."
+    },
+    "created": {"type": "string", "minLength": 1},
+    "status": {"enum": ["proposed", "ratified", "rejected"]},
+    "ratified_by": {
+      "type": ["string", "null"],
+      "description": "The operator or delegated curation session that ratified. Required when status=ratified, forbidden otherwise — a ratification without an author is not a ratification."
+    },
+    "note": {"type": ["string", "null"]}
+  }
+}

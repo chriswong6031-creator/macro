@@ -1,7 +1,7 @@
 {
-  "study": "SP1-A",
-  "generated": "2026-08-15T02:18:07.844994+00:00",
-  "verdict": "H0 DOES NOT REPLICATE (sign is positive, significant only in the WRONG direction) \u2014 per the prereg the branch tests H1/H2 are UNINTERPRETABLE and SP1-A is a NULL",
+  "study": "SP1-B",
+  "generated": "2026-08-15T06:37:11.905556+00:00",
+  "verdict": "H0 DOES NOT REPLICATE (sign is positive, significant only in the WRONG direction) \u2014 per the prereg the branch tests H1/H2 are UNINTERPRETABLE and SP1-B is a NULL",
   "h0_replicates": false,
   "diagnostics": {
     "price_panel_coverage_pct_by_dtc_quintile": {
@@ -23,96 +23,96 @@
     "n_full_universe_at_sample_date": 5616,
     "n_study_universe_at_sample_date": 1289
   },
-  "prereg": "research/short_side/SP1_SHORT_PRESSURE_PREREG.md (\u00a75 + Amendment 1)",
-  "events": 222367,
-  "entry_dates": 193,
-  "tickers": 1723,
+  "prereg": "research/short_side/SP1_SHORT_PRESSURE_PREREG.md (\u00a75C SUPERSESSION 1)",
+  "events": 229486,
+  "entry_dates": 200,
+  "tickers": 1715,
   "window": [
-    "2018-02-12",
-    "2026-06-10"
+    "2018-01-25",
+    "2026-05-12"
   ],
-  "median_names_per_date": 1186,
+  "median_names_per_date": 1183,
   "survivorship_caveat": "data/yahoo/ is the CURRENT universe; delisted names are absent. Biases AGAINST H1, so a null H1 is not decisive and no effect size here is unbiased.",
   "panel_lag_convention": "8 NYSE sessions after settlement (CORRECTED rule, lib/finra_knowable.py)",
   "calendar_audit": {
-    "index_rows_in_event_window": 3041,
-    "weekend_rows_in_event_window": 868,
-    "weekend_row_pct": 28.5,
-    "21_row_step_spans_weekday_sessions": 15,
-    "63_row_step_spans_weekday_sessions": 45
+    "index_rows_in_event_window": 2085,
+    "weekend_rows_in_event_window": 0,
+    "weekend_row_pct": 0.0,
+    "21_row_step_spans_weekday_sessions": 21,
+    "63_row_step_spans_weekday_sessions": 63
   },
   "results": [
     {
       "test": "H0 high-DTC minus low-DTC",
       "horizon": 21,
-      "n_dates": 185,
-      "mean_pp": 0.782,
-      "t_nw": 3.06,
-      "p": 0.0022,
-      "h1_pp": 0.614,
-      "h2_pp": 0.934,
+      "n_dates": 200,
+      "mean_pp": 0.749,
+      "t_nw": 2.09,
+      "p": 0.0363,
+      "h1_pp": 0.276,
+      "h2_pp": 1.177,
       "both_halves_same_sign": true,
-      "q_bh": 0.0022
+      "q_bh": 0.0363
     },
     {
       "test": "H1 top-DTC price-weak minus top-DTC",
       "horizon": 21,
-      "n_dates": 185,
-      "mean_pp": 0.241,
-      "t_nw": 0.85,
-      "p": 0.3975,
-      "h1_pp": 0.066,
-      "h2_pp": 0.4,
-      "both_halves_same_sign": true,
-      "q_bh": 0.795
+      "n_dates": 200,
+      "mean_pp": 0.281,
+      "t_nw": 0.77,
+      "p": 0.4406,
+      "h1_pp": -0.064,
+      "h2_pp": 0.594,
+      "both_halves_same_sign": false,
+      "q_bh": 1.0
     },
     {
       "test": "H2 top-DTC price-strong minus top-DTC",
       "horizon": 21,
-      "n_dates": 185,
-      "mean_pp": 0.039,
-      "t_nw": 0.21,
-      "p": 0.8351,
-      "h1_pp": 0.01,
-      "h2_pp": 0.066,
+      "n_dates": 200,
+      "mean_pp": 0.24,
+      "t_nw": 0.98,
+      "p": 0.328,
+      "h1_pp": 0.313,
+      "h2_pp": 0.174,
       "both_halves_same_sign": true,
-      "q_bh": 1.0
+      "q_bh": 0.656
     },
     {
       "test": "H0 high-DTC minus low-DTC",
       "horizon": 63,
-      "n_dates": 193,
-      "mean_pp": 0.902,
-      "t_nw": 1.29,
-      "p": 0.1972,
-      "h1_pp": 0.22,
-      "h2_pp": 1.523,
-      "both_halves_same_sign": true,
-      "q_bh": 0.2366
+      "n_dates": 200,
+      "mean_pp": 0.959,
+      "t_nw": 1.01,
+      "p": 0.3131,
+      "h1_pp": -0.295,
+      "h2_pp": 2.094,
+      "both_halves_same_sign": false,
+      "q_bh": 0.4697
     },
     {
       "test": "H1 top-DTC price-weak minus top-DTC",
       "horizon": 63,
-      "n_dates": 193,
-      "mean_pp": 0.663,
-      "t_nw": 1.07,
-      "p": 0.2858,
-      "h1_pp": 0.398,
-      "h2_pp": 0.905,
-      "both_halves_same_sign": true,
-      "q_bh": 0.4287
+      "n_dates": 200,
+      "mean_pp": 0.872,
+      "t_nw": 0.93,
+      "p": 0.3545,
+      "h1_pp": -0.835,
+      "h2_pp": 2.416,
+      "both_halves_same_sign": false,
+      "q_bh": 1.0
     },
     {
       "test": "H2 top-DTC price-strong minus top-DTC",
       "horizon": 63,
-      "n_dates": 193,
-      "mean_pp": 0.267,
-      "t_nw": 0.59,
-      "p": 0.556,
-      "h1_pp": 0.555,
-      "h2_pp": 0.005,
+      "n_dates": 200,
+      "mean_pp": 0.735,
+      "t_nw": 1.37,
+      "p": 0.1717,
+      "h1_pp": 1.138,
+      "h2_pp": 0.37,
       "both_halves_same_sign": true,
-      "q_bh": 1.0
+      "q_bh": 0.206
     }
   ]
 }

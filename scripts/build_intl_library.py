@@ -359,6 +359,11 @@ def main(alpha: dict | None = None) -> dict | None:
         uni.append((ticker, closes[ticker], str(m["name"]), str(m["sector"]),
                     str(m["flag"]), str(m["market"])))
     recs = _analyze_universe(uni)           # parallel analyze() fan-out (order-preserving)
+    # session date for conviction provenance + B2 accrual. compute_intl_alpha
+    # never carries as_of, so this is alpha as_of → library tip → wall-clock
+    # (same helper the name-score append uses / will use after PR #5683).
+    _session_asof, _ = _intl_session_asof(
+        alpha, [(item[0], rec) for item, rec in zip(uni, recs) if rec])
     profiles: dict[str, dict] = {}
     sig_verdict: dict[str, dict] = {}       # owner's confluence T1->T4 cascade verdict per name
     to_write: list[tuple[str, dict]] = []
@@ -402,7 +407,7 @@ def main(alpha: dict | None = None) -> dict | None:
         # fall-through that calling conviction_profile(rec, "INTL") used to hit.
         norm = stock_score.normalize_rec(rec, "INTL")
         rec["conviction"] = stock_score.conviction_profile(
-            norm, "INTL", ctx={"as_of": (alpha or {}).get("as_of")})
+            norm, "INTL", ctx={"as_of": _session_asof})
         # ---- POTENTIAL score (engine/name_score, INTL) — front-running buy-readiness ----
         # Cycle-trigger timing blended with the residual-momentum prior. Overridden below.
         try:
@@ -458,7 +463,7 @@ def main(alpha: dict | None = None) -> dict | None:
     # demotion study can run once ≥180 trading days accrue. Write-only ledger, never fatal.
     try:
         from engine import conviction_accrual
-        _b2_asof = (alpha or {}).get("as_of")
+        _b2_asof = _session_asof
         if conviction_accrual.archive_member_conviction("intl", profiles, asof=_b2_asof):
             log.info("B2 conviction accrual: archived conviction_intl for %s", _b2_asof)
     except Exception as e:  # noqa: BLE001 — additive, never fatal

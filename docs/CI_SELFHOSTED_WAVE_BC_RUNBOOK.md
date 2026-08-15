@@ -47,7 +47,7 @@ from that maintained shallow `main`; they do not claim that unreachable historic
 promisor fragments form complete history. Full current-tree checkout with lazy fetch
 disabled is the materialization acceptance boundary.
 
-Before `actions/checkout`, the root-owned prewarm program:
+Before candidate materialization, the root-owned prewarm program:
 
 1. validates the cache owner, modes, identity marker, bare-repository state, origin,
    and frozen base commit/tree;
@@ -55,8 +55,9 @@ Before `actions/checkout`, the root-owned prewarm program:
 3. writes only the runner workspace's `objects/info/alternates`;
 4. creates `refs/cache/main`, so fetch negotiation advertises the local base;
 5. materializes the frozen base locally with lazy fetching disabled; and
-6. hands the prepared repository to `actions/checkout@v4` for the exact candidate
-   ref.
+6. hands the prepared repository to a credential-free, filtered fetch of the exact
+   immutable candidate SHA using normal Git negotiation; the job then detaches that
+   SHA and asserts `HEAD` exactly.
 
 There is no direct-origin fallback. The live negative-control job passes an absent
 cache and requires exit 66 before `.git` exists.

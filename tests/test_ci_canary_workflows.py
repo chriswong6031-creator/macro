@@ -34,7 +34,7 @@ def test_normal_ci_and_fences_remain_hosted() -> None:
         assert job["runs-on"] == "ubuntu-latest"
 
 
-def test_selfhosted_checkout_is_cache_preceded_and_exact_sha_verified() -> None:
+def test_selfhosted_checkout_is_cache_preceded_negotiated_and_exact_sha_verified() -> None:
     document = workflow("selfhosted-ci-canary.yml")
     steps = document["jobs"]["selfhosted-pack"]["steps"]
     prewarm = next(
@@ -42,9 +42,21 @@ def test_selfhosted_checkout_is_cache_preceded_and_exact_sha_verified() -> None:
         for i, step in enumerate(steps)
         if step.get("name", "").startswith("prewarm exact base")
     )
-    checkout = next(i for i, step in enumerate(steps) if step.get("uses") == "actions/checkout@v4")
-    assert prewarm < checkout
+    materialize = next(
+        i
+        for i, step in enumerate(steps)
+        if step.get("name", "").startswith("materialize exact candidate")
+    )
+    assert prewarm < materialize
     assert "/usr/local/libexec/mastermind-ci-prewarm" in str(steps[prewarm])
+    command = steps[materialize]["run"]
+    assert "fetch.negotiationAlgorithm=skipping" in command
+    assert "--filter=blob:none --depth=1" in command
+    assert 'origin "$TESTED_SHA"' in command
+    assert command.index("extraheader") < command.index("git -c credential.helper=")
+    assert "GIT_TERMINAL_PROMPT=0" in command
+    assert "GIT_ASKPASS=/bin/false" in command
+    assert all(step.get("uses") != "actions/checkout@v4" for step in steps)
     assert "git rev-parse HEAD" in str(steps)
     assert ".git/objects/info/alternates" in str(steps)
 
@@ -76,6 +88,9 @@ def test_m1_canary_has_no_old_generic_route_or_checkout() -> None:
     assert "refs/heads/main" in str(document["jobs"]["trust-gate"])
     assert not {"macstudio", "macstudio-light", "theta-m1", "codex", "render-heavy"} & set(job["runs-on"])
     assert all("uses" not in step for step in job["steps"])
+    command = job["steps"][0]["run"]
+    assert "pgrep -f 'Runner.Listener' | wc -l" in command
+    assert "pgrep -fc" not in command
 
 
 def test_every_candidate_checkout_uses_the_frozen_sha_not_the_movable_merge_ref() -> None:
@@ -83,14 +98,25 @@ def test_every_candidate_checkout_uses_the_frozen_sha_not_the_movable_merge_ref(
     rendered = str(document)
     assert "steps.ref.outputs.tested_sha" in rendered
     assert rendered.count("needs.plan.outputs.tested_sha") >= 4
-    for job_name in ("hosted-control", "selfhosted-pack"):
-        checkout = next(
-            step
-            for step in document["jobs"][job_name]["steps"]
-            if step.get("uses") == "actions/checkout@v4"
-            and "tested_sha" in str(step.get("with", {}).get("ref", ""))
-        )
-        assert "tested_ref" not in str(checkout)
+    checkout = next(
+        step
+        for step in document["jobs"]["hosted-control"]["steps"]
+        if step.get("uses") == "actions/checkout@v4"
+        and "tested_sha" in str(step.get("with", {}).get("ref", ""))
+    )
+    assert "tested_ref" not in str(checkout)
+    selfhosted = str(document["jobs"]["selfhosted-pack"]["steps"])
+    assert "needs.plan.outputs.tested_sha" in selfhosted
+    assert "needs.plan.outputs.tested_ref" not in selfhosted
+
+
+def test_contamination_probe_reuses_the_cache_without_an_origin_checkout() -> None:
+    steps = workflow("selfhosted-ci-canary.yml")["jobs"]["contamination-probe"]["steps"]
+    assert all(step.get("uses") != "actions/checkout@v4" for step in steps)
+    detach = next(step for step in steps if step.get("name", "").startswith("detach the second"))
+    assert detach["env"]["GIT_NO_LAZY_FETCH"] == "1"
+    assert "needs.plan.outputs.contamination_sha" in detach["run"]
+    assert "git fetch" not in detach["run"]
 
 
 def test_process_contamination_probe_intentionally_abandons_and_then_rejects_a_child() -> None:

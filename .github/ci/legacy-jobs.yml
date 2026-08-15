@@ -1516,6 +1516,11 @@ jobs:
       # The Stock Connect leaderboard shape/render contract also lives here: it imports
       # scripts/build_china.py and renders the real China template, using the pandas /
       # pyarrow / jinja2 dependency set this job already owns.
+      #
+      # test_intl_session_asof.py (#5706) pins _intl_session_asof and the two
+      # conviction-profile / B2 sites in scripts/build_intl_library.py. It belongs
+      # next to test_intl_library_limited.py on this same run: line — same subject,
+      # same pandas/pyarrow install, no new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1619,6 +1624,7 @@ jobs:
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
+          tests/test_intl_session_asof.py
           tests/test_library_chg_1d.py
           tests/test_stock_technicals.py
           tests/test_aibrief_page.py
@@ -2292,7 +2298,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
-        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_intelligence_os.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
       - name: Neural Web constitution A0-A7 regression (A7 refusal + Wilson-gate sweep)
         run: python -m pytest tests/test_constitution.py -q
       - name: Mastermind semantic registry + generated global system map
@@ -2373,6 +2379,22 @@ jobs:
     # narrow those.
     scope: exclusive
     paths:
+      # Eval OS T4 additions. app/: reached through scripts/freshness_sentinel.py, which
+      # T4's reader-plane adapter imports for the surface table rather than copying it;
+      # the sentinel's alert path imports app.mailer lazily and the closure walker sees
+      # it. Named files, not `app/**` — the job touches these two and nothing else under
+      # app/. lib/dataos/: the WHOLE package, enumerated per the 2026-08-15 lib idiom —
+      # lib/dataos/__init__.py re-exports every sibling, so importing the temporal model
+      # executes all seven files and all seven are genuinely in this job's closure.
+      - "app/__init__.py"
+      - "app/mailer.py"
+      - "lib/dataos/__init__.py"
+      - "lib/dataos/identity.py"
+      - "lib/dataos/nulls.py"
+      - "lib/dataos/price.py"
+      - "lib/dataos/quality.py"
+      - "lib/dataos/registry.py"
+      - "lib/dataos/temporal.py"
       - "collectors/__init__.py"
       - "collectors/_drip.py"
       - "collectors/base.py"
@@ -2443,6 +2465,7 @@ jobs:
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
+      - "scripts/build_output_health.py"
       - "scripts/build_rr_banner.py"
       - "scripts/build_site.py"
       - "scripts/build_sp500_heatmap.py"
@@ -2463,6 +2486,7 @@ jobs:
       - "scripts/check_template_site_sync.py"
       - "scripts/close_pass_publish.py"
       - "scripts/close_pass_reconcile.py"
+      - "scripts/freshness_sentinel.py"
       - "scripts/inject_wh_banner.py"
       - "scripts/notify.py"
       - "scripts/optimize_assets.py"
@@ -2480,6 +2504,7 @@ jobs:
       - "site/qledger/**"
       - "tests/test_check_intelligence_registry.py"
       - "tests/test_intelligence_registry.py"
+      - "tests/test_output_health.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2501,6 +2526,18 @@ jobs:
           python3 scripts/check_intelligence_registry.py
       - name: intelligence engine registry derivation + gate tests
         run: python -m pytest tests/test_intelligence_registry.py tests/test_check_intelligence_registry.py -q
+      # Eval OS T4 — the output-level health contract, which JOINS the T1 view above with
+      # synapse and the existing health surfaces. Same job because it reads the same two
+      # registries; APPENDED, never inserted, because run_ci_pack.py::_run_job returns on
+      # the first non-zero step and a new FIRST step would hide the T1 guard behind it
+      # (#4779 — an absence of red is not a pass).
+      #
+      # Fixture-rooted by construction: the suite asserts nothing about live synapse
+      # contents or live estate freshness, so a nightly append and a genuinely stale
+      # artifact are both invisible to it. The resolver is pure, so this step needs no
+      # dependency beyond the pytest/pyyaml line already installed above.
+      - name: "output health contract (Eval OS T4)"
+        run: python -m pytest tests/test_output_health.py -q
 
   neural-web-core:
     if: ${{ false }}
@@ -2859,7 +2896,10 @@ jobs:
     # `from lib.logging import get_logger` (never existed), plus a permanently-skipped
     # test and a dead fixture branch. The single-module guard is retired; its
     # calendar public-API check moved into test_nyse_calendar.py.
-    # Both suites are stdlib-only (ast + pathlib); pytest is the whole dependency set.
+    # The first two suites are stdlib-only (ast + pathlib). The third
+    # (test_sp1_trading_day_index.py, SP1-B 2026-08-15) imports the study
+    # module and needs pandas/numpy/pyyaml; those join the install line
+    # below. A suite named by no run: step reds workflow-yaml.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2867,9 +2907,14 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest
+        run: pip install pytest pandas numpy pyyaml
       - name: nyse calendar rules + first-party imported-name resolution
         run: python -m pytest tests/test_nyse_calendar.py tests/test_first_party_import_names.py -q
+      # SP1-B: restrict_to_nyse_sessions must refuse a weekend-contaminated
+      # price index. Belongs HERE — the filter is session_rows + is_session,
+      # which this job already owns. Hermetic (synthetic dates, no data/).
+      - name: SP1-B trading-day price index refuses a contaminated calendar
+        run: python -m pytest tests/test_sp1_trading_day_index.py -q
 
   dag-conformance:
     if: ${{ false }}
@@ -7211,6 +7256,10 @@ jobs:
         run: TZ=UTC python -m pytest tests/test_theme_graph_contracts.py -q
       - name: theme graph — crosswalk v3 additive integrity
         run: TZ=UTC python -m pytest tests/test_theme_graph_crosswalk.py -q
+      - name: theme graph — W3A local-theme plane (hostile tests D-M, capability sidecar, rights gate)
+        run: TZ=UTC python -m pytest tests/test_theme_graph_local_plane.py -q
+      - name: theme graph — source-rights registry shape + F20 grandfather pin
+        run: TZ=UTC python -m pytest tests/test_theme_sources_registry.py -q
       - name: CN limit-rule registry — schema, continuity, parity vs china_microstructure
         run: TZ=UTC python -m pytest tests/test_cn_limit_rules.py -q
       # GMI W2 — the exposure-decomposition probe's pure math. The probe script itself is a
@@ -7263,8 +7312,13 @@ jobs:
       # pandas/numpy/pyarrow/pyyaml/requests, all already on the install line above.
       - name: ledger-advance + builder failstreaks + turn-event notifier
         run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py tests/test_mag7_events.py -q
-      - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
-        run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
+      # test_finviz_tree_refresh.py (GMI Theme Graph W3A, 2026-08-14) rides the
+      # step that already owns scripts/fetch_finviz_themes.py — same module, same
+      # subject, and pytest reports EVERY file inside ONE step, so nothing here
+      # masks anything else. Stdlib + pytest only (it monkeypatches the fetchers
+      # and never touches the network), so the install line above is unchanged.
+      - name: polygon universe/intraday + dead-name prices + finviz archival/tree-refresh + thetadata sessions
+        run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_finviz_tree_refresh.py tests/test_thetadata_tape_sessions.py -q
       # Enumerated in NO workflow before this (calendar-asof audit follow-up
       # 2026-08-05): the finviz collector's asof feeds these ledgers, but a PR
       # touching the track record or its heal fired no run that could see a
@@ -7647,6 +7701,13 @@ jobs:
           tests/test_smart_money.py
           tests/test_smart_money_v3.py
           tests/test_smart_money_census_surface.py -q
+      # GATE-4 commercial-path alerting. Sibling of freshness_sentinel (same
+      # systemd unit, same Telegram/Discord/email transport). Ordered BEFORE
+      # the ~40-file sweep so a red here is not hidden behind that step's
+      # first-nonzero abandon. Stdlib + pytest + requests (already on the
+      # pip line); the suite's live-delivery proof is a local HTTP receiver.
+      - name: commercial-path alerting (GATE-4)
+        run: python -m pytest tests/test_commercial_path_alerts.py -q
       - name: store/ops builders behind the nightly data lanes
         run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_ei_f1d_shadow.py tests/test_freshness_sentinel.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
       # Tech-Lab parity fixtures: the ~24 STRUCTURAL checks (fields, warmup
@@ -10548,3 +10609,29 @@ jobs:
         run: >-
           PYTHONDONTWRITEBYTECODE=1 python -m pytest
           tests/test_identity_seam_agreement.py -q -rs
+
+  no-client-supplied-identity:
+    if: ${{ false }}
+    # WS-9 / GATE-6: route handlers must not take user identity from the client.
+    # _pg() uses SUPABASE_SERVICE_ROLE_KEY (bypasses RLS); token-derived identity
+    # is the only cross-tenant fence. Scoped to app/** — an app-only PR must
+    # select this job, a research-only PR must not.
+    paths:
+      - app/**
+      - scripts/check_no_client_supplied_identity.py
+      - tests/test_check_no_client_supplied_identity.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: no-client-supplied-identity selftest (gate fires on planted violations)
+        run: python3 scripts/check_no_client_supplied_identity.py --selftest
+      - name: no-client-supplied-identity guard (hard fail on client-sourced user_id)
+        run: python3 scripts/check_no_client_supplied_identity.py
+      - name: no-client-supplied-identity test suite
+        run: python3 -m pytest tests/test_check_no_client_supplied_identity.py -q

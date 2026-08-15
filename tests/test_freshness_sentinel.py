@@ -580,6 +580,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_sentinel_units_ship_and_are_oneshot_with_env_files():
     service = (ROOT / "app" / "deploy" / "macro-sentinel.service").read_text()
     assert "Type=oneshot" in service
+    # GATE-4 commercial pass rides this unit. It is ExecStart'd FIRST with '-'
+    # so a freshness breach cannot skip the money-path page and a commercial
+    # exit cannot skip the dead-man switch. Freshness still owns unit status.
+    assert "ExecStart=-/opt/macro/.venv/bin/python -m scripts.commercial_path_sentinel" in service
+    assert service.index("scripts.commercial_path_sentinel") < service.index(
+        "scripts.freshness_sentinel")
     assert "ExecStart=/opt/macro/.venv/bin/python -m scripts.freshness_sentinel" in service
     assert "EnvironmentFile=-/etc/macro-api.env" in service
     assert "EnvironmentFile=-/etc/macro-sentinel.env" in service

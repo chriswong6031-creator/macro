@@ -28,13 +28,13 @@ premium product / private operations / vendor raw
   -> browser receives only its tier's bytes
 ```
 
-This census contains **104 non-overlapping delivery families** at the level needed to make that split. Their single required classifications are:
+This census contains **105 non-overlapping delivery families** at the level needed to make that split. Their single required classifications are:
 
 | Classification | Count | Meaning in this census |
 |---|---:|---|
 | `PUBLIC_FACT` | 5 | Candidate for an anonymous allowlist projection; source rights, delay and provenance still bind. |
 | `PREMIUM_PRODUCT` | 41 | Sellable differentiated output. Full objects require Essential or Pro delivery. |
-| `PRIVATE_OPERATIONAL` | 26 | Internal state, controls, models, telemetry or authority material. No customer tier receives the raw object. |
+| `PRIVATE_OPERATIONAL` | 27 | Internal state, controls, models, telemetry or authority material. No customer tier receives the raw object. |
 | `VENDOR_RAW` | 11 | Raw/transformed upstream material. Private service/operator access only unless a separate licensed projection is proved. |
 | `UNRESOLVED` | 21 | Field, source-rights, mixed-schema, or unregistered-key audit is incomplete. It fails closed to private. |
 
@@ -145,6 +145,7 @@ On the 2026-08-12 crawl, manifests returned `200` for 22 configured roots. `hk_s
 | Earnings story journal | `PRIVATE_OPERATIONAL` | Publication audit/reconciliation | None. | Private operational store. |
 | Oracle panels | `PREMIUM_PRODUCT` / Pro | Oracle/Neural Web build services | Separately approved regime preview only. | Private model/product hydration. |
 | AI response logs and eval summaries | `PRIVATE_OPERATIONAL` / operator | Admin/evaluation only | None. | Priority private-bucket migration and historical-object handling gate. |
+| Host-local commercial-path alert ledger | `PRIVATE_OPERATIONAL` / operator | Sentinel Telegram/Discord/email | None. | Remain host-local; never publish to shared R2 or public Git. |
 | Flow model/calibrator artifacts | `PRIVATE_OPERATIONAL` / private service | Flow scoring service | Public model-card methodology only. | Private model registry. |
 | Marketing chart PNGs | `PUBLIC_FACT` / Anonymous | Public web/social | Approved PNG only. | Deliberate public-media allowlist. |
 | User share snapshots | `UNRESOLVED` / hold private | Public-by-possession share page | Only after explicit share, metadata stripping, retention/delete and paid-overlay policy. | Separate deliberate share-media bucket before blanket ACL closure. |
