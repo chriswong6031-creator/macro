@@ -1,0 +1,17 @@
+# Nightly customer-table backup. 05:17 UTC sits clear of daily.yml (02:00Z),
+# the :00/:05 live-plane lanes, and the :03 macro-update cron ticks.
+#
+# Persistent=true: a box that was down overnight must dump on boot rather than
+# wait another 24 hours. A missed backup is exactly when recovery risk is highest.
+[Unit]
+Description=Run the customer-table backup every night at 05:17 UTC
+
+[Timer]
+OnCalendar=*-*-* 05:17:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=90s
+Persistent=true
+Unit=macro-user-backup.service
+
+[Install]
+WantedBy=timers.target

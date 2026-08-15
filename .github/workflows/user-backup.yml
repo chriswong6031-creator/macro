@@ -1,0 +1,35 @@
+name: user-backup
+# MMX-001 / GATE-1 dump+restore suite. Standalone so this Wave-1 lane does not
+# edit .github/ci/legacy-jobs.yml (shared with other remediation packs).
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/backup_user_tables.py"
+      - "tests/test_backup_user_tables.py"
+      - "app/deploy/macro-user-backup.service"
+      - "app/deploy/macro-user-backup.timer"
+      - "app/deploy/user-backup-setup.sh"
+      - "docs/RESTORE_RUNBOOK.md"
+      - ".github/workflows/user-backup.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: user-backup-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: customer-table backup dump/restore/refuse-production
+        run: python -m pytest tests/test_backup_user_tables.py -q

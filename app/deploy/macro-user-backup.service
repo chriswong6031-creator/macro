@@ -1,0 +1,56 @@
+# Nightly logical dump of customer / billing tables (MMX-001 / GATE-1).
+# Oneshoot, fail-closed: missing encryption key or source creds exits 2 so the
+# unit is red. PrivateTmp holds the plaintext only for the duration of the run.
+#
+# RuntimeMaxSec + TimeoutStartSec bound a wedged PostgREST/R2 call. This is the
+# existing timer-driven idiom (TimeoutStartSec on every oneshot) plus the
+# remediation-plan RuntimeMaxSec requirement.
+#
+# This unit is NOT self-armed by update.sh. Install with
+# app/deploy/user-backup-setup.sh after /etc/macro-user-backup.env exists.
+# No autonomous production deploy.
+[Unit]
+Description=Mastermind customer-table backup to private encrypted R2 (MMX-001)
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/macro-user-backup.env
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-api.env
+EnvironmentFile=/etc/macro-user-backup.env
+Environment=USER_BACKUP_DIR=/var/lib/macro-user-backup
+ExecStart=/opt/macro/.venv/bin/python -m scripts.backup_user_tables backup --upload-r2 --r2-sse-c --prune
+TimeoutStartSec=900
+RuntimeMaxSec=900
+Nice=12
+CPUWeight=10
+CPUQuota=30%
+MemoryHigh=256M
+MemoryMax=384M
+IOWeight=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/macro-user-backup
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectHostname=true
+ProtectProc=invisible
+ProcSubset=pid
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictRealtime=true
+LockPersonality=true
+SystemCallArchitectures=native
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
