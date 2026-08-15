@@ -63,6 +63,15 @@ verified:
   - claim: "Placeholder-regex widening blast radius measured before commit: 2 artifact paths flip to placeholder handling, 0 producer existence-check changes."
     command: "static + dynamic diff over live synapse.yml (builder receipt in the PR thread)"
     result: "placeholder_path 26->28; no producer flips — the stop condition never triggered."
+  - claim: "Adversarial review (opus): 3 BLOCKERs + 4 MAJORs, every one reproduced before fixing; fix wave + reader-negative/r2-primary carve-out landed with named pinning tests; 11 hand-performed mutations all bite; final suites green."
+    command: "python3 -m pytest tests/test_output_health.py tests/test_admin_intelligence_os.py -q (post-fix tree)"
+    result: "122 passed (98 core + 24 admin); 321 with the T1 suites; live distribution shifted only by removing false negatives (unavailable 134->92, nothing new entered healthy)."
+  - claim: "Admin Intelligence OS page verified end-to-end on a local authed server: census chips, provenance line (nothing stored / write-time refused), blind badges (F5), chip filters, drill-down records, unknown-id refusal; /api/intelligence_os payload matches the CLI census; cache hit <1ms on second call."
+    command: "python -m admin --port 8791; curl /api/intelligence_os + /api/intelligence_os/engine?id=...; browser screenshots + DOM row count"
+    result: "60 rows page 1; first row = the (no engine cell) bucket showing 8 T1-excluded artifacts with a live '2 blind' badge; zero console errors; ESLint clean."
+  - claim: "Real-tree acceptance census (sparse worktree, --now 2026-08-15T00:30Z): healthy 147 / degraded 4 / stale 39 / unavailable 92 / null 360; complete 207 / partial 202 / could_not_look 233; exact 230 / upper 412; reader-observed 0 on a checkout (deployed-plane evidence; carve-outs proven reachable via synthetic audit fixture)."
+    command: "python3 scripts/build_output_health.py --now 2026-08-15T00:30:00+00:00"
+    result: "Full distribution + reason histogram in the PR body; runtime ~80s after the batched-read fix (was 692s)."
 
 unverified: []
 
