@@ -35,6 +35,15 @@ T1b static: the pin is the ONLY sys.path mutation in a guard-family file.  A
     inside a function) reorders resolution AFTER the pin ran and is invisible
     to T3, which execs only up to the pin — so the shape is banned outright.
 T2  baseline: the wider scripts/** entry-script population may only SHRINK.
+T2b sealed-runtime waivers: a first-class exception registry
+    (``config/script_import_pin_sealed_runtime_waivers.yml``, same shape as
+    ``config/unrun_test_waivers.yml``) names scripts whose threat model
+    FORBIDS a module-load pin.  Each row needs a non-empty reason, must
+    remain in the T2 affected set (still no strong pin), must not appear
+    in the baseline, and is proved by a stronger delayed-import contract
+    rather than joining the legacy list.  ``--emit-baseline`` excludes
+    waived paths so regenerating cannot silently extend T2.
+    ``DEC:SEALED-RUNTIME-WINS-OVER-MODULE-LOAD-PIN``.
 T3  dynamic: simulate bare invocation against a hostile decoy tree and prove
     every member of the check_*/ci family still resolves its repo imports from
     its own repo root.  This covers already-pinned members too.
@@ -61,6 +70,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BASELINE_PATH = REPO_ROOT / "tests" / "fixtures" / "script_import_pin_baseline.txt"
+WAIVERS_PATH = (
+    REPO_ROOT / "config" / "script_import_pin_sealed_runtime_waivers.yml"
+)
 
 #: Top-level import targets that live in THIS repo.
 REPO_PACKAGES = frozenset({
@@ -258,6 +270,48 @@ def _affected_entry_scripts() -> list[str]:
     return sorted(_rel(p) for p in _iter_scripts("scripts/**/*.py") if _affected(p))
 
 
+def _load_sealed_runtime_waivers() -> dict[str, str]:
+    """``path -> nonempty reason``.  Fail-closed on any other shape.
+
+    PyYAML is imported here, not at module load, so the T3
+    ``--resolve-probe`` subprocess (hostile ``PYTHONPATH``, no third-party
+    contract) never needs it.
+    """
+    import yaml  # noqa: PLC0415 — deferred; see docstring
+
+    raw = yaml.safe_load(WAIVERS_PATH.read_text(encoding="utf-8")) or {}
+    if not isinstance(raw, dict):
+        raise AssertionError(
+            f"{_rel(WAIVERS_PATH)} must be a mapping of repo-relative "
+            f"paths to reasons, not {type(raw).__name__}"
+        )
+    out: dict[str, str] = {}
+    problems: list[str] = []
+    for key, reason in raw.items():
+        if not isinstance(key, str) or not key.strip():
+            problems.append(f"non-string or empty path: {key!r}")
+            continue
+        if not isinstance(reason, str) or not reason.strip():
+            problems.append(
+                f"{key}: empty or non-string reason — a waiver without an "
+                "argument is a baseline row wearing a disguise"
+            )
+            continue
+        out[key] = reason.strip()
+    if problems:
+        raise AssertionError(
+            "sealed-runtime waiver registry is malformed:\n  "
+            + "\n  ".join(problems)
+        )
+    return out
+
+
+def _t2_census() -> list[str]:
+    """Unpinned entry scripts minus first-class sealed-runtime waivers."""
+    waived = set(_load_sealed_runtime_waivers())
+    return [path for path in _affected_entry_scripts() if path not in waived]
+
+
 # ---------------------------------------------------------------------------
 # decoy
 # ---------------------------------------------------------------------------
@@ -398,14 +452,181 @@ def test_unpinned_entry_scripts_only_shrink():
         BASELINE_PATH.read_text(encoding="utf-8").splitlines()
         if line.strip()
     }
+    waivers = _load_sealed_runtime_waivers()
     current = set(_affected_entry_scripts())
+    stale = sorted(set(waivers) - current)
+    assert not stale, (
+        "Sealed-runtime waiver names a script that is no longer an unpinned "
+        "entry script (it grew a strong pin, left scripts/**, or no longer "
+        "imports repo packages). Delete the waiver row; do not keep a stale "
+        "exception.\n\n  " + "\n  ".join(stale)
+    )
+    current -= set(waivers)
     added = sorted(current - baseline)
     assert not added, (
         "New entry scripts import repo packages with no repo-root pin.  Add the "
-        "pin, never extend the baseline; prune entries you fix.\n\n"
+        "pin, never extend the baseline; prune entries you fix.  A sealed-"
+        "runtime runner that must not pin at module load goes in "
+        f"{_rel(WAIVERS_PATH)} with a non-empty reason, not in the baseline.\n\n"
         f"{PIN_IDIOM}\n\nunpinned and not in the baseline:\n  "
         + "\n  ".join(added)
     )
+
+
+def test_sealed_runtime_waivers_are_first_class_and_do_not_join_the_baseline():
+    """T2b: path → nonempty reason; singleton; no overlap with the burn-down list."""
+    waivers = _load_sealed_runtime_waivers()
+    assert waivers, (
+        f"{_rel(WAIVERS_PATH)} is empty — the sparse-selector canary still "
+        "exists, so the registry must name it.  An empty file is not a ruling."
+    )
+    for path, reason in waivers.items():
+        assert path.startswith("scripts/") and path.endswith(".py"), path
+        assert (REPO_ROOT / path).is_file(), path
+        assert reason.strip(), path
+    # A new row requires a dedicated proof test in this module (see T2b).
+    # Growing the set without that proof is how a frozenset becomes a dump.
+    assert set(waivers) == {"scripts/run_options_sparse_selector.py"}
+    baseline = {
+        line.strip() for line in
+        BASELINE_PATH.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    }
+    overlap = sorted(set(waivers) & baseline)
+    assert not overlap, (
+        "A waived script must not also sit in the T2 baseline — that is the "
+        "hole --emit-baseline used to have.  The baseline is leftovers "
+        "awaiting a pin; a waiver is a reviewed exception.\n\n  "
+        + "\n  ".join(overlap)
+    )
+
+
+def test_authenticated_delayed_import_runner_pins_only_after_attestation():
+    """The canary runner's exception is narrower than an ambient repo pin."""
+
+    waivers = _load_sealed_runtime_waivers()
+    assert set(waivers) == {"scripts/run_options_sparse_selector.py"}
+    relative = next(iter(waivers))
+    path = REPO_ROOT / relative
+    _src, tree = _parse(path)
+    packages, top_level, relative_import = _repo_imports(tree)
+    assert packages == ["engine", "lib"]
+    assert top_level == []
+    assert relative_import is False
+    assert _strong_pin(tree) == (None, None)
+
+    functions = {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    preflight = functions["_static_preflight"]
+    load_runtime = functions["_load_runtime"]
+    preflight_calls = {
+        node.func.id: node.lineno
+        for node in ast.walk(preflight)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    assert preflight_calls["_attest_runtime_carrier"] < preflight_calls["_load_runtime"]
+
+    mutations = _sys_path_mutations(tree)
+    assert len(mutations) == 1
+    pin_line, pin_kind = mutations[0]
+    assert pin_kind == "sys.path.insert(...)"
+    repo_import_lines = [
+        node.lineno
+        for node in ast.walk(load_runtime)
+        if (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").split(".")[0] in REPO_PACKAGES
+        )
+    ]
+    assert repo_import_lines and pin_line < min(repo_import_lines)
+
+    loop = (
+        REPO_ROOT / "ops/launchd/run_options_sparse_selector_loop.sh"
+    ).read_text(encoding="utf-8")
+    assert 'exec "$SEALED_PYTHON" -I -S -B "$RUNNER" --run-once' in loop
+
+
+def _isolated_module_load_report(script: Path) -> dict:
+    """Load ``script`` under ``python -I -S`` without running ``__main__``.
+
+    Isolate mode ignores ``PYTHONPATH``; ``-S`` installs no site-packages.
+    The probe itself is stdlib-only so it can run in that sealed process.
+    """
+    probe = (
+        "import json, runpy, sys\n"
+        "from pathlib import Path\n"
+        "target = Path(sys.argv[1]).resolve()\n"
+        "repo_root = str(target.parent.parent)\n"
+        "runpy.run_path(str(target), run_name='not_main')\n"
+        "packages = {\n"
+        "    'admin', 'app', 'collectors', 'engine', 'lib', 'research',\n"
+        "    'scripts', 'tests', 'verify_shots',\n"
+        "}\n"
+        "resolved = []\n"
+        "for entry in sys.path:\n"
+        "    if not entry:\n"
+        "        continue\n"
+        "    try:\n"
+        "        resolved.append(str(Path(entry).resolve()))\n"
+        "    except OSError:\n"
+        "        resolved.append(entry)\n"
+        "print(json.dumps({\n"
+        "    'repo_root': repo_root,\n"
+        "    'repo_root_on_path': repo_root in resolved,\n"
+        "    'repo_modules': sorted(\n"
+        "        name for name in sys.modules\n"
+        "        if name.split('.')[0] in packages\n"
+        "    ),\n"
+        "    'pythonpath_leaked': any(\n"
+        "        'hostile-pythonpath' in (entry or '') for entry in sys.path\n"
+        "    ),\n"
+        "}))\n"
+    )
+    env = dict(os.environ)
+    env["PYTHONPATH"] = "/tmp/hostile-pythonpath-should-be-ignored"
+    proc = subprocess.run(
+        [sys.executable, "-I", "-S", "-c", probe, str(script)],
+        capture_output=True, text=True, cwd=str(REPO_ROOT),
+        env=env, timeout=30,
+    )
+    assert proc.returncode == 0, (
+        f"isolated module-load probe crashed (rc={proc.returncode})\n"
+        f"stdout:\n{proc.stdout[-2000:]}\nstderr:\n{proc.stderr[-2000:]}"
+    )
+    return json.loads(proc.stdout)
+
+
+def test_sealed_runtime_runner_module_load_stays_isolated():
+    """Runtime proof: ``python -I -S`` load adds no repo path and no repo import."""
+    relative = next(iter(_load_sealed_runtime_waivers()))
+    report = _isolated_module_load_report(REPO_ROOT / relative)
+    assert report["repo_root_on_path"] is False, report
+    assert report["repo_modules"] == [], report
+    assert report["pythonpath_leaked"] is False, report
+
+
+def test_isolated_module_load_probe_detects_a_module_load_pin(tmp_path):
+    """Positive control: the isolation probe is not vacuously green."""
+    pinned = tmp_path / "pinned_entry.py"
+    pinned.write_text(
+        "import sys\n"
+        "from pathlib import Path\n"
+        "sys.path.insert(0, str(Path(__file__).resolve().parent.parent))\n",
+        encoding="utf-8",
+    )
+    report = _isolated_module_load_report(pinned)
+    assert report["repo_root_on_path"] is True, report
+
+
+def test_emit_baseline_excludes_sealed_runtime_waivers():
+    """Regenerating T2 must not grandfather a reviewed exception."""
+    waived = set(_load_sealed_runtime_waivers())
+    emitted = set(_t2_census())
+    assert not (emitted & waived), sorted(emitted & waived)
+    assert waived <= set(_affected_entry_scripts())
 
 
 # ---------------------------------------------------------------------------
@@ -580,7 +801,7 @@ def _main(argv: list[str]) -> int:
     if argv[1:2] == ["--resolve-probe"]:
         return _resolve_probe(Path(argv[2]).resolve(), Path(argv[3]))
     if argv[1:2] == ["--emit-baseline"]:
-        print("\n".join(_affected_entry_scripts()))
+        print("\n".join(_t2_census()))
         return 0
     print(__doc__)
     return 2

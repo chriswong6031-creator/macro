@@ -276,6 +276,38 @@ def compute_intl_global_betas(closes, members) -> dict:
         return {}
 
 
+def _intl_session_asof(alpha, to_write) -> "tuple[str, bool]":
+    """Session anchor for the INTL name-score ledger stamp.
+
+    ``compute_intl_alpha`` carries NO ``as_of`` key on any return path (adversarial
+    review D1, PR #5674 — ``(alpha or {}).get("as_of")`` is always ``None`` here),
+    so the anchor is tried in order: a future alpha ``as_of`` if one ever appears,
+    then the library's OWN tip — the max parseable per-rec ``asof`` among the built
+    recs (the same self-relative convention as the US ``_feed_freshness``). Only
+    when neither resolves does the stamp fall back to the host clock, and the
+    second element (``session_keyed``) goes ``False`` so the store row itself
+    records that its date key is wall-clock, not session."""
+    a = (alpha or {}).get("as_of")
+    if a:
+        try:
+            _ts = pd.Timestamp(str(a))
+            if not pd.isna(_ts):
+                return str(_ts.date()), True
+        except Exception:  # noqa: BLE001 — corrupt stamp => fall through to the tip
+            pass
+    tips = []
+    for _, _rec in (to_write or []):
+        try:
+            _ts = pd.Timestamp(str((_rec or {}).get("asof")))
+            if not pd.isna(_ts):
+                tips.append(_ts)
+        except Exception:  # noqa: BLE001 — unparseable rec asof contributes nothing
+            continue
+    if tips:
+        return str(max(tips).date()), True
+    return str(pd.Timestamp.utcnow().date()), False
+
+
 def main(alpha: dict | None = None) -> dict | None:
     site = config.ROOT / config.load()["storage"]["site_dir"]
     outdir = site / "intlstockdata"
@@ -414,11 +446,11 @@ def main(alpha: dict | None = None) -> dict | None:
         if _icalls:
             # session stamp, not host clock — same date key the board publishes
             # (US measured board(D)≡store(D+1) under utcnow stamping;
-            # DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES)
-            _intl_asof = (alpha or {}).get("as_of")
+            # DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES). INTL's alpha carries
+            # no as_of, so the anchor resolves from the library tip (_intl_session_asof).
+            _intl_asof, _intl_sk = _intl_session_asof(alpha, to_write)
             name_score_grader.append_name_calls(
-                _icalls, market="INTL",
-                asof=str(_intl_asof) if _intl_asof else str(pd.Timestamp.utcnow().date()))
+                _icalls, market="INTL", asof=_intl_asof, session_keyed=_intl_sk)
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("INTL name-score grader append failed (%s)", e)
     # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-

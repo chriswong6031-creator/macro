@@ -94,6 +94,14 @@ public:
     # Public evidence-first product shell. All analytical reads remain behind
     # authenticated no-store API routes; only the SEO/context shell is public.
     - /market_memory.html
+    # BioCatalyst is the same shell/payload split. The HTML and its paired
+    # presentation/client assets contain no trial records; the same-origin API
+    # remains code-enforced at site_full. Keeping all three anonymous-public
+    # prevents the open shell from intermittently receiving a gated, inert JS
+    # or CSS response when asset requests land on different edge connections.
+    - /biocatalyst.html
+    - /biocatalyst.css
+    - /biocatalyst.js
     # Tier-preview shells, promoted from free_registered to ANONYMOUS-public
     # (SEO_SUPERCHARGE_MASTERPLAN §A1/W1a). The pages themselves are preview
     # SHELLS: honest totals + methodology + a small newest-first preview slice +
@@ -590,15 +598,6 @@ free_registered:
     # (The two Special Situations tier-preview shells moved UP to public.exact on
     # 2026-08-02 — SEO_SUPERCHARGE_MASTERPLAN W1a. Their paid payloads are still
     # enforced under premium.enforced_early below; only the shells opened.)
-    # BioCatalyst's registered preview shell contains no study facts. The
-    # same-origin ClinicalTrials.gov API remains code-enforced at site_full, so
-    # this page can explain and load the workspace without leaking its records.
-    - /biocatalyst.html
-    # Presentation and authenticated API client paired with the registered
-    # preview shell. Neither asset embeds study facts; keeping them at the same
-    # tier prevents an entitled-but-free user receiving a bare inert document.
-    - /biocatalyst.css
-    - /biocatalyst.js
   prefixes:
     - /news/
     - /chinanews/

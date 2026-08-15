@@ -38,3 +38,15 @@ quiet because the vote arithmetic still runs — the family contributes a consta
 percentile that shifts every row equally and cancels in ranking. The registered
 fix direction (variance-aware floor) is a PR-2 registry question, not a patch to
 sneak into a race PR.
+
+## Resolution (PR-2, 2026-08-14)
+
+The falsifier's spec landed in `research/prophet_fusion/families.yml`
+(`semantics.variance_floor` + `variance_floor_spec`): a member is VOTE-INERT on a
+frame when fewer than 50% of frame dates carry >= 2 distinct non-null oriented
+values — defined on features alone (no outcome enters the rule), frame-relative,
+computed at evaluation time, disclosed rather than hidden. The PR-2 harness
+(`scripts/prophet_fusion_c2.py`) computes it for every wired member; the suite pins
+both halves of the falsifier (news_burst-shaped near-constants marked inert;
+sparse-but-VARIABLE synthetic members pass). The constraint this record states
+remains true of the PRESENCE floor; the variance axis now exists beside it.

@@ -66,3 +66,35 @@ board/alpha session anchor; utcnow survives only as a loudly-warned fallback whe
 anchor is missing/corrupt. Historical store rows keep their wall-clock keys — apply
 store(X) = session-(X-1) when joining history. "name_score" claims on PRE-fix store
 dates must still name their source.
+
+Adversarial-review hardening (same PR, opus red-team on the first head):
+
+- **INTL's alpha carries NO as_of key on any code path** — a plain
+  `(alpha or {}).get("as_of")` anchor is ALWAYS None there (and the same dead
+  expression pre-exists at two other INTL sites). The INTL stamp resolves from the
+  library tip instead (`_intl_session_asof`: alpha as_of if it ever appears → max
+  per-rec asof → wall-clock marked unkeyed), with a behavioral test.
+- **`session_keyed` column (nullable boolean) on every row written from the cutover**:
+  True = session-keyed date, False = wall-clock fallback, null = pre-cutover era.
+  This is the partition marker for BOTH transition costs: (a) the 2026-08-14 mixed
+  stamp, and (b) the forward-fill convention break — wall-clock-era weekday rows
+  filled TWO sessions after the call (stamp D+1, fill = next bar), session-keyed rows
+  fill ONE session after; do not compare forward metrics (rank-IC, hit rates) across
+  the cutover without partitioning on this column.
+- **grade()'s PIT stamp-gap detector is now trailing-window cadenced**
+  (`_GAP_DOW_WINDOW=15`): the store's history contains 11 weekend stamps, so an
+  all-history weekday set would have flagged every post-cutover weekend as a gap
+  forever and saturated `stamp_gap_dates[:14]` within ~4 weeks, hiding any real
+  missed nightly.
+- **Zero-row appends are now visible at the write site** (grader logs
+  admitted/submitted delta), and a resolved-but-stale session anchor (>5 days behind
+  the host clock — a frozen alpha.json would make every nightly dedupe into the stale
+  session and land 0 rows, a failure mode wall-clock stamping could not have) emits a
+  `::warning` annotation from `_name_score_asof`.
+- **Accrual cadence drops ~7/wk → ~5/wk by design**: the weekend stamps the store
+  used to accrue were duplicate echoes of Friday's calls under new date keys, not
+  independent observations.
+- **The `_MAX_BAR_LAG_DAYS=7` dead-feed gate ran one real day TIGHTER than its
+  documented NYSE-closure derivation under wall-clock stamping**; session stamping
+  restores the documented calibration (a feed frozen exactly 7 calendar days behind
+  the session is now admitted). Noted at the constant.

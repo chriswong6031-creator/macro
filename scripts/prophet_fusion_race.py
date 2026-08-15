@@ -1861,9 +1861,14 @@ def name_score_cross_check(race: RaceFrame, g2: Rung, *,
                      "so a low match rate does not move G2's numbers; it says the two "
                      "memories of name_score disagree and that a future rung reading "
                      "the STORE would be racing a different quantity than this one."),
-            "lag_probe": ("Tested and rejected: the same-date join is the BEST match on "
-                          "every date tried (2026-06-30 / 07-01 / 07-31), so the "
-                          "disagreement is not a one-session staleness offset.")}
+            "lag_probe": ("Tested and rejected for SESSION offsets: the same-date join "
+                          "is the best match on every date tried (2026-06-30 / 07-01 / "
+                          "07-31). RESOLVED 2026-08-14: the true alignment is CALENDAR "
+                          "+1 — the store stamped wall-clock UTC after midnight, so "
+                          "board(D) ≡ store(D+1 calendar) at level match 1.000; a "
+                          "session-offset sweep cannot see a calendar-key shift. Store "
+                          "dates are session-keyed from 2026-08-14 (session_keyed "
+                          "column; DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES).")}
 
 
 def name_score_pit_receipt(*, root: Path | str | None = None,

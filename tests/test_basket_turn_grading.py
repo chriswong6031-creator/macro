@@ -972,3 +972,179 @@ def test_grade_cohorts_defaults_to_the_spy_tape_bound(monkeypatch, tmp_path):
     assert len(grades) == 1
     assert grades[0]["graded_as_of"] == _COHORT_LAST_BAR
     assert grades[0]["sessions_elapsed"] == BTC.GRADE_HORIZON_SESSIONS
+
+
+# ---------------------------------------------------------------------------
+# (23) register_cohort_claims — the cohort claims log records the ACTUAL
+#      per-claim registration outcome, never an assumed success
+#
+#      Defect (W3 review, PR #5679, reviewer R3): the log wrote
+#      {"cohort_id": cid, "registered": True} for EVERY attempted cohort
+#      without reading register_batch's per-claim status — 4 cohorts were
+#      logged registered while only 2 claims reached data/qledger/claims.jsonl.
+#      register_batch returns one slot per input claim in input order, and a
+#      slot is either a stored row (status open / rejected) or
+#      {"status": "error", ...} whose claim was never persisted at all.
+# ---------------------------------------------------------------------------
+
+def _read_cohort_log(data_root: Path) -> list[dict]:
+    p = data_root / "basket_turn" / "cohort_claims_log.jsonl"
+    if not p.exists():
+        return []
+    return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
+
+
+def _cohort_log_last(data_root: Path) -> dict[str, dict]:
+    """cohort_id → its LAST log row (a retried cohort has more than one)."""
+    return {row["cohort_id"]: row for row in _read_cohort_log(data_root)}
+
+
+def _read_claims(repo_root: Path) -> list[dict]:
+    p = repo_root / "data" / "qledger" / "claims.jsonl"
+    if not p.exists():
+        return []
+    return [json.loads(ln) for ln in p.read_text(encoding="utf-8").splitlines() if ln.strip()]
+
+
+def _scope_key(claim: dict) -> str:
+    return str((claim.get("scope") or {}).get("key") or "")
+
+
+def _cohort(cid: str) -> dict:
+    return {"cohort_id": cid, "cohort_date": cid,
+            "basket_ids": ["ai_semiconductors"], "n_baskets": 1, "legs": {}}
+
+
+def test_register_cohort_claims_partially_rejected_batch(monkeypatch, tmp_path):
+    """A batch where one claim is REJECTED must log rejected, not registered.
+
+    Only the validation verdict is steered — _prepare_claim, register_batch,
+    the dedupe pass and the claims.jsonl append are all the real machinery, so
+    the rejected row persists for audit exactly as it does in production.
+
+    Under the pre-fix code all three rows read registered:true.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    repo_root = tmp_path / "repo"
+    data_root = tmp_path / "data_area"
+    repo_root.mkdir()
+    data_root.mkdir()
+
+    import engine.qledger as q_real
+
+    bad = "2026-07-11"
+    real_validate = q_real._validate_claim
+
+    def _validate(claim):
+        if _scope_key(claim) == bad:
+            return False, "planted: schema-invalid cohort claim"
+        return real_validate(claim)
+
+    monkeypatch.setattr(q_real, "_validate_claim", _validate)
+
+    cohorts = [_cohort("2026-07-10"), _cohort(bad), _cohort("2026-07-12")]
+    results = BTC.register_cohort_claims(cohorts, data_root=data_root, root=repo_root)
+
+    assert [r.get("status") for r in results] == ["open", "rejected", "open"], (
+        "fixture did not produce a partially-rejected batch"
+    )
+
+    rows = _cohort_log_last(data_root)
+    assert rows[bad].get("registered") is False, (
+        "REGRESSION: a rejected claim was logged as registered — the log is "
+        "asserting a registration register_batch never reported"
+    )
+    assert rows[bad]["outcome"] == "rejected"
+    assert rows[bad].get("reason"), "a non-registered outcome must carry its reason"
+    for good in ("2026-07-10", "2026-07-12"):
+        assert rows[good]["outcome"] == "registered"
+        assert rows[good]["registered"] is True
+        assert rows[good]["claim_id"]
+
+    # The log's registered count must equal the gradeable claims actually on disk.
+    claims = _read_claims(repo_root)
+    n_open = sum(1 for c in claims if c.get("status") == "open")
+    n_logged = sum(1 for r in rows.values() if r["registered"])
+    assert n_logged == n_open == 2, (
+        f"log claims {n_logged} registrations, claims.jsonl holds {n_open} open rows"
+    )
+
+    # A rejected row IS persisted (audit), so keep-first latches it: re-running
+    # must not re-attempt it (it would only dedupe against itself).
+    assert BTC.register_cohort_claims(cohorts, data_root=data_root, root=repo_root) == []
+
+
+def test_register_cohort_claims_failed_claim_is_never_logged_registered(monkeypatch, tmp_path):
+    """A claim whose preparation RAISES persists nothing — log it as failed.
+
+    This is the half of the defect that loses a forward bet outright: the error
+    slot carries no claim_id and no row reaches claims.jsonl, yet the pre-fix
+    log recorded registered:true and keep-first latched the cohort forever.
+    """
+    monkeypatch.setenv("COLLECT_LANE", "nightly")
+    repo_root = tmp_path / "repo"
+    data_root = tmp_path / "data_area"
+    repo_root.mkdir()
+    data_root.mkdir()
+
+    import engine.qledger as q_real
+
+    doomed = "2026-07-11"
+    real_prepare = q_real._prepare_claim
+
+    def _prepare(claim):
+        if _scope_key(claim) == doomed:
+            raise RuntimeError("planted: claim preparation failed")
+        return real_prepare(claim)
+
+    monkeypatch.setattr(q_real, "_prepare_claim", _prepare)
+
+    cohorts = [_cohort("2026-07-10"), _cohort(doomed), _cohort("2026-07-12")]
+    results = BTC.register_cohort_claims(cohorts, data_root=data_root, root=repo_root)
+
+    assert results[1].get("status") == "error", "fixture did not produce an error slot"
+
+    rows = _cohort_log_last(data_root)
+    assert rows[doomed].get("registered") is False, (
+        "REGRESSION: a claim that never reached the store was logged as registered"
+    )
+    assert rows[doomed]["outcome"] == "failed"
+    assert "claim_id" not in rows[doomed], "a failed claim has no claim_id to record"
+
+    claims = _read_claims(repo_root)
+    assert [_scope_key(c) for c in claims] == ["2026-07-10", "2026-07-12"]
+    assert doomed not in {_scope_key(c) for c in claims}
+
+    # keep-first must NOT latch a cohort whose claim persisted nothing: the next
+    # nightly retries it, and only then does it read registered.
+    monkeypatch.setattr(q_real, "_prepare_claim", real_prepare)
+    retry = BTC.register_cohort_claims(cohorts, data_root=data_root, root=repo_root)
+    assert [_scope_key(r) for r in retry] == [doomed], (
+        "a failed cohort must stay eligible — it was silently latched instead"
+    )
+    assert retry[0]["status"] == "open"
+    rows = _cohort_log_last(data_root)
+    assert rows[doomed]["outcome"] == "registered"
+    assert rows[doomed]["registered"] is True
+
+    # ...and the retry must not duplicate the two that already landed.
+    assert sum(1 for c in _read_claims(repo_root) if _scope_key(c) == "2026-07-10") == 1
+
+
+def test_cohort_log_legacy_rows_still_latch(tmp_path):
+    """Rows written before the outcome field existed carry no 'outcome' key and
+    must keep latching keep-first exactly as they did when written."""
+    log_dir = tmp_path / "basket_turn"
+    log_dir.mkdir(parents=True)
+    (log_dir / "cohort_claims_log.jsonl").write_text(
+        json.dumps({"cohort_id": "2026-07-10", "registered": True}) + "\n"
+        + json.dumps({"cohort_id": "2026-07-11", "registered": False, "outcome": "failed"}) + "\n"
+        + json.dumps({"cohort_id": "2026-07-12", "registered": False, "outcome": "rejected"}) + "\n",
+        encoding="utf-8",
+    )
+
+    seen = BTC._load_cohort_log(tmp_path)
+
+    assert "2026-07-10" in seen, "legacy row (no outcome key) must latch"
+    assert "2026-07-12" in seen, "a rejected row is persisted — it latches"
+    assert "2026-07-11" not in seen, "a failed row persisted nothing — it must retry"

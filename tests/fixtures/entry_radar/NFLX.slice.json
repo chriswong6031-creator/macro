@@ -1,0 +1,6077 @@
+{
+ "indicator": {
+  "as_of": "2026-08-13T00:00:00Z",
+  "bar_quality": "synthetic_open_deepstore",
+  "early_dots": [
+   "2018-05-04",
+   "2018-07-31",
+   "2018-08-21",
+   "2018-11-06",
+   "2018-11-28",
+   "2018-12-26",
+   "2019-05-23",
+   "2019-07-29",
+   "2019-09-05",
+   "2019-10-04",
+   "2019-10-30",
+   "2020-03-19",
+   "2020-06-15",
+   "2020-08-21",
+   "2020-09-25",
+   "2020-11-03",
+   "2020-11-24",
+   "2021-03-19",
+   "2021-05-19",
+   "2021-06-15",
+   "2021-12-21",
+   "2022-01-26",
+   "2022-12-30",
+   "2023-03-13",
+   "2023-08-03",
+   "2023-08-21",
+   "2023-09-28",
+   "2023-10-19",
+   "2024-04-30",
+   "2024-08-08",
+   "2024-09-12",
+   "2025-01-17",
+   "2025-03-17",
+   "2025-04-10",
+   "2025-08-04",
+   "2025-11-05",
+   "2025-12-23",
+   "2026-05-18",
+   "2026-06-09",
+   "2026-07-28"
+  ],
+  "indicator": {
+   "engine": "python:signal_layer.confluence_v2@v2",
+   "id": "confluence_rsimacd_stochrsi_mtf",
+   "macd_kind": "rsi_based",
+   "params": {
+    "buy_rsi_max": 65,
+    "confW": 8,
+    "confirmTF": "1W",
+    "ext_rsi": 70,
+    "macd_fast": 14,
+    "macd_on": "rsi",
+    "macd_signal": 5,
+    "macd_slow": 60,
+    "no_cut_exits": true,
+    "reclaim_lane": true,
+    "rev_bars": 3,
+    "rsiLen": 14,
+    "useMTF": true
+   },
+   "source_hash": "sha256:f27a407bea861a2217477beb98c398abc62845d2bcc38d331d4963c06471986d",
+   "source_lang": "python",
+   "title": "RSI-MACD \u00d7 StochRSI MTF Confluence"
+  },
+  "meta": {
+   "honest_read": "W2 parity fixture \u2014 deep-store substrate",
+   "leakfree": true,
+   "score_basis": "partial",
+   "scored": false,
+   "validated_against": "signal_layer/confluence.py",
+   "validation": {},
+   "warnings": []
+  },
+  "schema": "mastermind.indicator/v1",
+  "signal_era": "gc_v2_wo2",
+  "signals": [
+   {
+    "bar_index": 40,
+    "basis": "structure_stop",
+    "known_ts": "2002-11-12",
+    "price": 0.057786,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.057929,
+    "strength": 0.588,
+    "ts": "2002-11-12",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2002-11-12",
+    "atr14": 0.005918,
+    "bar_index": 41,
+    "known_ts": "2002-11-13",
+    "price": 0.064143,
+    "prior_stop_level": 0.057929,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2002-11-12 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.052612,
+    "strength": 0.588,
+    "sweep_low": 0.055571,
+    "ts": "2002-11-13",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 45,
+    "basis": "structure_stop",
+    "known_ts": "2002-12-04",
+    "price": 0.071,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.074929,
+    "strength": 0.588,
+    "ts": "2002-12-04",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2002-12-04",
+    "atr14": 0.006892,
+    "bar_index": 46,
+    "known_ts": "2002-12-05",
+    "price": 0.078571,
+    "prior_stop_level": 0.074929,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2002-12-04 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.066197,
+    "strength": 0.588,
+    "sweep_low": 0.069643,
+    "ts": "2002-12-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 50,
+    "basis": "structure_stop",
+    "known_ts": "2002-12-24",
+    "price": 0.070714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.071,
+    "strength": 0.725,
+    "ts": "2002-12-24",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2002-12-24",
+    "atr14": 0.005352,
+    "bar_index": 51,
+    "known_ts": "2002-12-30",
+    "price": 0.071357,
+    "prior_stop_level": 0.071,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2002-12-24 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.065753,
+    "strength": 0.725,
+    "sweep_low": 0.068429,
+    "ts": "2002-12-30",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 67,
+    "known_ts": "2003-03-10",
+    "price": 0.107571,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2002-12-24 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2003-03-10",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 116,
+    "known_ts": "2003-10-09",
+    "price": 0.307643,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "score": 10,
+    "strength": 1.0,
+    "tier": "base",
+    "ts": "2003-10-07",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 123,
+    "basis": "structure_stop",
+    "known_ts": "2003-11-06",
+    "price": 0.363071,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.371357,
+    "strength": 1.0,
+    "ts": "2003-11-06",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 124,
+    "basis": "structure_stop",
+    "known_ts": "2003-11-10",
+    "price": 0.332857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.371357,
+    "strength": 1.0,
+    "ts": "2003-11-10",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 139,
+    "known_ts": "2004-01-15",
+    "price": 0.483929,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2003-11-10 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2004-01-15",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 143,
+    "basis": "structure_stop",
+    "known_ts": "2004-02-04",
+    "price": 0.4975,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.505357,
+    "strength": 1.0,
+    "ts": "2004-02-04",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2004-02-04",
+    "atr14": 0.026717,
+    "bar_index": 143,
+    "known_ts": "2004-02-05",
+    "price": 0.522571,
+    "prior_stop_level": 0.505357,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2004-02-04 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.481571,
+    "strength": 1.0,
+    "sweep_low": 0.494929,
+    "ts": "2004-02-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 157,
+    "known_ts": "2004-04-06",
+    "price": 0.508571,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 25,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2004-04-02",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 162,
+    "basis": "structure_stop",
+    "known_ts": "2004-04-27",
+    "price": 0.400571,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 0.404714,
+    "strength": 0.725,
+    "ts": "2004-04-27",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 168,
+    "known_ts": "2004-05-24",
+    "price": 0.456429,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 0,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2004-05-20",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 180,
+    "basis": "structure_stop",
+    "known_ts": "2004-07-16",
+    "price": 0.328857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.413143,
+    "strength": 0.588,
+    "ts": "2004-07-16",
+    "type": "SELL"
+   },
+   {
+    "atr14": 0.023808,
+    "bar_index": 184,
+    "known_ts": "2004-08-03",
+    "price": 0.275,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.252382,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.264286,
+    "trigger_known_ts": "2004-08-03",
+    "trigger_ts": "2004-07-30",
+    "ts": "2004-07-30",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.503225,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "atr14": 0.019147,
+    "bar_index": 188,
+    "known_ts": "2004-08-19",
+    "price": 0.226429,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.199856,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.209429,
+    "trigger_known_ts": "2004-08-19",
+    "trigger_ts": "2004-08-17",
+    "ts": "2004-08-17",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.590967,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "atr14": 0.016523,
+    "bar_index": 192,
+    "known_ts": "2004-09-07",
+    "price": 0.220143,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.189596,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.197857,
+    "trigger_known_ts": "2004-09-07",
+    "trigger_ts": "2004-09-02",
+    "ts": "2004-09-02",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.602322,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 194,
+    "blocked": true,
+    "known_ts": "2004-09-15",
+    "price": 0.227143,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2004-09-13",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.014693,
+    "bar_index": 194,
+    "known_ts": "2004-09-15",
+    "price": 0.227143,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.190939,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 0.198286,
+    "trigger_known_ts": "2004-09-15",
+    "trigger_ts": "2004-09-13",
+    "ts": "2004-09-13",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.589677,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "atr14": 0.01653,
+    "bar_index": 199,
+    "known_ts": "2004-10-06",
+    "price": 0.256429,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.205021,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.213286,
+    "trigger_known_ts": "2004-10-06",
+    "trigger_ts": "2004-10-04",
+    "ts": "2004-10-04",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.536773,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 202,
+    "basis": "structure_stop",
+    "known_ts": "2004-10-15",
+    "price": 0.147143,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "stop_level": 0.239429,
+    "strength": 0.45,
+    "ts": "2004-10-15",
+    "type": "SELL"
+   },
+   {
+    "atr14": 0.012228,
+    "bar_index": 206,
+    "known_ts": "2004-11-04",
+    "price": 0.151,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.126029,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.132143,
+    "trigger_known_ts": "2004-11-04",
+    "trigger_ts": "2004-11-02",
+    "ts": "2004-11-02",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.727226,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 208,
+    "blocked": true,
+    "known_ts": "2004-11-12",
+    "price": 0.155143,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2004-11-10",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.0104,
+    "bar_index": 208,
+    "known_ts": "2004-11-12",
+    "price": 0.155143,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.1288,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 0.134,
+    "trigger_known_ts": "2004-11-12",
+    "trigger_ts": "2004-11-10",
+    "ts": "2004-11-10",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.719741,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 220,
+    "basis": "structure_stop",
+    "known_ts": "2005-01-05",
+    "price": 0.16,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.164714,
+    "strength": 0.588,
+    "ts": "2005-01-05",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 221,
+    "basis": "structure_stop",
+    "known_ts": "2005-01-07",
+    "price": 0.158857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.164714,
+    "strength": 0.588,
+    "ts": "2005-01-07",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 239,
+    "blocked": true,
+    "known_ts": "2005-03-30",
+    "price": 0.146429,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2005-03-28",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.00596,
+    "bar_index": 239,
+    "known_ts": "2005-03-30",
+    "price": 0.146429,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.124306,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 0.127286,
+    "trigger_known_ts": "2005-03-30",
+    "trigger_ts": "2005-03-28",
+    "ts": "2005-03-28",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.728188,
+     "monthly_oversold_dwell": 2,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 245,
+    "basis": "structure_stop",
+    "known_ts": "2005-04-22",
+    "price": 0.16,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.161857,
+    "strength": 0.588,
+    "ts": "2005-04-22",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2005-04-22",
+    "atr14": 0.00863,
+    "bar_index": 245,
+    "known_ts": "2005-04-25",
+    "price": 0.164286,
+    "prior_stop_level": 0.161857,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2005-04-22 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.153256,
+    "strength": 0.588,
+    "sweep_low": 0.157571,
+    "ts": "2005-04-25",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 249,
+    "known_ts": "2005-05-09",
+    "price": 0.185,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2005-04-22 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2005-05-09",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 254,
+    "basis": "structure_stop",
+    "known_ts": "2005-05-31",
+    "price": 0.204143,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.206286,
+    "strength": 0.863,
+    "ts": "2005-05-31",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2005-05-31",
+    "atr14": 0.011385,
+    "bar_index": 254,
+    "known_ts": "2005-06-01",
+    "price": 0.207143,
+    "prior_stop_level": 0.206286,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2005-05-31 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.197164,
+    "strength": 0.863,
+    "sweep_low": 0.202857,
+    "ts": "2005-06-01",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 258,
+    "known_ts": "2005-06-16",
+    "price": 0.245571,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2005-05-31 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2005-06-16",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 277,
+    "known_ts": "2005-09-09",
+    "price": 0.356714,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "score": 20,
+    "strength": 1.0,
+    "tier": "base",
+    "ts": "2005-09-07",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 288,
+    "basis": "structure_stop",
+    "known_ts": "2005-10-26",
+    "price": 0.356857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.366143,
+    "strength": 1.0,
+    "ts": "2005-10-26",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2005-10-26",
+    "atr14": 0.021156,
+    "bar_index": 289,
+    "known_ts": "2005-10-27",
+    "price": 0.37,
+    "prior_stop_level": 0.366143,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2005-10-26 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.329565,
+    "strength": 1.0,
+    "sweep_low": 0.340143,
+    "ts": "2005-10-27",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 316,
+    "known_ts": "2006-02-28",
+    "price": 0.383,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 0,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2006-02-24",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 320,
+    "known_ts": "2006-03-16",
+    "price": 0.363857,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 20,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2006-03-14",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 334,
+    "basis": "structure_stop",
+    "known_ts": "2006-05-12",
+    "price": 0.422714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.422857,
+    "strength": 0.863,
+    "ts": "2006-05-12",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 359,
+    "known_ts": "2006-08-31",
+    "price": 0.286,
+    "quality": "block",
+    "quality_reason": "counter-trend, no 200-reclaim/hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.588,
+    "tier": "base",
+    "ts": "2006-08-29",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 370,
+    "basis": "structure_stop",
+    "known_ts": "2006-10-17",
+    "price": 0.324714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.325429,
+    "strength": 0.588,
+    "ts": "2006-10-17",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2006-10-17",
+    "atr14": 0.011143,
+    "bar_index": 371,
+    "known_ts": "2006-10-23",
+    "price": 0.329714,
+    "prior_stop_level": 0.325429,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2006-10-17 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.307999,
+    "strength": 0.588,
+    "sweep_low": 0.313571,
+    "ts": "2006-10-23",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 374,
+    "known_ts": "2006-11-01",
+    "price": 0.381429,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2006-10-17 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2006-11-01",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 380,
+    "basis": "structure_stop",
+    "known_ts": "2006-11-28",
+    "price": 0.412,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.413143,
+    "strength": 0.863,
+    "ts": "2006-11-28",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2006-11-28",
+    "atr14": 0.010275,
+    "bar_index": 380,
+    "known_ts": "2006-11-29",
+    "price": 0.417,
+    "prior_stop_level": 0.413143,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2006-11-28 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.402292,
+    "strength": 0.863,
+    "sweep_low": 0.407429,
+    "ts": "2006-11-29",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 405,
+    "blocked": true,
+    "known_ts": "2007-03-22",
+    "price": 0.33,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2007-03-20",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 408,
+    "known_ts": "2007-04-02",
+    "price": 0.350429,
+    "quality": "block_repair",
+    "quality_reason": "bear-block legs repaired after the 2007-03-20 blocked entry",
+    "reasons": [
+     "bear_block_cleared",
+     "macd_cross_still_live"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2007-04-02",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 411,
+    "basis": "structure_stop",
+    "known_ts": "2007-04-18",
+    "price": 0.31,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.331286,
+    "strength": 0.588,
+    "ts": "2007-04-18",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 412,
+    "basis": "structure_stop",
+    "known_ts": "2007-04-23",
+    "price": 0.310429,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.331286,
+    "strength": 0.588,
+    "ts": "2007-04-23",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 432,
+    "blocked": true,
+    "known_ts": "2007-07-18",
+    "price": 0.287429,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2007-07-16",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.011418,
+    "bar_index": 437,
+    "known_ts": "2007-08-08",
+    "price": 0.256714,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.230005,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.235714,
+    "trigger_known_ts": "2007-08-08",
+    "trigger_ts": "2007-08-06",
+    "ts": "2007-08-06",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.390642,
+     "monthly_oversold_dwell": 3,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 440,
+    "blocked": true,
+    "known_ts": "2007-08-21",
+    "price": 0.247143,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2007-08-17",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.011906,
+    "bar_index": 440,
+    "known_ts": "2007-08-21",
+    "price": 0.247143,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.231476,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 0.237429,
+    "trigger_known_ts": "2007-08-21",
+    "trigger_ts": "2007-08-17",
+    "ts": "2007-08-17",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.413361,
+     "monthly_oversold_dwell": 3,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 451,
+    "known_ts": "2007-10-04",
+    "price": 0.318143,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2007-04-23 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2007-10-04",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 459,
+    "basis": "structure_stop",
+    "known_ts": "2007-11-09",
+    "price": 0.360714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.375143,
+    "strength": 0.863,
+    "ts": "2007-11-09",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 460,
+    "basis": "structure_stop",
+    "known_ts": "2007-11-13",
+    "price": 0.363,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.375143,
+    "strength": 0.863,
+    "ts": "2007-11-13",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 468,
+    "known_ts": "2007-12-17",
+    "price": 0.355286,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2007-11-13 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2007-12-17",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 470,
+    "known_ts": "2007-12-28",
+    "price": 0.384714,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "score": 20,
+    "strength": 1.0,
+    "tier": "base",
+    "ts": "2007-12-26",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 479,
+    "known_ts": "2008-02-07",
+    "price": 0.383571,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 10,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2008-02-05",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 494,
+    "basis": "structure_stop",
+    "known_ts": "2008-04-11",
+    "price": 0.507286,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.512857,
+    "strength": 1.0,
+    "ts": "2008-04-11",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 495,
+    "known_ts": "2008-04-17",
+    "price": 0.581429,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "score": 20,
+    "strength": 1.0,
+    "tier": "base",
+    "ts": "2008-04-15",
+    "type": "REBUY"
+   },
+   {
+    "anchor_ts": "2008-04-11",
+    "atr14": 0.023251,
+    "bar_index": 495,
+    "known_ts": "2008-04-15",
+    "price": 0.521143,
+    "prior_stop_level": 0.512857,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2008-04-11 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.489946,
+    "strength": 1.0,
+    "sweep_low": 0.501571,
+    "ts": "2008-04-15",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 519,
+    "known_ts": "2008-07-30",
+    "price": 0.436143,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 10,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2008-07-28",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 528,
+    "basis": "structure_stop",
+    "known_ts": "2008-09-04",
+    "price": 0.426714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.427714,
+    "strength": 0.863,
+    "ts": "2008-09-04",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2008-09-04",
+    "atr14": 0.016522,
+    "bar_index": 528,
+    "known_ts": "2008-09-08",
+    "price": 0.430714,
+    "prior_stop_level": 0.427714,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2008-09-04 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.39931,
+    "strength": 0.863,
+    "sweep_low": 0.407571,
+    "ts": "2008-09-08",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 531,
+    "known_ts": "2008-09-19",
+    "price": 0.456286,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 15,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2008-09-17",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 544,
+    "known_ts": "2008-11-13",
+    "price": 0.348,
+    "quality": "block",
+    "quality_reason": "counter-trend, no 200-reclaim/hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 25,
+    "strength": 0.588,
+    "tier": "base",
+    "ts": "2008-11-11",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 567,
+    "basis": "structure_stop",
+    "known_ts": "2009-02-23",
+    "price": 0.508286,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 0.516714,
+    "strength": 0.863,
+    "ts": "2009-02-23",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2009-02-23",
+    "atr14": 0.023249,
+    "bar_index": 568,
+    "known_ts": "2009-02-27",
+    "price": 0.517714,
+    "prior_stop_level": 0.516714,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2009-02-23 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.486946,
+    "strength": 0.863,
+    "sweep_low": 0.498571,
+    "ts": "2009-02-27",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 570,
+    "known_ts": "2009-03-10",
+    "price": 0.55,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "score": 20,
+    "strength": 1.0,
+    "tier": "base",
+    "ts": "2009-03-06",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 580,
+    "basis": "structure_stop",
+    "known_ts": "2009-04-22",
+    "price": 0.655429,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.665571,
+    "strength": 1.0,
+    "ts": "2009-04-22",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 599,
+    "known_ts": "2009-07-14",
+    "price": 0.618571,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 10,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2009-07-10",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 607,
+    "basis": "structure_stop",
+    "known_ts": "2009-08-17",
+    "price": 0.615857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.621429,
+    "strength": 0.863,
+    "ts": "2009-08-17",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2009-08-17",
+    "atr14": 0.021213,
+    "bar_index": 608,
+    "known_ts": "2009-08-18",
+    "price": 0.622143,
+    "prior_stop_level": 0.621429,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2009-08-17 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.59668,
+    "strength": 0.863,
+    "sweep_low": 0.607286,
+    "ts": "2009-08-18",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 611,
+    "basis": "structure_stop",
+    "known_ts": "2009-09-01",
+    "price": 0.602143,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.615857,
+    "strength": 0.863,
+    "ts": "2009-09-01",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2009-09-01",
+    "atr14": 0.021407,
+    "bar_index": 613,
+    "known_ts": "2009-09-09",
+    "price": 0.617571,
+    "prior_stop_level": 0.615857,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2009-09-01 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.550296,
+    "strength": 0.725,
+    "sweep_low": 0.561,
+    "ts": "2009-09-09",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 615,
+    "known_ts": "2009-09-21",
+    "price": 0.678571,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 0,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2009-09-17",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 633,
+    "basis": "structure_stop",
+    "known_ts": "2009-12-04",
+    "price": 0.803286,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 0.826429,
+    "strength": 1.0,
+    "ts": "2009-12-04",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 646,
+    "known_ts": "2010-02-03",
+    "price": 0.885,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2010-02-01",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 680,
+    "basis": "structure_stop",
+    "known_ts": "2010-06-30",
+    "price": 1.552143,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 1.559429,
+    "strength": 0.863,
+    "ts": "2010-06-30",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2010-06-30",
+    "atr14": 0.080394,
+    "bar_index": 681,
+    "known_ts": "2010-07-01",
+    "price": 1.566571,
+    "prior_stop_level": 1.559429,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2010-06-30 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 1.435089,
+    "strength": 0.863,
+    "sweep_low": 1.475286,
+    "ts": "2010-07-01",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 701,
+    "known_ts": "2010-09-27",
+    "price": 2.437571,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2010-06-30 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2010-09-27",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 706,
+    "basis": "structure_stop",
+    "known_ts": "2010-10-19",
+    "price": 2.133286,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 2.137714,
+    "strength": 0.863,
+    "ts": "2010-10-19",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2010-10-19",
+    "atr14": 0.086928,
+    "bar_index": 706,
+    "known_ts": "2010-10-20",
+    "price": 2.187857,
+    "prior_stop_level": 2.137714,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2010-10-19 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 2.061536,
+    "strength": 0.863,
+    "sweep_low": 2.105,
+    "ts": "2010-10-20",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 710,
+    "known_ts": "2010-11-03",
+    "price": 2.401429,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2010-10-19 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2010-11-03",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 719,
+    "basis": "structure_stop",
+    "known_ts": "2010-12-13",
+    "price": 2.625714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 2.649286,
+    "strength": 1.0,
+    "ts": "2010-12-13",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 731,
+    "known_ts": "2011-02-03",
+    "price": 3.114571,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2010-12-13 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2011-02-03",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 735,
+    "basis": "structure_stop",
+    "known_ts": "2011-02-23",
+    "price": 3.017143,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 3.018,
+    "strength": 0.863,
+    "ts": "2011-02-23",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2011-02-23",
+    "atr14": 0.121373,
+    "bar_index": 735,
+    "known_ts": "2011-02-24",
+    "price": 3.074,
+    "prior_stop_level": 3.018,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2011-02-23 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 2.873457,
+    "strength": 0.863,
+    "sweep_low": 2.934143,
+    "ts": "2011-02-24",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 736,
+    "basis": "structure_stop",
+    "known_ts": "2011-02-28",
+    "price": 2.952429,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 3.018,
+    "strength": 0.863,
+    "ts": "2011-02-28",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 743,
+    "known_ts": "2011-03-30",
+    "price": 3.399286,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": 15,
+    "strength": 0.588,
+    "tier": "base",
+    "ts": "2011-03-28",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 773,
+    "basis": "structure_stop",
+    "known_ts": "2011-08-05",
+    "price": 3.444429,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "stop_level": 3.509,
+    "strength": 0.588,
+    "ts": "2011-08-05",
+    "type": "SELL"
+   },
+   {
+    "atr14": 0.152638,
+    "bar_index": 787,
+    "known_ts": "2011-10-06",
+    "price": 1.760571,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 1.461252,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 1.537571,
+    "trigger_known_ts": "2011-10-06",
+    "trigger_ts": "2011-10-04",
+    "ts": "2011-10-04",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.587454,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 794,
+    "blocked": true,
+    "known_ts": "2011-11-04",
+    "price": 1.286,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2011-11-02",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.12247,
+    "bar_index": 794,
+    "known_ts": "2011-11-04",
+    "price": 1.286,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.999479,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 1.060714,
+    "trigger_known_ts": "2011-11-04",
+    "trigger_ts": "2011-11-02",
+    "ts": "2011-11-02",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.698658,
+     "monthly_oversold_dwell": 1,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "atr14": 0.106768,
+    "bar_index": 795,
+    "known_ts": "2011-11-09",
+    "price": 1.257857,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 1.071473,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 1.124857,
+    "trigger_known_ts": "2011-11-09",
+    "trigger_ts": "2011-11-07",
+    "ts": "2011-11-07",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.705252,
+     "monthly_oversold_dwell": 1,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "atr14": 0.074716,
+    "bar_index": 803,
+    "known_ts": "2011-12-14",
+    "price": 1.014857,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.892785,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 0.930143,
+    "trigger_known_ts": "2011-12-14",
+    "trigger_ts": "2011-12-12",
+    "ts": "2011-12-12",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.762193,
+     "monthly_oversold_dwell": 2,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 818,
+    "basis": "structure_stop",
+    "known_ts": "2012-02-21",
+    "price": 1.677143,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 1.69,
+    "strength": 0.588,
+    "ts": "2012-02-21",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 825,
+    "known_ts": "2012-03-21",
+    "price": 1.715714,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 10,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2012-03-19",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 848,
+    "blocked": true,
+    "known_ts": "2012-06-28",
+    "price": 0.962286,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2012-06-26",
+    "type": "BUY"
+   },
+   {
+    "atr14": 0.041093,
+    "bar_index": 848,
+    "known_ts": "2012-06-28",
+    "price": 0.962286,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 0.905025,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 0.925571,
+    "trigger_known_ts": "2012-06-28",
+    "trigger_ts": "2012-06-26",
+    "ts": "2012-06-26",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.774512,
+     "monthly_oversold_dwell": 8,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 854,
+    "basis": "structure_stop",
+    "known_ts": "2012-07-23",
+    "price": 1.142,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 1.146143,
+    "strength": 0.725,
+    "ts": "2012-07-23",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2012-07-23",
+    "atr14": 0.05017,
+    "bar_index": 854,
+    "known_ts": "2012-07-24",
+    "price": 1.148429,
+    "prior_stop_level": 1.146143,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2012-07-23 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 1.086486,
+    "strength": 0.588,
+    "sweep_low": 1.111571,
+    "ts": "2012-07-24",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 859,
+    "known_ts": "2012-08-15",
+    "price": 0.903714,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 25,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2012-08-13",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 866,
+    "known_ts": "2012-09-14",
+    "price": 0.864571,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 35,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2012-09-12",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 871,
+    "known_ts": "2012-10-05",
+    "price": 0.950857,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 35,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2012-10-03",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 896,
+    "known_ts": "2013-01-28",
+    "price": 2.315857,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 20,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2013-01-24",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 906,
+    "basis": "structure_stop",
+    "known_ts": "2013-03-11",
+    "price": 2.577857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 2.588714,
+    "strength": 1.0,
+    "ts": "2013-03-11",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2013-03-11",
+    "atr14": 0.109082,
+    "bar_index": 906,
+    "known_ts": "2013-03-12",
+    "price": 2.601571,
+    "prior_stop_level": 2.588714,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2013-03-11 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 2.502745,
+    "strength": 1.0,
+    "sweep_low": 2.557286,
+    "ts": "2013-03-12",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 910,
+    "known_ts": "2013-03-26",
+    "price": 2.704,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2013-03-11 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2013-03-26",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 928,
+    "basis": "structure_stop",
+    "known_ts": "2013-06-12",
+    "price": 2.966286,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 3.059857,
+    "strength": 0.863,
+    "ts": "2013-06-12",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2013-06-12",
+    "atr14": 0.128834,
+    "bar_index": 928,
+    "known_ts": "2013-06-13",
+    "price": 3.077,
+    "prior_stop_level": 3.059857,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2013-06-12 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 2.874869,
+    "strength": 0.863,
+    "sweep_low": 2.939286,
+    "ts": "2013-06-13",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 947,
+    "known_ts": "2013-09-03",
+    "price": 4.215857,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2013-06-12 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2013-09-03",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 956,
+    "basis": "structure_stop",
+    "known_ts": "2013-10-11",
+    "price": 4.297857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 4.314857,
+    "strength": 0.863,
+    "ts": "2013-10-11",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2013-10-11",
+    "atr14": 0.176757,
+    "bar_index": 956,
+    "known_ts": "2013-10-14",
+    "price": 4.633714,
+    "prior_stop_level": 4.314857,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2013-10-11 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 4.199192,
+    "strength": 0.863,
+    "sweep_low": 4.287571,
+    "ts": "2013-10-14",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 976,
+    "basis": "structure_stop",
+    "known_ts": "2014-01-07",
+    "price": 4.85,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 5.063429,
+    "strength": 0.863,
+    "ts": "2014-01-07",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 985,
+    "known_ts": "2014-02-14",
+    "price": 6.117571,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2014-01-07 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2014-02-14",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 990,
+    "basis": "structure_stop",
+    "known_ts": "2014-03-10",
+    "price": 6.285,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 6.365571,
+    "strength": 0.863,
+    "ts": "2014-03-10",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 991,
+    "basis": "structure_stop",
+    "known_ts": "2014-03-13",
+    "price": 6.143714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 6.365571,
+    "strength": 0.725,
+    "ts": "2014-03-13",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1005,
+    "known_ts": "2014-05-15",
+    "price": 4.917,
+    "quality": "take",
+    "quality_reason": "reclaimed 200 & held",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.588,
+    "tier": "base",
+    "ts": "2014-05-13",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1021,
+    "basis": "structure_stop",
+    "known_ts": "2014-07-22",
+    "price": 6.158429,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 6.265,
+    "strength": 0.725,
+    "ts": "2014-07-22",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1025,
+    "known_ts": "2014-08-07",
+    "price": 6.450571,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2014-07-22 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2014-08-07",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1034,
+    "basis": "structure_stop",
+    "known_ts": "2014-09-16",
+    "price": 6.527286,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 6.752429,
+    "strength": 0.725,
+    "ts": "2014-09-16",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1058,
+    "blocked": true,
+    "known_ts": "2014-12-31",
+    "price": 4.880143,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2014-12-29",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1061,
+    "basis": "structure_stop",
+    "known_ts": "2015-01-12",
+    "price": 4.554714,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "stop_level": 4.650143,
+    "strength": 0.45,
+    "ts": "2015-01-12",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2015-01-12",
+    "atr14": 0.150377,
+    "bar_index": 1062,
+    "known_ts": "2015-01-16",
+    "price": 4.819143,
+    "prior_stop_level": 4.650143,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2015-01-12 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 4.451241,
+    "strength": 0.45,
+    "sweep_low": 4.526429,
+    "ts": "2015-01-16",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1065,
+    "known_ts": "2015-01-29",
+    "price": 6.301,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2015-01-12 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2015-01-29",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1073,
+    "basis": "structure_stop",
+    "known_ts": "2015-03-06",
+    "price": 6.487429,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 6.740571,
+    "strength": 0.863,
+    "ts": "2015-03-06",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1081,
+    "known_ts": "2015-04-09",
+    "price": 6.781143,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2015-03-06 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2015-04-09",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1099,
+    "basis": "structure_stop",
+    "known_ts": "2015-06-26",
+    "price": 9.308857,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 9.387143,
+    "strength": 0.863,
+    "ts": "2015-06-26",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2015-06-26",
+    "atr14": 0.216761,
+    "bar_index": 1100,
+    "known_ts": "2015-07-02",
+    "price": 9.404429,
+    "prior_stop_level": 9.387143,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2015-06-26 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 9.003334,
+    "strength": 1.0,
+    "sweep_low": 9.111714,
+    "ts": "2015-07-02",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1103,
+    "known_ts": "2015-07-14",
+    "price": 11.581,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2015-06-26 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2015-07-14",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1129,
+    "known_ts": "2015-11-04",
+    "price": 11.405,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 0,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2015-11-02",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1142,
+    "basis": "structure_stop",
+    "known_ts": "2015-12-31",
+    "price": 11.438,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 11.624,
+    "strength": 0.725,
+    "ts": "2015-12-31",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2015-12-31",
+    "atr14": 0.50803,
+    "bar_index": 1143,
+    "known_ts": "2016-01-06",
+    "price": 11.768,
+    "prior_stop_level": 11.624,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2015-12-31 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 10.241985,
+    "strength": 0.725,
+    "sweep_low": 10.496,
+    "ts": "2016-01-06",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1156,
+    "blocked": true,
+    "known_ts": "2016-03-03",
+    "price": 9.793,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2016-03-01",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1168,
+    "basis": "structure_stop",
+    "known_ts": "2016-04-21",
+    "price": 9.498,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 10.268,
+    "strength": 0.588,
+    "ts": "2016-04-21",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1168,
+    "basis": "structure_stop",
+    "known_ts": "2016-04-25",
+    "price": 9.356,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 9.434,
+    "strength": 0.588,
+    "ts": "2016-04-25",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1175,
+    "blocked": true,
+    "known_ts": "2016-05-24",
+    "price": 9.789,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2016-05-20",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1184,
+    "blocked": true,
+    "known_ts": "2016-07-01",
+    "price": 9.667,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": null,
+    "strength": 0.588,
+    "tier": null,
+    "ts": "2016-06-29",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1191,
+    "blocked": true,
+    "known_ts": "2016-08-02",
+    "price": 9.356,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": null,
+    "strength": 0.588,
+    "tier": null,
+    "ts": "2016-07-29",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1203,
+    "basis": "structure_stop",
+    "known_ts": "2016-09-21",
+    "price": 9.488,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 9.609,
+    "strength": 0.725,
+    "ts": "2016-09-21",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2016-09-21",
+    "atr14": 0.231212,
+    "bar_index": 1204,
+    "known_ts": "2016-09-27",
+    "price": 9.707,
+    "prior_stop_level": 9.609,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2016-09-21 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 9.210394,
+    "strength": 0.725,
+    "sweep_low": 9.326,
+    "ts": "2016-09-27",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1207,
+    "known_ts": "2016-10-06",
+    "price": 10.333,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2016-09-21 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2016-10-06",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1215,
+    "basis": "structure_stop",
+    "known_ts": "2016-11-10",
+    "price": 11.542,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 12.203,
+    "strength": 0.863,
+    "ts": "2016-11-10",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1219,
+    "known_ts": "2016-11-28",
+    "price": 11.7,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2016-11-10 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2016-11-28",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1240,
+    "basis": "structure_stop",
+    "known_ts": "2017-03-02",
+    "price": 13.953,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 14.082,
+    "strength": 1.0,
+    "ts": "2017-03-02",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2017-03-02",
+    "atr14": 0.24908,
+    "bar_index": 1241,
+    "known_ts": "2017-03-06",
+    "price": 14.194,
+    "prior_stop_level": 14.082,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2017-03-02 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 13.70146,
+    "strength": 1.0,
+    "sweep_low": 13.826,
+    "ts": "2017-03-06",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1257,
+    "known_ts": "2017-05-12",
+    "price": 15.941,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2017-03-02 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2017-05-12",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1263,
+    "basis": "structure_stop",
+    "known_ts": "2017-06-12",
+    "price": 15.144,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 15.32,
+    "strength": 0.863,
+    "ts": "2017-06-12",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2017-06-12",
+    "atr14": 0.398493,
+    "bar_index": 1265,
+    "known_ts": "2017-06-19",
+    "price": 15.34,
+    "prior_stop_level": 15.32,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2017-06-12 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 14.530753,
+    "strength": 0.863,
+    "sweep_low": 14.73,
+    "ts": "2017-06-19",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1275,
+    "known_ts": "2017-07-31",
+    "price": 18.073999,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2017-06-12 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2017-07-31",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1295,
+    "basis": "structure_stop",
+    "known_ts": "2017-10-25",
+    "price": 19.377001,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 19.495001,
+    "strength": 1.0,
+    "ts": "2017-10-25",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2017-10-25",
+    "atr14": 0.457671,
+    "bar_index": 1295,
+    "known_ts": "2017-10-26",
+    "price": 19.521,
+    "prior_stop_level": 19.495001,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2017-10-25 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 19.072165,
+    "strength": 1.0,
+    "sweep_low": 19.301001,
+    "ts": "2017-10-26",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1312,
+    "known_ts": "2018-01-08",
+    "price": 21.252001,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2017-10-25 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2018-01-08",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1355,
+    "basis": "structure_stop",
+    "known_ts": "2018-07-17",
+    "price": 37.948002,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 39.051998,
+    "strength": 0.863,
+    "ts": "2018-07-17",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1369,
+    "known_ts": "2018-09-14",
+    "price": 36.456001,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 15,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2018-09-12",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1375,
+    "basis": "structure_stop",
+    "known_ts": "2018-10-08",
+    "price": 34.91,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 36.118999,
+    "strength": 0.725,
+    "ts": "2018-10-08",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1393,
+    "blocked": true,
+    "known_ts": "2018-12-28",
+    "price": 25.608,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2018-12-26",
+    "type": "BUY"
+   },
+   {
+    "atr14": 1.593435,
+    "bar_index": 1393,
+    "known_ts": "2018-12-28",
+    "price": 25.608,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 22.326282,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 23.122999,
+    "trigger_known_ts": "2018-12-28",
+    "trigger_ts": "2018-12-26",
+    "ts": "2018-12-26",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.388787,
+     "monthly_oversold_dwell": 0,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 1396,
+    "known_ts": "2019-01-09",
+    "price": 33.758999,
+    "quality": "block_repair",
+    "quality_reason": "bear-block legs repaired after the 2018-12-26 blocked entry",
+    "reasons": [
+     "bear_block_cleared",
+     "macd_cross_still_live"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2019-01-09",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1409,
+    "basis": "structure_stop",
+    "known_ts": "2019-03-08",
+    "price": 34.959999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 35.104,
+    "strength": 0.725,
+    "ts": "2019-03-08",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2019-03-08",
+    "atr14": 1.028086,
+    "bar_index": 1409,
+    "known_ts": "2019-03-11",
+    "price": 35.886002,
+    "prior_stop_level": 35.104,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2019-03-08 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 33.732959,
+    "strength": 0.725,
+    "sweep_low": 34.247002,
+    "ts": "2019-03-11",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1414,
+    "known_ts": "2019-03-28",
+    "price": 36.695999,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2019-03-08 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2019-03-28",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1420,
+    "known_ts": "2019-04-26",
+    "price": 37.485001,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 40,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2019-04-24",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1434,
+    "known_ts": "2019-06-26",
+    "price": 36.220001,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2019-06-24",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1439,
+    "basis": "structure_stop",
+    "known_ts": "2019-07-18",
+    "price": 32.521,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 36.029999,
+    "strength": 0.725,
+    "ts": "2019-07-18",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1459,
+    "blocked": true,
+    "known_ts": "2019-10-11",
+    "price": 28.292999,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2019-10-09",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1475,
+    "known_ts": "2019-12-17",
+    "price": 33.222,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2019-07-18 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2019-12-17",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1482,
+    "basis": "structure_stop",
+    "known_ts": "2020-01-22",
+    "price": 32.599998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 32.904999,
+    "strength": 0.863,
+    "ts": "2020-01-22",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2020-01-22",
+    "atr14": 0.964128,
+    "bar_index": 1483,
+    "known_ts": "2020-01-23",
+    "price": 34.959999,
+    "prior_stop_level": 32.904999,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2020-01-22 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 31.877937,
+    "strength": 0.863,
+    "sweep_low": 32.360001,
+    "ts": "2020-01-23",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1486,
+    "known_ts": "2020-02-05",
+    "price": 36.676998,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2020-01-22 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2020-02-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1490,
+    "basis": "structure_stop",
+    "known_ts": "2020-02-25",
+    "price": 36.008999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 36.676998,
+    "strength": 0.863,
+    "ts": "2020-02-25",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2020-02-25",
+    "atr14": 1.178308,
+    "bar_index": 1490,
+    "known_ts": "2020-02-26",
+    "price": 37.924,
+    "prior_stop_level": 36.676998,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2020-02-25 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 35.182845,
+    "strength": 0.863,
+    "sweep_low": 35.771999,
+    "ts": "2020-02-26",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1503,
+    "known_ts": "2020-04-20",
+    "price": 42.141998,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2020-02-25 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2020-04-20",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1511,
+    "basis": "structure_stop",
+    "known_ts": "2020-05-22",
+    "price": 42.931999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 43.181999,
+    "strength": 1.0,
+    "ts": "2020-05-22",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1520,
+    "known_ts": "2020-07-01",
+    "price": 49.381001,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2020-05-22 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2020-07-01",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1529,
+    "basis": "structure_stop",
+    "known_ts": "2020-08-11",
+    "price": 46.693001,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 47.757999,
+    "strength": 0.863,
+    "ts": "2020-08-11",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2020-08-11",
+    "atr14": 1.660025,
+    "bar_index": 1530,
+    "known_ts": "2020-08-13",
+    "price": 48.132999,
+    "prior_stop_level": 47.757999,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2020-08-11 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 45.824986,
+    "strength": 0.863,
+    "sweep_low": 46.654999,
+    "ts": "2020-08-13",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1543,
+    "known_ts": "2020-10-12",
+    "price": 53.980999,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 15,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2020-10-08",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1556,
+    "known_ts": "2020-12-07",
+    "price": 51.577999,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2020-12-03",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1563,
+    "basis": "structure_stop",
+    "known_ts": "2021-01-06",
+    "price": 50.049,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 51.396999,
+    "strength": 0.863,
+    "ts": "2021-01-06",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1566,
+    "known_ts": "2021-01-21",
+    "price": 57.984001,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 20,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2021-01-19",
+    "type": "REBUY"
+   },
+   {
+    "bar_index": 1583,
+    "known_ts": "2021-04-06",
+    "price": 54.452999,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 20,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2021-04-01",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1587,
+    "basis": "structure_stop",
+    "known_ts": "2021-04-22",
+    "price": 50.877998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 54.001999,
+    "strength": 0.725,
+    "ts": "2021-04-22",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1599,
+    "known_ts": "2021-06-14",
+    "price": 49.988998,
+    "quality": "block",
+    "quality_reason": "counter-trend, no 200-reclaim/hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.588,
+    "tier": "base",
+    "ts": "2021-06-10",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1607,
+    "basis": "structure_stop",
+    "known_ts": "2021-07-16",
+    "price": 53.030998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 53.076,
+    "strength": 0.725,
+    "ts": "2021-07-16",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2021-07-16",
+    "atr14": 1.132943,
+    "bar_index": 1607,
+    "known_ts": "2021-07-19",
+    "price": 53.228001,
+    "prior_stop_level": 53.076,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2021-07-16 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 51.657528,
+    "strength": 0.725,
+    "sweep_low": 52.223999,
+    "ts": "2021-07-19",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1608,
+    "basis": "structure_stop",
+    "known_ts": "2021-07-22",
+    "price": 51.176998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 53.076,
+    "strength": 0.588,
+    "ts": "2021-07-22",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1612,
+    "known_ts": "2021-08-05",
+    "price": 51.997002,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2021-07-22 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2021-08-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1615,
+    "known_ts": "2021-08-20",
+    "price": 54.688,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 35,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2021-08-18",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1622,
+    "basis": "structure_stop",
+    "known_ts": "2021-09-20",
+    "price": 57.542999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 57.776001,
+    "strength": 0.863,
+    "ts": "2021-09-20",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2021-09-20",
+    "atr14": 1.386171,
+    "bar_index": 1623,
+    "known_ts": "2021-09-22",
+    "price": 59.064999,
+    "prior_stop_level": 57.776001,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2021-09-20 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 56.114913,
+    "strength": 0.863,
+    "sweep_low": 56.807999,
+    "ts": "2021-09-22",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1626,
+    "known_ts": "2021-10-05",
+    "price": 63.185001,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2021-09-20 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2021-10-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1633,
+    "basis": "structure_stop",
+    "known_ts": "2021-11-05",
+    "price": 64.571999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 66.292,
+    "strength": 1.0,
+    "ts": "2021-11-05",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2021-11-05",
+    "atr14": 1.716132,
+    "bar_index": 1635,
+    "known_ts": "2021-11-12",
+    "price": 68.261002,
+    "prior_stop_level": 66.292,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2021-11-05 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 63.352933,
+    "strength": 1.0,
+    "sweep_low": 64.210999,
+    "ts": "2021-11-12",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1637,
+    "known_ts": "2021-11-19",
+    "price": 65.405998,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2021-11-05 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2021-11-19",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1669,
+    "basis": "structure_stop",
+    "known_ts": "2022-04-11",
+    "price": 34.799999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "stop_level": 37.384998,
+    "strength": 0.45,
+    "ts": "2022-04-11",
+    "type": "SELL"
+   },
+   {
+    "atr14": 1.700024,
+    "bar_index": 1675,
+    "known_ts": "2022-05-09",
+    "price": 17.309999,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 16.379987,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 17.23,
+    "trigger_known_ts": "2022-05-09",
+    "trigger_ts": "2022-05-05",
+    "ts": "2022-05-05",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.746195,
+     "monthly_oversold_dwell": 1,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 1678,
+    "blocked": true,
+    "known_ts": "2022-05-20",
+    "price": 18.635,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2022-05-18",
+    "type": "BUY"
+   },
+   {
+    "atr14": 1.439404,
+    "bar_index": 1678,
+    "known_ts": "2022-05-20",
+    "price": 18.635,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 15.551298,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 16.271,
+    "trigger_known_ts": "2022-05-20",
+    "trigger_ts": "2022-05-18",
+    "ts": "2022-05-18",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.726768,
+     "monthly_oversold_dwell": 1,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 1701,
+    "basis": "structure_stop",
+    "known_ts": "2022-08-30",
+    "price": 22.065001,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 22.142,
+    "strength": 0.588,
+    "ts": "2022-08-30",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2022-08-30",
+    "atr14": 0.964678,
+    "bar_index": 1702,
+    "known_ts": "2022-08-31",
+    "price": 22.356001,
+    "prior_stop_level": 22.142,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2022-08-30 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 21.391661,
+    "strength": 0.588,
+    "sweep_low": 21.874001,
+    "ts": "2022-08-31",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1712,
+    "known_ts": "2022-10-17",
+    "price": 24.51,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 25,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2022-10-13",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1722,
+    "basis": "structure_stop",
+    "known_ts": "2022-11-28",
+    "price": 28.117001,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 28.504999,
+    "strength": 0.863,
+    "ts": "2022-11-28",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1723,
+    "known_ts": "2022-12-02",
+    "price": 32.041,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "fast_reversal_up",
+     "sell_failed"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 20,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2022-11-30",
+    "type": "REBUY"
+   },
+   {
+    "anchor_ts": "2022-11-28",
+    "atr14": 1.300625,
+    "bar_index": 1723,
+    "known_ts": "2022-11-30",
+    "price": 30.552999,
+    "prior_stop_level": 28.504999,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2022-11-28 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 26.943687,
+    "strength": 0.863,
+    "sweep_low": 27.594,
+    "ts": "2022-11-30",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1727,
+    "basis": "structure_stop",
+    "known_ts": "2022-12-16",
+    "price": 29.070999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 30.556,
+    "strength": 0.863,
+    "ts": "2022-12-16",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1731,
+    "known_ts": "2023-01-05",
+    "price": 31.517,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2022-12-16 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2023-01-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1733,
+    "known_ts": "2023-01-18",
+    "price": 32.632999,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "score": 10,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2023-01-13",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1739,
+    "basis": "structure_stop",
+    "known_ts": "2023-02-10",
+    "price": 34.736,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 36.147999,
+    "strength": 0.863,
+    "ts": "2023-02-10",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1740,
+    "basis": "structure_stop",
+    "known_ts": "2023-02-14",
+    "price": 35.995998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 36.147999,
+    "strength": 0.863,
+    "ts": "2023-02-14",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1751,
+    "known_ts": "2023-04-05",
+    "price": 34.235001,
+    "quality": "block",
+    "quality_reason": "failed reclaim-and-hold",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 35,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2023-04-03",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1798,
+    "known_ts": "2023-10-26",
+    "price": 40.354,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 25,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2023-10-24",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1813,
+    "basis": "structure_stop",
+    "known_ts": "2024-01-02",
+    "price": 46.849998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 48.675999,
+    "strength": 1.0,
+    "ts": "2024-01-02",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1817,
+    "known_ts": "2024-01-17",
+    "price": 48.294998,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2024-01-02 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2024-01-17",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1823,
+    "basis": "structure_stop",
+    "known_ts": "2024-02-13",
+    "price": 55.452,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 55.588001,
+    "strength": 1.0,
+    "ts": "2024-02-13",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2024-02-13",
+    "atr14": 1.429446,
+    "bar_index": 1823,
+    "known_ts": "2024-02-14",
+    "price": 57.932999,
+    "prior_stop_level": 55.588001,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2024-02-13 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 54.185278,
+    "strength": 1.0,
+    "sweep_low": 54.900002,
+    "ts": "2024-02-14",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1827,
+    "known_ts": "2024-02-29",
+    "price": 61.583,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2024-02-13 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 1.0,
+    "ts": "2024-02-29",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1846,
+    "known_ts": "2024-05-23",
+    "price": 63.567001,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 15,
+    "strength": 0.863,
+    "tier": "base",
+    "ts": "2024-05-21",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1849,
+    "basis": "structure_stop",
+    "known_ts": "2024-06-04",
+    "price": 63.161999,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 63.567001,
+    "strength": 0.725,
+    "ts": "2024-06-04",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2024-06-04",
+    "atr14": 1.584505,
+    "bar_index": 1849,
+    "known_ts": "2024-06-05",
+    "price": 65.027,
+    "prior_stop_level": 63.567001,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2024-06-04 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 61.851749,
+    "strength": 0.725,
+    "sweep_low": 62.644001,
+    "ts": "2024-06-05",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1853,
+    "known_ts": "2024-06-21",
+    "price": 67.240997,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2024-06-04 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2024-06-21",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1857,
+    "basis": "structure_stop",
+    "known_ts": "2024-07-11",
+    "price": 65.275002,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 67.361,
+    "strength": 1.0,
+    "ts": "2024-07-11",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1869,
+    "known_ts": "2024-08-29",
+    "price": 67.531998,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2024-07-11 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2024-08-29",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1877,
+    "basis": "structure_stop",
+    "known_ts": "2024-10-07",
+    "price": 70.192001,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 70.612999,
+    "strength": 0.863,
+    "ts": "2024-10-07",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2024-10-07",
+    "atr14": 1.643067,
+    "bar_index": 1878,
+    "known_ts": "2024-10-08",
+    "price": 72.176003,
+    "prior_stop_level": 70.612999,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2024-10-07 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 68.821464,
+    "strength": 0.863,
+    "sweep_low": 69.642998,
+    "ts": "2024-10-08",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1881,
+    "known_ts": "2024-10-21",
+    "price": 74.929001,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2024-10-07 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2024-10-21",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1894,
+    "basis": "structure_stop",
+    "known_ts": "2024-12-18",
+    "price": 88.955002,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "stop_level": 91.334999,
+    "strength": 1.0,
+    "ts": "2024-12-18",
+    "type": "SELL"
+   },
+   {
+    "anchor_ts": "2024-12-18",
+    "atr14": 2.07361,
+    "bar_index": 1896,
+    "known_ts": "2024-12-24",
+    "price": 93.211998,
+    "prior_stop_level": 91.334999,
+    "quality": "stop_sweep_reclaim",
+    "quality_reason": "price reclaimed the 2024-12-18 structure-stop level within five sessions",
+    "reasons": [
+     "close_reclaimed_stop_level",
+     "within_5_sessions",
+     "failed_breakdown"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 87.619193,
+    "strength": 1.0,
+    "sweep_low": 88.655998,
+    "ts": "2024-12-24",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1907,
+    "known_ts": "2025-02-13",
+    "price": 103.584999,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2024-12-18 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.863,
+    "ts": "2025-02-13",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 1909,
+    "basis": "structure_stop",
+    "known_ts": "2025-02-24",
+    "price": 98.847,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 100.807999,
+    "strength": 0.863,
+    "ts": "2025-02-24",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1922,
+    "known_ts": "2025-04-23",
+    "price": 104.959,
+    "quality": "take",
+    "quality_reason": "held confirmation",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 15,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2025-04-21",
+    "type": "BUY"
+   },
+   {
+    "bar_index": 1942,
+    "basis": "structure_stop",
+    "known_ts": "2025-07-18",
+    "price": 120.924004,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "stop_level": 124.511002,
+    "strength": 0.863,
+    "ts": "2025-07-18",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 1954,
+    "known_ts": "2025-09-10",
+    "price": 124.771004,
+    "quality": "block",
+    "quality_reason": "veto: bearish divergence",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": true,
+     "weeklyBull": false
+    },
+    "score": 20,
+    "strength": 0.725,
+    "tier": "base",
+    "ts": "2025-09-08",
+    "type": "BUY"
+   },
+   {
+    "atr14": 2.430796,
+    "bar_index": 1989,
+    "known_ts": "2026-02-10",
+    "price": 82.209999,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 78.014605,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 79.230003,
+    "trigger_known_ts": "2026-02-10",
+    "trigger_ts": "2026-02-06",
+    "ts": "2026-02-06",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.378666,
+     "monthly_oversold_dwell": 2,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 1992,
+    "blocked": true,
+    "known_ts": "2026-02-24",
+    "price": 78.040001,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2026-02-20",
+    "type": "BUY"
+   },
+   {
+    "atr14": 2.58671,
+    "bar_index": 1992,
+    "known_ts": "2026-02-24",
+    "price": 78.040001,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 73.716647,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 75.010002,
+    "trigger_known_ts": "2026-02-24",
+    "trigger_ts": "2026-02-20",
+    "ts": "2026-02-20",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.410182,
+     "monthly_oversold_dwell": 2,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "atr14": 3.504549,
+    "bar_index": 1993,
+    "known_ts": "2026-02-27",
+    "price": 96.239998,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 73.257728,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 75.010002,
+    "trigger_known_ts": "2026-02-27",
+    "trigger_ts": "2026-02-25",
+    "ts": "2026-02-25",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.272628,
+     "monthly_oversold_dwell": 3,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 1998,
+    "basis": "structure_stop",
+    "known_ts": "2026-03-19",
+    "price": 91.739998,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 94.309998,
+    "strength": 0.588,
+    "ts": "2026-03-19",
+    "type": "SELL"
+   },
+   {
+    "bar_index": 2004,
+    "known_ts": "2026-04-14",
+    "price": 107.790001,
+    "quality": "reclaim",
+    "quality_reason": "trend reclaimed the 2026-03-19 sell level",
+    "reasons": [
+     "close>sell_price",
+     "weekly_bull",
+     "above200",
+     "debounced"
+    ],
+    "regime": {
+     "above200": true,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "scored": true,
+    "strength": 0.725,
+    "ts": "2026-04-14",
+    "type": "RECLAIM"
+   },
+   {
+    "bar_index": 2008,
+    "basis": "structure_stop",
+    "known_ts": "2026-05-04",
+    "price": 91.019997,
+    "reasons": [
+     "distribution_confirmed",
+     "structure_break"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": true
+    },
+    "stop_level": 91.370003,
+    "strength": 0.725,
+    "ts": "2026-05-04",
+    "type": "SELL"
+   },
+   {
+    "atr14": 2.476724,
+    "bar_index": 2021,
+    "known_ts": "2026-06-30",
+    "price": 71.400002,
+    "quality": "washout_early_watch",
+    "quality_reason": "early momentum turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "early_momentum_turn"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 69.621639,
+    "strength": 0.45,
+    "subtype": "early_dot",
+    "sweep_low": 70.860001,
+    "trigger_known_ts": "2026-06-30",
+    "trigger_ts": "2026-06-26",
+    "ts": "2026-06-26",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.444297,
+     "monthly_oversold_dwell": 7,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   },
+   {
+    "bar_index": 2028,
+    "blocked": true,
+    "known_ts": "2026-07-30",
+    "price": 73.169998,
+    "quality": "regime_blocked",
+    "quality_reason": "bear_block: monthly-bear & below-200 & 2W-not-bull",
+    "reasons": [
+     "macd_bull_cross",
+     "recent_b1",
+     "confirm_bull",
+     "rsi<65"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "score": null,
+    "strength": 0.45,
+    "tier": null,
+    "ts": "2026-07-28",
+    "type": "BUY"
+   },
+   {
+    "atr14": 2.617446,
+    "bar_index": 2028,
+    "known_ts": "2026-07-30",
+    "price": 73.169998,
+    "quality": "washout_trigger_watch",
+    "quality_reason": "blocked Oracle turn inside a point-in-time own-name washout",
+    "reasons": [
+     "bear_block",
+     "own_name_washout",
+     "raw_buy_trigger"
+    ],
+    "regime": {
+     "above200": false,
+     "monthlyBull": false,
+     "weeklyBull": false
+    },
+    "risk_basis": "daily_ohlc_atr14",
+    "scored": false,
+    "stop_level": 65.38128,
+    "strength": 0.45,
+    "subtype": "blocked_trigger",
+    "sweep_low": 66.690002,
+    "trigger_known_ts": "2026-07-30",
+    "trigger_ts": "2026-07-28",
+    "ts": "2026-07-28",
+    "type": "BOTTOM_WATCH",
+    "washout_ctx": {
+     "drawdown_252": -0.413566,
+     "monthly_oversold_dwell": 7,
+     "recent_3d_oversold": true,
+     "rule": "bear_block & (dd252<=-35% | monthly_os_dwell>=3) & recent_3d_os"
+    }
+   }
+  ],
+  "state": {
+   "above200": false,
+   "bars_since_signal": 4,
+   "extended": false,
+   "last_scored_basis": "structure_stop",
+   "last_scored_signal": "SELL",
+   "last_scored_ts": "2026-05-04",
+   "last_signal": "BOTTOM_WATCH",
+   "overbought": true,
+   "position_hint": "flat",
+   "strong_bull": false,
+   "weeklyBull": true
+  },
+  "symbol": "NFLX",
+  "timeframe": "3D",
+  "warnings": [
+   {
+    "kind": "confirm",
+    "level": 57.7760009765625,
+    "px": 57.542999267578125,
+    "ts": "2021-09-20"
+   },
+   {
+    "kind": "arm",
+    "px": 57.31399917602539,
+    "ts": "2021-09-21"
+   },
+   {
+    "kind": "arm",
+    "px": 62.82899856567383,
+    "ts": "2021-10-15"
+   },
+   {
+    "kind": "confirm",
+    "level": 66.29199981689453,
+    "px": 64.5719985961914,
+    "ts": "2021-11-05"
+   },
+   {
+    "kind": "arm",
+    "px": 35.5880012512207,
+    "ts": "2022-04-08"
+   },
+   {
+    "kind": "confirm",
+    "level": 37.3849983215332,
+    "px": 34.79999923706055,
+    "ts": "2022-04-11"
+   },
+   {
+    "kind": "arm",
+    "px": 17.47800064086914,
+    "ts": "2022-07-14"
+   },
+   {
+    "kind": "confirm",
+    "level": 22.142000198364258,
+    "px": 22.065000534057617,
+    "ts": "2022-08-30"
+   },
+   {
+    "kind": "arm",
+    "px": 26.07900047302246,
+    "ts": "2022-11-04"
+   },
+   {
+    "kind": "confirm",
+    "level": 28.5049991607666,
+    "px": 28.117000579833984,
+    "ts": "2022-11-28"
+   },
+   {
+    "kind": "arm",
+    "px": 29.041000366210938,
+    "ts": "2022-12-15"
+   },
+   {
+    "kind": "confirm",
+    "level": 30.555999755859375,
+    "px": 29.070999145507812,
+    "ts": "2022-12-16"
+   },
+   {
+    "kind": "arm",
+    "px": 36.25,
+    "ts": "2023-02-09"
+   },
+   {
+    "kind": "confirm",
+    "level": 36.14799880981445,
+    "px": 34.736000061035156,
+    "ts": "2023-02-10"
+   },
+   {
+    "kind": "arm",
+    "px": 35.856998443603516,
+    "ts": "2023-02-13"
+   },
+   {
+    "kind": "confirm",
+    "level": 36.14799880981445,
+    "px": 35.99599838256836,
+    "ts": "2023-02-14"
+   },
+   {
+    "kind": "arm",
+    "px": 43.470001220703125,
+    "ts": "2023-06-20"
+   },
+   {
+    "kind": "arm",
+    "px": 47.39699935913086,
+    "ts": "2023-11-30"
+   },
+   {
+    "kind": "arm",
+    "px": 48.6879997253418,
+    "ts": "2023-12-29"
+   },
+   {
+    "kind": "confirm",
+    "level": 48.67599868774414,
+    "px": 46.849998474121094,
+    "ts": "2024-01-02"
+   },
+   {
+    "kind": "arm",
+    "px": 55.5880012512207,
+    "ts": "2024-02-06"
+   },
+   {
+    "kind": "confirm",
+    "level": 55.5880012512207,
+    "px": 55.45199966430664,
+    "ts": "2024-02-13"
+   },
+   {
+    "kind": "arm",
+    "px": 59.849998474121094,
+    "ts": "2024-03-05"
+   },
+   {
+    "kind": "arm",
+    "px": 63.37900161743164,
+    "ts": "2024-06-03"
+   },
+   {
+    "kind": "confirm",
+    "level": 63.56700134277344,
+    "px": 63.1619987487793,
+    "ts": "2024-06-04"
+   },
+   {
+    "kind": "arm",
+    "px": 68.43399810791016,
+    "ts": "2024-06-27"
+   },
+   {
+    "kind": "confirm",
+    "level": 67.36100006103516,
+    "px": 65.2750015258789,
+    "ts": "2024-07-11"
+   },
+   {
+    "kind": "arm",
+    "px": 67.53199768066406,
+    "ts": "2024-09-03"
+   },
+   {
+    "kind": "arm",
+    "px": 71.10900115966797,
+    "ts": "2024-10-02"
+   },
+   {
+    "kind": "confirm",
+    "level": 70.61299896240234,
+    "px": 70.19200134277344,
+    "ts": "2024-10-07"
+   },
+   {
+    "kind": "arm",
+    "px": 87.26000213623047,
+    "ts": "2024-11-26"
+   },
+   {
+    "kind": "confirm",
+    "level": 91.33499908447266,
+    "px": 88.95500183105469,
+    "ts": "2024-12-18"
+   },
+   {
+    "kind": "arm",
+    "px": 100.31500244140625,
+    "ts": "2025-02-21"
+   },
+   {
+    "kind": "confirm",
+    "level": 100.80799865722656,
+    "px": 98.84700012207031,
+    "ts": "2025-02-24"
+   },
+   {
+    "kind": "arm",
+    "px": 113.84400177001953,
+    "ts": "2025-05-13"
+   },
+   {
+    "kind": "confirm",
+    "level": 124.51100158691406,
+    "px": 120.92400360107422,
+    "ts": "2025-07-18"
+   },
+   {
+    "kind": "arm",
+    "px": 95.19999694824219,
+    "ts": "2026-03-16"
+   },
+   {
+    "kind": "confirm",
+    "level": 94.30999755859375,
+    "px": 91.73999786376953,
+    "ts": "2026-03-19"
+   },
+   {
+    "kind": "arm",
+    "px": 97.30999755859375,
+    "ts": "2026-04-17"
+   },
+   {
+    "kind": "confirm",
+    "level": 91.37000274658203,
+    "px": 91.0199966430664,
+    "ts": "2026-05-04"
+   }
+  ]
+ }
+}

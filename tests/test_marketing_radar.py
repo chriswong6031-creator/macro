@@ -1145,16 +1145,36 @@ def test_feed_stage_stale_snapshot_empties_feed_with_annotation(tmp_path, capsys
     assert stale in warn_lines[0]
 
 
-def test_feed_stage_serves_only_newest_snapshot(tmp_path):
-    """Two retained snapshots: names present only in the OLD one must not leak."""
+def test_feed_stage_serves_only_newest_snapshot(tmp_path, monkeypatch):
+    """Two retained snapshots: names present only in the OLD one must not leak.
+
+    Collection-time ``_TODAY`` plus a runtime ``date.today() - 1d`` for
+    ``prior`` collapse to the same ISO date when pytest collects on D and
+    this test runs on D+1 (CI run 31851595116 at 2026-08-15T00:01:52Z).
+    Both rows then share the newest as_of, GONE sorts first on sata 99,
+    and the assertion sees ``['GONE', 'NEW']``. One FakeDate clock (same
+    inject as test_risk_radar_market_catalysts / earnings_blackout) mints
+    both as_ofs and the builder's ``_today_str`` staleness gate.
+    """
+    from engine.marketing import radar_internal
     from engine.marketing.radar_internal import _feed_stage
-    prior = (date.today() - timedelta(days=1)).isoformat()
+
+    pinned = date(2026, 8, 14)  # Friday; yesterday is a weekday session
+
+    class _FakeDate(date):
+        @classmethod
+        def today(cls):
+            return pinned
+
+    monkeypatch.setattr(radar_internal, "date", _FakeDate)
+    today = pinned.isoformat()
+    prior = (pinned - timedelta(days=1)).isoformat()
     _write_stage_parquet(tmp_path, {
         "ticker": ["NEW", "GONE"], "region": ["USA", "USA"],
         "stage_flag": [2, 2],
         "stage_detailed": ["2X_fallback_bullish", "2X_fallback_bullish"],
         "sata_score": [80, 99], "weeks_in_stage": [3, 9],
-        "as_of_date": [_TODAY, prior],
+        "as_of_date": [today, prior],
     })
     items = _feed_stage(tmp_path)
     assert [i["ticker"] for i in items] == ["NEW"]

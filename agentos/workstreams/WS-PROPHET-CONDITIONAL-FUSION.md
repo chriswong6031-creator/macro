@@ -18,6 +18,11 @@ blast_radius: user_facing
 ambiguity: scoped
 owns_paths:
   - research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md
+  - research/prophet_fusion/
+  - scripts/prophet_fusion_arena.py
+  - scripts/prophet_fusion_labels.py
+  - scripts/prophet_fusion_race.py
+  - scripts/prophet_fusion_c2.py
 decisions:
   - DEC:PROPHET-ZERO-AUTHORITY-SUPERSEDED-BY-EARNED-CONDITIONAL-AUTHORITY
 landmines:
@@ -66,7 +71,7 @@ waves:
   - id: w2
     depends_on: [w1b]
     title: "PR-2 — C2 regularized family stack + redundancy matrices + incremental harness"
-    status: todo
+    status: in_progress
   - id: w3
     depends_on: [w2]
     title: "PR-3 — nightly shadow-scoring lane + forward race instrumentation"
@@ -88,17 +93,17 @@ waves:
     title: "PR-7 — promotion prereg + DNR amendments + operator/CEO adjudication"
     status: todo
 next_action: >
-  PR-2 (C2 + redundancy matrices) per masterplan §14 — it inherits PR-1b's §9 family
-  table and the C1-weights question; the report's shadow-accrual recommendation
-  (G3, G4, C1-as-raced, C1-minus-F2, each with the §4.4 confluence-only caveat and
-  today-out-of-sample noted) feeds PR-3's prereg, not production. STILL OPEN from
-  w1: the §13.0 live closure — no post-#5604-merge nightly had completed as of
-  2026-08-14 ~22Z (last curated candidates stamp 2026-08-07; the 08-12 stamp is
-  scan-tier-heal only) — the first post-merge nightly must show a fresh curated
-  stamp_date with quiet staleness warnings, prior rows immutable, and the Aug 8-13
-  gap NOT backfilled. Also open: flip families.yml short_int pit_status ->
-  pit_settlement now that #5602 and #5604 are both merged (sequenced by the #5602
-  addendum in the 2026-08-14 handoff).
+  w2 IN FLIGHT (PR-2: C2 regularized family stack + redundancy matrices + incremental
+  harness per masterplan §14) — it inherits PR-1b's §9 family table and the C1-weights
+  question; the PR-1b shadow-accrual recommendation (G3, G4, C1-as-raced, C1-minus-F2,
+  each with the §4.4 confluence-only caveat and today-out-of-sample noted) feeds
+  PR-3's prereg, not production, and W2 registers NO new shadow rung. The short_int
+  pit_status flip (-> pit_settlement) sequenced by the #5602 addendum LANDED in PR-2
+  part 1. STILL OPEN from w1: the §13.0 live closure — no post-#5604-merge nightly
+  had completed as of 2026-08-14 ~23Z (tonight's cron run scheduled 22:52Z, pending;
+  last curated candidates stamp 2026-08-07, the 08-12 stamp is scan-tier-heal only) —
+  the first post-merge nightly must show a fresh curated stamp_date with quiet
+  staleness warnings, prior rows immutable, and the Aug 8-13 gap NOT backfilled.
 ---
 
 ## Context

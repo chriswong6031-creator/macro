@@ -28,9 +28,14 @@ The **funnel** and the **bus**, nothing else:
   ``producers/``         one adapter per artifact-based producer (Track C census)
   ``spool.py``           the durable prospective nomination spool
 
-NO DETECTOR CODE LIVES HERE.  No StochRSI, no MACD, no oscillator math of any
-kind — those are PR-2 (G0) and PR-3 (C1–C5).  This package computes admission,
-and admission is a *coverage* decision.
+NO OSCILLATOR MATH LIVES HERE.  No StochRSI, no MACD, no indicator computation
+of any kind.  PR-2's modules (``entry_events``, ``indicator_ingest``,
+``g0_adapter``, ``detectors``) now live in this package, and they hold none
+either: G0 is an artifact CONSUMER of Terminal's already-computed grey dot, and
+``detectors`` holds detector identity plus the §13 lifecycle, not evaluation.
+Detector constants for C1–C5/F1 are reserved-by-name and locked at PR-3; the
+§3.2 locked-spec fallback, if it is ever built, is the only thing here that
+would compute an oscillator, and it is not built.
 
 ADMISSION IS NOT BULLISHNESS
 ----------------------------
