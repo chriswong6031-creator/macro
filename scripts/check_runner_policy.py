@@ -244,12 +244,36 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
     prewarm_positions = [
         i for i, name in enumerate(names) if name.startswith("prewarm exact base")
     ]
-    checkout_positions = [i for i, step in enumerate(steps) if isinstance(step, dict) and step.get("uses") == "actions/checkout@v4"]
-    if not prewarm_positions or not checkout_positions or prewarm_positions[0] >= checkout_positions[0]:
-        findings.append(Finding("R9", "self-hosted canary must prewarm before actions/checkout"))
+    materialize_positions = [
+        i
+        for i, step in enumerate(steps)
+        if isinstance(step, dict)
+        and str(step.get("name", "")).startswith("materialize exact candidate")
+    ]
+    if (
+        not prewarm_positions
+        or not materialize_positions
+        or prewarm_positions[0] >= materialize_positions[0]
+    ):
+        findings.append(Finding("R9", "self-hosted canary must prewarm before candidate materialization"))
     rendered_steps = str(steps)
     if "/usr/local/libexec/mastermind-ci-prewarm" not in rendered_steps:
         findings.append(Finding("R9", "self-hosted canary is not bound to the host prewarm"))
+    if any(step.get("uses") == "actions/checkout@v4" for step in steps if isinstance(step, dict)):
+        findings.append(Finding("R9", "self-hosted canary may not use no-negotiation actions/checkout"))
+    required_materialization = (
+        "fetch.negotiationAlgorithm=skipping",
+        "--filter=blob:none --depth=1",
+        'origin "$TESTED_SHA"',
+        "extraheader",
+    )
+    materialization = (
+        str(steps[materialize_positions[0]].get("run", ""))
+        if materialize_positions
+        else ""
+    )
+    if any(token not in materialization for token in required_materialization):
+        findings.append(Finding("R9", "self-hosted candidate fetch is not negotiated, exact-SHA, and credential-free"))
     if "cache-negative-control" not in (canary.get("jobs") or {}):
         findings.append(Finding("R9", "cache-disabled negative-control job is missing"))
     for job_id, job in (canary.get("jobs") or {}).items():
