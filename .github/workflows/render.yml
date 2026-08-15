@@ -137,6 +137,7 @@ on:
       - "scripts/build_impulse.py"
       - "scripts/build_index_changes.py"
       - "scripts/build_index_leadership.py"
+      - "scripts/build_institutional_13f_census.py"
       - "scripts/build_intel_hub.py"
       - "scripts/build_intelligence.py"
       - "scripts/build_intl.py"

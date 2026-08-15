@@ -63,6 +63,7 @@ from scripts.check_synapse_reads import (  # noqa: E402
     _report_findings,
     _run_selftest,
     scan_findings,
+    _prose_masked_source,
 )
 from engine.neuralweb.synapse import load_registry  # noqa: E402
 
@@ -313,3 +314,119 @@ def test_article2_module_set_builder() -> None:
     assert "scripts/build_stock_library.py" in article2_modules
     # top_setups -> build_site
     assert "scripts/build_site.py" in article2_modules
+
+
+# ---------------------------------------------------------------------------
+# Test 11: a MENTION is not a READ (prose masking)
+# ---------------------------------------------------------------------------
+#
+# The gate scanned raw file text, so a registered path named in a DOCSTRING was
+# reported as a consumer. On 2026-08-14 that hard-failed the fleet on a
+# paragraph: scripts/build_stock_library.py::_name_score_asof explains a measured
+# (date, ticker) join against data/name_score/us_calls.parquet — the read it
+# describes lives in the grader — and the Article-2 tier turned that sentence
+# into a money-path violation reddening `synapse-read-gate` for every PR.
+#
+# These cases pin BOTH directions. Masking that only proved "prose is silent"
+# would be satisfied by a guard that had gone blind, so every silent case here
+# is paired with a firing one that differs ONLY in whether the path reaches code.
+
+
+def test_docstring_mention_alone_is_not_a_read(tmp_path: Path) -> None:
+    """A path named only in a module docstring is a mention, not a consumer."""
+    reg = _make_reg(path="data/fake/artifact.json", producer="engine/producer.py")
+    extra = {
+        "engine/prose_only.py": textwrap.dedent("""\
+            \"\"\"Explains a join against data/fake/artifact.json without opening it.\"\"\"
+            import json
+            data = json.loads("{}")
+        """),
+    }
+    assert scan_findings(tmp_path, reg=reg, extra_files=extra) == []
+
+
+def test_comment_mention_alone_is_not_a_read(tmp_path: Path) -> None:
+    """A path named only in a comment is a mention, not a consumer."""
+    reg = _make_reg(path="data/fake/artifact.json", producer="engine/producer.py")
+    extra = {
+        "engine/comment_only.py": textwrap.dedent("""\
+            import json
+            # historically compared against data/fake/artifact.json
+            data = json.loads("{}")
+        """),
+    }
+    assert scan_findings(tmp_path, reg=reg, extra_files=extra) == []
+
+
+def test_function_docstring_mention_alone_is_not_a_read(tmp_path: Path) -> None:
+    """Function-level docstrings are masked too, not just the module docstring."""
+    reg = _make_reg(path="data/fake/artifact.json", producer="engine/producer.py")
+    extra = {
+        "engine/fn_prose.py": textwrap.dedent("""\
+            def explain():
+                \"\"\"Describes data/fake/artifact.json for the reader.\"\"\"
+                return 1
+        """),
+    }
+    assert scan_findings(tmp_path, reg=reg, extra_files=extra) == []
+
+
+def test_prose_masking_does_not_hide_a_real_read(tmp_path: Path) -> None:
+    """The load-bearing case: prose AND a real read must still fire, at the CODE line.
+
+    This is what stops the fix from being a blindfold — the file opens with a
+    docstring naming the artifact and then actually reads it.
+    """
+    reg = _make_reg(path="data/fake/artifact.json", producer="engine/producer.py")
+    extra = {
+        "engine/prose_and_read.py": textwrap.dedent("""\
+            \"\"\"Prose about data/fake/artifact.json.\"\"\"
+            import json
+            data = json.load(open("data/fake/artifact.json"))
+        """),
+    }
+    findings = scan_findings(tmp_path, reg=reg, extra_files=extra)
+    assert len(findings) == 1, f"real read was masked away: {findings}"
+    assert findings[0].module == "engine/prose_and_read.py"
+    # Line 1 is the docstring; the reported line must be the executable one.
+    assert findings[0].line_no == 3, (
+        "reported line must point at code, not at the masked docstring"
+    )
+
+
+def test_a_bare_string_assignment_is_still_a_read(tmp_path: Path) -> None:
+    """Masking covers docstrings and comments ONLY — every other literal counts."""
+    reg = _make_reg(path="data/fake/artifact.json", producer="engine/producer.py")
+    extra = {
+        "engine/assigns.py": 'PATH = "data/fake/artifact.json"\n',
+    }
+    findings = scan_findings(tmp_path, reg=reg, extra_files=extra)
+    assert len(findings) == 1, "a path assigned to a variable is still a read"
+
+
+def test_unparseable_module_fails_open(tmp_path: Path) -> None:
+    """A module that will not parse keeps its OLD reach, never goes quietly blind."""
+    reg = _make_reg(path="data/fake/artifact.json", producer="engine/producer.py")
+    extra = {
+        "engine/broken.py": 'def broken(:\n    x = "data/fake/artifact.json"\n',
+    }
+    findings = scan_findings(tmp_path, reg=reg, extra_files=extra)
+    assert len(findings) == 1, "an unparseable file must still be scanned as before"
+
+
+def test_the_shipped_build_stock_library_docstring_is_not_a_consumer() -> None:
+    """Regression pin on the real file that reddened the fleet.
+
+    scripts/build_stock_library.py names data/name_score/us_calls.parquet exactly
+    once, inside _name_score_asof's docstring. If a future edit gives that module
+    a genuine read, this test SHOULD start failing — the correct response is then
+    to declare it a consumer in config/synapse.yml, not to loosen the mask.
+    """
+    source = (REPO_ROOT / "scripts" / "build_stock_library.py").read_text(
+        encoding="utf-8", errors="replace"
+    )
+    needle = "data/name_score/us_calls.parquet"
+    assert needle in source, "fixture drifted — the docstring mention is gone"
+    assert needle not in _prose_masked_source(source), (
+        "the only mention is prose; masking it must remove it from the code view"
+    )

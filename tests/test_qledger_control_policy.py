@@ -1992,3 +1992,134 @@ def test_membership_gics_sector_of_resolves_both_vocabularies_and_fails_open(tmp
     assert resolve("OFFIDX") is None                       # absent from the file
     assert resolve(None) is None
     assert q.control_for_sector(resolve("AAPL")) == "XLK"
+
+
+# =========================================================================== #
+# P0d REVIEW ROUND 2, F5 — `today` REACHES THE MATCHED-CONTROL GATE
+#
+# `scripts/grade_qledger.py --today` exists for point-in-time replay and it
+# reached `grade_claim`. It did NOT reach the readiness path:
+# `run_readiness_post_step` -> `compute_promotion_readiness` ->
+# `promotion_check_dispatch` -> `matched_control_check(root=root)` — no `today`.
+# So a replay graded against date T while `_cohort_rowless_class` judged cohort
+# MATURITY against the wall clock. The drift was conservative in direction (extra
+# claims look matured and mostly land in `matured_awaiting_grading`), but two
+# dates inside one run is exactly the point-in-time inconsistency C4.4's
+# classification exists to rule out: the CLASS is the truth about why a row is
+# missing, and a class computed on the wrong date is not that truth.
+# =========================================================================== #
+def _f5_replay_store(root: Path):
+    """30 mature controlled+graded claims + 5 controlled claims registered in
+    2025-06 whose 21-session windows close in JULY.
+
+    AS OF 2025-06-16 (the replay date) those five have NOT matured; as of the
+    wall clock — and as of F4_TODAY — they are long matured. That gap is the
+    whole test: the five are `not_yet_matured` on a PIT replay and something else
+    entirely if the gate silently re-reads `date.today()`."""
+    claims, grades = _controlled_graded(30)
+    for asof in _dates(5, "2025-06-09"):
+        claims.append(_claim(family=REQ_A, asof=asof, control="XLK",
+                             claim_id=f"replay|{asof}"))
+    _write_store(root, claims, grades)
+    _start_clock(root, REQ_A)
+
+
+F5_REPLAY_TODAY = date(2025, 6, 16)
+
+
+def test_f5_a_replay_judges_maturity_on_the_replay_date_not_the_wall_clock(
+        f4_prices, tmp_path):
+    """THE PIT INVARIANT, at the gate itself. Same store, two reference dates:
+    at the replay date the five young claims are `not_yet_matured`; at a later
+    date they are not. If `today` did not reach `_cohort_rowless_class` the two
+    calls would be indistinguishable.
+
+    MUTATION CONTROL: drop the `today=` kwarg from `matched_control_check`'s call
+    inside `promotion_check_dispatch` — see the sibling test below, which is the
+    one that exercises the production dispatch. THIS test pins the gate's own
+    contract and fails if `matched_control_check` stops honouring `today`.
+    """
+    _f5_replay_store(tmp_path)
+
+    replay = q.matched_control_check(REQ_A, 21, root=tmp_path,
+                                     today=F5_REPLAY_TODAY)
+    later = q.matched_control_check(REQ_A, 21, root=tmp_path, today=F4_TODAY)
+
+    assert replay.cohort_rowless == {q.COHORT_ROWLESS_NOT_YET_MATURED: 5}
+    assert later.cohort_rowless != replay.cohort_rowless, (
+        "if the two dates agree, the reference date is not being honoured at all")
+    assert q.COHORT_ROWLESS_NOT_YET_MATURED not in later.cohort_rowless
+
+
+def test_f5_promotion_check_dispatch_threads_today_to_the_matched_gate(
+        f4_prices, tmp_path):
+    """THE PRODUCTION DISPATCH, which is where the date was actually dropped.
+
+    MUTATION CONTROL: in `engine/qledger.py::promotion_check_dispatch`, drop the
+    `today=today` kwarg from the `matched_control_check(...)` call so it falls
+    back to `date.today()`. The five claims then read as matured (the wall clock
+    is well past their July 2025 windows) and this test fails on
+    `cohort_rowless == {not_yet_matured: 5}`.
+    """
+    _f5_replay_store(tmp_path)
+
+    pr = q.promotion_check_dispatch(REQ_A, 21, root=tmp_path,
+                                    today=F5_REPLAY_TODAY)
+
+    assert pr.evidence_basis == q.EVIDENCE_BASIS_MATCHED_CONTROL
+    assert pr.cohort_rowless == {q.COHORT_ROWLESS_NOT_YET_MATURED: 5}
+
+
+def test_f5_readiness_payload_is_point_in_time_consistent(f4_prices, tmp_path):
+    """The payload the admin tab and the first-cross alert read must carry the
+    REPLAY's classification, not a wall-clock one — a replayed nightly that
+    publishes wall-clock maturity is publishing two dates in one record.
+
+    MUTATION CONTROL: drop the `today=today` kwarg from the
+    `q.promotion_check_dispatch(...)` call in
+    `scripts/grade_qledger.py::compute_promotion_readiness` — this test fails on
+    the `cohort_rowless` census in the emitted row.
+    """
+    _f5_replay_store(tmp_path)
+
+    row = grader.compute_promotion_readiness(
+        tmp_path, families=[REQ_A], today=F5_REPLAY_TODAY)[REQ_A]["21"]
+
+    assert row["cohort_rowless"] == {q.COHORT_ROWLESS_NOT_YET_MATURED: 5}
+    assert row["n_cohort_rows"] == 30
+    assert row["evidence_basis"] == q.EVIDENCE_BASIS_MATCHED_CONTROL
+
+
+def test_f5_ladder_states_is_point_in_time_consistent(f4_prices, tmp_path):
+    """`emit_ladder_states` writes the OTHER production artifact
+    (track_record.json). Review round 1 finding 7 established that these two
+    payloads must agree; they cannot agree if only one of them knows the date.
+
+    MUTATION CONTROL: drop the `today=today` kwarg from the
+    `promotion_check_dispatch(...)` call in `engine/qledger.py::
+    emit_ladder_states` — this test fails on the `cohort_rowless` census.
+    """
+    _f5_replay_store(tmp_path)
+
+    entry = q.emit_ladder_states(root=tmp_path, families=[REQ_A],
+                                 today=F5_REPLAY_TODAY)[REQ_A]["21"]
+
+    assert entry["cohort_rowless"] == {q.COHORT_ROWLESS_NOT_YET_MATURED: 5}
+
+
+def test_f5_omitting_today_is_unchanged_wall_clock_behaviour(f4_prices, tmp_path):
+    """BACKWARD COMPATIBILITY, asserted rather than assumed: every signature
+    keeps its default, and a caller that passes no `today` gets exactly the
+    wall-clock answer it got before this change."""
+    _f5_replay_store(tmp_path)
+
+    default = q.promotion_check_dispatch(REQ_A, 21, root=tmp_path)
+    explicit = q.matched_control_check(REQ_A, 21, root=tmp_path,
+                                       today=date.today())
+
+    assert default.cohort_rowless == explicit.cohort_rowless
+    assert default.control_coverage == explicit.control_coverage
+    assert default.n_cohort_rows == explicit.n_cohort_rows
+    # and the readiness/ladder paths agree with it when `today` is omitted too
+    row = grader.compute_promotion_readiness(tmp_path, families=[REQ_A])[REQ_A]["21"]
+    assert row["cohort_rowless"] == default.cohort_rowless
