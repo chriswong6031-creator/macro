@@ -358,7 +358,8 @@ def _minute_reader_cache_only(cache_dir: Path):
 
 def _finalize_candidates(cands: list[dict[str, Any]], *, panel: str,
                          cache_dir: Path, spy_close, sectors: dict[str, str],
-                         refusals: list[dict[str, Any]]) -> list[Any]:
+                         refusals: list[dict[str, Any]],
+                         p0_minute: str = "attempt") -> list[Any]:
     """§6 reference units + features -> frozen EpisodeRefs, refusal-recorded."""
     import pandas as pd  # noqa: PLC0415
 
@@ -367,6 +368,8 @@ def _finalize_candidates(cands: list[dict[str, Any]], *, panel: str,
     from scripts import entry_radar_vendor as vendor  # noqa: PLC0415
 
     def _minute_open(ticker: str, session: date) -> float | None:
+        if p0_minute == "skip":
+            return None  # frozen §6 fallback binds: next session close, uniform
         try:
             rows = vendor.minute_window(ticker, session, session, cache_dir=cache_dir)
         except Exception:  # noqa: BLE001
@@ -482,7 +485,8 @@ def _cohort_of(cand: dict[str, Any], daily, dpos: int, *, panel: str) -> str:
 
 def gather_episodes(*, cache_dir: Path, panel: str,
                     info_cutoff: str | None,
-                    names: list[str] | None = None) -> tuple[list[Any], list[dict[str, Any]]]:
+                    names: list[str] | None = None,
+                    p0_minute: str = "attempt") -> tuple[list[Any], list[dict[str, Any]]]:
     """Derive one panel's episodes from the granular W5 APIs, G-6-fenced.
 
     Panel-B: staged-Terminal tables (G0 dots + C5 watches, emitted by
@@ -596,7 +600,7 @@ def gather_episodes(*, cache_dir: Path, panel: str,
 
     kept = _finalize_candidates(cands, panel=panel, cache_dir=cache_dir,
                                 spy_close=spy_close, sectors=sectors,
-                                refusals=refusals)
+                                refusals=refusals, p0_minute=p0_minute)
     if refusals:
         print(f"entry-radar replay: {len(refusals)} refusal(s) recorded on panel "
               f"{panel} (coverage census, never dropped)", flush=True)
@@ -651,6 +655,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="TrialLedger path override (tests only; default data/)")
     ap.add_argument("--declare-budget", action="store_true",
                     help="declare the §13 budget once and exit")
+    ap.add_argument("--p0-minute", choices=("attempt", "skip"), default="attempt",
+                    help="confirmed-bar P0 minute reconstruction: 'skip' refuses "
+                         "wholesale (P0 = next session close, the frozen §6 "
+                         "fallback, uniform across the panel; recorded per episode)")
     ap.add_argument("--names", default=None,
                     help="comma-separated ticker subset (sharding / smoke runs); "
                          "the coverage census records the restriction")
@@ -706,7 +714,8 @@ def main(argv: list[str] | None = None) -> int:
         # look is spent below, immediately before the outcome tables are built.
         shard = shard_names
         episodes, refusals = gather_episodes(cache_dir=cache_dir, panel=panel,
-                                             info_cutoff=info_cutoff, names=shard)
+                                             info_cutoff=info_cutoff, names=shard,
+                                             p0_minute=args.p0_minute)
         if shard:
             refusals.append({"reason": "names_shard_restriction", "panel": panel,
                              "names": shard})
