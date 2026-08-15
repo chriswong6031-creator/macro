@@ -34,6 +34,7 @@ import pandas as pd
 from collectors.base import Adapter, is_connection_error
 from collectors.universe import basket_members
 from lib import config
+from lib.massive_ticker import vendor_join_key
 
 log = logging.getLogger(__name__)
 
@@ -108,10 +109,11 @@ def _watchlist(tier: int) -> list[str]:
 
 def parse_sentiment(results: list[dict], ticker: str) -> dict | None:
     """Pure: roll a ticker's news `insights` sentiment into pos/neg/neutral counts."""
+    target = vendor_join_key(ticker)
     pos = neg = neu = 0
     for art in results or []:
         for ins in art.get("insights", []) or []:
-            if str(ins.get("ticker", "")).upper() != ticker.upper():
+            if vendor_join_key(ins.get("ticker")) != target:
                 continue
             s = str(ins.get("sentiment", "")).lower()
             if s == "positive":

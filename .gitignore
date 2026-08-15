@@ -288,6 +288,9 @@ data/price_pressure/events.parquet
 #            data/massive_stock_day/_backfill_state.json (resume state)
 # ~12,400 tickers × ~350 rows = ~240 MB total — must NOT be committed to git.
 data/massive_stock_day/*.parquet
+# Mixed-case vendor identities use a hex-keyed subdirectory so default APFS cannot
+# fold them into the legacy uppercase filename (lib.massive_ticker).
+data/massive_stock_day/__case_v1/*.parquet
 # Options Alpha §A4/A8: raw Massive.com options day-agg cache.
 # Local cache + R2-published via publish_r2 --dirs massive_options_day.
 # NEVER committed to git; content is re-downloadable from massive.com entitlement.
