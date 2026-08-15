@@ -98,6 +98,12 @@ def _code(src: str) -> str:
 CODE = {name: _code(src) for name, src in (
     ("publish", PUBLISH_SRC), ("mirror", MIRROR_SRC), ("reconcile", RECONCILE_SRC),
     ("board", BOARD_SRC),
+    # PR-A. `massive_close` reaches the network on the lane's behalf, which makes
+    # it the newest way this lane could acquire a `data/` write, a git call or a
+    # dropped annotation — so it joins the AST sweep rather than being trusted
+    # because it is new.
+    ("massive_close",
+     (ROOT / "engine" / "close_pass" / "massive_close.py").read_text(encoding="utf-8")),
     ("engine.reconcile",
      (ROOT / "engine" / "close_pass" / "reconcile.py").read_text(encoding="utf-8")),
 )}

@@ -149,6 +149,11 @@ jobs:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          # Same-day close truth. The keyless prefetch above refreshes the index
+          # group only, so without this the pass evaluates ~14% of the universe
+          # (measured 2026-08-14: 253 of 1,763). Unset = store-only + a warning,
+          # never a wrong board.
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
           # No live plane on a runner: the served copy belongs to the VPS.
           CLOSE_PASS_SERVED_PATH: ""
         run: |

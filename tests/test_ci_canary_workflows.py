@@ -89,8 +89,33 @@ def test_m1_canary_has_no_old_generic_route_or_checkout() -> None:
     assert not {"macstudio", "macstudio-light", "theta-m1", "codex", "render-heavy"} & set(job["runs-on"])
     assert all("uses" not in step for step in job["steps"])
     command = job["steps"][0]["run"]
-    assert "pgrep -f 'Runner.Listener' | wc -l" in command
-    assert "pgrep -fc" not in command
+    for service, runner_root, runner_name in (
+        (
+            "actions.runner.mastermindx-market-intelligence-macro.m1-nightly-1",
+            "/Users/chriswong/actions-runner-1",
+            "m1-nightly-1",
+        ),
+        (
+            "actions.runner.mastermindx-market-intelligence-macro.m1-nightly-2",
+            "/Users/chriswong/actions-runner-2",
+            "m1-nightly-2",
+        ),
+        (
+            "actions.runner.mastermindx-market-intelligence-macro.m1-light-1",
+            "/Users/chriswong/actions-runner-3",
+            "m1-light-1",
+        ),
+    ):
+        assert f"{service} {runner_root} {runner_name}" in command
+    assert 'launchctl print "gui/$(id -u)/$service"' in command
+    assert "state = running" in command
+    assert 'kill -0 "$pid"' in command
+    assert 'test "$command" = "$expected_root/bin/Runner.Listener run --startuptype service"' in command
+    assert '/usr/bin/plutil -extract agentName raw -o - "$expected_root/.runner"' in command
+    assert 'test "$registered_name" = "$expected_name"' in command
+    assert '"${listener_pids[@]}"' in command
+    assert 'test "$unique_listener_count" -eq 3' in command
+    assert "pgrep" not in command
 
 
 def test_every_candidate_checkout_uses_the_frozen_sha_not_the_movable_merge_ref() -> None:
@@ -123,6 +148,42 @@ def test_process_contamination_probe_intentionally_abandons_and_then_rejects_a_c
     document = workflow("selfhosted-ci-canary.yml")
     pack = str(document["jobs"]["selfhosted-pack"]["steps"])
     probe = str(document["jobs"]["contamination-probe"]["steps"])
+    assert 'expected_home="$(dirname "$RUNNER_TEMP")/_home"' in pack
+    assert 'test "$HOME" = "$expected_home"' in pack
+    assert 'test "$HOME" = "$RUNNER_WORKSPACE/_home"' not in pack
     assert "env -u RUNNER_TRACKING_ID" in pack
     assert "mastermind-ci-leak-$GITHUB_RUN_ID" in pack
     assert "[m]astermind-ci-leak-${{ github.run_id }}" in probe
+
+
+def test_red_pack_results_are_captured_instead_of_aborting_the_receipt_path() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    for job_name in ("hosted-control", "selfhosted-pack"):
+        command = next(
+            step["run"]
+            for step in document["jobs"][job_name]["steps"]
+            if step.get("name") == "execute the frozen logical pack and retain its actual result"
+        )
+        pack = command.index("scripts/run_ci_pack.py")
+        capture = command.index("pack_rc=${PIPESTATUS[0]}")
+        assert command.index("set +e") < pack < capture
+        assert command.index("set -e", capture) > capture
+
+
+def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
+    steps = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"]["steps"]
+    upload = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and str(step.get("with", {}).get("name", "")).startswith("ci-canary-selfhosted-")
+    )
+    gate = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "surface a red pack after preserving its three-slot receipt"
+    )
+    assert upload < gate
+    assert steps[gate]["if"] == "inputs.slots == '3'"
+    assert 'cat "$RUNNER_TEMP/pack.rc"' in steps[gate]["run"]
+    assert "-eq 0" in steps[gate]["run"]

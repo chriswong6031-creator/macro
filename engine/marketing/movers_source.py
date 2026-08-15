@@ -381,7 +381,12 @@ def _pack_tiles(root: PathLike, exclude: set[str] | None = None) -> list[dict]:
     for ticker, rec in records.items():
         if not isinstance(rec, dict):
             continue
-        t = str(ticker).upper()
+        raw_ticker = str(ticker).strip()
+        if raw_ticker != raw_ticker.upper():
+            # This display plane is keyed to the uppercase house quote universe.
+            # Do not turn a mixed-case Massive identity into a different security.
+            continue
+        t = raw_ticker
         if not t or t in exclude:
             continue
         if rec.get("suspect"):

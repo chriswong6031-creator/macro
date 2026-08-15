@@ -6,7 +6,7 @@
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
 .github/workflows/daily.yml	2747	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	4999	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+.github/workflows/daily.yml	5027	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/billing.py	60	def _commercial_emit(kind: str, **fields) -> None:
 app/biocatalyst.py	2331	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
@@ -97,7 +97,7 @@ scripts/build_stock_library.py	4412	_calls = _collect_potential_calls(to_write)
 scripts/build_tape_flow_daily.py	12	Storage:
 scripts/build_tape_flow_daily.py	18	State file      : data/tape_flow/_state.json          (resumability + round-robin cursor)
 scripts/calibrate_thetadata_tape_sessions.py	12	to data/options_flow/tape_signing_sessions.jsonl (append-only; never rewritten).
-scripts/close_pass_publish.py	50	BOARD_KEY = "live_flow/us_board_provisional.json"
+scripts/close_pass_publish.py	51	BOARD_KEY = "live_flow/us_board_provisional.json"
 scripts/close_pass_reconcile.py	39	RECEIPT_KEY = "live_flow/us_board_confirmation.json"
 scripts/commercial_path_sentinel.py	59	def _transports(now: datetime):
 scripts/freshness_sentinel.py	49	Read from the served tree on disk (SERVED_DIR, default the Caddyfile's
