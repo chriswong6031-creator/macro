@@ -1194,7 +1194,7 @@ def _fusion_plane(pool: Sequence[Mapping[str, Any]],
 
 def _fusion_prophet_block(fusion: _FusionRead, index: int, *, definition: str,
                           legacy_score: float, legacy_points: Mapping[str, float],
-                          legacy_values: Mapping[str, float],
+                          legacy_components: Mapping[str, float],
                           alpha_percentile: float | None) -> dict[str, Any]:
     """The published ``prophet`` block on a fusion board — score plus its receipt.
 
@@ -1203,21 +1203,20 @@ def _fusion_prophet_block(fusion: _FusionRead, index: int, *, definition: str,
     abstained and why, and the member percentiles underneath.  ``fusion_score: null``
     is published as a null for a row no family could speak to — the receipt says the
     row was not scored rather than letting a 0.0 imply it scored worst.
-
-    ``components`` / ``points`` are the retired v2 legs, always stamped.  On a
-    degraded night they ARE the published score (honesty contract: runway still
-    pays 0 on an unmeasured row).  On a fusion night they are the same disclosure
-    the shadow carries, so a consumer that reads ``prophet.components`` — the
-    pre-override path — still sees the fail-closed legs rather than a KeyError.
-    They do not author the fusion score.
     """
-    components = {name: round(value, 6) for name, value in legacy_values.items()}
     if fusion.degraded:
         return {
             "version": definition,
             "score": round(legacy_score, 1),
             "score_authority": "retired us_prophet_v2 priority heuristic",
-            "components": components,
+            # `components` ships here too, not just `points`.  A degraded night IS the
+            # retired scorer publishing, so its legs belong on the published block — and
+            # `component_coverage` reads them.  Omitting them made a fallback board
+            # report every leg as unmeasured, which is the exact shape of a real
+            # extension outage: the disclosure built to catch that outage would have
+            # been the thing hiding it, on the one kind of night already going wrong.
+            "components": {name: round(value, 6)
+                           for name, value in legacy_components.items()},
             "points": dict(legacy_points),
             "alpha_percentile": alpha_percentile,
             "degradation": {
@@ -1240,8 +1239,6 @@ def _fusion_prophet_block(fusion: _FusionRead, index: int, *, definition: str,
         "score": None if raw is None else round(raw, 1),
         "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
         "score_kind": FUSION_SCORE_KIND,
-        "components": components,
-        "points": dict(legacy_points),
         "fusion": {
             "families_active": sorted(families),
             "family_contribution": {name: round(value * 100.0, 2)
@@ -1498,8 +1495,7 @@ def score_rows(
         else:
             row["prophet"] = _fusion_prophet_block(
                 fusion, index, definition=effective_definition,
-                legacy_score=score, legacy_points=points,
-                legacy_values=values,
+                legacy_score=score, legacy_points=points, legacy_components=values,
                 alpha_percentile=percentiles.get(index))
             if not fusion.degraded:
                 # The champion it replaced, kept running with ZERO authority.  Stamped
@@ -1678,12 +1674,13 @@ def component_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, dict[str,
     "measured zero".
 
     IT FOLLOWS THE LEGS, NOT THE RANK AUTHORITY (2026-08-15).  These five legs are the
-    retired v2 scorer's.  They are stamped on the published ``prophet`` block (the
-    honesty contract: runway still pays 0 on an unmeasured row, even when fusion
-    is the rank authority or the night degraded to fallback) and again on
-    ``prophet_shadow``.  This still falls back to the shadow when a row predates
-    that stamp, because the receipt's job is to disclose the legs the same block
-    still publishes ``weights`` and ``formula_points`` for.
+    retired v2 scorer's, and since the fusion override they live on ``prophet_shadow``.
+    This reads there when the canonical block has no components, because the receipt's
+    job is to disclose the legs the same block still publishes ``weights`` and
+    ``formula_points`` for.  Pointing it at the canonical block alone would have
+    reported every leg dead on every fusion night — an all-zero coverage table is the
+    exact shape of a real extension outage, so the disclosure built to catch that
+    outage would have been the thing hiding it.
     """
     out = {name: {"nonzero": 0, "n": 0} for name in SCORE_WEIGHTS}
     for row in rows:
