@@ -83,7 +83,8 @@ waves:
     depends_on: [W0]
     # Opened this session as a reviewable reference PR. NOT done — flagship
     # reference UI; commissioning session reviews and owns merge. Do not mark
-    # done at armed or at open PR.
+    # done at armed or at open PR. Artifact freeze:
+    # b4f5576330b079c7704102c2af8d59e7ed989f17
 
   - id: W9
     title: PR-9 production UI + live RTH verification

@@ -2,7 +2,7 @@ schema: mastermind.rig_proposal.v1
 reference_id: entry-radar-w8
 
 proposed_artifact:
-  frozen_sha: PENDING_THIS_PR
+  frozen_sha: b4f5576330b079c7704102c2af8d59e7ed989f17
   paths:
     - mockups/refs/entry_radar/index.html
     - mockups/refs/entry_radar/radar.css
