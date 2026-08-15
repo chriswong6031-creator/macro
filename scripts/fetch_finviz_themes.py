@@ -107,43 +107,111 @@ ST_TO_TF: dict[str, str] = {
 # Structure refresh contract — preregistered constants
 #
 # Every number below is pinned in research/theme_graph/W3A_LOCAL_THEME_PLANE_PLAN.md
-# §3 and lives HERE rather than at its call site so that loosening a wall is a
-# one-line reviewable diff instead of a buried literal.
+# §9.1/§9.2/§9.7 (review-1 amendments, which SUPERSEDE the §3 draft values) and
+# lives HERE rather than at its call site so that loosening a wall is a one-line
+# reviewable diff instead of a buried literal.
+#
+# The walls are derived from PARSER FAILURE MODES, not from observed drift.
+# "20x the churn we have seen" is the wrong calibration: it sizes the wall to the
+# source's good behaviour instead of to the specific ways a bad read can look
+# plausible. Each threshold below names the failure it is shaped to catch.
 # --------------------------------------------------------------------------- #
 
 #: Stamped into every receipt. Bump when the trace or the normalisation changes
 #: shape — a receipt must never be readable against the wrong extraction contract.
+#: The INTERLOCK regime is not versioned here on purpose: every wall writes its
+#: own value into the receipt's shrink/growth blocks, so a receipt says which
+#: numbers judged it without anyone having to resolve a version string.
 PARSER_VERSION = "finviz_tree_refresh.v1"
 
 MAP_PAGE_URL = "https://finviz.com/map?t=themes"
 FINVIZ_ORIGIN = "https://finviz.com"
 
-#: Refuse promotion when more than this FRACTION of the PRIOR memberships
-#: disappears in one pull. Observed genuine churn is 1.1% per SEVEN WEEKS
-#: (26 removals of 2,356, 2026-06-27 → 2026-08-14, every one dispositioned as
-#: dead-at-vendor), so 25% is >=20x any drift the source has ever shown — while
-#: still tripping the 40-45% "parser ate half the chunk" catastrophe (test B).
-#: Overridable ONLY with --allow-shrink, which is an operator's signed act.
-MAX_MEMBERSHIP_REMOVAL_FRAC = 0.25
+# --- shrink walls (§9.2; all four clear together under --allow-shrink) ------ #
 
-#: Refuse promotion on more than this fractional shrink in the subtheme count.
-#: The structure is empirically FROZEN (zero themes/subthemes/keys/names/
-#: descriptions changed in seven weeks), so a structural shrink is presumptively
-#: a partial parse rather than a source edit. Overridable ONLY with --allow-shrink.
-MAX_SUBTHEME_SHRINK_FRAC = 0.05
+#: Refuse when more than this fraction of PRIOR memberships disappears. Sized to
+#: catch the truncation that drops the LAST member of every subtheme — 268 of
+#: 2,339 = 11.5%, a read that loses one ticker per row and is otherwise perfect.
+#: Genuine churn under the manual cadence is ~1.1%/7wk, so 10% is still >=4x any
+#: plausible gap's drift while sitting BELOW the failure it must see.
+MAX_MEMBERSHIP_REMOVAL_FRAC = 0.10
 
-#: ANY decrease in the theme count refuses — deliberately not a fraction. The 40
-#: top-level themes are the coarsest possible evidence that the walk finished;
-#: losing even one is the signature of a truncated chunk, not of curation.
-MAX_THEME_SHRINK = 0
+#: Theme and subtheme DELETION are zero-tolerance and symmetric. Not a fraction:
+#: the structure has been frozen since June at BOTH levels, so a vanished row is
+#: presumptively a truncated chunk. Deliberately keyed on deletion rather than on
+#: net count — a delete plus an unrelated add nets to zero and would otherwise
+#: walk straight through a count-based wall.
+MAX_THEME_DELETIONS = 0
+MAX_SUBTHEME_DELETIONS = 0
 
-#: A removed subtheme key and an added subtheme key whose member sets overlap at
-#: Jaccard >= this are the same concept under a new key. That REFUSES promotion
-#: with NO flag override: auto-promoting would silently break every graph node id
-#: bound to the old key (a fake identity break), and auto-merging would silently
-#: rewrite identity. The run files a `key_rename` probation proposal instead and
-#: a human ratifies (G0.6) — neither failure mode can happen quietly.
-RENAME_JACCARD_MIN = 0.80
+#: Refuse when any SINGLE subtheme loses more than this fraction of its members.
+#: A total-membership wall is blind to a concentrated failure: one subtheme
+#: emptied out of 268 is 0.4% of the tree and would promote silently.
+MAX_SUBTHEME_MEMBER_LOSS_FRAC = 0.50
+
+#: Refuse when more than this fraction of subthemes lose at least one member in a
+#: single refresh. This is the DISTRIBUTED-truncation fingerprint — the failure
+#: that hides from both walls above by staying small everywhere. The 2026-08-14
+#: genuine churn touched 12% of subthemes (32 of 268); a real vendor restructure
+#: that legitimately exceeds 30% arrives WITH structural changes, so it is
+#: already refusing on the deletion walls and an operator is already reading it.
+MAX_SUBTHEMES_LOSING_MEMBERS_FRAC = 0.30
+
+# --- growth walls (§9.1; all three clear together under --allow-growth) ----- #
+#
+# Growth is the CATASTROPHIC direction in an append-only store, and the original
+# contract had no wall on it at all. A membership that should never have existed
+# is minted as a permanent open edge — nothing later closes it, because the
+# source never "removed" what it never had. A removal at least carries a date and
+# closes an interval. Observed genuine additions are 0.4%/7wk (9 of 2,356).
+
+#: Refuse when total memberships grow by more than this fraction in one pull.
+MAX_MEMBERSHIP_GROWTH_FRAC = 0.10
+
+#: Refuse when the unique-ticker count grows by more than this fraction. Catches
+#: a universe-level smear that the per-subtheme cap could miss if it were spread.
+MAX_TICKER_GROWTH_FRAC = 0.10
+
+#: Per-subtheme growth cap: max(prior x MULTIPLIER, prior + ABSOLUTE). Shaped to
+#: catch MIS-NESTING — reading a theme's full member union onto each of its
+#: subthemes, which multiplies small rows by ~6x while leaving theme and subtheme
+#: COUNTS untouched and removing nothing. The additive term keeps a genuinely
+#: tiny subtheme (3 members) from tripping on ordinary growth.
+SUBTHEME_GROWTH_MULTIPLIER = 2.0
+SUBTHEME_GROWTH_ABSOLUTE = 15
+
+# --- identity walls (§9.7; NO flag override, ever) -------------------------- #
+
+#: A removed subtheme key and an added subtheme key are the same concept under a
+#: new key when the SMALLER member set is this contained in the larger.
+#: Containment of the smaller set, NOT Jaccard: review-1 measured that J>=0.8
+#: misses a rename carrying one swapped member on 51.5% of live subthemes, because
+#: (n-1)/(n+1) < 0.8 for every n <= 8 — i.e. the old wall was blindest exactly
+#: where the tree is densest.
+RENAME_CONTAINMENT_MIN = 0.60
+
+#: Below this member count, allow ONE member of the smaller set to differ
+#: regardless of the fraction: at n=2 a single swap scores 0.5 containment, which
+#: is real-rename territory at that size and noise-floor territory nowhere else.
+RENAME_SLACK_MAX_N = 9
+
+#: A departed ticker and an arrived ticker whose SUBTHEME SETS differ by at most
+#: this many keys are one security under a new symbol. SYMMETRIC DIFFERENCE, not
+#: containment: PSTG(2 subthemes) sits entirely inside SNDK(9), so containment
+#: reads 1.0 for what is actually two different issuers swapping a slot — the
+#: receipted 2026-08-14 case. Symmetric difference scores that pair 7 and
+#: correctly leaves it alone, while a true symbol change preserves the set (+-1
+#: for co-occurring churn).
+TICKER_CONTINUITY_MAX_SYMDIFF = 1
+
+# --- nightly tripwires (advisory, never fatal) ------------------------------ #
+
+#: Warn when member-perf coverage falls short of the tree by this many members OR
+#: this fraction, whichever fires first. The 2026-08-13 board covered 923 of 941
+#: — 18 dead tickers, 1.9% — so both floors would have surfaced those departures
+#: near their true dates instead of at the next manual refresh.
+MEMBER_COVERAGE_ABS_FLOOR = 5
+MEMBER_COVERAGE_FRAC_FLOOR = 0.01
 
 #: Politeness floor between requests on an undocumented vendor route; the
 #: receipted 2026-08-14 extraction used the same gap and drew no bot-wall.
@@ -265,6 +333,53 @@ def emit_key_drift_warning(drift: dict | None) -> bool:
         f"tree-only: {_sample(drift['tree_only'])}. perf-only: {_sample(drift['perf_only'])}. "
         "Advisory only — the board is unaffected; re-pull the structure with "
         "`python scripts/fetch_finviz_themes.py --refresh-tree` after a look.",
+        flush=True,
+    )
+    return True
+
+
+def member_coverage_gap(tree_members: Iterable[str],
+                        covered: Iterable[str]) -> dict | None:
+    """Members the tree carries that the screener priced nothing for. Pure.
+
+    Returns ``None`` below BOTH floors. This is the other half of the manual
+    cadence's blind spot: a symbol the vendor stops pricing leaves the tree only
+    at the next refresh, so between refreshes the only visible trace is its
+    absence from the perf feed. The 2026-08-13 board is the worked example —
+    923 of 941 priced, and those 18 gaps were the 18 tickers the 08-14 refresh
+    would later remove.
+    """
+    tree = set(tree_members)
+    missing = sorted(tree - set(covered))
+    if not tree or not missing:
+        return None
+    frac = len(missing) / len(tree)
+    if len(missing) < MEMBER_COVERAGE_ABS_FLOOR and frac < MEMBER_COVERAGE_FRAC_FLOOR:
+        return None
+    return {
+        "tree_member_count": len(tree),
+        "covered_count": len(tree) - len(missing),
+        "missing_count": len(missing),
+        "missing_frac": round(frac, 6),
+        "missing": missing,
+    }
+
+
+def emit_member_coverage_warning(gap: dict | None) -> bool:
+    """Print the advisory coverage annotation; return True if one was emitted.
+
+    Bare flushed ``print`` for the same reason as ``emit_key_drift_warning`` — a
+    prefixing logger would make GitHub drop the annotation silently.
+    """
+    if not gap:
+        return False
+    print(
+        "::warning title=finviz-member-coverage::Finviz priced "
+        f"{gap['covered_count']}/{gap['tree_member_count']} of the committed tree's members — "
+        f"{gap['missing_count']} unpriced ({gap['missing_frac']:.1%}). "
+        f"unpriced: {_sample(gap['missing'])}. "
+        "Advisory only — a symbol the vendor stops pricing is usually a delisting or "
+        "symbol retirement that the next `--refresh-tree` will remove from the structure.",
         flush=True,
     )
     return True
@@ -908,6 +1023,16 @@ def diff_trees(prev: list[dict], new: list[dict]) -> dict:
         for k in shared if p_idx[k]["theme"] != n_idx[k]["theme"]
     ]
 
+    # Per-subtheme deltas for the SHARED keys. The concentrated failures (one
+    # subtheme emptied, one subtheme smeared with its theme's whole union) are
+    # invisible in the totals above, so they get measured at their own grain.
+    deltas = [
+        {"key": k, "prev": len(p_idx[k]["members"]), "new": len(n_idx[k]["members"])}
+        for k in shared if p_idx[k]["members"] != n_idx[k]["members"]
+    ]
+    losing = [d for d in deltas
+              if p_idx[d["key"]]["members"] - n_idx[d["key"]]["members"]]
+
     return {
         "themes": {
             "prev": len(p_themes), "new": len(n_themes),
@@ -918,9 +1043,15 @@ def diff_trees(prev: list[dict], new: list[dict]) -> dict:
             "prev": len(p_idx), "new": len(n_idx),
             "added": sorted(set(n_idx) - set(p_idx)),
             "removed": sorted(set(p_idx) - set(n_idx)),
+            "shared": len(shared),
             "name_changes": name_changes,
             "description_changes": desc_changed,
             "moved_between_themes": moved,
+            # Shared subthemes whose MEMBER SET moved at all, and the subset that
+            # lost at least one member (the co-occurrence wall's numerator).
+            "member_deltas": deltas,
+            "losing_members": len(losing),
+            "losing_members_sample": [d["key"] for d in losing[:20]],
         },
         "memberships": {
             "prev": len(p_pairs), "new": len(n_pairs),
@@ -935,9 +1066,29 @@ def diff_trees(prev: list[dict], new: list[dict]) -> dict:
     }
 
 
-def detect_key_renames(prev: list[dict], new: list[dict],
-                       *, threshold: float = RENAME_JACCARD_MIN) -> list[dict]:
-    """Removed-key × added-key pairs whose members overlap at Jaccard >= threshold.
+def _rename_continuity(a_members: set[str], b_members: set[str]) -> tuple[bool, float, int]:
+    """Is (a, b) the same concept? Returns (flagged, containment, shared_count).
+
+    Containment of the SMALLER set, with one-member slack below RENAME_SLACK_MAX_N.
+    Jaccard was the original rule and it is wrong here: a rename that also swaps a
+    single member scores (n-1)/(n+1), which is under 0.8 for every n <= 8 — i.e.
+    the wall went blind exactly where the live tree is densest (51.5% of
+    subthemes). Containment asks the question that actually matters — "is the
+    smaller row essentially inside the larger" — and the slack covers n=2, where
+    one swap reads 0.5 by fraction but is unmistakable by inspection.
+    """
+    smaller = min(len(a_members), len(b_members))
+    if not smaller:
+        return False, 0.0, 0
+    shared = len(a_members & b_members)
+    containment = shared / smaller
+    flagged = (containment >= RENAME_CONTAINMENT_MIN
+               or (smaller < RENAME_SLACK_MAX_N and shared >= smaller - 1))
+    return flagged, round(containment, 4), shared
+
+
+def detect_key_renames(prev: list[dict], new: list[dict]) -> list[dict]:
+    """Removed-key × added-key pairs that are one concept under a new key.
 
     A subtheme whose KEY changes while its MEMBERS stay put is one concept under
     a new label, and the two ways of handling it automatically are both wrong:
@@ -954,72 +1105,208 @@ def detect_key_renames(prev: list[dict], new: list[dict],
         a_members = p_idx[r]["members"]
         for a in added:
             b_members = n_idx[a]["members"]
-            union = a_members | b_members
-            if not union:
+            flagged, containment, shared = _rename_continuity(a_members, b_members)
+            if not flagged:
                 continue
-            shared = a_members & b_members
-            j = len(shared) / len(union)
-            if j >= threshold:
+            union = len(a_members | b_members)
+            out.append({
+                "old_key": r, "new_key": a,
+                "containment": containment,
+                "jaccard": round(shared / union, 4) if union else 0.0,
+                "old_theme": p_idx[r]["theme"], "new_theme": n_idx[a]["theme"],
+                "old_name": p_idx[r]["name"], "new_name": n_idx[a]["name"],
+                "old_member_count": len(a_members), "new_member_count": len(b_members),
+                "shared_member_count": shared,
+            })
+    out.sort(key=lambda d: (-d["containment"], d["old_key"], d["new_key"]))
+    return out
+
+
+def _ticker_subtheme_sets(tree: list[dict]) -> dict[str, set[str]]:
+    """``{ticker: {subtheme_key, …}}`` — a ticker's signature in the tree."""
+    out: dict[str, set[str]] = {}
+    for t in tree:
+        for s in t.get("subsectors") or []:
+            for m in s.get("members") or []:
+                out.setdefault(m, set()).add(s["key"])
+    return out
+
+
+def detect_ticker_continuity(prev: list[dict], new: list[dict]) -> list[dict]:
+    """(departed, arrived) ticker pairs that look like one security renamed.
+
+    A symbol change (ticker retirement, reverse merger, class re-designation)
+    reaches this collector as one ticker leaving and another arriving in the SAME
+    rows — so the subtheme-set signature is the evidence. SYMMETRIC DIFFERENCE,
+    not containment: the receipted 2026-08-14 pair has PSTG's 2 subthemes sitting
+    entirely inside SNDK's 9, which containment scores 1.0 — a perfect match for
+    what is really two different issuers, one taking the other's slot. Symmetric
+    difference scores that 7 and leaves it alone, while a genuine symbol change
+    preserves the whole set.
+
+    Flagged pairs REFUSE promotion and file an `identity_continuity` proposal:
+    promoting one would kill the old company node and mint a stranger, and the
+    ratified alternative (SAME_AS / merged_into) is a curated act, not a guess.
+    """
+    p_sets, n_sets = _ticker_subtheme_sets(prev), _ticker_subtheme_sets(new)
+    departed = sorted(set(p_sets) - set(n_sets))
+    arrived = sorted(set(n_sets) - set(p_sets))
+    out: list[dict] = []
+    for d in departed:
+        for a in arrived:
+            sym = p_sets[d] ^ n_sets[a]
+            if len(sym) <= TICKER_CONTINUITY_MAX_SYMDIFF:
                 out.append({
-                    "old_key": r, "new_key": a,
-                    "jaccard": round(j, 4),
-                    "old_theme": p_idx[r]["theme"], "new_theme": n_idx[a]["theme"],
-                    "old_name": p_idx[r]["name"], "new_name": n_idx[a]["name"],
-                    "old_member_count": len(a_members), "new_member_count": len(b_members),
-                    "shared_member_count": len(shared),
+                    "departed_ticker": d, "arrived_ticker": a,
+                    "symmetric_difference": len(sym),
+                    "differing_subthemes": sorted(sym),
+                    "departed_subtheme_count": len(p_sets[d]),
+                    "arrived_subtheme_count": len(n_sets[a]),
+                    "shared_subtheme_count": len(p_sets[d] & n_sets[a]),
                 })
-    out.sort(key=lambda d: (-d["jaccard"], d["old_key"], d["new_key"]))
+    out.sort(key=lambda d: (d["symmetric_difference"],
+                            d["departed_ticker"], d["arrived_ticker"]))
     return out
 
 
 def shrink_stats(diff: dict) -> dict:
-    """The three shrink measurements plus the thresholds they are read against.
+    """Every shrink measurement plus the wall it is read against.
 
-    Thresholds travel WITH the numbers into the receipt: a receipt that records
-    "0.31 removed" without recording the wall it was judged against cannot be
-    re-adjudicated later if the wall moves.
+    Thresholds travel WITH the numbers into the receipt: a receipt recording
+    "0.31 removed" without recording the wall that judged it cannot be
+    re-adjudicated later when the wall moves.
     """
     p_mem = diff["memberships"]["prev"]
     p_sub = diff["subthemes"]["prev"]
+    shared = diff["subthemes"].get("shared", 0)
+    losing = diff["subthemes"].get("losing_members", 0)
+    over_loss = [
+        {"key": d["key"], "prev": d["prev"], "new": d["new"],
+         "loss_frac": round((d["prev"] - d["new"]) / d["prev"], 4)}
+        for d in diff["subthemes"].get("member_deltas", [])
+        if d["prev"] and (d["prev"] - d["new"]) / d["prev"] > MAX_SUBTHEME_MEMBER_LOSS_FRAC
+    ]
     return {
         "membership_removals": diff["memberships"]["removed"],
         "prior_memberships": p_mem,
         "membership_removal_frac": round(diff["memberships"]["removed"] / p_mem, 6) if p_mem else 0.0,
         "max_membership_removal_frac": MAX_MEMBERSHIP_REMOVAL_FRAC,
-        "theme_delta": diff["themes"]["new"] - diff["themes"]["prev"],
-        "max_theme_shrink": MAX_THEME_SHRINK,
-        "subtheme_delta": diff["subthemes"]["new"] - p_sub,
-        "subtheme_shrink_frac": round(max(0, p_sub - diff["subthemes"]["new"]) / p_sub, 6) if p_sub else 0.0,
-        "max_subtheme_shrink_frac": MAX_SUBTHEME_SHRINK_FRAC,
+        "themes_deleted": len(diff["themes"]["removed"]),
+        "max_theme_deletions": MAX_THEME_DELETIONS,
+        "subthemes_deleted": len(diff["subthemes"]["removed"]),
+        "max_subtheme_deletions": MAX_SUBTHEME_DELETIONS,
+        "subthemes_over_loss_wall": over_loss,
+        "max_subtheme_member_loss_frac": MAX_SUBTHEME_MEMBER_LOSS_FRAC,
+        "subthemes_losing_members": losing,
+        "shared_subthemes": shared,
+        "subthemes_losing_members_frac": round(losing / shared, 6) if shared else 0.0,
+        "max_subthemes_losing_members_frac": MAX_SUBTHEMES_LOSING_MEMBERS_FRAC,
     }
 
 
-def evaluate_interlocks(diff: dict, *, allow_shrink: bool = False) -> list[str]:
+def _growth_cap(prior: int) -> int:
+    """max(prior x MULTIPLIER, prior + ABSOLUTE) — the per-subtheme ceiling."""
+    return int(max(prior * SUBTHEME_GROWTH_MULTIPLIER, prior + SUBTHEME_GROWTH_ABSOLUTE))
+
+
+def growth_stats(diff: dict) -> dict:
+    """Every growth measurement plus the wall it is read against (§9.1)."""
+    p_mem = diff["memberships"]["prev"]
+    p_tick = diff["tickers"]["prev"]
+    over_cap = [
+        {"key": d["key"], "prev": d["prev"], "new": d["new"], "cap": _growth_cap(d["prev"])}
+        for d in diff["subthemes"].get("member_deltas", [])
+        if d["new"] > _growth_cap(d["prev"])
+    ]
+    mem_growth = diff["memberships"]["new"] - p_mem
+    tick_growth = diff["tickers"]["new"] - p_tick
+    return {
+        "membership_growth": mem_growth,
+        "membership_growth_frac": round(max(0, mem_growth) / p_mem, 6) if p_mem else 0.0,
+        "max_membership_growth_frac": MAX_MEMBERSHIP_GROWTH_FRAC,
+        "ticker_growth": tick_growth,
+        "ticker_growth_frac": round(max(0, tick_growth) / p_tick, 6) if p_tick else 0.0,
+        "max_ticker_growth_frac": MAX_TICKER_GROWTH_FRAC,
+        "subthemes_over_growth_cap": over_cap,
+        "subtheme_growth_multiplier": SUBTHEME_GROWTH_MULTIPLIER,
+        "subtheme_growth_absolute": SUBTHEME_GROWTH_ABSOLUTE,
+    }
+
+
+def evaluate_interlocks(diff: dict, *, allow_shrink: bool = False,
+                        allow_growth: bool = False) -> list[str]:
     """Preregistered refusal reasons for this diff (empty list ⇒ nothing blocking).
 
-    Bootstrap case: with no prior tree there is nothing to shrink FROM, so the
-    walls are skipped rather than dividing by zero — the completeness checks in
-    ``assert_complete_tree`` are what guard a first materialisation.
+    Bootstrap case: with no prior tree there is nothing to shrink from or grow
+    against, so the walls are skipped rather than dividing by zero —
+    ``assert_complete_tree`` is what guards a first materialisation.
+
+    The two families are SEPARATELY overridable. An operator who has established
+    that the source really contracted has said nothing about an explosion in the
+    same pull, and one flag clearing both would let the acknowledged half carry
+    the unacknowledged half through.
     """
+    out: list[str] = []
+    if not allow_shrink:
+        out.extend(_shrink_refusals(diff))
+    if not allow_growth:
+        out.extend(_growth_refusals(diff))
+    return out
+
+
+def _shrink_refusals(diff: dict) -> list[str]:
     st = shrink_stats(diff)
     out: list[str] = []
-    if diff["themes"]["prev"] and st["theme_delta"] < -MAX_THEME_SHRINK:
+    if diff["themes"]["prev"] and st["themes_deleted"] > MAX_THEME_DELETIONS:
         out.append(
-            f"theme_count_decrease: {diff['themes']['prev']} → {diff['themes']['new']} "
-            f"({st['theme_delta']}); ANY theme loss is presumptively a truncated chunk")
-    if diff["subthemes"]["prev"] and st["subtheme_shrink_frac"] > MAX_SUBTHEME_SHRINK_FRAC:
+            f"theme_deletion: {st['themes_deleted']} theme(s) vanished "
+            f"({', '.join(diff['themes']['removed'][:5])}); the structure has been frozen "
+            "since June, so a deletion is presumptively a truncated chunk")
+    if diff["subthemes"]["prev"] and st["subthemes_deleted"] > MAX_SUBTHEME_DELETIONS:
         out.append(
-            f"subtheme_shrink: {diff['subthemes']['prev']} → {diff['subthemes']['new']} "
-            f"({st['subtheme_shrink_frac']:.1%} > {MAX_SUBTHEME_SHRINK_FRAC:.0%})")
+            f"subtheme_deletion: {st['subthemes_deleted']} subtheme(s) vanished "
+            f"({', '.join(diff['subthemes']['removed'][:5])}); zero-tolerance, symmetric "
+            "with themes")
     if st["prior_memberships"] and st["membership_removal_frac"] > MAX_MEMBERSHIP_REMOVAL_FRAC:
         out.append(
             f"membership_shrink: {st['membership_removals']} of {st['prior_memberships']} "
             f"memberships removed ({st['membership_removal_frac']:.1%} > "
             f"{MAX_MEMBERSHIP_REMOVAL_FRAC:.0%})")
-    if allow_shrink:
-        # --allow-shrink is the operator's signed acknowledgement of a REAL source
-        # contraction; it clears the three walls above and nothing else.
-        out = []
+    if st["subthemes_over_loss_wall"]:
+        worst = max(st["subthemes_over_loss_wall"], key=lambda d: d["loss_frac"])
+        out.append(
+            f"subtheme_member_collapse: {len(st['subthemes_over_loss_wall'])} subtheme(s) lost "
+            f">{MAX_SUBTHEME_MEMBER_LOSS_FRAC:.0%} of their members (worst {worst['key']}: "
+            f"{worst['prev']} → {worst['new']}, {worst['loss_frac']:.1%})")
+    if st["shared_subthemes"] and \
+            st["subthemes_losing_members_frac"] > MAX_SUBTHEMES_LOSING_MEMBERS_FRAC:
+        out.append(
+            f"distributed_membership_loss: {st['subthemes_losing_members']} of "
+            f"{st['shared_subthemes']} subthemes lost >=1 member "
+            f"({st['subthemes_losing_members_frac']:.1%} > "
+            f"{MAX_SUBTHEMES_LOSING_MEMBERS_FRAC:.0%}) — the distributed-truncation fingerprint")
+    return out
+
+
+def _growth_refusals(diff: dict) -> list[str]:
+    gr = growth_stats(diff)
+    out: list[str] = []
+    if diff["memberships"]["prev"] and gr["membership_growth_frac"] > MAX_MEMBERSHIP_GROWTH_FRAC:
+        out.append(
+            f"membership_growth: +{gr['membership_growth']} memberships "
+            f"({gr['membership_growth_frac']:.1%} > {MAX_MEMBERSHIP_GROWTH_FRAC:.0%}); a false "
+            "edge in an append-only store is PERMANENT — nothing later closes what the source "
+            "never had")
+    if diff["tickers"]["prev"] and gr["ticker_growth_frac"] > MAX_TICKER_GROWTH_FRAC:
+        out.append(
+            f"ticker_growth: +{gr['ticker_growth']} unique tickers "
+            f"({gr['ticker_growth_frac']:.1%} > {MAX_TICKER_GROWTH_FRAC:.0%})")
+    if gr["subthemes_over_growth_cap"]:
+        worst = max(gr["subthemes_over_growth_cap"], key=lambda d: d["new"] - d["cap"])
+        out.append(
+            f"subtheme_growth_cap: {len(gr['subthemes_over_growth_cap'])} subtheme(s) grew past "
+            f"max(2x prior, prior+{SUBTHEME_GROWTH_ABSOLUTE}) (worst {worst['key']}: "
+            f"{worst['prev']} → {worst['new']}, cap {worst['cap']}) — the mis-nesting signature")
     return out
 
 
@@ -1034,11 +1321,47 @@ def _rel_to_root(p: Path) -> str:
         return str(p)
 
 
-def _proposal_id(rename: dict, new_tree_sha: str) -> str:
-    """Deterministic id: the same suspected rename re-proposed by a re-run is the
-    SAME proposal, not a second one (an operator investigating a refusal will run
-    it more than once, and a queue that grows a row per attempt is unreadable)."""
-    return f"key_rename:{rename['old_key']}->{rename['new_key']}:{new_tree_sha[:12]}"
+def _proposal_id(kind: str, subject: dict) -> str:
+    """``'prop:' + sha1(kind|subject)[:16]`` — the probation queue's id grammar.
+
+    Deterministic on the SUBJECT alone (never on the candidate tree's hash): the
+    same suspected rename found by a later run against a moved tree is the SAME
+    finding, so it dedupes into the same keep-first row instead of growing the
+    queue every time an operator re-runs a refusal.
+
+    Reimplemented here rather than imported: this collector is the OWNER pipeline
+    and must stay runnable with the graph layer absent or mid-build. The payoff
+    for that decoupling is a second implementation of one hash, so
+    ``tests/test_finviz_tree_refresh.py`` pins this against
+    ``engine.theme_graph.probation.proposal_id`` whenever that module is present —
+    a divergence has to fail a test, not a nightly.
+    """
+    payload = json.dumps({"kind": str(kind), "subject": subject},
+                         ensure_ascii=False, sort_keys=True, default=str)
+    return "prop:" + hashlib.sha1(payload.encode("utf-8")).hexdigest()[:16]
+
+
+def _proposal_row(*, kind: str, subject: dict, evidence: dict,
+                  evidence_refs: list[str], created: str) -> dict:
+    """One row shaped exactly like contracts/theme_graph/probation_proposal.v1.
+
+    That schema is ``additionalProperties: false``, so the field list is a
+    contract and not a suggestion. ``status`` is hard-coded: a proposer that
+    could mint a ratified row would be the auto-promotion path the queue exists
+    to prevent (G0.6).
+    """
+    return {
+        "proposal_id": _proposal_id(kind, subject),
+        "kind": kind,
+        "subject": dict(subject),
+        "evidence": dict(evidence),
+        "evidence_refs": list(evidence_refs),
+        "proposed_by": "refresh_identity",
+        "created": created,
+        "status": "proposed",
+        "ratified_by": None,
+        "note": None,
+    }
 
 
 def append_probation_proposal(path: Path, row: dict) -> bool:
@@ -1113,6 +1436,7 @@ def _write_refresh_receipt(receipts_dir: Path, stamp: str, receipt: dict) -> Pat
 def refresh_tree(
     *,
     allow_shrink: bool = False,
+    allow_growth: bool = False,
     dry_run: bool = False,
     paths: _RefreshPaths | None = None,
     fetch: FetchFn | None = None,
@@ -1125,6 +1449,14 @@ def refresh_tree(
     Write order on success is tree → history → receipt, so the receipt is the last
     thing written and its existence means the promotion completed; on refusal only
     the receipt is written, and the committed tree is byte-identical either way.
+
+    The vintage stamp is the UTC EXTRACTION DATE — deliberately NOT
+    ``_asof_stamp()``. That helper answers "which NYSE session does this EOD board
+    describe", which is the right question for the perf lane and the wrong one
+    here: a structure observed on a Saturday was observed on that Saturday, and
+    stamping it Friday would invent a date the source was never read on. The
+    plan's own no-backdating rule (``valid_from`` = FIRST OBSERVED) depends on
+    this stamp being the observation instant.
     """
     paths = paths or _RefreshPaths()
     fetch = fetch or _fetch_bytes
@@ -1132,7 +1464,7 @@ def refresh_tree(
     # ISO-8601 BASIC format: colon-free so the filename is portable, still
     # lexicographically sortable, still unambiguous UTC.
     stamp = now.strftime("%Y%m%dT%H%M%SZ")
-    asof = asof or _asof_stamp(now)
+    asof = asof or now.strftime("%Y-%m-%d")
 
     prev_tree = json.loads(paths.tree.read_text()) if paths.tree.exists() else []
     prev_hash = _tree_hash(prev_tree) if prev_tree else None
@@ -1148,6 +1480,7 @@ def refresh_tree(
         "asof": asof,
         "mode": "dry_run" if dry_run else "refresh",
         "allow_shrink": allow_shrink,
+        "allow_growth": allow_growth,
         "tree_path": _rel_to_root(paths.tree),
         "tree_history_path": _rel_to_root(paths.tree_history),
         "prev_tree_sha256": prev_hash,
@@ -1174,7 +1507,8 @@ def refresh_tree(
     new_hash = _tree_hash(tree)
     diff = diff_trees(prev_tree, tree)
     renames = detect_key_renames(prev_tree, tree)
-    refusals = evaluate_interlocks(diff, allow_shrink=allow_shrink)
+    continuity = detect_ticker_continuity(prev_tree, tree)
+    refusals = evaluate_interlocks(diff, allow_shrink=allow_shrink, allow_growth=allow_growth)
 
     receipt.update({
         "trace": traced,
@@ -1183,48 +1517,81 @@ def refresh_tree(
         "tree_changed": new_hash != prev_hash,
         "diff": diff,
         "shrink": shrink_stats(diff),
+        "growth": growth_stats(diff),
         "supergroups": groups,
         "parse_notes": notes,
         "identity_report": {
-            "threshold_jaccard": RENAME_JACCARD_MIN,
+            "rename_containment_min": RENAME_CONTAINMENT_MIN,
+            "rename_slack_max_n": RENAME_SLACK_MAX_N,
+            "ticker_continuity_max_symdiff": TICKER_CONTINUITY_MAX_SYMDIFF,
             "renames": renames,
+            "ticker_continuity": continuity,
             "proposal_ids": [],
         },
     })
 
     # ---- identity: a suspected rename refuses with NO flag override -------- #
+    # Neither --allow-shrink nor --allow-growth reaches these. Both flags say
+    # "the source really did change size"; neither says "and it is fine to guess
+    # which old thing this new thing used to be".
+    receipt_path_hint = _rel_to_root(paths.receipts_dir / f"{stamp}.json")
+    created = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+    def _file(row: dict) -> None:
+        if not dry_run:
+            append_probation_proposal(paths.proposals, row)
+        receipt["identity_report"]["proposal_ids"].append(row["proposal_id"])
+
     if renames:
         refusals.append(
-            f"suspected_key_rename: {len(renames)} removed/added subtheme key pair(s) overlap at "
-            f"Jaccard >= {RENAME_JACCARD_MIN} (" +
-            ", ".join(f"{r['old_key']}→{r['new_key']} j={r['jaccard']}" for r in renames[:5]) +
-            ") — curation required; --allow-shrink does NOT override this")
-        receipt_path_hint = _rel_to_root(paths.receipts_dir / f"{stamp}.json")
+            f"suspected_key_rename: {len(renames)} removed/added subtheme key pair(s) share the "
+            f"smaller member set at containment >= {RENAME_CONTAINMENT_MIN} (" +
+            ", ".join(f"{r['old_key']}→{r['new_key']} c={r['containment']}" for r in renames[:5]) +
+            ") — curation required; no flag overrides this")
         for r in renames:
-            row = {
-                "proposal_id": _proposal_id(r, new_hash),
-                "kind": "key_rename",
-                "evidence_refs": [receipt_path_hint],
-                "evidence": {
-                    "source_family": "finviz_themes",
-                    "old_key": r["old_key"], "new_key": r["new_key"],
-                    "jaccard": r["jaccard"],
+            _file(_proposal_row(
+                kind="key_rename",
+                subject={"source_family": "finviz_themes",
+                         "old_key": r["old_key"], "new_key": r["new_key"]},
+                evidence={
+                    "containment": r["containment"], "jaccard": r["jaccard"],
                     "old_theme": r["old_theme"], "new_theme": r["new_theme"],
                     "old_name": r["old_name"], "new_name": r["new_name"],
                     "old_member_count": r["old_member_count"],
                     "new_member_count": r["new_member_count"],
                     "shared_member_count": r["shared_member_count"],
+                    "containment_wall": RENAME_CONTAINMENT_MIN,
                     "prev_tree_sha256": prev_hash,
                     "candidate_tree_sha256": new_hash,
                 },
-                "proposed_by": "refresh_identity",
-                "created": now.isoformat(timespec="seconds"),
-                "status": "proposed",
-                "ratified_by": None,
-            }
-            if not dry_run:
-                append_probation_proposal(paths.proposals, row)
-            receipt["identity_report"]["proposal_ids"].append(row["proposal_id"])
+                evidence_refs=[receipt_path_hint], created=created))
+
+    if continuity:
+        refusals.append(
+            f"suspected_ticker_rename: {len(continuity)} departed/arrived ticker pair(s) carry the "
+            f"same subtheme signature (symmetric difference <= {TICKER_CONTINUITY_MAX_SYMDIFF}) (" +
+            ", ".join(f"{c['departed_ticker']}→{c['arrived_ticker']} "
+                      f"symdiff={c['symmetric_difference']}" for c in continuity[:5]) +
+            ") — a symbol change, not a departure plus an unrelated arrival; curation required")
+        for c in continuity:
+            _file(_proposal_row(
+                kind="identity_continuity",
+                subject={"source_family": "finviz_themes",
+                         "departed_ticker": c["departed_ticker"],
+                         "arrived_ticker": c["arrived_ticker"]},
+                evidence={
+                    "symmetric_difference": c["symmetric_difference"],
+                    "differing_subthemes": c["differing_subthemes"],
+                    "departed_subtheme_count": c["departed_subtheme_count"],
+                    "arrived_subtheme_count": c["arrived_subtheme_count"],
+                    "shared_subtheme_count": c["shared_subtheme_count"],
+                    "symdiff_wall": TICKER_CONTINUITY_MAX_SYMDIFF,
+                    "prev_tree_sha256": prev_hash,
+                    "candidate_tree_sha256": new_hash,
+                },
+                evidence_refs=[receipt_path_hint], created=created))
+
+    if renames or continuity:
         receipt["identity_report"]["proposals_path"] = _rel_to_root(paths.proposals)
 
     receipt["refusal_reasons"] = refusals
@@ -1283,8 +1650,13 @@ def main() -> None:
                          "(does NOT fetch perf; the nightly never passes this)")
     ap.add_argument("--allow-shrink", action="store_true",
                     help="with --refresh-tree: acknowledge a REAL source contraction and clear "
-                         "the theme/subtheme/membership shrink walls. Never clears a suspected "
-                         "key rename — that one has no override by design.")
+                         "the four shrink walls (theme/subtheme deletion, total removals, "
+                         "per-subtheme collapse, distributed loss). Never clears a suspected "
+                         "key or ticker rename — identity has no override by design.")
+    ap.add_argument("--allow-growth", action="store_true",
+                    help="with --refresh-tree: acknowledge a REAL source expansion and clear the "
+                         "three growth walls. Separate from --allow-shrink on purpose: a source "
+                         "that contracted has said nothing about an explosion in the same pull.")
     ap.add_argument("--dry-run", action="store_true",
                     help="with --refresh-tree: fetch, diff and receipt, but mutate NOTHING")
     args = ap.parse_args()
@@ -1295,11 +1667,13 @@ def main() -> None:
         # the perf fetch — a refresh is a manual act on the structure, while the
         # perf path is the nightly's board, and mixing them would make an
         # operator's structural investigation silently rewrite tonight's snapshot.
-        raise SystemExit(refresh_tree(allow_shrink=args.allow_shrink, dry_run=args.dry_run))
-    if args.allow_shrink or args.dry_run:
+        raise SystemExit(refresh_tree(allow_shrink=args.allow_shrink,
+                                      allow_growth=args.allow_growth,
+                                      dry_run=args.dry_run))
+    if args.allow_shrink or args.allow_growth or args.dry_run:
         raise SystemExit(
-            "--allow-shrink/--dry-run apply only to --refresh-tree; the perf path never "
-            "mutates the tree, so silently accepting them would be a false promise")
+            "--allow-shrink/--allow-growth/--dry-run apply only to --refresh-tree; the perf path "
+            "never mutates the tree, so silently accepting them would be a false promise")
 
     if not TREE_PATH.exists():
         # The structure is a hash-rotated webpack data chunk and the committed
@@ -1326,6 +1700,11 @@ def main() -> None:
     print("fetching member perf …")
     mem_perf = fetch_member_perf(members)
     print(f"  {len(mem_perf)}/{len(members)} members covered")
+
+    # Advisory member-coverage tripwire (plan §9.6). Under the manual refresh
+    # cadence a symbol the vendor stops pricing is invisible in the structure
+    # until the next pull — but it goes missing from THIS feed the night it dies.
+    emit_member_coverage_warning(member_coverage_gap(members, mem_perf.keys()))
 
     asof = _asof_stamp()
     snap = {
