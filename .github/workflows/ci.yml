@@ -4182,39 +4182,17 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}
 
 jobs:
-  # PLAN ONCE, ADJUDICATE ONCE (Wave B, 2026-08-11). Before this job existed all
-  # twelve packs re-derived the selection independently, so twelve runners could
-  # silently disagree about what the suite even IS, and nothing published a single
-  # stable check name that branch protection or an external controller could read.
-  # `ci-plan` computes the partition ONCE, hands `ci-pack` its matrix, and hands
-  # every pack the plan's sha256 so a pack that would have executed a DIFFERENT
-  # partition refuses before running a single test.
+  # PLAN ONCE, EXECUTE MANY, ADJUDICATE ONCE. `ci-plan` is the sole selection and
+  # partition authority. Its v2 artifact binds the exact tested tree, PR subject
+  # head, tested base, changed-file digest, logical jobs, semantic proof IDs, and
+  # execution-spec digests. Packs consume that artifact verbatim and emit raw
+  # bounded observations; they never recompute the proof universe or declare
+  # causality. `ci-gate` reconciles complete accounting into the one stable
+  # `ci.semantic_evidence.v1` verdict. Pack indices remain transport only.
   #
-  # THIS JOB COSTS TIME TODAY. Do not read a saving into it, in either direction:
-  #
-  #   * It used to save ZERO pack launches: scope inference derived scopes for
-  #     179 of 180 jobs, but those scopes inherited `tests/**` and `*` from
-  #     opaque traversals inside named pytest suites, so every realistic diff
-  #     still selected 115-130 jobs and filled all 12 packs (measured 2026-08-11;
-  #     still true on PR #5550 / run 31729769728: one test file → 133/187 jobs,
-  #     12/12 packs, slowest pack 56 min of which 31 min was fetch-depth:0).
-  #     `exclude_peer_test_ownership` strips those catch-alls from named pytest
-  #     jobs; the dynamic matrix then emits only the packs that still carry work.
-  #   * It saves ZERO planning passes. `--expect-plan-sha` REQUIRES each pack to
-  #     recompute the plan, and a pack has always had to derive the partition to
-  #     know its own jobs, so all selected packs still re-infer. Measured on the
-  #     real manifest: `infer_job_scopes` 106.5s, `load_legacy_jobs` + partition 0.2s.
-  #     With checkout and setup, Wave B adds roughly one pack startup — about 4-5
-  #     minutes — to the critical path of every pull request.
-  #
-  # What it buys is correctness, not speed: one planning authority instead of
-  # twelve that could disagree, and `ci-gate` as a nameable aggregate (see the
-  # bottom of this file — the sweeper needs an affirmative pass, #4779, and today
-  # no single check name is guaranteed to be present on a PR head). The non-empty
-  # filter becomes load-bearing only once selection narrows. Making the packs
-  # CONSUME this plan instead of recomputing it would turn the cost into a saving,
-  # and is deliberately NOT done here: directive §6.6 wants the twelve independent
-  # recomputations as the drift guard. That trade is the operator's to revisit.
+  # This is a proof-semantics boundary, not the CI SPEED wave. Pack count,
+  # weighting, runner fleet, dependency caching, and existing scope selection are
+  # deliberately unchanged here.
   ci-plan:
     # Same closed-event fence as `ci-pack` below: a closed PR needs only the
     # workflow-level concurrency side effect above.
@@ -4257,9 +4235,9 @@ jobs:
           # run proves GitHub's synthetic merge commit, not a later API-resolved
           # branch tip, so make the event SHA explicit.
           ref: ${{ github.sha }}
-          # `fetch-depth: 0` is REQUIRED, not an optimisation. The planner diffs
-          # against the immutable PR base SHA, and a shallow clone does not contain
-          # that commit — the diff would fail, the planner would widen to the full
+          # `fetch-depth: 0` is REQUIRED, not an optimisation. The planner derives
+          # the tested base from parent 1 of this exact synthetic merge commit, and
+          # a shallow clone may not contain that commit — the diff would fail, the planner would widen to the full
           # suite by law, and the plan would be meaningless on every PR. The
           # blob:none filter keeps full history cheap. Packs do NOT repeat this
           # fetch: they download the `ci-changed-files` artifact and
@@ -4321,11 +4299,10 @@ jobs:
       # varying indent, and an empty `CI_SCOPE_ARG` must word-split away to nothing
       # so main's baseline and every workflow_dispatch stay full-suite.
       #
-      # The base SHA is `github.event.pull_request.base.sha` — the IMMUTABLE commit
-      # the PR was opened against — never `github.head_ref`, `github.base_ref` or any
-      # other branch NAME. A name is resolved at runtime, so main moving under a
-      # long-running PR would silently change what the plan selected, and the packs
-      # would then verify a plan hash for a diff nobody reviewed.
+      # The authoritative tested base is parent 1 of the exact synthetic merge
+      # commit checked out above. The event's base SHA is trigger provenance and may
+      # be stale by runner pickup; a branch name is mutable and is never substituted.
+      # Parent 2 must equal the signed event head before this value is published.
       - id: plan
         name: plan the CI packs once
         env:
@@ -4477,8 +4454,8 @@ jobs:
       # the sweeper had nothing to merge, and a heal had to rerun every pack
       # from zero. execute_pack already continues after a red INSIDE a pack
       # so one run reports every legacy failure; the matrix must do the same
-      # BETWEEN packs. A real red still fails ci-gate (`PACK_RESULT != success`)
-      # and still blocks merge. workflow_dispatch (main's heal) was already
+      # BETWEEN packs. A real red remains present in the raw fragment and the
+      # reconciled semantic evidence still blocks merge. workflow_dispatch was already
       # fail-fast:false. Do not add max-parallel (#5465).
       #
       # Literal boolean, not an expression. `fail-fast: "${{ ... }}"` evaluates
@@ -4705,15 +4682,34 @@ jobs:
         env:
           PLAN_RESULT: ${{ needs.ci-plan.result }}
           PLAN_REASON: ${{ needs.ci-plan.outputs.reason }}
+          FALLBACK_RUN_ID: ${{ github.run_id }}
+          FALLBACK_EVENT: ${{ github.event_name }}
+          FALLBACK_ROLE: ${{ needs.ci-plan.outputs.semantic_role }}
+          FALLBACK_TESTED_TREE: ${{ needs.ci-plan.outputs.tested_tree_sha }}
+          FALLBACK_SUBJECT_HEAD: ${{ needs.ci-plan.outputs.subject_head_sha }}
+          FALLBACK_BASE: ${{ needs.ci-plan.outputs.tested_base_sha }}
         run: |
           set -u
           mkdir -p "$RUNNER_TEMP/ci-semantic-fragments" "$RUNNER_TEMP/ci-semantic-final"
+          fallback_args=()
+          if [ -n "$FALLBACK_ROLE" ] && [ -n "$FALLBACK_TESTED_TREE" ] && [ -n "$FALLBACK_SUBJECT_HEAD" ] && [ -n "$FALLBACK_BASE" ]; then
+            fallback_args=(
+              --fallback-workflow-run-id "$FALLBACK_RUN_ID"
+              --fallback-workflow ci
+              --fallback-event "$FALLBACK_EVENT"
+              --fallback-role "$FALLBACK_ROLE"
+              --fallback-tested-tree-sha "$FALLBACK_TESTED_TREE"
+              --fallback-subject-head-sha "$FALLBACK_SUBJECT_HEAD"
+              --fallback-base-sha "$FALLBACK_BASE"
+            )
+          fi
           python3 scripts/ci_semantic_proof.py reconcile \
             --plan "$RUNNER_TEMP/ci-semantic-plan/ci-plan.json" \
             --fragments-dir "$RUNNER_TEMP/ci-semantic-fragments" \
             --planner-outcome "$PLAN_RESULT" \
             --planner-detail "$PLAN_REASON" \
-            --output "$RUNNER_TEMP/ci-semantic-final/ci-semantic-evidence.json"
+            --output "$RUNNER_TEMP/ci-semantic-final/ci-semantic-evidence.json" \
+            "${fallback_args[@]}"
       # Published on success AND failure. The fixed run-scoped name plus
       # overwrite prevents reruns from leaving two apparently authoritative
       # artifacts; consumers reject duplicates anyway.

@@ -122,6 +122,28 @@ def test_real_manifest_only_disambiguates_the_two_duplicate_sbir_steps() -> None
             "sbir-sttr-progression-evidence-post-amount-semantics",
         ),
     ]
+
+
+def test_real_manifest_plan_digest_is_shared_with_reconciler() -> None:
+    """The exact production proof universe must cross the runner/core boundary."""
+    jobs = PACK.load_legacy_jobs(MANIFEST)
+    plan = PACK.build_plan(
+        jobs,
+        [".github/ci/legacy-jobs.yml"],
+        changed_from=SHA_BASE,
+        scope_mode="active",
+        pack_count=12,
+        workflow_run_id="987654321",
+        workflow="ci",
+        event="pull_request",
+        role="pr_head",
+        tested_tree_sha=SHA_TREE,
+        subject_head_sha=SHA_HEAD,
+        base_sha=SHA_BASE,
+    )
+
+    assert len(plan.semantic_jobs) == len(jobs)
+    assert SEMANTIC.authoritative_plan_sha256(plan.to_dict()) == plan.plan_sha256
     # The production census migration is executable: all 614 semantic units now
     # have one non-empty identity unique inside their existing logical job.
     jobs = PACK.load_legacy_jobs(MANIFEST)
@@ -491,6 +513,14 @@ def test_exact_empty_changed_list_round_trips_as_a_distinct_plan_input(
     )
     assert consumed.changed_paths == ()
     assert consumed.plan_sha256 == plan.plan_sha256
+
+
+def test_runner_and_shared_reconciler_hash_unicode_plan_identically() -> None:
+    """Production proof names are UTF-8; JSON escape style is not identity."""
+    job = _job("unicode-proof", [{"name": "证明 receipt", "run": "echo ok"}])
+    plan = _plan([job], changed=["engine/example.py"])
+
+    assert SEMANTIC.authoritative_plan_sha256(plan.to_dict()) == plan.plan_sha256
 
 
 def test_invalid_internal_job_result_blocks_infrastructure() -> None:

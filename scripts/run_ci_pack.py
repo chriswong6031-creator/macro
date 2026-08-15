@@ -1518,7 +1518,16 @@ def plan_hash_payload(
 
 def _canonical_json(payload: object) -> str:
     """Canonical JSON — stable and type-sensitive (``true`` is not ``1``)."""
-    return json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    # The shared reconciler hashes canonical UTF-8 bytes with non-ASCII text
+    # preserved. Using json.dumps' default ensure_ascii=True here makes two
+    # equivalent documents hash differently as soon as a proof name contains
+    # Unicode — a real property of the production manifest.
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
 
 
 def _canonical_digest(payload: dict[str, Any]) -> str:
@@ -3839,6 +3848,32 @@ def main(argv: list[str] | None = None) -> int:
         if args.plan_only and args.github_output is not None:
             _emit_planner_fallback(args, exc)
             return 0
+        # A pinned pack may fail before it can materialize a replacement plan
+        # when the changed-file artifact is missing or malformed. Preserve the
+        # established operator-facing parity receipts in that earlier refusal
+        # path: the expected plan still exists, but this runner cannot prove the
+        # changed-file input needed to reconstruct it. This is diagnostic only;
+        # the exception below remains the fail-closed gate.
+        if args.expect_plan_sha:
+            handle = args.changed_files_file or os.environ.get(
+                "CI_CHANGED_FILES_FILE"
+            )
+            state, paths = _read_changed_files_handle(handle)
+            if state not in {"list", "null"}:
+                print(
+                    f"::error title=ci-changed-files::pack {args.pack_index} "
+                    f"could not reconstruct the published plan; changed paths "
+                    f"read as {state} from "
+                    f"{handle or '$CI_CHANGED_FILES_FILE (unset)'}"
+                    + (f" carrying {len(paths)} path(s)" if state == "list" else ""),
+                    flush=True,
+                )
+                print(
+                    "::error title=ci-plan-parity::pack "
+                    f"{args.pack_index} could not verify published plan "
+                    f"{args.expect_plan_sha}; refusing before legacy execution",
+                    flush=True,
+                )
         if isinstance(
             exc,
             (

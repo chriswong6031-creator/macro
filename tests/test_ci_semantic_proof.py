@@ -327,6 +327,7 @@ def test_authority_change_cannot_self_excuse_but_all_pass_can_bootstrap() -> Non
 def test_missing_fragment_and_missing_unit_are_explicit_not_pass() -> None:
     missing_pack = proof.reconcile_evidence(_plan(), [])
     assert missing_pack["status"] == "failure"
+    assert proof.semantic_gate_verdict(missing_pack).infrastructure_blocking is True
     assert {step["outcome"] for step in missing_pack["jobs"][0]["steps"]} == {"infrastructure_blocked"}
     fragment = _fragment()
     fragment["jobs"][0]["steps"].pop()
@@ -529,7 +530,11 @@ def test_descendant_pass_inside_overall_red_heals_monotonically() -> None:
 
 
 def test_non_descendant_pass_and_bounded_history_do_not_heal() -> None:
-    candidate = _reconcile(_fragment())
+    main_plan = _plan(role="main")
+    candidate = proof.reconcile_evidence(
+        main_plan,
+        [_fragment(role="main", plan=main_plan)],
+    )
     assert proof.find_descendant_pass_witness(
         "job-a", "proof-a", BASE, [candidate] * 20, lambda *_: False, max_candidates=12
     ) is None
@@ -555,3 +560,51 @@ def test_reconcile_cli_always_writes_failure_artifact_on_malformed_input(
     document = json.loads(output.read_text())
     assert document["status"] == "failure"
     assert document["infrastructure"][0]["outcome"] == "planner_configuration_failure"
+
+
+def test_reconcile_cli_plan_failure_keeps_independently_bound_identity(
+    tmp_path: Path,
+) -> None:
+    output = tmp_path / "final" / "ci-semantic-evidence.json"
+    rc = proof.main(
+        [
+            "reconcile",
+            "--plan",
+            str(tmp_path / "missing-plan.json"),
+            "--fragments-dir",
+            str(tmp_path / "fragments"),
+            "--output",
+            str(output),
+            "--fallback-workflow-run-id",
+            "99",
+            "--fallback-workflow",
+            "ci",
+            "--fallback-event",
+            "pull_request",
+            "--fallback-role",
+            "pr_head",
+            "--fallback-tested-tree-sha",
+            TREE,
+            "--fallback-subject-head-sha",
+            HEAD,
+            "--fallback-base-sha",
+            BASE,
+        ]
+    )
+    assert rc == 2
+    document = json.loads(output.read_text())
+    loaded = proof.load_semantic_evidence(
+        document,
+        advertised=True,
+        expected_run_id=99,
+        expected_workflow="ci",
+        expected_event="pull_request",
+        expected_role="pr_head",
+        expected_tested_tree_sha=TREE,
+        expected_subject_head_sha=HEAD,
+        expected_base_sha=BASE,
+    )
+    assert loaded.evidence is not None
+    assert loaded.evidence["status"] == "failure"
+    assert loaded.evidence["authority_changed"] is True
+    assert loaded.evidence["infrastructure"][0]["outcome"] == "planner_configuration_failure"

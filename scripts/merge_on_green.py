@@ -1509,6 +1509,9 @@ def semantic_main_circuit_decision(
         return False, frozenset(), "semantic evidence absent"
     if _touches_semantic_authority(candidate_paths):
         return False, frozenset(), "candidate changes CI semantic authority"
+    main_gate = semantic_proof.semantic_gate_verdict(main_loaded.evidence)
+    if main_gate.infrastructure_blocking:
+        return False, frozenset(), "main semantic evidence has unresolved infrastructure"
     main_red = semantic_proof.red_semantic_units(main_loaded.evidence)
     if not main_red:
         return False, frozenset(), "red baseline is not explained by a semantic red unit"

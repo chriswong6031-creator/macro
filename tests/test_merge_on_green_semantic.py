@@ -47,13 +47,19 @@ def _unit(classification: str = "inherited_base") -> SimpleNamespace:
     )
 
 
-def _gate(*, clear: bool, classification: str = "inherited_base") -> SimpleNamespace:
+def _gate(
+    *,
+    clear: bool,
+    classification: str = "inherited_base",
+    infrastructure_blocking: bool = False,
+) -> SimpleNamespace:
     unit = _unit(classification)
     return SimpleNamespace(
         clear=clear,
         blocking=() if clear else (unit,),
         inherited=(unit,) if clear else (),
         passed=(),
+        infrastructure_blocking=infrastructure_blocking,
     )
 
 
@@ -103,6 +109,11 @@ def test_pack_red_is_transport_only_when_semantic_gate_is_clear(monkeypatch):
 def test_main_red_without_semantic_overlap_does_not_pause_candidate(monkeypatch):
     monkeypatch.setattr(
         MOG.semantic_proof,
+        "semantic_gate_verdict",
+        lambda _evidence: _gate(clear=False, infrastructure_blocking=False),
+    )
+    monkeypatch.setattr(
+        MOG.semantic_proof,
         "red_semantic_units",
         lambda evidence: frozenset({("job-a", "proof-a")}),
     )
@@ -120,6 +131,11 @@ def test_main_red_without_semantic_overlap_does_not_pause_candidate(monkeypatch)
 
 
 def test_semantic_main_overlap_and_authority_change_both_retain_breaker(monkeypatch):
+    monkeypatch.setattr(
+        MOG.semantic_proof,
+        "semantic_gate_verdict",
+        lambda _evidence: _gate(clear=False, infrastructure_blocking=False),
+    )
     monkeypatch.setattr(
         MOG.semantic_proof,
         "red_semantic_units",
@@ -140,6 +156,34 @@ def test_semantic_main_overlap_and_authority_change_both_retain_breaker(monkeypa
         _loaded("main"), _loaded("candidate"), ["scripts/merge_on_green.py"]
     )
     assert allowed is False and not overlap and "authority" in why
+
+
+def test_main_infrastructure_ambiguity_retains_global_breaker(monkeypatch):
+    """Semantic non-overlap cannot waive unassigned runner uncertainty."""
+    monkeypatch.setattr(
+        MOG.semantic_proof,
+        "semantic_gate_verdict",
+        lambda _evidence: _gate(clear=False, infrastructure_blocking=True),
+    )
+    monkeypatch.setattr(
+        MOG.semantic_proof,
+        "red_semantic_units",
+        lambda _evidence: frozenset({("job-a", "proof-a")}),
+    )
+    monkeypatch.setattr(
+        MOG.semantic_proof,
+        "main_red_overlap",
+        lambda *_args: frozenset(),
+    )
+
+    allowed, overlap, why = MOG.semantic_main_circuit_decision(
+        _loaded("main-with-infrastructure"),
+        _loaded("candidate-b"),
+        ["engine/product.py"],
+    )
+    assert allowed is False
+    assert not overlap
+    assert "infrastructure" in why
 
 
 def test_rename_inventory_keeps_old_authority_and_surface_paths(monkeypatch):

@@ -311,6 +311,7 @@ class SemanticGateVerdict:
     blocking: tuple[SemanticUnit, ...]
     inherited: tuple[SemanticUnit, ...]
     passed: tuple[SemanticUnit, ...]
+    infrastructure_blocking: bool
 
 
 @dataclass(frozen=True)
@@ -1301,17 +1302,27 @@ def semantic_gate_verdict(evidence: Mapping[str, Any] | None) -> SemanticGateVer
     passed = tuple(unit for unit in units if unit.classification == "passed")
     inherited = tuple(unit for unit in units if unit.classification == "inherited_base")
     blocking = tuple(unit for unit in units if unit.classification not in {"passed", "inherited_base"})
+    infrastructure_blocking = bool(validated["infrastructure"]) or any(
+        str(job["infrastructure"].get("outcome", "passed")) != "passed"
+        for job in validated["jobs"]
+    )
     clear = (
         validated["status"] == "clear"
         and not blocking
-        and not validated["infrastructure"]
+        and not infrastructure_blocking
         and not (
             validated["role"] == "pr_head"
             and validated["authority_changed"]
             and bool(inherited)
         )
     )
-    return SemanticGateVerdict(clear, blocking, inherited, passed)
+    return SemanticGateVerdict(
+        clear,
+        blocking,
+        inherited,
+        passed,
+        infrastructure_blocking,
+    )
 
 
 def semantic_surface(evidence: Mapping[str, Any]) -> frozenset[tuple[str, str]]:
@@ -1392,20 +1403,52 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
     temporary.replace(path)
 
 
-def _planner_failure_evidence(detail: object) -> dict[str, Any]:
+def _planner_failure_evidence(
+    detail: object,
+    *,
+    workflow_run_id: object | None = None,
+    workflow: object | None = None,
+    event: object | None = None,
+    role: object | None = None,
+    tested_tree_sha: object | None = None,
+    subject_head_sha: object | None = None,
+    base_sha: object | None = None,
+) -> dict[str, Any]:
+    """Materialize a bounded failure even when the plan cannot be loaded.
+
+    The workflow supplies independently bound identity outputs from its exact
+    checkout.  When all are present, the failure artifact remains a structurally
+    valid ``ci.semantic_evidence.v1`` document and consumers can provenance-bind
+    it normally.  The all-zero/unknown fallback exists only for direct or broken
+    invocations that cannot provide those facts; it is intentionally rejected by
+    strict consumers and therefore can never downgrade to legacy permission.
+    """
     zero40 = "0" * 40
     zero64 = "0" * 64
+    supplied = (
+        workflow_run_id,
+        workflow,
+        event,
+        role,
+        tested_tree_sha,
+        subject_head_sha,
+        base_sha,
+    )
+    complete_identity = all(value is not None and str(value) for value in supplied)
     evidence: dict[str, Any] = {
         "schema": EVIDENCE_SCHEMA,
-        "workflow_run_id": "unknown",
-        "workflow": "ci",
-        "event": "unknown",
-        "role": "main",
-        "tested_tree_sha": zero40,
-        "subject_head_sha": zero40,
-        "base_sha": zero40,
+        "workflow_run_id": str(workflow_run_id) if complete_identity else "unknown",
+        "workflow": str(workflow) if complete_identity else "ci",
+        "event": str(event) if complete_identity else "unknown",
+        "role": str(role) if complete_identity else "main",
+        "tested_tree_sha": str(tested_tree_sha) if complete_identity else zero40,
+        "subject_head_sha": str(subject_head_sha) if complete_identity else zero40,
+        "base_sha": str(base_sha) if complete_identity else zero40,
         "plan_sha256": zero64,
-        "authority_changed": False,
+        # With no readable plan, a PR cannot prove that its changed-file surface
+        # leaves proof authority untouched. Conservatively mark it authority-
+        # changing; the infrastructure failure blocks either way.
+        "authority_changed": bool(complete_identity and role == "pr_head"),
         "status": "failure",
         "jobs": [],
         "infrastructure": [
@@ -1413,6 +1456,13 @@ def _planner_failure_evidence(detail: object) -> dict[str, Any]:
         ],
     }
     evidence["evidence_sha256"] = canonical_sha256(evidence)
+    if complete_identity:
+        try:
+            _validate_evidence(evidence)
+        except SemanticProofError as exc:
+            return _planner_failure_evidence(
+                f"{_bounded_text(detail)}; fallback identity invalid: {exc}"
+            )
     return evidence
 
 
@@ -1434,7 +1484,16 @@ def _cli_reconcile(args: argparse.Namespace) -> int:
         print(json.dumps(evidence, sort_keys=True, separators=(",", ":")))
         return 0 if semantic_gate_verdict(evidence).clear else 1
     except Exception as exc:  # ensure red runs still expose one bounded artifact
-        evidence = _planner_failure_evidence(exc)
+        evidence = _planner_failure_evidence(
+            exc,
+            workflow_run_id=args.fallback_workflow_run_id,
+            workflow=args.fallback_workflow,
+            event=args.fallback_event,
+            role=args.fallback_role,
+            tested_tree_sha=args.fallback_tested_tree_sha,
+            subject_head_sha=args.fallback_subject_head_sha,
+            base_sha=args.fallback_base_sha,
+        )
         _write_json(Path(args.output), evidence)
         print(json.dumps(evidence, sort_keys=True, separators=(",", ":")))
         return 2
@@ -1467,6 +1526,13 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     reconcile.add_argument("--output", required=True)
     reconcile.add_argument("--planner-outcome", default="success")
     reconcile.add_argument("--planner-detail")
+    reconcile.add_argument("--fallback-workflow-run-id")
+    reconcile.add_argument("--fallback-workflow")
+    reconcile.add_argument("--fallback-event")
+    reconcile.add_argument("--fallback-role", choices=("pr_head", "main"))
+    reconcile.add_argument("--fallback-tested-tree-sha")
+    reconcile.add_argument("--fallback-subject-head-sha")
+    reconcile.add_argument("--fallback-base-sha")
     validate = subparsers.add_parser("validate", help="validate one final evidence document")
     validate.add_argument("--input", required=True)
     return parser.parse_args(argv)

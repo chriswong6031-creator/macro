@@ -13,11 +13,11 @@ conventional — and a convention in a 4,000-line YAML file is not a guard:
     `ci-gate`, or let its no-work branch rot, and a proven-no-work PR reads
     `unproven` and never merges.  Nothing about that failure is visible in a diff.
   * The plan is computed from a diff, so WHICH commit it diffs against is now
-    load-bearing.  `github.event.pull_request.base.sha` is immutable; every branch
-    NAME (`github.head_ref`, `github.base_ref`, `github.ref_name`) resolves at run
-    time, so main moving under a long-running PR would silently change what was
-    selected while the packs kept verifying a plan hash for a diff nobody reviewed.
-    Swapping one for the other is a one-token edit that stays green forever.
+    load-bearing. The tested base is parent 1 of the exact synthetic merge commit;
+    parent 2 must equal the signed event head. Every branch NAME
+    (`github.head_ref`, `github.base_ref`, `github.ref_name`) resolves at run time,
+    while event base metadata can be stale by runner pickup. Substituting either
+    would let the plan describe a different diff than the tested merge tree.
 
 The `ci-gate` tests EXECUTE the adjudication script under `bash` rather than reading
 it, because the whole point of that job is its exit code.  A test that only greps for
@@ -124,7 +124,7 @@ def test_ci_plan_is_fenced_against_closed_events() -> None:
 
 
 def test_ci_plan_checks_out_full_history_for_the_base_diff() -> None:
-    """The planner diffs against the PR base SHA, which a shallow clone lacks.
+    """The planner diffs against synthetic-merge parent 1, which a shallow clone may lack.
 
     Drop `fetch-depth: 0` and the diff fails, the planner widens to the full suite by
     law (fail-SAFE), and every PR runs everything while the plan still reports
@@ -365,6 +365,21 @@ def test_ci_gate_fails_when_planning_did_not_succeed() -> None:
     reconcile = _gate_step("reconcile complete semantic evidence")
     assert reconcile["env"]["PLAN_RESULT"] == "${{ needs.ci-plan.result }}"
     assert '--planner-outcome "$PLAN_RESULT"' in reconcile["run"]
+    # Identity is bound before planning. If the plan artifact itself is missing
+    # or malformed, ci-gate still publishes a structurally valid, provenance-
+    # bound failure artifact instead of an unbound JSON tombstone.
+    assert reconcile["env"]["FALLBACK_RUN_ID"] == "${{ github.run_id }}"
+    assert reconcile["env"]["FALLBACK_ROLE"] == "${{ needs.ci-plan.outputs.semantic_role }}"
+    for flag in (
+        "--fallback-workflow-run-id",
+        "--fallback-workflow",
+        "--fallback-event",
+        "--fallback-role",
+        "--fallback-tested-tree-sha",
+        "--fallback-subject-head-sha",
+        "--fallback-base-sha",
+    ):
+        assert flag in reconcile["run"]
     enforce = _gate_step("enforce semantic verdict")
     assert "steps.semantic_reconcile.outcome" in enforce["env"]["RECONCILE_OUTCOME"]
     assert '[ "$RECONCILE_OUTCOME" != "success" ]' in enforce["run"]
