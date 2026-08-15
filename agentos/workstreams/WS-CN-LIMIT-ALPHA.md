@@ -47,22 +47,20 @@ waves:
       asia-close refresh after merge (floor 2026-08-15); hist files do not
       exist until that run.
   - id: P-B3
-    title: Persistence-robust certification (prereg freeze)
-    status: in_progress
+    title: Persistence-robust certification
+    status: done
     depends_on: [P-B2]
     next_action: >-
-      PREREG FROZEN (PR #5729, freeze-only):
-      research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
-      (DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE). A = primary within-name
-      transition contrast; B = corroborative persistence-preserving null.
-      Scope = 20 cells (DD20/DD35/MA200/QB/VZ × main/chinext20 × H10/H5).
-      P-B2 verdict is not rewritten.       Independent adversarial review
-      posted 2026-08-15: FREEZE AMEND
-      (research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md).
-      A1–A8 are now in the prereg as numbered pre-outcome amendments
-      (§16). Cheap re-review next. Do not run the certification until
-      that re-review accepts the amended text. Do not auto-roll into
-      the run or into P-D.
+      SHIPPED (PR #5729): prereg sha256 prefix 75fb38e1e6b5aefe; freeze
+      commit 6419ca5ed5744d562b7c22093b52065502f802f3; run head
+      b473cad20da08a274a3c7914b2edec1827433783; receipts
+      PB3_PERSISTENCE_ROBUST_CERT_2026-08-15.{md,json}. Verify 19/19
+      checks + 19/19 probes. Verdict = NULL=12, UNINFORMATIVE=8; zero
+      CERTIFIED TIMING; zero CERTIFIED OCCUPANCY
+      (DSC:CN-PB3-FROZEN-20-NULL-OR-UNINFORMATIVE). P-B2 remains NO
+      DISCRIMINATOR AT THE PREREGISTERED BAR. P-D is not opened and
+      has no input from this construction. Do not re-run. Do not shop
+      gates, floors, strata, cells, or headlines.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -81,12 +79,10 @@ waves:
     title: Conjunction stacking + scorer preregistration
     status: todo
     next_action: >-
-      Last, by design. Requires a pre-registered ablation arena over Prophet incumbent
-      + surviving families; every family must show INCREMENTAL information over Prophet
-      and over the structural carrier AND name propensity. P-B3 TIMING-stamped
-      cells are eligible timing-family inputs; occupancy-stamped cells are
-      named occupancy covariates only; a CARRIER_SERIES cell is not
-      incremental to the washout carrier. A P-B3 NULL is not re-shopped.
+      Last, by design. Still todo — P-B3 did not open it. The frozen P-B3
+      construction produced no TIMING-stamped cells and no occupancy
+      covariates (NULL=12, UNINFORMATIVE=8). A P-B3 NULL is not re-shopped
+      into P-D. A later persistence-robust design would need a fresh prereg.
       Gauntlet at promotion; forward verification only via the
       exact-plane ledger chain.
 landmines:
@@ -140,28 +136,26 @@ do_not_redo:
     report_rc overwrite fix (#5614).
   - >-
     Do not reuse P-B2's long-horizon feature-shift placebo as a certification null
-    (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). Do not add a P-B3 runner or
-    result table to the freeze PR. Do not auto-roll from the freeze into the run.
+    (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). Do not re-run P-B3 or shop
+    its gates, floors, strata, cells, or headlines
+    (DSC:CN-PB3-FROZEN-20-NULL-OR-UNINFORMATIVE). Do not open P-D from this
+    construction. Do not flip MA200 to onset or DD to exit after seeing the
+    A_B_CONTRADICT rows.
 decisions: ["DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE", "DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE"]
-discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT"]
+discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT", "DSC:CN-PB3-FROZEN-20-NULL-OR-UNINFORMATIVE"]
 artifacts:
   - research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
   - research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md
+  - research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_2026-08-15.md
+  - research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_2026-08-15.json
+  - research/cn_prophet_audit/pb3_persistence_robust_cert.py
   - research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md
 next_action: >-
-  P-B3 A1–A8 are in the prereg (PR #5729). Next: cheap re-review of
-  the amended text
-  (research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md
-  tick list). Do not run the certification until that re-review
-  accepts. After acceptance, a later session runs P-B3. Parallel:
-  (1) P-B2-ACCRUAL shipped on main (#5730) — record live
-  min(first_seen) after the first asia-close write; do not seed hist
-  from snapshots; (2) P-C when its data gates
-  open; (3) full-A exact-plane re-measurement; (4) P-D last, and only
-  as an ablation arena that may take P-B3 TIMING-stamped cells as
-  timing-family input and occupancy-stamped cells as named covariates
-  (CARRIER_SERIES is not incremental to the washout carrier).
-  No production scoring change from P-B2 or from this freeze.
+  P-B3 shipped on PR #5729: NULL=12, UNINFORMATIVE=8; P-D not opened.
+  Parallel only: (1) P-B2-ACCRUAL live min(first_seen) after the first
+  asia-close write; (2) P-C when its data gates open; (3) full-A
+  exact-plane re-measurement. P-D stays last and currently has no
+  P-B3 input. No production scoring change.
 ---
 
 ## Context
@@ -172,7 +166,7 @@ ACTIVE on lawful substrate, not blocked: the v2 program home
 (`research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md`) re-homed the thesis on the
 pattern-tier washout-onset lane, and W-P0 (#5364), P-A1 (#5438), P-B (#5521) and
 P-B2 (#5615) have all merged under it. P-B2's verdict — NO DISCRIMINATOR at the
-preregistered bar — closes that construction only. P-B3 is the persistence-robust
-reopen of the unresolved DD / MA200 / QB / VZ structure; its prereg is frozen
-before any P-B3 instrument or outcome. P-B2-ACCRUAL (#5730) shipped the
-prospective keep-first PIT hist stores; that wave is done and is not a P-B3 input.
+preregistered bar — closes that construction only. P-B3 (PR #5729) ran the
+persistence-robust reopen and closed it: NULL=12, UNINFORMATIVE=8; no timing
+or occupancy input for P-D. P-B2-ACCRUAL (#5730) shipped the prospective
+keep-first PIT hist stores; that wave is done and is not a P-B3 input.
