@@ -3228,6 +3228,13 @@ on:
       - "scripts/freshness_sentinel.py"
       - "app/deploy/macro-sentinel.service"
       - "app/deploy/macro-sentinel.timer"
+      # MMX-001 customer-table backup — same #3509 lesson as the sentinel:
+      # listing only the suite leaves a unit/script-only edit unable to start
+      # the job that owns it. update.sh already appears above.
+      - "tests/test_backup_user_tables.py"
+      - "scripts/backup_user_tables.py"
+      - "app/deploy/macro-user-backup.service"
+      - "app/deploy/macro-user-backup.timer"
       # The china half of that dead-man switch: the board-lag disclosure the
       # sentinel's china surface anchors on, and the A-share session calendar the
       # engine computes `delayed` from. Both halves listed for the same reason as
