@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-15T00:00:47.273164+00:00",
-  "count": 1100,
+  "generated_at": "2026-08-15T00:45:20.572173+00:00",
+  "count": 1102,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -53,6 +53,7 @@
     "Shikhara",
     "Societe Generale",
     "Std Chartered",
+    "TCW",
     "TS Lombard",
     "The Market Ear",
     "The Punchline",
@@ -500,6 +501,26 @@
       "needs_metadata": false
     },
     {
+      "id": "marketdesk-lr2cijw2hva-1cd735",
+      "title": "Beyond the AI Theme",
+      "institution": "TCW",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T01:12:19Z",
+      "summary_points": [
+        "**Compounding Earnings & Valuation Discount**: EM earnings compound at 35%+ CAGR (2025-2027) vs.",
+        "21% in US, with 44% forward P/E discount to developed markets (near 25-year lows), driven by lower inflation and fiscal resilience.",
+        "**Diversified Growth Engines Beyond AI**: EM delivers broad sector returns (tech 70% of index, plus consumer, financials, healthcare, industrials) with no correlation, contrasting US’s narrow tech/AI focus.",
+        "**India/China Structural Opportunities**: India’s domestic growth (GDP surprises, 10% tariff benefit, light foreign positioning) and China’s critical tech leadership (EV supply chain, 19x P/E vs 10-yr avg 20.6x) offer near-term catalysts amid property downturn."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
       "id": "marketdesk-rnjb6e1zaiy-80e293",
       "title": "GS Callahan TMT quick hits 13 Aug 2026",
       "institution": "S&T",
@@ -615,6 +636,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k9j5e5zidek-591581",
+      "title": "Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T15:19:24Z",
+      "summary_points": [
+        "**US CPI & Fed Policy Probability**: Soft 0.1% MoM core CPI expected, increasing September hold probability (12bp OIS strip), while oil near $89.5b (US/Iran tensions) and Fed hike by year-end drive rates.",
+        "**Geopolitical Oil Volatility**: Middle East and Pakistan/Qatar tensions keep oil near $90 and markets volatile, directly impacting rates and equity flows.",
+        "**UK GDP Catalyst**: Tomorrow's UK GDP critical; soft US CPI may extend relief rally but oil near $90 and mixed US data risk UK underperformance.",
+        "**Gilts Oil/Rates Sensitivity**: UK gilts show acute sensitivity to oil/rates trade (5% 10Y yield test), with Qatar/Pakistan headlines amplifying volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },

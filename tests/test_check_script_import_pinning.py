@@ -64,6 +64,15 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 BASELINE_PATH = REPO_ROOT / "tests" / "fixtures" / "script_import_pin_baseline.txt"
 
+# This runner deliberately starts under ``python -I -S`` with no checkout on
+# sys.path.  It authenticates the sealed runtime and exact clean checkout before
+# installing either trusted path and importing repo modules.  A module-load pin
+# would invert that security boundary, so this single named path is proved by a
+# stronger delayed-import contract below instead of joining the legacy baseline.
+AUTHENTICATED_DELAYED_IMPORT_ENTRY_SCRIPTS = frozenset({
+    "scripts/run_options_sparse_selector.py",
+})
+
 #: Top-level import targets that live in THIS repo.
 REPO_PACKAGES = frozenset({
     "admin", "app", "collectors", "engine", "lib", "research", "scripts",
@@ -564,6 +573,8 @@ def test_unpinned_entry_scripts_only_shrink():
         if line.strip()
     }
     current = set(_affected_entry_scripts())
+    assert AUTHENTICATED_DELAYED_IMPORT_ENTRY_SCRIPTS <= current
+    current -= AUTHENTICATED_DELAYED_IMPORT_ENTRY_SCRIPTS
     added = sorted(current - baseline)
     assert not added, (
         "New entry scripts import repo packages with no repo-root pin.  Add the "
@@ -571,6 +582,55 @@ def test_unpinned_entry_scripts_only_shrink():
         f"{PIN_IDIOM}\n\nunpinned and not in the baseline:\n  "
         + "\n  ".join(added)
     )
+
+
+def test_authenticated_delayed_import_runner_pins_only_after_attestation():
+    """The canary runner's exception is narrower than an ambient repo pin."""
+
+    assert AUTHENTICATED_DELAYED_IMPORT_ENTRY_SCRIPTS == {
+        "scripts/run_options_sparse_selector.py",
+    }
+    relative = next(iter(AUTHENTICATED_DELAYED_IMPORT_ENTRY_SCRIPTS))
+    path = REPO_ROOT / relative
+    _src, tree = _parse(path)
+    packages, top_level, relative_import = _repo_imports(tree)
+    assert packages == ["engine", "lib"]
+    assert top_level == []
+    assert relative_import is False
+    assert _strong_pin(tree) == (None, None)
+
+    functions = {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+    }
+    preflight = functions["_static_preflight"]
+    load_runtime = functions["_load_runtime"]
+    preflight_calls = {
+        node.func.id: node.lineno
+        for node in ast.walk(preflight)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+    }
+    assert preflight_calls["_attest_runtime_carrier"] < preflight_calls["_load_runtime"]
+
+    mutations = _sys_path_mutations(tree)
+    assert len(mutations) == 1
+    pin_line, pin_kind = mutations[0]
+    assert pin_kind == "sys.path.insert(...)"
+    repo_import_lines = [
+        node.lineno
+        for node in ast.walk(load_runtime)
+        if (
+            isinstance(node, ast.ImportFrom)
+            and (node.module or "").split(".")[0] in REPO_PACKAGES
+        )
+    ]
+    assert repo_import_lines and pin_line < min(repo_import_lines)
+
+    loop = (
+        REPO_ROOT / "ops/launchd/run_options_sparse_selector_loop.sh"
+    ).read_text(encoding="utf-8")
+    assert 'exec "$SEALED_PYTHON" -I -S -B "$RUNNER" --run-once' in loop
 
 
 # ---------------------------------------------------------------------------
