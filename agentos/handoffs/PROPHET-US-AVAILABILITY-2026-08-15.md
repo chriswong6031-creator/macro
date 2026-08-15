@@ -3,7 +3,7 @@ workstream: WS:PROPHET-US-AVAILABILITY
 session: cursor/daily-cron-sibling-concurrency-cae8
 model: local
 ended_because: complete
-prs: []
+prs: [5723]
 decisions: [DEC:DAILY-CRON-SLOT-CONCURRENCY-GROUPS]
 discoveries: [DSC:GITHUB-CONCURRENCY-SUPERSEDES-PENDING]
 mission: >
