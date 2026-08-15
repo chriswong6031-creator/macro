@@ -3680,6 +3680,7 @@ on:
       - "tests/test_russell_breadth.py"
       # unrun-brain-gateway
       - "tests/test_brain_gateway.py"
+      - "tests/test_brain_gateway_quota_safety.py"
       # unrun-macro-panels
       # engine/equity_factors.py was STRICTLY DARK (2026-08-06): named by no `run:` step
       # and by no path here, so an edit to the module carrying `composite_rank` — the
