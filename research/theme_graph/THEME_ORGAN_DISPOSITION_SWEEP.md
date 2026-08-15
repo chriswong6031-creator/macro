@@ -131,6 +131,26 @@ appends; corrections live here).
 | 45 | `scripts/probe_theme_exposure_axes.py` | GMI W2 (research artifact) | Not a bus artifact | **DORMANT (by design)** | One-shot research probe, zero workflow wiring, writes only `--out-dir`. Never a production dependency; re-runs only under a new prereg (2026-11 / 2027-02 re-probes). |
 | 46 | `scripts/scrape_ths_weekly.py` + `contracts/baskets_china_ths/scrape_receipt.v1.schema.json` | CN collectors (china_*) | Collector + receipt contract (not bus artifacts) | **CONSUME** | W1a's own deliverable, shipped with the original sweep commit. GMI consumes receipts/side-cars read-only; the W3A THS concept nodes read `concept_map.json` (asof 2026-06-27) and inherit the weekly cadence's future updates through the owner pipeline. First live proof: Sat 2026-08-15 UTC. |
 
+### No-drift verifications (directive §19 named organs; each checked for commits since
+2026-08-11 00:00:00 + workflow wiring + synapse status against origin/main @ 2026-08-14)
+
+`engine/themes_heatmap.py` + `scripts/build_themes_heatmap.py` (no commits; render/ci wired;
+unregistered) · `engine/subsector_rotation.py` + `scripts/build_subsector_rotation.py` (no
+commits; render/asia wired; registered family) · `engine/theme_scoring.py` (no commits;
+`site-theme-state` consumer — row #1 unchanged) · `engine/theme_discovery.py` (no commits —
+row #7 unchanged) · `engine/theme_emergence.py` (no commits — row #8) ·
+`engine/theme_fingerprint.py` (no commits — row #9) · `engine/narrative_emergence.py` (no
+commits — row #39) · `engine/group_flow.py` (no code commits; its CI lane moved to
+`express-render-guards` in the 2026-08-14 three-way lane split — wiring note only, row #4
+unchanged) · `engine/us_basket_turn.py` / `engine/china_basket_turn.py` (no commits; FT-R1
+fence confirmed on `china-basket-turn-cn` — F1 stands) · `collectors/china_ths_concepts.py`
+(no commits beyond the W1a ship itself) · `engine/theme_context.py` (no commits — row #14) ·
+`engine/theme_warn.py` (no commits — row #15/F4 drift still present, still owner's) ·
+`scripts/grade_thematic.py` + graders (no commits — rows #26–28, now EXTEND (W3B)).
+Post-2026-08-11 drift found and rowed above: seeder (#32 update), qledger (#42 update),
+`company_theme_exposure` probe (#10 update), group_pulse (#43), theme_graph spine (#44),
+W2 probe artifact (#45), THS weekly scraper (#46).
+
 ### Standing note for future waves
 
 Crosswalk fact pinned during this re-census: `config/theme_crosswalk.yml` carries NO

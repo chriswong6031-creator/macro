@@ -232,8 +232,134 @@ committed by main loop.
 
 ## §8 Adversarial review record
 
-Review 1 (plan, PRE-BUILD): [to be filled — reviewer verdict + findings + resolutions]
-Review 2 (diff, PRE-PR): [to be filled]
-The reviewer must answer the directive §55's fifteen questions explicitly; §55.13 (byte-identical
-boards) is N/A-by-scope in W3A (no board contact) and becomes W3C's GATE-1; §55.9 (user-facing
-claims) is N/A (no user surface); every other question has a W3A answer.
+**Review 1 (plan, PRE-BUILD, opus reviewer, 2026-08-14): PASS-WITH-CHANGES.** All fifteen §55
+questions answered explicitly (report retained in the session record; §55.11 was UNANSWERED in
+the draft — resolved by §9.8's null baseline; §55.13/§55.9 N/A-by-scope confirmed). Four
+challenged rulings UPHELD: (a) MEMBER_OF company→local_theme is a first-party source claim, not
+the refused derived composition — structural proof: the Finviz plane carries zero ltheme→theme
+edges, so no composition path to canonical exists; (e) `valid_to` = extraction-observation date
+is correct semantics (the perf lane observes a different predicate); (f) the zero-Finviz-EXPRESSES
+/ 61-THS-EXPRESSES asymmetry is evidence-based; (h) no backward laundering. Eight binding
+conditions C1–C8 + strongly-recommended items — ALL adopted (two adopted-with-modification,
+reasons in §9): resolutions are §9 below, which SUPERSEDES the named §2–§5 clauses. Reviewer
+independently reproduced every reconciliation headline (923 priced members, 18/18 departures
+absent, arithmetic closure, 14 subsector_keys, 373 unique THS codes).
+**Review 2 (diff, PRE-PR):** [to be filled]
+
+## §9 Review-1 amendments (BINDING — supersede the named clauses above)
+
+1. **Growth interlocks (C1/F1, supersedes §3 interlock list):** symmetric walls — total
+   membership INCREASE >10% ⇒ refuse without `--allow-growth`; any single subtheme growing
+   beyond max(2× prior, prior+15) ⇒ refuse; unique-ticker increase >10% ⇒ refuse. Hostile test:
+   a mis-nesting fixture (theme-level member lists smeared onto every subtheme, ~6×) must refuse
+   with bytes unchanged. Rationale: observed genuine adds 0.4%/7wk; the catastrophic direction
+   in an append-only store is growth (false edges are permanent; closes at least carry dates).
+2. **Shrink constants re-derived against parser failure modes (C7/F2, supersedes §3's 25%/5%):**
+   total membership removals >10% ⇒ refuse (catches the last-member-of-every-subtheme truncation
+   = 11.5%; manual-cadence genuine churn ~1.1%/7wk keeps 10% ≥4× any plausible gap's drift);
+   ANY theme or subtheme DELETION ⇒ refuse without `--allow-shrink` (zero-tolerance, symmetric —
+   the "structure empirically frozen" rationale applies at both levels); any single subtheme
+   losing >50% of members ⇒ refuse; co-occurrence rule: >30% of subthemes losing ≥1 member in
+   one refresh ⇒ refuse (the distributed-truncation fingerprint — 2026-08-14 genuine churn
+   touched 12% of subthemes; a real vendor restructure that legitimately exceeds this arrives
+   with structural changes and is handled by receipt + explicit flags). Boundary tests at the
+   walls (9.9%/10.1%), not only far-field.
+3. **Capability moves OFF the node row (C2/F3, supersedes §2's node columns for capability):**
+   node rows are keep-first write-once (`NODE_KEY=("node_id",)`) — so `capability`/
+   `capability_basis` live in a re-derived append-only sidecar `data/theme_graph/capability.parquet`
+   (`node_id`, `capability`, `capability_basis`, `computed_at`, `engine_version`; current view =
+   max `computed_at` per node; recomputed nightly with the graph build). This kills the one-way
+   ratchet: substrate improvements re-derive automatically, and **W3B may promote a
+   `semantic_only` node** whose substrate improved — stated here explicitly (F12's question).
+   Synapse: the sidecar registers as `theme-graph-capability` (4th GMI entry, display, six-false)
+   — F15's registration demand adopted for GMI's OWN artifacts; the probation queue and refresh
+   receipts remain unregistered as curation/audit sidecars with no signal consumers (justified on
+   own reasoning — the drafted `basket_membership_pit` precedent citation was WRONG, that module's
+   artifacts ARE registered, citation withdrawn); registering the OWNER's `themes_tree.json` is
+   not GMI's act (G0.3) — its freshness instrumentation is §9.6's coverage tripwire + receipts,
+   and the sweep addendum records this reasoning.
+   `name_en`/`name_zh`/`source_meta` are MINT-TIME snapshots (write-once with the row);
+   the graph is a join spine, never the display-label authority — current labels resolve from
+   the live tree (source of record); a displayName rename lands in the refresh receipt's
+   identity report, changes no node bytes, and test C asserts exactly that (supersedes §5 test
+   C's "label update only" phrasing, which keep-first makes impossible).
+4. **Rights single-authority (C3/F4+F19+F20, supersedes §4 rights mechanics):** the REGISTRY
+   (`config/theme_sources.yml`) is the sole rights authority; per-row evidence licensing
+   booleans are mint-time snapshots with zero enforcement power (README amended to say so);
+   `rights.py` consults the registry only. New vendor evidence mints booleans DERIVED from the
+   registry ((True, False, False) while `unresolved` — never `LICENSE_VENDOR`'s display-True).
+   The three committed W1b vendor rows carrying `licensing_display_ok=True` stay as historical
+   snapshots (append-only store); the guard emits a WARNING naming any row whose snapshot
+   disagrees with its family's current class (never an error — history is not editable).
+   **F19 resolution (label vs structure):** the vendor's LABELS are already-public vocabulary
+   and ride `name_*` lawfully; the subtheme→member STRUCTURE as a dataset is what rights
+   govern and stays internal-only — this exact distinction lands in the README and the
+   `name_en` schema description (same PR). **F20:** the grandfather is an enumerated
+   `grandfathered_surfaces:` path list in the registry with a review row per entry + a test
+   pinning that the list cannot grow without one; the full public-emitter CI walk is recorded
+   as a W6 entry ticket (structural enforcement at the wave that creates new emitters).
+5. **Vintage ladder mechanics (C4/F5 + F21, supersedes §2 era/PIT paragraph's tape claim):**
+   vintage 1 is a DECLARED SEED — `finviz_themes/finviz_themes_map.json` (asof 2026-06-27,
+   commit `04e45a3da046`), named as such in code; the tape (`tree_history.jsonl`) supplies
+   vintages from the W3A promotion on. Ladder ordering strictly by asof; dedupe
+   ADJACENT-identical vintages only (an A→B→A revert keeps all three — a re-appearance is a new
+   open interval). `--refresh-tree` stamps the UTC extraction DATE (wall clock) — never
+   `_asof_stamp()` session dates, which belong to the EOD perf board (a Saturday structure
+   refresh must not stamp Friday).
+6. **Coverage tripwire upgraded (F14, extends §3's key-drift tripwire):** the nightly perf path
+   additionally warns (line-start `::warning`, non-fatal) when member-perf coverage drops ≥5
+   members or ≥1% vs the tree (the 923/941 pattern would have flagged all 18 departures near
+   their true dates); §3's cadence ruling gains the disclosure that `valid_to` under manual
+   cadence is INTERVAL-CENSORED (bounded by refresh gaps) — W3B must not read it as a point
+   observation.
+7. **Ticker-continuity across departures×arrivals (C5/F6, new §3 obligation):** before
+   dispositions, every (departed, arrived) pair is tested for identity continuity — subtheme-set
+   signature match (exact set, or containment ≥0.8 of the smaller membership) ⇒ suspected ticker
+   rename ⇒ REFUSE auto-promotion + probation `kind=identity_continuity` proposal (ratified
+   outcome uses the existing `SAME_AS`/`merged_into` machinery). SNDK(9 subthemes)/PSTG(2) is
+   the negative fixture (substitution, no flag); a same-set rename fixture is the positive.
+   Key-rename continuity (C7/F13, supersedes J=0.8): containment of the SMALLER member set
+   ≥0.6 with one-member slack below n=9 (a rename + 1 swap at n=7 MUST flag — that negative
+   control replaces the trivially-passing J=0.9 fixture).
+8. **Null baseline for relation proposals (F8, extends §4):** every basket↔subtheme proposal
+   file prints the containment floor's yield under k=20 basket-label shuffles (mechanical,
+   LLM-free) so curators see the false-positive rate; this is also the recorded W3A answer to
+   §55.11 (the honest form: W3A emits no measurements, and its one derived-pair surface now
+   carries its own null).
+9. **Coverage-gap case A is the CO-OCCURRENCE form (F9, supersedes §4 case A):** pairwise
+   shared-membership counts among supplied ids + ids sharing no concept with any other id —
+   the motivating lithium exemplar (names WITH memberships that no concept jointly explains)
+   must fire it; zero-membership ids remain reported as a sub-case. §56.D coverage reads boards
+   READ-ONLY with artifact paths named (`site/factordata/{us,china}_standouts.json`), nothing
+   written — C6/F10 resolved (numbers already computed in the operator report).
+10. **Capability substrate (F12, supersedes §4's price-store rule):** price coverage resolves
+    against the union `data/baskets/ohlcv/` ∪ `data/stocks/` ∪ the whole-market
+    `massive_stock_day` store where present (builder verifies the CN store path
+    `engine/cn_global_beta` reads and RECORDS it — W2 precedent); `capability_basis` names the
+    substrate that satisfied the rule (self-describing). THS concepts resolve members via the
+    basket join (the only membership path this wave) and `capability_basis` says so.
+11. **Spec pins (F16):** finviz MEMBER_OF: `source_class="scrape"`,
+    `confidence_basis="finviz_tree.v1"`, evidence = the extraction/refresh receipts; basket→ltheme
+    EXPRESSES: `membership_doc.v1`; ltheme→theme: `crosswalk`. `market_scope`: `us`/`cn` per
+    family. THS node ids use the CODE (ASCII digits; `concept_map.json` name→code resolved at
+    build; zh names never enter ids). Future dangling `ths_concept` names: report-only via
+    `_meta` unknown-list idiom, edge minted only on resolution. Rights guard scopes to rows
+    whose `source_meta.rights_family` is non-null (pre-existing nodes exempt by construction).
+    Guard additionally REFUSES any `basket:finviz_themes:*` id (the suite exists for company
+    identity only — F18's optic closed structurally). `status=canonical` is lifecycle
+    vocabulary, not an epistemic claim (F18 sentence).
+12. **Join law + census grain (F7/F23/F22/F17):** README states the join law — canonical
+    expression is ONE-hop (basket→theme); `ltheme→theme` is vocabulary resolution, never a
+    second expression path — and the guard asserts the two paths agree over the 61 shared
+    crosswalk rows. §56.B census carries membership-grain columns per market (direct company
+    edges / basket-mediated / none) so the CN plane's two-hop shape is visible; counts are
+    PER-LISTING (cross-listing issuer twins exist — SHOP/RIO/TSM class; `SAME_AS` across
+    listings is W4's; disclosed, not resolved). Reconciliation table header hedged to the
+    receipted claim ("vendor stopped pricing the symbol by 2026-08-13" — halts/suspensions
+    share the footprint; F17).
+13. **Company-node mint count corrected (C8/F11):** ~**512** new `co:us:*` nodes (924 fresh-tree
+    tickers, 412 already present), store → ~3,860 nodes; build prints the actual resolution
+    table and the receipt asserts against it, not against the withdrawn "~250".
+14. **Addendum completeness (F24):** the sweep addendum lists every directive-§19-named organ
+    with either its drift entry or an explicit "no commits since 2026-08-11, wiring/synapse
+    verified" line.
