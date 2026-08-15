@@ -1,0 +1,60 @@
+name: ci-authority
+
+# This workflow is designed to be selected by an organization required-workflow
+# ruleset. pull_request_target loads this file from the trusted default branch;
+# every checkout below names that branch explicitly and never materializes the
+# candidate head. The controller posts the same stable check name directly to
+# the exact, API-reverified PR head as diagnostic evidence only. That custom
+# check must never be the sole required authority: the organization
+# required-workflow rule remains mandatory.
+#
+# Base-specific exact-head contexts are complementary: `ci-authority/main` and
+# `ci-authority/codex/merge-queue-pilot`. Each PR run fails the inactive context
+# so an edited retarget cannot reuse a success earned against another base.
+# Required-workflow event filters do not treat `edited` as a fresh authority
+# run, so these contexts close that metadata-only retarget seam; they do not
+# replace the mandatory organization required workflow.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, edited]
+  merge_group:
+    types: [checks_requested]
+
+permissions: {}
+
+concurrency:
+  group: ci-authority-${{ github.event.pull_request.number || github.event.merge_group.head_sha || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request_target' }}
+
+jobs:
+  ci-authority:
+    name: ci-authority
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: read
+    steps:
+      # actions/checkout v4.2.2, immutable. Never replace this ref with a PR,
+      # merge-group, or github.sha expression: candidate code is the threat.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+          sparse-checkout: scripts
+          persist-credentials: false
+
+      - name: publish exact-head trusted-base authority verdict
+        if: ${{ github.event_name == 'pull_request_target' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/ci_authority.py --event "$GITHUB_EVENT_PATH"
+
+      # The job itself is the stable check on GitHub's synthetic queue head. Its
+      # executable comes from the explicit default-branch checkout above.
+      - name: validate trusted merge-group envelope
+        if: ${{ github.event_name == 'merge_group' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python3 scripts/ci_authority.py --event "$GITHUB_EVENT_PATH"

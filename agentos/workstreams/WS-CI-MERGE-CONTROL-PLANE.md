@@ -32,10 +32,10 @@ waves:
       Two lineages collided 2026-08-14: PR 5585 (claude — API diff, plan
       consumption, wake diet) was closed in a reconciliation naming PR 5591
       (codex — authority plan artifact, committed scope index, evidence
-      chain) canonical; 5591 is under active iteration and carries the E2BIG
-      defects this workstream's W-TRANSPORT fixed on main (receipts posted on
-      the PR). Whichever lineage lands must preserve the bounded transport —
-      the wiring pins enforce it.
+      chain) canonical. PR 5591 was closed unmerged on 2026-08-15 and is now
+      historical archaeology only; it carried the E2BIG defects this
+      workstream's W-TRANSPORT fixed on main. Any successor must preserve the
+      bounded transport — the wiring pins enforce it.
   - id: W-SEMANTIC-PROOF
     title: Semantic CI proof identity and ancestry-valid healing
     status: in_progress
@@ -62,4 +62,6 @@ owns_paths:
 The E2BIG incident model and receipts live in
 DSC:CI-CHANGED-FILES-ENV-HAS-AN-EXECVE-CEILING and the session handoff
 CI-MERGE-CONTROL-PLANE-2026-08-14-e2big.md. The competing rewrite lineages'
-own documentation lives in their PRs (5585 closed, 5591 open).
+own documentation lives in their PRs (5585 and 5591 both closed unmerged).
+The mandatory pre-build semantic-step census is committed as
+`DSC-CI-SEMANTIC-PROOF-MANIFEST-CENSUS.v1.json`.

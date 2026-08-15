@@ -288,6 +288,8 @@ def test_the_sweeper_sparse_checks_out_only_what_it_reads():
     wanted = set(str(options["sparse-checkout"]).split())
     assert wanted == {
         "scripts/merge_on_green.py",
+        "scripts/ci_semantic_proof.py",
+        "scripts/ci_authority_paths.py",
         "scripts/gh_path_filter.py",
         "scripts/run_ci_pack.py",
         ".github/workflows",
