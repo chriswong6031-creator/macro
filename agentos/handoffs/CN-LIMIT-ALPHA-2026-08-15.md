@@ -51,9 +51,9 @@ decisions: [DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE]
 discoveries: [DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT]
 ---
 
-Freeze session only. The commit hash of
-`research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md`
-is the freeze proof once review passes. No certification numbers exist yet.
+Freeze session only. Freeze commit `6419ca5ed5744d562b7c22093b52065502f802f3`
+contains `research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md`.
+That hash is the freeze proof once review passes. No certification numbers exist yet.
 
 ## Folded from #5730 (cn-intel PIT hist, already on main)
 
