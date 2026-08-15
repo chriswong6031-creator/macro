@@ -2194,6 +2194,46 @@ jobs:
     # jobs to 129. The job does not read the landing page; it only
     # fallback-matched it. The declaration is the owned import closure,
     # compacted to directory globs. Do not add templates/**.
+    #
+    # `scripts/` IS ENUMERATED, NOT GLOBBED (2026-08-14 follow-up). The first
+    # curation shipped a whole-directory `scripts/*`, which re-created inside
+    # the CURATED tier the very behaviour `scope: exclusive` exists to end: a
+    # directory glob makes EVERY ordinary code PR touching ANY script select
+    # this job, on no evidence that the job reads it. Measured the same day —
+    # `scripts/build_free_content.py` is NOT in this job's import closure, yet
+    # `scripts/*` selected it, and that smear alone put the build_free_content
+    # probe at 127 jobs against the then-126 ceiling in
+    # tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs.
+    # A sibling heal re-based that ceiling elsewhere, so this is an
+    # OPTIMIZATION rather than a red — but the smear was structural and is what
+    # the enumeration removes. The 39 entries below ARE the job's own scripts/
+    # import closure, re-derived on this commit via
+    # tests/test_ci_pack.py::_inferred_as_if_not_exclusive.
+    #
+    # WIDENING IS THE SAFE DIRECTION. Exclusivity SKIPS inference, so a closure
+    # file with no matching pattern is a job that stops running when its own
+    # dependency changes and reports green forever. Do not hand-prune this
+    # list: when a new import lands,
+    # test_curated_exclusive_scopes_cover_their_own_import_closure names the
+    # exact uncovered file — add it here.
+    #
+    # THE REMAINING GLOBS ARE NOT ALL EQUALLY EARNED, and this comment will not
+    # pretend otherwise. Measured 2026-08-14 — tracked files the glob matches /
+    # of those, how many are in this job's concrete import closure:
+    #
+    #   engine/**     1462 / 355   enumeration would genuinely rot: 355 entries
+    #                              that churn on every engine import
+    #   config/**      133 /  17   the registry's DECLARED INPUT SURFACE
+    #                              (synapse.yml, qual_ladder.yml, the overlay) —
+    #                              a config edit SHOULD select this job
+    #   collectors/*   237 /  33   NOT earned by either argument above
+    #   lib/*           33 /  19   NOT earned by either argument above
+    #
+    # `collectors/*` and `lib/*` are the same shape `scripts/*` was: small
+    # enough to enumerate, and mostly smear. They are left alone HERE only to
+    # keep this change to the one tree that was measured against a ceiling.
+    # They are the next candidates — NOT a justified baseline, and not
+    # precedent for adding another directory glob to a curated job.
     scope: exclusive
     paths:
       - "collectors/*"
@@ -2204,7 +2244,45 @@ jobs:
       - "research/SIGNAL_EPISODE_ATLAS_MASTERPLAN_BY_FABLE.md"
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
-      - "scripts/*"
+      - "scripts/__init__.py"
+      - "scripts/build_biocatalyst.py"
+      - "scripts/build_capital_structure_page.py"
+      - "scripts/build_chart_data.py"
+      - "scripts/build_fundamental_forensics.py"
+      - "scripts/build_index_leadership.py"
+      - "scripts/build_intelligence_registry.py"
+      - "scripts/build_live_overlay.py"
+      - "scripts/build_market_heatmap.py"
+      - "scripts/build_market_memory_page.py"
+      - "scripts/build_market_structure_page.py"
+      - "scripts/build_rr_banner.py"
+      - "scripts/build_site.py"
+      - "scripts/build_sp500_heatmap.py"
+      - "scripts/build_state_of_themes.py"
+      - "scripts/build_stock_library.py"
+      - "scripts/build_subsector_confluence.py"
+      - "scripts/build_subsector_rotation.py"
+      - "scripts/build_subsector_rotation_china.py"
+      - "scripts/build_subsector_rotation_china_pages.py"
+      - "scripts/build_subsector_rotation_pages.py"
+      - "scripts/build_themes_heatmap.py"
+      - "scripts/build_whitehouse.py"
+      - "scripts/check_board_contradictions.py"
+      - "scripts/check_intelligence_registry.py"
+      - "scripts/check_signal_gate_coherence.py"
+      - "scripts/check_stretch_oracle_contract.py"
+      - "scripts/check_synapse_reads.py"
+      - "scripts/check_template_site_sync.py"
+      - "scripts/close_pass_publish.py"
+      - "scripts/close_pass_reconcile.py"
+      - "scripts/inject_wh_banner.py"
+      - "scripts/notify.py"
+      - "scripts/optimize_assets.py"
+      - "scripts/regime_reliability_phase0.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "scripts/translate_profiles.py"
+      - "scripts/validate_regime_fwd.py"
+      - "scripts/worktree_sparse.py"
       - "site/basketdata/**"
       - "site/factordata/**"
       - "site/flowleaders/**"
