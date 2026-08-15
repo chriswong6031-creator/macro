@@ -34,9 +34,7 @@ T1b static: the pin is the ONLY sys.path mutation in a guard-family file.  A
     call-time insert (check_live_worker.py once carried `sys.path.insert(0, ".")`
     inside a function) reorders resolution AFTER the pin ran and is invisible
     to T3, which execs only up to the pin — so the shape is banned outright.
-T2  baseline: the wider scripts/** entry-script population may only SHRINK.  The
-    one sealed selector runner may defer its imports only while a structural
-    contract proves its checkout/runtime attestation runs before path exposure.
+T2  baseline: the wider scripts/** entry-script population may only SHRINK.
 T3  dynamic: simulate bare invocation against a hostile decoy tree and prove
     every member of the check_*/ci family still resolves its repo imports from
     its own repo root.  This covers already-pinned members too.
@@ -236,7 +234,6 @@ def _guarded_family() -> list[Path]:
 _ENTRY_RE = re.compile(r"^if\b.*__name__", re.M)
 _REPO_IMPORT_RE = re.compile(
     r"(?:\bfrom|\bimport)\s+(?:" + "|".join(sorted(REPO_PACKAGES)) + r")\b")
-_AUTHENTICATED_DELAYED_IMPORT_ENTRY = "scripts/run_options_sparse_selector.py"
 
 
 def _affected(path: Path) -> bool:
@@ -261,7 +258,7 @@ def _affected(path: Path) -> bool:
         return False
     pin_line, _ = _strong_pin(tree)
     if pin_line is None:
-        return not _authenticated_delayed_import(path, tree)
+        return True
     first_top = min((lineno for lineno, _ in top), default=None)
     return first_top is not None and first_top < pin_line
 
@@ -374,159 +371,6 @@ def _sys_path_mutations(tree: ast.Module) -> list[tuple[int, str]]:
     return mutations
 
 
-def _authenticated_delayed_import(path: Path, tree: ast.Module) -> bool:
-    """Recognize the selector's fail-closed import boundary, not a generic opt-out.
-
-    The sparse selector starts under ``python -I -S`` and cannot expose either
-    the checkout or sealed site-packages until both have been authenticated.
-    Consequently its normal repo-root pin would weaken, rather than strengthen,
-    the boundary this module protects.  Keep the exception singular and prove
-    its complete import/path/call ordering structurally.
-    """
-    if _rel(path) != _AUTHENTICATED_DELAYED_IMPORT_ENTRY:
-        return False
-
-    def _function(name: str) -> ast.FunctionDef | None:
-        matches = [
-            node for node in tree.body
-            if isinstance(node, ast.FunctionDef) and node.name == name
-        ]
-        return matches[0] if len(matches) == 1 else None
-
-    loader = _function("_load_runtime")
-    preflight = _function("_static_preflight")
-    if loader is None or preflight is None:
-        return False
-
-    # Nothing outside the authenticated loader may need checkout or third-party
-    # resolution. A new relative import or module-load dependency would execute
-    # before the sealed roots below are exposed.
-    if any(
-        isinstance(node, ast.ImportFrom) and node.level
-        for node in ast.walk(tree)
-    ):
-        return False
-    stdlib = set(sys.stdlib_module_names) | {"__future__"}
-    for node in tree.body:
-        if isinstance(node, ast.Import):
-            roots = {alias.name.split(".")[0] for alias in node.names}
-        elif isinstance(node, ast.ImportFrom):
-            roots = {(node.module or "").split(".")[0]}
-        else:
-            continue
-        if not roots <= stdlib:
-            return False
-
-    expected_imports = [
-        ("engine", ("options_sparse_selector",)),
-        ("engine.session_digest", ("session_window_et",)),
-        ("lib.nyse_calendar", ("is_session",)),
-    ]
-    direct_import_nodes: list[ast.ImportFrom] = []
-    direct_imports: list[tuple[str, tuple[str, ...]]] = []
-    for node in loader.body:
-        if not isinstance(node, ast.ImportFrom) or node.level:
-            continue
-        root = (node.module or "").split(".")[0]
-        if root not in REPO_PACKAGES:
-            continue
-        direct_import_nodes.append(node)
-        direct_imports.append(
-            (node.module or "", tuple(alias.name for alias in node.names))
-        )
-    if direct_imports != expected_imports:
-        return False
-
-    loader_node_ids = {id(node) for node in ast.walk(loader)}
-    repo_import_nodes: list[ast.Import | ast.ImportFrom] = []
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Import):
-            if any(alias.name.split(".")[0] in REPO_PACKAGES for alias in node.names):
-                repo_import_nodes.append(node)
-        elif isinstance(node, ast.ImportFrom) and not node.level:
-            if (node.module or "").split(".")[0] in REPO_PACKAGES:
-                repo_import_nodes.append(node)
-    if (
-        len(repo_import_nodes) != len(expected_imports)
-        or {id(node) for node in repo_import_nodes}
-        != {id(node) for node in direct_import_nodes}
-        or any(id(node) not in loader_node_ids for node in repo_import_nodes)
-    ):
-        return False
-
-    if not loader.body or not isinstance(loader.body[0], ast.For):
-        return False
-    path_loop = loader.body[0]
-    if (
-        not isinstance(path_loop.target, ast.Name)
-        or path_loop.target.id != "path"
-        or ast.unparse(path_loop.iter)
-        != "(str(RUNTIME_SITE_PACKAGES), str(EXPECTED_REPO_ROOT))"
-        or path_loop.orelse
-        or len(path_loop.body) != 1
-        or not isinstance(path_loop.body[0], ast.If)
-    ):
-        return False
-    guard = path_loop.body[0]
-    if (
-        ast.unparse(guard.test) != "path not in sys.path"
-        or guard.orelse
-        or len(guard.body) != 1
-        or not isinstance(guard.body[0], ast.Expr)
-        or not isinstance(guard.body[0].value, ast.Call)
-        or ast.unparse(guard.body[0].value) != "sys.path.insert(0, path)"
-    ):
-        return False
-    insert = guard.body[0]
-    if (
-        _sys_path_mutations(tree) != [(insert.lineno, "sys.path.insert(...)")]
-        or any(node.lineno <= insert.lineno for node in direct_import_nodes)
-    ):
-        return False
-
-    def _direct_assignment(
-        function: ast.FunctionDef, target: str, callee: str, arguments: str
-    ) -> tuple[int, ast.Call] | None:
-        matches: list[tuple[int, ast.Call]] = []
-        for index, node in enumerate(function.body):
-            if (
-                isinstance(node, ast.Assign)
-                and len(node.targets) == 1
-                and isinstance(node.targets[0], ast.Name)
-                and node.targets[0].id == target
-                and isinstance(node.value, ast.Call)
-                and isinstance(node.value.func, ast.Name)
-                and node.value.func.id == callee
-                and ast.unparse(ast.Tuple(elts=node.value.args, ctx=ast.Load()))
-                == arguments
-                and not node.value.keywords
-            ):
-                matches.append((index, node.value))
-        return matches[0] if len(matches) == 1 else None
-
-    repository = _direct_assignment(
-        preflight, "repository", "_attest_repository", "()"
-    )
-    runtime_receipt = _direct_assignment(
-        preflight,
-        "runtime_receipt",
-        "_attest_runtime_carrier",
-        "(repository,)"
-    )
-    runtime = _direct_assignment(preflight, "runtime", "_load_runtime", "()")
-    if repository is None or runtime_receipt is None or runtime is None:
-        return False
-    if not repository[0] < runtime_receipt[0] < runtime[0]:
-        return False
-    loader_calls = [
-        node for node in ast.walk(tree)
-        if isinstance(node, ast.Call)
-        and isinstance(node.func, ast.Name)
-        and node.func.id == "_load_runtime"
-    ]
-    return len(loader_calls) == 1 and loader_calls[0] is runtime[1]
-
-
 def test_guard_family_has_no_call_time_sys_path_mutation():
     """The pin must be the ONLY sys.path mutation — anywhere in the file.
 
@@ -551,15 +395,6 @@ def test_guard_family_has_no_call_time_sys_path_mutation():
         "imports to a foreign tree — and the dynamic probe cannot see it.\n\n"
         "Delete the mutation; the module-level pin already covers lazy "
         "imports.\n\n  " + "\n  ".join(sorted(offenders))
-    )
-
-
-def test_authenticated_delayed_import_contract_is_fail_closed():
-    path = REPO_ROOT / _AUTHENTICATED_DELAYED_IMPORT_ENTRY
-    _src, tree = _parse(path)
-    assert _authenticated_delayed_import(path, tree), (
-        "The sealed selector may defer its repo pin only while the checkout and "
-        "runtime are authenticated before the sole delayed import loader."
     )
 
 
