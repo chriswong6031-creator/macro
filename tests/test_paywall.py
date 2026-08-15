@@ -194,8 +194,8 @@ def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
                   "/etfs.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
-    assert paywall.classify_path("/biocatalyst.html") == "free", (
-        "control: a registered-preview shell must still classify free"
+    assert paywall.classify_path("/news.html") == "free", (
+        "control: a free_registered document must still classify free"
     )
     for payload in (
         "/premiumdata/special_situations.json",
