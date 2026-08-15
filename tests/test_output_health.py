@@ -347,6 +347,120 @@ def test_09c_a_reader_never_clears_producer_blindness(observation, blind_reason)
     assert any(e["plane"] == "reader" for e in row["evidence"]), row["evidence"]
 
 
+def _r2_reader(verdict: str, asof: str = FRESH, field: str = "asof") -> dict:
+    return {
+        "source": "r2_audit:live_flow",
+        "verdict": verdict,
+        "clock_kind": "content",
+        "asof_field": field,
+        "observed_asof": asof,
+    }
+
+
+@pytest.mark.parametrize(
+    "observation, blind_reason",
+    BLINDNESS_CASES,
+    ids=["field_mismatch", "absent_field", "parse_error", "date_only", "sparse"],
+)
+def test_09c2_a_definitive_reader_negative_decides_over_producer_blindness(
+    observation, blind_reason
+):
+    """THE ASYMMETRY. A reader `fresh` cannot rescue a blind producer (test_09c); a reader
+    STALE on the same evidence decides anyway.
+
+    A negative needs only its own axis to be complete — the same rule that already lets a
+    definitive negative resolve state under a `partial` assessment. Blindness on the
+    producer's watermark does not make the served copy less stale; it means we cannot ALSO
+    say what the producer holds, and `partial` plus the retained blindness reasons is
+    exactly how the record says that.
+    """
+    doc = two_artifact_estate()
+    rows = resolve(
+        doc,
+        {"a": observation, "b": obs()},
+        reader_observations={"a": _r2_reader("stale", asof=OLD)},
+    )
+    row = rows["a"]
+    assert row["state"] == "stale"
+    assert row["decided_by"] == "reader"
+    assert row["assessment_status"] == "partial"
+    # BOTH reason families stay: the proven defect and the plane that went dark.
+    assert blind_reason in row["reason_codes"], row["reason_codes"]
+    assert "reader_stale_overrides_producer" in row["reason_codes"]
+
+
+def test_09c3_a_reader_that_looked_and_found_nothing_decides_over_blindness_too():
+    """`missing` is the other definitive negative, and it is per-object by construction:
+    anchor LISTING no longer produces verdicts at all, so the only way to get one is a
+    reader that went and fetched the object."""
+    doc = two_artifact_estate()
+    rows = resolve(
+        doc,
+        {
+            "a": obs(exists=None, asof=None, presence_source=None, sparse_unmaterialized=True),
+            "b": obs(),
+        },
+        reader_observations={
+            "a": {"source": "r2_audit:live_flow", "verdict": "missing",
+                  "clock_kind": "content", "asof_field": "asof"}
+        },
+    )
+    row = rows["a"]
+    assert row["state"] == "unavailable"
+    assert row["decided_by"] == "reader"
+    assert row["assessment_status"] == "partial"
+    assert "sparse_unmaterialized" in row["reason_codes"]
+
+
+def test_09c4_a_pure_r2_artifact_reads_its_audit_probe_as_the_primary_plane():
+    """There is no local copy to be blind ABOUT, so the audit's read of the declared field
+    is not a rescue — it is the only plane that can answer, in both directions.
+
+    `git+r2` is the control: a git copy exists there, so a fresh reader over a blind
+    producer is the rescue §7 forbids and stays could_not_look.
+    """
+    doc = synapse_doc(
+        r2=artifact("live_flow/tide.json", producer=PRODUCER_A, storage="r2"),
+        both=artifact("data/both.json", producer=PRODUCER_B, storage="git+r2"),
+    )
+    unobserved = obs(exists=None, asof=None, presence_source=None)
+
+    fresh = resolve(
+        doc,
+        {"r2": unobserved, "both": unobserved},
+        reader_observations={"r2": _r2_reader("fresh"), "both": _r2_reader("fresh")},
+    )
+    assert fresh["r2"]["state"] == "healthy"
+    assert fresh["r2"]["decided_by"] == "reader"
+    assert fresh["r2"]["assessment_status"] == "complete"
+    assert "r2_reader_primary_plane" in fresh["r2"]["reason_codes"]
+    # The local-plane reason is disclosed but no longer deciding.
+    assert "watermark_unread" in fresh["r2"]["reason_codes"]
+
+    assert fresh["both"]["state"] is None                 # git+r2: the rescue is refused
+    assert fresh["both"]["assessment_status"] == "could_not_look"
+    assert "r2_reader_primary_plane" not in fresh["both"]["reason_codes"]
+
+    stale = resolve(
+        doc,
+        {"r2": unobserved, "both": unobserved},
+        reader_observations={"r2": _r2_reader("stale", asof=OLD)},
+    )
+    assert stale["r2"]["state"] == "stale"
+    assert stale["r2"]["decided_by"] == "reader"
+
+    # …and with NO field-matching observation nothing changes: a mismatched field leaves
+    # the pure-r2 artifact exactly as blind as it was.
+    mismatched = resolve(
+        doc,
+        {"r2": unobserved, "both": unobserved},
+        reader_observations={"r2": _r2_reader("fresh", field="source_asof")},
+    )
+    assert mismatched["r2"]["state"] is None
+    assert mismatched["r2"]["assessment_status"] == "could_not_look"
+    assert "r2_reader_primary_plane" not in mismatched["r2"]["reason_codes"]
+
+
 def test_09d_a_reader_measuring_another_field_is_diagnostic_only():
     """The live prophet-index shape. The freshness sentinel reads `source_asof` out of
     the served `prophet/index.json`; the artifact's declared watermark is `asof`. A fresh

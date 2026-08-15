@@ -68,14 +68,33 @@ exists at all.
 
 TWO REFUSALS BOUND THAT OVERRIDE, AND BOTH ARE THE SAME LAW AS THE PRODUCER SIDE'S:
 
-1. BLINDNESS IS ESTABLISHED BEFORE THE FOLD AND SURVIVES IT. The producer-side read runs
-   first; if the artifact's OWN evidence was unreadable (:data:`FRESH_BLIND` — field
-   mismatch, promised field absent, parse error, unparseable or date-only-beyond-SLA)
-   that blindness is recorded before any reader row is consulted and no reader verdict
-   can convert it into a state. A reader may fill an UNASSESSED axis
-   (:data:`FRESH_UNASSESSABLE` — the write-time contract with no trusted mtime); it may
-   not fill a BLIND one. The two are different answers: "not measured" versus "measured
-   and unreadable", and only the first is a gap a second observer can close.
+1. BLINDNESS IS ESTABLISHED BEFORE THE FOLD AND A FRESH READER NEVER CLEARS IT. The
+   producer-side read runs first; if the artifact's OWN evidence was unreadable
+   (:data:`FRESH_BLIND` — field mismatch, promised field absent, parse error, unparseable
+   or date-only-beyond-SLA) that blindness is recorded before any reader row is consulted,
+   and no reader verdict of ``fresh`` can convert it into ``healthy``. A reader may fill
+   an UNASSESSED axis (:data:`FRESH_UNASSESSABLE` — the write-time contract with no
+   trusted mtime); it may not fill a BLIND one. The two are different answers: "not
+   measured" versus "measured and unreadable", and only the first is a gap a second
+   observer can close.
+
+   TWO CARVE-OUTS, BOTH ASYMMETRIC ON PURPOSE, because a negative and a rescue are not
+   the same claim:
+
+   (A) A DEFINITIVE READER NEGATIVE DECIDES ANYWAY. A field-matching content-clock
+       ``stale``, or a ``missing`` from a reader that went and looked for this object,
+       is a complete observation of a real defect on its own axis — the same logic that
+       already lets a definitive negative resolve state under a ``partial`` assessment.
+       The state is ``stale``/``unavailable`` with ``decided_by='reader'``, the producer
+       blindness reasons STAY on the record, and the assessment stays ``partial``.
+       Suppressing that to ``could_not_look`` would hide a proven defect behind a
+       question about a different plane.
+   (B) FOR A PURE-``r2`` ARTIFACT THE READER IS THE PRIMARY PLANE. Nothing local exists
+       to be blind about, so a field-matching content-clock observation is not a rescue —
+       it is the only plane that can answer, and it completes the freshness axis in both
+       directions (:data:`REASON_R2_READER_PRIMARY_PLANE`, and the local-plane reasons in
+       :data:`R2_LOCAL_PLANE_BLINDNESS` are superseded). ``git+r2`` is excluded: a git
+       copy exists, so a fresh reader there is a rescue and only (A) gets through.
 2. A CONTENT-CLOCK READER MUST NAME THE FIELD IT MEASURED. ``asof_field`` is REQUIRED on
    a content-clock row whose verdict is fresh/stale; a row naming a different field than
    the artifact declares — the live shape is the freshness sentinel reading
@@ -214,6 +233,7 @@ REASON_TRANSPORT_OUTRANKED = "transport_clock_outranked_by_content"
 REASON_READER_INDETERMINATE = "reader_indeterminate"
 REASON_READER_FIELD_MISMATCH = "reader_field_mismatch"
 REASON_READER_FIELD_UNDECLARED = "reader_field_undeclared"
+REASON_R2_READER_PRIMARY_PLANE = "r2_reader_primary_plane"
 REASON_SELF_INPUT_EXCLUDED = "self_input_excluded"
 REASON_DEPENDENCY_CYCLE = "dependency_cycle"
 REASON_REQUIRED_INPUT_UNASSESSED = "required_input_unassessed"
@@ -257,6 +277,7 @@ REASON_CODES: frozenset[str] = frozenset({
     REASON_READER_INDETERMINATE,
     REASON_READER_FIELD_MISMATCH,
     REASON_READER_FIELD_UNDECLARED,
+    REASON_R2_READER_PRIMARY_PLANE,
     REASON_SELF_INPUT_EXCLUDED,
     REASON_DEPENDENCY_CYCLE,
     REASON_REQUIRED_INPUT_UNASSESSED,
@@ -291,6 +312,18 @@ BLIND_REASONS: frozenset[str] = frozenset({
     REASON_WATERMARK_UNPARSEABLE,
     REASON_WATERMARK_UNREAD,
     REASON_DATE_ONLY_CALENDAR_UNKNOWN,
+})
+
+#: The blindness reasons that describe THE LOCAL PLANE ONLY, and that a pure-``r2``
+#: artifact's reader evidence therefore SUPERSEDES rather than argues with. Both are
+#: statements about a copy that was never supposed to be here: an object that lives only
+#: in the bucket has no local watermark to read and no local presence to probe, so
+#: reporting "we could not read it" about the checkout is reporting the absence of a
+#: thing that does not exist. Where the audit read the object's own declared field, that
+#: IS the primary observation (:data:`REASON_R2_READER_PRIMARY_PLANE`).
+R2_LOCAL_PLANE_BLINDNESS: frozenset[str] = frozenset({
+    REASON_R2_UNOBSERVABLE,
+    REASON_WATERMARK_UNREAD,
 })
 
 #: ``parse_error`` values an adapter may pass to name a SPECIFIC blindness. Anything else
@@ -1261,6 +1294,54 @@ def _build_record(
         if fresh["verdict"] == FRESH_BLIND:
             blind.extend(r for r in fresh["reasons"] if r in BLIND_REASONS)
 
+    # --- what the reader plane is ENTITLED to decide over blindness -------
+    # Both carve-outs are scoped by whether a LOCAL PRODUCER PLANE EXISTS, and neither
+    # applies to an unprobeable path (a family is not a file, so no verdict about it is
+    # about one artifact).
+    reader_decides = reader is not None and not reader.get("diagnostic") and not unprobeable
+
+    #: (A) A DEFINITIVE NEGATIVE NEEDS ONLY ITS OWN AXIS. A field-matching content-clock
+    #: `stale`, or a `missing` from a reader that went and looked for THIS object, is a
+    #: complete observation of a real defect — the same logic that already lets a
+    #: definitive negative resolve state under a `partial` assessment. Blindness on the
+    #: producer's watermark does not make the served copy less stale; it only means we
+    #: cannot ALSO say what the producer holds, which is what `partial` is for.
+    #: `missing` is per-object by construction: anchor LISTING stopped producing verdicts
+    #: at all (see scripts/build_output_health._r2_anchor_verdicts), so the only way to
+    #: get one is a reader that fetched the object.
+    reader_negative = reader_decides and (
+        (reader["verdict"] == "stale" and reader["clock_kind"] == CLOCK_CONTENT)
+        or reader["verdict"] == "missing"
+    )
+
+    #: (B) FOR A PURE-``r2`` ARTIFACT THE READER IS THE PRIMARY PLANE, NOT A RESCUE. There
+    #: is no local copy to be blind about, so a field-matching content-clock observation
+    #: is the ONLY plane that can answer at all: it completes the freshness axis rather
+    #: than arguing with a local read that never happened. ``git+r2`` is deliberately
+    #: excluded — a git copy exists, so a fresh reader there IS the rescue §7 forbids and
+    #: only rule (A)'s negatives get through.
+    r2_primary = (
+        reader_decides
+        and storage == "r2"
+        and reader["clock_kind"] == CLOCK_CONTENT
+        and reader["verdict"] in ("fresh", "stale")
+    )
+    if r2_primary:
+        superseded = [r for r in blind if r in R2_LOCAL_PLANE_BLINDNESS]
+        if superseded:
+            blind = [r for r in blind if r not in R2_LOCAL_PLANE_BLINDNESS]
+            reasons.extend(superseded)   # disclosed, no longer deciding
+        reasons.append(REASON_R2_READER_PRIMARY_PLANE)
+        evidence.append(
+            _evidence(
+                "reader",
+                str(reader.get("source") or "reader"),
+                f"pure-r2 artifact: the audit read the declared field "
+                f"{reader.get('asof_field')!r} off the served object, which is the "
+                f"primary content evidence — there is no local copy to read",
+            )
+        )
+
     # --- semantic self health -------------------------------------------
     self_row = self_map.get(artifact_id)
     self_health_out: dict[str, Any] | None = None
@@ -1443,13 +1524,17 @@ def _build_record(
             # commissioned default) and the discount is disclosed rather than applied.
             reasons.append(REASON_UPPER_BOUND_ATTRIBUTION)
 
-    if blind:
+    if blind and not reader_negative:
         # OBSERVER BLINDNESS SHORT-CIRCUITS FIRST and is never converted: not to healthy
-        # (we did not look), not to unavailable (absence was not observed).
+        # (we did not look), not to unavailable (absence was not OBSERVED). The one thing
+        # that gets through is an absence somebody DID observe — see `reader_negative`.
         state, decided_by = None, None
         assessment = ASSESSMENT_COULD_NOT_LOOK
         reasons.extend(blind)
     else:
+        # Blindness that a definitive reader negative outranks stays ON THE RECORD and
+        # forces `partial` (via `gaps` below); it just no longer suppresses the verdict.
+        reasons.extend(blind)
         if exists is False:
             state, decided_by = STATE_UNAVAILABLE, presence_decided_by
         elif STATE_UNAVAILABLE in required_states:
@@ -1472,7 +1557,11 @@ def _build_record(
             state, decided_by = STATE_DEGRADED, DECIDED_BY_DEPENDENCY
 
         gaps = (
-            fresh["verdict"] == FRESH_UNASSESSABLE
+            # A verdict standing on ONE definitive plane while another went dark is a
+            # partial assessment by definition — the negative is proven, the whole
+            # picture is not.
+            bool(blind)
+            or fresh["verdict"] == FRESH_UNASSESSABLE
             or bool(unassessed_required)
             or bool(optional_problems)
             or self_status == "unknown"
