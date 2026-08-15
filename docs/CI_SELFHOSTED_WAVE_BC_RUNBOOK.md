@@ -166,8 +166,9 @@ gh workflow run m1-runner-canary.yml --ref main
 ```
 
 It reports only runner name, hostname, architecture, OS, CPU count, memory, disk,
-runner root, disk-guard status, and listener count. It performs no checkout, reads no
-secret, and publishes nothing.
+runner root, disk-guard status, and the three exact service-to-root-to-registration
+mappings with distinct live listener PIDs. It performs no checkout, reads no secret,
+and publishes nothing.
 
 ## Rollback
 

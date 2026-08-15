@@ -1,4 +1,8 @@
-# BioCatalyst — current handoff, updated 2026-08-12
+# BioCatalyst — historical handoff, updated 2026-08-12
+
+> **Superseded for current work:** continue from
+> `research/BIOCATALYST_HANDOFF_TO_CODEX_2026-08-15.md`. This file preserves the
+> publication-repair and exact-activation evidence as it stood on August 12.
 
 This supersedes the stale action list in the original 2026-08-10 handoff. The critical-path
 engineering is shipped. The remaining launch gate is the real fourteen-day soak; no session may

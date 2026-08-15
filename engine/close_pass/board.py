@@ -351,6 +351,7 @@ def build_board(
     display_by: Mapping[str, Mapping[str, Any]] | None = None,
     universe_n: int | None = None,
     skipped: Mapping[str, int] | None = None,
+    close_meta: Mapping[str, Any] | None = None,
 ) -> dict:
     """Verdicts + extension rows → the provisional board payload.
 
@@ -374,6 +375,15 @@ def build_board(
     label would be false for whichever family it did not describe. A name with
     no declared basis is dropped rather than assumed; an unnamed basis is
     exactly the defect gate 3 exists to stop.
+
+    ``close_meta`` is the lane's CLOSE-PROVENANCE block, merged verbatim into
+    ``meta``: where each close came from, when it was observed, on what basis,
+    and whether it is final. It arrives as an opaque mapping rather than as N
+    keyword arguments because this module must not learn a second vocabulary for
+    a fact the lane owns — ``adjustment_by`` already names the SERIES' basis, and
+    this names the SOURCE of the newest bar in it. Absent for any caller that
+    predates it (a replay, the reconciler), in which case ``meta`` simply carries
+    no provenance rather than an invented one.
     """
     adjustment_by = adjustment_by or {}
     price_through = price_through or {}
@@ -476,5 +486,10 @@ def build_board(
             "evaluated_n": len(rows),
             "admitted_n": len(admitted),
             "skipped": counts,
+            # Additive and LAST, so the four counters above keep their meaning
+            # and their position. A provenance key can never overwrite one of
+            # them — the merge is under a fixed prefix the lane owns.
+            **{k: v for k, v in dict(close_meta or {}).items()
+               if str(k).startswith("close_")},
         },
     }
