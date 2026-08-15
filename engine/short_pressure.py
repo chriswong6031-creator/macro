@@ -52,7 +52,12 @@ disseminates well after the position date. This module READS the panel's stored
 `data/finra/short_interest_panel.parquet` is rebuilt. The retired
 `settlement + 10 calendar days` was measured EARLY on every settlement the repo
 holds (see `lib/finra_knowable.py`); studies keyed to this column shift 1-3
-sessions later on that rebuild.
+sessions later on that rebuild. Nothing rebuilds the panel on a schedule — the
+backfill is a manual script in no workflow — and this module is currently imported
+only by its own tests and the SP1 study. **If you are the first to wire `asof_slice`
+into a surface, rebuild the panel FIRST**, or you ship the retired rule's look-ahead
+on day one. Governance record: `research/short_side/SP1_SHORT_PRESSURE_PREREG.md`
+§5B.
 """
 from __future__ import annotations
 

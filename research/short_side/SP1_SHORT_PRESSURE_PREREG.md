@@ -472,11 +472,21 @@ that no authority state reads.
 **The trigger is an ACTOR, not an event — do not wait for one.**
 `scripts/backfill_finra_short_interest.py` is referenced by **no workflow**: it is a
 manual script, so nothing rebuilds this panel on a schedule and there is no passive
-"next rebuild" to inherit the correction. Until somebody runs it, the live panel
-keeps the retired rule indefinitely and `engine/short_pressure.py`'s `asof_slice`
-keeps serving `knowable_date`s that are 1–3 sessions early. Whoever next needs an
-SP1 number owns the rebuild + re-run as one step; the binding obligation until then
-is the citation ban below.
+"next rebuild" to inherit the correction. Until somebody runs it, the panel keeps the
+retired rule indefinitely. Whoever next needs an SP1 number owns the rebuild + re-run
+as one step; the binding obligation until then is the citation ban below.
+
+**No live surface is affected today — and that is a trap for whoever wires one.**
+`engine/short_pressure.py` is imported by exactly two things:
+`tests/test_short_pressure.py` and `scripts/research/sp1_short_pressure_study.py`
+(verified: no render, app, worker, or template consumer). The module is
+**built-but-unwired**, so nothing user-facing is currently serving early
+`knowable_date`s, and this correction is not a live-data incident. The hazard is
+ordering: the FIRST consumer to wire `asof_slice` into a surface inherits a panel
+still built on the retired rule and ships look-ahead on day one. **Rebuild the panel
+before wiring, not after.** (Do not confuse this module with
+`sfc_short_pressure` in `engine/hk_stock_signals.py` / `engine/pick_lab/hk.py` —
+that is the Hong Kong SFC signal, a different source, unaffected by any of this.)
 
 ### Effect on published SP1 results — stated explicitly
 
@@ -591,7 +601,10 @@ the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
   (`sp1_short_pressure_study.py:78` reads the stored column), so the trigger is a
   rebuild of `data/finra/short_interest_panel.parquet` — **which nothing does
   automatically**: `scripts/backfill_finra_short_interest.py` is in no workflow, so
-  the live panel (and `engine/short_pressure.py`'s display-tier `asof_slice`) keeps
-  serving `knowable_date`s that are 1–3 sessions early until a person runs it.
-  Whoever next needs an SP1 number owns the rebuild + re-run as one step. No
-  `DO_NOT_REBUILD` row is filed: nothing was killed and no authority state moves.
+  the panel keeps the retired rule until a person runs it. Whoever next needs an SP1
+  number owns the rebuild + re-run as one step. **No live surface is affected:**
+  `engine/short_pressure.py` is imported only by its own tests and the SP1 study
+  script — built-but-unwired — so the hazard is ordering, not exposure. The first
+  consumer to wire `asof_slice` into a surface must rebuild the panel FIRST or it
+  ships look-ahead on day one. No `DO_NOT_REBUILD` row is filed: nothing was killed
+  and no authority state moves.
