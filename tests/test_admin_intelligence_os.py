@@ -17,6 +17,7 @@ from __future__ import annotations
 import ast
 import json
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -28,7 +29,12 @@ if str(REPO) not in sys.path:
 
 from admin import intelligence_os as IOS  # noqa: E402
 
-FRESH = "2026-08-14T06:00:00+00:00"
+# Wall-clock relative: panel() uses datetime.now(), so a frozen 2026-08-14
+# asof ages out of the 24h SLA the next calendar day and this suite becomes a
+# nightly alarm. Keep FRESH 6h behind now, matching the T4 suite contract.
+FRESH = (datetime.now(timezone.utc) - timedelta(hours=6)).strftime(
+    "%Y-%m-%dT%H:%M:%S+00:00"
+)
 
 
 # ---------------------------------------------------------------------------
