@@ -5,7 +5,8 @@ NW Rails Program §7 PR-6 (R2 audit) — RUL-P10 path b.
 Walks the declared inventory of forward ledgers (seeded from the 2026-07-06
 census) and for each reports:
   - storage        : local-present | absent-by-design
-  - grader_wired   : Y | N (+ module path when wired)
+  - grader_wired   : Y | N (+ every wired module path, comma-separated)
+  - graders        : list of wired grader module paths (machine-readable)
   - n_logged       : rows / entries in the ledger store
   - n_graded       : rows with a matured outcome
   - last_graded_at : ISO string of the latest grade timestamp, or null
@@ -51,7 +52,12 @@ log = logging.getLogger("audit_grading_closure")
 #   key          : short ledger id (snake_case)
 #   path         : relative path from repo root to the ledger file / dir
 #   format       : jsonl | parquet | parquet_dir (per-compound dir)
-#   grader       : module path of the grading code, or None (LOG-ONLY)
+#   graders      : LIST of module paths that grade this ledger; [] = LOG-ONLY.
+#                  One-to-many since 2026-08-14: a ledger can carry an engine-local
+#                  grader AND a shared cross-engine grader, and naming only one of
+#                  them told evidence-gathering sessions the other did not exist.
+#                  (`grader: <str|None>` is still accepted as a legacy single-value
+#                  alias so hand-built specs and older callers keep working.)
 #   grade_field  : field/column whose presence signals a graded row, or None
 #   grade_ts_field : field containing the grade timestamp, or None
 #   tune_step    : True if an auto-tune loop is wired after the grader
@@ -64,7 +70,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "qledger_claims",
         "path": "data/qledger/claims.jsonl",
         "format": "jsonl",
-        "grader": "scripts/grade_qledger.py",
+        "graders": ["scripts/grade_qledger.py"],
         "grade_field": None,      # grades are a SEPARATE file (grades.jsonl)
         "grade_ts_field": None,
         "tune_step": False,
@@ -74,7 +80,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "qledger_grades",
         "path": "data/qledger/grades.jsonl",
         "format": "jsonl",
-        "grader": "scripts/grade_qledger.py",
+        "graders": ["scripts/grade_qledger.py"],
         "grade_field": "graded_at",   # every row IS a grade
         "grade_ts_field": "graded_at",
         "tune_step": False,
@@ -85,7 +91,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "board_ledger_hk",
         "path": "data/board_ledger/hk_board.parquet",
         "format": "parquet",
-        "grader": "engine/board_ledger.py",
+        "graders": ["engine/board_ledger.py"],
         "grade_field": "fwd_mfe_21",       # nullable col; non-null = graded
         "grade_ts_field": None,
         "tune_step": False,
@@ -95,7 +101,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "board_ledger_ca",
         "path": "data/board_ledger/ca_board.parquet",
         "format": "parquet",
-        "grader": "engine/board_ledger.py",
+        "graders": ["engine/board_ledger.py"],
         "grade_field": "fwd_mfe_21",
         "grade_ts_field": None,
         "tune_step": False,
@@ -105,7 +111,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "us_board_ledger",
         "path": "data/us_board_ledger/retro_grades.parquet",
         "format": "parquet",
-        "grader": "scripts/grade_us_board.py",
+        "graders": ["scripts/grade_us_board.py"],
         "grade_field": "excess_spy",       # non-null = graded (every row is a grade)
         "grade_ts_field": None,
         "tune_step": False,
@@ -115,7 +121,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "signal_archive_track_record",
         "path": "data/signal_archive/track_record.parquet",
         "format": "parquet",
-        "grader": "engine/track_record.py",
+        "graders": ["engine/track_record.py"],
         "grade_field": "fwd_ret_20",       # nullable; non-null = graded row
         "grade_ts_field": None,
         "tune_step": False,
@@ -126,7 +132,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "china_standout_track",
         "path": "data/china_standout_track/board.parquet",
         "format": "parquet",
-        "grader": "engine/china_standout_track.py",
+        "graders": ["engine/china_standout_track.py"],
         "grade_field": "fwd_mfe_21",
         "grade_ts_field": None,
         "tune_step": False,
@@ -137,7 +143,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "sector_cycles_forward_log",
         "path": "data/sector_cycles/forward_log.parquet",
         "format": "parquet",
-        "grader": "scripts/grade_promises.py",
+        "graders": ["scripts/grade_promises.py"],
         "grade_field": None,      # grade_promises uses a separate scorecard dir
         "grade_ts_field": None,
         "tune_step": False,
@@ -147,8 +153,21 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "china_sector_cycles_forward_log",
         "path": "data/china_sector_cycles/forward_log.parquet",
         "format": "parquet",
-        "grader": "engine/china_sector_cycles_grader.py",
-        "grade_field": None,      # grader outputs to scorecards/
+        # TWO graders read this ledger, and until 2026-08-14 only the first was
+        # named — which read as "the promise-grader does not cover CN".
+        #   engine/china_sector_cycles_grader.py — CN-specific drawdown/return/
+        #     calibration channels; published to site/chinasectordata/cycles_scorecard.json
+        #     by scripts/build_china_cycles_scorecard.py (asia-close lane).
+        #   scripts/grade_promises.py — the SHARED cycle promise-grader; china_sector_cycles
+        #     is in its ENGINES list and is graded on the same gates as the US/country
+        #     siblings, into data/china_sector_cycles/scorecards/promises_<epoch>.json.
+        #     That is the scorecard dir n_graded is actually read from below, so the
+        #     old single-grader entry credited these grades to the wrong module.
+        "graders": [
+            "engine/china_sector_cycles_grader.py",
+            "scripts/grade_promises.py",
+        ],
+        "grade_field": None,      # graders output to scorecards, not an in-ledger column
         "grade_ts_field": None,
         "tune_step": False,       # explicitly no-tune per grader comment
         "storage_note": None,
@@ -157,7 +176,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "country_cycles_forward_log",
         "path": "data/country_cycles/forward_log.parquet",
         "format": "parquet",
-        "grader": "scripts/grade_promises.py",
+        "graders": ["scripts/grade_promises.py"],
         "grade_field": None,
         "grade_ts_field": None,
         "tune_step": False,
@@ -172,7 +191,7 @@ INVENTORY: list[dict[str, Any]] = [
         # called from collect.py end-of-collect block.  Grades rows whose h21
         # outcome window has matured; idempotent.  Verdict = GRADER-STARVED until
         # the first stamp matures (~21 business days after first elevated/high fire).
-        "grader": "scripts/grade_breadth_divergence.py",
+        "graders": ["scripts/grade_breadth_divergence.py"],
         "grade_field": "fwd_dd",      # nullable float; non-null = graded
         "grade_ts_field": None,
         "tune_step": False,
@@ -187,7 +206,7 @@ INVENTORY: list[dict[str, Any]] = [
         # grade_log/scorecard/snapshot_and_grade called from engine/run.py:614.
         # Prior None was a hardcoded inventory error; verdict = GRADER-STARVED
         # (time-starved: n=8 rows, none matured to h21 yet as of 2026-07-06).
-        "grader": "engine/risk_radar_audit.py",
+        "graders": ["engine/risk_radar_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": False,
@@ -197,7 +216,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_cn",
         "path": "data/risk_radar_intl/cn_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,        # engine/risk_radar_intl_tune.py wired in build
@@ -207,7 +226,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_hk",
         "path": "data/risk_radar_intl/hk_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -217,7 +236,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_ca",
         "path": "data/risk_radar_intl/ca_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -227,7 +246,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_kr",
         "path": "data/risk_radar_intl/kr_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -237,7 +256,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_jp",
         "path": "data/risk_radar_intl/jp_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -247,7 +266,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_tw",
         "path": "data/risk_radar_intl/tw_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -257,7 +276,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_in",
         "path": "data/risk_radar_intl/in_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -267,7 +286,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_au",
         "path": "data/risk_radar_intl/au_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -277,7 +296,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_gb",
         "path": "data/risk_radar_intl/gb_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -287,7 +306,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "risk_radar_intl_ez",
         "path": "data/risk_radar_intl/ez_forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/risk_radar_intl_audit.py",
+        "graders": ["engine/risk_radar_intl_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,
@@ -298,7 +317,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "market_state_forward_log",
         "path": "data/market_state/forward_log.jsonl",
         "format": "jsonl",
-        "grader": "engine/market_state_audit.py",
+        "graders": ["engine/market_state_audit.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": True,        # engine/market_state_tune.py wired in build_site
@@ -309,7 +328,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "oracle_forward_ledger",
         "path": "data/oracle/forward_ledger.jsonl",
         "format": "jsonl",
-        "grader": "scripts/oracle_nightly.py",
+        "graders": ["scripts/oracle_nightly.py"],
         "grade_field": None,      # forward detections; not a graded outcomes store
         "grade_ts_field": None,
         "tune_step": False,
@@ -319,7 +338,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "oracle_compounds_live_ledger",
         "path": "data/oracle/compounds/live_ledger.jsonl",
         "format": "jsonl",
-        "grader": "scripts/oracle_nightly.py",
+        "graders": ["scripts/oracle_nightly.py"],
         "grade_field": "excess_21d",   # nullable; non-null after maturity
         "grade_ts_field": None,
         "tune_step": False,
@@ -329,7 +348,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "oracle_reversion_forward",
         "path": "data/oracle/reversion_forward",
         "format": "parquet_dir",  # per-compound JSONL files
-        "grader": "scripts/oracle_reversion_forward_ledger.py",
+        "graders": ["scripts/oracle_reversion_forward_ledger.py"],
         "grade_field": "matured",   # boolean field; True = graded
         "grade_ts_field": None,
         "tune_step": False,
@@ -340,7 +359,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "btc_override_ledger",
         "path": "data/vector/override_ledger.jsonl",
         "format": "jsonl",
-        "grader": "engine/btc_override_ledger.py",
+        "graders": ["engine/btc_override_ledger.py"],
         "grade_field": None,     # subclaims graded via override_scored.json sidecar
         "grade_ts_field": None,
         "tune_step": False,
@@ -351,7 +370,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "foresight_log",
         "path": "data/foresight/log.jsonl",
         "format": "jsonl",
-        "grader": "engine/foresight_grader.py",
+        "graders": ["engine/foresight_grader.py"],
         "grade_field": None,     # grader outputs to data/foresight/track_record.json
         "grade_ts_field": None,
         "tune_step": False,
@@ -366,7 +385,7 @@ INVENTORY: list[dict[str, Any]] = [
         # After next_comment_close_date passes, checks federal_register/documents.parquet
         # for whether the predicted comment-close event occurred (accurate bool).
         # Verdict = GRADER-STARVED until first matured entry (~2026-08-01 earliest).
-        "grader": "scripts/grade_policy_calendar.py",
+        "graders": ["scripts/grade_policy_calendar.py"],
         "grade_field": "graded_date",    # ISO date string; non-null = graded
         "grade_ts_field": "graded_date",
         "tune_step": False,
@@ -377,7 +396,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "froth_fragility_log",
         "path": "data/froth_fragility/log.jsonl",
         "format": "jsonl",
-        "grader": "engine/froth_fragility.py",
+        "graders": ["engine/froth_fragility.py"],
         "grade_field": "graded",
         "grade_ts_field": None,
         "tune_step": False,
@@ -391,7 +410,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "species_registry",
         "path": "data/species/registry.json",
         "format": "json",
-        "grader": "engine/species_registry.py",
+        "graders": ["engine/species_registry.py"],
         "grade_field": None,     # registry config; outcomes ride the bound ledgers
         "grade_ts_field": None,
         "tune_step": False,
@@ -401,7 +420,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "species_antichase_shadow_ledger",
         "path": "data/signal_archive/antichase_shadow_ledger.parquet",
         "format": "parquet",
-        "grader": "engine/species_registry.py",
+        "graders": ["engine/species_registry.py"],
         "grade_field": None,
         "grade_ts_field": None,
         "tune_step": False,
@@ -411,7 +430,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "species_f1d_shadow_ledger",
         "path": "data/signal_archive/f1d_shadow_ledger.parquet",
         "format": "parquet",
-        "grader": "engine/species_registry.py",
+        "graders": ["engine/species_registry.py"],
         "grade_field": None,
         "grade_ts_field": None,
         "tune_step": False,
@@ -425,7 +444,7 @@ INVENTORY: list[dict[str, Any]] = [
         "key": "bd_avoid1_ledger",
         "path": "data/research/bd_avoid1_ledger.parquet",
         "format": "parquet",
-        "grader": "scripts/research/bd_avoid1_stamper.py",
+        "graders": ["scripts/research/bd_avoid1_stamper.py"],
         "grade_field": "long_state_clean8_21",  # non-null = graded at 21d horizon
         "grade_ts_field": "stamped_at",
         "tune_step": False,
@@ -438,8 +457,57 @@ INVENTORY: list[dict[str, Any]] = [
 
 
 # ---------------------------------------------------------------------------
+# CYCLE PROMISE-GRADER SCORECARDS
+# ---------------------------------------------------------------------------
+# The three cycle engines graded by scripts/grade_promises.py (its ENGINES list)
+# keep their grades in data/<engine>/scorecards/promises_<epoch>.json rather than
+# in a ledger column, so n_graded is read from the scorecard's n_stamps_total.
+# ledger key -> data/<engine>/ directory name.  Cross-checked against the real
+# ENGINES list by tests/test_audit_grading_closure.py: adding an engine there
+# without wiring it here (or without naming grade_promises among that ledger's
+# `graders`) fails the suite.
+PROMISE_SCORECARD_ENGINES: dict[str, str] = {
+    "sector_cycles_forward_log": "sector_cycles",
+    "country_cycles_forward_log": "country_cycles",
+    "china_sector_cycles_forward_log": "china_sector_cycles",
+}
+
+PROMISE_GRADER = "scripts/grade_promises.py"
+
+
+# ---------------------------------------------------------------------------
 # HELPERS
 # ---------------------------------------------------------------------------
+
+def spec_graders(spec: dict) -> list[str]:
+    """Normalise a spec's grader declaration to a list of module paths.
+
+    Accepts the canonical `graders: [...]` and the legacy single-value
+    `grader: <str|None>` alias (hand-built specs, older callers). Order is
+    preserved and duplicates are dropped; [] means LOG-ONLY.
+    """
+    raw = spec.get("graders")
+    if raw is None:
+        legacy = spec.get("grader")
+        raw = [legacy] if legacy else []
+    elif isinstance(raw, str):     # tolerate a bare string in `graders`
+        raw = [raw]
+
+    out: list[str] = []
+    for g in raw:
+        if g and g not in out:
+            out.append(str(g))
+    return out
+
+
+def _grader_wired(graders: list[str]) -> str:
+    """Render the grader_wired cell: 'N', or 'Y:' + every wired module path.
+
+    The 'Y' prefix is load-bearing — scripts/build_measurement.py derives the
+    RUL-4 TIME-vs-BUILD starvation column from `grader_wired.upper().startswith('Y')`.
+    """
+    return ("Y:" + ",".join(graders)) if graders else "N"
+
 
 def _read_jsonl(path: Path) -> list[dict]:
     """Load a JSONL file; return empty list on any failure."""
@@ -477,9 +545,9 @@ def _jsonl_last_ts(rows: list[dict], ts_field: str) -> str | None:
     return max(vals) if vals else None
 
 
-def _verdict(entry: dict, grader: str | None, n_logged: int, n_graded: int) -> str:
+def _verdict(entry: dict, graders: list[str], n_logged: int, n_graded: int) -> str:
     """Classify verdict from parameters."""
-    if grader is None:
+    if not graders:
         return "LOG-ONLY"
     if n_logged > 0 and n_graded == 0:
         return "GRADER-STARVED"
@@ -498,7 +566,7 @@ def audit_entry(spec: dict, root: Path) -> dict:
     key = spec["key"]
     rel = spec["path"]
     fmt = spec["format"]
-    grader = spec["grader"]
+    graders = spec_graders(spec)
     grade_field = spec.get("grade_field")
     grade_ts_field = spec.get("grade_ts_field")
     tune_step = bool(spec.get("tune_step", False))
@@ -518,12 +586,13 @@ def audit_entry(spec: dict, root: Path) -> dict:
             "key": key,
             "path": rel,
             "storage": storage,
-            "grader_wired": ("Y:" + grader) if grader else "N",
+            "grader_wired": _grader_wired(graders),
+            "graders": graders,
             "n_logged": 0,
             "n_graded": 0,
             "last_graded_at": None,
             "tune_step": "Y" if tune_step else "N",
-            "verdict": "LOG-ONLY" if grader is None else "GRADER-STARVED",
+            "verdict": "LOG-ONLY" if not graders else "GRADER-STARVED",
         }
 
     # --- count logged / graded ---
@@ -609,10 +678,15 @@ def audit_entry(spec: dict, root: Path) -> dict:
             except Exception:
                 pass
 
-    # sector_cycles / country_cycles: check scorecards/ for presence
-    if key in ("sector_cycles_forward_log", "country_cycles_forward_log"):
-        name = "sector_cycles" if "sector" in key else "country_cycles"
-        sc_dir = root / "data" / name / "scorecards"
+    # Cycle promise-graders: grades live in data/<engine>/scorecards/, not in the
+    # ledger, so n_graded is read from the scorecard's n_stamps_total.  All three
+    # engines are graded by scripts/grade_promises.py (its ENGINES list) — china
+    # used to be a duplicated branch below, keyed off a grader that publishes
+    # somewhere else entirely.  Explicit map, not a substring test: "sector" is in
+    # BOTH sector_cycles_forward_log and china_sector_cycles_forward_log.
+    sc_engine = PROMISE_SCORECARD_ENGINES.get(key)
+    if sc_engine:
+        sc_dir = root / "data" / sc_engine / "scorecards"
         if sc_dir.is_dir() and list(sc_dir.glob("*.json")):
             # scorecards exist — grader has run; count n_stamps_total as n_graded proxy
             try:
@@ -623,24 +697,14 @@ def audit_entry(spec: dict, root: Path) -> dict:
             except Exception:
                 n_graded = 1  # scorecard exists but unreadable — grader has run
 
-    if key == "china_sector_cycles_forward_log":
-        sc_dir = root / "data" / "china_sector_cycles" / "scorecards"
-        if sc_dir.is_dir() and list(sc_dir.glob("*.json")):
-            try:
-                sc_file = next(sc_dir.glob("*.json"))
-                sc_data = json.loads(sc_file.read_text())
-                n_graded = int(sc_data.get("n_stamps_total") or 0)
-                last_graded_at = sc_data.get("as_of")
-            except Exception:
-                n_graded = 1
-
-    verdict = _verdict(spec, grader, n_logged, n_graded)
+    verdict = _verdict(spec, graders, n_logged, n_graded)
 
     return {
         "key": key,
         "path": rel,
         "storage": "present" if exists else (storage_note or "absent-locally"),
-        "grader_wired": ("Y:" + grader) if grader else "N",
+        "grader_wired": _grader_wired(graders),
+        "graders": graders,
         "n_logged": n_logged,
         "n_graded": n_graded,
         "last_graded_at": last_graded_at,
@@ -664,7 +728,7 @@ def run(root: Path | None = None, write: bool = True) -> dict:
             log.warning("audit_grading_closure: entry %s crashed: %s", spec["key"], exc)
             results.append({
                 "key": spec["key"], "path": spec["path"],
-                "storage": "error", "grader_wired": "?",
+                "storage": "error", "grader_wired": "?", "graders": [],
                 "n_logged": 0, "n_graded": 0,
                 "last_graded_at": None, "tune_step": "N",
                 "verdict": "LOG-ONLY",
@@ -676,6 +740,10 @@ def run(root: Path | None = None, write: bool = True) -> dict:
     log_only = sum(1 for r in results if r["verdict"] == "LOG-ONLY")
 
     payload = {
+        # v1 retained: `graders` is purely ADDITIVE and grader_wired keeps its
+        # 'Y'/'N' contract (it now names every wired module, comma-separated,
+        # instead of only the first). Read `graders` in preference to splitting
+        # grader_wired — that is the machine-readable form.
         "schema": "grading_closure.v1",
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "n_ledgers": len(results),
@@ -735,13 +803,14 @@ def _write_md(payload: dict, root: Path) -> None:
     )
     lines.append("")
     # table header
-    lines.append("| Ledger | Storage | Grader | n_logged | n_graded | last_graded_at | Tune | Verdict |")
-    lines.append("|--------|---------|--------|----------|----------|----------------|------|---------|")
+    lines.append("| Ledger | Storage | Grader(s) | n_logged | n_graded | last_graded_at | Tune | Verdict |")
+    lines.append("|--------|---------|-----------|----------|----------|----------------|------|---------|")
     for r in payload["ledgers"]:
         grader_cell = r["grader_wired"]
         if grader_cell.startswith("Y:"):
-            module = grader_cell[2:]
-            grader_cell = f"Y: `{module}`"
+            # one-to-many: every wired module gets its own backticked cell entry
+            modules = [m for m in grader_cell[2:].split(",") if m]
+            grader_cell = "Y: " + ", ".join(f"`{m}`" for m in modules)
         last = r["last_graded_at"] or "—"
         if last and len(last) > 19:
             last = last[:19]  # truncate to datetime without TZ noise
