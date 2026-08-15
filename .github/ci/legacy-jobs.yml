@@ -5992,6 +5992,89 @@ jobs:
     # site/ writes). The support-map smoke reads only committed inputs
     # (config/synapse.yml + data/neuralweb/confluence_graph.json), so its
     # census bands move only via PRs that themselves trigger this job.
+    #
+    # CURATED SCOPE (2026-08-14 wave 3). `scope: exclusive` makes the paths
+    # below REPLACE inference instead of being unioned under it, so the opaque
+    # fallback tier this job used to carry — whole-tree `engine/**`,
+    # `scripts/**`, `site/**`, `templates/**`, `tools/**` claims smeared out of
+    # a subprocess or traversal deep in its closure — stops selecting it. Every
+    # pattern here was generated from the job's OWN import closure (100 files
+    # across eleven directories) and audited for zero misses: no file this job
+    # demonstrably reads lost its owner.
+    #
+    # NOTE for anyone re-deriving this in a SPARSE worktree: `site` is in
+    # `audit_unrun_tests.FIRST_PARTY`, so site/ path literals ARE closure
+    # members — but every literal is admitted through `(ROOT / rel).is_file()`,
+    # which answers False for an omitted tree. Derived sparse, this closure is
+    # 85 files and silently loses all 15 site/ members; derived against a full
+    # checkout it is 100. `data/` is genuinely absent from the closure either
+    # way (the builder excludes it from LITERAL_DIRS by policy), which is why
+    # the `data/**` row below is hand-declared rather than derived.
+    #
+    # This job was named in the wave-2 note in tests/test_ci_pack.py as a rider
+    # that would "stay inferred" alongside dataos-identity-seams. That call is
+    # superseded here, and for the opposite reason to the one that spared
+    # dataos-identity-seams: an `engine/`-heavy closure only degenerates to
+    # fallback breadth when it needs `engine/**`. This one does not. Its 35
+    # engine files are all TOP-LEVEL modules plus four whole subpackages, so
+    # `engine/*` + four `engine/<pkg>/**` covers the closure exactly while
+    # leaving every other engine subpackage — `engine/prophet/**` among them —
+    # outside the declaration. `scripts/` is enumerated file-by-file for the
+    # same reason: `scripts/*` would re-acquire `scripts/build_free_content.py`,
+    # one of the two probes this curation exists to release.
+    #
+    # Measured on the pre-curation manifest (193 jobs), this job matched all
+    # THREE ratchet probes on the fallback tier and none on the owned tier:
+    # templates/index.html, scripts/build_free_content.py, and
+    # engine/prophet/plan_book.py each drop it, -1 job / -13 weight-seconds per
+    # probe. The `site/...` and `data/**` rows are NOT smear carried forward:
+    # engine/neuralweb/*, engine/pick_lab/registry.py, engine/signal_quality.py
+    # and config/synapse.yml name those artifact trees in literal reads. The
+    # site/ rows are DERIVED closure members (see the sparse note above); the
+    # two top-level files are enumerated exactly rather than folded into a
+    # `site/*` glob, matching how flow-surface declares site/coming-soon.html
+    # and site/master_brief.json. `data/**` is hand-declared: the builder
+    # excludes `data` from LITERAL_DIRS by policy, so no data path can ever
+    # appear in the derived tier, and the support-map smoke's committed input
+    # (data/neuralweb/confluence_graph.json) would otherwise lose its owner.
+    scope: exclusive
+    paths:
+      - "config/**"
+      - "data/**"
+      - "engine/*"
+      - "engine/government_revenue/**"
+      - "engine/neuralweb/**"
+      - "engine/pick_lab/**"
+      - "engine/seasonality/**"
+      - "lib/*"
+      - "scripts/__init__.py"
+      - "scripts/build_flow_leaders.py"
+      - "scripts/build_market_structure.py"
+      - "scripts/build_market_structure_page.py"
+      - "scripts/build_options_command.py"
+      - "scripts/build_options_screener.py"
+      - "scripts/validate_gex.py"
+      - "site/altdata/**"
+      - "site/basketdata/**"
+      - "site/chinastatedata/**"
+      - "site/factordata/**"
+      - "site/flow_desk.json"
+      - "site/flowleaders/**"
+      - "site/intelligence/**"
+      - "site/leaderradar/**"
+      - "site/neuralwebdata/**"
+      - "site/options.html"
+      - "templates/options.html.j2"
+      - "tests/test_build_flow_leaders.py"
+      - "tests/test_build_market_structure_page.py"
+      - "tests/test_build_options_command.py"
+      - "tests/test_build_options_screener.py"
+      - "tests/test_flow_leaders.py"
+      - "tests/test_market_structure.py"
+      - "tests/test_market_structure_nw.py"
+      - "tests/test_options_gap_discipline.py"
+      - "tests/test_support_map.py"
+      - "tools/index.html"
     timeout-minutes: 15
     runs-on: ubuntu-latest
     steps:

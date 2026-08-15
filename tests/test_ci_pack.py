@@ -3737,11 +3737,36 @@ CURATED_EXCLUSIVE = {
     # dataos-identity-seams was EVALUATED AND REJECTED — its genuine closure
     # spans 43 files across engine/, so exclusivity would either lie about
     # coverage or degenerate to fallback breadth; it stays inferred, like the
-    # other new riders without paths (options-estate-guards,
-    # product-experience-capture/-registry, wri-risk-core).
+    # other new riders without paths (product-experience-capture/-registry,
+    # wri-risk-core).
     "dataos-foundation",
     "momoedge-browser-observe",
     "vintage-pin-fence",
+    # 2026-08-14 wave 3. options-estate-guards was listed above as a rider that
+    # would stay inferred; that call is superseded. #5634 gave it
+    # tests/test_options_gap_discipline.py, whose closure carries an opaque
+    # construct, and the resulting whole-tree fallback claim made this job a
+    # NEW selector on all three ratchet probes — smear, not evidence, and the
+    # reason scripts/build_free_content.py ran out of headroom. The
+    # dataos-identity-seams rejection does not transfer: an engine-heavy
+    # closure only degenerates to fallback breadth when it needs `engine/**`,
+    # and this one does not — its 35 engine files are top-level modules plus
+    # four whole subpackages, so `engine/*` + four `engine/<pkg>/**` covers the
+    # closure exactly and leaves engine/prophet/** outside. Measured: 100
+    # closure files, zero uncovered; fallback tier drops to (); all four
+    # probes in the test below were fallback-tier before and are unmatched
+    # after, so nothing owned was lost.
+    #
+    # Derive that closure against a FULL checkout. `site` is in
+    # audit_unrun_tests.FIRST_PARTY, but site/ literals are admitted through
+    # `(ROOT / rel).is_file()`, which answers False for a tree a sparse
+    # worktree omitted -- so the same job derives 85 files there and silently
+    # loses all 15 site/ members. The first version of this curation was
+    # derived sparse, declared `site/<dir>/**` for the 13 members it could
+    # see, and was red HERE on the two top-level ones it could not
+    # (site/flow_desk.json, site/options.html). This test is the check that
+    # catches it; a sparse local run of it is not evidence that it passes.
+    "options-estate-guards",
 }
 
 
@@ -3825,9 +3850,45 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     and non-exclusive forms of the SAME tree instead: unrelated new jobs then
     cancel out, while restoring the fallback tier still loses the measured
     ~1,550 weight-seconds and at least two requested packs per shape.
+
+    Wave 3 (#5692) adds one specific ratchet inside that relative comparison:
+    options-estate-guards used to fallback-match all four representative
+    ordinary-code probes despite reading none of them. Its curated declaration
+    must make each probe unmatched, while restoring inference for THAT job alone
+    must add exactly options-estate-guards back. This preserves the new scope
+    guarantee without reviving absolute fleet-size ceilings that unrelated jobs
+    made stale.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
-    without_exclusive = list(_inferred_as_if_not_exclusive().values())
+    jobs_by_id = {job.job_id: job for job in jobs}
+    without_exclusive_by_id = _inferred_as_if_not_exclusive()
+    without_exclusive = list(without_exclusive_by_id.values())
+
+    options_restored = [
+        without_exclusive_by_id[job.job_id]
+        if job.job_id == "options-estate-guards"
+        else job
+        for job in jobs
+    ]
+    for probe in (
+        "templates/index.html",
+        "site/theme.css",
+        "scripts/build_free_content.py",
+        "engine/prophet/plan_book.py",
+    ):
+        before = PACK._job_diff_match(
+            without_exclusive_by_id["options-estate-guards"], [probe]
+        )
+        after = PACK._job_diff_match(jobs_by_id["options-estate-guards"], [probe])
+        assert before and before[1] == "fallback", (probe, before)
+        assert after is None, (probe, after)
+
+        selected, _ = PACK.select_jobs(jobs, [probe])
+        restored, restored_reason = PACK.select_jobs(options_restored, [probe])
+        assert {job.job_id for job in restored} - {job.job_id for job in selected} == {
+            "options-estate-guards"
+        }, (probe, restored_reason)
+
     for probe in (
         "templates/index.html",
         "scripts/build_free_content.py",
