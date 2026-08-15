@@ -1,30 +1,44 @@
 # W3A — Operator report (directive §56)
 
-**Session:** 2026-08-14, branch `claude/gmi-theme-graph-w3a`. [FILL-AT-SHIP: PR #, merge SHA]
+**Session:** 2026-08-14→15 UTC, branch `claude/gmi-theme-graph-w3a`. [PR # at open; merged per
+merge-on-green chain]
 
 ## A. Verdict
 
-[FILL-AT-SHIP: PASS / PARTIAL / BLOCKED — set after tests + adversarial reviews conclude]
+**PASS.** All eleven §31 stop conditions met: law amended; sweep current (Addendum 1);
+Finviz reconciled + receipted + promoted through the new contract; both local planes live in
+the graph; PIT/provenance enforced (era spot-checks below); capability split exists (sidecar,
+anti-ratchet); coverage-gap mechanism live (co-occurrence form); hostile tests A–M green
+(120 refresh + 54 plane + 5 registry suites); TWO adversarial reviews (plan PASS-WITH-CHANGES,
+8 conditions folded pre-build; diff review pre-PR). No ThemeState was built (W3B's).
 
-## B. Taxonomy census
+## B. Taxonomy census (membership grain shown per market — review F23)
 
 **United States** — local semantic nodes: 268 (`ltheme:finviz:*`, subtheme grain; 40 top-level
-themes + 6 supergroups ride node metadata, not nodes); memberships: 2,339 open + 26 closed
-(two-vintage 2026-06-27→2026-08-14 ladder); unique securities: 924 (≈250 newly minted company
-nodes beyond the curated-basket 708); canonical-mapped: **0 by ruling** (the crosswalk's
-Finviz reference is 40-grain display names — mechanically insufficient; mapping proposals go to
-probation for curation); semantic-only vs measurement-candidate: [FILL-AT-SHIP counts, rule
-`capability.v1` = ≥3 price-covered live members]; source families: `finviz_themes` (vendor,
-rights unresolved), `mastermind_curated` (49 baskets, first-class, untouched).
+themes + 6 supergroups ride node metadata, not nodes); memberships: **DIRECT company→ltheme**
+— 2,339 open + 26 closed (two-vintage ladder 2026-06-27 → 2026-08-15 UTC); unique securities:
+924 per-listing (529 newly minted `co:us:*`, 413 resolved to existing, 0 dot-dash twins;
+cross-listing issuer twins vs ca/hk/intl suites are disclosed, `SAME_AS` = W4); canonical-mapped:
+**0 by ruling** (crosswalk's Finviz reference is 40-grain display names — mechanically
+insufficient; 234 basket↔subtheme mapping proposals sit in probation with a k=20 shuffle null
+(mean 3.85) for curation); capability: 268 subthemes → within the 641-row sidecar, US+CN split
+below; source families: `finviz_themes` (vendor, rights unresolved), `mastermind_curated`
+(49 baskets, first-class, untouched).
 
-**China** — local semantic nodes: 373 (`ltheme:ths:*`, concept grain, from `concept_map.json`
-asof 2026-06-27); memberships: basket-mediated (3,532 company→basket edges already in the
-graph; 237 baskets → their concepts via EXPRESSES); unique securities: 919 (via THS baskets);
-canonical-mapped: 61 concepts (W1b crosswalk curation, concept-grain — the honest asymmetry vs
-the US 0 reflects real curation, not preference); semantic-only: includes all 136 unseeded
-concepts (no graph membership substrate — W3B may extend through the owner seeder/snapshots if
-eligibility needs it); measurement candidates: [FILL-AT-SHIP]; source family: `ths_concepts`
-(receipted scraper, weekly cadence live from 2026-08-15, rights unresolved).
+**China** — local semantic nodes: 373 (`ltheme:ths:*`, concept grain, `concept_map.json` asof
+2026-06-27); memberships: **BASKET-MEDIATED only** (3,532 company→basket edges pre-existing;
+237 baskets → their concepts via EXPRESSES, 0 unresolved names; **zero direct company→concept
+edges** — the two-hop join is deliberate, and 136 unseeded concepts carry NO membership
+substrate at all); unique securities: 919 (via THS baskets); canonical-mapped: 61 concepts
+(W1b concept-grain curation — the honest asymmetry vs the US 0 reflects real curation, not
+preference); source family: `ths_concepts` (receipted scraper, weekly cadence live from
+2026-08-15, rights unresolved).
+
+**Capability (both markets, `capability.v1` = ≥3 price-covered live members, substrate named
+per row):** 641 local-theme rows — **499 `measurement_candidate` / 142 `semantic_only`**
+(the 142 includes all 136 unseeded THS concepts + 6 substrate-thin subthemes). Re-derived
+nightly; W3B's preregistered gates re-test every node and may promote `semantic_only` nodes
+whose substrate improves (anti-ratchet by design, review C2).
 
 ## C. Finviz reconciliation (full doc: `W3A_FINVIZ_RECONCILIATION.md` + receipts)
 
@@ -32,10 +46,17 @@ Committed tree ≡ old extraction (both 2026-06-27, verified). Fresh receipted e
 2026-08-14 = **exactly** the operator's counts (40/268/2,339/924), byte-identical re-fetches,
 two independent parsers element-identical. Delta 06-27→08-14: zero structural changes; pure
 member churn (26 removals, 9 additions across 32 subthemes). **All 18 departed tickers are
-dead-at-vendor** (absent from Finviz's own screener perf asof 2026-08-13: 923 = 941 − 18);
-1 arrival (SNDK, taking PSTG's slot in both storage subthemes). Zero parser artifacts, zero
-renames, zero unverifiable. Arithmetic closes exactly. Promotion runs only through the new
-refresh contract ([FILL-AT-SHIP: promotion receipt id + new tree_history row]).
+dead-at-vendor-class** (absent from Finviz's own screener perf asof 2026-08-13: 923 = 941 − 18;
+the receipted claim is "vendor stopped pricing the symbol" — halts/suspensions share the
+footprint); 1 arrival (SNDK, taking PSTG's slot in both storage subthemes; ticker-continuity
+symdiff 7 ⇒ correctly a substitution, not a rename). Zero parser artifacts, zero renames, zero
+unverifiable. Arithmetic closes exactly. **Promoted through the new refresh contract:** receipt
+`data/themes_heatmap/tree_refresh_receipts/20260815T020134Z.json` (exit 0, zero refusals, sha
+`1d597c44c8ce` — byte-identical to the session's earlier receipted extraction), tree_history
+row 2 asof **2026-08-15** (UTC extraction date; the 07-05 tape row is content-identical to the
+declared seed and adjacent-deduped in the ladder). Store spot-checks: PSTG's two storage
+memberships closed `[2026-06-27, 2026-08-15)` era=observed; SNDK's nine open at 2026-08-15;
+2,330 surviving vintage-1 memberships era=reconstruction; guard `--strict` rc 0.
 
 ## D. Coverage audit (fraction attachable to ≥1 meaningful local theme)
 
@@ -72,7 +93,14 @@ Uncovered board names are the coverage-gap diagnostic's standing work queue.
    one; file to the board owner at W3C charter.
 4. 136 unseeded THS concepts are semantic-only — W3B decides whether eligibility work charters
    snapshot-direct membership through the owner pipeline.
-5. [FILL-AT-SHIP: anything the diff review or promotion surfaces]
+5. Two probation-writer implementations exist by design boundary (the refresh contract's inline
+   emitter and `engine/theme_graph/probation.py`); a contract test pins their `proposal_id`
+   hashes equal — reconcile onto the module whenever the collector may lawfully import the
+   graph engine (cosmetic; drift is test-stopped).
+6. Board coverage names 23 US isolates / 9 zero-membership names (banks/REITs/utilities
+   shaped) — the coverage-gap queue's standing population; a curation session may propose
+   local concepts for them (probation path exists), or they remain honestly outside thematic
+   maps.
 
 ## G. W3B continuation handoff
 

@@ -9,22 +9,32 @@ Current tree outranks this handoff on conflict — verify, then adjudicate discr
 
 ## 1. What W3A shipped (the substrate you inherit)
 
-[FILL-AT-SHIP: PR number, merge SHA, final store counts, test counts]
+Store after the W3A materialization (verify against live `_meta.json`, not this snapshot):
+**3,878 nodes** (641 `local_theme` = 268 finviz + 373 ths; 529 new `co:us:*`) / **8,292 edges**
+(2,365 finviz MEMBER_OF incl. 26 closed; 237 basket→ltheme + 61 ltheme→theme EXPRESSES; zero
+finviz→canonical) / 11 evidence / **641 capability rows (499 candidate / 142 semantic_only)**.
+Suites: test_finviz_tree_refresh (120) + test_theme_graph_local_plane (54) +
+test_theme_sources_registry (5) + theme-graph regression (141) all green; guard `--strict` rc 0.
 - Local-theme plane in `data/theme_graph/`: `kind=local_theme` nodes — `ltheme:finviz:<key>`
-  (268 US subthemes) + `ltheme:ths:<code>` (373 CN concepts) — with `capability`,
-  `capability_basis`, `source_meta` columns; MEMBER_OF company→ltheme (Finviz, two-vintage
-  2026-06-27→2026-08-14 ladder, closes included); EXPRESSES basket→ltheme (237 THS) and
-  ltheme→theme (61 crosswalk-curated THS concepts; ZERO mechanical Finviz→canonical by ruling).
-- Finviz structure refresh contract: `scripts/fetch_finviz_themes.py --refresh-tree`
-  (receipted, interlocked, atomic; manual cadence by ruling + nightly key-drift `::warning`
-  tripwire). Receipts: `data/themes_heatmap/tree_refresh_receipts/`.
-- Rights plane: `config/theme_sources.yml` + `engine/theme_graph/rights.py` emission gate
-  (finviz/ths `unresolved` ⇒ internal-only; test L enforces).
+  (268) + `ltheme:ths:<code>` (373) — with mint-time `source_meta`; capability lives in the
+  **sidecar `data/theme_graph/capability.parquet`** (nightly re-derived, anti-ratchet — NOT a
+  node column); MEMBER_OF company→ltheme (two-vintage ladder: declared seed 2026-06-27 +
+  promoted 2026-08-15 UTC; 2,330 v1 rows era=reconstruction, the 35 v2 changes era=observed);
+  EXPRESSES basket→ltheme (237) and ltheme→theme (61); ZERO mechanical Finviz→canonical.
+- Finviz refresh contract: `scripts/fetch_finviz_themes.py --refresh-tree` — receipted,
+  interlocked BOTH directions (growth walls included), atomic promote-or-rollback, ticker- and
+  key-continuity detection refusing to auto-promote suspected renames; manual cadence by ruling
+  + TWO nightly advisory tripwires (subsector-key drift; member-perf coverage drop). First live
+  receipt: `tree_refresh_receipts/20260815T020134Z.json` (promoted, sha 1d597c44c8ce).
+- Rights plane: `config/theme_sources.yml` (SOLE authority; per-row evidence booleans are
+  mint-time snapshots with no enforcement power) + `engine/theme_graph/rights.py` emission gate
+  + F20 grandfathered path list with growth-pinned test.
 - Corroboration class: evidence kind `external_classification` (+provider/claim_type) — EMPTY
-  by design; probation queue `data/theme_graph/probation/proposals.jsonl` (mapping + key-rename
-  proposals only; nothing ratified).
-- Docs: reconciliation (`W3A_FINVIZ_RECONCILIATION.md` + receipts), rights/procurement note,
-  sweep Addendum 1, masterplan §11 entries.
+  by design; probation queue seeded with 234 basket↔subtheme `mapping` proposals (k=20 shuffle
+  null attached, mean 3.85); nothing ratified; the build ignores non-ratified rows.
+- Docs: reconciliation + receipts, rights/procurement note, sweep Addendum 1, plan §9 (review
+  amendments — READ IT, several constants and semantics changed there), operator report,
+  masterplan §11 entries (directive adjudication + W3A-shipped).
 
 ## 2. W3B objective (directive §32, unchanged)
 
@@ -60,9 +70,12 @@ consequence-ledger prep through the TIL W6 pack (§37; R-TIL-6 excess-over-place
 
 `capability=measurement_candidate` marks nodes passing the DEFINITIONAL floor only (≥3
 price-covered live members — `capability.v1`, existence check, not an eligibility judgment).
-[FILL-AT-SHIP: candidate counts US/CN]. Your gates re-test every candidate and may demote
-freely; `semantic_only` nodes (incl. all 136 unseeded THS concepts — no graph membership
-substrate by W3A scope ruling) are OUT of state computation entirely. If eligibility work
+Tonight: **499 candidates / 142 semantic_only** across both markets (the 142 = all 136 unseeded
+THS concepts + 6 substrate-thin US subthemes; per-row `capability_basis` names the substrate —
+US = ohlcv∪stocks stores, CN = `data/china_search/closes.parquet`, the panel
+`scripts/c1_cn_global_beta.py::_panel()` reads; `cn_global_beta` itself is pure compute).
+Your gates re-test every node — candidates AND `semantic_only` (the sidecar re-derives nightly;
+promotion on improved substrate is automatic by design, review C2). If eligibility work
 genuinely needs membership for unseeded concepts, extend it through the OWNER pipeline
 (seeder/snapshots — raw side-cars carry members for all 373 concepts) as a chartered W3B step;
 do not read snapshots directly into the graph without that charter (residue, plan §0b).
@@ -74,10 +87,11 @@ do not read snapshots directly into the graph without that charter (residue, pla
   when W3C's charter opens (or earlier if the owner is already in the file).
 - **Finviz/THS display rights unresolved** — internal-only stands; the W6 design wave is the
   forcing point (rights note §1). Nothing in W3B needs resolution (no user surface in W3B).
-- **Finviz→canonical mappings:** zero exist by ruling (40-grain names insufficient).
-  Probation `mapping` proposals [FILL-AT-SHIP: count] await curation — ratification is an
+- **Finviz→canonical mappings:** zero exist by ruling (40-grain names insufficient). 234
+  probation `mapping` proposals (null baseline attached) await curation — ratification is an
   operator/delegated act, never a build step.
-- [FILL-AT-SHIP: anything the diff review or promotion run surfaces]
+- Two probation-writer implementations (refresh inline + engine module) pinned equal by a
+  contract test — reconcile when the collector may lawfully import the engine (cosmetic).
 
 ## 6. Verification commands (cold-stranger test)
 
@@ -89,7 +103,8 @@ print(json.dumps({k: m[k] for k in ('counts','per_suite') if k in m}, indent=1))
 EOF
 python -m pytest tests/test_theme_graph_local_plane.py tests/test_finviz_tree_refresh.py -q
 ```
-[FILL-AT-SHIP: expected outputs]
+Expected: guard rc 0 (one licensing-snapshot ::notice on 3 W1b vendor rows is DESIGNED);
+_meta counts 3,878 nodes / 8,292 edges / 641 capability; suites 120+54+5 green.
 
 ## 7. Do-not-redo (binding unless refuted with new evidence)
 
