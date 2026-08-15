@@ -51,6 +51,12 @@ exactly the names on which "today's raw close equals today's adjusted close" sto
 being true. It reports ``complete`` and the caller is required to treat
 incomplete as GUARD DOWN — see ``scripts.close_pass_publish.collect``.
 
+TWO RECORDS GOVERN THE VENDOR CONTRACT, both in the knowledge plane rather than
+only here: ``DSC:MASSIVE-SNAPSHOT-DAY-IS-RTH-CLOSE`` (which RUNG to read, and why
+the snapshot needs a session check) and ``DSC:MASSIVE-TICKER-CASE-IS-IDENTITY``
+(WHICH SECURITY a row belongs to — see :func:`universe_ticker`). A splice needs
+both answered; either one alone gets a plausible wrong number.
+
 NO ``data/`` PATH, NO GIT, NO RAISE. Every public function returns an explicit
 result object and degrades rather than throwing: this feeds a lane whose whole
 purpose is to land inside a 30-minute window, so a vendor hiccup must cost
