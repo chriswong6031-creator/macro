@@ -89,8 +89,33 @@ def test_m1_canary_has_no_old_generic_route_or_checkout() -> None:
     assert not {"macstudio", "macstudio-light", "theta-m1", "codex", "render-heavy"} & set(job["runs-on"])
     assert all("uses" not in step for step in job["steps"])
     command = job["steps"][0]["run"]
-    assert "pgrep -f 'Runner.Listener' | wc -l" in command
-    assert "pgrep -fc" not in command
+    for service, runner_root, runner_name in (
+        (
+            "actions.runner.mastermindx-market-intelligence-macro.m1-nightly-1",
+            "/Users/chriswong/actions-runner-1",
+            "m1-nightly-1",
+        ),
+        (
+            "actions.runner.mastermindx-market-intelligence-macro.m1-nightly-2",
+            "/Users/chriswong/actions-runner-2",
+            "m1-nightly-2",
+        ),
+        (
+            "actions.runner.mastermindx-market-intelligence-macro.m1-light-1",
+            "/Users/chriswong/actions-runner-3",
+            "m1-light-1",
+        ),
+    ):
+        assert f"{service} {runner_root} {runner_name}" in command
+    assert 'launchctl print "gui/$(id -u)/$service"' in command
+    assert "state = running" in command
+    assert 'kill -0 "$pid"' in command
+    assert 'test "$command" = "$expected_root/bin/Runner.Listener run --startuptype service"' in command
+    assert '/usr/bin/plutil -extract agentName raw -o - "$expected_root/.runner"' in command
+    assert 'test "$registered_name" = "$expected_name"' in command
+    assert '"${listener_pids[@]}"' in command
+    assert 'test "$unique_listener_count" -eq 3' in command
+    assert "pgrep" not in command
 
 
 def test_every_candidate_checkout_uses_the_frozen_sha_not_the_movable_merge_ref() -> None:
