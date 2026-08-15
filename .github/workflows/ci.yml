@@ -2745,6 +2745,7 @@ on:
       - "tests/test_regwall_json_gate.py"
       - "tests/test_paywall.py"
       - "tests/test_api_paywall.py"
+      - "tests/test_auth_cache_outage.py"
       - "tests/test_paywall_pro_gate.py"
       - "tests/test_special_situations_gate.py"
       - "tests/test_china_special_situations_gate.py"
