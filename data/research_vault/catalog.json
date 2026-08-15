@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-15T00:14:43.457519+00:00",
-  "count": 1101,
+  "generated_at": "2026-08-15T01:15:51.779336+00:00",
+  "count": 1104,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -146,6 +146,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-w2js3ab4ext-2e227f",
+      "title": "Turkiye Current Account Deficit Widened to US$4",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T16:32:59Z",
+      "summary_points": [
+        "**Current Account Deficit Widening**: $4.2bn deficit in June (3.5% GDP by 2026), driven by core goods imports and tourism revenue decline (-6% yoy), signaling structural external vulnerability.",
+        "**E&O Revisions Reduce Outflows**: Cumulative outflows revised down from $57.8bn to $23.5bn (2023-2026) via offshore deposits/derivatives adjustments, easing structural pressure.",
+        "**External Debt Rollover Stability**: Corporate/bank external debt rollover ratios stable in June, indicating manageable near-term refinancing risk and reduced debt-servicing pressure.",
+        "**Deficit Financing via Capital Inflows**: June deficit covered by $1.5bn net other investment and $2.0bn net portfolio inflows, highlighting reliance on volatile capital flows to offset current account shortfall."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
@@ -352,6 +372,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 17,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-ct6towzzybo-6b9e97",
+      "title": "The Point for Europe Friday, 14 August 2026",
+      "institution": "Citi",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T10:23:19Z",
+      "summary_points": [
+        "**BASF SE: EU Protectionism Risk vs.",
+        "Resilient Valuation**: EU protectionism risk in H2 could trigger re-rating; shares at €50 (5-yr upper half) with supportive macro data and management momentum commentary leaving room for upside.",
+        "**Infineon Technologies: AI Power Infrastructure Catalyst**: Structural beneficiary confirmed; FY26 AI revenue target raised to >€1.6bn due to demand-supply imbalance, improving bookings, and rising lead times across end markets.",
+        "**SCHOTT Pharma AG Revised Estimates & Target Price**: FY26-31E revenue +c.5% and EBITDA +c.4-6% with glass syringe customer; trades at >30% discount to peer STVN, Buy rating, and target price up +28.6%."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 12,
       "language": "en",
       "needs_metadata": false
     },
@@ -636,6 +676,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k9j5e5zidek-591581",
+      "title": "Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T15:19:24Z",
+      "summary_points": [
+        "**US CPI & Fed Policy Probability**: Soft 0.1% MoM core CPI expected, increasing September hold probability (12bp OIS strip), while oil near $89.5b (US/Iran tensions) and Fed hike by year-end drive rates.",
+        "**Geopolitical Oil Volatility**: Middle East and Pakistan/Qatar tensions keep oil near $90 and markets volatile, directly impacting rates and equity flows.",
+        "**UK GDP Catalyst**: Tomorrow's UK GDP critical; soft US CPI may extend relief rally but oil near $90 and mixed US data risk UK underperformance.",
+        "**Gilts Oil/Rates Sensitivity**: UK gilts show acute sensitivity to oil/rates trade (5% 10Y yield test), with Qatar/Pakistan headlines amplifying volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },

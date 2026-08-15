@@ -1667,6 +1667,13 @@
     "narrative_radar",
     "china_narrative_radar"
    ]
+  },
+  {
+   "match": "combination of validated technology, growing global project pipeline",
+   "backing": "Quoted third-party utterance, not a first-party claim: an executive's own sentence reproduced verbatim inside an earnings-call <blockquote> on the earnings wave/call-record pages (site/stocks/earnings/*). The word belongs to the quoted speaker with attribution; no engine artifact asserts this technology is validated. Phrase-scoped so it survives page repagination (page-NN.html rolls nightly). Added 2026-08-15 healing a fleet-wide ci-pack red (PR #5683).",
+   "surfaces": [
+    "stocks"
+   ]
   }
  ]
 }

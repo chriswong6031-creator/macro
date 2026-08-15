@@ -53,7 +53,7 @@ STORE_PARQUETS = {
 }
 DEFAULT_STORE = "candidates"
 
-PIT_STATUSES = {"pit", "forward_only", "snapshot_not_pit"}
+PIT_STATUSES = {"pit", "pit_settlement", "forward_only", "snapshot_not_pit"}
 NULL_SEMANTICS = {"unmeasured", "measured_negative", "not_applicable"}
 EXPECTED_FAMILIES = [
     "F1_TECHNICAL_CONFLUENCE",
@@ -487,13 +487,22 @@ class TestColumnsExistInTheStore:
 # ---------------------------------------------------------------------------
 
 class TestPitIntegrityFlags:
-    def test_short_interest_is_marked_snapshot_not_pit(self, registry):
-        """§4.2 flag 2: `context_api._short_int_dim` IGNORES the query date and returns
-        the CURRENT snapshot; the history file is never read. Any historical use is
-        leakage BY CONSTRUCTION."""
+    def test_short_interest_is_marked_pit_settlement(self, registry):
+        """PR-2, on #5602's merged fix: `context_api._short_int_dim` resolves HISTORICAL
+        query dates against the history+panel union gated on the store's own
+        `knowable_date` (basis `pit_settlement`); current dates keep the snapshot path.
+        The old §4.2-flag-2 verdict ("ignores the query date") is FIXED, and this test
+        pins the flip plus the caveats that ride with it."""
         member = _find(registry, "F5_FLOW_POSITIONING", "short_interest")
-        assert member["pit_status"] == "snapshot_not_pit"
+        assert member["pit_status"] == "pit_settlement"
         assert all(c.startswith("short_int__") for c in member["columns"])
+        # The evidence trail and both binding caveats (3-settlement depth; basis
+        # mixing) live in the change note — a bare flip with no receipt is how the
+        # next census re-litigates this.
+        change_note = member.get("pit_status_change_note", "")
+        assert "#5602" in change_note
+        assert "knowable_date" in change_note
+        assert "3 settlements" in change_note
 
     def test_forensics_is_marked_snapshot_not_pit(self, registry):
         """§4.1: the store REFUSES dates before its `generated_at` — backtestable never."""
@@ -501,18 +510,44 @@ class TestPitIntegrityFlags:
         assert member["pit_status"] == "snapshot_not_pit"
         assert all(c.startswith("forensics__") for c in member["columns"])
 
-    def test_every_snapshot_not_pit_column_is_prefixed_short_int_or_forensics(self, registry):
-        """The converse direction: exactly these two dims, so a harness that refuses on
+    def test_every_snapshot_not_pit_column_is_prefixed_forensics(self, registry):
+        """The converse direction: forensics is now the ONLY snapshot-only dim (short
+        interest graduated to `pit_settlement` in PR-2), so a harness that refuses on
         prefix and a harness that refuses on `pit_status` agree."""
         for fam_key, member in _members(registry):
             if member["pit_status"] != "snapshot_not_pit":
                 continue
             for column in _member_columns(member):
-                assert column.startswith(("short_int__", "forensics__")), (
+                assert column.startswith("forensics__"), (
                     f"{fam_key}.{member['name']} marks {column!r} snapshot_not_pit; if a "
-                    f"third snapshot-only dim has appeared, widen §4.2 and this test "
+                    f"second snapshot-only dim has appeared, widen §4.2 and this test "
                     f"together"
                 )
+
+    def test_pit_settlement_is_registered_vocabulary_but_backtest_admission_is_deferred(self, registry):
+        """The arena side of the PR-2 flip, asserted against the REAL registry — in the
+        DEFERRED direction the adversarial review ruled (finding F-5): the status is
+        valid vocabulary (the loader accepts it; the mechanism note is registry truth),
+        but a short_int column still REFUSES in a backtest frame, because the
+        producer's knowable_date is DERIVED at settlement + 10 CALENDAR days, which
+        under-waits the ~8-session FINRA publication lag by 2-3 days on every
+        committed settlement.  Admission follows the lag-constant reconciliation, not
+        this suite.  (The vocabulary twin lives in tests/test_prophet_fusion_arena.py.)"""
+        import scripts.prophet_fusion_arena as arena
+        real = arena.load_registry()
+        member = _find(registry, "F5_FLOW_POSITIONING", "short_interest")
+        assert member["pit_status"] == "pit_settlement"   # vocabulary accepted
+        with pytest.raises(arena.PITRefusal) as exc:
+            arena.check_features(real, ["short_int__days_to_cover"],
+                                 frame_kind=arena.FRAME_KIND_BACKTEST)
+        assert exc.value.pit_status == "pit_settlement"
+        with pytest.raises(arena.PITRefusal):
+            arena.check_features(real, ["forensics__action"],
+                                 frame_kind=arena.FRAME_KIND_BACKTEST)
+        # The deferral is documented where the next consumer will look.
+        note = member.get("pit_status_change_note", "")
+        assert "BACKTEST ADMISSION DEFERRED" in note
+        assert "10 CALENDAR days" in note
 
     def test_insider_is_pit_but_flagged_serving_dead(self, registry):
         """§4.2 flag 3: PIT-correct by construction (`filing_date`), but the panel

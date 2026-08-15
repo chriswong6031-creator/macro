@@ -664,12 +664,12 @@ def test_biocatalyst_renderer_writes_only_the_shell_and_paired_assets(tmp_path: 
     assert 'href="biocatalyst.css"' in html
 
 
-def test_biocatalyst_is_registered_preview_with_a_site_full_api_boundary():
+def test_biocatalyst_has_public_workbench_assets_with_a_site_full_api_boundary():
     policy = yaml.safe_load((ROOT / "config" / "site_access.yml").read_text(encoding="utf-8"))
-    free_registered = policy["free_registered"]["exact"]
-    assert "/biocatalyst.html" in free_registered
-    assert "/biocatalyst.css" in free_registered
-    assert "/biocatalyst.js" in free_registered
+    public = policy["public"]["exact"]
+    assert "/biocatalyst.html" in public
+    assert "/biocatalyst.css" in public
+    assert "/biocatalyst.js" in public
 
     page_source = (TEMPLATES / "biocatalyst.html.j2").read_text(encoding="utf-8")
     api_source = (ROOT / "app" / "biocatalyst.py").read_text(encoding="utf-8")
