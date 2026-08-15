@@ -31,12 +31,10 @@ from pathlib import Path
 import sys
 from typing import Any, Mapping
 
-_REPO = Path(__file__).resolve().parents[1]
-if str(_REPO) not in sys.path:
-    sys.path.insert(0, str(_REPO))
+_REPO = Path(__file__).resolve().parent.parent   # scripts/* -> parents[1]
+sys.path.insert(0, str(_REPO))
 
 from engine import us_board_rank as ubr           # noqa: E402
-from engine import us_prophet_fusion as fusion    # noqa: E402
 
 BOARD = _REPO / "site" / "factordata" / "us_standouts.json"
 GATE = _REPO / "site" / "factordata" / "signal_gate.json"
