@@ -2226,6 +2226,12 @@ jobs:
     # precedent for adding another directory glob to a curated job.
     scope: exclusive
     paths:
+      # Reached through scripts/freshness_sentinel.py, which T4's reader-plane adapter
+      # imports for the surface table rather than copying it. The sentinel's alert path
+      # imports app.mailer lazily; the closure walker sees it, so it is declared. Named
+      # files, not `app/**` — the job touches these two and nothing else under app/.
+      - "app/__init__.py"
+      - "app/mailer.py"
       - "collectors/*"
       - "config/**"
       - "engine/**"

@@ -190,6 +190,22 @@ def _watermark_from_json(payload: Any, field: str) -> tuple[bool, Any]:
     return False, None
 
 
+def _record_watermark(out: dict[str, Any], present: bool, raw: Any, field: str) -> None:
+    """Fill the observation's watermark keys from what the declared field held.
+
+    A non-string value is NOT stringified: ``20260814`` would then parse as an ISO basic
+    date and land as a midnight timestamp, quietly skipping the conservative end-of-date
+    reading a date is entitled to. Naming it unreadable is the honest answer.
+    """
+    out["asof_field_present"] = present
+    if isinstance(raw, str):
+        out["content_asof_raw"] = raw
+    elif present and raw is not None:
+        out["parse_error"] = (
+            f"declared field {field!r} holds a {type(raw).__name__}, not a timestamp string"
+        )
+
+
 def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
     """Read ONLY the declared field. Never falls back to another timestamp key."""
     fmt = str(entry.get("format") or "").lower()
@@ -211,9 +227,7 @@ def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
         except (json.JSONDecodeError, ValueError) as exc:
             out["parse_error"] = f"envelope sidecar does not parse ({type(exc).__name__})"
             return out
-        present, raw = _watermark_from_json(payload, field)
-        out["asof_field_present"] = present
-        out["content_asof_raw"] = raw if isinstance(raw, str) else None
+        _record_watermark(out, *_watermark_from_json(payload, field), field)
         return out
     if fmt not in ("json", "jsonl"):
         out["parse_error"] = "watermark_unreadable_format"
@@ -239,9 +253,7 @@ def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
         except (json.JSONDecodeError, ValueError) as exc:
             out["parse_error"] = f"content does not parse ({type(exc).__name__})"
             return out
-    present, raw = _watermark_from_json(payload, field)
-    out["asof_field_present"] = present
-    out["content_asof_raw"] = raw if isinstance(raw, str) else None
+    _record_watermark(out, *_watermark_from_json(payload, field), field)
     return out
 
 
