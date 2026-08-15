@@ -52,7 +52,7 @@ changed:
       re-verified DEAD in a narrow round 2. Full table + judgment-call verdicts +
       clean surfaces + spec-hash record."
 
-prs: []
+prs: [5724]
 
 verified:
   - claim: "The exact CI line passes: 675 tests across the 11 entry-radar suites."

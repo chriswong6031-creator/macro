@@ -51,6 +51,7 @@ waves:
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
     status: in_progress
+    pr: 5724
     depends_on: [W2]
     next_action: >
       C1–C5 specification lock per contract §18 A5 (append-only, committed before any
