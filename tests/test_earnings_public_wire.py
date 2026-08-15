@@ -430,6 +430,38 @@ def test_preview_prefers_management_material_evidence_over_boilerplate_or_qa(tmp
     assert "apple inc" in view["search_text"]
 
 
+def test_preview_skips_excerpts_that_carry_the_validated_authority_token(tmp_path: Path) -> None:
+    """WAVE-class marketing copy must not win the public card over a clean excerpt.
+
+    The packet stays verbatim (receipt-bound). Public HTML is the gated surface.
+    """
+    article, _manifest, _raw, _packet = _article(tmp_path)
+    forged = deepcopy(article)
+    contaminated = (
+        "Overall, we believe that the combination of validated technology, "
+        "growing global project pipeline, improving cost discipline, and "
+        "increasing global demand for clean energy driven by AI positions "
+        "Eco Wave Power well for the next phase of growth."
+    )
+    forged["facts"][0]["quote"]["text"] = contaminated
+    forged["facts"][0]["role"] = "executive"
+    forged["facts"][1]["quote"]["text"] = (
+        "As artificial intelligence continues to expand globally, it is driving "
+        "significant growth in electricity demands, particularly from data centers."
+    )
+    forged["facts"][1]["role"] = "executive"
+    for fact in forged["facts"][2:]:
+        fact["quote"]["text"] = "Operator: thank you for joining the replay and safe harbor statement."
+        fact["role"] = "analyst"
+    view = _view_article(forged, alignment={"company_name": "Eco Wave Power", "dossier_available": False})
+    assert "validated" not in view["preview_quote"].lower()
+    assert view["preview_quote"].startswith("As artificial intelligence")
+    public_texts = [fact["quote"]["text"] for fact in view["public_facts"]]
+    assert all("validated" not in text.lower() for text in public_texts)
+    locked_texts = [fact["quote"]["text"] for fact in view["locked_facts"]]
+    assert contaminated in locked_texts
+
+
 def test_exact_evidence_context_and_weekly_contracts_are_deterministic_and_context_only(tmp_path: Path) -> None:
     article, manifest, manifest_raw, _packet = _article(tmp_path)
     publication = build_public_wire_manifest(

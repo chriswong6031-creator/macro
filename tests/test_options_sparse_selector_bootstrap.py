@@ -22,7 +22,7 @@ EXPECTED_REPO_IMPORT_SOURCE_SHA256 = {
         "55e73e3086de01e3d06204a0638f3665fc2b4fa64e0d00b0c9893886c9cad220"
     ),
     "scripts/run_options_sparse_selector.py": (
-        "80d43d79a4be45e9dfbb595cb1bb645065743f5c8d33e42ab7e66b126d7c7a12"
+        "007223931d0597ee1c0d71afdd1eb755ff46940009e13807b5308b3aef7b5db7"
     ),
     "ops/launchd/run_options_sparse_selector_verified.py": (
         "0a859a426a3477d45a9dbddd498987d9d855906828d08b75b38f228989d07773"
