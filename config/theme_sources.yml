@@ -50,3 +50,17 @@ families:
   #   rights_class: unresolved
   #   auth_class: licensed
   #   source_route: "commercial license required; see rights note §5 for the procurement question list"
+
+# Owner surfaces that PRE-DATE GMI and render vendor theme data as their owner's
+# product (rights note §1-2). Enumerated BY PATH so the exemption is content-scoped,
+# never lineage-scoped (plan §9.4/F20): a surface is exempt iff its path is here with
+# a review row. tests/test_theme_sources_registry.py refuses list growth without one.
+# GMI emitters never cite this list — their gate is assert_public_emission_allowed().
+# The W6 surface wave adds the structural public-emitter walk (recorded entry ticket).
+grandfathered_surfaces:
+  - path: "site/marketdata/themes_heatmap.json"
+    family: finviz_themes
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "owner heatmap feed predating GMI (#579 lineage; consumed by site/sector_heatmap.html map-type=themes)" }
+  - path: "site/marketdata/subsector_rotation.json"
+    family: finviz_themes
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "owner rotation feed predating GMI (#715 lineage)" }
