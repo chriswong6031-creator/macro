@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from engine import altdata_models as M
 from engine import theme_activity as ta
@@ -398,6 +399,19 @@ def test_polygon_news_parse_and_channel():
     assert roll["articles"] == 3 and roll["bullish"] == 2 and roll["bull_ratio"] == round(2 / 3, 2)
     recs = M.channel_records({"news_sentiment": [{"ticker": "NVDA", "bull_ratio": 0.7, "articles": 8, "hot": True}]})
     assert "news_sentiment" in recs["NVDA"]["channels"]
+
+
+@pytest.mark.parametrize("upper,mixed", [("TPC", "TpC"), ("BCPC", "BCpC")])
+def test_polygon_news_sentiment_matches_vendor_tickers_case_exact(upper, mixed):
+    from collectors import polygon_news
+
+    results = [{"insights": [
+        {"ticker": upper, "sentiment": "positive"},
+        {"ticker": mixed, "sentiment": "negative"},
+    ]}]
+
+    assert polygon_news.parse_sentiment(results, upper)["net"] == 1
+    assert polygon_news.parse_sentiment(results, mixed)["net"] == -1
 
 
 def test_sam_velocity_and_radar_leg():
