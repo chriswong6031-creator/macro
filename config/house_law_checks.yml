@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-14"
+updated: "2026-08-15"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -2226,6 +2226,37 @@ checks:
     notes: >
       Landed on main concurrently with this registry (2026-07-06); registered
       during the registry PR's merge-with-main — the census pass caught it.
+
+  - law_id: auth.no_client_supplied_identity
+    summary: >
+      Route handlers must not derive user_id (or equivalent identity) from the
+      request body, query string, or path. _pg() uses SUPABASE_SERVICE_ROLE_KEY,
+      which bypasses RLS, so token-derived identity is the only thing preventing
+      cross-tenant access. Law source: MASTERMIND_SECURITY_AUTH_BILLING_AUDIT.md
+      §2.1 (WS-9 / GATE-6).
+    source_ref:
+      - scripts/check_no_client_supplied_identity.py
+      - research/MASTERMIND_SECURITY_AUTH_BILLING_AUDIT.md
+      - research/MASTERMIND_RED_TEAM_REMEDIATION_PLAN.md
+      - "WS-9 GATE-6 MMX isolation invariant"
+    severity: hard
+    check_script: scripts/check_no_client_supplied_identity.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: no-client-supplied-identity
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - AST over app/** FastAPI/Starlette handlers only. Operator admin tools are a different trust boundary and are not scanned.
+      - Dynamic key construction (body.get("user_" + "id"), getattr with a non-literal) is invisible.
+      - Pydantic models defined in another module are not joined; only same-file body models are checked for identity fields.
+      - A Depends() wrapper that itself reads a client field is a known miss — the parameter then looks injected.
+    owner_program: mastermind-security-auth-billing
+    notes: >
+      Mutation-proven in-script (--selftest plants each surface, then requires
+      the live app/ tree to stay clean). Registering the file is not the proof.
 
   # ── Discipline-only laws (no check_script, no ci_wiring) ──────────────────
 

@@ -10540,3 +10540,29 @@ jobs:
         run: >-
           PYTHONDONTWRITEBYTECODE=1 python -m pytest
           tests/test_identity_seam_agreement.py -q -rs
+
+  no-client-supplied-identity:
+    if: ${{ false }}
+    # WS-9 / GATE-6: route handlers must not take user identity from the client.
+    # _pg() uses SUPABASE_SERVICE_ROLE_KEY (bypasses RLS); token-derived identity
+    # is the only cross-tenant fence. Scoped to app/** — an app-only PR must
+    # select this job, a research-only PR must not.
+    paths:
+      - app/**
+      - scripts/check_no_client_supplied_identity.py
+      - tests/test_check_no_client_supplied_identity.py
+    timeout-minutes: 8
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install minimal deps
+        run: pip install pytest
+      - name: no-client-supplied-identity selftest (gate fires on planted violations)
+        run: python3 scripts/check_no_client_supplied_identity.py --selftest
+      - name: no-client-supplied-identity guard (hard fail on client-sourced user_id)
+        run: python3 scripts/check_no_client_supplied_identity.py
+      - name: no-client-supplied-identity test suite
+        run: python3 -m pytest tests/test_check_no_client_supplied_identity.py -q
