@@ -454,6 +454,25 @@ def minute_window(ticker: str, start_session: date | str, end_session: date | st
     if hi < lo:
         raise VendorError(f"minute window {lo}..{hi} runs backwards")
     path = _minute_cache_path(cache_dir, ticker, lo, hi)
+    if not path.exists():
+        # COVERING-SPAN reuse: a prefetch pass caches multi-session spans; a
+        # single-session request must SLICE a covering span rather than
+        # re-fetch (measured: the Panel-A replay went network-bound on
+        # thousands of single-session misses while the covering spans sat in
+        # cache).  Scan is bounded to this ticker's own span files.
+        try:
+            for cand in sorted((cache_dir / _MINUTE_DIR).glob(f"{ticker}__*.parquet")):
+                parts = cand.stem.split("__")
+                if len(parts) != 3:
+                    continue
+                c_lo, c_hi = date.fromisoformat(parts[1]), date.fromisoformat(parts[2])
+                if c_lo <= lo and hi <= c_hi:
+                    frame = pd.read_parquet(cand)
+                    ts = pd.to_datetime(frame["t"])
+                    mask = ((ts.dt.date >= lo) & (ts.dt.date <= hi))
+                    return frame[mask].reset_index(drop=True)
+        except Exception:  # noqa: BLE001 — a torn span falls through to fetch
+            pass
     if path.exists():
         try:
             cached = pd.read_parquet(path)

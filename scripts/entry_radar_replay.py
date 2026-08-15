@@ -1097,17 +1097,33 @@ def _fs_grid(kept_eps, *, cache_dir: Path):
             key = det_key.get(ref.detector_id)
             if key is None:
                 continue
+            # ONE windowing pass per episode at the max horizon; every cell
+            # then reads the same cached arrays through the SAME first-touch
+            # semantics (outcomes._first_touch) — 27x fewer searchsorted+slice
+            # passes with identical ordering law (battery G protects the
+            # primary; this grid is diagnostic-only).
+            if ref.a0 is None or ref.a0 <= 0 or ref.atr_basis != "true_range_daily_ohlc":
+                continue
+            h_max = max(prereg.SENSITIVITY_HORIZONS)
+            fwd = outcomes._forward_frame(plane, ref.decision_session, h_max)
+            if not len(fwd):
+                continue
+            highs = fwd["h"].to_numpy(dtype=float)
+            lows = fwd["l"].to_numpy(dtype=float)
+            day0 = [float(x) for x in (ref.extra.get("day0_samples") or ())
+                    if x is not None]
             for fav in prereg.SENSITIVITY_FAVORABLE:
                 for adv in prereg.SENSITIVITY_ADVERSE:
                     for h in prereg.SENSITIVITY_HORIZONS:
-                        row = outcomes.attach(
-                            ref, daily=plane, bench_close=bench,
-                            sector_close=None, cost_per_side_bps=0.0,
-                            cost_basis="floor", horizon=h,
-                            adverse_atr=adv, favorable_atr=fav)
-                        if row.false_start is not None:
-                            fs_by_cell.setdefault((fav, adv, h, key),
-                                                  []).append(row.false_start)
+                        hh, ll = highs[:h], lows[:h]
+                        pos_a = outcomes._first_touch(
+                            day0, ll, ref.p0 - adv * ref.a0, up=False)
+                        pos_f = outcomes._first_touch(
+                            day0, hh, ref.p0 + fav * ref.a0, up=True)
+                        fs = (pos_a is not None
+                              and (pos_f is None or pos_a <= pos_f))
+                        fs_by_cell.setdefault((fav, adv, h, key),
+                                              []).append(bool(fs))
     for (fav, adv, h, key), vals in sorted(fs_by_cell.items()):
         grid_rows.append({
             "cell": f"fs_grid_f{int(fav*100):03d}_a{int(adv*100):03d}_h{h}_{key}",
