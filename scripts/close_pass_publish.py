@@ -43,6 +43,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from engine.close_pass import board as CB  # noqa: E402
+from engine.close_pass import massive_close as MC  # noqa: E402
 from engine.prophet_live import r2io  # noqa: E402
 
 #: The R2 key the VPS mirror pulls. Same ``live_flow/`` prefix as the rest of
@@ -86,6 +87,29 @@ def session_date(now: datetime) -> str | None:
     return et.isoformat() if is_session(et) else None
 
 
+def _with_session_close(close: Any, session: str, price: float) -> Any:
+    """One close series + today's close → the same series with today's bar.
+
+    IN MEMORY AND NOWHERE ELSE (G0.2). This appends a row to a pandas object the
+    pass is holding; nothing is written back to the store, which is the nightly's
+    to advance. The returned object is a new Series — the store's own frame is
+    never mutated, so a caller that re-reads the same ticker sees the store.
+
+    The stamp is built on the EXISTING index's timezone rather than a naive
+    ``Timestamp``: a tz-aware store index concatenated with a naive stamp yields
+    an object-dtype index, and every downstream ``.date()`` and comparison then
+    works on the wrong type instead of raising where it could be seen.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    tz = getattr(getattr(close, "index", None), "tz", None)
+    stamp = pd.Timestamp(session)
+    if tz is not None:
+        stamp = stamp.tz_localize(tz)
+    return pd.concat([close, pd.Series([float(price)], index=[stamp],
+                                       name=getattr(close, "name", None))])
+
+
 def collect(session: str) -> dict[str, Any]:
     """Read the price store and run the gate. The only heavy step in the lane.
 
@@ -108,6 +132,43 @@ def collect(session: str) -> dict[str, Any]:
     uni = universe()
     adjustment_by = universe_price_adjustment()
 
+    # ── SAME-DAY CLOSE TRUTH ─────────────────────────────────────────────────
+    # MEASURED: the Fri 2026-08-14 pass evaluated 253 of a 1,763-name universe —
+    # `skipped {'no_todays_bar': 1508}`, 86% of the market — because the lane's
+    # keyless Yahoo heal refreshes the index group and the deep per-name stores
+    # are the nightly's to advance. Massive's grouped daily is ONE request for
+    # the whole market, so the coverage hole closes without a per-name fetch.
+    #
+    # THE BASIS LAW, and it is the whole reason this splice is legal.
+    # A store history is re-based RETROSPECTIVELY at each ex-date: the vendor
+    # divides every PRIOR bar by the split/dividend factor and leaves the newest
+    # bar alone. So for any name with NO same-session corporate action, today's
+    # raw close IS today's adjusted close — the same number, exactly, on both
+    # `universe_price_adjustment()` families (ADJUSTED per-name stores and the
+    # UNADJUSTED breadth caches alike). The append is therefore exact, not
+    # approximate, and no per-name `price_basis` changes.
+    # For a name WITH a same-session action the two numbers differ by the factor
+    # itself — BYND reverse-split 1:30 on 2026-08-14, so its raw close that day
+    # sits 30× off its own pre-split history, a fabricated gap the gate would
+    # happily score. Such a name is DARKED, never spliced; the nightly settles it
+    # hours later. Measured for 2026-08-14: 3 splits and 450 ex-dividends
+    # market-wide, 58 of them on names in this universe.
+    wanted = [row[0] for row in uni]
+    mc = MC.fetch_session_closes(session, wanted)
+    # Asked ONLY when there is something to guard — the guard is the price of the
+    # splice, not a standing cost of the pass.
+    ca = MC.corp_action_tickers(session) if mc.ok else MC.CorpActions(session)
+    # FAIL CLOSED. An incomplete corp-action read cannot tell "no name had an
+    # action today" from "we did not get to look", and splicing on the second
+    # would put a split-day price on a pre-split history. Guard down → store
+    # only, disclosed, for the WHOLE pass.
+    splice = bool(mc.ok and ca.complete)
+    degraded = None if splice else (mc.reason or ca.reason or "unavailable")
+    if not splice:
+        _warn(f"same-day close fill is OFF ({degraded}) — the board is store-only "
+              "and its coverage is whatever the store had at pass time")
+    filled: set[str] = set()
+
     verdicts: dict[str, dict] = {}
     closes: dict[str, Any] = {}
     through: dict[str, str] = {}
@@ -129,12 +190,33 @@ def collect(session: str) -> dict[str, Any]:
         last = close.index[-1]
         through[ticker] = (last.date() if hasattr(last, "date") else last).isoformat()
         # A name whose newest bar is not TODAY has not printed today's close on
-        # this store yet. It is skipped, never carried at yesterday's price: a
-        # board that silently mixes vintages is the defect W-L0 gate 3 exists to
-        # stop, and at 16:20 ET a thin name legitimately has no bar yet.
+        # THIS STORE yet. It is never carried at yesterday's price — a board that
+        # silently mixes vintages is the defect W-L0 gate 3 exists to stop — so
+        # it is either given today's real close from the vendor, or skipped.
+        #
+        # THE STORE'S OWN TODAY-BAR ALWAYS WINS: this branch is not entered at
+        # all when the store already has today. Basis consistency is why —
+        # a store bar and the rest of that store's history come from one vendor
+        # on one convention, and replacing it with another vendor's print to gain
+        # nothing would introduce a seam where there is currently none.
         if through[ticker] != session:
-            skipped["no_todays_bar"] = skipped.get("no_todays_bar", 0) + 1
-            continue
+            fill = mc.closes.get(ticker) if splice else None
+            # Only ever forward. A store whose newest bar POSTDATES the session
+            # (a replay of an old session) must not have an older row appended
+            # after it — that would build a non-monotone index the gate reads
+            # positionally.
+            if fill is None or through[ticker] > session:
+                skipped["no_todays_bar"] = skipped.get("no_todays_bar", 0) + 1
+                continue
+            if ticker in ca.tickers:
+                # Counted only when a fill EXISTED and was refused, so this
+                # number means "the guard darked N names" rather than doubling as
+                # a tally of names nobody had a price for anyway.
+                skipped["corp_action_today"] = skipped.get("corp_action_today", 0) + 1
+                continue
+            close = _with_session_close(close, session, fill)
+            through[ticker] = session
+            filled.add(ticker)
         verdict = signal_gate.gate(ticker, close)
         verdicts[ticker] = verdict
         closes[ticker] = close
@@ -190,9 +272,29 @@ def collect(session: str) -> dict[str, Any]:
         if not cx.empty:
             ext_by.update(extension_signals(cx))
 
+    # PROVENANCE, additively. Every key here is a fact about WHERE the closes the
+    # board scored came from — not a score, not a word, and nothing an existing
+    # consumer reads. `close_finalized` is a claim about the whole board, so it
+    # is true when nothing was filled at all (every close is a settled store bar)
+    # and it follows the fill's own finality otherwise: a grouped daily bar is
+    # the session's settled aggregate, a snapshot read minutes after the close is
+    # the best answer available at that moment and may still be revised.
+    close_meta: dict[str, Any] = {
+        "close_source": {"store": len(verdicts) - len(filled),
+                         "massive": len(filled)},
+        "close_observed_at": mc.observed_at or None,
+        "close_basis": MC.BASIS,
+        "close_finalized": (not filled) or bool(mc.finalized),
+    }
+    if filled:
+        close_meta["close_fill_source"] = mc.source
+    if degraded:
+        close_meta["close_degraded"] = degraded
+
     return {"verdicts": verdicts, "ext_by": ext_by, "adjustment_by": adjustment_by,
             "price_through": through, "display_by": display,
-            "universe_n": len(uni), "skipped": skipped}
+            "universe_n": len(uni), "skipped": skipped,
+            "close_meta": close_meta}
 
 
 def build_payload(session: str, now: datetime, inputs: dict[str, Any]) -> dict:
@@ -206,6 +308,10 @@ def build_payload(session: str, now: datetime, inputs: dict[str, Any]) -> dict:
         display_by=inputs.get("display_by"),
         universe_n=inputs["universe_n"],
         skipped=inputs["skipped"],
+        # Absent for a collector that predates PR-A (a replay, a test fixture) —
+        # the payload then simply carries no close-provenance block rather than
+        # an invented one.
+        close_meta=inputs.get("close_meta"),
     )
 
 
@@ -297,6 +403,15 @@ def run(*, now: datetime, dry_run: bool = False, force: bool = False,
           f"{meta['evaluated_n']} evaluated (universe {meta['universe_n']}); "
           f"skipped {meta['skipped'] or '{}'}; cards {contract['cards_n']} "
           f"complete={contract['card_complete']}", flush=True)
+    # The coverage line, printed beside the board it explains: `evaluated_n` is
+    # the number the coverage defect showed up in, and the split between store
+    # and vendor closes is what makes a change in it readable rather than merely
+    # observable.
+    if meta.get("close_source"):
+        print(f"{_TAG} closes: {meta['close_source']} "
+              f"basis={meta.get('close_basis')} "
+              f"final={meta.get('close_finalized')} "
+              f"src={meta.get('close_fill_source')}", flush=True)
     # An admitted name the reader will not see is a fact the operator should
     # learn from the run, not from a support ticket.
     if contract["cards_dropped_n"]:
