@@ -80,6 +80,7 @@ waves:
   - id: W8
     title: PR-8 UI reference + RIG (Prophet Board sister language, operator directive 2026-08-13)
     status: in_progress
+    pr: 5737
     depends_on: [W0]
     # Opened this session as a reviewable reference PR. NOT done — flagship
     # reference UI; commissioning session reviews and owns merge. Do not mark
@@ -98,7 +99,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W8 in_progress — reference + RIG opened for commissioning review (do not merge from the authoring session; do not auto-roll W9). Parallel next waves remain W4 (live evaluator) and W5 (forward evidence). W6/W7 still blocked on W5.
+next_action: W8 in_progress on PR #5737 (draft, reviewable; do not merge from the authoring session; do not auto-roll W9). Parallel next waves remain W4 (live evaluator) and W5 (forward evidence). W6/W7 still blocked on W5.
 ---
 
 ## Context

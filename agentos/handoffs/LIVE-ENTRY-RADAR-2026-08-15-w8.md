@@ -56,12 +56,14 @@ unverified:
   - claim: "Playwright visual checks in CI (local Playwright was green this session)."
     what_would_verify: "CI job or a commissioning `verify.py --url` on a served tree."
 
+prs: [5737]
+
 unresolved:
   - "Author-session critique is not an independent RIG receipt. Do not approve from this PR's author."
   - "W4 live fields, W6 Priority, and W7 Opportunity are not in this package and must not be invented to fill slots."
 
 next_actions:
-  - "Commissioning session: quarantined product + visual critics, then a design-authority verdict. Leave the PR open until that review. Do not arm merge-on-green unless house law is forced over the flagship-review hold."
+  - "Commissioning session: quarantined product + visual critics on PR #5737, then a design-authority verdict. Leave the PR open until that review. Do not arm merge-on-green unless house law is forced over the flagship-review hold."
   - "W9 is a separate commissioning after W4 + W6 + this reference is approved. Copy from W9_IMPLEMENTATION_HANDOFF.md only."
   - "W4 and W5 remain the next engine waves; they do not wait on W8 merge."
 
