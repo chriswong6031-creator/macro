@@ -1,0 +1,31 @@
+{
+ "calendar": "lib.nyse_calendar via engine.session_anchor / engine.session_digest",
+ "files": {
+  "w3_c1c2_path.json": {
+   "daily_bars": 106,
+   "kind": "synthetic",
+   "minute_rows": 1290,
+   "price_basis": "adjusted",
+   "sessions": [
+    "2026-06-24",
+    "2026-06-25",
+    "2026-06-26"
+   ],
+   "source": "constructed by bisecting canonical StochRSI rawk targets; no market data of any kind was read",
+   "ticker": "ZZWO",
+   "vintage": "n/a \u2014 no vendor input",
+   "why_synthetic": "the PIT battery needs an exact oscillator morphology (arm below 20, trough above 2, failed micro-turn, C2a cross above 20, a flash low the sampled path never saw); a real session supplies those only by accident"
+  },
+  "w3_early_close_tape.json": {
+   "kind": "synthetic",
+   "minute_rows": 210,
+   "session": "2025-12-24",
+   "source": "a monotone intraday ramp on a REAL NYSE early-close session date, so the 13:00 clip is exercised against the real calendar",
+   "vintage": "n/a \u2014 no vendor input"
+  }
+ },
+ "generated_at": "2026-08-15T03:14:43+00:00",
+ "generated_by": "scripts/entry_radar_fixture_gen.py",
+ "regenerate": "python3 scripts/entry_radar_fixture_gen.py",
+ "schema": "radar.w3.fixture_manifest/v1"
+}
