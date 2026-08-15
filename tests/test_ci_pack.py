@@ -130,12 +130,14 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - run: printf leak > leaked.tmp
+      - name: create the leak fixture
+        run: printf leak > leaked.tmp
   second:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - run: test ! -e leaked.tmp
+      - name: prove the checkout was restored
+        run: test ! -e leaked.tmp
 """
     )
     subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
@@ -1021,8 +1023,18 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     assert plan["predicted_skipped"] == ["would-skip"]
 
     monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
-    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
-    monkeypatch.setattr(PACK, "_run_job", lambda *args, **kwargs: None)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(
+        PACK,
+        "_run_job",
+        lambda job, **_kwargs: PACK.JobExecution(
+            logical_job_id=job.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(job),
+            infrastructure={"outcome": "passed"},
+            steps=(),
+            failure=None,
+        ),
+    )
     assert PACK.execute_pack(jobs, shadow_predicted=frozenset({"owner"})) == 0
     records = [
         json.loads(line.split("=", 1)[1])
@@ -1040,18 +1052,34 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """merge_on_green parses `title=legacy-job-<id>` for live-inherited reds."""
-    definition = {"steps": [{"run": "true"}], "runs-on": "ubuntu-latest"}
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
     jobs = [
         PACK.LegacyJob("unrun-government-revenue", definition, 0, 1, ("engine/**",)),
         PACK.LegacyJob("other", definition, 1, 1, ("engine/**",)),
     ]
     monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
-    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
 
     def fake_run(job, **_kwargs):
-        if job.job_id == "unrun-government-revenue":
-            return f"{job.job_id}: step 'pytest' exited 1"
-        return None
+        failed = job.job_id == "unrun-government-revenue"
+        specs = PACK.semantic_step_specs(job)
+        return PACK.JobExecution(
+            logical_job_id=job.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(job),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "failed" if failed else "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=(f"{job.job_id}: step 'pytest' exited 1" if failed else None),
+        )
 
     monkeypatch.setattr(PACK, "_run_job", fake_run)
     assert PACK.execute_pack(jobs) == 1
@@ -1135,12 +1163,30 @@ def _isolate_pack_runner_planner_env(monkeypatch: pytest.MonkeyPatch) -> None:
     changed-file artifact, and it OUT-RANKS the inline form, so leaving it
     ambient would leak the live PR diff into these fixtures exactly as #5560's
     inline value did.
+
+    Semantic identity env joined on 2026-08-15 (PR #5750 pack-1 / job
+    95003903089). ``build_plan`` now infers ``role=pr_head`` from
+    ``GITHUB_EVENT_NAME=pull_request`` and then refuses a full-suite plan
+    (``changed is None``) as "a PR semantic plan requires an exact
+    changed-file inventory". Packing-contract tests that call
+    ``plan_from_workflow(..., changed_from=None)`` or ``--plan-only``
+    without ``--event/--role`` inherited the live PR event and the
+    hosted-runner packing contract exited 1. Strip the identity vars so
+    those tests keep the local ``workflow_dispatch`` / ``main`` default;
+    tests that want a PR plan pass ``event``/``role`` or a file list
+    explicitly. The production ci-plan path still passes ``--event`` and
+    ``--role`` on the command line, so this does not weaken that gate.
     """
     for name in (
         "CI_CHANGED_FILES_FILE",
         "CI_CHANGED_FILES_JSON",
         "CI_SCOPE_MODE",
         "CI_DYNAMIC_MATRIX_MODE",
+        "GITHUB_EVENT_NAME",
+        "CI_SEMANTIC_ROLE",
+        "CI_TESTED_TREE_SHA",
+        "CI_SUBJECT_HEAD_SHA",
+        "CI_BASE_SHA",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -1184,6 +1230,28 @@ def test_packing_contract_ignores_ambient_ci_changed_files_json(
     assert set(plan.eligible_job_ids) == {"owner"}
     assert plan.skipped_job_ids == ("would-skip",)
     assert PACK.resolve_changed_files("base-sha") == ["engine/example.py"]
+
+
+def test_packing_contract_strips_ambient_pr_event_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The leak that redded pack-1 on PR #5750 head 168e8e1f.
+
+    Autouse isolation must leave ``GITHUB_EVENT_NAME`` unset so
+    ``_full_plan()`` mints a local main plan. Planting the live Actions
+    PR event afterwards must raise the inventory ManifestError — that is
+    the law that fired inside the packing contract when the fixture
+    still inherited ``pull_request``.
+    """
+    assert os.environ.get("GITHUB_EVENT_NAME") != "pull_request"
+    assert "CI_SEMANTIC_ROLE" not in os.environ
+    plan = _full_plan()
+    assert plan.event == "workflow_dispatch"
+    assert plan.role == "main"
+    assert plan.changed_from is None
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
+    with pytest.raises(PACK.ManifestError, match="exact changed-file inventory"):
+        _full_plan()
 
 
 def _freeze_scope_inference(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1249,6 +1317,14 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
     """The hash is what makes twelve independent derivations one decision."""
     plan = _full_plan()
     payload = PACK.plan_hash_payload(
+        workflow_run_id=plan.workflow_run_id,
+        workflow=plan.workflow,
+        event=plan.event,
+        role=plan.role,
+        tested_tree_sha=plan.tested_tree_sha,
+        subject_head_sha=plan.subject_head_sha,
+        base_sha=plan.base_sha,
+        authority_changed=plan.authority_changed,
         changed_from=plan.changed_from,
         scope_mode=plan.scope_mode,
         changed_files_sha256=plan.changed_files_sha256,
@@ -1256,6 +1332,7 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
         eligible_job_ids=plan.eligible_job_ids,
         pack_jobs=plan.pack_jobs,
         pack_weights=plan.pack_weights,
+        semantic_jobs=plan.semantic_jobs,
     )
     assert PACK._canonical_digest(payload) == plan.plan_sha256
 
@@ -1896,13 +1973,16 @@ def test_emit_plan_json_prints_exactly_one_machine_line(
         "skipped_job_count", "skipped_jobs", "packs", "nonempty_pack_indices",
         "matrix", "has_work", "plan_sha256",
         "changed_files_sha256", "changed_files_count",
+        "workflow_run_id", "workflow", "event", "role",
+        "tested_tree_sha", "subject_head_sha", "base_sha",
+        "authority_changed", "semantic_jobs",
     }
     # The full-suite baseline carries the affirmative "no list" encoding, which
     # is what lets a pack tell "planned everything" from "planned this exact
     # diff" without a second flag.
     assert document["changed_files_sha256"] == ""
     assert document["changed_files_count"] == 0
-    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v1"
+    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v2"
     assert [entry["index"] for entry in document["packs"]] == list(range(12))
 
     # A path gets the same document, indented, and no marker line on stdout.
@@ -1962,16 +2042,9 @@ def test_the_pack_report_survived_the_plan_refactor(
 def test_workflow_scopes_only_pull_requests() -> None:
     """Main's baseline must never pass --changed-from: it runs the full manifest."""
     pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
-    step = next(
-        s for s in pack["steps"]
-        if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
-    )
-    scope_arg = str(step["env"]["CI_SCOPE_ARG"])
-    assert "github.event_name == 'pull_request'" in scope_arg
-    assert "--changed-from" in scope_arg
-    assert "pull_request.base.sha" in scope_arg
-    assert "github.base_ref" not in scope_arg
-    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    step = next(s for s in pack["steps"] if s.get("id") == "execute_semantic_pack")
+    assert "CI_SCOPE_ARG" not in step.get("env", {})
+    assert "--changed-from" not in step["run"]
     # A leftover `shadow` GitHub Actions variable must not hostage the fleet:
     # anything other than exact `off` is active. Quote: before #5515 the var
     # could sit at `shadow` and run the full 185-job suite while reporting a
@@ -1988,13 +2061,18 @@ def test_workflow_scopes_only_pull_requests() -> None:
     assert plan_step["env"]["CI_DYNAMIC_MATRIX_MODE"] == (
         "${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}"
     )
+    scope_arg = str(plan_step["env"]["CI_SCOPE_ARG"])
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert "--changed-from" in scope_arg
+    assert "steps.identity.outputs.tested_base_sha" in scope_arg
+    assert "github.base_ref" not in scope_arg
     on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
     pull_paths = on["pull_request"]["paths"]
     assert "**" in pull_paths
     assert "worker/**" in pull_paths
     assert "content/**" in pull_paths
     assert "wrangler.toml" in pull_paths
-    assert "$CI_SCOPE_ARG" in str(step["run"])
+    assert "$CI_SCOPE_ARG" in str(plan_step["run"])
 
 
 def test_pack_command_folds_to_exactly_one_shell_command() -> None:
@@ -2693,12 +2771,14 @@ jobs:
     paths:
       - "engine/example/**"
     steps:
-      - run: echo engine/example only
+      - name: curated semantic proof
+        run: echo engine/example only
   plain:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo unscoped
+      - name: plain semantic proof
+        run: echo unscoped
 """,
         encoding="utf-8",
     )
@@ -2721,7 +2801,8 @@ jobs:
     paths:
       - "engine/example/**"
     steps:
-      - run: python -m pytest tests/test_ci_pack.py -q
+      - name: outside-scope semantic proof
+        run: python -m pytest tests/test_ci_pack.py -q
 """,
         encoding="utf-8",
     )

@@ -2684,9 +2684,9 @@ jobs:
       # untested code otherwise); no importorskip, no data/ or site/ reads, so it
       # cannot skip its way to a green on a pack runner.
       - name: ci-plan/ci-pack/ci-gate workflow structure contract
-        run: python -m pytest tests/test_ci_plan_workflow.py -q
+        run: python -m pytest tests/test_ci_plan_workflow.py tests/test_ci_semantic_proof.py tests/test_ci_pack_semantic.py -q
       - name: hosted-runner packing contract
-        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
+        run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_merge_on_green_semantic.py tests/test_check_conflict_markers.py -q
       - name: transitional self-hosted runner policy and canary contracts
         run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
@@ -3934,13 +3934,19 @@ jobs:
     paths:
       - ".claude/hooks/**"
       - scripts/agentos.py
+      - scripts/ci_authority.py
+      - scripts/ci_authority_paths.py
+      - scripts/ci_semantic_proof.py
       - scripts/check_self_mod_fence.py
       - tests/test_agent_worktree_roots.py
       - tests/test_agentos_compile.py
       - tests/test_agentos_schema.py
       - tests/test_agentos_status.py
       - tests/test_self_mod_fence.py
+      - tests/test_ci_authority.py
+      - tests/test_ci_semantic_proof.py
       - tests/test_ship_loop_guard.py
+      - tests/test_ship_loop_semantic.py
       - tests/test_sparse_worktree_profile.py
     # F2 (Metabolism Phase 0 / R-AUT-5): self-modification fence.
     # Hard-fails any PR whose branch name or commit trailers carry the loop
@@ -3966,7 +3972,7 @@ jobs:
         # merges and demands a render on a merge commit that can never have one.
         # It also owns the exact claude/* delivery-branch prefix: a look-alike or
         # codex/* branch must fail before stand-down or GitHub probes can release it.
-        run: python -m pytest tests/test_ship_loop_guard.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py -q
+        run: python -m pytest tests/test_ship_loop_guard.py tests/test_ship_loop_semantic.py tests/test_agent_worktree_roots.py tests/test_sparse_worktree_profile.py -q
       - name: self-mod-fence live check (loop PR + immutable → BLOCKED)
         run: |
           BRANCH="${{ github.head_ref }}"
@@ -4020,7 +4026,7 @@ jobs:
             --files $FILES \
             --trailers "$TRAILERS"
       - name: self-mod-fence test suite
-        run: python -m pytest tests/test_self_mod_fence.py -q
+        run: python -m pytest tests/test_self_mod_fence.py tests/test_ci_authority.py -q
       - name: agent-os record contract (schema fail-closed, join fail-open)
         # ORDERED LAST IN THIS JOB, deliberately. `run_ci_pack.py:_run_job` returns on
         # the FIRST nonzero step, so any step placed before `self-mod-fence live check`
@@ -7486,6 +7492,7 @@ jobs:
       # the same federal-award collector family as the SAM.gov/USAspending steps
       # above, under the same jsonschema-bearing install line.
       - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
+        proof_id: sbir-sttr-progression-evidence-pre-amount-semantics
         run: python -m pytest tests/test_sbir_awards.py -q
       - name: amount-class semantics guard (selftest + live source scan)
         run: |
@@ -7498,6 +7505,7 @@ jobs:
       # the same federal-award collector family as the SAM.gov/USAspending steps
       # above, under the same jsonschema-bearing install line.
       - name: SBIR/STTR progression evidence lane — collector + engine rail (#5012)
+        proof_id: sbir-sttr-progression-evidence-post-amount-semantics
         run: python -m pytest tests/test_sbir_awards.py -q
 
   unrun-government-revenue-candidate-projection:
@@ -8694,7 +8702,12 @@ jobs:
       - "tests/test_us_context_vector.py"
       - "tests/test_us_context_vector_accrual.py"
       - "tests/test_weinstein_stage.py"
-    timeout-minutes: 5
+    # 2026-08-15 pack-9 / run 31881072256 on PR #5750: the first semantic step
+    # (1253 tests) took 223.76s; the fusion step was SIGKILL'd when this
+    # 5-minute logical-job deadline expired at 300s, and the post-kill
+    # `git for-each-ref refs/replace` then exited 128 as infrastructure
+    # unknown. 12 minutes covers fusion + board-read + era + stage-analysis.
+    timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
