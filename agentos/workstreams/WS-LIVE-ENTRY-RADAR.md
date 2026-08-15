@@ -50,17 +50,17 @@ waves:
     # Historical in_progress row predated the merge; no other state manufactured.
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
-    status: in_progress
+    status: done
     pr: 5724
     depends_on: [W2]
-    next_action: >
-      C1–C5 specification lock per contract §18 A5 (append-only, committed before any
-      outcome reading): C1/C2 on the A5.1 provisional-1D + 5-min sampled path, C3 on
-      confirmed-daily washout + completed session-open-anchored 4H buckets, C4
-      stratification-only (structurally cannot fire), C5 bound to the preserved W2
-      watch events by event_id. F1 stays reserved. PIT mutation battery is the
-      acceptance gate. PR number added at ship; status flips to done only at actual
-      merge (never at armed).
+    # DONE at ACTUAL merge (never at armed): PR #5724 MERGED 2026-08-15T06:55:31Z,
+    # squash commit 4b9706ef058eab3bccaa36966ca89ebd0c49936d; merged-main verified
+    # (owned-path byte diff vs origin/main empty; registry probe on merged bytes:
+    # C1 f0bbd6cf3a6e2339 · C2 d8ba60a25cfa7400 · C3 d54dc1e55c4261c8 ·
+    # C4 dce21ac680233ee2 · C5 13dec66345a0376c · G0 9be89a8acc8b905c unchanged;
+    # F1 still NotYetSpecified). Contract lock = §18 A5; review receipts =
+    # research/live_entry_radar/W3_REVIEW_DISPOSITIONS.md; handoff =
+    # agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15.md.
   - id: W4
     title: PR-4 live evaluator on the VPS plane (5-min RTH)
     status: todo
@@ -93,7 +93,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W3 (PR-3) in flight — C1–C5 exact specs + PIT mutation battery under contract §18 A5; W4 (live evaluator) and W5 (forward evidence) stay todo and are NOT rolled into W3.
+next_action: W3 DONE (PR #5724, merge 4b9706ef, 2026-08-15) — C1–C5 locked under §18 A5 with the PIT battery green. Next = W4 (PR-4 live evaluator; wires rearm_eligible + its own raw-quote basis audit BEFORE the engine) and W5 (PR-5 forward evidence; first outcome read), each a fresh commissioning — deliberately NOT auto-rolled by the W3 session.
 ---
 
 ## Context
