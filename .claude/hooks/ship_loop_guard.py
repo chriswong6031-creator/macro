@@ -1092,20 +1092,41 @@ def _semantic_nonunit_refusal(loaded: Any) -> str:
     infrastructure = evidence.get("infrastructure")
     if isinstance(infrastructure, list) and infrastructure:
         return "semantic infrastructure ambiguity: " + str(infrastructure[:4])[:800]
+    job_infrastructure = [
+        {
+            "logical_job_id": job.get("logical_job_id"),
+            "infrastructure": job.get("infrastructure"),
+        }
+        for job in evidence.get("jobs", [])
+        if isinstance(job, dict)
+        and isinstance(job.get("infrastructure"), dict)
+        and job["infrastructure"].get("outcome") != "passed"
+    ]
+    if job_infrastructure:
+        return "semantic job infrastructure ambiguity: " + str(
+            job_infrastructure[:4]
+        )[:800]
     return (
         f"semantic evidence status={evidence.get('status')!r} is not clear and "
         "contains no classified blocking unit"
     )
 
 
-def _semantic_has_nonunit_blocker(loaded: Any) -> bool:
+def _semantic_has_nonunit_blocker(loaded: Any, gate: Any | None = None) -> bool:
     evidence = getattr(loaded, "evidence", None)
+    if not isinstance(evidence, dict):
+        return True
+    if evidence.get("authority_changed") is True or bool(
+        evidence.get("infrastructure")
+    ):
+        return True
+    try:
+        resolved_gate = gate if gate is not None else _semantic_gate(loaded)
+    except (semantic_proof.SemanticProofError, RuntimeError, ValueError):
+        return True
     return bool(
-        isinstance(evidence, dict)
-        and (
-            evidence.get("authority_changed") is True
-            or bool(evidence.get("infrastructure"))
-        )
+        resolved_gate is not None
+        and getattr(resolved_gate, "infrastructure_blocking", False)
     )
 
 
@@ -1183,6 +1204,12 @@ def _red_pairs(runs: list[dict[str, Any]]) -> list[tuple[str, str]]:
         name = str(run.get("name") or "unnamed check")
         if _is_spurious_check(name):
             continue
+        # ci-authority deliberately fails the inactive pilot context before it
+        # publishes the active main verdict. Stop-hook sessions only track PRs
+        # targeting main, so this exact pilot context is retarget-invalidation
+        # state, not a red. ci-authority/main remains binding everywhere.
+        if name == "ci-authority/codex/merge-queue-pilot":
+            continue
         if run.get("status") != "completed":
             continue
         conclusion = run.get("conclusion")
@@ -1207,6 +1234,8 @@ def _split_head_runs(
     for run in runs:
         name = str(run.get("name") or "unnamed check")
         if _is_spurious_check(name):
+            continue
+        if name == "ci-authority/codex/merge-queue-pilot":
             continue
         if run.get("status") != "completed":
             pending.append(name)
@@ -1464,7 +1493,7 @@ def _armed_pull_status(owner: str, repo: str, branch: str, head: str) -> tuple[s
                 return CI_FAILED_UNMERGED, _semantic_authority_refusal(number)
             if not gate.clear:
                 reasons = _semantic_unit_details(gate.blocking)
-                if _semantic_has_nonunit_blocker(loaded):
+                if _semantic_has_nonunit_blocker(loaded, gate):
                     reasons.append(_semantic_nonunit_refusal(loaded))
                 detail = "; ".join(reasons) or _semantic_nonunit_refusal(loaded)
                 return CI_FAILED_UNMERGED, (
@@ -1923,7 +1952,7 @@ def _check_ci(
         witness_notes: list[str] = []
         unresolved_units: list[Any] = []
         if not gate.clear:
-            if _semantic_has_nonunit_blocker(loaded):
+            if _semantic_has_nonunit_blocker(loaded, gate):
                 return False, (
                     "Failing semantic CI on the frozen merged head: "
                     f"{_semantic_nonunit_refusal(loaded)}. Descendant unit healing "

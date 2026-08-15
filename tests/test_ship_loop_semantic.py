@@ -56,13 +56,19 @@ def _unit(classification: str = "inherited_base") -> SimpleNamespace:
     )
 
 
-def _gate(*, clear: bool, classification: str = "inherited_base") -> SimpleNamespace:
+def _gate(
+    *,
+    clear: bool,
+    classification: str = "inherited_base",
+    infrastructure_blocking: bool = False,
+) -> SimpleNamespace:
     unit = _unit(classification)
     return SimpleNamespace(
         clear=clear,
         blocking=() if clear else (unit,),
         inherited=(unit,) if clear else (),
         passed=(),
+        infrastructure_blocking=infrastructure_blocking,
     )
 
 
@@ -108,6 +114,27 @@ def test_unmerged_inherited_red_names_semantic_identity_not_pack(monkeypatch):
     assert f"base SHA={BASE}" in detail
     assert f"head SHA={HEAD}" in detail
     assert "fix ci-pack-7" not in detail.lower()
+
+
+def test_main_target_split_ignores_only_inactive_pilot_authority_context() -> None:
+    runs = [
+        _check("ci-gate", "success"),
+        _check("fence-pack", "success"),
+        _check("ci-authority/main", "success"),
+        _check("ci-authority/codex/merge-queue-pilot", "failure"),
+    ]
+    assert GUARD._split_head_runs(runs) == (
+        [],
+        [],
+        ["ci-gate", "fence-pack", "ci-authority/main"],
+    )
+
+    active_red = [dict(run) for run in runs]
+    active_red[2]["conclusion"] = "failure"
+    red, pending, passed = GUARD._split_head_runs(active_red)
+    assert red == ["ci-authority/main (failure)"]
+    assert not pending
+    assert passed == ["ci-gate", "fence-pack"]
 
 
 def test_unmerged_unknown_semantic_red_says_exact_refusal(monkeypatch):
@@ -324,6 +351,60 @@ def test_descendant_unit_pass_cannot_erase_frozen_infrastructure(monkeypatch, tm
     )
     assert ok is False
     assert "missing_pack_fragment" in detail
+    assert "cannot erase infrastructure" in detail
+
+
+def test_descendant_unit_pass_cannot_erase_frozen_job_infrastructure(
+    monkeypatch, tmp_path
+):
+    runs = [
+        _check("ci-pack-7", "failure"),
+        _check("ci-gate", "failure", details=True),
+    ]
+    loaded = SimpleNamespace(
+        mode="semantic",
+        evidence={
+            "authority_changed": False,
+            "infrastructure": [],
+            "jobs": [
+                {
+                    "logical_job_id": "semantic-registry",
+                    "infrastructure": {
+                        "outcome": "dependency_failed",
+                        "detail": "pip install failed",
+                    },
+                }
+            ],
+        },
+    )
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+    monkeypatch.setattr(GUARD, "_semantic_evidence_for_head", lambda *_a, **_k: loaded)
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_gate",
+        lambda _loaded: _gate(
+            clear=False,
+            classification="unknown",
+            infrastructure_blocking=True,
+        ),
+    )
+    monkeypatch.setattr(
+        GUARD,
+        "_recent_main_semantic_evidence",
+        lambda *_a: pytest.fail("job infrastructure attempted unit healing"),
+    )
+
+    ok, detail = GUARD._check_ci(
+        tmp_path,
+        "acme",
+        "widgets",
+        HEAD,
+        MERGE,
+        "2026-08-15T01:30:00Z",
+        "codex/example",
+    )
+    assert ok is False
+    assert "dependency_failed" in detail
     assert "cannot erase infrastructure" in detail
 
 

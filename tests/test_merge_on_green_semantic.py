@@ -106,6 +106,22 @@ def test_pack_red_is_transport_only_when_semantic_gate_is_clear(monkeypatch):
     assert MOG._semantic_check_verdict(runs, _gate(clear=True)) == ("clean", [])
 
 
+def test_main_target_ignores_only_inactive_pilot_authority_context() -> None:
+    runs = [
+        _check("ci-gate", "success"),
+        _check("fence-pack", "success"),
+        _check("ci-authority/main", "success"),
+        _check("ci-authority/codex/merge-queue-pilot", "failure"),
+    ]
+    assert MOG.decide_verdict(runs) == ("clean", [])
+
+    active_red = [dict(run) for run in runs]
+    active_red[2]["conclusion"] = "failure"
+    verdict, names = MOG.decide_verdict(active_red)
+    assert verdict == "blocked"
+    assert names == ["ci-authority/main (failure)"]
+
+
 def test_main_red_without_semantic_overlap_does_not_pause_candidate(monkeypatch):
     monkeypatch.setattr(
         MOG.semantic_proof,
@@ -184,6 +200,28 @@ def test_main_infrastructure_ambiguity_retains_global_breaker(monkeypatch):
     assert allowed is False
     assert not overlap
     assert "infrastructure" in why
+
+
+def test_job_infrastructure_is_a_nonunit_blocker() -> None:
+    loaded = SimpleNamespace(
+        mode="semantic",
+        evidence={
+            "authority_changed": False,
+            "infrastructure": [],
+            "jobs": [
+                {
+                    "logical_job_id": "job-a",
+                    "infrastructure": {
+                        "outcome": "dependency_failed",
+                        "detail": "pip install failed",
+                    },
+                }
+            ],
+        },
+    )
+    gate = _gate(clear=False, infrastructure_blocking=True)
+    assert MOG._semantic_has_nonunit_blocker(loaded, gate) is True
+    assert "dependency_failed" in MOG._semantic_nonunit_refusal(loaded)
 
 
 def test_rename_inventory_keeps_old_authority_and_surface_paths(monkeypatch):

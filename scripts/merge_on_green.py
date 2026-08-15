@@ -835,7 +835,18 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     for full information; the guard gates only a message to a session that can
     act on a red immediately, so there red outranks pending.
     """
-    considered = [run for run in runs if not is_spurious_check(str(run.get("name") or ""))]
+    # ci-authority publishes a failure on the INACTIVE base context first so a
+    # same-head main<->pilot retarget cannot reuse an old success. This sweeper
+    # only admits PRs targeting main, so the pilot context is an invalidation
+    # receipt, not a failing check. The active main context remains fully
+    # binding (pending/failure both block normally).
+    considered = [
+        run
+        for run in runs
+        if not is_spurious_check(str(run.get("name") or ""))
+        and str(run.get("name") or "")
+        != "ci-authority/codex/merge-queue-pilot"
+    ]
     if not considered:
         return "unproven", []
     pending = [
@@ -1434,20 +1445,41 @@ def _semantic_nonunit_refusal(loaded: Any) -> str:
     infrastructure = evidence.get("infrastructure")
     if isinstance(infrastructure, list) and infrastructure:
         return "semantic infrastructure ambiguity: " + str(infrastructure[:4])[:800]
+    job_infrastructure = [
+        {
+            "logical_job_id": job.get("logical_job_id"),
+            "infrastructure": job.get("infrastructure"),
+        }
+        for job in evidence.get("jobs", [])
+        if isinstance(job, dict)
+        and isinstance(job.get("infrastructure"), dict)
+        and job["infrastructure"].get("outcome") != "passed"
+    ]
+    if job_infrastructure:
+        return "semantic job infrastructure ambiguity: " + str(
+            job_infrastructure[:4]
+        )[:800]
     return (
         f"semantic evidence status={evidence.get('status')!r} is not clear and "
         "contains no classified blocking unit"
     )
 
 
-def _semantic_has_nonunit_blocker(loaded: Any) -> bool:
+def _semantic_has_nonunit_blocker(loaded: Any, gate: Any | None = None) -> bool:
     evidence = getattr(loaded, "evidence", None)
+    if not isinstance(evidence, dict):
+        return True
+    if evidence.get("authority_changed") is True or bool(
+        evidence.get("infrastructure")
+    ):
+        return True
+    try:
+        resolved_gate = gate if gate is not None else _semantic_gate(loaded)
+    except (semantic_proof.SemanticProofError, RuntimeError, ValueError):
+        return True
     return bool(
-        isinstance(evidence, dict)
-        and (
-            evidence.get("authority_changed") is True
-            or bool(evidence.get("infrastructure"))
-        )
+        resolved_gate is not None
+        and getattr(resolved_gate, "infrastructure_blocking", False)
     )
 
 
@@ -5748,7 +5780,7 @@ def sweep_pull(
                     verdict, names = _semantic_check_verdict(runs, semantic_gate)
                     if not semantic_gate.clear:
                         semantic_reasons = list(names)
-                        if _semantic_has_nonunit_blocker(loaded):
+                        if _semantic_has_nonunit_blocker(loaded, semantic_gate):
                             semantic_reasons.append(_semantic_nonunit_refusal(loaded))
                         semantic_refusal = "; ".join(semantic_reasons) or (
                             _semantic_nonunit_refusal(loaded)
@@ -6629,7 +6661,7 @@ def mark_only_pass(
                                         *_semantic_unit_lines(gate.blocking),
                                         *(
                                             [_semantic_nonunit_refusal(loaded)]
-                                            if _semantic_has_nonunit_blocker(loaded)
+                                            if _semantic_has_nonunit_blocker(loaded, gate)
                                             else []
                                         ),
                                     ]
