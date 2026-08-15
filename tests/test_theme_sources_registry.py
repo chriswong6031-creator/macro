@@ -1,5 +1,9 @@
 """The theme source-family rights registry is the SOLE rights authority (plan §9.4).
 
+Ship note (2026-08-15): docs-only and empty commits do not re-trigger the PR packs on
+this repo — re-triggers must touch a watched path, which is why this file carries the
+ship-chain timestamp line below.
+
 These tests pin the registry's shape, not its verdicts: an operator resolving
 `finviz_themes` to `derived_display_ok` should touch nothing here. What may never
 happen silently is (a) a family appearing in the store without a registry row —
