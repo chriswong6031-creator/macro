@@ -4077,3 +4077,60 @@ def test_ui_contract_separates_scores_from_axis_labels():
     assert 'class="rkc-mood-axis rsx-axis-labels"' in source
     assert "rkc-mood-flag" not in source
     assert "@container risk-dialog (max-width:520px)" in source
+
+
+# ── merge artifacts are not competing verdicts (2026-08-15) ──────────────────
+#
+# Merging fires `pull_request: closed`, and ci.yml's concurrency block deliberately
+# starts a ZERO-RUNNER replacement for it. So every cleanly merged head carries two
+# ci-gate check-runs: the real concluded one, plus a `skipped` artifact created 12-15s
+# later BY the merge. Counting the artifact as a second opinion raised
+# "links multiple latest ci-gate workflow runs" on every merged head and blocked the
+# authoring session from stopping on work that had merged GREEN — with no session-side
+# remedy, because merged check-runs are immutable and `gh run rerun` preserves the run id.
+
+def _gate(run_id: int, conclusion: str) -> dict:
+    return {
+        "name": "ci-gate",
+        "conclusion": conclusion,
+        "details_url": f"https://github.com/o/r/actions/runs/{run_id}/job/1",
+    }
+
+
+def test_skipped_merge_artifact_does_not_make_evidence_ambiguous(monkeypatch):
+    """The real shape of merged PR #5754 head c02fc9eac6e8."""
+    seen: dict = {}
+
+    def _fake_get_json(url: str):
+        seen["url"] = url
+        raise AssertionError("stop after run resolution")
+
+    monkeypatch.setattr(GUARD, "_get_json", _fake_get_json)
+    runs = [_gate(31887298300, "success"), _gate(31889718105, "skipped")]
+    with pytest.raises(AssertionError, match="stop after run resolution"):
+        GUARD._semantic_evidence_for_head("o", "r", "c02fc9eac6e8", check_runs=runs)
+    # It resolved the DECISIVE run, not the merge artifact, and did not raise ambiguity.
+    assert "31887298300" in seen["url"]
+
+
+def test_two_decisive_ci_gates_still_raise_ambiguity():
+    """Fail-closed is preserved: two real conclusions remain irreconcilable."""
+    runs = [_gate(111, "success"), _gate(222, "failure")]
+    with pytest.raises(Exception, match="multiple latest ci-gate workflow runs"):
+        GUARD._semantic_evidence_for_head("o", "r", "deadbeefcafe", check_runs=runs)
+
+
+def test_only_skipped_ci_gates_do_not_resolve_to_a_run(monkeypatch):
+    """A head whose ONLY gate is skipped has no usable evidence — never a fake pass."""
+    called: dict = {"n": 0}
+
+    def _fake_get_json(url: str):
+        called["n"] += 1
+        raise AssertionError("must not resolve a run from skipped-only evidence")
+
+    monkeypatch.setattr(GUARD, "_get_json", _fake_get_json)
+    runs = [_gate(333, "skipped"), _gate(444, "skipped")]
+    # Two skipped ids remain ambiguous rather than silently choosing one.
+    with pytest.raises(Exception, match="multiple latest ci-gate workflow runs"):
+        GUARD._semantic_evidence_for_head("o", "r", "0123456789ab", check_runs=runs)
+    assert called["n"] == 0
