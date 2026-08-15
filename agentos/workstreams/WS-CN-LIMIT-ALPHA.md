@@ -35,6 +35,16 @@ waves:
       placebo reproducibility (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT);
       MA200/QB/VZ placebo-clean with strong holdout-consistent structure;
       nothing rescued, frozen consequence applied unchanged.
+  - id: P-B2-ACCRUAL
+    title: Prospective PIT accrual for remaining class-C China Intelligence feeds
+    status: done
+    next_action: >-
+      SHIPPED: separate keep-first hist stores for broker 金股, per-name margin,
+      block trades, buybacks. report_rc already fixed by #5614 (not redone).
+      Display snapshots unchanged. Zero scoring/Prophet authority.
+      DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE. Evidence-start = first live
+      asia-close refresh after merge (floor 2026-08-15); hist files do not
+      exist until that run.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -85,16 +95,22 @@ do_not_redo:
     Do not import China Intelligence composite scores (opportunity_score / conviction)
     into any Prophet-facing construction: display-tier composites; raw evidence
     producers only, each re-earning incremental value under its own preregistration.
+  - >-
+    Do not reconstruct evidence history from current snapshots (broker.parquet,
+    margin.parquet, china_block_trades/detail.parquet, china_buyback/buyback.parquet).
+    Studies read the hist/events stores. Do not stamp historical broker months as
+    PIT-known (DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE). Do not redo the
+    report_rc overwrite fix (#5614).
 discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT"]
+decisions: ["DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE"]
 next_action: >-
-  Post-P-B2 order: (1) prospective/PIT evidence-accrual hardening for orthogonal
-  China Intelligence families (broker jingu first-seen store; report_rc fix rides
-  its chip; per-name margin/block-trades/buybacks accrual); (2) a persistence-robust
-  certification design — within-name state-transition contrasts or a
-  persistence-preserving permutation calibration — under a fresh prereg (the reopen
-  path for P-B2's placebo-clean MA200/QB/VZ structure and its indeterminate DD
-  cells); (3) P-C when its data gates open; (4) full-A exact-plane re-measurement;
-  (5) P-D ablation arena. No production scoring change from P-B2 itself.
+  Post-accrual order: (1) a persistence-robust certification design — within-name
+  state-transition contrasts or a persistence-preserving permutation calibration
+  — under a fresh prereg (the reopen path for P-B2's placebo-clean MA200/QB/VZ
+  structure and its indeterminate DD cells); (2) P-C when its data gates open
+  (chips-distribution lane + auction/minutes + quota/authority; full-A spine
+  stays an operator decision); (3) full-A exact-plane re-measurement; (4) P-D
+  ablation arena. No production scoring change from P-B2 or from accrual.
 ---
 
 ## Context
