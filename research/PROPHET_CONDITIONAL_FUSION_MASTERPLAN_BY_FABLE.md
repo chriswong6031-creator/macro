@@ -1419,3 +1419,116 @@ to PR-1a). Agent OS records: `blast_radius` raised to `user_facing` (w7 changes 
 board), `owns_paths` trimmed to in-repo paths, DEC evidence now cites the commissioning
 artifact. The reviewer's freeze conditions (1)–(10) are exactly the §17 table's landed
 resolutions; the arena is frozen WITH them, not despite them.
+
+---
+
+# §18 — CHAIRMAN OVERRIDE, 2026-08-15: C1 IS THE CANONICAL US RANKER
+
+**This section changes the program's central sequencing rule. It is dated, it names
+what it supersedes, and it deletes nothing.** Every promotion-gate paragraph above
+remains the historical record of what this program committed to before the override,
+and §8's gate stays binding for everything the override does not name.
+
+## §18.1 What the override says
+
+The Chairman ruled on 2026-08-15 that the deterministic **C1 evidence-family fusion**
+replaces `us_prophet_v2` as the canonical US board ranker **now**, without waiting for
+the w7 promotion adjudication and without waiting for forward outcomes. The exact
+pre-change v2 scorer is frozen and continues running with zero authority as
+`us_prophet_v2_shadow`.
+
+Shipped as `us_prophet_v3` (`engine/us_board_rank.py`, `engine/us_prophet_fusion.py`).
+
+## §18.2 What is SUPERSEDED — the old language, preserved
+
+Three commitments made above are overridden **for the rank path only**. They are quoted
+here rather than edited in place, because a program that rewrites its own prior position
+cannot be audited:
+
+| Where | The prior commitment | Status |
+|---|---|---|
+| WS record `objective:` | "a promotion gate that the current `us_prophet_v2` champion must lose before any live ranking change ships" | **SUPERSEDED 2026-08-15** by Chairman override. Still binding for C2–C5 and every other rung. |
+| WS `Scope boundary` | "Live rank path untouched until w7's adjudication." | **SUPERSEDED 2026-08-15.** The live rank path is C1 as of this PR. |
+| §8 promotion gate | The champion/challenger arena decides what ships | **NARROWED, not repealed.** It no longer gates C1's adoption. It still gates every rung above C1 and every claim of forward predictive alpha. |
+
+The override is a **product decision about which order to publish**, taken on the
+strength of the glass-box construction and a visual acceptance review of the resulting
+board. It is **not** a finding that C1 beat the champion on outcomes, and no artifact,
+receipt or user-facing surface may say otherwise. `FUSION_SCORE_KIND` carries that
+limit into the published artifact verbatim.
+
+## §18.3 What did NOT change, deliberately
+
+* **Selection.** Population, raw signal gate, admissible entry statuses, stage logic,
+  execution safeguards, featured shortfalls, earnings/extension checks and caps are
+  untouched. The same names are admitted on the same evidence.
+* **`SELECTION_ERA`.** Still `anticipation-v1-2026-08-08`. The era names the SELECTION
+  regime; a valuation/ordering change explicitly does not reset it, and bumping it here
+  would restart the H=63 episode clock and re-create the unsatisfiable-gate trap the
+  era's own ruling exists to prevent. The rank change is fenced by `BOARD_DEFINITION`,
+  which is the fence built for it.
+* **No C2.** PR-2 (#5700) established that C2 has **no lawful real-data folds** and
+  **zero fitted coefficients**; 67 more graded dates are needed. Nothing here fits C2,
+  relaxes §9.2's fold law, or manufactures a weight. C1 remains equal-weight by
+  construction, which is exactly why it was adoptable without a fit.
+* **The stage hierarchy.** The canonical order is `(stage_rank, −fusion_score, ticker)`.
+  Entry/timing still decides whether and where a name is actionable; fusion decides only
+  which interesting name rises inside that actionable state.
+
+## §18.4 The prospective floor evaluation (the #5700 carry-forward, now implemented)
+
+PR-2 registered the variance-floor amendment and explicitly left its **as-of-night** form
+unimplemented, carrying it to PR-3. Production cannot use a whole-history coverage
+decision — tonight's ranker would be consulting a member's coverage on nights that have
+not happened — so the prospective form is implemented here, on both axes:
+
+* **Presence**: share of TONIGHT's pool with a non-null oriented value ≥ 0.50.
+* **Variance**: the registered rule (`min_distinct_values_per_date: 2`,
+  `min_dates_with_variation_share: 0.50`) evaluated on a one-date frame, which collapses
+  without loss to *a member votes tonight iff tonight's pool holds ≥ 2 distinct non-null
+  oriented values for it*. No threshold was re-chosen and the floor was not tuned.
+* **A date that cannot carry variation is excluded from the denominator, not counted as
+  a failure.** A pool of one row is degenerate for every member; counting it would
+  refuse the whole plane and stamp a legitimately tiny board as a degraded one.
+
+Measured consequence, first live pool (2026-08-13, 69 buy rows): 7 of 8 members vote and
+F1/F2/F4/F5/F8 are active. Under PR-1b's **whole-frame** floor the same registry admitted
+only 6 members and F1 was absent (`tier_cascade` coverage 0.25 across the 24-date frame
+vs ~1.00 on a live buy pool). The two frames genuinely disagree, which is the whole
+reason the prospective form had to exist before adoption.
+
+## §18.5 Honest limits of the shipped ranker
+
+Named here because the acceptance artifact measures them and a reader should not have to
+find them:
+
+1. **Family count is not evidence count.** On the first live pool, `F8` handed 99% of
+   rows the identical contribution and `F4` 97%. Both cleared the floors legitimately (a
+   sparse-but-variable event flag is *meant* to pass — that is the registered acceptance
+   test, and re-tuning the floor against this observation is forbidden by PR-2's
+   `do_not_redo`). The practical consequence is that today's ordering work is done
+   mostly by **F2**, then **F1** and **F5**. `research/prophet_fusion/
+   FUSION_BOARD_COMPARISON.md` publishes the separation table every run.
+2. **`insider_cluster` is serving-dead** (collector stopped at 2026q1). It is not
+   pre-excluded; the variance floor stands it down on any night it is constant, and says
+   so in the receipt.
+3. **`gex_confirm_verdict` dropped on presence** (0.46 on the first live pool). F5 still
+   votes through its other members.
+4. **No forward evidence exists for this ranker.** The first `us_prophet_v3` grade
+   matures at H=10 roughly ten sessions after the first fusion-ranked night.
+
+## §18.6 Degradation, and why it changes the stamp
+
+If the fusion plane cannot be built on a night, the board publishes under
+`us_prophet_v2_fallback` with a `prophet.degradation` receipt naming the cause — it does
+**not** quietly fall back inside the canonical stamp. The artifact's `rank_by` /
+`board_definition`, the candidate-store stamp and the pool block all read the definition
+the ROWS carry (`us_board_rank.published_definition`), never the module constant, so a
+degraded night can never pool with a canonical one in any forward ledger.
+
+## §18.7 What w3–w7 become
+
+Forward arena work **continues unchanged as measurement**. It is no longer the production
+blocker for C1; it is what will decide C2–C5 and any future claim of predictive alpha.
+`us_prophet_v2_shadow` supplies the champion side of that race prospectively, from the
+first night this ships.

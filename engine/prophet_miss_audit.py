@@ -45,7 +45,7 @@ WHAT IT MEASURES (nightly, over the committed S&P-1500 close caches)
      is printed with a plain reason (roadmap
      ``research/PROPHET_US_SUPERINTELLIGENCE_ROADMAP_BY_FABLE.md`` §4.4 action 1).
 
-  F. PRIORITY_SCORE SCORECARD — the forward grade of the ``us_prophet_v1`` PRIORITY score,
+  F. PRIORITY_SCORE SCORECARD — the forward grade of the board's PRIORITY score,
      over the FULL analyzed universe.  ``engine/us_prophet_grades.py`` grades every stamped
      Context Vector row (~1,579 names a night, not the ~12 that become plans) at H=10/21
      sessions excess-vs-SPY; this block joins those outcomes to the score the system gave
@@ -221,7 +221,7 @@ THIN_MIN_IC_DATES = 5
 
 # --- F. priority_score scorecard (read-only mirror of the full-population grade store) ---
 # PROPHET US §W7.3. The score whose robustness the operator asked about (2026-08-05) is the
-# us_prophet_v1 priority score; the grade store now carries an outcome for EVERY stamped
+# board priority score; the grade store now carries an outcome for EVERY stamped
 # name, so this block can ask both "is the ordering right?" (rank-IC / P@k / deciles over
 # the scored rows) and "does the board beat the universe at all?" (the population leg).
 PRIORITY_GRADES_REL = "data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet"
@@ -1522,7 +1522,7 @@ def priority_score_scorecard(root: Path = ROOT, degraded: list[dict] | None = No
         "authority": "none — read-only join of two zero-authority stores; no rank, gate, "
                      "size, board, plan or user-facing consumer",
         "source": f"{PRIORITY_GRADES_REL} joined to {PRIORITY_CANDIDATES_REL}",
-        "scored_field": "prophet_score — the us_prophet_v1 priority score exactly as "
+        "scored_field": "prophet_score — the board priority score exactly as "
                         "us_board_rank.score_rows stamped it that night (itemized legs sit "
                         "beside it in the candidates store; no composite is built here)",
         "graded_by": "engine.us_prophet_grades — engine.grading.forward_metrics (next-bar "

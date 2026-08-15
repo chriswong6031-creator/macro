@@ -301,8 +301,16 @@ class TestFallsBackToV1:
         POLICY era, not per-day behaviour.  On a night when the artifact is missing the board
         admits exactly as v1 did — and still stamps `us_prophet_v2`, because the rule in
         force is the v2 rule and the ledger must not silently re-file that night under the
-        old product.  A stamp that flickered with data availability would fence nothing."""
-        assert ubr.BOARD_DEFINITION == "us_prophet_v2"
+        old product.  A stamp that flickered with data availability would fence nothing.
+
+        The stamp has since moved to `us_prophet_v3` (2026-08-15 fusion override) and the
+        RECLAIM WAIVER RODE THROUGH UNCHANGED, which is the point this test now also
+        makes: the waiver is an ADMISSION rule and the override changed only the rank
+        authority, so the same names are admitted on the same evidence and only their
+        order moved.  What is asserted is that the live stamp is the live stamp — read
+        from the producer, never hand-copied."""
+        assert ubr.BOARD_DEFINITION == "us_prophet_v3"
+        assert "us_prophet_v2" in ubr.SUPERSEDED_ERA_STAMPS
 
 
 # --------------------------------------------------------------------------- #

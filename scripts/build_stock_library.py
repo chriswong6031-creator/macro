@@ -57,7 +57,7 @@ from engine import donor  # noqa: E402  — G6a donor-sector context chip (displ
 from engine import hold as hold_engine  # noqa: E402  — W6-C HOLD tracker (basing state / invalidation)
 from engine import earnings_blackout as _eb  # noqa: E402  — W1.5 earnings-blackout hygiene veto
 from engine import earnings_catalyst as _ecat  # noqa: E402  — W4 display-tier catalyst fields
-from engine import us_board_rank  # noqa: E402  — us_prophet_v1 priority score / stages / ran lane
+from engine import us_board_rank  # noqa: E402  — board priority score / stages / ran lane
 from engine import washout_turn  # noqa: E402  — WTN-W1 weekly washout-turn watch (display-tier)
 from engine import event_atlas  # noqa: E402  — SEA-W3 matching-episode receipts (display-tier)
 from engine.stock_fundamentals import panels as fundamental_panels  # noqa: E402
@@ -1031,7 +1031,7 @@ def universe() -> list[tuple[str, pd.Series, pd.Series | None, str, str]]:
 #     weekend, every US market holiday — that last row is crypto-only, so every
 #     equity's ext_z is NaN and ext_map collapses to the crypto names alone.
 #     Measured 2026-08-02 on the live universe: 3 readings instead of 1,662, which
-#     zeroes the us_prophet_v1 `runway` leg (0/71 buy rows) and strips the ez-term
+#     zeroes the board's `runway` leg (0/71 buy rows) and strips the ez-term
 #     and the parabolic/stretched grade floor out of conviction.risk.components.ext
 #     (engine.stock_score._risk_idio, the largest idio-risk weight at 0.38);
 #   * even on a weekday build the union index injects ~62 all-NaN weekend rows into
@@ -4548,7 +4548,7 @@ def main() -> int:
         # per-card trust tier + α chip + per-leg basis show exactly what is validated vs
         # context. `gate_go` (currently NEUTRAL) would flip the trust tier to 'validated'.
         row_by_t = {r.get("ticker"): r for _, r in cand}
-        # ── Theme linkage (us_prophet_v1 §3.6) ────────────────────────────────
+        # ── Theme linkage (board §3.6) ───────────────────────────────────────
         # Top-8 in-favour baskets from the nightly theme engine, joined to their
         # curated members. DISPLAY-TIER CONTEXT ONLY: a theme chip never scores,
         # never gates, and never changes buy-lane membership; on the leaders lane
@@ -4928,7 +4928,7 @@ def main() -> int:
             return r
 
         # rank_by is (re)stamped with the live board definition by the
-        # us_prophet_v1 block below, once the rows are actually scored.
+        # board ranking block below, once the rows are actually scored.
         wide = {"as_of": alpha_asof, "rank_by": us_board_rank.BOARD_DEFINITION,
                 "gate_go": gate_go,
                 "buy": _all_buy_rows,
@@ -5225,7 +5225,7 @@ def main() -> int:
                      len(_fb_shallow), _FB_SHALLOW_THRESHOLD,
                      [(t, f"{d:.1f}%", f"off_high={o:.1f}%" if o else None)
                       for t, d, o in _fb_shallow])
-        # ── us_prophet_v1 priority ranking ───────────────────────────────────
+        # ── board priority ranking (C1 fusion since us_prophet_v3) ───────────
         # Masterplan: research/PROPHET_BOARD_PRIORITY_ENGINE_MASTERPLAN_BY_FABLE.md
         # Evidence:   research/US_BOARD_MEASUREMENT.md §1 + §5.
         #
@@ -5255,6 +5255,13 @@ def main() -> int:
         # featuring and moves no stage. A missing source reads `absent`, never
         # "nobody qualified".
         _reversal_cohort = us_board_rank.load_reversal_cohort()
+        # `fusion_floors` is an OUT-parameter: score_rows fills it with the measured
+        # reason each stood-down member was refused, which the stamped rows cannot
+        # reconstruct, and ranking_block publishes it. The board's DEFINITION comes
+        # from the scored rows, never from the constant — on a night the fusion plane
+        # refuses, score_rows stamps `us_prophet_v2_fallback` and the artifact must
+        # say so rather than inheriting the canonical name from this module.
+        _fusion_floors: dict = {}
         wide["buy"] = us_board_rank.score_rows(
             wide["buy"],
             verdict_by=sig_verdict,
@@ -5263,20 +5270,38 @@ def main() -> int:
             board_asof=wide.get("as_of"),
             bottom_watch_stage=us_board_rank.STAGE_BASING,
             reversal_cohort=_reversal_cohort,
+            fusion_floors=_fusion_floors,
         )
-        wide["rank_by"] = us_board_rank.BOARD_DEFINITION
-        wide["board_definition"] = us_board_rank.BOARD_DEFINITION
+        _board_def = us_board_rank.published_definition(wide["buy"])
+        wide["rank_by"] = _board_def
+        wide["board_definition"] = _board_def
         wide["ranking"] = us_board_rank.ranking_block(
-            wide["buy"], theme_asof=_theme_ctx.get("as_of"))
+            wide["buy"], theme_asof=_theme_ctx.get("as_of"),
+            definition=_board_def, fusion_floors=_fusion_floors)
         wide["themes_in_favour"] = _theme_ctx.get("themes") or []
         _stage_ct = us_board_rank.stage_counts(wide["buy"])
-        log.info("us_prophet_v1: %d buy rows scored — stages %s, featured %d "
-                 "(cap %d, sector cap %d)", len(wide["buy"]), _stage_ct,
+        _fus_blk = wide["ranking"].get("fusion") or {}
+        log.info("%s: %d buy rows scored — stages %s, featured %d "
+                 "(cap %d, sector cap %d)", _board_def, len(wide["buy"]), _stage_ct,
                  wide["ranking"]["featured_count"],
                  us_board_rank.FEATURED_CAP, us_board_rank.SECTOR_CAP)
+        if _fus_blk:
+            log.info("%s: fusion ranked %d rows on families %s — %d unscored "
+                     "(no family present); stood down %s", _board_def,
+                     _fus_blk.get("rows_scored"), _fus_blk.get("families_active"),
+                     _fus_blk.get("rows_unscored"),
+                     [d.get("column") for d in
+                      (_fus_blk.get("floors") or {}).get("members_stood_down") or []])
+        elif _board_def == us_board_rank.FALLBACK_DEFINITION:
+            # Line-start bare print, never only the logger: a prefixing formatter turns
+            # ::warning into "WARNING ::warning" and GitHub drops it silently.
+            print("::warning title=us-board-fusion-degraded::the US board published "
+                  f"under {_board_def} tonight — the C1 fusion plane was unavailable "
+                  "and the retired v2 order ranked the pool; see "
+                  "buy[].prophet.degradation for the cause", flush=True)
         _rev_cov = wide["ranking"]["reversal_cohort_coverage"]
-        log.info("us_prophet_v1: reversal cohort input=%s — %d of %d rows in a "
-                 "washed-out/basing/turning basket (%s baskets read)",
+        log.info("%s: reversal cohort input=%s — %d of %d rows in a "
+                 "washed-out/basing/turning basket (%s baskets read)", _board_def,
                  _rev_cov["input"], _rev_cov["members"], _rev_cov["n"],
                  _reversal_cohort["baskets_read"])
 
@@ -5995,7 +6020,11 @@ def main() -> int:
             # partition exists.
             _pool_block = _ucl.build_candidate_pool(
                 as_of=wide.get("as_of"),
-                board_definition=us_board_rank.BOARD_DEFINITION,
+                # THE PUBLISHED definition, not the constant: on a night the fusion
+                # plane refused, these rows belong to `us_prophet_v2_fallback` and
+                # must not be filed under the canonical stamp.
+                board_definition=wide.get("board_definition")
+                or us_board_rank.BOARD_DEFINITION,
                 selection_era=us_board_rank.SELECTION_ERA,
                 eligible_order=_pool_blend_order,
                 buy_rows=wide["buy"],
@@ -6498,7 +6527,13 @@ def main() -> int:
                     log.warning("candidate-pool store columns skipped (%s)", _ucl_e)
                 _ucv_n = _ucv.append_candidates(
                     sig_verdict, _ucv_asof,
-                    board_definition=us_board_rank.BOARD_DEFINITION,
+                    # THE PUBLISHED definition (see the ranking block above): the
+                    # store dedupes on (stamp_date, ticker, board_definition) and
+                    # grades forward BY definition, so stamping a degraded night
+                    # with the canonical name would pool two different rankers'
+                    # forward records under one track record.
+                    board_definition=wide.get("board_definition")
+                    or us_board_rank.BOARD_DEFINITION,
                     is_buyable=signal_gate.is_buyable,
                     universe_meta=_ucv_meta,
                     board_rows=_ucv_board,
