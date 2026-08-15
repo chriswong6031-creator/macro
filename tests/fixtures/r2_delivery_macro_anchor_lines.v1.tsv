@@ -5,8 +5,8 @@
 # fingerprint to whatever a stale line number currently points at. Targets must be
 # non-blank and unique in their file; data/ and site/ anchors are receipt-only.
 # path	line	text
-.github/workflows/daily.yml	2747	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
-.github/workflows/daily.yml	4999	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
+.github/workflows/daily.yml	2749	mkdir -p "$CHECKPOINT_DIR/$(dirname "$rel")"
+.github/workflows/daily.yml	5001	bash scripts/ci/options_signal_nightly.sh require-clean-broad-start
 app/biocatalyst.py	2331	@router.get("/api/biocatalyst/v1/health")
 collectors/biocatalyst/clinicaltrials_history.py	501	def _receipt(
 collectors/biocatalyst/clinicaltrials_v2.py	442	def _version_receipt(
