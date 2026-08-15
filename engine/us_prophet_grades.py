@@ -20,7 +20,7 @@ then we have less data to train on"; "we should be remembering the score that we
 picks, so that it can be logged into the ledger and so that we can later assess how robust
 and correct our scoring system is."  The remembering half already accrues: the Context
 Vector store (:mod:`engine.us_context_vector`, #4540) stamps every name nightly WITH the
-``us_prophet_v1`` priority-score legs itemized per row.  This module is the OUTCOME half —
+board priority-score legs itemized per row.  This module is the OUTCOME half —
 it turns that stamp log into a graded record, so the score can be measured against what the
 tape actually did instead of asserted.
 

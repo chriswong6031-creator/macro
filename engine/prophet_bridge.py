@@ -26,7 +26,9 @@ OURS: selection rule documented here; all levels are display-only.
         projected T4 remains visible on the board but cannot originate a trade plan.
    Reason: gate_go=False is a macro-caution flag; tighten score threshold, but
    don't eliminate imminent-entry (act_level>=2) setups entirely.
-3. Sort: descending by the us_prophet_v1 priority score (row["prophet"]["score"]);
+3. Sort: descending by the BOARD's own priority score (row["prophet"]["score"] —
+   the canonical ranker of whatever definition the artifact carries; C1 evidence-
+   family fusion since `us_prophet_v3`, 2026-08-15);
    ties broken by act_level descending, then ticker ascending.  Rows with no
    numeric priority score (pre-v1 artifacts) sort BELOW every scored row and,
    among themselves, by the legacy key (conviction.score descending).
@@ -733,7 +735,12 @@ def compute_geometry(
 # ---------------------------------------------------------------------------
 
 def _priority_score(row: dict) -> float | None:
-    """The us_prophet_v1 board priority score for a buy row, or None.
+    """The board's CANONICAL priority score for a buy row, or None.
+
+    Reads the FIELD, never a version literal: `prophet.score` is whatever the board
+    that wrote the artifact ranked by, so this inherited the C1 fusion authority on
+    2026-08-15 without an edit here — which is the property that made the override a
+    one-module change. `prophet_shadow.score` is the retired scorer and is NOT read.
 
     ``row["prophet"]["score"]`` is stamped by ``engine.us_board_rank`` (#4331) and is
     the key the BOARD is already ordered by.  Returns None — not 0 — for a row that
@@ -765,7 +772,7 @@ def _selection_sort_key(row: dict):
     """Total order over admitted candidates. ORDERING ONLY — never admission.
 
     Legs, in precedence order:
-      1. tier      — 0 when the row carries a us_prophet_v1 priority score, else 1.
+      1. tier      — 0 when the row carries a board priority score, else 1.
                      Every scored row therefore outranks every legacy row.
       2. rank      — priority score desc within tier 0; conviction.score desc within
                      tier 1 (the verbatim pre-W1 primary key).
@@ -1164,7 +1171,7 @@ def select_candidates(
     dropped silently — a board that renamed a status word would otherwise empty the
     intake with no alarm.
 
-    ORDER (W1 2026-08-03, scored + operator-signed) is UNCHANGED: the us_prophet_v1
+    ORDER (W1 2026-08-03, scored + operator-signed) is UNCHANGED: the board's
     priority score, then act_level, then ticker — see the sort block below.  ``n``
     remains for research/backward-compatible direct callers; live plan origination
     always passes ``n=None`` and applies no positional slice.
@@ -1241,10 +1248,10 @@ def select_candidates(
         stats["refused_tier"] = dict(sorted(refused_tier.items()))
         stats["buy_rows"] = len(buys)
 
-    # Sort: us_prophet_v1 priority score desc, act_level desc, ticker asc.
+    # Sort: board priority score desc, act_level desc, ticker asc.
     #
     # W1 2026-08-03 (SCORED, operator-signed): the primary key moved from raw
-    # conviction.score to row["prophet"]["score"] — the SAME us_prophet_v1 priority
+    # conviction.score to row["prophet"]["score"] — the SAME board priority
     # score the board is ranked by (engine/us_board_rank.py, #4331; weights
     # signal 30 / entry 25 / edge 25 / runway 10 / quality 10).
     # research/US_BOARD_MEASUREMENT.md graded conviction/board order ANTI-predictive
@@ -1757,7 +1764,7 @@ def legacy_shadow_rows(
             "entry_signal": entry_status(b) or None,
             "act_level": int(act_level) if isinstance(act_level, (int, float))
             and not isinstance(act_level, bool) else None,
-            # `score` is the RANKING key (us_prophet_v1 priority) — the number `rank` is
+            # `score` is the RANKING key (the board's own priority) — `rank` is
             # derived from.  `conviction_score` is the number the legacy caution-mode
             # escape actually gated on.  Both ship: one column named `score` could only
             # ever be read as the wrong one of the two.
@@ -4659,7 +4666,7 @@ def originate_plans(
             "profit_plan_zh": profit_plan_zh,        # list[{level, label, action, status}] (ZH)
             # Extra metadata (display)
             "_signal_date": signal_date,
-            # The us_prophet_v1 priority score this pick was ORDERED by, frozen onto
+            # The board priority score this pick was ORDERED by, frozen onto
             # the plan at origination.  The index sorts `plans[]` by it (P6) so the
             # shipped order is the order the artifact says it is; None on a legacy
             # board row with no numeric prophet.score, which sorts below every scored

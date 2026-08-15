@@ -170,7 +170,8 @@ def gather_top_picks(root=None, cfg: dict | None = None) -> dict | None:
     n = max(1, min(12, int(cfg.get("max_picks", 6))))
     picks = []
     # PRIORITY-ORDER DEPENDENCY (intentional): this slice takes the board's own top-n
-    # in artifact order (us_prophet_v1 = stage bucket, priority score desc, ticker), so
+    # in artifact order (stage bucket, priority score desc, ticker — see the board's
+    # own `ranking.sort_key`), so
     # re-ordering the buy lane changes WHICH names the desk writes notes about — pinned
     # by tests/test_us_board_rank.py::TestArtifactOrderConsumers.
     for row in board["buy"][:n]:

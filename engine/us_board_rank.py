@@ -72,6 +72,7 @@ evidence, it just no longer fires on absence.
 from __future__ import annotations
 
 from collections import defaultdict
+from dataclasses import dataclass
 from datetime import date, datetime
 import json
 import math
@@ -96,7 +97,43 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 # `rank_by`, into the research spine through `us_context_vector`'s
 # `(stamp_date, ticker, board_definition)` dedupe key, and into every `ranking` block
 # emitted below.  Same move, same reason, as `hk_prophet_v2` (#4470).
-BOARD_DEFINITION = "us_prophet_v2"
+BOARD_DEFINITION = "us_prophet_v3"
+
+#: The RANKING AUTHORITY, as of the Chairman override of 2026-08-15.
+#:
+#: ``us_prophet_v3`` is the same board as ``us_prophet_v2`` in every respect that
+#: decides WHO is on it — selection population, raw signal gate, admissible entry
+#: statuses, stage logic, execution safeguards, featured shortfalls, earnings and
+#: extension checks, caps.  What changed is WHICH INTERESTING NAME RISES: the five-leg
+#: weighted heuristic below is retired from the rank path and the deterministic C1
+#: evidence-family fusion (:mod:`engine.us_prophet_fusion`) orders the pool inside each
+#: stage bucket.
+#:
+#: WHY THE STAMP MOVED EVEN THOUGH THE POPULATION DID NOT.  ``BOARD_DEFINITION`` is the
+#: FORWARD-LEDGER fence: it keys the candidates store, the grade store and the context
+#: spine, and its job is to stop two different products' records from pooling.  A board
+#: ordered by a different ranker publishes a different top-30 from the same evidence, so
+#: pooling v2's forward record with v3's would read as one track record of a ranker that
+#: never ran.  That is the same reason v1 -> v2 bumped, and it is a different question
+#: from :data:`SELECTION_ERA`, which does NOT move here — see its own note.
+BOARD_DEFINITION_ADOPTED = "2026-08-15"
+
+#: The retired scorer, kept RUNNING with zero authority.  Every US row carries a
+#: ``prophet_shadow`` block computed by :func:`legacy_v2_values` — byte-identical
+#: arithmetic to the pre-override ``prophet`` block — so the champion it replaced keeps
+#: producing a forward-gradeable order beside the canonical one instead of vanishing on
+#: the day it was superseded.  It originates no plan, controls no Featured slot, sets no
+#: priority and moves no user-visible order (``tests/test_us_prophet_fusion_board.py``
+#: pins each of those).
+SHADOW_DEFINITION = "us_prophet_v2_shadow"
+
+#: The DEGRADATION stamp.  If the fusion plane cannot be built on a given night — no
+#: family survives the presence/variance floors, or the pass raises — the board does NOT
+#: quietly fall back inside the canonical stamp.  It publishes under this name with a
+#: ``prophet.degradation`` receipt naming the cause, so a night ranked by the retired
+#: heuristic can never be mistaken for a night ranked by fusion, in the artifact or in
+#: any forward ledger keyed off the definition.
+FALLBACK_DEFINITION = "us_prophet_v2_fallback"
 
 #: Era stamps this board USED to publish under, newest last.  A `BOARD_DEFINITION` bump
 #: appends the displaced stamp here in the SAME PR: these are HISTORICAL FACTS about rows
@@ -108,6 +145,7 @@ BOARD_DEFINITION = "us_prophet_v2"
 #: `{BOARD_DEFINITION} | set(SUPERSEDED_ERA_STAMPS)` — never a hand-copied literal.
 SUPERSEDED_ERA_STAMPS: tuple[str, ...] = (
     "us_prophet_v1",   # live 2026-08-02 → 2026-08-10, displaced by us_prophet_v2
+    "us_prophet_v2",   # live 2026-08-10 → 2026-08-15, displaced by us_prophet_v3
 )
 
 FEATURED_CAP = 12
@@ -158,7 +196,24 @@ EXT_UNKNOWN_ALARM_FRACTION = 0.5
 # ``ext_unknown_coverage`` on the ranking block, and the featured copy on the board
 # saying so (``tests/test_hk_board_ui.py`` pins all three).  Add a market to this set
 # when it WIRES an extension reading, never merely because it renders a board.
-EXTENSION_PANEL_MARKETS = frozenset((BOARD_DEFINITION,))
+#
+# THE DEGRADATION STAMP IS THE SAME MARKET (2026-08-15).  `us_prophet_v2_fallback` is
+# this board on a night its ranker refused, not a different market, and it still has
+# the same extension panel — leaving it out would silence the outage alarm on exactly
+# the nights something else already went wrong.
+EXTENSION_PANEL_MARKETS = frozenset((BOARD_DEFINITION, FALLBACK_DEFINITION))
+
+
+def is_us_definition(definition: Any) -> bool:
+    """Is ``definition`` this board, under any of the names it publishes under?
+
+    The canonical stamp, the degradation stamp, and every era it has already
+    published under.  Consumers asking "is this the US board" must ask THIS rather
+    than `== BOARD_DEFINITION`, or a fallback night reads as a sibling market and
+    silently inherits another board's copy.
+    """
+    return str(definition or "") in (
+        {BOARD_DEFINITION, FALLBACK_DEFINITION} | set(SUPERSEDED_ERA_STAMPS))
 
 # Featured freshness window (mirrors engine.confluence_tiers.FRESH_TICKS).
 FEATURED_MAX_TICKS = 2
@@ -200,6 +255,15 @@ SCORE_WEIGHTS = {
 # featured entry set (both of which this era did), leaves the episodes comparable and
 # the stamp unchanged.  Bump it only when the selected population itself changes:
 # a new admission gate, a different universe, a different lane definition.
+#
+# THE 2026-08-15 FUSION OVERRIDE DELIBERATELY DOES NOT MOVE THIS.  Replacing the rank
+# authority with C1 evidence-family fusion is the largest ORDERING change this board has
+# made, and it is exactly the class of change the paragraph above says leaves the stamp
+# alone: the buy pool is decided by the confluence admission gate, and that gate, its
+# universe and its lanes are untouched.  Bumping the era here would restart the H=63
+# episode clock for the second time in a week and re-create the unsatisfiable-gate trap
+# the ruling above exists to prevent.  The ranker change is fenced by
+# `BOARD_DEFINITION` instead, which is the fence built for it.
 SELECTION_ERA = "anticipation-v1-2026-08-08"
 
 # Frozen definition inputs, not fitted coefficients.  The tier cascade and
@@ -455,6 +519,18 @@ ZERO_SCORE_AUTHORITY = (
 )
 
 SCORE_KIND = "transparent priority heuristic; not a calibrated return forecast"
+
+#: What the CANONICAL score is, and — just as importantly — what it is not.  C1 is an
+#: unfitted equal-weight vote across evidence families: no coefficient in it was read
+#: off an outcome, which is what makes it a glass box, and is equally why it carries no
+#: claim of forward predictive alpha.  The frozen arena that produced the construction
+#: was explicitly non-promotion-bearing (#5667) and the C2 fit that would have weighted
+#: the families REFUSED for want of lawful folds (#5700, 67 graded dates short).  This
+#: string ships in the artifact so a reader never has to infer the epistemic status of
+#: the number they are sorting on.
+FUSION_SCORE_KIND = (
+    "unfitted equal-weight evidence-family vote; a breadth-of-evidence ordering, not a "
+    "calibrated return forecast and not a promoted alpha model")
 
 
 # --------------------------------------------------------------------------- #
@@ -1026,6 +1102,288 @@ def verdict_for(
 
 
 # --------------------------------------------------------------------------- #
+# the retired v2 scorer — FROZEN, and still running as the shadow
+# --------------------------------------------------------------------------- #
+
+def legacy_v2_values(
+    row: Mapping[str, Any],
+    *,
+    verdict: Mapping[str, Any] | None,
+    entry: Mapping[str, Any] | None,
+    alpha_percentile: float | None,
+) -> tuple[dict[str, float], dict[str, float], float]:
+    """The EXACT pre-override ``us_prophet_v2`` priority arithmetic.
+
+    Extracted verbatim from :func:`score_rows` when the Chairman override of
+    2026-08-15 moved the rank authority to C1 fusion.  Nothing here was retuned,
+    reordered or rounded differently on the way out — the five legs, the weights, the
+    per-leg rounding to 4 places, the 0-100 clamp and the final rounding to 1 place are
+    the ones that shipped, and ``tests/test_us_prophet_fusion_board.py::
+    TestLegacyV2ByteParity`` pins the output against the frozen fixtures the retired
+    scorer produced.
+
+    It has two live callers and they mean different things.  A SIBLING board
+    (``hk_prophet_v1``) still publishes this as its score, unchanged.  The US board
+    publishes it as ``prophet_shadow`` with zero authority, and — only when the fusion
+    plane is unavailable — as the explicitly stamped ``us_prophet_v2_fallback`` order.
+
+    Returns ``(values, points, score)``.
+    """
+    values = {
+        "signal": signal_value(verdict),
+        "entry": entry_value(entry),
+        "edge": edge_value(alpha_percentile),
+        "runway": runway_value(row),
+        "quality": quality_value(row),
+    }
+    points = {
+        name: round(SCORE_WEIGHTS[name] * value, 4)
+        for name, value in values.items()
+    }
+    score = max(0.0, min(100.0, sum(points.values())))
+    return values, points, score
+
+
+# --------------------------------------------------------------------------- #
+# the fusion plane — the canonical rank authority (US)
+# --------------------------------------------------------------------------- #
+
+@dataclass(frozen=True)
+class _FusionRead:
+    """What the fusion pass produced for one pool, including how it failed."""
+
+    plane: Any = None                # engine.us_prophet_fusion.FusionPlane | None
+    applies: bool = False            # this board ranks by fusion at all
+    degraded: bool = False           # fusion applies but could not be built tonight
+    reason: str | None = None
+
+
+def _fusion_plane(pool: Sequence[Mapping[str, Any]],
+                  verdicts: Sequence[Mapping[str, Any] | None],
+                  *, definition: str) -> _FusionRead:
+    """Build tonight's fusion plane, or say precisely why there is none.
+
+    FAIL-LOUD, NEVER FAIL-SILENT.  Three outcomes and they are all distinguishable
+    downstream: this board does not rank by fusion at all (a sibling market —
+    ``applies=False``, and its output is byte-identical to the pre-override board);
+    fusion applies and succeeded; fusion applies and REFUSED, which publishes under
+    :data:`FALLBACK_DEFINITION` with the reason on the row.  What must never happen is
+    the fourth case — a night ranked by the retired heuristic wearing the canonical
+    stamp — and that is why the fallback changes the definition rather than only
+    logging.
+    """
+    if definition != BOARD_DEFINITION:
+        return _FusionRead(applies=False)
+    if not pool:
+        # An empty pool is not a failed plane and must not raise a degradation: there
+        # are no rows to order, so there is nothing for a ranker to have failed at.
+        return _FusionRead(applies=False)
+    try:
+        from engine import us_prophet_fusion as fusion_mod
+
+        plane = fusion_mod.fuse_board(pool, verdicts=list(verdicts))
+        return _FusionRead(plane=plane, applies=True)
+    except Exception as exc:  # noqa: BLE001 — the degradation IS the handled outcome
+        reason = f"{type(exc).__name__}: {exc}"
+        _warning("us-prophet-fusion-unavailable",
+                 f"the C1 fusion plane could not be built tonight ({reason}) — the "
+                 f"board is publishing under {FALLBACK_DEFINITION} on the retired v2 "
+                 f"order, NOT under {BOARD_DEFINITION}")
+        return _FusionRead(applies=True, degraded=True, reason=reason)
+
+
+def _fusion_prophet_block(fusion: _FusionRead, index: int, *, definition: str,
+                          legacy_score: float, legacy_points: Mapping[str, float],
+                          alpha_percentile: float | None) -> dict[str, Any]:
+    """The published ``prophet`` block on a fusion board — score plus its receipt.
+
+    GLASS BOX BY CONSTRUCTION.  Every number a reader would need to re-derive the row's
+    priority by hand is here: which families voted, what each contributed, which
+    abstained and why, and the member percentiles underneath.  ``fusion_score: null``
+    is published as a null for a row no family could speak to — the receipt says the
+    row was not scored rather than letting a 0.0 imply it scored worst.
+    """
+    if fusion.degraded:
+        return {
+            "version": definition,
+            "score": round(legacy_score, 1),
+            "score_authority": "retired us_prophet_v2 priority heuristic",
+            "points": dict(legacy_points),
+            "alpha_percentile": alpha_percentile,
+            "degradation": {
+                "expected_definition": BOARD_DEFINITION,
+                "reason": fusion.reason,
+                "note": ("the C1 fusion plane was unavailable tonight, so this board "
+                         "is stamped with the degradation definition and ordered by "
+                         "the retired scorer. It is NOT a us_prophet_v3 board and no "
+                         "forward record keyed on the definition will pool it with "
+                         "one."),
+            },
+            "zero_score_authority": list(ZERO_SCORE_AUTHORITY),
+        }
+
+    plane = fusion.plane
+    raw = plane.scores[index]
+    families = plane.family_scores[index]
+    return {
+        "version": definition,
+        "score": None if raw is None else round(raw, 1),
+        "score_authority": "C1 evidence-family fusion (equal-weight family vote)",
+        "score_kind": FUSION_SCORE_KIND,
+        "fusion": {
+            "families_active": sorted(families),
+            "family_contribution": {name: round(value * 100.0, 2)
+                                    for name, value in sorted(families.items())},
+            "families_abstaining": [f["family"] for f in plane.families_absent
+                                    if f["family"] not in families],
+            "member_percentiles": {name: round(value, 6) for name, value
+                                   in sorted(plane.member_percentiles[index].items())},
+            "n_families": len(families),
+            "definition": definition,
+            "construction": plane.receipt()["construction"],
+        },
+        "alpha_percentile": alpha_percentile,
+        "zero_score_authority": list(ZERO_SCORE_AUTHORITY),
+    }
+
+
+def _canonical_sort_key(row: Mapping[str, Any], *, fused: bool) -> tuple:
+    """``(stage_rank, scored-first, -score, ticker)``.
+
+    The middle term exists so a null fusion score is ordered by SAYING it is unscored
+    rather than by coercing it to 0.0.  On a fusion board the two happen to produce the
+    same position, which is exactly why the distinction has to be in the code and the
+    receipt instead of left to coincidence — the day the scale changes, a null-as-zero
+    would silently start ranking unscored rows mid-pool.
+    """
+    block = row.get("prophet") or {}
+    score = block.get("score")
+    unscored = 1 if (fused and score is None) else 0
+    return (
+        stage_rank(str(row.get("stage") or "")),
+        unscored,
+        -float(score or 0.0),
+        str(row.get("ticker") or ""),
+    )
+
+
+def _shadow_sort_key(row: Mapping[str, Any]) -> tuple:
+    """The retired champion's own key, over the same pool — its ranking, preserved."""
+    block = row.get("prophet_shadow") or {}
+    return (
+        stage_rank(str(row.get("stage") or "")),
+        -float(block.get("score") or 0.0),
+        str(row.get("ticker") or ""),
+    )
+
+
+def published_definition(rows: Iterable[Mapping[str, Any]],
+                         *, default: str = BOARD_DEFINITION) -> str:
+    """The definition the SCORED ROWS actually carry — never the module constant.
+
+    THE CONSTANT IS THE INTENT; THE ROWS ARE THE FACT.  On a night the fusion plane
+    refuses, :func:`score_rows` stamps every row :data:`FALLBACK_DEFINITION`, and a
+    builder that copied ``BOARD_DEFINITION`` into ``rank_by`` would publish an artifact
+    claiming to be a fusion board while its rows say otherwise — and the forward
+    ledgers, which key on the artifact, would pool a degraded night with the canonical
+    ones.  Every consumer of "which board is this" reads this function or the
+    artifact's own ``rank_by``; nothing downstream re-derives it from a literal.
+
+    Rows disagreeing is a defect loud enough to refuse: it can only mean two scoring
+    passes were mixed into one pool.
+    """
+    stamped = {str((row.get("prophet") or {}).get("version") or "")
+               for row in rows}
+    stamped.discard("")
+    if not stamped:
+        return default
+    if len(stamped) > 1:
+        raise ValueError(
+            f"the buy pool carries {len(stamped)} different board definitions "
+            f"({sorted(stamped)}) — two scoring passes were mixed into one pool and "
+            "no single definition can honestly stamp the artifact")
+    return stamped.pop()
+
+
+def fusion_ranking_receipt(
+    rows: Iterable[Mapping[str, Any]],
+    *,
+    floors: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """The board-level fusion disclosure, RECOMPUTED from the scored rows.
+
+    Same law as ``component_coverage`` and ``ext_unknown_coverage`` directly below:
+    derived from ``rows`` every build, never a frozen number an edit here could leave
+    stale.  Returns None for a board that does not rank by fusion, so a sibling
+    market's receipt carries an explicit null rather than a fabricated empty plane.
+
+    ``floors`` is the one thing the rows cannot answer — WHY a member was stood down,
+    with the coverage share or variation share that decided it.  :func:`score_rows`
+    fills it in through its ``fusion_floors`` out-parameter when the caller supplies
+    one; without it the receipt still reports which members voted and which families
+    abstained, and says plainly that the floor detail was not captured.
+    """
+    scored = [row for row in rows if (row.get("prophet") or {}).get("fusion")]
+    if not scored:
+        return None
+
+    active: set[str] = set()
+    voting: set[str] = set()
+    abstaining: list[str] = []
+    by_count: dict[str, int] = defaultdict(int)
+    unscored = 0
+    construction = ""
+    for row in scored:
+        block = (row.get("prophet") or {})
+        plane = block.get("fusion") or {}
+        active.update(plane.get("families_active") or ())
+        voting.update((plane.get("member_percentiles") or {}).keys())
+        by_count[str(int(plane.get("n_families") or 0))] += 1
+        if block.get("score") is None:
+            unscored += 1
+        if not abstaining:
+            abstaining = list(plane.get("families_abstaining") or ())
+        construction = construction or str(plane.get("construction") or "")
+
+    try:
+        from engine import us_prophet_fusion as fusion_mod
+
+        signs = {c: fusion_mod.REGISTERED_SIGNS[c].as_dict()
+                 for c in sorted(voting) if c in fusion_mod.REGISTERED_SIGNS}
+        presence_floor: Any = fusion_mod.PRESENCE_FLOOR
+        min_distinct: Any = fusion_mod.VARIANCE_MIN_DISTINCT
+    except Exception:  # noqa: BLE001 — the receipt must never be the thing that fails
+        signs, presence_floor, min_distinct = {}, None, None
+
+    return {
+        "score_kind": FUSION_SCORE_KIND,
+        "construction": construction,
+        "families_active": sorted(active),
+        "families_abstaining": abstaining,
+        "members_voting": [signs.get(c, {"column": c}) for c in sorted(voting)],
+        "rows_by_n_families_present": {k: by_count[k] for k in sorted(by_count, key=int)},
+        "rows_scored": len(scored) - unscored,
+        "rows_unscored": unscored,
+        "presence_floor": presence_floor,
+        "variance_floor": {
+            "axis": "within_night_distinct_nonnull_oriented_values",
+            "min_distinct_values": min_distinct,
+            "evaluated": "as_of_night",
+        },
+        "floors": (dict(floors) if floors else
+                   {"captured": False,
+                    "note": "the caller did not request the floor detail; which "
+                            "members voted is above, the measured reason each "
+                            "stood-down member was refused is not in this artifact"}),
+        "shadow_note": (
+            f"`weights` / `formula_points` in this block describe {SHADOW_DEFINITION}, "
+            "the RETIRED priority heuristic — it still runs on every row as "
+            "`prophet_shadow` with zero authority and is not what this board is "
+            "ordered by"),
+    }
+
+
+# --------------------------------------------------------------------------- #
 # the scoring pass
 # --------------------------------------------------------------------------- #
 def score_rows(
@@ -1042,6 +1400,7 @@ def score_rows(
     featured_extra: Callable[[Mapping[str, Any]], Iterable[str]] | None = None,
     bottom_watch_stage: str = STAGE_BLOCKED,
     reversal_cohort: Mapping[str, Any] | None = None,
+    fusion_floors: dict[str, Any] | None = None,
 ) -> list[dict]:
     """Score, stage, feature and order a buy pool.
 
@@ -1070,34 +1429,89 @@ def score_rows(
     pool = list(rows)
     board_date = _as_date(board_asof)
     percentiles = alpha_percentiles(pool, value_of=alpha_of)
+    verdicts = [verdict_for(row, verdict_by) for row in pool]
+
+    # ── the fusion plane (US only) ───────────────────────────────────────────────
+    # Built ONCE for the whole pool, before any row is stamped, because a percentile
+    # is a property of the cross-section and cannot be computed a row at a time.  A
+    # sibling board (hk_prophet_v1 delegates this whole pass) never enters here: its
+    # `definition` is not this module's, it has no registered members wired, and its
+    # output stays byte-identical to the pre-override behaviour.
+    fusion = _fusion_plane(pool, verdicts, definition=definition)
+    effective_definition = definition if not fusion.degraded else FALLBACK_DEFINITION
+    if fusion_floors is not None:
+        # Out-parameter, filled for the caller that wants the floor detail in its
+        # `ranking` receipt.  The measured reason a member was stood down is the one
+        # fact the stamped rows genuinely cannot reconstruct, and it is the fact that
+        # separates "this evidence channel is dark tonight" from "this evidence
+        # channel is present and unanimous" — a distinction the whole variance-floor
+        # amendment exists to publish.
+        fusion_floors.clear()
+        fusion_floors.update({
+            "captured": True,
+            "degraded": bool(fusion.degraded),
+            "reason": fusion.reason,
+            "members_stood_down": ([dict(d) for d in fusion.plane.members_dropped]
+                                   if fusion.plane is not None else []),
+            "members_collapsed_as_duplicates": (
+                [dict(d) for d in fusion.plane.members_collapsed]
+                if fusion.plane is not None else []),
+            "families_absent": ([dict(f) for f in fusion.plane.families_absent]
+                                if fusion.plane is not None else []),
+        })
 
     for index, row in enumerate(pool):
         ticker = str(row.get("ticker") or "")
-        verdict = verdict_for(row, verdict_by)
+        verdict = verdicts[index]
         entry = (entry_by or {}).get(ticker) or row.get("entry_signal") or {}
 
-        values = {
-            "signal": signal_value(verdict),
-            "entry": entry_value(entry),
-            "edge": edge_value(percentiles.get(index)),
-            "runway": runway_value(row),
-            "quality": quality_value(row),
-        }
-        points = {
-            name: round(SCORE_WEIGHTS[name] * value, 4)
-            for name, value in values.items()
-        }
-        score = max(0.0, min(100.0, sum(points.values())))
+        # The RETIRED v2 scorer, still computed for every row.  On a sibling board it
+        # is the published score; on the US board it is the zero-authority shadow.
+        values, points, score = legacy_v2_values(
+            row, verdict=verdict, entry=entry, alpha_percentile=percentiles.get(index))
 
         row["stage"] = stage_for(row, entry, bottom_watch_stage=bottom_watch_stage)
-        row["prophet"] = {
-            "version": definition,
-            "score": round(score, 1),
-            "components": {name: round(value, 6) for name, value in values.items()},
-            "points": points,
-            "alpha_percentile": percentiles.get(index),
-            "zero_score_authority": list(ZERO_SCORE_AUTHORITY),
-        }
+        if not fusion.applies:
+            # A sibling board.  Byte-identical to the pre-override behaviour: the
+            # retired arithmetic IS its published score and there is no shadow beside
+            # it, because nothing replaced it here.
+            row["prophet"] = {
+                "version": definition,
+                "score": round(score, 1),
+                "components": {name: round(value, 6) for name, value in values.items()},
+                "points": points,
+                "alpha_percentile": percentiles.get(index),
+                "zero_score_authority": list(ZERO_SCORE_AUTHORITY),
+            }
+        else:
+            row["prophet"] = _fusion_prophet_block(
+                fusion, index, definition=effective_definition,
+                legacy_score=score, legacy_points=points,
+                alpha_percentile=percentiles.get(index))
+            if not fusion.degraded:
+                # The champion it replaced, kept running with ZERO authority.  Stamped
+                # on every row rather than only where it disagrees: a block that appears
+                # only on a disagreement cannot be told apart from a build that never
+                # computed it, and the shadow's whole job is to be gradeable on every
+                # night.
+                #
+                # NOT on a degraded night, deliberately.  There the retired scorer IS
+                # the published ranker, so a `prophet_shadow` beside it would publish
+                # the same number twice under two names — and a forward race joining
+                # shadow rank against canonical rank would score a guaranteed tie as
+                # though it were an observation.  The `degradation` receipt already
+                # says who ranked the board.
+                row["prophet_shadow"] = {
+                    "version": SHADOW_DEFINITION,
+                    "score": round(score, 1),
+                    "components": {name: round(value, 6)
+                                   for name, value in values.items()},
+                    "points": points,
+                    "alpha_percentile": percentiles.get(index),
+                    "authority": "none — display and forward-grading only; originates "
+                                 "no plan, controls no Featured slot, sets no priority "
+                                 "and moves no user-visible order",
+                }
         # No top-level ``score`` key: rows already carry ``alpha``, ``setup`` and the
         # conviction score legs, and a fourth bare "score" would be unreadable.
         # ``prophet.score`` is the display/sort authority; the legacy fields stay.
@@ -1133,13 +1547,21 @@ def score_rows(
 
     _warn_on_dark_extension(pool, definition=definition)
 
-    pool.sort(
-        key=lambda row: (
-            stage_rank(str(row.get("stage") or "")),
-            -float((row.get("prophet") or {}).get("score") or 0.0),
-            str(row.get("ticker") or ""),
-        )
-    )
+    # The SHADOW's own order, computed BEFORE the canonical sort and frozen onto the
+    # row, so the retired champion's ranking survives as a gradeable number instead of
+    # being inferable only by re-sorting the artifact.  Same key shape it always used —
+    # (stage_rank, -score, ticker) — over the same population.
+    if fusion.applies and not fusion.degraded:
+        for rank, row in enumerate(sorted(pool, key=_shadow_sort_key), start=1):
+            row["prophet_shadow"]["score_rank"] = rank
+
+    # (stage_rank, -fusion_score, ticker).  Entry/timing decides WHETHER and WHERE a
+    # name is actionable; fusion decides which interesting name rises inside that
+    # actionable state.  A row with NO family present is scored null, never 0.0, and
+    # sorts after every scored row in its bucket — the ordering a null-as-zero would
+    # coincidentally produce, arrived at by saying so rather than by pretending the
+    # row earned the bottom score.
+    pool.sort(key=lambda row: _canonical_sort_key(row, fused=fusion.applies))
 
     featured_n = 0
     sector_counts: dict[str, int] = defaultdict(int)
@@ -1241,10 +1663,21 @@ def component_coverage(rows: Iterable[Mapping[str, Any]]) -> dict[str, dict[str,
     Every leg in :data:`SCORE_WEIGHTS` is reported, present or not: a bucket missing
     from this dict would read as "not measured", which is a different claim from
     "measured zero".
+
+    IT FOLLOWS THE LEGS, NOT THE RANK AUTHORITY (2026-08-15).  These five legs are the
+    retired v2 scorer's, and since the fusion override they live on ``prophet_shadow``.
+    This reads there when the canonical block has no components, because the receipt's
+    job is to disclose the legs the same block still publishes ``weights`` and
+    ``formula_points`` for.  Pointing it at the canonical block alone would have
+    reported every leg dead on every fusion night — an all-zero coverage table is the
+    exact shape of a real extension outage, so the disclosure built to catch that
+    outage would have been the thing hiding it.
     """
     out = {name: {"nonzero": 0, "n": 0} for name in SCORE_WEIGHTS}
     for row in rows:
-        components = (row.get("prophet") or {}).get("components") or {}
+        block = row.get("prophet") or {}
+        components = (block.get("components")
+                      or (row.get("prophet_shadow") or {}).get("components") or {})
         for name in SCORE_WEIGHTS:
             value = _finite_float(components.get(name))
             if value is None:            # leg not scored on this row — not a zero
@@ -1303,9 +1736,10 @@ def ranking_block(
     featured_cap: int = FEATURED_CAP,
     sector_cap: int = SECTOR_CAP,
     theme_asof: Any = None,
-    definition: str = BOARD_DEFINITION,
+    definition: str | None = None,
     edge_reads: str = EDGE_READS_US,
     featured_requirements_extra: Sequence[str] = (),
+    fusion_floors: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """The artifact-disclosed ``ranking`` block — the score's own receipt.
 
@@ -1321,20 +1755,35 @@ def ranking_block(
     sibling board that disclosed different weights would not be the same score.
     """
     scored = list(rows)
+    # DEFAULT TO WHAT THE ROWS SAY, not to the constant.  A caller that does not name a
+    # definition gets the one its rows were actually stamped with, so a night the
+    # fusion plane refused publishes `us_prophet_v2_fallback` in its own receipt
+    # instead of a block asserting `us_prophet_v3` over rows that say otherwise.  A
+    # sibling market still passes its own name explicitly and is unaffected.
+    if definition is None:
+        definition = published_definition(scored, default=BOARD_DEFINITION)
     counts = stage_counts(scored)
     # The ladder is shared; the evidence that set it is not.  A sibling market gets the
     # inherited-structurally wording, never the US re-measurement as its own basis.
     entry_provenance = (
-        _ENTRY_BASIS_PROVENANCE_OWN if definition == BOARD_DEFINITION
+        _ENTRY_BASIS_PROVENANCE_OWN if is_us_definition(definition)
         else _ENTRY_BASIS_PROVENANCE_INHERITED
     )
+    fusion_receipt = fusion_ranking_receipt(scored, floors=fusion_floors)
     return {
         "definition": definition,
         # Which SELECTION rule produced this board — the entry ladder and the featured
         # entry set.  Printed so a forward-ledger row is readable against the rule it
         # was made under rather than against today's constants.
         "selection_era": SELECTION_ERA,
-        "score_kind": SCORE_KIND,
+        "score_kind": fusion_receipt["score_kind"] if fusion_receipt else SCORE_KIND,
+        # THE CANONICAL RANKER's receipt.  Null on a sibling board, which still ranks by
+        # the weighted heuristic below.  On the US board this is the score's own account
+        # of itself and `weights`/`formula_points` describe the SHADOW — see
+        # `shadow_note`.  Keeping both in one block rather than swapping one for the
+        # other is deliberate: the retired legs still ship, still order the shadow, and a
+        # reader comparing tonight's two orders needs both formulas in front of them.
+        "fusion": fusion_receipt,
         "weights": dict(SCORE_WEIGHTS),
         "formula_points": [
             {"component": "signal", "points": SCORE_WEIGHTS["signal"],
