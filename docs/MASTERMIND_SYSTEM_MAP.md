@@ -1051,7 +1051,7 @@ Connect global themes, evidence, transmission, and contagion into a governed gra
 
 - Synapse owners: `gmi-theme-graph`
 - Lobe owners: `gmi-theme-graph`
-- Synapse artifacts: **3**; tier mix: display=3
+- Synapse artifacts: **4**; tier mix: display=4
 - Lobe charters: **0**
 - Information domains: none declared
 
@@ -3449,7 +3449,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `flow-continuity` | `subprogram_of` | `options-intelligence` | 3 | 0 |
 | `macro` | `flow-leaders-desk` | `subprogram_of` | `options-intelligence` | 2 | 0 |
 | `macro` | `fundamental-forensics` | `mapped` | `fundamental-forensics` | 3 | 0 |
-| `macro` | `gmi-theme-graph` | `mapped` | `gmi-theme-graph` | 3 | 0 |
+| `macro` | `gmi-theme-graph` | `mapped` | `gmi-theme-graph` | 4 | 0 |
 | `macro` | `government-revenue-foresight` | `mapped` | `government-revenue-foresight` | 42 | 0 |
 | `macro` | `hk-canada` | `unresolved_split` | `china-system, international-risk-intelligence` | 2 | 0 |
 | `macro` | `hk-pick-lab` | `subprogram_of` | `prophet-cn` | 3 | 0 |
