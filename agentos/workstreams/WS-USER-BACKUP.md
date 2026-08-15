@@ -33,6 +33,7 @@ waves:
   - id: W1
     title: Repo dump job, systemd timer, runbook, local integrity drill
     status: done
+    pr: 5732
     next_action: Merge the isolated PR; do not treat merge as GATE-1.
   - id: W2
     title: Operator scratch-project restore + plan/PITR capture

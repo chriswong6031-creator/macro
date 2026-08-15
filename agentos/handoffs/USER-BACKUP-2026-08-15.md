@@ -3,6 +3,7 @@ workstream: WS:USER-BACKUP
 session: cursor/user-backup-restore-3515
 model: opus
 ended_because: blocked
+prs: [5732]
 mission: >
   WS-1 of the red-team remediation plan — repo-side customer-data backup and a
   proven restore path. Isolated PR. No production deploy. No auth/billing redesign.
