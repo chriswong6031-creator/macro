@@ -215,6 +215,62 @@ def diagnostics(panel: pd.DataFrame, px: pd.DataFrame) -> dict:
     }
 
 
+def panel_lag_convention() -> str:
+    """Which publication-lag rule the LIVE panel was built under, read from the
+    panel's own coverage sidecar rather than assumed here.
+
+    The retired writer stamped `knowable_lag_days` (settlement + 10 CALENDAR days,
+    measured EARLY on every settlement the repo holds); the corrected writer stamps
+    `knowable_lag_sessions` (lib/finra_knowable.py). This module reads the panel's
+    stored `knowable_date` and never derives it, so the convention is a property of
+    the BUILD, not of this file — printing it is the only way a reader can tell which
+    rule produced the entry dates below. Governance record: prereg §5B.
+    """
+    p = config.data_dir() / "finra" / "short_interest_panel_coverage.json"
+    try:
+        cov = json.loads(p.read_text())
+    except Exception:  # noqa: BLE001 — a missing sidecar must not kill the run
+        return "UNKNOWN — coverage sidecar missing or unreadable"
+    if "knowable_lag_sessions" in cov:
+        return (f"{cov['knowable_lag_sessions']} NYSE sessions after settlement "
+                "(CORRECTED rule, lib/finra_knowable.py)")
+    if "knowable_lag_days" in cov:
+        return (f"{cov['knowable_lag_days']} calendar days after settlement "
+                "(RETIRED rule — measured EARLY, manufactures look-ahead; prereg §5B)")
+    return "UNKNOWN — sidecar carries no knowable-lag key"
+
+
+def calendar_audit(px: pd.DataFrame, ev: pd.DataFrame) -> dict:
+    """A MEASURED property of the price index, not an assumption.
+
+    Horizons are applied as POSITIONAL row offsets into the union index of
+    `data/yahoo/` (`px.iloc[pos + h]`). That index is the union over every file in
+    the directory, and the directory holds non-equity instruments that trade on
+    weekends (crypto/FX/futures), so one row step is NOT one trading-day step. This
+    reports what a step actually spans, so a horizon label can never silently drift
+    from the thing that was measured.
+    """
+    idx = px.index
+    lo, hi = ev["entry"].min(), ev["entry"].max()
+    win = idx[(idx >= lo) & (idx <= hi)]
+    if len(win) == 0:
+        return {"index_rows_in_event_window": 0}
+    wknd = win[win.dayofweek >= 5]
+    sess = win[win.dayofweek < 5]
+    spans: dict = {}
+    for h in HORIZONS:
+        got = [int(((sess > win[p]) & (sess <= win[p + h])).sum())
+               for p in range(0, max(len(win) - h, 0), 25)]
+        spans[f"{h}_row_step_spans_weekday_sessions"] = (
+            int(np.median(got)) if got else None)
+    return {
+        "index_rows_in_event_window": int(len(win)),
+        "weekend_rows_in_event_window": int(len(wknd)),
+        "weekend_row_pct": round(100.0 * len(wknd) / len(win), 1),
+        **spans,
+    }
+
+
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     panel = sp.load_si_panel()
@@ -254,8 +310,16 @@ def main() -> int:
     # branch tests are uninterpretable and that is the finding."
     h0_replicates = any((r["mean_pp"] < 0) and (r["q_bh"] is not None and r["q_bh"] <= 0.10)
                         for r in h0)
+    # Derived, not asserted: the 2026-08-05 cut hardcoded "sign is positive, not
+    # significant", which stopped being true the moment a re-run produced a
+    # significant WRONG-direction H0. The gate is direction AND significance.
+    _signs = "/".join(sorted({("positive" if r["mean_pp"] > 0 else "negative")
+                              for r in h0}))
+    _sig = any(r["q_bh"] is not None and r["q_bh"] <= 0.10 for r in h0)
+    _why = (f"sign is {_signs}, significant only in the WRONG direction" if _sig
+            else f"sign is {_signs}, not significant")
     verdict = ("H0 REPLICATES — branch tests interpretable" if h0_replicates else
-               "H0 DOES NOT REPLICATE (sign is positive, not significant) — per the "
+               f"H0 DOES NOT REPLICATE ({_why}) — per the "
                "prereg the branch tests H1/H2 are UNINTERPRETABLE and SP1-A is a NULL")
 
     out = {
@@ -270,12 +334,34 @@ def main() -> int:
         "survivorship_caveat": ("data/yahoo/ is the CURRENT universe; delisted names "
                                 "are absent. Biases AGAINST H1, so a null H1 is not "
                                 "decisive and no effect size here is unbiased."),
+        "panel_lag_convention": panel_lag_convention(),
+        "calendar_audit": calendar_audit(px, ev),
         "results": results,
     }
     d = config.data_dir() / "research"
     d.mkdir(parents=True, exist_ok=True)
     (d / "sp1_short_pressure.json").write_text(
         json.dumps(sanitize_non_finite(out), indent=2, allow_nan=False) + "\n")
+
+    def _res(prefix: str, h: int):
+        for r in results:
+            if r["test"].startswith(prefix) and r["horizon"] == h:
+                return r
+        return None
+
+    # EVERY number in the prose below is derived from `results`. The first cut of
+    # this report hardcoded the 2026-08-05 run's effect sizes into the sentences
+    # while the table was computed, so a re-run would have printed a table and a
+    # narrative that contradicted each other. Do not reintroduce a literal here.
+    h0a, h0b = _res("H0", HORIZONS[0]), _res("H0", HORIZONS[1])
+    h2b = _res("H2", HORIZONS[1])
+    cal = out["calendar_audit"]
+    _sign = "POSITIVE" if h0a["mean_pp"] > 0 else "NEGATIVE"
+    _perf = "*out*performed" if h0a["mean_pp"] > 0 else "*under*performed"
+    _gate = ("H0 REPLICATES, so the branch tests are interpretable."
+             if h0_replicates else
+             "The prereg's replication gate requires H0 to be NEGATIVE **and** "
+             "significant, so it does not replicate and H1/H2 are uninterpretable.")
 
     lines = [f"| {r['test']} | {r['horizon']}d | {r['mean_pp']:+.3f} | "
              f"{r['t_nw']} | {r['q_bh']} | {r['h1_pp']:+.2f} / {r['h2_pp']:+.2f} | "
@@ -285,17 +371,31 @@ def main() -> int:
     md.write_text(
         "# SP1-A — short-pressure branch study\n\n"
         f"Prereg: `{out['prereg']}` (committed before this ran).\n\n"
+        f"**Entry convention (read from the panel, not assumed here):** "
+        f"{out['panel_lag_convention']}.\n\n"
         f"{out['events']:,} events, {out['entry_dates']} entry dates, "
         f"{out['tickers']} tickers, {out['window'][0]} → {out['window'][1]}, "
         f"median {out['median_names_per_date']} names/date.\n"
         "Returns demeaned within date, so nothing here can come from market timing.\n\n"
         f"**Survivorship:** {out['survivorship_caveat']}\n\n"
+        f"**Horizon labels are row offsets, not trading days.** Measured on this run: "
+        f"{cal.get('weekend_rows_in_event_window')} of "
+        f"{cal.get('index_rows_in_event_window')} index rows in the event window "
+        f"({cal.get('weekend_row_pct')}%) are weekend rows contributed by non-equity "
+        f"files in `data/yahoo/` (crypto/FX/futures), so a "
+        f"{HORIZONS[0]}-row step spans "
+        f"{cal.get(f'{HORIZONS[0]}_row_step_spans_weekday_sessions')} weekday sessions "
+        f"and a {HORIZONS[1]}-row step spans "
+        f"{cal.get(f'{HORIZONS[1]}_row_step_spans_weekday_sessions')}. The `h` column "
+        "below is the row offset. No effect size here is quotable until this is fixed.\n\n"
         "| test | h | mean (pp) | NW t | q(BH) | 2018-21 / 2022-26 | same sign |\n"
         "|---|---|---|---|---|---|---|\n" + "\n".join(lines) + "\n\n"
         f"## Verdict\n\n**{verdict}.**\n\n"
-        "H0 came out POSITIVE (high days-to-cover *out*performed low, +0.37pp at 21d / "
-        "+0.79pp at 63d, t 1.22 / 1.09) — the opposite sign to the published result and "
-        "not significant. This must not be read as \"high short interest is bullish\": "
+        f"H0 came out {_sign} (high days-to-cover {_perf} low, "
+        f"{h0a['mean_pp']:+.2f}pp at {h0a['horizon']}d / "
+        f"{h0b['mean_pp']:+.2f}pp at {h0b['horizon']}d, t {h0a['t_nw']} / {h0b['t_nw']}, "
+        f"q {h0a['q_bh']} / {h0b['q_bh']}). {_gate} "
+        "This must not be read as \"high short interest is bullish\": "
         "it is the signature of a universe and a sample that cannot see the effect.\n\n"
         "## Why H0 does not replicate here — measured, not asserted\n\n"
         f"- **Survivorship.** Of names eligible pre-2021, "
@@ -314,17 +414,23 @@ def main() -> int:
         "- **Post-publication decay.** The result published in 2015; this sample is "
         "2018-2026, entirely post-publication, where McLean-Pontiff-class haircuts run "
         "26-58%.\n\n"
-        "All three push the same direction and any one of them accounts for a t of 1.2.\n\n"
+        "All three push the same direction, and each one on its own is enough to "
+        "account for H0 failing to appear in the hypothesised direction here.\n\n"
         "## What this does and does not license\n\n"
         "- It does **not** license a squeeze product, a short-pressure ranking, or any "
-        "authority. H2 (the squeeze branch) reached q=0.09 at 63d but its 21d sibling "
-        "flips sign across halves, its halves differ ~8x (+0.28 / +2.19), and 1.28pp is "
-        "far below the +/-5pp promotion bar. Pre-declared expectation was null; it is null.\n"
+        f"authority. H2 (the squeeze branch) reached q={h2b['q_bh']} at "
+        f"{h2b['horizon']}d with halves {h2b['h1_pp']:+.2f} / {h2b['h2_pp']:+.2f} "
+        f"(same sign: {'yes' if h2b['both_halves_same_sign'] else 'NO'}), and "
+        f"{abs(h2b['mean_pp']):.2f}pp is far below the +/-5pp promotion bar. "
+        "Pre-declared expectation was null; it is null.\n"
         "- It does **not** overturn the published result. The honest statement is that "
         "this universe cannot test it.\n"
-        "- It **does** name the fix: a delisting-inclusive price panel "
+        "- It **does** name the fixes: (1) a delisting-inclusive price panel "
         "(`collectors/edgar_delisting.py` + `edgar_deadname_prices.py` exist) and a wider "
-        "universe. Until then, short pressure stays display-tier context here.\n")
+        "universe, for survivorship; and (2) a trading-day price index — `load_prices()` "
+        "unions every file in `data/yahoo/`, including weekend-trading non-equities, "
+        "which is what makes the `h` column a row offset rather than a session count. "
+        "Until both are fixed, short pressure stays display-tier context here.\n")
     print(json.dumps(out["results"], indent=2))
     log.info("wrote %s", md)
     return 0

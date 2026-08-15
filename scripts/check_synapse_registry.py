@@ -6,7 +6,8 @@ engine.neuralweb.synapse.validate_registry(). Prints each violation
 to stdout with a [VIOLATION] prefix.
 
 Scope: registry INTEGRITY only (required fields, enum validity, producer
-existence, duplicate paths). This script does NOT check:
+existence, duplicate paths) plus one prose-hygiene rule (no restated consumer
+counts — see check_consumer_count_claims). This script does NOT check:
   - Consumer coverage (whether every module that reads an artifact is listed)
   - Read-gating (whether reads are authorized) — that is W1's job
   - Envelope stamping — that is W2's job
@@ -26,6 +27,7 @@ Options
 """
 import argparse
 import copy
+import re
 import sys
 from pathlib import Path
 
@@ -38,6 +40,41 @@ sys.path.insert(0, str(_REPO_ROOT))
 
 from engine.neuralweb.synapse import load_registry, validate_registry  # noqa: E402
 
+REGISTRY_REL = "config/synapse.yml"
+
+# A restated consumer count is drift by construction: an entry's `consumers:` list
+# IS its count, so any prose total is a hand-maintained copy of the line below it.
+# Measured 2026-08-14 before this rule landed: 43 of the 77 `# --- N consumers ---`
+# section headers disagreed with their own entry (site-us-standouts said 13 for a
+# 14-item list; regime-latest said 27 for 37), and the regime-latest notes field
+# claimed "28 Python modules + 3 external" against an actual 37 + 4. Every one of
+# them read as canon to an evidence-gathering session. The counts are gone; this
+# rule keeps them gone.
+_CONSUMER_COUNT_CLAIM = re.compile(r"\b\d+\s+consumers?\b", re.IGNORECASE)
+
+
+def check_consumer_count_claims(text: str) -> list[str]:
+    """Return one violation per line of `text` that restates a consumer count.
+
+    Deliberately matches prose ANYWHERE in the file — comment or scalar value —
+    because both vectors had already drifted. `\\b` before the digits keeps wave
+    labels ("W2 consumers", "W4 consumer", "v1 consumer seam") clean: there is no
+    word boundary inside "W2", so they never match.
+    """
+    violations: list[str] = []
+    for lineno, line in enumerate(text.splitlines(), 1):
+        m = _CONSUMER_COUNT_CLAIM.search(line)
+        if not m:
+            continue
+        violations.append(
+            f"{REGISTRY_REL}:{lineno} restates a consumer count in prose "
+            f"({m.group(0)!r}) — an entry's `consumers:` list IS its count, so a "
+            f"restated total can only drift. Drop the number; for a dated census "
+            f"figure name what was counted instead (e.g. '27 unique module files "
+            f"at W7a'). Offending line: {line.strip()!r}"
+        )
+    return violations
+
 
 def _run_integrity_check(root: Path) -> int:
     """Load and validate the registry. Returns exit code (0=clean, 1=violations)."""
@@ -48,6 +85,7 @@ def _run_integrity_check(root: Path) -> int:
         return 1
 
     violations = validate_registry(reg, root=root)
+    violations += check_consumer_count_claims((root / REGISTRY_REL).read_text())
     if violations:
         print(f"synapse registry integrity: {len(violations)} violation(s) found")
         for v in violations:
@@ -234,6 +272,40 @@ def _run_selftest(root: Path) -> int:
         }
         _test(f"producer path does not exist (storage={_storage})",
               reg8, "producer file not found")
+
+    # --- Test 9: restated consumer counts (both vectors + negative controls) ---
+    # Added 2026-08-14 with the count strip. Both halves are load-bearing: the
+    # FLAG cases prove the rule fires on the shapes that had drifted, and the
+    # CLEAN cases prove it is not just matching the word "consumer" — those three
+    # strings are real lines of the registry that must never be flagged.
+    def _test_text(label: str, sample: str, should_flag: bool) -> None:
+        nonlocal all_passed
+        found = check_consumer_count_claims(sample)
+        ok = bool(found) == should_flag
+        if not ok:
+            all_passed = False
+        print(f"  selftest [{'PASS' if ok else 'FAIL'}] {label}")
+        if not ok:
+            print(f"    expected flagged={should_flag}, got {len(found)} violation(s)")
+            print(f"    sample: {sample.strip()!r}")
+
+    for _label, _sample in (
+        ("bare section header", "  # --- 13 consumers ---"),
+        ("annotated section header", "  # --- 0 consumers (display rail only) ---"),
+        ("singular section header", "  # --- 1 consumer ---"),
+        ("count restated in a notes value",
+         '    notes: "Highest-consumer artifact in the bus (28 consumers)."'),
+    ):
+        _test_text(f"flags {_label}", _sample, True)
+
+    for _label, _sample in (
+        ("labelled section header", "  # --- W2 sweep 1: China Standout Board ---"),
+        ("wave label before the word", "      arithmetic. W2 consumers will be the hub tile"),
+        ("wave label, singular", "  # NAR-W3 shared-contract stores (W4 consumer)"),
+        ("schema seam", "      konseki.market_memory/v1 consumer seam at context_only"),
+        ("a real consumers list", "      - engine/neuralweb/cortex.py"),
+    ):
+        _test_text(f"leaves {_label} alone", _sample, False)
 
     print()
     if all_passed:
