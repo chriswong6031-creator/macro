@@ -726,6 +726,39 @@ def test_readiness_maps_every_authored_status_and_keeps_unknown_fail_soft() -> N
         )
 
 
+def test_phase2b_closeout_makes_w4_eligible_without_starting_it(
+    store: Path, builds: Path, tmp_path: Path
+) -> None:
+    """The deployed E2E closes W2B; it does not silently begin the hook wave."""
+    agentos = _load_cli()
+    authored, _ = agentos.parse_record(
+        store / "workstreams" / "WS-AGENT-OS.md"
+    )
+    waves = {wave["id"]: wave for wave in authored["waves"]}
+    assert waves["W2B"]["status"] == "done"
+    assert waves["W2B"]["pr"] == 5649
+    assert waves["W4"]["status"] == "todo"
+    assert waves["W4"]["depends_on"] == ["W1", "W2", "W2B"]
+
+    output = tmp_path / "closed.json"
+    assert _status(
+        store, output, "--now", FROZEN, "--active-builds", str(builds)
+    ).returncode == 0
+    readiness = {
+        (item["workstream"], item["wave"]): item
+        for item in _state(output)["readiness"]["records"]
+    }
+    assert (
+        readiness[("AGENT-OS", "W2B")]["state"],
+        readiness[("AGENT-OS", "W2B")]["reason_code"],
+    ) == ("done", "status_done")
+    assert (
+        readiness[("AGENT-OS", "W4")]["state"],
+        readiness[("AGENT-OS", "W4")]["reason_code"],
+        readiness[("AGENT-OS", "W4")]["unmet_dependencies"],
+    ) == ("ready", "dependencies_satisfied", [])
+
+
 def test_terminal_records_keep_dependencies_but_report_no_unmet_dependencies() -> None:
     agentos = _load_cli()
     records = [{

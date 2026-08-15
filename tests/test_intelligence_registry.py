@@ -1093,6 +1093,62 @@ def test_output_class_vocabulary_is_the_seven_catalog_classes():
     }
 
 
+def test_a_curated_output_class_clears_the_missing_finding_and_removal_restores_it():
+    """W3 acceptance, both directions: curation is the only thing that clears
+    OUTPUT_CLASS_MISSING on a gate-tripped engine, and deleting the row brings the
+    finding straight back — the gate never latches on a stale curation."""
+    synapse = _synapse({"a": _artifact(tier="shadow", path="data/s.parquet")})
+    overlay = {
+        "schema_version": 1,
+        "engines": {
+            "engine/a.py::prog": {
+                "output_class": {
+                    "value": "predictive",
+                    "rationale": "fixture: dated directional claims graded at a ruler",
+                }
+            }
+        },
+    }
+    curated = build_registry(synapse=synapse, overlay=overlay)
+    row = curated["engines"][0]
+    assert row["output_class"] == "predictive"
+    assert row["output_class_reason"].startswith("curated: ")
+    assert "OUTPUT_CLASS_MISSING" not in _codes(curated)
+
+    bare = build_registry(synapse=synapse)
+    assert bare["engines"][0]["output_class"] is None
+    assert bare["engines"][0]["output_class_reason"] == "required_but_uncurated"
+    assert "OUTPUT_CLASS_MISSING" in _codes(bare)
+
+
+def test_an_eighth_output_class_is_a_structural_violation():
+    """The W3 handoff's own tempting escape hatch ('mixed') must fail mechanically —
+    a genuine multi-class cell is a CEO architectural exception, never a new literal."""
+    overlay = {
+        "schema_version": 1,
+        "engines": {
+            "engine/a.py::prog": {
+                "output_class": {"value": "mixed", "rationale": "two species in one cell"}
+            }
+        },
+    }
+    violations = validate_overlay(overlay, ["engine/a.py::prog"])
+    assert any("output_class.value" in v for v in violations)
+
+
+def test_a_blank_output_class_rationale_is_a_structural_violation():
+    overlay = {
+        "schema_version": 1,
+        "engines": {
+            "engine/a.py::prog": {
+                "output_class": {"value": "predictive", "rationale": "   "}
+            }
+        },
+    }
+    violations = validate_overlay(overlay, ["engine/a.py::prog"])
+    assert any("rationale" in v for v in violations)
+
+
 # ---------------------------------------------------------------------------
 # declared_horizon
 # ---------------------------------------------------------------------------

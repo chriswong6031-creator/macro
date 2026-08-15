@@ -40,9 +40,9 @@ def _private_runtime_test_harness(
 
     if request.node.name in {
         "test_schema_and_frozen_digests_are_valid",
-        "test_unarmed_advance_refuses_before_private_store_creation",
+        "test_proposal_canary_refuses_w1a_before_private_store_creation",
         "test_public_plan_and_commit_are_inert_before_private_store_creation",
-        "test_core_package_excludes_runtime_and_publication_surfaces",
+        "test_core_activation_preserves_private_paper_only_boundary",
     }:
         return
     monkeypatch.setattr(selector, "SELECTOR_RUNTIME_ARMED", True)
@@ -734,7 +734,8 @@ def _passing_evidence(
 def test_schema_and_frozen_digests_are_valid() -> None:
     schema = json.loads(SCHEMA.read_text(encoding="utf-8"))
     Draft202012Validator.check_schema(schema)
-    assert selector.SELECTOR_RUNTIME_ARMED is False
+    assert selector.SELECTOR_RUNTIME_ARMED is True
+    assert selector.SELECTOR_PROPOSALS_ARMED is False
     assert selector.DIGESTS == {
         "benchmark_digest_sha256": "20e6c19f691cf9a07381288d6bdb33c6d74c8957b074ceefcdaf0ab8da1b1f42",
         "selector_rule_sha256": "a98d3b92e1ebe069c141d5f79ee9260eeb2b8eeee4f90f574ef0069c062ad20b",
@@ -797,8 +798,84 @@ def test_linear_unique_items_rejects_numeric_equivalent_runtime_pointers() -> No
     assert any(error.validator == "uniqueItems" for error in linear_errors)
 
 
-def test_unarmed_advance_refuses_before_private_store_creation(tmp_path: Path) -> None:
+def test_proposal_canary_refuses_w1a_before_private_store_creation(
+    tmp_path: Path,
+) -> None:
     root = tmp_path / "never-created"
+    with pytest.raises(selector.SparseSelectorUnarmed, match="W1A receipt root"):
+        selector.advance(
+            private_root=root,
+            source=selector.SourceSnapshot("bad", b"", b"", "bad"),
+            evidence_inputs=selector.EvidenceInputs(
+                w1a_receipt_root=tmp_path / "forbidden-w1a"
+            ),
+            scheduled_at="bad",
+        )
+    assert not root.exists()
+
+
+@pytest.mark.parametrize(
+    ("head_proposals", "value"),
+    (
+        (
+            0,
+            {
+                "schema": "options.sparse_selector_decision/v1",
+                "action": "propose",
+            },
+        ),
+        (
+            0,
+            {
+                "schema": "options.sparse_selector_cycle_receipt/v1",
+                "propose_count": 1,
+            },
+        ),
+        (1, {"schema": "options.sparse_selector_source_episode_chunk/v1"}),
+    ),
+)
+def test_proposal_canary_rejects_planned_authority_before_wal(
+    head_proposals: int,
+    value: dict[str, object],
+) -> None:
+    plan = selector.CyclePlan(
+        expected_head_id=None,
+        objects=(selector.PlannedObject(key="probe.json", value=value),),
+        head={"proposal_session_count": head_proposals},
+        intent={},
+    )
+    with pytest.raises(selector.SparseSelectorUnarmed, match="code-unarmed"):
+        selector._assert_proposal_boundary_closed(plan)
+
+
+def test_proposal_canary_rejects_forged_planner_output_before_wal(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "proposal-forgery"
+    forged = selector.CyclePlan(
+        expected_head_id=None,
+        objects=(
+            selector.PlannedObject(
+                key="decisions/forged.json",
+                value={
+                    "schema": "options.sparse_selector_decision/v1",
+                    "action": "propose",
+                },
+            ),
+        ),
+        head={"proposal_session_count": 1},
+        intent={},
+    )
+    monkeypatch.setattr(selector, "_plan_cycle_internal", lambda **_kwargs: forged)
+    monkeypatch.setattr(
+        selector,
+        "_commit_cycle_locked",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            AssertionError("proposal-bearing plan reached commit")
+        ),
+    )
+
     with pytest.raises(selector.SparseSelectorUnarmed, match="code-unarmed"):
         selector.advance(
             private_root=root,
@@ -806,7 +883,7 @@ def test_unarmed_advance_refuses_before_private_store_creation(tmp_path: Path) -
             evidence_inputs=selector.EvidenceInputs(),
             scheduled_at="bad",
         )
-    assert not root.exists()
+    assert not (root / selector.INTENT_FILE).exists()
 
 
 def test_public_plan_and_commit_are_inert_before_private_store_creation(
@@ -814,7 +891,7 @@ def test_public_plan_and_commit_are_inert_before_private_store_creation(
 ) -> None:
     root = tmp_path / "public-never-created"
     source = selector.SourceSnapshot("bad", b"", b"", "bad")
-    with pytest.raises(selector.SparseSelectorUnarmed, match="code-unarmed"):
+    with pytest.raises(selector.SparseSelectorUnarmed, match="public planning is inert"):
         selector.plan_cycle(
             root=root,
             source=source,
@@ -822,24 +899,18 @@ def test_public_plan_and_commit_are_inert_before_private_store_creation(
             scheduled_at="bad",
             clock=_clock(),
         )
-    with pytest.raises(selector.SparseSelectorUnarmed, match="code-unarmed"):
+    with pytest.raises(selector.SparseSelectorUnarmed, match="public commit is inert"):
         selector.commit_cycle(root, None)
     assert not root.exists()
 
 
-def test_core_package_excludes_runtime_and_publication_surfaces() -> None:
-    # The core payload deliberately does not contain a runner.  Existing repo
-    # orchestration surfaces must not name or arm this held research lane.
-    assert not (ROOT / "scripts/run_options_sparse_selector.py").is_file()
-    for path in (
-        ROOT / ".github/workflows/daily.yml",
-        ROOT / "config/dag.yml",
-        ROOT / "config/synapse.yml",
-    ):
-        text = path.read_text(encoding="utf-8").lower()
-        assert "options_sparse_selector" not in text
-        assert "sparse-selector" not in text
-    assert selector.SELECTOR_RUNTIME_ARMED is False
+def test_core_activation_preserves_private_paper_only_boundary() -> None:
+    assert (ROOT / "scripts/run_options_sparse_selector.py").is_file()
+    assert selector.SELECTOR_RUNTIME_ARMED is True
+    assert selector.SELECTOR_PROPOSALS_ARMED is False
+    daily = (ROOT / ".github/workflows/daily.yml").read_text(encoding="utf-8").lower()
+    assert "options_sparse_selector" not in daily
+    assert "sparse-selector" not in daily
     assert "make_w1a_export" not in selector.__all__
     assert "make_nbbo_handoff" not in selector.__all__
     assert not hasattr(selector, "make_nbbo_handoff")
@@ -1082,12 +1153,42 @@ def test_status_recovers_durable_w1a_intent_only_with_trusted_inputs(
     report = selector.status(root, evidence_inputs=inputs)
     assert report == {
         "runtime_armed": True,
+        "proposals_armed": False,
         "initialized": True,
         "head": head,
         "recovery_intent": True,
         "intent_next_head_id": plan.head["head_id"],
+        "intent_next_head": plan.head,
     }
     assert selector.commit_cycle(root, None, evidence_inputs=inputs) == plan.head
+
+
+def test_status_exposes_exact_first_intent_target_without_parent_head(
+    tmp_path: Path,
+) -> None:
+    source = _source([[_episode("status-first-intent", "2026-08-12T13:31:00Z")]])
+    root = tmp_path / "status-first-intent"
+    plan = selector.plan_cycle(
+        root=root,
+        source=source,
+        evidence_inputs=selector.EvidenceInputs(),
+        scheduled_at="2026-08-12T14:00:00Z",
+        clock=_clock(),
+        runtime_armed=True,
+    )
+
+    def crash(point: str) -> None:
+        if point == "after_intent":
+            raise RuntimeError("first intent crash")
+
+    with pytest.raises(RuntimeError, match="first intent crash"):
+        selector.commit_cycle(root, plan, hook=crash)
+    report = selector.status(root)
+    assert report["head"] is None
+    assert report["recovery_intent"] is True
+    assert report["intent_next_head_id"] == plan.head["head_id"]
+    assert report["intent_next_head"] == plan.head
+    assert selector.commit_cycle(root, None) == plan.head
 
 
 def test_w1a_exact_asof_absence_is_evidence_while_missing_owner_is_not(
