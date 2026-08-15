@@ -22,11 +22,14 @@ Two things make it usable anyway, and one caveat keeps it honest:
   * Restatement is rare and FINRA marks it. `revisionFlag == 'R'` appears on
     34/15,627 rows (0.22%) at 2018-01-31 and 1/22,375 (0.004%) at 2026-07-15.
     The flag is preserved so a consumer can exclude or measure them.
-  * Publication lag is knowable and fixed. FINRA's schedule reports positions on
-    the second business day after settlement and disseminates ~7 calendar days
-    after settlement (e.g. settlement Jan 15 → published Jan 27). We stamp a
-    conservative `knowable_date` and any backtest MUST join on THAT, never on
-    `settlement_date` — joining on settlement date buys ~8 days of look-ahead.
+  * Publication lag is knowable and bounded. FINRA's schedule reports positions
+    on the second business day after settlement and disseminates on the next
+    schedule date — settlement Jan 15 → due Jan 20 → published Jan 27, which is
+    TWELVE calendar days, not the "~7" this docstring used to claim. We stamp a
+    conservative `knowable_date` (8 NYSE sessions, lib/finra_knowable.py) and any
+    backtest MUST join on THAT, never on `settlement_date` — joining on settlement
+    date buys ~12 days of look-ahead, and the retired 10-calendar-day stamp bought
+    2-3 of them back (see lib/finra_knowable.py for the measurements).
   * CAVEAT: for the 0.22% of restated rows we hold the restated value, not the
     originally-published one. That is a real (small) deviation from true PIT and
     is why the panel is labelled as-restated rather than vintage.
@@ -62,7 +65,7 @@ import json
 import logging
 import sys
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
@@ -72,6 +75,7 @@ _ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_ROOT))
 
 from lib import config  # noqa: E402
+from lib.finra_knowable import KNOWABLE_LAG_SESSIONS, knowable_date  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -82,11 +86,18 @@ MAX_PAGES = 40
 # settlement calendar (every settlement publishes a row for a name this liquid).
 CALENDAR_SYMBOLS = ("AAPL", "MSFT", "JNJ")
 
-# FINRA disseminates ~7 calendar days after settlement (schedule: settlement
-# Jan 15 -> due Jan 20 6pm ET -> published Jan 27). We use 10 CALENDAR days as a
-# deliberately conservative floor: erring long can only make a backtest
-# pessimistic, erring short manufactures look-ahead.
-KNOWABLE_LAG_DAYS = 10
+# The publication lag has ONE definition, in lib/finra_knowable.py, imported by
+# both this backfill and engine/neuralweb/context_api.py — the two-constant
+# mirror they used to keep in sync by drift test is deleted.
+#
+# The FINRA schedule example is unchanged and now stated honestly: settlement
+# Jan 15 -> due Jan 20 6pm ET -> published Jan 27 is TWELVE calendar days, which
+# is exactly why the retired KNOWABLE_LAG_DAYS = 10 under-waited. Measured, +10
+# calendar days landed 3/2/2 days EARLY on the 2026-06-30 / 07-15 / 07-31
+# settlements against 8 NYSE sessions, and on 07-31 it fell three days before our
+# own collector's capture date. Erring long can only make a backtest pessimistic;
+# erring short manufactures look-ahead at the publication boundary.
+#  -> KNOWABLE_LAG_SESSIONS / knowable_date, imported above from lib.finra_knowable.
 
 DTC_SENTINEL = 999.0          # values >= this are FINRA's "ADV ~ 0" cap
 LISTED_CLASSES = {"NYSE", "NNM", "ARCA", "SC", "AMEX", "BZX", "BATS", "NMS"}
@@ -183,7 +194,7 @@ def fetch_settlement(settlement: str) -> pd.DataFrame:
     sd = pd.Timestamp(settlement)
     df["settlement_date"] = sd
     # THE PIT COLUMN. Backtests join on this, never on settlement_date.
-    df["knowable_date"] = sd + timedelta(days=KNOWABLE_LAG_DAYS)
+    df["knowable_date"] = pd.Timestamp(knowable_date(sd.date()))
 
     keep = ["settlement_date", "knowable_date", "ticker", "short_shares",
             "prev_short_shares", "avg_daily_vol", "days_to_cover", "dtc_capped",
@@ -210,7 +221,7 @@ def write_coverage(panel: pd.DataFrame) -> dict:
         "first_settlement": str(panel["settlement_date"].min().date()),
         "last_settlement": str(panel["settlement_date"].max().date()),
         "tickers": int(panel["ticker"].nunique()),
-        "knowable_lag_days": KNOWABLE_LAG_DAYS,
+        "knowable_lag_sessions": KNOWABLE_LAG_SESSIONS,
         "as_restated": True,
         "revised_rows": int((panel.get("revision_flag") == "R").sum()),
         "dtc_capped_rows": int(panel["dtc_capped"].sum()),

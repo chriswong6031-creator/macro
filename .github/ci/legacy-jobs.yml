@@ -1593,6 +1593,7 @@ jobs:
           tests/test_forensics_api.py
           tests/test_edgar_forensics_collector.py
           tests/test_context_api.py
+          tests/test_finra_knowable.py
           tests/test_t0_indicator.py
           tests/test_intraday_flow.py
           tests/test_intraday_flow_stance.py
@@ -2416,6 +2417,7 @@ jobs:
       - "lib/config.py"
       - "lib/delisted_symbols.py"
       - "lib/filing_value_units.py"
+      - "lib/finra_knowable.py"
       - "lib/forex_link.py"
       - "lib/hk_calendar.py"
       - "lib/nyse_calendar.py"
