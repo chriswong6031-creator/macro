@@ -48,7 +48,7 @@ THETA_HOST = "127.0.0.1"
 THETA_PORT = 25503
 THETA_TIMEOUT_SECONDS = 2.0
 
-EXPECTED_REPO_ROOT = Path("/Users/chriswong/options-sparse-selector-ops-wt")
+EXPECTED_REPO_ROOT = Path(__file__).resolve().parents[1]
 CANONICAL_ORIGIN_URL = "git@github.com:mastermindx-market-intelligence/macro.git"
 CANONICAL_ORIGIN_REF = "refs/remotes/origin/main"
 GIT = Path("/usr/bin/git")

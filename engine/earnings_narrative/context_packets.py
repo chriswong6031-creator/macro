@@ -79,6 +79,11 @@ _NUMBER_PREVIEW = re.compile(
     r"(?:\$?\d[\d,.]*%?|\b\d+(?:\.\d+)?\s*(?:bps|million|billion|percent)\b)",
     re.IGNORECASE,
 )
+# House law: "validated" in user-facing text is an authority claim. A receipt-bound
+# transcript excerpt may use the word (WAVE Q4 FY2025: "validated technology");
+# the packet stays verbatim. Public HTML must not — select_public_facts drops
+# those excerpts, and refuses the article if every excerpt carries the token.
+_AUTHORITY_TOKEN_PREVIEW = re.compile(r"\bvalidated\b|已验证", re.IGNORECASE)
 
 
 class EarningsContextContractError(ValueError):
@@ -117,8 +122,7 @@ def _context_id(unsigned: Mapping[str, Any]) -> str:
 
 def _public_fact_score(fact: Mapping[str, Any]) -> int:
     """Rank public preview evidence without creating or changing a claim."""
-    quote = fact.get("quote") if isinstance(fact.get("quote"), Mapping) else {}
-    text = str(quote.get("text") or "")
+    text = _quote_text(fact)
     role = str(fact.get("role") or "").lower()
     score = 18 if role in {"executive", "management"} else (-30 if role == "analyst" else 0)
     score += 14 * len(set(str(item) for item in fact.get("categories", []) if str(item) in {
@@ -135,15 +139,34 @@ def _public_fact_score(fact: Mapping[str, Any]) -> int:
     return score + min(len(text) // 80, 5)
 
 
+def _quote_text(fact: object) -> str:
+    if not isinstance(fact, Mapping):
+        return ""
+    quote = fact.get("quote") if isinstance(fact.get("quote"), Mapping) else {}
+    return str(quote.get("text") or "")
+
+
+def _carries_authority_token(fact: object) -> bool:
+    return bool(_AUTHORITY_TOKEN_PREVIEW.search(_quote_text(fact)))
+
+
 def select_public_facts(facts: object, *, limit: int = PUBLIC_FACT_LIMIT) -> list[Mapping[str, Any]]:
     """Return the one canonical public excerpt subset in relevance order."""
     if not isinstance(facts, list) or not facts:
         raise EarningsContextContractError("public fact selection requires a non-empty fact list")
     if isinstance(limit, bool) or not isinstance(limit, int) or limit < 1 or limit > PUBLIC_FACT_LIMIT:
         raise EarningsContextContractError("public fact selection limit invalid")
+    clean = [
+        (index, fact) for index, fact in enumerate(facts)
+        if not _carries_authority_token(fact)
+    ]
+    if not clean:
+        raise EarningsContextContractError(
+            "public fact selection found only excerpts carrying a banned authority token"
+        )
     ranked = sorted(
-        enumerate(facts), key=lambda row: (-_public_fact_score(row[1]), row[0]),
-    )[: min(limit, len(facts))]
+        clean, key=lambda row: (-_public_fact_score(row[1]), row[0]),
+    )[: min(limit, len(clean))]
     return [fact for _index, fact in ranked]
 
 

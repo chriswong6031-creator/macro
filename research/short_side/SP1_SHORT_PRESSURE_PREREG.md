@@ -1,5 +1,23 @@
 # SP-1 — Short-Pressure & Crowding: adjudication + frozen test
 
+> **CORRECTION (2026-08-14) — the entry rule's publication lag was measured
+> EARLY, not merely revised.** This file states `knowable_date` = settlement + 10
+> CALENDAR days in three places (§2, §4 trap 4, §5A entry rule) and calls it a
+> "conservative" floor. It was not conservative: measured against the exchange
+> calendar it lands **before** the figure was public on every settlement the repo
+> can check, and **before our own collector's capture date** on all three
+> settlements the history store holds. That is look-ahead at the publication
+> boundary — the one place a short-interest study is most likely to be misread as
+> predictive. The convention is now the 8th NYSE session after settlement, one
+> definition in `lib/finra_knowable.py` (PR #5705).
+>
+> **SP1-A's published NULL verdict stands** — the correction makes the test
+> strictly harder, and it touches neither of the two reasons §7 gave for the
+> verdict. **Its effect sizes are not re-quotable**, and the panel must be rebuilt
+> before any re-run. See **§5B — AMENDMENT 2** for the measurement, the governance
+> ruling, and the re-run condition. The original text below is left **intact and
+> annotated, never rewritten**, so the rule SP1-A actually ran under stays legible.
+
 **Written:** 2026-08-05. **Status:** data spine BUILT; numeric study FROZEN, NOT RUN.
 **Lobe:** `research/SHORT_SIDE_MASTERPLAN_BY_FABLE.md` (avoid-not-short charter).
 **Freeze authority:** this file. No outcome number below has been computed. The
@@ -100,6 +118,12 @@ flag is preserved so a consumer can exclude or measure them. The *publication*
 lag, which is the larger PIT risk, is handled by a conservative `knowable_date`
 (settlement + 10 days against an actual ~7-day dissemination).
 
+> **RETIRED 2026-08-14 (§5B).** Both numbers in that sentence are wrong. The
+> dissemination lag is not ~7 days — FINRA's own cited schedule example is 12
+> calendar days — and settlement + 10 days was therefore not conservative but
+> **early**. Current rule: the 8th NYSE session after settlement,
+> `lib/finra_knowable.py`.
+
 **(2) "Borrow fee / utilization / availability: paid vendor only."** The signal
 docket carries three entries — SLF-002 (borrow-fee anomaly), SLF-014 (utilization
 shock), SLF-015 (locate scarcity) — all marked `data_contract_first`, blocked on
@@ -195,7 +219,7 @@ Prior-art boundaries confirmed clear:
 | 2 | Feed is ~42% **OTC**, carrying nearly all sentinels | 9,491/22,375 OTC; listed sentinel rate only 0.3% (0.50% across the full 205-settlement panel) | percentile basis restricted to exchange-listed |
 | 3 | **Borrow fee is near-constant in our universe** | in-universe median 0.35%, p99 1.25%, 18/1,519 names ≥1%, **none ≥20%**; full file median 1.10%, 50.9% ≥1% | absolute thresholds, never a percentile or z; capture widened to universe ∪ HTB tail |
 | 3b | **Thin-ADV days-to-cover is a division artifact** | of the 75 listed names with DTC ≥ 50, **all 75** have ADV < 100k and their **median ADV is 36 shares/day**. With ADV ≥ 100k: p50 2.94, p99 16.1, max 38.8 | `MIN_ADV_SHARES = 100_000` floor on the percentile basis; thin names flagged and reported `elevated=None`, never "elevated" |
-| 4 | Publication lag ≈ 7 days | joining on `settlement_date` buys ~8 days of look-ahead | `knowable_date` = settlement + 10d; missing column raises rather than degrades |
+| 4 | Publication lag ≈ 7 days *(**measurement RETIRED 2026-08-14** — §5B; FINRA's own cited schedule example is 12 calendar days)* | joining on `settlement_date` buys ~8 days of look-ahead | `knowable_date` = **8 NYSE sessions** after settlement (`lib/finra_knowable.py`); missing column raises rather than degrades. *Retired guard: settlement + 10d — measured EARLY, see §5B* |
 | 5 | `>10000000` availability sentinel | 762 rows | boolean flag; never coerced to a number |
 | 6 | Feed mutates intraday | 07:01:33 → 07:17:12 in 16 min | one capture per day, `snapshot_et` recorded |
 | 7 | **Delisted tickers resurrect** across an 8.5-year panel | "newest settlement per ticker" returned **48,539** names at asof 2026-08-01 when the newest settlement carries ~23k — the excess is dead symbols wearing years-old readings | `MAX_STALE_DAYS = 45`: a name that stopped being reported is absent, not stale-but-live |
@@ -298,6 +322,11 @@ their own accrual matures (~2027); this amendment does not weaken their bar.
   to 660 (2026).
 - **Entry:** the first trading day at/after `knowable_date` (settlement + 10d).
   Never the settlement date.
+  *(**CORRECTED 2026-08-14, §5B.** The binding clause — "first trading day at/after
+  `knowable_date`", never the settlement date — is unchanged. The parenthetical
+  gloss was wrong: `knowable_date` is the 8th NYSE session after settlement,
+  `lib/finra_knowable.py`. SP1-A ran under the retired gloss; 146 of the 205
+  settlement entry dates move 1–3 sessions LATER on rebuild, none earlier.)*
 - **Horizons:** 21d and 63d only.
 - **Short-pressure axis:** within-date `dtc_pctile` over the eligible set.
 - **Conditioner:** within-date trailing 63d return percentile — strong vs weak.
@@ -321,6 +350,185 @@ H1 is conservative and a null H1 is **not** decisive. No effect size from SP1-A
 may be quoted as unbiased, and no result here may promote anything. A clean
 version needs a delisting-inclusive panel (`collectors/edgar_delisting.py` +
 `edgar_deadname_prices.py` exist and are the path).
+
+## §5B. AMENDMENT 2 — the publication lag was measured EARLY (post-outcome, 2026-08-14)
+
+Committed AFTER SP1-A ran. That is the whole governance question, so it is answered
+first, in the open, rather than left to a reader to notice.
+
+**Provenance and status, as of 2026-08-14.** The corrected convention is established
+by **PR #5705** (`lib/finra_knowable.py`, `scripts/backfill_finra_short_interest.py`,
+`engine/neuralweb/context_api.py`), which was open and armed when this amendment was
+written. This amendment is the governance record of that correction and does not
+depend on the merge landing first: the *measurement* is what retires the old rule,
+and it holds regardless of merge order. Two states are therefore true together and
+are kept distinct throughout this section — the **rule** is corrected, and the
+**live panel** still carries the retired one until it is rebuilt.
+
+### What was wrong
+
+`knowable_date` = settlement + 10 CALENDAR days, called "the deliberately
+conservative floor" in the code comment this prereg inherited. Three independent
+measurements (PR #5705, receipts in `lib/finra_knowable.py`'s module docstring)
+show it was not a floor at all:
+
+1. **Its own cited FINRA schedule example refutes it.** The comment reads
+   "settlement Jan 15 → due Jan 20 6pm ET → published Jan 27". That is **12
+   calendar days** — already two past the constant the same sentence calls
+   conservative. §2 and §4 of this file repeated the derived "~7-day
+   dissemination" claim; both are retired above.
+2. **It lands early against the exchange calendar** on every settlement the repo
+   holds: 2026-06-30 (3 days early), 2026-07-15 (2), 2026-07-31 (2). The 3-day gap
+   is the observed 2026-07-03 Independence Day closure — precisely what calendar
+   arithmetic cannot see and session arithmetic cannot miss.
+3. **It precedes our own collector's capture date** on all three settlements in
+   `data/finra/short_interest_history.parquet`. On the 07-31 settlement the retired
+   rule declared the row knowable on 08-10, **three days before our collector could
+   have seen it.**
+
+The correct reading is not "the constant was a bit tight". An under-waiting derived
+lag **manufactures look-ahead at the publication boundary**, and it did so in the
+one direction that flatters a short-interest study.
+
+### The measured blast radius on SP1-A's entry dates
+
+`scripts/research/sp1_short_pressure_study.py:78` reads the panel's **stored**
+`knowable_date` column and does not derive it (`engine/short_pressure.py` likewise,
+and `tests/test_short_pressure.py:113` pins that it raises rather than degrades if
+the column is absent). So the study's behaviour does not change until
+`data/finra/short_interest_panel.parquet` is rebuilt — **and then SP1-A's entry
+dates move with no code change to the study at all.**
+
+Entry is "the first trading day at/after `knowable_date`", which absorbs part of the
+shift whenever the retired date already fell on a weekend or holiday. Measured over
+the settlement schedule this panel spans, retired rule vs 8-session rule:
+
+| entry shift | settlements | share |
+|---|---|---|
+| unchanged | 59 | 28.8% |
+| +1 session later | 45 | 22.0% |
+| +2 sessions later | 76 | 37.1% |
+| +3 sessions later | 25 | 12.2% |
+| **moves LATER** | **146** | **71.2%** |
+| **moves EARLIER** | **0** | **0.0%** |
+
+**The defect is strictly one-directional.** Not one entry in 205 moved earlier: the
+retired rule never once waited longer than the corrected one. Every deviation was a
+1–3 session head start the study did not have in reality.
+
+*Method, stated so it can be checked.* The panel is gitignored build output
+(`.gitignore:143`) and absent from a sparse worktree, so this was computed over a
+**reconstruction** of the FINRA settlement schedule (the 15th and the last calendar
+day of each month, rolled back to the prior session), not over the panel's own
+`settlement_date` column. The reconstruction reproduces the panel's committed
+coverage sidecar exactly on all three of its independent anchors — **205
+settlements, first 2018-01-12, last 2026-07-15** — and reproduces PR #5705's 3/2/2
+day deltas on the three committed settlements. SP1-A drew **120** entry dates from
+this 205-settlement schedule, so ~71% of them move; the exact per-date count is only
+recoverable from a rebuilt panel.
+
+### RULING — amend in place; do not supersede; do not re-run yet
+
+**Amended in place.** This is not a design change. No hypothesis, conditioner,
+horizon, universe, control, statistic, or promotion bar moves. §5A's binding entry
+clause — *"the first trading day at/after `knowable_date`… Never the settlement
+date"* — is untouched, and its stated purpose is exactly "no look-ahead at the
+publication boundary". The parenthetical `(settlement + 10d)` was a **factual gloss
+on what `knowable_date` meant**, and the gloss was measured wrong. Correcting a
+wrong factual gloss *toward the rule's own stated intent* is a correction, not a
+post-hoc redesign.
+
+**Why a prereg may be corrected here at all.** Prereg immutability exists to stop
+goalposts moving *after* outcomes are seen. That hazard is absent in both
+directions:
+
+- The correction makes the test **strictly harder** — later entry, less
+  information, an advantage removed. Nobody moves a goalpost toward themselves.
+- It was **not authored by SP1**. PR #5705 came out of a FINRA-lag audit of two
+  drifting constants in `context_api.py` and the backfill script; it had no
+  knowledge of, and no contact with, SP1's outcomes.
+- Immutability is preserved by **non-deletion, not by non-annotation**. All three
+  retired-rule sites are left legible and marked, so a reader can always reconstruct
+  the rule SP1-A actually ran under. Silently rewriting them would have destroyed
+  exactly the audit trail immutability is for.
+
+**Precedent followed.** `research/ORACLE_COMPOUND_GAUNTLET_R1.md` handles a
+*stronger* case the same way: a post-outcome dated blockquote at the top of the
+file that **withdrew a PASS** (A9) and **reversed a verdict** (A17), left the
+original intact, named what still stands, and minted no new file. This case
+withdraws no verdict and is strictly weaker, so it takes the same treatment. §5A
+above establishes the numbered in-document amendment form (though it was
+pre-outcome).
+
+**Superseding was rejected.** A new prereg would misfile a corrected data
+convention as a design change, and would orphan a null that nothing depends on.
+
+**Re-running now was rejected — but the obligation is recorded, not waived.** A
+re-run has zero governance delta today: SP1-A promoted nothing, ranked nothing,
+gated nothing, and filed no `DO_NOT_REBUILD` row (§7). The panel is gitignored build
+output and its rebuild is a real ~20-minute compute cost (§1), paid to change numbers
+that no authority state reads.
+
+**The trigger is an ACTOR, not an event — do not wait for one.**
+`scripts/backfill_finra_short_interest.py` is referenced by **no workflow**: it is a
+manual script, so nothing rebuilds this panel on a schedule and there is no passive
+"next rebuild" to inherit the correction. Until somebody runs it, the panel keeps the
+retired rule indefinitely. Whoever next needs an SP1 number owns the rebuild + re-run
+as one step; the binding obligation until then is the citation ban below.
+
+**No live surface is affected today — and that is a trap for whoever wires one.**
+`engine/short_pressure.py` is imported by exactly two things:
+`tests/test_short_pressure.py` and `scripts/research/sp1_short_pressure_study.py`
+(verified: no render, app, worker, or template consumer). The module is
+**built-but-unwired**, so nothing user-facing is currently serving early
+`knowable_date`s, and this correction is not a live-data incident. The hazard is
+ordering: the FIRST consumer to wire `asof_slice` into a surface inherits a panel
+still built on the retired rule and ships look-ahead on day one. **Rebuild the panel
+before wiring, not after.** (Do not confuse this module with
+`sfc_short_pressure` in `engine/hk_stock_signals.py` / `engine/pick_lab/hk.py` —
+that is the Hong Kong SFC signal, a different source, unaffected by any of this.)
+
+### Effect on published SP1 results — stated explicitly
+
+**Mechanically affected: YES.** `reports/sp1-short-pressure.md`,
+`data/research/sp1_short_pressure.json`, and the §7 status-log numbers were all
+computed under the retired rule. The live panel still is: its committed sidecar
+`data/finra/short_interest_panel_coverage.json` records `"knowable_lag_days": 10`,
+which is the receipt that the panel predates this fix. (The corrected writer emits
+`"knowable_lag_sessions": 8` instead, so the sidecar self-documents on rebuild.)
+
+**The published VERDICT stands: unaffected.** SP1-A is a NULL that §5A's own gate
+already declared uninterpretable, because H0 did not replicate. §7 gave two reasons
+for that verdict — survivorship (34.8% of the pre-2021 high-DTC quintile is absent)
+and coverage (583 of 5,616 eligible names, concentrated in large/mid caps). **The
+lag correction touches neither.** It changes the numbers, not the reasons the
+verdict was reached. Nothing was promoted on those numbers and nothing was killed by
+them, so no authority state moves.
+
+**The effect sizes are NOT re-quotable.** §5A already forbade quoting any SP1-A
+effect size as unbiased on survivorship grounds; this adds a **second, independent
+PIT reason**. No number from the §7 log or the report table may be cited — in a
+successor study, an adjudication, a masterplan, or any user-facing surface — until a
+re-run on a rebuilt panel replaces it.
+
+**What is deliberately NOT claimed.** A shifted entry produces genuinely different
+events, not a monotone transform of the same ones, so no claim is made that a re-run
+reproduces these numbers or their signs. The honest statement is directional: the
+correction removes an advantage the study *already failed to exploit*, so the null is
+if anything reinforced. Should a re-run instead flip H0 to negative-and-significant,
+that is a **new finding requiring its own adjudication** — it would not
+retroactively validate anything here.
+
+### Standing rule for this class of correction
+
+A prereg whose *data-availability convention* is later measured wrong is
+**corrected in place, dated, with the retired convention left legible** — the
+original is never rewritten and never silently replaced. The correction must state
+that the retired rule was **measured wrong and in which direction**, never merely
+"revised", and must answer explicitly whether each published result is affected in
+its numbers, in its verdict, or in both. Superseding is reserved for changes to the
+*design* — hypotheses, conditioners, horizons, universe, controls, statistics, or
+the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
 
 ## §6. Graveyard seeded at charter
 
@@ -372,3 +580,31 @@ version needs a delisting-inclusive panel (`collectors/edgar_delisting.py` +
   (`collectors/edgar_delisting.py` + `edgar_deadname_prices.py` already exist) and
   a wider universe. Until then short pressure stays display-tier context, which is
   where §3 already put it.
+
+- 2026-08-14: **AMENDMENT 2 committed POST-outcome (§5B) — the entry rule's
+  publication lag was measured EARLY, not merely revised.** `knowable_date` =
+  settlement + 10 calendar days landed before the figure was public on every
+  settlement checkable, and before our own collector's capture date on all three in
+  the history store: it manufactured look-ahead at the publication boundary. Rule
+  corrected to the 8th NYSE session after settlement, one definition in
+  `lib/finra_knowable.py` (PR #5705). Measured blast radius: **146 of 205 settlement
+  entry dates move 1–3 sessions LATER on rebuild, 0 move earlier** — the defect was
+  strictly one-directional.
+
+  **The SP1-A verdict above stands** — §7's two stated reasons for it (survivorship,
+  coverage) are untouched by the lag, and the correction makes the test strictly
+  harder. **Its effect sizes are now doubly non-quotable** (survivorship per §5A,
+  plus this PIT defect) and no number in the entry above may be cited until a re-run
+  on a rebuilt panel replaces it. The live panel still carries the retired rule —
+  `data/finra/short_interest_panel_coverage.json` records `"knowable_lag_days": 10`.
+  The study picks the correction up with no code change
+  (`sp1_short_pressure_study.py:78` reads the stored column), so the trigger is a
+  rebuild of `data/finra/short_interest_panel.parquet` — **which nothing does
+  automatically**: `scripts/backfill_finra_short_interest.py` is in no workflow, so
+  the panel keeps the retired rule until a person runs it. Whoever next needs an SP1
+  number owns the rebuild + re-run as one step. **No live surface is affected:**
+  `engine/short_pressure.py` is imported only by its own tests and the SP1 study
+  script — built-but-unwired — so the hazard is ordering, not exposure. The first
+  consumer to wire `asof_slice` into a surface must rebuild the panel FIRST or it
+  ships look-ahead on day one. No `DO_NOT_REBUILD` row is filed: nothing was killed
+  and no authority state moves.
