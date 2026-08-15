@@ -1,0 +1,430 @@
+{
+  "parser_version": "finviz_tree_refresh.v1",
+  "refreshed_at_utc": "2026-08-15T02:01:34+00:00",
+  "asof": "2026-08-15",
+  "mode": "refresh",
+  "allow_shrink": false,
+  "allow_growth": false,
+  "tree_path": "data/themes_heatmap/themes_tree.json",
+  "tree_history_path": "data/themes_heatmap/tree_history.jsonl",
+  "prev_tree_sha256": "e0f85510edc075a390d52cb9d4bf05f0451ac869886887e42352b1f6b9802618",
+  "promoted": true,
+  "reason": "promoted",
+  "refusal_reasons": [],
+  "error": null,
+  "fetches": [
+    {
+      "url": "https://finviz.com/map?t=themes",
+      "retrieved_at_utc": "2026-08-15T02:01:34+00:00",
+      "http_status": 200,
+      "byte_size": 46880,
+      "sha256": "9d6e3d35b91f769c2564a5a124015bbf63484435cbb46bfb6212ae0cba00d341",
+      "content_type": "text/html; charset=utf-8",
+      "ok": true
+    },
+    {
+      "url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+      "retrieved_at_utc": "2026-08-15T02:01:35+00:00",
+      "http_status": 200,
+      "byte_size": 105839,
+      "sha256": "1fb0446af7b82287ab3dd03a024f65e750f4038ec8d4773ea1c340f8d79c0e01",
+      "content_type": "text/javascript",
+      "ok": true
+    },
+    {
+      "url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+      "retrieved_at_utc": "2026-08-15T02:01:35+00:00",
+      "http_status": 200,
+      "byte_size": 6277,
+      "sha256": "107ad96fdc967b1c2ec51876a6dc438540ac53ab8b6b2e0a2606e5234d2a6aa3",
+      "content_type": "text/javascript",
+      "ok": true
+    },
+    {
+      "url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+      "retrieved_at_utc": "2026-08-15T02:01:36+00:00",
+      "http_status": 200,
+      "byte_size": 42417,
+      "sha256": "d1929213e8f3c6657aac2e88721417b32af8002b6851793b580c034ce50003ac",
+      "content_type": "text/javascript",
+      "ok": true
+    }
+  ],
+  "trace": {
+    "map_page_url": "https://finviz.com/map?t=themes",
+    "map_js_url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "runtime_js_url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "chunk_url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "chunk_id": "6574",
+    "module_id": "13014",
+    "chunk_hash": "6c9683c9",
+    "literal_bytes": 41492
+  },
+  "counts": {
+    "themes": 40,
+    "subthemes": 268,
+    "memberships": 2339,
+    "unique_tickers": 924
+  },
+  "new_tree_sha256": "1d597c44c8ce0ffba6ce548a08d090c8c702199356830fd7b02739f09f1dba45",
+  "tree_changed": true,
+  "diff": {
+    "themes": {
+      "prev": 40,
+      "new": 40,
+      "added": [],
+      "removed": []
+    },
+    "subthemes": {
+      "prev": 268,
+      "new": 268,
+      "added": [],
+      "removed": [],
+      "shared": 268,
+      "name_changes": [],
+      "description_changes": [],
+      "moved_between_themes": [],
+      "member_deltas": [
+        {
+          "key": "agricultureindoorfarming",
+          "prev": 4,
+          "new": 3
+        },
+        {
+          "key": "aidata",
+          "prev": 13,
+          "new": 14
+        },
+        {
+          "key": "bigdatainfrastructure",
+          "prev": 16,
+          "new": 16
+        },
+        {
+          "key": "clouddatabases",
+          "prev": 9,
+          "new": 8
+        },
+        {
+          "key": "commagrisofts",
+          "prev": 6,
+          "new": 5
+        },
+        {
+          "key": "commenergygaslng",
+          "prev": 12,
+          "new": 11
+        },
+        {
+          "key": "commmetalssilver",
+          "prev": 7,
+          "new": 6
+        },
+        {
+          "key": "consumerfarmdirect",
+          "prev": 8,
+          "new": 6
+        },
+        {
+          "key": "educationcurriculum",
+          "prev": 11,
+          "new": 10
+        },
+        {
+          "key": "educationplatforms",
+          "prev": 6,
+          "new": 5
+        },
+        {
+          "key": "educationworkforce",
+          "prev": 10,
+          "new": 9
+        },
+        {
+          "key": "energycleanhydrogen",
+          "prev": 9,
+          "new": 8
+        },
+        {
+          "key": "environmentalagriculture",
+          "prev": 13,
+          "new": 12
+        },
+        {
+          "key": "environmentalairquality",
+          "prev": 10,
+          "new": 9
+        },
+        {
+          "key": "environmentalclimate",
+          "prev": 13,
+          "new": 12
+        },
+        {
+          "key": "environmentalwaste",
+          "prev": 10,
+          "new": 9
+        },
+        {
+          "key": "evsfleets",
+          "prev": 8,
+          "new": 7
+        },
+        {
+          "key": "fintechlending",
+          "prev": 6,
+          "new": 5
+        },
+        {
+          "key": "hardwaredatacenters",
+          "prev": 6,
+          "new": 7
+        },
+        {
+          "key": "hardwareelectronics",
+          "prev": 7,
+          "new": 8
+        },
+        {
+          "key": "hardwareindustrialiot",
+          "prev": 11,
+          "new": 12
+        },
+        {
+          "key": "hardwarepcsdevices",
+          "prev": 10,
+          "new": 11
+        },
+        {
+          "key": "hardwarestorage",
+          "prev": 7,
+          "new": 7
+        },
+        {
+          "key": "healthcarediagnostics",
+          "prev": 12,
+          "new": 11
+        },
+        {
+          "key": "iothardware",
+          "prev": 7,
+          "new": 8
+        },
+        {
+          "key": "nanotechproducts",
+          "prev": 7,
+          "new": 6
+        },
+        {
+          "key": "nutritionaltprotein",
+          "prev": 10,
+          "new": 9
+        },
+        {
+          "key": "semismemory",
+          "prev": 4,
+          "new": 5
+        },
+        {
+          "key": "spacesatellites",
+          "prev": 6,
+          "new": 5
+        },
+        {
+          "key": "telecomsatcom",
+          "prev": 7,
+          "new": 6
+        },
+        {
+          "key": "wearablesmedical",
+          "prev": 8,
+          "new": 7
+        },
+        {
+          "key": "wearablessmartwatches",
+          "prev": 4,
+          "new": 3
+        }
+      ],
+      "losing_members": 25,
+      "losing_members_sample": [
+        "agricultureindoorfarming",
+        "bigdatainfrastructure",
+        "clouddatabases",
+        "commagrisofts",
+        "commenergygaslng",
+        "commmetalssilver",
+        "consumerfarmdirect",
+        "educationcurriculum",
+        "educationplatforms",
+        "educationworkforce",
+        "energycleanhydrogen",
+        "environmentalagriculture",
+        "environmentalairquality",
+        "environmentalclimate",
+        "environmentalwaste",
+        "evsfleets",
+        "fintechlending",
+        "hardwarestorage",
+        "healthcarediagnostics",
+        "nanotechproducts"
+      ]
+    },
+    "memberships": {
+      "prev": 2356,
+      "new": 2339,
+      "added": 9,
+      "removed": 26,
+      "added_sample": [
+        "aidata:SNDK",
+        "bigdatainfrastructure:SNDK",
+        "hardwaredatacenters:SNDK",
+        "hardwareelectronics:SNDK",
+        "hardwareindustrialiot:SNDK",
+        "hardwarepcsdevices:SNDK",
+        "hardwarestorage:SNDK",
+        "iothardware:SNDK",
+        "semismemory:SNDK"
+      ],
+      "removed_sample": [
+        "agricultureindoorfarming:UGRO",
+        "bigdatainfrastructure:PSTG",
+        "clouddatabases:CFLT",
+        "commagrisofts:FDP",
+        "commenergygaslng:CTRA",
+        "commmetalssilver:DVS",
+        "consumerfarmdirect:CVGW",
+        "consumerfarmdirect:FDP",
+        "educationcurriculum:UDMY",
+        "educationplatforms:UDMY",
+        "educationworkforce:UDMY",
+        "energycleanhydrogen:GTLS",
+        "environmentalagriculture:ORGN",
+        "environmentalairquality:GTLS",
+        "environmentalclimate:ORGN",
+        "environmentalwaste:MEG",
+        "evsfleets:NVVE",
+        "fintechlending:LC",
+        "hardwarestorage:PSTG",
+        "healthcarediagnostics:EXAS"
+      ]
+    },
+    "tickers": {
+      "prev": 941,
+      "new": 924,
+      "added": 1,
+      "removed": 18
+    }
+  },
+  "shrink": {
+    "membership_removals": 26,
+    "prior_memberships": 2356,
+    "membership_removal_frac": 0.011036,
+    "max_membership_removal_frac": 0.1,
+    "themes_deleted": 0,
+    "max_theme_deletions": 0,
+    "subthemes_deleted": 0,
+    "max_subtheme_deletions": 0,
+    "subthemes_over_loss_wall": [],
+    "max_subtheme_member_loss_frac": 0.5,
+    "subthemes_losing_members": 25,
+    "shared_subthemes": 268,
+    "subthemes_losing_members_frac": 0.093284,
+    "max_subthemes_losing_members_frac": 0.3
+  },
+  "growth": {
+    "membership_growth": -17,
+    "membership_growth_frac": 0.0,
+    "max_membership_growth_frac": 0.1,
+    "ticker_growth": -17,
+    "ticker_growth_frac": 0.0,
+    "max_ticker_growth_frac": 0.1,
+    "subthemes_over_growth_cap": [],
+    "subtheme_growth_multiplier": 2.0,
+    "subtheme_growth_absolute": 15
+  },
+  "supergroups": [
+    {
+      "group": "1",
+      "themes": [
+        "Artificial Intelligence",
+        "Cloud Computing",
+        "Semiconductors",
+        "Cybersecurity",
+        "Software",
+        "Hardware",
+        "Quantum Computing",
+        "Virtual & Augmented Reality",
+        "Biometrics",
+        "Big Data"
+      ]
+    },
+    {
+      "group": "2",
+      "themes": [
+        "Electric Vehicles",
+        "Industrial Automation",
+        "Defense & Aerospace",
+        "Transportation & Logistics",
+        "Space Tech",
+        "Robotics",
+        "Telecommunications",
+        "Nanotechnology",
+        "Internet of Things",
+        "Autonomous Systems"
+      ]
+    },
+    {
+      "group": "3",
+      "themes": [
+        "E-commerce",
+        "Social Media",
+        "Digital Entertainment",
+        "Real Estate & REITs",
+        "Consumer Goods",
+        "Smart Home",
+        "Wearables",
+        "Education Technology"
+      ]
+    },
+    {
+      "group": "4",
+      "themes": [
+        "Energy Renewable",
+        "Energy Traditional",
+        "Commodities Energy",
+        "Commodities Metals",
+        "Commodities Agriculture",
+        "Agriculture & FoodTech",
+        "Environmental Sustainability"
+      ]
+    },
+    {
+      "group": "5",
+      "themes": [
+        "Healthcare & Biotech",
+        "Aging Population & Longevity",
+        "Healthy Food & Nutrition"
+      ]
+    },
+    {
+      "group": "6",
+      "themes": [
+        "FinTech",
+        "Crypto & Blockchain"
+      ]
+    }
+  ],
+  "parse_notes": [
+    "level-1 supergroup layer: 6 groups (1=10, 2=10, 3=8, 4=7, 5=3, 6=2) \u2014 flattened in group order to match the committed schema"
+  ],
+  "identity_report": {
+    "rename_containment_min": 0.6,
+    "rename_slack_max_n": 9,
+    "ticker_continuity_max_symdiff": 1,
+    "renames": [],
+    "ticker_continuity": [],
+    "proposal_ids": []
+  },
+  "history_appended": true
+}

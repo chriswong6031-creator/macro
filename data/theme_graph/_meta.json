@@ -1,15 +1,48 @@
 {
-  "belief_time": "2026-08-14",
-  "computed_at": "2026-08-14T04:59:39Z",
+  "belief_time": "2026-08-15",
+  "capability_counts": {
+    "measurement_candidate": 499,
+    "semantic_only": 142
+  },
+  "computed_at": "2026-08-15T02:01:46Z",
   "counts": {
-    "edges": 5628,
-    "edges_latest_belief": 5628,
-    "evidence": 9,
-    "nodes": 2707
+    "capability": 641,
+    "edges": 8292,
+    "edges_latest_belief": 8292,
+    "evidence": 11,
+    "nodes": 3878
   },
   "engine_version": "theme_graph.v1",
   "era": "observed",
   "lane": "nightly",
+  "local_plane": {
+    "finviz": {
+      "closed_member_edges": 26,
+      "company_resolution": {
+        "minted_new": 529,
+        "refused": [],
+        "resolved_dot_dash_variant": 0,
+        "resolved_existing": 413,
+        "variant_pairs": []
+      },
+      "dropped_adjacent_duplicates": [
+        "2026-07-05"
+      ],
+      "member_edges": 2365,
+      "notes": [],
+      "subthemes": 268,
+      "vintages": [
+        "2026-06-27",
+        "2026-08-15"
+      ]
+    },
+    "ths": {
+      "concept_map_asof": "2026-06-27",
+      "concepts": 373,
+      "expresses_edges": 237,
+      "unresolved_concept_names": 0
+    }
+  },
   "mode": "nightly",
   "per_suite": {
     "baskets": {
@@ -62,6 +95,7 @@
     },
     "crosswalk": {
       "expresses_edges": 74,
+      "local_theme_expresses_edges": 61,
       "published_at": "2026-07-09",
       "themes": 18,
       "ths_codes_mapped": 61,
@@ -69,11 +103,13 @@
     }
   },
   "rows_appended": {
-    "edges": 0,
-    "evidence": 0,
-    "nodes": 0
+    "capability": 641,
+    "edges": 2664,
+    "evidence": 2,
+    "nodes": 1171
   },
   "skipped_suites": {},
   "ths_unmapped_concept_count": 312,
-  "unknown_ths_codes": []
+  "unknown_ths_codes": [],
+  "unknown_ths_concepts": []
 }

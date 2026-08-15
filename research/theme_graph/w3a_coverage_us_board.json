@@ -1,0 +1,303 @@
+{
+  "case_a_cooccurrence": {
+    "isolated_ids": [
+      "AA",
+      "AMR",
+      "AWR",
+      "BWA",
+      "CIEN",
+      "EQIX",
+      "EW",
+      "FDX",
+      "FORM",
+      "FTI",
+      "HEI",
+      "IONQ",
+      "IREN",
+      "META",
+      "NVT",
+      "ONTO",
+      "ORA",
+      "SGML",
+      "SMPL",
+      "SNPS",
+      "SPOT",
+      "TEM",
+      "TMUS"
+    ],
+    "isolated_note": "these ids HAVE memberships, but share no concept with any other supplied id — the gap the per-name check cannot see",
+    "pairs_sharing_a_concept": [
+      {
+        "a": "DKNG",
+        "b": "MGM",
+        "concepts": [
+          "ltheme:finviz:entertainmentbetting",
+          "ltheme:finviz:entertainmentgambling"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "KMI",
+        "b": "OKE",
+        "concepts": [
+          "ltheme:finviz:commenergygaslng",
+          "ltheme:finviz:energybaseoilrefining"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "PL",
+        "b": "RKLB",
+        "concepts": [
+          "ltheme:finviz:defensespacetech",
+          "ltheme:finviz:spacedataanalytics"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "BG",
+        "b": "DAR",
+        "concepts": [
+          "ltheme:finviz:agricultureprocessing"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "BIIB",
+        "b": "JNJ",
+        "concepts": [
+          "ltheme:finviz:longevityagingpharma"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "CWEN",
+        "b": "XEL",
+        "concepts": [
+          "ltheme:finviz:energycleanutilities"
+        ],
+        "shared": 1
+      }
+    ],
+    "zero_membership_ids": [
+      "ENTG",
+      "EU",
+      "HSIC",
+      "JBL",
+      "NNE",
+      "NVR",
+      "PNW",
+      "TKO",
+      "WFC"
+    ],
+    "zero_membership_note": "a different failure from isolation: no vocabulary at all, rather than no shared vocabulary"
+  },
+  "case_d_breadth": {
+    "breadth_distribution": {
+      "concepts_with_live_members": 505,
+      "max_members": 34,
+      "median_members": 10,
+      "p90_members": 19
+    },
+    "broad_only_ids": [],
+    "floor_note": "a REPORT PARAMETER, not a truth claim about where 'too broad' begins; the distribution below is what it should be read against",
+    "reporting_floor_members": 25
+  },
+  "generated_at": "2026-08-15T02:03:02Z",
+  "membership_detail": {
+    "AA": [
+      "ltheme:finviz:commmetalsindustrial"
+    ],
+    "AMR": [
+      "ltheme:finviz:energybasethermal"
+    ],
+    "AWR": [
+      "ltheme:finviz:environmentalwater"
+    ],
+    "BG": [
+      "ltheme:finviz:agricultureprocessing",
+      "ltheme:finviz:commagrigrains",
+      "ltheme:finviz:nutritionaltprotein"
+    ],
+    "BIIB": [
+      "ltheme:finviz:longevityagingpharma"
+    ],
+    "BWA": [
+      "ltheme:finviz:evssuppliers"
+    ],
+    "CIEN": [
+      "ltheme:finviz:hardwaretelecom",
+      "ltheme:finviz:telecominfrastructure"
+    ],
+    "CWEN": [
+      "ltheme:finviz:energycleanutilities",
+      "ltheme:finviz:energycleanwind"
+    ],
+    "DAR": [
+      "ltheme:finviz:agricultureprocessing",
+      "ltheme:finviz:commagribiofuels",
+      "ltheme:finviz:commenergybiofuels",
+      "ltheme:finviz:energycleanbiofuels"
+    ],
+    "DKNG": [
+      "ltheme:finviz:entertainmentbetting",
+      "ltheme:finviz:entertainmentgambling"
+    ],
+    "ENTG": [],
+    "EQIX": [
+      "ltheme:finviz:aicloud",
+      "ltheme:finviz:bigdatainfrastructure",
+      "ltheme:finviz:clouddatacenters",
+      "ltheme:finviz:realestateittelecom",
+      "ltheme:finviz:telecomcloudedge"
+    ],
+    "EU": [],
+    "EW": [
+      "ltheme:finviz:healthcaredevices"
+    ],
+    "FDX": [
+      "ltheme:finviz:automationlogistics",
+      "ltheme:finviz:ecommercelogistics",
+      "ltheme:finviz:transportationaircargo",
+      "ltheme:finviz:transportationinfrastructure",
+      "ltheme:finviz:transportationtrucking"
+    ],
+    "FORM": [
+      "ltheme:finviz:semispackaging"
+    ],
+    "FTI": [
+      "ltheme:finviz:energybaseoilservices"
+    ],
+    "HEI": [
+      "ltheme:finviz:defenseaviation",
+      "ltheme:finviz:defensemanufacturing"
+    ],
+    "HSIC": [],
+    "IONQ": [
+      "ltheme:finviz:hardwarenextgen",
+      "ltheme:finviz:quantumapplications",
+      "ltheme:finviz:quantumcloud",
+      "ltheme:finviz:quantumhardware",
+      "ltheme:finviz:quantumsoftware",
+      "ltheme:finviz:semisnextgen"
+    ],
+    "IREN": [
+      "ltheme:finviz:blockchainmining"
+    ],
+    "JBL": [],
+    "JNJ": [
+      "ltheme:finviz:healthcareoncology",
+      "ltheme:finviz:longevityagingpharma",
+      "ltheme:finviz:nanotechmedicine",
+      "ltheme:finviz:roboticsmedical"
+    ],
+    "KMI": [
+      "ltheme:finviz:commenergygaslng",
+      "ltheme:finviz:energybaseoilrefining"
+    ],
+    "META": [
+      "ltheme:finviz:aiadssearch",
+      "ltheme:finviz:aiagi",
+      "ltheme:finviz:aimodels",
+      "ltheme:finviz:biometricssoftware",
+      "ltheme:finviz:ecommercesocial",
+      "ltheme:finviz:hardwaregaming",
+      "ltheme:finviz:socialadvertising",
+      "ltheme:finviz:socialgaming",
+      "ltheme:finviz:socialnetworks",
+      "ltheme:finviz:socialvisualcontent",
+      "ltheme:finviz:varealityapplications",
+      "ltheme:finviz:varealityhardware",
+      "ltheme:finviz:varealitysoftware",
+      "ltheme:finviz:wearablessoftware"
+    ],
+    "MGM": [
+      "ltheme:finviz:entertainmentbetting",
+      "ltheme:finviz:entertainmentgambling"
+    ],
+    "NNE": [],
+    "NVR": [],
+    "NVT": [
+      "ltheme:finviz:hardwaredatacenters"
+    ],
+    "OKE": [
+      "ltheme:finviz:commenergygaslng",
+      "ltheme:finviz:energybaseoilrefining"
+    ],
+    "ONTO": [
+      "ltheme:finviz:nanotechresearchtools"
+    ],
+    "ORA": [
+      "ltheme:finviz:energycleangeothermal"
+    ],
+    "PL": [
+      "ltheme:finviz:defensespacetech",
+      "ltheme:finviz:spacedataanalytics"
+    ],
+    "PNW": [],
+    "RKLB": [
+      "ltheme:finviz:defensespacetech",
+      "ltheme:finviz:spacedataanalytics",
+      "ltheme:finviz:spacedefense",
+      "ltheme:finviz:spaceinfrastructure",
+      "ltheme:finviz:spacelaunch"
+    ],
+    "SGML": [
+      "ltheme:finviz:commmetalsbattery"
+    ],
+    "SMPL": [
+      "ltheme:finviz:nutritionsupplements"
+    ],
+    "SNPS": [
+      "ltheme:finviz:automationsoftware",
+      "ltheme:finviz:semisdesigntools",
+      "ltheme:finviz:softwaredesign"
+    ],
+    "SPOT": [
+      "ltheme:finviz:entertainmentmusic"
+    ],
+    "TEM": [
+      "ltheme:finviz:healthcaregenomics"
+    ],
+    "TKO": [],
+    "TMUS": [
+      "ltheme:finviz:iotnetworking",
+      "ltheme:finviz:telecomwireless"
+    ],
+    "WFC": [],
+    "XEL": [
+      "ltheme:finviz:energybaseutilities",
+      "ltheme:finviz:energycleanutilities"
+    ]
+  },
+  "resolved": 44,
+  "rule": "coverage_gaps.v1 (mechanical, LLM-free; case A co-occurrence + case D breadth signal). Cases B/C need theme_discovery clusters and co-movement state — deferred to W3B, where those inputs exist.",
+  "supplied": 69,
+  "unresolved": {
+    "AGNT": "no company node with this id or symbol",
+    "ARR": "no company node with this id or symbol",
+    "AYI": "no company node with this id or symbol",
+    "BXMT": "no company node with this id or symbol",
+    "CAVA": "no company node with this id or symbol",
+    "CVCO": "no company node with this id or symbol",
+    "DXYZ": "no company node with this id or symbol",
+    "ECPG": "no company node with this id or symbol",
+    "EFC": "no company node with this id or symbol",
+    "GNL": "no company node with this id or symbol",
+    "HLI": "no company node with this id or symbol",
+    "HZO": "no company node with this id or symbol",
+    "JBSS": "no company node with this id or symbol",
+    "LBRT": "no company node with this id or symbol",
+    "LNTH": "no company node with this id or symbol",
+    "MBC": "no company node with this id or symbol",
+    "MC": "no company node with this id or symbol",
+    "MTDR": "no company node with this id or symbol",
+    "OZK": "no company node with this id or symbol",
+    "SITM": "no company node with this id or symbol",
+    "SM": "no company node with this id or symbol",
+    "SWX": "no company node with this id or symbol",
+    "TREX": "no company node with this id or symbol",
+    "TRLV": "no company node with this id or symbol",
+    "UCB": "no company node with this id or symbol"
+  }
+}

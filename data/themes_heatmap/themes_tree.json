@@ -72,6 +72,7 @@
           "GOOGL",
           "MDB",
           "AI",
+          "SNDK",
           "NVDA",
           "CRM",
           "INOD",
@@ -273,7 +274,6 @@
         "members": [
           "SNOW",
           "MDB",
-          "CFLT",
           "ORCL",
           "MSFT",
           "AMZN",
@@ -463,6 +463,7 @@
         "description": "Memory & Storage",
         "members": [
           "MU",
+          "SNDK",
           "WDC",
           "STX",
           "RMBS"
@@ -911,6 +912,7 @@
           "INTC",
           "AMD",
           "QCOM",
+          "SNDK",
           "MSFT",
           "NVDA",
           "STX"
@@ -950,7 +952,7 @@
         "description": "Storage",
         "members": [
           "NTAP",
-          "PSTG",
+          "SNDK",
           "WDC",
           "STX",
           "DELL",
@@ -964,6 +966,7 @@
         "description": "Data Center Infrastructure",
         "members": [
           "VRT",
+          "SNDK",
           "ETN",
           "MOD",
           "NVT",
@@ -982,7 +985,8 @@
           "MSFT",
           "GRMN",
           "HPQ",
-          "DELL"
+          "DELL",
+          "SNDK"
         ]
       },
       {
@@ -1046,7 +1050,8 @@
           "TEL",
           "PI",
           "TXN",
-          "AME"
+          "AME",
+          "SNDK"
         ]
       },
       {
@@ -1335,9 +1340,9 @@
           "MSFT",
           "AMZN",
           "GOOGL",
+          "SNDK",
           "MDB",
           "ORCL",
-          "PSTG",
           "NVDA",
           "STX",
           "WDC",
@@ -1515,7 +1520,6 @@
         "description": "Fleet Management & Telematics",
         "members": [
           "IOT",
-          "NVVE",
           "AIOT",
           "UBER",
           "TRMB",
@@ -1930,8 +1934,7 @@
           "GSAT",
           "VSAT",
           "TSAT",
-          "ASTS",
-          "SATS"
+          "ASTS"
         ]
       },
       {
@@ -2143,7 +2146,6 @@
           "VSAT",
           "TSAT",
           "ASTS",
-          "SATS",
           "AMZN"
         ]
       },
@@ -2243,7 +2245,6 @@
           "MMM",
           "DD",
           "PG",
-          "SEE",
           "CL",
           "NKE"
         ]
@@ -2316,7 +2317,8 @@
           "AMD",
           "SMCI",
           "NXPI",
-          "CSCO"
+          "CSCO",
+          "SNDK"
         ]
       },
       {
@@ -2976,8 +2978,6 @@
         "description": "Farming & Direct Marketplaces",
         "members": [
           "VITL",
-          "FDP",
-          "CVGW",
           "SFM",
           "AMZN",
           "UNFI",
@@ -3126,8 +3126,7 @@
         "members": [
           "AAPL",
           "GRMN",
-          "GOOGL",
-          "MASI"
+          "GOOGL"
         ]
       },
       {
@@ -3138,7 +3137,6 @@
           "DXCM",
           "ABT",
           "IRTC",
-          "MASI",
           "MDT",
           "AAPL",
           "GOOGL",
@@ -3199,7 +3197,6 @@
         "description": "Online Learning Platforms",
         "members": [
           "COUR",
-          "UDMY",
           "DUOL",
           "LRN",
           "SKIL",
@@ -3212,7 +3209,6 @@
         "description": "Workforce Training",
         "members": [
           "SKIL",
-          "UDMY",
           "COUR",
           "CVSA",
           "UTI",
@@ -3235,7 +3231,6 @@
           "COUR",
           "BNED",
           "GHC",
-          "UDMY",
           "DUOL",
           "TAL",
           "CVSA"
@@ -3310,7 +3305,6 @@
           "FCEL",
           "BLDP",
           "LIN",
-          "GTLS",
           "HTOO",
           "CMI"
         ]
@@ -3565,7 +3559,6 @@
           "AR",
           "KMI",
           "WMB",
-          "CTRA",
           "ET",
           "NEXT",
           "OKE",
@@ -3637,7 +3630,6 @@
           "HL",
           "PAAS",
           "SVM",
-          "DVS",
           "WPM"
         ]
       },
@@ -3748,7 +3740,6 @@
         "members": [
           "CSAN",
           "DOLE",
-          "FDP",
           "AGRO",
           "HSY",
           "SJM"
@@ -3835,8 +3826,7 @@
         "members": [
           "LOCL",
           "HYFM",
-          "VFF",
-          "UGRO"
+          "VFF"
         ]
       },
       {
@@ -3908,8 +3898,7 @@
           "CWST",
           "BALL",
           "SON",
-          "LNZA",
-          "MEG"
+          "LNZA"
         ]
       },
       {
@@ -3922,7 +3911,6 @@
           "HON",
           "ECL",
           "CMI",
-          "GTLS",
           "FTEK",
           "AME",
           "VLTO",
@@ -3937,7 +3925,6 @@
           "LIN",
           "JCI",
           "OXY",
-          "ORGN",
           "AES",
           "NEE",
           "BEPC",
@@ -3958,7 +3945,6 @@
           "LIN",
           "NEE",
           "FSLR",
-          "ORGN",
           "BEPC",
           "OXY",
           "AES",
@@ -4035,7 +4021,6 @@
           "GH",
           "DHR",
           "NTRA",
-          "EXAS",
           "TXG",
           "PACB",
           "LH",
@@ -4221,7 +4206,6 @@
         "members": [
           "BYND",
           "OTLY",
-          "STKL",
           "INGR",
           "ADM",
           "GIS",
@@ -4319,7 +4303,6 @@
         "members": [
           "UPST",
           "AFRM",
-          "LC",
           "XYZ",
           "PYPL",
           "SOFI"
