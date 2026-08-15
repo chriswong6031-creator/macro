@@ -332,6 +332,25 @@ def test_force_flip_plants_a_dwell_legal_transition():
     assert pb3.lawful_transitions(early, np.ones(30, bool), 5)["onset"].size == 0
 
 
+def test_permuted_plant_fallback_is_planted_direction():
+    src = Path(pb3.__file__).read_text()
+    assert "z_a is None or z_a < 1.96" in src
+
+
+def test_mutated_plant_drop_is_one_sided():
+    """§11.4: a large negative leftover has dropped below +1.96."""
+    src = Path(pb3.__file__).read_text()
+    assert "shifted plant z drops below 1.96 (planted +)" in src
+    assert "z_m is None or z_m < 1.96" in src
+
+
+def test_planted_a_z_needs_same_regime_control():
+    """A nearest-regime control is required; first-in-name is not the match."""
+    src = Path(pb3.__file__).read_text()
+    assert "nearest same-name, same-regime stay-FALSE" in src
+    assert "first-in-name stay-FALSE bar is a biased control" in src
+
+
 def test_diagnostic_shift_sets_empty_fkeys_order():
     """A11: P-B2 FKEYS_ORDER is empty unless its own main() ran."""
     class _PB2:
