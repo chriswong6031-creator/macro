@@ -2718,10 +2718,21 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     WEIGHT and PACK ceilings are again deliberately NOT moved, for the reason
     given above: they bound the incident, and a fallback-tier regression is
     ~1,550 weight-seconds — two orders of magnitude above the 24 removed here.
+
+    JOB COUNT RE-BASED +2 on templates/index.html only (129, 2026-08-15).
+    ``engine/china_intel_interest.py`` lazy-imports ``china_intel_hub``, and
+    that hub's opaque constructs smear ``templates/**`` onto two inferred
+    jobs that already imported ``build_china_library`` /
+    ``china_standout_track`` (``cn-standout-audit``,
+    ``coiled-mtf-anchor-era``). Measured 126 → 128 on this probe; the other
+    two probes are unchanged. Weight and pack ceilings stay. Exclusive
+    curation of those two jobs is the smear-at-source fix, but their
+    closures run through ``build_china_library`` and would be a third
+    exclusive-scope wave, not this packing-contract heal.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 127, 5_800),
+        ("templates/index.html", 129, 5_800),
         ("scripts/build_free_content.py", 124, 5_600),
         ("engine/prophet/plan_book.py", 119, 5_600),
     ):

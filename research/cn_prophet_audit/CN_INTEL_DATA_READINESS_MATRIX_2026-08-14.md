@@ -14,11 +14,31 @@ Compiled by the P-B2 session (WS:CN-LIMIT-ALPHA) from a full producer census wit
 file:line receipts; the two load-bearing store-semantics rulings (§2, §3) were
 re-verified by hand in this checkout.
 
-**Standing composite ban (re-affirmed):** China Intelligence's `opportunity_score` /
-conviction composites and the intel-bus digest are display/context constructions
-(`engine/china_intel_bus.py` is stamped LEAF · CONTEXT-ONLY). They are NEVER imported
-into Prophet or any scoring layer. Only RAW evidence producers below are candidates,
-and only through fresh preregistered studies.
+**Standing composite rule — AMENDED 2026-08-15 (operator, "Handoff B").** The former
+absolute ("never China Intelligence composites in Prophet") is replaced by a
+PROVENANCE rule, because the thing that was actually dangerous was the feedback loop,
+not the word "composite":
+
+> Any displayed CN Prophet score or rank must trace to `engine/china_board_rank.py`.
+> China Intelligence may supply that scorer with registered BOARD-INDEPENDENT evidence,
+> including a board-independent intelligence-interest composite
+> (`engine/china_intel_interest.py`, `intel_interest_score`).
+> Raw `china_intel_hub.opportunity_score`, any Hub board-derived term, and anything
+> under `research/cn_prophet_audit/` may NEVER directly own Prophet rank.
+
+Board-derived terms, named: the Hub's `board_row` direction, its board-label edge leg,
+its board-ABSENT bonus, and the board's contribution to its leading-vs-lagging gap — plus
+any Prophet score or rank in any intelligence input. Those four terms are why the Hub's
+own `opportunity_score` stays banned: it carries the board's output back into itself, so
+ranking the board by it would close a loop. `china_intel_interest` re-derives the
+composite with all four structurally absent (declared in `BOARD_DERIVED_TERMS_EXCLUDED`,
+enforced by `tests/test_china_intel_interest.py`), which is what makes it admissible
+where the Hub composite is not.
+
+The intel-bus digest is unchanged: display/context only (`engine/china_intel_bus.py` is
+stamped LEAF · CONTEXT-ONLY). Raw evidence producers below remain candidates for any
+FURTHER authority (gate, size, score) only through fresh preregistered studies — this
+amendment grants ordering authority, and nothing else.
 
 ---
 

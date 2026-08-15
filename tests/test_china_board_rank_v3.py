@@ -218,14 +218,23 @@ def test_unknown_tick_count_is_not_evidence_of_lateness():
     assert [row["ticker"] for row in lanes["featured"]] == ["UNKNOWN.SS"]
 
 
-def test_board_definition_stamp_is_v3_on_rows_and_lanes():
-    assert china_board_rank.BOARD_DEFINITION == "cn_prophet_v3"
+def test_board_definition_stamp_is_the_live_definition_on_rows_and_lanes():
+    """The live stamp moved v3 -> v4 (ordering change); the v3 SCORE is unchanged.
+
+    Pinned against the module constant rather than a literal so the stamp is proven
+    consistent across rows, lanes and the ``prophet`` block wherever it points, while
+    ``test_china_board_rank_v4.py`` owns pinning the literal itself.
+    """
+    live = china_board_rank.BOARD_DEFINITION
+    assert live == "cn_prophet_v4"
     lanes = _lanes([_row("STAMP.SS")])
     row = lanes["featured"][0]
 
-    assert lanes["board_definition"] == "cn_prophet_v3"
-    assert row["board_definition"] == "cn_prophet_v3"
-    assert row["prophet"]["version"] == "cn_prophet_v3"
+    assert lanes["board_definition"] == live
+    assert row["board_definition"] == live
+    assert row["prophet"]["version"] == live
+    # The v3 SCORE survives the definition bump untouched.
+    assert row["prophet"]["score_basis"] == "cn_prophet_v3_score"
 
 
 # ── R2: theme_timing's bounded authority ──────────────────────────────────────
@@ -552,7 +561,8 @@ def test_v2_shadow_shelf_applies_the_displaced_rule_to_the_same_scored_rows():
     assert {row["ticker"] for row in shadow} == {"CONFIRMED.SS", "FRESHBUY.SS"}
     assert all(row["board_definition"] == "cn_prophet_v2_shadow" for row in shadow)
     # The live rows are untouched by the shadow run (it deep-copies).
-    assert all(row["board_definition"] == "cn_prophet_v3" for row in live["featured"])
+    assert all(row["board_definition"] == china_board_rank.BOARD_DEFINITION
+               for row in live["featured"])
 
 
 def test_v2_shadow_definition_is_a_watch_definition():
@@ -582,7 +592,8 @@ def test_v2_shadow_can_never_own_the_headline_definition():
 def test_tripwire_specs_cover_the_three_slate_items():
     specs = cn_v3_tripwires.tripwire_specs()
 
-    assert {spec["slate_item"] for spec in specs} == {"R1", "R2", "R3"}
+    # R4 is the V4 ordering race (see test_china_board_rank_v4.py).
+    assert {spec["slate_item"] for spec in specs} == {"R1", "R2", "R3", "R4"}
     assert len({spec["id"] for spec in specs}) == len(specs)
     for spec in specs:
         assert spec["min_matured"] == 60

@@ -1,10 +1,40 @@
-"""China Prophet v3 "Relay Engine" board scoring and lane admission.
+"""China Prophet v4 board scoring, INTELLIGENCE ORDERING, and lane admission.
 
 The module deliberately separates three decisions which the old board conflated:
 
 * ``prophet_score`` orders names using a small, frozen set of features.
 * execution checks decide whether a scored name may be *featured now*.
 * lifecycle lanes preserve every raw gate-eligible name instead of silently dropping it.
+
+V4 (operator commission 2026-08-15, "Handoff B — intelligence-ranked, entry-gated")
+adds a FOURTH separation on top of the v3 machinery, and changes nothing else:
+
+    RANK BY INTERESTINGNESS · GATE BY ENTRY.
+
+Every v3 admission rule is preserved byte for byte — the prime-entry-window shelf,
+confirmed-late and relay-late demotions, freshness, fillability, liquidity floor,
+extension, sector/board caps and the four lossless lanes.  What changes is the ORDER
+in which names are considered and displayed inside each lane: primarily the measured
+``intel_interest_score`` (:mod:`engine.china_intel_interest`), then the unchanged v3
+``prophet_score``, then ticker.  Because the featured caps bind in that order, the
+interest score decides who takes the last shelf slot — an uninteresting name can no
+longer ride a pretty entry oscillator to the top, and an interesting name still cannot
+be featured without clearing every execution safeguard.
+
+The v4 score itself is v3's score: :data:`SCORE_WEIGHTS` is untouched, and no
+intelligence term enters ``prophet_score``.  This module remains the SOLE live ranking
+authority: China Intelligence produces evidence, ``china_board_rank`` decides what that
+evidence does to the board.  The interest composite is board-independent by
+construction (no board direction, no board label edge, no board-absent bonus, no board
+term in the leading-vs-lagging gap, and no Prophet score or rank anywhere in its
+inputs), so ranking by it closes no feedback loop.  A name whose interest score is
+genuinely unavailable is NOT scored zero: it keeps its v3 priority and is stamped
+``intel_interest_basis="fallback_v3"``.
+
+The displaced v3 ORDERING keeps grading as a labeled shadow via
+:func:`v3_shadow_featured` under :data:`V3_SHADOW_DEFINITION`, exactly as the displaced
+v2 admission rule does under :data:`V2_SHADOW_DEFINITION`.  Historical v3 rows are
+untouched; v4 accrues prospectively.
 
 The score is a transparent priority heuristic, not a calibrated return forecast.  Only
 the six components in :data:`SCORE_WEIGHTS` have score authority.  Residual alpha,
@@ -66,11 +96,15 @@ from typing import Any, Iterable, Mapping
 from engine import signal_gate
 
 
-BOARD_DEFINITION = "cn_prophet_v3"
+BOARD_DEFINITION = "cn_prophet_v4"
 # The displaced v2 admission rule keeps grading in parallel under this labeled
 # definition (G0.8).  It is registered in ``china_standout_track.WATCH_DEFINITIONS``
 # so it can never own the headline grade.
 V2_SHADOW_DEFINITION = "cn_prophet_v2_shadow"
+# V4: the displaced v3 ORDERING (v3 score rank, same admission rule) keeps grading the
+# same way.  Reusing the existing standout-track shadow mechanism rather than inventing
+# a second grader is deliberate — v2 is already preserved exactly like this.
+V3_SHADOW_DEFINITION = "cn_prophet_v3_shadow"
 FEATURED_CAP = 24
 SECTOR_CAP = 4
 ADV_FLOOR_YI = 0.5
@@ -160,6 +194,18 @@ CHASE_RUN_5D_MIN = 0.15
 RELAY_MID_MIN = 2
 RELAY_LATE_MIN = 4
 RELAY_POSITIONS = ("early", "mid", "late")
+
+
+# V4 — the ordering contract.  ``measured`` rows order by their intelligence-interest
+# score; ``fallback_v3`` rows order by their v3 ``prophet_score`` instead.  Mixing the
+# two keys in one total order is deliberate and is why the basis is stamped on every
+# row: a name the desks never saw keeps its v3 standing rather than being sunk beneath
+# every covered name by a zero nobody measured.  Both keys are 0-100 board-wide
+# priorities, and neither is a return forecast.
+INTEL_BASIS_MEASURED = "measured"
+INTEL_BASIS_FALLBACK = "fallback_v3"
+#: Human-readable name of the v4 ordering, stamped on every row's ``prophet`` block.
+INTEL_INTEREST_ORDER = "intel_interest_then_v3_score"
 
 
 def _clip01(value: Any) -> float:
@@ -408,6 +454,62 @@ def _relay_position_of(row: Mapping[str, Any]) -> str | None:
     return relay_position(payload.get("count_3d"))
 
 
+def _attach_intel(row: dict, record: Mapping[str, Any] | None) -> None:
+    """Stamp one row's board-independent intelligence-interest evidence.
+
+    A missing, malformed, or explicitly unavailable record all resolve the same way —
+    ``fallback_v3`` with a ``None`` score — because none of them is a measurement.  The
+    compact ``intel`` block is what the card and the ledger read; ``intel_interest_score``
+    and ``intel_interest_basis`` are hoisted to the top level because they are the
+    ordering key and must be greppable in a stored row without unpacking.
+    """
+    score: float | None = None
+    basis = INTEL_BASIS_FALLBACK
+    if isinstance(record, Mapping) and record.get("basis") == INTEL_BASIS_MEASURED:
+        score = _finite_float(record.get("score"))
+        if score is not None:
+            score = max(0.0, min(100.0, score))
+            basis = INTEL_BASIS_MEASURED
+    row["intel_interest_score"] = round(score, 2) if score is not None else None
+    row["intel_interest_basis"] = basis
+    if isinstance(record, Mapping):
+        row["intel"] = {
+            "definition": record.get("definition"),
+            "basis": basis,
+            "score": row["intel_interest_score"],
+            "drivers": list(record.get("drivers") or [])[:3],
+            "signal_core": record.get("signal_core"),
+            "signal_source": record.get("signal_source"),
+            "edge_remaining": record.get("edge_remaining"),
+            "gap": record.get("gap"),
+            "unavailable_reason": record.get("unavailable_reason"),
+        }
+    else:
+        row["intel"] = {
+            "definition": None, "basis": basis, "score": None, "drivers": [],
+            "unavailable_reason": "no_intel_record",
+        }
+
+
+def intel_order_key(row: Mapping[str, Any]) -> tuple[float, float, str]:
+    """The v4 board ordering key: interest first, v3 priority second, ticker third.
+
+    Descending on both scores, so the tuple negates them.  A ``fallback_v3`` row
+    substitutes its v3 ``prophet_score`` for the missing interest score — the explicit
+    fallback the ordering contract requires, never a fabricated zero.
+    """
+    prophet = _finite_float(row.get("prophet_score"))
+    if prophet is None:
+        prophet = _finite_float((row.get("prophet") or {}).get("score")) or 0.0
+    interest = _finite_float(row.get("intel_interest_score"))
+    primary = (
+        interest
+        if row.get("intel_interest_basis") == INTEL_BASIS_MEASURED and interest is not None
+        else prophet
+    )
+    return (-float(primary), -float(prophet), str(row.get("ticker") or ""))
+
+
 def _bottom_quality_value(row: Mapping[str, Any]) -> float:
     coiled = row.get("coiled") or {}
     if coiled.get("star"):
@@ -510,6 +612,7 @@ def enrich_and_score_rows(
     basket_cycle_by: Mapping[str, Mapping[str, Any]] | None = None,
     chase_by: Mapping[str, Mapping[str, Any]] | None = None,
     relay_by: Mapping[str, Mapping[str, Any]] | None = None,
+    intel_by: Mapping[str, Mapping[str, Any]] | None = None,
     micro_asof: Any = None,
     board_asof: Any = None,
 ) -> list[dict]:
@@ -527,6 +630,12 @@ def enrich_and_score_rows(
     admission/display inputs only and add no score; ``chase_by`` alone has no
     admission effect at all (PR #4506 refuted the blanket demote) — it is kept on
     the row so the W0 telemetry engine can grade every chase branch.
+
+    ``intel_by`` carries the V4 board-independent interest records from
+    :mod:`engine.china_intel_interest`.  It adds NO score — ``prophet_score`` is
+    computed identically with or without it — and feeds only ``board_rank``, the v4
+    display/admission ORDER.  Omitting it leaves every row ``fallback_v3``, which
+    makes ``board_rank`` equal to ``score_rank`` and the board order exactly v3's.
     """
     enriched: list[dict] = []
     board_date = _as_date(board_asof)
@@ -599,6 +708,9 @@ def enrich_and_score_rows(
         if relay is not None:
             row["relay"] = deepcopy(dict(relay))
         row["rev_z"] = _finite_float(rev_z)
+        # V4 — board-independent intelligence interest.  Attached before scoring so the
+        # ordering key, the card and the ledger all read one point-in-time record.
+        _attach_intel(row, (intel_by or {}).get(ticker))
         row["_micro_asof"] = micro_date
         row["_board_asof"] = board_date
         enriched.append(row)
@@ -647,12 +759,21 @@ def enrich_and_score_rows(
             },
             "points": points,
             "zero_score_authority": list(_ZERO_SCORE_AUTHORITY),
+            # V4: the SCORE is v3's, unchanged; only the ORDER is intelligence-ranked.
+            "score_basis": "cn_prophet_v3_score",
+            "order_basis": INTEL_INTEREST_ORDER,
         }
         row["board_definition"] = BOARD_DEFINITION
 
+    # ``score_rank`` stays the v3 SCORE order — the displaced-v3 shadow, the ledger and
+    # every historical consumer read it, and it must not silently start meaning
+    # something else.  ``board_rank`` is the new v4 DISPLAY/ADMISSION order.
     enriched.sort(key=lambda row: (-float(row["prophet_score"]), str(row.get("ticker") or "")))
     for rank, row in enumerate(enriched, start=1):
         row["score_rank"] = rank
+    enriched.sort(key=intel_order_key)
+    for rank, row in enumerate(enriched, start=1):
+        row["board_rank"] = rank
     return enriched
 
 
@@ -926,12 +1047,25 @@ def _partition(
     entry_statuses: frozenset[str],
     early_ticks_required: bool,
     relay_late_guard: bool,
+    rank_field: str = "board_rank",
 ) -> dict[str, Any]:
-    """Shared lane machinery for the live v3 rule and the v2 shadow rule."""
+    """Shared lane machinery for the live v4 rule and both shadow rules.
+
+    ``rank_field`` selects the ORDER — ``board_rank`` (v4: interest, then v3 score) or
+    ``score_rank`` (v3: score only).  It governs both the iteration order, so the
+    featured/sector caps bind on that priority, and the per-lane display order.  A row
+    missing the field sorts last rather than raising, so a partially-enriched pool
+    degrades to "unranked at the bottom" instead of darkening the board.
+    """
     rows = [deepcopy(dict(row)) for row in scored_rows]
+
+    def _rank_of(row: Mapping[str, Any]) -> int:
+        rank = _finite_float(row.get(rank_field))
+        return int(rank) if rank is not None else 10**9
+
     rows.sort(
         key=lambda row: (
-            int(row.get("score_rank") or 10**9),
+            _rank_of(row),
             -float(row.get("prophet_score") or 0.0),
             str(row.get("ticker") or ""),
         )
@@ -1009,12 +1143,7 @@ def _partition(
         "forming": forming,
     }
     for lane_rows in lanes.values():
-        lane_rows.sort(
-            key=lambda row: (
-                int(row.get("score_rank") or 10**9),
-                str(row.get("ticker") or ""),
-            )
-        )
+        lane_rows.sort(key=lambda row: (_rank_of(row), str(row.get("ticker") or "")))
         for display_rank, row in enumerate(lane_rows, start=1):
             row["display_rank"] = display_rank
             # Builder-only join metadata and the verbose duplicate research
@@ -1051,6 +1180,11 @@ def partition_board_rows(
     ``more_actionable`` unless they pass every featured-now safeguard — including
     the R1 prime-window entry rule and the R3 ``relay_late`` demotion — and fit
     both display caps.
+
+    V4: the admission RULES above are v3's, unchanged.  Only the ORDER is new — rows
+    are considered in ``board_rank`` (interest, then v3 score) order, so the featured
+    and sector caps admit the most interesting qualifying names rather than the
+    highest-v3-scoring ones.
     """
     return _partition(
         scored_rows,
@@ -1060,7 +1194,39 @@ def partition_board_rows(
         entry_statuses=_FEATURED_ENTRY_STATUSES,
         early_ticks_required=True,
         relay_late_guard=True,
+        rank_field="board_rank",
     )
+
+
+def v3_shadow_featured(
+    scored_rows: Iterable[Mapping[str, Any]],
+    *,
+    featured_cap: int = FEATURED_CAP,
+    sector_cap: int = SECTOR_CAP,
+) -> list[dict]:
+    """The DISPLACED v3 ORDERING, stamped :data:`V3_SHADOW_DEFINITION`.
+
+    v3 ranked by ``prophet_score`` alone; v4 ranks by measured intelligence interest
+    first.  Running the two on the SAME scored rows, with the SAME admission rule and
+    the SAME caps, isolates the ordering change — the only thing v4 altered — so the
+    v4-vs-v3 race accrues from merge day with v4 live, exactly as the v2 shadow does
+    for the v3 admission change.
+
+    Display-free measurement output: these rows log to the shared board store under
+    their own definition, which ``china_standout_track.WATCH_DEFINITIONS`` excludes
+    from headline-grade resolution.
+    """
+    lanes = _partition(
+        scored_rows,
+        featured_cap=featured_cap,
+        sector_cap=sector_cap,
+        definition=V3_SHADOW_DEFINITION,
+        entry_statuses=_FEATURED_ENTRY_STATUSES,
+        early_ticks_required=True,
+        relay_late_guard=True,
+        rank_field="score_rank",
+    )
+    return lanes["featured"]
 
 
 def v2_shadow_featured(
@@ -1080,6 +1246,10 @@ def v2_shadow_featured(
     These rows are display-free measurement output: they log to the shared board
     store under their own definition, which ``china_standout_track.WATCH_DEFINITIONS``
     excludes from headline-grade resolution.
+
+    Ordering stays ``score_rank`` under v4: this shadow exists to isolate the v2-vs-v3
+    ADMISSION rule, and re-ordering it by intelligence interest would confound that
+    race with the separate v4 ordering change.
     """
     lanes = _partition(
         scored_rows,
@@ -1089,6 +1259,7 @@ def v2_shadow_featured(
         entry_statuses=_V2_FEATURED_ENTRY_STATUSES,
         early_ticks_required=False,
         relay_late_guard=False,
+        rank_field="score_rank",
     )
     return lanes["featured"]
 
@@ -1109,6 +1280,7 @@ def build_board_lanes(
     basket_cycle_by: Mapping[str, Mapping[str, Any]] | None = None,
     chase_by: Mapping[str, Mapping[str, Any]] | None = None,
     relay_by: Mapping[str, Mapping[str, Any]] | None = None,
+    intel_by: Mapping[str, Mapping[str, Any]] | None = None,
     micro_asof: Any = None,
     board_asof: Any = None,
     featured_cap: int = FEATURED_CAP,
@@ -1130,6 +1302,7 @@ def build_board_lanes(
         basket_cycle_by=basket_cycle_by,
         chase_by=chase_by,
         relay_by=relay_by,
+        intel_by=intel_by,
         micro_asof=micro_asof,
         board_asof=board_asof,
     )

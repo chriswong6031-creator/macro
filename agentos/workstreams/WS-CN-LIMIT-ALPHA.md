@@ -92,9 +92,18 @@ do_not_redo:
     (DNR:KILL-OUTCOME-AUDITION; Stock Identity owns per-security routing; Live Entry
     Radar owns the entry-event store).
   - >-
-    Do not import China Intelligence composite scores (opportunity_score / conviction)
-    into any Prophet-facing construction: display-tier composites; raw evidence
-    producers only, each re-earning incremental value under its own preregistration.
+    Do not import the RAW China Intelligence Hub composite (china_intel_hub
+    opportunity_score / conviction) or any Hub board-derived term (board_row direction,
+    board label edge, board-absent bonus, board's leading-vs-lagging gap contribution)
+    into a Prophet-facing construction — those carry the board's own output back into
+    itself. AMENDED 2026-08-15 (operator, "Handoff B"): the rule is PROVENANCE, not the
+    word "composite". Any displayed CN Prophet score/rank must trace to
+    engine/china_board_rank.py; that scorer may consume registered board-INDEPENDENT
+    evidence, including the board-independent intelligence-interest composite
+    engine/china_intel_interest.py (intel_interest_score), which is live in
+    cn_prophet_v4 as ORDERING authority. Nothing under research/cn_prophet_audit/ may
+    own Prophet rank. Any FURTHER authority (gate/size/score) still re-earns its value
+    under its own preregistration.
   - >-
     Do not reconstruct evidence history from current snapshots (broker.parquet,
     margin.parquet, china_block_trades/detail.parquet, china_buyback/buyback.parquet).
