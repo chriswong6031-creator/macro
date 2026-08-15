@@ -26,6 +26,7 @@ waves:
   - id: W1
     title: Repo-side dump job, systemd timer, runbook, fail-closed tests
     status: awaiting_ci
+    pr: 5733
   - id: W2
     title: Scratch-Supabase restore drill + vendor PITR fact
     status: todo

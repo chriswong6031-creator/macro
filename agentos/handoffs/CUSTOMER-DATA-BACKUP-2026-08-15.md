@@ -52,6 +52,7 @@ danger_areas:
   - Service-role key bypasses RLS — the dump is the full customer table.
   - A wrong dest URL that somehow evades the ref check would write customer rows. Keep the production-ref guard.
   - update.sh self-arm will enable the timer on the API box; without the encryption key the unit fails every night (visible, intended).
+prs: [5733]
 decisions:
   - DEC:BACKUP-DUAL-SOURCE
 discoveries:
