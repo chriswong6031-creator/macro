@@ -36,11 +36,22 @@ waves:
       defects this workstream's W-TRANSPORT fixed on main (receipts posted on
       the PR). Whichever lineage lands must preserve the bounded transport —
       the wiring pins enforce it.
+  - id: W-SEMANTIC-PROOF
+    title: Semantic CI proof identity and ancestry-valid healing
+    status: in_progress
+    note: >
+      Fresh-main bounded implementation wave commissioned by the 2026-08-14
+      CEO V2 ruling. Execution packs are transport only; the new proof law is
+      keyed by logical job plus semantic proof ID, with exact-base causality,
+      bounded failure signatures, complete accounting, ancestry-valid
+      descendant healing, and semantic main-red overlap. PR 5591 remains the
+      prototype/canonical historical W-REWRITE lineage and is archaeology for
+      surgical harvesting only; this wave does not imply W-REWRITE is done.
 next_action: >
-  Drive W-TRANSPORT through merge, then close/reopen PR 5578 for real pack
-  execution at its exact head; the 5591 lineage owns the comparison-base law
-  and the sweeper wake diet; merge-on-green re-enablement is an operator
-  decision.
+  Complete the W-SEMANTIC-PROOF manifest census, implement one shared semantic
+  evidence law from fresh main, close hostile review and mutation receipts,
+  then land under the pre-existing bootstrap standard or return the exact
+  one-time operator landing packet. Do not begin CI speed/scoping work.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
