@@ -12,13 +12,17 @@ markdown table) — not on internal implementation details.
 """
 from __future__ import annotations
 
+import ast
 import json
+import re
 from pathlib import Path
 
 import pandas as pd
 import pytest
 
 import scripts.audit_grading_closure as agc
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 # ---------------------------------------------------------------------------
@@ -379,6 +383,7 @@ class TestRunOutputs:
             assert "n_logged" in r
             assert "n_graded" in r
             assert "grader_wired" in r
+            assert isinstance(r["graders"], list)
             assert r["tune_step"] in ("Y", "N")
 
 
@@ -413,7 +418,7 @@ class TestCollectStepResilience:
 # ---------------------------------------------------------------------------
 
 class TestInventorySchema:
-    REQUIRED = {"key", "path", "format", "grader", "grade_field",
+    REQUIRED = {"key", "path", "format", "graders", "grade_field",
                 "grade_ts_field", "tune_step", "storage_note"}
 
     def test_all_specs_have_required_keys(self) -> None:
@@ -429,3 +434,151 @@ class TestInventorySchema:
         known = {"jsonl", "parquet", "parquet_dir", "json"}
         for spec in agc.INVENTORY:
             assert spec["format"] in known, f"{spec['key']}: unknown format {spec['format']!r}"
+
+
+# ---------------------------------------------------------------------------
+# One-to-many grader mapping (2026-08-14)
+# ---------------------------------------------------------------------------
+# The inventory used to map each ledger to exactly ONE grader. data/china_sector_cycles/
+# forward_log.parquet named only engine/china_sector_cycles_grader.py — which publishes
+# to site/chinasectordata/cycles_scorecard.json — while the n_graded this audit reports
+# for that ledger is read out of data/china_sector_cycles/scorecards/, written by the
+# SHARED scripts/grade_promises.py (china_sector_cycles is in its ENGINES list, graded
+# on the same gates as the US/country siblings). An evidence-gathering session reading
+# the audit was told the promise-grader did not cover CN. These tests pin the fix.
+
+def _grade_promises_engines() -> list[str]:
+    """Read the real ENGINES list out of scripts/grade_promises.py.
+
+    Parsed with ast rather than imported: the module pulls pandas and
+    engine.promise_graders at import time, and this guard must stay cheap and
+    independent of whether those import cleanly.
+    """
+    src = (REPO_ROOT / "scripts" / "grade_promises.py").read_text()
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name) and target.id == "ENGINES":
+                    return list(ast.literal_eval(node.value))
+    raise AssertionError("ENGINES not found in scripts/grade_promises.py")
+
+
+class TestGraderMapping:
+    def test_spec_graders_normalises_both_shapes(self) -> None:
+        """`graders` list is canonical; `grader` stays a working legacy alias."""
+        assert agc.spec_graders({"graders": ["a.py", "b.py"]}) == ["a.py", "b.py"]
+        assert agc.spec_graders({"grader": "a.py"}) == ["a.py"]
+        assert agc.spec_graders({"grader": None}) == []
+        assert agc.spec_graders({"graders": []}) == []
+        assert agc.spec_graders({}) == []
+        assert agc.spec_graders({"graders": "a.py"}) == ["a.py"]      # bare string
+        assert agc.spec_graders({"graders": ["a.py", "a.py"]}) == ["a.py"]  # deduped
+
+    def test_grader_wired_renders_every_module(self) -> None:
+        """grader_wired keeps its 'Y' prefix (build_measurement's RUL-4 test) and
+        names EVERY wired module, not just the first."""
+        assert agc._grader_wired([]) == "N"
+        assert agc._grader_wired(["a.py"]) == "Y:a.py"
+        assert agc._grader_wired(["a.py", "b.py"]) == "Y:a.py,b.py"
+
+    def test_multi_grader_entry_reports_all_graders(self, tmp_path: Path) -> None:
+        """An entry with two graders reports both, and still verdicts as wired."""
+        ledger = tmp_path / "data" / "multi" / "log.jsonl"
+        _make_jsonl(ledger, [{"id": 1, "graded": True}])
+        result = _run_single(tmp_path, {
+            "key": "multi_grader_ledger",
+            "path": "data/multi/log.jsonl",
+            "format": "jsonl",
+            "graders": ["engine/first_grader.py", "scripts/second_grader.py"],
+            "grade_field": "graded",
+            "grade_ts_field": None,
+            "tune_step": False,
+            "storage_note": None,
+        })
+        assert result["graders"] == ["engine/first_grader.py", "scripts/second_grader.py"]
+        assert result["grader_wired"] == "Y:engine/first_grader.py,scripts/second_grader.py"
+        assert result["verdict"] == "CLOSED"
+
+    def test_every_declared_grader_module_exists(self) -> None:
+        """A renamed or deleted grader must not keep reading as wired."""
+        missing = [
+            (spec["key"], g)
+            for spec in agc.INVENTORY
+            for g in agc.spec_graders(spec)
+            if not (REPO_ROOT / g).is_file()
+        ]
+        assert not missing, f"inventory names grader modules that do not exist: {missing}"
+
+    def test_promise_graded_engines_are_all_in_the_inventory(self) -> None:
+        """Every engine scripts/grade_promises.py grades must be a mapped ledger.
+
+        This is the check that was missing: adding an engine to ENGINES without
+        wiring its forward log here leaves the audit reading that engine's
+        scorecard-derived n_graded with no idea who produced it.
+        """
+        engines = _grade_promises_engines()
+        mapped = set(agc.PROMISE_SCORECARD_ENGINES.values())
+        assert set(engines) == mapped, (
+            f"scripts/grade_promises.py ENGINES={sorted(engines)} but "
+            f"PROMISE_SCORECARD_ENGINES maps {sorted(mapped)} — wire the new engine "
+            f"into scripts/audit_grading_closure.py"
+        )
+
+    def test_promise_graded_ledgers_name_the_promise_grader(self) -> None:
+        """Every ledger whose n_graded comes from a promises scorecard must name
+        scripts/grade_promises.py among its graders — the exact defect fixed here."""
+        by_key = {s["key"]: s for s in agc.INVENTORY}
+        for key in agc.PROMISE_SCORECARD_ENGINES:
+            assert key in by_key, f"{key} is mapped to a scorecard dir but is not in INVENTORY"
+            graders = agc.spec_graders(by_key[key])
+            assert agc.PROMISE_GRADER in graders, (
+                f"{key} reads its n_graded from data/"
+                f"{agc.PROMISE_SCORECARD_ENGINES[key]}/scorecards/ (written by "
+                f"{agc.PROMISE_GRADER}) but does not name it in `graders`: {graders}"
+            )
+
+    def test_china_sector_cycles_names_both_graders(self) -> None:
+        """Regression pin for the reported defect."""
+        spec = next(s for s in agc.INVENTORY
+                    if s["key"] == "china_sector_cycles_forward_log")
+        graders = agc.spec_graders(spec)
+        assert "engine/china_sector_cycles_grader.py" in graders
+        assert "scripts/grade_promises.py" in graders
+
+    def test_scorecard_engine_map_is_not_a_substring_test(self) -> None:
+        """'sector' is a substring of BOTH sector_cycles_forward_log and
+        china_sector_cycles_forward_log — the old branch resolved china to the US
+        directory. Pin that each key maps to its OWN engine directory."""
+        for key, engine in agc.PROMISE_SCORECARD_ENGINES.items():
+            assert key == f"{engine}_forward_log", (
+                f"{key} maps to data/{engine}/ — the map and the ledger key disagree"
+            )
+
+
+class TestMarkdownMultiGrader:
+    def test_md_table_lists_every_grader(self, tmp_path: Path) -> None:
+        """The rendered table must show both modules, each backticked."""
+        payload = {
+            "schema": "grading_closure.v1",
+            "generated_at": "2026-08-14T00:00:00+00:00",
+            "n_ledgers": 1, "n_closed": 1, "n_grader_starved": 0, "n_log_only": 0,
+            "ledgers": [{
+                "key": "china_sector_cycles_forward_log",
+                "path": "data/china_sector_cycles/forward_log.parquet",
+                "storage": "present",
+                "grader_wired": "Y:engine/china_sector_cycles_grader.py,scripts/grade_promises.py",
+                "graders": ["engine/china_sector_cycles_grader.py",
+                            "scripts/grade_promises.py"],
+                "n_logged": 10, "n_graded": 5,
+                "last_graded_at": None, "tune_step": "N", "verdict": "CLOSED",
+            }],
+        }
+        agc._write_md(payload, tmp_path)
+        md = (tmp_path / "docs" / "GRADING_CLOSURE.md").read_text()
+        assert "`engine/china_sector_cycles_grader.py`" in md
+        assert "`scripts/grade_promises.py`" in md
+        row = next(l for l in md.splitlines() if l.startswith("| `china_sector_cycles"))
+        assert row.count("`") >= 6, f"both graders must be backticked separately: {row}"
+        assert not re.search(r"`[^`]+,[^`]+`", row), (
+            f"graders must not be rendered as one comma-joined path: {row}"
+        )
