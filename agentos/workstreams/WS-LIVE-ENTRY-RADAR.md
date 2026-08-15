@@ -24,6 +24,7 @@ owns_paths:
   - data/entry_radar/
   - research/live_entry_radar/
   - mockups/refs/entry_radar/
+  - tests/fixtures/entry_radar/
 waves:
   - id: W0
     title: PR-0 archaeology + frozen research contract (Tracks A–E, kill-registry compliance)

@@ -804,7 +804,8 @@ def test_radar_owns_only_its_declared_paths():
     owned_exact = {"config/entry_radar.yml", "templates/entry_radar.html.j2",
                    "site/entry_radar.html"}
     owned_prefixes = ("engine/entry_radar/", "scripts/entry_radar_",
-                      "tests/test_entry_radar_", "data/entry_radar/",
+                      "tests/test_entry_radar_", "tests/fixtures/entry_radar/",
+                      "data/entry_radar/",
                       "research/LIVE_ENTRY_RADAR_", "research/live_entry_radar/",
                       "mockups/refs/entry_radar/", "agentos/")
     listed = subprocess.run(["git", "ls-files"], cwd=ROOT,
