@@ -290,6 +290,18 @@ merge. One PR must carry every fix the pack needs. Cherry-pick a sibling with `-
 (authorship preserved) rather than rewriting it, and read its diff first — the
 sibling's version is often the better one.
 
+Sessions SHOULD heal. The “don’t propose in-flight work” line is for new
+features; heals are the exception (this bullet exists because #4850 was missed
+that way). One PR per pack stays — different packs still get separate heal PRs.
+
+**Missing hole (2026-08-14, #5715/#5717 deadlock then #5689 absorbed both):**
+if TWO (or more) packs are red on main AND required `ci-gate` needs every pack
+green AND `gh pr merge --admin` is refused by the repository ruleset, two
+whole-pack PRs still cannot land. Then ONE PR labelled `main-red-repair` must
+carry every pack heal that `ci-gate` is blocking. Do not wait. Do not open a
+second `main-red-repair`. That is not a repeal of one-PR-per-pack; it is the
+mutual-block exception.
+
 **Re-fetch `origin/main` and re-run the job line before pushing OR merging.** On a
 red main the tree moves in hours (five heal PRs landed mid-session here), and a
 `merge-blocked` "real content conflict" on a heal PR usually means the heal already
