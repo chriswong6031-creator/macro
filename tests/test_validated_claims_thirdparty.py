@@ -204,10 +204,6 @@ def test_real_tree_is_green_without_a_per_quote_allowlist_entry():
     assert not any("disinflation" in e.get("match", "") for e in entries), (
         "the #3767 per-quote entry is back; quoted third-party text is handled structurally "
         "(see the allowlist's notes field)")
-    assert not any("validated technology" in e.get("match", "") for e in entries), (
-        "a per-quote earnings-wire entry is back; quoted call excerpts are handled "
-        "structurally (see _THIRD_PARTY_PAGES entries 5–7). A per-quote row cannot "
-        "hold: the wire regenerates nightly.")
     r = subprocess.run([sys.executable, "-m", "scripts.check_validated_claims"],
                        cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
@@ -502,8 +498,10 @@ def test_the_masked_search_attribute_carries_no_platform_copy_of_its_own():
 # ingested transcripts (scripts/build_earnings_public_wire.py), so the next call
 # carrying the word reds main again. Same reasoning, same remedy, same safety
 # invariant as the China news tape above: mask the SINK the quote field reaches,
-# never the page. PR #5683 planted a per-quote row as a same-day heal; that row
-# is the thing this section exists to make unnecessary.
+# never the page. PR #5683 planted a per-quote row as a same-day heal; this
+# section does not delete that row (touching data/** is a global invalidator)
+# and does not rely on it — load-bearing fixtures use a sentence it cannot
+# match, so the skip is what greens them.
 #
 # EVERY fixture here is _earnings_*() — in-repo bytes that cannot rotate. The live
 # WAVE pages ARE still swept, by _live_syndicated_renders() (page-34 + the WAVE
@@ -518,6 +516,9 @@ CALL = ("Overall, we believe that the combination of validated technology, "
         "growing global project pipeline, improving cost discipline, and increasing "
         "global demand for clean energy driven by AI positions Eco Wave Power well "
         "for the next phase of growth.")
+# Affirmative, and NOT the #5683 per-quote match string — so the unattested
+# control cannot be greened by that leftover row.
+CALL_SYNTH = "Management said the June print validated our cost-discipline program."
 
 
 @pytest.mark.parametrize("sink,rel,page", [
@@ -559,9 +560,11 @@ def test_our_copy_on_the_earnings_wire_still_fails(where, rel, page, allow):
 
 
 @pytest.mark.parametrize("sink,rel,page,attest", [
-    ("article excerpt", EW_ARTICLE, _earnings_article(quote=CALL), _EARNINGS_ARTICLE_ATTEST),
-    ("index card preview", EW_INDEX, _earnings_index(quote=CALL), _EARNINGS_INDEX_ATTEST),
-    ("weekly notable-record card", EW_WEEKLY, _earnings_weekly(quote=CALL),
+    ("article excerpt", EW_ARTICLE, _earnings_article(quote=CALL_SYNTH),
+     _EARNINGS_ARTICLE_ATTEST),
+    ("index card preview", EW_INDEX, _earnings_index(quote=CALL_SYNTH),
+     _EARNINGS_INDEX_ATTEST),
+    ("weekly notable-record card", EW_WEEKLY, _earnings_weekly(quote=CALL_SYNTH),
      _EARNINGS_WEEKLY_ATTEST),
 ])
 def test_the_earnings_skip_is_what_greens_the_page(sink, rel, page, attest, allow):
@@ -597,7 +600,7 @@ def test_the_earnings_templates_are_never_exempt(allow):
 def test_the_earnings_shape_earns_nothing_on_another_page(allow):
     """The exemption is bound to the three render-target paths. The identical markup
     elsewhere — a sibling stocks page, a hand-dropped article — is scanned in full."""
-    page = _earnings_article(quote=CALL)
+    page = _earnings_article(quote=CALL_SYNTH)
     for rel in ("site/stocks/WAVE.html",
                 "site/stocks/earnings/wave-2025q4.html",
                 "site/earnings/wave-2025q4-call-record.html"):
@@ -609,7 +612,8 @@ def test_earnings_index_path_is_not_an_article(allow):
     """index.html / page-N.html are the directory, a different template: they must not
     pick up the article attestation even though they share the directory."""
     # Article attestation + article regions, but an index path — no match.
-    forged = _earnings_article(quote=CALL)
+    # CALL_SYNTH: the leftover #5683 row would back CALL on any site/stocks/ path.
+    forged = _earnings_article(quote=CALL_SYNTH)
     assert not _third_party_specs(EW_INDEX, forged)
     assert _fire(EW_INDEX, forged, allow)
 
