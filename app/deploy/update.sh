@@ -1579,6 +1579,42 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# CUSTOMER-TABLE BACKUP — MMX-001 / GATE-1. Same self-arming contract as the
+# sentinel: go-live is a REPO COMMIT, so a CHANGED-only trigger would install a
+# timer nobody ever enables. Gated on macro-api.service (the box that already
+# holds Supabase + R2 env). The .service is a oneshot and is NEVER restarted;
+# only the timer is (re)armed. Absent-file clause self-heals an earlier failed
+# verify or an operator removal. The job fail-closes without
+# BACKUP_ENCRYPTION_KEY — that is visible, not silent.
+if systemctl is-enabled macro-api.service >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-user-backup\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-user-backup.timer ]; }; then
+	USER_BACKUP_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-user-backup.service"
+		"$APP_DIR/app/deploy/macro-user-backup.timer"
+	)
+	if systemd-analyze verify "${USER_BACKUP_UNIT_SOURCES[@]}"; then
+		USER_BACKUP_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${USER_BACKUP_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				USER_BACKUP_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$USER_BACKUP_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-user-backup.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-user-backup units updated"
+		fi
+		systemctl enable --now macro-user-backup.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-user-backup.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-user-backup unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # PRESS-FEEDS is a long-running daemon, unlike the oneshot live-plane timers
 # above. Arming remains an explicit operator choice: this block neither installs
 # an absent unit nor enables/starts an inactive one. Once the operator has

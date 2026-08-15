@@ -989,6 +989,10 @@ on:
       - "tests/test_china_einteraction_collector.py"
       - "tests/test_china_reports_collector.py"
       - "tests/test_china_holder_counts_collector.py"
+      # Post-P-B2 China Intelligence PIT hist (wired into china-native-collectors).
+      # collectors/** already covers the five subject modules; the suite itself
+      # must be named so a test-only re-pin still starts the pack.
+      - "tests/test_cn_intel_pit_accrual.py"
       # W3 CNH policy/OMO/trade-detail collectors. Same wiring law: collectors/**
       # already triggers the job, but a test-only edit (a re-pinned live fixture) must
       # re-run it too. test_china_official_corpora.py was named by NO job before this —
@@ -3228,6 +3232,13 @@ on:
       - "scripts/freshness_sentinel.py"
       - "app/deploy/macro-sentinel.service"
       - "app/deploy/macro-sentinel.timer"
+      # MMX-001 customer-table backup — same #3509 lesson as the sentinel:
+      # listing only the suite leaves a unit/script-only edit unable to start
+      # the job that owns it. update.sh already appears above.
+      - "tests/test_backup_user_tables.py"
+      - "scripts/backup_user_tables.py"
+      - "app/deploy/macro-user-backup.service"
+      - "app/deploy/macro-user-backup.timer"
       # The china half of that dead-man switch: the board-lag disclosure the
       # sentinel's china surface anchors on, and the A-share session calendar the
       # engine computes `delayed` from. Both halves listed for the same reason as

@@ -67,6 +67,7 @@ InaccessiblePaths=-/etc/macro-live.env
 InaccessiblePaths=-/etc/macro-market-memory.env
 InaccessiblePaths=-/etc/macro-ollama.env
 InaccessiblePaths=-/etc/macro-sentinel.env
+InaccessiblePaths=-/etc/macro-user-backup.env
 InaccessiblePaths=-/etc/ssl/cf-origin.key
 
 [Install]
