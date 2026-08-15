@@ -41,6 +41,12 @@ CI users cannot mutate it. `/usr/local/libexec/mastermind-ci-cache-update` seria
 the only mutation with `flock`, advances only `refs/heads/main`, runs a connectivity
 check, and never prunes, repacks, or runs GC during migration.
 
+The peer source was a partial clone, so the cache is shallow-bound at the audited
+bootstrap main commit. Integrity checks enumerate and verify every object reachable
+from that maintained shallow `main`; they do not claim that unreachable historical
+promisor fragments form complete history. Full current-tree checkout with lazy fetch
+disabled is the materialization acceptance boundary.
+
 Before `actions/checkout`, the root-owned prewarm program:
 
 1. validates the cache owner, modes, identity marker, bare-repository state, origin,
