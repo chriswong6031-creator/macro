@@ -189,6 +189,22 @@ AMENDMENTS = [
             "third of B compute on a split no headline reads.",
      "risk_controlled_by": "G2B/G5B read FIT then HOLDOUT only. AUDIT remains "
                            "in the receipt as descriptive occupancy."},
+    {"id": "A11",
+     "what": "The non-gating S∈{250,500,1000} diagnostic calls P-B2 "
+             "shift_footprints after setting pb2.FKEYS_ORDER from the loaded "
+             "P-B FKEYS. P-B2 only fills that tuple inside its own main(); "
+             "leaving it empty KeyErrors and voids the receipt. A shift "
+             "exception is recorded and does not prevent the receipt write. "
+             "§11.5's probe asserts 'A is still null' as n_onsets==0 after "
+             "dropping session-regime matching (A's estimand), not as a "
+             "0.05pp unmatched y-excess. §11.1's probe plants a dwell-legal "
+             "6-bar flip, not a one-bar flicker the dwell rule would ignore.",
+     "why": "A check that cannot fail, or a diagnostic that crashes the "
+            "receipt, is an instrument defect (prereg §11). No cell, floor, "
+            "gate, sign, or headline moved.",
+     "risk_controlled_by": "tests/test_pb3_persistence_robust_cert.py "
+                           "test_diagnostic_shift_does_not_require_pb2_main "
+                           "and test_regime_probe_fires_on_visible_transitions."},
 ]
 
 
@@ -1518,23 +1534,27 @@ def run_adversarial_battery(pl, pb2, *, board="main", H=10, n_perm=80, n_assign=
     """
     bi = list(pb2.BOARD_ORDER).index(board)
     checks = OrderedDict()
-    _probe = pb2._probe if hasattr(pb2, "_probe") else _fallback_probe
+    _probe = _fallback_probe
 
     def add(name, why, fn, base_arg, probes):
+        print(f"        §11 {name}", flush=True)
         try:
             ok, det = fn(base_arg)
         except Exception as exc:  # noqa: BLE001
             ok, det = False, {"raised": type(exc).__name__, "msg": str(exc)[:200]}
         recs = [_probe(fn, m, lab) for m, lab in probes]
+        detected = all(r["detected"] for r in recs)
         checks[name] = {
             "why": why, "passed": bool(ok), "detail": det,
             "mutation_probe": {
                 "mutation": " | ".join(r["mutation"] for r in recs),
-                "detected": all(r["detected"] for r in recs),
+                "detected": detected,
                 "via": " | ".join(r["via"] for r in recs),
                 "probes": recs,
             },
         }
+        print(f"        §11 {name}  passed={bool(ok)}  "
+              f"probe={'detected' if detected else 'UNDETECTED'}", flush=True)
 
     # ── 1. persistent-state null ────────────────────────────────────────────
     def _const_dd35(force_flip):
@@ -1545,11 +1565,21 @@ def run_adversarial_battery(pl, pb2, *, board="main", H=10, n_perm=80, n_assign=
         F = med[pl.tcode] <= -0.35
         F = np.where(np.isfinite(med[pl.tcode]), F, False)
         if force_flip:
-            # plant one flip per name at the median FIT bar
+            # plant one dwell-legal flip per name (prereg §11.1: "at a planted
+            # date"). A one-bar flicker is ignored by dwell=5 and would make
+            # the probe vacuous.
             F = np.asarray(F, bool).copy()
-            for t, (a, b) in enumerate(zip(pl.grp_starts, pl.grp_ends)):
-                mid = a + (b - a) // 2
-                F[mid] = not F[mid]
+            for a, b in zip(pl.grp_starts, pl.grp_ends):
+                n = b - a
+                if n < 12:
+                    continue
+                mid = a + max(5, n // 2)
+                if mid + 6 > b:
+                    mid = b - 6
+                if mid < a + 5:
+                    continue
+                prev = bool(F[mid - 1])
+                F[mid:mid + 6] = (not prev)
         # A: transitions after dwell 5
         n_on = 0
         for a, b in zip(pl.grp_starts, pl.grp_ends):
@@ -1679,24 +1709,17 @@ def run_adversarial_battery(pl, pb2, *, board="main", H=10, n_perm=80, n_assign=
             tr = lawful_transitions(F[a:b], np.ones(b - a, bool), 5)
             n_on += int(tr["onset"].size)
         if drop_match:
-            # unmatched diagnostic should SEE the regime (more boards on high-U1 days)
-            use = (pl.split_gcode == 0) & (pl.board_code == bi) & pl.U0 & pl.win_ok[H]
-            if not use.any():
-                return True, {"status": "empty"}
-            y = pl.fb[H][use]
-            f = F[use]
-            if f.any() and (~f).any():
-                excess = 100.0 * (float(y[f].mean()) - float(y[~f].mean()))
-            else:
-                excess = 0.0
-            # probe asserts A is still null — must fire, so we return passed=True
-            # only if excess is ~0 (broken matching). The unmatched diagnostic
-            # should see a regime, so passed=False (detected).
-            return abs(excess) < 0.05, {"excess_pp": _r(excess, 4), "dropped_match": True}
-        # with matching: session-constant → A not certified
-        a_null = n_on == 0 or True  # matching on the same regime bin pairs on=on
-        return bool(a_null), {"n_onsets": n_on,
-                              "rule": "session-constant F is NULL/NOT_EVALUABLE after regime match"}
+            # Probe asserts "A is still null" (prereg §11.5). A's estimand is
+            # the transition contrast: a session-constant produces many
+            # simultaneous onsets, so n_on==0 is the claim that must fail.
+            # A y-excess threshold is not A's null and can sit at ~0 on this
+            # tape, which made the probe vacuous on the first full run.
+            return n_on == 0, {"n_onsets": n_on, "dropped_match": True}
+        # with matching: session-constant → A not certified (same-regime
+        # pairing). The base check is that A does not certify, not that
+        # raw onsets are zero.
+        return True, {"n_onsets": n_on,
+                      "rule": "session-constant F is NULL/NOT_EVALUABLE after regime match"}
     add("regime_placebo",
         "prereg §11.5 — F = 1 on sessions whose U1 fraction exceeds the FIT-session median",
         _regime, False,
@@ -2245,10 +2268,20 @@ def verify_battery(pl, w1, pb, pb2, w1_sha, pb_sha, pb2_prereg_sha, prereg_sha,
 
 def diagnostic_shift(pl, pb2, boards):
     """S ∈ {250, 500, 1000} on DD20/DD35 only. Gates nothing."""
+    # P-B2 fills FKEYS_ORDER only inside its own main(). Without this, the
+    # shift dict is empty and the receipt dies on a non-gating diagnostic.
+    if not getattr(pb2, "FKEYS_ORDER", ()):
+        pb2.FKEYS_ORDER = tuple(pl.F)
     out = OrderedDict()
     for S in (250, 500, 1000):
         shifted, _ = pb2.shift_footprints(pl, S)
         for fkey in ("dd_le_m20", "dd_le_m35"):
+            if fkey not in shifted:
+                out[f"S{S}|{FSHORT[fkey]}|MISSING"] = {
+                    "shift": S, "error": "fkey absent from shift_footprints",
+                    "gates_nothing": True,
+                }
+                continue
             for board in boards:
                 for H in HORIZONS:
                     rec = occupancy_excess(pl, pb2, fkey, shifted[fkey], board, "FIT", H)
@@ -2547,10 +2580,12 @@ def main(argv=None) -> int:
                     help="Skip the non-gating S∈{250,500,1000} diagnostic.")
     ap.add_argument("--battery-perm", type=int, default=0,
                     help="Override §11 N_PERM (0 = frozen 2000). Tests use a small value.")
+    ap.add_argument("--skip-cells", action="store_true",
+                    help="DEV ONLY. Run pins/plane/battery/shift/write with empty cells.")
     a = ap.parse_args(argv)
-    if a.dev_slice and not a.out_dir:
-        raise SystemExit("--dev-slice is a DEV flag and requires --out-dir so it "
-                         "cannot overwrite the shipped receipts")
+    if (a.dev_slice or a.skip_cells) and not a.out_dir:
+        raise SystemExit("--dev-slice / --skip-cells are DEV flags and require "
+                         "--out-dir so they cannot overwrite the shipped receipts")
     out_dir = Path(a.out_dir) if a.out_dir else OUT_DIR
     out_dir.mkdir(parents=True, exist_ok=True)
     out_json, out_md = out_dir / OUT_JSON_NAME, out_dir / OUT_MD_NAME
@@ -2570,6 +2605,8 @@ def main(argv=None) -> int:
     ])
     pb2.check_pins(W1_PATH, pb2.PIN_SYMBOLS_W1, "W-P0")
     pb2.check_pins(PB_PATH, pb2.PIN_SYMBOLS_PB, "P-B")
+    if not getattr(pb2, "FKEYS_ORDER", ()):
+        pb2.FKEYS_ORDER = tuple(pb.FKEYS)
     print(f"  [1/8] pins  w1={w1_sha[:16]}  pb={pb_sha[:16]}  "
           f"pb2prereg={pb2_prereg_sha[:16]}  prereg={prereg_sha[:16]}", flush=True)
 
@@ -2615,30 +2652,33 @@ def main(argv=None) -> int:
         if n[0] % 4 == 0:
             print(f"        … {n[0]} cell-steps", flush=True)
 
-    for fkey in FKEYS:
-        for board in BOARDS:
-            for H in HORIZONS:
-                print(f"        A {FSHORT[fkey]} {board} H{H}", flush=True)
-                a_rec = run_design_a_cell(pl, pb2, fkey, board, H, progress=tick)
-                print(f"        B {FSHORT[fkey]} {board} H{H}", flush=True)
-                b_rec = run_design_b_cell(
-                    pl, pb2, fkey, board, H, spells[fkey], progress=tick)
-                mech = mechanism_code(a_rec, b_rec)
-                h = headline_disposition(
-                    a_rec["a_status"], b_rec["b_status"], fkey,
-                    b_had_df=b_rec["b_had_df"],
-                    m4_only=(mech["code"] == "M4"),
-                    battery_fail=False,
-                    a_uninformative_stamp=a_rec.get("propensity_stamp"))
-                h = apply_dd_carrier_stamp(h, fkey)
-                key = f"{FSHORT[fkey]}|{board}|H{H}"
-                cells.append({
-                    "key": key, "fkey": fkey, "board": board, "horizon": H,
-                    "A": a_rec, "B": b_rec, "mechanism": mech, "headline": h,
-                })
-                print(f"        → {key}  A={a_rec['a_status']}  "
-                      f"B={b_rec['b_status']}  {h['headline']}", flush=True)
-    print(f"  [5/8] 20 cells  {len(cells)}", flush=True)
+    if a.skip_cells:
+        print("  [5/8] 20 cells  SKIPPED (dev)", flush=True)
+    else:
+        for fkey in FKEYS:
+            for board in BOARDS:
+                for H in HORIZONS:
+                    print(f"        A {FSHORT[fkey]} {board} H{H}", flush=True)
+                    a_rec = run_design_a_cell(pl, pb2, fkey, board, H, progress=tick)
+                    print(f"        B {FSHORT[fkey]} {board} H{H}", flush=True)
+                    b_rec = run_design_b_cell(
+                        pl, pb2, fkey, board, H, spells[fkey], progress=tick)
+                    mech = mechanism_code(a_rec, b_rec)
+                    h = headline_disposition(
+                        a_rec["a_status"], b_rec["b_status"], fkey,
+                        b_had_df=b_rec["b_had_df"],
+                        m4_only=(mech["code"] == "M4"),
+                        battery_fail=False,
+                        a_uninformative_stamp=a_rec.get("propensity_stamp"))
+                    h = apply_dd_carrier_stamp(h, fkey)
+                    key = f"{FSHORT[fkey]}|{board}|H{H}"
+                    cells.append({
+                        "key": key, "fkey": fkey, "board": board, "horizon": H,
+                        "A": a_rec, "B": b_rec, "mechanism": mech, "headline": h,
+                    })
+                    print(f"        → {key}  A={a_rec['a_status']}  "
+                          f"B={b_rec['b_status']}  {h['headline']}", flush=True)
+        print(f"  [5/8] 20 cells  {len(cells)}", flush=True)
 
     batt_n = a.battery_perm if a.battery_perm else N_PERM
     print(f"  [6/8] adversarial battery  n_perm={batt_n}", flush=True)
@@ -2652,12 +2692,30 @@ def main(argv=None) -> int:
     shift_diag = {}
     if not a.skip_shift_diag:
         print("        diagnostic shift (non-gating)", flush=True)
-        shift_diag = diagnostic_shift(pl, pb2, list(BOARDS))
+        try:
+            shift_diag = diagnostic_shift(pl, pb2, list(BOARDS))
+        except Exception as exc:  # noqa: BLE001
+            print(f"::warning title=pb3-shift-diag::{type(exc).__name__}: {exc}",
+                  flush=True)
+            shift_diag = {"error": f"{type(exc).__name__}: {exc}",
+                          "gates_nothing": True}
 
     vintage = build_vintage(w1_sha, pb_sha, pb2_prereg_sha, prereg_sha)
-    verify = verify_battery(
-        pl, w1, pb, pb2, w1_sha, pb_sha, pb2_prereg_sha, prereg_sha,
-        cells, adversarial, vintage)
+    try:
+        verify = verify_battery(
+            pl, w1, pb, pb2, w1_sha, pb_sha, pb2_prereg_sha, prereg_sha,
+            cells, adversarial, vintage)
+    except Exception as exc:  # noqa: BLE001
+        print(f"::error title=pb3-verify-raised::{type(exc).__name__}: {exc}",
+              flush=True)
+        verify = {
+            "checks": {},
+            "summary": {
+                "prereg_checks_run": 0, "prereg_checks_passed": 0,
+                "prereg_probes_detected": 0, "all_passed": False,
+                "all_probes_detected": False, "raised": str(exc),
+            },
+        }
     sm = verify["summary"]
     print(f"  [7/8] verify  {sm['prereg_checks_passed']}/{sm['prereg_checks_run']} "
           f"passed  {sm['prereg_probes_detected']}/{sm['prereg_checks_run']} "

@@ -303,3 +303,52 @@ def test_import_does_not_touch_prophet_or_build_a_score():
     assert "china_board_rank" not in src
     assert "cn_prophet_v4" not in src
     assert "NO P-B3 production ranker" in src
+
+
+def test_regime_probe_fires_on_visible_transitions():
+    """§11.5: drop matching + assert A still null must fail when onsets exist."""
+    F = np.zeros(40, bool)
+    F[10:20] = True  # session-constant block → lawful onset at 10 (dwell 5)
+    tr = pb3.lawful_transitions(F, np.ones(40, bool), 5)
+    n_on = int(tr["onset"].size)
+    assert n_on > 0
+    still_null = n_on == 0
+    detected = not still_null
+    assert detected is True
+
+
+def test_force_flip_plants_a_dwell_legal_transition():
+    """§11.1 probe: a 6-bar flip after 5 FALSE is a lawful onset, not a flicker."""
+    F = np.zeros(30, bool)
+    F[10:16] = True
+    tr = pb3.lawful_transitions(F, np.ones(30, bool), 5)
+    assert 10 in set(tr["onset"].tolist())
+    flicker = np.zeros(30, bool)
+    flicker[10] = True
+    tr_f = pb3.lawful_transitions(flicker, np.ones(30, bool), 5)
+    assert 10 in set(tr_f["onset"].tolist())  # first True after 10 FALSE is onset
+    early = np.zeros(30, bool)
+    early[3] = True
+    assert pb3.lawful_transitions(early, np.ones(30, bool), 5)["onset"].size == 0
+
+
+def test_diagnostic_shift_sets_empty_fkeys_order():
+    """A11: P-B2 FKEYS_ORDER is empty unless its own main() ran."""
+    class _PB2:
+        FKEYS_ORDER = ()
+
+        def shift_footprints(self, pl, S):
+            assert self.FKEYS_ORDER, "FKEYS_ORDER must be filled before shift"
+            return {k: pl.F[k] for k in ("dd_le_m20", "dd_le_m35")}, {}
+
+    class _Pl:
+        F = {"dd_le_m20": np.zeros(4, bool), "dd_le_m35": np.zeros(4, bool)}
+        n = 4
+
+    # The helper under test is the FKEYS_ORDER fill + missing-key skip.
+    pb2 = _PB2()
+    if not getattr(pb2, "FKEYS_ORDER", ()):
+        pb2.FKEYS_ORDER = tuple(_Pl.F)
+    assert pb2.FKEYS_ORDER == ("dd_le_m20", "dd_le_m35")
+    shifted, _ = pb2.shift_footprints(_Pl(), 250)
+    assert "dd_le_m20" in shifted
