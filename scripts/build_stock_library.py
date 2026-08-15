@@ -486,7 +486,7 @@ def _name_score_asof(alpha_asof) -> "tuple[str, bool]":
     Until 2026-08-14 this stamp was ``pd.Timestamp.utcnow().date()`` at append
     time. The nightly's library band runs after 00:00 UTC, so session D's calls
     landed under calendar date D+1 (weekend lanes minted Sat/Sun stamps), and a
-    (date, ticker) join of the grader's US calls ledger against the published
+    (date, ticker) join of data/name_score/us_calls.parquet against the published
     board compared ADJACENT SESSIONS: 22-29% agreement, |Δ| up to 99 — measured
     board(D) ≡ store(D+1 calendar) with close-level match 1.000 on all 20 snapshot
     dates (DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES). One quantity, two date
