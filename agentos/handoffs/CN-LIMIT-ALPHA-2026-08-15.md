@@ -1,82 +1,77 @@
 ---
 workstream: WS:CN-LIMIT-ALPHA
-session: cursor/cn-intel-pit-accrual-a9f2
-model: opus
+session: cursor/cn-pb3-prereg-ee9b
+model: local
 ended_because: complete
 mission: >
-  Post-P-B2 China Intelligence PIT accrual hardening: convert the remaining
-  carrier-independent class-C snapshot feeds (broker 金股, per-name margin,
-  block trades, buybacks) into prospective append-only keep-first evidence
-  stores. report_rc already fixed by #5614 — verify, do not redo. Display
-  only; zero scoring or Prophet authority.
+  Freeze the P-B3 persistence-robust certification preregistration only.
+  Do not run the study. Do not read new outcomes. Do not compute a new
+  result table. Stop once the prereg PR exists, before independent
+  adversarial review and before any later certification session.
 state_before: >
-  P-B2 shipped (#5615). report_rc overwrite defect healed on main (#5614,
-  2026-08-14 17:29:28Z). broker.parquet / margin.parquet /
-  china_block_trades/detail.parquet / china_buyback/buyback.parquet were
-  still latest-window overwrites (matrix class C).
+  P-B2 shipped (PR #5615): NO DISCRIMINATOR at the preregistered bar;
+  DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT recorded; WS next_action
+  named a persistence-robust certification under a fresh prereg as the
+  reopen path for placebo-clean MA200/QB/VZ and indeterminate DD cells.
+  No P-B3 prereg existed.
 changed:
-  - {path: collectors/_first_seen_store.py, what: "extracted china_trade_detail keep-first + holder_counts first_seen/atomic/abort-on-unreadable write path"}
-  - {path: collectors/tushare_broker.py, what: "broker_hist.parquet keyed (month, ticker, broker); known_at only when vendor month == Asia/Shanghai collection month; snapshot unchanged"}
-  - {path: collectors/tushare_margin.py, what: "margin_hist.parquet keyed (ticker, trade_date); snapshot unchanged; fin_pctile stays snapshot-only"}
-  - {path: collectors/china_block_trades.py, what: "events.parquet keyed (ticker, event_date); event_date ≠ first_seen; dateless rows dropped; snapshot unchanged"}
-  - {path: collectors/china_buyback.py, what: "buyback_hist.parquet keyed (ticker, event_date, plan_key); vendor 公告日期 is event_date never known_at; snapshot unchanged"}
-  - {path: tests/test_cn_intel_pit_accrual.py, what: "mutation battery — day-2 preserve, first_seen immutability, payload keep-first, snapshot roll, no fabricated dates, no broker month-start PIT, no row multiply"}
-  - {path: research/cn_prophet_audit/CN_INTEL_DATA_READINESS_MATRIX_2026-08-14.md, what: "§3 report_rc marked fixed; §4 rows updated; §6 evidence-start table + remaining P-C gates"}
-  - {path: agentos/decisions/DEC-CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE.md, what: "separate hist + keep-first dialect; rejected in-place _drip and snapshot seeding"}
-  - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "wave P-B2-ACCRUAL done; next_action is persistence-robust certification then P-C gates"}
+  - {path: research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md, what: "new — P-B3 prereg frozen before any instrument or outcome; A primary, B corroborative; 20-cell scope; joint disposition and P-D implication frozen"}
+  - {path: agentos/decisions/DEC-CN-PB3-A-PRIMARY-B-CORROBORATIVE.md, what: "new — records the A-primary / B-corroborative assignment and the rejected alternatives"}
+  - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "P-B3 wave added as in_progress (prereg freeze); next_action points at independent review then a later run"}
+  - {path: research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md, what: "P-B3 row added as prereg-frozen, run not started"}
 verified:
-  - {claim: "report_rc already accrues keep-first on main; not redone", command: "git log --all --oneline --grep=5614; python3 -m pytest tests/test_tushare.py::test_report_rc_accrues_across_windows -q", result: "1e3b16dd2aa on main; test green"}
-  - {claim: "14/14 new mutation tests green plus related collector/extras regressions", command: "python3 -m pytest tests/test_cn_intel_pit_accrual.py tests/test_tushare.py tests/test_china_holder_counts_collector.py tests/test_china_special_situations.py -q", result: "80+14 passed in this session (tushare vendor/auth cases deselected only where marked)"}
-  - {claim: "agentos records valid", command: "python3 scripts/agentos.py validate", result: "0 errors, 9 pre-existing warnings (none on this workstream)"}
+  - {claim: "P-B2 instruments still byte-untouched", command: "git diff --stat HEAD -- research/cn_prophet_audit/washout_onset_w1.py research/cn_prophet_audit/pb_case_decomposition.py research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md research/cn_prophet_audit/pb2_precursor_discrimination.py", result: "empty on those paths"}
+  - {claim: "W-P0 / P-B / P-B2-prereg sha prefixes match the pins written into the P-B3 prereg §3", command: "python3 -c \"from pathlib import Path; import hashlib; [print(p, hashlib.sha256(Path(p).read_bytes()).hexdigest()[:16]) for p in ['research/cn_prophet_audit/washout_onset_w1.py','research/cn_prophet_audit/pb_case_decomposition.py','research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md']]\"", result: "11ac61de71f0f595 / f42b0566beb60bec / 043a85d69f76ea86"}
+  - {claim: "this PR adds no study runner and no result JSON", command: "git diff --name-only origin/main...HEAD", result: "prereg + agentos/program-home pointers only"}
+  - {claim: "agentos records valid", command: "python3 scripts/agentos.py validate", result: "0 errors on the new records"}
 unverified:
-  - {claim: "exact live evidence-start timestamps for the four new hist files", what_would_verify: "after the first asia-close collect that writes each hist parquet, record min(first_seen) per store — the files do not exist until that run"}
+  - {claim: "the 20 in-scope cells will meet A's transition floors on DD", what_would_verify: "the later P-B3 run's honest-N table; INSUFFICIENT SUPPORT is a pre-registered outcome, not a defect"}
+  - {claim: "independent adversarial review will pass this prereg without a design change", what_would_verify: "the review session's written blockers, if any, incorporated as numbered pre-outcome amendments"}
 unresolved:
-  - "P-C remains gated on chips-distribution + auction/minutes accrual lanes and the full-A spine authority decision."
+  - "P-B3 is freeze-only. Certification is a later session after independent adversarial review. P-D is not opened."
 next_actions:
-  - "Persistence-robust certification design under a fresh prereg (P-B2 reopen path for MA200/QB/VZ and indeterminate DD cells)."
-  - "P-C only when its data gates open. Do not charter it from this wave."
-  - "Do not score broker/margin/block/buyback/report_rc. Do not add them to Prophet."
+  - "Independent adversarial review of PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md (this PR). Do not run the study in the review session."
+  - "After review passes, a later session implements the instrument and runs P-B3 against the frozen prereg. Do not auto-roll from review into the run."
+  - "Do not open P-D from the certification session. CERTIFIED STRUCTURE is an eligible P-D input only; NULL is recorded and not re-shopped."
+  - "Orthogonal PIT accrual (broker 金股 first-seen; report_rc; per-name margin/block-trades/buybacks) remains a parallel next_action of the workstream, not of this freeze."
 do_not_redo:
-  - "Never cite/restore withdrawn W1-W3 artifacts (DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT)."
-  - "Never redo the report_rc overwrite fix (#5614)."
-  - "Never stamp historical broker 金股 months as PIT-known; known_at is UNKNOWN unless vendor month equals the collection calendar month."
-  - "Never turn a vendor event_date or plan_start into known_at."
-  - "Never reconstruct evidence from current snapshots."
-  - "Never seed the new hist stores from the pre-existing snapshots and call that PIT."
+  - "Do not rerun P-B2 or move its gates. P-B2 remains NO DISCRIMINATOR AT THE PREREGISTERED BAR."
+  - "Do not reuse S in {250, 500, 1000} feature shifting as a P-B3 certification null (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT)."
+  - "Do not restore or cite withdrawn W1-W3 artifacts (DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT)."
+  - "Do not read P-B winners-only numbers as selection skill."
+  - "Do not shop the §2 cell list, §5.2 edge map, or §10 headline table after outcomes."
+  - "Do not add a study runner or a result file to the freeze PR."
 danger_areas:
-  - "asia-close must actually run the four collectors for hist files to appear. A token-dark tushare night leaves broker_hist and margin_hist uncreated; that is an empty start, not a backfill invitation."
-  - "china_margin_detail (akshare drip) is a different source from tushare margin_hist. Do not join them as one tape."
-  - "Session worktrees are sparse: do not write into omitted data/ trees."
-prs: [5730]
-decisions: [DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE]
+  - "Calling an occupancy stamp 'timing' is the misread this prereg exists to prevent. Only §10 TIMING may use that word."
+  - "A later session that flips MA200 to onset-under, or DD to exit, because the primary edge is null, has shopped the edge. That result does not exist."
+  - "Session worktrees are sparse: materialize data/ before any later panel run. This freeze session must not write into data/ or site/."
+  - "P-B2's permutation remains diagnostic-only and anticonservative; do not import it as a P-B3 gate."
+prs: []
+decisions: [DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE]
 discoveries: [DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT]
 ---
 
-## §0 State
+Freeze session only. The commit hash of
+`research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md`
+is the freeze proof once review passes. No certification numbers exist yet.
 
-Accrual hardening for the four remaining class-C carrier-independent China
-Intelligence snapshots is implemented. Display files are unchanged.
-`report_rc` was already lawful on main (#5614) and was not touched.
+## Folded from #5730 (cn-intel PIT hist, already on main)
+
+Shipped on main as `576ce39009` (PR #5730, session
+`cursor/cn-intel-pit-accrual-a9f2`). Accrual hardening for the four remaining
+class-C carrier-independent China Intelligence snapshots is implemented.
+Display files are unchanged. `report_rc` was already lawful on main (#5614)
+and was not touched.
 
 Evidence-start floor for the four new stores is 2026-08-15. The exact
 timestamp per store is `min(first_seen)` after the first live collect that
-creates the file. No hist parquet is committed in this change.
+creates the file. No hist parquet is committed in that change.
 
-## §1 What is left
-
-1. Persistence-robust certification design (fresh prereg) — the P-B2 reopen
-   path. Not this wave.
-2. P-C when chips-distribution and/or the minute/auction plane actually run,
-   plus the operator-owned full-A spine decision.
-3. Record live `min(first_seen)` on each new hist file after the first
-   asia-close write.
-
-## §2 Danger areas
-
-A dark tushare token leaves broker_hist and margin_hist uncreated. That is
-not permission to seed from `broker.parquet` / `margin.parquet`.
-
-## §3 Not in scope
-
-Scoring, Prophet wiring, opportunity_score/conviction, P-B/P-D comparisons,
-and any historical PIT backfill.
+Do not redo: never stamp historical broker 金股 months as PIT-known; never
+turn a vendor event_date or plan_start into known_at; never reconstruct
+evidence from current snapshots; never seed the new hist stores from the
+pre-existing snapshots and call that PIT. A dark tushare token leaves
+`broker_hist` and `margin_hist` uncreated — that is an empty start, not a
+backfill invitation. `china_margin_detail` (akshare drip) is a different
+source from tushare `margin_hist`. Decision:
+`DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE`.

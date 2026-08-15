@@ -34,7 +34,8 @@ waves:
       3/4 families — a calibration-governed null, mechanism = persistent-state
       placebo reproducibility (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT);
       MA200/QB/VZ placebo-clean with strong holdout-consistent structure;
-      nothing rescued, frozen consequence applied unchanged.
+      nothing rescued, frozen consequence applied unchanged. Do not rerun.
+      Do not move its gates. Reopen path is P-B3, not a P-B2 rewrite.
   - id: P-B2-ACCRUAL
     title: Prospective PIT accrual for remaining class-C China Intelligence feeds
     status: done
@@ -45,6 +46,19 @@ waves:
       DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE. Evidence-start = first live
       asia-close refresh after merge (floor 2026-08-15); hist files do not
       exist until that run.
+  - id: P-B3
+    title: Persistence-robust certification (prereg freeze)
+    status: in_progress
+    depends_on: [P-B2]
+    next_action: >-
+      PREREG FROZEN (this wave, freeze-only): 
+      research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
+      (DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE). A = primary within-name
+      transition contrast; B = corroborative persistence-preserving null.
+      Scope = 20 cells (DD20/DD35/MA200/QB/VZ × main/chinext20 × H10/H5).
+      P-B2 verdict is not rewritten. Next: independent adversarial review
+      of the prereg. The certification RUN is a later session. Do not
+      auto-roll into the run or into P-D.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -65,8 +79,10 @@ waves:
     next_action: >-
       Last, by design. Requires a pre-registered ablation arena over Prophet incumbent
       + surviving families; every family must show INCREMENTAL information over Prophet
-      and over the structural carrier. Gauntlet at promotion; forward verification only
-      via the exact-plane ledger chain.
+      and over the structural carrier AND name propensity. P-B3 CERTIFIED STRUCTURE
+      is an eligible input if and when that wave ships a certification; a P-B3 NULL
+      is not re-shopped. Gauntlet at promotion; forward verification only via the
+      exact-plane ledger chain.
 landmines:
   - >-
     The STOP-SHIP (operator, 2026-08-10; DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT) covers
@@ -79,7 +95,13 @@ landmines:
   - >-
     P-B is WINNERS-ONLY anatomy: its presence/order/lead numbers carry no comparison
     arm and must never be quoted as selection skill or conditional probability. The
-    preregistered comparison arm is P-B2.
+    preregistered comparison arm is P-B2. P-B3 certifies what P-B2 left unresolved;
+    it does not rewrite P-B2.
+  - >-
+    Long-horizon feature shifting (P-B2 §6.3, S in {250, 500, 1000}) is not a
+    valid certification null for persistent states
+    (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). P-B3's corroborative null
+    is a duration/prevalence-preserving within-split spell permutation.
 do_not_redo:
   - >-
     Do not restore, re-grade, or cite any adjusted-plane W1-W3 artifact, ledger, model
@@ -110,16 +132,25 @@ do_not_redo:
     Studies read the hist/events stores. Do not stamp historical broker months as
     PIT-known (DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE). Do not redo the
     report_rc overwrite fix (#5614).
+  - >-
+    Do not reuse P-B2's long-horizon feature-shift placebo as a certification null
+    (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). Do not add a P-B3 runner or
+    result table to the freeze PR. Do not auto-roll from the freeze into the run.
+decisions: ["DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE"]
 discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT"]
-decisions: ["DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE"]
+artifacts:
+  - research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
+  - research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md
 next_action: >-
-  Post-accrual order: (1) a persistence-robust certification design — within-name
-  state-transition contrasts or a persistence-preserving permutation calibration
-  — under a fresh prereg (the reopen path for P-B2's placebo-clean MA200/QB/VZ
-  structure and its indeterminate DD cells); (2) P-C when its data gates open
-  (chips-distribution lane + auction/minutes + quota/authority; full-A spine
-  stays an operator decision); (3) full-A exact-plane re-measurement; (4) P-D
-  ablation arena. No production scoring change from P-B2 or from accrual.
+  P-B3 prereg is frozen; independent adversarial review of
+  PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md is the next act.
+  Do not run the certification in the review session. After review
+  passes, a later session runs P-B3. Parallel and unchanged: (1)
+  prospective/PIT evidence-accrual hardening for orthogonal China
+  Intelligence families; (2) P-C when its data gates open; (3)
+  full-A exact-plane re-measurement; (4) P-D last, and only as an
+  ablation arena that may take P-B3 CERTIFIED STRUCTURE as input.
+  No production scoring change from P-B2 or from this freeze.
 ---
 
 ## Context
@@ -128,8 +159,9 @@ The 2026-08-10 STOP-SHIP ruling stands in full force as a citation/restoration b
 the withdrawn adjusted-plane artifacts (see landmines) — but the RESEARCH workstream is
 ACTIVE on lawful substrate, not blocked: the v2 program home
 (`research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md`) re-homed the thesis on the
-pattern-tier washout-onset lane, and W-P0 (#5364), P-A1 (#5438) and P-B (#5521) have
-all merged under it. P-B2 (this record's in-progress wave) is the preregistered
-matched-control discrimination study that P-B's ore ledger reserved; its prereg was
-committed before any outcome run, and its verdict — discriminator or null — closes the
-tested construction only, never the search space.
+pattern-tier washout-onset lane, and W-P0 (#5364), P-A1 (#5438), P-B (#5521) and
+P-B2 (#5615) have all merged under it. P-B2's verdict — NO DISCRIMINATOR at the
+preregistered bar — closes that construction only. P-B3 is the persistence-robust
+reopen of the unresolved DD / MA200 / QB / VZ structure; its prereg is frozen
+before any P-B3 instrument or outcome. P-B2-ACCRUAL (#5730) shipped the
+prospective keep-first PIT hist stores; that wave is done and is not a P-B3 input.
