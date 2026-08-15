@@ -82,6 +82,34 @@ def test_caddy_public_boundary_matches_policy_exactly():
     assert _caddy_public_exclusions() == expected
 
 
+def test_biocatalyst_shell_assets_are_public_but_payload_api_stays_paid():
+    shell_paths = {"/biocatalyst.html", "/biocatalyst.css", "/biocatalyst.js"}
+    assert shell_paths <= set(POLICY["public"]["exact"])
+    assert shell_paths.isdisjoint(POLICY["free_registered"]["exact"])
+    assert shell_paths <= _caddy_public_exclusions()
+
+    error_matcher = re.search(
+        r"@reg_asset_err\s*\{\s*not path ([^\n]+)", CADDY, flags=re.S
+    )
+    assert error_matcher, "Caddy matcher @reg_asset_err missing"
+    assert shell_paths <= set(shlex.split(error_matcher.group(1)))
+
+    for matcher in ("public_static", "public_versioned"):
+        block = re.search(rf"@{matcher}\s*\{{(.*?)^\s*\}}", CADDY, flags=re.S | re.M)
+        assert block, f"Caddy matcher @{matcher} missing"
+        paths = {
+            token
+            for path_line in re.findall(r"^\s*path\s+([^\n]+)", block.group(1), flags=re.M)
+            for token in shlex.split(path_line)
+        }
+        assert {"/biocatalyst.css", "/biocatalyst.js"} <= paths
+
+    api_source = (ROOT / "app" / "biocatalyst.py").read_text()
+    assert "def require_site_full_user(" in api_source
+    assert "Depends(require_site_full_user)" in api_source
+    assert "enforce_site_full" in api_source
+
+
 def test_retired_movers_route_redirects_to_the_consolidated_hub_section():
     redirect_lines = [
         line.strip()
