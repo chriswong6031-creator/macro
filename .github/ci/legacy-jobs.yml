@@ -7710,6 +7710,13 @@ jobs:
       # pip line); the suite's live-delivery proof is a local HTTP receiver.
       - name: commercial-path alerting (GATE-4)
         run: python -m pytest tests/test_commercial_path_alerts.py -q
+      # MMX-001 / GATE-1 customer-table backup. Sibling of the freshness-sentinel
+      # suite in the sweep below: same deploy/ops shape (oneshot + timer +
+      # update.sh self-arm). Own step so a sweep failure cannot hide it, and so
+      # audit_unrun_tests.py sees a run: body that names the suite. openssl is
+      # on ubuntu-latest; the suite is stdlib + MemoryStore (no boto3).
+      - name: customer-table backup dump/restore contracts (MMX-001)
+        run: python -m pytest tests/test_backup_user_tables.py -q
       - name: store/ops builders behind the nightly data lanes
         run: python -m pytest tests/test_append_sync_gauge.py tests/test_audit_fred_groups.py tests/test_audit_massive_store.py tests/test_build_adjudication_packet.py tests/test_build_demand.py tests/test_build_ext_quotes.py tests/test_build_live_overlay.py tests/test_build_m2_profiles.py tests/test_build_unusual_baseline.py tests/test_calibrate_flow_signing_append.py tests/test_calibrate_stage.py tests/test_cctv_finalize_watcher.py tests/test_collect_lane_gate.py tests/test_context_candidates.py tests/test_context_index_eval.py tests/test_deploy_update_self_heal.py tests/test_ei_f1d_shadow.py tests/test_freshness_sentinel.py tests/test_exit_tax_scenarios.py tests/test_expanding_mean_benchmark.py tests/test_fetch_basket_ohlcv.py tests/test_finra_short_interest_pit.py tests/test_flow_score_stock_block.py tests/test_gex_history_snapshot.py tests/test_grade_policy_calendar.py tests/test_import_equitydesk.py tests/test_import_equitydesk_backfill.py tests/test_index_add_overnight.py tests/test_manifest_seams.py tests/test_mri_config_spine.py tests/test_narrative_ttl.py tests/test_net_replay_v1.py tests/test_options_tape_signed.py tests/test_quotes_server.py tests/test_reconcile_membership.py tests/test_refresh_markets_now.py tests/test_release_playbook.py tests/test_sf_harness_runner.py tests/test_slf031.py tests/test_slf051_cn_margin.py tests/test_tech_lab_cli.py tests/test_vps_live_orchestration.py -q
       # Tech-Lab parity fixtures: the ~24 STRUCTURAL checks (fields, warmup

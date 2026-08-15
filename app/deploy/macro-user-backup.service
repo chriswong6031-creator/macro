@@ -1,0 +1,41 @@
+# Nightly encrypted dump of customer/billing tables to private R2 (MMX-001 / GATE-1).
+#
+# WS-1, research/MASTERMIND_RED_TEAM_REMEDIATION_PLAN.md. The oneshot dumps the
+# nine protected user tables, encrypts the archive with BACKUP_ENCRYPTION_KEY,
+# uploads it under private/user-table-backups/, and prunes objects older than
+# 30 days. It never restores. Restore is an operator command against a scratch
+# project — see docs/RESTORE_RUNBOOK.md.
+#
+# Env files: macro-api.env already carries SUPABASE_URL / service role and the
+# shared R2_* pair. macro-user-backup.env is the operator slot for
+# BACKUP_ENCRYPTION_KEY, SUPABASE_DB_URL (preferred dump path), and optional
+# BACKUP_R2_* overrides so this prefix does not share a public CDN mapping.
+#
+# Resource caps follow the live-plane idiom (TimeoutStartSec + Nice/CPU/Memory)
+# and add RuntimeMaxSec as required by the remediation plan. Nine small tables
+# plus openssl plus one R2 put should finish in well under a minute; 900s bounds
+# a wedged dump so it cannot overlap the next night.
+[Unit]
+Description=Mastermind encrypted nightly backup of customer/billing tables
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-api.env
+EnvironmentFile=-/etc/macro-user-backup.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.backup_user_tables dump
+TimeoutStartSec=900
+RuntimeMaxSec=900
+Nice=10
+CPUWeight=20
+CPUQuota=30%
+MemoryHigh=128M
+MemoryMax=256M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

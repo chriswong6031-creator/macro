@@ -333,6 +333,7 @@ the next rung, so the shipped order is right before and after such a fix.
 | `codex-runtime-setup.sh` | pins the official Codex CLI and prepares its root-only VPS state directory |
 | `live-setup.sh` | installs the fast, full-snapshot, and intraday-bar systemd lanes |
 | `macro-sentinel.service` + `.timer` | external freshness sentinel (masterplan W1 dead-man switch) plus the GATE-4 commercial-path pass — same unit, same `/etc/macro-sentinel.env` Telegram/Discord/email transport, no new vendor. Freshness still owns unit status; commercial-path is the leading `ExecStart=-` so a freshness breach cannot skip the money-path page |
+| `macro-user-backup.service` + `.timer` | encrypted nightly dump of the nine customer/billing tables to private R2 (MMX-001 / GATE-1) — self-armed by `update.sh` on the API box; restore is operator-only against a scratch project, see `docs/RESTORE_RUNBOOK.md` |
 | `live-rollback.sh` | disables the live lanes, restores legacy cron, and preserves artifacts in a backup |
 
 ## Notes / gotchas
