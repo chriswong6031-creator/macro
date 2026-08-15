@@ -24,6 +24,21 @@ CUSTOM_LABELS = {
     "m1-light",
 }
 HOSTED = "ubuntu-latest"
+TRUSTED_PULL_REQUEST_TARGET = ".github/workflows/ci-authority.yml"
+TRUSTED_AUTHORITY_CHECKOUT = (
+    "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+)
+TRUSTED_AUTHORITY_CHECKOUT_WITH = {
+    "ref": "${{ github.event.repository.default_branch }}",
+    "fetch-depth": 1,
+    "sparse-checkout": "scripts",
+    "persist-credentials": False,
+}
+FORBIDDEN_CANDIDATE_CHECKOUT_FRAGMENTS = (
+    "pull_request.head",
+    "merge_group.head",
+    "github.sha",
+)
 RUNTIME_WORKFLOWS = {
     "mastermindx-market-intelligence/macro/.github/workflows/selfhosted-ci-canary.yml@refs/heads/main",
     "mastermindx-market-intelligence/macro/.github/workflows/m1-runner-canary.yml@refs/heads/main",
@@ -85,6 +100,94 @@ def reaches_trust_gate(jobs: dict, job_id: str, seen: set[str] | None = None) ->
     return any(reaches_trust_gate(jobs, name, seen) for name in needs_names(job))
 
 
+def _authority_controller_r2_findings(relative: str, document: dict) -> list[Finding]:
+    """R2: pull_request_target is forbidden except the trusted-base controller.
+
+    ``ci-authority.yml`` may use ``pull_request_target`` only while it remains a
+    default-branch controller that never materializes candidate code. Any other
+    file, or this file after losing those pins, is still R2. That is not a
+    general allowlist: a second ``pull_request_target`` workflow, or this one
+    checking out the PR head, still fails the same rule.
+    """
+    if relative != TRUSTED_PULL_REQUEST_TARGET:
+        return [Finding("R2", f"{relative}: pull_request_target is forbidden")]
+
+    findings: list[Finding] = []
+    if "pull_request" in triggers(document):
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller must not also trigger on pull_request",
+            )
+        )
+    if document.get("permissions") != {}:
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller must declare empty workflow permissions",
+            )
+        )
+    jobs = document.get("jobs") or {}
+    if set(jobs) != {"ci-authority"}:
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller must contain only job ci-authority",
+            )
+        )
+        return findings
+    job = jobs["ci-authority"]
+    if not isinstance(job, dict):
+        findings.append(Finding("R2", f"{relative}: ci-authority job must be a mapping"))
+        return findings
+    if "uses" in job:
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller may not delegate to a reusable workflow",
+            )
+        )
+    if job.get("runs-on") != HOSTED:
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller must remain exactly {HOSTED}",
+            )
+        )
+    steps = [step for step in (job.get("steps") or []) if isinstance(step, dict)]
+    checkouts = [
+        step
+        for step in steps
+        if str(step.get("uses", "")).startswith("actions/checkout@")
+    ]
+    if len(checkouts) != 1:
+        findings.append(
+            Finding("R2", f"{relative}: trusted controller must have exactly one checkout")
+        )
+        return findings
+    checkout = checkouts[0]
+    if checkout.get("uses") != TRUSTED_AUTHORITY_CHECKOUT:
+        findings.append(
+            Finding("R2", f"{relative}: trusted controller checkout must stay pinned")
+        )
+    if checkout.get("with") != TRUSTED_AUTHORITY_CHECKOUT_WITH:
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller must checkout only the default branch without credentials",
+            )
+        )
+    checkout_text = yaml.safe_dump(checkout)
+    if any(fragment in checkout_text for fragment in FORBIDDEN_CANDIDATE_CHECKOUT_FRAGMENTS):
+        findings.append(
+            Finding(
+                "R2",
+                f"{relative}: trusted controller must not materialize candidate code",
+            )
+        )
+    return findings
+
+
 def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Finding]:
     registry = load_yaml(registry_path)
     findings: list[Finding] = []
@@ -124,7 +227,7 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         documents[relative] = document
         workflow_triggers = triggers(document)
         if "pull_request_target" in workflow_triggers:
-            findings.append(Finding("R2", f"{relative}: pull_request_target is forbidden"))
+            findings.extend(_authority_controller_r2_findings(relative, document))
         for job_id, job in (document.get("jobs") or {}).items():
             if not isinstance(job, dict):
                 continue
