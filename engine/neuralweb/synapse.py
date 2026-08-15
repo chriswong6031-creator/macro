@@ -137,6 +137,11 @@ def validate_registry(reg: dict, root: str | Path | None = None) -> list[str]:
 
     seen_paths: dict[str, str] = {}  # path -> artifact_id (dup check)
 
+    # Reverse consumer index for the health_optional_upstreams rule (2n), built ONCE and
+    # only when some entry declares the field — the rule ships with zero live entries, so
+    # a registry that never uses it pays nothing.
+    upstream_index: dict[str, set[str]] | None = None
+
     for artifact_id, entry in artifacts.items():
         if not isinstance(entry, dict):
             violations.append(f"{artifact_id}: entry is not a dict")
@@ -291,6 +296,53 @@ def validate_registry(reg: dict, root: str | Path | None = None) -> list[str]:
                 f"{prefix}: known_extra_writers is non-empty but notes is missing "
                 f"(rot must be explained)"
             )
+
+        # 2n. health_optional_upstreams — the optional-input DELTA for Eval OS T4
+        # (engine/output_health.py). VALIDATE-WHEN-PRESENT, same shape as 2k2 and
+        # deliberately NOT in _REQUIRED_ARTIFACT_KEYS: requiring it would demand a key on
+        # all 642 artifacts and change this check for every open PR.
+        #
+        # THE DERIVED GRAPH REMAINS THE SOURCE OF TRUTH. Inputs are inferred mechanically
+        # (B is an input of A when A's producer appears in B's consumers); this field says
+        # only that one already-inferred input is OPTIONAL to A's health, so a missing or
+        # stale one degrades A rather than making it unavailable. That is a SEMANTIC claim
+        # about a producer contract, so all three conditions are required — an id that
+        # names nothing, or names something that does not actually flow into this
+        # artifact, would let a health verdict be softened by a declaration with no
+        # evidence behind it. Ships with ZERO live entries by design.
+        optional_upstreams = entry.get("health_optional_upstreams")
+        if optional_upstreams is not None:
+            if not isinstance(optional_upstreams, list):
+                violations.append(
+                    f"{prefix}: health_optional_upstreams must be a list, got "
+                    f"{type(optional_upstreams).__name__}"
+                )
+            elif optional_upstreams:
+                if upstream_index is None:
+                    upstream_index = {}
+                    for aid, art in artifacts.items():
+                        if not isinstance(art, dict):
+                            continue
+                        for module in art.get("consumers") or []:
+                            upstream_index.setdefault(str(module), set()).add(aid)
+                if not entry.get("notes"):
+                    violations.append(
+                        f"{prefix}: health_optional_upstreams requires a notes field "
+                        f"giving the evidence for treating an input as optional"
+                    )
+                producer_module = (entry.get("producer") or "").strip()
+                candidates = upstream_index.get(producer_module, set()) - {artifact_id}
+                for upstream in optional_upstreams:
+                    if upstream not in artifacts:
+                        violations.append(
+                            f"{prefix}: health_optional_upstreams {upstream!r} is not a "
+                            f"registered artifact id"
+                        )
+                    elif upstream not in candidates:
+                        violations.append(
+                            f"{prefix}: health_optional_upstreams {upstream!r} is not in "
+                            f"the inferred direct-upstream set of {artifact_id}"
+                        )
 
     return violations
 
