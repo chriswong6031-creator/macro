@@ -3240,6 +3240,12 @@ on:
       - "scripts/backup_user_tables.py"
       - "app/deploy/macro-user-backup.service"
       - "app/deploy/macro-user-backup.timer"
+      # PR-C — the W-L1 acceptance record built on top of that sentinel. It
+      # reads the sentinel's own state file, so a change to either side of that
+      # contract must be able to START this workflow; same #3509 lesson as the
+      # four lines above.
+      - "tests/test_close_pass_slo_report.py"
+      - "scripts/close_pass_slo_report.py"
       # The china half of that dead-man switch: the board-lag disclosure the
       # sentinel's china surface anchors on, and the A-share session calendar the
       # engine computes `delayed` from. Both halves listed for the same reason as
