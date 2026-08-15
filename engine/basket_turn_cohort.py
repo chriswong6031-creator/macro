@@ -84,6 +84,14 @@ _TURN_WATCH_LEDGER_FILE = "ledger.jsonl"
 _COHORT_LOG_DIR  = "basket_turn"
 _COHORT_LOG_FILE = "cohort_claims_log.jsonl"
 
+# Per-claim outcome words written into the cohort claims log.  The log records
+# what register_batch ACTUALLY returned per claim, never an assumed success
+# (W3 review, PR #5679 reviewer R3: 4 cohorts were logged registered:true while
+# only 2 claims reached data/qledger/claims.jsonl).
+_OUTCOME_REGISTERED = "registered"   # claim row is in claims.jsonl, gradeable
+_OUTCOME_REJECTED   = "rejected"     # row persisted for audit; never graded
+_OUTCOME_FAILED     = "failed"       # register_batch persisted NOTHING for it
+
 # Path for the nightly cohort grades (one row per cohort once 21 sessions elapsed)
 # Grades live here; qledger row remains the registration of record.
 _COHORT_GRADES_FILE = "cohort_grades.jsonl"
@@ -144,8 +152,44 @@ def load_turn_watch_ledger(data_root: Path | None = None) -> list[dict]:
     return rows
 
 
+def _registration_outcome(result: Any) -> str:
+    """Map ONE ``qledger.register_batch`` result slot to its outcome word.
+
+    register_batch returns one dict per input claim, in input order:
+      * the stored row, status 'open' (or a later live status such as 'graded'
+        on a dedupe hit) — the claim row IS in data/qledger/claims.jsonl;
+      * the stored row, status 'rejected' — persisted for audit, never graded;
+      * ``{"status": "error", "error": "..."}`` — preparation raised and
+        NOTHING was persisted for that claim.
+
+    Fail-closed: an error slot, a non-dict, or any slot without a claim_id is
+    'failed'.  Only a persisted row may be logged as registered — the whole
+    point of the fix is that the log stops asserting a success it never saw.
+    """
+    from engine.qledger import STATUS_REJECTED  # noqa: PLC0415 — lazy, as elsewhere
+
+    if not isinstance(result, dict):
+        return _OUTCOME_FAILED
+    status = result.get("status")
+    if status == STATUS_REJECTED:
+        return _OUTCOME_REJECTED
+    if status == "error" or not result.get("claim_id"):
+        return _OUTCOME_FAILED
+    return _OUTCOME_REGISTERED
+
+
 def _load_cohort_log(data_root: Path | None = None) -> set[str]:
-    """Return set of cohort_ids already registered (keep-first guard)."""
+    """Return the set of cohort_ids whose claim REACHED the store (keep-first).
+
+    A row latches the cohort when its claim was persisted — outcome
+    'registered' or 'rejected' (a rejected row lives in claims.jsonl for audit,
+    and re-registering it would only dedupe against itself).  Outcome 'failed'
+    means register_batch persisted nothing, so the cohort stays eligible and the
+    next nightly retries it rather than losing it silently.
+
+    Legacy rows written before the outcome field existed carry no 'outcome' key
+    and latch unconditionally, exactly as they did when they were written.
+    """
     p = _cohort_log_path(data_root)
     seen: set[str] = set()
     if not p.exists():
@@ -156,11 +200,16 @@ def _load_cohort_log(data_root: Path | None = None) -> set[str]:
             continue
         try:
             row = json.loads(line)
-            cid = row.get("cohort_id")
-            if cid:
-                seen.add(cid)
         except json.JSONDecodeError:
             continue
+        if not isinstance(row, dict):
+            continue
+        cid = row.get("cohort_id")
+        if not cid:
+            continue
+        if row.get("outcome", _OUTCOME_REGISTERED) == _OUTCOME_FAILED:
+            continue
+        seen.add(cid)
     return seen
 
 
@@ -511,6 +560,11 @@ def register_cohort_claims(
     form_cohorts, double-checked here).  Returns list of newly registered
     claim dicts (empty list when COLLECT_LANE gate is not set or no new cohorts).
 
+    Each attempted cohort gets ONE row in the cohort claims log carrying the
+    outcome register_batch actually returned for it — registered / rejected /
+    failed (see _registration_outcome).  A 'failed' cohort persisted nothing,
+    so it does not latch keep-first and the next nightly retries it.
+
     Claim design:
       desk/family    : basket_turn.v1
       scope_type     : basket
@@ -589,17 +643,44 @@ def register_cohort_claims(
     _root = root if root is not None else config.ROOT
     registered = q.register_batch(claims_to_register, root=_root, dedupe=True)
 
-    # Append cohort log for keep-first bookkeeping
+    # Append cohort log for keep-first bookkeeping.  register_batch returns one
+    # result per input claim IN INPUT ORDER, so registered[i] is the outcome of
+    # the claim built from new_cohort_ids[i] — the log records that outcome and
+    # never assumes it.  A short/absent slot reads as 'failed' (fail-closed).
     log_path = _cohort_log_path(data_root)
+    counts = {_OUTCOME_REGISTERED: 0, _OUTCOME_REJECTED: 0, _OUTCOME_FAILED: 0}
     with log_path.open("a", encoding="utf-8") as fh:
-        for cid in new_cohort_ids:
-            fh.write(json.dumps({"cohort_id": cid, "registered": True}) + "\n")
+        for i, cid in enumerate(new_cohort_ids):
+            result = registered[i] if i < len(registered) else None
+            outcome = _registration_outcome(result)
+            counts[outcome] += 1
+            row: dict[str, Any] = {
+                "cohort_id":  cid,
+                "registered": outcome == _OUTCOME_REGISTERED,
+                "outcome":    outcome,
+            }
+            if isinstance(result, dict):
+                if result.get("claim_id"):
+                    row["claim_id"] = result["claim_id"]
+                reason = result.get("reject_reason") or result.get("error")
+                if outcome != _OUTCOME_REGISTERED and reason:
+                    row["reason"] = str(reason)
+            fh.write(json.dumps(row) + "\n")
 
-    n_open = sum(1 for r in registered if r.get("status") == "open")
     log.info(
-        "basket_turn_cohort: %d cohorts processed → %d new qledger claims (open)",
-        len(new_cohort_ids), n_open,
+        "basket_turn_cohort: %d cohorts processed → %d registered, %d rejected, %d failed",
+        len(new_cohort_ids), counts[_OUTCOME_REGISTERED],
+        counts[_OUTCOME_REJECTED], counts[_OUTCOME_FAILED],
     )
+    # A claim that never reached the store is a silently-lost forward bet — the
+    # exact failure this log used to hide.  Make it visible in the Actions run.
+    if counts[_OUTCOME_REJECTED] or counts[_OUTCOME_FAILED]:
+        print(
+            f"::warning title=basket-turn-cohort::{counts[_OUTCOME_REJECTED]} rejected + "
+            f"{counts[_OUTCOME_FAILED]} failed of {len(new_cohort_ids)} cohort claim(s) "
+            f"did not register into data/qledger/claims.jsonl",
+            flush=True,
+        )
     return registered
 
 
@@ -656,7 +737,10 @@ def nightly_run(
             }
 
         registered = register_cohort_claims(cohorts, data_root=data_root, root=root)
-        n_registered = len([r for r in registered if r.get("status") == "open"])
+        n_registered = sum(
+            1 for r in registered
+            if _registration_outcome(r) == _OUTCOME_REGISTERED
+        )
 
         # Grade matured cohorts (21 sessions elapsed)
         new_grades = grade_cohorts(cohorts, as_of=as_of, data_root=data_root)
