@@ -244,6 +244,13 @@
   }
 
   function listsAll() { return listsCache.slice(); }
+  function listNameOf(listId) {
+    if (!listId) return '';
+    for (var i = 0; i < listsCache.length; i++) {
+      if (String(listsCache[i].id) === String(listId)) return listsCache[i].name || '';
+    }
+    return '';
+  }
 
   function listsFetch() {
     return _listsGuard().then(function () {
@@ -508,9 +515,21 @@
            can be different rows — bound 'Default', folding into a newly created
            'Watchlist'. Folding the post-merge blob therefore planted the bound list's
            entire membership into a list the user never asked for. The fold delivers
-           what the visitor accumulated, and nothing else. */
+           what the visitor accumulated, and nothing else.
+
+           Taken BEFORE the bind below: bindList re-points the blob at the list cache,
+           and capturing after that would fold the cloud membership, not the visitor's. */
         var localBeforeMerge = _tickersOf(
           (window.WL && window.WL.getBlob) ? window.WL.getBlob() : null);
+
+        /* Bind the page to the list we just read, WITH its name. Leaving listId
+           null after pull is why the selector kept saying "My watchlist" over the
+           53-name default (W4 2026-08-15). Listeners run synchronously. */
+        try {
+          document.dispatchEvent(new CustomEvent('wl-list-change', {
+            detail: { listId: wlId, name: listNameOf(wlId) }
+          }));
+        } catch (e) {}
 
         // Merge cloud rows into the local blob (union: cloud wins for membership)
         if (window.WL && window.WL.merge && items.length > 0) {
@@ -755,7 +774,9 @@
          interleave between the assignment and the rebind. */
       wlId = listId;
       try {
-        document.dispatchEvent(new CustomEvent('wl-list-change', { detail: { listId: listId } }));
+        document.dispatchEvent(new CustomEvent('wl-list-change', {
+          detail: { listId: listId, name: listNameOf(listId) }
+        }));
       } catch (e) {}
       return rows;
     });
