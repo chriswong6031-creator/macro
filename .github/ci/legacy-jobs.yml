@@ -7560,8 +7560,10 @@ jobs:
       # machinery, so the five suites red together on any registry or harness edit.
       # scipy is pinned EXPLICITLY in this step's install line (not inherited through
       # scikit-learn's dependency tree): scripts/prophet_fusion_c2.py imports
-      # scipy.optimize for the bounded elastic-net fit, and a scikit-learn drop must
-      # not silently take that import with it (requirements.txt carries the same note).
+      # scipy.optimize for the bounded elastic-net fit and scipy.stats for the t
+      # reference, and a scikit-learn drop must not silently take those imports with
+      # it (requirements.txt:17 declares scipy a direct dependency and names this
+      # module as a consumer).
       - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race + C2/redundancy (PR-1a/PR-1b/PR-2)
         run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py tests/test_prophet_fusion_c2.py -q
       # G-D plan-book board read (#5541). Landed as a collecting suite named by

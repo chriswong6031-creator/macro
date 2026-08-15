@@ -186,11 +186,15 @@ def test_forward_only_is_refused_in_a_backtest(registry):
     assert exc.value.pit_status == ARENA.PIT_FORWARD_ONLY
 
 
-def test_pit_settlement_is_backtest_lawful(tmp_path):
-    """PR-2: `pit_settlement` joins the backtest-lawful set — the producer enforces the
-    §9.1 availability gate itself (knowable_date), so the status is not a snapshot.
-    Pinned on a synthetic member so the law outlives any one registry entry."""
-    assert ARENA.PIT_SETTLEMENT in ARENA.BACKTEST_LAWFUL_STATUSES
+def test_pit_settlement_is_valid_vocabulary_but_not_backtest_lawful(tmp_path):
+    """PR-2, post-review (finding F-5): `pit_settlement` is REGISTERED VOCABULARY —
+    the loader accepts it, so the registry can state the mechanism truthfully — but it
+    is NOT in the backtest-lawful set: on every buildable frame the producer's
+    knowable_date is DERIVED (settlement + 10 calendar days), and that constant
+    under-waits the ~8-session publication lag.  Admission follows the lag-constant
+    reconciliation; this test flips the day it lands, deliberately."""
+    assert ARENA.PIT_SETTLEMENT in ARENA.PIT_STATUSES          # vocabulary
+    assert ARENA.PIT_SETTLEMENT not in ARENA.BACKTEST_LAWFUL_STATUSES
     assert ARENA.PIT_SNAPSHOT not in ARENA.BACKTEST_LAWFUL_STATUSES
     assert ARENA.PIT_FORWARD_ONLY not in ARENA.BACKTEST_LAWFUL_STATUSES
     doc = {
@@ -205,11 +209,15 @@ def test_pit_settlement_is_backtest_lawful(tmp_path):
     }
     path = tmp_path / "families.yml"
     path.write_text(yaml.safe_dump(doc), encoding="utf-8")
-    reg = ARENA.load_registry(path)
+    reg = ARENA.load_registry(path)                            # loads clean
+    with pytest.raises(ARENA.PITRefusal) as exc:
+        ARENA.check_features(reg, ["syn_si_days_to_cover"],
+                             frame_kind=ARENA.FRAME_KIND_BACKTEST)
+    assert exc.value.pit_status == ARENA.PIT_SETTLEMENT
+    assert "syn_si_days_to_cover" not in reg.pit_columns()
     gate = ARENA.check_features(reg, ["syn_si_days_to_cover"],
-                                frame_kind=ARENA.FRAME_KIND_BACKTEST)
-    assert gate.families == ("F5",)
-    assert "syn_si_days_to_cover" in reg.pit_columns()
+                                frame_kind=ARENA.FRAME_KIND_LIVE)
+    assert gate.families == ("F5",)                            # live read stays lawful
 
 
 def test_the_same_member_is_lawful_in_a_live_frame(registry):

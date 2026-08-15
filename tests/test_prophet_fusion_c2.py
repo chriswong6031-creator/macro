@@ -69,6 +69,8 @@ from scripts.prophet_fusion_labels import LabelFrame               # noqa: E402
 LEDGER = ROOT / "data" / "us_board_ledger" / "retro_grades.parquet"
 SNAPSHOTS = ROOT / "data" / "us_board_ledger" / "snapshots.jsonl"
 REPORT_PATH = ROOT / "research" / "prophet_fusion" / "pr2_c2" / "report.json"
+PR1B_REPORT = (ROOT / "research" / "prophet_fusion" / "pr1b_baseline_race"
+               / "report.json")
 
 #: The sparse-worktree idiom the sibling suites use: `data/` is omitted by default
 #: (`config/sparse_worktree.json`), so a real-frame test skips CLEANLY with the opt-in
@@ -667,7 +669,10 @@ def _fixture_inputs(pvalues, effects):
             "spearman_vs_outcome": {"mean": effect, "ci95": [None, None]},
             "partial_spearman_given_g0": {"mean": effect, "ci95": [effect - 0.01,
                                                                   effect + 0.01]},
-            "p_partial": p, "p_method": "fixture", "n_dates_partial": 20,
+            "status": "estimated",
+            "p_t": p, "p_normal": p / 2.0, "t_stat": 2.0, "df": 19,
+            "p_method": "fixture", "n_dates_partial": 20,
+            "min_dates": c2.DESCRIPTIVE_MIN_DATES,
         })
     census = {"families": families}
     descriptive = {"cells": cells}
@@ -699,6 +704,13 @@ class TestFDR:
         assert table["n_rejections"] == 2
         adjusted = {row["family"]: row["p_adj"] for row in table["rows"]}
         assert adjusted["FX2"] > 0.04, "p_adj must exceed the raw p under BH"
+        # The verdict keys on p_t; p_normal rides beside it and is never read.
+        for row in table["rows"]:
+            assert row["verdict_keys_on"] == "p_t"
+            assert row["p_t"] is not None and row["p_normal"] is not None
+            assert row["p_t"] != row["p_normal"], (
+                "the fixture's two references are identical, so this test could not "
+                "detect the table reading the wrong one")
 
     def test_skipping_the_adjustment_would_change_the_verdicts(self):
         """The adjustment is load-bearing: a raw-p table would reject a third family."""
@@ -766,13 +778,109 @@ class TestWhatDoesXAddTable:
         assert "vote_inert" in rows["F8_ATTENTION_CROWDING"]["sub_reasons"]
 
     @NEEDS_REAL_FRAME
+    @pytest.mark.skipif(not PR1B_REPORT.exists(), reason="PR-1b artifact not committed")
     def test_the_descriptive_tier_reproduces_pr1b_section_9_4(self, real_report):
-        """PR-1b measured F2 -0.083 and F5 +0.074 at H=10; the same construction must agree."""
+        """Parity is asserted against the PR-1b ARTIFACT, never against typed literals.
+
+        A hand-copied number pins the transcription, not the construction: if PR-1b is
+        ever re-run and its own cells move, a literal keeps passing while the two
+        artifacts silently disagree. Both reports are on disk — compare them.
+        """
+        pr1b = json.loads(PR1B_REPORT.read_text(encoding="utf-8"))
+        theirs = {row["family"]: row for row in
+                  pr1b["c1_analysis"]["incremental_over_champion"]}
+        ours = {cell["family"]: cell for cell in
+                real_report["incremental"]["descriptive"]["score_membership"]["cells"]
+                if cell["horizon"] == c2.PRIMARY_HORIZON}
+        shared = sorted(set(theirs) & set(ours))
+        assert shared, "no family is present in both artifacts — parity is unasserted"
+        for family in shared:
+            for block in ("partial_spearman_given_g0", "spearman_vs_outcome"):
+                assert ours[family][block]["mean"] == pytest.approx(
+                    theirs[family][block]["mean"], abs=5e-4), (
+                    f"{family}.{block} diverged from PR-1b's committed artifact — the "
+                    f"score-membership construction is supposed to BE PR-1b §9.4's")
+                assert ours[family][block]["n_dates"] == theirs[family][block]["n_dates"]
+
+    @NEEDS_REAL_FRAME
+    def test_the_verdict_keys_on_t_and_both_references_are_printed(self, real_report):
+        """F-1: the normal reference decided the draft's only rejection. Pin the fix."""
+        table = real_report["what_does_x_add"]
+        assert table["verdict_keys_on"] == "p_t"
+        assert "t" in table["p_method"] and "not immaterial" in table["p_method"].lower()
+        measured = [row for row in table["rows"] if row["p_t"] is not None]
+        assert measured
+        for row in measured:
+            assert row["p_normal"] is not None
+            assert row["verdict_keys_on"] == "p_t"
+            # The t is the more conservative reference at these block counts; if a row
+            # ever showed p_t < p_normal the instrument would not be what it claims.
+            assert row["p_t"] > row["p_normal"]
+            assert row["p_adj"] >= row["p_t"]
+        f5 = next(r for r in table["rows"] if r["family"] == "F5_FLOW_POSITIONING")
+        assert f5["p_normal"] == pytest.approx(0.0134, abs=5e-4)
+        assert f5["p_t"] == pytest.approx(0.0268, abs=5e-4)
+        assert f5["p_adj"] == pytest.approx(0.0804, abs=5e-4)
+        assert f5["verdict"] == "null_unresolved", (
+            "F5 rejects again — the table is reading the normal reference")
+        assert table["n_rejections"] == 0
+
+    @NEEDS_REAL_FRAME
+    def test_design_membership_rides_beside_every_verdict(self, real_report):
+        """F-2: F5's registered score includes the serving-dead insider_cluster."""
         rows = {row["family"]: row for row in real_report["what_does_x_add"]["rows"]}
-        assert rows["F2_MOMENTUM_EXTENSION"]["effect_partial_rho_given_g0"] == \
-            pytest.approx(-0.083, abs=0.002)
-        assert rows["F5_FLOW_POSITIONING"]["effect_partial_rho_given_g0"] == \
-            pytest.approx(0.074, abs=0.002)
+        f5 = rows["F5_FLOW_POSITIONING"]
+        design = f5["design_membership_effect"]
+        assert design["status"] == "estimated"
+        assert design["members"] == ["smartmoney_add"]
+        assert design["differs_from_score_membership"] is True
+        assert design["effect_partial_rho_given_g0"] == pytest.approx(0.052269, abs=5e-4)
+        assert design["ci95"][0] == pytest.approx(-0.00256, abs=5e-4)
+        assert design["ci95"][1] == pytest.approx(0.11086, abs=5e-4)
+        assert design["n_dates"] == 12
+        # The verdict stays on the REGISTERED construction; the disclosure is not a
+        # second test and is deliberately outside the BH bookkeeping.
+        assert f5["membership"] == "score"
+        assert f5["n_dates"] == 15
+        assert "not a second test" in design["not_bh_adjusted"]
+        # A family whose two member sets agree must say so rather than look different.
+        f2 = rows["F2_MOMENTUM_EXTENSION"]["design_membership_effect"]
+        assert f2["differs_from_score_membership"] is False
+        assert f2["effect_partial_rho_given_g0"] == pytest.approx(
+            rows["F2_MOMENTUM_EXTENSION"]["effect_partial_rho_given_g0"], abs=1e-9)
+
+    @NEEDS_REAL_FRAME
+    def test_the_design_membership_block_is_computed_over_the_fit_eligible_set(
+        self, real_report
+    ):
+        block = real_report["incremental"]["descriptive"]
+        assert set(block) >= {"score_membership", "design_membership", "law"}
+        assert block["score_membership"]["membership"] == "score"
+        assert block["design_membership"]["membership"] == "design"
+        assert block["design_membership"]["members_per_family"][
+            "F5_FLOW_POSITIONING"] == ["smartmoney_add"]
+        assert sorted(block["score_membership"]["members_per_family"][
+            "F5_FLOW_POSITIONING"]) == ["insider_cluster", "smartmoney_add"]
+
+    @NEEDS_REAL_FRAME
+    def test_multiplicity_sensitivity_is_reported(self, real_report):
+        """F-3: a floor that lowers the test count must answer with the other table."""
+        block = real_report["what_does_x_add"]["sensitivity"]
+        assert block["variant"] == "vote_inert_members_retained"
+        assert block["requested_n_tests"] == 4
+        assert "F8_ATTENTION_CROWDING" in block["families_retained"]
+        assert "0.50" in block["law"] and "not a tuned quantity" in block["law"]
+        # The frame cannot supply the 4th test: F8's retained cell is itself below the
+        # registered depth minimum, and the block says so with its count.
+        refused = {row["family"]: row for row in block["refused_below_min_dates"]}
+        assert "F8_ATTENTION_CROWDING" in refused
+        assert refused["F8_ATTENTION_CROWDING"]["n_dates"] == 6
+        assert block["n_tests"] == 3 and block["n_rejections"] == 0
+        # ...so the m=4 question is settled by bounding F8's hypothetical p at both ends.
+        for bound in block["m4_bounds"].values():
+            assert bound["m"] == 4
+            assert bound["n_real_family_rejections"] == 0
+        assert block["m4_conclusion"] == "no REAL family rejects at either extreme"
 
 
 # --------------------------------------------------------------------------- #
@@ -923,3 +1031,308 @@ class TestCommittedReport:
                      "test_fold_raw_order"}
         leaked = sorted(_all_keys(doc) & forbidden)
         assert not leaked, f"{leaked} reached a REFUSED real-frame report"
+
+# --------------------------------------------------------------------------- #
+# 17. the registered descriptive depth minimum (review F-7)
+# --------------------------------------------------------------------------- #
+
+class TestDescriptiveMinDates:
+    def test_the_minimum_is_registered_and_self_consistent_with_cmi(self, real_report):
+        assert c2.DESCRIPTIVE_MIN_DATES == c2.CMI_MIN_DATES == 8
+        block = real_report["registered"]["descriptive_minimums"]
+        assert block["min_date_blocks"] == 8
+        assert block["equal_to_cmi_min_dates"] is True
+
+    def test_a_thin_cell_refuses_with_its_count(self):
+        reference = c2.date_blocked_p([0.1, 0.2, -0.05, 0.3, 0.11, 0.02, 0.07])
+        assert reference["status"] == "NOT_ESTIMABLE"
+        assert reference["p_t"] is None and reference["p_normal"] is None
+        assert reference["n_dates"] == 7 and reference["min_dates"] == 8
+        assert "7 date-blocks < the registered descriptive minimum 8" in reference["reason"]
+
+    def test_an_estimable_cell_carries_both_references_and_t_is_conservative(self):
+        values = [0.10, 0.14, -0.02, 0.21, 0.08, 0.17, 0.05, 0.12, 0.19, 0.03]
+        reference = c2.date_blocked_p(values)
+        assert reference["status"] == "estimated"
+        assert reference["df"] == len(values) - 1
+        assert reference["p_t"] > reference["p_normal"], (
+            "the t must be the more conservative reference at these block counts")
+
+    @NEEDS_REAL_FRAME
+    def test_h21_secondary_table_is_empty_because_every_cell_refuses(self, real_report):
+        """7/7/4 date-blocks cannot support a two-sided p of either shape."""
+        table = real_report["what_does_x_add_secondary_horizons"]["21"]
+        assert table["n_tests"] == 0
+        assert table["rows"] == []
+        refused = {row["family"]: row for row in table["refused_below_min_dates"]}
+        assert set(refused) == {"F2_MOMENTUM_EXTENSION", "F4_CATALYST_EVENT",
+                                "F5_FLOW_POSITIONING"}
+        assert refused["F2_MOMENTUM_EXTENSION"]["n_dates"] == 7
+        assert refused["F5_FLOW_POSITIONING"]["n_dates"] == 7
+        assert refused["F4_CATALYST_EVENT"]["n_dates"] == 4
+        for row in refused.values():
+            assert row["min_dates"] == 8
+
+    @NEEDS_REAL_FRAME
+    def test_h5_secondary_table_still_reports_and_keys_on_t(self, real_report):
+        table = real_report["what_does_x_add_secondary_horizons"]["5"]
+        assert table["n_tests"] == 3 and table["verdict_keys_on"] == "p_t"
+        for row in table["rows"]:
+            assert row["p_t"] is not None and row["p_normal"] is not None
+
+
+# --------------------------------------------------------------------------- #
+# 18. null-semantics on the variance axis (review F-9) and the train/serve
+#     ratio's like-for-like comparison (review F-10)
+# --------------------------------------------------------------------------- #
+
+_NULL_ENCODED_REGISTRY = {
+    "schema": "prophet_fusion.families.v1",
+    "coverage_floor": 0.50,
+    "semantics": {"variance_floor_spec": {
+        "axis": "within_date_distinct_nonnull_oriented_values",
+        "min_distinct_values_per_date": 2,
+        "min_dates_with_variation_share": 0.50,
+        "excluded_from": ["family_vote_aggregation", "fitted_design_matrices"],
+        "retained_in": ["census"]}},
+    "families": {"FEV_EVENT": {"title": "Null-encoded event flag", "members": {
+        # measured_negative AND null-encoded: the producer answers "no event" by writing
+        # NOTHING, which is the shape the presence floor already special-cases.
+        "null_encoded_event": {"pit_status": "pit", "columns": ["syn_event"],
+                               "null_semantics": "measured_negative",
+                               "coverage_probe": True}}}},
+}
+
+
+def _null_encoded_frame(n_dates: int = 20, n_tickers: int = 40, seed: int = 11):
+    """A sparse event flag whose negatives are NULLS, not explicit False."""
+    rng = np.random.default_rng(seed)
+    rows, outcomes = [], []
+    for index in range(n_dates):
+        date = f"E{index:03d}"
+        fires = set(int(t) for t in rng.choice(n_tickers, size=2, replace=False))
+        for ticker_index in range(n_tickers):
+            ticker = f"EV{ticker_index:03d}"
+            rows.append({"date": date, "ticker": ticker,
+                         "syn_event": True if ticker_index in fires else None})
+            outcomes.append({"date": date, "ticker": ticker, "horizon": 10,
+                             "excess_spy": float(rng.normal(0, 0.05))})
+    features = pd.DataFrame(rows)
+    frame = pd.DataFrame(outcomes)
+    return c2.C2Frame(
+        features=features, outcomes=frame,
+        g0=features[["date", "ticker"]].assign(g0_score=0.0),
+        signs={"syn_event": c2.RegisteredSign(
+            column="syn_event", family="FEV_EVENT", sign=+1, kind="flag",
+            source="fixture")},
+        labels=LabelFrame(frame=frame, receipt={}))
+
+
+def _null_encoded_census(tmp_path, serve_slab=None):
+    path = tmp_path / "null_encoded.yml"
+    path.write_text(yaml.safe_dump(_NULL_ENCODED_REGISTRY, sort_keys=False),
+                    encoding="utf-8")
+    registry = load_registry(path)
+    floor = c2.load_variance_floor(path)
+    flags = c2.registry_member_flags(path)
+    frame = _null_encoded_frame()
+    census = c2.estimability_census(frame, registry, floor, member_flags=flags,
+                                    serve_slab=serve_slab)
+    return census["families"]["FEV_EVENT"]["members"][0]
+
+
+class TestNullSemanticsOnTheVarianceAxis:
+    def test_a_null_encoded_event_flag_is_not_vote_inert(self, tmp_path):
+        """F-9: counting only non-nulls sees ONE value and kills a live event channel."""
+        member = _null_encoded_census(tmp_path)
+        axis = member["variance_axis"]["syn_event"]
+        assert member["null_semantics"] == "measured_negative"
+        assert member["coverage"]["n_explicit_negative_values"] == 0
+        assert axis["null_counts_as_a_measured_value"] is True
+        assert axis["variation_share"] == 1.0, (
+            "the null state is this member's measured negative, so a date on which the "
+            "flag fired carries TWO distinct values, not one")
+        assert member["vote_inert"] is False
+        assert "vote_inert" not in member["reasons"]
+
+    def test_the_credit_is_withheld_when_negatives_are_stored_explicitly(self,
+                                                                        synthetic_bundle):
+        """The guard's other side: an explicit-False member must NOT be credited twice."""
+        inert = _member(synthetic_bundle["census"], "FI_NEAR_CONSTANT")
+        axis = inert["variance_axis"]["syn_inert"]
+        assert axis["null_counts_as_a_measured_value"] is False
+        assert inert["vote_inert"] is True
+
+    @NEEDS_REAL_FRAME
+    def test_news_burst_is_unchanged_by_the_null_semantics_fix(self, real_census):
+        """news_burst stores 1,474 explicit False, so its 0.333 / inert read must hold."""
+        member = next(m for m in real_census["families"]["F8_ATTENTION_CROWDING"]["members"]
+                      if m["vote_column"] == "news_burst")
+        axis = member["variance_axis"]["news_burst"]
+        assert member["coverage"]["n_explicit_negative_values"] == 1474
+        assert axis["null_counts_as_a_measured_value"] is False
+        assert axis["variation_share"] == pytest.approx(0.3333, abs=1e-3)
+        assert member["vote_inert"] is True
+
+
+class TestTrainServeRatio:
+    def test_the_ratio_is_raw_notna_on_both_sides(self, tmp_path):
+        """F-10: pairing a semantic 1.0 with a raw serve share doubles the threshold."""
+        serve = pd.DataFrame({"syn_event": [True, None, None, None] * 10})
+        member = _null_encoded_census(tmp_path, serve_slab=serve)
+        train_serve = member["train_serve"]
+        # The semantic figure (what the presence FLOOR reads) is 1.0 for this member...
+        assert train_serve["train_coverage_semantic"] == 1.0
+        assert member["coverage"]["used_for_floor"] == 1.0
+        # ...but the RATIO compares raw non-null on both sides: 0.25 serve vs 0.05 train.
+        assert train_serve["train_coverage"] == pytest.approx(0.05, abs=1e-6)
+        assert train_serve["serve_coverage"] == pytest.approx(0.25, abs=1e-6)
+        assert "like-for-like" in train_serve["train_coverage_basis"]
+        assert "excluded_train_serve_skew" not in member["reasons"], (
+            "the semantic 1.0 was used as the ratio's denominator, which doubles the "
+            "exclusion threshold for exactly the members whose nulls mean something")
+
+    @NEEDS_REAL_FRAME
+    def test_alpha_is_not_excluded_by_a_mismatched_column_set(self, real_census):
+        member = next(m for m in real_census["families"]["F2_MOMENTUM_EXTENSION"]["members"]
+                      if m["member"] == "F2_MOMENTUM_EXTENSION.residual_alpha")
+        train_serve = member["train_serve"]
+        assert train_serve["columns_measured"] == ["alpha"]
+        assert train_serve["serve_coverage"] == pytest.approx(0.930111, abs=1e-5)
+        assert member["verdict"] == "eligible"
+
+
+# --------------------------------------------------------------------------- #
+# 19. the two NITs, and the pit_settlement deferral ripple
+# --------------------------------------------------------------------------- #
+
+class TestPermutationPEstimator:
+    @NEEDS_REAL_FRAME
+    def test_cmi_p_can_never_be_exactly_zero(self, real_report):
+        """(1 + #{null >= observed}) / (B + 1): the observed draw counts itself."""
+        estimated = [c for c in real_report["cmi"]["cells"] if c["status"] == "estimated"]
+        assert estimated
+        for cell in estimated:
+            assert cell["p_one_sided_estimator"] == "(1 + #{null >= observed}) / (B + 1)"
+            assert cell["p_one_sided"] >= 1.0 / (cell["permutation_b"] + 1)
+
+
+class TestUnresolvableEdgeSpec:
+    @NEEDS_REAL_FRAME
+    def test_a_family_range_in_a_member_position_is_not_a_measurement_gap(self,
+                                                                          real_report):
+        edges = real_report["redundancy"]["known_edges"]
+        ranged = [e for e in edges
+                  if e["measurement"]["status"] == "unresolvable_pair_spec"]
+        assert len(ranged) == 1
+        edge = ranged[0]
+        assert edge["unresolvable_sides"] == ["F1_TECHNICAL_CONFLUENCE..F4_CATALYST_EVENT"]
+        assert "registry edit" in edge["reason"]
+        # It must NOT be counted among the edges that would flip to a measurement.
+        for other in edges:
+            if other is edge:
+                continue
+            assert other["measurement"]["status"] in ("NOT_MEASURABLE", "estimated",
+                                                      "NOT_ESTIMABLE")
+
+
+class TestPitSettlementDeferral:
+    """RIPPLE: the commissioning session reverted BACKTEST_LAWFUL_STATUSES to {pit}."""
+
+    def test_the_suite_reads_the_gate_rather_than_assuming_it(self):
+        from scripts.prophet_fusion_arena import BACKTEST_LAWFUL_STATUSES
+        assert "pit_settlement" not in BACKTEST_LAWFUL_STATUSES
+
+    @NEEDS_REAL_FRAME
+    def test_short_interest_is_not_backtest_lawful_everywhere_it_appears(self,
+                                                                        real_report,
+                                                                        real_census):
+        member = next(m for m in real_census["families"]["F5_FLOW_POSITIONING"]["members"]
+                      if m["member"] == "F5_FLOW_POSITIONING.short_interest")
+        assert member["pit_status"] == "pit_settlement"
+        assert member["backtest_lawful"] is False
+        assert "not_backtest_pit" in member["reasons"]
+        assert member["in_family_score"] is False and member["in_design_matrix"] is False
+        # It reaches no score, matrix or fit...
+        assert "short_int__short_shares" not in json.dumps(
+            real_report["c2_fit"]["would_have_entered"]["members_per_family"])
+        # ...but its frame-1 redundancy cells are still MEASURED, with the status
+        # attached so a structural fact cannot read as an admission.
+        block = real_report["redundancy"]["frame1_stamp_20260807"]["families"][
+            "F5_FLOW_POSITIONING"]
+        assert "F5_FLOW_POSITIONING.short_interest (pit_settlement)" in block[
+            "members_measured_but_not_backtest_lawful"]
+        assert "NEVER an admission" in block["pit_disclosure"]
+
+
+# --------------------------------------------------------------------------- #
+# the doc's hand-written tables are machine-checked against the artifact
+# (adversarial review F-4: the first draft of the wave doc mis-transcribed three
+# CMI cells; this pin makes that class of error red instead of shipped)
+# --------------------------------------------------------------------------- #
+
+DOC_PATH = ROOT / "research" / "prophet_fusion" / "PR2_C2_REDUNDANCY.md"
+
+
+@NEEDS_REAL_FRAME
+class TestDocTablesMatchTheArtifact:
+    def _doc(self):
+        return DOC_PATH.read_text(encoding="utf-8")
+
+    def test_the_cmi_table_cells_match_report_json(self, real_report):
+        """§5's table prints `excess (p)` per family x horizon; every printed pair
+        must equal the artifact's cell rounded to the doc's own precision."""
+        doc = self._doc()
+        cells = {(c["family"], int(c["horizon"])): c
+                 for c in real_report["cmi"]["cells"]}
+        import re
+        row_re = re.compile(
+            r"^\|\s*(F\d)\s*\|\s*([^|]+)\|\s*([^|]+)\|\s*([^|]+)\|\s*$", re.M)
+        fam_map = {"F2": "F2_MOMENTUM_EXTENSION", "F4": "F4_CATALYST_EVENT",
+                   "F5": "F5_FLOW_POSITIONING"}
+        found = 0
+        for match in row_re.finditer(doc):
+            short = match.group(1)
+            if short not in fam_map:
+                continue
+            fam = fam_map[short]
+            for horizon, text in ((5, match.group(2)), (10, match.group(3))):
+                cell = cells[(fam, horizon)]
+                text = text.replace("\u2212", "-")   # the doc's typographic minus
+                pair = re.search(r"([+\-]\d+\.\d+)\s*\((\d+\.\d+)\)", text)
+                assert pair, f"doc row {short} H={horizon} carries no `excess (p)` pair"
+                assert float(pair.group(1)) == pytest.approx(
+                    cell["excess_bits"], abs=5e-5), (short, horizon, "excess")
+                assert float(pair.group(2)) == pytest.approx(
+                    cell["p_one_sided"], abs=5e-4), (short, horizon, "p")
+            assert "NOT_ESTIMABLE" in match.group(4), (short, "H=21 must refuse")
+            found += 1
+        assert found == 3, f"expected 3 CMI doc rows, matched {found}"
+
+    def test_the_what_does_x_add_table_matches_report_json(self, real_report):
+        """§7's measured rows print `p_t / p_normal / p_adj`; each must equal the
+        artifact's row at the doc's 3-decimal precision, and the doc's verdict
+        word must be the artifact's verdict."""
+        doc = self._doc()
+        rows = {r["family"]: r for r in real_report["what_does_x_add"]["rows"]}
+        import re
+        fam_map = {"F2": "F2_MOMENTUM_EXTENSION", "F4": "F4_CATALYST_EVENT",
+                   "F5": "F5_FLOW_POSITIONING"}
+        found = 0
+        for line in doc.splitlines():
+            match = re.match(r"^\|\s*(F\d)\s*\|\s*\**`(\w+)`\**", line)
+            if not match or match.group(1) not in fam_map:
+                continue
+            fam = fam_map[match.group(1)]
+            row = rows[fam]
+            assert match.group(2) == row["verdict"], (fam, "verdict")
+            triple = re.search(
+                r"\**(\d+\.\d+)\**\s*/\s*(\d+\.\d+)\s*/\s*\**(\d+\.\d+)\**", line)
+            assert triple, (fam, "p triple missing")
+            assert float(triple.group(1)) == pytest.approx(row["p_t"], abs=5e-4)
+            assert float(triple.group(2)) == pytest.approx(row["p_normal"], abs=5e-4)
+            assert float(triple.group(3)) == pytest.approx(row["p_adj"], abs=5e-4)
+            found += 1
+        assert found == 3, f"expected 3 measured what_does_x_add doc rows, matched {found}"
+        assert "**Zero rejections.**" in doc
+        assert real_report["what_does_x_add"]["n_rejections"] == 0

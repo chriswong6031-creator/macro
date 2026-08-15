@@ -64,6 +64,7 @@ import numpy as np
 import pandas as pd
 import yaml
 from scipy.optimize import minimize
+from scipy.stats import t as student_t
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO_ROOT))
@@ -155,6 +156,14 @@ REDUNDANCY_MIN_DATES = 5
 #: CMI estimator minimums (§5.3 / §9.3).
 CMI_MIN_ROWS = 300
 CMI_MIN_DATES = 8
+
+#: The descriptive tier's own date-block minimum, registered in PR-2 and deliberately
+#: EQUAL to :data:`CMI_MIN_DATES` (adversarial review F-7): the two estimators read the
+#: same nights off the same frame, so a depth that refuses one and admits the other is an
+#: inconsistency the reader has to reconcile, not a finding. Below it a cell is
+#: NOT_ESTIMABLE with its count — this is what refuses every H=21 secondary cell
+#: (7/7/4 blocks) rather than printing a two-sided p over seven nights.
+DESCRIPTIVE_MIN_DATES = 8
 CMI_TERCILE_CUTS = (1.0 / 3.0, 2.0 / 3.0)
 
 #: The C2 model classes (§8.1's C2 row, spelled out so the report and the suite read the
@@ -424,14 +433,32 @@ def _numeric_or_oriented(frame: pd.DataFrame, column: str,
     return pd.to_numeric(frame[column], errors="coerce")
 
 
-def _variation_by_date(frame: pd.DataFrame, values: pd.Series,
-                       floor: VarianceFloor) -> dict[str, Any]:
-    """The §5.3 variance axis: distinct non-null oriented values per date."""
-    counts = values.groupby(frame["date"].astype(str)).apply(
-        lambda block: int(block.dropna().nunique()))
+def _variation_by_date(frame: pd.DataFrame, values: pd.Series, floor: VarianceFloor, *,
+                       null_encodes_negative: bool = False) -> dict[str, Any]:
+    """The §5.3 variance axis: distinct non-null oriented values per date.
+
+    NULL-SEMANTICS-AWARE, exactly parallel to the presence floor (adversarial review
+    F-9).  For a ``measured_negative`` member the null IS the producer's answer — and
+    when such a member encodes its negatives as NULL rather than storing False (the
+    frame carries zero explicit negatives), counting only the non-null values sees ONE
+    distinct value on a date where the flag fired and would call a live event channel
+    vote-inert.  The null state is that member's second value, so it counts as one.
+
+    Guarded on the ZERO-explicit-negatives shape on purpose: a member that stores its
+    negatives explicitly (the board ledger's boolean chips — ``news_burst`` carries 1,474
+    explicit False) already has both states in the non-null values, and crediting the
+    nulls again would hand it a variation it does not have.  ``news_burst`` therefore
+    reads 0.333 and stays inert under both code paths.
+    """
+    dates = frame["date"].astype(str)
+    counts = values.groupby(dates).apply(lambda block: int(block.dropna().nunique()))
+    if null_encodes_negative:
+        has_null = values.isna().groupby(dates).any()
+        counts = counts + has_null.reindex(counts.index).fillna(False).astype(int)
     if counts.empty:
         return {"n_dates": 0, "n_dates_with_variation": 0, "variation_share": 0.0,
-                "min_distinct": 0, "median_distinct": 0, "max_distinct": 0}
+                "min_distinct": 0, "median_distinct": 0, "max_distinct": 0,
+                "null_counts_as_a_measured_value": bool(null_encodes_negative)}
     carries = counts >= int(floor.min_distinct_values_per_date)
     return {
         "n_dates": int(len(counts)),
@@ -440,6 +467,7 @@ def _variation_by_date(frame: pd.DataFrame, values: pd.Series,
         "min_distinct": int(counts.min()),
         "median_distinct": _round(float(counts.median())),
         "max_distinct": int(counts.max()),
+        "null_counts_as_a_measured_value": bool(null_encodes_negative),
         "per_date_distinct": {str(k): int(v) for k, v in counts.sort_index().items()},
     }
 
@@ -616,11 +644,17 @@ def estimability_census(frame: C2Frame, registry: Registry, floor: VarianceFloor
                 reasons.append("below_presence_floor")
 
             # --- variance axis (the PR-2 amendment) -----------------------------------
+            # A `measured_negative` member that encodes its negatives as NULL (zero
+            # explicit False on the frame) carries the null state as a real, measured
+            # value on this axis — the same law the presence floor applies above.
+            null_encodes_negative = (not counts_against) and explicit_negatives == 0
             variance: dict[str, Any] = {}
             vote_inert: bool | None = None
             for column in present:
                 values = _numeric_or_oriented(features, column, signs.get(column))
-                variance[column] = _variation_by_date(features, values, floor)
+                variance[column] = _variation_by_date(
+                    features, values, floor,
+                    null_encodes_negative=null_encodes_negative and column == vote_column)
                 variance[column]["oriented"] = column in signs
             axis_column = vote_column or (present[0] if present else None)
             if axis_column is not None:
@@ -632,14 +666,23 @@ def estimability_census(frame: C2Frame, registry: Registry, floor: VarianceFloor
             # --- serving side + §8.5.2 train/serve rule -------------------------------
             serve_value, serve_detail = _serve_coverage(
                 columns, serve_slab, comparable_columns=present)
+            # THE RATIO IS RAW notna ON BOTH SIDES (adversarial review F-10).  The serving
+            # figure is a raw non-null share, so pairing it with the SEMANTIC train figure
+            # — which reads 1.0 for a measured_negative member whose nulls are answers —
+            # silently doubles the exclusion threshold for exactly the members whose nulls
+            # mean something.  The semantic figure rides beside it, named, because it is
+            # the one the presence FLOOR reads.
             train_serve: dict[str, Any] = {
                 "serve_frame": serve_label, "serve_coverage": serve_value,
-                "train_coverage": coverage_for_floor, **serve_detail}
+                "train_coverage": coverage_present,
+                "train_coverage_semantic": coverage_for_floor,
+                "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
+                **serve_detail}
             if isinstance(serve_value, (int, float)) and present:
-                skew = float(serve_value) < 0.5 * float(coverage_for_floor or 0.0)
+                skew = float(serve_value) < 0.5 * float(coverage_present or 0.0)
                 train_serve["ratio_serve_over_train"] = _round(
-                    float(serve_value) / float(coverage_for_floor)
-                    if coverage_for_floor else None)
+                    float(serve_value) / float(coverage_present)
+                    if coverage_present else None)
                 train_serve["rule"] = ("§8.5.2: serve coverage < 0.5 x train coverage "
                                        "EXCLUDES the member from every fitted design "
                                        "matrix; the rule fires on MEASURED skew only")
@@ -707,6 +750,16 @@ def estimability_census(frame: C2Frame, registry: Registry, floor: VarianceFloor
 
         score_members = [m["vote_column"] for m in member_rows if m["in_family_score"]]
         design_members = [m["vote_column"] for m in member_rows if m["in_design_matrix"]]
+        # The sensitivity variant's member set: the score set PLUS the members the
+        # variance floor removed.  Published from the census so the m = 4 table is
+        # reproducible from the artifact alone.
+        _inert_but_otherwise_clean = {"vote_inert", "serving_dead",
+                                      "excluded_train_serve_skew"}
+        retaining_inert = [
+            m["vote_column"] for m in member_rows
+            if m["in_family_score"]
+            or (m["vote_inert"] and m["vote_column"]
+                and not (set(m["reasons"]) - _inert_but_otherwise_clean - {"eligible"}))]
         families[fam_key] = {
             "family": fam_key, "name": fam.name, "coverage_floor": fam.coverage_floor,
             "n_members": len(member_rows),
@@ -714,6 +767,7 @@ def estimability_census(frame: C2Frame, registry: Registry, floor: VarianceFloor
             "eligible_for_design_matrix": bool(design_members),
             "design_matrix_members": design_members,
             "family_score_members": score_members,
+            "family_score_members_retaining_inert": retaining_inert,
             "structural_note": STRUCTURAL_FAMILY_NOTES.get(fam_key),
             "members": member_rows,
         }
@@ -802,9 +856,15 @@ def build_family_scores(frame: C2Frame, census: Mapping[str, Any], *,
     exclusions (``serving_dead``, measured train/serve skew, non-PIT), which is why the
     same family can appear in a redundancy block and be absent from the design matrix.
     """
-    if membership not in ("score", "design"):
-        raise C2Refusal(f"unknown membership {membership!r}; known: score | design")
-    key = "family_score_members" if membership == "score" else "design_matrix_members"
+    known = ("score", "design", "score_retaining_inert")
+    if membership not in known:
+        raise C2Refusal(f"unknown membership {membership!r}; known: {list(known)}")
+    key = {"score": "family_score_members",
+           "design": "design_matrix_members",
+           # The sensitivity variant (review F-3): identical aggregation with the
+           # vote-inert members put back, so the m = 4 multiplicity can be PRINTED
+           # rather than argued about.  It never feeds a verdict, a matrix or a fit.
+           "score_retaining_inert": "family_score_members_retaining_inert"}[membership]
     per_family = {fam: list(body[key]) for fam, body in census["families"].items()
                   if body[key]}
     columns = sorted({c for cols in per_family.values() for c in cols})
@@ -1015,9 +1075,26 @@ def redundancy_blocks(frame: C2Frame, registry: Registry, census: Mapping[str, A
                 for right in sorted(usable)[i + 1:]:
                     cells.append({"left": left, "right": right,
                                   **_cross_section_cell(work, left, right)})
+            # PIT DISCLOSURE.  Redundancy is a structural fact about the STORE and is
+            # measured for every wired column, including members a BACKTEST frame may not
+            # join — but a measured cell must never read as admission.  `short_interest`
+            # is the live case: its `pit_settlement` status is NOT in
+            # BACKTEST_LAWFUL_STATUSES (F-5 deferred admission), so its columns appear
+            # here with the status attached and nowhere in any fitted path.
+            not_lawful = sorted({
+                f"{q} ({registry.members[q].pit_status})"
+                for q in registry.families[fam].members
+                if registry.members[q].pit_status not in BACKTEST_LAWFUL_STATUSES
+                and any(c in usable for c in registry.members[q].columns)})
             out[fam] = {"status": "measured" if cells else "no_measurable_pair",
                         "n_columns_measured": len(usable), "cells": cells,
-                        "columns_skipped": skipped}
+                        "columns_skipped": skipped,
+                        "members_measured_but_not_backtest_lawful": not_lawful,
+                        "pit_disclosure": (
+                            "a measured redundancy cell is a structural fact about the "
+                            "store, NEVER an admission: the members listed above are "
+                            "refused by the backtest PIT gate and reach no score, matrix "
+                            "or fit anywhere in this report")}
         return out
 
     serve_key = f"{SERVE_STAMP}|{SERVE_TIER}"
@@ -1087,6 +1164,21 @@ def _measure_known_edge(left_name: str, right_name: str, registry: Registry,
         if serve is not None:
             store = next((c for c in member.columns if c in serve["frame"].columns), None)
         return vote, store
+
+    # A "FAMILY_A..FAMILY_B" RANGE written where a member key belongs can never resolve
+    # to a member on any frame, in any future wiring state — it is a spec defect, not a
+    # measurement gap, and grouping it with the genuinely-unwired edges would inflate the
+    # count of edges that "flip to a measurement once wired" (adversarial review, NIT).
+    ranged = [name for name in (left_name, right_name) if ".." in name]
+    if ranged:
+        return {"measured_on": None,
+                "measurement": {"status": "unresolvable_pair_spec"},
+                "unresolvable_sides": ranged,
+                "reason": ("this side is written as a FAMILY RANGE in a position the "
+                           "schema reads as a single `FAMILY.member` key, so it can never "
+                           "resolve to a member on any frame. Fixing it is a registry "
+                           "edit (name the specific members the edge asserts), not more "
+                           "data — it is excluded from the unwired-edge count.")}
 
     left_vote, left_store = _resolve(left_name)
     right_vote, right_store = _resolve(right_name)
@@ -1236,7 +1328,12 @@ def cmi_cell(joined: pd.DataFrame, *, family: str, horizon: int,
         "z_bins_present": z_bins,
         "observed_bits": _round(observed), "null_mean_bits": _round(null_mean),
         "excess_bits": _round(observed - null_mean),
-        "p_one_sided": _round(float((nulls >= observed).mean())),
+        # (1 + #{null >= observed}) / (B + 1): the observed statistic is itself one of
+        # the B+1 exchangeable draws under the null, so the unbiased Monte-Carlo p can
+        # never be exactly 0 — a p of 0.000 from 500 draws is a rounding artifact, not
+        # evidence (adversarial review, NIT).
+        "p_one_sided": _round(float((1 + int((nulls >= observed).sum())) / (int(b) + 1))),
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": int(b), "permutation_seed": int(seed),
     }
 
@@ -1431,57 +1528,130 @@ def crossfit_incremental(frame: C2Frame, fam_scores: pd.DataFrame,
 # Part 4b — the descriptive in-sample tier (PR-1b §9.4, extended over horizons)
 # --------------------------------------------------------------------------- #
 
-def _normal_two_sided_p(values: Sequence[float]) -> float | None:
-    """Two-sided p from the date-blocked mean / SE normal approximation.
+def date_blocked_p(values: Sequence[float]) -> dict[str, Any]:
+    """Both references on the date-blocked mean / SE, and the **t** is verdict-bearing.
 
-    DISCLOSED, not hidden: with 6-24 date blocks the t and the normal differ in the third
-    decimal and no verdict in this file turns on that difference — but the method is
-    named in every cell that uses it (`p_method`) so a reader never has to guess.
+    THE DRAFT OF THIS FILE GOT THIS WRONG AND THE ERROR DECIDED A RESULT (PR-2
+    adversarial review, F-1).  It shipped the normal approximation with a note claiming
+    the two references differ in the third decimal and that no verdict turns on the
+    difference.  Both halves were false at these block counts: on 15 date-blocks the F5
+    cell reads p = 0.0134 under the normal and 0.0268 under t(df=14) — a factor of two —
+    which moved its BH-adjusted p from 0.040 to 0.080 and flipped this table's only
+    rejection to a non-rejection.  A normal reference on 12-17 blocks is anti-conservative
+    exactly where the answer is decided, so the **t** is the instrument and the normal
+    rides beside it only for continuity with PR-1b §8.2's paired-delta table.
+
+    Estimating the SE from the same blocks costs the degrees of freedom, hence df = n-1
+    and not the normal's infinite df.  A cell below :data:`DESCRIPTIVE_MIN_DATES` blocks
+    is NOT_ESTIMABLE with its count, not a wide interval — 7 blocks cannot support a
+    two-sided reference of either shape.
     """
     arr = np.array([v for v in values if math.isfinite(v)], dtype="float64")
-    if len(arr) < 3:
-        return None
-    se = float(arr.std(ddof=1) / math.sqrt(len(arr)))
+    n = int(len(arr))
+    base: dict[str, Any] = {"n_dates": n, "min_dates": int(DESCRIPTIVE_MIN_DATES)}
+    if n < DESCRIPTIVE_MIN_DATES:
+        return {**base, "status": "NOT_ESTIMABLE", "p_t": None, "p_normal": None,
+                "t_stat": None, "df": None,
+                "reason": (f"{n} date-blocks < the registered descriptive minimum "
+                           f"{DESCRIPTIVE_MIN_DATES}; the cell is refused with its count "
+                           f"rather than reported as a wide interval")}
+    se = float(arr.std(ddof=1) / math.sqrt(n))
     if not math.isfinite(se) or se == 0.0:
-        return None
-    return float(math.erfc(abs(float(arr.mean()) / se) / math.sqrt(2.0)))
+        return {**base, "status": "NOT_ESTIMABLE", "p_t": None, "p_normal": None,
+                "t_stat": None, "df": n - 1,
+                "reason": "degenerate standard error across date-blocks"}
+    t_stat = float(arr.mean() / se)
+    return {
+        **base, "status": "estimated", "df": n - 1, "t_stat": _round(t_stat),
+        "p_t": _round(float(2.0 * student_t.sf(abs(t_stat), df=n - 1))),
+        "p_normal": _round(float(math.erfc(abs(t_stat) / math.sqrt(2.0)))),
+    }
+
+
+#: The truthful method string.  It states which reference decides, and it states the
+#: MEASURED consequence of the correction rather than asserting immateriality — the
+#: sentence the draft carried is the one this file exists to not repeat.
+P_METHOD = (
+    "Two-sided reference on the date-blocked mean / SE over nights. The **t** "
+    "(df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file "
+    "keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with "
+    "PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block "
+    "counts and is not claimed to be: correcting the draft's normal reference to t moved "
+    "F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, "
+    "changing this table's rejection count from 1 to 0. The SE is estimated from the same "
+    "blocks, which is why the reference costs a degree of freedom."
+)
 
 
 def descriptive_incremental(frame: C2Frame, fam_scores: pd.DataFrame, *,
-                            families: Sequence[str],
+                            families: Sequence[str], membership: str = "score",
                             bootstrap_b: int = BOOTSTRAP_B) -> dict[str, Any]:
-    """Plain rho and partial rho | G0 per family x horizon — PR-1b §9.4's construction."""
-    g0 = frame.g0.rename(columns={"g0_score": "g0_score"})
+    """Plain rho and partial rho | G0 per family x horizon — PR-1b §9.4's construction.
+
+    Computed TWICE by the caller, on two member sets (adversarial review F-2):
+
+      * ``membership="score"``  — C1-comparable: every member that clears the presence
+        and variance floors, INCLUDING ones a fitted rung may not touch.  This is the
+        registered construction, it is what PR-1b §9.4 measured, and it is what the
+        verdict keys on.
+      * ``membership="design"`` — fit-eligible members only.  F5's registered score
+        includes ``insider_cluster``, whose collector stopped at 2026q1 — so the
+        registered number answers "what did this evidence add on the frozen frame" while
+        the design-membership number answers "what would a model that can only see
+        SERVING-LAWFUL members have got".  Those are different questions and the report
+        prints both rather than letting one silently stand in for the other.
+    """
+    g0 = frame.g0
     cells: list[dict[str, Any]] = []
     for horizon in HORIZONS:
         outcome = frame.outcome_slice(horizon)
         joined = fam_scores.merge(outcome, on=["date", "ticker"], how="left")
         conditioned = joined.merge(g0, on=["date", "ticker"], how="inner")
         for family in families:
+            if family not in fam_scores.columns:
+                cells.append({
+                    "family": family, "horizon": int(horizon), "membership": membership,
+                    "tier": "descriptive_in_sample_counterfactual",
+                    "status": "NOT_ESTIMABLE", "n_rows": 0, "n_dates_partial": 0,
+                    "p_t": None, "p_normal": None, "p_method": P_METHOD,
+                    "reason": (f"no {membership}-membership score exists for this family "
+                               f"on this frame — every member is excluded from that "
+                               f"member set, which is a fact about the set and not a "
+                               f"measurement of the family"),
+                })
+                continue
             raw = _spearman_by_date(joined, family, "excess_spy")
             partial = _partial_spearman_by_date(conditioned, family, "excess_spy",
                                                 ["g0_score"])
+            reference = date_blocked_p(partial)
             cells.append({
-                "family": family, "horizon": int(horizon),
+                "family": family, "horizon": int(horizon), "membership": membership,
                 "tier": "descriptive_in_sample_counterfactual",
+                "status": reference["status"],
                 "n_rows": int(joined[[family, "excess_spy"]].dropna().shape[0]),
                 "spearman_vs_outcome": _date_blocked_ci(raw, b=bootstrap_b,
                                                         seed=BOOTSTRAP_SEED),
                 "partial_spearman_given_g0": _date_blocked_ci(partial, b=bootstrap_b,
                                                               seed=BOOTSTRAP_SEED),
-                "p_partial": _round(_normal_two_sided_p(partial)),
-                "p_method": ("two-sided normal approximation on the date-blocked mean / "
-                             "SE over nights (disclosed; the t and the normal differ in "
-                             "the third decimal at these block counts)"),
+                "p_t": reference["p_t"],
+                "p_normal": reference["p_normal"],
+                "t_stat": reference.get("t_stat"), "df": reference.get("df"),
+                "p_method": P_METHOD,
                 "n_dates_partial": len(partial),
+                "min_dates": int(DESCRIPTIVE_MIN_DATES),
+                **({"reason": reference["reason"]} if reference.get("reason") else {}),
             })
     return {
+        "membership": membership,
+        "members_per_family": None,
         "method": ("rank-residual partial correlation within date: rank every series "
                    "inside the night, regress the family rank and the outcome rank on "
                    "the G0-replay rank, correlate the residuals; date-blocked bootstrap "
                    "CI over nights. Identical construction to PR-1b §9.4 — it calls "
                    "race's own helpers rather than re-deriving them."),
         "tier": "descriptive_in_sample_counterfactual",
+        "p_method": P_METHOD,
+        "min_dates": int(DESCRIPTIVE_MIN_DATES),
         "cells": cells,
         "reading": ("This tier is computable TODAY and is what feeds the §5.3 verdict "
                     "table. It is in-sample by construction and promotion-barred; the "
@@ -2008,29 +2178,44 @@ def what_does_x_add(census: Mapping[str, Any], descriptive: Mapping[str, Any],
                     cmi: Mapping[str, Any], crossfit_status: str,
                     power: Mapping[str, Any], *,
                     n_tests: int, alpha: float = 0.05,
-                    horizon: int = PRIMARY_HORIZON) -> dict[str, Any]:
+                    horizon: int = PRIMARY_HORIZON,
+                    design_descriptive: Mapping[str, Any] | None = None,
+                    sensitivity: Mapping[str, Any] | None = None) -> dict[str, Any]:
     """One row per registry family at the primary horizon, BH-FDR over the family grain.
 
     §9.8: the family-grain BH table is SEPARATE from the leaderboard's model x metric x
     horizon table, and it is the axis this §5.3 exhibit varies over — one test per family
     at H=10.  Secondary horizons get their own separately-bookkept tables, marked
     secondary, and never share this table's alpha.
+
+    THE VERDICT KEYS ON ``p_t``.  See :data:`P_METHOD` — the normal reference the draft
+    used is anti-conservative at 12-17 date-blocks and flipped this table's only
+    rejection.  ``p_normal`` is carried in every row for continuity, and is never read.
     """
     cells = {(c["family"], c["horizon"]): c for c in descriptive["cells"]}
+    design_cells = {(c["family"], c["horizon"]): c
+                    for c in (design_descriptive or {}).get("cells", [])}
     cmi_cells = {(c["family"], c["horizon"]): c for c in cmi["cells"]}
     scored = census_families_in_score(census)
 
     pvalues: list[float] = []
     scored_at_horizon: list[str] = []
+    refused_for_depth: list[dict[str, Any]] = []
     for family in scored:
         cell = cells.get((family, horizon))
-        p = None if cell is None else _opt(cell.get("p_partial"))
+        p = None if cell is None else _opt(cell.get("p_t"))
         if p is None:
+            refused_for_depth.append({
+                "family": family,
+                "n_dates": (cell or {}).get("n_dates_partial", 0),
+                "min_dates": int(DESCRIPTIVE_MIN_DATES),
+                "reason": (cell or {}).get("reason", "no descriptive cell")})
             continue
         scored_at_horizon.append(family)
         pvalues.append(float(p))
     bh = benjamini_hochberg(pvalues, alpha=alpha) if pvalues else []
     by_family = {family: bh[i] for i, family in enumerate(scored_at_horizon)}
+    depth_refused = {row["family"]: row for row in refused_for_depth}
 
     rows: list[dict[str, Any]] = []
     for family in sorted(census["families"]):
@@ -2060,12 +2245,49 @@ def what_does_x_add(census: Mapping[str, Any], descriptive: Mapping[str, Any],
                 "sub_reasons": sorted({r for m in body["members"] for r in m["reasons"]
                                        if r != "eligible"}),
                 "tier": cell["tier"],
+                "membership": "score",
                 "effect_partial_rho_given_g0": _round(effect),
                 "ci95": (cell.get("partial_spearman_given_g0") or {}).get("ci95"),
                 "spearman_vs_outcome": (cell.get("spearman_vs_outcome") or {}).get("mean"),
-                "p": verdict_row["p"], "p_adj": verdict_row["p_adj"],
+                "p_t": verdict_row["p"], "p_normal": cell.get("p_normal"),
+                "p_adj": verdict_row["p_adj"],
                 "reject": verdict_row["reject"], "p_method": cell["p_method"],
+                "verdict_keys_on": "p_t",
                 "n_dates": cell["n_dates_partial"], "n_rows": cell["n_rows"],
+                "design_membership_effect": _design_membership_effect(
+                    design_cells.get((family, horizon)), census, family),
+                "cmi": _cmi_summary(cmi_cell),
+                "crossfit_status": crossfit_status,
+                "power_note": power_note,
+                "members": member_detail,
+            })
+            continue
+
+        if family in depth_refused:
+            # A family that HAS a score but whose cell is below the registered date-block
+            # minimum.  Naming it "insufficient coverage" would blame the evidence; the
+            # shortfall is in the FRAME's graded depth at this horizon, and the count says
+            # so (adversarial review F-7).
+            shortfall = depth_refused[family]
+            rows.append({
+                "family": family, "verdict": "not_estimable",
+                "reason": (f"descriptive cell refused: {shortfall['n_dates']} date-blocks "
+                           f"< the registered minimum {shortfall['min_dates']}"),
+                "sub_reasons": ["below_descriptive_min_dates"],
+                "tier": "refused_below_descriptive_min_dates",
+                "membership": "score",
+                "effect_partial_rho_given_g0": (
+                    (cell.get("partial_spearman_given_g0") or {}).get("mean")
+                    if cell else None),
+                "ci95": ((cell.get("partial_spearman_given_g0") or {}).get("ci95")
+                         if cell else [None, None]),
+                "spearman_vs_outcome": ((cell.get("spearman_vs_outcome") or {}).get("mean")
+                                        if cell else None),
+                "p_t": None, "p_normal": None, "p_adj": None, "reject": False,
+                "p_method": P_METHOD, "verdict_keys_on": "p_t",
+                "n_dates": shortfall["n_dates"], "n_rows": (cell or {}).get("n_rows", 0),
+                "design_membership_effect": _design_membership_effect(
+                    design_cells.get((family, horizon)), census, family),
                 "cmi": _cmi_summary(cmi_cell),
                 "crossfit_status": crossfit_status,
                 "power_note": power_note,
@@ -2079,12 +2301,15 @@ def what_does_x_add(census: Mapping[str, Any], descriptive: Mapping[str, Any],
             "reason": "; ".join(sub_reasons),
             "sub_reasons": sub_reasons,
             "tier": "census_only_no_descriptive_read",
+            "membership": "score",
             "effect_partial_rho_given_g0": None, "ci95": [None, None],
             "spearman_vs_outcome": None,
-            "p": None, "p_adj": None, "reject": False,
-            "p_method": None,
+            "p_t": None, "p_normal": None, "p_adj": None, "reject": False,
+            "p_method": None, "verdict_keys_on": "p_t",
             "n_dates": (cell["n_dates_partial"] if cell else 0),
             "n_rows": (cell["n_rows"] if cell else 0),
+            "design_membership_effect": _design_membership_effect(
+                design_cells.get((family, horizon)), census, family),
             "cmi": _cmi_summary(cmi_cell),
             "crossfit_status": crossfit_status,
             "power_note": power_note,
@@ -2109,13 +2334,56 @@ def what_does_x_add(census: Mapping[str, Any], descriptive: Mapping[str, Any],
         "n_tests_registered": int(n_tests),
         "n_tests_consumed": len(pvalues),
         "n_rejections": int(sum(1 for r in rows if r["reject"])),
+        "n_refused_below_min_dates": len(refused_for_depth),
+        "refused_below_min_dates": refused_for_depth,
+        "min_dates": int(DESCRIPTIVE_MIN_DATES),
         "vocabulary": list(VERDICT_VOCABULARY),
+        "p_method": P_METHOD,
+        "verdict_keys_on": "p_t",
+        "membership": ("score — the registered C1-comparable member set. Every row also "
+                       "carries `design_membership_effect`, the same construction over "
+                       "FIT-ELIGIBLE members only (adversarial review F-2)."),
         "law": ("BH-FDR across the family-grain p-values of the DESCRIPTIVE partial-rho | "
-                "G0 at H=10 only (§9.8's family-grain axis). Secondary horizons carry "
-                "their own separately-bookkept tables, marked secondary. Every row "
-                "carries its tier and its power context — a verdict is never printed "
-                "without them."),
+                "G0 at H=10 only (§9.8's family-grain axis), keyed on the t reference. "
+                "Secondary horizons carry their own separately-bookkept tables, marked "
+                "secondary. Every row carries its tier and its power context — a verdict "
+                "is never printed without them."),
+        "sensitivity": sensitivity or {"status": "not_computed"},
         "rows": rows,
+    }
+
+
+def _design_membership_effect(cell: Mapping[str, Any] | None, census: Mapping[str, Any],
+                              family: str) -> dict[str, Any]:
+    """The same partial-rho, over FIT-ELIGIBLE members only (adversarial review F-2).
+
+    Beside the verdict, never instead of it.  F5's registered score includes
+    ``insider_cluster``, whose collector stopped at 2026q1 — so the registered number
+    answers "what did this evidence add on the frozen frame" and this one answers "what
+    would a model that can only see serving-lawful members have got".  Publishing only the
+    first lets a reader carry a dead feature's contribution forward as if a fitted rung
+    could use it.
+    """
+    body = census["families"].get(family) or {}
+    members = list(body.get("design_matrix_members") or [])
+    if cell is None or cell.get("status") == "NOT_ESTIMABLE" or not members:
+        return {"status": "NOT_ESTIMABLE", "members": members,
+                "reason": ((cell or {}).get("reason")
+                           or "no fit-eligible member set exists for this family"),
+                "differs_from_score_membership": bool(
+                    set(members) != set(body.get("family_score_members") or []))}
+    partial = cell.get("partial_spearman_given_g0") or {}
+    return {
+        "status": "estimated", "members": members,
+        "effect_partial_rho_given_g0": partial.get("mean"),
+        "ci95": partial.get("ci95"),
+        "n_dates": cell.get("n_dates_partial"), "n_rows": cell.get("n_rows"),
+        "p_t": cell.get("p_t"), "p_normal": cell.get("p_normal"),
+        "differs_from_score_membership": bool(
+            set(members) != set(body.get("family_score_members") or [])),
+        "not_bh_adjusted": ("this column is a DISCLOSURE beside the verdict, not a second "
+                            "test — it is deliberately excluded from the registered BH "
+                            "table, whose multiplicity was fixed before any outcome read"),
     }
 
 
@@ -2149,22 +2417,132 @@ def secondary_horizon_tables(census: Mapping[str, Any], descriptive: Mapping[str
     out: dict[str, Any] = {}
     for horizon in SECONDARY_HORIZONS:
         families, pvalues = [], []
+        refused: list[dict[str, Any]] = []
         for family in census_families_in_score(census):
             cell = cells.get((family, horizon))
-            p = None if cell is None else _opt(cell.get("p_partial"))
+            p = None if cell is None else _opt(cell.get("p_t"))
             if p is None:
+                refused.append({
+                    "family": family, "status": "NOT_ESTIMABLE",
+                    "n_dates": (cell or {}).get("n_dates_partial", 0),
+                    "min_dates": int(DESCRIPTIVE_MIN_DATES),
+                    "reason": (cell or {}).get("reason", "no descriptive cell")})
                 continue
             families.append(family)
             pvalues.append(float(p))
         bh = benjamini_hochberg(pvalues, alpha=alpha) if pvalues else []
         out[str(horizon)] = {
             "tier": "secondary", "horizon": int(horizon), "alpha": float(alpha),
-            "n_tests": len(pvalues),
-            "rows": [{"family": families[i], **bh[i]} for i in range(len(bh))],
+            "n_tests": len(pvalues), "verdict_keys_on": "p_t",
+            "min_dates": int(DESCRIPTIVE_MIN_DATES),
+            "rows": [{"family": families[i],
+                      "p_t": bh[i]["p"], "p_adj": bh[i]["p_adj"],
+                      "reject": bh[i]["reject"],
+                      "p_normal": (cells.get((families[i], horizon)) or {}).get("p_normal")}
+                     for i in range(len(bh))],
+            "n_refused_below_min_dates": len(refused),
+            "refused_below_min_dates": refused,
             "law": ("SEPARATELY BOOKKEPT: a secondary horizon never shares the primary "
-                    "table's alpha, and no verdict in `what_does_x_add` is derived here."),
+                    "table's alpha, and no verdict in `what_does_x_add` is derived here. "
+                    f"A cell below {DESCRIPTIVE_MIN_DATES} date-blocks is REFUSED with its "
+                    "count rather than given a two-sided p — which is what empties the "
+                    "H=21 table entirely (adversarial review F-7)."),
         }
     return out
+
+
+def multiplicity_sensitivity(frame: C2Frame, census: Mapping[str, Any], *,
+                             alpha: float = 0.05, horizon: int = PRIMARY_HORIZON,
+                             bootstrap_b: int = BOOTSTRAP_B) -> dict[str, Any]:
+    """The n_tests = 4 variant, with the vote-inert family RETAINED (review F-3).
+
+    WHY THIS EXISTS.  The registered multiplicity is 3 because the variance floor removed
+    F8's only member from the family score — and a floor that lowers the test count is a
+    researcher degree of freedom whether or not it was exercised as one.  The honest reply
+    is not an assurance, it is the other table: recompute the identical construction with
+    the inert member retained, run BH at m = 4, and print what changes.  The floor's own
+    defence is structural and stated in the law string below (0.50 mirrors the registered
+    presence floor and predates every outcome read here), but the reader gets the number
+    rather than the promise.
+    """
+    scores, receipt = build_family_scores(frame, census, membership="score_retaining_inert")
+    families = sorted(c for c in scores.columns if c not in ("date", "ticker"))
+    descriptive = descriptive_incremental(frame, scores, families=families,
+                                          membership="score_retaining_inert",
+                                          bootstrap_b=bootstrap_b)
+    cells = {(c["family"], c["horizon"]): c for c in descriptive["cells"]}
+    named, pvalues, refused = [], [], []
+    for family in families:
+        cell = cells.get((family, horizon))
+        p = None if cell is None else _opt(cell.get("p_t"))
+        if p is None:
+            refused.append({"family": family,
+                            "n_dates": (cell or {}).get("n_dates_partial", 0),
+                            "reason": (cell or {}).get("reason")})
+            continue
+        named.append(family)
+        pvalues.append(float(p))
+    bh = benjamini_hochberg(pvalues, alpha=alpha) if pvalues else []
+
+    # The variant was ASKED FOR at m = 4 and the frame cannot supply four tests: the
+    # retained family's own cell is below the registered date-block minimum.  Rather than
+    # invent its p-value — which is precisely the under-powered number DESCRIPTIVE_MIN_DATES
+    # exists to refuse — bound the question from both ends.  Adding a 4th p-value to BH can
+    # only change the outcome through its RANK, so evaluating the extremes p = 0 (most
+    # favourable) and p = 1 (least) brackets every value it could have taken.  If no REAL
+    # family rejects at either extreme, the conclusion does not depend on F8 at all.
+    bounds: dict[str, Any] = {}
+    for label, hypothetical in (("most_favourable_p_0", 0.0), ("least_favourable_p_1", 1.0)):
+        padded = pvalues + [hypothetical]
+        padded_bh = benjamini_hochberg(padded, alpha=alpha)
+        bounds[label] = {
+            "hypothetical_p_for_the_retained_family": hypothetical,
+            "m": len(padded),
+            "real_family_rejections": [named[i] for i in range(len(named))
+                                       if padded_bh[i]["reject"]],
+            "n_real_family_rejections": int(sum(1 for i in range(len(named))
+                                                if padded_bh[i]["reject"])),
+        }
+
+    return {
+        "variant": "vote_inert_members_retained",
+        "requested_n_tests": len(receipt["families"]),
+        "n_tests": len(pvalues),
+        "n_tests_note": (
+            "REQUESTED as the m = 4 variant; the frame supplies 3. Retaining the "
+            "vote-inert member gives F8 a family score, but that score's own partial-rho "
+            "cell is NOT_ESTIMABLE at the registered date-block minimum (see "
+            "`refused_below_min_dates`) — the family's flag varies on too few nights to "
+            "rank a cross-section on. So m = 3 is NOT an artifact of the variance floor: "
+            "the floor and the depth minimum exclude F8 independently, and the bounds "
+            "below settle the m = 4 question without inventing F8's p-value."),
+        "alpha": float(alpha), "horizon": int(horizon), "verdict_keys_on": "p_t",
+        "families_retained": receipt["families"],
+        "members_per_family": receipt["members_per_family"],
+        "rows": [{"family": named[i],
+                  "p_t": bh[i]["p"], "p_adj": bh[i]["p_adj"], "reject": bh[i]["reject"],
+                  "p_normal": (cells.get((named[i], horizon)) or {}).get("p_normal"),
+                  "effect_partial_rho_given_g0": (
+                      (cells[(named[i], horizon)].get("partial_spearman_given_g0") or {})
+                      .get("mean")),
+                  "n_dates": cells[(named[i], horizon)].get("n_dates_partial")}
+                 for i in range(len(bh))],
+        "n_rejections": int(sum(1 for row in bh if row["reject"])),
+        "refused_below_min_dates": refused,
+        "m4_bounds": bounds,
+        "m4_conclusion": (
+            "no REAL family rejects at either extreme"
+            if all(b["n_real_family_rejections"] == 0 for b in bounds.values())
+            else "the m = 4 variant CHANGES a real family's verdict — see m4_bounds"),
+        "law": (
+            "The registered table's m = 3 rests on the variance floor removing F8's only "
+            "member from the family score. That threshold (0.50 of frame dates carrying "
+            ">= 2 distinct oriented values) MIRRORS the registered presence floor of 0.50 "
+            "and was set in the registry amendment before any PR-2 outcome cell was read, "
+            "so it is not a tuned quantity — and this block prints the retained-member "
+            "variant anyway, computed by the identical construction, so a reader does not "
+            "have to take that on trust."),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -2348,6 +2726,20 @@ def _registered_block(floor: VarianceFloor, *, n_tests: int,
                 "secondary_tables": ("H=5 and H=21 carry their own separately-bookkept BH "
                                      "tables, marked secondary; they never share this "
                                      "alpha")},
+        "descriptive_minimums": {
+            "min_date_blocks": int(DESCRIPTIVE_MIN_DATES),
+            "equal_to_cmi_min_dates": int(DESCRIPTIVE_MIN_DATES) == int(CMI_MIN_DATES),
+            "law": ("a descriptive-incremental or secondary-horizon cell below this many "
+                    "date-blocks is NOT_ESTIMABLE with its count — deliberately equal to "
+                    "cmi_estimator.minimums.min_dates so the two estimators do not "
+                    "disagree about how deep the same nights are"),
+        },
+        "p_instrument": {
+            "verdict_bearing": "p_t",
+            "reference": "two-sided Student t on the date-blocked mean / SE, df = n-1",
+            "also_reported": "p_normal (erfc form) — continuity with PR-1b §8.2 only",
+            "method": P_METHOD,
+        },
         "redundancy_cell_minimums": {
             "min_non_null_pairs_within_a_date": REDUNDANCY_MIN_PAIRS_PER_DATE,
             "min_counted_dates": REDUNDANCY_MIN_DATES,
@@ -2463,12 +2855,33 @@ def run_c2(*, root: Path | str | None = None,
                      "estimator and is labelled as one on every cell."),
         }
     descriptive = descriptive_incremental(frame, fam_scores, families=scored_families,
-                                          bootstrap_b=bootstrap_b)
-    report["incremental"] = {"crossfit": crossfit, "descriptive": descriptive}
+                                          membership="score", bootstrap_b=bootstrap_b)
+    descriptive["members_per_family"] = score_receipt["members_per_family"]
+    design_scores, design_receipt = build_family_scores(frame, census,
+                                                        membership="design")
+    design_descriptive = descriptive_incremental(
+        frame, design_scores, families=scored_families, membership="design",
+        bootstrap_b=bootstrap_b)
+    design_descriptive["members_per_family"] = design_receipt["members_per_family"]
+    report["incremental"] = {
+        "crossfit": crossfit,
+        "descriptive": {
+            "law": ("TWO member sets, both printed (adversarial review F-2). "
+                    "`score_membership` is the REGISTERED C1-comparable construction and "
+                    "is what every verdict keys on; `design_membership` repeats it over "
+                    "FIT-ELIGIBLE members only, so a family carrying a serving-dead "
+                    "member (F5.insider_panel) cannot have that member's contribution "
+                    "read forward as something a fitted rung could use."),
+            "score_membership": descriptive,
+            "design_membership": design_descriptive,
+        },
+    }
 
     power = power_block(frame, census, cmi, fold_plan)
+    sensitivity = multiplicity_sensitivity(frame, census, bootstrap_b=bootstrap_b)
     report["what_does_x_add"] = what_does_x_add(
-        census, descriptive, cmi, crossfit["status"], power, n_tests=n_tests)
+        census, descriptive, cmi, crossfit["status"], power, n_tests=n_tests,
+        design_descriptive=design_descriptive, sensitivity=sensitivity)
     report["what_does_x_add_secondary_horizons"] = secondary_horizon_tables(
         census, descriptive)
     report["c2_fit"] = c2_fit_block(frame, registry, census, fold_plan)
@@ -2872,10 +3285,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"  variance    : floor {spec['min_dates_with_variation_share']} "
           f"(read from {spec['read_from']})")
     for row in report["what_does_x_add"]["rows"]:
-        print(f"    {row['family']:26} {row['verdict']:26} "
-              f"effect={row['effect_partial_rho_given_g0']} n_dates={row['n_dates']}")
-    print(f"  BH-FDR      : n_tests={report['what_does_x_add']['n_tests_registered']}, "
-          f"rejections={report['what_does_x_add']['n_rejections']}")
+        print(f"    {row['family']:26} {row['verdict']:22} "
+              f"effect={row['effect_partial_rho_given_g0']} p_t={row['p_t']} "
+              f"p_adj={row['p_adj']} n_dates={row['n_dates']}")
+    table = report["what_does_x_add"]
+    print(f"  BH-FDR      : n_tests={table['n_tests_registered']}, "
+          f"rejections={table['n_rejections']} (keyed on p_t; "
+          f"{table['n_refused_below_min_dates']} refused below "
+          f"{table['min_dates']} date-blocks)")
+    print(f"  sensitivity : m={table['sensitivity']['n_tests']} variant — "
+          f"{table['sensitivity']['m4_conclusion']}")
     print(f"  crossfit    : {report['incremental']['crossfit']['status']}")
     print(f"  c2_fit      : {report['c2_fit']['status']}")
     print(f"  report      : {path}")

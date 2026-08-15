@@ -245,9 +245,12 @@ semantics:
     event flag firing on a few percent of rows most dates) pass, which is the DSC
     falsifier's own acceptance test and is pinned by suite.  Vote-inertness is
     FRAME-RELATIVE and computed by the harness at evaluation time — it is never a
-    registry constant, because a member inert on one frame may be live on the next, and
-    a PROSPECTIVE evaluation must compute it as-of each night (the PR-1b whole-frame
-    floor look-ahead lesson applies to this axis identically).
+    registry constant, because a member inert on one frame may be live on the next.
+    A PROSPECTIVE evaluation must compute it as-of each night (the PR-1b whole-frame
+    floor look-ahead lesson applies to this axis identically) — UNIMPLEMENTED as of
+    PR-2, whose harness computes the share over its frozen historical frame; the
+    as-of-night form is carried to PR-3's shadow lane, and no prospective consumer
+    exists before it.
   variance_floor_spec:
     axis: within_date_distinct_nonnull_oriented_values
     min_distinct_values_per_date: 2
@@ -798,9 +801,20 @@ families:
           with as_of = the settlement actually knowable on the query date; a current
           date (within 1 day) keeps the snapshot path and its `snapshot_not_pit` basis,
           which is the correct live read and is what the nightly stamps.
-          `pit_settlement` is BACKTEST-LAWFUL in the arena: the §9.1 availability gate
-          is enforced INSIDE the producer, on the store's own knowable_date — never a
-          derived statutory lag applied at join time.  Two caveats BIND every consumer.
+          BACKTEST ADMISSION DEFERRED (PR-2 adversarial review, F-5): `pit_settlement`
+          is deliberately NOT in the arena's BACKTEST_LAWFUL_STATUSES yet.  The
+          producer does gate historical resolutions on `knowable_date`, but on every
+          frame this repo can build that field is DERIVED — `_si_normalise` computes
+          `settlement_date + 10 CALENDAR days` (`_SI_KNOWABLE_LAG_DAYS`) because the
+          history parquet carries no native knowable column — and 10 calendar days is
+          2-3 days SHORT of the "~8 sessions" publication lag this member's own note
+          records (measured on all 3 committed settlements: +10cal lands 2026-07-10 /
+          07-25 / 08-10 vs 8 US sessions landing 07-13 / 07-27 / 08-12).  A derived
+          lag that under-waits manufactures look-ahead at exactly the publication
+          boundary, so the status stays REFUSED in backtest frames until the owning
+          lane reconciles the constant (8 business sessions, or
+          max(derived, capture_date) — the store's real capture_date is currently
+          unused).  Three caveats BIND every consumer once admitted.
           (1) DEPTH: committed history is 3 settlements (first knowable 2026-07-10);
           re-run scripts/backfill_finra_short_interest.py before any deep historical
           join (the 2018+ panel parquet is absent on the primary checkout) — a
@@ -810,6 +824,10 @@ families:
           reconstruction rows stamp.  Key on `basis_field` — a frame mixing
           `pit_settlement` and `snapshot_not_pit` bases without disclosure is not a
           PIT frame.
+          (3) LAG PROVENANCE: any admission must first reconcile the knowable-lag
+          convention above; the engine constant's own "deliberately conservative"
+          comment is contradicted by the session arithmetic and must not be cited as
+          the reconciliation.
         note: >-
           `settlement_date` is the OBSERVATION date, not the publication date (FINRA
           publishes ~8 sessions later) — the reader's knowable_date gate is what makes a

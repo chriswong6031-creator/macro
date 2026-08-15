@@ -123,6 +123,17 @@
       "derivation": "the count of families carrying a score-eligible member at H=10, computed from the FEATURE-side census alone — no outcome value enters the multiplicity count",
       "secondary_tables": "H=5 and H=21 carry their own separately-bookkept BH tables, marked secondary; they never share this alpha"
     },
+    "descriptive_minimums": {
+      "min_date_blocks": 8,
+      "equal_to_cmi_min_dates": true,
+      "law": "a descriptive-incremental or secondary-horizon cell below this many date-blocks is NOT_ESTIMABLE with its count — deliberately equal to cmi_estimator.minimums.min_dates so the two estimators do not disagree about how deep the same nights are"
+    },
+    "p_instrument": {
+      "verdict_bearing": "p_t",
+      "reference": "two-sided Student t on the date-blocked mean / SE, df = n-1",
+      "also_reported": "p_normal (erfc form) — continuity with PR-1b §8.2 only",
+      "method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom."
+    },
     "redundancy_cell_minimums": {
       "min_non_null_pairs_within_a_date": 30,
       "min_counted_dates": 5,
@@ -449,6 +460,7 @@
         "eligible_for_design_matrix": false,
         "design_matrix_members": [],
         "family_score_members": [],
+        "family_score_members_retaining_inert": [],
         "structural_note": null,
         "members": [
           {
@@ -518,6 +530,7 @@
                 "min_distinct": 0,
                 "median_distinct": 2.5,
                 "max_distinct": 4,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 0,
                   "2026-06-16": 0,
@@ -552,6 +565,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": 0.07979,
               "train_coverage": 0.250111,
+              "train_coverage_semantic": 0.250111,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "tier_cascade": 0.07979,
@@ -623,6 +638,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "young_history": 1.0,
@@ -677,6 +694,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "stage": 0.04601
@@ -726,6 +745,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -773,6 +794,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -820,6 +843,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -867,6 +892,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -914,6 +941,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -961,6 +990,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1008,6 +1039,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1039,6 +1072,10 @@
           "off_high"
         ],
         "family_score_members": [
+          "alpha",
+          "off_high"
+        ],
+        "family_score_members_retaining_inert": [
           "alpha",
           "off_high"
         ],
@@ -1091,6 +1128,7 @@
                 "min_distinct": 47,
                 "median_distinct": 72.5,
                 "max_distinct": 125,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 85,
                   "2026-06-16": 84,
@@ -1125,6 +1163,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": 0.930111,
               "train_coverage": 1.0,
+              "train_coverage_semantic": 1.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "alpha": 0.930111,
@@ -1180,6 +1220,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "ext_z": 0.988352
@@ -1233,6 +1275,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "antichase_shadow_blocked": 0.089691
@@ -1282,6 +1326,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1343,6 +1389,7 @@
                 "min_distinct": 51,
                 "median_distinct": 72.0,
                 "max_distinct": 118,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 70,
                   "2026-06-16": 74,
@@ -1377,6 +1424,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 1.0,
+              "train_coverage_semantic": 1.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [
                 "off_high"
               ],
@@ -1424,6 +1473,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1452,6 +1503,7 @@
         "eligible_for_design_matrix": false,
         "design_matrix_members": [],
         "family_score_members": [],
+        "family_score_members_retaining_inert": [],
         "structural_note": "absent_from_frame: the frozen board payload the ledger records carries no theme / basket / relay evidence column (sector is IDENTITY, and donor_state/donor_sector are page-level constants). Not measured here.",
         "members": [
           {
@@ -1494,6 +1546,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "theme_membership_count": 1.0,
@@ -1560,6 +1614,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "theme_heat_rank": 0.245195,
@@ -1624,6 +1680,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "relay_count_3d": 0.0,
@@ -1680,6 +1738,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "foresight_stage": 0.114153
@@ -1737,6 +1797,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "sector__sector_node": 0.852068,
@@ -1788,6 +1850,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1835,6 +1899,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1882,6 +1948,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1931,6 +1999,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -1963,6 +2033,9 @@
           "sue_fresh"
         ],
         "family_score_members": [
+          "sue_fresh"
+        ],
+        "family_score_members_retaining_inert": [
           "sue_fresh"
         ],
         "structural_note": null,
@@ -2007,6 +2080,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "days_to_report": 0.909726,
@@ -2065,6 +2140,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "post_earnings_move_pct": 0.413512,
@@ -2119,6 +2196,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "eightk_recent_days": 0.377402
@@ -2182,6 +2261,7 @@
                 "min_distinct": 0,
                 "median_distinct": 2.0,
                 "max_distinct": 2,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 0,
                   "2026-06-16": 0,
@@ -2216,6 +2296,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.663261,
+              "train_coverage_semantic": 0.663261,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [
                 "sue_fresh"
               ],
@@ -2263,6 +2345,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2310,6 +2394,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2357,6 +2443,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2404,6 +2492,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2453,6 +2543,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2485,6 +2577,10 @@
           "smartmoney_add"
         ],
         "family_score_members": [
+          "insider_cluster",
+          "smartmoney_add"
+        ],
+        "family_score_members_retaining_inert": [
           "insider_cluster",
           "smartmoney_add"
         ],
@@ -2539,6 +2635,7 @@
                 "min_distinct": 0,
                 "median_distinct": 1.0,
                 "max_distinct": 3,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 0,
                   "2026-06-16": 0,
@@ -2573,6 +2670,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.208796,
+              "train_coverage_semantic": 0.208796,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [
                 "gex_confirm_verdict"
               ],
@@ -2601,7 +2700,7 @@
             "member": "F5_FLOW_POSITIONING.short_interest",
             "family": "F5_FLOW_POSITIONING",
             "pit_status": "pit_settlement",
-            "backtest_lawful": true,
+            "backtest_lawful": false,
             "null_semantics": "unmeasured",
             "serving_dead": false,
             "cross_sectional": true,
@@ -2639,6 +2738,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "short_int__short_shares": 0.849156,
@@ -2653,10 +2754,12 @@
               "rule": "not applied — serve coverage is `not_yet_measurable`, and an unmeasured serving side is not a measured skew"
             },
             "verdict": [
-              "absent_from_frame"
+              "absent_from_frame",
+              "not_backtest_pit"
             ],
             "reasons": [
-              "absent_from_frame"
+              "absent_from_frame",
+              "not_backtest_pit"
             ],
             "in_family_score": false,
             "in_design_matrix": false,
@@ -2706,6 +2809,7 @@
                 "min_distinct": 0,
                 "median_distinct": 2.0,
                 "max_distinct": 2,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 0,
                   "2026-06-16": 0,
@@ -2740,6 +2844,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.663261,
+              "train_coverage_semantic": 0.663261,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [
                 "insider_cluster"
               ],
@@ -2799,6 +2905,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "turnover_pctile_20d": 0.852068,
@@ -2851,6 +2959,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2898,6 +3008,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -2959,6 +3071,7 @@
                 "min_distinct": 0,
                 "median_distinct": 2.0,
                 "max_distinct": 2,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 0,
                   "2026-06-16": 0,
@@ -2993,6 +3106,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.663261,
+              "train_coverage_semantic": 0.663261,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [
                 "smartmoney_add"
               ],
@@ -3021,6 +3136,7 @@
         "eligible_for_design_matrix": false,
         "design_matrix_members": [],
         "family_score_members": [],
+        "family_score_members_retaining_inert": [],
         "structural_note": "STRUCTURALLY EXCLUDED, not missing: §5.1 F6 is row-constant per night (one value for every name), so it is cross-sectionally DEGENERATE by construction and cannot rank names. The frame DOES carry its columns (quad_hard_label, vol_regime, rate_pressure, fused_risk_label, risk_radar_state, dispersion_state) and their row-constancy is measured and printed in exhibits.f6_row_constancy. Lawful only as a router/interaction axis (§10.2).",
         "members": [
           {
@@ -3113,6 +3229,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "regime__quad": 1.0,
@@ -3204,6 +3322,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "regime_market_quad": 1.0,
@@ -3259,6 +3379,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -3310,6 +3432,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -3342,6 +3466,7 @@
         "eligible_for_design_matrix": false,
         "design_matrix_members": [],
         "family_score_members": [],
+        "family_score_members_retaining_inert": [],
         "structural_note": "absent_from_frame: the only F7-adjacent column present is `archetype`, and §5.1 F7 routes archetype/personality through #5583's fingerprint interfaces, never raw. No a-priori ordinal direction is filed for a nominal category, and reading one off this frame's outcomes would be an audition. Not raced.",
         "members": [
           {
@@ -3386,6 +3511,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "forensics__action": 0.840419,
@@ -3449,6 +3576,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "archetype__archetype": 0.845661,
@@ -3508,6 +3637,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "personality__chart_primary": 0.991846,
@@ -3559,6 +3690,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -3606,6 +3739,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -3653,6 +3788,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -3681,6 +3818,9 @@
         "eligible_for_design_matrix": false,
         "design_matrix_members": [],
         "family_score_members": [],
+        "family_score_members_retaining_inert": [
+          "news_burst"
+        ],
         "structural_note": null,
         "members": [
           {
@@ -3719,6 +3859,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {
                 "attention__views": 0.69074,
@@ -3785,6 +3927,7 @@
                 "min_distinct": 0,
                 "median_distinct": 1.0,
                 "max_distinct": 2,
+                "null_counts_as_a_measured_value": false,
                 "per_date_distinct": {
                   "2026-06-15": 0,
                   "2026-06-16": 0,
@@ -3819,6 +3962,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.663261,
+              "train_coverage_semantic": 0.663261,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [
                 "news_burst"
               ],
@@ -3868,6 +4013,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -3915,6 +4062,8 @@
               "serve_frame": "2026-08-07 curated",
               "serve_coverage": "not_yet_measurable",
               "train_coverage": 0.0,
+              "train_coverage_semantic": 0.0,
+              "train_coverage_basis": "raw_non_null_share (like-for-like with serve)",
               "columns_absent_from_store": [],
               "per_column": {},
               "serve_coverage_all_registered_columns": null,
@@ -4606,7 +4755,9 @@
               "column": "stage",
               "reason": "not_measurable_categorical"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         },
         "F2_MOMENTUM_EXTENSION": {
           "status": "measured",
@@ -4672,7 +4823,9 @@
               "column": "off_high",
               "reason": "absent_from_stamp"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         },
         "F3_THEME_STRUCTURE": {
           "status": "measured",
@@ -4822,7 +4975,9 @@
               "column": "sector__oracle_episode",
               "reason": "not_measurable_categorical"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         },
         "F4_CATALYST_EVENT": {
           "status": "measured",
@@ -5023,7 +5178,9 @@
               "column": "sue_fresh",
               "reason": "absent_from_stamp"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         },
         "F5_FLOW_POSITIONING": {
           "status": "measured",
@@ -5248,7 +5405,11 @@
               "column": "smartmoney_add",
               "reason": "absent_from_stamp"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [
+            "F5_FLOW_POSITIONING.short_interest (pit_settlement)"
+          ],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         },
         "F6_MACRO_REGIME": {
           "status": "structurally_excluded",
@@ -5319,7 +5480,11 @@
               "column": "personality__archetype",
               "reason": "not_measurable_categorical"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [
+            "F7_QUALITY_FUNDAMENTAL.forensics_scalars (snapshot_not_pit)"
+          ],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         },
         "F8_ATTENTION_CROWDING": {
           "status": "measured",
@@ -5340,7 +5505,11 @@
               "column": "news_burst",
               "reason": "absent_from_stamp"
             }
-          ]
+          ],
+          "members_measured_but_not_backtest_lawful": [
+            "F8_ATTENTION_CROWDING.attention (forward_only)"
+          ],
+          "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
         }
       }
     },
@@ -5587,7 +5756,9 @@
                 "column": "stage",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F2_MOMENTUM_EXTENSION": {
             "status": "measured",
@@ -5630,7 +5801,9 @@
                 "column": "off_high",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F3_THEME_STRUCTURE": {
             "status": "measured",
@@ -5780,7 +5953,9 @@
                 "column": "sector__oracle_episode",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F4_CATALYST_EVENT": {
             "status": "measured",
@@ -5981,7 +6156,9 @@
                 "column": "sue_fresh",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F5_FLOW_POSITIONING": {
             "status": "measured",
@@ -6206,7 +6383,11 @@
                 "column": "smartmoney_add",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [
+              "F5_FLOW_POSITIONING.short_interest (pit_settlement)"
+            ],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F6_MACRO_REGIME": {
             "status": "structurally_excluded",
@@ -6277,7 +6458,11 @@
                 "column": "personality__archetype",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [
+              "F7_QUALITY_FUNDAMENTAL.forensics_scalars (snapshot_not_pit)"
+            ],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F8_ATTENTION_CROWDING": {
             "status": "measured",
@@ -6298,7 +6483,11 @@
                 "column": "news_burst",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [
+              "F8_ATTENTION_CROWDING.attention (forward_only)"
+            ],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           }
         }
       },
@@ -6671,7 +6860,9 @@
                 "column": "stage",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F2_MOMENTUM_EXTENSION": {
             "status": "no_measurable_pair",
@@ -6698,7 +6889,9 @@
                 "column": "off_high",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F3_THEME_STRUCTURE": {
             "status": "no_measurable_pair",
@@ -6773,7 +6966,9 @@
                 "column": "sector__oracle_episode",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F4_CATALYST_EVENT": {
             "status": "measured",
@@ -6924,7 +7119,9 @@
                 "column": "sue_fresh",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F5_FLOW_POSITIONING": {
             "status": "measured",
@@ -7003,7 +7200,9 @@
                 "column": "smartmoney_add",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F6_MACRO_REGIME": {
             "status": "structurally_excluded",
@@ -7058,7 +7257,9 @@
                 "column": "personality__archetype",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F8_ATTENTION_CROWDING": {
             "status": "no_measurable_pair",
@@ -7077,7 +7278,9 @@
                 "column": "news_burst",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           }
         }
       },
@@ -7450,7 +7653,9 @@
                 "column": "stage",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F2_MOMENTUM_EXTENSION": {
             "status": "no_measurable_pair",
@@ -7477,7 +7682,9 @@
                 "column": "off_high",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F3_THEME_STRUCTURE": {
             "status": "no_measurable_pair",
@@ -7552,7 +7759,9 @@
                 "column": "sector__oracle_episode",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F4_CATALYST_EVENT": {
             "status": "measured",
@@ -7703,7 +7912,9 @@
                 "column": "sue_fresh",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F5_FLOW_POSITIONING": {
             "status": "measured",
@@ -7782,7 +7993,9 @@
                 "column": "smartmoney_add",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F6_MACRO_REGIME": {
             "status": "structurally_excluded",
@@ -7837,7 +8050,9 @@
                 "column": "personality__archetype",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F8_ATTENTION_CROWDING": {
             "status": "no_measurable_pair",
@@ -7856,7 +8071,9 @@
                 "column": "news_burst",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           }
         }
       },
@@ -8229,7 +8446,9 @@
                 "column": "stage",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F2_MOMENTUM_EXTENSION": {
             "status": "no_measurable_pair",
@@ -8256,7 +8475,9 @@
                 "column": "off_high",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F3_THEME_STRUCTURE": {
             "status": "no_measurable_pair",
@@ -8331,7 +8552,9 @@
                 "column": "sector__oracle_episode",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F4_CATALYST_EVENT": {
             "status": "measured",
@@ -8482,7 +8705,9 @@
                 "column": "sue_fresh",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F5_FLOW_POSITIONING": {
             "status": "measured",
@@ -8561,7 +8786,9 @@
                 "column": "smartmoney_add",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F6_MACRO_REGIME": {
             "status": "structurally_excluded",
@@ -8616,7 +8843,9 @@
                 "column": "personality__archetype",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F8_ATTENTION_CROWDING": {
             "status": "no_measurable_pair",
@@ -8635,7 +8864,9 @@
                 "column": "news_burst",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           }
         }
       },
@@ -9008,7 +9239,9 @@
                 "column": "stage",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F2_MOMENTUM_EXTENSION": {
             "status": "no_measurable_pair",
@@ -9035,7 +9268,9 @@
                 "column": "off_high",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F3_THEME_STRUCTURE": {
             "status": "no_measurable_pair",
@@ -9110,7 +9345,9 @@
                 "column": "sector__oracle_episode",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F4_CATALYST_EVENT": {
             "status": "measured",
@@ -9261,7 +9498,9 @@
                 "column": "sue_fresh",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F5_FLOW_POSITIONING": {
             "status": "measured",
@@ -9340,7 +9579,9 @@
                 "column": "smartmoney_add",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F6_MACRO_REGIME": {
             "status": "structurally_excluded",
@@ -9395,7 +9636,9 @@
                 "column": "personality__archetype",
                 "reason": "not_measurable_categorical"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           },
           "F8_ATTENTION_CROWDING": {
             "status": "no_measurable_pair",
@@ -9414,7 +9657,9 @@
                 "column": "news_burst",
                 "reason": "absent_from_stamp"
               }
-            ]
+            ],
+            "members_measured_but_not_backtest_lawful": [],
+            "pit_disclosure": "a measured redundancy cell is a structural fact about the store, NEVER an admission: the members listed above are refused by the backtest PIT gate and reach no score, matrix or fit anywhere in this report"
           }
         }
       }
@@ -9481,13 +9726,12 @@
         "source": "masterplan §5.2 Intelligence Hub; engine/intel_hub.py:845-850 reads signal_gate.json",
         "measured_on": null,
         "measurement": {
-          "status": "NOT_MEASURABLE"
+          "status": "unresolvable_pair_spec"
         },
-        "missing_side": [
-          "F3_THEME_STRUCTURE.hub_theme_leg",
+        "unresolvable_sides": [
           "F1_TECHNICAL_CONFLUENCE..F4_CATALYST_EVENT"
         ],
-        "reason": "neither frame carries a wired, present column for the named side(s) — the edge stays an ASSERTED prior and says so"
+        "reason": "this side is written as a FAMILY RANGE in a position the schema reads as a single `FAMILY.member` key, so it can never resolve to a member on any frame. Fixing it is a registry edit (name the specific members the edge asserts), not more data — it is excluded from the unwired-edge count."
       },
       {
         "pair": [
@@ -9603,7 +9847,8 @@
         "observed_bits": 0.007026,
         "null_mean_bits": 0.003533,
         "excess_bits": 0.003493,
-        "p_one_sided": 0.058,
+        "p_one_sided": 0.05988,
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": 500,
         "permutation_seed": 20260818
       },
@@ -9622,7 +9867,8 @@
         "observed_bits": 0.001884,
         "null_mean_bits": 0.002105,
         "excess_bits": -0.000221,
-        "p_one_sided": 0.468,
+        "p_one_sided": 0.469062,
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": 500,
         "permutation_seed": 20260818
       },
@@ -9641,7 +9887,8 @@
         "observed_bits": 0.001009,
         "null_mean_bits": 0.001392,
         "excess_bits": -0.000383,
-        "p_one_sided": 0.544,
+        "p_one_sided": 0.54491,
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": 500,
         "permutation_seed": 20260818
       },
@@ -9660,7 +9907,8 @@
         "observed_bits": 0.01065,
         "null_mean_bits": 0.0057,
         "excess_bits": 0.00495,
-        "p_one_sided": 0.056,
+        "p_one_sided": 0.057884,
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": 500,
         "permutation_seed": 20260818
       },
@@ -9679,7 +9927,8 @@
         "observed_bits": 0.002621,
         "null_mean_bits": 0.001885,
         "excess_bits": 0.000736,
-        "p_one_sided": 0.232,
+        "p_one_sided": 0.233533,
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": 500,
         "permutation_seed": 20260818
       },
@@ -9698,7 +9947,8 @@
         "observed_bits": 0.003366,
         "null_mean_bits": 0.002202,
         "excess_bits": 0.001164,
-        "p_one_sided": 0.19,
+        "p_one_sided": 0.191617,
+        "p_one_sided_estimator": "(1 + #{null >= observed}) / (B + 1)",
         "permutation_b": 500,
         "permutation_seed": 20260818
       },
@@ -9791,272 +10041,688 @@
       "note": "NO FOLD WAS MANUFACTURED and no in-sample substitute was computed under this key. The descriptive tier beside it is a DIFFERENT estimator and is labelled as one on every cell."
     },
     "descriptive": {
-      "method": "rank-residual partial correlation within date: rank every series inside the night, regress the family rank and the outcome rank on the G0-replay rank, correlate the residuals; date-blocked bootstrap CI over nights. Identical construction to PR-1b §9.4 — it calls race's own helpers rather than re-deriving them.",
-      "tier": "descriptive_in_sample_counterfactual",
-      "cells": [
-        {
-          "family": "F2_MOMENTUM_EXTENSION",
-          "horizon": 5,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 2251,
-          "spearman_vs_outcome": {
-            "mean": -0.017444,
-            "median": -0.080943,
-            "n_dates": 24,
-            "ci95": [
-              -0.098104,
-              0.066994
-            ],
-            "share_positive": 0.458333
-          },
-          "partial_spearman_given_g0": {
-            "mean": -0.032293,
-            "median": -0.143313,
-            "n_dates": 17,
-            "ci95": [
-              -0.129568,
-              0.069337
-            ],
-            "share_positive": 0.411765
-          },
-          "p_partial": 0.541804,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 17
+      "law": "TWO member sets, both printed (adversarial review F-2). `score_membership` is the REGISTERED C1-comparable construction and is what every verdict keys on; `design_membership` repeats it over FIT-ELIGIBLE members only, so a family carrying a serving-dead member (F5.insider_panel) cannot have that member's contribution read forward as something a fitted rung could use.",
+      "score_membership": {
+        "membership": "score",
+        "members_per_family": {
+          "F2_MOMENTUM_EXTENSION": [
+            "alpha",
+            "off_high"
+          ],
+          "F4_CATALYST_EVENT": [
+            "sue_fresh"
+          ],
+          "F5_FLOW_POSITIONING": [
+            "insider_cluster",
+            "smartmoney_add"
+          ]
         },
-        {
-          "family": "F4_CATALYST_EVENT",
-          "horizon": 5,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 1493,
-          "spearman_vs_outcome": {
-            "mean": -0.025514,
-            "median": -0.01811,
-            "n_dates": 14,
-            "ci95": [
-              -0.083925,
-              0.031265
-            ],
-            "share_positive": 0.428571
+        "method": "rank-residual partial correlation within date: rank every series inside the night, regress the family rank and the outcome rank on the G0-replay rank, correlate the residuals; date-blocked bootstrap CI over nights. Identical construction to PR-1b §9.4 — it calls race's own helpers rather than re-deriving them.",
+        "tier": "descriptive_in_sample_counterfactual",
+        "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+        "min_dates": 8,
+        "cells": [
+          {
+            "family": "F2_MOMENTUM_EXTENSION",
+            "horizon": 5,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 2251,
+            "spearman_vs_outcome": {
+              "mean": -0.017444,
+              "median": -0.080943,
+              "n_dates": 24,
+              "ci95": [
+                -0.098104,
+                0.066994
+              ],
+              "share_positive": 0.458333
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.032293,
+              "median": -0.143313,
+              "n_dates": 17,
+              "ci95": [
+                -0.129568,
+                0.069337
+              ],
+              "share_positive": 0.411765
+            },
+            "p_t": 0.550371,
+            "p_normal": 0.541804,
+            "t_stat": -0.610087,
+            "df": 16,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 17,
+            "min_dates": 8
           },
-          "partial_spearman_given_g0": {
-            "mean": -0.026823,
-            "median": -0.02075,
-            "n_dates": 14,
-            "ci95": [
-              -0.084413,
-              0.029548
-            ],
-            "share_positive": 0.428571
+          {
+            "family": "F4_CATALYST_EVENT",
+            "horizon": 5,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1493,
+            "spearman_vs_outcome": {
+              "mean": -0.025514,
+              "median": -0.01811,
+              "n_dates": 14,
+              "ci95": [
+                -0.083925,
+                0.031265
+              ],
+              "share_positive": 0.428571
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.026823,
+              "median": -0.02075,
+              "n_dates": 14,
+              "ci95": [
+                -0.084413,
+                0.029548
+              ],
+              "share_positive": 0.428571
+            },
+            "p_t": 0.389482,
+            "p_normal": 0.373303,
+            "t_stat": -0.890304,
+            "df": 13,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 14,
+            "min_dates": 8
           },
-          "p_partial": 0.373303,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 14
+          {
+            "family": "F5_FLOW_POSITIONING",
+            "horizon": 5,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1493,
+            "spearman_vs_outcome": {
+              "mean": 0.047786,
+              "median": 0.05455,
+              "n_dates": 17,
+              "ci95": [
+                -0.013032,
+                0.111699
+              ],
+              "share_positive": 0.705882
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.048298,
+              "median": 0.056008,
+              "n_dates": 17,
+              "ci95": [
+                -0.013608,
+                0.111925
+              ],
+              "share_positive": 0.647059
+            },
+            "p_t": 0.162236,
+            "p_normal": 0.142862,
+            "t_stat": 1.465217,
+            "df": 16,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 17,
+            "min_dates": 8
+          },
+          {
+            "family": "F2_MOMENTUM_EXTENSION",
+            "horizon": 10,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1382,
+            "spearman_vs_outcome": {
+              "mean": -0.075586,
+              "median": -0.068132,
+              "n_dates": 17,
+              "ci95": [
+                -0.137489,
+                -0.011429
+              ],
+              "share_positive": 0.294118
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.083097,
+              "median": -0.089454,
+              "n_dates": 15,
+              "ci95": [
+                -0.154208,
+                -0.006847
+              ],
+              "share_positive": 0.266667
+            },
+            "p_t": 0.055585,
+            "p_normal": 0.036827,
+            "t_stat": -2.087674,
+            "df": 14,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 15,
+            "min_dates": 8
+          },
+          {
+            "family": "F4_CATALYST_EVENT",
+            "horizon": 10,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1190,
+            "spearman_vs_outcome": {
+              "mean": 0.010004,
+              "median": 0.01796,
+              "n_dates": 12,
+              "ci95": [
+                -0.047433,
+                0.063319
+              ],
+              "share_positive": 0.583333
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.011729,
+              "median": 0.020789,
+              "n_dates": 12,
+              "ci95": [
+                -0.04897,
+                0.066225
+              ],
+              "share_positive": 0.583333
+            },
+            "p_t": 0.707842,
+            "p_normal": 0.70051,
+            "t_stat": 0.384632,
+            "df": 11,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 12,
+            "min_dates": 8
+          },
+          {
+            "family": "F5_FLOW_POSITIONING",
+            "horizon": 10,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1190,
+            "spearman_vs_outcome": {
+              "mean": 0.073432,
+              "median": 0.058462,
+              "n_dates": 15,
+              "ci95": [
+                0.019502,
+                0.127625
+              ],
+              "share_positive": 0.733333
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.073927,
+              "median": 0.071634,
+              "n_dates": 15,
+              "ci95": [
+                0.017177,
+                0.12957
+              ],
+              "share_positive": 0.733333
+            },
+            "p_t": 0.026819,
+            "p_normal": 0.013391,
+            "t_stat": 2.473195,
+            "df": 14,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 15,
+            "min_dates": 8
+          },
+          {
+            "family": "F2_MOMENTUM_EXTENSION",
+            "horizon": 21,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "NOT_ESTIMABLE",
+            "n_rows": 442,
+            "spearman_vs_outcome": {
+              "mean": -0.088976,
+              "median": -0.065039,
+              "n_dates": 7,
+              "ci95": [
+                -0.182307,
+                0.006721
+              ],
+              "share_positive": 0.285714
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.098369,
+              "median": -0.057789,
+              "n_dates": 7,
+              "ci95": [
+                -0.186728,
+                -0.01687
+              ],
+              "share_positive": 0.285714
+            },
+            "p_t": null,
+            "p_normal": null,
+            "t_stat": null,
+            "df": null,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 7,
+            "min_dates": 8,
+            "reason": "7 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
+          },
+          {
+            "family": "F4_CATALYST_EVENT",
+            "horizon": 21,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "NOT_ESTIMABLE",
+            "n_rows": 442,
+            "spearman_vs_outcome": {
+              "mean": -0.02012,
+              "median": -0.036874,
+              "n_dates": 4,
+              "ci95": [
+                -0.157398,
+                0.117159
+              ],
+              "share_positive": 0.5
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.019706,
+              "median": -0.043249,
+              "n_dates": 4,
+              "ci95": [
+                -0.15693,
+                0.11586
+              ],
+              "share_positive": 0.5
+            },
+            "p_t": null,
+            "p_normal": null,
+            "t_stat": null,
+            "df": null,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 4,
+            "min_dates": 8,
+            "reason": "4 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
+          },
+          {
+            "family": "F5_FLOW_POSITIONING",
+            "horizon": 21,
+            "membership": "score",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "NOT_ESTIMABLE",
+            "n_rows": 442,
+            "spearman_vs_outcome": {
+              "mean": 0.047443,
+              "median": 0.070575,
+              "n_dates": 7,
+              "ci95": [
+                0.0065,
+                0.086842
+              ],
+              "share_positive": 0.714286
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.04651,
+              "median": 0.073846,
+              "n_dates": 7,
+              "ci95": [
+                0.004569,
+                0.086864
+              ],
+              "share_positive": 0.714286
+            },
+            "p_t": null,
+            "p_normal": null,
+            "t_stat": null,
+            "df": null,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 7,
+            "min_dates": 8,
+            "reason": "7 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
+          }
+        ],
+        "reading": "This tier is computable TODAY and is what feeds the §5.3 verdict table. It is in-sample by construction and promotion-barred; the cross-fitted tier beside it is the one that would carry inference, and on this frame it is refused."
+      },
+      "design_membership": {
+        "membership": "design",
+        "members_per_family": {
+          "F2_MOMENTUM_EXTENSION": [
+            "alpha",
+            "off_high"
+          ],
+          "F4_CATALYST_EVENT": [
+            "sue_fresh"
+          ],
+          "F5_FLOW_POSITIONING": [
+            "smartmoney_add"
+          ]
         },
-        {
-          "family": "F5_FLOW_POSITIONING",
-          "horizon": 5,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 1493,
-          "spearman_vs_outcome": {
-            "mean": 0.047786,
-            "median": 0.05455,
-            "n_dates": 17,
-            "ci95": [
-              -0.013032,
-              0.111699
-            ],
-            "share_positive": 0.705882
+        "method": "rank-residual partial correlation within date: rank every series inside the night, regress the family rank and the outcome rank on the G0-replay rank, correlate the residuals; date-blocked bootstrap CI over nights. Identical construction to PR-1b §9.4 — it calls race's own helpers rather than re-deriving them.",
+        "tier": "descriptive_in_sample_counterfactual",
+        "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+        "min_dates": 8,
+        "cells": [
+          {
+            "family": "F2_MOMENTUM_EXTENSION",
+            "horizon": 5,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 2251,
+            "spearman_vs_outcome": {
+              "mean": -0.017444,
+              "median": -0.080943,
+              "n_dates": 24,
+              "ci95": [
+                -0.098104,
+                0.066994
+              ],
+              "share_positive": 0.458333
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.032293,
+              "median": -0.143313,
+              "n_dates": 17,
+              "ci95": [
+                -0.129568,
+                0.069337
+              ],
+              "share_positive": 0.411765
+            },
+            "p_t": 0.550371,
+            "p_normal": 0.541804,
+            "t_stat": -0.610087,
+            "df": 16,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 17,
+            "min_dates": 8
           },
-          "partial_spearman_given_g0": {
-            "mean": 0.048298,
-            "median": 0.056008,
-            "n_dates": 17,
-            "ci95": [
-              -0.013608,
-              0.111925
-            ],
-            "share_positive": 0.647059
+          {
+            "family": "F4_CATALYST_EVENT",
+            "horizon": 5,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1493,
+            "spearman_vs_outcome": {
+              "mean": -0.025514,
+              "median": -0.01811,
+              "n_dates": 14,
+              "ci95": [
+                -0.083925,
+                0.031265
+              ],
+              "share_positive": 0.428571
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.026823,
+              "median": -0.02075,
+              "n_dates": 14,
+              "ci95": [
+                -0.084413,
+                0.029548
+              ],
+              "share_positive": 0.428571
+            },
+            "p_t": 0.389482,
+            "p_normal": 0.373303,
+            "t_stat": -0.890304,
+            "df": 13,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 14,
+            "min_dates": 8
           },
-          "p_partial": 0.142862,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 17
-        },
-        {
-          "family": "F2_MOMENTUM_EXTENSION",
-          "horizon": 10,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 1382,
-          "spearman_vs_outcome": {
-            "mean": -0.075586,
-            "median": -0.068132,
-            "n_dates": 17,
-            "ci95": [
-              -0.137489,
-              -0.011429
-            ],
-            "share_positive": 0.294118
+          {
+            "family": "F5_FLOW_POSITIONING",
+            "horizon": 5,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1493,
+            "spearman_vs_outcome": {
+              "mean": 0.025891,
+              "median": 0.043744,
+              "n_dates": 14,
+              "ci95": [
+                -0.055753,
+                0.092399
+              ],
+              "share_positive": 0.642857
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.026198,
+              "median": 0.038312,
+              "n_dates": 14,
+              "ci95": [
+                -0.053283,
+                0.090173
+              ],
+              "share_positive": 0.642857
+            },
+            "p_t": 0.479241,
+            "p_normal": 0.466324,
+            "t_stat": 0.728474,
+            "df": 13,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 14,
+            "min_dates": 8
           },
-          "partial_spearman_given_g0": {
-            "mean": -0.083097,
-            "median": -0.089454,
-            "n_dates": 15,
-            "ci95": [
-              -0.154208,
-              -0.006847
-            ],
-            "share_positive": 0.266667
+          {
+            "family": "F2_MOMENTUM_EXTENSION",
+            "horizon": 10,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1382,
+            "spearman_vs_outcome": {
+              "mean": -0.075586,
+              "median": -0.068132,
+              "n_dates": 17,
+              "ci95": [
+                -0.137489,
+                -0.011429
+              ],
+              "share_positive": 0.294118
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.083097,
+              "median": -0.089454,
+              "n_dates": 15,
+              "ci95": [
+                -0.154208,
+                -0.006847
+              ],
+              "share_positive": 0.266667
+            },
+            "p_t": 0.055585,
+            "p_normal": 0.036827,
+            "t_stat": -2.087674,
+            "df": 14,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 15,
+            "min_dates": 8
           },
-          "p_partial": 0.036827,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 15
-        },
-        {
-          "family": "F4_CATALYST_EVENT",
-          "horizon": 10,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 1190,
-          "spearman_vs_outcome": {
-            "mean": 0.010004,
-            "median": 0.01796,
-            "n_dates": 12,
-            "ci95": [
-              -0.047433,
-              0.063319
-            ],
-            "share_positive": 0.583333
+          {
+            "family": "F4_CATALYST_EVENT",
+            "horizon": 10,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1190,
+            "spearman_vs_outcome": {
+              "mean": 0.010004,
+              "median": 0.01796,
+              "n_dates": 12,
+              "ci95": [
+                -0.047433,
+                0.063319
+              ],
+              "share_positive": 0.583333
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.011729,
+              "median": 0.020789,
+              "n_dates": 12,
+              "ci95": [
+                -0.04897,
+                0.066225
+              ],
+              "share_positive": 0.583333
+            },
+            "p_t": 0.707842,
+            "p_normal": 0.70051,
+            "t_stat": 0.384632,
+            "df": 11,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 12,
+            "min_dates": 8
           },
-          "partial_spearman_given_g0": {
-            "mean": 0.011729,
-            "median": 0.020789,
-            "n_dates": 12,
-            "ci95": [
-              -0.04897,
-              0.066225
-            ],
-            "share_positive": 0.583333
+          {
+            "family": "F5_FLOW_POSITIONING",
+            "horizon": 10,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "estimated",
+            "n_rows": 1190,
+            "spearman_vs_outcome": {
+              "mean": 0.050026,
+              "median": 0.044922,
+              "n_dates": 12,
+              "ci95": [
+                -0.003805,
+                0.108369
+              ],
+              "share_positive": 0.583333
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.052269,
+              "median": 0.04473,
+              "n_dates": 12,
+              "ci95": [
+                -0.00256,
+                0.11086
+              ],
+              "share_positive": 0.583333
+            },
+            "p_t": 0.105776,
+            "p_normal": 0.078048,
+            "t_stat": 1.762125,
+            "df": 11,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 12,
+            "min_dates": 8
           },
-          "p_partial": 0.70051,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 12
-        },
-        {
-          "family": "F5_FLOW_POSITIONING",
-          "horizon": 10,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 1190,
-          "spearman_vs_outcome": {
-            "mean": 0.073432,
-            "median": 0.058462,
-            "n_dates": 15,
-            "ci95": [
-              0.019502,
-              0.127625
-            ],
-            "share_positive": 0.733333
+          {
+            "family": "F2_MOMENTUM_EXTENSION",
+            "horizon": 21,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "NOT_ESTIMABLE",
+            "n_rows": 442,
+            "spearman_vs_outcome": {
+              "mean": -0.088976,
+              "median": -0.065039,
+              "n_dates": 7,
+              "ci95": [
+                -0.182307,
+                0.006721
+              ],
+              "share_positive": 0.285714
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.098369,
+              "median": -0.057789,
+              "n_dates": 7,
+              "ci95": [
+                -0.186728,
+                -0.01687
+              ],
+              "share_positive": 0.285714
+            },
+            "p_t": null,
+            "p_normal": null,
+            "t_stat": null,
+            "df": null,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 7,
+            "min_dates": 8,
+            "reason": "7 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
           },
-          "partial_spearman_given_g0": {
-            "mean": 0.073927,
-            "median": 0.071634,
-            "n_dates": 15,
-            "ci95": [
-              0.017177,
-              0.12957
-            ],
-            "share_positive": 0.733333
+          {
+            "family": "F4_CATALYST_EVENT",
+            "horizon": 21,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "NOT_ESTIMABLE",
+            "n_rows": 442,
+            "spearman_vs_outcome": {
+              "mean": -0.02012,
+              "median": -0.036874,
+              "n_dates": 4,
+              "ci95": [
+                -0.157398,
+                0.117159
+              ],
+              "share_positive": 0.5
+            },
+            "partial_spearman_given_g0": {
+              "mean": -0.019706,
+              "median": -0.043249,
+              "n_dates": 4,
+              "ci95": [
+                -0.15693,
+                0.11586
+              ],
+              "share_positive": 0.5
+            },
+            "p_t": null,
+            "p_normal": null,
+            "t_stat": null,
+            "df": null,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 4,
+            "min_dates": 8,
+            "reason": "4 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
           },
-          "p_partial": 0.013391,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 15
-        },
-        {
-          "family": "F2_MOMENTUM_EXTENSION",
-          "horizon": 21,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 442,
-          "spearman_vs_outcome": {
-            "mean": -0.088976,
-            "median": -0.065039,
-            "n_dates": 7,
-            "ci95": [
-              -0.182307,
-              0.006721
-            ],
-            "share_positive": 0.285714
-          },
-          "partial_spearman_given_g0": {
-            "mean": -0.098369,
-            "median": -0.057789,
-            "n_dates": 7,
-            "ci95": [
-              -0.186728,
-              -0.01687
-            ],
-            "share_positive": 0.285714
-          },
-          "p_partial": 0.035662,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 7
-        },
-        {
-          "family": "F4_CATALYST_EVENT",
-          "horizon": 21,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 442,
-          "spearman_vs_outcome": {
-            "mean": -0.02012,
-            "median": -0.036874,
-            "n_dates": 4,
-            "ci95": [
-              -0.157398,
-              0.117159
-            ],
-            "share_positive": 0.5
-          },
-          "partial_spearman_given_g0": {
-            "mean": -0.019706,
-            "median": -0.043249,
-            "n_dates": 4,
-            "ci95": [
-              -0.15693,
-              0.11586
-            ],
-            "share_positive": 0.5
-          },
-          "p_partial": 0.807644,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 4
-        },
-        {
-          "family": "F5_FLOW_POSITIONING",
-          "horizon": 21,
-          "tier": "descriptive_in_sample_counterfactual",
-          "n_rows": 442,
-          "spearman_vs_outcome": {
-            "mean": 0.047443,
-            "median": 0.070575,
-            "n_dates": 7,
-            "ci95": [
-              0.0065,
-              0.086842
-            ],
-            "share_positive": 0.714286
-          },
-          "partial_spearman_given_g0": {
-            "mean": 0.04651,
-            "median": 0.073846,
-            "n_dates": 7,
-            "ci95": [
-              0.004569,
-              0.086864
-            ],
-            "share_positive": 0.714286
-          },
-          "p_partial": 0.050818,
-          "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
-          "n_dates_partial": 7
-        }
-      ],
-      "reading": "This tier is computable TODAY and is what feeds the §5.3 verdict table. It is in-sample by construction and promotion-barred; the cross-fitted tier beside it is the one that would carry inference, and on this frame it is refused."
+          {
+            "family": "F5_FLOW_POSITIONING",
+            "horizon": 21,
+            "membership": "design",
+            "tier": "descriptive_in_sample_counterfactual",
+            "status": "NOT_ESTIMABLE",
+            "n_rows": 442,
+            "spearman_vs_outcome": {
+              "mean": 0.021838,
+              "median": 0.014683,
+              "n_dates": 4,
+              "ci95": [
+                -0.078406,
+                0.129235
+              ],
+              "share_positive": 0.75
+            },
+            "partial_spearman_given_g0": {
+              "mean": 0.017808,
+              "median": 0.001885,
+              "n_dates": 4,
+              "ci95": [
+                -0.079763,
+                0.131301
+              ],
+              "share_positive": 0.5
+            },
+            "p_t": null,
+            "p_normal": null,
+            "t_stat": null,
+            "df": null,
+            "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+            "n_dates_partial": 4,
+            "min_dates": 8,
+            "reason": "4 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
+          }
+        ],
+        "reading": "This tier is computable TODAY and is what feeds the §5.3 verdict table. It is in-sample by construction and promotion-barred; the cross-fitted tier beside it is the one that would carry inference, and on this frame it is refused."
+      }
     }
   },
   "what_does_x_add": {
@@ -10065,7 +10731,10 @@
     "alpha": 0.05,
     "n_tests_registered": 3,
     "n_tests_consumed": 3,
-    "n_rejections": 1,
+    "n_rejections": 0,
+    "n_refused_below_min_dates": 0,
+    "refused_below_min_dates": [],
+    "min_dates": 8,
     "vocabulary": [
       "incremental_positive",
       "incremental_negative",
@@ -10075,7 +10744,94 @@
       "not_estimable",
       "excluded_train_serve_skew"
     ],
-    "law": "BH-FDR across the family-grain p-values of the DESCRIPTIVE partial-rho | G0 at H=10 only (§9.8's family-grain axis). Secondary horizons carry their own separately-bookkept tables, marked secondary. Every row carries its tier and its power context — a verdict is never printed without them.",
+    "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+    "verdict_keys_on": "p_t",
+    "membership": "score — the registered C1-comparable member set. Every row also carries `design_membership_effect`, the same construction over FIT-ELIGIBLE members only (adversarial review F-2).",
+    "law": "BH-FDR across the family-grain p-values of the DESCRIPTIVE partial-rho | G0 at H=10 only (§9.8's family-grain axis), keyed on the t reference. Secondary horizons carry their own separately-bookkept tables, marked secondary. Every row carries its tier and its power context — a verdict is never printed without them.",
+    "sensitivity": {
+      "variant": "vote_inert_members_retained",
+      "requested_n_tests": 4,
+      "n_tests": 3,
+      "n_tests_note": "REQUESTED as the m = 4 variant; the frame supplies 3. Retaining the vote-inert member gives F8 a family score, but that score's own partial-rho cell is NOT_ESTIMABLE at the registered date-block minimum (see `refused_below_min_dates`) — the family's flag varies on too few nights to rank a cross-section on. So m = 3 is NOT an artifact of the variance floor: the floor and the depth minimum exclude F8 independently, and the bounds below settle the m = 4 question without inventing F8's p-value.",
+      "alpha": 0.05,
+      "horizon": 10,
+      "verdict_keys_on": "p_t",
+      "families_retained": [
+        "F2_MOMENTUM_EXTENSION",
+        "F4_CATALYST_EVENT",
+        "F5_FLOW_POSITIONING",
+        "F8_ATTENTION_CROWDING"
+      ],
+      "members_per_family": {
+        "F2_MOMENTUM_EXTENSION": [
+          "alpha",
+          "off_high"
+        ],
+        "F4_CATALYST_EVENT": [
+          "sue_fresh"
+        ],
+        "F5_FLOW_POSITIONING": [
+          "insider_cluster",
+          "smartmoney_add"
+        ],
+        "F8_ATTENTION_CROWDING": [
+          "news_burst"
+        ]
+      },
+      "rows": [
+        {
+          "family": "F2_MOMENTUM_EXTENSION",
+          "p_t": 0.055585,
+          "p_adj": 0.083378,
+          "reject": false,
+          "p_normal": 0.036827,
+          "effect_partial_rho_given_g0": -0.083097,
+          "n_dates": 15
+        },
+        {
+          "family": "F4_CATALYST_EVENT",
+          "p_t": 0.707842,
+          "p_adj": 0.707842,
+          "reject": false,
+          "p_normal": 0.70051,
+          "effect_partial_rho_given_g0": 0.011729,
+          "n_dates": 12
+        },
+        {
+          "family": "F5_FLOW_POSITIONING",
+          "p_t": 0.026819,
+          "p_adj": 0.080457,
+          "reject": false,
+          "p_normal": 0.013391,
+          "effect_partial_rho_given_g0": 0.073927,
+          "n_dates": 15
+        }
+      ],
+      "n_rejections": 0,
+      "refused_below_min_dates": [
+        {
+          "family": "F8_ATTENTION_CROWDING",
+          "n_dates": 6,
+          "reason": "6 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
+        }
+      ],
+      "m4_bounds": {
+        "most_favourable_p_0": {
+          "hypothetical_p_for_the_retained_family": 0.0,
+          "m": 4,
+          "real_family_rejections": [],
+          "n_real_family_rejections": 0
+        },
+        "least_favourable_p_1": {
+          "hypothetical_p_for_the_retained_family": 1.0,
+          "m": 4,
+          "real_family_rejections": [],
+          "n_real_family_rejections": 0
+        }
+      },
+      "m4_conclusion": "no REAL family rejects at either extreme",
+      "law": "The registered table's m = 3 rests on the variance floor removing F8's only member from the family score. That threshold (0.50 of frame dates carrying >= 2 distinct oriented values) MIRRORS the registered presence floor of 0.50 and was set in the registry amendment before any PR-2 outcome cell was read, so it is not a tuned quantity — and this block prints the retained-member variant anyway, computed by the identical construction, so a reader does not have to take that on trust."
+    },
     "rows": [
       {
         "family": "F1_TECHNICAL_CONFLUENCE",
@@ -10087,18 +10843,27 @@
           "excluded_train_serve_skew"
         ],
         "tier": "census_only_no_descriptive_read",
+        "membership": "score",
         "effect_partial_rho_given_g0": null,
         "ci95": [
           null,
           null
         ],
         "spearman_vs_outcome": null,
-        "p": null,
+        "p_t": null,
+        "p_normal": null,
         "p_adj": null,
         "reject": false,
         "p_method": null,
+        "verdict_keys_on": "p_t",
         "n_dates": 0,
         "n_rows": 0,
+        "design_membership_effect": {
+          "status": "NOT_ESTIMABLE",
+          "members": [],
+          "reason": "no fit-eligible member set exists for this family",
+          "differs_from_score_membership": false
+        },
         "cmi": {
           "status": "absent"
         },
@@ -10157,23 +10922,44 @@
           "unwired"
         ],
         "tier": "descriptive_in_sample_counterfactual",
+        "membership": "score",
         "effect_partial_rho_given_g0": -0.083097,
         "ci95": [
           -0.154208,
           -0.006847
         ],
         "spearman_vs_outcome": -0.075586,
-        "p": 0.036827,
-        "p_adj": 0.05524,
+        "p_t": 0.055585,
+        "p_normal": 0.036827,
+        "p_adj": 0.083378,
         "reject": false,
-        "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
+        "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+        "verdict_keys_on": "p_t",
         "n_dates": 15,
         "n_rows": 1382,
+        "design_membership_effect": {
+          "status": "estimated",
+          "members": [
+            "alpha",
+            "off_high"
+          ],
+          "effect_partial_rho_given_g0": -0.083097,
+          "ci95": [
+            -0.154208,
+            -0.006847
+          ],
+          "n_dates": 15,
+          "n_rows": 1382,
+          "p_t": 0.055585,
+          "p_normal": 0.036827,
+          "differs_from_score_membership": false,
+          "not_bh_adjusted": "this column is a DISCLOSURE beside the verdict, not a second test — it is deliberately excluded from the registered BH table, whose multiplicity was fixed before any outcome read"
+        },
         "cmi": {
           "status": "estimated",
           "excess_bits": 0.00495,
           "observed_bits": 0.01065,
-          "p_one_sided": 0.056,
+          "p_one_sided": 0.057884,
           "n_dates": 15
         },
         "crossfit_status": "refused_no_lawful_folds",
@@ -10237,18 +11023,27 @@
           "absent_from_frame"
         ],
         "tier": "census_only_no_descriptive_read",
+        "membership": "score",
         "effect_partial_rho_given_g0": null,
         "ci95": [
           null,
           null
         ],
         "spearman_vs_outcome": null,
-        "p": null,
+        "p_t": null,
+        "p_normal": null,
         "p_adj": null,
         "reject": false,
         "p_method": null,
+        "verdict_keys_on": "p_t",
         "n_dates": 0,
         "n_rows": 0,
+        "design_membership_effect": {
+          "status": "NOT_ESTIMABLE",
+          "members": [],
+          "reason": "no fit-eligible member set exists for this family",
+          "differs_from_score_membership": false
+        },
         "cmi": {
           "status": "absent"
         },
@@ -10332,23 +11127,43 @@
           "unwired"
         ],
         "tier": "descriptive_in_sample_counterfactual",
+        "membership": "score",
         "effect_partial_rho_given_g0": 0.011729,
         "ci95": [
           -0.04897,
           0.066225
         ],
         "spearman_vs_outcome": 0.010004,
-        "p": 0.70051,
-        "p_adj": 0.70051,
+        "p_t": 0.707842,
+        "p_normal": 0.70051,
+        "p_adj": 0.707842,
         "reject": false,
-        "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
+        "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+        "verdict_keys_on": "p_t",
         "n_dates": 12,
         "n_rows": 1190,
+        "design_membership_effect": {
+          "status": "estimated",
+          "members": [
+            "sue_fresh"
+          ],
+          "effect_partial_rho_given_g0": 0.011729,
+          "ci95": [
+            -0.04897,
+            0.066225
+          ],
+          "n_dates": 12,
+          "n_rows": 1190,
+          "p_t": 0.707842,
+          "p_normal": 0.70051,
+          "differs_from_score_membership": false,
+          "not_bh_adjusted": "this column is a DISCLOSURE beside the verdict, not a second test — it is deliberately excluded from the registered BH table, whose multiplicity was fixed before any outcome read"
+        },
         "cmi": {
           "status": "estimated",
           "excess_bits": 0.000736,
           "observed_bits": 0.002621,
-          "p_one_sided": 0.232,
+          "p_one_sided": 0.233533,
           "n_dates": 15
         },
         "crossfit_status": "refused_no_lawful_folds",
@@ -10408,33 +11223,54 @@
       },
       {
         "family": "F5_FLOW_POSITIONING",
-        "verdict": "incremental_positive",
-        "reason": "BH-FDR rejects at alpha=0.05, positive",
+        "verdict": "null_unresolved",
+        "reason": "BH-FDR does not reject at alpha=0.05",
         "sub_reasons": [
           "absent_from_frame",
           "below_presence_floor",
+          "not_backtest_pit",
           "serving_dead",
           "unwired",
           "vote_inert"
         ],
         "tier": "descriptive_in_sample_counterfactual",
+        "membership": "score",
         "effect_partial_rho_given_g0": 0.073927,
         "ci95": [
           0.017177,
           0.12957
         ],
         "spearman_vs_outcome": 0.073432,
-        "p": 0.013391,
-        "p_adj": 0.040173,
-        "reject": true,
-        "p_method": "two-sided normal approximation on the date-blocked mean / SE over nights (disclosed; the t and the normal differ in the third decimal at these block counts)",
+        "p_t": 0.026819,
+        "p_normal": 0.013391,
+        "p_adj": 0.080457,
+        "reject": false,
+        "p_method": "Two-sided reference on the date-blocked mean / SE over nights. The **t** (df = n_dates - 1) is the VERDICT-BEARING instrument and every verdict in this file keys on `p_t`; `p_normal` (the erfc form) rides beside it only for continuity with PR-1b §8.2's paired-delta table. The difference is NOT immaterial at these block counts and is not claimed to be: correcting the draft's normal reference to t moved F5's H=10 cell from p 0.0134 to 0.0268 and its BH-adjusted p from 0.040 to 0.080, changing this table's rejection count from 1 to 0. The SE is estimated from the same blocks, which is why the reference costs a degree of freedom.",
+        "verdict_keys_on": "p_t",
         "n_dates": 15,
         "n_rows": 1190,
+        "design_membership_effect": {
+          "status": "estimated",
+          "members": [
+            "smartmoney_add"
+          ],
+          "effect_partial_rho_given_g0": 0.052269,
+          "ci95": [
+            -0.00256,
+            0.11086
+          ],
+          "n_dates": 12,
+          "n_rows": 1190,
+          "p_t": 0.105776,
+          "p_normal": 0.078048,
+          "differs_from_score_membership": true,
+          "not_bh_adjusted": "this column is a DISCLOSURE beside the verdict, not a second test — it is deliberately excluded from the registered BH table, whose multiplicity was fixed before any outcome read"
+        },
         "cmi": {
           "status": "estimated",
           "excess_bits": 0.001164,
           "observed_bits": 0.003366,
-          "p_one_sided": 0.19,
+          "p_one_sided": 0.191617,
           "n_dates": 15
         },
         "crossfit_status": "refused_no_lawful_folds",
@@ -10459,10 +11295,12 @@
             "member": "F5_FLOW_POSITIONING.short_interest",
             "vote_column": null,
             "verdict": [
-              "absent_from_frame"
+              "absent_from_frame",
+              "not_backtest_pit"
             ],
             "reasons": [
-              "absent_from_frame"
+              "absent_from_frame",
+              "not_backtest_pit"
             ],
             "c1_raced": false,
             "c2_fit_eligible": false,
@@ -10516,18 +11354,27 @@
           "structurally_excluded"
         ],
         "tier": "census_only_no_descriptive_read",
+        "membership": "score",
         "effect_partial_rho_given_g0": null,
         "ci95": [
           null,
           null
         ],
         "spearman_vs_outcome": null,
-        "p": null,
+        "p_t": null,
+        "p_normal": null,
         "p_adj": null,
         "reject": false,
         "p_method": null,
+        "verdict_keys_on": "p_t",
         "n_dates": 0,
         "n_rows": 0,
+        "design_membership_effect": {
+          "status": "NOT_ESTIMABLE",
+          "members": [],
+          "reason": "no fit-eligible member set exists for this family",
+          "differs_from_score_membership": false
+        },
         "cmi": {
           "status": "absent"
         },
@@ -10575,18 +11422,27 @@
           "not_backtest_pit"
         ],
         "tier": "census_only_no_descriptive_read",
+        "membership": "score",
         "effect_partial_rho_given_g0": null,
         "ci95": [
           null,
           null
         ],
         "spearman_vs_outcome": null,
-        "p": null,
+        "p_t": null,
+        "p_normal": null,
         "p_adj": null,
         "reject": false,
         "p_method": null,
+        "verdict_keys_on": "p_t",
         "n_dates": 0,
         "n_rows": 0,
+        "design_membership_effect": {
+          "status": "NOT_ESTIMABLE",
+          "members": [],
+          "reason": "no fit-eligible member set exists for this family",
+          "differs_from_score_membership": false
+        },
         "cmi": {
           "status": "absent"
         },
@@ -10646,18 +11502,27 @@
           "vote_inert"
         ],
         "tier": "census_only_no_descriptive_read",
+        "membership": "score",
         "effect_partial_rho_given_g0": null,
         "ci95": [
           null,
           null
         ],
         "spearman_vs_outcome": null,
-        "p": null,
+        "p_t": null,
+        "p_normal": null,
         "p_adj": null,
         "reject": false,
         "p_method": null,
+        "verdict_keys_on": "p_t",
         "n_dates": 0,
         "n_rows": 0,
+        "design_membership_effect": {
+          "status": "NOT_ESTIMABLE",
+          "members": [],
+          "reason": "no fit-eligible member set exists for this family",
+          "differs_from_score_membership": false
+        },
         "cmi": {
           "status": "absent"
         },
@@ -10702,54 +11567,68 @@
       "horizon": 5,
       "alpha": 0.05,
       "n_tests": 3,
+      "verdict_keys_on": "p_t",
+      "min_dates": 8,
       "rows": [
         {
           "family": "F2_MOMENTUM_EXTENSION",
-          "p": 0.541804,
-          "p_adj": 0.541804,
-          "reject": false
+          "p_t": 0.550371,
+          "p_adj": 0.550371,
+          "reject": false,
+          "p_normal": 0.541804
         },
         {
           "family": "F4_CATALYST_EVENT",
-          "p": 0.373303,
-          "p_adj": 0.541804,
-          "reject": false
+          "p_t": 0.389482,
+          "p_adj": 0.550371,
+          "reject": false,
+          "p_normal": 0.373303
         },
         {
           "family": "F5_FLOW_POSITIONING",
-          "p": 0.142862,
-          "p_adj": 0.428586,
-          "reject": false
+          "p_t": 0.162236,
+          "p_adj": 0.486708,
+          "reject": false,
+          "p_normal": 0.142862
         }
       ],
-      "law": "SEPARATELY BOOKKEPT: a secondary horizon never shares the primary table's alpha, and no verdict in `what_does_x_add` is derived here."
+      "n_refused_below_min_dates": 0,
+      "refused_below_min_dates": [],
+      "law": "SEPARATELY BOOKKEPT: a secondary horizon never shares the primary table's alpha, and no verdict in `what_does_x_add` is derived here. A cell below 8 date-blocks is REFUSED with its count rather than given a two-sided p — which is what empties the H=21 table entirely (adversarial review F-7)."
     },
     "21": {
       "tier": "secondary",
       "horizon": 21,
       "alpha": 0.05,
-      "n_tests": 3,
-      "rows": [
+      "n_tests": 0,
+      "verdict_keys_on": "p_t",
+      "min_dates": 8,
+      "rows": [],
+      "n_refused_below_min_dates": 3,
+      "refused_below_min_dates": [
         {
           "family": "F2_MOMENTUM_EXTENSION",
-          "p": 0.035662,
-          "p_adj": 0.076227,
-          "reject": false
+          "status": "NOT_ESTIMABLE",
+          "n_dates": 7,
+          "min_dates": 8,
+          "reason": "7 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
         },
         {
           "family": "F4_CATALYST_EVENT",
-          "p": 0.807644,
-          "p_adj": 0.807644,
-          "reject": false
+          "status": "NOT_ESTIMABLE",
+          "n_dates": 4,
+          "min_dates": 8,
+          "reason": "4 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
         },
         {
           "family": "F5_FLOW_POSITIONING",
-          "p": 0.050818,
-          "p_adj": 0.076227,
-          "reject": false
+          "status": "NOT_ESTIMABLE",
+          "n_dates": 7,
+          "min_dates": 8,
+          "reason": "7 date-blocks < the registered descriptive minimum 8; the cell is refused with its count rather than reported as a wide interval"
         }
       ],
-      "law": "SEPARATELY BOOKKEPT: a secondary horizon never shares the primary table's alpha, and no verdict in `what_does_x_add` is derived here."
+      "law": "SEPARATELY BOOKKEPT: a secondary horizon never shares the primary table's alpha, and no verdict in `what_does_x_add` is derived here. A cell below 8 date-blocks is REFUSED with its count rather than given a two-sided p — which is what empties the H=21 table entirely (adversarial review F-7)."
     }
   },
   "c2_fit": {
@@ -10939,7 +11818,8 @@
           "family": "F5_FLOW_POSITIONING",
           "vote_column": null,
           "reasons": [
-            "absent_from_frame"
+            "absent_from_frame",
+            "not_backtest_pit"
           ],
           "in_family_score": false
         },

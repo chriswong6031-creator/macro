@@ -95,10 +95,17 @@ PIT_FORWARD_ONLY = "forward_only"
 PIT_SNAPSHOT = "snapshot_not_pit"
 PIT_STATUSES = (PIT_OK, PIT_SETTLEMENT, PIT_FORWARD_ONLY, PIT_SNAPSHOT)
 
-#: The statuses a BACKTEST frame may join.  ``pit_settlement`` qualifies because its
-#: producer performs the availability join itself (knowable_date), never a derived
-#: statutory lag at join time; ``forward_only`` and ``snapshot_not_pit`` stay refused.
-BACKTEST_LAWFUL_STATUSES = frozenset({PIT_OK, PIT_SETTLEMENT})
+#: The statuses a BACKTEST frame may join.  ``pit_settlement`` is DELIBERATELY NOT
+#: here yet (PR-2 adversarial review, finding F-5): the producer's knowable_date is
+#: itself DERIVED on every buildable frame — ``_si_normalise`` computes
+#: ``settlement_date + 10 CALENDAR days`` because the history parquet ships no native
+#: knowable column — and 10 calendar days under-waits the "~8 sessions" FINRA
+#: publication lag by 2-3 days on all three committed settlements, which manufactures
+#: look-ahead at exactly the publication boundary.  Admission requires the owning lane
+#: to reconcile the lag constant first (8 business sessions, or
+#: ``max(derived, capture_date)``); the registry's short_interest note carries the
+#: full receipt.  ``forward_only`` and ``snapshot_not_pit`` stay refused as before.
+BACKTEST_LAWFUL_STATUSES = frozenset({PIT_OK})
 
 #: A backtest frame may only join ``pit`` members; a LIVE (serving) read has no future
 #: to leak, so a snapshot is lawful there.  The distinction is a parameter rather than

@@ -524,18 +524,30 @@ class TestPitIntegrityFlags:
                     f"together"
                 )
 
-    def test_pit_settlement_is_backtest_lawful_and_snapshot_is_not(self, registry):
-        """The arena side of the PR-2 flip, asserted against the REAL registry: a
-        short_int column passes the backtest gate, a forensics column still refuses.
-        (The synthetic-registry twin lives in tests/test_prophet_fusion_arena.py.)"""
+    def test_pit_settlement_is_registered_vocabulary_but_backtest_admission_is_deferred(self, registry):
+        """The arena side of the PR-2 flip, asserted against the REAL registry — in the
+        DEFERRED direction the adversarial review ruled (finding F-5): the status is
+        valid vocabulary (the loader accepts it; the mechanism note is registry truth),
+        but a short_int column still REFUSES in a backtest frame, because the
+        producer's knowable_date is DERIVED at settlement + 10 CALENDAR days, which
+        under-waits the ~8-session FINRA publication lag by 2-3 days on every
+        committed settlement.  Admission follows the lag-constant reconciliation, not
+        this suite.  (The vocabulary twin lives in tests/test_prophet_fusion_arena.py.)"""
         import scripts.prophet_fusion_arena as arena
         real = arena.load_registry()
-        gate = arena.check_features(real, ["short_int__days_to_cover"],
-                                    frame_kind=arena.FRAME_KIND_BACKTEST)
-        assert gate.families == ("F5_FLOW_POSITIONING",)
+        member = _find(registry, "F5_FLOW_POSITIONING", "short_interest")
+        assert member["pit_status"] == "pit_settlement"   # vocabulary accepted
+        with pytest.raises(arena.PITRefusal) as exc:
+            arena.check_features(real, ["short_int__days_to_cover"],
+                                 frame_kind=arena.FRAME_KIND_BACKTEST)
+        assert exc.value.pit_status == "pit_settlement"
         with pytest.raises(arena.PITRefusal):
             arena.check_features(real, ["forensics__action"],
                                  frame_kind=arena.FRAME_KIND_BACKTEST)
+        # The deferral is documented where the next consumer will look.
+        note = member.get("pit_status_change_note", "")
+        assert "BACKTEST ADMISSION DEFERRED" in note
+        assert "10 CALENDAR days" in note
 
     def test_insider_is_pit_but_flagged_serving_dead(self, registry):
         """§4.2 flag 3: PIT-correct by construction (`filing_date`), but the panel
