@@ -187,6 +187,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
+          set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
             --pack-index "${{ needs.plan.outputs.primary_pack }}" \
@@ -196,6 +197,7 @@ jobs:
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
+          set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
           kill "$monitor_pid" 2>/dev/null || true
@@ -330,6 +332,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
+          set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
             --pack-index "${{ matrix.pack }}" \
@@ -339,6 +342,7 @@ jobs:
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
+          set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
           kill "$monitor_pid" 2>/dev/null || true

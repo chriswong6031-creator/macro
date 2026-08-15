@@ -154,3 +154,17 @@ def test_process_contamination_probe_intentionally_abandons_and_then_rejects_a_c
     assert "env -u RUNNER_TRACKING_ID" in pack
     assert "mastermind-ci-leak-$GITHUB_RUN_ID" in pack
     assert "[m]astermind-ci-leak-${{ github.run_id }}" in probe
+
+
+def test_red_pack_results_are_captured_instead_of_aborting_the_receipt_path() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    for job_name in ("hosted-control", "selfhosted-pack"):
+        command = next(
+            step["run"]
+            for step in document["jobs"][job_name]["steps"]
+            if step.get("name") == "execute the frozen logical pack and retain its actual result"
+        )
+        pack = command.index("scripts/run_ci_pack.py")
+        capture = command.index("pack_rc=${PIPESTATUS[0]}")
+        assert command.index("set +e") < pack < capture
+        assert command.index("set -e", capture) > capture
