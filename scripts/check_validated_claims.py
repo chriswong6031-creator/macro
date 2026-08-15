@@ -361,6 +361,13 @@ def _decode_unicode_escapes(text: str) -> str:
 # A region is ("span", open, close) — protect from the end of `open` to the start of the next
 # `close`, across lines — or ("line", pat) — protect the whole line. Spans are used where the
 # sink shares a line with our own markup; whole-line where the template emits the tag alone.
+#
+# Shared by earnings-wire entries 5–7: one sink, three attestations. Defined here so a
+# template rename of the tag has one edit site, and so the three entries cannot drift
+# onto different regions.
+_EARNINGS_QUOTE_REGIONS = (
+    ("span", re.compile(r'<blockquote lang="en">'), re.compile(r"</blockquote>")),
+)
 _THIRD_PARTY_PAGES = (
     # 1. Per-report landing pages (templates/research_report.html.j2). Third-party sinks:
     #    n.title (title/h1/og/twitter/JSON-LD headline), n.teaser + meta_desc, the verbatim
@@ -425,6 +432,51 @@ _THIRD_PARTY_PAGES = (
          ("span", re.compile(r'<h2 class="tp-title">'), re.compile(r"</h2>")),
          ("span", re.compile(r'<p class="tp-sum">'), re.compile(r"</p>")),
      )),
+    # 5–7. The earnings-wire family (templates/earnings_wire/*.j2, rendered by
+    #    scripts/build_earnings_public_wire.py). Same family as #4: the pages
+    #    mirror a third party's own words — here a company executive's, taken
+    #    verbatim from an admitted earnings-call transcript — and 'validated'
+    #    is ordinary English in that register ("the combination of validated
+    #    technology, growing global project pipeline…"). The 2026-08-15 red
+    #    was that one sentence on two renders at once (the WAVE Q4 FY2025
+    #    article and its index-card preview on page-34). A per-quote allowlist
+    #    entry could never hold: the wire regenerates nightly from ingested
+    #    transcripts, so tomorrow's call brings a different sentence. Same
+    #    reasoning as the China news tape.
+    #
+    #    Three entries, not one: the three templates carry different
+    #    disclaimers, and the skip requires BOTH a known render-target path
+    #    AND that render's attestation literal. The literals below are the
+    #    brand-invariant English cores (no Mastermind / MastermindX) so a
+    #    corporate rename cannot silently drop the skip — same move as
+    #    entry #1. Each `t()` emits both languages, so the English core is
+    #    always present; a ZH-only hand-drop would fail closed.
+    #
+    #    SINK — one region covers all three templates. Each emits the quote
+    #    alone inside <blockquote lang="en">, with our markup outside it:
+    #      _facts.html.j2:4          (article)
+    #      earnings_weekly.html.j2:56 (weekly notable-record card)
+    #      earnings_wire_index.html.j2:65 (directory card preview)
+    #    Everything else on the page is OURS and stays scanned: the category
+    #    tags (.ew-tags), the attribution line (.ewa-attribution /
+    #    .ew-card-foot / .eww-record-foot), the receipt-table rows, the
+    #    kickers, the member-gate copy, the honesty rail. The wrapper
+    #    <article class="ewa-fact"> / .ew-card / .eww-record is deliberately
+    #    NOT the region: it contains that copy.
+    #
+    #    data-search on the index card is ticker / period / category /
+    #    speaker only (build_earnings_public_wire.py:640-644) — the quote
+    #    does not ride into it. JSON-LD is our chrome (title, method
+    #    sentence), not the excerpt. Neither needs a region.
+    (re.compile(r"^site/stocks/earnings/(?:index|page-\d+)\.html$"),
+     "every card preview is a verbatim call excerpt",
+     _EARNINGS_QUOTE_REGIONS),
+    (re.compile(r"^site/stocks/earnings/[^/]+-call-record\.html$"),
+     "Verbatim, receipt-bound excerpts from the earnings-call transcript",
+     _EARNINGS_QUOTE_REGIONS),
+    (re.compile(r"^site/stocks/earnings/weekly/(?:index|\d{4}-\d{2}-\d{2})\.html$"),
+     "This weekly view covers admitted transcript records only",
+     _EARNINGS_QUOTE_REGIONS),
 )
 
 # Joiner for the surviving fragments of a partly-masked line. Chosen because it is outside
@@ -435,11 +487,12 @@ _TP_CUT = "\x00"
 
 
 def _third_party_specs(rel_path: str, text: str) -> tuple:
-    """Regions of `rel_path` holding verbatim third-party research text, or ().
+    """Regions of `rel_path` holding verbatim third-party text, or ().
 
-    Living under site/research/ earns nothing on its own: the file must also carry the
-    attestation literal its builder emits. A hand-dropped page in that directory, or a
-    render whose disclaimer was removed, gets no exemption and is scanned in full.
+    Matching a known syndicated path earns nothing on its own: the file must also
+    carry the attestation literal its builder emits. A hand-dropped page in that
+    directory, or a render whose disclaimer was removed, gets no exemption and is
+    scanned in full.
     """
     for path_re, attest, regions in _THIRD_PARTY_PAGES:
         if path_re.match(rel_path) and attest in text:
@@ -1204,6 +1257,93 @@ def _news_page(**over) -> str:
     return SELFTEST_NEWS_PAGE.format(**{**_NEUTRAL_NEWS, **over})
 
 
+# The earnings-wire family reduced to its load-bearing shape. Three renders, one
+# sink: every third-party span is a <blockquote lang="en">…</blockquote>. Tags,
+# attribution, and receipt rows sit OUTSIDE that span and stay scanned.
+#
+# IN-REPO BYTES ON PURPOSE — same reason as SELFTEST_NEWS_PAGE. The wire
+# regenerates nightly, so a test pinned to today's excerpt stops testing the
+# moment the next call is admitted.
+#
+# `quote` is third-party (the executive's sentence). `tag` / `attribution` /
+# `receipt` are ours INSIDE the same card; they must still fire.
+SELFTEST_EARNINGS_ARTICLE = """<!DOCTYPE html>
+<html lang="en">
+<body>
+<article class="ewa">
+  <header class="ewa-head">
+    <p><span class="l-en">{attest}. This is a source record, not a synthesized analysis or recommendation.</span></p>
+  </header>
+  <section class="ewa-facts">
+    <article class="ewa-fact">
+      <div class="ewa-fact-meta"><div class="ew-tags"><span>{tag}</span></div></div>
+      <blockquote lang="en">“{quote}”</blockquote>
+      <div class="ewa-attribution"><span>{attribution}</span><code>claim_selftest</code></div>
+    </article>
+  </section>
+  <details class="ewa-receipts">
+    <table><tbody>
+      <tr><td><code>{receipt}</code></td><td>quote</td></tr>
+    </tbody></table>
+  </details>
+</article>
+</body>
+</html>
+"""
+SELFTEST_EARNINGS_INDEX = """<!DOCTYPE html>
+<html lang="en">
+<body>
+<section class="ew-directory">
+  <p><span class="l-en">Browse the full archive page by page. Search on this page by ticker, period, category, or speaker; {attest}.</span></p>
+  <article class="ew-card">
+    <div class="ew-tags"><span>{tag}</span></div>
+    <blockquote lang="en">“{quote}”</blockquote>
+    <div class="ew-card-foot"><span>{attribution}</span></div>
+  </article>
+</section>
+</body>
+</html>
+"""
+SELFTEST_EARNINGS_WEEKLY = """<!DOCTYPE html>
+<html lang="en">
+<body>
+<article class="eww-record">
+  <div class="ew-tags"><span>{tag}</span></div>
+  <blockquote lang="en">“{quote}”</blockquote>
+  <div class="eww-record-foot"><span>{attribution}</span><code>claim_selftest</code></div>
+</article>
+<section class="eww-honesty">
+  <p><span class="l-en">{attest}. Releases, filings, slides, consensus, price reaction and non-admitted calls are not silently inferred.</span></p>
+</section>
+</body>
+</html>
+"""
+_EARNINGS_ARTICLE_ATTEST = "Verbatim, receipt-bound excerpts from the earnings-call transcript"
+_EARNINGS_INDEX_ATTEST = "every card preview is a verbatim call excerpt"
+_EARNINGS_WEEKLY_ATTEST = "This weekly view covers admitted transcript records only"
+_NEUTRAL_EARNINGS = {
+    "quote": "Revenue grew 12% year-over-year on stronger volumes.",
+    "tag": "performance",
+    "attribution": "Jane Doe · CEO",
+    "receipt": "claim_selftest",
+}
+
+
+def _earnings_article(**over) -> str:
+    spec = {**_NEUTRAL_EARNINGS, "attest": _EARNINGS_ARTICLE_ATTEST, **over}
+    return SELFTEST_EARNINGS_ARTICLE.format(**spec)
+
+
+def _earnings_index(**over) -> str:
+    spec = {**_NEUTRAL_EARNINGS, "attest": _EARNINGS_INDEX_ATTEST, **over}
+    return SELFTEST_EARNINGS_INDEX.format(**spec)
+
+
+def _earnings_weekly(**over) -> str:
+    spec = {**_NEUTRAL_EARNINGS, "attest": _EARNINGS_WEEKLY_ATTEST, **over}
+    return SELFTEST_EARNINGS_WEEKLY.format(**spec)
+
+
 def selftest() -> int:
     """Prove the gate FIRES on a synthetic unearned 'validated' in EN and in zh (all
     token variants), does NOT fire on negated uses, matches through HTML autoescaping
@@ -1378,6 +1518,36 @@ def selftest() -> int:
          "site/news.html", _news_page(title=wire), True),
         ("china tape: unclosed .tp-title fails CLOSED (nothing masked)",
          cn, _news_page(title=wire).replace("</h2>", "<!-- -->"), True),
+        # ── earnings wire: call excerpts are the same structural non-claim ────
+        ("earnings article: quoted call excerpt is not a claim",
+         "site/stocks/earnings/wave-2025q4-call-record.html",
+         _earnings_article(quote=quoted), False),
+        ("earnings index: the same excerpt on a directory card is not a claim",
+         "site/stocks/earnings/page-34.html",
+         _earnings_index(quote=quoted), False),
+        ("earnings weekly: the same excerpt on a notable-record card is not a claim",
+         "site/stocks/earnings/weekly/2026-03-16.html",
+         _earnings_weekly(quote=quoted), False),
+        ("earnings article: OUR tag on the same card STILL FAILS",
+         "site/stocks/earnings/wave-2025q4-call-record.html",
+         _earnings_article(quote=quoted, tag=ours), True),
+        ("earnings article: OUR attribution on the same card STILL FAILS",
+         "site/stocks/earnings/wave-2025q4-call-record.html",
+         _earnings_article(quote=quoted, attribution=ours), True),
+        ("earnings article: OUR receipt row STILL FAILS",
+         "site/stocks/earnings/wave-2025q4-call-record.html",
+         _earnings_article(quote=quoted, receipt=ours), True),
+        ("earnings article WITHOUT the attestation gets no exemption",
+         "site/stocks/earnings/wave-2025q4-call-record.html",
+         _earnings_article(quote=quoted, attest="MastermindX publishes records"), True),
+        ("same page shape in templates/ is never exempt",
+         "templates/earnings_wire/earnings_wire_article.html.j2",
+         _earnings_article(quote=quoted), True),
+        ("same page shape on another site page is never exempt",
+         "site/stocks/other.html", _earnings_article(quote=quoted), True),
+        ("earnings article: unclosed blockquote fails CLOSED (nothing masked)",
+         "site/stocks/earnings/wave-2025q4-call-record.html",
+         _earnings_article(quote=quoted).replace("</blockquote>", "<!-- -->"), True),
     ]
     for name, rel, text, should_fire in page_cases:
         found, _ = scan_text(rel, text, allow)

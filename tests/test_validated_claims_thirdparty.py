@@ -34,9 +34,15 @@ sys.path.insert(0, str(ROOT))
 
 from scripts.check_validated_claims import (  # noqa: E402
     _ATTEST,
+    _EARNINGS_ARTICLE_ATTEST,
+    _EARNINGS_INDEX_ATTEST,
+    _EARNINGS_WEEKLY_ATTEST,
     _NEWS_ATTEST,
     _THIRD_PARTY_PAGES,
     TOKEN,
+    _earnings_article,
+    _earnings_index,
+    _earnings_weekly,
     _load_allowlist,
     _news_page,
     _page,
@@ -198,6 +204,10 @@ def test_real_tree_is_green_without_a_per_quote_allowlist_entry():
     assert not any("disinflation" in e.get("match", "") for e in entries), (
         "the #3767 per-quote entry is back; quoted third-party text is handled structurally "
         "(see the allowlist's notes field)")
+    assert not any("validated technology" in e.get("match", "") for e in entries), (
+        "a per-quote earnings-wire entry is back; quoted call excerpts are handled "
+        "structurally (see _THIRD_PARTY_PAGES entries 5–7). A per-quote row cannot "
+        "hold: the wire regenerates nightly.")
     r = subprocess.run([sys.executable, "-m", "scripts.check_validated_claims"],
                        cwd=ROOT, capture_output=True, text=True)
     assert r.returncode == 0, f"{r.stdout}\n{r.stderr}"
@@ -225,10 +235,22 @@ def test_real_tree_is_green_without_a_per_quote_allowlist_entry():
 
 def _live_candidates() -> list[Path]:
     """Every live file the third-party map can cover: the vault's report pages, their crawl
-    hub, the vault app page, and the China news tape."""
+    hub, the vault app page, the China news tape, and the earnings-wire family.
+
+    Earnings call-record articles are sampled, not walked in full: ~3k of them would
+    re-read the same tree the full-gate test already scanned, and the existence
+    check only needs one match per path_re. The WAVE article that reddened main
+    is the load-bearing sample; index pages and weekly briefs are small enough
+    to include whole.
+    """
     return [p for p in (*sorted(ROOT.glob("site/research/*.html")),
                         ROOT / "site/research_vault.html",
-                        ROOT / "site/china_news.html") if p.is_file()]
+                        ROOT / "site/china_news.html",
+                        ROOT / "site/stocks/earnings/index.html",
+                        *sorted(ROOT.glob("site/stocks/earnings/page-*.html")),
+                        ROOT / "site/stocks/earnings/wave-2025q4-call-record.html",
+                        *sorted(ROOT.glob("site/stocks/earnings/weekly/*.html")))
+            if p.is_file()]
 
 
 def _live_syndicated_renders() -> list[tuple[str, str]]:
@@ -314,6 +336,18 @@ def test_attestation_literals_still_exist_in_the_templates():
     assert '<script id="rv-catalog"' in vault_j2
     news_j2 = (ROOT / "templates/china_news.html.j2").read_text(encoding="utf-8")
     assert _NEWS_ATTEST in news_j2, f"china_news.html.j2 no longer emits {_NEWS_ATTEST!r}"
+    article_j2 = (ROOT / "templates/earnings_wire/earnings_wire_article.html.j2").read_text(
+        encoding="utf-8")
+    assert _EARNINGS_ARTICLE_ATTEST in article_j2, (
+        f"earnings_wire_article.html.j2 no longer emits {_EARNINGS_ARTICLE_ATTEST!r}")
+    index_j2 = (ROOT / "templates/earnings_wire/earnings_wire_index.html.j2").read_text(
+        encoding="utf-8")
+    assert _EARNINGS_INDEX_ATTEST in index_j2, (
+        f"earnings_wire_index.html.j2 no longer emits {_EARNINGS_INDEX_ATTEST!r}")
+    weekly_j2 = (ROOT / "templates/earnings_wire/earnings_weekly.html.j2").read_text(
+        encoding="utf-8")
+    assert _EARNINGS_WEEKLY_ATTEST in weekly_j2, (
+        f"earnings_weekly.html.j2 no longer emits {_EARNINGS_WEEKLY_ATTEST!r}")
 
 
 # ── the China news tape — same sink exemption, a feed that rotates every night ──────────
@@ -454,3 +488,140 @@ def test_the_masked_search_attribute_carries_no_platform_copy_of_its_own():
                     f"engine.china_news.{name}[{slug!r}] = {word!r} carries the BC-2 token, "
                     "and it rides into the masked data-search attribute — either reword it "
                     "or narrow the data-search region before shipping this label")
+
+
+# ── the earnings-wire family — same sink exemption, a feed that rotates every night ──
+#
+# 2026-08-15: an Eco Wave Power executive's sentence ("the combination of validated
+# technology, growing global project pipeline…") reddened main on TWO renders at once
+# — the call-record article and its directory-card preview. It is the speaker's own
+# words inside a <blockquote>, not a Macro Dashboard claim, and it has no artifact
+# to cite because it is not ours to back.
+#
+# An allowlist entry could not have held it: the wire regenerates nightly from
+# ingested transcripts (scripts/build_earnings_public_wire.py), so the next call
+# carrying the word reds main again. Same reasoning, same remedy, same safety
+# invariant as the China news tape above: mask the SINK the quote field reaches,
+# never the page. PR #5683 planted a per-quote row as a same-day heal; that row
+# is the thing this section exists to make unnecessary.
+#
+# EVERY fixture here is _earnings_*() — in-repo bytes that cannot rotate. The live
+# WAVE pages ARE still swept, by _live_syndicated_renders() (page-34 + the WAVE
+# article + weekly briefs are now in _live_candidates).
+
+EW_ARTICLE = "site/stocks/earnings/wave-2025q4-call-record.html"
+EW_INDEX = "site/stocks/earnings/page-34.html"
+EW_WEEKLY = "site/stocks/earnings/weekly/2026-03-16.html"
+# The live EN sentence, verbatim. The wire has no zh half of the quote — transcripts
+# are English — so there is no WIRE_ZH twin.
+CALL = ("Overall, we believe that the combination of validated technology, "
+        "growing global project pipeline, improving cost discipline, and increasing "
+        "global demand for clean energy driven by AI positions Eco Wave Power well "
+        "for the next phase of growth.")
+
+
+@pytest.mark.parametrize("sink,rel,page", [
+    ("article excerpt (_facts.html.j2)", EW_ARTICLE, _earnings_article(quote=CALL)),
+    ("index card preview (earnings_wire_index.html.j2)", EW_INDEX, _earnings_index(quote=CALL)),
+    ("weekly notable-record card (earnings_weekly.html.j2)",
+     EW_WEEKLY, _earnings_weekly(quote=CALL)),
+])
+def test_earnings_quote_sinks_pass(sink, rel, page, allow):
+    """A call excerpt using 'validated' in its ordinary sense must not red the build."""
+    assert not _fire(rel, page, allow), f"third-party earnings {sink} wrongly flagged as a claim"
+
+
+# NOT a page exemption: everything on the card that is OURS is still gated — including
+# the copy that shares the very same <article> wrapper. That wrapper is deliberately
+# NOT the masked region: our tags, attribution and receipt rows live inside it.
+
+@pytest.mark.parametrize("where,rel,page", [
+    ("category tag (.ew-tags), inside the article card",
+     EW_ARTICLE, _earnings_article(quote=CALL, tag=OURS)),
+    ("attribution (.ewa-attribution), inside the article card",
+     EW_ARTICLE, _earnings_article(quote=CALL, attribution=OURS)),
+    ("receipt row, below the excerpts",
+     EW_ARTICLE, _earnings_article(quote=CALL, receipt=OURS)),
+    ("category tag (.ew-tags), inside the index card",
+     EW_INDEX, _earnings_index(quote=CALL, tag=OURS)),
+    ("card-foot attribution, inside the index card",
+     EW_INDEX, _earnings_index(quote=CALL, attribution=OURS)),
+    ("category tag (.ew-tags), inside the weekly card",
+     EW_WEEKLY, _earnings_weekly(quote=CALL, tag=OURS)),
+    ("record-foot attribution, inside the weekly card",
+     EW_WEEKLY, _earnings_weekly(quote=CALL, attribution=OURS)),
+    ("category tag, zh, inside the article card",
+     EW_ARTICLE, _earnings_article(quote=CALL, tag=OURS_ZH)),
+])
+def test_our_copy_on_the_earnings_wire_still_fails(where, rel, page, allow):
+    """The load-bearing half: same file, same card, our claim is still gated."""
+    assert _fire(rel, page, allow), f"platform claim in {where} escaped the gate"
+
+
+@pytest.mark.parametrize("sink,rel,page,attest", [
+    ("article excerpt", EW_ARTICLE, _earnings_article(quote=CALL), _EARNINGS_ARTICLE_ATTEST),
+    ("index card preview", EW_INDEX, _earnings_index(quote=CALL), _EARNINGS_INDEX_ATTEST),
+    ("weekly notable-record card", EW_WEEKLY, _earnings_weekly(quote=CALL),
+     _EARNINGS_WEEKLY_ATTEST),
+])
+def test_the_earnings_skip_is_what_greens_the_page(sink, rel, page, attest, allow):
+    """Anti-vacuity, per render, on bytes that cannot rotate: the quote is masked
+    (counted), and the identical page without that render's attestation fires. That
+    is strictly stronger than counting the mask — it proves WHAT greened the page."""
+    found, stats = scan_text(rel, page, allow)
+    assert not found
+    assert stats["third_party"] >= 1, (
+        f"{sink}: expected the quote masked, got {stats['third_party']} — "
+        "something other than the skip greened this page")
+
+    bare = page.replace(attest, "Mastermind publishes research")
+    assert not _third_party_specs(rel, bare), "the exemption survived losing its literal"
+    fired, st = scan_text(rel, bare, allow)
+    assert fired, f"{sink}: the skip is not what greens it — the unattested copy scans clean"
+    assert st["third_party"] == 0
+
+
+def test_the_earnings_templates_are_never_exempt(allow):
+    """Same safety invariant as the research vault: every platform string on these
+    pages is authored in templates/earnings_wire/, which the gate scans with NO skip."""
+    assert _fire("templates/earnings_wire/earnings_wire_article.html.j2",
+                 _earnings_article(quote=CALL, tag=OURS), allow)
+    assert not _third_party_specs("templates/earnings_wire/earnings_wire_article.html.j2",
+                                  _earnings_article())
+    assert _fire("templates/earnings_wire/earnings_wire_index.html.j2",
+                 _earnings_index(quote=CALL, tag=OURS), allow)
+    assert _fire("templates/earnings_wire/earnings_weekly.html.j2",
+                 _earnings_weekly(quote=CALL, tag=OURS), allow)
+
+
+def test_the_earnings_shape_earns_nothing_on_another_page(allow):
+    """The exemption is bound to the three render-target paths. The identical markup
+    elsewhere — a sibling stocks page, a hand-dropped article — is scanned in full."""
+    page = _earnings_article(quote=CALL)
+    for rel in ("site/stocks/WAVE.html",
+                "site/stocks/earnings/wave-2025q4.html",
+                "site/earnings/wave-2025q4-call-record.html"):
+        assert _fire(rel, page, allow), f"{rel} picked up the earnings-wire exemption"
+        assert not _third_party_specs(rel, page)
+
+
+def test_earnings_index_path_is_not_an_article(allow):
+    """index.html / page-N.html are the directory, a different template: they must not
+    pick up the article attestation even though they share the directory."""
+    # Article attestation + article regions, but an index path — no match.
+    forged = _earnings_article(quote=CALL)
+    assert not _third_party_specs(EW_INDEX, forged)
+    assert _fire(EW_INDEX, forged, allow)
+
+
+def test_earnings_sink_literal_still_exists_in_the_templates():
+    """The one region keys off markup all three templates emit. If the tag is renamed
+    the gate silently stops exempting the quote and the next call reds main — catch
+    it here, where the fix is one line, instead of on somebody else's PR."""
+    for rel in ("templates/earnings_wire/_facts.html.j2",
+                "templates/earnings_wire/earnings_weekly.html.j2",
+                "templates/earnings_wire/earnings_wire_index.html.j2"):
+        j2 = (ROOT / rel).read_text(encoding="utf-8")
+        assert '<blockquote lang="en">' in j2, (
+            f"{rel} no longer emits <blockquote lang=\"en\"> — "
+            "the earnings-wire region in _THIRD_PARTY_PAGES no longer matches it")
