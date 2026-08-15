@@ -109,7 +109,13 @@ def c32_flag(close: pd.Series, asof_pos: int) -> bool | None:
     r = roc20.iloc[-prereg.C32_ROC_SESSIONS:]
     if not np.isfinite(r.iloc[-1]):
         return None
-    decel = bool(r.iloc[-1] > r.min())
+    floor = r.min()
+    if not np.isfinite(floor):
+        return None
+    # Prereg form is `roc20 > min(roc20, 20)`. Today at the floor is still
+    # making lows and must refuse. A 1-ULP lift (2.22e-16) on a constant-rate
+    # tail used to pass that `>` and read acceleration as deceleration.
+    decel = bool(r.iloc[-1] > float(floor) + 1e-12)
     return fresh_low and decel
 
 

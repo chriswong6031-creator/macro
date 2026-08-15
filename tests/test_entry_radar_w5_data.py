@@ -203,17 +203,20 @@ def test_c32_flag_true_false_and_unevaluable():
     assert features.c32_flag(short, len(short) - 1) is None, "warm-up is None, not False"
 
     # A decline that DECELERATES into the low: steep early, nearly flat late, so
-    # roc20 at D sits ABOVE its own 20-session minimum while price is still at a
-    # fresh 60-session low.  A LINEAR decline is the trap here — constant absolute
-    # steps make roc20 fall as the base shrinks, so it never clears its minimum.
+    # roc20 at D sits ABOVE its own prior 20-session floor while price is still
+    # at a fresh 60-session low.  The flat tail must be SHORTER than the roc20
+    # window — a 50-bar tail leaves the last 20 roc20 values in a constant-rate
+    # regime, where 1 ULP makes `last > min` true for acceleration too.
+    # A LINEAR decline is the other trap: constant absolute steps make roc20
+    # fall as the base shrinks, so it never clears its minimum.
     decel = pd.Series(100 * np.exp(-np.r_[np.linspace(0, 0.7, need),
-                                          np.linspace(0.7, 0.72, 50)]))
+                                          np.linspace(0.7, 0.72, 12)]))
     assert features.c32_flag(decel, len(decel) - 1) is True
 
     # MUTATION CONTROLS — one per leg, each holding the other leg TRUE, so the
     # True above cannot be coming from a single leg doing all the work.
     accel = pd.Series(100 * np.exp(-np.r_[np.linspace(0, 0.15, need),
-                                          np.linspace(0.15, 1.10, 50)]))
+                                          np.linspace(0.15, 1.10, 12)]))
     assert features.c32_flag(accel, len(accel) - 1) is False, (
         "fresh low but ACCELERATING into it — the roc20 leg must refuse")
     rallied = pd.Series(np.r_[decel.to_numpy(),
