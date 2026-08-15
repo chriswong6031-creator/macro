@@ -89,13 +89,11 @@ FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
 DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
 SEMANTIC_DETAIL_MAX_BYTES = 1_024
 
-# Repo-binding Git variables must never reach a legacy step.  Injecting
-# GIT_DIR/GIT_WORK_TREE into the job env (PR #5750, 2026-08-15) made every
-# child `git` operate on the pack checkout: `git init` in tmp_path exited
-# 128, a sparse-checkout cone hid tests/*.py (pytest usage exit 4), and
-# `git rev-parse HEAD` then failed as infrastructure unknown.  Runner-owned
-# probes keep using `_trusted_git_environment`; children must discover git
-# from cwd like the old one-VM-per-job world.
+# Repo-binding Git variables must never reach a legacy step OR a runner
+# probe.  Injecting GIT_DIR/GIT_WORK_TREE into the job env (PR #5750,
+# 2026-08-15) made every child `git` operate on the pack checkout.  The
+# follow-up pack-9 own-red was the same family: the post-step
+# ``for-each-ref`` probe still bound GIT_DIR and exited 128.
 REPO_BINDING_GIT_VARS = (
     "GIT_DIR",
     "GIT_WORK_TREE",
@@ -2327,35 +2325,40 @@ def _workspace_root() -> Path:
     return root
 
 
-def _trusted_git_environment(root: Path) -> dict[str, str]:
-    """Bind Git to this checkout while disabling replacement-object rewrites.
+def _trusted_git_environment(_root: Path | None = None) -> dict[str, str]:
+    """Clean env for runner-owned git: no repo-binding GIT_* vars.
 
-    ``GIT_OPTIONAL_LOCKS=0`` keeps read-only probes from dying on a leftover
-    ``*.lock`` after a SIGKILL'd semantic step (PR #5750 pack-9: the 5-minute
-    job deadline killed pytest, then ``git for-each-ref refs/replace`` exited
-    128 and was reported as infrastructure unknown).
+    Do not set GIT_DIR/GIT_WORK_TREE.  Binding those made the post-step
+    ``for-each-ref refs/replace`` probe exit 128 (unrun-picks-boards,
+    2026-08-15) against a checkout ``git -C`` / cwd discovery could still
+    see.  ``GIT_OPTIONAL_LOCKS=0`` keeps a leftover ``*.lock`` after a
+    SIGKILL'd step from turning a timeout into infrastructure unknown.
     """
     clean_env = {
         key: value
         for key, value in os.environ.items()
         if not key.startswith("GIT_")
     }
+    for key in REPO_BINDING_GIT_VARS:
+        clean_env.pop(key, None)
     clean_env["GIT_OPTIONAL_LOCKS"] = "0"
-    git_dir = subprocess.run(
+    clean_env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    return clean_env
+
+
+def _absolute_git_dir(root: Path) -> Path:
+    """Resolve the checkout's git dir without binding GIT_DIR into the env."""
+    result = subprocess.run(
         ["git", "-C", str(root), "rev-parse", "--absolute-git-dir"],
-        check=True,
+        cwd=root,
+        check=False,
         capture_output=True,
         text=True,
-        env=clean_env,
-    ).stdout.strip()
-    clean_env.update(
-        {
-            "GIT_DIR": git_dir,
-            "GIT_WORK_TREE": str(root),
-            "GIT_NO_REPLACE_OBJECTS": "1",
-        }
+        env=_trusted_git_environment(root),
     )
-    return clean_env
+    if result.returncode == 0 and result.stdout.strip():
+        return Path(result.stdout.strip())
+    return (root / ".git").resolve()
 
 
 def _replace_refs_from_filesystem(git_dir: Path) -> list[str]:
@@ -2396,14 +2399,14 @@ def _git_rewrite_metadata(root: Path, env: Mapping[str, str]) -> tuple[list[str]
         text=True,
         env=dict(env),
     )
-    git_dir = Path(str(env.get("GIT_DIR") or ""))
+    git_dir = _absolute_git_dir(root)
     if listed.returncode == 0:
         refs = [line for line in listed.stdout.splitlines() if line.strip()]
     else:
         if not git_dir.is_dir():
             raise RuntimeError(
                 "`git for-each-ref --format=%(refname) refs/replace` returned "
-                f"{listed.returncode} and GIT_DIR is not a directory "
+                f"{listed.returncode} and git dir is not a directory "
                 f"({git_dir})"
             )
         if (git_dir / "reftable").is_dir():

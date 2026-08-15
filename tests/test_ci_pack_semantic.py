@@ -1020,14 +1020,30 @@ def test_timed_out_step_is_not_masked_by_rewrite_probe(
 
 def test_trusted_git_environment_disables_optional_locks(
     tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     source = tmp_path / "source"
     _small_repository(source)
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
     env = PACK._trusted_git_environment(source)
     assert env["GIT_OPTIONAL_LOCKS"] == "0"
     assert env["GIT_NO_REPLACE_OBJECTS"] == "1"
-    assert env["GIT_DIR"]
-    assert env["GIT_WORK_TREE"] == str(source)
+    assert "GIT_DIR" not in env
+    assert "GIT_WORK_TREE" not in env
+
+
+def test_rewrite_probe_uses_checkout_path_not_foreign_git_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
+    PACK._assert_no_git_rewrites(source)
+    assert PACK._current_commit_sha(source) == tested_sha
 
 
 def test_job_steps_must_not_inherit_checkout_git_dir(
