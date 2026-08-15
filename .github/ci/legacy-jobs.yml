@@ -7257,8 +7257,13 @@ jobs:
       # pandas/numpy/pyarrow/pyyaml/requests, all already on the install line above.
       - name: ledger-advance + builder failstreaks + turn-event notifier
         run: python -m pytest tests/test_check_ledger_advance.py tests/test_builder_failstreaks.py tests/test_notify_turn_events.py tests/test_mag7_events.py -q
-      - name: polygon universe/intraday + dead-name prices + finviz archival + thetadata sessions
-        run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_thetadata_tape_sessions.py -q
+      # test_finviz_tree_refresh.py (GMI Theme Graph W3A, 2026-08-14) rides the
+      # step that already owns scripts/fetch_finviz_themes.py — same module, same
+      # subject, and pytest reports EVERY file inside ONE step, so nothing here
+      # masks anything else. Stdlib + pytest only (it monkeypatches the fetchers
+      # and never touches the network), so the install line above is unchanged.
+      - name: polygon universe/intraday + dead-name prices + finviz archival/tree-refresh + thetadata sessions
+        run: python -m pytest tests/test_build_polygon_universe.py tests/test_polygon_intraday.py tests/test_fetch_dead_name_prices_polygon.py tests/test_finviz_archival.py tests/test_finviz_tree_refresh.py tests/test_thetadata_tape_sessions.py -q
       # Enumerated in NO workflow before this (calendar-asof audit follow-up
       # 2026-08-05): the finviz collector's asof feeds these ledgers, but a PR
       # touching the track record or its heal fired no run that could see a

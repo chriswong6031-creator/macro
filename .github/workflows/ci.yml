@@ -2995,6 +2995,11 @@ on:
       - "tests/test_fetch_dead_name_prices_polygon.py"
       - "tests/test_fetch_r2.py"
       - "tests/test_finviz_archival.py"
+      # The refresh contract's own suite (W3A, 2026-08-14). Its SUBJECT
+      # (scripts/fetch_finviz_themes.py, below) already triggers, but a test-only
+      # edit that weakened an interlock assertion would otherwise fire no run —
+      # the exact half-registration this list exists to close.
+      - "tests/test_finviz_tree_refresh.py"
       - "tests/test_notify_turn_events.py"
       - "tests/test_polygon_intraday.py"
       - "tests/test_thetadata_tape_sessions.py"

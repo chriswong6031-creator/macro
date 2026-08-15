@@ -314,10 +314,13 @@ absent, arithmetic closure, 14 subsector_keys, 373 unique THS codes).
    observation.
 7. **Ticker-continuity across departures×arrivals (C5/F6, new §3 obligation):** before
    dispositions, every (departed, arrived) pair is tested for identity continuity — subtheme-set
-   signature match (exact set, or containment ≥0.8 of the smaller membership) ⇒ suspected ticker
-   rename ⇒ REFUSE auto-promotion + probation `kind=identity_continuity` proposal (ratified
-   outcome uses the existing `SAME_AS`/`merged_into` machinery). SNDK(9 subthemes)/PSTG(2) is
-   the negative fixture (substitution, no flag); a same-set rename fixture is the positive.
+   signature match = SYMMETRIC DIFFERENCE ≤1 between the departed ticker's subtheme set and the
+   arrived ticker's (a true rename preserves the set, ±1 for co-occurring churn) ⇒ suspected
+   ticker rename ⇒ REFUSE auto-promotion + probation `kind=identity_continuity` proposal
+   (ratified outcome uses the existing `SAME_AS`/`merged_into` machinery). Containment alone is
+   WRONG here — PSTG(2)⊂SNDK(9) has containment 1.0 yet is a substitution of different issuers
+   (symmetric difference 7 ⇒ correctly unflagged); SNDK/PSTG is the pinned negative fixture, a
+   same-set rename the positive.
    Key-rename continuity (C7/F13, supersedes J=0.8): containment of the SMALLER member set
    ≥0.6 with one-member slack below n=9 (a rename + 1 swap at n=7 MUST flag — that negative
    control replaces the trivially-passing J=0.9 fixture).
