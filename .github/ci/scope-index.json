@@ -22701,7 +22701,7 @@
     "python_count": 5674,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "7aec9383996d0a4a835cd0a8a2886e77de6e3576058392f14d745c1977820d99",
+  "index_sha256": "fe9173f33d4b9c1f8e3440c46a00a6544d245de36f8c4adba6d6664fc91819ce",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -42085,6 +42085,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -63360,6 +63361,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -65174,7 +65176,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "1974435fd5940990b4076c509dc155f955e2110d55e4851bd0b466b7eaca38ce"
+    "sha256": "84791ca3e879aae77d8fb3108f39da3f294914bacbd7fc6e3ccb63848da59e47"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [

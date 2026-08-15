@@ -65,8 +65,8 @@ Admission is bounded independently from logical coverage:
 - trusted `workflow_dispatch` on `main`: up to 12 packs, globally deduplicated.
 
 The engine render-guard singleton is split into five schedulable jobs. The full
-192-job manifest currently partitions into 12 predicted packs of weight
-approximately 607–610 instead of one pack being pinned by the former 1036-weight
+195-job manifest currently partitions into 12 predicted packs of weight
+approximately 617–620 instead of one pack being pinned by the former 1036-weight
 singleton.
 
 `ci-gate` always runs for non-closed events. It fails unless planning succeeded,
@@ -88,12 +88,12 @@ required aggregate in a later step of the same job.
 
 ## Merge authority and live state
 
-At the incident cutover, the custom `merge-on-green` workflow is manually
-disabled. Keep it disabled through the validation cutover: its historical
-presence-derived proof set allowed PR #5555 to merge before the final-head CI job
-existed. PR #5580 made `ci-gate` unconditionally mandatory, closing that exact
-absence-as-clean race, but the controller is still not live merge authority until
-its bounded wake/reconciliation path is separately proven.
+At the incident cutover, the custom `merge-on-green` workflow was manually
+disabled: its historical presence-derived proof set allowed PR #5555 to merge
+before the final-head CI job existed. PR #5580 made `ci-gate` unconditionally
+mandatory, closing that exact absence-as-clean race. Re-enabling the controller
+does not by itself establish merge authority; server-side rules must still refuse
+every missing, pending, red, or stale proof.
 
 Native Merge Queue is available on this public organization-owned Enterprise
 repository, and repository code now handles `merge_group`. A fresh live canary on
@@ -113,19 +113,25 @@ current producer architecture:
   that identity constraint, but bypass pushes would still move the base and
   rebuild merge groups.
 
-The scratch ruleset and branches were removed after the experiment; current live
-state again has no repository ruleset or native queue. The temporary privileged
-producer-bypass workflow was removed from this change because the canary decision
-no longer needs it. `merge_group` and pilot-specific authority support remain
-dormant so the decision can be revisited without re-opening event-identity bugs.
+The merge-queue experiment's scratch ruleset and branches were removed. During
+the final recovery cutover, a separate no-bypass bootstrap ruleset is active on
+`main`: changes require a squash pull request plus exact-head `ci-gate` and
+`fence-pack`; deletion, non-fast-forward updates, and direct pushes are refused.
+It is a temporary safety freeze, not durable closure: `ci-authority` must still be
+made a required trusted workflow and direct-main publishers need a dedicated,
+least-privilege producer identity before the bootstrap rule can be replaced. The
+repository has no native queue. The temporary privileged producer-bypass workflow
+was removed from this change because the canary decision no longer needs it.
+`merge_group` and pilot-specific authority support remain dormant so the decision
+can be revisited without re-opening event-identity bugs.
 
 Reopen native queue adoption only after direct producers stop advancing `main`
 (for example, by publishing data outside Git history or through queued PRs), then
 repeat the pilot with stable required `ci-authority`, `ci-gate`, and `fence-pack`
-evidence. Until then, the safe live posture is manual merge while the custom
-reconciler is disabled. Any later custom-controller reactivation must be a
-separate atomic step after its required-gate, wake-loss, red/pending/missing, and
-bounded-load receipts are green; it must never overlap a native queue.
+evidence. Until durable producer enforcement replaces the bootstrap freeze, keep
+all merge paths behind its required checks. Any custom-controller reactivation
+must be an atomic step after its required-gate, wake-loss, red/pending/missing,
+and bounded-load receipts are green; it must never overlap a native queue.
 
 The durable decision record is
 `agentos/decisions/DEC-CI-NATIVE-MERGE-QUEUE-REJECTED.md`.
