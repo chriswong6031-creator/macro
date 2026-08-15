@@ -31,9 +31,9 @@ python3 -m http.server 8793 --directory mockups/refs/entry_radar
 
 The header purpose line states Radar's question in plain words. A sister line under it names the distinction so a reader coming from Prophet does not read this as Own-It.
 
-**Not inherited from Prophet:** seven-cell plan lifecycle (Watch / Ready / Entered / Delivering / Overtime / Invalidated / Resolved as *plan* cells), Own-It / Featured-as-conviction, Priority-as-a-number, entry/target/void levels, stance Buy/Wait/Hold/Avoid as the card's ruling verb. Candidate/featured hues use `--ok` (direction-neutral), never `--pv-buy` — that token flips red under `html[data-lang=zh]` because it is derived from `--up`. Tape change still uses `--ink-up/--ink-down`.
+**Not inherited from Prophet:** seven-cell plan lifecycle (Watch / Ready / Entered / Delivering / Overtime / Invalidated / Resolved as *plan* cells), Own-It / Featured-as-conviction, Priority-as-a-number, entry/target/void levels, stance Buy/Wait/Hold/Avoid as the card's ruling verb. Candidate/featured hues use `--er-life` (slate-indigo, direction-neutral) — never `--pv-buy` (flips red under `html[data-lang=zh]` because it is derived from `--up`) and never `--ok` (that green is the same family as ZH `--down`). Tape change still uses `--ink-up/--ink-down`.
 
-**Inherited from Prophet (sister language):** tokens, card geometry (12px radius, 74px hero, 232px grid min), typography/density, chip anatomy, featured aura *as a Best-lane mark only*, hover/drawer disclosure, light-mode white card plane, zh direction-ink flip, weight-only lifecycle marks, freshness banner grammar, 390px single-column / no page-level horizontal scroll, visible `:focus-visible`, `prefers-reduced-motion`.
+**Inherited from Prophet (sister language):** tokens, card geometry (12px radius, 74px hero, 232px grid min), typography/density, chip anatomy, featured aura *as a Best-lane mark only* (computed from the Best filter — the same set, not a silent 2-card glow), hover/drawer disclosure, light-mode white card plane, zh direction-ink flip, weight-only lifecycle marks, freshness banner grammar, 390px single-column that *fits* (not `overflow-x: hidden`), visible `:focus-visible`, `prefers-reduced-motion`.
 
 ---
 
@@ -46,7 +46,7 @@ The header purpose line states Radar's question in plain words. A sister line un
 - Unmissable REFERENCE banner (page chrome + in-flow note)
 - Probe Set headline integer
 - Lifecycle ladder: **Probing · Pre-candidate · Candidate** (live enclosure) | **Invalidated · Expired** (terminal, outside the live sum)
-- Expert lanes: All · Best · Grey Dot · 1D Washout · 1D Turn · Deep Washout · Intelligence · **C4 context-only (not a filter, not a fire)**
+- Expert lanes: All · **Best · unranked** (count dashed — not a W6 rank) · Grey Dot · 1D Washout · 1D Turn · Deep Washout · Intelligence · **C4 context-only (not a filter, not a fire)**
 
 Lane mapping (contract §14 names → W3 detector ids):
 
@@ -59,20 +59,26 @@ Lane mapping (contract §14 names → W3 detector ids):
 | Intelligence | `C5_BOTTOM_WATCH@1` | yes · event-bound |
 | *(not a lane)* | `C4_MTF_TURN@1` | **never** · `role=stratification_only` |
 
-### Card (glance)
-1. Hero spark *or* printed null at equal 74px (VTC-301 lesson)
-2. Lifecycle chip (axis labelled) + expert identity chip (G0/C1/C2/C3/C5) + C2 variant when present
+### Card (glance) — W8 founding subset, **not** contract §14 complete
+1. Hero spark *or* printed null at equal 74px (VTC-301 lesson). Stale has a path; it must not print “No path yet.”
+2. Lifecycle chip (axis labelled) + expert identity chip (G0/C1/C2/C3/C5). C2 variant lives on the marks row / drawer — not the overlay (unwrap on 232px).
 3. Live/session quote (em-dash when unavailable — never invented)
-4. Ticker + bilingual name
-5. Priority slot: **ACCRUING** — never a number (W6 has not run)
-6. Cohort line; C4 context chip when present; multi-expert count
+4. Ticker + bilingual name. **Not a link** — founding surface has no `stock.html`.
+5. Priority slot: **em-dash** on the card. One board-level line says `Priority ACCRUING — W6 has not measured a rank.` Never a number.
+6. Cohort line; C2 variant chip when present; C4 context chip when present; multi-expert count
 7. Weight mark + lifecycle word + Why control
 8. One-line mechanical why-candidate
 9. False-start count when history exists (not tooltip-only)
-10. Footer: freshness in plain words + as-of
+10. Footer: freshness in plain words + as-of (wraps; not nowrap-clipped)
 
-### Drawer (Why)
+**Reserved, not omitted** (ACCRUING / UNAVAILABLE / BLOCKED_DATA until W4) — do not teach W9 that their absence is law:
+- Glance component states: 1D Stoch / MACD-RSI / Structure / Lobe evidence
+- Zone + invalidation on the glance footer (invalidation is drawer-only in this reference)
+
+### Drawer (Why) — W8 founding subset, **not** contract §14 complete
 Why here → why armed → why candidate/fired → C2 variant → C4 context → invalidation → expiry → Opportunity **NOT YET MEASURED** → clocks (`known_at` / as-of) → false-start history → sibling expert lanes.
+
+**Reserved drawer slots** (ACCRUING / UNAVAILABLE until W4): why-now, what is recovering, still structurally strong, risk geometry / asymmetry, what else sees it (lobes), trustworthiness / sample, fire-path mini chart (arm / trough / turn / promotion).
 
 Why-now copy is mechanical. No “huge upside”, no “92% likely”, no “AI says buy”, no “validated”.
 
@@ -92,7 +98,7 @@ Why-now copy is mechanical. No “huge upside”, no “92% likely”, no “AI 
 | Expired | terminal muted weight; ledger row kept |
 | False-start history | counted on the card, listed in the drawer |
 | Multi-expert ticker | **one card per (ticker, expert)** — never one generic “entry signal” |
-| Quiet / no candidates | empty well; Probe Set may still be non-zero on other states |
+| Quiet / no candidates | empty well; Probe Set stays the live probe universe (not forced to 0) |
 | C4 | dashed “C4 · context only”; cannot be a lane filter; cannot be `data-expert` on a card |
 
 ---
@@ -106,7 +112,7 @@ W8 is before W6/W7. The reference **refuses**:
 - “validated” / “edge confirmed” language
 - Fake conversion of Radar episodes into Prophet plans
 
-Slots exist so W9 does not have to invent layout later. They print `ACCRUING` / `NOT YET MEASURED` / `UNAVAILABLE` / `PLACEHOLDER — FUTURE W6/W7`.
+Slots exist so W9 does not have to invent layout later. Priority is one board-level `ACCRUING` line plus an em-dash on the card. Opportunity prints `NOT YET MEASURED`. Missing §14 glance/drawer slots are reserved as `ACCRUING` / `UNAVAILABLE` / `BLOCKED_DATA` — they are not secretly complete.
 
 ---
 
@@ -122,11 +128,11 @@ Required states (query `?state=`): `quiet`, `g0`, `c1`, `c2`, `c3`, `c5`, `multi
 
 From the R4 closure ledger (PR #5560), Radar refuses:
 
-- Card with no route (PRC-301) — ticker is a real in-page link
+- Card with no route (PRC-301) — **PRC-301 is not closed.** Founding surface has no `stock.html`. Cards are not links. A `#ticker` hash with no matching id is the same defect restated. Honest form is no link until a real destination exists.
 - Anon gate promising levels the card bans (PRC-302) — copy lists what Radar actually shows
 - Header that can only say “settled close” (PRC-305) — freshness branches
-- Chartless 24px void (VTC-301) — equalised 74px printed null
-- Stance/tape one-colour collision (DA-002) — tape uses `--ink-up/--ink-down`; lifecycle is weight-only
+- Chartless 24px void (VTC-301) — equalised 74px printed null. Stale is a freshness fact and keeps its path; “No path yet” is only for a true missing spark.
+- Stance/tape one-colour collision (DA-002) — tape uses `--ink-up/--ink-down`; lifecycle uses `--er-life`, never `--pv-buy` or `--ok`
 - Amber meaning three things (VTC-304) — amber is caution / stale only
 
 ---
@@ -140,7 +146,7 @@ From the R4 closure ledger (PR #5560), Radar refuses:
 - `prefers-reduced-motion` kills hover lift
 - No emoji as functional icons (caution banner is a CSS border + words)
 - Critical states (stale, unavailable, C4-not-a-fire, false-start history, provisional) are on the card, not tooltip-only
-- 390px: one column, no page-level horizontal scroll
+- 390px: one column that fits. Do not pin “no hscroll” with `overflow-x: hidden`. Overlay does not wrap the C2 variant on the 232px card.
 
 ---
 

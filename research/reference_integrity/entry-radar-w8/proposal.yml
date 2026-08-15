@@ -116,10 +116,10 @@ authority_delta:
     evidence: ".er-refbanner + RADAR_META.synthetic + every row synthetic:true"
   - id: auth.no_priority_number
     production_claim: "none"
-    proposal_claim: "Priority is ACCRUING, never a number"
+    proposal_claim: "Priority is one board-level ACCRUING line; card slot is an em-dash; never a number"
     direction: weaker
     warranted: true
-    evidence: "[data-priority=accruing]; W6 has not run"
+    evidence: "[data-priority-board=accruing] + [data-priority=accruing] em-dash; W6 has not run"
   - id: auth.no_opportunity
     production_claim: "none"
     proposal_claim: "Opportunity is NOT YET MEASURED"

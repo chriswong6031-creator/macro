@@ -68,6 +68,18 @@
   if (lifeF) rows = rows.filter((r) => r.lifecycle === lifeF);
   if (laneF) rows = rows.filter((r) => inLane(r, laneF));
 
+  /* Printed sort is implemented (PRC-002). Live enclosure first, then
+     terminal; then expert identity G0→C1→C2→C3→C5; then ticker. */
+  const LIFE_ORD = { candidate: 0, pre_candidate: 1, probing: 2, invalidated: 3, expired: 4 };
+  const EXP_ORD = { G0: 0, C1: 1, C2: 2, C3: 3, C5: 4 };
+  rows.sort((a, b) => {
+    const ld = (LIFE_ORD[a.lifecycle] ?? 9) - (LIFE_ORD[b.lifecycle] ?? 9);
+    if (ld) return ld;
+    const ed = (EXP_ORD[a.expert] ?? 9) - (EXP_ORD[b.expert] ?? 9);
+    if (ed) return ed;
+    return String(a.ticker).localeCompare(String(b.ticker));
+  });
+
   const counts = {
     probing: 0, pre_candidate: 0, candidate: 0, invalidated: 0, expired: 0,
     g0: 0, c1: 0, c2: 0, c3: 0, c5: 0, best: 0,
@@ -80,7 +92,9 @@
     if (inLane(r, "best")) counts.best += 1;
   });
   const liveTotal = counts.probing + counts.pre_candidate + counts.candidate;
-  const probeSet = state === "quiet" ? 0 : META.probe_set;
+  /* Quiet is no-candidates, not no-probes. Never force the Probe Set to 0
+     while the empty well says the Probe Set can still be live (PRC-001). */
+  const probeSet = META.probe_set;
 
   window.RADAR = {
     theme, lang, state, life: lifeF, lane: laneF,
@@ -90,9 +104,12 @@
     pinned_prophet_tree: META.pinned_prophet_tree,
   };
 
-  function spark(vals) {
+  function spark(vals, r) {
     if (!vals || vals.length < 2) {
-      return `<div class="pv-nochart"><span class="pv-nochart-l">${both("No path yet", "尚无路径")}</span></div>`;
+      const msg = r && r.stale
+        ? both("Path is stale", "路径已过期")
+        : both("No path yet", "尚无路径");
+      return `<div class="pv-nochart"><span class="pv-nochart-l">${msg}</span></div>`;
     }
     const w = 240, h = 74, p = 4;
     const mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals);
@@ -130,9 +147,8 @@
     if (r.unavailable) out.push("er-unav");
     if (r.degraded) out.push("er-degraded");
     if (r.raw_basis) out.push("er-raw");
-    if (r.featured && !r.stale && !r.unavailable && !r.degraded && !r.raw_basis && r.lifecycle === "candidate") {
-      out.push("pv-featured");
-    }
+    /* Featured aura = Best-lane filter. Not a fixture flag of 2 (PRC-004). */
+    if (inLane(r, "best")) out.push("pv-featured");
     return out.join(" ");
   }
 
@@ -146,7 +162,7 @@
     const fsN = (r.false_starts || []).length;
     const sib = (r.siblings || []).length;
     const cls = ["pvcard", tone(r), flags(r)].filter(Boolean).join(" ");
-    const hero = spark(r.spark);
+    const hero = spark(r.spark, r);
     return `<article class="${cls}" data-id="${esc(r.id)}" data-ticker="${esc(r.ticker)}"
       data-expert="${esc(r.expert)}" data-expert-id="${esc(r.expert_id)}"
       data-life="${esc(r.lifecycle)}" data-bar="${esc(r.bar_state)}"
@@ -166,7 +182,6 @@
         <span class="er-xchip" data-expert="${esc(r.expert)}" title="${esc(r.expert_id)}">
           <span class="pv-axis">${t(C.expert_axis)}</span> ${esc(r.expert)}
         </span>
-        ${v ? `<span class="pv-mk-i" data-c2-variant="${esc(r.c2_variant)}">${esc(t(v))}</span>` : ""}
       </div>
       <div class="pv-ov pv-ovr">
         <span class="pv-quote" data-mock-live="1">
@@ -176,19 +191,18 @@
       </div>
       <div class="pv-bd">
         <div class="pv-hd">
-          <a class="pv-open" href="#${esc(r.ticker)}">
-            <span class="pv-idw">
-              <span class="pv-tk">${esc(r.ticker)}</span>
-              <span class="pv-nm">${esc(name)}</span>
-            </span>
-          </a>
+          <span class="pv-idw">
+            <span class="pv-tk">${esc(r.ticker)}</span>
+            <span class="pv-nm">${esc(name)}</span>
+          </span>
           <span class="pv-pri" title="${esc(t(C.pri_tip))}">
             <span class="pv-pril">${t(C.pri_label)}</span>
-            <span class="pv-prin pv-prin--na" data-priority="accruing">${t(C.pri_accruing)}</span>
+            <span class="pv-prin pv-prin--na" data-priority="accruing">—</span>
           </span>
         </div>
         <div class="pv-mk">
           <span class="pv-mk-i">${esc(lang === "zh" ? r.cohort_zh : r.cohort_en)}</span>
+          ${v ? `<span class="pv-mk-i" data-c2-variant="${esc(r.c2_variant)}">${esc(t(v))}</span>` : ""}
           ${r.c4 ? `<span class="er-c4 er-xchip" data-expert="C4" data-role="stratification_only">${t(C.c4_chip)}</span>` : ""}
           ${sib ? `<span class="pv-mk-i" data-siblings="${sib}">${sib + 1} ${both("experts", "位专家")}</span>` : ""}
         </div>
@@ -243,8 +257,12 @@
         ${t(C.c4_chip)}</span>`;
     }
     const label = C.lanes[id];
+    /* Best is an unmeasured filter, not a ranked count (PRC-003). */
+    const count = id === "best"
+      ? `<b class="fig" data-best-unranked="1">—</b>`
+      : `<b class="fig">${n}</b>`;
     return `<button type="button" class="er-lane" data-lane="${id}" aria-pressed="${laneF === id}">
-      ${t(label)} <b class="fig">${n}</b></button>`;
+      ${t(label)} ${count}</button>`;
   }
 
   function harness() {
@@ -339,8 +357,12 @@
         </div>
         <div class="setups-bar">
           <span class="sort-rule">${both(
-            "Sorted by lifecycle, then expert identity. No Opportunity rank — W7 has not measured one.",
-            "按生命周期、再按专家身份排序。没有机会分——W7尚未测量。"
+            "Sorted by lifecycle (live cells first), then expert identity. No Opportunity rank — W7 has not measured one.",
+            "按生命周期（活单元格在前）、再按专家身份排序。没有机会分——W7尚未测量。"
+          )}</span>
+          <span class="er-pri-board" data-priority-board="accruing">${both(
+            "Priority ACCRUING — W6 has not measured a rank.",
+            "优先级尚未测量 — W6尚未给出排名。"
           )}</span>
         </div>
         ${rows.length ? `<div class="pv-grid">${cards}</div>` : `<div class="er-empty" data-empty="1">${t(C.empty)}</div>`}

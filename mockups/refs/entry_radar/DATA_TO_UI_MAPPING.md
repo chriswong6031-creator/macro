@@ -29,8 +29,10 @@ W8 fixtures are synthetic. W9 must replace fixture fields with live evaluator fi
 | Sibling lanes | `siblings[]` | glance count + drawer | other episodes on ticker | CAN COPY NOW / WAIT FOR W4 |
 | Event id | `event_id` | drawer (C5) | `mastermind.entry_event.v1` | WAIT FOR W4 |
 | Spark | `spark[]` | hero | mini path | CAN COPY NOW (null law) / WAIT FOR W4 (real path) |
-| Featured | `featured` | aura | Best-lane live candidate | CAN COPY NOW (rule) |
-| Research Priority | `research_priority` | glance ACCRUING | W6 object | **WAIT FOR W6** |
+| Featured | computed `inLane(best)` | aura | Best-lane live candidate (same set) | CAN COPY NOW (rule) |
+| Research Priority | `research_priority` | board-level ACCRUING + card em-dash | W6 object | **WAIT FOR W6** |
+| Glance component states | — | reserved UNAVAILABLE | 1D Stoch / MACD-RSI / Structure / Lobe | **BLOCKED_DATA until W4** |
+| Glance zone + invalidation | — | reserved ACCRUING | risk geometry on the footer | **BLOCKED_DATA until W4** |
 | Opportunity | `opportunity` | drawer NOT YET MEASURED | W7 object | **WAIT FOR W7** |
 
 ## Forbidden mappings
@@ -38,4 +40,6 @@ W8 fixtures are synthetic. W9 must replace fixture fields with live evaluator fi
 - Do not map any Radar episode onto a Prophet plan row or seven-cell lifecycle.
 - Do not map C4 onto a firing `detector_id` or a Best-lane card.
 - Do not map missing Priority/Opportunity onto a guessed number.
+- Do not map ticker onto a `#ticker` hash. Cards are not links until a real `stock.html` exists (PRC-301 is not closed).
+- Do not treat the W8 reduced card as contract §14 complete.
 - Do not map unavailable/stale onto `condition_met=false`.

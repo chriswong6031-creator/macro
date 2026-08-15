@@ -39,6 +39,7 @@ def static_checks() -> None:
     data = _read("radar-data.js")
     notes = _read("DESIGN_NOTES.md")
     pin = _read("PINNED_PROPHET_REFERENCE.md")
+    w9 = _read("W9_IMPLEMENTATION_HANDOFF.md")
 
     # R1 — reference assets must not be production UI
     prod_j2 = REPO / "templates" / "entry_radar.html.j2"
@@ -143,18 +144,22 @@ def static_checks() -> None:
     ok("R12c reduced-motion", "prefers-reduced-motion" in css, "motion")
     ok("R12d focus-visible", ":focus-visible" in css, "focus")
     ok("R12e no-emoji-icon", "⚠️" not in js and "⚡" not in js, "emoji icons")
-    # Candidate lifecycle must not inherit Prophet Buy (--pv-buy flips red in ZH).
+    # Candidate lifecycle must not inherit Prophet Buy (--pv-buy flips red in ZH)
+    # and must not reuse --ok (same family as ZH --down). Third mix: --er-life.
     ok("R12f cand-not-pv-buy",
-       ".er-cand   { --pvh: var(--ok);" in css or "--pvh: var(--ok)" in css,
-       "candidate hue is direction-neutral --ok, not --pv-buy")
+       "--pvh: var(--er-life)" in css,
+       "candidate hue is --er-life, not --pv-buy")
     ok("R12g cand-not-up-derived",
        ".er-cand" in css and "--pvh: var(--pv-buy)" not in css.split(".er-cand")[1][:80],
        "er-cand must not bind --pv-buy")
+    ok("R12h cand-not-ok-green",
+       ".er-cand" in css and "--pvh: var(--ok)" not in css.split(".er-cand")[1][:80],
+       "er-cand must not bind --ok (ZH down-green family)")
 
-    # R13 — 390px single column
+    # R13 — 390px single column that FITS (clip is not fit)
     ok("R13 mobile-one-col", ".pv-grid { grid-template-columns: 1fr;" in css.replace("\n", " ").replace("  ", " "),
        "390 grid")
-    ok("R13b overflow-x-hidden", "overflow-x: hidden" in css, "page")
+    ok("R13b no-overflow-x-hidden", "overflow-x: hidden" not in css, "clip is not fit")
 
     # R14 — fixtures unmistakably synthetic
     ok("R14 synthetic-meta", "synthetic: true" in data, "meta")
@@ -166,6 +171,55 @@ def static_checks() -> None:
                "invalidated", "history", "stale", "unavailable", "raw",
                "degraded", "partial", "board", "ipo", "lobe"):
         ok(f"R15 state-{st}", f"{st}:" in data or f'"{st}"' in data, st)
+
+    # R16 — quiet must not contradict the Probe Set (PRC-001)
+    ok("R16 quiet-not-forced-zero", 'state === "quiet" ? 0' not in js, "quiet probeSet")
+    ok("R16b quiet-empty-agrees",
+       "Probe Set can still be live" not in data or 'state === "quiet" ? 0' not in js,
+       "empty well vs 0")
+
+    # R17 — printed sort is implemented (PRC-002)
+    ok("R17 sort-implemented", "rows.sort" in js and "LIFE_ORD" in js, "sort")
+    ok("R17b sort-copy-matches", "Sorted by lifecycle" in js and "rows.sort" in js, "copy")
+
+    # R18 — Best is unranked (PRC-003)
+    ok("R18 best-unranked-hook", 'data-best-unranked="1"' in js, "dash")
+    ok("R18b best-qualified", "unranked" in data and "未排名" in data, "copy")
+
+    # R19 — featured aura === Best filter (PRC-004)
+    ok("R19 featured-is-best", 'if (inLane(r, "best")) out.push("pv-featured")' in js, "computed")
+    ok("R19b no-fixture-featured", "featured: true" not in data, "fixture flag")
+
+    # R20 — stale is not a missing path (PRC-006)
+    ok("R20 stale-has-spark",
+       "stale: true" in data and "spark: [74.2" in data,
+       "stale fixture keeps a path")
+    ok("R20b stale-null-copy", "Path is stale" in js, "wrong-null guard")
+
+    # R21 — no dead #ticker link; PRC-301 is not closed (PRC-010)
+    ok("R21 no-hash-ticker", "href=\"#${" not in js and "href=\"#${esc(r.ticker)}\"" not in js, "dead link")
+    ok("R21b prc301-honest",
+       "ticker is a real in-page link" not in notes and "PRC-301 is not closed" in notes,
+       "DESIGN_NOTES honesty")
+
+    # R22 — W9 must not list the reduced card as §14 complete (PRC-007/008)
+    ok("R22 w9-not-section14-complete",
+       "NOT §14 COMPLETE" in w9 and "Card anatomy: lifecycle + expert identity" not in w9,
+       "BLOCKED_DATA reservation")
+
+    # R23 — one board-level ACCRUING line; card is an em-dash (VTC-002)
+    ok("R23 priority-board-line", "data-priority-board" in js, "board")
+    ok("R23b card-priority-dash", 'data-priority="accruing">—' in js, "em-dash")
+
+    # R24 — third mix token exists
+    ok("R24 er-life-token", "--er-life:" in css and "--ink-life:" in css, "token")
+
+    # R25 — overlay unwrap + footer wrap (VTC-005/006)
+    ovl = js.split("pv-ov pv-ovl", 1)[-1].split("pv-ov pv-ovr", 1)[0]
+    ok("R25c c2-not-in-overlay", "data-c2-variant" not in ovl, "overlay unwrap")
+    ok("R25d zn-wraps",
+       "white-space: nowrap; overflow: hidden" not in css.split(".pv-zn", 1)[-1][:280],
+       "footer must wrap, not clip")
 
 
 def playwright_checks(url: str) -> None:
@@ -197,10 +251,28 @@ def playwright_checks(url: str) -> None:
         pri = pg.evaluate(
             "() => [...document.querySelectorAll('[data-priority]')].map(n => n.textContent.trim())")
         ok("P1e no-priority-digits", all(not re.search(r"\d", t) for t in pri), str(pri))
+        featured_n = pg.evaluate(
+            "() => document.querySelectorAll('.pvcard.pv-featured').length")
+        best_n = pg.evaluate(
+            """() => [...document.querySelectorAll('.pvcard')].filter(c =>
+              c.dataset.life==='candidate' && c.dataset.stale!=='1'
+              && c.dataset.unavailable!=='1' && c.dataset.degraded!=='1'
+              && c.dataset.rawBasis!=='1').length""")
+        ok("P1f featured-eq-best", featured_n == best_n and featured_n > 2, f"feat={featured_n} best={best_n}")
+        hash_links = pg.evaluate(
+            "() => [...document.querySelectorAll('a[href^=\"#\"]')].map(a => a.getAttribute('href'))")
+        ok("P1g no-dead-hash", all(not re.match(r"^#[A-Z.]+", h or "") for h in hash_links), str(hash_links))
 
         pgq = page_at("theme=dark&lang=en&state=quiet")
         ok("P2 quiet-empty", pgq.locator("[data-empty]").count() == 1, "empty well")
         ok("P2b quiet-no-cards", pgq.locator(".pvcard").count() == 0, "cards")
+        qprobe = pgq.evaluate(
+            "() => Number(document.querySelector('[data-probe-set]')?.getAttribute('data-probe-set') || 0)")
+        ok("P2c quiet-probe-nonzero", qprobe > 0, str(qprobe))
+        qtxt = pgq.inner_text("body")
+        ok("P2d quiet-no-zero-and-live",
+           not ("0 in the Probe Set" in qtxt and "Probe Set can still be live" in qtxt),
+           "contradiction")
 
         pgm = page_at("theme=dark&lang=en&state=multi")
         many = pgm.evaluate(
@@ -212,6 +284,8 @@ def playwright_checks(url: str) -> None:
         ok("P4b stale-not-featured-look",
            pgs.evaluate("() => getComputedStyle(document.querySelector('.pvcard')).borderStyle") == "dashed",
            "dashed")
+        stale_txt = pgs.inner_text("body")
+        ok("P4c stale-not-no-path", "No path yet" not in stale_txt, "wrong null")
 
         pgu = page_at("theme=dark&lang=en&state=unavailable")
         ok("P5 unav-not-candidate",

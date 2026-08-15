@@ -111,7 +111,6 @@ window.RADAR_FIXTURES = {
     expiry_zh: "再武装法：已确认K高于下限，或达到最长会话，先到为准。",
     cohort_en: "1D LIVE · provisional",
     cohort_zh: "1D LIVE · 临时",
-    featured: true,
     spark: [22.1, 21.4, 20.0, 19.2, 18.1, 17.6, 17.9, 18.2, 18.44],
     c4: { role: "context", state: "quiet", note_en: "C4 MTF turn is context only — not a fire.", note_zh: "C4多周期拐点仅为分层语境，不是开火。" },
   }),
@@ -142,7 +141,6 @@ window.RADAR_FIXTURES = {
     expiry_zh: "绑定父C1情节窗口。",
     cohort_en: "1D turn · six variants, not a blend",
     cohort_zh: "1D拐点 · 六个变体，不混合",
-    featured: true,
     spark: [58, 56.4, 55.1, 54.8, 55.6, 57.2, 59.0, 61.4, 63.1],
     c4: { role: "context", state: "aligning", note_en: "Weekly turn context aligning — stratification only.", note_zh: "周线拐点语境对齐——仅分层。" },
   }),
@@ -389,6 +387,7 @@ window.RADAR_FIXTURES = {
     cohort_en: "Stale source · demoted",
     cohort_zh: "过期源 · 已降级",
     stale: true,
+    spark: [74.2, 75.1, 76.0, 76.8, 77.1, 76.9, 77.2, 77.4, 77.40],
   }),
 
   unavailable: _ep({
@@ -617,7 +616,7 @@ window.RADAR_COPY = {
   },
   lanes: {
     all:  { en: "All", zh: "全部" },
-    best: { en: "Best", zh: "首选" },
+    best: { en: "Best · unranked", zh: "首选 · 未排名" },
     g0:   { en: "Grey Dot", zh: "灰点" },
     c1:   { en: "1D Washout", zh: "1D洗盘" },
     c2:   { en: "1D Turn", zh: "1D拐点" },
@@ -643,8 +642,8 @@ window.RADAR_COPY = {
   opp_none: { en: "NOT YET MEASURED — future W7", zh: "尚未测量 — 未来W7" },
   c4_chip: { en: "C4 · context only", zh: "C4 · 仅语境" },
   empty: {
-    en: "No candidates in this view. The Probe Set can still be live — quiet is a state, not a broken page.",
-    zh: "此视图没有候选。探针集仍可能是活的——安静是一种状态，不是坏页。",
+    en: "No candidates in this view. Quiet is a state, not a broken page. The Probe Set count above is the live probe universe — it is not required to be zero.",
+    zh: "此视图没有候选。安静是一种状态，不是坏页。上方探针集计数是活的探针宇宙——不必为零。",
   },
   stale_banner: {
     en: "Stale or degraded readings are demoted. They never keep a live-candidate look.",

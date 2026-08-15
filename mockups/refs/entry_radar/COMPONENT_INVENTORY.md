@@ -16,15 +16,15 @@ Radar-only components use the `er-` prefix.
 | C4 non-lane | `.er-lane--c4` `[data-role=stratification_only]` | — | Visible, not a fire, not a filter |
 | Stale/degraded banner | `.er-banner` `[data-stale-banner]` | Prophet `.nb-stale-note` | Demotion disclosure |
 | Card | `.pvcard` | Prophet `.pvcard` | One (ticker, expert) episode |
-| Featured aura | `.pv-featured` | Prophet featured | Best-lane live candidate only |
+| Featured aura | `.pv-featured` | Prophet featured | Best-lane filter — same set, computed |
 | Hero spark / null | `.pv-chart` `.pv-nochart` | Prophet hero | 74px equalised; printed null |
 | Lifecycle chip | `.er-lifechip` `.pv-axis` | Prophet stance chip + axis | Radar lifecycle, axis labelled |
 | Expert chip | `.er-xchip` `[data-expert]` | Prophet marks | Exact expert id G0/C1/C2/C3/C5 |
-| C2 variant chip | `[data-c2-variant]` | — | Inspectable variant, never a blend |
+| C2 variant chip | `[data-c2-variant]` on marks/drawer, not overlay | — | Inspectable variant, never a blend |
 | C4 context chip | `.er-c4` `[data-expert=C4]` | — | Context / stratification only |
 | Quote | `.pv-quote` `.nb-px` `.nb-chg` | Prophet quote | Price + change; em-dash if missing |
 | Identity | `.pv-tk` `.pv-nm` | Prophet identity | Ticker + bilingual name |
-| Priority slot | `.pv-pri` `[data-priority=accruing]` | Prophet Priority | ACCRUING — no number |
+| Priority slot | `.pv-pri` `[data-priority=accruing]` | Prophet Priority | Card em-dash; board-level ACCRUING |
 | Why line | `.er-why` | Prophet zone sentence | Mechanical why-candidate |
 | False-start flag | `.er-fs` `[data-false-starts]` | — | History cannot disappear |
 | Freshness footer | `.pv-zn` | Prophet zone footer | Freshness + as-of |

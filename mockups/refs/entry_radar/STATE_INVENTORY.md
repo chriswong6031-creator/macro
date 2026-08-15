@@ -4,7 +4,7 @@ All fixtures are synthetic (`synthetic: true`). Query `?state=<id>`.
 
 | State id | What it proves | Expert | Lifecycle | Freshness / bar |
 |---|---|---|---|---|
-| `quiet` | No candidates; empty well; not a broken page | — | — | — |
+| `quiet` | No candidates; empty well; Probe Set stays live (not forced to 0) | — | — | — |
 | `g0` | G0-only nightly confirmed grey dot | G0 | candidate | nightly · confirmed |
 | `c1` | C1 1D LIVE provisional; first arm is candidate; C4 context chip | C1 | candidate | 1D LIVE · provisional |
 | `c2` | C2 candidate; variant `c2a_kd_cross` inspectable | C2 | candidate | 1D LIVE · provisional |
@@ -14,7 +14,7 @@ All fixtures are synthetic (`synthetic: true`). Query `?state=<id>`.
 | `expired` | Expired episode retained | C1 | expired | expired |
 | `invalidated` | Invalidated false start retained | C2 / c2b | invalidated | invalidated |
 | `history` | Live C1 plus two prior false starts on the card | C1 | candidate | 1D LIVE · provisional |
-| `stale` | Stale demotion; no featured / no live-candidate look | C1 | candidate | STALE · 14m |
+| `stale` | Stale demotion; path kept (not “No path yet”); no featured / no live-candidate look | C1 | candidate | STALE · 14m |
 | `unavailable` | Unavailable ≠ non-fire; C2f ATR missing | C2 / c2f | probing | UNAVAILABLE |
 | `raw` | Raw/adjusted basis refusal; whole observation null | C1 | probing | UNAVAILABLE · basis |
 | `degraded` | Evaluator degraded banner + demoted card | C3 | pre_candidate | DEGRADED |

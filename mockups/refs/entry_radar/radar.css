@@ -77,6 +77,14 @@ html[data-theme="light"][data-lang="zh"] {
   --ink-act:  color-mix(in srgb, var(--act)  var(--ink-mix-act),  var(--text));
   --ink-link: color-mix(in srgb, var(--link) var(--ink-mix-link), var(--text));
   --ink-info: color-mix(in srgb, var(--info) var(--ink-mix-info), var(--text));
+  /* Radar lifecycle — third mix. Not --ok (collides with ZH --down green)
+     and not --pv-buy (flips with --up). Slate-indigo; direction-neutral. */
+  --er-life: #6b7fc4;
+  --ink-life: color-mix(in srgb, var(--er-life) 88%, var(--text));
+}
+html[data-theme="light"] {
+  --er-life: #4a5fa8;
+  --ink-life: color-mix(in srgb, var(--er-life) 70%, var(--text));
 }
 html:not([data-lang="zh"]) .l-zh { display: none; }
 html[data-lang="zh"] .l-en { display: none; }
@@ -87,7 +95,6 @@ body {
   background: var(--bg); color: var(--text);
   font-family: var(--font-ui); font-size: 15px;
   -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 .wrap { max-width: 1320px; margin: 0 auto; padding: 0 22px 80px; }
 a { color: inherit; }
@@ -300,6 +307,7 @@ a { color: inherit; }
 /* ═══════════════════════ CARDS ════════════════════════════════════════ */
 .setups-bar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
 .sort-rule { font-size: 11.5px; color: var(--muted); }
+.er-pri-board { font-size: 11.5px; color: var(--muted); }
 
 .pv-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(232px, 1fr));
@@ -319,32 +327,32 @@ a { color: inherit; }
 .pvcard:focus-within { outline: 2px solid var(--ink-link); outline-offset: 2px; }
 
 /* Radar lifecycle channel is NOT Prophet Buy/Wait.
-   Candidate/pre-candidate hues are direction-neutral (--ok / --pv-wait) so
-   they do not flip red under html[data-lang=zh] (红涨绿跌 is tape-only).
+   Candidate hue is --er-life (slate-indigo), not --ok (ZH down-green)
+   and not --pv-buy (flips with --up). Tape still uses --ink-up/--ink-down.
    Stale/unavailable take NO positive hue. */
-.er-cand   { --pvh: var(--ok);      --pvh-ink: var(--ink-ok); }
+.er-cand   { --pvh: var(--er-life); --pvh-ink: var(--ink-life); }
 .er-pre    { --pvh: var(--pv-wait); --pvh-ink: var(--pv-wait); }
 .er-probe  { --pvh: var(--pv-noread); --pvh-ink: var(--pv-noread); }
 .er-term   { --pvh: var(--pv-hold); --pvh-ink: var(--pv-hold); }
 
 .pvcard.pv-featured {
-  background: color-mix(in srgb, var(--ok) 2.5%, var(--panel2));
-  border-color: color-mix(in srgb, var(--ok) 38%, var(--line));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 24%, transparent),
-              0 0 16px -6px color-mix(in srgb, var(--ok) 32%, transparent),
+  background: color-mix(in srgb, var(--er-life) 2.5%, var(--panel2));
+  border-color: color-mix(in srgb, var(--er-life) 38%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--er-life) 24%, transparent),
+              0 0 16px -6px color-mix(in srgb, var(--er-life) 32%, transparent),
               0 10px 26px -14px rgba(0,0,0,.7);
 }
 .pvcard.pv-featured:hover {
-  border-color: color-mix(in srgb, var(--ok) 48%, var(--line));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 30%, transparent),
-              0 0 20px -6px color-mix(in srgb, var(--ok) 40%, transparent),
+  border-color: color-mix(in srgb, var(--er-life) 48%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--er-life) 30%, transparent),
+              0 0 20px -6px color-mix(in srgb, var(--er-life) 40%, transparent),
               0 8px 22px -8px rgba(0,0,0,.5);
 }
 .pvcard.pv-featured::before {
   content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 3;
   pointer-events: none; border-radius: 12px 12px 0 0;
-  background: linear-gradient(90deg, var(--ok), color-mix(in srgb, var(--ok) 55%, transparent));
-  box-shadow: 0 1px 10px color-mix(in srgb, var(--ok) 40%, transparent);
+  background: linear-gradient(90deg, var(--er-life), color-mix(in srgb, var(--er-life) 55%, transparent));
+  box-shadow: 0 1px 10px color-mix(in srgb, var(--er-life) 40%, transparent);
 }
 html[data-theme="light"] .pvcard {
   background: #fff;
@@ -353,10 +361,10 @@ html[data-theme="light"] .pvcard {
 }
 html[data-theme="light"] .pvcard.pv-featured {
   background: #fff;
-  border-color: color-mix(in srgb, var(--ok) 30%, var(--line));
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 16%, transparent),
-              0 0 12px -6px color-mix(in srgb, var(--ok) 22%, transparent),
-              0 8px 20px -14px rgba(24,58,40,.22);
+  border-color: color-mix(in srgb, var(--er-life) 30%, var(--line));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--er-life) 16%, transparent),
+              0 0 12px -6px color-mix(in srgb, var(--er-life) 22%, transparent),
+              0 8px 20px -14px rgba(24,40,70,.22);
 }
 
 /* Stale / unavailable / degraded / raw NEVER keep a live-candidate treatment */
@@ -416,8 +424,8 @@ html[data-theme="light"] .pvcard.pv-featured {
   color: var(--muted); opacity: .72; line-height: 1;
 }
 .pv-ov { position: absolute; top: 8px; display: flex; gap: 5px; align-items: center; z-index: 2; }
-.pv-ov.pv-ovl { flex-wrap: wrap; row-gap: 3px; max-width: calc(100% - 122px); }
-.pv-ov.pv-ovr { max-width: 60%; }
+.pv-ov.pv-ovl { flex-wrap: nowrap; max-width: calc(100% - 96px); }
+.pv-ov.pv-ovr { max-width: 40%; }
 .pv-ovl { left: 9px; }
 .pv-ovr { right: 9px; }
 
@@ -447,7 +455,7 @@ html[data-theme="light"] .pvcard.pv-featured {
 .er-xchip[data-expert="G0"] { border-color: color-mix(in srgb, var(--muted) 70%, var(--line)); }
 .er-xchip[data-expert="C1"] { border-color: color-mix(in srgb, var(--prov) 50%, var(--line)); color: var(--prov-ink); }
 .er-xchip[data-expert="C2"] { border-color: color-mix(in srgb, var(--info) 50%, var(--line)); color: var(--ink-info); }
-.er-xchip[data-expert="C3"] { border-color: color-mix(in srgb, var(--ok) 50%, var(--line)); color: var(--ink-ok); }
+.er-xchip[data-expert="C3"] { border-color: color-mix(in srgb, var(--er-life) 50%, var(--line)); color: var(--ink-life); }
 .er-xchip[data-expert="C5"] { border-color: color-mix(in srgb, var(--orange) 50%, var(--line)); color: var(--orange); }
 .er-xchip[data-expert="C4"], .er-c4 {
   color: var(--muted);
@@ -480,9 +488,6 @@ html[data-theme="light"] .pvcard.pv-featured {
 .pv-hd { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
 .pv-idw { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
 .pv-tk { font-size: 13.5px; font-weight: 800; letter-spacing: .01em; white-space: nowrap; flex: none; }
-.pv-open { color: inherit; text-decoration: none; display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; }
-.pv-open::after { content: ""; position: absolute; inset: 0; z-index: 1; }
-.pvcard:hover .pv-tk { text-decoration: underline; text-underline-offset: 2px; }
 .pv-chip, .er-xchip, .pv-pri, .er-drawer-btn, .er-c4, .pv-cau { position: relative; z-index: 2; }
 .pv-nm { font-size: 10px; color: var(--muted); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
@@ -509,10 +514,10 @@ html[data-theme="light"] .pvcard.pv-featured {
 }
 
 .pv-zn {
-  display: flex; align-items: baseline; gap: 6px; margin-top: auto;
+  display: flex; align-items: baseline; gap: 6px; margin-top: auto; flex-wrap: wrap;
   background: color-mix(in srgb, var(--panel) 55%, var(--bg));
   border-top: 1px solid var(--line); padding: 5px 10px 6px;
-  font-size: 10px; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden;
+  font-size: 10px; font-variant-numeric: tabular-nums;
 }
 .pv-znl {
   font-size: 8.5px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase;
