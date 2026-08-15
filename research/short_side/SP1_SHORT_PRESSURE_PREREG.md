@@ -846,3 +846,52 @@ study, an adjudication, a masterplan, or any user-facing surface.
   *expected* neighborhood, not a result of this study. Official numbers follow
   in a later §7 line after the run. Citation ban still stands (survivorship
   unfixed).
+
+  **DISCHARGED by the next entry — the official run happened in the same
+  session, after this line and after the code change.** The commit order is
+  the receipt: prereg → filter → results.
+
+- 2026-08-15: **SP1-B RUN on the NYSE-session price index — §5C's official
+  run. Verdict UNCHANGED: still a NULL. Confirmation of the seen
+  counterfactual, not a discovery.** Artifacts regenerated:
+  `reports/sp1-short-pressure.md`, `data/research/sp1_short_pressure.json`.
+  Commit order on this change: (1) §5C + `DEC:PREREG-DESIGN-CHANGE-SUPERSEDES`
+  with no code and no run, (2) `restrict_to_nyse_sessions` + tests, (3) this
+  log and the artifacts.
+
+  **`calendar_audit` after the fix:** `weekend_rows_in_event_window` = **0**
+  of 2,085 index rows in the event window; a 21-row step spans **21** weekday
+  sessions and a 63-row step spans **63**. The horizon labels are true NYSE
+  sessions.
+
+  **H0 still does not replicate — it is POSITIVE.** 229,486 events, 200
+  entry dates, 1,715 tickers, 2018-01-25 → 2026-05-12, median 1,183
+  names/date. H0 `+0.749pp` (NW t 2.09, q 0.0363) at 21 sessions and
+  `+0.959pp` (t 1.01, q 0.4697) at 63 sessions. H1 `+0.281` / `+0.872`;
+  H2 `+0.240` / `+0.735`. §5A's gate requires H0 **negative and
+  significant**, so the branch tests stay uninterpretable and SP1-B is a
+  NULL. No test is near the ±5pp promotion bar. **No `DO_NOT_REBUILD` row
+  is filed** — nothing promoted, nothing killed, no authority state moves.
+
+  **Against the pre-declared expected neighborhood (counterfactual D).**
+  D measured H0 21-row `+0.702pp / t 1.92 / q 0.0551`, 216,488 events, 188
+  entry dates, on a weekday-only index made by dropping the 35 non-equity
+  files. Official SP1-B (NYSE-session intersection, holidays dropped too,
+  `HORIZONS` as true sessions) landed at `+0.749 / t 2.09 / q 0.0363`,
+  229,486 events, 200 entry dates. Same sign, same t-band, same failure of
+  the replication gate and of the promotion bar. The window starts earlier
+  (2018-01-25 vs the contaminated run's 2018-02-12) because `searchsorted`
+  no longer lands on a thin weekend/holiday row, and ends earlier
+  (2026-05-12 vs 2026-06-10) because a 21-session horizon needs more
+  runway than a 15-session one. Entry-date count 200 vs D's 188 is a
+  sample difference, not a material deviation: §5C reserved adjudication
+  for H0 flipping negative-and-significant or any `|mean| ≥ 5pp`. Neither
+  happened.
+
+  **CITATION BAN NOT LIFTED.** This run discharges only the third of the
+  three reasons (calendar). Survivorship (§5A) is untouched: 34.6% of the
+  pre-2021 high-DTC quintile is still gone by 2025 and the named fix is
+  still unbuilt. The PIT lag is already discharged. **No effect size from
+  this run may be cited** — successor study, adjudication, masterplan, or
+  user-facing surface. A result in the seen neighborhood is confirmation,
+  not discovery.
