@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-15T00:34:10.281558+00:00",
-  "count": 1102,
+  "generated_at": "2026-08-15T01:00:27.274298+00:00",
+  "count": 1103,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -146,6 +146,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 10,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-w2js3ab4ext-2e227f",
+      "title": "Turkiye Current Account Deficit Widened to US$4",
+      "institution": "Goldman Sachs",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-14T16:32:59Z",
+      "summary_points": [
+        "**Current Account Deficit Widening**: $4.2bn deficit in June (3.5% GDP by 2026), driven by core goods imports and tourism revenue decline (-6% yoy), signaling structural external vulnerability.",
+        "**E&O Revisions Reduce Outflows**: Cumulative outflows revised down from $57.8bn to $23.5bn (2023-2026) via offshore deposits/derivatives adjustments, easing structural pressure.",
+        "**External Debt Rollover Stability**: Corporate/bank external debt rollover ratios stable in June, indicating manageable near-term refinancing risk and reduced debt-servicing pressure.",
+        "**Deficit Financing via Capital Inflows**: June deficit covered by $1.5bn net other investment and $2.0bn net portfolio inflows, highlighting reliance on volatile capital flows to offset current account shortfall."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 8,
       "language": "en",
       "needs_metadata": false
     },
