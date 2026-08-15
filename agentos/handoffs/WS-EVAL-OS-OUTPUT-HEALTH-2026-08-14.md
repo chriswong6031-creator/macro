@@ -44,8 +44,30 @@ changed:
   - path: research/MASTERMIND_INTELLIGENCE_OS_V1_PLAN.md
     what: "T4 as-built amendment: unavailable vs could_not_look split; categorical display confidence; admin surface."
 
-verified: []
-# FILLED AT SHIP: suite results, CI validator receipts, mutation receipts, census, PR + merge SHA.
+verified:
+  - claim: "T4 + admin suites green on the branch tree."
+    command: "python3 -m pytest tests/test_output_health.py tests/test_admin_intelligence_os.py -q"
+    result: "79 passed (53 core + 3 perf/placeholder + 23 admin)."
+  - claim: "T1 suites, synapse contract, admin smoke/server/ESLint all green; the one red in the wider battery (test_admin_neural_web::test_bus_graph_shape) is a sparse-worktree artifact — materializing data/neuralweb/confluence_graph.json from HEAD makes it pass; CI runs a full checkout."
+    command: "python3 -m pytest tests/test_output_health.py tests/test_admin_intelligence_os.py tests/test_intelligence_registry.py tests/test_check_intelligence_registry.py tests/test_synapse_registry.py tests/test_admin_neural_web.py tests/test_admin_modules_smoke.py -q"
+    result: "452 passed / 1 sparse-artifact fail, attributed with a reproduction."
+  - claim: "All CI wiring validators green with the T4 steps appended after the T1 guard."
+    command: "run_ci_pack --validate-only packs 0-11; check_ci_trigger_closure; check_workflow_yaml; check_house_law_registry; audit_unrun_tests; check_admin_js"
+    result: "12/12 valid; closure OK (0 gaps); 86 workflows parse; 83 laws OK; unrun-tests clean; ESLint no-undef clean."
+  - claim: "The three commissioned mutation gates bite (performed by hand, restored byte-identical)."
+    command: "edit engine/output_health.py per gate; pytest; cmp/shasum restore"
+    result: "precedence-rule removal, mtime-over-content inversion, could_not_look conversion — each fails its named test; independent reviewer re-performed gate 19 with shasum receipts."
+  - claim: "CLI runtime on this sparse worktree cut 691.96s -> 78.39s (git subprocesses ~1144 -> 133) with byte-identical summary output."
+    command: "time python3 scripts/build_output_health.py --summary --now 2026-08-14T00:00:00+00:00 (before/after batched ls-tree + cat-file --batch)"
+    result: "8.8x; batched-vs-per-path verdict identity pinned by test_batched_head_reads_are_verdict_identical_to_the_per_path_ladder."
+  - claim: "Placeholder-regex widening blast radius measured before commit: 2 artifact paths flip to placeholder handling, 0 producer existence-check changes."
+    command: "static + dynamic diff over live synapse.yml (builder receipt in the PR thread)"
+    result: "placeholder_path 26->28; no producer flips — the stop condition never triggered."
+
+unverified: []
+
+next_actions:
+  - "FILLED AT SHIP: merge + live verification receipts; T7 readiness recommendation."
 
 unresolved:
   - "Registry curation debt SURFACED, deliberately not healed here: 30 artifacts promise an asof_field their content does not carry (site-foresight-cascade declares as_of, file has asof; NW health's _AS_OF_KEYS fallback masked all 30); ~80 storage:git artifacts absent from both worktree and HEAD (nightly-estate-only outputs declared git); 86 watermark_unreadable_format (parquet without envelope sidecars). Each is a per-record honest could_not_look/unavailable with a reason code until curated."
