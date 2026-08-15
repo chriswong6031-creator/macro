@@ -466,9 +466,17 @@ convention as a design change, and would orphan a null that nothing depends on.
 **Re-running now was rejected — but the obligation is recorded, not waived.** A
 re-run has zero governance delta today: SP1-A promoted nothing, ranked nothing,
 gated nothing, and filed no `DO_NOT_REBUILD` row (§7). The panel is gitignored build
-output whose rebuild is a real render-budget cost. The correct trigger is the next
-rebuild of `data/finra/short_interest_panel.parquet`; the binding obligation until
-then is the citation ban below.
+output and its rebuild is a real ~20-minute compute cost (§1), paid to change numbers
+that no authority state reads.
+
+**The trigger is an ACTOR, not an event — do not wait for one.**
+`scripts/backfill_finra_short_interest.py` is referenced by **no workflow**: it is a
+manual script, so nothing rebuilds this panel on a schedule and there is no passive
+"next rebuild" to inherit the correction. Until somebody runs it, the live panel
+keeps the retired rule indefinitely and `engine/short_pressure.py`'s `asof_slice`
+keeps serving `knowable_date`s that are 1–3 sessions early. Whoever next needs an
+SP1 number owns the rebuild + re-run as one step; the binding obligation until then
+is the citation ban below.
 
 ### Effect on published SP1 results — stated explicitly
 
@@ -580,6 +588,10 @@ the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
   on a rebuilt panel replaces it. The live panel still carries the retired rule —
   `data/finra/short_interest_panel_coverage.json` records `"knowable_lag_days": 10`.
   The study picks the correction up with no code change
-  (`sp1_short_pressure_study.py:78` reads the stored column), so the trigger is the
-  next rebuild of `data/finra/short_interest_panel.parquet`. No `DO_NOT_REBUILD` row
-  is filed: nothing was killed and no authority state moves.
+  (`sp1_short_pressure_study.py:78` reads the stored column), so the trigger is a
+  rebuild of `data/finra/short_interest_panel.parquet` — **which nothing does
+  automatically**: `scripts/backfill_finra_short_interest.py` is in no workflow, so
+  the live panel (and `engine/short_pressure.py`'s display-tier `asof_slice`) keeps
+  serving `knowable_date`s that are 1–3 sessions early until a person runs it.
+  Whoever next needs an SP1 number owns the rebuild + re-run as one step. No
+  `DO_NOT_REBUILD` row is filed: nothing was killed and no authority state moves.
