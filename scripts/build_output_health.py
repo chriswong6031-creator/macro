@@ -30,9 +30,14 @@ THE PRESENCE LADDER IS STORAGE-AWARE, AND ITS DEFAULTS ARE ASYMMETRIC ON PURPOSE
 ``gitignored-local``   worktree only. Absent means INVISIBLE FROM A CHECKOUT (the file is
                        written at runtime on another host), never ``exists=False``.
 ``r2``                 not probeable from here at all: ``exists=None`` unless the R2 audit
-                       covers its anchor, in which case the reader plane supplies presence.
-                       Presence is never fabricated from an anchor that was not checked.
-placeholder paths      ``<SYM>``-style paths name a family, not a file — no probe.
+                       carries an explicit VERDICT for its anchor, in which case the
+                       reader plane supplies presence. An anchor merely LISTED in the
+                       audit is not a verdict about anything and yields no row: presence
+                       is never fabricated from an inventory.
+unprobeable paths      a `<SYM>` family, a directory, a glob, a ``YYYY-MM`` template or
+                       ``embedded:`` prose is not one file — no probe, and a miss against
+                       it is blindness rather than absence
+                       (:func:`engine.output_health.unprobeable_path_reason`).
 
 WATERMARKS: THE DECLARED FIELD ONLY
 -----------------------------------
@@ -68,7 +73,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import yaml  # noqa: E402
 
-from engine.output_health import resolve_output_health  # noqa: E402
+from engine.output_health import (  # noqa: E402
+    governing_watermark_field,
+    resolve_output_health,
+    unprobeable_path_reason,
+)
 from scripts.build_intelligence_registry import (  # noqa: E402
     _READ_CACHE,
     _tracked_file_exists,
@@ -311,14 +320,6 @@ def _content_text(root: Path, rel: str) -> tuple[str | None, str | None]:
 # Observation per artifact
 # ---------------------------------------------------------------------------
 
-def _governing_field(entry: dict) -> str | None:
-    for key in ("staleness_from", "asof_field"):
-        value = entry.get(key)
-        if isinstance(value, str) and value.strip() and value.strip() != "null":
-            return value.strip()
-    return None
-
-
 def _watermark_from_json(payload: Any, field: str) -> tuple[bool, Any]:
     """(field_present, raw_value) for a top-level key, else ``meta.<field>`` one level."""
     if isinstance(payload, dict):
@@ -380,7 +381,9 @@ def _watermark_sources_to_warm(
         rel = str(entry.get("path") or "")
         if not rel or storage in ("gitignored-local", "r2"):
             continue
-        if not _governing_field(entry):
+        if unprobeable_path_reason(rel):
+            continue                                   # not one file: never read
+        if not governing_watermark_field(entry):
             continue
         if not (root / rel).is_file() and rel not in head_blobs:
             continue                                  # not present: nothing will be read
@@ -467,7 +470,12 @@ def observe(
         "parse_error": None,
         "sparse_unmaterialized": False,
     }
-    if not rel:
+    if not rel or unprobeable_path_reason(rel):
+        # NOT ONE FILE — a family, a directory, a glob, a date template or prose. There is
+        # no single path to ask about, so nothing is asked and `exists` stays None. The
+        # probe used to run anyway and answer False: 29 live roots reported as deleted
+        # because of how the registry SPELLS them, plus everything downstream folded to
+        # `unavailable` behind them. A question we never asked has no negative answer.
         return obs
 
     on_disk = root / rel
@@ -499,7 +507,7 @@ def observe(
         obs["sparse_unmaterialized"] = True
         return obs
 
-    field = _governing_field(entry)
+    field = governing_watermark_field(entry)
     if field and obs["exists"]:
         obs.update(_read_watermark(root, entry, field))
     return obs
@@ -672,6 +680,13 @@ def sentinel_readers(payload: Any, synapse: dict) -> dict[str, list[dict[str, An
             "source": f"freshness_sentinel:{surface.get('id')}",
             "verdict": verdict,
             "clock_kind": "content" if content else "transport",
+            # WHICH FIELD THE SENTINEL MEASURED, off its own surface config — never
+            # inferred. `prophet_us` reads `source_asof` (the ranked-price watermark)
+            # while the artifact declares `asof`, so the resolver demotes that row to
+            # diagnostic rather than letting one watermark stand in for another. A page
+            # surface names no field at all: its content clock is the board's delay
+            # marker, which is not a declared artifact watermark either.
+            "asof_field": surface.get("asof_field"),
         }
         if record.get("asof"):
             row["observed_asof"] = str(record["asof"])
@@ -681,39 +696,95 @@ def sentinel_readers(payload: Any, synapse: dict) -> dict[str, list[dict[str, An
     return out
 
 
-def _r2_anchor_verdicts(doc: dict) -> dict[str, tuple[str, str]]:
-    """anchor -> (verdict, clock_kind), read off the audit's own fail/warn reasons."""
-    verdicts: dict[str, tuple[str, str]] = {}
-    for name in doc.get("anchors") or {}:
-        anchor = str(name).split("/")[0]
-        verdicts.setdefault(anchor, ("fresh", "transport"))
+def _r2_subject(text: str) -> tuple[str, str]:
+    """``(head, anchor)`` for one audit reason line — its verdict word and its subject.
+
+    ``scripts/audit_r2.py`` writes its lines in TWO shapes and the subject sits on a
+    different side of the colon in each:
+
+        ``R2 STALE: stockdata last published 40h ago``   -> subject after the colon
+        ``asof probe stockdata/SPY.json: HTTP 500``      -> subject inside the head
+
+    Reading the second shape the first way yields the anchor ``"HTTP"``, which matches no
+    artifact — so every ``asof probe`` / ``coverage probe`` warning silently addressed
+    nothing. Harmless while those map to ``indeterminate``, and a trap the moment they do
+    not; both shapes are parsed rather than one.
+    """
+    head, _, rest = text.partition(":")
+    head = head.strip()
+    subject = (
+        (rest.strip().split() or [""])[0]
+        if head.startswith("R2 ")
+        else (head.split() or [""])[-1]
+    )
+    return head, subject.split("/")[0]
+
+
+def _r2_anchor_verdicts(doc: dict) -> dict[str, dict[str, Any]]:
+    """anchor -> a reader row, built ONLY from the audit's EXPLICIT verdicts.
+
+    BEING LISTED IS NOT A VERDICT. ``anchors`` is an inventory: each entry records the
+    ``Last-Modified`` the probe saw, which says when bytes were served and nothing about
+    what is in them — and the audit already emits ``R2 STALE`` when that stamp is over
+    budget, so reading "fresh" out of mere membership invented a pass the audit never
+    gave. It also fabricated PRESENCE for pure-r2 artifacts (a fresh reader row rescues
+    ``exists``), so an artifact under a listed anchor could be reported healthy without
+    anything ever having looked at it.
+
+    What DOES map, one line at a time, and nothing else:
+
+    ``anchors[k].asof``      a definitive CONTENT probe — the audit fetched the object and
+                             read its ``asof``. Content clock, field ``asof``.
+    ``R2 CONTENT STALE``     stale on the content clock (overrides the probe row above,
+                             which is why the fail reasons are folded in second)
+    ``R2 STALE``             stale on the transport clock (an over-budget Last-Modified)
+    ``R2 DARK``              INDETERMINATE. The audit found no anchor object — that is the
+                             audit failing to resolve the anchor, not proof the artifact
+                             under it was deleted, and "missing" here mints an outage out
+                             of a probe's silence.
+    ``R2 FORBIDDEN``         indeterminate: the bucket refused the read (401/403). Nothing
+                             was observed about the object at all.
+    anything else            indeterminate. An unrecognized reason is a reason we have not
+                             taught this adapter, never a pass.
+    ``warnings``             indeterminate, and only where nothing definitive was recorded.
+    """
+    verdicts: dict[str, dict[str, Any]] = {}
+    for name, row in (doc.get("anchors") or {}).items():
+        if not isinstance(row, dict) or not row.get("asof"):
+            continue
+        verdicts[str(name).split("/")[0]] = {
+            "verdict": "fresh",
+            "clock_kind": "content",
+            "asof_field": "asof",
+            "observed_asof": str(row["asof"]),
+            "detail": f"content probe {name} asof={row['asof']}",
+        }
     for reason in doc.get("fail_reasons") or []:
         text = str(reason)
-        head, _, rest = text.partition(":")
-        subject = rest.strip().split()[0] if rest.strip() else ""
-        anchor = subject.split("/")[0]
+        head, anchor = _r2_subject(text)
         if not anchor:
             continue
-        if head.startswith("R2 CONTENT"):
-            verdicts[anchor] = (
-                ("stale", "content") if "STALE" in head else ("missing", "content")
-            )
-        elif head == "R2 DARK":
-            verdicts[anchor] = ("missing", "transport")
+        if head.startswith("R2 CONTENT STALE"):
+            verdicts[anchor] = {
+                "verdict": "stale", "clock_kind": "content", "asof_field": "asof",
+            }
+        elif head.startswith("R2 STALE"):
+            verdicts[anchor] = {"verdict": "stale", "clock_kind": "transport"}
         else:
-            verdicts[anchor] = ("stale", "transport")
+            verdicts[anchor] = {"verdict": "indeterminate", "clock_kind": "transport"}
+        verdicts[anchor]["detail"] = text
     for warning in doc.get("warnings") or []:
         text = str(warning)
-        head, _, rest = text.partition(":")
-        subject = rest.strip().split()[0] if rest.strip() else ""
-        anchor = subject.split("/")[0]
-        if anchor and verdicts.get(anchor, ("fresh", ""))[0] == "fresh":
-            verdicts[anchor] = ("indeterminate", "transport")
+        _head, anchor = _r2_subject(text)
+        if anchor and anchor not in verdicts:
+            verdicts[anchor] = {
+                "verdict": "indeterminate", "clock_kind": "transport", "detail": text,
+            }
     return verdicts
 
 
 def r2_readers(doc: Any, synapse: dict) -> dict[str, list[dict[str, Any]]]:
-    """R2 audit anchors joined to artifacts whose R2 key sits under the anchor prefix."""
+    """R2 audit verdicts joined to artifacts whose R2 key sits under the anchor prefix."""
     if not isinstance(doc, dict):
         return {}
     verdicts = _r2_anchor_verdicts(doc)
@@ -725,15 +796,13 @@ def r2_readers(doc: Any, synapse: dict) -> dict[str, list[dict[str, Any]]]:
         hit = verdicts.get(anchor)
         if not hit:
             continue
-        verdict, clock = hit
-        out.setdefault(str(aid), []).append(
-            {
-                "source": f"r2_audit:{anchor}",
-                "verdict": verdict,
-                "clock_kind": clock,
-                "detail": f"anchor {anchor} per data/quality/r2_audit.json",
-            }
+        row = dict(hit)
+        row["source"] = f"r2_audit:{anchor}"
+        row["detail"] = (
+            f"{row.get('detail') or 'anchor ' + anchor} "
+            f"(per data/quality/r2_audit.json)"
         )
+        out.setdefault(str(aid), []).append(row)
     return out
 
 

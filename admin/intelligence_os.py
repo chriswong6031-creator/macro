@@ -25,17 +25,23 @@ tonight appears on this page tomorrow with no edit to this file, and one removed
 disappears. The only hand-written vocabulary is the state ORDER
 (:data:`STATE_SEVERITY`), which is the T4 precedence ladder, not a fact about the estate.
 
-``trust_mtime`` IS ENVIRONMENT-DEPENDENT ON PURPOSE. A file's mtime is only freshness
-evidence where the producer is the sole writer of that file. On the VPS
-(``ADMIN_DEPLOYED=1``) that holds: the deployed tree is written by the pipeline and read
-by nobody who touches it. In a developer checkout it does not: ``git status`` sweeps,
-Finder visits and ``reflog expire`` all restamp mtimes, measured across the fleet pinning
-137 of 143 DEAD worktrees as "fresh". So write-time evidence is admitted only on the one
-plane where it means something, and refused everywhere else.
+``trust_mtime`` IS ALWAYS FALSE HERE, AND THE DEPLOYED PLANE IS THE REASON, NOT THE
+EXCEPTION. A file's mtime is freshness evidence only where the PRODUCER is the sole
+writer of that file, and on the VPS it is not: ``app/deploy/update.sh`` deploys with
+``git fetch && git reset --hard``, so every file git rewrites is stamped with the PULL
+time. A deploy or a rollback would therefore restamp the tree and make the 63 artifacts
+that declare an SLA but no watermark read "fresh" — an entire class of frozen stores
+reporting current because somebody deployed. The developer-checkout hazard is the same
+shape (``git status`` sweeps, Finder visits and ``reflog expire`` restamp mtimes,
+measured across the fleet pinning 137 of 143 DEAD worktrees as "fresh"), which is why
+this panel admits write-time evidence on NO plane. Those artifacts stay
+``could_not_look``/``partial`` with ``write_time_untrusted`` — the honest answer, and a
+standing argument for declaring a watermark rather than for trusting a clock nobody
+controls. The T4 CLI keeps ``--trust-mtime`` for an operator on a plane whose mtimes
+really are producer-owned; nothing in this module can set it.
 """
 from __future__ import annotations
 
-import os
 import sys
 import threading
 import time
@@ -83,6 +89,20 @@ _CACHE: dict[tuple, tuple[float, dict, dict]] = {}
 _LOCK = threading.RLock()
 
 
+class EstateUnavailable(RuntimeError):
+    """The estate could not be derived — raised where the failure can still be NAMED.
+
+    Both underlying failures exit the process by design: the T1 builder raises
+    ``scripts.build_intelligence_registry.SynapseUnavailable`` (a ``SystemExit``
+    SUBCLASS) and the T4 builder raises a plain ``SystemExit`` when
+    ``config/synapse.yml`` is unreadable. That is right for a CLI and wrong for a request
+    handler, so :func:`_derive` converts both into this ordinary exception at the one
+    place that knows which is which — and the entry points below fail open on a plain
+    ``except Exception`` instead of a blanket ``except SystemExit`` that would also
+    swallow a deliberate interpreter shutdown.
+    """
+
+
 def _mtime_ns(path: Path) -> int | None:
     try:
         return path.stat().st_mtime_ns
@@ -91,8 +111,13 @@ def _mtime_ns(path: Path) -> int | None:
 
 
 def _trust_mtime() -> bool:
-    """Write-time evidence is admitted on the deployed plane only (see module docstring)."""
-    return os.environ.get("ADMIN_DEPLOYED") == "1"
+    """ALWAYS False on the admin plane — a deployed mtime is a git-transport clock.
+
+    Not an environment question: ``app/deploy/update.sh`` updates the VPS with
+    ``git reset --hard``, so a deployed file's mtime is when the pull touched it. See the
+    module docstring; the operator opt-in lives on the T4 CLI's ``--trust-mtime``.
+    """
+    return False
 
 
 def _derive(root: Path, force: bool) -> tuple[dict, dict, float, str]:
@@ -117,12 +142,23 @@ def _derive(root: Path, force: bool) -> tuple[dict, dict, float, str]:
         # package only when the root is importable.
         if str(_ROOT) not in sys.path:
             sys.path.insert(0, str(_ROOT))
+        from scripts.build_intelligence_registry import (  # noqa: PLC0415
+            SynapseUnavailable,
+        )
         from scripts.build_output_health import build_with_registry  # noqa: PLC0415
 
         started = time.monotonic()
-        view, registry = build_with_registry(
-            root, now=datetime.now(timezone.utc), trust_mtime=_trust_mtime()
-        )
+        try:
+            view, registry = build_with_registry(
+                root, now=datetime.now(timezone.utc), trust_mtime=_trust_mtime()
+            )
+        except SynapseUnavailable as exc:
+            # T1's own sentinel — an artifact census that could not be loaded. Caught
+            # BEFORE SystemExit because it is a subclass of it.
+            raise EstateUnavailable(f"SynapseUnavailable: {exc}") from exc
+        except SystemExit as exc:
+            # The T4 builder's plain exit for an unreadable/unparseable config/synapse.yml.
+            raise EstateUnavailable(f"SystemExit: {exc}") from exc
         elapsed = time.monotonic() - started
         _CACHE[key] = (time.monotonic(), view, registry)
         # One live root, and the key changes on every registry edit — without this the
@@ -180,6 +216,7 @@ def _engine_rows(view: dict, registry: dict) -> list[dict]:
     rows = []
     for eid, records in sorted(by_engine.items()):
         cell = cells.get(eid) or {}
+        counts = _tally(records, "state")
         rows.append(
             {
                 "engine_id": eid,
@@ -192,7 +229,15 @@ def _engine_rows(view: dict, registry: dict) -> list[dict]:
                 "authority": cell.get("authority") or records[0].get("authority"),
                 "n_artifacts": len(records),
                 "worst_state": worst_state(r.get("state") for r in records),
-                "state_counts": _tally(records, "state"),
+                "state_counts": counts,
+                # THE ROLL-UP MUST NOT RENDER GREEN OVER BLINDNESS. `worst_state` folds
+                # only REAL verdicts — a null is "we could not determine it" and correctly
+                # never outranks one — so an engine whose one readable output is healthy
+                # and whose other seven were unreadable folded to a green row with nothing
+                # on it to say so. The count is derivable from `state_counts`, but a
+                # number the surface has to remember to derive is a number it will forget:
+                # hoisted to a top-level field so the row cannot be drawn without it.
+                "n_blind": counts.get("null", 0),
             }
         )
     return rows
@@ -203,13 +248,12 @@ def panel(root: Path | None = None, force: bool = False) -> dict[str, Any]:
     root = Path(root) if root is not None else _ROOT
     try:
         view, registry, elapsed, cache = _derive(root, force)
-    except (Exception, SystemExit) as exc:  # noqa: BLE001
-        # SystemExit is caught DELIBERATELY and is not over-broad: the T4 builder signals
-        # an unreadable synapse by raising SynapseUnavailable, a SystemExit SUBCLASS, so
-        # a plain `except Exception` here leaves the one failure this panel is most likely
-        # to meet — a checkout without config/synapse.yml — escaping into the server's
-        # request loop. Fail-open like every sibling admin panel; never take the process
-        # down to report that a file was missing.
+    except Exception as exc:  # noqa: BLE001
+        # The two exit-flavored failures — T1's SynapseUnavailable and the T4 builder's
+        # plain SystemExit for an unreadable config/synapse.yml — are already converted to
+        # EstateUnavailable inside _derive, which is the only place that can tell them
+        # apart. So this handler is an ordinary one: fail open like every sibling admin
+        # panel, and never take the process down to report that a file was missing.
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
     records = list(view.get("outputs") or [])
@@ -254,7 +298,7 @@ def engine_detail(engine_id: str, root: Path | None = None) -> dict[str, Any]:
     wanted = str(engine_id or "")
     try:
         view, registry, _elapsed, _cache = _derive(root, force=False)
-    except (Exception, SystemExit) as exc:  # noqa: BLE001 — SystemExit: see panel()
+    except Exception as exc:  # noqa: BLE001 — fail open; see panel()
         return {"ok": False, "error": f"{type(exc).__name__}: {exc}"}
 
     outputs = [

@@ -56,8 +56,8 @@ inferring one from a ticker or a program name is a guess. So it returns
 ``date_only_calendar_unknown`` and could_not_look — deliberately NOT the weekend-aware
 rule ``engine/neuralweb/health.py`` applies to its own rollup.
 
-THE READER PLANE OUTRANKS THE PRODUCER (§8)
--------------------------------------------
+THE READER PLANE OUTRANKS THE PRODUCER (§8) — BUT IT NEVER CLEARS BLINDNESS
+---------------------------------------------------------------------------
 A definitive CONTENT-clock reader verdict of stale/missing overrides any producer-side
 current-ness, because the reader copy is what consumers actually receive. Clock kind is
 adjudicated by CONTRACT, not by newest timestamp: content-clock evidence outranks
@@ -65,6 +65,31 @@ transport-clock evidence in BOTH directions — a fresh ``Last-Modified`` never 
 stale content watermark, and a stale transport stamp never overrides a definitively fresh
 reader content watermark. A transport-clock verdict decides only where no content clock
 exists at all.
+
+TWO REFUSALS BOUND THAT OVERRIDE, AND BOTH ARE THE SAME LAW AS THE PRODUCER SIDE'S:
+
+1. BLINDNESS IS ESTABLISHED BEFORE THE FOLD AND SURVIVES IT. The producer-side read runs
+   first; if the artifact's OWN evidence was unreadable (:data:`FRESH_BLIND` — field
+   mismatch, promised field absent, parse error, unparseable or date-only-beyond-SLA)
+   that blindness is recorded before any reader row is consulted and no reader verdict
+   can convert it into a state. A reader may fill an UNASSESSED axis
+   (:data:`FRESH_UNASSESSABLE` — the write-time contract with no trusted mtime); it may
+   not fill a BLIND one. The two are different answers: "not measured" versus "measured
+   and unreadable", and only the first is a gap a second observer can close.
+2. A CONTENT-CLOCK READER MUST NAME THE FIELD IT MEASURED. ``asof_field`` is REQUIRED on
+   a content-clock row whose verdict is fresh/stale; a row naming a different field than
+   the artifact declares — the live shape is the freshness sentinel reading
+   ``source_asof`` out of a ``prophet/index.json`` whose declared watermark is ``asof`` —
+   is DOWNGRADED to diagnostic evidence with :data:`REASON_READER_FIELD_MISMATCH`, and a
+   row naming no field at all with :data:`REASON_READER_FIELD_UNDECLARED`. It ranks and
+   reads as transport-equivalent: disclosed, but deciding nothing. Otherwise the reader
+   plane would be a silent-fallback hole in exactly the law §5 closes on the producer
+   plane — a different timestamp standing in for the declared one.
+
+``source_asof`` IS THE DECLARED FIELD'S VALUE, READ FROM THE PRODUCER, OR NULL. It is
+never back-filled from a reader's ``observed_asof``: a record whose watermark column
+silently switches planes cannot be compared with itself over time. Where a reader decides
+the state its own asof is disclosed as an EVIDENCE row instead.
 
 DEPENDENCY BOUNDS ARE UPPER UNLESS PROVEN EXACT (§6)
 ----------------------------------------------------
@@ -166,6 +191,7 @@ EVIDENCE_PLANES: tuple[str, ...] = (
 
 REASON_NOT_IN_ENGINE_REGISTRY = "not_in_engine_registry"
 REASON_PLACEHOLDER_PATH = "placeholder_path"
+REASON_FAMILY_PATH_UNPROBEABLE = "family_path_unprobeable"
 REASON_SPARSE_UNMATERIALIZED = "sparse_unmaterialized"
 REASON_PRESENCE_UNOBSERVABLE = "presence_unobservable"
 REASON_RUNTIME_ONLY_UNOBSERVABLE = "runtime_only_unobservable"
@@ -186,9 +212,15 @@ REASON_READER_STALE_OVERRIDES_PRODUCER = "reader_stale_overrides_producer"
 REASON_PRODUCER_BEHIND_READER = "producer_behind_reader"
 REASON_TRANSPORT_OUTRANKED = "transport_clock_outranked_by_content"
 REASON_READER_INDETERMINATE = "reader_indeterminate"
+REASON_READER_FIELD_MISMATCH = "reader_field_mismatch"
+REASON_READER_FIELD_UNDECLARED = "reader_field_undeclared"
 REASON_SELF_INPUT_EXCLUDED = "self_input_excluded"
 REASON_DEPENDENCY_CYCLE = "dependency_cycle"
 REASON_REQUIRED_INPUT_UNASSESSED = "required_input_unassessed"
+REASON_REQUIRED_INPUT_UNAVAILABLE = "required_input_unavailable"
+REASON_REQUIRED_INPUT_STALE = "required_input_stale"
+REASON_REQUIRED_INPUT_DEGRADED = "required_input_degraded"
+REASON_UPPER_BOUND_ATTRIBUTION = "upper_bound_attribution"
 REASON_OPTIONAL_INPUT_MISSING = "optional_input_missing"
 REASON_OPTIONAL_INPUT_STALE = "optional_input_stale"
 REASON_OPTIONAL_INPUT_DEGRADED = "optional_input_degraded"
@@ -202,6 +234,7 @@ REASON_SELF_HEALTH_MISSING = "self_health_missing"
 REASON_CODES: frozenset[str] = frozenset({
     REASON_NOT_IN_ENGINE_REGISTRY,
     REASON_PLACEHOLDER_PATH,
+    REASON_FAMILY_PATH_UNPROBEABLE,
     REASON_SPARSE_UNMATERIALIZED,
     REASON_PRESENCE_UNOBSERVABLE,
     REASON_RUNTIME_ONLY_UNOBSERVABLE,
@@ -222,9 +255,15 @@ REASON_CODES: frozenset[str] = frozenset({
     REASON_PRODUCER_BEHIND_READER,
     REASON_TRANSPORT_OUTRANKED,
     REASON_READER_INDETERMINATE,
+    REASON_READER_FIELD_MISMATCH,
+    REASON_READER_FIELD_UNDECLARED,
     REASON_SELF_INPUT_EXCLUDED,
     REASON_DEPENDENCY_CYCLE,
     REASON_REQUIRED_INPUT_UNASSESSED,
+    REASON_REQUIRED_INPUT_UNAVAILABLE,
+    REASON_REQUIRED_INPUT_STALE,
+    REASON_REQUIRED_INPUT_DEGRADED,
+    REASON_UPPER_BOUND_ATTRIBUTION,
     REASON_OPTIONAL_INPUT_MISSING,
     REASON_OPTIONAL_INPUT_STALE,
     REASON_OPTIONAL_INPUT_DEGRADED,
@@ -240,6 +279,7 @@ REASON_CODES: frozenset[str] = frozenset({
 #: blind, and blindness is a THIRD answer — never healthy, never unavailable (§7).
 BLIND_REASONS: frozenset[str] = frozenset({
     REASON_PLACEHOLDER_PATH,
+    REASON_FAMILY_PATH_UNPROBEABLE,
     REASON_SPARSE_UNMATERIALIZED,
     REASON_PRESENCE_UNOBSERVABLE,
     REASON_RUNTIME_ONLY_UNOBSERVABLE,
@@ -278,6 +318,17 @@ DEPENDENCY_UPPER = "upper"
 #: a file to begin with, which is the exact conflation this module exists to prevent.
 _PLACEHOLDER_RE = re.compile(r"<[A-Za-z_]+>")
 
+#: A DATE TEMPLATE token, and only a literal one. ``YYYY-MM/panel.parquet`` names a family
+#: of monthly files; ``2026-08.parquet`` is a REAL file that happens to be named after a
+#: month, and the difference is letters versus digits. The boundaries are what keep
+#: ``COMMENT`` and ``ADD`` out of it — a token only counts where it is not part of a
+#: longer alphanumeric run.
+_DATE_TEMPLATE_RE = re.compile(r"(?<![A-Za-z0-9])(?:YYYY|MM|DD)(?![A-Za-z0-9])")
+
+#: A path that is PROSE about where a field lives rather than a path at all (9 live
+#: entries: "embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json").
+_EMBEDDED_PREFIX = "embedded:"
+
 #: A watermark that is a calendar date and nothing else.
 _DATE_ONLY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
@@ -288,6 +339,42 @@ _NULL_FIELD = "null"
 def reason_base(code: str) -> str:
     """The base reason code — the part before any ``:<artifact_id>`` suffix."""
     return str(code).split(":", 1)[0]
+
+
+def unprobeable_path_reason(path: str) -> str | None:
+    """Why *path* cannot denote ONE file, or None when it names a single artifact.
+
+    THE SINGLE DEFINITION of that question, so the adapter that decides whether to probe
+    and the resolver that decides what a miss MEANS can never drift apart.
+
+    A path that cannot denote one file has no presence to probe, so a miss against it is
+    not an absence — it is a question that was never asked. Probing them as files minted
+    ``exists=False`` for 29 live roots (18 directory paths, 8 globs, 3 date templates) and
+    folded ``unavailable`` onto everything downstream of them: an outage report generated
+    entirely out of the registry's own notation.
+
+    The four unprobeable shapes, each verified live:
+
+    ``embedded:`` prose  a description of a field inside another artifact, not a path
+    ``<TOKEN>``          a placeholder family (:data:`REASON_PLACEHOLDER_PATH` — kept
+                         separate because it is the shape synapse's own validator already
+                         exempts from its existence check)
+    trailing ``/``       a directory: a STORE of files, none of which is "the" artifact
+    ``*`` / ``?``        a glob
+    ``YYYY``/``MM``/``DD`` a date template — and ONLY the literal letter tokens; a real
+                         file named ``2026-08.parquet`` is a file (see
+                         :data:`_DATE_TEMPLATE_RE`).
+    """
+    text = str(path or "").strip()
+    if not text:
+        return None
+    if text.lower().startswith(_EMBEDDED_PREFIX):
+        return REASON_FAMILY_PATH_UNPROBEABLE
+    if _PLACEHOLDER_RE.search(text):
+        return REASON_PLACEHOLDER_PATH
+    if text.endswith("/") or "*" in text or "?" in text or _DATE_TEMPLATE_RE.search(text):
+        return REASON_FAMILY_PATH_UNPROBEABLE
+    return None
 
 
 # ---------------------------------------------------------------------------
@@ -307,6 +394,20 @@ def _declared_field(value: Any) -> str | None:
     if not text or text == _NULL_FIELD:
         return None
     return text
+
+
+def governing_watermark_field(entry: Mapping[str, Any]) -> str | None:
+    """The ONE field this artifact's freshness is measured from, or None.
+
+    ``staleness_from`` when declared (6 live artifacts pin an event clock that structurally
+    lags the content asof), else ``asof_field``. THE SINGLE DEFINITION: the adapter reads
+    this field, the resolver refuses an observation of any other, and the reader plane is
+    checked against it — three call sites that must agree forever, so they share one
+    function rather than three copies of one expression.
+    """
+    return _declared_field(entry.get("staleness_from")) or _declared_field(
+        entry.get("asof_field")
+    )
 
 
 def _positive_int(value: Any) -> int | None:
@@ -516,18 +617,82 @@ def _reader_rows(value: Any) -> list[Mapping[str, Any]]:
 #: dangerous direction for a health verdict (the same reason T1 takes MAX authority).
 _READER_SEVERITY = {"missing": 0, "stale": 1, "fresh": 2, "indeterminate": 3}
 
+#: The verdicts that are a WATERMARK READING and therefore owe a field name. ``missing``
+#: is a presence fact and ``indeterminate`` decides nothing, so neither is gated on
+#: ``asof_field``: demanding a watermark field from an observation that never claimed to
+#: read one would refuse evidence for failing to answer a question it was not asked.
+_FIELD_BEARING_VERDICTS: frozenset[str] = frozenset({"fresh", "stale"})
 
-def _reader_rank(row: Mapping[str, Any]) -> tuple[int, int, str]:
-    """Sort key: content clock before transport, then worst verdict, then source name.
+
+def _prepare_reader_rows(
+    rows: Sequence[Mapping[str, Any]], *, field: str | None
+) -> list[dict[str, Any]]:
+    """Normalize reader rows and DOWNGRADE any that cannot lawfully decide freshness.
+
+    A content-clock fresh/stale row is a claim about a specific timestamp field. It
+    governs only when it names that field (``asof_field``) AND the name is the one the
+    artifact declares. Anything else is transport-equivalent DIAGNOSTIC evidence: kept,
+    disclosed, ranked below every deciding row, and unable to move a state.
+
+    Returns NEW dicts — the caller's observations are never mutated.
+    """
+    prepared: list[dict[str, Any]] = []
+    for row in rows:
+        verdict = str(row.get("verdict") or "indeterminate")
+        declared_clock = (
+            CLOCK_CONTENT if row.get("clock_kind") == CLOCK_CONTENT else CLOCK_TRANSPORT
+        )
+        raw_field = row.get("asof_field")
+        asof_field = (
+            raw_field.strip()
+            if isinstance(raw_field, str) and raw_field.strip()
+            else None
+        )
+        clock, diagnostic, reason = declared_clock, False, None
+        if declared_clock == CLOCK_CONTENT and verdict in _FIELD_BEARING_VERDICTS:
+            if asof_field is None:
+                clock, diagnostic, reason = (
+                    CLOCK_TRANSPORT, True, REASON_READER_FIELD_UNDECLARED
+                )
+            elif asof_field != field:
+                clock, diagnostic, reason = (
+                    CLOCK_TRANSPORT,
+                    True,
+                    f"{REASON_READER_FIELD_MISMATCH}:{asof_field}",
+                )
+        prepared.append(
+            {
+                "source": str(row.get("source") or "reader"),
+                "verdict": verdict,
+                "clock_kind": clock,
+                "declared_clock": declared_clock,
+                "asof_field": asof_field,
+                "observed_asof": (
+                    str(row["observed_asof"]) if row.get("observed_asof") else None
+                ),
+                "detail": str(row["detail"]) if row.get("detail") else None,
+                "diagnostic": diagnostic,
+                "reason": reason,
+            }
+        )
+    return prepared
+
+
+def _reader_rank(row: Mapping[str, Any]) -> tuple[int, int, int, str]:
+    """Sort key: content clock, then deciding before diagnostic, then worst verdict, then
+    source name.
 
     THE CLOCK-KIND LAW IS A RANKING, not a special case: whichever plane holds the
-    stronger clock governs, in both directions. The source name is only ever a tie-break
-    between two equally strong, equally severe observations, so the choice is
-    deterministic without being arbitrary about the verdict.
+    stronger clock governs, in both directions. ``diagnostic`` sits above severity so a
+    row that CANNOT decide never displaces one that can — otherwise a field-mismatched
+    row would win the "worse observation governs" tie-break and then decide nothing,
+    silencing the row that would have. The source name is only ever a tie-break between
+    two equally strong, equally severe observations, so the choice is deterministic
+    without being arbitrary about the verdict.
     """
     content = 0 if row.get("clock_kind") == CLOCK_CONTENT else 1
     severity = _READER_SEVERITY.get(str(row.get("verdict")), 3)
-    return (content, severity, str(row.get("source") or ""))
+    return (content, 1 if row.get("diagnostic") else 0, severity, str(row.get("source") or ""))
 
 
 def _governing_reader(rows: Sequence[Mapping[str, Any]]) -> Mapping[str, Any] | None:
@@ -556,9 +721,7 @@ def _producer_freshness(
     now: datetime,
 ) -> dict[str, Any]:
     """The producer-side freshness read, before the reader plane is folded in."""
-    field = _declared_field(entry.get("staleness_from")) or _declared_field(
-        entry.get("asof_field")
-    )
+    field = governing_watermark_field(entry)
     sla = _positive_int(entry.get("freshness_sla_hours"))
     out: dict[str, Any] = {
         "verdict": FRESH_UNASSESSABLE,
@@ -723,16 +886,48 @@ def _reader_presence(reader: Mapping[str, Any] | None) -> bool | None:
     return None
 
 
+def _reader_asof_evidence(fresh: dict[str, Any], reader: Mapping[str, Any]) -> None:
+    """Disclose the DECIDING reader's own watermark — as evidence, never as source_asof.
+
+    ``source_asof`` is the declared field read out of the PRODUCER's bytes and nothing
+    else. Back-filling it from a reader would make one column mean two different things
+    depending on which plane happened to win, and a record you cannot compare with its own
+    history is not a record. So the reader's asof lands here, named and attributed.
+    """
+    if not reader.get("observed_asof"):
+        return
+    field = reader.get("asof_field") or "asof"
+    fresh["evidence"].append(
+        _evidence(
+            "reader",
+            str(reader.get("source") or "reader"),
+            f"reader {field}={reader['observed_asof']} decided the freshness axis; "
+            f"source_asof stays the producer's declared-field read",
+        )
+    )
+
+
 def _fold_reader(
     *,
     fresh: dict[str, Any],
     reader: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
-    """Apply the reader plane to the producer-side freshness read (§8). Mutates in place."""
+    """Apply the reader plane to the producer-side freshness read (§8). Mutates in place.
+
+    The caller has ALREADY recorded producer-side blindness (see :func:`_build_record`),
+    so nothing this function does can clear it — it can only add a negative or fill an
+    axis that was merely unassessed.
+    """
     if reader is None:
         return fresh
     verdict = reader.get("verdict")
     clock = reader.get("clock_kind")
+
+    if reader.get("diagnostic"):
+        # It measured a field the artifact does not declare (or named none at all): the
+        # row is disclosed on the record and in `evidence`, and decides nothing. The
+        # reason was recorded by the caller against the row itself.
+        return fresh
 
     if verdict == "indeterminate":
         # A reader that could not answer is not a reader that saw a problem: evidence
@@ -753,8 +948,7 @@ def _fold_reader(
             fresh["verdict"] = FRESH_STALE
             fresh["decided_by"] = DECIDED_BY_READER
             fresh["reasons"].append(REASON_READER_STALE_OVERRIDES_PRODUCER)
-            if reader.get("observed_asof") and not fresh["source_asof"]:
-                fresh["source_asof"] = str(reader["observed_asof"])
+            _reader_asof_evidence(fresh, reader)
             return fresh
         # Transport clock. It decides only where no content clock answered at all —
         # a fresh content watermark outranks a stale transport stamp.
@@ -774,6 +968,7 @@ def _fold_reader(
             fresh["reasons"].append(REASON_PRODUCER_BEHIND_READER)
         fresh["verdict"] = FRESH_CURRENT
         fresh["decided_by"] = DECIDED_BY_READER
+        _reader_asof_evidence(fresh, reader)
         return fresh
     # Transport clock, fresh: a server stamp says when bytes were served, not what is in
     # them, so it never rescues a stale or unreadable content watermark.
@@ -829,7 +1024,11 @@ def resolve_output_health(
         ``mtime_utc``, ``mtime_trusted``, ``parse_error``, ``sparse_unmaterialized``.
     reader_observations
         Per artifact, one mapping or a sequence of them:
-        ``{source, verdict, clock_kind, observed_asof?, detail?}``.
+        ``{source, verdict, clock_kind, asof_field?, observed_asof?, detail?}``.
+        ``asof_field`` is REQUIRED on a content-clock row whose verdict is ``fresh`` or
+        ``stale`` — it names the field the reader actually measured. A row that names a
+        different field than the artifact declares, or none at all, is downgraded to
+        transport-equivalent diagnostic evidence and decides nothing (§8).
     self_health
         Per artifact ``{source, status, detail?, source_artifact?}`` with ``status``
         already normalized to ok | degraded | missing | unknown. ``source_artifact`` names
@@ -955,23 +1154,37 @@ def _build_record(
         )
 
     # --- reader plane ---------------------------------------------------
-    reader_rows = _reader_rows(reader_map.get(artifact_id))
+    governing_field = governing_watermark_field(entry)
+    reader_rows = _prepare_reader_rows(
+        _reader_rows(reader_map.get(artifact_id)), field=governing_field
+    )
     reader = _governing_reader(reader_rows)
     for row in reader_rows:
         source = str(row.get("source") or "reader")
-        label = f"{row.get('verdict')} on the {row.get('clock_kind')} clock"
-        if row is reader:
+        label = f"{row['verdict']} on the {row['declared_clock']} clock"
+        if row["diagnostic"]:
+            # A downgraded row is disclosed WITH ITS DEMOTION, so the panel never shows a
+            # confident-looking reader verdict that decided nothing.
+            measured = repr(row["asof_field"]) if row["asof_field"] else "an unnamed field"
+            declared = repr(governing_field) if governing_field else "not declared"
+            label += (
+                f" — DIAGNOSTIC ONLY: it measured {measured}, the declared watermark is "
+                f"{declared}"
+            )
+        elif row is reader:
             if row.get("detail"):
                 label += f" — {row['detail']}"
         else:
             label += f" (outranked by {reader.get('source') if reader else 'n/a'})"
         evidence.append(_evidence("reader", source, label))
+        if row["reason"]:
+            reasons.append(row["reason"])
 
     # --- presence -------------------------------------------------------
     # PRESENCE RESOLVES BEFORE FRESHNESS. A definitively absent output has no watermark to
     # read, so computing freshness first would turn `unavailable` into "could not look" on
     # the missing content — the exact conflation this module exists to prevent.
-    placeholder = bool(_PLACEHOLDER_RE.search(path))
+    unprobeable = unprobeable_path_reason(path)
     reader_presence = _reader_presence(reader)
     exists = obs.get("exists")
     presence_decided_by = DECIDED_BY_AUDIT
@@ -994,6 +1207,7 @@ def _build_record(
 
     # --- freshness ------------------------------------------------------
     freshness_moot = exists is False
+    producer_blind: list[str] = []
     if freshness_moot:
         fresh: dict[str, Any] = {
             "verdict": FRESH_VACUOUS,
@@ -1007,14 +1221,19 @@ def _build_record(
         if reader is not None and reader.get("verdict") == "missing":
             reasons.append(REASON_READER_STALE_OVERRIDES_PRODUCER)
     else:
-        fresh = _fold_reader(
-            fresh=_producer_freshness(entry=entry, obs=obs, now=now), reader=reader
-        )
+        # THE PRODUCER READ RUNS FIRST AND ITS BLINDNESS IS BANKED BEFORE THE FOLD. A
+        # reader row may fill an axis that was merely UNASSESSED; it may not answer a
+        # question we asked the artifact itself and could not read the answer to.
+        producer_fresh = _producer_freshness(entry=entry, obs=obs, now=now)
+        if producer_fresh["verdict"] == FRESH_BLIND:
+            producer_blind = [r for r in producer_fresh["reasons"] if r in BLIND_REASONS]
+        fresh = _fold_reader(fresh=producer_fresh, reader=reader)
 
-    if placeholder:
-        # A `<SYM>`-style path names a family, not a file. Nothing about it is probeable
-        # as one artifact, so this short-circuits everything below it.
-        blind.append(REASON_PLACEHOLDER_PATH)
+    if unprobeable:
+        # A `<SYM>`-style path, a directory, a glob or a date template names a FAMILY,
+        # not a file. Nothing about it is probeable as one artifact, so this
+        # short-circuits everything below it — and a miss against it is never an absence.
+        blind.append(unprobeable)
     elif exists is None:
         if obs.get("sparse_unmaterialized"):
             blind.append(REASON_SPARSE_UNMATERIALIZED)
@@ -1033,9 +1252,12 @@ def _build_record(
             _evidence("producer", "presence", f"exists={exists} via {presence_source}")
         )
 
-    if not placeholder:
+    if not unprobeable:
         reasons.extend(fresh["reasons"])
         evidence.extend(fresh["evidence"])
+        # BOTH halves, and the first one is the fix: producer blindness established
+        # before the fold survives whatever the reader said afterwards.
+        blind.extend(producer_blind)
         if fresh["verdict"] == FRESH_BLIND:
             blind.extend(r for r in fresh["reasons"] if r in BLIND_REASONS)
 
@@ -1193,6 +1415,33 @@ def _build_record(
     state: str | None = None
     decided_by: str | None = None
     assessment = ASSESSMENT_COMPLETE
+    bound = index.dependency_bound(artifact_id)
+
+    def fold_required(input_state: str, code: str) -> None:
+        """Record WHICH inputs folded a state onto this artifact, and how.
+
+        A dependency-decided verdict that does not name its culprit is unactionable: the
+        operator is told the output is unavailable and left to re-derive the input graph
+        by hand to find out which upstream it is about.
+        """
+        culprits = sorted(
+            row["artifact_id"] for row in required_rows if row["state"] == input_state
+        )
+        reasons.extend(f"{code}:{aid}" for aid in culprits)
+        evidence.append(
+            _evidence(
+                "dependency",
+                "synapse",
+                f"required input(s) {input_state}: {', '.join(culprits)} — this state was "
+                f"folded from the dependency plane, not observed on the output itself",
+            )
+        )
+        if bound == DEPENDENCY_UPPER:
+            # THE ATTRIBUTION IS A UNION, NOT A FACT ABOUT THIS OUTPUT. A multi-output
+            # producer's inputs fold together, so the culprit may belong to a SIBLING
+            # output of the same producer. The state stays (conservative folding is the
+            # commissioned default) and the discount is disclosed rather than applied.
+            reasons.append(REASON_UPPER_BOUND_ATTRIBUTION)
 
     if blind:
         # OBSERVER BLINDNESS SHORT-CIRCUITS FIRST and is never converted: not to healthy
@@ -1205,10 +1454,12 @@ def _build_record(
             state, decided_by = STATE_UNAVAILABLE, presence_decided_by
         elif STATE_UNAVAILABLE in required_states:
             state, decided_by = STATE_UNAVAILABLE, DECIDED_BY_DEPENDENCY
+            fold_required(STATE_UNAVAILABLE, REASON_REQUIRED_INPUT_UNAVAILABLE)
         elif fresh["verdict"] == FRESH_STALE:
             state, decided_by = STATE_STALE, fresh["decided_by"] or DECIDED_BY_CONTENT
         elif STATE_STALE in required_states:
             state, decided_by = STATE_STALE, DECIDED_BY_DEPENDENCY
+            fold_required(STATE_STALE, REASON_REQUIRED_INPUT_STALE)
         elif self_status in ("degraded", "missing"):
             # `missing` from a SEMANTIC monitor against an output our own probe just read
             # is a disagreement, not a deletion: our probe owns presence, so the monitor's
@@ -1216,6 +1467,7 @@ def _build_record(
             state, decided_by = STATE_DEGRADED, DECIDED_BY_SELF_HEALTH
         elif STATE_DEGRADED in required_states:
             state, decided_by = STATE_DEGRADED, DECIDED_BY_DEPENDENCY
+            fold_required(STATE_DEGRADED, REASON_REQUIRED_INPUT_DEGRADED)
         elif optional_negative:
             state, decided_by = STATE_DEGRADED, DECIDED_BY_DEPENDENCY
 
@@ -1248,7 +1500,7 @@ def _build_record(
         "source_asof": fresh["source_asof"],
         "freshness_sla_hours": sla,
         "age_hours": fresh["age_hours"],
-        "dependency_bound": index.dependency_bound(artifact_id),
+        "dependency_bound": bound,
         "required_inputs": sorted(required_rows, key=lambda r: r["artifact_id"]),
         "optional_inputs": sorted(optional_rows, key=lambda r: r["artifact_id"]),
         "reader_observation": _reader_record(reader),
@@ -1270,12 +1522,20 @@ def _healthy_decided_by(fresh: Mapping[str, Any]) -> str:
 
 
 def _reader_record(reader: Mapping[str, Any] | None) -> dict[str, Any] | None:
+    """The governing reader row as it appears on the record.
+
+    ``asof_field`` is carried whenever the row named one: a consumer reading
+    ``observed_asof`` without knowing WHICH field it came from is one silent substitution
+    away from the bug this module refuses on the producer plane.
+    """
     if reader is None:
         return None
     out: dict[str, Any] = {
         "source": str(reader.get("source") or "reader"),
         "verdict": str(reader.get("verdict") or "indeterminate"),
     }
+    if reader.get("asof_field"):
+        out["asof_field"] = str(reader["asof_field"])
     if reader.get("detail"):
         out["detail"] = str(reader["detail"])
     if reader.get("observed_asof"):

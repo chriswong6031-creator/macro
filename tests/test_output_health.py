@@ -238,6 +238,9 @@ def test_08_missing_output_beats_healthy_inputs():
 # ---------------------------------------------------------------------------
 
 def test_09_reader_stale_overrides_a_fresh_producer():
+    """And `source_asof` STAYS the producer's declared-field read (the reader's own asof
+    is disclosed as evidence). A watermark column that silently switches planes cannot be
+    compared with its own history."""
     doc = two_artifact_estate()
     rows = resolve(
         doc,
@@ -247,6 +250,7 @@ def test_09_reader_stale_overrides_a_fresh_producer():
                 "source": "freshness_sentinel:prophet_us",
                 "verdict": "stale",
                 "clock_kind": "content",
+                "asof_field": "asof",
                 "observed_asof": OLD,
             }
         },
@@ -255,21 +259,189 @@ def test_09_reader_stale_overrides_a_fresh_producer():
     assert rows["a"]["decided_by"] == "reader"
     assert "reader_stale_overrides_producer" in rows["a"]["reason_codes"]
     assert rows["a"]["reader_observation"]["verdict"] == "stale"
+    assert rows["a"]["reader_observation"]["observed_asof"] == OLD
+    # F1c: the producer's own read owns the column and the age; the reader's asof is
+    # evidence, named and attributed.
+    assert rows["a"]["source_asof"] == FRESH
+    assert rows["a"]["age_hours"] == pytest.approx(6.0)
+    assert any(
+        e["plane"] == "reader" and OLD in e["detail"] and "source_asof" in e["detail"]
+        for e in rows["a"]["evidence"]
+    ), rows["a"]["evidence"]
 
 
 def test_09b_reader_content_fresh_governs_a_stale_producer_copy():
-    """The other direction of the same law: the reader copy is what consumers receive."""
+    """The other direction of the same law: the reader copy is what consumers receive.
+
+    The reader row names the SAME field the artifact declares — that is what entitles it
+    to govern at all (test_09d is the other half)."""
     doc = two_artifact_estate()
     rows = resolve(
         doc,
         {"a": obs(asof=OLD), "b": obs()},
         reader_observations={
-            "a": {"source": "r2_audit:live_flow", "verdict": "fresh", "clock_kind": "content"}
+            "a": {
+                "source": "r2_audit:live_flow",
+                "verdict": "fresh",
+                "clock_kind": "content",
+                "asof_field": "asof",
+                "observed_asof": FRESH,
+            }
         },
     )
     assert rows["a"]["state"] == "healthy"
     assert rows["a"]["decided_by"] == "reader"
     assert "producer_behind_reader" in rows["a"]["reason_codes"]
+    # Still the PRODUCER's watermark in the column, stale though it is: the disagreement
+    # is the finding, so both halves have to remain legible.
+    assert rows["a"]["source_asof"] == OLD
+
+
+BLINDNESS_CASES = [
+    (obs(asof=FRESH, watermark_field_used="generated_utc"), "watermark_field_mismatch"),
+    (obs(asof=None, asof_field_present=False), "promised_asof_field_absent"),
+    (obs(parse_error="content does not parse (JSONDecodeError)"), "content_parse_error"),
+    (obs(asof="2026-08-10"), "date_only_calendar_unknown"),
+    (
+        obs(exists=None, asof=None, presence_source=None, sparse_unmaterialized=True),
+        "watermark_unread",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "observation, blind_reason",
+    BLINDNESS_CASES,
+    ids=["field_mismatch", "absent_field", "parse_error", "date_only", "sparse"],
+)
+def test_09c_a_reader_never_clears_producer_blindness(observation, blind_reason):
+    """THE ACCEPTANCE RULE, INVERTED. A reader may fill an UNASSESSED freshness axis; it
+    may never answer a question we asked the artifact itself and could not read.
+
+    The reader row here is the strongest one there is — content clock, fresh, naming the
+    SAME field the artifact declares — so nothing but the blindness law is holding the
+    verdict back. Before the fix each of these five shapes folded to `healthy`: the
+    blindness reason stayed on the record while the state contradicted it, which is worse
+    than either answer alone.
+    """
+    doc = two_artifact_estate()
+    rows = resolve(
+        doc,
+        {"a": observation, "b": obs()},
+        reader_observations={
+            "a": {
+                "source": "freshness_sentinel:fixture",
+                "verdict": "fresh",
+                "clock_kind": "content",
+                "asof_field": "asof",
+                "observed_asof": FRESH,
+            }
+        },
+    )
+    row = rows["a"]
+    assert row["state"] is None
+    assert row["assessment_status"] == "could_not_look"
+    assert blind_reason in row["reason_codes"], row["reason_codes"]
+    # BOTH facts survive: what we could not read, and what the reader did see.
+    assert row["reader_observation"]["verdict"] == "fresh"
+    assert any(e["plane"] == "reader" for e in row["evidence"]), row["evidence"]
+
+
+def test_09d_a_reader_measuring_another_field_is_diagnostic_only():
+    """The live prophet-index shape. The freshness sentinel reads `source_asof` out of
+    the served `prophet/index.json`; the artifact's declared watermark is `asof`. A fresh
+    `source_asof` therefore says nothing about the field the contract is written against,
+    and letting it decide would be the silent fallback §5 refuses on the producer plane —
+    reintroduced one plane over.
+    """
+    doc = two_artifact_estate()
+    rows = resolve(
+        doc,
+        {"a": obs(asof=OLD), "b": obs()},
+        reader_observations={
+            "a": {
+                "source": "freshness_sentinel:prophet_us",
+                "verdict": "fresh",
+                "clock_kind": "content",
+                "asof_field": "source_asof",
+                "observed_asof": FRESH,
+            }
+        },
+    )
+    row = rows["a"]
+    assert row["state"] == "stale"                       # from the PRODUCER's own field
+    assert row["decided_by"] == "content_watermark"
+    assert "reader_field_mismatch:source_asof" in row["reason_codes"]
+    assert "producer_behind_reader" not in row["reason_codes"]
+    # Disclosed, not dropped: the row is on the record and names the field it measured.
+    assert row["reader_observation"]["source"] == "freshness_sentinel:prophet_us"
+    assert row["reader_observation"]["asof_field"] == "source_asof"
+    assert row["source_asof"] == OLD
+
+
+def test_09e_a_content_clock_reader_that_names_no_field_decides_nothing():
+    """A content-clock verdict with no `asof_field` is an unattributable claim about SOME
+    timestamp. It is disclosed and outranked, never trusted."""
+    doc = two_artifact_estate()
+    rows = resolve(
+        doc,
+        {"a": obs(asof=OLD), "b": obs()},
+        reader_observations={
+            "a": {"source": "sentinel:page", "verdict": "fresh", "clock_kind": "content"}
+        },
+    )
+    assert rows["a"]["state"] == "stale"
+    assert "reader_field_undeclared" in rows["a"]["reason_codes"]
+    # A deciding row is never shadowed by a diagnostic one, whichever sorts first.
+    ranked = resolve(
+        doc,
+        {"a": obs(asof=OLD), "b": obs()},
+        reader_observations={
+            "a": [
+                {"source": "a_page", "verdict": "fresh", "clock_kind": "content"},
+                {"source": "z_store", "verdict": "stale", "clock_kind": "content",
+                 "asof_field": "asof", "observed_asof": OLD},
+            ]
+        },
+    )
+    assert ranked["a"]["reader_observation"]["source"] == "z_store"
+    assert ranked["a"]["decided_by"] == "reader"
+
+
+def test_09f_a_downgraded_reader_row_cannot_fill_an_unassessed_axis_either():
+    """"Transport-equivalent" means OUTRANKED, not PROMOTED.
+
+    A genuine transport clock legitimately fills the write-time axis of an artifact that
+    declares no watermark (§5.2a): a server stamp is a write-time observation. A
+    content-clock row demoted for measuring the wrong field is NOT that — it is a reading
+    of some other timestamp, and letting the demotion hand it the transport plane's
+    filling power would rescue the same claim through the back door.
+
+    Both halves asserted on one estate, because the difference between them IS the rule.
+    """
+    doc = synapse_doc(a=artifact("data/a.json", producer=PRODUCER_A, asof_field=None, sla=24))
+    demoted = resolve(
+        doc,
+        {"a": obs(asof=None, mtime_utc=NOW)},
+        reader_observations={
+            "a": {"source": "sentinel:page", "verdict": "fresh", "clock_kind": "content",
+                  "asof_field": "board_price_through"}
+        },
+    )
+    assert demoted["a"]["state"] is None
+    assert demoted["a"]["assessment_status"] == "partial"
+    assert "write_time_untrusted" in demoted["a"]["reason_codes"]
+    assert "reader_field_mismatch:board_price_through" in demoted["a"]["reason_codes"]
+
+    genuine = resolve(
+        doc,
+        {"a": obs(asof=None, mtime_utc=NOW)},
+        reader_observations={
+            "a": {"source": "sentinel:bake", "verdict": "fresh", "clock_kind": "transport"}
+        },
+    )
+    assert genuine["a"]["state"] == "healthy"
+    assert genuine["a"]["decided_by"] == "reader"
 
 
 def test_10_content_watermark_outranks_a_fresh_transport_clock():
@@ -368,6 +540,218 @@ def test_13b_tracked_but_unmaterialized_reads_from_head_as_a_real_observation(tm
 
 
 # ---------------------------------------------------------------------------
+# Unprobeable paths — a family is not a file, and a miss against one is not an absence
+# ---------------------------------------------------------------------------
+
+UNPROBEABLE_PATHS = [
+    ("data/metabolism/journal/", "trailing_slash"),
+    ("data/index_gex_history/*.parquet", "glob_star"),
+    ("data/rule_experiments/results/?.json", "glob_question"),
+    ("data/us_prophet_rank/candidates/YYYY-MM.parquet", "date_template"),
+    ("data/us_prophet_rank/grades/YYYY-MM/YYYY-MM-DD.parquet", "date_template_nested"),
+    (
+        "embedded: entry_clock + thesis_clock inside site/stockdata/<TICKER>.json",
+        "embedded_prose",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "path", [p for p, _ in UNPROBEABLE_PATHS], ids=[i for _, i in UNPROBEABLE_PATHS]
+)
+def test_an_unprobeable_path_is_blindness_and_never_an_absence(path):
+    """A path that cannot denote ONE file has no presence to probe, so a miss against it
+    is a question that was never asked — not a deletion.
+
+    The observation deliberately carries ``exists=False``: even if an adapter probed it
+    anyway (which is what minted 29 live "unavailable" roots out of the registry's own
+    notation), the resolver refuses to read that as an absence.
+    """
+    doc = synapse_doc(a=artifact(path, producer=PRODUCER_A))
+    rows = resolve(doc, {"a": obs(exists=False, asof=None)})
+    assert rows["a"]["state"] is None
+    assert rows["a"]["assessment_status"] == "could_not_look"
+    assert rows["a"]["display_confidence_state"] == "unknown"
+    assert "family_path_unprobeable" in rows["a"]["reason_codes"], rows["a"]["reason_codes"]
+
+
+def test_a_placeholder_family_keeps_its_own_reason_code():
+    """`<SYM>` shapes stay `placeholder_path` — the reason synapse's own validator already
+    exempts from its existence check. Same verdict, different (more specific) disclosure."""
+    doc = synapse_doc(a=artifact("site/signals/<SYM>.json", producer=PRODUCER_A))
+    rows = resolve(doc, {"a": obs(exists=False, asof=None)})
+    assert rows["a"]["state"] is None
+    assert "placeholder_path" in rows["a"]["reason_codes"]
+    assert "family_path_unprobeable" not in rows["a"]["reason_codes"]
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "data/us_prophet_rank/candidates/2026-08.parquet",   # a REAL monthly file
+        "data/summary/comment.json",                          # 'mm' inside words
+        "data/ADDENDUM/DDM.json",                             # 'DD' inside words
+        "site/basketdata/foresight_cascade.json",
+    ],
+)
+def test_a_real_path_is_still_probed(path):
+    """The negative control, and the reason the date-template rule reads LETTERS only: a
+    file named after a month is a file. A rule that blinded these would trade 29 false
+    absences for hundreds of false blindnesses."""
+    assert OH.unprobeable_path_reason(path) is None
+    doc = synapse_doc(a=artifact(path, producer=PRODUCER_A))
+    assert resolve(doc, {"a": obs()})["a"]["state"] == "healthy"
+    assert resolve(doc, {"a": obs(exists=False, asof=None)})["a"]["state"] == "unavailable"
+
+
+def test_the_adapter_does_not_probe_an_unprobeable_path(tmp_path):
+    """The other half, one layer down: the CLI must not ASK. Probing a directory or a glob
+    costs a git call to answer a question with no answer, and the answer it produced was
+    `exists=False`."""
+    root = tmp_path / "estate"
+    (root / "data").mkdir(parents=True)
+    for path, _ in UNPROBEABLE_PATHS:
+        observation = CLI.observe(
+            root, artifact(path, producer=PRODUCER_A), trust_mtime=False, git_ok=True
+        )
+        assert observation["exists"] is None, path
+        assert observation["presence_source"] is None, path
+    # …and it still probes a real one, where git_ok makes a miss a genuine absence.
+    real = CLI.observe(
+        root, artifact("data/real.json", producer=PRODUCER_A), trust_mtime=False, git_ok=True
+    )
+    assert real["exists"] is False
+
+
+# ---------------------------------------------------------------------------
+# The R2 audit reader — a listing is an inventory, not a verdict
+# ---------------------------------------------------------------------------
+
+def _r2_synapse() -> dict:
+    return synapse_doc(
+        s=artifact("stockdata/index.json", producer=PRODUCER_A, storage="r2"),
+        c=artifact("chinastockdata/index.json", producer=PRODUCER_B, storage="r2"),
+    )
+
+
+def test_an_r2_anchor_that_is_merely_listed_yields_no_reader_row():
+    """Being in the inventory says bytes were served at some point; it is not a pass.
+
+    The audit emits `R2 STALE` itself when that Last-Modified is over budget, so reading
+    'fresh' out of membership invented a verdict the audit declined to give — and, because
+    a fresh reader row rescues presence, it also FABRICATED existence for artifacts nobody
+    had looked at.
+    """
+    doc = {
+        "anchors": {
+            "stockdata": {"anchor": "stockdata/_manifest.json",
+                          "last_modified": "2026-08-14T10:00:00+00:00", "age_hours": 2.0},
+        },
+        "fail_reasons": [],
+        "warnings": [],
+    }
+    assert CLI.r2_readers(doc, _r2_synapse()) == {}
+
+
+def test_an_r2_content_probe_is_a_content_clock_verdict_that_names_its_field():
+    doc = {
+        "anchors": {"stockdata/SPY.json": {"asof": "2026-08-14", "age_days": 0}},
+        "fail_reasons": [],
+        "warnings": [],
+    }
+    row = CLI.r2_readers(doc, _r2_synapse())["s"][0]
+    assert (row["verdict"], row["clock_kind"]) == ("fresh", "content")
+    assert row["asof_field"] == "asof"
+    assert row["observed_asof"] == "2026-08-14"
+
+
+@pytest.mark.parametrize(
+    "reason, expected",
+    [
+        ("R2 CONTENT STALE: stockdata/SPY.json asof=2026-07-01 is 44d old (limit 3d)",
+         ("stale", "content")),
+        ("R2 STALE: stockdata last published 40.0h ago (limit 26h; anchor x)",
+         ("stale", "transport")),
+        ("R2 DARK: stockdata has no anchor object (index.json: HTTP 404)",
+         ("indeterminate", "transport")),
+        ("R2 FORBIDDEN: stockdata/_manifest.json HTTP 403 — public bucket access broken",
+         ("indeterminate", "transport")),
+        ("R2 COVERAGE HOLE: stockdata reports a 5-full store", ("indeterminate", "transport")),
+    ],
+    ids=["content_stale", "transport_stale", "dark", "forbidden", "unrecognized"],
+)
+def test_each_r2_fail_reason_maps_to_exactly_one_verdict(reason, expected):
+    """DARK and FORBIDDEN are INDETERMINATE, not missing: the audit failing to resolve an
+    anchor (404 on the probe, or a bucket that refused the read) is the audit going blind.
+    Reading it as absence mints an outage out of a probe's silence — and, because `missing`
+    is a presence verdict, would fold `unavailable` onto every artifact under the anchor.
+    An unrecognized reason is likewise indeterminate: a reason this adapter has not been
+    taught is never a pass.
+    """
+    doc = {"anchors": {}, "fail_reasons": [reason], "warnings": []}
+    row = CLI.r2_readers(doc, _r2_synapse())["s"][0]
+    assert (row["verdict"], row["clock_kind"]) == expected
+    assert reason in row["detail"]
+
+
+def test_an_r2_fail_reason_overrides_the_content_probe_it_names():
+    doc = {
+        "anchors": {"stockdata/SPY.json": {"asof": "2026-07-01", "age_days": 44}},
+        "fail_reasons": ["R2 CONTENT STALE: stockdata/SPY.json asof=2026-07-01 is 44d old"],
+        "warnings": [],
+    }
+    assert CLI.r2_readers(doc, _r2_synapse())["s"][0]["verdict"] == "stale"
+
+
+def test_an_r2_warning_is_indeterminate_and_never_downgrades_a_definitive_verdict():
+    doc = {
+        "anchors": {"stockdata/SPY.json": {"asof": "2026-08-14", "age_days": 0}},
+        "fail_reasons": [],
+        "warnings": [
+            "R2 UNREACHABLE: chinastockdata anchors could not be checked (timeout)",
+            "asof probe stockdata/SPY.json: HTTP 500",
+        ],
+    }
+    readers = CLI.r2_readers(doc, _r2_synapse())
+    assert readers["c"][0]["verdict"] == "indeterminate"
+    assert readers["s"][0]["verdict"] == "fresh"          # the definitive probe survives
+
+
+def test_both_r2_reason_shapes_resolve_to_the_anchor_they_are_about():
+    """`R2 STALE: <anchor> …` puts its subject after the colon; `asof probe <key>: …`
+    puts it in the head. Parsing only the first shape addressed the anchor "HTTP"."""
+    assert CLI._r2_subject("R2 STALE: stockdata last published 40h ago") == (
+        "R2 STALE", "stockdata"
+    )
+    assert CLI._r2_subject("asof probe stockdata/SPY.json: HTTP 500") == (
+        "asof probe stockdata/SPY.json", "stockdata"
+    )
+    assert CLI._r2_subject("coverage probe chinastockdata: unreachable") == (
+        "coverage probe chinastockdata", "chinastockdata"
+    )
+    lands = CLI.r2_readers(
+        {
+            "anchors": {},
+            "fail_reasons": [],
+            "warnings": ["asof probe stockdata/SPY.json: HTTP 500"],
+        },
+        _r2_synapse(),
+    )
+    assert lands["s"][0]["verdict"] == "indeterminate"
+
+
+def test_a_pure_r2_artifact_with_no_audit_verdict_is_blind_not_healthy():
+    """End to end at the resolver: no reader row, nothing probeable from a checkout. The
+    honest answer is that we could not look — never a green row for an object in a bucket
+    nobody opened."""
+    doc = _r2_synapse()
+    rows = resolve(doc, {"s": obs(exists=None, asof=None, presence_source=None)})
+    assert rows["s"]["state"] is None
+    assert rows["s"]["assessment_status"] == "could_not_look"
+    assert "r2_unobservable" in rows["s"]["reason_codes"]
+
+
+# ---------------------------------------------------------------------------
 # 14-17 — semantic health, provider noise, bounds, optional-upstream legality
 # ---------------------------------------------------------------------------
 
@@ -441,11 +825,32 @@ def test_17_illegal_optional_upstreams_are_refused_by_validator_and_resolver():
     ]
 
 
-def test_17b_the_live_registry_declares_zero_optional_upstreams():
-    """The MECHANISM ships with no live entries: optionality needs producer evidence and
-    none is adjudicated in this wave. Structural (a count of zero), not a content claim."""
-    text = (REPO / "config" / "synapse.yml").read_text(encoding="utf-8")
-    assert "health_optional_upstreams" not in text
+def _live_synapse() -> dict:
+    return yaml.safe_load((REPO / "config" / "synapse.yml").read_text(encoding="utf-8"))
+
+
+def test_17b_every_live_optional_upstream_declaration_is_legal():
+    """The MECHANISM ships with no live entries — optionality needs producer evidence and
+    none is adjudicated in this wave — but the assertion is about LEGALITY, not absence.
+
+    A raw ``"health_optional_upstreams" not in text`` reads as a strong guarantee and is
+    really a substring search over 642 entries: it would fail on the field appearing in a
+    comment, and it turns the day someone legitimately adjudicates an optional input into
+    a red test that says nothing about whether the declaration is correct. Parsed and
+    validated, this stays green through that day and goes red on an illegal entry.
+    """
+    doc = _live_synapse()
+    declared = {
+        aid: [str(x) for x in (entry.get("health_optional_upstreams") or [])]
+        for aid, entry in doc["artifacts"].items()
+        if isinstance(entry, dict) and entry.get("health_optional_upstreams")
+    }
+    for aid, upstreams in declared.items():
+        assert OH.optional_upstream_violations(doc, aid, upstreams) == [], aid
+    # The resolver and the validator agree on every live declaration, whatever its size.
+    assert not [
+        v for v in validate_registry(doc, root=REPO) if "health_optional_upstreams" in v
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -679,6 +1084,67 @@ def test_the_precedence_ladder_resolves_worst_first():
             kwargs["self_health"] = {"a": {"source": "fixture", "status": semantic}}
         rows = resolve(doc, {"a": a_obs, "b": b_obs}, **kwargs)
         assert rows["a"]["state"] == expected, (a_obs["exists"], a_obs["content_asof_raw"], semantic)
+
+
+@pytest.mark.parametrize(
+    "b_observation, b_self, state, code",
+    [
+        (obs(exists=False, asof=None), None, "unavailable", "required_input_unavailable:b"),
+        (obs(asof=OLD), None, "stale", "required_input_stale:b"),
+        (obs(), "degraded", "degraded", "required_input_degraded:b"),
+    ],
+    ids=["unavailable", "stale", "degraded"],
+)
+def test_a_dependency_decided_state_names_the_input_that_caused_it(
+    b_observation, b_self, state, code
+):
+    """A folded verdict that does not name its culprit is unactionable: the operator is
+    told the output is unavailable and left to re-derive the input graph by hand.
+
+    Rules 2/4/6 of the precedence ladder all fold an UPSTREAM's state onto this artifact,
+    and each now says which upstream, in the reason codes AND in a dependency-plane
+    evidence row.
+    """
+    doc = two_artifact_estate()
+    kwargs = {"self_health": {"b": {"source": "fixture", "status": b_self}}} if b_self else {}
+    rows = resolve(doc, {"a": obs(), "b": b_observation}, **kwargs)
+    row = rows["a"]
+    assert (row["state"], row["decided_by"]) == (state, "dependency")
+    assert code in row["reason_codes"], row["reason_codes"]
+    assert any(
+        e["plane"] == "dependency" and "b" in e["detail"] for e in row["evidence"]
+    ), row["evidence"]
+
+
+def test_an_upper_bound_dependency_fold_discloses_its_over_attribution():
+    """A multi-output producer's inputs fold together, so a dependency-decided negative on
+    one of its outputs may be ABOUT A SIBLING. The commissioned fold stays conservative —
+    the state is not softened — and the discount is disclosed so a consumer can apply it.
+
+    The exact-bound half is the control: same fold, no disclosure, because there is nothing
+    to discount when the producer registers exactly one artifact.
+    """
+    doc = synapse_doc(
+        a=artifact("data/a.json", producer=PRODUCER_A),
+        a2=artifact("data/a2.json", producer=PRODUCER_A),          # -> bound upper
+        b=artifact("data/b.json", producer=PRODUCER_B, consumers=(PRODUCER_A,)),
+        c=artifact("data/c.json", producer="engine/c.py"),          # -> bound exact
+        d=artifact("data/d.json", producer="engine/d.py", consumers=("engine/c.py",)),
+    )
+    rows = resolve(
+        doc,
+        {
+            "a": obs(), "a2": obs(), "b": obs(exists=False, asof=None),
+            "c": obs(), "d": obs(exists=False, asof=None),
+        },
+    )
+    assert rows["a"]["dependency_bound"] == "upper"
+    assert rows["a"]["state"] == "unavailable"
+    assert "upper_bound_attribution" in rows["a"]["reason_codes"]
+
+    assert rows["c"]["dependency_bound"] == "exact"
+    assert rows["c"]["state"] == "unavailable"
+    assert "upper_bound_attribution" not in rows["c"]["reason_codes"]
 
 
 def test_required_inputs_outrank_optional_ones():
@@ -920,8 +1386,10 @@ def test_two_readers_of_one_artifact_are_ranked_by_clock_then_severity():
         {"a": obs(), "b": obs()},
         reader_observations={
             "a": [
-                {"source": "z_sentinel", "verdict": "stale", "clock_kind": "content"},
-                {"source": "a_audit", "verdict": "fresh", "clock_kind": "content"},
+                {"source": "z_sentinel", "verdict": "stale", "clock_kind": "content",
+                 "asof_field": "asof"},
+                {"source": "a_audit", "verdict": "fresh", "clock_kind": "content",
+                 "asof_field": "asof"},
             ]
         },
     )
@@ -936,7 +1404,8 @@ def test_two_readers_of_one_artifact_are_ranked_by_clock_then_severity():
         reader_observations={
             "a": [
                 {"source": "a_audit", "verdict": "stale", "clock_kind": "transport"},
-                {"source": "z_sentinel", "verdict": "fresh", "clock_kind": "content"},
+                {"source": "z_sentinel", "verdict": "fresh", "clock_kind": "content",
+                 "asof_field": "asof"},
             ]
         },
     )
@@ -964,10 +1433,20 @@ def test_a_monitor_may_not_grade_its_own_producers_output():
 
 
 def test_the_view_schema_is_not_a_registered_synapse_artifact():
-    """No fixed point: T4 commits nothing, so nothing here can grade itself."""
-    text = (REPO / "config" / "synapse.yml").read_text(encoding="utf-8")
-    assert OH.SCHEMA not in text
-    assert "output_health" not in text
+    """No fixed point: T4 commits nothing, so nothing here can grade itself.
+
+    Asserted against the PARSED registry rather than as a substring sweep — the raw form
+    also banned the word "output_health" from every comment in the file, which is a
+    prohibition on discussing this layer rather than on registering it.
+    """
+    doc = _live_synapse()
+    t4_names = {"output_health", "build_output_health"}
+    for aid, entry in doc["artifacts"].items():
+        assert str(aid) not in t4_names
+        assert str(entry.get("schema")) != OH.SCHEMA, aid
+        assert Path(str(entry.get("path") or "")).stem not in t4_names, aid
+        producer = Path(str(entry.get("producer") or "").split(":")[0]).stem
+        assert producer not in t4_names, aid
 
 
 def test_the_resolver_is_pure_over_repeated_calls():

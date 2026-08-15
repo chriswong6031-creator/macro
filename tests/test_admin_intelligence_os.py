@@ -14,6 +14,7 @@ goes wrong exactly when it matters — quietly, at the moment the estate changes
 """
 from __future__ import annotations
 
+import ast
 import json
 import sys
 from pathlib import Path
@@ -297,6 +298,30 @@ def test_artifacts_outside_every_engine_cell_are_surfaced_not_dropped(tmp_path):
 # worst_state ordering
 # ---------------------------------------------------------------------------
 
+@pytest.fixture(scope="module")
+def blind_estate(tmp_path_factory):
+    """A two-engine estate the roll-up cannot honestly summarize with a state alone.
+
+    ``blind`` has ONE output and it is unreadable (a csv carries no readable watermark, so
+    the freshness axis is blind). ``mixed`` has one readable-and-current output and one
+    unreadable one — the shape that used to render a plain green row.
+
+    Module-scoped because the panel is a real derivation and the assertions below hang off
+    a parametrized test; deriving it once is the difference between a pin and a tax.
+    """
+    root = _write_root(
+        tmp_path_factory.mktemp("blind"),
+        {
+            "b1": artifact("data/b1.csv", producer="engine/blind.py", owner="prog-blind",
+                           fmt="csv"),
+            "m1": artifact("data/m1.json", producer="engine/mixed.py", owner="prog-mixed"),
+            "m2": artifact("data/m2.csv", producer="engine/mixed.py", owner="prog-mixed",
+                           fmt="csv"),
+        },
+    )
+    return IOS.panel(root=root, force=True)
+
+
 @pytest.mark.parametrize(
     "states, expected",
     [
@@ -309,8 +334,25 @@ def test_artifacts_outside_every_engine_cell_are_surfaced_not_dropped(tmp_path):
         ([], None),
     ],
 )
-def test_worst_state_follows_the_t4_precedence_ladder(states, expected):
+def test_worst_state_follows_the_t4_precedence_ladder(states, expected, blind_estate):
     assert IOS.worst_state(states) == expected
+
+    # THE OTHER HALF OF THE SAME LADDER. `worst_state` folding only real verdicts is
+    # correct — "could not determine" is not a health verdict and must never outrank one —
+    # but it means the fold ALONE cannot describe an engine some of whose outputs were
+    # unreadable. So every row carries the blind count, asserted on the payload (the DOM
+    # is not the contract; the payload is).
+    rows = {r["engine_id"]: r for r in blind_estate["engines"]}
+    assert all("n_blind" in r for r in rows.values()), sorted(rows)
+
+    all_blind = rows["engine/blind.py::prog-blind"]
+    assert all_blind["worst_state"] is None
+    assert all_blind["n_blind"] == all_blind["n_artifacts"] == 1
+
+    mixed = rows["engine/mixed.py::prog-mixed"]
+    assert mixed["worst_state"] == "healthy"          # the worst thing that could be SEEN
+    assert (mixed["n_blind"], mixed["n_artifacts"]) == (1, 2)
+    assert mixed["state_counts"]["null"] == 1         # and it agrees with its own tally
 
 
 def test_worst_state_treats_an_unknown_word_as_the_worst_thing_it_has_seen():
@@ -399,14 +441,66 @@ def test_the_cache_does_not_grow_one_entry_per_registry_edit(tmp_path):
 # Trust-mtime plane + fail-open
 # ---------------------------------------------------------------------------
 
-def test_write_time_evidence_is_admitted_on_the_deployed_plane_only(monkeypatch):
-    """mtime is freshness evidence only where the producer is the file's sole writer."""
+def test_write_time_evidence_is_refused_on_every_plane_including_the_deployed_one(
+    monkeypatch,
+):
+    """A DEPLOYED file's mtime is a git-transport clock, not a write time.
+
+    ``app/deploy/update.sh`` updates the VPS with ``git fetch && git reset --hard``, so
+    every file git rewrites is stamped with the PULL time. The panel used to admit
+    write-time evidence whenever ``ADMIN_DEPLOYED=1``, which means a deploy or a rollback
+    would have restamped the tree and turned the 63 artifacts that declare an SLA but no
+    watermark green — an entire class of frozen stores reading "fresh" because somebody
+    deployed. The environment cannot turn it back on because the environment is no longer
+    consulted: pinned structurally, since an env read is the thing being removed.
+    """
+    monkeypatch.setenv("ADMIN_DEPLOYED", "1")
+    assert IOS._trust_mtime() is False
     monkeypatch.delenv("ADMIN_DEPLOYED", raising=False)
     assert IOS._trust_mtime() is False
-    monkeypatch.setenv("ADMIN_DEPLOYED", "1")
-    assert IOS._trust_mtime() is True
-    monkeypatch.setenv("ADMIN_DEPLOYED", "0")
-    assert IOS._trust_mtime() is False
+
+    tree = ast.parse((REPO / "admin" / "intelligence_os.py").read_text(encoding="utf-8"))
+    imported = {
+        alias.name.split(".")[0]
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Import)
+        for alias in node.names
+    } | {
+        node.module.split(".")[0]
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module
+    }
+    assert "os" not in imported
+    assert not [
+        node
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Attribute) and node.attr in ("environ", "getenv")
+    ]
+    assert "ADMIN_DEPLOYED" not in {
+        node.value
+        for node in ast.walk(tree)
+        if isinstance(node, ast.Constant) and isinstance(node.value, str)
+    }
+
+
+def test_a_no_watermark_artifact_stays_unassessed_rather_than_trusting_its_mtime(tmp_path):
+    """The consequence of the rule above, made visible: an artifact that declares an SLA
+    but no watermark field is NOT healthy and NOT stale — it is unassessed, and the record
+    says which axis and why. That reason code is the standing argument for declaring a
+    watermark; a silent green would have removed the argument."""
+    root = _write_root(
+        tmp_path,
+        {
+            "nowm": artifact("data/nowm.json", producer="engine/a.py", owner="prog-one",
+                             asof_field=None, sla=24),
+        },
+    )
+    detail = IOS.engine_detail("engine/a.py::prog-one", root=root)
+    record = detail["outputs"][0]
+    assert record["state"] is None
+    assert record["assessment_status"] == "partial"
+    assert "write_time_untrusted" in record["reason_codes"]
+    assert IOS.panel(root=root)["generated"]["trust_mtime"] is False
 
 
 def test_both_entry_points_fail_open_on_an_unreadable_root(tmp_path):

@@ -3888,6 +3888,27 @@ const iosStateCls = (s) => (s == null ? "s-mut" : (IOS_STATE_CLS[s] || "s-mut"))
 const iosStateWord = (s) => (s == null ? "not determined" : String(s));
 function iosStatePill(s) { return `<span class="statpill ${iosStateCls(s)}">${esc(iosStateWord(s))}</span>`; }
 
+/* The worst-state cell for an engine ROW, which is never allowed to read green over
+   blindness. worst_state folds only real verdicts (a null must not outrank one), so an
+   engine with one healthy output and seven unreadable ones used to render a plain green
+   pill. Two disclosures fix that, both from the payload's own n_blind:
+     · every output null  -> "no read", muted, INSTEAD of a state pill. There is no
+       verdict to show, and "healthy" was never the risk here — "not determined" printed
+       in the same slot as a verdict still reads like one.
+     · some outputs null  -> the state pill PLUS a muted "N blind" badge, so the green is
+       true (it is the worst thing we could see) and visibly partial. */
+function iosRowStateCell(r) {
+  const blind = Number(r.n_blind || 0);
+  const total = Number(r.n_artifacts || 0);
+  if (total && blind >= total) {
+    return `<span class="statpill s-mut" title="every output of this engine was unreadable — Eval OS could not look, which is not a health verdict">no read</span>`;
+  }
+  const badge = blind > 0
+    ? ` <span class="statpill s-mut" title="${esc(String(blind))} of this engine's ${esc(String(total))} outputs could not be read at all — the state beside this badge covers only the rest">${esc(String(blind))} blind</span>`
+    : "";
+  return iosStatePill(r.worst_state) + badge;
+}
+
 const IOS = { filter: { state: null, output_class: null, authority: null, owner_program: null }, q: "", page: 1, rows: [], data: null };
 const IOS_PAGE_SIZE = 60;
 
@@ -3935,7 +3956,7 @@ function iosRenderTable() {
         <td>${r.output_class ? `<b>${esc(r.output_class)}</b>` : `<span class="muted" title="no adjudicated class in the T1 overlay — never guessed here">—</span>`}</td>
         <td class="sub">${esc(r.authority || "—")}</td>
         <td class="r">${fmtNum(r.n_artifacts)}</td>
-        <td>${iosStatePill(r.worst_state)}</td>
+        <td>${iosRowStateCell(r)}</td>
       </tr>`).join("")}
   </tbody></table>` : `<div class="card sub">No engine matches this filter.</div>`;
   const cnt = $("#iosCnt"); if (cnt) cnt.textContent = fmtNum(all.length);
@@ -4005,7 +4026,7 @@ function iosHero(d) {
     <div class="nw-hero-note">Derived on demand from the signal registry and the T1 adjudication overlay — nothing on this page is stored.
       ${g.observed_at ? `Observed ${esc(String(g.observed_at).replace("T", " ").slice(0, 19))} UTC` : ""}
       · ${g.cache === "hit" ? "served from the in-process cache" : `computed in ${esc(String(g.compute_seconds))}s`}
-      · presence read from <code>${esc(g.root_mode || "?")}</code>${g.trust_mtime ? "" : " · write-time evidence refused off the deployed plane"}.</div>
+      · presence read from <code>${esc(g.root_mode || "?")}</code>${g.trust_mtime ? "" : " · write-time evidence refused — a deployed file's mtime is its git pull time, not its write time"}.</div>
   </div>`;
 }
 
