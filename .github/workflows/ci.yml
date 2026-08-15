@@ -3708,6 +3708,12 @@ on:
       - "scripts/calibrate_commodities.py"
       - "scripts/calibrate_forex.py"
       - "scripts/factor_ic_scorecard.py"
+      # Cortex attention grader (W3, 2026-08-14). The script was reachable by NO path
+      # pattern and named by NO `run:` step — strictly dark, which is how a direction=0
+      # coercion and a substring-matching falsifier router survived in the nightly
+      # A2 earn-in path. Both halves are wired here: the script so a grader-only edit
+      # starts the pack, and the suite below so a suite-only edit does too.
+      - "scripts/grade_cortex_attention.py"
       - "scripts/grade_news_events.py"
       - "scripts/inject_wh_banner.py"
       # unrun-market-plumbing
@@ -3717,6 +3723,7 @@ on:
       - "tests/test_event_priors.py"
       - "tests/test_foresight_ledger_lane_gates.py"
       - "tests/test_gex_archive_snapshot.py"
+      - "tests/test_grade_cortex_attention.py"
       - "tests/test_grade_thematic.py"
       - "tests/test_live_delay_labeling.py"
       - "tests/test_options_flow_attention_reflex.py"
