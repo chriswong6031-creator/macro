@@ -1194,6 +1194,7 @@ def _fusion_plane(pool: Sequence[Mapping[str, Any]],
 
 def _fusion_prophet_block(fusion: _FusionRead, index: int, *, definition: str,
                           legacy_score: float, legacy_points: Mapping[str, float],
+                          legacy_components: Mapping[str, float],
                           alpha_percentile: float | None) -> dict[str, Any]:
     """The published ``prophet`` block on a fusion board — score plus its receipt.
 
@@ -1208,6 +1209,14 @@ def _fusion_prophet_block(fusion: _FusionRead, index: int, *, definition: str,
             "version": definition,
             "score": round(legacy_score, 1),
             "score_authority": "retired us_prophet_v2 priority heuristic",
+            # `components` ships here too, not just `points`.  A degraded night IS the
+            # retired scorer publishing, so its legs belong on the published block — and
+            # `component_coverage` reads them.  Omitting them made a fallback board
+            # report every leg as unmeasured, which is the exact shape of a real
+            # extension outage: the disclosure built to catch that outage would have
+            # been the thing hiding it, on the one kind of night already going wrong.
+            "components": {name: round(value, 6)
+                           for name, value in legacy_components.items()},
             "points": dict(legacy_points),
             "alpha_percentile": alpha_percentile,
             "degradation": {
@@ -1486,7 +1495,7 @@ def score_rows(
         else:
             row["prophet"] = _fusion_prophet_block(
                 fusion, index, definition=effective_definition,
-                legacy_score=score, legacy_points=points,
+                legacy_score=score, legacy_points=points, legacy_components=values,
                 alpha_percentile=percentiles.get(index))
             if not fusion.degraded:
                 # The champion it replaced, kept running with ZERO authority.  Stamped
