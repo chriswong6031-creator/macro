@@ -182,10 +182,7 @@ def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
     before its free-shell render; until the gate-6b re-flip, that document must
     classify premium and deny a Free user. The free-tier control below keeps
     classify_path's `free` branch under test, so this cannot quietly become
-    "everything reads as public". /biocatalyst.html used to be that control;
-    #5710 promoted its shell (and paired CSS/JS) to public so the workbench
-    stays outside the registration wall while /api/biocatalyst/v1 stays
-    site_full. The remaining free_registered exemplar is /news.html.
+    "everything reads as public".
     """
     _arm(monkeypatch)
     monkeypatch.setattr(
@@ -197,11 +194,16 @@ def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
                   "/etfs.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
-    assert paywall.classify_path("/biocatalyst.html") == "public", (
-        "BioCatalyst's shell is public after #5710; the API stays site_full"
-    )
+    # Control must stay a `free` assertion. #5710 moved /biocatalyst.html to
+    # public on purpose (test_biocatalyst_shell_assets_are_public_but_payload_api_stays_paid);
+    # flipping this expect to public would destroy the control. /news.html is
+    # the replacement: site_access.yml pins the news desk at free_registered as
+    # the registration driver ("Kept free_registered (NOT public)"), this file
+    # already uses it as the free_registered exemplar, and it is not a product
+    # workbench on the SEO-public promotion path that took special_situations /
+    # etfs / biocatalyst.
     assert paywall.classify_path("/news.html") == "free", (
-        "control: a remaining free_registered path must still classify free"
+        "control: a registered-preview shell must still classify free"
     )
     for payload in (
         "/premiumdata/special_situations.json",
