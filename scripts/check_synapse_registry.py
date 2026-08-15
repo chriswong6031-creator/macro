@@ -2,12 +2,19 @@
 scripts/check_synapse_registry.py — Synapse registry integrity gate.
 
 HARD-FAIL (exit 1) on any structural violation detected by
-engine.neuralweb.synapse.validate_registry(). Prints each violation
-to stdout with a [VIOLATION] prefix.
+engine.neuralweb.synapse.validate_registry(), and on duplicate YAML keys
+in config/synapse.yml. Prints each violation to stdout with a
+[VIOLATION] prefix.
+
+yaml.safe_load silently keeps the last value of a repeated mapping key,
+so the duplicate-key gate uses a SafeLoader subclass that records every
+collision. A check that only called safe_load would never see this class
+of defect.
 
 Scope: registry INTEGRITY only (required fields, enum validity, producer
 existence, duplicate paths) plus one prose-hygiene rule (no restated consumer
 counts — see check_consumer_count_claims). This script does NOT check:
+existence, duplicate paths, duplicate YAML keys). This script does NOT check:
   - Consumer coverage (whether every module that reads an artifact is listed)
   - Read-gating (whether reads are authorized) — that is W1's job
   - Envelope stamping — that is W2's job
@@ -21,8 +28,10 @@ Options
   --root PATH     Repo root for resolving relative paths (default: parent of
                   the scripts/ directory, i.e. the repo root).
   --selftest      Inject a set of synthetic bad entries into the in-memory
-                  registry and prove the validator catches each one. Exits 0
-                  if all expected violations are caught, 1 otherwise.
+                  registry and prove the validator catches each one. Also
+                  plants a duplicate-key YAML that safe_load accepts and
+                  proves this script rejects it. Exits 0 if all expected
+                  violations are caught, 1 otherwise.
                   Precedent: scripts/check_validated_claims.py --selftest.
 """
 import argparse
@@ -30,6 +39,11 @@ import copy
 import re
 import sys
 from pathlib import Path
+from typing import Any
+
+import yaml
+from yaml.constructor import ConstructorError
+from yaml.nodes import MappingNode
 
 # Allow running as a standalone script from the repo root.  Unconditional: an
 # already-present root further down sys.path still loses to a foreign package
@@ -76,8 +90,78 @@ def check_consumer_count_claims(text: str) -> list[str]:
     return violations
 
 
+class _DuplicateKeyLoader(yaml.SafeLoader):
+    """SafeLoader that records repeated mapping keys instead of silently
+    keeping the last value (yaml.safe_load's default).
+    """
+
+    def __init__(self, stream: Any) -> None:
+        super().__init__(stream)
+        self.duplicate_keys: list[str] = []
+
+
+def _construct_mapping_detect_duplicates(
+    loader: _DuplicateKeyLoader, node: MappingNode, deep: bool = False
+) -> dict[Any, Any]:
+    if not isinstance(node, MappingNode):
+        raise ConstructorError(None, None, "expected a mapping node", node.start_mark)
+    loader.flatten_mapping(node)
+    result: dict[Any, Any] = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        try:
+            repeated = key in result
+        except TypeError as exc:
+            raise ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                "found an unhashable mapping key",
+                key_node.start_mark,
+            ) from exc
+        if repeated:
+            mark = key_node.start_mark
+            loader.duplicate_keys.append(
+                f"duplicate YAML key {key!r} at line {mark.line + 1}, "
+                f"column {mark.column + 1}"
+            )
+        result[key] = loader.construct_object(value_node, deep=deep)
+    return result
+
+
+_DuplicateKeyLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_mapping_detect_duplicates,
+)
+
+
+def duplicate_yaml_key_violations(text: str) -> list[str]:
+    """Return one message per repeated mapping key in YAML ``text``.
+
+    yaml.safe_load of the same text succeeds and keeps the last value;
+    this function is the instrument that can still see the collision.
+    """
+    loader = _DuplicateKeyLoader(text)
+    try:
+        loader.get_single_data()
+        return list(loader.duplicate_keys)
+    finally:
+        loader.dispose()
+
+
 def _run_integrity_check(root: Path) -> int:
     """Load and validate the registry. Returns exit code (0=clean, 1=violations)."""
+    registry_path = root / "config" / "synapse.yml"
+    try:
+        yaml_text = registry_path.read_text(encoding="utf-8")
+    except FileNotFoundError as exc:
+        print(f"[ERROR] synapse.yml not found at {registry_path}: {exc}")
+        return 1
+
+    violations = [
+        f"{registry_path.name}: {message}"
+        for message in duplicate_yaml_key_violations(yaml_text)
+    ]
+
     try:
         reg = load_registry(root)
     except FileNotFoundError as exc:
@@ -306,6 +390,37 @@ def _run_selftest(root: Path) -> int:
         ("a real consumers list", "      - engine/neuralweb/cortex.py"),
     ):
         _test_text(f"leaves {_label} alone", _sample, False)
+    # --- Test 9: duplicate YAML keys (yaml.safe_load is blind) -----------------
+    # Plant a mapping that safe_load accepts (keeps the last `notes`) and prove
+    # the unique-key loader still reports the collision. If this check used
+    # safe_load internally it would see a clean dict and pass vacuously.
+    planted_dup = (
+        "meta:\n"
+        "  schema_version: 1\n"
+        "artifacts:\n"
+        "  _selftest_dup_keys:\n"
+        "    notes: first-value-discarded-by-safe-load\n"
+        "    notes: last-value-kept-by-safe-load\n"
+    )
+    safe_loaded = yaml.safe_load(planted_dup)
+    safe_notes = (
+        (safe_loaded or {}).get("artifacts", {}).get("_selftest_dup_keys", {}).get("notes")
+    )
+    if safe_notes != "last-value-kept-by-safe-load":
+        all_passed = False
+        print("  selftest [FAIL] duplicate YAML keys (safe_load negative control)")
+        print(f"    expected safe_load to keep last notes, got: {safe_notes!r}")
+    else:
+        dup_violations = duplicate_yaml_key_violations(planted_dup)
+        matched = any("notes" in v for v in dup_violations)
+        status = "PASS" if matched else "FAIL"
+        if not matched:
+            all_passed = False
+        print(f"  selftest [{status}] duplicate YAML keys (safe_load is blind)")
+        if not matched:
+            print("    expected fragment: 'notes'")
+            print(f"    safe_load notes:   {safe_notes!r}")
+            print(f"    got violations:    {dup_violations}")
 
     print()
     if all_passed:
