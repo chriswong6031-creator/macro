@@ -58,6 +58,7 @@ from engine.entry_radar.contracts import iso
 from engine.entry_radar.entry_events import (
     RADAR_1D_LIVE_WASHOUT_SUBTYPE,
     RADAR_1D_TURN_SUBTYPES,
+    STRATIFICATION_ONLY_DETECTOR_IDS,
     EntryEvent,
     EntryEventError,
     build_radar_native_event,
@@ -100,6 +101,14 @@ C2F_ATR_MULTIPLE = 0.5
 
 #: C4's higher-timeframe washout window, in NATIVE bars of that grain (§18 A5.5).
 MTF_OS_WINDOW = 8
+
+#: §10 episode hygiene, frozen: re-arm after an episode ends requires confirmed
+#: 1D K above the floor on two consecutive sessions, or 15 elapsed sessions —
+#: whichever comes first.  Defined here, above the spec blocks, because C1_SPEC
+#: carries all three BY VALUE (W3-4).
+REARM_K_FLOOR = 50
+REARM_K_SESSIONS = 2
+REARM_MAX_SESSIONS = 15
 
 #: C4's grains.  Two and three sessions on the ABSOLUTE anchor — never G0's
 #: per-symbol listing-anchored grid and never a calendar business-day bin.
@@ -159,11 +168,26 @@ C1_SPEC: dict[str, Any] = {
                            "minutes (A5.2)"),
     "depth_requirement": ("none — no zero print is required and no depth is rewarded; "
                           "K=1 and K=19 satisfy the same arm condition (§4)"),
-    "sampling_law": ("session-open-anchored 5-minute intervals; the value of an interval "
-                     "is the LAST minute-aggregate close in it (A5.1)"),
+    "sampling_law": ("session-open-anchored intervals; the value of an interval is the "
+                     "LAST minute-aggregate close in it (A5.1)"),
     "interval_minutes": SAMPLE_INTERVAL_MINUTES,
-    "minute_knowability": ("a minute aggregate is knowable at bar_start + 60s; "
-                           "observation T admits only bars knowable <= T"),
+    "minute_knowability": ("a minute aggregate is knowable at bar_start + "
+                           "minute_bar_seconds; observation T admits only bars knowable "
+                           "<= T"),
+    # W3-4: BY VALUE.  The knowability offset decides WHICH bars an observation
+    # may read, so shortening it would change what fires without moving the hash.
+    "minute_bar_seconds": MINUTE_BAR_SECONDS,
+    # W3-1: a tape and a daily frame on different adjustment bases cannot be
+    # concatenated — the seam alone fabricates a move, and a fabricated move
+    # fabricates a cross.  The whole observation refuses.
+    "price_basis_law": ("the intraday tape's basis must equal the confirmed daily "
+                        "basis; on disagreement the ENTIRE observation is unavailable "
+                        "and every predicate is null (§5 price-basis row)"),
+    # W3-5: `stale` is in the §5 vocabulary and must be reachable.
+    "freshness_law": ("the confirmed history must run up to the reference session "
+                      "immediately preceding the evaluated session; an older feed is "
+                      "`stale` with condition_met null, never a measured non-fire "
+                      "(§7 stale demotion, #5555)"),
     "provisional_close_rule": ("append-not-replace — the latest sampled close <= T is "
                                "APPENDED as the current session's provisional daily "
                                "close; no prior confirmed close is ever replaced (§7.1)"),
@@ -172,8 +196,16 @@ C1_SPEC: dict[str, Any] = {
     "session_scope": "RTH only; extended-hours prints never enter the path (§7)",
     "confirmed_mirror": ("the confirmed-daily recipe is a reading STATE of this same "
                          "mechanism; no C1_CONFIRMED arena detector is minted (A5.2)"),
-    "rearm_law": ("§10 episode hygiene only — confirmed K > 50 on 2 consecutive sessions, "
-                  "or 15 sessions elapsed, whichever comes first"),
+    # W3-4: numbers BY VALUE from the module constants, never hand-typed into
+    # prose.  A prose "15 sessions" beside a constant of 20 is a spec that lies
+    # with a stable hash.
+    "rearm_law": {
+        "rule": ("§10 episode hygiene only — confirmed K above the floor on N "
+                 "consecutive sessions, or max_sessions elapsed, whichever first"),
+        "confirmed_k_floor": REARM_K_FLOOR,
+        "consecutive_sessions": REARM_K_SESSIONS,
+        "max_sessions": REARM_MAX_SESSIONS,
+    },
 }
 
 C2_SPEC: dict[str, Any] = {
@@ -203,8 +235,12 @@ C2_SPEC: dict[str, Any] = {
         "c2e_hist_curvature": ("H_T - 2*H_prev + H_prev2 > 0 (may lawfully fire before "
                                "c2d — curvature can turn positive while slope is still "
                                "negative; intentional)"),
+        # W3-13: the non-positive-ATR refusal was implemented and unstated.  A
+        # zero or negative ATR makes the threshold meaningless (every rebound
+        # clears it), so the variant is unavailable rather than trivially true.
         "c2f_rebound_atr": ("last_sampled_price_T - running_sampled_low_T >= "
-                            "0.5 * ATR14_prior_confirmed"),
+                            "0.5 * ATR_prior_confirmed; a non-positive "
+                            "prior-confirmed ATR => unavailable, never a trivial pass"),
     },
     "primary_variant": C2_PRIMARY_VARIANT,
     "combination_rule": ("NONE — no seventh variant, no combination detector, no '2 of 6', "
@@ -221,6 +257,27 @@ C2_SPEC: dict[str, Any] = {
                   "missing ATR makes the variant UNAVAILABLE, never False"),
     "prev_definition": ("_prev is the immediately preceding LAWFUL observation for that "
                         "variant's own inputs"),
+    # W3-4: c2f reads the sampled path directly, so the sampling grid and the
+    # minute-knowability offset are firing-relevant for C2 and ride ITS hash too.
+    "sampling": {
+        "interval_minutes": SAMPLE_INTERVAL_MINUTES,
+        "minute_bar_seconds": MINUTE_BAR_SECONDS,
+        "law": ("session-open-anchored intervals; running_sampled_low is the minimum "
+                "over the sampled path, never over the raw minute lows"),
+    },
+    # W3-8: pre-arm is an EVALUATED non-fire, not a missing input.  The episode
+    # clause of the C2 condition is known-False, so the conjunction is False
+    # without running the turn sub-predicate — which stays UNCALLED so the c2c
+    # pivot ledger holds only in-episode pivots.
+    "pre_arm_encoding": ("condition_met False with features.eligible False; the turn "
+                         "sub-predicate is never evaluated.  An UNAVAILABLE or STALE "
+                         "input dominates and yields null"),
+    # W3-1 / W3-5: the same two refusals C1 carries, restated where C2 reads them.
+    "price_basis_law": ("tape basis must equal the confirmed daily basis; on "
+                        "disagreement every variant is unavailable and null"),
+    "freshness_law": ("a confirmed history older than the reference session "
+                      "immediately preceding the evaluated session is `stale` and "
+                      "yields null, never a measured non-fire"),
     "indicator_core": ic.INDICATOR_CORE,
     "candidates_per_episode_per_variant": 1,
 }
@@ -272,21 +329,20 @@ def c4_spec_hash() -> str:
     return sha16(C4_SPEC)
 
 
-#: Detector ids registered ``role=stratification_only``.  Held as data so the
-#: refusal below cannot drift from the spec block that declares the role.
-STRATIFICATION_ONLY_IDS: frozenset[str] = frozenset({
-    did for did, spec in ((C4_DETECTOR_ID, C4_SPEC),)
-    if spec.get("role") == "stratification_only"
-})
+#: Detector ids that may never emit.  CONSUMED from ``entry_events``, not derived
+#: here (W3-7): the event doors and the lifecycle doors must refuse the same set,
+#: and two derivations of "the same set" is how one of them ends up shorter.
+#: ``tests/test_entry_radar_w3_c4.py`` pins that every spec declaring
+#: ``role=stratification_only`` appears in it, and nothing else does.
+STRATIFICATION_ONLY_IDS: frozenset[str] = frozenset(STRATIFICATION_ONLY_DETECTOR_IDS)
 
 
 def assert_can_fire(detector_id: str) -> None:
     """Raise ``StratificationOnly`` for a detector that may never emit.
 
-    Called on every path that could produce a candidate — event minting and
-    lifecycle transition alike.  The refusal reads the SPEC's declared role, so a
-    future detector registered ``stratification_only`` inherits the fence without
-    anyone remembering to add it here.
+    Called on every path that could produce a candidate — lifecycle transition
+    here, event construction in ``entry_events`` — off ONE list, so a detector
+    cannot be fenced at one door and open at another.
     """
     if detector_id in STRATIFICATION_ONLY_IDS:
         raise StratificationOnly(
@@ -343,7 +399,16 @@ class DetectorEpisode:
     last_observed_at: str | None = None
     transitions: list[Any] = field(default_factory=list)
     event_ids: list[str] = field(default_factory=list)
+    #: ``event_id -> signal_ts`` for everything this episode minted.  Kept so a
+    #: consumer can answer "did this event EXIST yet?" without re-reading the event
+    #: store — the question :func:`lawful_evidence_refs` asks on every reading.
+    event_ts: dict[str, str] = field(default_factory=dict)
     fires: list[str] = field(default_factory=list)
+
+    def record_event(self, event_id: str, signal_ts: str) -> None:
+        """Append an event this episode minted, with the clock it was minted at."""
+        self.event_ids.append(event_id)
+        self.event_ts[event_id] = signal_ts
 
     def __post_init__(self) -> None:
         assert_can_fire(self.detector_id)
@@ -378,15 +443,26 @@ class DetectorEpisode:
             "last_observed_at": self.last_observed_at,
             "transitions": [t.to_dict() for t in self.transitions],
             "event_ids": list(self.event_ids),
+            "event_ts": dict(self.event_ts),
             "fires": list(self.fires),
         }
 
 
-#: §10 episode hygiene, frozen: re-arm after an episode ends requires confirmed
-#: 1D K > 50 on two consecutive sessions, or 15 elapsed sessions — whichever first.
-REARM_K_FLOOR = 50
-REARM_K_SESSIONS = 2
-REARM_MAX_SESSIONS = 15
+def lawful_evidence_refs(episode: DetectorEpisode | None,
+                         observed_at: str) -> tuple[str, ...]:
+    """Evidence an observation at ``observed_at`` could actually have cited.
+
+    W3-3.  Every C2 reading used to carry the C1 episode's event ids, INCLUDING
+    readings dated hours before that event existed — a forward citation inside the
+    record whose whole purpose is to say what was knowable when.  An event with no
+    recorded clock is excluded rather than assumed old: fail-closed, because the
+    failure this fixes was a citation nobody had checked.
+    """
+    if episode is None:
+        return ()
+    return tuple(eid for eid in episode.event_ids
+                 if (episode.event_ts.get(eid) or "") != ""
+                 and episode.event_ts[eid] <= observed_at)
 
 
 def rearm_eligible(confirmed_k_since_end: Sequence[float | None],
@@ -474,13 +550,62 @@ class DailyHistory:
         idx = pd.DatetimeIndex(frame.index)
         if getattr(idx, "tz", None) is not None:
             idx = idx.tz_localize(None)
-        object.__setattr__(self, "frame",
-                           frame.set_axis(idx.normalize()).sort_index())
+        idx = idx.normalize()
+        # W3-12.  A duplicated session silently doubles a bar inside every
+        # rolling window — the RSI denominator, the StochRSI extremes and the ATR
+        # all shift, and nothing downstream can see why.  A frame handed in out of
+        # order is the same defect wearing a different hat: sorting it would hide
+        # that the caller's idea of "the last bar" and ours disagree.
+        if idx.has_duplicates:
+            dupes = sorted({str(d.date()) for d in idx[idx.duplicated()]})
+            raise ChallengerError(
+                f"DailyHistory index carries duplicate session(s) {dupes}; a doubled "
+                f"bar shifts every rolling window and no consumer can see it")
+        if not idx.is_monotonic_increasing:
+            raise ChallengerError(
+                "DailyHistory index is not monotonically increasing; pass the frame in "
+                "session order — silently sorting it would hide that the caller's "
+                "'last bar' and this module's disagree")
+        object.__setattr__(self, "frame", frame.set_axis(idx))
 
     def confirmed_through(self, session: date) -> pd.DataFrame:
         """Rows STRICTLY BEFORE ``session`` — nothing from the open session leaks."""
         cut = pd.Timestamp(session).normalize()
         return self.frame.loc[self.frame.index < cut]
+
+
+def prior_reference_session(session: date, *, market: str = "US") -> date | None:
+    """The reference session immediately preceding ``session``, or None before the epoch.
+
+    Read from ``engine.session_anchor.reference_sessions`` — the same absolute
+    calendar C4's buckets ride — so "yesterday" is a calendar fact rather than a
+    property of whatever rows the caller happened to load.
+    """
+    reference = session_anchor.reference_sessions(market)
+    position = int(reference.searchsorted(pd.Timestamp(session).normalize(),
+                                          side="left"))
+    if position <= 0:
+        return None
+    return reference[position - 1].date()
+
+
+def freshness_state(last_confirmed: date | None, session: date, *,
+                    market: str = "US") -> str:
+    """``confirmed`` | ``stale`` | ``unavailable`` for a confirmed-history cut.
+
+    W3-5.  ``stale`` is in the §5 vocabulary and was unreachable: a three-month-old
+    daily feed produced a `confirmed` reading and a measured non-fire, which is
+    exactly the stale-frame failure #5555's law exists to stop.  The test is
+    CONTINUITY against the reference calendar — the history must reach the session
+    immediately before the one being evaluated.  Anything OLDER is stale; a feed
+    carrying an extra non-session row is not (it is not older, merely odd).
+    """
+    if last_confirmed is None:
+        return "unavailable"
+    required = prior_reference_session(session, market=market)
+    if required is None:
+        return "confirmed"
+    return "stale" if last_confirmed < required else "confirmed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -518,10 +643,18 @@ class Observation:
     source_bar_time: str | None
     source_bar_known_at: str | None
     data_vintage: str | None
+    #: The INTRADAY tape's basis and the CONFIRMED DAILY frame's basis, kept as a
+    #: pair (W3-1).  One of them alone cannot be audited: the whole question is
+    #: whether the two halves of the concatenated series agree.
     price_basis: str
+    daily_price_basis: str
     atr_prior_confirmed: float | None
     atr_basis: str | None
     confirmed_bars: int
+    #: ``confirmed`` | ``stale`` | ``unavailable`` for the confirmed history behind
+    #: this observation (W3-5).  Recorded separately from ``availability`` because
+    #: "the feed is three months old" and "no print yet today" are different facts.
+    history_freshness: str = "confirmed"
 
     @property
     def oversold(self) -> bool | None:
@@ -604,26 +737,55 @@ def build_observation_path(*, ticker: str, daily: DailyHistory,
         session_ts = pd.Timestamp(tape.session).normalize()
         atr_series = ic.atr14(confirmed["high"], confirmed["low"], confirmed["close"])
         atr_prior = ic.last_finite(atr_series)
+        # W3-1.  The basis check gated only the ATR fields; the OSCILLATOR was
+        # computed on `confirmed daily closes + a sampled close from the other
+        # basis`, so the seam between the two halves fabricated a move — and a
+        # fabricated move fabricates a cross and mints a candidate.  A disagreeing
+        # basis now voids the whole observation, exactly as c2f already refused.
         basis_agrees = daily.price_basis == tape.price_basis
-        atr_basis = (f"wilder_atr14_true_range_prior_confirmed[{daily.price_basis}]"
-                     if atr_prior is not None else None)
+        atr_basis = (f"wilder_atr{ic.ATR_LEN}_true_range_prior_confirmed"
+                     f"[{daily.price_basis}]" if atr_prior is not None else None)
         vintage = tape.vintage or daily.vintage or None
+        last_confirmed = (base_index[-1].date() if len(base_index) else None)
+        freshness = freshness_state(last_confirmed, tape.session)
+
+        def _record(point: SampledPoint, *, availability: str,
+                    sampled: float | None, k: float | None, d: float | None,
+                    hist: float | None) -> Observation:
+            return Observation(
+                ticker=ticker, observed_at=utc_iso(point.observed_at),
+                market_session=tape.session.isoformat(),
+                interval_start=utc_iso(point.interval_start),
+                availability=availability, bar_state="provisional",
+                sampled_close=sampled,
+                running_sampled_low=(point.running_sampled_low
+                                     if sampled is not None else None),
+                running_minute_low=point.running_minute_low,
+                k=k, d=d, hist=hist,
+                source_bar_time=(session_ts.date().isoformat()
+                                 if sampled is not None else None),
+                source_bar_known_at=None,
+                data_vintage=vintage, price_basis=tape.price_basis,
+                daily_price_basis=daily.price_basis,
+                atr_prior_confirmed=atr_prior if basis_agrees else None,
+                atr_basis=atr_basis if basis_agrees else None,
+                confirmed_bars=int(len(closes)),
+                history_freshness=freshness)
 
         for point in sample_session_path(tape, interval_minutes=interval_minutes):
-            if point.sampled_close is None or len(closes) == 0:
-                observations.append(Observation(
-                    ticker=ticker, observed_at=utc_iso(point.observed_at),
-                    market_session=tape.session.isoformat(),
-                    interval_start=utc_iso(point.interval_start),
-                    availability="unavailable", bar_state="provisional",
-                    sampled_close=None, running_sampled_low=None,
-                    running_minute_low=point.running_minute_low,
-                    k=None, d=None, hist=None,
-                    source_bar_time=None, source_bar_known_at=None,
-                    data_vintage=vintage, price_basis=tape.price_basis,
-                    atr_prior_confirmed=atr_prior if basis_agrees else None,
-                    atr_basis=atr_basis if basis_agrees else None,
-                    confirmed_bars=int(len(closes))))
+            if not basis_agrees or point.sampled_close is None or len(closes) == 0:
+                observations.append(_record(
+                    point, availability="unavailable",
+                    sampled=(point.sampled_close if basis_agrees else None),
+                    k=None, d=None, hist=None))
+                continue
+            if freshness != "confirmed":
+                # A STALE history is not computed on at all: a %K derived from a
+                # three-month-old base is a current-looking number about an old
+                # world, and the safest place for it is nowhere.
+                observations.append(_record(
+                    point, availability=freshness, sampled=point.sampled_close,
+                    k=None, d=None, hist=None))
                 continue
 
             series = pd.Series(
@@ -632,24 +794,10 @@ def build_observation_path(*, ticker: str, daily: DailyHistory,
             k_series, d_series = ic.stoch_rsi_kd(series)
             hist_series = ic.rsi_macd_hist(series)
             k_val = ic.last_finite(k_series)
-            d_val = ic.last_finite(d_series)
-            hist_val = ic.last_finite(hist_series)
-            observations.append(Observation(
-                ticker=ticker, observed_at=utc_iso(point.observed_at),
-                market_session=tape.session.isoformat(),
-                interval_start=utc_iso(point.interval_start),
-                availability="unavailable" if k_val is None else "provisional",
-                bar_state="provisional",
-                sampled_close=float(point.sampled_close),
-                running_sampled_low=point.running_sampled_low,
-                running_minute_low=point.running_minute_low,
-                k=k_val, d=d_val, hist=hist_val,
-                source_bar_time=session_ts.date().isoformat(),
-                source_bar_known_at=None,
-                data_vintage=vintage, price_basis=tape.price_basis,
-                atr_prior_confirmed=atr_prior if basis_agrees else None,
-                atr_basis=atr_basis if basis_agrees else None,
-                confirmed_bars=int(len(closes))))
+            observations.append(_record(
+                point, availability="unavailable" if k_val is None else "provisional",
+                sampled=point.sampled_close, k=k_val,
+                d=ic.last_finite(d_series), hist=ic.last_finite(hist_series)))
     return tuple(observations)
 
 
@@ -657,9 +805,13 @@ def build_observation_path(*, ticker: str, daily: DailyHistory,
 # C1 — the arm IS the candidate
 # ---------------------------------------------------------------------------
 
+#: Availability states that can carry no verdict at all (§18 A5.0 + W3-5).
+NULL_AVAILABILITY: frozenset[str] = frozenset({"unavailable", "stale"})
+
+
 def c1_reading(obs: Observation) -> DetectorReading:
-    """One C1 reading.  ``condition_met`` is None whenever K is unavailable."""
-    available = obs.availability != "unavailable"
+    """One C1 reading.  ``condition_met`` is None on an unavailable OR stale input."""
+    available = obs.k is not None and obs.availability not in NULL_AVAILABILITY
     return DetectorReading(
         ticker=obs.ticker,
         detector_id=C1_DETECTOR_ID,
@@ -679,7 +831,11 @@ def c1_reading(obs: Observation) -> DetectorReading:
             "oversold_threshold": ic.OVERSOLD,
             "sampled_close": obs.sampled_close,
             "confirmed_bars": obs.confirmed_bars,
+            # W3-1: the PAIR, so a reader can audit the seam rather than trust it.
             "price_basis": obs.price_basis,
+            "daily_price_basis": obs.daily_price_basis,
+            # W3-5: why the availability says what it says.
+            "history_freshness": obs.history_freshness,
         },
         condition_met=(None if not available else bool(obs.k < ic.OVERSOLD)),
     )
@@ -704,9 +860,17 @@ def run_c1(path: Sequence[Observation]) -> C1Run:
     ONE candidate per episode (A5.2).  The first ``K < 20`` arms AND promotes at
     the same instant — ``candidate_at == first_armed_at == observed_at`` — and
     every later oversold observation is a path observation, not a second
-    candidate.  A new episode may not open while the current one is nonterminal;
-    §10's re-arm rule is :func:`rearm_eligible`, and the live evaluator (PR-4)
-    owns the clock that ends an episode.
+    candidate.
+
+    WHAT ``episodes`` IS NOT (W3-10).  It is a per-PATH trace, not a §10 episode
+    ledger: a single pass produces at most one episode BY CONSTRUCTION, because
+    nothing here can terminate the live one and §10 forbids a second while it is
+    nonterminal.  The clocks that END an episode — CANDIDATE resolving at H,
+    ARMED/TURNING expiring at 15 sessions, and the re-arm eligibility that follows
+    — belong to the live evaluator (PR-4) and the nightly reconciler (PR-5).
+    :func:`rearm_eligible` is the exported primitive they will wire; W3 ships the
+    predicate, not the clock, because a clock with no ledger behind it would be a
+    second source of truth for when an episode ended.
     """
     readings: list[DetectorReading] = []
     episodes: list[DetectorEpisode] = []
@@ -734,13 +898,17 @@ def run_c1(path: Sequence[Observation]) -> C1Run:
             family="radar_1d_live_washout",
             subtype=RADAR_1D_LIVE_WASHOUT_SUBTYPE,
             signal_ts=obs.observed_at,
+            # W3-15: a 1D-LIVE observation is knowable exactly at its own
+            # observation instant — that is what "live" means.  Finality is
+            # unchanged (the BAR behind it is still provisional until the close).
+            signal_known_ts=obs.observed_at,
             market_session=obs.market_session,
             bar_state=obs.bar_state,
             context={"k": obs.k, "d": obs.d, "sampled_close": obs.sampled_close,
                      "market_session": obs.market_session,
                      "oversold_threshold": ic.OVERSOLD})
         events.append(event)
-        live.event_ids.append(str(event.event_id))
+        live.record_event(str(event.event_id), obs.observed_at)
         live.fires.append(obs.observed_at)
         live.first_armed_at = obs.observed_at
         live.candidate_at = obs.observed_at
@@ -854,11 +1022,18 @@ C2_EVALUATORS = {
 }
 
 
-def _c2_features(obs: Observation, variant: str) -> dict[str, Any]:
+def _c2_features(obs: Observation, variant: str, *, eligible: bool) -> dict[str, Any]:
     base: dict[str, Any] = {
         "k": obs.k, "d": obs.d, "hist": obs.hist,
         "sampled_close": obs.sampled_close,
         "price_basis": obs.price_basis,
+        "daily_price_basis": obs.daily_price_basis,
+        "history_freshness": obs.history_freshness,
+        # W3-8: C3 already encoded the same situation this way.  One vocabulary
+        # across the two detectors, so a consumer counting non-fires does not have
+        # to know which detector wrote the row.
+        "eligible": eligible,
+        "pre_arm": not eligible,
     }
     if variant == "c2f_rebound_atr":
         base["running_sampled_low"] = obs.running_sampled_low
@@ -900,6 +1075,16 @@ def run_c2(path: Sequence[Observation], c1_episode: DetectorEpisode | None, *,
     ``_prev`` means "the previous observation at which THIS mechanism could be
     evaluated" — a variant still inside its indicator's warm-up does not consume a
     predecessor it never had.
+
+    PRE-ARM IS AN EVALUATED NON-FIRE (W3-8).  C2's condition is "inside a
+    nonterminal C1 episode AND the turn"; before the arm the first conjunct is
+    known-FALSE, so the conjunction is False and the turn sub-predicate is never
+    run — which is also what keeps the c2c pivot ledger holding in-episode pivots
+    only.  An unavailable or stale INPUT still dominates and yields null: not
+    knowing beats knowing the answer is no.
+
+    THE RETURNED EPISODES ARE A PER-PATH TRACE, NOT A LEDGER (W3-10) — see
+    :func:`run_c1`; §10's termination and re-arm clocks are PR-4/PR-5's.
     """
     evaluators = dict(evaluators or C2_EVALUATORS)
     readings: list[DetectorReading] = []
@@ -913,12 +1098,18 @@ def run_c2(path: Sequence[Observation], c1_episode: DetectorEpisode | None, *,
     armed_at = c1_episode.first_armed_at if c1_episode is not None else None
     for obs in path:
         eligible = armed_at is not None and obs.observed_at >= armed_at
+        input_ok = obs.availability not in NULL_AVAILABILITY
         for variant, evaluate in evaluators.items():
             vstate = state[variant]
-            verdict = evaluate(vstate, obs) if eligible else None
-            availability = obs.availability if eligible else "unavailable"
-            if verdict is None:
-                availability = "unavailable"
+            if not input_ok:
+                verdict, availability = None, obs.availability
+            elif not eligible:
+                # The episode clause is known-False; the turn stays UNCALLED.
+                verdict, availability = False, obs.availability
+            else:
+                verdict = evaluate(vstate, obs)
+                availability = obs.availability if verdict is not None \
+                    else "unavailable"
             readings.append(DetectorReading(
                 ticker=obs.ticker,
                 detector_id=C2_DETECTOR_ID,
@@ -932,9 +1123,9 @@ def run_c2(path: Sequence[Observation], c1_episode: DetectorEpisode | None, *,
                 source_bar_known_at=obs.source_bar_known_at,
                 bar_state=obs.bar_state,
                 data_vintage=obs.data_vintage,
-                features=_c2_features(obs, variant),
+                features=_c2_features(obs, variant, eligible=eligible),
                 condition_met=verdict,
-                evidence_refs=tuple(c1_episode.event_ids) if c1_episode else (),
+                evidence_refs=lawful_evidence_refs(c1_episode, obs.observed_at),
             ))
             if verdict is True:
                 fires[variant].append(obs.observed_at)
@@ -951,6 +1142,8 @@ def run_c2(path: Sequence[Observation], c1_episode: DetectorEpisode | None, *,
                         family="radar_1d_turn",
                         subtype=variant,
                         signal_ts=obs.observed_at,
+                        # W3-15: knowable at the observation instant (see run_c1).
+                        signal_known_ts=obs.observed_at,
                         market_session=obs.market_session,
                         bar_state=obs.bar_state,
                         context={"variant": variant, "k": obs.k, "d": obs.d,
@@ -958,7 +1151,7 @@ def run_c2(path: Sequence[Observation], c1_episode: DetectorEpisode | None, *,
                                  "market_session": obs.market_session,
                                  "sampled_close": obs.sampled_close})
                     events.append(event)
-                    episode.event_ids.append(str(event.event_id))
+                    episode.record_event(str(event.event_id), obs.observed_at)
                     episode.first_armed_at = obs.observed_at
                     episode.candidate_at = obs.observed_at
                     episode.transition(lc.DetectorState.CANDIDATE, at=obs.observed_at,
@@ -1145,6 +1338,21 @@ def c4_snapshot(*, ticker: str, daily: DailyHistory, market_session: date | str,
     session = (market_session if isinstance(market_session, date)
                else date.fromisoformat(str(market_session)[:10]))
     confirmed = daily.confirmed_through(session)
+    index = pd.DatetimeIndex(confirmed.index)
+    freshness = freshness_state(index[-1].date() if len(index) else None, session,
+                                market=market)
+    if freshness != "confirmed":
+        # W3-5.  A stratification snapshot computed on an aged frame would read as
+        # a current higher-timeframe state; the registered features are withheld
+        # and the reason is recorded, rather than published with an asterisk.
+        blank = {n: MtfGrainState(grain=n, availability=freshness) for n in MTF_GRAINS}
+        return C4State(
+            ticker=ticker, detector_id=C4_DETECTOR_ID,
+            market_session=session.isoformat(), anchor_era=RADAR_MTF_ANCHOR_ERA,
+            base_variant=base_variant, d2=blank[2], d3=blank[3], recovery_count=None,
+            provisional_context={"history_freshness": freshness,
+                                 "note": "confirmed history does not reach the prior "
+                                         "reference session; features withheld"})
     d2, debug2 = _grain_state(confirmed, 2, market=market)
     d3, debug3 = _grain_state(confirmed, 3, market=market)
     if d2.turn is None or d3.turn is None:
@@ -1156,6 +1364,7 @@ def c4_snapshot(*, ticker: str, daily: DailyHistory, market_session: date | str,
         market_session=session.isoformat(), anchor_era=RADAR_MTF_ANCHOR_ERA,
         base_variant=base_variant, d2=d2, d3=d3, recovery_count=recovery,
         provisional_context={"d2": debug2, "d3": debug3,
+                             "history_freshness": freshness,
                              "note": "partial buckets are debug context, never registered"})
 
 
@@ -1167,7 +1376,11 @@ def c4_reading(state: C4State, *, observed_at: str) -> DetectorReading:
     reader to treat the absence of a turn as a measured non-fire of a detector
     that cannot fire at all.
     """
-    available = state.d2.availability == "confirmed" and state.d3.availability == "confirmed"
+    grains = (state.d2.availability, state.d3.availability)
+    available = grains == ("confirmed", "confirmed")
+    # W3-5: a stale frame is reported STALE, not merely unavailable — the two are
+    # different provenance facts and only one of them is fixable by waiting.
+    degraded = "stale" if "stale" in grains else "unavailable"
     return DetectorReading(
         ticker=state.ticker,
         detector_id=C4_DETECTOR_ID,
@@ -1176,7 +1389,7 @@ def c4_reading(state: C4State, *, observed_at: str) -> DetectorReading:
         variant=None,
         observed_at=observed_at,
         market_session=state.market_session,
-        availability="confirmed" if available else "unavailable",
+        availability="confirmed" if available else degraded,
         source_bar_time=state.d3.bucket_last_session or state.d2.bucket_last_session,
         source_bar_known_at=state.d3.bucket_last_session or state.d2.bucket_last_session,
         bar_state="confirmed",

@@ -67,6 +67,12 @@ READING_FIELDS: tuple[str, ...] = (
     "authority",
 )
 
+#: Availability states that REQUIRE ``condition_met=None``.  ``stale`` joined
+#: ``unavailable`` at W3-5: both describe an input that cannot support a current
+#: verdict, and the difference between them (we could not look / we looked at an
+#: old world) is a provenance fact, not a licence to publish a boolean.
+_NULL_REQUIRED_AVAILABILITY: frozenset[str] = frozenset({"unavailable", "stale"})
+
 #: Substrings a ``features`` key may never contain.  Narrower than
 #: ``contracts.BANNED_RECORD_TOKENS`` on purpose: a reading legitimately carries
 #: counts and levels (``recovery_count``, ``k``, ``running_sampled_low``); what it
@@ -137,13 +143,22 @@ class DetectorReading:
             raise ReadingError(f"condition_met {self.condition_met!r} is not tri-state "
                                f"(True | False | None)")
         # --- the null law (§18 A5.0), structural ---
-        if self.availability == "unavailable" and self.condition_met is not None:
+        #
+        # W3-5 widened this from `unavailable` to `unavailable | stale`.  Same
+        # rationale, one step further: a STALE input is a real reading of an old
+        # world, and a verdict computed from it would be a current-sounding claim
+        # about a tape nobody has seen since.  §7 demotes stale inputs visibly and
+        # #5555's law forbids acting off a stale frame — so stale carries no
+        # boolean at all rather than a boolean with an asterisk.
+        if self.availability in _NULL_REQUIRED_AVAILABILITY and \
+                self.condition_met is not None:
             raise ReadingError(
                 f"{self.detector_id}{'/' + self.variant if self.variant else ''} for "
                 f"{self.ticker} at {self.observed_at} reports condition_met="
-                f"{self.condition_met!r} on an UNAVAILABLE input; `unavailable` is not "
-                f"`false` — a missing bar is not evidence the detector did not fire "
-                f"(contract §18 A5.0 null law)")
+                f"{self.condition_met!r} on an {self.availability.upper()} input; "
+                f"`{self.availability}` is not `false` — a missing or aged bar is not "
+                f"evidence the detector did not fire (contract §18 A5.0 null law, §7 "
+                f"stale demotion)")
         bad = sorted(k for k in self.features
                      if any(tok in str(k).lower() for tok in BANNED_FEATURE_TOKENS))
         if bad:

@@ -126,6 +126,18 @@ RADAR_NATIVE_SUBTYPES: dict[str, frozenset[str]] = {
 
 RADAR_NATIVE_FAMILIES: tuple[str, ...] = tuple(RADAR_NATIVE_SUBTYPES)
 
+#: THE list of detectors that may never emit.  Held HERE — at the schema root,
+#: where every event door already passes — so there is exactly one of it:
+#: ``challengers.assert_can_fire`` consumes this tuple rather than keeping a
+#: second copy derived from its own spec blocks.
+#:
+#: W3-7: family-level refusal was not enough.  ``C4_MTF_TURN@1`` under a LAWFUL
+#: family (``radar_1d_turn``) walked straight through both the builder and the
+#: direct ``EntryEvent`` constructor, so the `DNR:KILL-WASHOUT-TURN` fence held
+#: only for the one shape nobody would try.  The refusal is now on the
+#: ``detector_id``, at construction, where no door can route around it.
+STRATIFICATION_ONLY_DETECTOR_IDS: tuple[str, ...] = ("C4_MTF_TURN@1",)
+
 #: FROZEN — the collapses A1.2 forbids.  The first four are flattenings (a
 #: family that dissolves the distinction it was recorded to preserve); the last
 #: three are UI labels masquerading as producer enums (A4.3).
@@ -504,6 +516,14 @@ class EntryEvent:
             raise EntryEventError(f"{self.family} requires subtype "
                                   f"{WATCH_SUBTYPES[self.family]!r}, got {self.subtype!r}")
         if self.family in RADAR_NATIVE_SUBTYPES:
+            if self.detector_id in STRATIFICATION_ONLY_DETECTOR_IDS:
+                raise EntryEventError(
+                    f"detector_id {self.detector_id!r} is registered "
+                    f"role=stratification_only and may never address an event — not "
+                    f"even under a lawful family like {self.family!r}.  Its features "
+                    f"stratify C2 episodes in later analysis; an arming interaction is "
+                    f"DNR:KILL-WASHOUT-TURN's construction re-cut at a new grain "
+                    f"(contract §18 A5.5)")
             allowed = RADAR_NATIVE_SUBTYPES[self.family]
             if self.subtype not in allowed:
                 raise EntryEventError(
@@ -721,6 +741,11 @@ def build_radar_native_event(*, detector_id: str, detector_spec_hash: str,
             f"({list(RADAR_NATIVE_FAMILIES)}); C4 is registered "
             f"role=stratification_only and has no family at all, so it cannot address "
             f"an event (contract §18 A5.5/A5.8, DNR:KILL-WASHOUT-TURN)")
+    if detector_id in STRATIFICATION_ONLY_DETECTOR_IDS:
+        raise EntryEventError(
+            f"detector_id {detector_id!r} is registered role=stratification_only and "
+            f"may never mint an event, whatever family it names "
+            f"(contract §18 A5.5, DNR:KILL-WASHOUT-TURN)")
     if bar_state not in BAR_STATES:
         raise EntryEventError(f"bar_state {bar_state!r} not in {sorted(BAR_STATES)}")
     final = bar_state == "confirmed"

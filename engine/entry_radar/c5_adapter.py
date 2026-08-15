@@ -225,28 +225,49 @@ def c5_reading(candidate: C5Candidate, *, observed_at: str | None = None,
 def superseded_reading(candidate: C5Candidate, event: EntryEvent) -> DetectorReading:
     """The reading for a watch that LOST the same-bar precedence contest.
 
-    ``condition_met=False`` and not ``None``: the observation existed and was
+    A KNOWABLE loser is ``condition_met=False``: the observation existed and was
     evaluated — it lost to the emitter's own de-duplication rule.  Recording it
     unavailable would erase an evaluated fact; recording nothing would erase the
     dot entirely.
+
+    W3-6: an UNKNOWABLE loser is not a knowable one with a missing field.  This
+    branch used to date it at ``signal_ts`` and stamp it ``confirmed`` — the exact
+    substitution :func:`c5_reading` refuses on the winning side, arriving through
+    the door nobody looked at.  With no ``signal_known_ts`` there is no decision
+    clock, so the reading is ``unavailable`` with a null verdict and says which
+    field is missing.  ``observed_at`` keeps the best-available label because the
+    record still has to be addressable.
     """
     known = event.signal_known_ts
+    features = {"subtype": str(event.subtype), "family": event.family,
+                "superseded_by_event_id": candidate.event_id,
+                "precedence_rule": "blocked_trigger takes precedence on a shared bar"}
+    refs = (str(event.event_id), candidate.event_id)
+    if not known:
+        return DetectorReading(
+            ticker=event.ticker, detector_id=C5_DETECTOR_ID,
+            detector_version=C5_VERSION, detector_spec_hash=c5_spec_hash(),
+            variant=str(event.subtype),
+            observed_at=str(event.signal_ts),
+            market_session=str(event.signal_ts),
+            availability="unavailable",
+            source_bar_time=event.signal_ts, source_bar_known_at=None,
+            bar_state="provisional", data_vintage=None,
+            features={**features,
+                      "knowability_basis": "signal_known_ts (absent)"},
+            condition_met=None, evidence_refs=refs)
     return DetectorReading(
         ticker=event.ticker, detector_id=C5_DETECTOR_ID,
         detector_version=C5_VERSION, detector_spec_hash=c5_spec_hash(),
         variant=str(event.subtype),
-        observed_at=str(known or event.signal_ts),
-        market_session=str(known or event.signal_ts),
+        observed_at=str(known),
+        market_session=str(known),
         availability="confirmed" if event.final else "provisional",
         source_bar_time=event.signal_ts, source_bar_known_at=known,
         bar_state="confirmed" if event.final else "provisional",
         data_vintage=None,
-        features={"subtype": str(event.subtype), "family": event.family,
-                  "knowability_basis": "signal_known_ts",
-                  "superseded_by_event_id": candidate.event_id,
-                  "precedence_rule": "blocked_trigger takes precedence on a shared bar"},
-        condition_met=False,
-        evidence_refs=(str(event.event_id), candidate.event_id))
+        features={**features, "knowability_basis": "signal_known_ts"},
+        condition_met=False, evidence_refs=refs)
 
 
 @dataclass(frozen=True, slots=True)

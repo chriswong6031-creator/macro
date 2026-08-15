@@ -22,9 +22,17 @@
    "session": "2025-12-24",
    "source": "a monotone intraday ramp on a REAL NYSE early-close session date, so the 13:00 clip is exercised against the real calendar",
    "vintage": "n/a \u2014 no vendor input"
+  },
+  "w3_rth_filter_tape.json": {
+   "kind": "synthetic",
+   "minute_rows": 377,
+   "session": "2026-06-24",
+   "source": "premarket prints at 08:00/09:15, NO print until 09:47, and postmarket prints, on a real NYSE session date",
+   "vintage": "n/a \u2014 no vendor input",
+   "why_synthetic": "W3-9: deleting the RTH filter survived the whole battery because every other tape prints from 09:30. An opening GAP is what makes the filter's absence visible \u2014 the 08:00 print becomes the 09:35 sampled value the moment the filter stops working"
   }
  },
- "generated_at": "2026-08-15T03:14:43+00:00",
+ "generated_at": "2026-08-15T04:37:32+00:00",
  "generated_by": "scripts/entry_radar_fixture_gen.py",
  "regenerate": "python3 scripts/entry_radar_fixture_gen.py",
  "schema": "radar.w3.fixture_manifest/v1"

@@ -65,6 +65,7 @@ from engine.entry_radar.challengers import (
     DetectorEpisode,
     MinuteBar,
     SessionTape,
+    freshness_state,
     lifecycle,
     rth_minutes,
     utc_iso,
@@ -91,6 +92,15 @@ FOUR_HOUR_MINUTES = 240
 #: C3's turn primitive needs three consecutive finite histogram points.
 TURN_POINTS = 3
 
+#: §10, frozen: ARMED/TURNING without candidate-promotion EXPIRES after 15
+#: sessions.  W3-2 wired it: a C3 arm used to wait forever, so a washout that
+#: healed months earlier still promoted on the first 4H turn that eventually
+#: arrived (reproduced at 88 sessions post-arm, with the confirmed daily K back at
+#: 95.8).  This is the correct staleness instrument — NOT a "still oversold at the
+#: turn" re-check, which would rebuild at 4H exactly the mistake A5.3 forbids for
+#: C2: the washout is the episode's history and the turn is the event.
+C3_ARM_EXPIRY_SESSIONS = 15
+
 
 class C3Error(ChallengerError):
     """A malformed C3 input or an illegal C3 operation."""
@@ -108,9 +118,23 @@ C3_SPEC: dict[str, Any] = {
                           "open (conservative); no same-session final close may create a "
                           "morning arm retrospectively — a historical parquet holding it "
                           "is not knowability (§5)"),
-    "arm_rule": "C3 arms when a confirmed 1D washout becomes knowable",
+    "arm_rule": ("C3 arms when a confirmed 1D washout becomes knowable, stamped at that "
+                 "session's 09:30 ET open instant"),
     "turn_rule": ("a NEW completed-4H RSI-MACD histogram turn strictly AFTER the arm; a "
                   "pre-arm 4H turn is stale context and cannot promote"),
+    # W3-2: firing-relevant, so it rides the hash BY VALUE.
+    "arm_expiry_sessions": C3_ARM_EXPIRY_SESSIONS,
+    "arm_expiry_rule": ("§10 episode hygiene — an ARMED episode with no candidate "
+                        "EXPIRES once arm_expiry_sessions have elapsed since the arm, "
+                        "and no candidate may be minted at or after expiry.  There is "
+                        "deliberately NO 'still oversold at the turn' re-check: that is "
+                        "the requirement A5.3 forbids, re-cut at 4H"),
+    "freshness_law": ("the confirmed daily history must reach the reference session "
+                      "immediately preceding the evaluated session; an older feed is "
+                      "`stale` with condition_met null (§7, #5555)"),
+    "empty_bucket_law": ("a CONFIRMED bucket with no prints contributes no close — the "
+                         "series stays adjacent rather than gaining a fabricated one — "
+                         "and the drop is disclosed per reading and on the run"),
     "turn_primitive": "H4_T > H4_prev AND H4_prev <= H4_prev2",
     "grid_anchor": "the 09:30 ET session open",
     "grid_nominal_minutes": FOUR_HOUR_MINUTES,
@@ -337,6 +361,10 @@ def c3_daily_leg(daily: DailyHistory, at_session: date) -> C3DailyLeg:
     create a same-session arm is not merely ignored — it is never read.  Its
     ``known_at`` is the arming session's own date: that is the "next session open"
     of §5, stated conservatively.
+
+    W3-5: the cut must also be FRESH.  A history that stops short of the reference
+    session immediately preceding ``at_session`` is `stale`, and a stale leg arms
+    nothing — a three-month-old K is not today's washout.
     """
     confirmed = daily.confirmed_through(at_session)
     closes = confirmed["close"].astype(float)
@@ -344,6 +372,13 @@ def c3_daily_leg(daily: DailyHistory, at_session: date) -> C3DailyLeg:
         return C3DailyLeg(availability="unavailable", k=None, washed=None,
                           source_bar_time=None, source_bar_known_at=None,
                           confirmed_bars=0)
+    index = pd.DatetimeIndex(confirmed.index)
+    freshness = freshness_state(index[-1].date(), at_session)
+    if freshness != "confirmed":
+        return C3DailyLeg(availability=freshness, k=None, washed=None,
+                          source_bar_time=index[-1].date().isoformat(),
+                          source_bar_known_at=at_session.isoformat(),
+                          confirmed_bars=int(len(closes)))
     k_series, _d = ic.stoch_rsi_kd(closes)
     k_value = ic.last_finite(k_series)
     source_bar = pd.DatetimeIndex(confirmed.index)[-1].date().isoformat()
@@ -366,7 +401,13 @@ class C3Run:
     readings: tuple[DetectorReading, ...]
     episodes: tuple[DetectorEpisode, ...]
     events: tuple[EntryEvent, ...]
+    #: The arm's INSTANT (UTC, the arming session's 09:30 ET open) — W3-14.
     armed_at: str | None = None
+    #: The arm's SESSION date.  Eligibility compares bucket sessions against THIS,
+    #: so a bucket completing later on the arming session stays eligible.
+    armed_session: str | None = None
+    #: The instant an ARMED-without-candidate episode expired (§10), if it did.
+    expired_at: str | None = None
     turns: tuple[str, ...] = ()
     provisional: tuple[dict[str, Any], ...] = ()
 
@@ -381,11 +422,19 @@ def run_c3(*, ticker: str, daily: DailyHistory,
     """Evaluate C3 across a run of sessions.
 
     ORDER IS THE MECHANISM.  For each session: (1) read the confirmed-daily leg as
-    knowable at that session's open and arm if it is washed; (2) walk that
-    session's CONFIRMED 4H buckets, appending each to the running completed-4H
-    series and testing the turn.  A turn observed before the arm is stale context
-    and cannot promote — which is why the arm is evaluated first, and why the
-    turn's own history is carried across sessions rather than restarted.
+    knowable at that session's open, arm if it is washed, and EXPIRE an arm that
+    has waited out §10's clock; (2) walk that session's CONFIRMED 4H buckets,
+    appending each to the running completed-4H series and testing the turn.  A
+    turn observed before the arm is stale context and cannot promote — which is
+    why the arm is evaluated first, and why the turn's own history is carried
+    across sessions rather than restarted.
+
+    THE ARM DOES NOT WAIT FOREVER (W3-2).  §10 expires an ARMED episode with no
+    candidate after ``C3_ARM_EXPIRY_SESSIONS`` sessions, counted over the sessions
+    this run actually walks.  What is deliberately NOT done is re-checking that
+    the daily leg is STILL washed when the turn arrives: that is the
+    must-still-be-oversold requirement A5.3 forbids for C2, and re-introducing it
+    at 4H would make the washout a gate again instead of the episode's history.
     """
     readings: list[DetectorReading] = []
     events: list[EntryEvent] = []
@@ -395,13 +444,34 @@ def run_c3(*, ticker: str, daily: DailyHistory,
     completed: list[FourHourBucket] = []
     live: DetectorEpisode | None = None
     armed_at: str | None = None
+    armed_session: str | None = None
+    expired_at: str | None = None
+    armed_index: int | None = None
+    empty_confirmed = 0
     lc = lifecycle()
 
-    for session, buckets in sorted(buckets_by_session, key=lambda row: row[0]):
+    ordered = sorted(buckets_by_session, key=lambda row: row[0])
+    for position, (session, buckets) in enumerate(ordered):
         leg = c3_daily_leg(daily, session)
+        session_open = utc_iso(session_window_et(session)[0])
+        if (live is not None and armed_index is not None and expired_at is None
+                and live.candidate_at is None
+                and position - armed_index >= C3_ARM_EXPIRY_SESSIONS):
+            # §10: ARMED/TURNING without candidate-promotion expires after 15
+            # sessions.  Stamped at THIS session's open, because that is the first
+            # instant at which the clock had run out.
+            expired_at = session_open
+            live.last_observed_at = expired_at
+            live.transition(lc.DetectorState.EXPIRED, at=expired_at,
+                            reason=f"§10 episode hygiene — ARMED with no candidate for "
+                                   f"{C3_ARM_EXPIRY_SESSIONS} sessions")
         if leg.washed is True and live is None:
             live = DetectorEpisode(ticker=ticker, detector_id=C3_DETECTOR_ID)
-            armed_at = session.isoformat()
+            # W3-14: an INSTANT, like every other Radar clock — a bare date beside
+            # a UTC candidate stamp cannot be ordered against it without guessing.
+            armed_at = session_open
+            armed_session = session.isoformat()
+            armed_index = position
             live.first_armed_at = armed_at
             live.transition(lc.DetectorState.ARMED, at=armed_at,
                             reason="latest 1D CONFIRMED StochRSI K < 20, knowable at "
@@ -415,15 +485,27 @@ def run_c3(*, ticker: str, daily: DailyHistory,
                 provisional.append(bucket.to_dict())
                 continue
             if bucket.close is None:
+                # W3-11: a CONFIRMED bucket that carried no prints.  Its absence
+                # makes two non-adjacent bars adjacent in the indicator's input,
+                # so it is DISCLOSED rather than silently dropped — no close is
+                # fabricated, because a fabricated bar is worse than a stated gap.
+                empty_confirmed += 1
+                provisional.append({"session": bucket.session, "index": bucket.index,
+                                    "reason": "confirmed_empty"})
                 continue
             completed.append(bucket)
             series = confirmed_four_hour_series(completed)
             turned = four_hour_turn(series)
             observed_at = utc_iso(bucket.effective_end)
-            eligible = armed_at is not None and bucket.session >= armed_at
-            availability = ("unavailable" if (turned is None or leg.availability
-                                              != "confirmed") else "confirmed")
-            condition = None if availability == "unavailable" else bool(
+            # Eligibility compares SESSION to SESSION (W3-14): the arm's instant is
+            # that session's 09:30 open, so a bucket completing at 13:30 the same
+            # day is post-arm and must stay eligible.
+            expired = expired_at is not None
+            eligible = (armed_session is not None and not expired
+                        and bucket.session >= armed_session)
+            availability = (leg.availability if leg.availability != "confirmed"
+                            else ("unavailable" if turned is None else "confirmed"))
+            condition = None if availability != "confirmed" else bool(
                 turned and eligible)
             readings.append(DetectorReading(
                 ticker=ticker, detector_id=C3_DETECTOR_ID,
@@ -440,13 +522,18 @@ def run_c3(*, ticker: str, daily: DailyHistory,
                     "daily_source_bar_known_at": leg.source_bar_known_at,
                     "h4_turn": turned,
                     "armed_at": armed_at,
-                    "pre_arm": (armed_at is None or bucket.session < armed_at),
+                    "armed_session": armed_session,
+                    "expired_at": expired_at,
+                    "eligible": eligible,
+                    "pre_arm": (armed_session is None
+                                or bucket.session < armed_session),
                     "completed_4h_bars": len(completed),
+                    "completed_4h_gaps": empty_confirmed,
                     "bucket_effective_minutes": bucket.effective_minutes,
                     "bucket_clipped": bucket.clipped,
                 },
                 condition_met=condition,
-                evidence_refs=tuple(live.event_ids) if live else ()))
+                evidence_refs=(tuple(live.event_ids) if live else ())))
             if turned:
                 turns.append(observed_at)
             if condition is True and live is not None and live.candidate_at is None:
@@ -469,12 +556,13 @@ def run_c3(*, ticker: str, daily: DailyHistory,
                              "armed_at": armed_at,
                              "market_session": bucket.session})
                 events.append(event)
-                live.event_ids.append(str(event.event_id))
+                live.record_event(str(event.event_id), observed_at)
                 live.candidate_at = observed_at
                 live.transition(lc.DetectorState.CANDIDATE, at=observed_at,
                                 reason="first post-arm completed-4H histogram turn "
                                        "(A5.4)",
                                 evidence_refs=(str(event.event_id),))
     return C3Run(readings=tuple(readings), episodes=tuple(episodes),
-                 events=tuple(events), armed_at=armed_at, turns=tuple(turns),
-                 provisional=tuple(provisional))
+                 events=tuple(events), armed_at=armed_at,
+                 armed_session=armed_session, expired_at=expired_at,
+                 turns=tuple(turns), provisional=tuple(provisional))

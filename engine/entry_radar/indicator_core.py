@@ -95,7 +95,11 @@ INDICATOR_CORE: dict[str, Any] = {
     "macd_input": "RSI, never price (EMA(RSI,14) - EMA(RSI,60); signal EMA(.,5))",
     "ema_adjust": "adjust=False",
     "rma_seed": "sma_seeded",
-    "atr": "true-range Wilder ATR(14) on daily OHLC (engine.stock_technicals form)",
+    "atr": "true-range Wilder ATR on daily OHLC (engine.stock_technicals form)",
+    # W3-4: BY VALUE, not baked into the prose above.  ATR's window decides
+    # whether C2f's 0.5x threshold is met, so a change to it must move every
+    # dependent spec_hash — which only happens if the number itself is hashed.
+    "atr_len": ATR_LEN,
     "atr_pit_shift_bars": ATR_PIT_SHIFT,
     "atr_forbidden": "engine.entry_signal._atr_pct is not ATR and is never used",
 }

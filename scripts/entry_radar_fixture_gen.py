@@ -55,7 +55,17 @@ from engine.session_digest import is_early_close, session_window_et  # noqa: E40
 FIXTURE_DIR = ROOT / "tests" / "fixtures" / "entry_radar"
 MAIN_FIXTURE = FIXTURE_DIR / "w3_c1c2_path.json"
 EARLY_FIXTURE = FIXTURE_DIR / "w3_early_close_tape.json"
+RTH_FIXTURE = FIXTURE_DIR / "w3_rth_filter_tape.json"
 MANIFEST = FIXTURE_DIR / "w3_provenance.json"
+
+#: W3-9.  The session-filter fixture: premarket prints at 08:00 and 09:15, NO
+#: print until 09:47, and postmarket prints.  Deleting ``rth_minutes`` survived the
+#: whole battery because every existing tape prints from 09:30 — an opening gap is
+#: what makes the filter's absence VISIBLE (the 08:00 print would otherwise become
+#: the 09:35 sampled value).
+RTH_PREMARKET_ET = ("08:00", "09:15")
+RTH_FIRST_PRINT_ET = "09:47"
+RTH_POSTMARKET_ET = ("16:05", "16:30")
 
 SCHEMA = "radar.w3.fixture/v1"
 TICKER = "ZZWO"
@@ -310,10 +320,54 @@ def build() -> tuple[dict, dict]:
         "columns": ["start", "open", "high", "low", "close", "volume"],
         "rows": minute_rows(early_session, ramp, base, flash=None),
     }
-    return fixture, early
+    return fixture, early, rth_filter_tape(tape_sessions[0], daily_rows)
 
 
-def manifest(fixture: dict, early: dict) -> dict:
+def rth_filter_tape(session: date, daily_rows: list[list]) -> dict:
+    """W3-9: extended-hours prints plus an opening print GAP, on a real session.
+
+    Prices are deliberately far from the RTH path so a filter that stopped working
+    moves the sampled value by a visible amount rather than a rounding digit.
+    """
+    open_dt, close_dt = session_window_et(session)
+    base = float(daily_rows[-1][4])
+    rows: list[list] = []
+
+    def row(when: datetime, px: float) -> list:
+        return [when.isoformat(), round(px, 4), round(px * 1.001, 4),
+                round(px * 0.999, 4), round(px, 4), 750.0]
+
+    for label in RTH_PREMARKET_ET:
+        hour, minute = (int(p) for p in label.split(":"))
+        rows.append(row(open_dt.replace(hour=hour, minute=minute), base * 1.25))
+    first_hour, first_minute = (int(p) for p in RTH_FIRST_PRINT_ET.split(":"))
+    first = open_dt.replace(hour=first_hour, minute=first_minute)
+    step = 0
+    cursor = first
+    while cursor + timedelta(minutes=1) <= close_dt:
+        rows.append(row(cursor, base * (1.0 + 0.0003 * step)))
+        cursor += timedelta(minutes=1)
+        step += 1
+    for label in RTH_POSTMARKET_ET:
+        hour, minute = (int(p) for p in label.split(":"))
+        rows.append(row(close_dt.replace(hour=hour, minute=minute), base * 0.75))
+    rows.sort(key=lambda r: r[0])
+    return {
+        "schema": SCHEMA,
+        "ticker": TICKER,
+        "price_basis": PRICE_BASIS,
+        "session": session.isoformat(),
+        "session_open_et": open_dt.isoformat(),
+        "session_close_et": close_dt.isoformat(),
+        "premarket_et": list(RTH_PREMARKET_ET),
+        "first_rth_print_et": RTH_FIRST_PRINT_ET,
+        "postmarket_et": list(RTH_POSTMARKET_ET),
+        "columns": ["start", "open", "high", "low", "close", "volume"],
+        "rows": rows,
+    }
+
+
+def manifest(fixture: dict, early: dict, rth: dict) -> dict:
     return {
         "schema": "radar.w3.fixture_manifest/v1",
         "generated_by": "scripts/entry_radar_fixture_gen.py",
@@ -343,6 +397,19 @@ def manifest(fixture: dict, early: dict) -> dict:
                 "session": early["session"],
                 "minute_rows": len(early["rows"]),
             },
+            RTH_FIXTURE.name: {
+                "kind": "synthetic",
+                "source": ("premarket prints at 08:00/09:15, NO print until 09:47, and "
+                           "postmarket prints, on a real NYSE session date"),
+                "vintage": "n/a — no vendor input",
+                "session": rth["session"],
+                "minute_rows": len(rth["rows"]),
+                "why_synthetic": ("W3-9: deleting the RTH filter survived the whole "
+                                  "battery because every other tape prints from 09:30. "
+                                  "An opening GAP is what makes the filter's absence "
+                                  "visible — the 08:00 print becomes the 09:35 sampled "
+                                  "value the moment the filter stops working"),
+            },
         },
         "calendar": "lib.nyse_calendar via engine.session_anchor / engine.session_digest",
         "regenerate": "python3 scripts/entry_radar_fixture_gen.py",
@@ -355,9 +422,9 @@ def main() -> int:
                         help="regenerate and report a diff without writing")
     args = parser.parse_args()
 
-    fixture, early = build()
-    payloads = {MAIN_FIXTURE: fixture, EARLY_FIXTURE: early,
-                MANIFEST: manifest(fixture, early)}
+    fixture, early, rth = build()
+    payloads = {MAIN_FIXTURE: fixture, EARLY_FIXTURE: early, RTH_FIXTURE: rth,
+                MANIFEST: manifest(fixture, early, rth)}
     changed = []
     for path, payload in payloads.items():
         text = json.dumps(payload, indent=1, sort_keys=True) + "\n"
