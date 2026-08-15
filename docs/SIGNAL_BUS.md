@@ -37,7 +37,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 | flow-continuity | 3 |
 | flow-leaders-desk | 2 |
 | fundamental-forensics | 3 |
-| gmi-theme-graph | 3 |
+| gmi-theme-graph | 4 |
 | government-revenue-foresight | 42 |
 | hk-canada | 2 |
 | hk-pick-lab | 3 |
@@ -114,7 +114,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | tier | count |
 |---|---|
-| display | 374 |
+| display | 375 |
 | infrastructure | 162 |
 | scored | 5 |
 | shadow | 101 |
@@ -123,7 +123,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | storage | count |
 |---|---|
-| git | 602 |
+| git | 603 |
 | git+r2 | 3 |
 | gitignored-local | 19 |
 | r2 | 18 |
@@ -429,6 +429,7 @@ The **signal bus** is the set of cross-engine data artifacts that flow between p
 
 | id | path | format | cadence | tier | consumers | external consumers |
 |---|---|---|---|---|---|---|
+| theme-graph-capability | `data/theme_graph/capability.parquet` | parquet | daily-engine | display | 0 | 0 |
 | theme-graph-edges | `data/theme_graph/edges.parquet` | parquet | daily-engine | display | 0 | 0 |
 | theme-graph-evidence | `data/theme_graph/evidence.parquet` | parquet | daily-engine | display | 0 | 0 |
 | theme-graph-nodes | `data/theme_graph/nodes.parquet` | parquet | daily-engine | display | 0 | 0 |

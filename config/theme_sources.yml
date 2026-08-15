@@ -1,0 +1,66 @@
+# Theme source-family rights registry (GMI W3A; masterplan G0.13).
+#
+# One row per source family that contributes local-theme nodes, memberships, or
+# corroboration evidence to the theme graph. RIGHTS ARE STATED, NEVER ASSUMED:
+# `unresolved` and `internal_only` both REFUSE public emission at the gate
+# (engine/theme_graph/rights.py::assert_public_emission_allowed); `unresolved`
+# additionally signals "operator decision pending" in program reports.
+# The guard (scripts/check_theme_graph_contracts.py) fails closed on any store
+# source family that has no row here.
+#
+# rights_class enum: internal_only | derived_display_ok | direct_display_ok | unresolved
+# auth_class enum:   house | keyless_public | receipted_scrape | entitled | licensed
+#
+# Pre-existing OWNER surfaces (themes heatmap, subsector rotation, cn theme pages)
+# predate GMI and are inventoried in research/theme_graph/W3A_SOURCE_RIGHTS_AND_PROCUREMENT.md;
+# this registry governs GMI emissions only — it does not retro-gate owner products.
+
+version: 1
+updated: "2026-08-14"
+
+families:
+  mastermind_curated:
+    rights_class: direct_display_ok
+    auth_class: house
+    source_route: "data/baskets/membership.json + regional membership documents (our own curation)"
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "house-owned content; no external rights" }
+    notes: "The 49 US curated baskets + regional families. First-class alongside vendor families (directive §24)."
+
+  finviz_themes:
+    rights_class: unresolved
+    auth_class: keyless_public
+    source_route: "finviz.com/map?t=themes webpack data chunk (structure, manual receipted refresh) + /api/map_perf* (nightly perf)"
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "escalation prepared, not concluded — see rights note §1; treat as internal_only until the operator resolves the derived-display question (natural forcing point: W6)" }
+    notes: "Vendor advertises export/API as Elite (paid); FAQ notes resale restrictions on raw historical data. No legal conclusion drawn here. GMI derivatives stay in data/theme_graph/ (internal plane)."
+
+  ths_concepts:
+    rights_class: unresolved
+    auth_class: receipted_scrape
+    source_route: "同花顺 concept boards via collectors/china_ths_concepts.py (complete-or-fail receipts, weekly cadence from 2026-08-15)"
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "same posture as finviz_themes — internal-only for NEW GMI emissions; existing cn owner surfaces grandfathered; bundle the display decision with the W6 escalation" }
+    notes: "Concept names are zh source labels; zh-authored copy laws apply if ever displayed."
+
+  # Reserved families — rows uncommented only when an ingestion wave actually lands
+  # (the corroboration evidence class ships empty in W3A; directive §29):
+  # sp_kensho:
+  #   rights_class: unresolved
+  #   auth_class: keyless_public
+  #   source_route: "public methodology/index description documents only; NO bulk constituent route"
+  # theia:
+  #   rights_class: unresolved
+  #   auth_class: licensed
+  #   source_route: "commercial license required; see rights note §5 for the procurement question list"
+
+# Owner surfaces that PRE-DATE GMI and render vendor theme data as their owner's
+# product (rights note §1-2). Enumerated BY PATH so the exemption is content-scoped,
+# never lineage-scoped (plan §9.4/F20): a surface is exempt iff its path is here with
+# a review row. tests/test_theme_sources_registry.py refuses list growth without one.
+# GMI emitters never cite this list — their gate is assert_public_emission_allowed().
+# The W6 surface wave adds the structural public-emitter walk (recorded entry ticket).
+grandfathered_surfaces:
+  - path: "site/marketdata/themes_heatmap.json"
+    family: finviz_themes
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "owner heatmap feed predating GMI (#579 lineage; consumed by site/sector_heatmap.html map-type=themes)" }
+  - path: "site/marketdata/subsector_rotation.json"
+    family: finviz_themes
+    review: { date: "2026-08-14", by: "gmi-w3a", outcome: "owner rotation feed predating GMI (#715 lineage)" }

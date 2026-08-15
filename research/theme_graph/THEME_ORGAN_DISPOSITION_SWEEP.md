@@ -71,3 +71,90 @@ Method & provenance: two independent censuses (snapshot-machinery; roster/synaps
 ## Enforcement note
 
 A GMI wave PR that touches an organ rowed EXTEND outside its named wave, feeds anything rowed FENCE-OFF, or depends on anything rowed DORMANT is **not done** (G0.3). Waves cite rows as `SWEEP:#<n>` in PR bodies. Additions to the roster (new theme organs shipped by owners after 2026-08-11) require a sweep addendum row before GMI consumes them.
+
+---
+
+## Addendum 1 — W3A re-census (2026-08-14; directive §19)
+
+Method: full per-organ re-verification against `origin/main` @ 2026-08-14 (sonnet census lane +
+main-loop adjudication). Methodology caveat that changed results: bare `git log --since=2026-08-11`
+parses the date as *that day at the current wall-clock time-of-day* and silently drops same-day
+morning commits — this census used explicit `--since="2026-08-11 00:00:00"`, which is how it
+caught W1b's own 12:11pm commit as post-sweep drift. Original rows above are unedited (this doc
+appends; corrections live here).
+
+### Row corrections
+
+- **#6 `engine/themes_heatmap.py` + `finviz_themes/` — STALE ROW, corrected.** The Finviz
+  organ is NOT "one-shot 2026-06-27, zero builder": `scripts/fetch_finviz_themes.py` runs
+  NIGHTLY in daily.yml (perf snapshot, lineage #715) with append-only PIT archival since #1213
+  (`subsector_perf_history.jsonl` 29 session rows through 2026-08-13; `tree_history.jsonl`
+  1 row asof 2026-07-05; session-stamped `asof`). The STRUCTURE remains manual-refresh-only
+  (`--refresh-tree` reserved no-op; committed tree = declared source of record, verified
+  content-identical to the 2026-06-27 extraction). Synapse: still unregistered (correct as-was).
+  **New disposition: EXTEND (W3A) → CONSUME** — W3A implements the reserved `--refresh-tree` as
+  a receipted, interlocked, atomic refresh contract in the OWNER collector plus a nightly
+  advisory key-drift tripwire; thereafter GMI consumes the tree/PIT tape read-only.
+  Blast-radius census for that refresh (consumers of `themes_tree.json`, all current-snapshot
+  readers): `scripts/build_themes_heatmap.py`, `scripts/build_subsector_rotation.py` (+ DAG row
+  `config/dag.yml:4239`), `scripts/build_oracle_timemachine.py`, `scripts/build_oracle_panel.py`
+  (self-declared survivorship warning), `engine/fund_intelligence.py`,
+  `engine/special_sits_intel.py`. `tree_history.jsonl` has ZERO readers today (write-only audit
+  trail; `engine/subsector_rotation.py:386` explicitly disclaims reading it) — the W3A graph
+  materializer becomes its first consumer.
+- **#32 THS collector family — W1b condition discharged; cadence live-proof pending.** The
+  seeder shape-collision fix named as W1b's entry ticket SHIPPED in `2ad4cbbd6e81` (2026-08-11
+  12:11pm, +179 lines: two-sided `classify_snapshot_shape` + `MAX_AUTO_SHRINK=0.5` interlock) —
+  7.5h after this sweep's census commit, so the original row predates it. Seeder remains
+  deliberately unwired (manual-only, documented in asia-close.yml comments). First scheduled
+  weekly scrape: Saturday 2026-08-15 UTC (receipts dir `data/baskets_china_ths/receipts/` is
+  created by that first run — it does not exist yet, which is expected, not drift).
+- **#10 `company_theme_exposure/` — EXTEND (W2) partially fired, W2 now CONCLUDED.** The probe
+  (`scripts/probe_theme_exposure_axes.py`, 2026-08-12, research-only, off every workflow) ran
+  against the prereg without touching the production package. Row's future tense is now past:
+  W2's verdict (masterplan §11) governs; any production extension of this organ re-charters at
+  W4 under the decomposed-annotation constraint. Disposition reverts to **CONSUME** until then.
+- **#26/#27/#28 grading pack + #42 qledger — "EXTEND (W3)" now reads "EXTEND (W3B)".** The
+  2026-08-14 CEO directive split W3 (masterplan §7); consequence grading is W3B's. No GMI
+  contact yet (correct). #42 update: `engine/qledger.py` took 9 commits 2026-08-13→14 under the
+  independent eval-os P0/P1 hardening thread (matched-control evidence contract, PIT-consistent
+  replay clock, no-pooled-mixed-direction rule) — none GMI-related; the row's coordination
+  posture ("W3 charter decides the ledger home WITH the QI owner; until then no GMI claims
+  ledger exists") is unchanged and now binds W3B, which must re-read the eval-os state then.
+
+### New rows (roster additions post-2026-08-11 or holes)
+
+| # | Module | Territory owner | Synapse status (verified) | Disposition | Binding condition |
+|---|---|---|---|---|---|
+| 43 | `engine/group_pulse.py` | Group Reads | Not registered as own producer (writes `site/basketdata/pulse.json` via `build_baskets`) | **CONSUME** | Never rowed in the original table (a sweep hole, not new machinery — it predates the sweep). Consumption is governed by masterplan §5.1 exactly. Post-sweep drift: W-B G0-10 enforcement (#5439, 2026-08-12) added published denominators + `AGREEMENT_MIN_N=4` floor + arc refusal — GMI legs inherit those floors verbatim; and `engine/entry_radar/producers/baskets.py` (2026-08-14) is a new downstream consumer enforcing basket-fact-never-launders-to-single-name, a boundary GMI cohort reads must also respect. |
+| 44 | `engine/theme_graph/` + `scripts/build_theme_graph.py` + `scripts/check_theme_graph_contracts.py` + `contracts/theme_graph/` + `config/theme_graph_identity_breaks.yml` | GMI (this program) | `theme-graph-{nodes,edges,evidence}` (display, six-false, `consumers: []`) | **EXTEND (W3A, W3B)** | The program's own spine (W1b, `2ad4cbbd6e81` — postdates the census). W3A extends: `kind=local_theme`, capability columns, rights module, probation queue, guard grammar. `consumers: []` is accurate today — W3C's cohort read becomes the first registered consumer. Identity breaks file gained ratified ABX/GOLD rows via #5632 (owner: baskets repair) — consumed as-is. |
+| 45 | `scripts/probe_theme_exposure_axes.py` | GMI W2 (research artifact) | Not a bus artifact | **DORMANT (by design)** | One-shot research probe, zero workflow wiring, writes only `--out-dir`. Never a production dependency; re-runs only under a new prereg (2026-11 / 2027-02 re-probes). |
+| 46 | `scripts/scrape_ths_weekly.py` + `contracts/baskets_china_ths/scrape_receipt.v1.schema.json` | CN collectors (china_*) | Collector + receipt contract (not bus artifacts) | **CONSUME** | W1a's own deliverable, shipped with the original sweep commit. GMI consumes receipts/side-cars read-only; the W3A THS concept nodes read `concept_map.json` (asof 2026-06-27) and inherit the weekly cadence's future updates through the owner pipeline. First live proof: Sat 2026-08-15 UTC. |
+
+### No-drift verifications (directive §19 named organs; each checked for commits since
+2026-08-11 00:00:00 + workflow wiring + synapse status against origin/main @ 2026-08-14)
+
+`engine/themes_heatmap.py` + `scripts/build_themes_heatmap.py` (no commits; render/ci wired;
+unregistered) · `engine/subsector_rotation.py` + `scripts/build_subsector_rotation.py` (no
+commits; render/asia wired; registered family) · `engine/theme_scoring.py` (no commits;
+`site-theme-state` consumer — row #1 unchanged) · `engine/theme_discovery.py` (no commits —
+row #7 unchanged) · `engine/theme_emergence.py` (no commits — row #8) ·
+`engine/theme_fingerprint.py` (no commits — row #9) · `engine/narrative_emergence.py` (no
+commits — row #39) · `engine/group_flow.py` (no code commits; its CI lane moved to
+`express-render-guards` in the 2026-08-14 three-way lane split — wiring note only, row #4
+unchanged) · `engine/us_basket_turn.py` / `engine/china_basket_turn.py` (no commits; FT-R1
+fence confirmed on `china-basket-turn-cn` — F1 stands) · `collectors/china_ths_concepts.py`
+(no commits beyond the W1a ship itself) · `engine/theme_context.py` (no commits — row #14) ·
+`engine/theme_warn.py` (no commits — row #15/F4 drift still present, still owner's) ·
+`scripts/grade_thematic.py` + graders (no commits — rows #26–28, now EXTEND (W3B)).
+Post-2026-08-11 drift found and rowed above: seeder (#32 update), qledger (#42 update),
+`company_theme_exposure` probe (#10 update), group_pulse (#43), theme_graph spine (#44),
+W2 probe artifact (#45), THS weekly scraper (#46).
+
+### Standing note for future waves
+
+Crosswalk fact pinned during this re-census: `config/theme_crosswalk.yml` carries NO
+finviz-branded field; `subsector_keys` values are TOP-LEVEL Finviz theme display names
+(14 distinct; 0 of the 268 subtheme keys), flowing to `subsector_rotation.json` theme strings.
+Any future subtheme-grain Finviz→canonical mapping is a curation act, never a mechanical join
+through those names (masterplan §11 2026-08-14; G0.12).

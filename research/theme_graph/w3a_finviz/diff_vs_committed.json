@@ -1,0 +1,709 @@
+{
+  "old_path": "/Users/chriswong/Documents/Cluade/Macro Dashboard/.claude/worktrees/gmi-theme-graph-w3-f12a28/data/themes_heatmap/themes_tree.json",
+  "new_path": "/private/tmp/claude-501/-Users-chriswong-Documents-Cluade-Macro-Dashboard--claude-worktrees-gmi-theme-graph-w3-f12a28/8489d6cf-bc30-4339-a5f8-6ea78e751674/scratchpad/finviz_w3a/extracted_tree.json",
+  "counts": {
+    "old": {
+      "themes": 40,
+      "subthemes": 268,
+      "memberships": 2356,
+      "unique_tickers": 941
+    },
+    "new": {
+      "themes": 40,
+      "subthemes": 268,
+      "memberships": 2339,
+      "unique_tickers": 924
+    }
+  },
+  "themes": {
+    "matched_by_key": [
+      "Aging Population & Longevity",
+      "Agriculture & FoodTech",
+      "Artificial Intelligence",
+      "Autonomous Systems",
+      "Big Data",
+      "Biometrics",
+      "Cloud Computing",
+      "Commodities Agriculture",
+      "Commodities Energy",
+      "Commodities Metals",
+      "Consumer Goods",
+      "Crypto & Blockchain",
+      "Cybersecurity",
+      "Defense & Aerospace",
+      "Digital Entertainment",
+      "E-commerce",
+      "Education Technology",
+      "Electric Vehicles",
+      "Energy Renewable",
+      "Energy Traditional",
+      "Environmental Sustainability",
+      "FinTech",
+      "Hardware",
+      "Healthcare & Biotech",
+      "Healthy Food & Nutrition",
+      "Industrial Automation",
+      "Internet of Things",
+      "Nanotechnology",
+      "Quantum Computing",
+      "Real Estate & REITs",
+      "Robotics",
+      "Semiconductors",
+      "Smart Home",
+      "Social Media",
+      "Software",
+      "Space Tech",
+      "Telecommunications",
+      "Transportation & Logistics",
+      "Virtual & Augmented Reality",
+      "Wearables"
+    ],
+    "added_by_key": [],
+    "removed_by_key": [],
+    "added_by_name": [],
+    "removed_by_name": [],
+    "key_equals_name_old": true,
+    "key_equals_name_new": true,
+    "order_changed": false,
+    "old_order": [
+      "Artificial Intelligence",
+      "Cloud Computing",
+      "Semiconductors",
+      "Cybersecurity",
+      "Software",
+      "Hardware",
+      "Quantum Computing",
+      "Virtual & Augmented Reality",
+      "Biometrics",
+      "Big Data",
+      "Electric Vehicles",
+      "Industrial Automation",
+      "Defense & Aerospace",
+      "Transportation & Logistics",
+      "Space Tech",
+      "Robotics",
+      "Telecommunications",
+      "Nanotechnology",
+      "Internet of Things",
+      "Autonomous Systems",
+      "E-commerce",
+      "Social Media",
+      "Digital Entertainment",
+      "Real Estate & REITs",
+      "Consumer Goods",
+      "Smart Home",
+      "Wearables",
+      "Education Technology",
+      "Energy Renewable",
+      "Energy Traditional",
+      "Commodities Energy",
+      "Commodities Metals",
+      "Commodities Agriculture",
+      "Agriculture & FoodTech",
+      "Environmental Sustainability",
+      "Healthcare & Biotech",
+      "Aging Population & Longevity",
+      "Healthy Food & Nutrition",
+      "FinTech",
+      "Crypto & Blockchain"
+    ],
+    "new_order": [
+      "Artificial Intelligence",
+      "Cloud Computing",
+      "Semiconductors",
+      "Cybersecurity",
+      "Software",
+      "Hardware",
+      "Quantum Computing",
+      "Virtual & Augmented Reality",
+      "Biometrics",
+      "Big Data",
+      "Electric Vehicles",
+      "Industrial Automation",
+      "Defense & Aerospace",
+      "Transportation & Logistics",
+      "Space Tech",
+      "Robotics",
+      "Telecommunications",
+      "Nanotechnology",
+      "Internet of Things",
+      "Autonomous Systems",
+      "E-commerce",
+      "Social Media",
+      "Digital Entertainment",
+      "Real Estate & REITs",
+      "Consumer Goods",
+      "Smart Home",
+      "Wearables",
+      "Education Technology",
+      "Energy Renewable",
+      "Energy Traditional",
+      "Commodities Energy",
+      "Commodities Metals",
+      "Commodities Agriculture",
+      "Agriculture & FoodTech",
+      "Environmental Sustainability",
+      "Healthcare & Biotech",
+      "Aging Population & Longevity",
+      "Healthy Food & Nutrition",
+      "FinTech",
+      "Crypto & Blockchain"
+    ],
+    "renames_detectable": false
+  },
+  "subthemes": {
+    "added": [],
+    "removed": [],
+    "moved_between_themes": [],
+    "key_stable_name_changed": [],
+    "name_stable_key_changed": [],
+    "description_changed_count": 0,
+    "description_changed_keys": [],
+    "description_changes": [],
+    "order_changed_within_theme": []
+  },
+  "members": {
+    "subthemes_with_changes": 32,
+    "total_added": 9,
+    "total_removed": 26,
+    "reorder_only_count": 0,
+    "changes": [
+      {
+        "key": "bigdatainfrastructure",
+        "theme": "Big Data",
+        "name": "Infrastructure",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [
+          "PSTG"
+        ],
+        "n_old": 16,
+        "n_new": 16,
+        "net": 0,
+        "churn": 2,
+        "reorder_only": false
+      },
+      {
+        "key": "consumerfarmdirect",
+        "theme": "Consumer Goods",
+        "name": "Farm-Direct",
+        "added": [],
+        "removed": [
+          "FDP",
+          "CVGW"
+        ],
+        "n_old": 8,
+        "n_new": 6,
+        "net": -2,
+        "churn": 2,
+        "reorder_only": false
+      },
+      {
+        "key": "hardwarestorage",
+        "theme": "Hardware",
+        "name": "Storage",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [
+          "PSTG"
+        ],
+        "n_old": 7,
+        "n_new": 7,
+        "net": 0,
+        "churn": 2,
+        "reorder_only": false
+      },
+      {
+        "key": "agricultureindoorfarming",
+        "theme": "Agriculture & FoodTech",
+        "name": "Indoor Farming",
+        "added": [],
+        "removed": [
+          "UGRO"
+        ],
+        "n_old": 4,
+        "n_new": 3,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "aidata",
+        "theme": "Artificial Intelligence",
+        "name": "Data",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 13,
+        "n_new": 14,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "clouddatabases",
+        "theme": "Cloud Computing",
+        "name": "Databases",
+        "added": [],
+        "removed": [
+          "CFLT"
+        ],
+        "n_old": 9,
+        "n_new": 8,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "commagrisofts",
+        "theme": "Commodities Agriculture",
+        "name": "Softs",
+        "added": [],
+        "removed": [
+          "FDP"
+        ],
+        "n_old": 6,
+        "n_new": 5,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "commenergygaslng",
+        "theme": "Commodities Energy",
+        "name": "Gas & LNG",
+        "added": [],
+        "removed": [
+          "CTRA"
+        ],
+        "n_old": 12,
+        "n_new": 11,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "commmetalssilver",
+        "theme": "Commodities Metals",
+        "name": "Silver",
+        "added": [],
+        "removed": [
+          "DVS"
+        ],
+        "n_old": 7,
+        "n_new": 6,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "educationcurriculum",
+        "theme": "Education Technology",
+        "name": "Curriculum",
+        "added": [],
+        "removed": [
+          "UDMY"
+        ],
+        "n_old": 11,
+        "n_new": 10,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "educationplatforms",
+        "theme": "Education Technology",
+        "name": "Platforms",
+        "added": [],
+        "removed": [
+          "UDMY"
+        ],
+        "n_old": 6,
+        "n_new": 5,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "educationworkforce",
+        "theme": "Education Technology",
+        "name": "Workforce",
+        "added": [],
+        "removed": [
+          "UDMY"
+        ],
+        "n_old": 10,
+        "n_new": 9,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "energycleanhydrogen",
+        "theme": "Energy Renewable",
+        "name": "Hydrogen",
+        "added": [],
+        "removed": [
+          "GTLS"
+        ],
+        "n_old": 9,
+        "n_new": 8,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "environmentalagriculture",
+        "theme": "Environmental Sustainability",
+        "name": "Agriculture",
+        "added": [],
+        "removed": [
+          "ORGN"
+        ],
+        "n_old": 13,
+        "n_new": 12,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "environmentalairquality",
+        "theme": "Environmental Sustainability",
+        "name": "Air Quality",
+        "added": [],
+        "removed": [
+          "GTLS"
+        ],
+        "n_old": 10,
+        "n_new": 9,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "environmentalclimate",
+        "theme": "Environmental Sustainability",
+        "name": "Climate",
+        "added": [],
+        "removed": [
+          "ORGN"
+        ],
+        "n_old": 13,
+        "n_new": 12,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "environmentalwaste",
+        "theme": "Environmental Sustainability",
+        "name": "Waste",
+        "added": [],
+        "removed": [
+          "MEG"
+        ],
+        "n_old": 10,
+        "n_new": 9,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "evsfleets",
+        "theme": "Electric Vehicles",
+        "name": "Fleets",
+        "added": [],
+        "removed": [
+          "NVVE"
+        ],
+        "n_old": 8,
+        "n_new": 7,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "fintechlending",
+        "theme": "FinTech",
+        "name": "Lending",
+        "added": [],
+        "removed": [
+          "LC"
+        ],
+        "n_old": 6,
+        "n_new": 5,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "hardwaredatacenters",
+        "theme": "Hardware",
+        "name": "Data Centers",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 6,
+        "n_new": 7,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "hardwareelectronics",
+        "theme": "Hardware",
+        "name": "Electronics",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 7,
+        "n_new": 8,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "hardwareindustrialiot",
+        "theme": "Hardware",
+        "name": "Industrial IoT",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 11,
+        "n_new": 12,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "hardwarepcsdevices",
+        "theme": "Hardware",
+        "name": "PCs & Devices",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 10,
+        "n_new": 11,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "healthcarediagnostics",
+        "theme": "Healthcare & Biotech",
+        "name": "Diagnostics",
+        "added": [],
+        "removed": [
+          "EXAS"
+        ],
+        "n_old": 12,
+        "n_new": 11,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "iothardware",
+        "theme": "Internet of Things",
+        "name": "Hardware",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 7,
+        "n_new": 8,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "nanotechproducts",
+        "theme": "Nanotechnology",
+        "name": "Products",
+        "added": [],
+        "removed": [
+          "SEE"
+        ],
+        "n_old": 7,
+        "n_new": 6,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "nutritionaltprotein",
+        "theme": "Healthy Food & Nutrition",
+        "name": "Alt Protein",
+        "added": [],
+        "removed": [
+          "STKL"
+        ],
+        "n_old": 10,
+        "n_new": 9,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "semismemory",
+        "theme": "Semiconductors",
+        "name": "Memory",
+        "added": [
+          "SNDK"
+        ],
+        "removed": [],
+        "n_old": 4,
+        "n_new": 5,
+        "net": 1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "spacesatellites",
+        "theme": "Space Tech",
+        "name": "Satellites",
+        "added": [],
+        "removed": [
+          "SATS"
+        ],
+        "n_old": 6,
+        "n_new": 5,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "telecomsatcom",
+        "theme": "Telecommunications",
+        "name": "Satcom",
+        "added": [],
+        "removed": [
+          "SATS"
+        ],
+        "n_old": 7,
+        "n_new": 6,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "wearablesmedical",
+        "theme": "Wearables",
+        "name": "Medical",
+        "added": [],
+        "removed": [
+          "MASI"
+        ],
+        "n_old": 8,
+        "n_new": 7,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      },
+      {
+        "key": "wearablessmartwatches",
+        "theme": "Wearables",
+        "name": "Smartwatches",
+        "added": [],
+        "removed": [
+          "MASI"
+        ],
+        "n_old": 4,
+        "n_new": 3,
+        "net": -1,
+        "churn": 1,
+        "reorder_only": false
+      }
+    ]
+  },
+  "tickers": {
+    "only_in_old": {
+      "CFLT": [
+        "clouddatabases"
+      ],
+      "CTRA": [
+        "commenergygaslng"
+      ],
+      "CVGW": [
+        "consumerfarmdirect"
+      ],
+      "DVS": [
+        "commmetalssilver"
+      ],
+      "EXAS": [
+        "healthcarediagnostics"
+      ],
+      "FDP": [
+        "commagrisofts",
+        "consumerfarmdirect"
+      ],
+      "GTLS": [
+        "energycleanhydrogen",
+        "environmentalairquality"
+      ],
+      "LC": [
+        "fintechlending"
+      ],
+      "MASI": [
+        "wearablesmedical",
+        "wearablessmartwatches"
+      ],
+      "MEG": [
+        "environmentalwaste"
+      ],
+      "NVVE": [
+        "evsfleets"
+      ],
+      "ORGN": [
+        "environmentalagriculture",
+        "environmentalclimate"
+      ],
+      "PSTG": [
+        "bigdatainfrastructure",
+        "hardwarestorage"
+      ],
+      "SATS": [
+        "spacesatellites",
+        "telecomsatcom"
+      ],
+      "SEE": [
+        "nanotechproducts"
+      ],
+      "STKL": [
+        "nutritionaltprotein"
+      ],
+      "UDMY": [
+        "educationcurriculum",
+        "educationplatforms",
+        "educationworkforce"
+      ],
+      "UGRO": [
+        "agricultureindoorfarming"
+      ]
+    },
+    "only_in_new": {
+      "SNDK": [
+        "aidata",
+        "bigdatainfrastructure",
+        "hardwaredatacenters",
+        "hardwareelectronics",
+        "hardwareindustrialiot",
+        "hardwarepcsdevices",
+        "hardwarestorage",
+        "iothardware",
+        "semismemory"
+      ]
+    },
+    "n_only_old": 18,
+    "n_only_new": 1,
+    "subtheme_set_changed": {},
+    "n_subtheme_set_changed": 0
+  }
+}

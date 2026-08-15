@@ -73,9 +73,12 @@ def test_all_artifact_ids_present():
     with _SYNAPSE_YML.open(encoding="utf-8") as fh:
         registry = yaml.safe_load(fh)
     artifact_ids = list(registry.get("artifacts", {}).keys())
-    assert len(artifact_ids) == 642, (
-        f"Expected 642 artifacts in synapse.yml, found {len(artifact_ids)}. "
+    assert len(artifact_ids) == 643, (
+        f"Expected 643 artifacts in synapse.yml, found {len(artifact_ids)}. "
         "Update the test if the registry count changed intentionally."
+        " (GMI W3A registered theme-graph-capability — the nightly re-derived"
+        " capability side-car, display tier, all six authority booleans false"
+        " = 642->643);"
         " (Options signal campaign v2 registered canonical revision, anchored"
         " outcome, and exact-prefix checkpoint artifacts = 639->642);"
         " (GMI W1b theme-graph spine registered the nodes, edges, and evidence"

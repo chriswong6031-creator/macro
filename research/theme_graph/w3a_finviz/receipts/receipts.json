@@ -1,0 +1,178 @@
+[
+  {
+    "url": "https://finviz.com/map?t=themes",
+    "final_url": "https://finviz.com/map?t=themes",
+    "filename": "01_map_page.html",
+    "retrieved_at_utc": "2026-08-15T00:27:28+00:00",
+    "http_status": 200,
+    "byte_size": 46880,
+    "sha256": "9d6e3d35b91f769c2564a5a124015bbf63484435cbb46bfb6212ae0cba00d341",
+    "content_type": "text/html; charset=utf-8",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "final_url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "filename": "02_map.v1.6775885d.js",
+    "retrieved_at_utc": "2026-08-15T00:27:29+00:00",
+    "http_status": 200,
+    "byte_size": 105839,
+    "sha256": "1fb0446af7b82287ab3dd03a024f65e750f4038ec8d4773ea1c340f8d79c0e01",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "final_url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "filename": "03_runtime.v1.f0939ef5.js",
+    "retrieved_at_utc": "2026-08-15T00:27:30+00:00",
+    "http_status": 200,
+    "byte_size": 6277,
+    "sha256": "107ad96fdc967b1c2ec51876a6dc438540ac53ab8b6b2e0a2606e5234d2a6aa3",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "final_url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "filename": "04_chunk_6574.v1.6c9683c9.js",
+    "retrieved_at_utc": "2026-08-15T00:27:31+00:00",
+    "http_status": 200,
+    "byte_size": 42417,
+    "sha256": "d1929213e8f3c6657aac2e88721417b32af8002b6851793b580c034ce50003ac",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/map?t=themes",
+    "final_url": "https://finviz.com/map?t=themes",
+    "filename": "01_map_page.html",
+    "retrieved_at_utc": "2026-08-15T00:30:23+00:00",
+    "http_status": 200,
+    "byte_size": 46880,
+    "sha256": "9d6e3d35b91f769c2564a5a124015bbf63484435cbb46bfb6212ae0cba00d341",
+    "content_type": "text/html; charset=utf-8",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "final_url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "filename": "02_map.v1.6775885d.js",
+    "retrieved_at_utc": "2026-08-15T00:30:24+00:00",
+    "http_status": 200,
+    "byte_size": 105839,
+    "sha256": "1fb0446af7b82287ab3dd03a024f65e750f4038ec8d4773ea1c340f8d79c0e01",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "final_url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "filename": "03_runtime.v1.f0939ef5.js",
+    "retrieved_at_utc": "2026-08-15T00:30:25+00:00",
+    "http_status": 200,
+    "byte_size": 6277,
+    "sha256": "107ad96fdc967b1c2ec51876a6dc438540ac53ab8b6b2e0a2606e5234d2a6aa3",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "final_url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "filename": "04_chunk_6574.v1.6c9683c9.js",
+    "retrieved_at_utc": "2026-08-15T00:30:26+00:00",
+    "http_status": 200,
+    "byte_size": 42417,
+    "sha256": "d1929213e8f3c6657aac2e88721417b32af8002b6851793b580c034ce50003ac",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/map?t=themes",
+    "final_url": "https://finviz.com/map?t=themes",
+    "filename": "01_map_page.html",
+    "retrieved_at_utc": "2026-08-15T00:30:32+00:00",
+    "http_status": 200,
+    "byte_size": 46880,
+    "sha256": "9d6e3d35b91f769c2564a5a124015bbf63484435cbb46bfb6212ae0cba00d341",
+    "content_type": "text/html; charset=utf-8",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "final_url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "filename": "02_map.v1.6775885d.js",
+    "retrieved_at_utc": "2026-08-15T00:30:33+00:00",
+    "http_status": 200,
+    "byte_size": 105839,
+    "sha256": "1fb0446af7b82287ab3dd03a024f65e750f4038ec8d4773ea1c340f8d79c0e01",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "final_url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "filename": "03_runtime.v1.f0939ef5.js",
+    "retrieved_at_utc": "2026-08-15T00:30:34+00:00",
+    "http_status": 200,
+    "byte_size": 6277,
+    "sha256": "107ad96fdc967b1c2ec51876a6dc438540ac53ab8b6b2e0a2606e5234d2a6aa3",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "final_url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "filename": "04_chunk_6574.v1.6c9683c9.js",
+    "retrieved_at_utc": "2026-08-15T00:30:35+00:00",
+    "http_status": 200,
+    "byte_size": 42417,
+    "sha256": "d1929213e8f3c6657aac2e88721417b32af8002b6851793b580c034ce50003ac",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/map?t=themes",
+    "final_url": "https://finviz.com/map?t=themes",
+    "filename": "01_map_page.html",
+    "retrieved_at_utc": "2026-08-15T00:30:52+00:00",
+    "http_status": 200,
+    "byte_size": 46880,
+    "sha256": "9d6e3d35b91f769c2564a5a124015bbf63484435cbb46bfb6212ae0cba00d341",
+    "content_type": "text/html; charset=utf-8",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "final_url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "filename": "02_map.v1.6775885d.js",
+    "retrieved_at_utc": "2026-08-15T00:30:53+00:00",
+    "http_status": 200,
+    "byte_size": 105839,
+    "sha256": "1fb0446af7b82287ab3dd03a024f65e750f4038ec8d4773ea1c340f8d79c0e01",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "final_url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "filename": "03_runtime.v1.f0939ef5.js",
+    "retrieved_at_utc": "2026-08-15T00:30:54+00:00",
+    "http_status": 200,
+    "byte_size": 6277,
+    "sha256": "107ad96fdc967b1c2ec51876a6dc438540ac53ab8b6b2e0a2606e5234d2a6aa3",
+    "content_type": "text/javascript",
+    "ok": true
+  },
+  {
+    "url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "final_url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "filename": "04_chunk_6574.v1.6c9683c9.js",
+    "retrieved_at_utc": "2026-08-15T00:30:55+00:00",
+    "http_status": 200,
+    "byte_size": 42417,
+    "sha256": "d1929213e8f3c6657aac2e88721417b32af8002b6851793b580c034ce50003ac",
+    "content_type": "text/javascript",
+    "ok": true
+  }
+]

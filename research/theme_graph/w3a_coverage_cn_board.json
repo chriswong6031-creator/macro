@@ -1,0 +1,291 @@
+{
+  "case_a_cooccurrence": {
+    "isolated_ids": [
+      "001301.SZ",
+      "002174.SZ",
+      "002709.SZ",
+      "002756.SZ"
+    ],
+    "isolated_note": "these ids HAVE memberships, but share no concept with any other supplied id — the gap the per-name check cannot see",
+    "pairs_sharing_a_concept": [
+      {
+        "a": "002050.SZ",
+        "b": "601689.SS",
+        "concepts": [
+          "ltheme:ths:301121",
+          "ltheme:ths:308805",
+          "ltheme:ths:309127",
+          "ltheme:ths:309177"
+        ],
+        "shared": 4
+      },
+      {
+        "a": "002338.SZ",
+        "b": "600879.SS",
+        "concepts": [
+          "ltheme:ths:301016",
+          "ltheme:ths:301505",
+          "ltheme:ths:301786",
+          "ltheme:ths:309115"
+        ],
+        "shared": 4
+      },
+      {
+        "a": "002460.SZ",
+        "b": "002466.SZ",
+        "concepts": [
+          "ltheme:ths:301104",
+          "ltheme:ths:308718"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "601689.SS",
+        "b": "603920.SS",
+        "concepts": [
+          "ltheme:ths:301121",
+          "ltheme:ths:309092"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "000833.SZ",
+        "b": "002460.SZ",
+        "concepts": [
+          "ltheme:ths:301104"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "000833.SZ",
+        "b": "002466.SZ",
+        "concepts": [
+          "ltheme:ths:301104"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002048.SZ",
+        "b": "601689.SS",
+        "concepts": [
+          "ltheme:ths:309106"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002050.SZ",
+        "b": "002338.SZ",
+        "concepts": [
+          "ltheme:ths:309177"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002050.SZ",
+        "b": "300322.SZ",
+        "concepts": [
+          "ltheme:ths:308805"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002050.SZ",
+        "b": "603920.SS",
+        "concepts": [
+          "ltheme:ths:301121"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002338.SZ",
+        "b": "002466.SZ",
+        "concepts": [
+          "ltheme:ths:301715"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002338.SZ",
+        "b": "601689.SS",
+        "concepts": [
+          "ltheme:ths:309177"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002460.SZ",
+        "b": "002812.SZ",
+        "concepts": [
+          "ltheme:ths:308718"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002466.SZ",
+        "b": "002812.SZ",
+        "concepts": [
+          "ltheme:ths:308718"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300065.SZ",
+        "b": "600118.SS",
+        "concepts": [
+          "ltheme:ths:300236"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300322.SZ",
+        "b": "600879.SS",
+        "concepts": [
+          "ltheme:ths:300795"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300322.SZ",
+        "b": "601689.SS",
+        "concepts": [
+          "ltheme:ths:308805"
+        ],
+        "shared": 1
+      }
+    ],
+    "zero_membership_ids": [],
+    "zero_membership_note": "a different failure from isolation: no vocabulary at all, rather than no shared vocabulary"
+  },
+  "case_d_breadth": {
+    "breadth_distribution": {
+      "concepts_with_live_members": 505,
+      "max_members": 34,
+      "median_members": 10,
+      "p90_members": 19
+    },
+    "broad_only_ids": [
+      "002812.SZ"
+    ],
+    "floor_note": "a REPORT PARAMETER, not a truth claim about where 'too broad' begins; the distribution below is what it should be read against",
+    "reporting_floor_members": 25
+  },
+  "generated_at": "2026-08-15T02:33:01Z",
+  "input": {
+    "ids_file": "/tmp/cn_board_ids.txt",
+    "n_supplied": 24,
+    "source_artifact": "site/factordata/china_standouts.json#buy",
+    "source_asof": "2026-08-14"
+  },
+  "membership_detail": {
+    "000833.SZ": [
+      "ltheme:ths:300858",
+      "ltheme:ths:301104"
+    ],
+    "001301.SZ": [
+      "ltheme:ths:307512"
+    ],
+    "002048.SZ": [
+      "ltheme:ths:309000",
+      "ltheme:ths:309106"
+    ],
+    "002050.SZ": [
+      "ltheme:ths:301121",
+      "ltheme:ths:308805",
+      "ltheme:ths:309127",
+      "ltheme:ths:309177"
+    ],
+    "002174.SZ": [
+      "ltheme:ths:300019",
+      "ltheme:ths:301050",
+      "ltheme:ths:302027"
+    ],
+    "002338.SZ": [
+      "ltheme:ths:300352",
+      "ltheme:ths:300941",
+      "ltheme:ths:301016",
+      "ltheme:ths:301505",
+      "ltheme:ths:301715",
+      "ltheme:ths:301786",
+      "ltheme:ths:309115",
+      "ltheme:ths:309177"
+    ],
+    "002460.SZ": [
+      "ltheme:ths:301104",
+      "ltheme:ths:302174",
+      "ltheme:ths:308718"
+    ],
+    "002466.SZ": [
+      "ltheme:ths:301104",
+      "ltheme:ths:301715",
+      "ltheme:ths:308718"
+    ],
+    "002709.SZ": [
+      "ltheme:ths:300085",
+      "ltheme:ths:301279"
+    ],
+    "002756.SZ": [
+      "ltheme:ths:300845"
+    ],
+    "002812.SZ": [
+      "ltheme:ths:308718"
+    ],
+    "300065.SZ": [
+      "ltheme:ths:300236"
+    ],
+    "300322.SZ": [
+      "ltheme:ths:300723",
+      "ltheme:ths:300795",
+      "ltheme:ths:308752",
+      "ltheme:ths:308791",
+      "ltheme:ths:308805",
+      "ltheme:ths:309055"
+    ],
+    "600118.SS": [
+      "ltheme:ths:300236",
+      "ltheme:ths:300704"
+    ],
+    "600879.SS": [
+      "ltheme:ths:300353",
+      "ltheme:ths:300722",
+      "ltheme:ths:300795",
+      "ltheme:ths:300830",
+      "ltheme:ths:300890",
+      "ltheme:ths:301016",
+      "ltheme:ths:301505",
+      "ltheme:ths:301546",
+      "ltheme:ths:301786",
+      "ltheme:ths:309115",
+      "ltheme:ths:309128"
+    ],
+    "601689.SS": [
+      "ltheme:ths:301121",
+      "ltheme:ths:308805",
+      "ltheme:ths:308984",
+      "ltheme:ths:309065",
+      "ltheme:ths:309092",
+      "ltheme:ths:309106",
+      "ltheme:ths:309127",
+      "ltheme:ths:309177",
+      "ltheme:ths:309187"
+    ],
+    "603920.SS": [
+      "ltheme:ths:301121",
+      "ltheme:ths:308535",
+      "ltheme:ths:309051",
+      "ltheme:ths:309092",
+      "ltheme:ths:309113"
+    ]
+  },
+  "resolved": 17,
+  "rule": "coverage_gaps.v1 (mechanical, LLM-free; case A co-occurrence + case D breadth signal). Cases B/C need theme_discovery clusters and co-movement state — deferred to W3B, where those inputs exist.",
+  "supplied": 24,
+  "unresolved": {
+    "000766.SZ": "no company node with this id or symbol",
+    "000767.SZ": "no company node with this id or symbol",
+    "301363.SZ": "no company node with this id or symbol",
+    "301488.SZ": "no company node with this id or symbol",
+    "600773.SS": "no company node with this id or symbol",
+    "688029.SS": "no company node with this id or symbol",
+    "688351.SS": "no company node with this id or symbol"
+  }
+}
