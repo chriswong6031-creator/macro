@@ -1516,6 +1516,11 @@ jobs:
       # The Stock Connect leaderboard shape/render contract also lives here: it imports
       # scripts/build_china.py and renders the real China template, using the pandas /
       # pyarrow / jinja2 dependency set this job already owns.
+      #
+      # test_intl_session_asof.py (#5706) pins _intl_session_asof and the two
+      # conviction-profile / B2 sites in scripts/build_intl_library.py. It belongs
+      # next to test_intl_library_limited.py on this same run: line — same subject,
+      # same pandas/pyarrow install, no new job.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1619,6 +1624,7 @@ jobs:
           tests/test_hk_library_limited.py
           tests/test_canada_library_limited.py
           tests/test_intl_library_limited.py
+          tests/test_intl_session_asof.py
           tests/test_library_chg_1d.py
           tests/test_stock_technicals.py
           tests/test_aibrief_page.py
