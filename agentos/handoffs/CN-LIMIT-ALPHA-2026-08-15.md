@@ -47,7 +47,7 @@ danger_areas:
   - "asia-close must actually run the four collectors for hist files to appear. A token-dark tushare night leaves broker_hist and margin_hist uncreated; that is an empty start, not a backfill invitation."
   - "china_margin_detail (akshare drip) is a different source from tushare margin_hist. Do not join them as one tape."
   - "Session worktrees are sparse: do not write into omitted data/ trees."
-prs: []
+prs: [5730]
 decisions: [DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE]
 discoveries: [DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT]
 ---
