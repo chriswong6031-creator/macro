@@ -41,20 +41,26 @@ waves:
     # predated the merge; no other state transition manufactured.
   - id: W2
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
-    status: in_progress
+    status: done
     pr: 5698
     depends_on: [W0]
-    next_action: >
-      G0-VIS is CLOSED (operator confirmed the raw grey family 2026-08-13, contract §18
-      A1) — the parity freeze is unblocked. PR-2 additionally owns the A1 adapter
-      obligation: ingest the unified indicator/v1 signals stream preserving emitter
-      type/subtype/quality/stage verbatim, and mint expert-family keys from emitter
-      receipts (STARTER/RE-ENTRY enumerations are PR-2 archaeology). PR number added
-      at ship.
+    # Reconciled 2026-08-14 by the W3 session from merged evidence: PR #5698 MERGED
+    # 2026-08-15T01:19:08Z, merge commit cf4134feaa99262cfd3bfa9b921d3444f48d5bf2
+    # (gh pr view 5698; git merge-base --is-ancestor confirms it on origin/main).
+    # Historical in_progress row predated the merge; no other state manufactured.
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
-    status: todo
+    status: done
+    pr: 5724
     depends_on: [W2]
+    # DONE at ACTUAL merge (never at armed): PR #5724 MERGED 2026-08-15T06:55:31Z,
+    # squash commit 4b9706ef058eab3bccaa36966ca89ebd0c49936d; merged-main verified
+    # (owned-path byte diff vs origin/main empty; registry probe on merged bytes:
+    # C1 f0bbd6cf3a6e2339 · C2 d8ba60a25cfa7400 · C3 d54dc1e55c4261c8 ·
+    # C4 dce21ac680233ee2 · C5 13dec66345a0376c · G0 9be89a8acc8b905c unchanged;
+    # F1 still NotYetSpecified). Contract lock = §18 A5; review receipts =
+    # research/live_entry_radar/W3_REVIEW_DISPOSITIONS.md; handoff =
+    # agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15.md.
   - id: W4
     title: PR-4 live evaluator on the VPS plane (5-min RTH)
     status: todo
@@ -87,7 +93,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: Land PR-0 (W0); then W1 (universe/bus) and W2 (G0 parity) can start in parallel sessions off the frozen contract.
+next_action: W3 DONE (PR #5724, merge 4b9706ef, 2026-08-15) — C1–C5 locked under §18 A5 with the PIT battery green. Next = W4 (PR-4 live evaluator; wires rearm_eligible + its own raw-quote basis audit BEFORE the engine) and W5 (PR-5 forward evidence; first outcome read), each a fresh commissioning — deliberately NOT auto-rolled by the W3 session.
 ---
 
 ## Context

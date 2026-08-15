@@ -15,6 +15,9 @@ Tests
 8. validator_dup_path          — synthetic dup-path entry is caught.
 9. validator_hand_weights_no_notes — weights=hand without notes is caught.
 10. validator_scored_no_evidence   — scored tier without qual_ladder_ref/notes is caught.
+11. no_restated_consumer_counts    — no prose in the registry restates a consumer
+                                     count (both the flag and the negative-control
+                                     side, so the rule can't pass by matching nothing).
 """
 from __future__ import annotations
 
@@ -365,3 +368,59 @@ def test_validator_bad_horizon_role_enum(base_reg):
     assert any("horizon_role" in v for v in violations), (
         f"Expected horizon_role enum violation, got: {violations}"
     )
+
+
+# ---------------------------------------------------------------------------
+# Test 11: no restated consumer counts in the registry prose
+# ---------------------------------------------------------------------------
+# Added 2026-08-14. config/synapse.yml carried 77 `# --- N consumers ---` section
+# headers; 43 of them disagreed with the `consumers:` list they sat on top of
+# (site-us-standouts said 13 for a 14-item list, regime-latest said 27 for 37),
+# and the regime-latest notes field claimed "28 Python modules + 3 external"
+# against an actual 37 + 4. A restated total is a hand-maintained copy of the
+# line below it, so it can only drift — the counts were removed rather than
+# regenerated, and these tests keep them out.
+
+def test_registry_has_no_restated_consumer_counts():
+    """The live registry must not restate a consumer count anywhere in prose."""
+    from scripts.check_synapse_registry import check_consumer_count_claims
+
+    violations = check_consumer_count_claims(REGISTRY_PATH.read_text(encoding="utf-8"))
+    assert violations == [], (
+        f"{len(violations)} restated consumer count(s) in config/synapse.yml:\n"
+        + "\n".join(f"  {v}" for v in violations)
+    )
+
+
+@pytest.mark.parametrize("sample", [
+    "  # --- 13 consumers ---",                              # bare section header
+    "  # --- 0 consumers (display rail only) ---",           # annotated header
+    "  # --- 1 consumer ---",                                # singular
+    "  # --- 7 consumers --- (single-writer restored)",      # trailing note
+    '    notes: "highest-consumer artifact (28 consumers)."',  # notes-field prose
+])
+def test_consumer_count_claim_is_flagged(sample):
+    """Every shape the registry had actually drifted in must be caught."""
+    from scripts.check_synapse_registry import check_consumer_count_claims
+
+    assert check_consumer_count_claims(sample), f"not flagged: {sample!r}"
+
+
+@pytest.mark.parametrize("sample", [
+    "  # --- W2 sweep 1: China Standout Board ---",          # labelled header
+    "      six named placements without new arithmetic. W2 consumers",
+    "  # NAR-W3 shared-contract stores (W4 consumer)",
+    "      konseki.market_memory/v1 consumer seam at context_only/weight=0.",
+    "      - engine/neuralweb/cortex.py",                    # a real consumers row
+    "    consumers: []",
+])
+def test_non_count_consumer_prose_is_not_flagged(sample):
+    """Negative control — the rule must key on a COUNT, not the word 'consumer'.
+
+    Every string here is a real line of config/synapse.yml. Without this test the
+    flag-side assertions above would still pass under a regex that matched any
+    mention of 'consumer', which would red the whole registry.
+    """
+    from scripts.check_synapse_registry import check_consumer_count_claims
+
+    assert check_consumer_count_claims(sample) == [], f"false positive: {sample!r}"

@@ -452,7 +452,9 @@ def test_short_int_pit_mid_period(tmp_path):
          "short_shares": 2_200_000},
     ])
 
-    # knowable dates are 07-10 and 07-25: on 07-20 only the 06-30 settlement exists.
+    # knowable dates are 07-13 and 07-27 (8 NYSE sessions after settlement; the
+    # 06-30 gap is 3 sessions' worth of calendar because of the 07-03 closure):
+    # on 07-20 only the 06-30 settlement exists.
     result = context_snapshot("AAPL", date="2026-07-20", root=root)
     dim = result["dimensions"]["short_int"]
     assert dim.get("absent") is not True
@@ -465,9 +467,9 @@ def test_short_int_pit_mid_period(tmp_path):
 def test_short_int_pit_publication_lag_honest(tmp_path):
     """A settled-but-unpublished figure stays invisible until its knowable_date.
 
-    2026-07-16 is AFTER the 07-15 settlement but BEFORE its 07-25 publication, so
-    a settlement-date join would hand back the 07-15 row here — 9 days of
-    look-ahead.  The resolver must still answer 06-30.
+    2026-07-16 is AFTER the 07-15 settlement but BEFORE its 07-27 publication (8
+    NYSE sessions), so a settlement-date join would hand back the 07-15 row here —
+    11 days of look-ahead.  The resolver must still answer 06-30.
     """
     root = _make_root(tmp_path)
     _write_si_history(root, [
@@ -518,12 +520,17 @@ def test_short_int_panel_preferred_and_union(tmp_path):
         {"ticker": "AAPL", "settlement_date": "2026-07-31", "days_to_cover": 7.7},
     ])
 
-    overlap = context_snapshot("AAPL", date="2026-07-26", root=root)["dimensions"]["short_int"]
+    # 07-27, not 07-26: the panel row's STORED knowable_date (2026-07-25) was
+    # written by the retired +10-calendar rule and is itself two days early, so
+    # the resolver floors it up to the 8-session convention before answering.
+    overlap = context_snapshot("AAPL", date="2026-07-27", root=root)["dimensions"]["short_int"]
     assert overlap["basis"] == "pit_settlement"
     assert overlap["as_of"] == "2026-07-15"
     assert overlap["value"]["days_to_cover"] == pytest.approx(9.9)
 
     # The panel's tail lags the nightly accrual: 07-31 exists only in history.
+    # 2026-08-12 is EXACTLY that settlement's knowable date (8 sessions), so this
+    # also pins the boundary as inclusive.
     tail = context_snapshot("AAPL", date="2026-08-12", root=root)["dimensions"]["short_int"]
     assert tail["as_of"] == "2026-07-31"
     assert tail["value"]["days_to_cover"] == pytest.approx(7.7)
@@ -545,12 +552,84 @@ def test_short_int_pit_payload_json_safe(tmp_path):
     json.dumps(dim)   # raises TypeError on a leaked Timestamp / numpy scalar
 
 
-def test_si_knowable_lag_matches_backfill_convention():
-    """The resolver's lag must not drift from the backfill's canonical constant."""
-    from scripts.backfill_finra_short_interest import KNOWABLE_LAG_DAYS
-    from engine.neuralweb.context_api import _SI_KNOWABLE_LAG_DAYS
+def test_short_int_capture_date_floors_the_derived_knowable_date(tmp_path):
+    """A row cannot be knowable before the collector captured it.
 
-    assert _SI_KNOWABLE_LAG_DAYS == KNOWABLE_LAG_DAYS
+    capture_date is the collector's own run date; collectors/finra.py dedups
+    (settlement_date, ticker) keep="last", so it only moves FORWARD and is a safe
+    knowability FLOOR for the value the store now carries.  It is load-bearing on
+    the REAL committed store, whose captures all trail the derived date: this
+    fixture reuses the measured 2026-06-30 pair verbatim (settlement 06-30 ->
+    8 sessions 07-13, but actually captured 2026-07-22).
+
+    The other history fixtures are unaffected because _write_si_history defaults
+    capture_date to the settlement date, which never exceeds the derived date.
+    """
+    root = _make_root(tmp_path)
+    _write_si_history(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-06-30", "days_to_cover": 7.7,
+         "capture_date": "2026-07-22"},
+    ])
+
+    # 07-15 is past the 8-session date (07-13) but before the capture: absent.
+    early = context_snapshot("AAPL", date="2026-07-15", root=root)["dimensions"]["short_int"]
+    assert early.get("absent") is True
+
+    late = context_snapshot("AAPL", date="2026-07-22", root=root)["dimensions"]["short_int"]
+    assert late.get("absent") is not True
+    assert late["as_of"] == "2026-06-30"
+    assert late["value"]["days_to_cover"] == pytest.approx(7.7)
+
+
+def test_short_int_stale_panel_knowable_date_is_floored_to_the_convention(tmp_path):
+    """A stored knowable_date written by the RETIRED rule must not be trusted down.
+
+    The panel is gitignored/Mac-local and this change does not regenerate it, so
+    real hosts keep a knowable_date column stamped `settlement + 10 calendar days`
+    — two days early on the 07-15 settlement.  The resolver floors it up to the
+    8-session convention, so 07-26 is still invisible and 07-27 is the first
+    knowable date.
+    """
+    root = _make_root(tmp_path)
+    _write_si_panel(root, [
+        {"ticker": "AAPL", "settlement_date": "2026-07-15",
+         "knowable_date": "2026-07-25", "days_to_cover": 9.9},
+    ])
+
+    stale = context_snapshot("AAPL", date="2026-07-26", root=root)["dimensions"]["short_int"]
+    assert stale.get("absent") is True, (
+        "the panel's retired +10-calendar knowable_date was trusted verbatim"
+    )
+
+    ok = context_snapshot("AAPL", date="2026-07-27", root=root)["dimensions"]["short_int"]
+    assert ok.get("absent") is not True
+    assert ok["as_of"] == "2026-07-15"
+    assert ok["value"]["days_to_cover"] == pytest.approx(9.9)
+
+
+def test_si_knowable_lag_has_exactly_one_definition():
+    """The two-constant mirror is GONE — drift is structural, not drift-tested.
+
+    The lag used to be the literal 10 in both engine/neuralweb/context_api.py
+    (_SI_KNOWABLE_LAG_DAYS) and scripts/backfill_finra_short_interest.py
+    (KNOWABLE_LAG_DAYS), kept honest by a test asserting they were equal.  They
+    were equally WRONG (see tests/test_finra_knowable.py), which is the failure a
+    mirror test cannot catch.  Both now resolve their lag from lib.finra_knowable
+    and neither defines a numeric lag constant of its own.
+    """
+    import lib.finra_knowable as canon
+    import scripts.backfill_finra_short_interest as backfill
+    from engine.neuralweb import context_api
+
+    assert backfill.KNOWABLE_LAG_SESSIONS is canon.KNOWABLE_LAG_SESSIONS
+    assert context_api.KNOWABLE_LAG_SESSIONS is canon.KNOWABLE_LAG_SESSIONS
+    assert backfill.knowable_date is canon.knowable_date
+
+    for mod in (context_api, backfill):
+        for name in ("_SI_KNOWABLE_LAG_DAYS", "KNOWABLE_LAG_DAYS"):
+            assert not hasattr(mod, name), (
+                f"{mod.__name__} re-declared its own lag constant {name} — the mirror is back"
+            )
 
 
 # ---------------------------------------------------------------------------
