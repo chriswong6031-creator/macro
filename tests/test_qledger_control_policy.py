@@ -1711,6 +1711,110 @@ def test_f4_a_fully_graded_cohort_reports_byte_identical_numbers(tmp_path):
     assert r.cohort_rowless == {}
 
 
+def test_f4_a_closed_window_with_a_dead_subject_is_a_primary_leg_refusal(
+        f4_prices, tmp_path):
+    """REVIEW DEFECT 2 (ported from #5661). `not_yet_matured` means ONE thing —
+    the window has not closed (contract C4.4's table). A subject whose price
+    series simply ENDS (delisted, or never collected past a point) leaves a
+    window that HAS closed and cannot be priced: that is `primary_leg_refused`,
+    and it stays out of the coverage denominator like every other non-control
+    refusal.
+
+    Before the fix, `_matured_window` was asked first, and it answers False for
+    BOTH "not closed yet" and "a leg's series does not reach the close" — so a
+    permanently dead subject reported as YOUNG forever, which is exactly the
+    young-vs-broken confusion the classification exists to prevent, and it left
+    `primary_leg_refused` reachable only through the rarer rule-5 endpoint hole.
+
+    MUTATION CONTROL: ask `_matured_window(root, window, today, [subject, bench])`
+    BEFORE the `today < window.coverage_date` check (the shipped order before
+    this fix). The five dead-subject claims classify as `not_yet_matured` and
+    this test fails on the `cohort_rowless` equality.
+    """
+    claims, grades = _controlled_graded(30)
+    for i, asof in enumerate(_dates(5, "2025-06-02")):
+        subject = f"DEAD{i}"
+        c = _claim(family=REQ_A, asof=asof, control="XLK", subject=subject,
+                   claim_id=f"dead|{asof}")
+        claims.append(c)
+        window = q.claim_window(c, 21)
+        # the series STOPS well before the window's close, and the window IS
+        # closed as of F4_TODAY — a delisting, not a young claim.
+        f4_prices[subject] = _session_series("2025-01-02", "2025-05-01", 50.0, 0.001)
+        assert F4_TODAY >= window.coverage_date, "the fixture must be MATURE"
+    _write_store(tmp_path, claims, grades)
+    _start_clock(tmp_path, REQ_A)
+
+    r = q.matched_control_check(REQ_A, 21, root=tmp_path, today=F4_TODAY)
+
+    assert r.cohort_rowless == {q.COHORT_ROWLESS_PRIMARY_REFUSED: 5}, (
+        "a CLOSED window that the subject cannot price is not a young claim")
+    assert r.n_control_refused_rows == 0, "never the control's fault"
+    assert r.n_cohort_rows == 30, "and never in the coverage denominator"
+    assert r.control_coverage == 1.0
+    assert r.eligible is True, r.reason
+
+
+def test_f4_an_immature_claim_still_reads_as_immature_after_the_fix(
+        f4_prices, tmp_path):
+    """The other side of defect 2 (ported from #5661): moving the calendar test
+    first must not reclassify a genuinely YOUNG claim. Same shape as the
+    dead-subject case except the window has NOT closed — and the subject is
+    perfectly priceable up to today, so only the calendar separates the two
+    tests."""
+    claims, grades = _controlled_graded(30)
+    early = date(2025, 5, 15)
+    for asof in _dates(5, "2025-05-01"):
+        c = _claim(family=REQ_A, asof=asof, control="XLK", claim_id=f"young|{asof}")
+        claims.append(c)
+        assert early < q.claim_window(c, 21).coverage_date, "must be IMMATURE"
+    _write_store(tmp_path, claims, grades)
+    _start_clock(tmp_path, REQ_A)
+
+    r = q.matched_control_check(REQ_A, 21, root=tmp_path, today=early)
+
+    assert r.cohort_rowless == {q.COHORT_ROWLESS_NOT_YET_MATURED: 5}
+    assert r.n_control_refused_rows == 0
+    assert r.n_cohort_rows == 30
+
+
+def test_f4_a_rowless_member_on_another_clock_basis_enters_no_count(
+        f4_prices, tmp_path):
+    """`other_basis` (C4.4's last table row; ported from #5661): a rowless cohort
+    member whose own window resolves on a DIFFERENT grading clock is not this
+    evaluation's business — it is counted under its own basis, never pooled into
+    this one (P0a). Even when its control is unpriceable, it must NOT join THIS
+    basis's coverage denominator.
+
+    The claim below declares `calendar_days` while the graded book declares
+    `trading_days`, so the two resolve to different basis keys at the same
+    horizon.
+
+    MUTATION CONTROL: drop the `row_basis != basis -> COHORT_ROWLESS_OTHER_BASIS`
+    re-tag in `matched_control_check`. The calendar-clock claims are then counted
+    as `control_leg_refused` on the trading-days basis, `n_cohort_rows` becomes
+    33, coverage falls to 30/33, and this test fails on all three assertions.
+    """
+    claims, grades = _controlled_graded(30)
+    for asof in _dates(3, "2025-06-02"):
+        c = _claim(family=REQ_A, asof=asof, control=UNPRICEABLE_CONTROL,
+                   unit="calendar_days", claim_id=f"cal|{asof}")
+        claims.append(c)
+    _write_store(tmp_path, claims, grades)
+    _start_clock(tmp_path, REQ_A)
+
+    r = q.matched_control_check(REQ_A, 21, root=tmp_path, today=F4_TODAY)
+
+    # the graded book decides the basis; the calendar-clock members are elsewhere
+    assert r.clock_basis == q.clock_basis_key(q.CLOCK_V1, "trading_days",
+                                              q.MARKET_US)
+    assert r.cohort_rowless == {q.COHORT_ROWLESS_OTHER_BASIS: 3}
+    assert r.n_control_refused_rows == 0, (
+        "an unpriceable control on ANOTHER basis is not this basis's uncovered claim")
+    assert r.n_cohort_rows == 30
+    assert r.control_coverage == 1.0
+
+
 def test_f4_readiness_row_publishes_the_control_refusal_accounting(f4_prices, tmp_path):
     """C6.1 at the payload the admin tab and the first-cross alert actually read:
     a coverage number that MOVED because controls refused must be legible as
