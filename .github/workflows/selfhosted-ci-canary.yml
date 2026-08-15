@@ -274,7 +274,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git -c fetch.negotiationAlgorithm=skipping fetch \
+          test -z "$(git config --get-regexp '^http\..*\.extraheader$' || true)"
+          GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/false \
+          git -c credential.helper= -c fetch.negotiationAlgorithm=skipping fetch \
             --no-tags --no-write-fetch-head --recurse-submodules=no \
             --filter=blob:none --depth=1 origin "$TESTED_SHA"
           GIT_NO_LAZY_FETCH=0 git checkout --force --detach "$TESTED_SHA"

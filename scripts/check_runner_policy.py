@@ -255,25 +255,78 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         or not materialize_positions
         or prewarm_positions[0] >= materialize_positions[0]
     ):
-        findings.append(Finding("R9", "self-hosted canary must prewarm before candidate materialization"))
+        findings.append(
+            Finding(
+                "R9",
+                "self-hosted canary must prewarm before candidate materialization",
+            )
+        )
     rendered_steps = str(steps)
     if "/usr/local/libexec/mastermind-ci-prewarm" not in rendered_steps:
         findings.append(Finding("R9", "self-hosted canary is not bound to the host prewarm"))
-    if any(step.get("uses") == "actions/checkout@v4" for step in steps if isinstance(step, dict)):
-        findings.append(Finding("R9", "self-hosted canary may not use no-negotiation actions/checkout"))
+    if any(
+        step.get("uses") == "actions/checkout@v4"
+        for step in steps
+        if isinstance(step, dict)
+    ):
+        findings.append(
+            Finding(
+                "R9",
+                "self-hosted canary may not use no-negotiation actions/checkout",
+            )
+        )
     required_materialization = (
         "fetch.negotiationAlgorithm=skipping",
         "--filter=blob:none --depth=1",
         'origin "$TESTED_SHA"',
-        "extraheader",
+        "GIT_TERMINAL_PROMPT=0",
+        "GIT_ASKPASS=/bin/false",
+        "credential.helper=",
+        "git config --get-regexp '^http\\..*\\.extraheader$'",
     )
     materialization = (
         str(steps[materialize_positions[0]].get("run", ""))
         if materialize_positions
         else ""
     )
-    if any(token not in materialization for token in required_materialization):
-        findings.append(Finding("R9", "self-hosted candidate fetch is not negotiated, exact-SHA, and credential-free"))
+    credential_guard = materialization.find("git config --get-regexp")
+    fetch_command = materialization.find("git -c credential.helper=")
+    if (
+        any(token not in materialization for token in required_materialization)
+        or credential_guard < 0
+        or fetch_command < 0
+        or credential_guard >= fetch_command
+    ):
+        findings.append(
+            Finding(
+                "R9",
+                "self-hosted candidate fetch is not negotiated, exact-SHA, and credential-free",
+            )
+        )
+    contamination_steps = (
+        ((canary.get("jobs") or {}).get("contamination-probe") or {}).get("steps")
+        or []
+    )
+    detach = next(
+        (
+            step
+            for step in contamination_steps
+            if isinstance(step, dict)
+            and str(step.get("name", "")).startswith("detach the second")
+        ),
+        {},
+    )
+    if (
+        (detach.get("env") or {}).get("GIT_NO_LAZY_FETCH") != "1"
+        or "git fetch" in str(detach.get("run", ""))
+        or any(
+            isinstance(step, dict) and step.get("uses") == "actions/checkout@v4"
+            for step in contamination_steps
+        )
+    ):
+        findings.append(
+            Finding("R9", "contamination probe must detach cache-only and fail closed")
+        )
     if "cache-negative-control" not in (canary.get("jobs") or {}):
         findings.append(Finding("R9", "cache-disabled negative-control job is missing"))
     for job_id, job in (canary.get("jobs") or {}).items():

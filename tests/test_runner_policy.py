@@ -193,6 +193,43 @@ def test_selfhosted_candidate_fetch_cannot_restore_no_negotiation_transfer(tmp_p
     assert "candidate fetch" in result.stdout
 
 
+def test_selfhosted_candidate_fetch_checks_credentials_before_network(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "selfhosted-ci-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    materialize = next(
+        step
+        for step in document["jobs"]["selfhosted-pack"]["steps"]
+        if step.get("name", "").startswith("materialize exact candidate")
+    )
+    lines = materialize["run"].splitlines()
+    guard = next(i for i, line in enumerate(lines) if "extraheader" in line)
+    lines.append(lines.pop(guard))
+    materialize["run"] = "\n".join(lines) + "\n"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R9" in result.stdout
+    assert "credential-free" in result.stdout
+
+
+def test_contamination_probe_cannot_fetch_missing_objects(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "selfhosted-ci-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    detach = next(
+        step
+        for step in document["jobs"]["contamination-probe"]["steps"]
+        if step.get("name", "").startswith("detach the second")
+    )
+    detach["run"] += "git fetch origin main\n"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R9" in result.stdout
+    assert "cache-only" in result.stdout
+
+
 def test_migration_job_cannot_bypass_hosted_main_trust_gate(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     path = workflows / "m1-runner-canary.yml"

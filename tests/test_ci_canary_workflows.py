@@ -53,7 +53,9 @@ def test_selfhosted_checkout_is_cache_preceded_negotiated_and_exact_sha_verified
     assert "fetch.negotiationAlgorithm=skipping" in command
     assert "--filter=blob:none --depth=1" in command
     assert 'origin "$TESTED_SHA"' in command
-    assert "extraheader" in command
+    assert command.index("extraheader") < command.index("git -c credential.helper=")
+    assert "GIT_TERMINAL_PROMPT=0" in command
+    assert "GIT_ASKPASS=/bin/false" in command
     assert all(step.get("uses") != "actions/checkout@v4" for step in steps)
     assert "git rev-parse HEAD" in str(steps)
     assert ".git/objects/info/alternates" in str(steps)
@@ -114,6 +116,7 @@ def test_contamination_probe_reuses_the_cache_without_an_origin_checkout() -> No
     detach = next(step for step in steps if step.get("name", "").startswith("detach the second"))
     assert detach["env"]["GIT_NO_LAZY_FETCH"] == "1"
     assert "needs.plan.outputs.contamination_sha" in detach["run"]
+    assert "git fetch" not in detach["run"]
 
 
 def test_process_contamination_probe_intentionally_abandons_and_then_rejects_a_child() -> None:
