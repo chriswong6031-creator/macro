@@ -995,6 +995,105 @@ def test_restore_workspace_reopens_a_sparse_cone(
     assert (skip / "b.txt").read_text(encoding="utf-8") == "skip\n"
 
 
+def _assert_pack_git_boundary(source: Path, tested_sha: str) -> None:
+    assert _git(source, "for-each-ref", "--format=%(refname)", "refs/replace") == ""
+    assert _git(source, "rev-parse", "HEAD") == tested_sha
+
+
+def test_restore_workspace_heals_corrupt_packed_refs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    (source / ".git" / "packed-refs").write_text("not-valid\n", encoding="utf-8")
+    with pytest.raises(subprocess.CalledProcessError):
+        _git(source, "for-each-ref", "--format=%(refname)", "refs/replace")
+    monkeypatch.chdir(source)
+    PACK._restore_workspace(tested_sha)
+    _assert_pack_git_boundary(source, tested_sha)
+    assert (source / "subject.txt").read_text(encoding="utf-8") == "base\n"
+
+
+def test_restore_workspace_heals_missing_head(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    (source / ".git" / "HEAD").unlink()
+    monkeypatch.chdir(source)
+    PACK._restore_workspace(tested_sha)
+    _assert_pack_git_boundary(source, tested_sha)
+
+
+def test_passed_step_that_breaks_packed_refs_leaves_probes_working(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    job = _job(
+        "smash-refs",
+        [{"name": "corrupt packed-refs", "run": "printf 'not-valid\\n' > .git/packed-refs"}],
+    )
+    monkeypatch.chdir(source)
+    result = PACK._run_job(
+        job,
+        base_ref="main",
+        head_ref="",
+        command_env=os.environ.copy(),
+        tested_tree_sha=tested_sha,
+    )
+    assert result.infrastructure["outcome"] == "unknown"
+    assert [step["outcome"] for step in result.steps] == ["infrastructure_blocked"]
+    _assert_pack_git_boundary(source, tested_sha)
+
+
+def test_timeout_after_broken_git_stays_timeout_and_leaves_probes_working(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    job = _job(
+        "timeout-smash",
+        [{"name": "killed mid-step", "run": "true"}],
+    )
+
+    def stream(
+        command: str,
+        *,
+        env: dict[str, str],
+        timeout_seconds: float | None = None,
+    ) -> object:
+        (source / ".git" / "packed-refs").write_text("not-valid\n", encoding="utf-8")
+        return PACK.CommandObservation(
+            outcome="timed_out",
+            returncode=None,
+            failure_signature=None,
+            detail="semantic step exceeded its job timeout",
+        )
+
+    monkeypatch.chdir(source)
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    result = PACK._run_job(
+        job,
+        base_ref="main",
+        head_ref="",
+        command_env=os.environ.copy(),
+        tested_tree_sha=tested_sha,
+    )
+    assert result.infrastructure["outcome"] == "passed"
+    assert result.failure == "timeout-smash: timed out after 1 minutes"
+    assert [step["outcome"] for step in result.steps] == ["timed_out"]
+    _assert_pack_git_boundary(source, tested_sha)
+
+
 def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

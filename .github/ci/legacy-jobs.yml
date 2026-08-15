@@ -8673,7 +8673,11 @@ jobs:
       - "tests/test_us_context_vector.py"
       - "tests/test_us_context_vector_accrual.py"
       - "tests/test_weinstein_stage.py"
-    timeout-minutes: 5
+    # 12m: pack-9 on PR #5750 measured the first semantic step at 224s of a
+    # 5m shared deadline; the fusion step was SIGKILL'd at 76s and the
+    # post-step git probe then reported infrastructure unknown. The four
+    # remaining pytest steps need the leftover budget.
+    timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
