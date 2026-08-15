@@ -2328,12 +2328,19 @@ def _workspace_root() -> Path:
 
 
 def _trusted_git_environment(root: Path) -> dict[str, str]:
-    """Bind Git to this checkout while disabling replacement-object rewrites."""
+    """Bind Git to this checkout while disabling replacement-object rewrites.
+
+    ``GIT_OPTIONAL_LOCKS=0`` keeps read-only probes from dying on a leftover
+    ``*.lock`` after a SIGKILL'd semantic step (PR #5750 pack-9: the 5-minute
+    job deadline killed pytest, then ``git for-each-ref refs/replace`` exited
+    128 and was reported as infrastructure unknown).
+    """
     clean_env = {
         key: value
         for key, value in os.environ.items()
         if not key.startswith("GIT_")
     }
+    clean_env["GIT_OPTIONAL_LOCKS"] = "0"
     git_dir = subprocess.run(
         ["git", "-C", str(root), "rev-parse", "--absolute-git-dir"],
         check=True,
@@ -2351,26 +2358,75 @@ def _trusted_git_environment(root: Path) -> dict[str, str]:
     return clean_env
 
 
+def _replace_refs_from_filesystem(git_dir: Path) -> list[str]:
+    """List ``refs/replace/**`` without asking Git to take a ref lock."""
+    found: list[str] = []
+    replace_dir = git_dir / "refs" / "replace"
+    if replace_dir.is_dir():
+        for path in sorted(replace_dir.rglob("*")):
+            if not path.is_file() or path.name.endswith(".lock"):
+                continue
+            found.append(path.relative_to(git_dir).as_posix())
+    packed = git_dir / "packed-refs"
+    if packed.is_file():
+        for line in packed.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line or line.startswith("#") or line.startswith("^"):
+                continue
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].startswith("refs/replace/"):
+                found.append(parts[1])
+    return found
+
+
 def _git_rewrite_metadata(root: Path, env: Mapping[str, str]) -> tuple[list[str], Path]:
-    refs = subprocess.run(
+    """Return replace-refs and the grafts path without fail-closing on probe 128.
+
+    ``git for-each-ref refs/replace`` exits 0 when the namespace is empty. Exit
+    128 is a lock, a killed sibling, or a confused GIT_DIR — not proof that
+    history was rewritten. Fall back to a filesystem listing so a racy probe
+    cannot turn a green (or merely timed-out) job into infrastructure unknown.
+    Reftable repositories have no loose ``refs/replace`` files; if the Git
+    listing fails there, refuse rather than silently miss a rewrite.
+    """
+    listed = subprocess.run(
         ["git", "for-each-ref", "--format=%(refname)", "refs/replace"],
         cwd=root,
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         env=dict(env),
-    ).stdout.splitlines()
+    )
+    git_dir = Path(str(env.get("GIT_DIR") or ""))
+    if listed.returncode == 0:
+        refs = [line for line in listed.stdout.splitlines() if line.strip()]
+    else:
+        if not git_dir.is_dir():
+            raise RuntimeError(
+                "`git for-each-ref --format=%(refname) refs/replace` returned "
+                f"{listed.returncode} and GIT_DIR is not a directory "
+                f"({git_dir})"
+            )
+        if (git_dir / "reftable").is_dir():
+            raise RuntimeError(
+                "`git for-each-ref --format=%(refname) refs/replace` returned "
+                f"{listed.returncode} in a reftable repository; cannot confirm "
+                "the absence of replace refs from the filesystem"
+            )
+        refs = _replace_refs_from_filesystem(git_dir)
     graft_text = subprocess.run(
         ["git", "rev-parse", "--git-path", "info/grafts"],
         cwd=root,
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         env=dict(env),
-    ).stdout.strip()
-    graft_path = Path(graft_text)
-    if not graft_path.is_absolute():
-        graft_path = root / graft_path
+    )
+    if graft_text.returncode != 0:
+        graft_path = git_dir / "info" / "grafts" if git_dir.is_dir() else root / ".git" / "info" / "grafts"
+    else:
+        graft_path = Path(graft_text.stdout.strip())
+        if not graft_path.is_absolute():
+            graft_path = root / graft_path
     return refs, graft_path
 
 
@@ -2634,7 +2690,12 @@ def _run_job(
         }
         if result.detail:
             record["detail"] = result.detail
-        if tested_tree_sha is not None:
+        # Only a *passed* step can hide a rewrite. A timed-out step was
+        # SIGKILL'd; probing Git immediately afterwards races leftover locks
+        # (pack-9 / run 31881072256: for-each-ref 128 masked the 5-minute
+        # deadline as infrastructure unknown). Failed/timed-out steps already
+        # fail the job.
+        if tested_tree_sha is not None and result.outcome == "passed":
             try:
                 _assert_no_git_rewrites(Path.cwd())
                 observed_tree_sha = _current_commit_sha(Path.cwd())

@@ -8673,7 +8673,12 @@ jobs:
       - "tests/test_us_context_vector.py"
       - "tests/test_us_context_vector_accrual.py"
       - "tests/test_weinstein_stage.py"
-    timeout-minutes: 5
+    # 2026-08-15 pack-9 / run 31881072256 on PR #5750: the first semantic step
+    # (1253 tests) took 223.76s; the fusion step was SIGKILL'd when this
+    # 5-minute logical-job deadline expired at 300s, and the post-kill
+    # `git for-each-ref refs/replace` then exited 128 as infrastructure
+    # unknown. 12 minutes covers fusion + board-read + era + stage-analysis.
+    timeout-minutes: 12
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
