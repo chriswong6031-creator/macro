@@ -6253,3 +6253,30 @@ button.obx-btn-reject:hover:not(:disabled) {
    throwing it away on every keypress would make the sheet unusable. */
 .obe-findings.is-stale { opacity: .42; filter: saturate(.5); }
 .rqx-replaced { color: var(--faint); }
+
+/* ---- Intelligence OS (Eval OS T1 census + T4 output health) --------------
+   Deliberately thin: the page is built from the console's existing vocabulary
+   (.nw-hero, .statpill, .ent-chip, .ent-table, .ent-search, .card), so what is
+   added here is only the layout those pieces do not already carry — a labelled
+   filter row, and the key/value line shape of an output record. */
+.ios-chips { display: flex; flex-direction: column; gap: 6px; }
+.ios-filter-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+/* Fixed column so the four filter rows read as a stack, not a ragged pile. */
+.ios-filter-label {
+  flex: 0 0 5.6em; font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--faint);
+}
+.ios-out { margin-bottom: 10px; }
+.ios-out-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 7px; }
+.ios-out-line {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px;
+  font-size: 12.5px; padding: 2px 0;
+}
+.ios-out-key {
+  flex: 0 0 5.6em; font-size: 11px; letter-spacing: .06em;
+  text-transform: uppercase; color: var(--faint);
+}
+.ios-out-line code { word-break: break-all; }
+/* Only ever matches a row that carries the cross-link this page added — no
+   pre-existing .nw-hero-row holds a .spacer. */
+.nw-hero-row .spacer, .ios-out-top .spacer { margin-left: auto; }

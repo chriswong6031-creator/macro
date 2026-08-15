@@ -23,6 +23,10 @@ THE PRESENCE LADDER IS STORAGE-AWARE, AND ITS DEFAULTS ARE ASYMMETRIC ON PURPOSE
                        git cannot be consulted at all the same silence is blindness, and
                        minting 600 "unavailable" verdicts out of a broken probe is the
                        failure this asymmetry exists to prevent.
+                       The HEAD half is answered from ONE batched ``git ls-tree``
+                       (:func:`_head_blobs`) rather than a probe per artifact; a miss
+                       there decides nothing and falls through to the per-path probe,
+                       which remains the sole authority for every negative.
 ``gitignored-local``   worktree only. Absent means INVISIBLE FROM A CHECKOUT (the file is
                        written at runtime on another host), never ``exists=False``.
 ``r2``                 not probeable from here at all: ``exists=None`` unless the R2 audit
@@ -122,6 +126,142 @@ def _git_answers(root: Path) -> bool:
     return result.returncode == 0
 
 
+#: HEAD's blob inventory, resolved ONCE per root. Measured on this repo's sparse agent
+#: worktree: 601 of 642 artifacts are unmaterialized, and asking git about each of them
+#: separately spent minutes of process spawn on an answer a single ``ls-tree`` already
+#: holds (66,789 blobs in ~1s).
+_HEAD_TREE_CACHE: dict[str, frozenset[str] | None] = {}
+
+
+def _head_blobs_uncached(root: Path) -> frozenset[str] | None:
+    try:
+        result = subprocess.run(
+            # -r WITHOUT -t: blobs only, never the trees between them. -z: NUL-separated
+            # and UNQUOTED — the default applies core.quotePath, which wraps any path
+            # holding a non-ASCII byte in quotes with octal escapes and would silently
+            # make that path miss the inventory.
+            ["git", "ls-tree", "-r", "-z", "--name-only", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    names = result.stdout.decode("utf-8", errors="surrogateescape").split("\0")
+    return frozenset(name for name in names if name)
+
+
+#: Blobs above this are left to the per-path ladder. The prewarm holds every body it
+#: reads until the observe loop consumes it, so the cap is a memory bound, not a policy:
+#: the live estate's watermark sources total ~256 MB and one of them is 44 MB, while the
+#: median is 22 kB. Capping at 1 MB warms ~90% of them for a few tens of MB and hands the
+#: fat tail back to the one-at-a-time path that was always going to read it.
+PREWARM_SIZE_CAP = 1024 * 1024
+
+
+def _prewarm_head_contents(root: Path, rels: list[str]) -> int:
+    """Fill ``read_tracked``'s cache for *rels* from ONE ``git cat-file --batch``.
+
+    PURELY A COST OPTIMIZATION, AND FAIL-SAFE BY CONSTRUCTION. Every entry it writes is
+    byte-for-byte what ``_read_tracked_uncached`` would have returned for the same path
+    (including its universal-newline translation), and everything it declines to warm —
+    an oversized blob, a non-UTF-8 body, a protocol it did not recognize — simply falls
+    through to that function. Getting this wrong can cost time. It cannot change a verdict.
+
+    Why it exists: presence became one call (:func:`_head_blobs`), which left the WATERMARK
+    reads as the whole cost. Measured on this repo's sparse worktree — where 601 of 642
+    artifacts live only in HEAD — that was ~630 ``git show`` spawns and the bulk of a
+    6-minute walk, for content one batch already streams.
+
+    Only paths NOT in the worktree are passed in, so warming ``"git"`` here can never
+    shadow a worktree copy the ladder would have preferred.
+    """
+    wanted = sorted({r for r in rels if r and "\n" not in r})
+    if not wanted:
+        return 0
+    payload = "".join(f"HEAD:{rel}\n" for rel in wanted).encode("utf-8", "surrogateescape")
+    try:
+        proc = subprocess.run(
+            ["git", "cat-file", "--batch"],
+            cwd=root,
+            input=payload,
+            capture_output=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return 0
+    if proc.returncode != 0:
+        return 0
+
+    out, pos, warmed = proc.stdout, 0, 0
+    for rel in wanted:
+        newline = out.find(b"\n", pos)
+        if newline < 0:
+            break
+        header, pos = out[pos:newline], newline + 1
+        parts = header.split(b" ")
+        if len(parts) == 2 and parts[1] in (b"missing", b"ambiguous"):
+            # The ladder's own answer for an object git cannot resolve is "absent", and
+            # 161 of these are envelope sidecars that simply do not exist. Caching the
+            # negative is what stops each of them costing a process to say so.
+            _READ_CACHE[(str(root), rel)] = (None, "absent")
+            warmed += 1
+            continue
+        if len(parts) != 3:
+            break  # protocol desync: stop reading rather than mis-attribute bodies
+        try:
+            size = int(parts[2])
+        except ValueError:
+            break
+        body, pos = out[pos:pos + size], pos + size + 1
+        if parts[1] != b"blob" or size > PREWARM_SIZE_CAP:
+            continue
+        if not body:
+            # AN EMPTY BLOB READS AS ABSENT, because that is what the function this warms
+            # returns: `_read_tracked_uncached` gates on `returncode == 0 and stdout`, and
+            # empty stdout is falsy. Caching "" instead moved two live artifacts from
+            # `watermark_unread` to a JSON parse error — a reason code changed by a
+            # PERFORMANCE patch, which is exactly the class of drift this branch prevents.
+            _READ_CACHE[(str(root), rel)] = (None, "absent")
+            warmed += 1
+            continue
+        try:
+            text = body.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        # subprocess(text=True) decodes with universal newlines; matching it is what makes
+        # a warmed read byte-identical to the read it replaces.
+        _READ_CACHE[(str(root), rel)] = (
+            text.replace("\r\n", "\n").replace("\r", "\n"),
+            "git",
+        )
+        warmed += 1
+    return warmed
+
+
+def _head_blobs(root: Path) -> frozenset[str] | None:
+    """Every path that is a BLOB at HEAD, or None when git could not be consulted.
+
+    THE POSITIVE FAST PATH ONLY, and it is a fast path precisely because it cannot say
+    anything the per-path probe would not have said:
+
+    * membership means BLOB — ``-r`` without ``-t`` never lists a tree, so
+      ``_tracked_file_exists``'s directory-is-not-a-file refusal survives intact (the
+      refusal that stopped an authority-bearing artifact from being pointed at a folder);
+    * an ``ls-tree`` listing is repo-relative by construction, so it can never name an
+      absolute path or one reached through ``..`` — the path-escape refusal survives too;
+    * a MISS decides NOTHING. It falls through to ``_tracked_file_exists``, which stays
+      the sole authority for every negative and every oddity. Being wrong here can only
+      cost time, never a verdict.
+    """
+    key = str(root)
+    if key not in _HEAD_TREE_CACHE:
+        _HEAD_TREE_CACHE[key] = _head_blobs_uncached(root)
+    return _HEAD_TREE_CACHE[key]
+
+
 def _load_yaml(root: Path, rel: Path) -> tuple[dict | None, str]:
     text, source = read_tracked(root, rel)
     if text is None:
@@ -206,6 +346,50 @@ def _record_watermark(out: dict[str, Any], present: bool, raw: Any, field: str) 
         )
 
 
+def watermark_source_path(entry: dict) -> str | None:
+    """The ONE file whose bytes carry this artifact's declared watermark, or None.
+
+    THE SINGLE DEFINITION of that question. :func:`_read_watermark` reads from it and
+    :func:`_prewarm_head_contents` warms it; a second copy of the rule would drift, and
+    the failure mode of drift here is a prewarm that misses — or worse, warms the wrong
+    file's bytes under the right file's key.
+    """
+    fmt = str(entry.get("format") or "").lower()
+    rel = str(entry.get("path") or "")
+    if not rel:
+        return None
+    if fmt == "parquet":
+        # The envelope sidecar or nothing — pyarrow is deliberately kept off this path.
+        return rel + ".envelope.json"
+    return rel if fmt in ("json", "jsonl") else None
+
+
+def _watermark_sources_to_warm(
+    root: Path, entries: list[dict], head_blobs: frozenset[str]
+) -> list[str]:
+    """Exactly the paths the observe loop is about to read out of HEAD, and no others.
+
+    Mirrors :func:`observe`'s own gates — an artifact with no governing field is never
+    read, a ``gitignored-local``/``r2`` artifact is never probed, and an artifact that is
+    not present has no content to read. A path already in the worktree is excluded so the
+    warm can never shadow the copy the ladder would rather have.
+    """
+    out: list[str] = []
+    for entry in entries:
+        storage = str(entry.get("storage") or "")
+        rel = str(entry.get("path") or "")
+        if not rel or storage in ("gitignored-local", "r2"):
+            continue
+        if not _governing_field(entry):
+            continue
+        if not (root / rel).is_file() and rel not in head_blobs:
+            continue                                  # not present: nothing will be read
+        source = watermark_source_path(entry)
+        if source and not (root / source).is_file():
+            out.append(source)
+    return out
+
+
 def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
     """Read ONLY the declared field. Never falls back to another timestamp key."""
     fmt = str(entry.get("format") or "").lower()
@@ -217,8 +401,7 @@ def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
         "parse_error": None,
     }
     if fmt == "parquet":
-        # The envelope sidecar or nothing — pyarrow is deliberately kept off this path.
-        sidecar, err = _content_text(root, rel + ".envelope.json")
+        sidecar, err = _content_text(root, watermark_source_path(entry) or "")
         if sidecar is None:
             out["parse_error"] = err or "watermark_unreadable_format"
             return out
@@ -258,9 +441,19 @@ def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
 
 
 def observe(
-    root: Path, entry: dict, *, trust_mtime: bool, git_ok: bool
+    root: Path,
+    entry: dict,
+    *,
+    trust_mtime: bool,
+    git_ok: bool,
+    head_blobs: frozenset[str] | None = None,
 ) -> dict[str, Any]:
-    """One storage-aware observation of one artifact. No verdicts — evidence only."""
+    """One storage-aware observation of one artifact. No verdicts — evidence only.
+
+    *head_blobs* is the optional batched HEAD inventory (:func:`_head_blobs`). It only
+    ever short-circuits a POSITIVE presence answer; every negative still goes through
+    ``_tracked_file_exists``. Omitting it changes the runtime and nothing else.
+    """
     rel = str(entry.get("path") or "")
     storage = str(entry.get("storage") or "")
     obs: dict[str, Any] = {
@@ -293,6 +486,9 @@ def observe(
         return obs
     elif storage == "r2":
         return obs
+    elif head_blobs is not None and rel in head_blobs:
+        obs["exists"] = True
+        obs["presence_source"] = "git_head"
     elif _tracked_file_exists(root, rel):
         obs["exists"] = True
         obs["presence_source"] = "git_head"
@@ -545,6 +741,19 @@ def r2_readers(doc: Any, synapse: dict) -> dict[str, list[dict[str, Any]]]:
 # Build
 # ---------------------------------------------------------------------------
 
+def reset_caches() -> None:
+    """Drop every in-process read cache, so the next build starts from the disk again.
+
+    The caches exist to make ONE build cheap, never to memoize across builds: a build is
+    supposed to be a function of one snapshot of its inputs, and a long-lived caller (the
+    admin panel derives this view on demand inside a server process) would otherwise be
+    served a HEAD inventory and a registry frozen at the moment the process booted —
+    a health view that cannot report an outage that started after the last restart.
+    """
+    _READ_CACHE.clear()
+    _HEAD_TREE_CACHE.clear()
+
+
 def build(
     root: Path,
     *,
@@ -555,6 +764,36 @@ def build(
     limit_artifacts: list[str] | None = None,
 ) -> dict[str, Any]:
     """Gather evidence and resolve. Reads only; writes nothing."""
+    return build_with_registry(
+        root,
+        now=now,
+        trust_mtime=trust_mtime,
+        staleness_json=staleness_json,
+        r2_audit=r2_audit,
+        limit_artifacts=limit_artifacts,
+    )[0]
+
+
+def build_with_registry(
+    root: Path,
+    *,
+    now: datetime,
+    trust_mtime: bool = False,
+    staleness_json: Path | None = None,
+    r2_audit: Path | None = None,
+    limit_artifacts: list[str] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """``(output-health view, the T1 registry it was resolved against)`` from ONE pass.
+
+    The T4 record carries the engine ID it joined on but not the engine's own fields —
+    producer, owner_program, the adjudicated output_class RATIONALE. A caller that needs
+    both (the admin surface does) would otherwise pay for the T1 producer scan twice, so
+    the pass hands back what it already built rather than being run again.
+
+    NOT thread-safe: the read caches it warms are module-level, so a caller running two
+    builds at once must serialize them (``admin/intelligence_os.py`` holds a lock).
+    """
+    reset_caches()
     synapse, synapse_source = _load_yaml(root, SYNAPSE_REL)
     if synapse is None:
         raise SystemExit(
@@ -570,8 +809,20 @@ def build(
     }
     wanted = set(limit_artifacts) if limit_artifacts else None
     git_ok = _git_answers(root)
+    head_blobs = _head_blobs(root)
+    if head_blobs is not None:
+        _prewarm_head_contents(
+            root,
+            _watermark_sources_to_warm(
+                root,
+                [e for aid, e in sorted(artifacts.items()) if wanted is None or aid in wanted],
+                head_blobs,
+            ),
+        )
     observations = {
-        aid: observe(root, entry, trust_mtime=trust_mtime, git_ok=git_ok)
+        aid: observe(
+            root, entry, trust_mtime=trust_mtime, git_ok=git_ok, head_blobs=head_blobs
+        )
         for aid, entry in sorted(artifacts.items())
         if wanted is None or aid in wanted
     }
@@ -600,7 +851,7 @@ def build(
     for aid, rows in r2_readers(audit_doc, synapse).items():
         readers.setdefault(aid, []).extend(rows)
 
-    return resolve_output_health(
+    view = resolve_output_health(
         synapse=synapse,
         registry=registry,
         observations=observations,
@@ -609,6 +860,7 @@ def build(
         provider_events=provider_events(root, synapse),
         now=now,
     )
+    return view, registry
 
 
 def render_summary(view: dict[str, Any]) -> str:

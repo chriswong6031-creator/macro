@@ -270,9 +270,13 @@ CLOCK_TRANSPORT = "transport"
 DEPENDENCY_EXACT = "exact"
 DEPENDENCY_UPPER = "upper"
 
-#: Same pattern as ``engine/neuralweb/synapse.py``: a path holding ``<SYM>``-style tokens
-#: names a FAMILY of files and cannot be probed as one.
-_PLACEHOLDER_RE = re.compile(r"<[A-Z_]+>")
+#: Same pattern as ``engine/neuralweb/synapse.py`` — keep the two IDENTICAL: a path
+#: holding a ``<SYM>``-style token names a FAMILY of files and cannot be probed as one.
+#: The case class is ``A-Za-z`` because the live registry writes both spellings
+#: (``<SYM>``, ``<compound_id>``), and an upper-only pattern resolved the lowercase
+#: families to ``unavailable`` — an absence verdict minted from a path that was never
+#: a file to begin with, which is the exact conflation this module exists to prevent.
+_PLACEHOLDER_RE = re.compile(r"<[A-Za-z_]+>")
 
 #: A watermark that is a calendar date and nothing else.
 _DATE_ONLY_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")

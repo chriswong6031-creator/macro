@@ -55,7 +55,13 @@ _REQUIRED_ARTIFACT_KEYS = {
 }
 
 # Repo-relative paths that contain placeholders (like <SYM>) — skip existence check.
-_PLACEHOLDER_RE = re.compile(r"<[A-Z_]+>")
+# LOWERCASE TOKENS COUNT. The pattern was `<[A-Z_]+>` until 2026-08-14, which read
+# `<SYM>` but not `data/oracle/reversion_forward/<compound_id>.jsonl` — so a path naming
+# a FAMILY of files was probed as if it were one file, and its miss reported as a real
+# absence. Measured across the live registry when this widened: 2 artifact paths change
+# classification (both lowercase-placeholder families that were being probed as files),
+# and ZERO producers — every placeholder producer was already SCREAMING_CASE.
+_PLACEHOLDER_RE = re.compile(r"<[A-Za-z_]+>")
 
 
 def _repo_root() -> Path:

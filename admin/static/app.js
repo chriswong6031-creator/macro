@@ -251,10 +251,14 @@ const ICONS = {
   chronicle:             NAV_ICO('<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2"/><path d="M9 2.5h6"/>'),
   /* Persona Roster — an identity card: one face, and the beat written beside it. */
   personas:              NAV_ICO('<rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="11" r="2.1"/><path d="M5.7 16.3a3.5 3.5 0 0 1 6.6 0"/><path d="M14.8 10h3.6M14.8 13.5h3.6"/>'),
+  /* Intelligence OS — a ledger of engines: stacked rows, each with its own state mark.
+     The Observatory's glyph is a NETWORK because it draws the bus; this one is a LIST
+     because it counts what is on it. */
+  intelligence_os:       NAV_ICO('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8.5h6M7 12h6M7 15.5h4"/><circle cx="17" cy="8.5" r="1.1"/><circle cx="17" cy="12" r="1.1"/><circle cx="17" cy="15.5" r="1.1"/>'),
 };
 const NAV_GROUPS = [
   { label: "", items: [["overview", "Overview"]] },
-  { label: "Neural Web", items: [["neural_web", "Observatory"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["macro_thesis", "Macro Thesis"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
+  { label: "Neural Web", items: [["neural_web", "Observatory"], ["intelligence_os", "Intelligence OS"], ["orchestrator", "Master Brain"], ["prophet", "Prophet"], ["macro_thesis", "Macro Thesis"], ["mastermind_ai", "Mastermind AI"], ["mastermind_logs", "AI Response Logs"], ["alerts", "Alerts"], ["long_hold", "Long-Hold Lobe"], ["context_lobe", "Context Lobe"], ["causal_lab", "Causal Lab"], ["chronicle", "Chronicle"]] },
   { label: "Research", items: [["research_tools", "Research Tools"]] },
   /* Marketing was one flat 19-item list — "SUPER messy" (operator, 2026-07-29).
      Split along the operator's actual loops: the nightly production line he
@@ -285,6 +289,7 @@ const TAB_PREFETCH_PATHS = {
   cost: ["/api/cost"],
   content: ["/api/content"],
   neural_web: ["/api/neural_web/lobes"],
+  intelligence_os: ["/api/intelligence_os"],
   orchestrator: ["/api/orchestrator", "/api/prophet"],
   prophet: ["/api/prophet", "/api/prophet/trade-memory"],
   macro_thesis: ["/api/macro-thesis"],
@@ -594,7 +599,7 @@ async function refreshSupportNavDot() {
 function setTopbarTitle(t) { const el = $("#topbar-title"); if (el) el.textContent = t; }
 
 function go(id) {
-  if (currentLobeId() || currentMktDept() || currentAnalyticsDetail() || currentTicketId()) history.replaceState(null, "", location.pathname + location.search);
+  if (currentLobeId() || currentEngineId() || currentMktDept() || currentAnalyticsDetail() || currentTicketId()) history.replaceState(null, "", location.pathname + location.search);
   CURRENT = id;
   if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
   if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
@@ -614,6 +619,19 @@ function gotoLobe(id) { location.hash = "#/lobe/" + encodeURIComponent(id); }
 function backToObservatory() {
   if (currentLobeId()) history.replaceState(null, "", location.pathname + location.search);
   go("neural_web");
+}
+
+/* hash router — Intelligence OS engine detail lives at #/engine/<engine_id>.
+   Engine ids are `producer::owner_program`, so they carry slashes and colons and MUST
+   go through encodeURIComponent in both directions. */
+function currentEngineId() {
+  const m = location.hash.match(/^#\/engine\/(.+)$/);
+  return m ? decodeURIComponent(m[1]) : null;
+}
+function gotoEngine(id) { location.hash = "#/engine/" + encodeURIComponent(id); }
+function backToIntelligenceOs() {
+  if (currentEngineId()) history.replaceState(null, "", location.pathname + location.search);
+  go("intelligence_os");
 }
 
 /* hash router — marketing department detail pages live at #/mkt-dept/<id> */
@@ -641,6 +659,8 @@ function backToTickets() {
 function route() {
   const id = currentLobeId();
   if (id) { renderLobeDetail(id); return; }
+  const engineId = currentEngineId();
+  if (engineId) { renderEngineDetail(engineId); return; }
   const deptId = currentMktDept();
   if (deptId) { renderMktDept(deptId); return; }
   const det = currentAnalyticsDetail();
@@ -3300,6 +3320,8 @@ function nwHero(d) {
       <span class="status-dot" data-status="${esc(NW_STATUS_DOT[st] || "unknown")}" style="width:14px;height:14px"></span>
       <span class="nw-hero-status-word">${esc(NW_STATUS_WORD[st] || st)}</span>
       <span class="sub" style="margin-left:2px">${sc.total != null ? sc.total : "—"} lobes across ${(d.groups || []).length} systems · ${(d.graph && d.graph.n_edges) != null ? d.graph.n_edges : "—"} bus links</span>
+      <span class="spacer"></span>
+      <button class="btn" id="nw-to-ios" title="the same estate counted by engine, with each output's health verdict">Intelligence OS →</button>
     </div>
     <div class="nw-hero-chips">
       ${chip("fresh", sc.fresh, "ok")}
@@ -3556,6 +3578,7 @@ RENDER.neural_web = async () => {
 
   v.innerHTML = html;
   const mbBtn = $("#mb-open"); if (mbBtn) mbBtn.onclick = () => go("orchestrator");
+  const iosBtn = $("#nw-to-ios"); if (iosBtn) iosBtn.onclick = () => go("intelligence_os");
 
   /* The map switch swaps only #nw-map-body — re-rendering the whole view would
      refetch /api/neural_web/lobes and throw away the lobe cards and the open
@@ -3844,6 +3867,291 @@ async function renderLobeDetail(id) {
     </div>
     <div class="section">Recent activity <span class="cnt">${recent.length}</span></div>
     ${timeline}`;
+  wireBack();
+}
+
+/* ---- INTELLIGENCE OS (Eval OS T1 census + T4 output health) --------------- */
+/* The Observatory answers "is the bus flowing"; this page answers "what does the estate
+   CONSIST of, and which of its outputs can we currently vouch for". Every number here is
+   derived on demand from config/synapse.yml + the T1 overlay — nothing is stored, so a
+   registry edit shows up on the next load and there is no snapshot to go stale.
+
+   NOTHING IS RANKED HERE. output_class and authority are ADJUDICATED values read off the
+   T1 overlay; where no adjudication exists the cell reads "—" and stays empty. Guessing
+   one would turn a census into an authority claim, which is the one thing this surface
+   must never do. */
+const IOS_STATE_CLS = {
+  healthy: "s-ok", degraded: "s-warn", stale: "s-bad", unavailable: "s-bad",
+};
+/* An unknown state is NEVER styled like a pass — it renders muted with its own word. */
+const iosStateCls = (s) => (s == null ? "s-mut" : (IOS_STATE_CLS[s] || "s-mut"));
+const iosStateWord = (s) => (s == null ? "not determined" : String(s));
+function iosStatePill(s) { return `<span class="statpill ${iosStateCls(s)}">${esc(iosStateWord(s))}</span>`; }
+
+const IOS = { filter: { state: null, output_class: null, authority: null, owner_program: null }, q: "", page: 1, rows: [], data: null };
+const IOS_PAGE_SIZE = 60;
+
+function iosChip(label, active, on, data) {
+  /* Same law as entChip: `on` is JS source pasted into an attribute, so a value may only
+     travel through data-* and be read back off this.dataset — an interpolated string
+     literal would close the attribute on its own quotes. */
+  return `<button class="ent-chip${active ? " on" : ""}"${dataAttrs(data)} onclick="${esc(on)}">${esc(label)}</button>`;
+}
+
+function iosCountsToChips(counts, kind, activeVal) {
+  return Object.entries(counts || {})
+    .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+    .map(([k, n]) => iosChip(`${k} (${n})`, activeVal === k, `iosSetFilter('${kind}', this.dataset.val)`, { val: k }))
+    .join("");
+}
+
+function iosMatches(r) {
+  const f = IOS.filter;
+  const cls = r.output_class == null ? "null" : String(r.output_class);
+  const st  = r.worst_state == null ? "null" : String(r.worst_state);
+  if (f.state && st !== f.state) return false;
+  if (f.output_class && cls !== f.output_class) return false;
+  if (f.authority && String(r.authority) !== f.authority) return false;
+  if (f.owner_program && String(r.owner_program) !== f.owner_program) return false;
+  if (IOS.q) {
+    const hay = `${r.engine_id} ${r.owner_program || ""} ${r.producer || ""} ${r.output_class || ""}`.toLowerCase();
+    if (!hay.includes(IOS.q.toLowerCase())) return false;
+  }
+  return true;
+}
+
+function iosRenderTable() {
+  const all = IOS.rows.filter(iosMatches);
+  const pages = Math.max(1, Math.ceil(all.length / IOS_PAGE_SIZE));
+  if (IOS.page > pages) IOS.page = pages;
+  const slice = all.slice((IOS.page - 1) * IOS_PAGE_SIZE, IOS.page * IOS_PAGE_SIZE);
+  const tbl = $("#iosTbl");
+  if (!tbl) return;
+  tbl.innerHTML = slice.length ? `<table class="ent-table"><thead><tr>
+      <th>Engine</th><th>Program</th><th>Output class</th><th>Authority</th><th class="r">Outputs</th><th>Worst state</th></tr></thead><tbody>
+    ${slice.map(r => `<tr>
+        <td><a href="#/engine/${encodeURIComponent(r.engine_id)}" class="mono" style="word-break:break-all">${esc(r.engine_id)}</a></td>
+        <td class="sub">${esc(r.owner_program || "—")}</td>
+        <td>${r.output_class ? `<b>${esc(r.output_class)}</b>` : `<span class="muted" title="no adjudicated class in the T1 overlay — never guessed here">—</span>`}</td>
+        <td class="sub">${esc(r.authority || "—")}</td>
+        <td class="r">${fmtNum(r.n_artifacts)}</td>
+        <td>${iosStatePill(r.worst_state)}</td>
+      </tr>`).join("")}
+  </tbody></table>` : `<div class="card sub">No engine matches this filter.</div>`;
+  const cnt = $("#iosCnt"); if (cnt) cnt.textContent = fmtNum(all.length);
+  const pager = $("#iosPager");
+  if (pager) pager.innerHTML = pages > 1 ? `
+    <button class="ent-chip" ${IOS.page <= 1 ? "disabled" : ""} onclick="iosGoto(${IOS.page - 1})">← prev</button>
+    <span class="sub">page ${IOS.page} / ${pages}</span>
+    <button class="ent-chip" ${IOS.page >= pages ? "disabled" : ""} onclick="iosGoto(${IOS.page + 1})">next →</button>` : "";
+}
+
+function iosSetFilter(kind, val) {
+  IOS.filter[kind] = (IOS.filter[kind] === val) ? null : val;   // second click clears
+  IOS.page = 1;
+  iosRenderChips();
+  iosRenderTable();
+}
+function iosClearFilters() {
+  IOS.filter = { state: null, output_class: null, authority: null, owner_program: null };
+  IOS.q = ""; IOS.page = 1;
+  const box = $("#iosSearch"); if (box) box.value = "";
+  iosRenderChips(); iosRenderTable();
+}
+function iosGoto(p) { IOS.page = Math.max(1, p); iosRenderTable(); }
+
+function iosRenderChips() {
+  const d = IOS.data; if (!d) return;
+  const c = d.census || {};
+  const byWorst = {};
+  IOS.rows.forEach(r => { const k = r.worst_state == null ? "null" : String(r.worst_state); byWorst[k] = (byWorst[k] || 0) + 1; });
+  const f = IOS.filter;
+  const el = $("#iosChips"); if (!el) return;
+  /* owner_program is the one OPEN vocabulary here — 99 distinct programs live, so it gets
+     a select instead of a chip row; the other three are closed enough to see at a glance. */
+  const progs = Object.keys(IOS.rows.reduce((acc, r) => { acc[r.owner_program || "—"] = 1; return acc; }, {})).sort();
+  el.innerHTML = `
+    <div class="ios-filter-row"><span class="ios-filter-label">state</span>${iosCountsToChips(byWorst, "state", f.state)}</div>
+    <div class="ios-filter-row"><span class="ios-filter-label">output class</span>${iosCountsToChips(c.by_output_class, "output_class", f.output_class)}</div>
+    <div class="ios-filter-row"><span class="ios-filter-label">authority</span>${iosCountsToChips(c.by_authority, "authority", f.authority)}</div>
+    <div class="ios-filter-row"><span class="ios-filter-label">program</span>
+      <select id="iosProg"><option value="">all programs</option>
+        ${progs.map(p => `<option value="${esc(p)}"${f.owner_program === p ? " selected" : ""}>${esc(p)}</option>`).join("")}</select>
+      <button class="ent-chip" onclick="iosClearFilters()">clear all</button>
+    </div>`;
+  const sel = $("#iosProg");
+  if (sel) sel.onchange = () => { IOS.filter.owner_program = sel.value || null; IOS.page = 1; iosRenderTable(); };
+}
+
+function iosHero(d) {
+  const c = d.census || {}, g = d.generated || {};
+  const st = c.by_state || {}, as = c.by_assessment_status || {};
+  const chip = (label, n, cls) => `<span class="statpill ${cls}">${esc(String(n == null ? 0 : n))} ${esc(label)}</span>`;
+  return `<div class="nw-hero">
+    <div class="nw-hero-row">
+      <span class="nw-hero-status-word">Intelligence OS</span>
+      <span class="sub" style="margin-left:2px">${fmtNum(c.engines)} engines · ${fmtNum(c.artifacts)} artifacts · ${fmtNum(c.outputs_assessed)} assessed</span>
+      <span class="spacer"></span>
+      <button class="btn" id="ios-to-nw" title="the bus view of the same estate">Observatory →</button>
+      <button class="btn" id="ios-refresh" title="bypass both caches and re-derive the whole estate now">Re-derive</button>
+    </div>
+    <div class="nw-hero-chips">
+      ${chip("healthy", st.healthy, "s-ok")}
+      ${chip("degraded", st.degraded, "s-warn")}
+      ${chip("stale", st.stale, "s-bad")}
+      ${chip("unavailable", st.unavailable, "s-bad")}
+      ${chip("could not look", as.could_not_look, "s-mut")}
+    </div>
+    <div class="nw-hero-note">Derived on demand from the signal registry and the T1 adjudication overlay — nothing on this page is stored.
+      ${g.observed_at ? `Observed ${esc(String(g.observed_at).replace("T", " ").slice(0, 19))} UTC` : ""}
+      · ${g.cache === "hit" ? "served from the in-process cache" : `computed in ${esc(String(g.compute_seconds))}s`}
+      · presence read from <code>${esc(g.root_mode || "?")}</code>${g.trust_mtime ? "" : " · write-time evidence refused off the deployed plane"}.</div>
+  </div>`;
+}
+
+function iosReasonCard(c) {
+  const rows = (c.top_reason_codes || []);
+  if (!rows.length) return "";
+  return `<div class="card"><h3>Why Eval OS answered the way it did</h3>
+    <div class="sub" style="margin-bottom:6px">Top reason codes across all ${fmtNum(c.artifacts)} outputs. A reason is a disclosure, not a fault.</div>
+    <div>${rows.map(r => `<span class="statpill s-mut mono">${esc(r.code)} · ${esc(String(r.n))}</span>`).join(" ")}</div></div>`;
+}
+
+RENDER.intelligence_os = async () => {
+  const v = $("#view");
+  v.innerHTML = `<div class="skeleton skeleton-title"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card" style="height:220px"></div>`;
+  const d = await api("/api/intelligence_os");
+  if (!d || !d.ok) { v.innerHTML = nwEmpty("Could not derive the estate", (d && d.error) || "panel error"); return; }
+  IOS.data = d; IOS.rows = d.engines || []; IOS.page = 1;
+  const c = d.census || {};
+  v.innerHTML = iosHero(d) + iosReasonCard(c) + `
+    <div class="section">Engines <span class="cnt" id="iosCnt">${fmtNum(IOS.rows.length)}</span></div>
+    <div id="iosChips" class="ios-chips"></div>
+    <div style="margin:8px 0">
+      <input id="iosSearch" class="ent-search" type="search" placeholder="filter by engine, producer or program…" autocomplete="off">
+    </div>
+    <div id="iosTbl"></div>
+    <div id="iosPager" class="ent-pager"></div>`;
+  iosRenderChips();
+  iosRenderTable();
+  const nwBtn = $("#ios-to-nw"); if (nwBtn) nwBtn.onclick = () => go("neural_web");
+  const rf = $("#ios-refresh");
+  if (rf) rf.onclick = async () => {
+    rf.disabled = true; rf.textContent = "re-deriving…";
+    /* force=1 bypasses the browser cache, the server's 15s response cache AND the panel
+       module's own 5-minute cache — anything less returns the same bytes and looks like
+       a no-op button. */
+    const fresh = await api("/api/intelligence_os?force=1", { cache: "no-store" });
+    if (fresh && fresh.ok) { IOS.data = fresh; IOS.rows = fresh.engines || []; RENDER.intelligence_os(); }
+    else { rf.disabled = false; rf.textContent = "Re-derive"; toast((fresh && fresh.error) || "re-derive failed", true); }
+  };
+  const box = $("#iosSearch");
+  if (box) box.oninput = () => { IOS.q = box.value.trim(); IOS.page = 1; iosRenderTable(); };
+};
+
+/* ---- Intelligence OS · engine detail (#/engine/<engine_id>) --------------- */
+function iosCrumbs(current) {
+  return `<div class="crumbs"><a href="#" data-ios-back>← Intelligence OS</a><span class="crumbs-sep">/</span><span class="crumbs-current">${esc(current)}</span></div>`;
+}
+
+function iosInputRows(label, rows) {
+  if (!rows || !rows.length) return "";
+  return `<div class="ios-out-line"><span class="ios-out-key">${esc(label)}</span>
+    ${rows.map(r => `<span class="statpill ${iosStateCls(r.state)}" title="${esc(r.assessment_status || "")}">${esc(r.artifact_id)}</span>`).join(" ")}</div>`;
+}
+
+function iosOutputCard(o, lobeIds) {
+  const sla = o.freshness_sla_hours;
+  const age = o.age_hours;
+  /* Age is shown AGAINST the SLA, never alone: "36h" is a fact about a clock and says
+     nothing until you know what was promised. */
+  const ageTxt = age == null
+    ? `<span class="muted">no age — ${esc(o.source_asof ? "watermark unusable" : "no watermark read")}</span>`
+    : `${esc(fmtAge(age))}${sla ? ` / ${esc(fmtAge(sla))} SLA` : ' <span class="muted">· no SLA declared</span>'}`;
+  const reasons = (o.reason_codes || []).map(r => `<span class="statpill s-mut mono">${esc(r)}</span>`).join(" ");
+  const reader = o.reader_observation
+    ? `<div class="ios-out-line"><span class="ios-out-key">reader</span><span class="statpill s-mut">${esc(o.reader_observation.source || "")}</span>
+        <span class="sub">${esc(o.reader_observation.verdict || "")}${o.reader_observation.detail ? " — " + esc(o.reader_observation.detail) : ""}</span></div>` : "";
+  const selfh = o.self_health
+    ? `<div class="ios-out-line"><span class="ios-out-key">self-health</span><span class="statpill ${o.self_health.status === "ok" ? "s-ok" : o.self_health.status === "unknown" ? "s-mut" : "s-warn"}">${esc(o.self_health.status || "")}</span>
+        <span class="sub">${esc(o.self_health.source || "")}${o.self_health.detail ? " — " + esc(o.self_health.detail) : ""}</span></div>` : "";
+  const lobeLink = lobeIds && lobeIds[o.artifact_id]
+    ? ` <a href="#/lobe/${encodeURIComponent(o.artifact_id)}" class="sub" title="this artifact is a Neural Web lobe — open its bus view">lobe ↗</a>` : "";
+  return `<div class="card ios-out">
+    <div class="ios-out-top">
+      <b class="mono">${esc(o.artifact_id)}</b>${lobeLink}
+      <span class="spacer"></span>
+      ${iosStatePill(o.state)}
+      <span class="statpill s-mut">${esc(o.assessment_status || "")}</span>
+      ${o.decided_by ? `<span class="statpill s-mut" title="which observation plane decided the state">by ${esc(o.decided_by)}</span>` : ""}
+    </div>
+    <div class="ios-out-line"><span class="ios-out-key">path</span><code class="mono">${esc(o.path || "")}</code>
+      <span class="statpill s-mut">${esc(o.storage || "")}</span>
+      <span class="statpill s-mut" title="exact = this producer registers one artifact; upper = a producer-level union that may over-attribute">${esc(o.dependency_bound || "")} bound</span></div>
+    <div class="ios-out-line"><span class="ios-out-key">freshness</span>${ageTxt}
+      ${o.source_asof ? `<span class="sub mono">asof ${esc(o.source_asof)}</span>` : ""}</div>
+    ${iosInputRows("required in", o.required_inputs)}
+    ${iosInputRows("optional in", o.optional_inputs)}
+    ${reader}${selfh}
+    ${reasons ? `<div class="ios-out-line"><span class="ios-out-key">reasons</span><span>${reasons}</span></div>` : ""}
+  </div>`;
+}
+
+async function renderEngineDetail(id) {
+  CURRENT = "intelligence_os"; setActiveNav("intelligence_os");
+  hideLobeTip();
+  if (RT_TIMER)   { clearInterval(RT_TIMER);   RT_TIMER   = null; }
+  if (LOOP_TIMER) { clearInterval(LOOP_TIMER); LOOP_TIMER = null; }
+  if (LOOP_TICK)  { clearInterval(LOOP_TICK);  LOOP_TICK  = null; }
+  setTopbarTitle("Intelligence OS");
+  const v = $("#view");
+  v.innerHTML = iosCrumbs(id) + `<div class="skeleton skeleton-title"></div><div class="skeleton skeleton-card" style="height:160px"></div>`;
+  const d = await api("/api/intelligence_os/engine?id=" + encodeURIComponent(id));
+  const wireBack = () => { const b = v.querySelector("[data-ios-back]"); if (b) b.onclick = (e) => { e.preventDefault(); backToIntelligenceOs(); }; };
+  if (!d || !d.ok) {
+    v.innerHTML = iosCrumbs(id) + nwEmpty("Unknown engine", (d && d.error) || `No engine with id “${id}”.`);
+    wireBack(); return;
+  }
+  const e = d.engine || {};
+  /* The Observatory's lobe ids ARE synapse artifact ids, so an artifact that also has a
+     lobe page can be linked straight across. Only SOME artifacts are lobes, so the map
+     has to be consulted rather than assumed — a link drawn for every artifact would be
+     mostly dead ends. NW_LOBE_BY_ID is populated as a side effect of rendering the
+     Observatory, so on a cold load (deep link, refresh) it is empty; fetch it once here
+     rather than silently dropping the link on exactly the path a shared URL takes. The
+     response is the one the Observatory prefetches anyway, so this is a cache hit in
+     the common case, and a failure just means no links. */
+  let lobeIds = NW_LOBE_BY_ID;
+  if (!lobeIds || !Object.keys(lobeIds).length) {
+    try {
+      const lobes = await api("/api/neural_web/lobes");
+      if (lobes && lobes.ok) {
+        NW_LOBE_BY_ID = {};
+        (lobes.groups || []).forEach(g => (g.lobes || []).forEach(l => { NW_LOBE_BY_ID[l.id] = l; }));
+        lobeIds = NW_LOBE_BY_ID;
+      }
+    } catch (err) { lobeIds = {}; }
+  }
+  lobeIds = lobeIds || {};
+  const head = `<div class="nw-hero">
+    <div class="nw-hero-row">
+      <span class="nw-hero-status-word mono" style="font-size:16px;word-break:break-all">${esc(e.engine_id || id)}</span>
+      <span class="spacer"></span>${iosStatePill(e.worst_state)}
+    </div>
+    <div class="nw-hero-chips">
+      <span class="statpill s-mut">program ${esc(e.owner_program || "—")}</span>
+      <span class="statpill s-mut">${fmtNum(e.n_artifacts)} output${e.n_artifacts === 1 ? "" : "s"}</span>
+      <span class="statpill ${e.output_class ? "s-mut" : "s-mut"}">class ${esc(e.output_class || "—")}</span>
+      <span class="statpill s-mut">authority ${esc(e.authority || "—")}</span>
+    </div>
+    ${e.producer ? `<div class="sub" style="margin-top:4px">producer <code class="mono">${esc(e.producer)}</code></div>` : ""}
+    ${e.output_class_rationale ? `<div class="sub" style="margin-top:4px">class rationale: ${esc(e.output_class_rationale)}</div>` : ""}
+    ${e.excluded_reason ? `<div class="sub" style="margin-top:4px;color:var(--warn)">not a graded engine cell — ${esc(e.excluded_reason)}</div>` : ""}
+    ${e.output_class ? "" : `<div class="nw-hero-note">No adjudicated output class. That is a gap in the T1 overlay, not a grade — Eval OS never infers one.</div>`}
+  </div>`;
+  v.innerHTML = iosCrumbs(e.engine_id || id) + head
+    + `<div class="section">Outputs <span class="cnt">${(d.outputs || []).length}</span></div>`
+    + (d.outputs || []).map(o => iosOutputCard(o, lobeIds)).join("");
   wireBack();
 }
 

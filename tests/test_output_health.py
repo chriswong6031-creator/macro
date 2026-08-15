@@ -492,16 +492,27 @@ def test_mutation_20_could_not_look_is_never_converted():
 # 21-22 — determinism and the import surface
 # ---------------------------------------------------------------------------
 
-def _git_fixture_root(tmp_path: Path) -> Path:
-    """A committed one-engine estate: enough for the CLI's ladder to be real."""
+def _git_fixture_root(tmp_path: Path, *, empty_artifact: bool = False) -> Path:
+    """A committed one-engine estate: enough for the CLI's ladder to be real.
+
+    *empty_artifact* commits a THIRD, zero-byte artifact. An empty blob is the one shape
+    where the read ladder's two halves disagree — a 0-byte worktree file reads as ``""``,
+    a 0-byte blob at HEAD reads as ABSENT — so it is the case any batched substitute is
+    most likely to get subtly wrong (and did, on two live artifacts, before the fix).
+    """
     root = tmp_path / "estate"
     (root / "config").mkdir(parents=True)
     (root / "data").mkdir()
     (root / "engine").mkdir()
-    doc = synapse_doc(
-        a=artifact("data/a.json", producer=PRODUCER_A),
-        b=artifact("data/b.json", producer=PRODUCER_B, consumers=(PRODUCER_A,)),
-    )
+    entries = {
+        "a": artifact("data/a.json", producer=PRODUCER_A),
+        "b": artifact("data/b.json", producer=PRODUCER_B, consumers=(PRODUCER_A,)),
+    }
+    if empty_artifact:
+        entries["empty"] = artifact("data/empty.json", producer="engine/empty.py")
+        (root / "data" / "empty.json").write_text("", encoding="utf-8")
+        (root / "engine" / "empty.py").write_text("", encoding="utf-8")
+    doc = synapse_doc(**entries)
     (root / "config" / "synapse.yml").write_text(yaml.safe_dump(doc), encoding="utf-8")
     (root / "data" / "a.json").write_text(json.dumps({"asof": FRESH}), encoding="utf-8")
     (root / "data" / "b.json").write_text(json.dumps({"asof": FRESH}), encoding="utf-8")
@@ -539,6 +550,80 @@ def test_21b_the_cli_writes_nothing(tmp_path, capsys):
     after = sorted(p.relative_to(root).as_posix() for p in root.rglob("*") if p.is_file())
     assert before == after
     assert "output health" in capsys.readouterr().out
+
+
+# ---------------------------------------------------------------------------
+# Batched git reads — a cost optimization that must be verdict-neutral
+# ---------------------------------------------------------------------------
+
+def test_batched_head_reads_are_verdict_identical_to_the_per_path_ladder(tmp_path):
+    """Two batched ``git`` calls replaced ~2 process spawns per unmaterialized artifact
+    (measured: 692s -> minutes on this repo's sparse worktree). The ONLY thing that makes
+    that a legal trade is that it cannot move an answer, so the two paths are compared
+    directly on a root where every artifact is read out of HEAD.
+
+    A perf change that quietly reclassified one artifact would otherwise look exactly like
+    a perf change that worked.
+    """
+    root = _git_fixture_root(tmp_path, empty_artifact=True)
+    for name in ("a.json", "b.json", "empty.json"):
+        (root / "data" / name).unlink()          # force the whole estate through HEAD
+
+    fast = CLI.build(root, now=NOW)
+
+    # Same build with BOTH batched paths disabled: presence falls back to the per-path
+    # `git cat-file -t` probe, content to the per-path `git show`.
+    real_head_blobs, real_prewarm = CLI._head_blobs, CLI._prewarm_head_contents
+    try:
+        CLI._head_blobs = lambda _root: None
+        CLI._prewarm_head_contents = lambda _root, _rels: 0
+        slow = CLI.build(root, now=NOW)
+    finally:
+        CLI._head_blobs, CLI._prewarm_head_contents = real_head_blobs, real_prewarm
+
+    assert json.dumps(fast, sort_keys=True) == json.dumps(slow, sort_keys=True)
+    # And the run being compared must actually have gone through HEAD — if both paths
+    # read the worktree, the comparison proves nothing.
+    assert fast["generated"]["root_mode"] == "git_head"
+    states = {r["artifact_id"]: r["state"] for r in fast["outputs"]}
+    assert states["a"] == "healthy" and states["b"] == "healthy"
+    # The empty blob must reach the SAME reason code either way — the divergence that
+    # made this test necessary was visible only here, never in a state.
+    reasons = {r["artifact_id"]: r["reason_codes"] for r in fast["outputs"]}
+    assert "watermark_unread" in reasons["empty"], reasons["empty"]
+
+
+def test_the_prewarm_declines_rather_than_guesses(tmp_path):
+    """Every path the batch does not warm must fall through, never resolve to a wrong or
+    empty body. An unresolvable ref caches the ladder's own ``absent``; a blob over the
+    cap is left entirely alone so the size-capped read still reports the cap."""
+    root = _git_fixture_root(tmp_path)
+    CLI.reset_caches()
+    warmed = CLI._prewarm_head_contents(root, ["data/a.json", "data/nope.json", ""])
+    assert warmed == 2
+    assert CLI._READ_CACHE[(str(root), "data/a.json")][1] == "git"
+    assert CLI._READ_CACHE[(str(root), "data/nope.json")] == (None, "absent")
+
+    CLI.reset_caches()
+    real_cap = CLI.PREWARM_SIZE_CAP
+    try:
+        CLI.PREWARM_SIZE_CAP = 1                 # every blob is now "too big"
+        assert CLI._prewarm_head_contents(root, ["data/a.json"]) == 0
+    finally:
+        CLI.PREWARM_SIZE_CAP = real_cap
+    assert (str(root), "data/a.json") not in CLI._READ_CACHE
+
+
+def test_watermark_source_path_is_the_single_definition(tmp_path):
+    """The prewarm and the reader must agree on WHICH file holds the watermark; a second
+    copy of that rule would drift into warming the wrong bytes under the right key."""
+    assert CLI.watermark_source_path({"path": "data/a.json", "format": "json"}) == "data/a.json"
+    assert CLI.watermark_source_path({"path": "data/a.jsonl", "format": "jsonl"}) == "data/a.jsonl"
+    assert CLI.watermark_source_path({"path": "data/a.parquet", "format": "parquet"}) == (
+        "data/a.parquet.envelope.json"
+    )
+    assert CLI.watermark_source_path({"path": "data/a.csv", "format": "csv"}) is None
+    assert CLI.watermark_source_path({"path": "", "format": "json"}) is None
 
 
 def _imported_modules(path: Path) -> set[str]:
