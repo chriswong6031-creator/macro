@@ -89,6 +89,23 @@ FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
 DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
 SEMANTIC_DETAIL_MAX_BYTES = 1_024
 
+# Repo-binding Git variables must never reach a legacy step.  Injecting
+# GIT_DIR/GIT_WORK_TREE into the job env (PR #5750, 2026-08-15) made every
+# child `git` operate on the pack checkout: `git init` in tmp_path exited
+# 128, a sparse-checkout cone hid tests/*.py (pytest usage exit 4), and
+# `git rev-parse HEAD` then failed as infrastructure unknown.  Runner-owned
+# probes keep using `_trusted_git_environment`; children must discover git
+# from cwd like the old one-VM-per-job world.
+REPO_BINDING_GIT_VARS = (
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_COMMON_DIR",
+    "GIT_NAMESPACE",
+)
+
 # ---------------------------------------------------------------------------
 # Changed-path scoping (2026-08-09)
 #
@@ -2367,6 +2384,56 @@ def _assert_no_git_rewrites(root: Path) -> None:
         )
 
 
+def _disable_sparse_checkout(root: Path, git_env: Mapping[str, str]) -> None:
+    """Re-open a full tree before the hard reset.
+
+    ``git checkout --force`` honours an active sparse cone, so a prior step
+    that ran ``git sparse-checkout set`` (or inherited a leaked GIT_DIR and
+    did the same to this checkout) would leave later jobs without
+    ``tests/*.py``.  Disable first; the later checkout/reset then materializes
+    every path.  ``sparse-checkout disable`` needs a usable HEAD, so the
+    config/file fallback still runs when an orphan checkout left HEAD unborn.
+    """
+    subprocess.run(
+        ["git", "sparse-checkout", "disable"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "core.sparseCheckout", "false"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "index.sparse", "false"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    sparse_text = subprocess.run(
+        ["git", "rev-parse", "--git-path", "info/sparse-checkout"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if sparse_text.returncode == 0:
+        sparse_path = Path(sparse_text.stdout.strip())
+        if not sparse_path.is_absolute():
+            sparse_path = root / sparse_path
+        with contextlib.suppress(FileNotFoundError):
+            sparse_path.unlink()
+
+
 def _restore_workspace(tested_tree_sha: str | None = None) -> None:
     """Restore the clean-checkout boundary that each old job received."""
     root = Path.cwd().resolve()
@@ -2381,6 +2448,7 @@ def _restore_workspace(tested_tree_sha: str | None = None) -> None:
         )
     with contextlib.suppress(FileNotFoundError):
         graft_path.unlink()
+    _disable_sparse_checkout(root, git_env)
     target = tested_tree_sha or "HEAD"
     subprocess.run(
         ["git", "checkout", "--detach", "--force", target],
@@ -2474,15 +2542,11 @@ def _run_job(
         root=Path.cwd(),
         tested_tree_sha=tested_tree_sha,
     )
-    semantic_env = dict(command_env)
+    semantic_env = _child_git_environment(command_env)
     if tested_tree_sha is not None:
-        trusted_git = _trusted_git_environment(Path.cwd())
-        semantic_env.update(
-            {
-                key: trusted_git[key]
-                for key in ("GIT_DIR", "GIT_WORK_TREE", "GIT_NO_REPLACE_OBJECTS")
-            }
-        )
+        # Bind replace-object *resolution* only.  Do not set GIT_DIR /
+        # GIT_WORK_TREE — those force every nested `git init` onto this tree.
+        semantic_env["GIT_NO_REPLACE_OBJECTS"] = "1"
     timeout_minutes = job.definition.get("timeout-minutes")
     timeout_seconds = int(timeout_minutes) * 60 if timeout_minutes else None
     job_deadline = (
@@ -2752,7 +2816,15 @@ def _child_environment(
         command_env["CI_CHANGED_FILES_FILE"] = str(changed_files_file)
     if command_env.get("CI_CHANGED_FILES_FILE"):
         command_env.pop("CI_CHANGED_FILES_JSON", None)
-    return command_env
+    return _child_git_environment(command_env)
+
+
+def _child_git_environment(command_env: Mapping[str, str]) -> dict[str, str]:
+    """Drop repo-binding Git vars so a child can `git init` in tmp_path."""
+    cleaned = dict(command_env)
+    for key in REPO_BINDING_GIT_VARS:
+        cleaned.pop(key, None)
+    return cleaned
 
 
 def _dependency_environment(

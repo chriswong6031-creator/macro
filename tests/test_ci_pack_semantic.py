@@ -654,6 +654,24 @@ def test_explicit_changed_file_handle_overrides_stale_child_transports(
     assert "CI_CHANGED_FILES_JSON" not in child
 
 
+def test_child_environment_strips_repo_binding_git_vars(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
+    monkeypatch.setenv("GIT_INDEX_FILE", "/foreign/repository/.git/index")
+    monkeypatch.setenv("GIT_AUTHOR_NAME", "keep-me")
+    handle = tmp_path / "changed.json"
+    handle.write_text("[]", encoding="utf-8")
+    child = PACK._child_environment(handle)
+    assert "GIT_DIR" not in child
+    assert "GIT_WORK_TREE" not in child
+    assert "GIT_INDEX_FILE" not in child
+    assert child["GIT_AUTHOR_NAME"] == "keep-me"
+    assert child["CI_CHANGED_FILES_FILE"] == str(handle)
+
+
 def test_streaming_capture_retains_only_one_bounded_prefix_of_a_giant_line(
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -884,6 +902,97 @@ def test_git_replace_metadata_cannot_substitute_the_tested_tree(
     PACK._restore_workspace(tested_sha)
     assert _git(source, "for-each-ref", "--format=%(refname)", "refs/replace") == ""
     assert _git(source, "rev-parse", "HEAD") == tested_sha
+
+
+def test_job_steps_must_not_inherit_checkout_git_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Nested `git init` must not operate on the pack checkout.
+
+    Measured 2026-08-15 on PR #5750: GIT_DIR/GIT_WORK_TREE in the job env
+    made tmp_path inits hit the CI tree (exit 128), a sparse cone hid
+    tests/*.py (pytest usage exit 4), and rev-parse HEAD then failed as
+    infrastructure unknown.
+    """
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    nested = tmp_path / "nested-work"
+    job = _job(
+        "nested-git",
+        [
+            {
+                "name": "init a throwaway repo",
+                "run": (
+                    f"mkdir -p {shlex.quote(str(nested))} && "
+                    f"git init -q -b main {shlex.quote(str(nested))} && "
+                    f"git -C {shlex.quote(str(nested))} config user.email t@t && "
+                    f"git -C {shlex.quote(str(nested))} config user.name t && "
+                    f"git -C {shlex.quote(str(nested))} commit --allow-empty -qm seed"
+                ),
+            }
+        ],
+    )
+    monkeypatch.chdir(source)
+    captured: list[dict[str, str]] = []
+    real_stream = PACK._stream_command
+
+    def stream(
+        command: str,
+        *,
+        env: dict[str, str],
+        timeout_seconds: float | None = None,
+    ) -> object:
+        captured.append(dict(env))
+        return real_stream(command, env=env, timeout_seconds=timeout_seconds)
+
+    monkeypatch.setattr(PACK, "_stream_command", stream)
+    planted = os.environ.copy()
+    planted["GIT_DIR"] = str(source / ".git")
+    planted["GIT_WORK_TREE"] = str(source)
+    result = PACK._run_job(
+        job,
+        base_ref="main",
+        head_ref="",
+        command_env=planted,
+        tested_tree_sha=tested_sha,
+    )
+    assert result.failure is None
+    assert [step["outcome"] for step in result.steps] == ["passed"]
+    assert captured
+    assert "GIT_DIR" not in captured[0]
+    assert "GIT_WORK_TREE" not in captured[0]
+    assert captured[0].get("GIT_NO_REPLACE_OBJECTS") == "1"
+    assert (nested / ".git").exists()
+    assert _git(nested, "rev-parse", "--is-inside-work-tree") == "true"
+    assert _git(source, "rev-parse", "HEAD") == tested_sha
+
+
+def test_restore_workspace_reopens_a_sparse_cone(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    _small_repository(source)
+    keep = source / "keep" / "nested"
+    skip = source / "skip" / "nested"
+    keep.mkdir(parents=True)
+    skip.mkdir(parents=True)
+    (keep / "a.txt").write_text("keep\n", encoding="utf-8")
+    (skip / "b.txt").write_text("skip\n", encoding="utf-8")
+    _git(source, "add", "keep", "skip")
+    _git(source, "commit", "-m", "nested")
+    tested_sha = _git(source, "rev-parse", "HEAD")
+    _git(source, "checkout", "--detach", tested_sha)
+    _git(source, "sparse-checkout", "init", "--cone")
+    _git(source, "sparse-checkout", "set", "--cone", "--", "keep")
+    assert not (skip / "b.txt").exists()
+    assert (keep / "a.txt").exists()
+    monkeypatch.chdir(source)
+    PACK._restore_workspace(tested_sha)
+    assert _git(source, "rev-parse", "HEAD") == tested_sha
+    assert (skip / "b.txt").read_text(encoding="utf-8") == "skip\n"
 
 
 def test_base_replay_uses_base_runner_and_is_serial_without_matrix_fanout(
