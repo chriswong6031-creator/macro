@@ -1843,6 +1843,7 @@ def _check_ci(
     merge_sha: str,
     merged_at: str,
     head_branch: str,
+    base_sha: str = "",
 ) -> tuple[bool, str]:
     """Judge the merged pull request's OWN head commit, then ask whose red it is.
 
@@ -1959,7 +1960,21 @@ def _check_ci(
                 repo,
                 head_sha,
                 check_runs=runs,
-                expected_base_sha=_semantic_pr_base_sha(runs, head_sha),
+                # A MERGED head has no PR associations left to bind its base with
+                # (2026-08-15): GitHub drops `pull_requests` from check-runs once the
+                # pull request closes — measured on #5754's ci-gate, `n_prs: 0` on BOTH
+                # entries — so `_semantic_pr_base_sha` returns None here every time and
+                # the loader then refused with "does not identify the exact PR proof
+                # base". That is the same shape as the skipped-gate artifact above: a
+                # merged head cannot repair its own metadata, and no session-side action
+                # exists. The merged pull request record itself still carries the
+                # authoritative base, so pass it as the fallback. Preference order is
+                # deliberate — the check-run-bound base is immutable and exact, so it
+                # still wins whenever it is present (open heads, and any future API that
+                # keeps associations after merge).
+                expected_base_sha=(
+                    _semantic_pr_base_sha(runs, head_sha) or base_sha or None
+                ),
             )
             if _head_can_advertise_semantic_evidence(runs)
             else None
@@ -3327,7 +3342,8 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     else:
         try:
             ci_ok, ci_reason = _check_ci(
-                root, owner, repo, head_sha, merge_sha, merged_at, head_ref
+                root, owner, repo, head_sha, merge_sha, merged_at, head_ref,
+                str((pull.get("base") or {}).get("sha") or ""),
             )
         except Exception as exc:
             _block(path, state, payload, _github_block_code(exc), str(exc))
