@@ -2464,11 +2464,36 @@ CURATED_EXCLUSIVE = {
     # dataos-identity-seams was EVALUATED AND REJECTED — its genuine closure
     # spans 43 files across engine/, so exclusivity would either lie about
     # coverage or degenerate to fallback breadth; it stays inferred, like the
-    # other new riders without paths (options-estate-guards,
-    # product-experience-capture/-registry, wri-risk-core).
+    # other new riders without paths (product-experience-capture/-registry,
+    # wri-risk-core).
     "dataos-foundation",
     "momoedge-browser-observe",
     "vintage-pin-fence",
+    # 2026-08-14 wave 3. options-estate-guards was listed above as a rider that
+    # would stay inferred; that call is superseded. #5634 gave it
+    # tests/test_options_gap_discipline.py, whose closure carries an opaque
+    # construct, and the resulting whole-tree fallback claim made this job a
+    # NEW selector on all three ratchet probes — smear, not evidence, and the
+    # reason scripts/build_free_content.py ran out of headroom. The
+    # dataos-identity-seams rejection does not transfer: an engine-heavy
+    # closure only degenerates to fallback breadth when it needs `engine/**`,
+    # and this one does not — its 35 engine files are top-level modules plus
+    # four whole subpackages, so `engine/*` + four `engine/<pkg>/**` covers the
+    # closure exactly and leaves engine/prophet/** outside. Measured: 100
+    # closure files, zero uncovered; fallback tier drops to (); all four
+    # probes in the test below were fallback-tier before and are unmatched
+    # after, so nothing owned was lost.
+    #
+    # Derive that closure against a FULL checkout. `site` is in
+    # audit_unrun_tests.FIRST_PARTY, but site/ literals are admitted through
+    # `(ROOT / rel).is_file()`, which answers False for a tree a sparse
+    # worktree omitted -- so the same job derives 85 files there and silently
+    # loses all 15 site/ members. The first version of this curation was
+    # derived sparse, declared `site/<dir>/**` for the 13 members it could
+    # see, and was red HERE on the two top-level ones it could not
+    # (site/flow_desk.json, site/options.html). This test is the check that
+    # catches it; a sparse local run of it is not evidence that it passes.
+    "options-estate-guards",
 }
 
 
@@ -2586,12 +2611,41 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     A PR that healed only one of the two would leave `ci-pack-1` red and neither
     PR could ever merge — the two-partial-heals deadlock. Whichever lands second
     resolves to an identical tree.
+
+    JOB COUNTS LOWERED to 127/124/119 (wave 3, 2026-08-14). The re-base above
+    absorbed TWO newcomers on the two code probes, and only one of them was
+    evidence. `intelligence-registry` matched on the DECLARED tier and stands.
+    `options-estate-guards` matched on the FALLBACK tier: #5634 gave it
+    tests/test_options_gap_discipline.py, an opaque construct in that suite's
+    closure widened it to whole-tree scan roots, and it began selecting on
+    files it does not read. That is smear, so it is curated away at the source
+    (`scope: exclusive` in the manifest) rather than paid for here.
+
+    Re-measured on the curated manifest, `options-estate-guards` is the sole
+    delta and the ONLY job that leaves any probe:
+
+        templates/index.html          127 -> 126 jobs, 5,259 -> 5,235 weight
+        scripts/build_free_content.py 124 -> 123 jobs, 5,009 -> 4,985 weight
+        engine/prophet/plan_book.py   119 -> 118 jobs, 5,001 -> 4,977 weight
+
+    The ceilings are set at measurement + 1, not at measurement. The #5620
+    re-base note above diagnosed zero headroom as the defect — "the very first
+    honest new job breached all three" — and then re-based exact, funding the
+    docstring's headroom promise with nothing again. One job of slack absorbs
+    the next honest newcomer and still makes the second a visible event. Note
+    the pre-curation measurements had already drifted BELOW the 129/127/121
+    ceilings as later curation waves landed, so those bounds carried accidental
+    slack of 2-3 jobs; this restores a ratchet that is tight on purpose.
+
+    WEIGHT and PACK ceilings are again deliberately NOT moved, for the reason
+    given above: they bound the incident, and a fallback-tier regression is
+    ~1,550 weight-seconds — two orders of magnitude above the 24 removed here.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 129, 5_800),
-        ("scripts/build_free_content.py", 127, 5_600),
-        ("engine/prophet/plan_book.py", 121, 5_600),
+        ("templates/index.html", 127, 5_800),
+        ("scripts/build_free_content.py", 124, 5_600),
+        ("engine/prophet/plan_book.py", 119, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
