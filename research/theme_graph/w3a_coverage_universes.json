@@ -1,0 +1,32 @@
+{
+  "cn": {
+    "covered": 894,
+    "fraction": 0.5225,
+    "local_plane_inputs": [
+      "data/baskets_china_ths/membership.json (237 baskets)"
+    ],
+    "n": 1711,
+    "population": "data/china_search/members.parquet index (top A-shares by mktcap)",
+    "population_paths": [
+      "data/china_search/members.parquet"
+    ]
+  },
+  "generated_at": "2026-08-15T02:33:18+00:00",
+  "rule": "attachable = ticker present in >=1 local-theme membership source (US: promoted finviz tree UNION curated basket membership; CN: THS basket membership, suffix-stripped)",
+  "us": {
+    "covered": 954,
+    "fraction": 0.336,
+    "local_plane_inputs": [
+      "data/themes_heatmap/themes_tree.json (2026-08-15 vintage)",
+      "data/baskets/membership.json"
+    ],
+    "n": 2839,
+    "population": "union of breadth constituent stores r2000+sp400+sp500+sp600",
+    "population_paths": [
+      "data/breadth/constituents.parquet",
+      "data/smallcap_breadth/constituents.parquet",
+      "data/midcap_breadth/constituents.parquet",
+      "data/russell_breadth/constituents.parquet"
+    ]
+  }
+}

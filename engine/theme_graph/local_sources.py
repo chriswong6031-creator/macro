@@ -192,19 +192,57 @@ def load_finviz_ladder(*, seed_path: Path, history_path: Path,
 # Reading a vintage
 # ---------------------------------------------------------------------------
 
-def subthemes_of(vintage: Vintage) -> dict[str, SubthemeMeta]:
+def load_supergroups(receipts_dir: Path) -> dict[str, int]:
+    """{theme name or key: 0-based supergroup index} from the NEWEST refresh receipt.
+
+    The source's unlabelled layer above themes (6 groups, 10/10/8/7/3/2 as of 2026-08)
+    is flattened out of the committed tree by the schema and survives only in the
+    refresh receipts (``supergroups: [{group, themes: [names]}]``). This is the ONLY
+    lawful source for the index: deriving it from theme ordinals mints 40 singleton
+    groups and writes them into write-once node metadata (the diff-review finding that
+    forced this loader). No receipt, or a receipt without the layer → empty map, and
+    the caller stamps ``supergroup_index=None`` — an honest unknown, never a guess.
+    """
+    try:
+        newest = max(receipts_dir.glob("*.json"))
+    except ValueError:
+        return {}
+    try:
+        doc = json.loads(newest.read_text(encoding="utf-8"))
+    except Exception:  # noqa: BLE001 — a torn receipt must not kill the build
+        return {}
+    out: dict[str, int] = {}
+    for idx, row in enumerate(doc.get("supergroups") or []):
+        if not isinstance(row, dict):
+            continue
+        for name in row.get("themes") or []:
+            label = str(name).strip()
+            if label:
+                out[label] = idx
+    return out
+
+
+def subthemes_of(vintage: Vintage,
+                 supergroups: dict[str, int] | None = None) -> dict[str, SubthemeMeta]:
     """{subtheme_key: metadata} for one vintage, in source order.
 
     ``supergroup_index`` is the unlabelled layer above themes that the committed schema
     flattens; it rides metadata and is NOT resurrected as hierarchy (W4 owns that).
+    The index comes ONLY from ``load_supergroups`` (refresh receipts) — a theme absent
+    from the map carries None, never its enumeration ordinal.
     """
+    sg_map = supergroups or {}
     out: dict[str, SubthemeMeta] = {}
-    for group_index, theme in enumerate(vintage.themes):
+    for theme in vintage.themes:
         if not isinstance(theme, dict):
             continue
         parent_key = str(theme.get("key") or theme.get("theme") or "").strip() or None
         parent_label = str(theme.get("theme") or theme.get("key") or "").strip() or None
-        sg = theme.get("supergroup_index")
+        sg_idx = None
+        for probe in (parent_label, parent_key):
+            if probe is not None and probe in sg_map:
+                sg_idx = int(sg_map[probe])
+                break
         for sub in theme.get("subsectors") or []:
             if not isinstance(sub, dict):
                 continue
@@ -218,7 +256,7 @@ def subthemes_of(vintage: Vintage) -> dict[str, SubthemeMeta]:
                              if sub.get("description") else None),
                 parent_theme_key=parent_key,
                 parent_theme_label=parent_label,
-                supergroup_index=(int(sg) if isinstance(sg, int) else group_index),
+                supergroup_index=sg_idx,
                 first_seen=vintage.asof,
             )
     return out
@@ -290,16 +328,18 @@ def membership_intervals(ladder: Ladder) -> list[Interval]:
     return out
 
 
-def subtheme_registry(ladder: Ladder) -> dict[str, SubthemeMeta]:
+def subtheme_registry(ladder: Ladder,
+                      supergroups: dict[str, int] | None = None) -> dict[str, SubthemeMeta]:
     """{key: metadata} across the whole ladder, keep-FIRST.
 
     Keep-first matches the node store: labels are MINT-TIME snapshots. The graph is a
     join spine, not the display-label authority — a renamed subtheme keeps its node, its
     id and its minted label, and the current label resolves from the live tree.
+    ``supergroups`` comes from :func:`load_supergroups`; absent → indexes stamp None.
     """
     out: dict[str, SubthemeMeta] = {}
     for v in ladder.vintages:
-        for key, meta in subthemes_of(v).items():
+        for key, meta in subthemes_of(v, supergroups).items():
             out.setdefault(key, meta)
     return out
 

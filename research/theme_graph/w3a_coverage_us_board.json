@@ -103,7 +103,13 @@
     "floor_note": "a REPORT PARAMETER, not a truth claim about where 'too broad' begins; the distribution below is what it should be read against",
     "reporting_floor_members": 25
   },
-  "generated_at": "2026-08-15T02:03:02Z",
+  "generated_at": "2026-08-15T02:33:00Z",
+  "input": {
+    "ids_file": "/tmp/us_board_ids.txt",
+    "n_supplied": 69,
+    "source_artifact": "site/factordata/us_standouts.json#buy",
+    "source_asof": "2026-08-13"
+  },
   "membership_detail": {
     "AA": [
       "ltheme:finviz:commmetalsindustrial"

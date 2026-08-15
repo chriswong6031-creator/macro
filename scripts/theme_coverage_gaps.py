@@ -224,6 +224,11 @@ def main(argv: list[str] | None = None) -> int:
                          f"{DEFAULT_BREADTH_FLOOR}); printed in the report")
     ap.add_argument("--propose", action="store_true",
                     help="append probation proposals for isolated ids (never edges)")
+    ap.add_argument("--source-artifact", default=None,
+                    help="provenance of the SUPPLIED ids (artifact path, e.g. "
+                         "site/factordata/us_standouts.json#buy) — recorded in the report")
+    ap.add_argument("--source-asof", default=None,
+                    help="the supplied artifact's own as-of date — recorded in the report")
     a = ap.parse_args(argv)
 
     ids = read_ids(a.ids_file)
@@ -240,6 +245,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     report = analyse(ids, nodes, edges, breadth_floor=a.breadth_floor)
+    # Input provenance rides IN the artifact (diff-review F3): a re-run that lands on a
+    # different number must be attributable to the plane or to the population, and prose
+    # in a report doc is not a receipt.
+    report["input"] = {"ids_file": a.ids_file, "n_supplied": len(ids),
+                       "source_artifact": a.source_artifact, "source_asof": a.source_asof}
     if a.propose:
         rows = proposals_from(report)
         added, skipped = probation.append_proposals(rows, store.probation_path())

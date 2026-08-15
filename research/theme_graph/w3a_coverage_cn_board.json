@@ -169,7 +169,13 @@
     "floor_note": "a REPORT PARAMETER, not a truth claim about where 'too broad' begins; the distribution below is what it should be read against",
     "reporting_floor_members": 25
   },
-  "generated_at": "2026-08-15T02:03:02Z",
+  "generated_at": "2026-08-15T02:33:01Z",
+  "input": {
+    "ids_file": "/tmp/cn_board_ids.txt",
+    "n_supplied": 24,
+    "source_artifact": "site/factordata/china_standouts.json#buy",
+    "source_asof": "2026-08-14"
+  },
   "membership_detail": {
     "000833.SZ": [
       "ltheme:ths:300858",

@@ -72,7 +72,8 @@ consequence-ledger prep through the TIL W6 pack (§37; R-TIL-6 excess-over-place
 price-covered live members — `capability.v1`, existence check, not an eligibility judgment).
 Tonight: **499 candidates / 142 semantic_only** across both markets (the 142 = all 136 unseeded
 THS concepts + 6 substrate-thin US subthemes; per-row `capability_basis` names the substrate —
-US = ohlcv∪stocks stores, CN = `data/china_search/closes.parquet`, the panel
+US resolves first-hit across ohlcv→stocks→massive_stock_day (every committed US row
+tonight resolved via `data/baskets/ohlcv/`), CN = `data/china_search/closes.parquet`, the panel
 `scripts/c1_cn_global_beta.py::_panel()` reads; `cn_global_beta` itself is pure compute).
 Your gates re-test every node — candidates AND `semantic_only` (the sidecar re-derives nightly;
 promotion on improved substrate is automatic by design, review C2). If eligibility work
@@ -101,7 +102,7 @@ python3 - <<'EOF'                                                # plane census
 import json; m = json.load(open('data/theme_graph/_meta.json'))
 print(json.dumps({k: m[k] for k in ('counts','per_suite') if k in m}, indent=1))
 EOF
-python -m pytest tests/test_theme_graph_local_plane.py tests/test_finviz_tree_refresh.py -q
+python -m pytest tests/test_theme_graph_local_plane.py tests/test_finviz_tree_refresh.py tests/test_theme_sources_registry.py -q
 ```
 Expected: guard rc 0 (one licensing-snapshot ::notice on 3 W1b vendor rows is DESIGNED);
 _meta counts 3,878 nodes / 8,292 edges / 641 capability; suites 120+54+5 green.

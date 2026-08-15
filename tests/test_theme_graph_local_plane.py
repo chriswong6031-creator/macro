@@ -697,7 +697,10 @@ def test_source_meta_carries_the_parent_without_minting_a_hierarchy(world):
     assert meta["grain"] == "finviz_subtheme"
     assert meta["rights_family"] == "finviz_themes"
     assert meta["parent_source_label"] == "Artificial Intelligence"
-    assert meta["supergroup_index"] == 0
+    # No refresh receipt in this fixture → the layer is UNKNOWN. None, never the theme's
+    # enumeration ordinal — the ordinal happened to be 0 here too, which is exactly how
+    # the original wrong-value bug passed this test (diff-review F1).
+    assert meta["supergroup_index"] is None
     assert meta["key_aliases"] == []
     # No node for the parent theme, and no PARENT_OF edge: hierarchy is a later wave's.
     assert not [n for n in view.nodes
@@ -821,13 +824,28 @@ def test_the_second_wall_refuses_a_mass_closure_without_the_flag(world):
 
 
 def test_the_second_wall_lets_ordinary_churn_through(world):
-    """1 of 8 closing is 12.5% — under the wall. A wall that fires on normal churn gets
-    disabled, which is worse than not having one."""
-    members = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH"]
+    """1 of 12 closing is 8.3% — under the 10% wall (§9.2: observed genuine churn is
+    ~1.1%/7wk; the wall exists for the 11.5% distributed truncation, not for churn).
+    A wall that fires on normal churn gets disabled, which is worse than not having one."""
+    members = [f"M{i:02d}" for i in range(12)]
     _set_tree(world, {"aicompute": members})
     stored = pd.DataFrame(_build(world).edges).reindex(columns=list(store.EDGE_COLUMNS))
     _set_tree(world, {"aicompute": members}, [(V2_ASOF, {"aicompute": members[1:]})])
     assert materialize.source_shrink_refusals(_build(world).edges, stored) == []
+
+
+def test_the_second_wall_boundary_sits_at_ten_percent(world):
+    """Boundary pin for MAX_SOURCE_SHRINK=0.10 (diff-review F2): 2/20 = 10.0% passes
+    (strictly-greater wall), 3/20 = 15% refuses — and the 25% constant this replaced
+    would have let the canonical 11.5% truncation straight through."""
+    members = [f"M{i:02d}" for i in range(20)]
+    _set_tree(world, {"aicompute": members})
+    stored = pd.DataFrame(_build(world).edges).reindex(columns=list(store.EDGE_COLUMNS))
+    _set_tree(world, {"aicompute": members}, [(V2_ASOF, {"aicompute": members[2:]})])
+    assert materialize.source_shrink_refusals(_build(world).edges, stored) == []
+    _set_tree(world, {"aicompute": members}, [(V2_ASOF, {"aicompute": members[3:]})])
+    refusals = materialize.source_shrink_refusals(_build(world).edges, stored)
+    assert len(refusals) == 1 and "finviz_themes" in refusals[0]
 
 
 def test_the_second_wall_measures_per_family(world):
@@ -1041,3 +1059,69 @@ def _latest_belief(root: Path) -> list[dict]:
     df = pd.read_parquet(root / "edges.parquet")
     ordered = df.sort_values(["edge_id", "belief_time", "computed_at"], kind="stable")
     return ordered.drop_duplicates(subset=["edge_id"], keep="last").to_dict("records")
+
+
+# ---------------------------------------------------------------------------
+# Supergroup layer (diff-review F1): receipts are the ONLY source; never ordinals
+# ---------------------------------------------------------------------------
+
+def _write_supergroup_receipt(world, groups: list[dict]) -> None:
+    rdir = world["data"] / "themes_heatmap" / "tree_refresh_receipts"
+    rdir.mkdir(parents=True, exist_ok=True)
+    (rdir / "20260815T000000Z.json").write_text(
+        json.dumps({"promoted": True, "supergroups": groups}), encoding="utf-8")
+
+
+def test_supergroup_index_comes_from_the_receipt_never_the_theme_ordinal(world):
+    """Two themes in ONE group must share an index — the theme ordinal cannot fake this.
+
+    The original defect stamped enumerate() ordinals (40 singleton groups on the real
+    tree); a one-theme fixture passed because ordinal 0 == group 0. This fixture makes
+    the two values diverge: theme 'Cloud' is ordinal 1 but group 0.
+    """
+    tree = [
+        {"theme": "Artificial Intelligence", "key": "Artificial Intelligence",
+         "subsectors": [{"key": "aicompute", "name": "Compute", "description": "",
+                         "members": ["AAA"]}]},
+        {"theme": "Cloud", "key": "Cloud",
+         "subsectors": [{"key": "cloudinfra", "name": "Infra", "description": "",
+                         "members": ["BBB"]}]},
+        {"theme": "Metals", "key": "Metals",
+         "subsectors": [{"key": "metalsgold", "name": "Gold", "description": "",
+                         "members": ["CCC"]}]},
+    ]
+    _write(world["root"] / local_sources.SEED_TREE_FILE,
+           {"asof": SEED_ASOF, "themes": tree})
+    (world["data"] / "themes_heatmap" / "tree_history.jsonl").parent.mkdir(
+        parents=True, exist_ok=True)
+    (world["data"] / "themes_heatmap" / "tree_history.jsonl").write_text(
+        "", encoding="utf-8")
+    _write_supergroup_receipt(world, [
+        {"group": "1", "themes": ["Artificial Intelligence", "Cloud"]},
+        {"group": "2", "themes": ["Metals"]},
+    ])
+    view = _build(world)
+    got = {}
+    for n in view.nodes:
+        if str(n["node_id"]).startswith("ltheme:finviz:"):
+            got[n["node_id"]] = json.loads(n["source_meta"])["supergroup_index"]
+    assert got["ltheme:finviz:aicompute"] == 0
+    assert got["ltheme:finviz:cloudinfra"] == 0   # ordinal 1 — the group wins
+    assert got["ltheme:finviz:metalsgold"] == 1   # ordinal 2 — the group wins
+
+
+def test_supergroup_absent_from_receipt_is_none_not_a_guess(world):
+    _set_tree(world, {"aicompute": ["AAA"]})
+    _write_supergroup_receipt(world, [{"group": "1", "themes": ["Something Else"]}])
+    view = _build(world)
+    meta = json.loads(next(n for n in view.nodes
+                           if n["node_id"] == "ltheme:finviz:aicompute")["source_meta"])
+    assert meta["supergroup_index"] is None
+
+
+def test_load_supergroups_handles_missing_dir_and_torn_receipt(tmp_path):
+    assert local_sources.load_supergroups(tmp_path / "nope") == {}
+    rdir = tmp_path / "receipts"
+    rdir.mkdir()
+    (rdir / "20260101T000000Z.json").write_text("{torn", encoding="utf-8")
+    assert local_sources.load_supergroups(rdir) == {}

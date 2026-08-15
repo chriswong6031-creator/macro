@@ -65,7 +65,7 @@ memberships closed `[2026-06-27, 2026-08-15)` era=observed; SNDK's nine open at 
 | US Prophet board (buy lane, asof 08-13) | 69 | **64%** | finviz hits 35, curated 34 (overlapping); uncovered = banks/REITs/utilities-shaped names — the coverage-gap case-A population |
 | CN Prophet board (featured, asof 08-14) | 24 | **71%** | more_actionable lane (83): 64% |
 | US Prophet universe (S&P1500+R2000, 2,839) | 2,839 | **34%** | small-cap breadth sits outside thematic maps — expected, reported not engineered |
-| CN Prophet universe (top-1,711 A-shares) | 1,711 | **52%** | rises if W3B charters unseeded-concept membership (137 concepts still unmapped to members in-graph) |
+| CN Prophet universe (top-1,711 A-shares) | 1,711 | **52%** | rises if W3B charters unseeded-concept membership (136 concepts still unmapped to members in-graph) |
 
 Reading: the local planes concentrate exactly where selection activity is (boards ≫ universes).
 Uncovered board names are the coverage-gap diagnostic's standing work queue.

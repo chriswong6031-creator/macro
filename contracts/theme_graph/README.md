@@ -125,7 +125,8 @@ be emitted from each source family, read at call time by
 `engine/theme_graph/rights.py::assert_public_emission_allowed`. The per-row
 `licensing_*` booleans on an evidence row are **mint-time snapshots with no enforcement
 power** — the store is append-only, so a row minted under last quarter's class cannot
-learn that the class moved. The guard therefore WARNS on a snapshot that disagrees with
+learn that the class moved. The guard therefore emits a ::notice (titled "licensing
+snapshots — designed") on a snapshot that disagrees with
 its family's current class and FAILS CLOSED on a `source_meta.rights_family` that has no
 registry row at all.
 

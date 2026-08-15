@@ -97,8 +97,12 @@ THS_FAMILY = "ths_concepts"
 #: a hand-edited tree that never went through a refresh run reaches the store through
 #: this path, and an append-only store makes a mass closure expensive to explain and
 #: impossible to un-see. Passing --allow-source-shrink <family> is how a real vendor
-#: restructure gets through — deliberately, with a name attached.
-MAX_SOURCE_SHRINK = 0.25
+#: restructure gets through — deliberately, with a name attached. 0.10 matches the
+#: refresh contract's §9.2-derived wall EXACTLY, and for the same reason: the canonical
+#: parser/hand-edit catastrophe (last-member-of-every-subtheme truncation) closes
+#: 268/2,339 = 11.5% — a 25% wall promoted it silently (diff-review F2); observed
+#: genuine churn is ~1.1% per 7 weeks, so 10% stays ≥4× any plausible gap's drift.
+MAX_SOURCE_SHRINK = 0.10
 
 #: Edge fields compared when deciding whether tonight's view differs from the stored
 #: belief — the ASSERTION, and only the assertion. src/dst/type/valid_from are already
@@ -566,7 +570,12 @@ class _Builder:
                 licensing=_licensing(FINVIZ_FAMILY))
             for v in ladder.vintages}
 
-        registry = local_sources.subtheme_registry(ladder)
+        # The supergroup layer exists only in the refresh receipts (the committed tree
+        # flattens it); the loader returns {} when no receipt carries it, and the
+        # registry then stamps None — never a theme-ordinal guess (diff-review F1).
+        supergroups = local_sources.load_supergroups(
+            self.data_dir / "themes_heatmap" / "tree_refresh_receipts")
+        registry = local_sources.subtheme_registry(ladder, supergroups)
         for key, meta in registry.items():
             try:
                 lt_node = identity.local_theme_node_id(

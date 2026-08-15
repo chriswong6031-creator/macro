@@ -244,7 +244,28 @@ conditions C1–C8 + strongly-recommended items — ALL adopted (two adopted-wit
 reasons in §9): resolutions are §9 below, which SUPERSEDES the named §2–§5 clauses. Reviewer
 independently reproduced every reconciliation headline (923 priced members, 18/18 departures
 absent, arithmetic closure, 14 subsector_keys, 373 unique THS codes).
-**Review 2 (diff, PRE-PR):** [to be filled]
+**Review 2 (diff, PRE-PR, opus reviewer, 2026-08-15 UTC): PASS-WITH-CHANGES — all six
+conditions resolved in-branch before PR.** The reviewer reproduced the suites (347 at review
+time), the store arithmetic, and the §55 answers in shipped form. Conditions + resolutions:
+(F1 MUST-FIX) `supergroup_index` was stamping the THEME ORDINAL (40 singleton groups) into
+write-once node metadata because the tree carries no such key — fixed by `load_supergroups()`
+reading the refresh receipt's `supergroups` layer (the only lawful source), None when absent
+(never a guess), the misleading single-theme fixture replaced by a two-themes-one-group test
+where ordinal and group diverge, and the store RE-MATERIALIZED from the origin/main base —
+verified post-rebuild: 6 distinct values [0..5], zero nulls, subthemes/group 84/64/48/42/17/13.
+(F2 MUST-FIX) the materializer's second shrink wall still carried the rejected 0.25 — re-derived
+to 0.10 with the §9.2 rationale and a 10.0%-pass/15%-refuse boundary test; the ordinary-churn
+fixture reshaped to 8.3%. (F3) coverage reports now record input provenance
+(`--source-artifact`/`--source-asof` → `report.input`), the missing §56.D receipts committed
+(cn more_actionable run + `w3a_coverage_universes.json` naming population paths).
+(F4) guard notices carry per-class titles (additive-columns / licensing-snapshots-designed /
+capability-promoted-itself / capability-side-car-MISSING) so the designed class can never mask
+a half-finished build; README/rights wording aligned to the notice channel. (F5) the join-law
+map is multi-valued (`setdefault(...).add`) so a future multi-concept basket has every mapping
+adjudicated; §9.12's "61" corrected to the adjudicated-population form (48 today).
+(F6–F8) 137→136; handoff substrate wording (first-hit resolution order, all committed US rows
+via ohlcv); handoff §6 command includes the registry suite. Post-fix verification: 351 passed
+across the 8-file W3A set + 69 annotation/synapse/dag; `--strict` rc 0; selftest OK.
 
 ## §9 Review-1 amendments (BINDING — supersede the named clauses above)
 
@@ -353,8 +374,9 @@ absent, arithmetic closure, 14 subsector_keys, 373 unique THS codes).
     vocabulary, not an epistemic claim (F18 sentence).
 12. **Join law + census grain (F7/F23/F22/F17):** README states the join law — canonical
     expression is ONE-hop (basket→theme); `ltheme→theme` is vocabulary resolution, never a
-    second expression path — and the guard asserts the two paths agree over the 61 shared
-    crosswalk rows. §56.B census carries membership-grain columns per market (direct company
+    second expression path — and the guard asserts the two paths agree over every basket where BOTH paths exist
+    (48 of the 61 concept-grain rows today — 61 counts ltheme→theme edges, not the
+    adjudicated basket population; diff-review F5). §56.B census carries membership-grain columns per market (direct company
     edges / basket-mediated / none) so the CN plane's two-hop shape is visible; counts are
     PER-LISTING (cross-listing issuer twins exist — SHOP/RIO/TSM class; `SAME_AS` across
     listings is W4's; disclosed, not resolved). Reconciliation table header hedged to the

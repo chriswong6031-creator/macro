@@ -30,7 +30,7 @@ CHECKS
   8. Rights, fail-closed: every non-null ``source_meta.rights_family`` has a row in
      ``config/theme_sources.yml``. A family nobody wrote down is a family nobody
      reviewed. Evidence rows whose MINT-TIME licensing booleans disagree with their
-     family's current class produce a WARNING, never a breach — the store is append-only
+     family's current class produce a titled ::notice, never a breach — the store is append-only
      and history is a record, not a mistake to be edited (§9.4).
   9. Join law: the canonical expression path is ONE hop (basket→theme). ``ltheme→theme``
      is vocabulary resolution, not a second expression path, so over the crosswalk rows
@@ -59,6 +59,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -227,7 +228,7 @@ def _check_columns(df: pd.DataFrame, expected: tuple[str, ...],
         additive = ADDITIVE_SINCE_W3A.get(label, frozenset())
         if set(missing) <= additive and got == tuple(c for c in expected if c in set(got)):
             return [], [
-                f"{label}: store predates the W3A additive column(s) {missing} — v1 is "
+                f"[additive columns pending rebuild] {label}: store predates the W3A additive column(s) {missing} — v1 is "
                 f"additive-only, so this shape was valid when it was written. It is "
                 f"filled by the next build (python -m scripts.build_theme_graph), not "
                 f"by a migration"]
@@ -431,11 +432,11 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
             if got != expected:
                 stale.append(f"{row.get('evidence_id')} ({family}: {got} vs {expected})")
         if stale:
-            # A WARNING, never a breach: the store is append-only, so a row minted under
+            # A titled ::notice, never a breach: the store is append-only, so a row minted under
             # last month's class cannot be rewritten and should not be. The registry is
             # what any live emission consults.
             notices.append(
-                f"{len(stale)} evidence row(s) carry mint-time licensing that disagrees "
+                f"[licensing snapshots — designed] {len(stale)} evidence row(s) carry mint-time licensing that disagrees "
                 f"with their family's CURRENT rights class (first: {stale[0]}) — "
                 f"historical snapshots, not breaches. The registry "
                 f"({rights.REGISTRY_FILE}) is the sole authority at emission time")
@@ -451,27 +452,31 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
         current = ordered.drop_duplicates(subset=["edge_id"], keep="last")
         live = current[(current["type"].astype(str) == "EXPRESSES")
                        & (current["valid_to"].map(_is_null))]
-        basket_ltheme: dict[str, str] = {}
+        # Multi-valued on purpose (diff-review F5): a basket expressing more than one
+        # local theme must have EVERY mapping adjudicated — last-write-wins silently
+        # exempted the extras from the agreement check the moment W3B/W4 adds one.
+        basket_ltheme: dict[str, set[str]] = {}
         basket_theme: dict[str, set[str]] = {}
         ltheme_theme: dict[str, set[str]] = {}
         for row in live.to_dict("records"):
             src, dst = str(row.get("src")), str(row.get("dst"))
             if src.startswith("basket:") and dst.startswith("ltheme:"):
-                basket_ltheme[src] = dst
+                basket_ltheme.setdefault(src, set()).add(dst)
             elif src.startswith("basket:") and dst.startswith("theme:"):
                 basket_theme.setdefault(src, set()).add(dst)
             elif src.startswith("ltheme:") and dst.startswith("theme:"):
                 ltheme_theme.setdefault(src, set()).add(dst)
         disagreements: list[str] = []
-        for basket, ltheme in sorted(basket_ltheme.items()):
-            via_local = ltheme_theme.get(ltheme, set())
+        for basket, lthemes in sorted(basket_ltheme.items()):
+            via_local = set().union(*(ltheme_theme.get(lt, set()) for lt in lthemes)) \
+                if lthemes else set()
             direct = basket_theme.get(basket, set())
             if not via_local or not direct:
                 continue  # only the SHARED rows are in scope; absence is not conflict
             if via_local != direct:
                 disagreements.append(
-                    f"{basket} → {sorted(direct)} directly, but its concept {ltheme} "
-                    f"resolves to {sorted(via_local)}")
+                    f"{basket} → {sorted(direct)} directly, but its concept(s) "
+                    f"{sorted(lthemes)} resolve to {sorted(via_local)}")
         if disagreements:
             breaches.append(
                 f"{len(disagreements)} crosswalk row(s) where the one-hop canonical "
@@ -578,7 +583,7 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                 minted = {str(v) for v in cap["capability"]}
                 if "measurable" in minted:
                     notices.append(
-                        "capability=measurable is present — that verdict is minted only "
+                        "[capability promoted itself] capability=measurable is present — that verdict is minted only "
                         "after a preregistered measurement (W3B). If this is W3A's own "
                         "output, the rule promoted itself")
     elif "local_theme" in set(kinds.values()):
@@ -586,7 +591,7 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
         # nothing has classified them: that is a build that stopped half way, not a
         # store that predates the side-car.
         notices.append(
-            "local_theme nodes exist but capability.parquet does not — the side-car is "
+            "[capability side-car MISSING — half-finished build] local_theme nodes exist but capability.parquet does not — the side-car is "
             "re-derived by every build (python -m scripts.build_theme_graph); its "
             "absence means nothing has classified them yet")
 
@@ -621,7 +626,13 @@ def run(*, strict: bool, store_dir: Path | None = None,
     for n in notices:
         # Bare print, line-start, flushed: a logger prefixes the line and GitHub
         # silently drops the annotation (tests/test_gh_annotation_line_start.py).
-        print(f"::notice title=theme graph indeterminate::{n}", flush=True)
+        # Distinct titles per class (diff-review F4): the DESIGNED licensing notice
+        # must never visually mask a half-finished build or a self-promoted verdict.
+        m = re.match(r"^\[([^\]]+)\]\s*(.*)$", n, flags=re.DOTALL)
+        if m:
+            print(f"::notice title=theme graph — {m.group(1)}::{m.group(2)}", flush=True)
+        else:
+            print(f"::notice title=theme graph indeterminate::{n}", flush=True)
     if not breaches:
         if not notices:
             print("theme graph contracts OK — columns, schemas, enums, evidence "

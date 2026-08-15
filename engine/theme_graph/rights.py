@@ -6,7 +6,8 @@ on an evidence row are MINT-TIME SNAPSHOTS with zero enforcement power: the evid
 store is append-only, so a row minted while a family was ``derived_display_ok`` keeps
 saying so forever, and a rights decision that moved after the fact can never reach it.
 Enforcement therefore reads the registry at call time — :func:`rights_class` — and the
-guard only WARNS when a stored snapshot disagrees with the family's current class,
+guard only emits a designed ::notice when a stored snapshot disagrees with the
+family's current class,
 because history is a record, not a mistake to be edited.
 
 Two directions matter and they are not symmetric:
