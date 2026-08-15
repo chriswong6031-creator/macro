@@ -1481,7 +1481,8 @@ def compute_hk_standouts(scoreboard: dict | None, n_buy: int = 60, n_lag: int = 
             # DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES)
             name_score_grader.append_name_calls(
                 _hkcalls, market="HK",
-                asof=str(as_of) if as_of else str(pd.Timestamp.utcnow().date()))
+                asof=str(as_of) if as_of else str(pd.Timestamp.utcnow().date()),
+                session_keyed=bool(as_of))
     except Exception as ex:  # noqa: BLE001 — grading is additive, never fatal
         log.debug("hk name-score grader append failed (%s)", ex)
     # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-
