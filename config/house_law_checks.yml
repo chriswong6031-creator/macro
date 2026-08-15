@@ -1878,6 +1878,49 @@ checks:
       Complements nw.dag_conformance (lane-sequence drift on declared lanes)
       by asserting bare loadability of ALL workflow files, lane or not.
 
+  - law_id: ops.runner_routing_policy
+    summary: >
+      Public-repository pull-request workflows remain exactly GitHub-hosted during
+      Wave B/C, cannot delegate through reusable-workflow call jobs, and cannot
+      consume the bounded PC/M1 migration labels. Only registered main-branch
+      workflow-dispatch canaries may request those labels, downstream of a hosted
+      trust gate. PC render and CI labels remain disjoint and the M1 canary cannot
+      regain a broad production label.
+    source_ref:
+      - scripts/check_runner_policy.py
+      - .github/runner-policy.yml
+      - tests/test_runner_policy.py
+      - docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
+    severity: hard
+    check_script: scripts/check_runner_policy.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      The checker has a mutation-focused pytest suite covering fork-route drift,
+      computed migration labels, reusable-workflow delegation, trust-gate removal,
+      topology overlap, and unregistered custom-label consumers; the checker and
+      suite run together in the registered workflow-yaml legacy job.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Repository lint is a merge guard, not a runtime admission boundary. The
+        live home runners must also reside in the organization runner group that
+        is restricted server-side to exact workflow paths pinned to refs/heads/main.
+      - >-
+        Existing pre-Wave-B/C production self-hosted labels are outside this
+        migration-label registry; this law prevents new fork/ordinary-PR routes
+        from reaching the canary labels without changing those production lanes.
+    owner_program: ci-recovery-wave-bc
+    notes: >
+      Registered after the first full PR pack correctly caught the new
+      check_runner_policy.py in the house-law census. The runtime counterpart is
+      the macro-home-canary organization runner group; static ordering alone is
+      not treated as a security boundary.
+
   - law_id: ops.no_skip_only_suites
     summary: >
       No test may skip in every CI job that names it. A suite can be named by a

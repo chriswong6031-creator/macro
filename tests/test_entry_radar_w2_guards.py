@@ -370,4 +370,7 @@ def test_MUTATION_g0_spec_hash_is_stable_and_matches_the_registry():
     assert g0_spec_hash() == G0_SPEC_HASH_FROZEN
     assert DETECTORS[G0_DETECTOR_ID].spec_hash == G0_SPEC_HASH_FROZEN
     assert g0_spec_hash() == g0_spec_hash(), "hash must not vary within a run"
-    assert len(DETECTORS) == 1, "W2 registers exactly one detector"
+    # W3 (PR-3) registered the five challengers beside G0, so the registry SIZE is
+    # no longer W2's fact.  What stays W2's fact is that G0's own hash did not move
+    # when they landed — the property this test was written to protect.
+    assert G0_DETECTOR_ID in DETECTORS

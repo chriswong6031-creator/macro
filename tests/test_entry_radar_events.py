@@ -67,6 +67,10 @@ FIXTURES = ROOT / "tests" / "fixtures" / "entry_radar"
 REFERENCE_DATE = date(2026, 8, 14)
 
 #: One lawful subtype per family, for construction smoke tests.
+#: One lawful subtype per minted family.  W3 (PR-3) added the three Radar-native
+#: families (contract §18 A5.8), so this map and the test below grew from six
+#: entries to nine — a family-list PIN updated for a family-list CHANGE, which is
+#: the only reason a pin like this may ever move.
 LAWFUL_SUBTYPE = {
     "grey_dot": None,
     "washout_early_watch": "early_dot",
@@ -74,6 +78,9 @@ LAWFUL_SUBTYPE = {
     "oracle_buy": "take",
     "oracle_rebuy": "take",
     "oracle_reclaim": "reclaim",
+    "radar_1d_live_washout": "live_k_lt_20",
+    "radar_1d_turn": "c2a_kd_cross",
+    "radar_1d_4h_recovery": "confirmed_4h_hist_trough",
 }
 
 #: Verbs that must never name a method on an append-only store.
@@ -214,7 +221,7 @@ def test_forbidden_family_keys_are_refused(family):
 
 
 @pytest.mark.parametrize("family", FAMILY_KEYS)
-def test_the_six_lawful_families_construct(family):
+def test_every_minted_family_constructs(family):
     event = _event(family=family, subtype=LAWFUL_SUBTYPE[family])
     assert event.family == family
     assert event.event_id and len(event.event_id) == 16
@@ -634,8 +641,14 @@ def test_both_doors_into_one_store_agree_in_either_order():
 # detector identity + §13 lifecycle
 # ---------------------------------------------------------------------------
 
-def test_w2_registers_exactly_one_detector_and_it_matches_its_implementation():
-    assert sorted(DETECTORS) == ["G0_GREY_DOT@1"]
+def test_g0_is_registered_and_matches_its_implementation():
+    """W2 registered G0 alone; W3 (PR-3) added the five challengers beside it.
+
+    This test keeps G0's OWN pin — its presence, its era and its population rule —
+    and no longer asserts the registry's SIZE, which is now W3's to pin
+    (`tests/test_entry_radar_w3_detectors.py`).
+    """
+    assert "G0_GREY_DOT@1" in DETECTORS
     assert_g0_registry_matches_implementation()
     spec = get_spec("G0_GREY_DOT@1")
     assert spec.version == 1

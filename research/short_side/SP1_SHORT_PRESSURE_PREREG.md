@@ -469,6 +469,20 @@ gated nothing, and filed no `DO_NOT_REBUILD` row (§7). The panel is gitignored 
 output and its rebuild is a real ~20-minute compute cost (§1), paid to change numbers
 that no authority state reads.
 
+**DISCHARGED 2026-08-15 — the rebuild and re-run happened; see §7.** The actor this
+ruling was waiting for arrived the next day. `short_interest_panel.parquet` was
+rebuilt with the corrected writer (206 settlements, 3,888,611 rows, 2018-01-12 →
+2026-07-31) and its sidecar now reads `"knowable_lag_sessions": 8`, so the receipt
+named below has flipped. **The verdict did not move: SP1-A is still a NULL.** The
+entry-shift prediction in this section was made against a *reconstruction* and is
+now confirmed against the panel itself — of the 115 settlements admitted under both
+conventions, **81 (70.4%) move 1–4 sessions later and 0 move earlier**, against the
+71.2% / 0 predicted. **The citation ban below is NOT lifted:** this section's PIT
+reason is discharged, but §5A's survivorship reason is untouched and §7's
+2026-08-15 entry adds a **third, independent** reason — the price index is not a
+trading-day index. Numbers from the re-run are no more quotable than the ones they
+replace.
+
 **The trigger is an ACTOR, not an event — do not wait for one.**
 `scripts/backfill_finra_short_interest.py` is referenced by **no workflow**: it is a
 manual script, so nothing rebuilds this panel on a schedule and there is no passive
@@ -509,7 +523,9 @@ them, so no authority state moves.
 effect size as unbiased on survivorship grounds; this adds a **second, independent
 PIT reason**. No number from the §7 log or the report table may be cited — in a
 successor study, an adjudication, a masterplan, or any user-facing surface — until a
-re-run on a rebuilt panel replaces it.
+re-run on a rebuilt panel replaces it. (The re-run happened on 2026-08-15 and the
+ban still stands: it discharged this PIT reason and immediately found a **third**,
+described in §7. Replacement was necessary but not sufficient.)
 
 **What is deliberately NOT claimed.** A shifted entry produces genuinely different
 events, not a monotone transform of the same ones, so no claim is made that a re-run
@@ -608,3 +624,88 @@ the promotion bar. Recorded as `DEC:PREREG-DATA-CONVENTION-CORRECTED-IN-PLACE`.
   consumer to wire `asof_slice` into a surface must rebuild the panel FIRST or it
   ships look-ahead on day one. No `DO_NOT_REBUILD` row is filed: nothing was killed
   and no authority state moves.
+
+- 2026-08-15: **SP1-A RE-RUN on the rebuilt panel — §5B's obligation is DISCHARGED.
+  Verdict UNCHANGED: still a NULL.** Panel rebuilt with the corrected writer
+  (`lib/finra_knowable.py`, PR #5705 — armed and still unmerged when this ran, so the
+  writer was applied from its branch; the same provenance convention §5B used):
+  206 settlements, 3,888,611 rows, 2018-01-12 → 2026-07-31, 48,679 tickers. The
+  committed sidecar flips `"knowable_lag_days": 10` → `"knowable_lag_sessions": 8`.
+  The study took the correction with **no entry-logic change**, exactly as §5B
+  predicted — it reads the panel's stored `knowable_date`. Artifacts regenerated:
+  `reports/sp1-short-pressure.md`, `data/research/sp1_short_pressure.json`.
+
+  **§5B's blast-radius prediction is confirmed against the real panel** (it was
+  computed over a reconstructed schedule and said so). Of the 115 settlements
+  admitted under **both** conventions, 81 (**70.4%**) move later — +1 session ×4,
+  +2 ×47, +3 ×29, +4 ×1 — 34 (29.6%) are unchanged, and **0 move earlier**. §5B
+  predicted 71.2% / 0. The defect was strictly one-directional, as claimed.
+
+  **H0 still does not replicate — it is POSITIVE.** 222,367 events, 193 entry dates,
+  1,723 tickers, 2018-02-12 → 2026-06-10, median 1,186 names/date. H0 `+0.782pp`
+  (NW t 3.06, q 0.0022) at the 21-row horizon and `+0.902pp` (t 1.29, q 0.2366) at
+  63-row; H1 `+0.241` / `+0.663`; H2 `+0.039` / `+0.267`. §5A's gate requires H0
+  **negative and significant**, so the branch tests stay uninterpretable and SP1-A
+  remains a NULL. **No `DO_NOT_REBUILD` row is filed** — nothing promoted, nothing
+  killed, no authority state moves.
+
+  **H0 is now significant in the WRONG direction, and that is NOT a new finding.**
+  §5B reserved adjudication for a flip to negative-and-significant; this is the
+  opposite pole, and it is adjudicated here as **explained, not discovered**. Two
+  confounds were isolated by changing one input at a time:
+
+  | run | lag | price calendar | events | entry dates | H0 21-row |
+  |---|---|---|---|---|---|
+  | 2026-08-05 published | retired +10d | as-is | 47,807 | 120 | +0.372, t 1.22 |
+  | counterfactual B | retired +10d | as-is | 139,349 | 121 | +0.556, t 1.49 |
+  | **2026-08-15 re-run** | **corrected 8s** | as-is | 222,367 | 193 | **+0.782, t 3.06** |
+  | counterfactual D | corrected 8s | weekday-only | 216,488 | 188 | +0.702, **t 1.92** |
+
+  1. **Universe.** `data/yahoo/` grew **739 → 2,268 files** between the two runs
+     (study tickers 641 → 1,723). Run B — retired lag, today's universe — recovers
+     most of the effect-size move, and reproduces the published run's entry-date
+     count (121 vs 120), which is what licenses it as a faithful counterfactual.
+  2. **The price index is not a trading-day index — a THIRD defect, independent of
+     the lag and of survivorship.** `load_prices()` unions every file in
+     `data/yahoo/`, including 35 non-equities that trade on weekends (`BTC-USD`,
+     `ETH-USD`, `SOL-USD`, 16 FX pairs, 13 futures). Measured on this run: **868 of
+     3,041 index rows in the event window (28.5%) are weekend rows**, from 36 of
+     2,112 columns. Removing only those files costs **zero** study names
+     (1,723 → 1,718) and takes t from 3.06 to **1.92**.
+
+  **That third defect has two consequences, both pre-existing, both undisclosed
+  until now.** (a) Horizons are applied as **positional row offsets**
+  (`px.iloc[pos + h]`), so a 21-row step spans exactly **15** weekday sessions and a
+  63-row step exactly **45** — every horizon label in the 2026-08-05 entry above and
+  in this one is off by 5/7. (b) When the retired **calendar**-day rule landed on a
+  weekend, `searchsorted` returned that weekend row — it *is* in the index — leaving
+  2–3 priced names, so `MIN_NAMES_PER_DATE` dropped the settlement silently. That is
+  why the published run used **120 of 205** settlements and this one uses **193 of
+  206**: the retired rule lost **41%** of its sample to this, evenly across all nine
+  years. **The sample rescue is an incidental side-effect of the lag fix, not a
+  property of the lag**, and `120 entry dates` sat in the published report the whole
+  time reading as normal.
+
+  **CITATION BAN NOT LIFTED — now three independent reasons.** §5B's PIT reason is
+  discharged by this rebuild. Survivorship (§5A) is untouched: 34.6% of the pre-2021
+  high-DTC quintile is still gone by 2025 and the named fix (a delisting-inclusive
+  panel — `collectors/edgar_delisting.py` + `edgar_deadname_prices.py`) is still
+  unbuilt. The calendar defect is the third. **No effect size from this run may be
+  cited either** — successor study, adjudication, masterplan, or user-facing surface.
+
+  **The calendar defect is deliberately NOT fixed here.** Applying it post-outcome,
+  having seen that it moves t from 3.06 to 1.92, is precisely the goalpost move
+  prereg immutability exists to forbid — and unlike the lag correction it is **not**
+  a data-availability convention: it changes the sample and the horizon definitions,
+  i.e. the design. Per §5B's own standing rule that is reserved for supersession,
+  not in-place amendment, so it needs its own pre-registration. Recorded here so the
+  next actor inherits it rather than rediscovering it.
+
+  **Report generator hardened (not entry logic).** The 2026-08-05 template hardcoded
+  that run's effect sizes into its **prose** while the table was computed, and
+  hardcoded a verdict reading "sign is positive, not significant" — so this re-run
+  would have emitted a table and a narrative contradicting each other, under a
+  verdict line that had just stopped being true. Every number in the prose is now
+  derived from `results`; the report additionally prints the panel's lag convention
+  (read from the sidecar, never assumed) and a measured calendar audit, so neither
+  the convention nor the horizon distortion can go unstated again.

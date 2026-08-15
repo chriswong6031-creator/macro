@@ -41,20 +41,26 @@ waves:
     # predated the merge; no other state transition manufactured.
   - id: W2
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
-    status: in_progress
+    status: done
     pr: 5698
     depends_on: [W0]
-    next_action: >
-      G0-VIS is CLOSED (operator confirmed the raw grey family 2026-08-13, contract §18
-      A1) — the parity freeze is unblocked. PR-2 additionally owns the A1 adapter
-      obligation: ingest the unified indicator/v1 signals stream preserving emitter
-      type/subtype/quality/stage verbatim, and mint expert-family keys from emitter
-      receipts (STARTER/RE-ENTRY enumerations are PR-2 archaeology). PR number added
-      at ship.
+    # Reconciled 2026-08-14 by the W3 session from merged evidence: PR #5698 MERGED
+    # 2026-08-15T01:19:08Z, merge commit cf4134feaa99262cfd3bfa9b921d3444f48d5bf2
+    # (gh pr view 5698; git merge-base --is-ancestor confirms it on origin/main).
+    # Historical in_progress row predated the merge; no other state manufactured.
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
-    status: todo
+    status: in_progress
+    pr: 5724
     depends_on: [W2]
+    next_action: >
+      C1–C5 specification lock per contract §18 A5 (append-only, committed before any
+      outcome reading): C1/C2 on the A5.1 provisional-1D + 5-min sampled path, C3 on
+      confirmed-daily washout + completed session-open-anchored 4H buckets, C4
+      stratification-only (structurally cannot fire), C5 bound to the preserved W2
+      watch events by event_id. F1 stays reserved. PIT mutation battery is the
+      acceptance gate. PR number added at ship; status flips to done only at actual
+      merge (never at armed).
   - id: W4
     title: PR-4 live evaluator on the VPS plane (5-min RTH)
     status: todo
@@ -87,7 +93,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: Land PR-0 (W0); then W1 (universe/bus) and W2 (G0 parity) can start in parallel sessions off the frozen contract.
+next_action: W3 (PR-3) in flight — C1–C5 exact specs + PIT mutation battery under contract §18 A5; W4 (live evaluator) and W5 (forward evidence) stay todo and are NOT rolled into W3.
 ---
 
 ## Context
