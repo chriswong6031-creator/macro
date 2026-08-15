@@ -168,3 +168,22 @@ def test_red_pack_results_are_captured_instead_of_aborting_the_receipt_path() ->
         capture = command.index("pack_rc=${PIPESTATUS[0]}")
         assert command.index("set +e") < pack < capture
         assert command.index("set -e", capture) > capture
+
+
+def test_three_slot_run_surfaces_red_after_preserving_the_receipt() -> None:
+    steps = workflow("selfhosted-ci-canary.yml")["jobs"]["selfhosted-pack"]["steps"]
+    upload = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("uses") == "actions/upload-artifact@v4"
+        and str(step.get("with", {}).get("name", "")).startswith("ci-canary-selfhosted-")
+    )
+    gate = next(
+        index
+        for index, step in enumerate(steps)
+        if step.get("name") == "surface a red pack after preserving its three-slot receipt"
+    )
+    assert upload < gate
+    assert steps[gate]["if"] == "inputs.slots == '3'"
+    assert 'cat "$RUNNER_TEMP/pack.rc"' in steps[gate]["run"]
+    assert "-eq 0" in steps[gate]["run"]

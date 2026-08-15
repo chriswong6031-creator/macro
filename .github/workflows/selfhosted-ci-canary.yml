@@ -380,6 +380,9 @@ jobs:
           path: ${{ runner.temp }}/selfhosted-${{ matrix.pack }}.json
           if-no-files-found: error
           retention-days: 14
+      - name: surface a red pack after preserving its three-slot receipt
+        if: inputs.slots == '3'
+        run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0
 
   cache-negative-control:
     name: diagnostic-cache-disabled-negative-control
