@@ -227,6 +227,28 @@ _REPO_IMPORT_RE = re.compile(
     r"(?:\bfrom|\bimport)\s+(?:" + "|".join(sorted(REPO_PACKAGES)) + r")\b")
 
 
+def _has_file_derived_repo_root(tree: ast.Module) -> bool:
+    """Top-level ``Path(__file__).resolve().parents[N]`` (or ``.parent`` × N).
+
+    T2 treats this as a pin when repo imports are delayed: the checkout root
+    is this file's repo, so those imports cannot resolve out of a foreign
+    hardcoded tree.  It is not a T1 strong pin — that still requires an
+    unconditional module-level ``sys.path.insert``.
+    """
+    for node in tree.body:
+        if not isinstance(node, ast.Assign):
+            continue
+        try:
+            text = ast.unparse(node.value)
+        except (TypeError, ValueError):
+            continue
+        if "__file__" not in text:
+            continue
+        if "parents[" in text or text.count(".parent") >= 2:
+            return True
+    return False
+
+
 def _affected(path: Path) -> bool:
     """Entry script that imports repo packages without an effective pin."""
     try:
@@ -249,6 +271,11 @@ def _affected(path: Path) -> bool:
         return False
     pin_line, _ = _strong_pin(tree)
     if pin_line is None:
+        # Delayed repo imports + a __file__-derived checkout root: T2 pin.
+        # A module-level sys.path.insert would expose the tree before
+        # attestation (the selector's python -I -S contract).
+        if not top and _has_file_derived_repo_root(tree):
+            return False
         return True
     first_top = min((lineno for lineno, _ in top), default=None)
     return first_top is not None and first_top < pin_line
