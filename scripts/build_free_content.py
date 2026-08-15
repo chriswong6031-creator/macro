@@ -1353,6 +1353,28 @@ def _comparable(text: str) -> str:
     return _ASSET_STAMP_RE.sub("?v=", _WHB_TAG_RE.sub("", text))
 
 
+def _carry_over_wh_banner(built: str, committed: str) -> str:
+    """Splice the committed page's wh_banner tag onto a freshly built page.
+
+    Used by `--fix`, which renders AFTER the sweeps daily.yml runs the injector
+    before. The tag is copied byte-for-byte instead of regenerated: the
+    committed one already carries optimize_assets' `?v=` stamp, so minting a
+    fresh tag here would write an unstamped `src` onto every page that has the
+    banner — a 57-file diff that `--check` cannot see, because `_comparable`
+    strips the tag from both sides. Pages whose committed copy has no tag, and
+    builds that somehow already carry one, are returned unchanged.
+    """
+    if _WHB_TAG_RE.search(built):
+        return built
+    match = _WHB_TAG_RE.search(committed)
+    if not match:
+        return built
+    idx = built.lower().rfind("</body>")
+    if idx == -1:
+        return built + match.group(0)
+    return built[:idx] + match.group(0) + built[idx:]
+
+
 def _normalize_like_render_lane(tmp_site: Path) -> None:
     """Replay the render lane's post-render sweeps over a temp site tree.
 
@@ -1395,6 +1417,23 @@ def _seed_hashable_assets(tmp_site: Path) -> set[Path]:
     return seeded
 
 
+def _render_committed_form(tmp_dir: Path) -> set[Path]:
+    """Render the estate into `tmp_dir` in its COMMITTED (post-sweep) form.
+
+    Returns the rels seeded purely so the sweeps could content-hash; everything
+    else under `tmp_dir` is this builder's output as site/ is meant to carry it.
+
+    `--check` and `--fix` both go through here on purpose. The form one verifies
+    has to be the form the other writes, and a second copy of this three-line
+    pipeline is exactly the thing that rots apart — which is how the plain build
+    mode came to emit bytes this builder's own check calls drift.
+    """
+    render_all(tmp_dir)
+    seeded = _seed_hashable_assets(tmp_dir)
+    _normalize_like_render_lane(tmp_dir)
+    return seeded
+
+
 def _check_mode() -> int:
     """Render to a temp dir; compare against committed site/ output.
 
@@ -1408,9 +1447,7 @@ def _check_mode() -> int:
 
         # Render to tmp, then replay the render lane's sweeps so the comparison
         # is post-image against post-image.
-        render_all(tmp_dir)
-        seeded = _seed_hashable_assets(tmp_dir)
-        _normalize_like_render_lane(tmp_dir)
+        seeded = _render_committed_form(tmp_dir)
 
         # Compare against site/ — everything this build produced (the pages, the
         # RSS feed, and the hashed stylesheets externalize_css lifted out of
@@ -1504,6 +1541,88 @@ def _check_mode() -> int:
         return 0
 
 
+def _fix_mode() -> int:
+    """Write the estate into site/ in the same form `--check` verifies.
+
+    THE GAP THIS CLOSES (2026-08-14). A plain build writes this builder's RAW
+    output — pages still carrying the inline <style> that externalize_css lifts
+    into site/assets/css/<hash>.css. `--check` compares against the POST-sweep
+    committed form, so the only write mode this builder had produced bytes its
+    own check reports as drift, and NO command produced the committed form at
+    all. That is why a template edit which moves the externalized content hash
+    has only ever been repaired by hand-swapping every stale href or by waiting
+    for a full site re-render: #5517 promoted the `--fs-*` ramp out of
+    `templates/seo_base.html.j2` into theme.css, re-rendered the 7 blog pages
+    whose re-hash it noticed, and left the other 50 estate pages linking the
+    retired `e194ed38.css` — main carried that red until #5655 swapped the 50
+    hrefs by hand. A re-render heals the bytes; it does not give the next
+    template edit a way to do the right thing.
+
+    Writes the pages, the RSS feed, and the externalized stylesheets. Three
+    things it deliberately does NOT do:
+      * the assets seeded only so the sweeps could hash (theme.css, theme.js, …)
+        are not this builder's output and are never written back;
+      * HAND_AUTHORED pages are source, so `_render_committed_form` never emits
+        them and the write loop cannot reach them;
+      * nothing is DELETED. A hashed stylesheet the estate stopped referencing
+        may still be referenced by a dashboard page this builder does not own,
+        and an unreferenced leftover is not something `--check` reports — so
+        pruning would be an unforced risk taken for no green.
+
+    wh_banner is the one render-lane sweep that cannot be replayed here (only
+    daily.yml runs it). `--check` strips the tag from both sides, so dropping it
+    would stay green while silently pulling the alert ticker off every page it
+    had reached. The committed tag is therefore carried over VERBATIM rather
+    than re-minted: daily.yml injects before the sweeps run, so the committed
+    tag already carries optimize_assets' `?v=` stamp, and calling the injector
+    here — after the sweeps — would write back a correct-looking but UNSTAMPED
+    tag on all 57 pages. Same reason `--check` compares stamp presence and not
+    stamp value: the stamp is the lane's, not this builder's, to mint.
+    """
+    from scripts.worktree_sparse import require_full_checkout
+
+    # A sparse worktree omits site/ entirely; writing into it would create a
+    # truncated shadow of the committed tree rather than update it.
+    require_full_checkout(["site"])
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp) / "site"
+        tmp_dir.mkdir(parents=True, exist_ok=True)
+        seeded = _render_committed_form(tmp_dir)
+
+        written: list[str] = []
+        for out_path in sorted(tmp_dir.rglob("*")):
+            if not out_path.is_file():
+                continue
+            rel = out_path.relative_to(tmp_dir)
+            if rel in seeded or _is_hand_authored(rel):
+                continue
+            payload = out_path.read_bytes()
+            site_path = _SITE_DIR / rel
+            if rel.suffix == ".html" and site_path.exists():
+                payload = _carry_over_wh_banner(
+                    payload.decode("utf-8"),
+                    site_path.read_text(encoding="utf-8"),
+                ).encode("utf-8")
+            if site_path.exists() and site_path.read_bytes() == payload:
+                continue
+            site_path.parent.mkdir(parents=True, exist_ok=True)
+            site_path.write_bytes(payload)
+            written.append(str(rel))
+
+        if not written:
+            print("OK: site/ already carries the committed form; nothing written")
+            return 0
+        print(f"WROTE {len(written)} file(s) into site/:")
+        for rel in written:
+            print(f"  {rel}")
+        print(
+            "Commit these together with the change that moved them, then "
+            "`--check` is green by construction."
+        )
+        return 0
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Main entry point
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1513,17 +1632,31 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Build public acquisition estate (products/blog/learn/tools)."
     )
-    parser.add_argument(
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
         "--check",
         action="store_true",
         help="Validate + render to tmp; exit 1 if site/ output differs.",
+    )
+    mode.add_argument(
+        "--fix",
+        action="store_true",
+        help=(
+            "Render and write the committed form into site/ — the repair for a "
+            "--check drift. Unlike a bare build this replays the render lane's "
+            "sweeps, so it emits the externalized bytes --check compares."
+        ),
     )
     args = parser.parse_args()
 
     if args.check:
         return _check_mode()
+    if args.fix:
+        return _fix_mode()
 
-    # Full build into site/
+    # Full build into site/. NOTE: raw builder output, PRE-sweep — the inline
+    # <style> is still inline, so this is not the committed form and `--check`
+    # will call it drift. Use --fix to write what site/ is meant to carry.
     render_all(_SITE_DIR)
     return 0
 

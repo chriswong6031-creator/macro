@@ -865,6 +865,157 @@ class TestHandAuthoredPages:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# --fix write mode (the repair `--check` never had)
+# ─────────────────────────────────────────────────────────────────────────────
+
+class TestFixMode:
+    """`--fix` must write exactly the form `--check` verifies.
+
+    Until 2026-08-14 the only write mode was a plain build, which emits RAW
+    pre-sweep pages — the inline <style> still inline. `--check` compares
+    against the post-sweep committed form, so the builder's own build produced
+    bytes its own check called drift and nothing produced the committed form at
+    all. The consequence was measured on main: #5517 moved the `--fs-*` ramp out
+    of seo_base.html.j2, which re-hashed the externalized stylesheet; 50 estate
+    pages kept linking the retired `e194ed38.css` and main stayed red until
+    #5655 swapped all 50 hrefs by hand.
+
+    Every test here works on a COPY under tmp_path. `_fix_mode` writes into
+    site/, so a test that let it reach the real tree would mutate the repo on
+    the very run that detects drift.
+    """
+
+    @staticmethod
+    def _committed_form_tree(tmp_path):
+        """A tmp site/ carrying the correct committed form, plus its assets.
+
+        Seeding happens from the REAL site/ (that is where theme.css & co live),
+        so this is built before `_SITE_DIR` is repointed at the copy.
+        """
+        import scripts.build_free_content as bfc
+        out = tmp_path / "site"
+        out.mkdir(parents=True, exist_ok=True)
+        bfc._render_committed_form(out)
+        return out
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_fix_repairs_a_stale_externalized_href_and_is_idempotent(
+        self, tmp_path, monkeypatch
+    ):
+        """The #5517 shape end to end: red -> --fix -> green -> no-op.
+
+        Drift is introduced the way #5517 introduced it — a page left pointing
+        at a hashed stylesheet the current render no longer mints.
+        """
+        import scripts.build_free_content as bfc
+        out = self._committed_form_tree(tmp_path)
+        monkeypatch.setattr(bfc, "_SITE_DIR", out)
+
+        page = out / "tools" / "calculators" / "cagr.html"
+        stale = re.sub(
+            r"assets/css/[0-9a-f]+\.css",
+            "assets/css/deadbeef.css",
+            page.read_text(encoding="utf-8"),
+        )
+        page.write_text(stale, encoding="utf-8")
+        assert bfc._check_mode() == 1, "seeded drift must make --check red"
+
+        assert bfc._fix_mode() == 0
+        assert bfc._check_mode() == 0, "--fix must leave --check green"
+        assert "deadbeef" not in page.read_text(encoding="utf-8")
+
+        # Idempotent: a second --fix writes nothing at all.
+        before = {p: p.read_bytes() for p in out.rglob("*") if p.is_file()}
+        assert bfc._fix_mode() == 0
+        after = {p: p.read_bytes() for p in out.rglob("*") if p.is_file()}
+        assert before == after, "--fix is not idempotent"
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_fix_carries_the_wh_banner_over_with_its_stamp(
+        self, tmp_path, monkeypatch
+    ):
+        """The tag must survive --fix WITH the `?v=` stamp it was committed with.
+
+        daily.yml injects the banner BEFORE the sweeps, so the committed tag
+        carries optimize_assets' stamp. `--fix` renders after the sweeps, so
+        re-minting the tag through the injector emits an unstamped `src` — and
+        `_comparable` strips the tag from both sides, so `--check` stays green
+        while all 57 pages quietly lose the stamp. Caught in review 2026-08-14;
+        this pins the carry-over instead of the regeneration.
+        """
+        import scripts.build_free_content as bfc
+        out = self._committed_form_tree(tmp_path)
+        monkeypatch.setattr(bfc, "_SITE_DIR", out)
+
+        page = out / "tools" / "calculators" / "cagr.html"
+        tag = ('<script defer data-whb data-root="../../" '
+               'src="../../wh_banner.js?v=4a53a176"></script>')
+        text = page.read_text(encoding="utf-8")
+        idx = text.lower().rfind("</body>")
+        page.write_text(text[:idx] + tag + "\n" + text[idx:], encoding="utf-8")
+
+        # Force a rewrite of that page so the carry-over path actually runs.
+        assert bfc._fix_mode() == 0
+        healed = page.read_text(encoding="utf-8")
+        assert tag in healed, "wh_banner tag lost its committed stamp"
+        assert healed.count("data-whb") == 1, "banner tag duplicated"
+        assert bfc._check_mode() == 0
+
+    @pytest.mark.skipif(
+        not _required_templates_present() or not _any_content_exists(),
+        reason="Designer templates or content .md files not yet present",
+    )
+    def test_fix_never_writes_hand_authored_pages_and_never_deletes(
+        self, tmp_path, monkeypatch
+    ):
+        """Two carve-outs the repair must respect.
+
+        HAND_AUTHORED pages are source; and a hashed stylesheet the estate
+        stopped referencing may still be referenced by a dashboard page this
+        builder does not own, so `--fix` adds and never prunes.
+        """
+        import scripts.build_free_content as bfc
+        out = self._committed_form_tree(tmp_path)
+        monkeypatch.setattr(bfc, "_SITE_DIR", out)
+
+        sentinels = {}
+        for rel in sorted(bfc.HAND_AUTHORED):
+            p = out / rel
+            p.parent.mkdir(parents=True, exist_ok=True)
+            p.write_text(f"<!-- source, not output: {rel} -->", encoding="utf-8")
+            sentinels[rel] = p.read_bytes()
+        orphan = out / "assets" / "css" / "0badcafe.css"
+        orphan.parent.mkdir(parents=True, exist_ok=True)
+        orphan.write_text("/* retired, but a dashboard page may still link it */",
+                          encoding="utf-8")
+
+        assert bfc._fix_mode() == 0
+        for rel, payload in sentinels.items():
+            assert (out / rel).read_bytes() == payload, \
+                f"--fix overwrote hand-authored source: {rel}"
+        assert orphan.exists(), "--fix deleted a stylesheet it does not own"
+
+    def test_fix_refuses_a_sparse_worktree(self, monkeypatch):
+        """Writing into an omitted site/ would truncate, not update.
+
+        The sparse profile omits site/ by default (2026-08-13 disk incident), and
+        a write into an omitted tree replaces the committed artifact rather than
+        extending it — so this fails LOUD with the opt-in command.
+        """
+        import scripts.build_free_content as bfc
+        import scripts.worktree_sparse as ws
+        monkeypatch.setattr(ws, "missing_dirs", lambda root=ws.ROOT: ["site"])
+        with pytest.raises(RuntimeError, match="site"):
+            bfc._fix_mode()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Uniqueness tests (require content files to exist)
 # ─────────────────────────────────────────────────────────────────────────────
 

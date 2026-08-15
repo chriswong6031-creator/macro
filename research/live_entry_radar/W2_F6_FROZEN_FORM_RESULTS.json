@@ -1,0 +1,223 @@
+{
+ "pass": [
+  {
+   "sym": "NVDA",
+   "ts": "2025-01-17",
+   "known_ts_full": "2025-01-22",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "NVDA",
+   "ts": "2025-12-18",
+   "known_ts_full": "2025-12-22",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "NVDA",
+   "ts": "2026-01-21",
+   "known_ts_full": "2026-01-23",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-01-16",
+   "known_ts_full": "2025-01-21",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-03-11",
+   "known_ts_full": "2025-03-13",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-11-20",
+   "known_ts_full": "2025-11-24",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2026-02-05",
+   "known_ts_full": "2026-02-09",
+   "dot_present_after_truncation_at_ts": false
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2026-03-30",
+   "known_ts_full": "2026-04-01",
+   "dot_present_after_truncation_at_ts": false
+  }
+ ],
+ "fail": [
+  {
+   "sym": "NVDA",
+   "ts": "2025-03-12",
+   "known_ts_full": "2025-03-14",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NVDA",
+   "ts": "2025-09-11",
+   "known_ts_full": "2025-09-15",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NVDA",
+   "ts": "2025-09-29",
+   "known_ts_full": "2025-10-01",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NVDA",
+   "ts": "2025-12-02",
+   "known_ts_full": "2025-12-04",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2025-01-17",
+   "known_ts_full": "2025-01-22",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2025-03-17",
+   "known_ts_full": "2025-03-19",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2025-04-10",
+   "known_ts_full": "2025-04-14",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2025-08-04",
+   "known_ts_full": "2025-08-06",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2025-11-05",
+   "known_ts_full": "2025-11-07",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2025-12-23",
+   "known_ts_full": "2025-12-26",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2026-02-06",
+   "known_ts_full": "2026-02-10",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2026-02-25",
+   "known_ts_full": "2026-02-27",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2026-05-18",
+   "known_ts_full": "2026-05-20",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2026-06-09",
+   "known_ts_full": "2026-06-11",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "NFLX",
+   "ts": "2026-06-26",
+   "known_ts_full": "2026-06-30",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-02-12",
+   "known_ts_full": "2025-02-14",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-04-09",
+   "known_ts_full": "2025-04-11",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-07-11",
+   "known_ts_full": "2025-07-15",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2025-08-11",
+   "known_ts_full": "2025-08-13",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  },
+  {
+   "sym": "TSLA",
+   "ts": "2026-02-24",
+   "known_ts_full": "2026-02-26",
+   "dot_present_after_truncation_at_ts": true,
+   "why": "dot visible with feed truncated at ts (< known_ts) \u2014 PIT LEAK"
+  }
+ ],
+ "edge": [
+  {
+   "sym": "NVDA",
+   "ts": "2026-07-07",
+   "known_ts_full": "2026-07-08",
+   "dot_present_after_truncation_at_ts": false
+  }
+ ],
+ "meta": {
+  "NVDA": {
+   "ipo_bar_anchor": 0,
+   "ipo_week_parity": 0,
+   "feed_end": "2026-07-08",
+   "n_sessions": 6906
+  },
+  "NFLX": {
+   "ipo_bar_anchor": 0,
+   "ipo_week_parity": 0,
+   "feed_end": "2026-07-08",
+   "n_sessions": 6069
+  },
+  "TSLA": {
+   "ipo_bar_anchor": 0,
+   "ipo_week_parity": 0,
+   "feed_end": "2026-07-08",
+   "n_sessions": 4030
+  },
+  "elapsed_s": 2.7
+ }
+}

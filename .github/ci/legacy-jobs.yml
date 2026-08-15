@@ -601,7 +601,8 @@ jobs:
       # acceptance suite under tests/ but named it in no workflow. The bare unrun audit
       # therefore reds current main. It belongs with the Prophet audit guards whose
       # horizon/price-basis contracts it reconciles; the existing dependencies suffice
-      # and the focused suite is 23/23 green.
+      # and the focused suite is 23/23 green. Sole `run:` owner (one step per suite);
+      # do not re-name on engine-render-guards or unrun-market-plumbing.
       - name: prophet US audit guards — post-board trajectory, price ladder, adjusted-basis control
         run: >
           python -m pytest
@@ -666,8 +667,16 @@ jobs:
       # signal-layer contract surface the Radar seam feeds (entry_event.v1 lands beside
       # the §7 contract at Radar PR-2). Cost: 93 tests in ~7s steady-state. Radar earns
       # its own job when the live evaluator lands (PR-4), not before.
-      - name: entry-radar W1 — probe universe funnel + enlistment bus contracts
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py -q
+      #
+      # W2 (PR-2, 2026-08-14) lands in the SAME step, as that comment anticipated:
+      # the entry_event.v1 store, the governed mastermind.indicator/v1 ingest, the G0
+      # grey-dot adapter and its F1-F6 parity tables, plus the W2 boundary/mutation
+      # guards. Still hermetic — the parity substrate is five COMMITTED slice fixtures
+      # under tests/fixtures/entry_radar/, no data/, no site/, no network, pure stdlib
+      # (the suites assert that themselves: no pandas/numpy import may appear in a W2
+      # module). Cost (whole step, all five suites): ~263 tests in ~5-7s steady-state.
+      - name: entry-radar W1+W2 — probe universe, entry_event.v1 store, G0 parity
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
@@ -1524,7 +1533,6 @@ jobs:
           tests/test_prophet_governor.py
           tests/test_prophet_showcase.py
           tests/test_prophet_options_context.py
-          tests/test_prophet_overtime_horizon_reconciliation.py
           tests/test_pick_autopsy_selection.py
           tests/test_trade_memory.py
           tests/test_options_stamp.py tests/test_options_entry_state.py tests/test_sector_pulse_wiring.py
@@ -3277,8 +3285,17 @@ jobs:
       # after the horizon-clock step it is a direct consequence of.
       - name: communique_diff phrase-book + qledger registration contract
         run: python -m pytest tests/test_communique_diff.py -q
-      - name: altdata reboot W2 — per-channel family routing + placebo tests
-        run: python -m pytest tests/test_altdata_reboot_families.py -q
+      # test_altdata_ledger_lane_gate.py rides THIS step rather than a new one: it pins
+      # the same module (engine/altdata_ledger.py) the family suite already owns, and a
+      # single pytest invocation reports every file in one place — extending the list
+      # adds coverage without adding a job to a manifest at the narrow-diff ceiling, and
+      # without adding a later step that could go dark behind an earlier red one. The
+      # sibling altdata suite (tests/test_altdata.py) is grandfathered UNRUN in
+      # config/unrun_test_baseline.json, so the gate contract had to land somewhere CI
+      # actually executes or it would have shipped dark — which is the exact class of
+      # defect it exists to catch.
+      - name: altdata reboot W2 — per-channel family routing + placebo tests + HOUSE-U5 ledger lane gate
+        run: python -m pytest tests/test_altdata_reboot_families.py tests/test_altdata_ledger_lane_gate.py -q
       # Metric-validity invariants (epistemics.qledger_metric_validity). grades.excess
       # is RAW, not direction-signed, so a pooled signed excess_mean over a
       # mixed-direction family measures universe drift rather than skill; a salience
@@ -5609,6 +5626,7 @@ jobs:
       - "engine/grading.py"
       - "engine/i18n.py"
       - "engine/indicators_m2.py"
+      - "engine/ledger_lane.py"
       - "engine/live_quotes.py"
       - "engine/llm_auth.py"
       - "engine/macro_surprise.py"
@@ -8417,8 +8435,10 @@ jobs:
       - "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md"
       - "research/US_BOARD_MEASUREMENT.md"
       - "research/prophet_fusion/PR1B_BASELINE_RACE.md"
+      - "research/prophet_fusion/PR2_C2_REDUNDANCY.md"
       - "research/prophet_fusion/families.yml"
       - "research/prophet_fusion/pr1b_baseline_race/report.json"
+      - "research/prophet_fusion/pr2_c2/report.json"
       - "scripts/__init__.py"
       - "scripts/_active_render.py"
       - "scripts/backtest_ladder_history.py"
@@ -8476,6 +8496,7 @@ jobs:
       - "scripts/measure_us_track_era_recompute.py"
       - "scripts/notify.py"
       - "scripts/prophet_fusion_arena.py"
+      - "scripts/prophet_fusion_c2.py"
       - "scripts/prophet_fusion_labels.py"
       - "scripts/prophet_fusion_race.py"
       - "scripts/publish_earnings_r2.py"
@@ -8528,6 +8549,7 @@ jobs:
       - "tests/test_prophet_card_live_change.py"
       - "tests/test_prophet_card_shared.py"
       - "tests/test_prophet_fusion_arena.py"
+      - "tests/test_prophet_fusion_c2.py"
       - "tests/test_prophet_fusion_families.py"
       - "tests/test_prophet_fusion_labels.py"
       - "tests/test_prophet_fusion_race.py"
@@ -8554,7 +8576,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: install minimal deps
-        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
+        run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn scipy
       # P1 unrun backfill 2026-08-14: tests/test_us_board_grader_honesty.py joins the
       # step that already owns engine/us_board_rank.py (test_us_board_rank.py) and the
       # track ledgers it grades into.  It was named by no `run:` step in any workflow,
@@ -8576,8 +8598,17 @@ jobs:
       # step rather than opening a new one — same store cluster, same registry, and the
       # race suite's own fixtures import the PR-1a harness, so a registry edit that reds
       # one should red them together in ONE check rather than in two that can disagree.
-      - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race (PR-1a/PR-1b)
-        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py -q
+      # PR-2 (WS:PROPHET-CONDITIONAL-FUSION): the C2/redundancy suite joins the same
+      # step for the same reason — it imports the race's signs and the arena's fold/PIT
+      # machinery, so the five suites red together on any registry or harness edit.
+      # scipy is pinned EXPLICITLY in this step's install line (not inherited through
+      # scikit-learn's dependency tree): scripts/prophet_fusion_c2.py imports
+      # scipy.optimize for the bounded elastic-net fit and scipy.stats for the t
+      # reference, and a scikit-learn drop must not silently take those imports with
+      # it (requirements.txt:17 declares scipy a direct dependency and names this
+      # module as a consumer).
+      - name: prophet conditional-fusion arena harness + evidence-family registry + baseline race + C2/redundancy (PR-1a/PR-1b/PR-2)
+        run: python -m pytest tests/test_prophet_fusion_families.py tests/test_prophet_fusion_arena.py tests/test_prophet_fusion_labels.py tests/test_prophet_fusion_race.py tests/test_prophet_fusion_c2.py -q
       # G-D plan-book board read (#5541). Landed as a collecting suite named by
       # no run: step, so audit_unrun_tests.py painted pack-1 red on every PR.
       # It belongs in THIS job with the other prophet/board surfaces: the join
@@ -8869,11 +8900,9 @@ jobs:
       # the sibling PR of this batch: collectors/yahoo.py imports yfinance unguarded,
       # so a suite that merely touches it needs a dep neither it nor its subject names.
       #
-      # P1 unrun backfill 2026-08-14, cont. — the LAST P1 suite, closing the tier:
-      #   * test_prophet_overtime_horizon_reconciliation.py — the Overtime/horizon-clock
-      #     ruling (research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §13), shipped
-      #     unwired by #5540.  Appended to the run step above rather than given a step of
-      #     its own, for the masking reason recorded at the top of this block.
+      # P1 unrun backfill 2026-08-14, cont. — lifecycle stays here (#5682).
+      # Overtime (test_prophet_overtime_horizon_reconciliation.py) is owned by
+      # signal-contract (#5540); do not re-name it on this run line.
       #   * test_prophet_lifecycle_state.py — the SAME ruling's §6/§9 deliverable
       #     (PR-0(c), #5506), shipped unwired the same way one wave later.  Same owner on
       #     the same discriminator: it imports scripts/build_prophet.py and
@@ -8896,18 +8925,6 @@ jobs:
       # test_prophet_plan_clock.py (the plan clock whose compute_management_state this
       # suite calls) — so an upstream regression is the first failure a reader sees
       # rather than this consumer failing for a borrowed reason.
-      # No dependency widened, measured at RUN time by the same two-instrument method:
-      # enumeration (packages_distributions over sys.modules after the run) reports only
-      # pandas/numpy/pyarrow/PyYAML, and a find_spec blocker CONTROL-TESTED on pandas and
-      # on numpy (both must, and both do, error the run at collection) leaves the suite at
-      # 23 passed with jinja2, plotly, requests, bs4, openpyxl, sklearn, scipy, matplotlib,
-      # statsmodels and fastapi ALL blocked.  pyarrow and PyYAML load only transitively —
-      # blocking either still passes — so the true closure is pytest + pandas + numpy, all
-      # three already on the install line above and the line is unchanged, which is what
-      # lets run_ci_pack.py reuse this venv.
-      # Verified 23 passed on a checkout carrying site/: two of these tests read the
-      # committed site/prophet payload and SKIP without it, so a sparse agent worktree
-      # scores them 21 passed / 2 skipped — a green that never ran the assertions.
       # Lifecycle dependency evidence was measured at RUN time, not collection:
       # packages_distributions over sys.modules plus a MetaPathFinder.find_spec blocker.
       # The blocker controls are live — pandas and numpy each error collection — while
@@ -8917,7 +8934,7 @@ jobs:
       # Full checkout verified 66 passed with no skips.  This job declares no scope key,
       # so it is not exclusive and needs no paths import-closure declaration.
       - name: live quotes / tape / GEX / options-flow / theme + tech-lab feeds behind the intraday lanes
-        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py tests/test_prophet_overtime_horizon_reconciliation.py tests/test_prophet_lifecycle_state.py -q
+        run: python -m pytest tests/test_attention_deterministic.py tests/test_build_live_quotes.py tests/test_cboe_chain_coverage.py tests/test_clinicaltrials_themes.py tests/test_daily_engine_setup_retry.py tests/test_event_priors.py tests/test_foresight_ledger_lane_gates.py tests/test_gex_archive_snapshot.py tests/test_grade_cortex_attention.py tests/test_grade_thematic.py tests/test_live_delay_labeling.py tests/test_options_flow_attention_reflex.py tests/test_prophet_bridge.py tests/test_prophet_bridge_order_invariance.py tests/test_prophet_durable_checkpoint.py tests/test_prophet_earnings_split_brain.py tests/test_prophet_stage_shadow.py tests/test_prophet_stage_tilt.py tests/test_prophet_w1_intake_repair.py tests/test_tape_flow.py tests/test_tape_flow_stamp.py tests/test_tech_events_export.py tests/test_techlab_p0_fixes.py tests/test_thematic_state.py tests/test_theme_adoption.py tests/test_theme_clinical.py tests/test_theme_options_witness.py tests/test_theme_trade_flows.py tests/test_thetadata_resolver.py tests/test_validate_gex.py tests/test_chain_session_hole_disclosure.py tests/test_prophet_arena_clock_parity.py tests/test_prophet_plan_clock.py tests/test_prophet_lifecycle_state.py -q
       # Daily engine setup-race recovery (2026-08-09): GitHub delivered engine and
       # factor_panel to one busy self-hosted runner one second apart; the runner
       # cancelled engine before checkout and the tail kept going.  The two suites
@@ -9623,6 +9640,7 @@ jobs:
       - "engine/grading.py"
       - "engine/i18n.py"
       - "engine/indicators_m2.py"
+      - "engine/ledger_lane.py"
       - "engine/live_quotes.py"
       - "engine/llm_auth.py"
       - "engine/macro_surprise.py"

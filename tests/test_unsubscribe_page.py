@@ -716,6 +716,10 @@ PUBLIC_EXACT = frozenset({
     # contain presentation and a bounded API client only. All analytical
     # payloads remain behind the paid /api/market-memory/v1/* routes.
     "/market_memory.html", "/market_memory.css", "/market_memory.js",
+    # BioCatalyst follows the same split. Its shell, stylesheet and fetch client
+    # contain no trial rows; every registry payload remains behind the
+    # site_full-enforced /api/biocatalyst/v1/* routes.
+    "/biocatalyst.html", "/biocatalyst.css", "/biocatalyst.js",
     "/onboard.css", "/onboard.js", "/tier_preview.css", "/tier_preview.js",
     "/landing.css", "/scene-motion.css", "/scene-motion.js",
     "/chat.css",
