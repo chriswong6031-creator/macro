@@ -32,7 +32,7 @@ changed:
     what: Synthetic injection, local Discord webhook delivery, honest SKIP without credentials.
   - path: .github/ci/legacy-jobs.yml
     what: Wired the new suite as its own step on unrun-builders-stores, before the 40-file sweep.
-prs: []
+prs: [5734]
 decisions:
   - DEC:COMMERCIAL-PATH-REUSES-SENTINEL-TRANSPORT
 verified:

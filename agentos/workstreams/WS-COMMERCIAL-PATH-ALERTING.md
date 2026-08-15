@@ -24,10 +24,11 @@ owns_paths:
 waves:
   - id: W1
     title: Detectors + emit points + sentinel reuse + synthetic proof
-    status: in_progress
+    status: awaiting_ci
+    pr: 5734
 next_action: >
-  Merge the isolated GATE-4 PR and confirm /etc/macro-sentinel.env has a
-  human-watched channel if DELIVER was SKIP in the prove receipt.
+  Stay on PR #5734 (armed merge-on-green). After merge, confirm
+  /etc/macro-sentinel.env has a human-watched channel if DELIVER was SKIP.
 decisions:
   - DEC:COMMERCIAL-PATH-REUSES-SENTINEL-TRANSPORT
 do_not_redo:
