@@ -4,56 +4,68 @@ session: cursor/cn-pb3-prereg-ee9b
 model: local
 ended_because: complete
 mission: >
-  Freeze the P-B3 persistence-robust certification preregistration only.
-  Do not run the study. Do not read new outcomes. Do not compute a new
-  result table. Stop once the prereg PR exists, before independent
-  adversarial review and before any later certification session.
+  Apply P-B3 prereg pre-outcome amendments A1–A8 from the independent
+  adversarial review. Do not run the certification. Do not merge. Do
+  not arm merge-on-green. Stop once A1–A8 are in the prereg text and
+  pushed to PR #5729.
 state_before: >
-  P-B2 shipped (PR #5615): NO DISCRIMINATOR at the preregistered bar;
-  DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT recorded; WS next_action
-  named a persistence-robust certification under a fresh prereg as the
-  reopen path for placebo-clean MA200/QB/VZ and indeterminate DD cells.
-  No P-B3 prereg existed.
+  P-B3 prereg frozen (PR #5729, freeze commit 6419ca5ed5744d562b7c22093b52065502f802f3).
+  Independent adversarial review returned FREEZE AMEND
+  (research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md).
+  A-primary / B-corroborative was not reopened. No P-B3 instrument or
+  outcome existed.
 changed:
-  - {path: research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md, what: "new — P-B3 prereg frozen before any instrument or outcome; A primary, B corroborative; 20-cell scope; joint disposition and P-D implication frozen"}
-  - {path: agentos/decisions/DEC-CN-PB3-A-PRIMARY-B-CORROBORATIVE.md, what: "new — records the A-primary / B-corroborative assignment and the rejected alternatives"}
-  - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "P-B3 wave added as in_progress (prereg freeze); next_action points at independent review then a later run"}
-  - {path: research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md, what: "P-B3 row added as prereg-frozen, run not started"}
+  - {path: research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md, what: "A1–A8 written in as numbered pre-outcome amendments (§16); A-primary / B-corroborative unchanged; no runner or outcome"}
+  - {path: research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md, what: "amendments-applied tick list added so a cheap re-review can check each A#"}
+  - {path: agentos/workstreams/WS-CN-LIMIT-ALPHA.md, what: "P-B3 next_action: A1–A8 landed; cheap re-review next; P-D occupancy-as-timing leak closed"}
+  - {path: research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md, what: "P-B3 row notes A1–A8 applied; P-D row splits TIMING vs occupancy covariate vs CARRIER_SERIES"}
+  - {path: agentos/handoffs/CN-LIMIT-ALPHA-2026-08-15.md, what: "this file — amend-session handoff replacing the freeze-only next_actions"}
 verified:
+  - {claim: "no study runner or result JSON added", command: "git diff --name-only origin/main...HEAD", result: "prereg + review + agentos/program-home pointers only; no pb3_*.py"}
+  - {claim: "A-primary / B-corroborative DEC left untouched", command: "git diff --stat HEAD -- agentos/decisions/DEC-CN-PB3-A-PRIMARY-B-CORROBORATIVE.md", result: "empty"}
   - {claim: "P-B2 instruments still byte-untouched", command: "git diff --stat HEAD -- research/cn_prophet_audit/washout_onset_w1.py research/cn_prophet_audit/pb_case_decomposition.py research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md research/cn_prophet_audit/pb2_precursor_discrimination.py", result: "empty on those paths"}
-  - {claim: "W-P0 / P-B / P-B2-prereg sha prefixes match the pins written into the P-B3 prereg §3", command: "python3 -c \"from pathlib import Path; import hashlib; [print(p, hashlib.sha256(Path(p).read_bytes()).hexdigest()[:16]) for p in ['research/cn_prophet_audit/washout_onset_w1.py','research/cn_prophet_audit/pb_case_decomposition.py','research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md']]\"", result: "11ac61de71f0f595 / f42b0566beb60bec / 043a85d69f76ea86"}
-  - {claim: "this PR adds no study runner and no result JSON", command: "git diff --name-only origin/main...HEAD", result: "prereg + agentos/program-home pointers only"}
-  - {claim: "agentos records valid", command: "python3 scripts/agentos.py validate", result: "0 errors on the new records"}
+  - {claim: "agentos records valid", command: "python3 scripts/agentos.py validate", result: "0 errors"}
 unverified:
+  - {claim: "cheap re-review will accept A1–A8 as written", what_would_verify: "an independent pass ticking the review-file A1–A8 table against the amended prereg clauses"}
   - {claim: "the 20 in-scope cells will meet A's transition floors on DD", what_would_verify: "the later P-B3 run's honest-N table; INSUFFICIENT SUPPORT is a pre-registered outcome, not a defect"}
-  - {claim: "independent adversarial review will pass this prereg without a design change", what_would_verify: "the review session's written blockers, if any, incorporated as numbered pre-outcome amendments"}
+  - {claim: "exact live evidence-start timestamps for the four new hist files", what_would_verify: "after the first asia-close collect that writes each hist parquet, record min(first_seen) per store — the files do not exist until that run"}
 unresolved:
-  - "P-B3 is freeze-only. Certification is a later session after independent adversarial review. P-D is not opened."
+  - "P-B3 certification is still not run. Cheap re-review of the amended prereg is the next act. P-D is not opened."
+  - "P-C remains gated on chips-distribution + auction/minutes accrual lanes and the full-A spine authority decision."
 next_actions:
-  - "Independent adversarial review of PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md (this PR). Do not run the study in the review session."
-  - "After review passes, a later session implements the instrument and runs P-B3 against the frozen prereg. Do not auto-roll from review into the run."
-  - "Do not open P-D from the certification session. CERTIFIED STRUCTURE is an eligible P-D input only; NULL is recorded and not re-shopped."
-  - "Orthogonal PIT accrual (broker 金股 first-seen; report_rc; per-name margin/block-trades/buybacks) remains a parallel next_action of the workstream, not of this freeze."
+  - "Cheap independent re-review of the amended prereg, ticking A1–A8 in PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md against the prereg clauses. Do not run the study in the re-review session."
+  - "After re-review accepts, a later session implements the instrument and runs P-B3 against the amended frozen prereg. Do not auto-roll from re-review into the run."
+  - "Do not open P-D from the certification session. TIMING-stamped cells are timing-family inputs; occupancy-stamped cells are named covariates only; CARRIER_SERIES is not incremental to the washout carrier. NULL is recorded and not re-shopped."
+  - "P-B2-ACCRUAL shipped on main (#5730). Record live min(first_seen) after the first asia-close write. Do not score broker/margin/block/buyback/report_rc. Do not add them to Prophet. Do not seed hist from snapshots."
+  - "P-C only when its data gates open. Do not charter it from this wave."
 do_not_redo:
   - "Do not rerun P-B2 or move its gates. P-B2 remains NO DISCRIMINATOR AT THE PREREGISTERED BAR."
   - "Do not reuse S in {250, 500, 1000} feature shifting as a P-B3 certification null (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT)."
   - "Do not restore or cite withdrawn W1-W3 artifacts (DNR:KILL-CN-ADJUSTED-TAPE-LEGAL-LIMIT)."
   - "Do not read P-B winners-only numbers as selection skill."
   - "Do not shop the §2 cell list, §5.2 edge map, or §10 headline table after outcomes."
-  - "Do not add a study runner or a result file to the freeze PR."
+  - "Do not add a study runner or a result file to the freeze/amend PR."
+  - "Do not reopen A-primary / B-corroborative (DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE)."
+  - "Never redo the report_rc overwrite fix (#5614)."
+  - "Never stamp historical broker 金股 months as PIT-known; known_at is UNKNOWN unless vendor month equals the collection calendar month."
+  - "Never turn a vendor event_date or plan_start into known_at."
+  - "Never reconstruct evidence from current snapshots or seed the new hist stores from pre-existing snapshots and call that PIT."
 danger_areas:
   - "Calling an occupancy stamp 'timing' is the misread this prereg exists to prevent. Only §10 TIMING may use that word."
   - "A later session that flips MA200 to onset-under, or DD to exit, because the primary edge is null, has shopped the edge. That result does not exist."
-  - "Session worktrees are sparse: materialize data/ before any later panel run. This freeze session must not write into data/ or site/."
+  - "Session worktrees are sparse: materialize data/ before any later panel run. This amend session must not write into data/ or site/."
   - "P-B2's permutation remains diagnostic-only and anticonservative; do not import it as a P-B3 gate."
-prs: [5729]
-decisions: [DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE]
+  - "G6B is cross-name path assignment, not F minus p_i. Residual-fill that only preserves TRUE lengths is forbidden."
+  - "asia-close must actually run the four collectors for hist files to appear. A token-dark tushare night leaves broker_hist and margin_hist uncreated; that is an empty start, not a backfill invitation."
+  - "china_margin_detail (akshare drip) is a different source from tushare margin_hist. Do not join them as one tape."
+prs: [5729, 5730]
+decisions: [DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE, DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE]
 discoveries: [DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT]
 ---
 
-Freeze session only. Freeze commit `6419ca5ed5744d562b7c22093b52065502f802f3`
-contains `research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md`.
-That hash is the freeze proof once review passes. No certification numbers exist yet.
+Amend session only. A1–A8 are in
+`research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md` §16.
+No certification numbers exist. Cheap re-review is the next act.
 
 ## Folded from #5730 (cn-intel PIT hist, already on main)
 

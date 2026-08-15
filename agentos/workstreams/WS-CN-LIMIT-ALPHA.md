@@ -56,11 +56,13 @@ waves:
       (DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE). A = primary within-name
       transition contrast; B = corroborative persistence-preserving null.
       Scope = 20 cells (DD20/DD35/MA200/QB/VZ × main/chinext20 × H10/H5).
-      P-B2 verdict is not rewritten. Independent adversarial review
+      P-B2 verdict is not rewritten.       Independent adversarial review
       posted 2026-08-15: FREEZE AMEND
       (research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md).
-      Do not run the certification until A1–A8 land as numbered
-      pre-outcome amendments. Do not auto-roll into the run or into P-D.
+      A1–A8 are now in the prereg as numbered pre-outcome amendments
+      (§16). Cheap re-review next. Do not run the certification until
+      that re-review accepts the amended text. Do not auto-roll into
+      the run or into P-D.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -81,9 +83,11 @@ waves:
     next_action: >-
       Last, by design. Requires a pre-registered ablation arena over Prophet incumbent
       + surviving families; every family must show INCREMENTAL information over Prophet
-      and over the structural carrier AND name propensity. P-B3 CERTIFIED STRUCTURE
-      is an eligible input if and when that wave ships a certification; a P-B3 NULL
-      is not re-shopped. Gauntlet at promotion; forward verification only via the
+      and over the structural carrier AND name propensity. P-B3 TIMING-stamped
+      cells are eligible timing-family inputs; occupancy-stamped cells are
+      named occupancy covariates only; a CARRIER_SERIES cell is not
+      incremental to the washout carrier. A P-B3 NULL is not re-shopped.
+      Gauntlet at promotion; forward verification only via the
       exact-plane ledger chain.
 landmines:
   - >-
@@ -138,22 +142,25 @@ do_not_redo:
     Do not reuse P-B2's long-horizon feature-shift placebo as a certification null
     (DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT). Do not add a P-B3 runner or
     result table to the freeze PR. Do not auto-roll from the freeze into the run.
-decisions: ["DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE"]
+decisions: ["DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE", "DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE"]
 discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT"]
 artifacts:
   - research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
   - research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md
   - research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md
 next_action: >-
-  P-B3 prereg review is FREEZE AMEND (PR #5729 review +
-  research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md).
-  Next: numbered pre-outcome amendments A1–A8, then a cheap re-review.
-  Do not run the certification until those land. After the amended
-  freeze is accepted, a later session runs P-B3. Parallel and unchanged: (1)
-  prospective/PIT evidence-accrual hardening for orthogonal China
-  Intelligence families; (2) P-C when its data gates open; (3)
-  full-A exact-plane re-measurement; (4) P-D last, and only as an
-  ablation arena that may take P-B3 CERTIFIED STRUCTURE as input.
+  P-B3 A1–A8 are in the prereg (PR #5729). Next: cheap re-review of
+  the amended text
+  (research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md
+  tick list). Do not run the certification until that re-review
+  accepts. After acceptance, a later session runs P-B3. Parallel:
+  (1) P-B2-ACCRUAL shipped on main (#5730) — record live
+  min(first_seen) after the first asia-close write; do not seed hist
+  from snapshots; (2) P-C when its data gates
+  open; (3) full-A exact-plane re-measurement; (4) P-D last, and only
+  as an ablation arena that may take P-B3 TIMING-stamped cells as
+  timing-family input and occupancy-stamped cells as named covariates
+  (CARRIER_SERIES is not incremental to the washout carrier).
   No production scoring change from P-B2 or from this freeze.
 ---
 

@@ -1,11 +1,13 @@
 # P-B3 — persistence-robust certification: PREREGISTRATION (2026-08-15)
 
-Status: **FROZEN BEFORE OUTCOME ACCESS.** This document is committed to git BEFORE any
-P-B3 instrument exists and BEFORE any P-B3 outcome is read. The commit hash of this
-file is the freeze proof once independent adversarial review passes. Any deviation
-discovered during a later build is a NUMBERED AMENDMENT in that later receipt (the
-P-B / P-B2 practice: what changed, why, what controls it) — never a silent re-choice
-of estimand, null, cell, floor, gate, sign, or primary/corroborative assignment.
+Status: **FROZEN BEFORE OUTCOME ACCESS.** Pre-outcome amendments **A1–A8**
+(independent adversarial review 2026-08-15, FREEZE AMEND) are in this text.
+No P-B3 instrument exists and no P-B3 outcome has been read. The freeze
+commit of the un-amended text is `6419ca5ed5744d562b7c22093b52065502f802f3`.
+Any further deviation discovered during a later build is a NUMBERED
+AMENDMENT in that later receipt (the P-B / P-B2 practice: what changed,
+why, what controls it) — never a silent re-choice of estimand, null, cell,
+floor, gate, sign, or primary/corroborative assignment.
 
 This session writes the preregistration only. **No study runner, no result JSON, no
 outcome table, no new computation on the panel.** An independent adversarial review
@@ -55,12 +57,16 @@ new outcome read):
   (P-B2 receipt §8) is a **persistent state, not a turn-on**. Whether that
   structure is state-timing information or persistent multi-year alignment is
   uncertified.
-- **MA200 / QB / VZ structure.** Placebo-clean at the cell level (non-DD
-  rejection rate 1/144 = 0.69%, inside the 2.5% bar) with holdout-consistent
-  signed excess, but family-downgraded because they sat in (board, horizon)
-  families the DD cells failed. The shift-placebo cannot be reused to certify
-  them as timing, and P-B2 forbids reading a SUGGESTIVE inside a failed family
-  as a weaker discriminator.
+- **MA200 / QB / VZ structure.** MA200 / QB / VZ were placebo-clean at the
+  cell level (non-DD rejection 1/144 = 0.69%). On main · H10, main · H5, and
+  chinext20 · H10 they sat inside families the DD cells failed, so P-B2’s
+  §6.3 consequence downgraded every DISCRIMINATOR in those families.
+  **chinext20 · H5 passed calibration** (1/48 = 2.08%); QB and VZ there are
+  SUGGESTIVE that missed G3/G4/G5, not family-downgraded DISCRIMINATORs.
+  They remain in the 20 as the frozen board × horizon companions, not
+  because calibration blocked them. The shift-placebo cannot be reused to
+  certify them as timing, and P-B2 forbids reading a SUGGESTIVE inside a
+  failed family as a weaker discriminator.
 
 P-B2’s construction — within-session cross-sectional matched discrimination under
 a long-horizon feature-shift null — stays closed. This wave does not rerun it.
@@ -276,7 +282,12 @@ That result does not exist.
 
 DD’s expected-positive onset is **not** a prediction that A will certify.
 The lead curve says the opposite shape. A NULL on DD onset with B
-occupancy surviving is a coherent, pre-registered outcome (§10 row 2).
+occupancy surviving is a coherent, pre-registered outcome (§10 row 3:
+`OCCUPANCY_NOT_TRANSITION`). A INSUFFICIENT_SUPPORT / NOT_EVALUABLE on
+DD with B occupancy surviving is §10 row 4
+(`OCCUPANCY_ONLY_A_UNDERPOWERED`). Neither row may use timing language.
+§10 row 2 is reserved for CERTIFIED_TIMING with B inert (short-spell F)
+and must not be cited as the DD occupancy fallback.
 
 ### §5.3 Treatment, label, control
 
@@ -294,10 +305,13 @@ occupancy surviving is a coherent, pre-registered outcome (§10 row 2).
   populations; FIT-era and HOLDOUT-era bars are never paired to each other.
   Control and treatment share `era_of`.
 - **Session-regime:** control session is matched to treatment session on
-  `era_of` and on a session-level washout bin (cross-sectional U1 fraction
-  that day, terciles computed on FIT sessions only, applied forward). This
-  is the regime control. A diagnostic that **drops** session-regime matching
-  is printed and never gates (§8 M4).
+  `era_of` and on a session-level washout bin. The bin is the
+  cross-sectional U1 fraction that session: **one U1-fraction per FIT
+  session** (one row per session, not per name-bar). Tercile cuts are
+  computed on FIT sessions only and applied forward (PIT). HOLDOUT /
+  AUDIT values **clip** to the FIT min/max cut. Ties at a cut go to the
+  **lower** tercile. This is the regime control. A diagnostic that
+  **drops** session-regime matching is printed and never gates (§8 M4).
 - **Volatility:** same W-P0 `rv_rank` decile, except QB (inherited carve-out).
 - **Carrier:** M1-class footprints also match `dd_band` (DD35 drops
   `dd_band` / `dur_band` — inherited carve-out).
@@ -311,10 +325,11 @@ occupancy surviving is a coherent, pre-registered outcome (§10 row 2).
 
 ### §5.4 A estimator
 
-ATT-weighted standardized difference of P(`fb_H`) on treatment vs matched
-controls, aggregated over the matching strata of §5.3, weighted by the
-treatment count. Honest-N on every cell: distinct-name transition events
-first, then distinct names, then distinct sessions, then rows last.
+ATT-weighted matched difference in P(`fb_H`), in percentage points, the
+P-B2 §6 excess; not a Cohen d. Aggregated over the matching strata of
+§5.3, weighted by the treatment count. Honest-N on every cell:
+distinct-name transition events first, then distinct names, then
+distinct sessions, then rows last.
 
 Primary SE: two-way clustered (session-block of 21 + name), CGM form as
 P-B2 §6.1, z = excess / se_2way, normal approximation stamped as such.
@@ -330,15 +345,16 @@ only) is printed and never gates.
 For each name and each in-scope footprint F, segment the name’s measurable
 eligible axis into contiguous **spells** (runs of F=TRUE and F=FALSE).
 
-One permutation draw, **independently inside FIT and inside HOLDOUT**
-(within-split, so holdout structure is not shuffled into FIT):
-
-- keeps the **multiset of F=TRUE spell lengths** (duration distribution
-  exact at the name × split grain)
-- keeps the **total F=TRUE bar count** (name-level prevalence exact)
-- fills residual bars with F=FALSE
-- refuses to place a TRUE spell across a board-key change
-- refuses to place F on a bar that fails F’s measurability mask
+One draw, independently inside FIT and inside HOLDOUT, **shuffles the
+existing sequence of contiguous TRUE and FALSE spells** on that
+name × split (or an equivalent placement that (i) keeps the multiset
+of TRUE spell lengths, (ii) keeps the multiset of FALSE spell
+lengths, (iii) keeps the TRUE bar count, (iv) places a ≥ 1-bar FALSE
+separator between every pair of TRUE spells so they cannot merge,
+(v) refuses a TRUE spell across a board-key change, (vi) refuses F
+on a bar that fails F’s measurability mask). Residual-fill that
+only preserves TRUE lengths is forbidden — it can clump TRUE spells
+into a longer occupied block and reintroduce a long-horizon shift.
 
 This breaks **when** the spells sit relative to outcomes. It does **not**
 translate the entire path by 250/500/1000 sessions. That shift is the
@@ -350,13 +366,19 @@ A name is **PERM-INERT** for F in a split when any of:
 
 - fewer than **2** F=TRUE spells in that split, or
 - the longest F=TRUE spell covers **> 70%** of the name’s eligible bars
-  in that split.
+  in that split, or
+- fewer than **3** F=TRUE spells in that split, or
+- the two longest TRUE spells together cover **> 70%** of eligible bars, or
+- the number of distinct legal placements of its TRUE-spell multiset
+  under §6.1 (A4) is **< 20**.
 
-Inert names are excluded from B’s contrast and counted. If the retained
-(non-inert) names carry **< 50%** of that cell’s F=TRUE positive episodes,
-B is `NOT_EVALUABLE` on that cell. That refusal is itself evidence the
-association is name-level; it is recorded as such, not as a B-null and
-not as certified occupancy.
+Two multi-year blocks are a shift, not a persistence-preserving null.
+Count these names. Inert names are excluded from B’s contrast and
+counted. If the retained (non-inert) names carry **< 50%** of that
+cell’s F=TRUE positive episodes, B is `NOT_EVALUABLE` on that cell
+(already stated) — that refusal is expected on DD and is not a B-null
+and not certified occupancy. That refusal is itself evidence the
+association is name-level; it is recorded as such.
 
 ### §6.3 B estimator
 
@@ -367,7 +389,7 @@ N_PERM = 2000. Two-sided p uses the (1+count)/(1+N_PERM) correction.
 The **real** (unpermuted) F is the observed statistic.
 
 B asks: given this persistence structure and these name prevalences, is
-the observed state-to-outcome **timing** unusual?
+the observed occupancy-to-outcome **association** unusual?
 
 Compute discipline: all permutation arithmetic on per-stratum
 sufficient-statistic tables, never on rows, chunked over strata. The
@@ -405,11 +427,17 @@ fails the control that applies is not certified (§8, §10).
      must be ≤ 60%, and if bottom+mid terciles each have ≥ 30 events
      they must agree in sign with the headline. Failure → stamp
      `PROPENSITY_CONCENTRATED`, cap at UNINFORMATIVE.
-   - **Within-name demeaning (B):** recompute B after replacing F with
-     F minus the name’s FIT-only prevalence (a residual occupancy). If
-     raw B rejects and demeaned B does not (p > 0.10), the cell is
-     `NAME_PROPENSITY` and the B status is NULL, not certified
-     occupancy. A state relationship that disappears once within-name
+   - **G6B (name-path assignment).** Inside each board × split, reassign
+     each retained name’s **entire** F path (the §6.1 / A4 spell
+     sequence, un-shuffled) to another retained name, uniformly,
+     without replacement, independently of outcomes. Recompute the
+     P-B2 matched excess on the reassigned paths. N_ASSIGN = 2000,
+     same seed stream offset from N_PERM. If raw B rejects at G2B and
+     the assignment-null one-sided p on FIT is `> 0.10`, the cell is
+     `NAME_PROPENSITY` and B status is NULL. This is DSC’s cross-name
+     assignment permutation. It is not `F − p_i`. `F − p_i`
+     thresholded at 0 reconstructs binary F and is forbidden as a
+     gate. A state relationship that disappears once within-name
      propensity / persistence is handled is **not** timing alpha.
 
 ---
@@ -422,10 +450,17 @@ effect an instrument effect.
 
 | Code | Mechanism | Evidence that supports it | Evidence that kills it |
 |---|---|---|---|
-| M1 | Persistent structural state genuinely changes conditional future-board probability | A CERTIFIED_TIMING, or B CERTIFIED_OCCUPANCY after the §7 demeaning control | Dies under propensity demeaning, or lives only when session-regime matching is dropped |
-| M2 | Name propensity / persistent level alignment | Top-tercile concentration, B PERM-INERT majority, demeaned B dies | A survives inside bottom+mid terciles; demeaned B still rejects |
+| M1 | Persistent structural state genuinely changes conditional future-board probability | A CERTIFIED_TIMING, or B CERTIFIED_OCCUPANCY after the §7 G6B name-path assignment control | Dies under G6B (`NAME_PROPENSITY`), or lives only when session-regime matching is dropped |
+| M2 | Name propensity / persistent level alignment | Top-tercile concentration, B PERM-INERT majority, G6B assignment-null p > 0.10 | A survives inside bottom+mid terciles; G6B still rejects (assignment-null p ≤ 0.10) |
 | M3 | Washout-carrier redundancy | A/B die under the inherited carrier match and live only when `dd_band` is dropped (where the carve-out does not already drop it) | Survives the inherited M1/carve-out match |
 | M4 | Market / session regime timing | Lives only in the diagnostic that drops session-regime matching | Dies, or is unchanged, when session-regime matching is applied |
+
+M3 is `NOT_APPLICABLE` on DD20 and DD35 (inherited carve-out: the
+footprint *is* the `dd250` series). Any DD headline that is not
+NULL / INSUFFICIENT / UNINFORMATIVE carries stamp `CARRIER_SERIES`
+in addition to TIMING or OCCUPANCY. P-D may not treat a
+`CARRIER_SERIES` cell as incremental information over the washout
+carrier.
 
 M4-only survival → cell verdict NULL, stamp `REGIME`. Not an instrument
 effect, not a P-D input.
@@ -434,10 +469,11 @@ effect, not a P-D input.
 
 ## §9 Inference, floors, gates
 
-Frozen constants: SEED = **20260815**, N_PERM = 2000, N_BOOT_SESSION = 4000,
-N_BOOT_NAME = 2000, BLOCK_LEN = 21, TZ=UTC. Byte-identical reruns. No
-wall-clock value in receipts. New seed (not P-B2’s 20260814) because this
-is a new study.
+Frozen constants: SEED = **20260815**, N_PERM = 2000, N_ASSIGN = 2000,
+N_BOOT_SESSION = 4000, N_BOOT_NAME = 2000, BLOCK_LEN = 21, TZ=UTC.
+Byte-identical reruns. No wall-clock value in receipts. New seed (not
+P-B2’s 20260814) because this is a new study. N_ASSIGN uses the same
+seed stream offset from N_PERM (G6B).
 
 ### §9.1 A floors (primary)
 
@@ -483,8 +519,9 @@ Opposite-edge diagnostics never enter these gates.
   MA200/QB negative — occupancy sign, not the A-exit sign for MA200).
 - **G5B** HOLDOUT: observed excess on the same side of the HOLDOUT
   permutation median as FIT, and one-sided p ≤ 0.10.
-- **G6B** §7 within-name demeaning: demeaned B still rejects at p ≤ 0.10
-  on FIT. Failure → B status NULL, stamp `NAME_PROPENSITY`.
+- **G6B** §7 name-path assignment: if raw B rejects at G2B and the
+  assignment-null one-sided p on FIT is `> 0.10`, B status is NULL,
+  stamp `NAME_PROPENSITY`. `F − p_i` is forbidden as this gate.
 
 B does not have an era-sign gate (spell counts per era are expected to
 be thin for DD). Era tables are printed and never gate B.
@@ -505,12 +542,20 @@ Every in-scope cell receives one A status, one B status, and exactly one
 headline verdict from this table. The later session does not invent a
 fifth headline.
 
+Apply the **most specific matching row**. A row that names a stamp,
+a footprint class (long-spell vs short-spell), or an M4/battery
+override beats a row that says “any evaluable.” First-match is
+forbidden. In particular, row 1 must read `CERTIFIED_TIMING | B
+CERTIFIED_OCCUPANCY or B not computed` and must not include B NULL;
+B NULL + A CERTIFIED_TIMING on DD20/DD35/MA200 is only row 8
+(`UNINFORMATIVE` / `A_B_CONTRADICT`).
+
 | A status | B status | Headline | Stamp | Timing language allowed? |
 |---|---|---|---|---|
-| CERTIFIED_TIMING | any evaluable | **CERTIFIED STRUCTURE** | `TIMING` | yes |
-| CERTIFIED_TIMING | NOT_EVALUABLE / INSUFFICIENT (B-inert expected for short-spell F, e.g. VZ) | **CERTIFIED STRUCTURE** | `TIMING` | yes |
-| NULL (A evaluable) | CERTIFIED_OCCUPANCY | **CERTIFIED STRUCTURE** | `OCCUPANCY_NOT_TRANSITION` | **no** — occupancy, not timing |
-| INSUFFICIENT_SUPPORT or NOT_EVALUABLE | CERTIFIED_OCCUPANCY | **CERTIFIED STRUCTURE** | `OCCUPANCY_ONLY_A_UNDERPOWERED` | **no** |
+| CERTIFIED_TIMING | B CERTIFIED_OCCUPANCY or B not computed | **CERTIFIED TIMING** | `TIMING` | yes |
+| CERTIFIED_TIMING | NOT_EVALUABLE / INSUFFICIENT (B-inert expected for short-spell F, e.g. VZ) | **CERTIFIED TIMING** | `TIMING` | yes |
+| NULL (A evaluable) | CERTIFIED_OCCUPANCY | **CERTIFIED OCCUPANCY** | `OCCUPANCY_NOT_TRANSITION` | **no** — occupancy, not timing |
+| INSUFFICIENT_SUPPORT or NOT_EVALUABLE | CERTIFIED_OCCUPANCY | **CERTIFIED OCCUPANCY** | `OCCUPANCY_ONLY_A_UNDERPOWERED` | **no** |
 | NULL | NULL | **NULL** | — | no |
 | INSUFFICIENT / NOT_EVALUABLE | NULL | **NULL** | `A_SILENT_B_NULL` | no |
 | INSUFFICIENT / NOT_EVALUABLE | INSUFFICIENT / NOT_EVALUABLE | **INSUFFICIENT SUPPORT** | — | no |
@@ -518,24 +563,34 @@ fifth headline.
 | any | any, but §8 lands on M4 only | **NULL** | `REGIME` | no |
 | battery fail on that cell | — | **UNINFORMATIVE** | `BATTERY` | no |
 
+Any DD headline that is not NULL / INSUFFICIENT / UNINFORMATIVE carries
+stamp `CARRIER_SERIES` in addition to `TIMING` or the occupancy stamp
+(A7). P-D may not treat a `CARRIER_SERIES` cell as incremental
+information over the washout carrier.
+
 **P-B2 is not rewritten.** The P-B3 receipt’s first result sentence is:
 
 > P-B2 remains NO DISCRIMINATOR AT THE PREREGISTERED BAR. The numbers
 > below are P-B3 verdicts on a new estimand and a new null.
 
-P-B3 may produce CERTIFIED STRUCTURE / NULL / UNINFORMATIVE /
-INSUFFICIENT SUPPORT. It may not produce a P-B2 DISCRIMINATOR, may not
-relabel a P-B2 SUGGESTIVE as certified, and may not cite P-B winners-only
-anatomy as selection evidence.
+P-B3 may produce CERTIFIED TIMING / CERTIFIED OCCUPANCY / NULL /
+UNINFORMATIVE / INSUFFICIENT SUPPORT. It may not produce a P-B2
+DISCRIMINATOR, may not relabel a P-B2 SUGGESTIVE as certified, and may
+not cite P-B winners-only anatomy as selection evidence. Do not print
+CERTIFIED STRUCTURE on an occupancy-only cell.
 
 ### §10.1 Exact implication for P-D
 
-- **CERTIFIED STRUCTURE** (either `TIMING` or either occupancy stamp) →
-  eligible **INPUT** to the eventual P-D ablation arena. It is not
-  production authority. P-D must still show incremental information over
-  Prophet, over the washout carrier, and over name propensity, under
-  P-D’s own preregistration. Gauntlet at promotion. No ranker is created
-  here.
+- **TIMING-stamped** cells are eligible P-D **timing-family** inputs.
+  Occupancy-stamped cells are eligible only as named occupancy
+  covariates, and P-D must still beat name propensity and the washout
+  carrier. A later session that quotes occupancy as timing has
+  violated this prereg regardless of headline. Neither stamp is
+  production authority. P-D must still show incremental information
+  over Prophet, over the washout carrier, and over name propensity,
+  under P-D’s own preregistration. A `CARRIER_SERIES` cell is not
+  incremental information over the washout carrier. Gauntlet at
+  promotion. No ranker is created here.
 - **NULL** → record the null of **this** construction on that cell. The
   cell is not a P-D input. **Do not re-shop another placebo in the same
   session.** A later wave needs a genuinely new design or a new
@@ -571,6 +626,7 @@ detect.
    random 5% of first-board events (seeded), else FALSE. A MUST produce
    G2-class |z| ≥ 2.81 in the planted direction on FIT (or the cell
    would have certified). B MUST reject its occupancy null at p ≤ 0.005.
+   G6B must still reject (the plant is timing, not name identity).
    **Probe:** run the plant with labels shuffled (must not certify).
 3. **Duration/prevalence-preserving permutation of the planted feature.**
    Apply §6.1 to the planted feature. A and B must fall back toward
@@ -592,7 +648,8 @@ detect.
    fraction of bars with `under_ma200` exceeds the cross-name FIT
    median, applied as a constant per name. A: no lawful transitions
    (FIT/HOLDOUT boundary flips are excluded). B: PERM-INERT. Neither
-   may certify. **Probe:** assert this constant certifies on B
+   may certify. G6B / B must not certify on this constant.
+   **Probe:** assert this constant certifies on B
    (must fire).
 
 The diagnostic long-horizon shift (S ∈ {250, 500, 1000}) may be run on
@@ -624,6 +681,12 @@ instrument implements these and refuses the receipt on any miss.
 7. **spell_length_preserved** — per name × split, the multiset of
    F=TRUE spell lengths is identical after each B draw. Probe: jitter
    one spell length.
+7a. **false_spell_length_preserved** — per name × split, the
+    multiset of F=FALSE spell lengths is identical after each B
+    draw. Probe: jitter a FALSE length.
+7b. **no_true_spell_merge** — after each B draw, no two TRUE spells
+    abut (a ≥ 1-bar FALSE separator remains between every pair).
+    Probe: force two TRUE spells to abut.
 8. **inert_exclusion** — PERM-INERT names are absent from B’s
    contrast and counted. Probe: force-include an inert name.
 9. **censoring_partition** — eligible = pos + neg + censored; no
@@ -682,9 +745,11 @@ this substrate at these horizons. It does not close the search space
 (market-timing/regime forms remain untested by construction; P-C; exact
 plane; genuinely new footprints).
 
-CERTIFIED STRUCTURE, if any, remains a display-tier fact about the
+CERTIFIED TIMING, if any, remains a display-tier fact about the
 survivor large-cap slice on the tolerant plane. It authorizes a P-D
-**input**, not a scorer.
+**timing-family input**, not a scorer. CERTIFIED OCCUPANCY authorizes
+only a named occupancy covariate. A `CARRIER_SERIES` cell is not
+incremental to the washout carrier.
 
 ---
 
@@ -699,12 +764,34 @@ Outputs of **this** freeze session:
 Outputs this session **must not** produce: a study runner, a result
 JSON, an outcome table, a new computation on `data/china_stocks_raw`.
 
-Later-session outputs (after independent adversarial review): a
+Later-session outputs (after cheap re-review of A1–A8): a
 deterministic instrument that imports W-P0 + P-B by the §3 pins, a
 receipt markdown, a receipt JSON, numbered amendments if any. SEED =
-20260815; TZ=UTC; byte-identical reruns.
+20260815; TZ=UTC; byte-identical reruns. This amend session adds no
+runner, result JSON, or outcome table.
+
+---
+
+## §16 Pre-outcome amendments A1–A8 (2026-08-15)
+
+Numbered so a later receipt can cite them. Applied to this file before
+any P-B3 outcome or instrument. Source:
+`research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md`.
+A-primary / B-corroborative is not reopened
+(`DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE`).
+
+| # | Close | Where in this file |
+|---|---|---|
+| A1 | §5.2 → §10 row 3 (`OCCUPANCY_NOT_TRANSITION`) / row 4 (`OCCUPANCY_ONLY_A_UNDERPOWERED`); no timing language; row 2 is not the DD occupancy fallback | §5.2 |
+| A2 | Most-specific §10 row wins; first-match forbidden; row 1 is `CERTIFIED_TIMING \| B CERTIFIED_OCCUPANCY or B not computed` and does not include B NULL; B NULL + A CERTIFIED_TIMING on DD20/DD35/MA200 is only row 8 | §10 |
+| A3 | Occupancy headline is **CERTIFIED OCCUPANCY**, not STRUCTURE; §6.3 asks association, not timing; P-D treats occupancy as a named covariate, not a timing-family input | §6.3, §10 table, §10.1, §14 |
+| A4 | B is a no-merge spell-sequence shuffle; residual-fill of TRUE lengths only is forbidden; §12 adds `false_spell_length_preserved` and `no_true_spell_merge` | §6.1, §12.7a, §12.7b |
+| A5 | Coarse-df names (≤2 long spells, two-longest >70%, or <20 legal placements) are PERM-INERT; the <50% retained-episode refusal is expected on DD and is not certified occupancy | §6.2 |
+| A6 | G6B is DSC’s cross-name path assignment (N_ASSIGN = 2000), not `F − p_i`; §11.2 plant must still reject under G6B; §11.6 constant must not certify | §7.8, §9.3, §11.2, §11.6 |
+| A7 | M3 is `NOT_APPLICABLE` on DD20/DD35; any non-null DD headline carries `CARRIER_SERIES`; P-D may not treat that as incremental to the washout carrier | §8, §10, §10.1 |
+| A8 | Honesty gloss: chinext20 · H5 passed calibration; QB/VZ there are SUGGESTIVE, not family-downgraded DISCRIMINATORs. ATT estimator is P-B2 §6 pp excess, not Cohen d. Session-regime terciles: one U1-fraction per FIT session; HOLDOUT/AUDIT clip; ties to the lower tercile | §0, §5.3, §5.4 |
 
 *Frozen 2026-08-15 by the P-B3 prereg-only session (WS:CN-LIMIT-ALPHA),
 before any P-B3 outcome run and before any P-B3 instrument exists.
-Independent adversarial review of this text is the next act. The
-certification run is a later session.*
+A1–A8 applied 2026-08-15 on the same freeze PR. Cheap re-review of the
+amended text is the next act. The certification run is a later session.*

@@ -1,9 +1,31 @@
 # P-B3 prereg — independent adversarial review (2026-08-15)
 
-Status: **FREEZE AMEND.** Do not run the certification. Do not merge. Do not
-arm `merge-on-green`. Numbered pre-outcome amendments below must land in the
-prereg (and DEC, where the assignment text repeats a shopping path) before any
-instrument exists.
+Status: **FREEZE AMEND** on the freeze-commit text. **A1–A8 APPLIED** in the
+same PR (2026-08-15 amend session) — see the tick list below. Do not run the
+certification. Do not merge. Do not arm `merge-on-green`. Cheap re-review
+ticks each A# against the amended prereg; the run is a later session.
+
+---
+
+## Amendments applied (2026-08-15) — cheap re-review tick list
+
+Applied to `research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md`
+as numbered pre-outcome amendments (§16). No runner, no result JSON, no
+outcome table. A-primary / B-corroborative was not reopened. DEC assignment
+text did not repeat a shopping path and was left untouched.
+
+| # | Required close | In prereg? | Where to tick |
+|---|---|---|---|
+| A1 | §5.2 points at §10 row 3 / row 4 only; no timing language; row 2 is not the DD occupancy fallback | YES | §5.2 |
+| A2 | Most-specific row wins; first-match forbidden; row 1 is `CERTIFIED_TIMING \| B CERTIFIED_OCCUPANCY or B not computed` and excludes B NULL; B NULL + A CERTIFIED_TIMING on DD20/DD35/MA200 is only row 8 | YES | §10 matching rule + table row 1 |
+| A3 | Occupancy headline is **CERTIFIED OCCUPANCY**, not STRUCTURE; “timing” deleted from §6.3; P-D treats occupancy as a named covariate, not a timing family | YES | §6.3, §10 table rows 3–4, §10.1, §14 |
+| A4 | No-merge spell-sequence shuffle; residual-fill of TRUE lengths only forbidden; `false_spell_length_preserved` + `no_true_spell_merge` | YES | §6.1, §12.7a, §12.7b |
+| A5 | Coarse-df names (≤2 long spells / two-longest >70% / <20 legal placements) are PERM-INERT; <50% retained-episode refusal expected on DD, not certified occupancy | YES | §6.2 |
+| A6 | G6B is DSC’s cross-name path assignment, not `F − p_i`; plant still rejects; name-constant must not certify | YES | §7.8, §9.3 G6B, §11.2, §11.6 |
+| A7 | M3 `NOT_APPLICABLE` on DD20/DD35; non-null DD headline carries `CARRIER_SERIES`; not incremental to the washout carrier | YES | §8, §10, §10.1 |
+| A8 | chinext20 · H5 honesty gloss; ATT = P-B2 §6 pp excess not Cohen d; session-regime terciles specified (FIT-session cuts, clip, ties lower) | YES | §0, §5.3, §5.4 |
+
+Re-review reads the amended clauses, not this tick list, as evidence.
 
 Reviewer did not write the freeze. No P-B3 outcome was computed. Frozen P-B2
 receipt / JSON were opened only to audit the “unresolved cells” claim. Pins
