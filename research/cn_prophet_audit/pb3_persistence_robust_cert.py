@@ -180,6 +180,15 @@ AMENDMENTS = [
      "risk_controlled_by": "verify.headline_most_specific and the A9 rows in "
                            "tests/test_pb3_persistence_robust_cert.py. No floor, "
                            "gate, sign, or cell list moved."},
+    {"id": "A10",
+     "what": "B's N_PERM distribution is computed on FIT and HOLDOUT only. AUDIT "
+             "prints observed excess and the inert/retention census; it does not "
+             "draw the permutation. AUDIT never gates (prereg §3).",
+     "why": "P-B2 A2 precedent: a diagnostic that no gate reads is not worth "
+            "the whole-matrix cost. Three splits × 2000 draws would spend a "
+            "third of B compute on a split no headline reads.",
+     "risk_controlled_by": "G2B/G5B read FIT then HOLDOUT only. AUDIT remains "
+                           "in the receipt as descriptive occupancy."},
 ]
 
 
@@ -909,13 +918,14 @@ def occupancy_excess(pl, pb2, fkey, fvals, board, split_group, H):
     }
 
 
-def occupancy_excess_on_rows(pb2, pl, rows, F, y, factors):
+def occupancy_excess_on_rows(pb2, pl, rows, F, y, factors, scodes=None, ns=None):
     if rows.size == 0:
         return None
-    packed = pl.packed(factors)[rows]
-    scodes, _ = pd.factorize(packed, sort=True)
-    ns = int(scodes.max()) + 1 if scodes.size else 0
-    if ns == 0:
+    if scodes is None:
+        packed = pl.packed(factors)[rows]
+        scodes, _ = pd.factorize(packed, sort=True)
+        ns = int(scodes.max()) + 1 if scodes.size else 0
+    if not ns:
         return None
     n1, k1, n0, k0 = pb2.suff_stats(scodes, ns, F, y)
     pe = pb2.point_estimate(n1, k1, n0, k0)
@@ -1300,10 +1310,26 @@ def run_design_b_cell(pl, pb2, fkey, board, H, recs_by_split, progress=None):
             if progress:
                 progress()
             continue
-        b_had_df = True
+        present = set(int(t) for t in pl.tcode[rows_ret])
+        retained = [r for r in retained if r["ticker_i"] in present]
         y = pl.fb[H][rows_ret]
         F0 = pl.F[fkey][rows_ret]
         obs = occupancy_excess_on_rows(pb2, pl, rows_ret, F0, y, factors)
+        if sg == "AUDIT":
+            per_split[sg] = {
+                "status": "DESCRIPTIVE",
+                "census": census,
+                "observed_excess_pp": _r(obs, 4),
+                "n_perm": 0,
+                "note": "AUDIT never gates; permutation not computed (A10)",
+            }
+            if progress:
+                progress()
+            continue
+        b_had_df = True
+        packed = pl.packed(factors)[rows_ret]
+        scodes, _ = pd.factorize(packed, sort=True)
+        ns = int(scodes.max()) + 1 if scodes.size else 0
         # permutation distribution
         parent = _seed_seq("B_G6B", fkey, board, H, sg)
         s_perm, s_assign = parent.spawn(2)
@@ -1314,7 +1340,7 @@ def run_design_b_cell(pl, pb2, fkey, board, H, recs_by_split, progress=None):
             Fp = apply_name_shuffles(pl, fkey, retained, rng, skip_inert=False,
                                     work=work)
             val = occupancy_excess_on_rows(
-                pb2, pl, rows_ret, Fp[rows_ret], y, factors)
+                pb2, pl, rows_ret, Fp[rows_ret], y, factors, scodes=scodes, ns=ns)
             draws[d] = 0.0 if val is None or (isinstance(val, float) and np.isnan(val)) else val
             if (d + 1) % 500 == 0:
                 print(f"          B perm {d + 1}/{N_PERM} {FSHORT[fkey]} "
@@ -1495,7 +1521,10 @@ def run_adversarial_battery(pl, pb2, *, board="main", H=10, n_perm=80, n_assign=
     _probe = pb2._probe if hasattr(pb2, "_probe") else _fallback_probe
 
     def add(name, why, fn, base_arg, probes):
-        ok, det = fn(base_arg)
+        try:
+            ok, det = fn(base_arg)
+        except Exception as exc:  # noqa: BLE001
+            ok, det = False, {"raised": type(exc).__name__, "msg": str(exc)[:200]}
         recs = [_probe(fn, m, lab) for m, lab in probes]
         checks[name] = {
             "why": why, "passed": bool(ok), "detail": det,
@@ -1824,8 +1853,9 @@ def _planted_b_p(pl, pb2, F, y, H, bi, n_perm, n_assign):
             adraws[d] = 0.0
             continue
         Fb = np.array([bool(v) for v in Fn[have]], bool)
+        yr = y[rows]
         adraws[d] = occupancy_excess_on_rows(
-            pb2, pl, rows[have], Fb, y[have], factors) or 0.0
+            pb2, pl, rows[have], Fb, yr[have], factors) or 0.0
     p_g6b = one_sided_perm_p(obs, adraws, +1)
     return p_b, p_g6b
 
@@ -1841,7 +1871,10 @@ def verify_battery(pl, w1, pb, pb2, w1_sha, pb_sha, pb2_prereg_sha, prereg_sha,
     _probe = pb._probe
 
     def add(name, why, fn, base_arg, probes):
-        ok, det = fn(base_arg)
+        try:
+            ok, det = fn(base_arg)
+        except Exception as exc:  # noqa: BLE001
+            ok, det = False, {"raised": type(exc).__name__, "msg": str(exc)[:200]}
         recs = [_probe(fn, m, lab) for m, lab in probes]
         checks[name] = {
             "why": why, "passed": bool(ok), "detail": det,
