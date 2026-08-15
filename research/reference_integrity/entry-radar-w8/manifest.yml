@@ -1,0 +1,37 @@
+schema: mastermind.rig_manifest.v1
+reference_id: entry-radar-w8
+scope: full
+status: in_review
+
+surface:
+  route: entry_radar.html
+  registry_row: entry_radar
+  archetype: discovery_board
+
+author:
+  identity: "cursor-cloud-w8-entry-radar-9f9d"
+  role: designer
+
+reference_files:
+  - path: mockups/refs/entry_radar/index.html
+    frozen_sha: PENDING_THIS_PR
+  - path: mockups/refs/entry_radar/radar.css
+    frozen_sha: PENDING_THIS_PR
+  - path: mockups/refs/entry_radar/radar.js
+    frozen_sha: PENDING_THIS_PR
+  - path: mockups/refs/entry_radar/radar-data.js
+    frozen_sha: PENDING_THIS_PR
+  - path: mockups/refs/entry_radar/DESIGN_NOTES.md
+    frozen_sha: PENDING_THIS_PR
+
+files:
+  baseline: baseline.yml
+  proposal: proposal.yml
+  reviews:
+    product_regression: reviews/product_regression.yml
+    visual_taste: reviews/visual_taste.yml
+  verdict: verdict.yml
+
+# Founding reference for a surface that does not exist in production.
+# No predecessor on route entry_radar.html — continuity.yml is therefore omitted.
+# Status is in_review: this cycle does not self-approve (RIG §3 / §7).

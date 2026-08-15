@@ -1,0 +1,139 @@
+schema: mastermind.rig_proposal.v1
+reference_id: entry-radar-w8
+
+proposed_artifact:
+  frozen_sha: PENDING_THIS_PR
+  paths:
+    - mockups/refs/entry_radar/index.html
+    - mockups/refs/entry_radar/radar.css
+    - mockups/refs/entry_radar/radar.js
+    - mockups/refs/entry_radar/radar-data.js
+    - mockups/refs/entry_radar/DESIGN_NOTES.md
+  screenshots:
+    - mockups/refs/entry_radar/crops/01-desktop-dark-en.png
+    - mockups/refs/entry_radar/crops/02-desktop-light-en.png
+    - mockups/refs/entry_radar/crops/03-desktop-dark-zh.png
+    - mockups/refs/entry_radar/crops/04-desktop-light-zh.png
+    - mockups/refs/entry_radar/crops/05-mobile390-dark-en.png
+    - mockups/refs/entry_radar/crops/06-mobile390-dark-zh.png
+    - mockups/refs/entry_radar/crops/07-mobile390-light-en.png
+    - mockups/refs/entry_radar/crops/08-mobile390-light-zh.png
+    - mockups/refs/entry_radar/crops/10-quiet-dark-en.png
+    - mockups/refs/entry_radar/crops/11-quiet-light-zh.png
+    - mockups/refs/entry_radar/crops/20-stale-dark-en.png
+    - mockups/refs/entry_radar/crops/21-degraded-dark-en.png
+    - mockups/refs/entry_radar/crops/30-multi-dark-en.png
+    - mockups/refs/entry_radar/crops/31-multi-light-zh.png
+    - mockups/refs/entry_radar/crops/40-invalidated-dark-en.png
+    - mockups/refs/entry_radar/crops/41-history-dark-en.png
+    - mockups/refs/entry_radar/crops/50-unavailable-dark-en.png
+    - mockups/refs/entry_radar/crops/51-partial-dark-en.png
+    - mockups/refs/entry_radar/crops/52-raw-dark-en.png
+    - mockups/refs/entry_radar/crops/60-c1-provisional-dark-en.png
+    - mockups/refs/entry_radar/crops/61-c2-variant-dark-en.png
+    - mockups/refs/entry_radar/crops/70-anon-dark-en.png
+    - mockups/refs/entry_radar/crops/80-ipo-dark-en.png
+    - mockups/refs/entry_radar/crops/81-lobe-dark-en.png
+
+dispositions:
+  - id: surface.absent
+    disposition: BLOCKED_DATA
+    dependency: "W9 production UI + W4 live evaluator — no production entry_radar.html may ship from this PR"
+    escalation: "WS:LIVE-ENTRY-RADAR wave W9; W9_IMPLEMENTATION_HANDOFF.md"
+    interim: "This reference HTML is served only from mockups/refs/entry_radar/. A page-level REFERENCE banner is mandatory. templates/entry_radar.html.j2 and site/entry_radar.html are not created."
+  - id: sister.prophet_card_language
+    disposition: RETAIN
+    target: "mockups/refs/entry_radar/radar.css tokens + .pvcard/.pv-chip/.pv-quote/.bh/.mx-ladder geometry copied from pinned Prophet Board tree d540f493a097"
+  - id: contract.expert_identities
+    disposition: IMPROVE
+    target: ".er-xchip[data-expert] + one card per (ticker, expert)"
+    rationale: "No production Radar surface existed; the reference makes G0/C1/C2/C3/C5 first-class and refuses a generic entry signal."
+  - id: contract.c4_not_a_fire
+    disposition: IMPROVE
+    target: ".er-lane--c4 and .er-c4[data-role=stratification_only]"
+    rationale: "C4 is visible as context and cannot be a lane filter or a card expert."
+  - id: contract.no_fabricated_edge
+    disposition: IMPROVE
+    target: "[data-priority=accruing] and [data-opportunity=not_yet_measured]"
+    rationale: "Priority/Opportunity slots exist as honest placeholders; no numbers."
+  - id: contract.freshness_honesty
+    disposition: IMPROVE
+    target: "freshness footer + stale/unavailable/raw/degraded card treatments"
+    rationale: "Provisional, confirmed, stale, unavailable, and raw-basis are distinct and not tooltip-only."
+  - id: contract.false_start_memory
+    disposition: IMPROVE
+    target: ".er-fs[data-false-starts] + drawer history"
+    rationale: "False starts are counted on the card and listed in the drawer."
+  - id: contract.multi_expert
+    disposition: IMPROVE
+    target: "state=multi renders three cards for FIX.MANY"
+    rationale: "Same ticker, three expert lanes, three episode ids."
+
+additions:
+  - id: add.radar_lifecycle_ladder
+    note: "Probing / Pre-candidate / Candidate | Invalidated / Expired — not Prophet's seven plan cells"
+  - id: add.expert_lanes
+    note: "Best · Grey Dot · 1D Washout · 1D Turn · Deep Washout · Intelligence"
+  - id: add.why_drawer
+    note: "Ordered mechanical disclosure"
+
+user_tasks:
+  - id: task.tell_radar_from_prophet
+    task: Instantly see that this is "where is an entry forming" not "what do we want to own"
+    critical: true
+    production: "no Radar page"
+    proposal: "Title + purpose + sister line; no Own-It; no seven-cell plan ladder"
+    verdict: BETTER
+    notes: "Founding surface — production could not serve the task"
+  - id: task.read_expert
+    task: See which expert is speaking and not flatten them
+    critical: true
+    production: "no Radar page"
+    proposal: "Expert chip + detector_id + C2 variant + one card per expert"
+    verdict: BETTER
+    notes: ""
+  - id: task.read_freshness
+    task: Know if the reading is live, provisional, confirmed, stale, or unavailable
+    critical: true
+    production: "no Radar page"
+    proposal: "Footer freshness + demoted stale/unavailable treatments + banners"
+    verdict: BETTER
+    notes: ""
+  - id: task.no_fake_edge
+    task: Not be sold a Priority or win probability that has not been measured
+    critical: true
+    production: "no Radar page"
+    proposal: "ACCRUING / NOT YET MEASURED slots"
+    verdict: BETTER
+    notes: ""
+
+authority_delta:
+  - id: auth.no_production_claim
+    production_claim: "none — surface absent"
+    proposal_claim: "reference / synthetic fixtures only; banner on every state"
+    direction: equal
+    warranted: true
+    evidence: ".er-refbanner + RADAR_META.synthetic + every row synthetic:true"
+  - id: auth.no_priority_number
+    production_claim: "none"
+    proposal_claim: "Priority is ACCRUING, never a number"
+    direction: weaker
+    warranted: true
+    evidence: "[data-priority=accruing]; W6 has not run"
+  - id: auth.no_opportunity
+    production_claim: "none"
+    proposal_claim: "Opportunity is NOT YET MEASURED"
+    direction: weaker
+    warranted: true
+    evidence: "[data-opportunity=not_yet_measured]; W7 has not run"
+
+information_economics:
+  words_per_card:
+    production: "n/a — no production card"
+    proposal: "glance ~25-40 words; why line 1-2 sentences; drawer is click-reveal"
+  findings:
+    - "Glance keeps ticker, expert, lifecycle, freshness, one why line"
+    - "Detector internals and clocks live in the drawer"
+    - "Priority/Opportunity are one word each, not a fake dashboard of scores"
+  preserved:
+    - "Prophet card density and chip grammar — Radar did not become a report"
