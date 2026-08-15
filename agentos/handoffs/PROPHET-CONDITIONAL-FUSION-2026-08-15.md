@@ -3,7 +3,7 @@ workstream: WS:PROPHET-CONDITIONAL-FUSION
 session: prophet-fusion-w2-pr2 (worktree prophet-fusion-w2-pr2-c618eb, branch claude/prophet-fusion-pr2)
 model: fable
 ended_because: complete
-prs: ["#5593", "#5602", "#5604", "#5667", "#PENDING_PR2"]
+prs: ["#5593", "#5602", "#5604", "#5667", "#5700"]
 mission: >
   PR-2 / wave w2: the C2 regularized evidence-family stack + the §5.3 redundancy/
   estimability/CMI plane + the cross-fitted incremental-vs-Prophet harness, under the
