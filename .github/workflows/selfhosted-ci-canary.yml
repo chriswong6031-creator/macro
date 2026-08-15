@@ -187,6 +187,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
+          set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
             --pack-index "${{ needs.plan.outputs.primary_pack }}" \
@@ -196,6 +197,7 @@ jobs:
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
+          set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
           kill "$monitor_pid" 2>/dev/null || true
@@ -313,7 +315,8 @@ jobs:
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
-          test "$HOME" = "$RUNNER_WORKSPACE/_home"
+          expected_home="$(dirname "$RUNNER_TEMP")/_home"
+          test "$HOME" = "$expected_home"
           touch .ci-canary-contamination-sentinel
           touch "$RUNNER_WORKSPACE/.ci-canary-outside-sentinel"
           touch "$HOME/.ci-canary-home-sentinel"
@@ -329,6 +332,7 @@ jobs:
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
+          set +e
           "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
             --workflow .github/ci/legacy-jobs.yml \
             --pack-index "${{ matrix.pack }}" \
@@ -338,6 +342,7 @@ jobs:
             --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
             --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
           pack_rc=${PIPESTATUS[0]}
+          set -e
           test_end=$(date +%s.%N)
           awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
           kill "$monitor_pid" 2>/dev/null || true
@@ -375,6 +380,9 @@ jobs:
           path: ${{ runner.temp }}/selfhosted-${{ matrix.pack }}.json
           if-no-files-found: error
           retention-days: 14
+      - name: surface a red pack after preserving its three-slot receipt
+        if: inputs.slots == '3'
+        run: test "$(cat "$RUNNER_TEMP/pack.rc")" -eq 0
 
   cache-negative-control:
     name: diagnostic-cache-disabled-negative-control

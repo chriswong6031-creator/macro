@@ -89,16 +89,14 @@ FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
 DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
 SEMANTIC_DETAIL_MAX_BYTES = 1_024
 
-# Repo-binding Git variables must never reach a legacy step.  Injecting
-# GIT_DIR/GIT_WORK_TREE into the job env (PR #5750, 2026-08-15) made every
-# child `git` operate on the pack checkout: `git init` in tmp_path exited
-# 128, a sparse-checkout cone hid tests/*.py (pytest usage exit 4), and
-# `git rev-parse HEAD` then failed as infrastructure unknown.  A later
-# pack-9 timeout SIGKILL left packed-refs unreadable, so
-# `for-each-ref refs/replace` exited 128 and masked the timeout.
-# Runner-owned probes keep using `_trusted_git_environment` and heal a
-# smashed ref store before the next job; children must discover git from
-# cwd like the old one-VM-per-job world.
+# Repo-binding Git variables must never reach a legacy step OR a runner
+# probe.  Injecting GIT_DIR/GIT_WORK_TREE into the job env (PR #5750,
+# 2026-08-15) made every child `git` operate on the pack checkout.  The
+# follow-up pack-9 own-red was the same family: the post-step
+# ``for-each-ref`` probe still bound GIT_DIR and exited 128, and a
+# timeout SIGKILL left packed-refs unreadable.  Runner-owned probes use
+# cwd/`git -C` discovery, set GIT_OPTIONAL_LOCKS=0, and heal a smashed
+# ref store so the next job still sees tests/*.py.
 REPO_BINDING_GIT_VARS = (
     "GIT_DIR",
     "GIT_WORK_TREE",
@@ -2330,29 +2328,40 @@ def _workspace_root() -> Path:
     return root
 
 
-def _clean_git_environ() -> dict[str, str]:
-    return {
+def _trusted_git_environment(_root: Path | None = None) -> dict[str, str]:
+    """Clean env for runner-owned git: no repo-binding GIT_* vars.
+
+    Do not set GIT_DIR/GIT_WORK_TREE.  Binding those made the post-step
+    ``for-each-ref refs/replace`` probe exit 128 (unrun-picks-boards,
+    2026-08-15) against a checkout ``git -C`` / cwd discovery could still
+    see.  ``GIT_OPTIONAL_LOCKS=0`` keeps a leftover ``*.lock`` after a
+    SIGKILL'd step from turning a timeout into infrastructure unknown.
+    """
+    clean_env = {
         key: value
         for key, value in os.environ.items()
         if not key.startswith("GIT_")
     }
+    for key in REPO_BINDING_GIT_VARS:
+        clean_env.pop(key, None)
+    clean_env["GIT_OPTIONAL_LOCKS"] = "0"
+    clean_env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    return clean_env
 
 
-def _resolve_git_dir(root: Path, clean_env: Mapping[str, str]) -> str:
-    """Locate this checkout's git dir even when HEAD/packed-refs are damaged."""
+def _absolute_git_dir(root: Path) -> Path:
+    """Resolve the checkout's git dir without binding GIT_DIR into the env."""
     result = subprocess.run(
         ["git", "-C", str(root), "rev-parse", "--absolute-git-dir"],
+        cwd=root,
         check=False,
         capture_output=True,
         text=True,
-        env=dict(clean_env),
+        env=_trusted_git_environment(root),
     )
-    value = result.stdout.strip()
-    if result.returncode == 0 and value:
-        return value
+    if result.returncode == 0 and result.stdout.strip():
+        return Path(result.stdout.strip())
     candidate = root / ".git"
-    if candidate.is_dir():
-        return str(candidate.resolve())
     if candidate.is_file():
         text = candidate.read_text(encoding="utf-8", errors="replace").strip()
         prefix = "gitdir:"
@@ -2360,22 +2369,8 @@ def _resolve_git_dir(root: Path, clean_env: Mapping[str, str]) -> str:
             pointed = Path(text[len(prefix) :].strip())
             if not pointed.is_absolute():
                 pointed = (root / pointed).resolve()
-            return str(pointed)
-    detail = (result.stderr or result.stdout).strip() or "no .git directory"
-    raise RuntimeError(f"cannot resolve git directory for {root}: {detail}")
-
-
-def _trusted_git_environment(root: Path) -> dict[str, str]:
-    """Bind Git to this checkout while disabling replacement-object rewrites."""
-    clean_env = _clean_git_environ()
-    clean_env.update(
-        {
-            "GIT_DIR": _resolve_git_dir(root, clean_env),
-            "GIT_WORK_TREE": str(root),
-            "GIT_NO_REPLACE_OBJECTS": "1",
-        }
-    )
-    return clean_env
+            return pointed
+    return candidate.resolve()
 
 
 def _git_cmd(
@@ -2405,25 +2400,68 @@ def _git_boundary_probes(
     return refs.returncode == 0 and head_ok, sha if head_ok else None
 
 
+def _replace_refs_from_filesystem(git_dir: Path) -> list[str]:
+    """List ``refs/replace/**`` without asking Git to take a ref lock."""
+    found: list[str] = []
+    replace_dir = git_dir / "refs" / "replace"
+    if replace_dir.is_dir():
+        for path in sorted(replace_dir.rglob("*")):
+            if not path.is_file() or path.name.endswith(".lock"):
+                continue
+            found.append(path.relative_to(git_dir).as_posix())
+    packed = git_dir / "packed-refs"
+    if packed.is_file():
+        for line in packed.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line or line.startswith("#") or line.startswith("^"):
+                continue
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].startswith("refs/replace/"):
+                found.append(parts[1])
+    return found
+
+
 def _git_rewrite_metadata(root: Path, env: Mapping[str, str]) -> tuple[list[str], Path]:
-    refs = _git_cmd(
+    """Return replace-refs and the grafts path without fail-closing on probe 128.
+
+    ``git for-each-ref refs/replace`` exits 0 when the namespace is empty. Exit
+    128 is a lock, a killed sibling, or a confused GIT_DIR — not proof that
+    history was rewritten. Fall back to a filesystem listing so a racy probe
+    cannot turn a green (or merely timed-out) job into infrastructure unknown.
+    Reftable repositories have no loose ``refs/replace`` files; if the Git
+    listing fails there, refuse rather than silently miss a rewrite.
+    """
+    listed = _git_cmd(
         root, env, "for-each-ref", "--format=%(refname)", "refs/replace"
     )
-    if refs.returncode != 0:
-        detail = (refs.stderr or refs.stdout).strip() or "no git output"
-        raise RuntimeError(
-            f"git for-each-ref refs/replace exited {refs.returncode}: {detail}"
+    git_dir = _absolute_git_dir(root)
+    if listed.returncode == 0:
+        refs = [line for line in listed.stdout.splitlines() if line.strip()]
+    else:
+        if not git_dir.is_dir():
+            raise RuntimeError(
+                "`git for-each-ref --format=%(refname) refs/replace` returned "
+                f"{listed.returncode} and git dir is not a directory "
+                f"({git_dir})"
+            )
+        if (git_dir / "reftable").is_dir():
+            raise RuntimeError(
+                "`git for-each-ref --format=%(refname) refs/replace` returned "
+                f"{listed.returncode} in a reftable repository; cannot confirm "
+                "the absence of replace refs from the filesystem"
+            )
+        refs = _replace_refs_from_filesystem(git_dir)
+    graft_text = _git_cmd(root, env, "rev-parse", "--git-path", "info/grafts")
+    if graft_text.returncode != 0:
+        graft_path = (
+            git_dir / "info" / "grafts"
+            if git_dir.is_dir()
+            else root / ".git" / "info" / "grafts"
         )
-    graft = _git_cmd(root, env, "rev-parse", "--git-path", "info/grafts")
-    if graft.returncode != 0:
-        detail = (graft.stderr or graft.stdout).strip() or "no git output"
-        raise RuntimeError(
-            f"git rev-parse --git-path info/grafts exited {graft.returncode}: {detail}"
-        )
-    graft_path = Path(graft.stdout.strip())
-    if not graft_path.is_absolute():
-        graft_path = root / graft_path
-    return refs.stdout.splitlines(), graft_path
+    else:
+        graft_path = Path(graft_text.stdout.strip())
+        if not graft_path.is_absolute():
+            graft_path = root / graft_path
+    return refs, graft_path
 
 
 def _heal_pack_git(root: Path, target: str | None, git_env: Mapping[str, str]) -> None:
@@ -2435,7 +2473,7 @@ def _heal_pack_git(root: Path, target: str | None, git_env: Mapping[str, str]) -
     probe reported infrastructure unknown, masking the timeout and
     breaking every later pack job.
     """
-    git_dir = Path(git_env["GIT_DIR"])
+    git_dir = _absolute_git_dir(root)
     commondir = git_dir / "commondir"
     if commondir.exists():
         pointed = commondir.read_text(encoding="utf-8", errors="replace").strip()
@@ -2585,14 +2623,10 @@ def _restore_workspace(tested_tree_sha: str | None = None) -> None:
 
 def _current_commit_sha(root: Path) -> str:
     git_env = _trusted_git_environment(root)
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        check=True,
-        capture_output=True,
-        text=True,
-        env=git_env,
-    )
+    result = _git_cmd(root, git_env, "rev-parse", "HEAD")
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip() or "no git output"
+        raise RuntimeError(f"git rev-parse HEAD exited {result.returncode}: {detail}")
     value = result.stdout.strip().lower()
     if not re.fullmatch(r"[0-9a-f]{40}", value):
         raise RuntimeError(f"checkout HEAD is not an exact commit SHA: {value!r}")
@@ -2752,24 +2786,32 @@ def _run_job(
         if result.detail:
             record["detail"] = result.detail
         if tested_tree_sha is not None:
+            # Always leave for-each-ref/rev-parse working for the next step.
+            # A timed-out step was SIGKILL'd and may have smashed packed-refs;
+            # heal first, then only a *passed* step can still hide a rewrite.
             try:
                 healed = _ensure_pack_git_usable(Path.cwd(), tested_tree_sha)
-                _assert_no_git_rewrites(Path.cwd())
-                observed_tree_sha = _current_commit_sha(Path.cwd())
-                if observed_tree_sha != tested_tree_sha:
-                    raise RuntimeError(
-                        f"semantic step changed checkout HEAD to {observed_tree_sha}; "
-                        f"expected {tested_tree_sha}"
-                    )
-                if healed and result.outcome == "passed":
-                    raise RuntimeError(
-                        "semantic step left git for-each-ref/rev-parse unusable"
-                    )
-            except Exception as exc:  # noqa: BLE001 — tree doubt blocks proof
-                detail = _bounded_detail(exc)
+            except Exception:  # noqa: BLE001 — last-ditch; proof already lost
+                healed = False
                 with contextlib.suppress(Exception):
                     _ensure_pack_git_usable(Path.cwd(), tested_tree_sha)
-                if result.outcome == "passed":
+            if result.outcome == "passed":
+                try:
+                    _assert_no_git_rewrites(Path.cwd())
+                    observed_tree_sha = _current_commit_sha(Path.cwd())
+                    if observed_tree_sha != tested_tree_sha:
+                        raise RuntimeError(
+                            f"semantic step changed checkout HEAD to {observed_tree_sha}; "
+                            f"expected {tested_tree_sha}"
+                        )
+                    if healed:
+                        raise RuntimeError(
+                            "semantic step left git for-each-ref/rev-parse unusable"
+                        )
+                except Exception as exc:  # noqa: BLE001 — tree doubt blocks proof
+                    detail = _bounded_detail(exc)
+                    with contextlib.suppress(Exception):
+                        _ensure_pack_git_usable(Path.cwd(), tested_tree_sha)
                     infrastructure = {"outcome": "unknown", "detail": detail}
                     record = {
                         **spec.plan_dict(),

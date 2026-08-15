@@ -904,6 +904,148 @@ def test_git_replace_metadata_cannot_substitute_the_tested_tree(
     assert _git(source, "rev-parse", "HEAD") == tested_sha
 
 
+def _stub_for_each_ref_128(monkeypatch: pytest.MonkeyPatch) -> None:
+    real = PACK.subprocess.run
+
+    def wrapped(args: object, **kwargs: object) -> object:
+        argv = [str(part) for part in list(args)]  # type: ignore[arg-type]
+        if len(argv) >= 2 and argv[0] == "git" and argv[1] == "for-each-ref":
+            return subprocess.CompletedProcess(
+                argv,
+                128,
+                stdout="",
+                stderr="fatal: Unable to create packed-refs.lock: File exists\n",
+            )
+        return real(args, **kwargs)
+
+    monkeypatch.setattr(PACK.subprocess, "run", wrapped)
+
+
+def test_for_each_ref_128_without_replace_refs_is_not_infra_unknown(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A racy replace-ref probe must not fail a job that did not rewrite history.
+
+    Measured 2026-08-15 on PR #5750 pack-9: the 5-minute deadline SIGKILL'd
+    pytest, then `git for-each-ref refs/replace` exited 128 and was reported
+    as infrastructure unknown.
+    """
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    _stub_for_each_ref_128(monkeypatch)
+    job = _job("probe-128", [{"name": "ok", "run": "true"}])
+    monkeypatch.chdir(source)
+    result = PACK._run_job(
+        job,
+        base_ref="main",
+        head_ref="",
+        command_env=os.environ.copy(),
+        tested_tree_sha=tested_sha,
+    )
+    assert result.failure is None
+    assert result.infrastructure["outcome"] == "passed"
+    assert [step["outcome"] for step in result.steps] == ["passed"]
+
+
+def test_filesystem_replace_refs_still_block_when_for_each_ref_exits_128(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, replacement_sha = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    _stub_for_each_ref_128(monkeypatch)
+    job = _job(
+        "replace-hidden",
+        [
+            {
+                "name": "plant replacement",
+                "run": f"git replace {tested_sha} {replacement_sha}",
+            }
+        ],
+    )
+    monkeypatch.chdir(source)
+    result = PACK._run_job(
+        job,
+        base_ref="main",
+        head_ref="",
+        command_env=os.environ.copy(),
+        tested_tree_sha=tested_sha,
+    )
+    assert result.infrastructure["outcome"] == "unknown"
+    assert result.steps[0]["outcome"] == "infrastructure_blocked"
+    assert "replace" in str(result.failure)
+
+
+def test_timed_out_step_is_not_masked_by_rewrite_probe(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    job = _job("slow", [{"name": "sleep", "run": "true"}])
+    monkeypatch.chdir(source)
+
+    def fake_stream(*_args: object, **_kwargs: object) -> object:
+        return PACK.CommandObservation(
+            outcome="timed_out",
+            returncode=None,
+            failure_signature=None,
+            detail="semantic step exceeded its job timeout",
+        )
+
+    def boom(*_args: object, **_kwargs: object) -> None:
+        raise RuntimeError(
+            "Command '['git', 'for-each-ref', '--format=%(refname)', "
+            "'refs/replace']' returned non-zero exit status 128."
+        )
+
+    monkeypatch.setattr(PACK, "_stream_command", fake_stream)
+    monkeypatch.setattr(PACK, "_assert_no_git_rewrites", boom)
+    result = PACK._run_job(
+        job,
+        base_ref="main",
+        head_ref="",
+        command_env=os.environ.copy(),
+        tested_tree_sha=tested_sha,
+    )
+    assert result.failure is not None
+    assert "timed out" in result.failure
+    assert "infrastructure unknown" not in result.failure
+    assert [step["outcome"] for step in result.steps] == ["timed_out"]
+
+
+def test_trusted_git_environment_disables_optional_locks(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    _small_repository(source)
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
+    env = PACK._trusted_git_environment(source)
+    assert env["GIT_OPTIONAL_LOCKS"] == "0"
+    assert env["GIT_NO_REPLACE_OBJECTS"] == "1"
+    assert "GIT_DIR" not in env
+    assert "GIT_WORK_TREE" not in env
+
+
+def test_rewrite_probe_uses_checkout_path_not_foreign_git_dir(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    tested_sha, _other = _small_repository(source)
+    _git(source, "checkout", "--detach", tested_sha)
+    monkeypatch.setenv("GIT_DIR", "/foreign/repository/.git")
+    monkeypatch.setenv("GIT_WORK_TREE", "/foreign/repository")
+    PACK._assert_no_git_rewrites(source)
+    assert PACK._current_commit_sha(source) == tested_sha
+
+
 def test_job_steps_must_not_inherit_checkout_git_dir(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

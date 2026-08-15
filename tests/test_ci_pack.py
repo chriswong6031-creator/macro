@@ -1163,12 +1163,30 @@ def _isolate_pack_runner_planner_env(monkeypatch: pytest.MonkeyPatch) -> None:
     changed-file artifact, and it OUT-RANKS the inline form, so leaving it
     ambient would leak the live PR diff into these fixtures exactly as #5560's
     inline value did.
+
+    Semantic identity env joined on 2026-08-15 (PR #5750 pack-1 / job
+    95003903089). ``build_plan`` now infers ``role=pr_head`` from
+    ``GITHUB_EVENT_NAME=pull_request`` and then refuses a full-suite plan
+    (``changed is None``) as "a PR semantic plan requires an exact
+    changed-file inventory". Packing-contract tests that call
+    ``plan_from_workflow(..., changed_from=None)`` or ``--plan-only``
+    without ``--event/--role`` inherited the live PR event and the
+    hosted-runner packing contract exited 1. Strip the identity vars so
+    those tests keep the local ``workflow_dispatch`` / ``main`` default;
+    tests that want a PR plan pass ``event``/``role`` or a file list
+    explicitly. The production ci-plan path still passes ``--event`` and
+    ``--role`` on the command line, so this does not weaken that gate.
     """
     for name in (
         "CI_CHANGED_FILES_FILE",
         "CI_CHANGED_FILES_JSON",
         "CI_SCOPE_MODE",
         "CI_DYNAMIC_MATRIX_MODE",
+        "GITHUB_EVENT_NAME",
+        "CI_SEMANTIC_ROLE",
+        "CI_TESTED_TREE_SHA",
+        "CI_SUBJECT_HEAD_SHA",
+        "CI_BASE_SHA",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -1212,6 +1230,28 @@ def test_packing_contract_ignores_ambient_ci_changed_files_json(
     assert set(plan.eligible_job_ids) == {"owner"}
     assert plan.skipped_job_ids == ("would-skip",)
     assert PACK.resolve_changed_files("base-sha") == ["engine/example.py"]
+
+
+def test_packing_contract_strips_ambient_pr_event_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The leak that redded pack-1 on PR #5750 head 168e8e1f.
+
+    Autouse isolation must leave ``GITHUB_EVENT_NAME`` unset so
+    ``_full_plan()`` mints a local main plan. Planting the live Actions
+    PR event afterwards must raise the inventory ManifestError — that is
+    the law that fired inside the packing contract when the fixture
+    still inherited ``pull_request``.
+    """
+    assert os.environ.get("GITHUB_EVENT_NAME") != "pull_request"
+    assert "CI_SEMANTIC_ROLE" not in os.environ
+    plan = _full_plan()
+    assert plan.event == "workflow_dispatch"
+    assert plan.role == "main"
+    assert plan.changed_from is None
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
+    with pytest.raises(PACK.ManifestError, match="exact changed-file inventory"):
+        _full_plan()
 
 
 def _freeze_scope_inference(monkeypatch: pytest.MonkeyPatch) -> None:
