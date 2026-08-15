@@ -610,7 +610,8 @@ def shares_outstanding(ticker: str, *, cache_dir: str | Path) -> float | None:
         return None
     path.parent.mkdir(parents=True, exist_ok=True)
     keep = {k: payload.get(k) for k in ("ticker", "share_class_shares_outstanding",
-                                        "weighted_shares_outstanding", "market_cap")}
+                                        "weighted_shares_outstanding", "market_cap",
+                                        "list_date")}
     path.write_text(json.dumps(keep), encoding="utf-8")
     _manifest_append(cache_dir, {"ticker": ticker, "kind": "reference", "rows": 1})
     v = keep.get("share_class_shares_outstanding") or keep.get(
@@ -618,8 +619,27 @@ def shares_outstanding(ticker: str, *, cache_dir: str | Path) -> float | None:
     return float(v) if v else None
 
 
+
+def list_date(ticker: str, *, cache_dir: str | Path):
+    """The vendor reference listing date (ISO string) or None — cached beside
+    shares (same payload).  Drives the §3 grid-anchor recovery for names whose
+    vendor daily history starts after their listing (the vendor's own data
+    floor): phase = NYSE sessions between listing and first bar, mod 3."""
+    cache_dir = _assert_cache_outside_repo(Path(cache_dir))
+    path = cache_dir / "reference" / f"{ticker}.json"
+    if not path.exists():
+        shares_outstanding(ticker, cache_dir=cache_dir)  # populates the cache
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        return payload.get("list_date") or None
+    except Exception:  # noqa: BLE001
+        return None
+
+
 __all__ = [
     "VendorError", "AGG_LIMIT", "DAILY_COLUMNS", "MINUTE_COLUMNS", "QUOTE_LIMIT",
     "daily_ohlcv", "minute_window", "minute_rows_for_session", "quotes_at",
-    "half_spread_bps", "read_manifest", "shares_outstanding",
+    "half_spread_bps", "read_manifest", "shares_outstanding", "list_date",
 ]

@@ -187,7 +187,8 @@ def _aligned(series: pd.Series | None, index: pd.Index) -> pd.Series | None:
 
 def run_name(staged_dir: str | Path, ticker: str, close: pd.Series, *,
              high: pd.Series | None = None, low: pd.Series | None = None,
-             volume: pd.Series | None = None) -> dict[str, Any]:
+             volume: pd.Series | None = None,
+             bar_anchor: int = 0) -> dict[str, Any]:
     """Run the staged emitter on one name's daily close series.
 
     Returns::
@@ -216,7 +217,7 @@ def run_name(staged_dir: str | Path, ticker: str, close: pd.Series, *,
     volume = _aligned(volume, close.index) if volume is not None else None
 
     with staged_signal_layer(staged_dir) as (confluence, confluence_v2):
-        sig = confluence.compute_signals(close)
+        sig = confluence.compute_signals(close, bar_anchor=int(bar_anchor) % 3)
         dot_dates: Sequence[str] = confluence_v2.early_dots(sig, close)
         known = _known_ts_lookup(sig)
         dots = [{"ts": ts, "known_ts": known.get(ts)} for ts in dot_dates]
@@ -348,12 +349,19 @@ def _emit_one(job: tuple[str, str, str, str]) -> tuple[str, str]:
         close = frame["c"].dropna()
         if len(close) < 120:
             return ticker, "refused:history_short"
+        anchor, anchor_basis, trim_start = _grid_anchor(ticker, close, cache_dir)
+        if trim_start is not None:
+            frame = frame[frame.index >= trim_start]
+            close = frame["c"].dropna()
+            if len(close) < 120:
+                return ticker, "refused:history_short_after_trim"
         table = run_name(staged_dir, ticker, close,
                          high=frame.get("h"), low=frame.get("l"),
-                         volume=frame.get("v"))
+                         volume=frame.get("v"), bar_anchor=anchor)
         payload = {
             "ticker": ticker, "terminal_pin": prereg.TERMINAL_PIN,
             "price_basis": "vendor_adjusted_split_only",
+            "bar_anchor": anchor, "bar_anchor_basis": anchor_basis,
             "n_sessions": int(table.get("n_sessions") or len(close)),
             "dots": table.get("dots") or [],
             "watches": table.get("watches") or [],
@@ -364,6 +372,74 @@ def _emit_one(job: tuple[str, str, str, str]) -> tuple[str, str]:
         return ticker, "ok"
     except Exception as exc:  # noqa: BLE001 — one bad name never sinks the panel
         return ticker, f"refused:{type(exc).__name__}"
+
+
+
+def _grid_anchor(ticker: str, close: pd.Series, cache_dir: str) -> tuple[int, str, "pd.Timestamp | None"]:
+    """§3.1 grid-anchor recovery for a vendor series truncated at the data floor.
+
+    The 3D grid is LISTING-anchored (``gi = arange(n) + bar_anchor``).  A vendor
+    daily series that starts AFTER the listing (the vendor's ~2003 floor) with
+    ``bar_anchor=0`` phase-shifts every 3D bar whenever the missing prefix is not
+    a multiple of 3 — measured 2026-08-15: AAPL 0 matched dates vs the curated
+    full-history ground truth, while post-floor listings matched exactly.  The
+    emitter's own parameter is the remedy: phase = NYSE sessions in
+    [list_date, first_bar) mod 3, with the exchange calendar computed
+    algorithmically (any year).  Names with no usable list_date keep anchor 0
+    and say so — row-16 measures every name against ground truth where one
+    exists, so an unrecovered or mis-recovered phase is VISIBLE, never silent.
+    """
+    try:
+        from lib import nyse_calendar as _cal  # noqa: PLC0415
+        from scripts import entry_radar_vendor as _vendor  # noqa: PLC0415
+
+        first_bar = pd.Timestamp(close.index[0]).date()
+
+        # Ladder rung 1 — the curated shared store IS the operative listing
+        # anchor: the Terminal computes on data/stocks as-is, so its first bar
+        # defines the production grid phase for every covered name.  Both
+        # series are modern (post-1999), so the session count between the two
+        # first bars is exact and the recovered phase matches ground truth BY
+        # CONSTRUCTION.
+        curated_path = REPO_ROOT / "data" / "stocks" / f"{ticker}.parquet"
+        if curated_path.exists():
+            cur_index = pd.DatetimeIndex(pd.read_parquet(curated_path).index)
+            cur_first = cur_index[0]
+            if pd.Timestamp(first_bar) > cur_first:
+                # vendor TRUNCATED vs the operative anchor: count the ACTUAL
+                # curated sessions before the vendor's first bar — the store's
+                # own index is the true session history, no holiday model (the
+                # algorithmic calendar drifts on pre-1998 regimes; measured:
+                # KO recovered the wrong phase through it).
+                missing = int(cur_index.searchsorted(pd.Timestamp(first_bar)))
+                return int(missing % 3), f"curated_index_phase_missing_{missing}", None
+            if pd.Timestamp(first_bar) < cur_first:
+                # vendor LONGER than the operative series (reused ticker: the
+                # vendor serves the OLD entity's prints under the same symbol —
+                # measured: CHTR, perfect pre-prefix, 0-matched with it).  The
+                # operative grid anchors at the curated first bar, so the
+                # vendor series must be TRIMMED there, not phase-shifted.
+                return 0, "trimmed_to_curated_anchor", cur_first
+            return 0, "history_reaches_curated_anchor", None
+
+        # Ladder rung 2 — vendor reference list_date (reliable for post-1952
+        # listings; the algorithmic NYSE calendar has no Saturday-session era).
+        ld = _vendor.list_date(ticker, cache_dir=cache_dir)
+        if not ld:
+            return 0, "no_list_date", None
+        listed = pd.Timestamp(ld).date()
+        if listed > first_bar:
+            # reused ticker with no curated ground truth: trim the old-entity
+            # prefix to the listing (same shape as the curated trim).
+            return 0, "trimmed_to_list_date", pd.Timestamp(listed)
+        if listed == first_bar:
+            return 0, "history_reaches_listing", None
+        missing = len(_cal.sessions_between(listed, first_bar)) - 1
+        if missing < 0:
+            return 0, "calendar_anomaly", None
+        return int(missing % 3), f"recovered_phase_missing_{missing}", None
+    except Exception as exc:  # noqa: BLE001 — an unrecovered anchor is visible in row-16
+        return 0, f"anchor_recovery_failed:{type(exc).__name__}", None
 
 
 def emit_tables(staged_dir: str | Path, names: Sequence[str], *,
