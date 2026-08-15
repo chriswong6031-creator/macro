@@ -18,10 +18,10 @@ collectors/sec_capital_structure_companyfacts.py	107	HEAD_GUARD_KEY = "capital_s
 collectors/wiki_pageviews.py	1	"""Offshore (en.wikipedia.org) per-ticker pageviews -> a DISPLAY-ONLY abnormal-
 config/site_access.yml	23	#   * every per-ticker <market>stockdata/*.json graded emit;
 config/site_access.yml	24	#   * every other data path not named under `public` below.
-config/site_access.yml	289	# THIS LIST IS THE EXCEPTION, NOT THE PREFIX. Everything else under /live/
-config/site_access.yml	291	# /live/prophet_live.json (Prophet Live provisional states, masterplan §4.4a)
-config/site_access.yml	295	# (The armed trigger LEVELS are not in it; they stay in the R2 pack.) It is
-config/site_access.yml	338	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
+config/site_access.yml	297	# THIS LIST IS THE EXCEPTION, NOT THE PREFIX. Everything else under /live/
+config/site_access.yml	299	# /live/prophet_live.json (Prophet Live provisional states, masterplan §4.4a)
+config/site_access.yml	303	# (The armed trigger LEVELS are not in it; they stay in the R2 pack.) It is
+config/site_access.yml	346	# client-side arithmetic only — every heavy per-symbol panel is fetched from R2
 config/synapse.yml	5941	gamma_flow, 0DTE pct) is reliable. Accrual store: data/options_flow/summary_<SYM>.parquet
 config/synapse.yml	6141	path: data/options_entry/state.parquet
 config/synapse.yml	11584	# --- prophet-ledger: Prophet forward outcome ledger ---
