@@ -1,0 +1,2366 @@
+{
+  "baskets": 49,
+  "containment_floor": 0.5,
+  "edges_minted": 0,
+  "edges_minted_note": "zero, by law: G0.13 forbids promoting an overlap statistic into an edge. These are proposals for a curated act.",
+  "floor_note": "REPORTING floor (a visibility cutoff), not a significance threshold and not a promotion rule — read it against the null yield below",
+  "generated_at": "2026-08-15T02:03:50Z",
+  "local_themes": 268,
+  "null_baseline": {
+    "max": 8,
+    "mean": 3.85,
+    "median": 4,
+    "p95": 8,
+    "seed": 20260814,
+    "shuffles": 20,
+    "what_was_shuffled": "members reassigned between baskets, each basket's SIZE preserved; permuting basket ids alone is degenerate — the pair statistics would be identical"
+  },
+  "observed_pairs": 234,
+  "pairs": [
+    {
+      "basket": "basket:baskets:us_sector_utilities",
+      "basket_size": 31,
+      "containment_of_basket": 0.2903,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.2903,
+      "local_theme": "ltheme:finviz:energybaseutilities",
+      "overlap": 9,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.381,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.381,
+      "local_theme": "ltheme:finviz:defenseaviation",
+      "overlap": 8,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.1356,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.1356,
+      "local_theme": "ltheme:finviz:longevityhealthcare",
+      "overlap": 8,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1081,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.1081,
+      "local_theme": "ltheme:finviz:iothardware",
+      "overlap": 8,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.3333,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:spacedefense",
+      "overlap": 7,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.6364,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.6364,
+      "local_theme": "ltheme:finviz:quantumhardware",
+      "overlap": 7,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.6364,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.6364,
+      "local_theme": "ltheme:finviz:quantumsoftware",
+      "overlap": 7,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.0946,
+      "local_theme": "ltheme:finviz:hardwareservers",
+      "overlap": 7,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.0946,
+      "local_theme": "ltheme:finviz:hardwarestorage",
+      "overlap": 7,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_financials",
+      "basket_size": 76,
+      "containment_of_basket": 0.0789,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.0789,
+      "local_theme": "ltheme:finviz:blockchainpayments",
+      "overlap": 6,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:payments_fintech",
+      "basket_size": 21,
+      "containment_of_basket": 0.2381,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.2381,
+      "local_theme": "ltheme:finviz:fintechlending",
+      "overlap": 5,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:us_sector_comm",
+      "basket_size": 23,
+      "containment_of_basket": 0.2174,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.2174,
+      "local_theme": "ltheme:finviz:telecomwireless",
+      "overlap": 5,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:memory_storage",
+      "basket_size": 4,
+      "containment_of_basket": 1.0,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.8,
+      "local_theme": "ltheme:finviz:semismemory",
+      "overlap": 4,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 1.0,
+      "jaccard": 0.4286,
+      "local_theme": "ltheme:finviz:softwareos",
+      "overlap": 3,
+      "subtheme_size": 3
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.1695,
+      "containment_of_subtheme": 0.9091,
+      "jaccard": 0.1667,
+      "local_theme": "ltheme:finviz:healthcaredevices",
+      "overlap": 10,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1351,
+      "containment_of_subtheme": 0.9091,
+      "jaccard": 0.1333,
+      "local_theme": "ltheme:finviz:cloudhardware",
+      "overlap": 10,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1351,
+      "containment_of_subtheme": 0.9091,
+      "jaccard": 0.1333,
+      "local_theme": "ltheme:finviz:hardwarepcsdevices",
+      "overlap": 10,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_utilities",
+      "basket_size": 31,
+      "containment_of_basket": 0.3226,
+      "containment_of_subtheme": 0.9091,
+      "jaccard": 0.3125,
+      "local_theme": "ltheme:finviz:energycleanutilities",
+      "overlap": 10,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.9,
+      "containment_of_subtheme": 0.6429,
+      "jaccard": 0.6,
+      "local_theme": "ltheme:finviz:softwaresecurity",
+      "overlap": 9,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1216,
+      "containment_of_subtheme": 0.9,
+      "jaccard": 0.12,
+      "local_theme": "ltheme:finviz:ainetworking",
+      "overlap": 9,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.3333,
+      "containment_of_subtheme": 0.875,
+      "jaccard": 0.3182,
+      "local_theme": "ltheme:finviz:defenseweapons",
+      "overlap": 7,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:obesity_glp1",
+      "basket_size": 14,
+      "containment_of_basket": 0.5,
+      "containment_of_subtheme": 0.875,
+      "jaccard": 0.4667,
+      "local_theme": "ltheme:finviz:healthcaremetabolic",
+      "overlap": 7,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.6364,
+      "containment_of_subtheme": 0.875,
+      "jaccard": 0.5833,
+      "local_theme": "ltheme:finviz:quantumapplications",
+      "overlap": 7,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.6364,
+      "containment_of_subtheme": 0.875,
+      "jaccard": 0.5833,
+      "local_theme": "ltheme:finviz:quantumcloud",
+      "overlap": 7,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.0875,
+      "containment_of_subtheme": 0.875,
+      "jaccard": 0.0864,
+      "local_theme": "ltheme:finviz:defenseaviation",
+      "overlap": 7,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.2857,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.2727,
+      "local_theme": "ltheme:finviz:defensemissiles",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:non_ai_tech",
+      "basket_size": 13,
+      "containment_of_basket": 0.4615,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.4286,
+      "local_theme": "ltheme:finviz:semisanalog",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.075,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.0741,
+      "local_theme": "ltheme:finviz:defensemissiles",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_realestate",
+      "basket_size": 31,
+      "containment_of_basket": 0.1935,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.1875,
+      "local_theme": "ltheme:finviz:realestateittelecom",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.08,
+      "local_theme": "ltheme:finviz:automationsoftware",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.08,
+      "local_theme": "ltheme:finviz:cybersecuritysiem",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.08,
+      "local_theme": "ltheme:finviz:semisanalog",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.08,
+      "local_theme": "ltheme:finviz:softwareenterprise",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.8571,
+      "jaccard": 0.08,
+      "local_theme": "ltheme:finviz:telecomg",
+      "overlap": 6,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:robotics_automation",
+      "basket_size": 12,
+      "containment_of_basket": 0.4167,
+      "containment_of_subtheme": 0.8333,
+      "jaccard": 0.3846,
+      "local_theme": "ltheme:finviz:automationrobotics",
+      "overlap": 5,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:silver_miners",
+      "basket_size": 8,
+      "containment_of_basket": 0.625,
+      "containment_of_subtheme": 0.8333,
+      "jaccard": 0.5556,
+      "local_theme": "ltheme:finviz:commmetalssilver",
+      "overlap": 5,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.8333,
+      "jaccard": 0.0667,
+      "local_theme": "ltheme:finviz:semiswireless",
+      "overlap": 5,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.4706,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.4211,
+      "local_theme": "ltheme:finviz:aienterprise",
+      "overlap": 8,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.381,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.3478,
+      "local_theme": "ltheme:finviz:defensedrones",
+      "overlap": 8,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:energy_complex",
+      "basket_size": 22,
+      "containment_of_basket": 0.3636,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:commenergyoil",
+      "overlap": 8,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:power_grid",
+      "basket_size": 24,
+      "containment_of_basket": 0.3333,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.3077,
+      "local_theme": "ltheme:finviz:energybasenuclear",
+      "overlap": 8,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_energy",
+      "basket_size": 21,
+      "containment_of_basket": 0.381,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.3478,
+      "local_theme": "ltheme:finviz:commenergyoil",
+      "overlap": 8,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_energy",
+      "basket_size": 21,
+      "containment_of_basket": 0.381,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.3478,
+      "local_theme": "ltheme:finviz:energybaseoilproduction",
+      "overlap": 8,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.5,
+      "local_theme": "ltheme:finviz:smarthomevoiceai",
+      "overlap": 4,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:semicap_equipment",
+      "basket_size": 16,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.2353,
+      "local_theme": "ltheme:finviz:semislithography",
+      "overlap": 4,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:us_sector_financials",
+      "basket_size": 76,
+      "containment_of_basket": 0.0526,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.0519,
+      "local_theme": "ltheme:finviz:blockchainplatforms",
+      "overlap": 4,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.8,
+      "jaccard": 0.0533,
+      "local_theme": "ltheme:finviz:semismemory",
+      "overlap": 4,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:power_grid",
+      "basket_size": 24,
+      "containment_of_basket": 0.2917,
+      "containment_of_subtheme": 0.7778,
+      "jaccard": 0.2692,
+      "local_theme": "ltheme:finviz:energybaseutilities",
+      "overlap": 7,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:uranium_miners",
+      "basket_size": 10,
+      "containment_of_basket": 0.7,
+      "containment_of_subtheme": 0.7778,
+      "jaccard": 0.5833,
+      "local_theme": "ltheme:finviz:commenergyuranium",
+      "overlap": 7,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.7778,
+      "jaccard": 0.0921,
+      "local_theme": "ltheme:finviz:wearablesimmersive",
+      "overlap": 7,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1622,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.1538,
+      "local_theme": "ltheme:finviz:aicompute",
+      "overlap": 12,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:payments_fintech",
+      "basket_size": 21,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.375,
+      "local_theme": "ltheme:finviz:fintechpayments",
+      "overlap": 9,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.2308,
+      "local_theme": "ltheme:finviz:semiscompute",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:ai_semiconductors",
+      "basket_size": 12,
+      "containment_of_basket": 0.5,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.4286,
+      "local_theme": "ltheme:finviz:semiscompute",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.6,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.5,
+      "local_theme": "ltheme:finviz:cybersecurityappsecurity",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.6,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.5,
+      "local_theme": "ltheme:finviz:cybersecurityzerotrust",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:robotics_automation",
+      "basket_size": 12,
+      "containment_of_basket": 0.5,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.4286,
+      "local_theme": "ltheme:finviz:roboticsautomation",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:travel",
+      "basket_size": 24,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.2308,
+      "local_theme": "ltheme:finviz:transportationairtravel",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.075,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.0732,
+      "local_theme": "ltheme:finviz:defenseweapons",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.0789,
+      "local_theme": "ltheme:finviz:cloudhybridcloud",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.0789,
+      "local_theme": "ltheme:finviz:semiscompute",
+      "overlap": 6,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:memory_storage",
+      "basket_size": 4,
+      "containment_of_basket": 0.75,
+      "containment_of_subtheme": 0.1875,
+      "jaccard": 0.1765,
+      "local_theme": "ltheme:finviz:bigdatainfrastructure",
+      "overlap": 3,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:memory_storage",
+      "basket_size": 4,
+      "containment_of_basket": 0.75,
+      "containment_of_subtheme": 0.4286,
+      "jaccard": 0.375,
+      "local_theme": "ltheme:finviz:hardwarestorage",
+      "overlap": 3,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.0375,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.037,
+      "local_theme": "ltheme:finviz:transportationaircargo",
+      "overlap": 3,
+      "subtheme_size": 4
+    },
+    {
+      "basket": "basket:baskets:us_sector_realestate",
+      "basket_size": 31,
+      "containment_of_basket": 0.0968,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.0938,
+      "local_theme": "ltheme:finviz:clouddatacenters",
+      "overlap": 3,
+      "subtheme_size": 4
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0405,
+      "containment_of_subtheme": 0.75,
+      "jaccard": 0.04,
+      "local_theme": "ltheme:finviz:cybersecuritynetwork",
+      "overlap": 3,
+      "subtheme_size": 4
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.3333,
+      "containment_of_subtheme": 0.7273,
+      "jaccard": 0.2963,
+      "local_theme": "ltheme:finviz:cloudhardware",
+      "overlap": 8,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:energy_complex",
+      "basket_size": 22,
+      "containment_of_basket": 0.3636,
+      "containment_of_subtheme": 0.7273,
+      "jaccard": 0.32,
+      "local_theme": "ltheme:finviz:energybaseoilrefining",
+      "overlap": 8,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1081,
+      "containment_of_subtheme": 0.7273,
+      "jaccard": 0.1039,
+      "local_theme": "ltheme:finviz:varealityhardware",
+      "overlap": 8,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2941,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.2632,
+      "local_theme": "ltheme:finviz:softwareenterprise",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.7143,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.5556,
+      "local_theme": "ltheme:finviz:aiagi",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.7143,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.4545,
+      "local_theme": "ltheme:finviz:aimodels",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:robotics_automation",
+      "basket_size": 12,
+      "containment_of_basket": 0.4167,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.3571,
+      "local_theme": "ltheme:finviz:roboticslogistics",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_comm",
+      "basket_size": 23,
+      "containment_of_basket": 0.2174,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:entertainmentvideo",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_financials",
+      "basket_size": 76,
+      "containment_of_basket": 0.0658,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.0641,
+      "local_theme": "ltheme:finviz:fintechexchanges",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.0625,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.061,
+      "local_theme": "ltheme:finviz:spacedefense",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.0658,
+      "local_theme": "ltheme:finviz:blockchainenterprise",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.7143,
+      "jaccard": 0.0658,
+      "local_theme": "ltheme:finviz:hardwarenetworking",
+      "overlap": 5,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.7,
+      "containment_of_subtheme": 0.7,
+      "jaccard": 0.5385,
+      "local_theme": "ltheme:finviz:cloudsecurity",
+      "overlap": 7,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.7,
+      "containment_of_subtheme": 0.6364,
+      "jaccard": 0.5,
+      "local_theme": "ltheme:finviz:cybersecuritycloud",
+      "overlap": 7,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:energy_complex",
+      "basket_size": 22,
+      "containment_of_basket": 0.3182,
+      "containment_of_subtheme": 0.7,
+      "jaccard": 0.28,
+      "local_theme": "ltheme:finviz:energybaseoilproduction",
+      "overlap": 7,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.7,
+      "jaccard": 0.0909,
+      "local_theme": "ltheme:finviz:aienterprise",
+      "overlap": 7,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.7,
+      "jaccard": 0.0909,
+      "local_theme": "ltheme:finviz:iotsoftware",
+      "overlap": 7,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.4583,
+      "containment_of_subtheme": 0.6875,
+      "jaccard": 0.3793,
+      "local_theme": "ltheme:finviz:aicompute",
+      "overlap": 11,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.1356,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.127,
+      "local_theme": "ltheme:finviz:nanotechmedicine",
+      "overlap": 8,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:ai_neoclouds",
+      "basket_size": 10,
+      "containment_of_basket": 0.6,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.4615,
+      "local_theme": "ltheme:finviz:blockchainmining",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:big_pharma",
+      "basket_size": 9,
+      "containment_of_basket": 0.6667,
+      "containment_of_subtheme": 0.4615,
+      "jaccard": 0.375,
+      "local_theme": "ltheme:finviz:healthcareoncology",
+      "overlap": 6,
+      "subtheme_size": 13
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.6,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.4615,
+      "local_theme": "ltheme:finviz:aisecurity",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.6,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.4615,
+      "local_theme": "ltheme:finviz:iotsecurity",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.2857,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.25,
+      "local_theme": "ltheme:finviz:autonomousdefense",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:non_ai_tech",
+      "basket_size": 13,
+      "containment_of_basket": 0.4615,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.375,
+      "local_theme": "ltheme:finviz:wearablesimmersive",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:nuclear_power",
+      "basket_size": 9,
+      "containment_of_basket": 0.6667,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.4615,
+      "local_theme": "ltheme:finviz:energybasenuclear",
+      "overlap": 6,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.1017,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0968,
+      "local_theme": "ltheme:finviz:longevityagingpharma",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0779,
+      "local_theme": "ltheme:finviz:nanotechelectronics",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0779,
+      "local_theme": "ltheme:finviz:softwaredesign",
+      "overlap": 6,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.2105,
+      "local_theme": "ltheme:finviz:cloudhyperscalers",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.4,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:cybersecurityendpoint",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.4,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:cybersecuritythreatops",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:payments_fintech",
+      "basket_size": 21,
+      "containment_of_basket": 0.1905,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.1739,
+      "local_theme": "ltheme:finviz:blockchainpayments",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:reshoring",
+      "basket_size": 16,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.2222,
+      "local_theme": "ltheme:finviz:automationautomation",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:space_economy",
+      "basket_size": 15,
+      "containment_of_basket": 0.2667,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.2353,
+      "local_theme": "ltheme:finviz:spacedataanalytics",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.05,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0488,
+      "local_theme": "ltheme:finviz:automationautomation",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.05,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0488,
+      "local_theme": "ltheme:finviz:transportationrail",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0526,
+      "local_theme": "ltheme:finviz:cybersecurityendpoint",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0526,
+      "local_theme": "ltheme:finviz:cybersecurityidentityiam",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0526,
+      "local_theme": "ltheme:finviz:quantumenablingtech",
+      "overlap": 4,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.1176,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.1111,
+      "local_theme": "ltheme:finviz:softwareos",
+      "overlap": 2,
+      "subtheme_size": 3
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.2857,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.25,
+      "local_theme": "ltheme:finviz:wearablessmartwatches",
+      "overlap": 2,
+      "subtheme_size": 3
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.1818,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.1667,
+      "local_theme": "ltheme:finviz:softwareos",
+      "overlap": 2,
+      "subtheme_size": 3
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.027,
+      "containment_of_subtheme": 0.6667,
+      "jaccard": 0.0267,
+      "local_theme": "ltheme:finviz:softwareos",
+      "overlap": 2,
+      "subtheme_size": 3
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 0.6429,
+      "jaccard": 0.3462,
+      "local_theme": "ltheme:finviz:defensemanufacturing",
+      "overlap": 9,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:defense",
+      "basket_size": 21,
+      "containment_of_basket": 0.3333,
+      "containment_of_subtheme": 0.6364,
+      "jaccard": 0.28,
+      "local_theme": "ltheme:finviz:defensecyberdefense",
+      "overlap": 7,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.6364,
+      "jaccard": 0.0897,
+      "local_theme": "ltheme:finviz:entertainmentinfrastructure",
+      "overlap": 7,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.6364,
+      "jaccard": 0.0897,
+      "local_theme": "ltheme:finviz:hardwaretelecom",
+      "overlap": 7,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.125,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.1163,
+      "local_theme": "ltheme:finviz:transportationinfrastructure",
+      "overlap": 10,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.1351,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.125,
+      "local_theme": "ltheme:finviz:bigdatainfrastructure",
+      "overlap": 10,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2941,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.25,
+      "local_theme": "ltheme:finviz:clouddatabases",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_financials",
+      "basket_size": 76,
+      "containment_of_basket": 0.0658,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.0633,
+      "local_theme": "ltheme:finviz:blockchaintokenization",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.0847,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.0806,
+      "local_theme": "ltheme:finviz:roboticsmedical",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.0649,
+      "local_theme": "ltheme:finviz:cybersecurityzerotrust",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.0649,
+      "local_theme": "ltheme:finviz:evschips",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.0649,
+      "local_theme": "ltheme:finviz:hardwareelectronics",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.625,
+      "jaccard": 0.0649,
+      "local_theme": "ltheme:finviz:varealityenterprise",
+      "overlap": 5,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.3529,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.2857,
+      "local_theme": "ltheme:finviz:cloudmulticloud",
+      "overlap": 6,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.3529,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.2857,
+      "local_theme": "ltheme:finviz:iotsoftware",
+      "overlap": 6,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.075,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.0714,
+      "local_theme": "ltheme:finviz:defensedrones",
+      "overlap": 6,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.0769,
+      "local_theme": "ltheme:finviz:cloudmulticloud",
+      "overlap": 6,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.125,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.1154,
+      "local_theme": "ltheme:finviz:semislithography",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:socialvisualcontent",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:wearablessoftware",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:payments_fintech",
+      "basket_size": 21,
+      "containment_of_basket": 0.1429,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.1304,
+      "local_theme": "ltheme:finviz:blockchainplatforms",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:space_economy",
+      "basket_size": 15,
+      "containment_of_basket": 0.2,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.1765,
+      "local_theme": "ltheme:finviz:spaceinfrastructure",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:space_economy",
+      "basket_size": 15,
+      "containment_of_basket": 0.2,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.1765,
+      "local_theme": "ltheme:finviz:spacesatellites",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:us_sector_materials",
+      "basket_size": 26,
+      "containment_of_basket": 0.1154,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.1071,
+      "local_theme": "ltheme:finviz:commagrifertilizers",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0405,
+      "containment_of_subtheme": 0.6,
+      "jaccard": 0.0395,
+      "local_theme": "ltheme:finviz:semislithography",
+      "overlap": 3,
+      "subtheme_size": 5
+    },
+    {
+      "basket": "basket:baskets:ai_semiconductors",
+      "basket_size": 12,
+      "containment_of_basket": 0.5833,
+      "containment_of_subtheme": 0.4375,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:aicompute",
+      "overlap": 7,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.5833,
+      "jaccard": 0.0886,
+      "local_theme": "ltheme:finviz:iotedgedevices",
+      "overlap": 7,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.4706,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.3478,
+      "local_theme": "ltheme:finviz:softwarehsaas",
+      "overlap": 8,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:non_ai_software",
+      "basket_size": 14,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5333,
+      "jaccard": 0.381,
+      "local_theme": "ltheme:finviz:cloudhsaas",
+      "overlap": 8,
+      "subtheme_size": 15
+    },
+    {
+      "basket": "basket:baskets:non_ai_software",
+      "basket_size": 14,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.4,
+      "local_theme": "ltheme:finviz:softwarehsaas",
+      "overlap": 8,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:aiagi",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:blockchainenterprise",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:cloudserverless",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:cybersecuritysiem",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:crypto",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.4,
+      "local_theme": "ltheme:finviz:fintechblockchain",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.3333,
+      "jaccard": 0.2667,
+      "local_theme": "ltheme:finviz:aiadssearch",
+      "overlap": 4,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.2857,
+      "jaccard": 0.2353,
+      "local_theme": "ltheme:finviz:aidata",
+      "overlap": 4,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.3077,
+      "jaccard": 0.25,
+      "local_theme": "ltheme:finviz:aienergy",
+      "overlap": 4,
+      "subtheme_size": 13
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.4,
+      "jaccard": 0.3077,
+      "local_theme": "ltheme:finviz:autonomoussoftware",
+      "overlap": 4,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.3636,
+      "jaccard": 0.2857,
+      "local_theme": "ltheme:finviz:bigdataaiplatforms",
+      "overlap": 4,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.25,
+      "jaccard": 0.2105,
+      "local_theme": "ltheme:finviz:bigdatainfrastructure",
+      "overlap": 4,
+      "subtheme_size": 16
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.4,
+      "jaccard": 0.3077,
+      "local_theme": "ltheme:finviz:biometricssoftware",
+      "overlap": 4,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.3636,
+      "jaccard": 0.2857,
+      "local_theme": "ltheme:finviz:entertainmentinfrastructure",
+      "overlap": 4,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.3636,
+      "local_theme": "ltheme:finviz:quantumapplications",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.3636,
+      "local_theme": "ltheme:finviz:quantumcloud",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.3636,
+      "jaccard": 0.2857,
+      "local_theme": "ltheme:finviz:varealityhardware",
+      "overlap": 4,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.4,
+      "local_theme": "ltheme:finviz:varealityinfrastructure",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.5714,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.4,
+      "local_theme": "ltheme:finviz:varealitysoftware",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.3636,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.2857,
+      "local_theme": "ltheme:finviz:aiagi",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.0678,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.0645,
+      "local_theme": "ltheme:finviz:wearablesmedical",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.5714,
+      "jaccard": 0.0519,
+      "local_theme": "ltheme:finviz:aiagi",
+      "overlap": 4,
+      "subtheme_size": 7
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.2083,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.1786,
+      "local_theme": "ltheme:finviz:nanotechelectronics",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2941,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.2381,
+      "local_theme": "ltheme:finviz:aimodels",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2941,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.2381,
+      "local_theme": "ltheme:finviz:cloudpaas",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:big_pharma",
+      "basket_size": 9,
+      "containment_of_basket": 0.5556,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.3846,
+      "local_theme": "ltheme:finviz:longevityagingpharma",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:big_pharma",
+      "basket_size": 9,
+      "containment_of_basket": 0.5556,
+      "containment_of_subtheme": 0.4167,
+      "jaccard": 0.3125,
+      "local_theme": "ltheme:finviz:nanotechmedicine",
+      "overlap": 5,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:power_grid",
+      "basket_size": 24,
+      "containment_of_basket": 0.2083,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.1786,
+      "local_theme": "ltheme:finviz:energycleansmartgrid",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:retail",
+      "basket_size": 21,
+      "containment_of_basket": 0.2381,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:ecommerceomnichannel",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_staples",
+      "basket_size": 35,
+      "containment_of_basket": 0.1429,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.1282,
+      "local_theme": "ltheme:finviz:nutritionaltprotein",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.0641,
+      "local_theme": "ltheme:finviz:aisecurity",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.5556,
+      "jaccard": 0.0641,
+      "local_theme": "ltheme:finviz:iotsecurity",
+      "overlap": 5,
+      "subtheme_size": 9
+    },
+    {
+      "basket": "basket:baskets:ai_semiconductors",
+      "basket_size": 12,
+      "containment_of_basket": 0.5,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.3529,
+      "local_theme": "ltheme:finviz:cloudhardware",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:gold_miners",
+      "basket_size": 13,
+      "containment_of_basket": 0.4615,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:commmetalsgold",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:power_grid",
+      "basket_size": 24,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.2069,
+      "local_theme": "ltheme:finviz:energycleanutilities",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_energy",
+      "basket_size": 21,
+      "containment_of_basket": 0.2857,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.2308,
+      "local_theme": "ltheme:finviz:energybaseoilrefining",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.075,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0706,
+      "local_theme": "ltheme:finviz:defensecyberdefense",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0759,
+      "local_theme": "ltheme:finviz:aicloud",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0759,
+      "local_theme": "ltheme:finviz:aiedge",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0759,
+      "local_theme": "ltheme:finviz:automationiot",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0759,
+      "local_theme": "ltheme:finviz:bigdataaiplatforms",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0759,
+      "local_theme": "ltheme:finviz:bigdataanalyticsbi",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5455,
+      "jaccard": 0.0759,
+      "local_theme": "ltheme:finviz:roboticsmachinevision",
+      "overlap": 6,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.1186,
+      "containment_of_subtheme": 0.5385,
+      "jaccard": 0.1077,
+      "local_theme": "ltheme:finviz:healthcareoncology",
+      "overlap": 7,
+      "subtheme_size": 13
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.4118,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2917,
+      "local_theme": "ltheme:finviz:aidata",
+      "overlap": 7,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.4118,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2917,
+      "local_theme": "ltheme:finviz:softwaredataanalytics",
+      "overlap": 7,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.0875,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0805,
+      "local_theme": "ltheme:finviz:defensemanufacturing",
+      "overlap": 7,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0864,
+      "local_theme": "ltheme:finviz:aidata",
+      "overlap": 7,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0864,
+      "local_theme": "ltheme:finviz:softwarehsaas",
+      "overlap": 7,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0946,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0864,
+      "local_theme": "ltheme:finviz:softwaresecurity",
+      "overlap": 7,
+      "subtheme_size": 14
+    },
+    {
+      "basket": "basket:baskets:robotics_automation",
+      "basket_size": 12,
+      "containment_of_basket": 0.5,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.3333,
+      "local_theme": "ltheme:finviz:airobotics",
+      "overlap": 6,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:us_sector_financials",
+      "basket_size": 76,
+      "containment_of_basket": 0.0789,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0732,
+      "local_theme": "ltheme:finviz:fintechpayments",
+      "overlap": 6,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:us_sector_staples",
+      "basket_size": 35,
+      "containment_of_basket": 0.1714,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1463,
+      "local_theme": "ltheme:finviz:consumerfood",
+      "overlap": 6,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0811,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.075,
+      "local_theme": "ltheme:finviz:hardwareindustrialiot",
+      "overlap": 6,
+      "subtheme_size": 12
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.2083,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1724,
+      "local_theme": "ltheme:finviz:ainetworking",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_semiconductors",
+      "basket_size": 12,
+      "containment_of_basket": 0.4167,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2941,
+      "local_theme": "ltheme:finviz:ainetworking",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2941,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2273,
+      "local_theme": "ltheme:finviz:cloudsecurity",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2941,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2273,
+      "local_theme": "ltheme:finviz:softwarecrm",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:non_ai_software",
+      "basket_size": 14,
+      "containment_of_basket": 0.3571,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2632,
+      "local_theme": "ltheme:finviz:aienterprise",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:robotics_automation",
+      "basket_size": 12,
+      "containment_of_basket": 0.4167,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2941,
+      "local_theme": "ltheme:finviz:autonomousindustrial",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_industrials",
+      "basket_size": 80,
+      "containment_of_basket": 0.0625,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0588,
+      "local_theme": "ltheme:finviz:iotenterprise",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0633,
+      "local_theme": "ltheme:finviz:autonomoussoftware",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0676,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0633,
+      "local_theme": "ltheme:finviz:softwarecrm",
+      "overlap": 5,
+      "subtheme_size": 10
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.1667,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1429,
+      "local_theme": "ltheme:finviz:iothardware",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:ai_semiconductors",
+      "basket_size": 12,
+      "containment_of_basket": 0.3333,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.25,
+      "local_theme": "ltheme:finviz:iothardware",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1905,
+      "local_theme": "ltheme:finviz:cloudhybridcloud",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.2353,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1905,
+      "local_theme": "ltheme:finviz:cybersecurityzerotrust",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:critical_minerals",
+      "basket_size": 11,
+      "containment_of_basket": 0.3636,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2667,
+      "local_theme": "ltheme:finviz:commmetalsrareearth",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:non_ai_tech",
+      "basket_size": 13,
+      "containment_of_basket": 0.3077,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2353,
+      "local_theme": "ltheme:finviz:evschips",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_health",
+      "basket_size": 59,
+      "containment_of_basket": 0.0678,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0635,
+      "local_theme": "ltheme:finviz:healthcaremetabolic",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_realestate",
+      "basket_size": 31,
+      "containment_of_basket": 0.129,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1143,
+      "local_theme": "ltheme:finviz:realestatehousing",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0513,
+      "local_theme": "ltheme:finviz:cybersecurityappsecurity",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0541,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0513,
+      "local_theme": "ltheme:finviz:telecominfrastructure",
+      "overlap": 4,
+      "subtheme_size": 8
+    },
+    {
+      "basket": "basket:baskets:ai_infra",
+      "basket_size": 24,
+      "containment_of_basket": 0.125,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1111,
+      "local_theme": "ltheme:finviz:semiswireless",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:ai_semiconductors",
+      "basket_size": 12,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:semiswireless",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.1765,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.15,
+      "local_theme": "ltheme:finviz:cybersecurityendpoint",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.1765,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.15,
+      "local_theme": "ltheme:finviz:cybersecuritythreatops",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:ai_software",
+      "basket_size": 17,
+      "containment_of_basket": 0.1765,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.15,
+      "local_theme": "ltheme:finviz:socialnetworks",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.3,
+      "local_theme": "ltheme:finviz:cloudhyperscalers",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:mag7",
+      "basket_size": 7,
+      "containment_of_basket": 0.4286,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.3,
+      "local_theme": "ltheme:finviz:socialnetworks",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:payments_fintech",
+      "basket_size": 21,
+      "containment_of_basket": 0.1429,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.125,
+      "local_theme": "ltheme:finviz:fintechneobanks",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.2727,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2143,
+      "local_theme": "ltheme:finviz:cloudhyperscalers",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:quantum_computing",
+      "basket_size": 11,
+      "containment_of_basket": 0.2727,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2143,
+      "local_theme": "ltheme:finviz:quantumenablingtech",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:robotics_automation",
+      "basket_size": 12,
+      "containment_of_basket": 0.25,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.2,
+      "local_theme": "ltheme:finviz:automationautomation",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:semicap_equipment",
+      "basket_size": 16,
+      "containment_of_basket": 0.1875,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1579,
+      "local_theme": "ltheme:finviz:semispackaging",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:space_economy",
+      "basket_size": 15,
+      "containment_of_basket": 0.2,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1667,
+      "local_theme": "ltheme:finviz:telecomsatcom",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_staples",
+      "basket_size": 35,
+      "containment_of_basket": 0.0857,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0789,
+      "local_theme": "ltheme:finviz:nanotechproducts",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0405,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.039,
+      "local_theme": "ltheme:finviz:automationrobotics",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0405,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.039,
+      "local_theme": "ltheme:finviz:cloudhyperscalers",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0405,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.039,
+      "local_theme": "ltheme:finviz:cybersecuritythreatops",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:us_sector_tech",
+      "basket_size": 74,
+      "containment_of_basket": 0.0405,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.039,
+      "local_theme": "ltheme:finviz:semisdesigntools",
+      "overlap": 3,
+      "subtheme_size": 6
+    },
+    {
+      "basket": "basket:baskets:cybersecurity",
+      "basket_size": 10,
+      "containment_of_basket": 0.2,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.1667,
+      "local_theme": "ltheme:finviz:cybersecuritynetwork",
+      "overlap": 2,
+      "subtheme_size": 4
+    },
+    {
+      "basket": "basket:baskets:memory_storage",
+      "basket_size": 4,
+      "containment_of_basket": 0.5,
+      "containment_of_subtheme": 0.1818,
+      "jaccard": 0.1538,
+      "local_theme": "ltheme:finviz:hardwarepcsdevices",
+      "overlap": 2,
+      "subtheme_size": 11
+    },
+    {
+      "basket": "basket:baskets:us_sector_financials",
+      "basket_size": 76,
+      "containment_of_basket": 0.0263,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0256,
+      "local_theme": "ltheme:finviz:blockchaininfrastructure",
+      "overlap": 2,
+      "subtheme_size": 4
+    },
+    {
+      "basket": "basket:baskets:us_sector_staples",
+      "basket_size": 35,
+      "containment_of_basket": 0.0571,
+      "containment_of_subtheme": 0.5,
+      "jaccard": 0.0541,
+      "local_theme": "ltheme:finviz:commagrigrains",
+      "overlap": 2,
+      "subtheme_size": 4
+    }
+  ],
+  "probation": {
+    "already_present": 0,
+    "written": 234
+  },
+  "suite": "baskets"
+}
