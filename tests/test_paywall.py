@@ -190,11 +190,14 @@ def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
         "_store_entitlement",
         lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
     )
+    # /biocatalyst.html joined the public set deliberately (#5710, 2026-08-15:
+    # public workbench assets kept outside the regwall) — it was this test's
+    # free-branch control until then.
     for shell in ("/special_situations.html", "/china_special_situations.html",
-                  "/etfs.html"):
+                  "/etfs.html", "/biocatalyst.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
-    assert paywall.classify_path("/biocatalyst.html") == "free", (
+    assert paywall.classify_path("/news.html") == "free", (
         "control: a registered-preview shell must still classify free"
     )
     for payload in (
