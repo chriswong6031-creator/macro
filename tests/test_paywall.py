@@ -190,13 +190,18 @@ def test_tier_preview_shell_access_matches_reverted_etfs_boundary(monkeypatch):
         "_store_entitlement",
         lambda uid: ({"tier": "free", "status": "none", "features": []}, True),
     )
-    # /biocatalyst.html joined the public set deliberately (#5710, 2026-08-15:
-    # public workbench assets kept outside the regwall) — it was this test's
-    # free-branch control until then.
     for shell in ("/special_situations.html", "/china_special_situations.html",
-                  "/etfs.html", "/biocatalyst.html"):
+                  "/etfs.html"):
         assert paywall.classify_path(shell) == "public"
         assert _check(shell, "document").status_code == 204
+    # Control must stay a `free` assertion. #5710 moved /biocatalyst.html to
+    # public on purpose (test_biocatalyst_shell_assets_are_public_but_payload_api_stays_paid);
+    # flipping this expect to public would destroy the control. /news.html is
+    # the replacement: site_access.yml pins the news desk at free_registered as
+    # the registration driver ("Kept free_registered (NOT public)"), this file
+    # already uses it as the free_registered exemplar, and it is not a product
+    # workbench on the SEO-public promotion path that took special_situations /
+    # etfs / biocatalyst.
     assert paywall.classify_path("/news.html") == "free", (
         "control: a registered-preview shell must still classify free"
     )
