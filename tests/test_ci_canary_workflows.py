@@ -76,6 +76,9 @@ def test_m1_canary_has_no_old_generic_route_or_checkout() -> None:
     assert "refs/heads/main" in str(document["jobs"]["trust-gate"])
     assert not {"macstudio", "macstudio-light", "theta-m1", "codex", "render-heavy"} & set(job["runs-on"])
     assert all("uses" not in step for step in job["steps"])
+    command = job["steps"][0]["run"]
+    assert "pgrep -f 'Runner.Listener' | wc -l" in command
+    assert "pgrep -fc" not in command
 
 
 def test_every_candidate_checkout_uses_the_frozen_sha_not_the_movable_merge_ref() -> None:
