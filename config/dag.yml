@@ -3552,6 +3552,41 @@ modules:
     needs_secrets: false
     event_driven: false
 
+  - module: scripts.build_theme_graph
+    reads:
+      - data/baskets/membership.json
+      - data/baskets_china/membership.json
+      - data/baskets_china_ths/membership.json
+      - data/baskets_china_ths/concept_map.json
+      - data/baskets_hk/membership.json
+      - data/baskets_canada/membership.json
+      - data/baskets_intl/membership.json
+      - config/theme_crosswalk.yml
+      - config/theme_graph_identity_breaks.yml
+      - config/theme_sources.yml
+      - finviz_themes/finviz_themes_map.json
+      - data/themes_heatmap/themes_tree.json
+      - data/themes_heatmap/tree_history.jsonl
+      - data/baskets/ohlcv/<T>.parquet
+      - data/stocks/<T>.parquet
+      - data/china_search/closes.parquet
+    writes:
+      - data/theme_graph/nodes.parquet
+      - data/theme_graph/edges.parquet
+      - data/theme_graph/evidence.parquet
+      - data/theme_graph/capability.parquet
+      - data/theme_graph/_meta.json
+    impure: false
+    needs_secrets: false
+    event_driven: false
+    note: >
+      GMI semantic spine (W1b + W3A local-theme plane). Assembles what owners already
+      publish; computes no score, rank or weight. The Finviz seed + tree history are read
+      as a DATED VINTAGE LADDER (the tree itself carries no date, so the tape is the
+      dating authority); the price stores are read for the capability side-car only, as
+      an existence question per symbol — no price series is loaded. Ledger writes are
+      lane-gated to COLLECT_LANE=nightly, fail-closed.
+
   - module: scripts.build_signal_quality
     reads:
       - data/stocks/*.parquet

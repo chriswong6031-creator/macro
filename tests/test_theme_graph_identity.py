@@ -39,10 +39,27 @@ def test_every_suite_mints_into_its_own_market(suite, market):
 
 def test_the_suite_map_covers_every_suite_the_materializer_reads():
     """A suite the materializer builds but identity does not know would refuse the whole
-    family at mint time — the two lists must not drift apart."""
+    family at mint time — the two lists must not drift apart.
+
+    The identity map is the LARGER of the two by design: a membership source can mint
+    companies without being a basket family (W3A's Finviz tree does exactly that). Those
+    extras are enumerated in NON_BASKET_SUITES, so an accidental orphan entry still
+    fails here rather than sitting unnoticed in a dict."""
     from engine.theme_graph import materialize
 
-    assert set(materialize.SUITES) == set(identity.SUITE_MARKET) == set(SUITE_TO_MARKET)
+    assert set(materialize.SUITES) == set(SUITE_TO_MARKET)
+    assert set(materialize.SUITES) <= set(identity.SUITE_MARKET)
+    assert (set(identity.SUITE_MARKET) - set(materialize.SUITES)
+            == set(identity.NON_BASKET_SUITES))
+
+
+def test_a_non_basket_suite_refuses_to_mint_a_basket_id():
+    """The finviz_themes namespace exists for company identity ONLY. A basket id there
+    would give one source two vocabularies for the same thing — closed structurally, and
+    the guard refuses any that somehow reach the store."""
+    assert identity.company_node_id("finviz_themes", "NVDA", breaks={}) == "co:us:NVDA"
+    with pytest.raises(ValueError, match="has no baskets"):
+        identity.basket_node_id("finviz_themes", "aicompute")
 
 
 def test_an_unknown_suite_is_refused_rather_than_defaulted():

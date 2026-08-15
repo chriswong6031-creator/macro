@@ -16,15 +16,25 @@ default (nightly, era=observed)
     summary is logged — a render lane computes and discards, exactly like every other
     ledger here.
 
+Both modes also re-derive the CAPABILITY side-car (W3A §9.3) — never a node column,
+because node rows are write-once and a capability written onto one would be a ratchet
+that outlived every later substrate improvement — and both pass through the source-family
+SHRINK WALL: a build that would close more than a quarter of a family's live memberships
+refuses unless ``--allow-source-shrink <family>`` says the restructure is real. That wall
+sits on the write path rather than the refresh path on purpose: a hand-edited input never
+goes near a refresh run, and in an append-only store its closures are permanent.
+
 Non-fatal by construction: this is a display-tier product data plane (all six synapse
 authority booleans false). A failure here degrades context, never a decision, so the
 nightly step must not take the collect lane down with it.
 
 Run: python -m scripts.build_theme_graph [--backfill] [--force-backfill]
+     [--allow-source-shrink FAMILY]
 """
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
 from pathlib import Path
@@ -60,7 +70,16 @@ def _newest_raw_snapshot() -> tuple[str, dict] | None:
     return raws[-1]
 
 
-def run(*, backfill: bool, force_backfill: bool) -> int:
+def _capability_counts(rows: list[dict]) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for r in rows:
+        key = str(r.get("capability"))
+        out[key] = out.get(key, 0) + 1
+    return dict(sorted(out.items()))
+
+
+def run(*, backfill: bool, force_backfill: bool,
+        allow_source_shrink: tuple[str, ...] = ()) -> int:
     lane = store.collect_lane()
     era = "reconstruction" if backfill else "observed"
     stored = store.read_edges(latest_belief=True)
@@ -75,9 +94,25 @@ def run(*, backfill: bool, force_backfill: bool) -> int:
     view = materialize.build(era=era, raw_snapshot=_newest_raw_snapshot())
     edges = view.edges if backfill else materialize.changed_edges(view.edges, stored)
 
-    log.info("theme graph computed: %d nodes, %d edges (%d to append), %d evidence rows; "
-             "era=%s lane=%r", len(view.nodes), len(view.edges), len(edges),
-             len(view.evidence), era, lane)
+    # SECOND WALL (§2). The refresh contract's interlocks guard the path a refresh takes;
+    # this one guards the path every WRITE takes, so a hand-edited or truncated input
+    # that never went through a refresh still cannot mass-close a source family. Refusing
+    # here is cheap; un-closing 2,000 permanent rows in an append-only store is not.
+    refusals = materialize.source_shrink_refusals(edges, stored, allow=allow_source_shrink)
+    if refusals:
+        for r in refusals:
+            log.error("theme graph shrink wall: %s", r)
+        print("::warning title=theme graph source shrink refused::" + "; ".join(refusals),
+              flush=True)
+        return 1
+
+    log.info("theme graph computed: %d nodes, %d edges (%d to append), %d evidence rows, "
+             "%d capability rows %s; era=%s lane=%r",
+             len(view.nodes), len(view.edges), len(edges), len(view.evidence),
+             len(view.capability), _capability_counts(view.capability), era, lane)
+    for family, report in sorted(view.local_plane.items()):
+        log.info("  local plane %s: %s", family, json.dumps(report, ensure_ascii=False,
+                                                            sort_keys=True)[:600])
     for suite, why in sorted(view.skipped_suites.items()):
         log.info("  suite %s skipped: %s", suite, why)
     if view.unknown_ths_codes:
@@ -91,6 +126,10 @@ def run(*, backfill: bool, force_backfill: bool) -> int:
     added_nodes = store.write_nodes(view.nodes, lane=lane, allow_backfill=allow)
     added_ev = store.write_evidence(view.evidence, lane=lane, allow_backfill=allow)
     added_edges = store.write_edges(edges, lane=lane, allow_backfill=allow)
+    # Re-derived every run, never carried forward: a node whose price coverage improved
+    # is re-classified UP tonight, which is the whole reason capability is a side-car and
+    # not a write-once node column.
+    added_cap = store.write_capability(view.capability, lane=lane, allow_backfill=allow)
 
     meta = {
         "computed_at": materialize.utc_now_stamp(),
@@ -104,13 +143,19 @@ def run(*, backfill: bool, force_backfill: bool) -> int:
             "edges": int(len(store.read_edges(latest_belief=False))),
             "edges_latest_belief": int(len(store.read_edges())),
             "evidence": int(len(store.read_evidence())),
+            "capability": int(len(store.read_capability())),
         },
         "rows_appended": {"nodes": added_nodes, "edges": added_edges,
-                          "evidence": added_ev},
+                          "evidence": added_ev, "capability": added_cap},
         "per_suite": view.per_suite,
         "skipped_suites": view.skipped_suites,
         "ths_unmapped_concept_count": view.ths_unmapped_concept_count,
         "unknown_ths_codes": view.unknown_ths_codes,
+        # The local plane's own report: the vintage ladder it read, and the company-mint
+        # resolution table printed rather than estimated (§9.13).
+        "local_plane": view.local_plane,
+        "unknown_ths_concepts": view.unknown_ths_concepts,
+        "capability_counts": _capability_counts(view.capability),
     }
     if store.write_meta(meta, lane=lane, allow_backfill=allow):
         log.info("wrote %s — appended %d nodes / %d edges / %d evidence rows",
@@ -128,9 +173,15 @@ def main(argv: list[str] | None = None) -> int:
                     help="one-shot era=reconstruction build of the whole graph")
     ap.add_argument("--force-backfill", action="store_true",
                     help="allow --backfill over a populated edge store (rarely right)")
+    ap.add_argument("--allow-source-shrink", action="append", default=[],
+                    metavar="FAMILY",
+                    help="permit this source family's live memberships to shrink past "
+                         "the wall (repeatable). For a REAL vendor restructure — the "
+                         "flag exists so the decision has a name attached")
     a = ap.parse_args(argv)
     try:
-        return run(backfill=a.backfill, force_backfill=a.force_backfill)
+        return run(backfill=a.backfill, force_backfill=a.force_backfill,
+                   allow_source_shrink=tuple(a.allow_source_shrink))
     except Exception:  # noqa: BLE001 — display-tier plane; never break the collect lane
         log.exception("theme graph build failed")
         print("::warning title=theme graph build failed::"

@@ -48,6 +48,10 @@ NODE_COLUMNS: tuple[str, ...] = (
     "node_id", "kind", "name_en", "name_zh", "market_scope", "tier", "status",
     "merged_into", "birth_date", "retire_date", "identity_epoch", "external_ids",
     "provenance", "computed_at", "engine_version",
+    # W3A, additive: the source-local plane's own metadata (JSON string, null for every
+    # node minted before it). Appended at the END on purpose — v1 is additive-only, and a
+    # column inserted mid-tuple would re-order every stored row's contract for no gain.
+    "source_meta",
 )
 
 EDGE_COLUMNS: tuple[str, ...] = (
@@ -64,6 +68,20 @@ EVIDENCE_COLUMNS: tuple[str, ...] = (
     "evidence_id", "kind", "published_at", "effective_at", "source_ref",
     "licensing_internal_ok", "licensing_display_ok", "licensing_redistribution_ok",
     "retention", "computed_at",
+    # W3A, additive: the corroboration class. A third party's CLASSIFICATION of a name is
+    # a different kind of claim from a membership document, and it says who made it
+    # (provider) and what kind of claim it is (claim_type). Ships empty.
+    "provider", "claim_type",
+)
+
+#: Capability classification (W3A §9.3) — a re-derived SIDE-CAR, never a node column.
+#: Node rows are keep-first write-once, so a capability stored on the row would be a
+#: one-way ratchet: the first night's verdict would outlive every substrate improvement
+#: that came after it. Here the current view is the max ``computed_at`` per node, so a
+#: node whose price coverage improves is re-derived UP on the next build with no
+#: migration and no rewrite.
+CAPABILITY_COLUMNS: tuple[str, ...] = (
+    "node_id", "capability", "capability_basis", "computed_at", "engine_version",
 )
 
 #: Keep-first keys. Edges key on (edge_id, belief_time): a NEW belief about the same
@@ -71,6 +89,7 @@ EVIDENCE_COLUMNS: tuple[str, ...] = (
 NODE_KEY: tuple[str, ...] = ("node_id",)
 EDGE_KEY: tuple[str, ...] = ("edge_id", "belief_time")
 EVIDENCE_KEY: tuple[str, ...] = ("evidence_id",)
+CAPABILITY_KEY: tuple[str, ...] = ("node_id", "computed_at")
 
 #: The three exposure axes are measured in W2; W1b writes them as declared nulls so the
 #: columns exist (and the contract can pin them) without anyone mistaking a null for a
@@ -100,6 +119,20 @@ def edges_path() -> Path:
 
 def evidence_path() -> Path:
     return store_dir() / "evidence.parquet"
+
+
+def capability_path() -> Path:
+    return store_dir() / "capability.parquet"
+
+
+def probation_path() -> Path:
+    """The probation queue — proposals awaiting a curated ratification act.
+
+    A sidecar under the store, deliberately NOT one of the three ledgers: nothing here is
+    production vocabulary, and the graph build ignores every row that has not been
+    ratified.
+    """
+    return store_dir() / "probation" / "proposals.jsonl"
 
 
 def meta_path() -> Path:
@@ -171,6 +204,20 @@ def read_edges(*, latest_belief: bool = True) -> pd.DataFrame:
     return latest.sort_values("edge_id", kind="stable").reset_index(drop=True)
 
 
+def read_capability(*, latest: bool = True) -> pd.DataFrame:
+    """Capability rows. ``latest`` collapses to the current view (max ``computed_at``).
+
+    Ties break on ``node_id`` — deterministic, and never on the capability VALUE, which
+    would quietly turn a tie into a ratchet in whichever direction sorted higher.
+    """
+    df = _read(capability_path(), CAPABILITY_COLUMNS)
+    if df.empty or not latest:
+        return df
+    ordered = df.sort_values(["node_id", "computed_at"], kind="stable")
+    return (ordered.drop_duplicates(subset=["node_id"], keep="last")
+                   .sort_values("node_id", kind="stable").reset_index(drop=True))
+
+
 def read_meta() -> dict:
     p = meta_path()
     if not p.exists():
@@ -237,6 +284,14 @@ def write_evidence(rows: list[dict], *, lane: str | None = None,
     if not lane_ok(lane, "evidence append", allow_backfill=allow_backfill):
         return 0
     return append_rows(evidence_path(), rows, EVIDENCE_COLUMNS, EVIDENCE_KEY)
+
+
+def write_capability(rows: list[dict], *, lane: str | None = None,
+                     allow_backfill: bool = False) -> int:
+    """Append tonight's capability derivation. Same lane gate as the ledgers."""
+    if not lane_ok(lane, "capability append", allow_backfill=allow_backfill):
+        return 0
+    return append_rows(capability_path(), rows, CAPABILITY_COLUMNS, CAPABILITY_KEY)
 
 
 def write_meta(meta: dict, *, lane: str | None = None,

@@ -23,6 +23,28 @@ CHECKS
   6. Closed-edge survivorship: every edge_id that appears anywhere in the FULL history
      carrying a ``valid_to`` still resolves in the latest-belief view. A closed
      membership must be findable, not merely absent.
+  7. Local-theme plane (W3A): the ``ltheme:`` id grammar; the src/dst KIND pairing every
+     edge type is allowed to connect; no ``basket:finviz_themes:*`` id exists at all (the
+     suite is registered for company identity only, so a basket there is a category
+     error, closed structurally rather than by convention).
+  8. Rights, fail-closed: every non-null ``source_meta.rights_family`` has a row in
+     ``config/theme_sources.yml``. A family nobody wrote down is a family nobody
+     reviewed. Evidence rows whose MINT-TIME licensing booleans disagree with their
+     family's current class produce a WARNING, never a breach — the store is append-only
+     and history is a record, not a mistake to be edited (§9.4).
+  9. Join law: the canonical expression path is ONE hop (basket→theme). ``ltheme→theme``
+     is vocabulary resolution, not a second expression path, so over the crosswalk rows
+     the two SHARE the two paths must agree in both directions — a basket that expresses
+     a theme through its concept, and a concept that resolves to a theme, cannot disagree
+     about which theme that is.
+  10. Capability side-car (when present): columns, schema, enum, and that every classified
+     node resolves to a node row. ``measurable`` is unreachable before W3B measures.
+
+MIGRATION. v1 is additive-only, so a store written before the W3A columns existed is not
+drift: a store missing ONLY columns from ``ADDITIVE_SINCE_W3A``, in the right order
+otherwise, is reported as a ``::notice`` naming the rebuild command, never as a breach.
+Anything else — a missing core column, an unexpected column, a re-ordering — stays a
+breach exactly as before.
 
 VERDICTS. A missing store is INDETERMINATE (``::notice``, rc 0) — a sparse checkout
 carries no ``data/``, and the state before the first run is not a breach. A breach
@@ -46,7 +68,7 @@ import yaml
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from engine.theme_graph import identity, store  # noqa: E402
+from engine.theme_graph import identity, rights, store  # noqa: E402
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
 log = logging.getLogger("check_theme_graph_contracts")
@@ -63,7 +85,17 @@ NODE_DTYPES: dict[str, str] = {
     "market_scope": "str", "tier": "str", "status": "str", "merged_into": "str",
     "birth_date": "str", "retire_date": "str", "identity_epoch": "int",
     "external_ids": "str", "provenance": "str", "computed_at": "str",
-    "engine_version": "str",
+    "engine_version": "str", "source_meta": "str",
+}
+
+#: Columns v1 gained in W3A. A store written before them is PRE-MIGRATION, not drifted:
+#: additive-only means the old shape was contract-valid when it was written, and a guard
+#: that reds the whole fleet between a code merge and the next nightly rebuild is a
+#: scheduled red, not a finding. Every other column-set difference stays a breach.
+ADDITIVE_SINCE_W3A: dict[str, frozenset[str]] = {
+    "nodes": frozenset({"source_meta"}),
+    "edges": frozenset(),
+    "evidence": frozenset({"provider", "claim_type"}),
 }
 EDGE_DTYPES: dict[str, str] = {
     "edge_id": "str", "type": "str", "src": "str", "dst": "str", "valid_from": "str",
@@ -80,13 +112,17 @@ EVIDENCE_DTYPES: dict[str, str] = {
     "evidence_id": "str", "kind": "str", "published_at": "str", "effective_at": "str",
     "source_ref": "str", "licensing_internal_ok": "bool",
     "licensing_display_ok": "bool", "licensing_redistribution_ok": "bool",
-    "retention": "str", "computed_at": "str",
+    "retention": "str", "computed_at": "str", "provider": "str", "claim_type": "str",
+}
+CAPABILITY_DTYPES: dict[str, str] = {
+    "node_id": "str", "capability": "str", "capability_basis": "str",
+    "computed_at": "str", "engine_version": "str",
 }
 
 #: Enum columns scanned in FULL (the sample proves shape, the scan proves values).
 NODE_ENUMS: dict[str, set[str]] = {
     "kind": {"theme", "company", "etf", "catalyst", "policy_program", "commodity",
-             "participant_class", "market", "basket"},
+             "participant_class", "market", "basket", "local_theme"},
     "status": {"candidate", "canonical", "retired", "merged"},
 }
 EDGE_ENUMS: dict[str, set[str]] = {
@@ -104,7 +140,26 @@ EDGE_ENUMS: dict[str, set[str]] = {
 }
 EVIDENCE_ENUMS: dict[str, set[str]] = {
     "kind": {"filing", "xbrl", "8k_counterparty", "scrape_receipt", "scrape",
-             "news_item", "operator_curation", "comovement_stat"},
+             "news_item", "operator_curation", "comovement_stat",
+             "external_classification"},
+    "claim_type": {"membership", "exposure", "ecosystem_role", "description"},
+}
+CAPABILITY_ENUMS: dict[str, set[str]] = {
+    # measurable is deliberately INSIDE the enum and OUTSIDE what W3A may mint: the
+    # column has to be able to hold W3B's verdict, and the "nothing minted it yet" check
+    # below is what keeps this wave from minting it early.
+    "capability": {"semantic_only", "measurement_candidate", "measurable"},
+}
+
+#: Which node kinds each edge type may connect. The pairing table is the structural
+#: answer to "did somebody quietly compose a new path": a MEMBER_OF from a company to a
+#: canonical theme, or an EXPRESSES from a local theme to a basket, would be a new
+#: semantics smuggled in as data.
+EDGE_PAIRING: dict[str, set[tuple[str, str]]] = {
+    "MEMBER_OF": {("company", "basket"), ("company", "local_theme")},
+    "EXPRESSES": {("basket", "theme"), ("basket", "local_theme"),
+                  ("local_theme", "theme")},
+    "TRACKS": {("etf", "basket")},
 }
 
 
@@ -160,16 +215,26 @@ def _dated(v: object) -> bool:
     return True
 
 
-def _check_columns(df: pd.DataFrame, expected: tuple[str, ...], label: str) -> list[str]:
+def _check_columns(df: pd.DataFrame, expected: tuple[str, ...],
+                   label: str) -> tuple[list[str], list[str]]:
+    """``(breaches, notices)``. A pre-migration store is a notice, drift is a breach."""
     got = tuple(df.columns)
     if got == expected:
-        return []
+        return [], []
     missing = [c for c in expected if c not in got]
     extra = [c for c in got if c not in expected]
+    if missing and not extra:
+        additive = ADDITIVE_SINCE_W3A.get(label, frozenset())
+        if set(missing) <= additive and got == tuple(c for c in expected if c in set(got)):
+            return [], [
+                f"{label}: store predates the W3A additive column(s) {missing} — v1 is "
+                f"additive-only, so this shape was valid when it was written. It is "
+                f"filled by the next build (python -m scripts.build_theme_graph), not "
+                f"by a migration"]
     if missing or extra:
-        return [f"{label}: column set drift — missing {missing}, unexpected {extra}"]
+        return [f"{label}: column set drift — missing {missing}, unexpected {extra}"], []
     return [f"{label}: column ORDER drift — the writer's column tuple is the contract "
-            f"(got {list(got)})"]
+            f"(got {list(got)})"], []
 
 
 def _check_dtypes(df: pd.DataFrame, families: dict[str, str], label: str) -> list[str]:
@@ -261,9 +326,12 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
         return breaches, notices
     nodes, edges, evidence = frames["nodes"], frames["edges"], frames["evidence"]
 
-    breaches += _check_columns(nodes, store.NODE_COLUMNS, "nodes")
-    breaches += _check_columns(edges, store.EDGE_COLUMNS, "edges")
-    breaches += _check_columns(evidence, store.EVIDENCE_COLUMNS, "evidence")
+    for frame, columns, label in ((nodes, store.NODE_COLUMNS, "nodes"),
+                                  (edges, store.EDGE_COLUMNS, "edges"),
+                                  (evidence, store.EVIDENCE_COLUMNS, "evidence")):
+        col_breaches, col_notices = _check_columns(frame, columns, label)
+        breaches += col_breaches
+        notices += col_notices
     breaches += _check_dtypes(nodes, NODE_DTYPES, "nodes")
     breaches += _check_dtypes(edges, EDGE_DTYPES, "edges")
     breaches += _check_dtypes(evidence, EVIDENCE_DTYPES, "evidence")
@@ -282,6 +350,134 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
             breaches.append(
                 f"{len(bad)} company node id(s) outside the permanent-identity grammar "
                 f"{identity.COMPANY_ID_RE.pattern} (first: {bad[0]!r})")
+
+    # --- local-theme grammar + the suite that has no baskets -----------------
+    kinds = {}
+    if {"kind", "node_id"} <= set(nodes.columns):
+        kinds = {str(n): str(k) for n, k in zip(nodes["node_id"], nodes["kind"])}
+        lt = nodes[nodes["kind"].astype(str) == "local_theme"]["node_id"].astype(str)
+        bad = sorted(lt[~lt.str.match(identity.LOCAL_THEME_ID_RE)].tolist())
+        if bad:
+            breaches.append(
+                f"{len(bad)} local_theme node id(s) outside the grammar "
+                f"{identity.LOCAL_THEME_ID_RE.pattern} (first: {bad[0]!r}) — source keys "
+                f"that cannot be expressed are resolved to a stable code BEFORE they "
+                f"reach an id, never squeezed into one")
+        stray = sorted(n for n in kinds if n.startswith("basket:finviz_themes:"))
+        if stray:
+            breaches.append(
+                f"{len(stray)} basket id(s) in the finviz_themes namespace (first: "
+                f"{stray[0]!r}) — that suite is registered for COMPANY identity only. Its "
+                f"concepts are local_theme nodes; a basket there gives one source two "
+                f"vocabularies for the same thing")
+
+    # --- edge pairing: which kinds an edge type may connect -------------------
+    if kinds and {"type", "src", "dst"} <= set(edges.columns):
+        seen_pairs: dict[str, set[tuple[str, str]]] = {}
+        example: dict[tuple[str, str, str], str] = {}
+        for row in edges.to_dict("records"):
+            etype = str(row.get("type"))
+            pair = (kinds.get(str(row.get("src")), "?"),
+                    kinds.get(str(row.get("dst")), "?"))
+            seen_pairs.setdefault(etype, set()).add(pair)
+            example.setdefault((etype, *pair), str(row.get("edge_id")))
+        for etype, pairs in sorted(seen_pairs.items()):
+            allowed = EDGE_PAIRING.get(etype)
+            if allowed is None:
+                continue
+            for pair in sorted(pairs - allowed):
+                if "?" in pair:
+                    breaches.append(
+                        f"{etype} edge {example[(etype, *pair)]!r} points at a node id "
+                        f"that has no node row — an edge between things the store does "
+                        f"not contain cannot be joined by anyone")
+                    continue
+                breaches.append(
+                    f"{etype} edge {example[(etype, *pair)]!r} connects {pair[0]}→"
+                    f"{pair[1]}, which is not a pairing this type may carry "
+                    f"({sorted(allowed)}) — a new semantics may not arrive as data")
+
+    # --- rights: fail closed on an unregistered family ------------------------
+    if "source_meta" in nodes.columns and "node_id" in nodes.columns:
+        known = rights.known_families()
+        unregistered: dict[str, str] = {}
+        for nid, meta in zip(nodes["node_id"], nodes["source_meta"]):
+            if _is_null(meta):
+                continue  # pre-existing node: exempt by construction, never by opinion
+            try:
+                family = str((json.loads(str(meta)) or {}).get("rights_family") or "")
+            except Exception:  # noqa: BLE001
+                breaches.append(f"node {str(nid)!r}: source_meta is not readable JSON")
+                continue
+            if family and family not in known:
+                unregistered.setdefault(family, str(nid))
+        for family, nid in sorted(unregistered.items()):
+            breaches.append(
+                f"source family {family!r} (e.g. node {nid!r}) has no row in "
+                f"{rights.REGISTRY_FILE} — rights are STATED, never assumed; an "
+                f"unreviewed family fails CLOSED rather than defaulting to permitted")
+
+    # --- rights: a mint-time snapshot that disagrees with today ---------------
+    if {"source_ref", "licensing_display_ok"} <= set(evidence.columns):
+        stale: list[str] = []
+        for row in evidence.to_dict("records"):
+            family = rights.family_for_source_ref(row.get("source_ref"))
+            if not family:
+                continue
+            expected = rights.licensing_for_family(family)
+            got = (bool(row.get("licensing_internal_ok")),
+                   bool(row.get("licensing_display_ok")),
+                   bool(row.get("licensing_redistribution_ok")))
+            if got != expected:
+                stale.append(f"{row.get('evidence_id')} ({family}: {got} vs {expected})")
+        if stale:
+            # A WARNING, never a breach: the store is append-only, so a row minted under
+            # last month's class cannot be rewritten and should not be. The registry is
+            # what any live emission consults.
+            notices.append(
+                f"{len(stale)} evidence row(s) carry mint-time licensing that disagrees "
+                f"with their family's CURRENT rights class (first: {stale[0]}) — "
+                f"historical snapshots, not breaches. The registry "
+                f"({rights.REGISTRY_FILE}) is the sole authority at emission time")
+
+    # --- join law: one canonical hop, and the two paths agree -----------------
+    if {"type", "src", "dst", "belief_time"} <= set(edges.columns):
+        # The LATEST-BELIEF view, and only LIVE rows. Against the full history a mapping
+        # that legitimately MOVED (theme A, later theme B) would read as a disagreement
+        # with itself — the store keeps both rows on purpose, and a check that forgets
+        # that manufactures a breach out of a correct history.
+        ordered = edges.sort_values(["edge_id", "belief_time", "computed_at"],
+                                    kind="stable")
+        current = ordered.drop_duplicates(subset=["edge_id"], keep="last")
+        live = current[(current["type"].astype(str) == "EXPRESSES")
+                       & (current["valid_to"].map(_is_null))]
+        basket_ltheme: dict[str, str] = {}
+        basket_theme: dict[str, set[str]] = {}
+        ltheme_theme: dict[str, set[str]] = {}
+        for row in live.to_dict("records"):
+            src, dst = str(row.get("src")), str(row.get("dst"))
+            if src.startswith("basket:") and dst.startswith("ltheme:"):
+                basket_ltheme[src] = dst
+            elif src.startswith("basket:") and dst.startswith("theme:"):
+                basket_theme.setdefault(src, set()).add(dst)
+            elif src.startswith("ltheme:") and dst.startswith("theme:"):
+                ltheme_theme.setdefault(src, set()).add(dst)
+        disagreements: list[str] = []
+        for basket, ltheme in sorted(basket_ltheme.items()):
+            via_local = ltheme_theme.get(ltheme, set())
+            direct = basket_theme.get(basket, set())
+            if not via_local or not direct:
+                continue  # only the SHARED rows are in scope; absence is not conflict
+            if via_local != direct:
+                disagreements.append(
+                    f"{basket} → {sorted(direct)} directly, but its concept {ltheme} "
+                    f"resolves to {sorted(via_local)}")
+        if disagreements:
+            breaches.append(
+                f"{len(disagreements)} crosswalk row(s) where the one-hop canonical "
+                f"expression and the concept's vocabulary resolution disagree (first: "
+                f"{disagreements[0]}) — ltheme→theme is vocabulary resolution, never a "
+                f"second expression path, so the two cannot name different themes")
 
     # --- semantic leakage: every edge cites dated evidence -------------------
     dated_ids: set[str] = set()
@@ -346,6 +542,53 @@ def audit(store_dir: Path, breaks_file: Path) -> tuple[list[str], list[str]]:
                     f"node {nid!r} claims identity_epoch {epoch} with no ratified row in "
                     f"{breaks_file.name} — an identity break is a curated act, never a "
                     f"builder's decision")
+
+    # --- capability side-car (optional; absent is pre-first-run) --------------
+    cap_path = store_dir / "capability.parquet"
+    if cap_path.exists():
+        try:
+            cap = pd.read_parquet(cap_path)
+        except Exception as exc:  # noqa: BLE001
+            breaches.append(f"capability.parquet unreadable: {exc}")
+            cap = None
+        if cap is not None:
+            cap_breaches, cap_notices = _check_columns(
+                cap, store.CAPABILITY_COLUMNS, "capability")
+            breaches += cap_breaches
+            notices += cap_notices
+            breaches += _check_dtypes(cap, CAPABILITY_DTYPES, "capability")
+            breaches += _check_enums(cap, CAPABILITY_ENUMS, "capability")
+            breaches += _check_schema(cap, "capability", "capability")
+            if "node_id" in cap.columns and kinds:
+                orphan = sorted({str(n) for n in cap["node_id"]} - set(kinds))
+                if orphan:
+                    breaches.append(
+                        f"{len(orphan)} capability row(s) classify a node that has no "
+                        f"node row (first: {orphan[0]!r}) — a classification of nothing")
+            if "capability_basis" in cap.columns:
+                blank = [str(n) for n, b in zip(cap.get("node_id", []),
+                                                cap["capability_basis"])
+                         if _is_null(b) or not str(b).strip()]
+                if blank:
+                    breaches.append(
+                        f"{len(blank)} capability row(s) carry no basis (first: "
+                        f"{blank[0]!r}) — a classification whose rule is not named is a "
+                        f"label, and W3B has to be able to re-derive it")
+            if "capability" in cap.columns:
+                minted = {str(v) for v in cap["capability"]}
+                if "measurable" in minted:
+                    notices.append(
+                        "capability=measurable is present — that verdict is minted only "
+                        "after a preregistered measurement (W3B). If this is W3A's own "
+                        "output, the rule promoted itself")
+    elif "local_theme" in set(kinds.values()):
+        # Silent when there is nothing to classify. Loud once local themes exist and
+        # nothing has classified them: that is a build that stopped half way, not a
+        # store that predates the side-car.
+        notices.append(
+            "local_theme nodes exist but capability.parquet does not — the side-car is "
+            "re-derived by every build (python -m scripts.build_theme_graph); its "
+            "absence means nothing has classified them yet")
 
     # --- closed-edge survivorship -------------------------------------------
     if {"edge_id", "valid_to", "belief_time"} <= set(edges.columns):
@@ -509,6 +752,46 @@ def selftest(tmp_root: Path | None = None) -> int:
         columns=list(store.EDGE_COLUMNS)).to_parquet(d2 / "edges.parquet", index=False)
     checks.append((not audit(d2, empty_breaks)[0],
                    "a re-opened edge is legal — the closure row survives on disk"))
+
+    # --- W3A: the local plane ------------------------------------------------
+    nodes, edges, ev = _clean_rows()
+    nodes.append({**nodes[0], "node_id": "ltheme:finviz:aicompute", "kind": "local_theme",
+                  "source_meta": json.dumps({"rights_family": "family_nobody_reviewed"})})
+    d = _fixture(tmp_root / "rights", nodes=nodes, edges=edges, evidence=ev)
+    checks.append((any("fails CLOSED" in x for x in audit(d, empty_breaks)[0]),
+                   "a source family with no registry row must fail CLOSED"))
+
+    nodes, edges, ev = _clean_rows()
+    nodes.append({**nodes[0], "node_id": "basket:finviz_themes:aicompute",
+                  "kind": "basket"})
+    d = _fixture(tmp_root / "finviz_basket", nodes=nodes, edges=edges, evidence=ev)
+    checks.append((any("finviz_themes namespace" in x for x in audit(d, empty_breaks)[0]),
+                   "a basket id in the company-identity-only suite must breach"))
+
+    nodes, edges, ev = _clean_rows()
+    nodes.append({**nodes[0], "node_id": "ltheme:finviz:BAD KEY", "kind": "local_theme"})
+    d = _fixture(tmp_root / "ltheme_grammar", nodes=nodes, edges=edges, evidence=ev)
+    checks.append((any("outside the grammar" in x for x in audit(d, empty_breaks)[0]),
+                   "a local-theme id outside the grammar must breach"))
+
+    nodes, edges, ev = _clean_rows()
+    nodes.append({**nodes[0], "node_id": "theme:solar", "kind": "theme"})
+    smuggled = {**edges[0], "dst": "theme:solar",
+                "edge_id": "member_of:co:us:AAA->theme:solar@2024-01-01"}
+    d = _fixture(tmp_root / "pairing", nodes=nodes, edges=[*edges, smuggled], evidence=ev)
+    checks.append((any("not a pairing this type may carry" in x
+                       for x in audit(d, empty_breaks)[0]),
+                   "a company→theme MEMBER_OF is the refused derived edge and must breach"))
+
+    # A store written before the additive columns existed: a NOTICE, never a breach —
+    # v1 is additive-only, so that shape was valid when it was written.
+    nodes, edges, ev = _clean_rows()
+    d = _fixture(tmp_root / "premigration", nodes=nodes, edges=edges, evidence=ev)
+    pd.read_parquet(d / "nodes.parquet").drop(columns=["source_meta"]).to_parquet(
+        d / "nodes.parquet", index=False)
+    b, n = audit(d, empty_breaks)
+    checks.append((not b and any("predates the W3A additive column" in x for x in n),
+                   f"a pre-migration store is INDETERMINATE, never a breach: {b}"))
 
     bad = [m for ok, m in checks if not ok]
     for m in bad:

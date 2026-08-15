@@ -22,7 +22,8 @@
       "description": "Deterministic: 'ev:' + sha1(kind|source_ref|published_at)[:16] — the same receipt observed twice is one row."
     },
     "kind": {
-      "enum": ["filing", "xbrl", "8k_counterparty", "scrape_receipt", "scrape", "news_item", "operator_curation", "comovement_stat"]
+      "enum": ["filing", "xbrl", "8k_counterparty", "scrape_receipt", "scrape", "news_item", "operator_curation", "comovement_stat", "external_classification"],
+      "description": "external_classification is the CORROBORATION class (W3A §4): a third party's classification of a name. It coexists with a membership receipt and nothing nets — two providers disagreeing are two rows, and a consumer that wants one answer says which receipt it trusts. Zero external_classification rows are minted in W3A; the class ships so the first one cannot arrive without a contract."
     },
     "published_at": {
       "$ref": "#/$defs/date",
@@ -37,14 +38,25 @@
       "minLength": 1,
       "description": "Repo path, accession, URL or url-hash identifying the source."
     },
-    "licensing_internal_ok": {"type": "boolean", "description": "May be used in internal computation."},
-    "licensing_display_ok": {"type": "boolean", "description": "May be shown to a user."},
-    "licensing_redistribution_ok": {"type": "boolean", "description": "May be republished as a dataset. Vendor-derived rows are false here."},
+    "licensing_internal_ok": {"type": "boolean", "description": "May be used in internal computation. MINT-TIME SNAPSHOT with no enforcement power (W3A §9.4): the rights authority is config/theme_sources.yml, read at call time by engine/theme_graph/rights.py. An append-only row cannot learn that a rights review moved, so the guard WARNS — never errors — when a stored snapshot disagrees with its family's current class."},
+    "licensing_display_ok": {"type": "boolean", "description": "May be shown to a user, as believed when the row was minted. Derived from the registry at mint time; not the authority. See licensing_internal_ok."},
+    "licensing_redistribution_ok": {"type": "boolean", "description": "May be republished as a dataset, as believed when the row was minted. Only house-authored content (auth_class: house) derives true here; vendor-derived rows are false."},
     "retention": {
       "type": ["string", "null"],
       "description": "Retention constraint carried by the source, when it has one; null when unconstrained."
     },
-    "computed_at": {"$ref": "#/$defs/clock"}
+    "computed_at": {"$ref": "#/$defs/clock"},
+    "provider": {
+      "type": ["string", "null"],
+      "description": "Who made the claim, for external_classification rows (an index provider, a data vendor). Null on first-party receipts, where source_ref already names the artifact."
+    },
+    "claim_type": {
+      "anyOf": [
+        {"type": "null"},
+        {"enum": ["membership", "exposure", "ecosystem_role", "description"]}
+      ],
+      "description": "What KIND of claim an external_classification row makes. 'X is in theme T' and 'X has exposure to T' are different assertions and must not be read as each other; null on first-party receipts."
+    }
   },
   "$defs": {
     "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"},
