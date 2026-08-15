@@ -10319,7 +10319,7 @@
       },
       {
         "path": "scripts/check_synapse_reads.py",
-        "signature_sha256": "c77cd07b4f295b995788e7cba3f719dbdc3cf232f45ce45e7354230012ef2936"
+        "signature_sha256": "69348e6bb71bb2acb743d98f071f9393071b9df23f9a5fb04d3a90d5f2b948a9"
       },
       {
         "path": "scripts/check_synapse_registry.py",
@@ -21535,7 +21535,7 @@
       },
       {
         "path": "tests/test_synapse_read_gate.py",
-        "signature_sha256": "f9ecabe8334c27ee3eeabe0ea0ea743b58fd9acab86d2a5f33e047594278faac"
+        "signature_sha256": "552bf5d422a807107f0fbfd06edcc339bb08fc4cf8a9b4b52b386b129a056269"
       },
       {
         "path": "tests/test_synapse_registry.py",
@@ -22657,7 +22657,7 @@
     "python_count": 5663,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "56df308fc8193b5b7209b48c17751d2919379736d9deb9ffa1d71ff786276dcc",
+  "index_sha256": "5fbcad5d75f39e240d4515544e24666f24599be81afbfc0dc9e17ba9d51b836b",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -64105,7 +64105,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2287,
+    "candidate_count": 2293,
     "candidates": [
       {
         "path": ".claude",
@@ -65728,6 +65728,10 @@
         "present": false
       },
       {
+        "path": "engine/assigns.py",
+        "present": false
+      },
+      {
         "path": "engine/auth_sensor.py",
         "present": false
       },
@@ -65830,6 +65834,10 @@
       {
         "path": "engine/briefing.py",
         "present": true
+      },
+      {
+        "path": "engine/broken.py",
+        "present": false
       },
       {
         "path": "engine/btc_alerts.py",
@@ -65942,6 +65950,10 @@
       {
         "path": "engine/codex_provider.py",
         "present": true
+      },
+      {
+        "path": "engine/comment_only.py",
+        "present": false
       },
       {
         "path": "engine/committed.py",
@@ -66222,6 +66234,10 @@
       {
         "path": "engine/flow_cohorts.py",
         "present": true
+      },
+      {
+        "path": "engine/fn_prose.py",
+        "present": false
       },
       {
         "path": "engine/foo.py",
@@ -67286,6 +67302,14 @@
       {
         "path": "engine/prophet_miss_audit.py",
         "present": true
+      },
+      {
+        "path": "engine/prose_and_read.py",
+        "present": false
+      },
+      {
+        "path": "engine/prose_only.py",
+        "present": false
       },
       {
         "path": "engine/qledger.py",
