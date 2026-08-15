@@ -1,0 +1,31 @@
+name: infrastructure-m1-runner-canary
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  m1-service-canary:
+    name: diagnostic-m1-service-canary
+    runs-on: [self-hosted, m1-theta]
+    timeout-minutes: 8
+    steps:
+      - name: report bounded non-secret host facts
+        shell: bash
+        run: |
+          set -euo pipefail
+          runner_root=$(cd "$RUNNER_WORKSPACE/.." && pwd)
+          echo "runner_name=${RUNNER_NAME:-unknown}"
+          echo "hostname=$(hostname)"
+          echo "arch=$(uname -m) os=$(sw_vers -productVersion)"
+          echo "cpu_count=$(sysctl -n hw.ncpu)"
+          echo "memory_bytes=$(sysctl -n hw.memsize)"
+          echo "runner_root=$runner_root"
+          df -h "$runner_root"
+          "$HOME/runner-guard/bin/runner_disk_guard.py" \
+            --path "$runner_root" --mode lightweight
+          listeners=$(pgrep -fc 'Runner.Listener' || true)
+          echo "runner_listeners_on_host=$listeners"
+          test "$listeners" -eq 3

@@ -1,0 +1,44 @@
+[Unit]
+Description=Mastermind isolated GitHub Actions CI runner __RUNNER_NAME__
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=900
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=macroci
+Group=macroci
+WorkingDirectory=__RUNNER_ROOT__
+ExecStartPre=/usr/local/libexec/mastermind-ci-resource-guard --path __RUNNER_ROOT__
+ExecStart=/usr/local/libexec/mastermind-ci-runner __RUNNER_ROOT__
+Restart=on-failure
+RestartSec=60
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+InaccessiblePaths=/mnt/c /mnt/d /home/longr /root
+ReadOnlyPaths=/var/cache/mastermind-ci/macro.git
+ReadWritePaths=__RUNNER_ROOT__ /var/lib/macroci
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

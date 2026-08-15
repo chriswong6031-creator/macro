@@ -1399,6 +1399,18 @@ on:
       # workflow-yaml guard: every workflow file must stay loadable (metabolism-agenda
       # col-0 incident #2135→#2260 — unparseable file = failed run on EVERY push).
       - "scripts/check_workflow_yaml.py"
+      # Wave B/C self-hosted canary policy and receipts. Workflow files are
+      # reached by the catch-all above; these are the other half of the guard.
+      - ".github/runner-policy.yml"
+      - "scripts/check_runner_policy.py"
+      - "scripts/resolve_ci_canary_ref.py"
+      - "scripts/select_ci_canary_packs.py"
+      - "scripts/monitor_ci_host_resources.py"
+      - "scripts/capture_ci_canary_receipt.py"
+      - "scripts/compare_ci_canary_receipts.py"
+      - "tests/test_runner_policy.py"
+      - "tests/test_ci_canary_tools.py"
+      - "tests/test_ci_canary_workflows.py"
       # Wave B job-graph guard (2026-08-11), same two-halves law as the blocks around
       # it. The SUBJECT is this very file — the ci-plan/ci-pack/ci-gate wiring below —
       # which the "**" catch-all at the top of this list already reaches; this entry

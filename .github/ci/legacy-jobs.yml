@@ -2596,6 +2596,8 @@ jobs:
         run: python -m pytest tests/test_ci_plan_workflow.py -q
       - name: hosted-runner packing contract
         run: python -m pytest tests/test_ci_pack.py tests/test_merge_on_green.py tests/test_check_conflict_markers.py -q
+      - name: transitional self-hosted runner policy and canary contracts
+        run: python scripts/check_runner_policy.py && python -m pytest tests/test_runner_policy.py tests/test_ci_canary_tools.py tests/test_ci_canary_workflows.py -q
       # The US nightly's cron redundancy (2026-08-13), wired here for the same reason
       # the two steps above are: its subject IS .github/workflows/ — specifically the
       # asymmetry that asia-close.yml carries five cron slots and daily.yml carries one

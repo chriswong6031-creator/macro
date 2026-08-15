@@ -1,0 +1,55 @@
+schema: runner_policy.v2
+phase: wave-bc-canary
+repository_visibility: public
+ordinary_pr_ci: github-hosted
+
+scenario_routes:
+  same_repo_ordinary_pr: github-hosted
+  fork_pr: github-hosted
+  trusted_dispatch_canary: pc-ci-canary
+
+protected_hosted_routes:
+  - workflow: .github/workflows/ci.yml
+    jobs: [ci-plan, ci-pack, ci-gate]
+  - workflow: .github/workflows/fences.yml
+    jobs: [fence-pack, fork-self-mod-fence, fork-capability-broker, fork-grader-manifest]
+
+custom_routes:
+  - workflow: .github/workflows/selfhosted-ci-canary.yml
+    job: selfhosted-pack
+    event: workflow_dispatch
+    labels: [self-hosted, ci-linux-canary, ci-linux]
+  - workflow: .github/workflows/selfhosted-ci-canary.yml
+    job: cache-negative-control
+    event: workflow_dispatch
+    labels: [self-hosted, ci-linux-canary]
+  - workflow: .github/workflows/selfhosted-ci-canary.yml
+    job: contamination-probe
+    event: workflow_dispatch
+    labels: [self-hosted, ci-linux-canary]
+  - workflow: .github/workflows/selfhosted-ci-canary.yml
+    job: render-reservation-probe
+    event: workflow_dispatch
+    labels: [self-hosted, render-linux]
+  - workflow: .github/workflows/m1-runner-canary.yml
+    job: m1-service-canary
+    event: workflow_dispatch
+    labels: [self-hosted, m1-theta]
+
+pool_topology:
+  pc-ci-canary:
+    slots: 1
+    labels: [self-hosted, ci-linux-canary]
+    forbidden_labels: [render-linux]
+  pc-ci:
+    slots: 3
+    labels: [self-hosted, ci-linux]
+    forbidden_labels: [render-linux]
+  pc-render:
+    slots: 1
+    labels: [self-hosted, Linux, X64, render-linux]
+    forbidden_labels: [ci-linux, ci-linux-canary]
+  m1-theta-canary:
+    slots: 1
+    labels: [self-hosted, m1-theta]
+    forbidden_labels: [macstudio, macstudio-light, theta-m1, codex, render-heavy]

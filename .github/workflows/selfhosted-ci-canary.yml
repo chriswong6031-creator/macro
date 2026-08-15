@@ -1,0 +1,459 @@
+name: infrastructure-selfhosted-ci-canary
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: "Same-repository PR whose exact merge ref is tested; 0 tests the dispatch main SHA."
+        type: string
+        default: "0"
+      slots:
+        description: "1 = parity/contamination canary; 3 = bounded CI capacity plus render reservation probe."
+        type: choice
+        options: ["1", "3"]
+        default: "1"
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: infrastructure-selfhosted-ci-canary
+  cancel-in-progress: false
+
+jobs:
+  trust-gate:
+    name: diagnostic-trusted-main-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: refuse a workflow definition outside main
+        env:
+          TRUSTED_REF: ${{ github.ref }}
+        run: |
+          test "$TRUSTED_REF" = refs/heads/main || {
+            echo "::error title=ci-canary-trust::dispatch must use the main workflow definition"
+            exit 1
+          }
+
+  plan:
+    name: diagnostic-plan-current-heavy-pack
+    needs: trust-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+      primary_pack: ${{ steps.select.outputs.primary_pack }}
+      primary_jobs: ${{ steps.select.outputs.primary_jobs }}
+      selected_packs: ${{ steps.select.outputs.selected_packs }}
+      plan_sha: ${{ steps.plan.outputs.plan_sha }}
+      tested_ref: ${{ steps.ref.outputs.tested_ref }}
+      tested_sha: ${{ steps.ref.outputs.tested_sha }}
+      base_sha: ${{ steps.ref.outputs.base_sha }}
+      head_sha: ${{ steps.ref.outputs.head_sha }}
+      contamination_sha: ${{ steps.ref.outputs.contamination_sha }}
+      control_sha: ${{ github.sha }}
+    steps:
+      - name: checkout trusted canary control code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          filter: blob:none
+          fetch-depth: 2
+      - name: preserve trusted control helpers outside the candidate workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/ci-canary-control"
+          cp scripts/resolve_ci_canary_ref.py \
+             scripts/select_ci_canary_packs.py \
+             "$RUNNER_TEMP/ci-canary-control/"
+      - id: ref
+        name: resolve an immutable trusted candidate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python3 "$RUNNER_TEMP/ci-canary-control/resolve_ci_canary_ref.py" \
+            --repository "${{ github.repository }}" \
+            --github-sha "${{ github.sha }}" \
+            --pr-number "${{ inputs.pr_number }}" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: checkout the exact candidate tree on hosted control
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.ref.outputs.tested_ref }}
+          filter: blob:none
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install isolated planner
+        run: |
+          python -m venv "$RUNNER_TEMP/ci-canary-plan-runner"
+          "$RUNNER_TEMP/ci-canary-plan-runner/bin/pip" install pyyaml
+      - id: plan
+        name: freeze the current logical plan
+        env:
+          CI_SCOPE_ARG: ${{ inputs.pr_number != '0' && format('--changed-from {0}', steps.ref.outputs.base_sha) || '' }}
+        run: >-
+          "$RUNNER_TEMP/ci-canary-plan-runner/bin/python" scripts/run_ci_pack.py
+          --workflow .github/ci/legacy-jobs.yml
+          --pack-count 12
+          --scope-mode active
+          --matrix-mode active
+          --plan-only
+          --github-output "$GITHUB_OUTPUT"
+          --emit-plan-json "$RUNNER_TEMP/ci-canary-plan/plan.json"
+          --emit-changed-files "$RUNNER_TEMP/ci-canary-plan/changed-files.json"
+          $CI_SCOPE_ARG
+      - id: select
+        name: select the current heaviest non-empty pack or top three
+        run: |
+          python3 "$RUNNER_TEMP/ci-canary-control/select_ci_canary_packs.py" \
+            --plan "$RUNNER_TEMP/ci-canary-plan/plan.json" \
+            --count "${{ inputs.slots }}" \
+            --github-output "$GITHUB_OUTPUT"
+      - name: publish frozen plan and changed-file handle
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-plan
+          path: ${{ runner.temp }}/ci-canary-plan
+          if-no-files-found: error
+          retention-days: 14
+
+  hosted-control:
+    name: diagnostic-hosted-control-pack-${{ needs.plan.outputs.primary_pack }}
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: mark hosted job start
+        run: date +%s.%N > "$RUNNER_TEMP/job-start"
+      - name: checkout trusted receipt control code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.control_sha }}
+          filter: blob:none
+          fetch-depth: 1
+      - name: preserve trusted receipt helpers outside the candidate workspace
+        run: |
+          mkdir -p "$RUNNER_TEMP/ci-canary-control"
+          cp scripts/monitor_ci_host_resources.py \
+             scripts/capture_ci_canary_receipt.py \
+             "$RUNNER_TEMP/ci-canary-control/"
+      - name: mark candidate checkout start
+        run: date +%s.%N > "$RUNNER_TEMP/checkout-start"
+      - name: checkout exact candidate tree
+        uses: actions/checkout@v4
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
+        with:
+          ref: ${{ needs.plan.outputs.tested_ref }}
+          filter: blob:none
+          fetch-depth: 1
+      - name: close candidate checkout timing
+        run: |
+          checkout_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/checkout-start")" -v end="$checkout_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/checkout-seconds"
+          date +%s.%N > "$RUNNER_TEMP/dependency-start"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install isolated pack runner
+        run: |
+          python -m venv "$RUNNER_TEMP/ci-canary-pack-runner"
+          "$RUNNER_TEMP/ci-canary-pack-runner/bin/pip" install pyyaml
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-plan
+          path: ${{ runner.temp }}/ci-canary-plan
+      - name: execute the frozen logical pack and retain its actual result
+        env:
+          CI_CHANGED_FILES_FILE: ${{ runner.temp }}/ci-canary-plan/changed-files.json
+        shell: bash
+        run: |
+          set -uo pipefail
+          dependency_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
+          test_start=$(date +%s.%N)
+          touch .ci-canary-contamination-sentinel
+          python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
+            --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
+          monitor_pid=$!
+          "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
+            --workflow .github/ci/legacy-jobs.yml \
+            --pack-index "${{ needs.plan.outputs.primary_pack }}" \
+            --pack-count 12 \
+            --scope-mode active \
+            --changed-from "${{ needs.plan.outputs.base_sha }}" \
+            --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
+            --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
+          pack_rc=${PIPESTATUS[0]}
+          test_end=$(date +%s.%N)
+          awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
+          kill "$monitor_pid" 2>/dev/null || true
+          wait "$monitor_pid" 2>/dev/null || true
+          echo "$pack_rc" > "$RUNNER_TEMP/pack.rc"
+      - name: write hosted receipt
+        run: |
+          wall_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/job-start")" -v end="$wall_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/wall-seconds"
+          object_bytes=$(du -sk .git/objects | awk '{print $1 * 1024}')
+          python3 "$RUNNER_TEMP/ci-canary-control/capture_ci_canary_receipt.py" \
+            --log "$RUNNER_TEMP/pack.log" \
+            --plan "$RUNNER_TEMP/ci-canary-plan/plan.json" \
+            --pack "${{ needs.plan.outputs.primary_pack }}" \
+            --exit-code "$(cat "$RUNNER_TEMP/pack.rc")" \
+            --tested-sha "${{ needs.plan.outputs.tested_sha }}" \
+            --base-sha "${{ needs.plan.outputs.base_sha }}" \
+            --runner-kind hosted \
+            --runner-name "${RUNNER_NAME:-github-hosted}" \
+            --trace2 "$RUNNER_TEMP/git-trace2.json" \
+            --metrics "$RUNNER_TEMP/resources.jsonl" \
+            --checkout-seconds "$RUNNER_TEMP/checkout-seconds" \
+            --dependency-seconds "$RUNNER_TEMP/dependency-seconds" \
+            --test-seconds "$RUNNER_TEMP/test-seconds" \
+            --wall-seconds "$RUNNER_TEMP/wall-seconds" \
+            --workspace-object-bytes "$object_bytes" \
+            --output "$RUNNER_TEMP/hosted-receipt.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-hosted-${{ needs.plan.outputs.primary_pack }}
+          path: ${{ runner.temp }}/hosted-receipt.json
+          if-no-files-found: error
+          retention-days: 14
+
+  selfhosted-pack:
+    name: diagnostic-selfhosted-pack-${{ matrix.pack }}
+    needs: plan
+    runs-on: ${{ fromJSON(inputs.slots == '1' && '["self-hosted","ci-linux-canary"]' || '["self-hosted","ci-linux"]') }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      max-parallel: ${{ fromJSON(inputs.slots) }}
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    steps:
+      - name: mark self-hosted job start
+        run: date +%s.%N > "$RUNNER_TEMP/job-start"
+      - name: refuse unsafe resources before shared cache use
+        run: /usr/local/libexec/mastermind-ci-resource-guard --path "$GITHUB_WORKSPACE"
+      - name: mark cache and checkout start
+        run: |
+          du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-before"
+          date +%s.%N > "$RUNNER_TEMP/checkout-start"
+      - name: prewarm exact base from the read-only shared cache
+        shell: bash
+        run: |
+          set -o pipefail
+          /usr/local/libexec/mastermind-ci-prewarm \
+            --cache /var/cache/mastermind-ci/macro.git \
+            --workspace "$GITHUB_WORKSPACE" \
+            --repository "${{ github.repository }}" \
+            --repository-url "https://github.com/${{ github.repository }}.git" \
+            --base-sha "${{ needs.plan.outputs.control_sha }}" \
+            | tee "$RUNNER_TEMP/prewarm.log"
+      - name: preserve root-owned-control-compatible receipt helpers
+        run: |
+          mkdir -p "$RUNNER_TEMP/ci-canary-control"
+          cp scripts/monitor_ci_host_resources.py \
+             scripts/capture_ci_canary_receipt.py \
+             "$RUNNER_TEMP/ci-canary-control/"
+      - name: checkout exact candidate tree after cache prewarm
+        uses: actions/checkout@v4
+        env:
+          GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
+        with:
+          ref: ${{ needs.plan.outputs.tested_ref }}
+          filter: blob:none
+          fetch-depth: 1
+      - name: verify exact checkout and close timing
+        run: |
+          test "$(git rev-parse HEAD)" = "${{ needs.plan.outputs.tested_sha }}"
+          test "$(cat .git/objects/info/alternates)" = "/var/cache/mastermind-ci/macro.git/objects"
+          checkout_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/checkout-start")" -v end="$checkout_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/checkout-seconds"
+          date +%s.%N > "$RUNNER_TEMP/dependency-start"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: install isolated pack runner
+        run: |
+          python -m venv "$RUNNER_TEMP/ci-canary-pack-runner"
+          "$RUNNER_TEMP/ci-canary-pack-runner/bin/pip" install pyyaml
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-plan
+          path: ${{ runner.temp }}/ci-canary-plan
+      - name: execute the frozen logical pack and retain its actual result
+        env:
+          CI_CHANGED_FILES_FILE: ${{ runner.temp }}/ci-canary-plan/changed-files.json
+        shell: bash
+        run: |
+          set -uo pipefail
+          dependency_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
+          test_start=$(date +%s.%N)
+          touch .ci-canary-contamination-sentinel
+          python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
+            --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
+          monitor_pid=$!
+          "$RUNNER_TEMP/ci-canary-pack-runner/bin/python" scripts/run_ci_pack.py \
+            --workflow .github/ci/legacy-jobs.yml \
+            --pack-index "${{ matrix.pack }}" \
+            --pack-count 12 \
+            --scope-mode active \
+            --changed-from "${{ needs.plan.outputs.base_sha }}" \
+            --expect-plan-sha "${{ needs.plan.outputs.plan_sha }}" \
+            --execute 2>&1 | tee "$RUNNER_TEMP/pack.log"
+          pack_rc=${PIPESTATUS[0]}
+          test_end=$(date +%s.%N)
+          awk -v start="$test_start" -v end="$test_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/test-seconds"
+          kill "$monitor_pid" 2>/dev/null || true
+          wait "$monitor_pid" 2>/dev/null || true
+          echo "$pack_rc" > "$RUNNER_TEMP/pack.rc"
+      - name: write self-hosted receipt
+        run: |
+          wall_end=$(date +%s.%N)
+          awk -v start="$(cat "$RUNNER_TEMP/job-start")" -v end="$wall_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/wall-seconds"
+          cat "$RUNNER_TEMP/prewarm.log" "$RUNNER_TEMP/pack.log" > "$RUNNER_TEMP/combined.log"
+          du -sb /var/cache/mastermind-ci/macro.git | awk '{print $1}' > "$RUNNER_TEMP/cache-after"
+          object_bytes=$(du -sk .git/objects | awk '{print $1 * 1024}')
+          python3 "$RUNNER_TEMP/ci-canary-control/capture_ci_canary_receipt.py" \
+            --log "$RUNNER_TEMP/combined.log" \
+            --plan "$RUNNER_TEMP/ci-canary-plan/plan.json" \
+            --pack "${{ matrix.pack }}" \
+            --exit-code "$(cat "$RUNNER_TEMP/pack.rc")" \
+            --tested-sha "${{ needs.plan.outputs.tested_sha }}" \
+            --base-sha "${{ needs.plan.outputs.base_sha }}" \
+            --runner-kind selfhosted \
+            --runner-name "${RUNNER_NAME:-unknown}" \
+            --trace2 "$RUNNER_TEMP/git-trace2.json" \
+            --metrics "$RUNNER_TEMP/resources.jsonl" \
+            --checkout-seconds "$RUNNER_TEMP/checkout-seconds" \
+            --dependency-seconds "$RUNNER_TEMP/dependency-seconds" \
+            --test-seconds "$RUNNER_TEMP/test-seconds" \
+            --wall-seconds "$RUNNER_TEMP/wall-seconds" \
+            --cache-before "$RUNNER_TEMP/cache-before" \
+            --cache-after "$RUNNER_TEMP/cache-after" \
+            --workspace-object-bytes "$object_bytes" \
+            --output "$RUNNER_TEMP/selfhosted-${{ matrix.pack }}.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ci-canary-selfhosted-${{ matrix.pack }}
+          path: ${{ runner.temp }}/selfhosted-${{ matrix.pack }}.json
+          if-no-files-found: error
+          retention-days: 14
+
+  cache-negative-control:
+    name: diagnostic-cache-disabled-negative-control
+    if: inputs.slots == '1'
+    needs: plan
+    runs-on: [self-hosted, ci-linux-canary]
+    timeout-minutes: 8
+    steps:
+      - name: prove a missing cache refuses before checkout
+        shell: bash
+        run: |
+          set +e
+          /usr/local/libexec/mastermind-ci-prewarm \
+            --cache "$RUNNER_TEMP/intentionally-absent-cache" \
+            --workspace "$RUNNER_TEMP/cache-negative-workspace" \
+            --repository "${{ github.repository }}" \
+            --repository-url "https://github.com/${{ github.repository }}.git" \
+            --base-sha "${{ needs.plan.outputs.control_sha }}"
+          rc=$?
+          set -e
+          test "$rc" -eq 66
+          test ! -e "$RUNNER_TEMP/cache-negative-workspace/.git"
+          echo "cache-disabled control refused with rc=$rc; no origin checkout attempted"
+
+  contamination-probe:
+    name: diagnostic-persistent-workspace-contamination
+    if: inputs.slots == '1'
+    needs: [plan, selfhosted-pack]
+    runs-on: [self-hosted, ci-linux-canary]
+    timeout-minutes: 20
+    steps:
+      - name: prewarm trusted control tree from shared cache
+        run: |
+          /usr/local/libexec/mastermind-ci-prewarm \
+            --cache /var/cache/mastermind-ci/macro.git \
+            --workspace "$GITHUB_WORKSPACE" \
+            --repository "${{ github.repository }}" \
+            --repository-url "https://github.com/${{ github.repository }}.git" \
+            --base-sha "${{ needs.plan.outputs.control_sha }}"
+      - name: checkout a second different exact tree
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.contamination_sha }}
+          filter: blob:none
+          fetch-depth: 1
+      - name: prove the persistent workspace is clean and isolated
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${{ needs.plan.outputs.contamination_sha }}"
+          test "${{ needs.plan.outputs.contamination_sha }}" != "${{ needs.plan.outputs.tested_sha }}"
+          test -z "$(git status --porcelain)"
+          test ! -e .ci-canary-contamination-sentinel
+          test ! -e .git/index.lock
+          test ! -w /var/cache/mastermind-ci/macro.git
+          ! pgrep -f '[m]onitor_ci_host_resources.py'
+          test ! -e /mnt/c/Users/longr
+          echo "second_tree=${{ needs.plan.outputs.contamination_sha }} runner=${RUNNER_NAME:-unknown} clean=true"
+
+  render-reservation-probe:
+    name: diagnostic-render-reserved-slot
+    if: inputs.slots == '3'
+    needs: plan
+    runs-on: [self-hosted, Linux, X64, render-linux]
+    timeout-minutes: 10
+    steps:
+      - name: prove the render-only listener remains independently routable
+        run: |
+          echo "runner=${RUNNER_NAME:-unknown} hostname=$(hostname)"
+          echo "render reservation probe: read-only, no checkout, no publication"
+          free -h
+          df -h "$RUNNER_WORKSPACE"
+          sleep 30
+
+  compare:
+    name: diagnostic-hosted-selfhosted-result-parity
+    if: always() && inputs.slots == '1'
+    needs: [plan, hosted-control, selfhosted-pack, cache-negative-control, contamination-probe]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: require every infrastructure leg to conclude
+        env:
+          PLAN: ${{ needs.plan.result }}
+          HOSTED: ${{ needs.hosted-control.result }}
+          SELFHOSTED: ${{ needs.selfhosted-pack.result }}
+          NEGATIVE: ${{ needs.cache-negative-control.result }}
+          CONTAMINATION: ${{ needs.contamination-probe.result }}
+        run: |
+          for result in "$PLAN" "$HOSTED" "$SELFHOSTED" "$NEGATIVE" "$CONTAMINATION"; do
+            test "$result" = success
+          done
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.control_sha }}
+          filter: blob:none
+          fetch-depth: 1
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-hosted-${{ needs.plan.outputs.primary_pack }}
+          path: ${{ runner.temp }}/hosted
+      - uses: actions/download-artifact@v4
+        with:
+          name: ci-canary-selfhosted-${{ needs.plan.outputs.primary_pack }}
+          path: ${{ runner.temp }}/selfhosted
+      - name: compare logical jobs, failures, and immutable identity
+        run: |
+          python3 scripts/compare_ci_canary_receipts.py \
+            --hosted "$RUNNER_TEMP/hosted/hosted-receipt.json" \
+            --selfhosted "$RUNNER_TEMP/selfhosted/selfhosted-${{ needs.plan.outputs.primary_pack }}.json"
