@@ -7743,8 +7743,10 @@ jobs:
       # sibling instrument (the freshness sentinel #5154 extended) already runs
       # in the sweep above.  Static/AST + engine.close_pass/us_board_rank only;
       # pandas/pyyaml ride the existing install line.
+      # 2026-08-15 (#5746): Massive close truth is the same lane — same publisher,
+      # same BOARD_KEY — so its suite rides this step rather than a new job.
       - name: evening close-pass provisional board lane (W-L1a, #5154)
-        run: python -m pytest tests/test_close_pass_lane.py -q
+        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py -q
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
   # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a
