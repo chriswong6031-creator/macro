@@ -1260,6 +1260,21 @@ def semantic_evidence_for_head(
         match = re.search(r"/actions/runs/(\d+)(?:/|$)", str(check.get("details_url") or ""))
         if match:
             linked.append((int(match.group(1)), check))
+    # MERGE ARTIFACTS ARE NOT COMPETING VERDICTS (2026-08-15) — the sweeper's half of the
+    # same fix in .claude/hooks/ship_loop_guard._semantic_evidence_for_head; that
+    # function's comment carries the measurement. A `closed` event starts a zero-runner
+    # ci.yml replacement in the same concurrency group by design, so a head can carry a
+    # `skipped` ci-gate beside its real one. A skipped gate asserts nothing and so can
+    # conflict with nothing. These two copies are kept deliberately identical: a guard
+    # that refuses evidence the sweeper accepts (or the reverse) is how a PR becomes
+    # unmergeable to one party and done to the other.
+    decisive = [
+        (run_id, check)
+        for run_id, check in linked
+        if str(check.get("conclusion") or "").lower() != "skipped"
+    ]
+    if decisive:
+        linked = decisive
     linked_ids = {run_id for run_id, _check in linked}
     if len(linked_ids) > 1:
         raise semantic_proof.SemanticProofError(

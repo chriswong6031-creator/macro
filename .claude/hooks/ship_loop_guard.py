@@ -930,6 +930,31 @@ def _semantic_evidence_for_head(
         match = re.search(r"/actions/runs/(\d+)(?:/|$)", str(check.get("details_url") or ""))
         if match:
             linked.append((int(match.group(1)), check))
+    # MERGE ARTIFACTS ARE NOT COMPETING VERDICTS (2026-08-15). Merging fires
+    # `pull_request: closed`, and ci.yml's concurrency block deliberately starts a
+    # ZERO-RUNNER replacement in the same group for it ("The closed event starts a
+    # zero-runner replacement ... cancelling a long CI pack when its PR merges or
+    # closes").  So EVERY cleanly merged head carries two ci-gate check-runs: the real
+    # concluded one, plus a `skipped` artifact created 12-15s later by the merge itself.
+    # Counting that artifact as a second opinion made this raise on every merged head —
+    # measured on two independently authored PRs the same afternoon:
+    #   #5754 c02fc9eac6e8: success 14:22:00Z (run 31887298300) + skipped 14:22:15Z (31889718105)
+    #   #5753 f9bdefd484b6: success 13:17:16Z              + skipped 13:17:28Z
+    # which blocked their authoring sessions from stopping on work that had merged GREEN,
+    # with no session-side remedy: check-runs on a merged commit are immutable and
+    # `gh run rerun` preserves the run id, so the two ids can never be collapsed.
+    #
+    # A `skipped` ci-gate asserts nothing, so it cannot CONFLICT with anything. Drop it
+    # and reason on what remains. Ambiguity is still fail-closed: two runs that both
+    # reached a real conclusion remain irreconcilable and still raise, and a head whose
+    # ONLY evidence is skipped still resolves to no usable evidence below.
+    decisive = [
+        (run_id, check)
+        for run_id, check in linked
+        if str(check.get("conclusion") or "").lower() != "skipped"
+    ]
+    if decisive:
+        linked = decisive
     linked_ids = {run_id for run_id, _check in linked}
     if len(linked_ids) > 1:
         raise semantic_proof.SemanticProofError(
