@@ -374,9 +374,14 @@ ARTIFACT_MANIFEST = [
      ],
      "schema_item_fields": [
          "ab_tier", "adv_yi", "align_tier", "alpha", "alpha_entry",
-         "board_definition", "cap_bucket", "coiled", "conviction", "data_through",
+         # V4: board_rank is the live display/admission ORDER (interest, then v3
+         # score); score_rank below stays the v3 SCORE order. intel* carry the
+         # board-independent interest receipt and its basis.
+         "board_definition", "board_rank", "cap_bucket", "coiled", "conviction",
+         "data_through",
          "days_since_signal", "dir", "display_rank", "entry_signal", "eq_dir",
-         "extension", "hold", "label", "label_zh", "lane", "lane_reasons",
+         "extension", "hold", "intel", "intel_interest_basis",
+         "intel_interest_score", "label", "label_zh", "lane", "lane_reasons",
          "macd_d2", "macd_d3", "macd_hist_d", "mcap", "microstructure",
          "muted_entry", "name", "narrative", "off_high", "price", "prophet",
          "quality", "rev_percentile", "rev_z",

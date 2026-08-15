@@ -33,6 +33,26 @@ from __future__ import annotations
 
 from typing import Any
 
+#: The definition the LIVE board stamps today.  Every R1-R3 cohort below is drawn
+#: from the live shelf, so this must move with ``china_board_rank.BOARD_DEFINITION``
+#: on every definition bump — a spec left pointing at a retired stamp matches zero
+#: rows, and a tripwire that matches nothing reads as "no breach" while it is
+#: actually blind.  It is a literal rather than an import so this module stays
+#: dependency-free; ``tests/test_china_board_rank_v4.py`` pins the two equal, so a
+#: future bump fails CI here instead of silently disarming the alarms.
+LIVE_BOARD_DEFINITION = "cn_prophet_v4"
+
+#: V4 preserved every v3 admission rule (R1 prime window, R2 theme_timing, R3
+#: relay_late) and changed only the ORDER, so R1-R3 stay meaningful against the live
+#: shelf.  Their accrual clocks restart at the v3→v4 boundary rather than pooling
+#: across it: v4's shelf COMPOSITION differs (the caps now bind on intelligence
+#: interest), and pooling two shelf compositions into one cohort would confound the
+#: very comparison the tripwire exists to make.
+ERA_BOUNDARY_NOTE = (
+    "cn_prophet_v3 -> cn_prophet_v4 (2026-08-15): ordering changed, admission did "
+    "not. R1-R3 cohorts do not pool across the boundary."
+)
+
 # The comparison cohorts are keyed on ledger columns the board store already
 # carries: ``board_definition`` (append_board), ``lane`` + ``lane_reasons``
 # (partition_board_rows), and the ``theme_timing`` component inside ``prophet``.
@@ -44,7 +64,7 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
         "metric": "win_rate_pct",
         "treatment": {
             "label": "v3_featured",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "featured",
         },
         "control": {
@@ -69,12 +89,12 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
         "metric": "loser_rate_pct",
         "treatment": {
             "label": "theme_timing_1_0",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "theme_timing": 1.0,
         },
         "control": {
             "label": "theme_timing_0_25",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "theme_timing": 0.25,
         },
         # Loser rate is a cost, so the favoured side is the LOWER one.
@@ -98,13 +118,13 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
         "metric": "median_excess_pct",
         "treatment": {
             "label": "relay_late_demoted",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "more_actionable",
             "lane_reason": "relay_late",
         },
         "control": {
             "label": "v3_featured",
-            "board_definition": "cn_prophet_v3",
+            "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "featured",
         },
         # The demotion is wrong if the names it moved BEAT the shelf it protected.
@@ -122,6 +142,37 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
             "late >=4 −5.32pp/36.0%; H=21 late −8.36pp/31.3%. The in-era §2.9 "
             "theme split it replaces was REFUTED at 12-month scale "
             "(chase x HOT −2.04pp vs chase x no-theme −1.51pp, n=7,816)."
+        ),
+    },
+    {
+        "id": "cn_v4_vs_v3_order_shadow_excess",
+        "slate_item": "R4",
+        "title": "V4 intelligence-ordered shelf vs the displaced v3 score-ordered shadow shelf",
+        "metric": "median_excess_pct",
+        "treatment": {
+            "label": "v4_featured",
+            "board_definition": LIVE_BOARD_DEFINITION,
+            "lane": "featured",
+        },
+        "control": {
+            "label": "v3_order_shadow_featured",
+            "board_definition": "cn_prophet_v3_shadow",
+            "lane": "featured",
+        },
+        "direction": "treatment_higher",
+        "threshold": 0.0,
+        "threshold_unit": "pp",
+        "min_matured": 60,
+        "action": (
+            "emit ::warning cn-v4-order-trails-v3 and propose reverting R4 "
+            "(partition_board_rows rank_field -> 'score_rank') to the operator"
+        ),
+        "evidence": (
+            "NO forward evidence — this wiring ships on a first-principles argument "
+            "(rank by interestingness, gate by entry) and an operator's read of the "
+            "resulting names, NOT on a measured edge. The two shelves differ only in "
+            "ORDER, so this race is the whole test of the ordering claim, and it has "
+            "n=0 today. Until it matures, 'v4 ranks better' is a hypothesis."
         ),
     },
 )
