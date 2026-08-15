@@ -56,9 +56,11 @@ waves:
       (DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE). A = primary within-name
       transition contrast; B = corroborative persistence-preserving null.
       Scope = 20 cells (DD20/DD35/MA200/QB/VZ × main/chinext20 × H10/H5).
-      P-B2 verdict is not rewritten. Next: independent adversarial review
-      of the prereg. The certification RUN is a later session. Do not
-      auto-roll into the run or into P-D.
+      P-B2 verdict is not rewritten. Independent adversarial review
+      posted 2026-08-15: FREEZE AMEND
+      (research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md).
+      Do not run the certification until A1–A8 land as numbered
+      pre-outcome amendments. Do not auto-roll into the run or into P-D.
   - id: P-A2
     title: Prophet-panel inference battery
     status: todo
@@ -140,12 +142,14 @@ decisions: ["DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE"]
 discoveries: ["DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT"]
 artifacts:
   - research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
+  - research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md
   - research/cn_prophet_audit/PB2_PRECURSOR_DISCRIMINATION_PREREG_2026-08-14.md
 next_action: >-
-  P-B3 prereg is frozen; independent adversarial review of
-  PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md is the next act.
-  Do not run the certification in the review session. After review
-  passes, a later session runs P-B3. Parallel and unchanged: (1)
+  P-B3 prereg review is FREEZE AMEND (PR #5729 review +
+  research/cn_prophet_audit/PB3_PREREG_ADVERSARIAL_REVIEW_2026-08-15.md).
+  Next: numbered pre-outcome amendments A1–A8, then a cheap re-review.
+  Do not run the certification until those land. After the amended
+  freeze is accepted, a later session runs P-B3. Parallel and unchanged: (1)
   prospective/PIT evidence-accrual hardening for orthogonal China
   Intelligence families; (2) P-C when its data gates open; (3)
   full-A exact-plane re-measurement; (4) P-D last, and only as an
