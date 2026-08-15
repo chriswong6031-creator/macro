@@ -276,6 +276,14 @@ def render_markdown(proof: dict, top: int) -> str:
     out.append("")
     out.append(f"## Top {top} — V4 order (live)")
     out.append("")
+    out.append(
+        "> These tables are the GLOBAL board order across all four lanes — they are not "
+        "the featured shelf. A name that can never be featured (a `topping` entry, an "
+        "unfillable row) still holds a global rank, and the `lane` column says so. What "
+        "the user sees is each lane ordered by this key; the shelf itself is the section "
+        "below."
+    )
+    out.append("")
     out.extend(_fmt_table(proof["top_v4"], top))
     out.append("")
     out.append(f"## Top {top} — V3 order (displaced, now shadow)")
