@@ -1431,7 +1431,7 @@
       },
       {
         "path": "engine/altdata_ledger.py",
-        "signature_sha256": "e6bfb6d32e00603838f21a6868c20a4dd084f2266617cb3d2e9a092fa17b0f26"
+        "signature_sha256": "270a60a3fcc5f96f844c4473e55da68262c8e90c361c3f80e28a547c0ee12f07"
       },
       {
         "path": "engine/altdata_models.py",
@@ -1519,7 +1519,7 @@
       },
       {
         "path": "engine/basket_turn_cohort.py",
-        "signature_sha256": "fc2e54d2066a38ca2636b207d049d99d50515b96e9200839659f0ad5a4dde04a"
+        "signature_sha256": "61a01b9dc03041f0b6051911f0495d3cfa510596464938e7cc19627ae2793944"
       },
       {
         "path": "engine/basket_turn_watch.py",
@@ -2836,6 +2836,22 @@
       {
         "path": "engine/entry_radar/contracts.py",
         "signature_sha256": "9cd61f3acc32e9df3b9352e0e3c5a5dc6d08592544b272f578673c5d8fe4494e"
+      },
+      {
+        "path": "engine/entry_radar/detectors.py",
+        "signature_sha256": "0111babc2d90c180088e88e055a2b194f3c21bd4b5d6279520e11b5f914a85ca"
+      },
+      {
+        "path": "engine/entry_radar/entry_events.py",
+        "signature_sha256": "27ad57a9dd3a92ebbbd161119dfa630462130f37c8b9b74e6ac85372728bccd5"
+      },
+      {
+        "path": "engine/entry_radar/g0_adapter.py",
+        "signature_sha256": "94b4073a6c116d302c310b9b0fb1cef06e1afdcffe10286b2f4674f3ed3790ac"
+      },
+      {
+        "path": "engine/entry_radar/indicator_ingest.py",
+        "signature_sha256": "45682ccaa64d648b6095bd2c0c16d5d853d7bd82ee45460a40ac81e24597865e"
       },
       {
         "path": "engine/entry_radar/nomination_bus.py",
@@ -9055,7 +9071,7 @@
       },
       {
         "path": "scripts/build_free_content.py",
-        "signature_sha256": "34240bf987722f2d24845e45fbbca9a7955acbf470ecaa8f3e04f8f059171659"
+        "signature_sha256": "1f9a9f3dc37c95bd1cd9543d33b128b4b1a2e6e44248cd29e8204cd9a647b7dc"
       },
       {
         "path": "scripts/build_fundamental_forensics.py",
@@ -10919,7 +10935,7 @@
       },
       {
         "path": "scripts/grade_cortex_attention.py",
-        "signature_sha256": "328e28e2bdeff2d1fc923dead17ea99956c578aa76b38cacbb8390db0e04182a"
+        "signature_sha256": "7dee89f2a19e3aa5eb2178bfdeab1ba9ea4b6ceca55ef021c40a3be5f3bd21bd"
       },
       {
         "path": "scripts/grade_etf_board.py",
@@ -11656,6 +11672,10 @@
       {
         "path": "scripts/prophet_fusion_arena.py",
         "signature_sha256": "828fdc36ee5011db017bd3d210a4bfdd97ac5f128e9d0fe6b6867377eafa2775"
+      },
+      {
+        "path": "scripts/prophet_fusion_c2.py",
+        "signature_sha256": "fa960f561ede4c526265c4fe117641db349c3fe5ca0a3c458f2934420ea232b0"
       },
       {
         "path": "scripts/prophet_fusion_labels.py",
@@ -13326,6 +13346,10 @@
         "signature_sha256": "f9e48f6f8a1aa2586b84d45b7483a295b4bf12611e257aca7910f4674d891dd3"
       },
       {
+        "path": "tests/test_altdata_ledger_lane_gate.py",
+        "signature_sha256": "d8a4c35b234d6d8dd8d1d9ac2c47db443dda03a76ba256d91e2bfdd7a7065a01"
+      },
+      {
         "path": "tests/test_altdata_price_truth.py",
         "signature_sha256": "6604fdb1a89fc1c9a325f635cfac92608ee100a6239cb25492b9996fdf65619d"
       },
@@ -14591,7 +14615,7 @@
       },
       {
         "path": "tests/test_check_script_import_pinning.py",
-        "signature_sha256": "d283100a7cf9ec9cfd4eec32c9e9795da876e8920b057659e4f2515b5b114526"
+        "signature_sha256": "8b4d03e162be777a757538e0e03b6a6bcf9671e87fa8e2b26f429cf1e2e3417a"
       },
       {
         "path": "tests/test_check_site_asset_refs.py",
@@ -16122,12 +16146,24 @@
         "signature_sha256": "d67c686fdd98c9622e6d65913dbd76ba2e1ab982fb379fccc8ec4405a1b3e312"
       },
       {
+        "path": "tests/test_entry_radar_events.py",
+        "signature_sha256": "c82ef09c7c9f7d71e434a5d2bd3ecd611a061c712b829948ed0854f7001d69e2"
+      },
+      {
+        "path": "tests/test_entry_radar_g0_parity.py",
+        "signature_sha256": "bc308e0fa4832f4217536519bafd14cc3d56f807e87122fe118a6d5a0fe2488a"
+      },
+      {
         "path": "tests/test_entry_radar_producers.py",
         "signature_sha256": "3e5fdf785006e191f4b301b36b0b1d472dac1db0297b17bb2be962ac6d3a7bf7"
       },
       {
         "path": "tests/test_entry_radar_w1.py",
         "signature_sha256": "6bb094dac00962218333dcec94308d1d243081f17b7eca2a543e672fb01883b2"
+      },
+      {
+        "path": "tests/test_entry_radar_w2_guards.py",
+        "signature_sha256": "36bca2740a8ad0949de208e528f366e3184e287781599661d9b24b16917fa7b6"
       },
       {
         "path": "tests/test_entry_signal.py",
@@ -16603,7 +16639,7 @@
       },
       {
         "path": "tests/test_free_content.py",
-        "signature_sha256": "d03ef16e86f8cb353f591fceea42a2505e55199a78b85cf8173595a99891328c"
+        "signature_sha256": "21200f83689cb4848aca567b8db203257d3ea2e1369e7f941e703667ca3945e1"
       },
       {
         "path": "tests/test_fresh_ticks_extension_replay.py",
@@ -17028,6 +17064,10 @@
       {
         "path": "tests/test_grade_breadth_divergence.py",
         "signature_sha256": "dc541d94056cabb887cc9f4e1c2923b2bac4b83b2b345dd942b279fcf907767a"
+      },
+      {
+        "path": "tests/test_grade_cortex_attention.py",
+        "signature_sha256": "e5689494c86ffbb234073bb6967ded28be43edbe6ed16e9e8abb55f8ad07722a"
       },
       {
         "path": "tests/test_grade_policy_calendar.py",
@@ -18959,7 +18999,7 @@
       },
       {
         "path": "tests/test_name_score.py",
-        "signature_sha256": "59636cb1e1f8ca6ecde61735263c64c9031cb588bb885a00c16b869354448e49"
+        "signature_sha256": "ad6a4bdf31e8ca5c548237736674f3b05f87a42fc9266095031143c788ecfc72"
       },
       {
         "path": "tests/test_narrative_brain.py",
@@ -19906,8 +19946,12 @@
         "signature_sha256": "f4444a6b3cbccb716c630a0e7687bb3a886d5d8820af760719ecdc817bd49bbd"
       },
       {
+        "path": "tests/test_prophet_fusion_c2.py",
+        "signature_sha256": "8373b1b49ba5c7a3f7719380188e464ffda1261c5165aa069b330a82c484511d"
+      },
+      {
         "path": "tests/test_prophet_fusion_families.py",
-        "signature_sha256": "4d8ab316197f8f493aa17a76cbed4671606956f2d30b8796e1fa2821b5dd1807"
+        "signature_sha256": "b685592d98477e67a92d543aa00c583b10712b75c1fb2b2c881be3280a36f6ec"
       },
       {
         "path": "tests/test_prophet_fusion_labels.py",
@@ -21111,7 +21155,7 @@
       },
       {
         "path": "tests/test_site_access_boundary.py",
-        "signature_sha256": "f0dd109bb529363879ce2ace312af4747c0753baf4c369a73434efad7bef7ac6"
+        "signature_sha256": "4bc84c108a114b310335037519c4b764ad4230d126c42f186685a93c076cb6be"
       },
       {
         "path": "tests/test_site_assets.py",
@@ -22654,10 +22698,10 @@
         "signature_sha256": "7df1121704ef17f4d7af509550247b9274b808a77e0d56887ea44b677108265d"
       }
     ],
-    "python_count": 5663,
+    "python_count": 5674,
     "schema": "ci.dependency_signature_inventory.v1"
   },
-  "index_sha256": "8a472524726c5e0a9248153404440aee3c6d3b712c6866bcd05e70ac704fc5b7",
+  "index_sha256": "7aec9383996d0a4a835cd0a8a2886e77de6e3576058392f14d745c1977820d99",
   "job_count": 195,
   "job_inventory": [
     "inline-js",
@@ -23061,6 +23105,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -23227,6 +23272,7 @@
         "engine/forward_calendar_context.py",
         "engine/gdelt_client.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -23365,6 +23411,10 @@
         "engine/confluence_tiers.py",
         "engine/cycles.py",
         "engine/entry_radar/contracts.py",
+        "engine/entry_radar/detectors.py",
+        "engine/entry_radar/entry_events.py",
+        "engine/entry_radar/g0_adapter.py",
+        "engine/entry_radar/indicator_ingest.py",
         "engine/entry_radar/nomination_bus.py",
         "engine/entry_radar/producers/__init__.py",
         "engine/entry_radar/producers/base.py",
@@ -23451,8 +23501,11 @@
         "site/prophet/index.json",
         "site/regime_timeline.json",
         "tests/test_early_signal_dates_contract.py",
+        "tests/test_entry_radar_events.py",
+        "tests/test_entry_radar_g0_parity.py",
         "tests/test_entry_radar_producers.py",
         "tests/test_entry_radar_w1.py",
+        "tests/test_entry_radar_w2_guards.py",
         "tests/test_forensic_detector_crosspin.py",
         "tests/test_fundamental_forensics_contract.py",
         "tests/test_fundamental_forensics_detectors.py",
@@ -23465,7 +23518,7 @@
         "tests/test_us_reclaim_waiver_prophet_v2.py",
         "tests/test_validate_signals.py"
       ],
-      "weight": 38
+      "weight": 44
     },
     {
       "job_id": "session-anchor-era",
@@ -24200,6 +24253,7 @@
         "engine/government_revenue/federation.py",
         "engine/government_revenue/freshness.py",
         "engine/grading.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -26485,6 +26539,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -28313,6 +28368,7 @@
         "engine/government_revenue/freshness.py",
         "engine/grading.py",
         "engine/i18n.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -32384,6 +32440,7 @@
         "engine/grading.py",
         "engine/group_flow.py",
         "engine/indicators.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -34152,6 +34209,7 @@
         "scripts/notify.py",
         "scripts/validate_regime_fwd.py",
         "site/qledger/track_record.json",
+        "tests/test_altdata_ledger_lane_gate.py",
         "tests/test_altdata_reboot_families.py",
         "tests/test_communique_diff.py",
         "tests/test_grade_qledger.py",
@@ -34165,7 +34223,7 @@
         "tests/test_qledger_validity.py",
         "tests/test_w6_readiness_monitor.py"
       ],
-      "weight": 34
+      "weight": 36
     },
     {
       "job_id": "altdata-new-sources",
@@ -35071,6 +35129,7 @@
         "engine/event_calendar.py",
         "engine/forward_calendar_context.py",
         "engine/gdelt_client.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -36836,6 +36895,7 @@
         "engine/hysteresis.py",
         "engine/indicators.py",
         "engine/inputs.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -37273,6 +37333,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -37769,6 +37830,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -38255,6 +38317,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -39612,6 +39675,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -39918,6 +39982,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -40293,6 +40358,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -40765,6 +40831,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -41099,6 +41166,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -41807,6 +41875,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -42299,6 +42368,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -43436,6 +43506,7 @@
         "engine/grading.py",
         "engine/indicators.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -43733,6 +43804,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -44610,6 +44682,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -44886,6 +44959,7 @@
         "engine/i18n.py",
         "engine/indicators.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -45198,6 +45272,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -45460,6 +45535,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -45689,6 +45765,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -46431,6 +46508,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -46689,6 +46767,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -47465,6 +47544,7 @@
         "engine/gdelt_client.py",
         "engine/grading.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -49684,6 +49764,7 @@
         "engine/i18n.py",
         "engine/indicators.py",
         "engine/json_strict.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/long_hold_clocks.py",
         "engine/macro_surprise.py",
@@ -50089,6 +50170,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -50851,6 +50933,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -53338,6 +53421,7 @@
         "engine/government_revenue/freshness.py",
         "engine/grading.py",
         "engine/inflation_intelligence.py",
+        "engine/ledger_lane.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
         "engine/manager_lag.py",
@@ -56908,8 +56992,10 @@
         "research/STOCK_PERSONALITY_MASTERPLAN_BY_FABLE.md",
         "research/US_BOARD_MEASUREMENT.md",
         "research/prophet_fusion/PR1B_BASELINE_RACE.md",
+        "research/prophet_fusion/PR2_C2_REDUNDANCY.md",
         "research/prophet_fusion/families.yml",
         "research/prophet_fusion/pr1b_baseline_race/report.json",
+        "research/prophet_fusion/pr2_c2/report.json",
         "scripts/__init__.py",
         "scripts/_active_render.py",
         "scripts/backtest_ladder_history.py",
@@ -56956,6 +57042,7 @@
         "scripts/measure_us_track_era_recompute.py",
         "scripts/notify.py",
         "scripts/prophet_fusion_arena.py",
+        "scripts/prophet_fusion_c2.py",
         "scripts/prophet_fusion_labels.py",
         "scripts/prophet_fusion_race.py",
         "scripts/publish_earnings_r2.py",
@@ -57001,6 +57088,7 @@
         "tests/test_prophet_card_live_change.py",
         "tests/test_prophet_card_shared.py",
         "tests/test_prophet_fusion_arena.py",
+        "tests/test_prophet_fusion_c2.py",
         "tests/test_prophet_fusion_families.py",
         "tests/test_prophet_fusion_labels.py",
         "tests/test_prophet_fusion_race.py",
@@ -58950,6 +59038,7 @@
         "engine/grading.py",
         "engine/i18n.py",
         "engine/indicators_m2.py",
+        "engine/ledger_lane.py",
         "engine/live_quotes.py",
         "engine/llm_auth.py",
         "engine/macro_surprise.py",
@@ -59972,6 +60061,7 @@
         "scripts/ci/chain_snapshot_salvage.py",
         "scripts/ci/retry_daily_engine_setup_cancel.py",
         "scripts/complete_polygon_gex_session_stamps.py",
+        "scripts/grade_cortex_attention.py",
         "scripts/grade_thematic.py",
         "scripts/migrate_polygon_gex_session_stamps.py",
         "scripts/mirror_gex_state_r2.py",
@@ -60031,6 +60121,7 @@
         "tests/test_gex_model.py",
         "tests/test_gex_state.py",
         "tests/test_gex_state_index.py",
+        "tests/test_grade_cortex_attention.py",
         "tests/test_grade_thematic.py",
         "tests/test_index_gex_history.py",
         "tests/test_level_grades_summary.py",
@@ -60875,6 +60966,7 @@
         "config/government_revenue/candidate_historical_suppressions.v1.json",
         "config/government_revenue/candidate_issuance_corrections.v1.json",
         "config/market_memory_canary.v1.json",
+        "config/script_import_pin_sealed_runtime_waivers.yml",
         "contracts/government_revenue/government_idv_bridge.v1.schema.json",
         "contracts/government_revenue/government_idv_dossiers.v1.schema.json",
         "contracts/government_revenue/government_procurement_event.v2.schema.json",
@@ -65082,7 +65174,7 @@
   ],
   "manifest": {
     "path": ".github/ci/legacy-jobs.yml",
-    "sha256": "b003611986befd736b003202252c9a4e0e045e17b92977781efe315ada29b415"
+    "sha256": "1974435fd5940990b4076c509dc155f955e2110d55e4851bd0b466b7eaca38ce"
   },
   "schema": "ci.committed_scope_index.v3",
   "selector_sources": [
@@ -65104,7 +65196,7 @@
     }
   ],
   "static_path_candidates": {
-    "candidate_count": 2293,
+    "candidate_count": 2298,
     "candidates": [
       {
         "path": ".claude",
@@ -65977,6 +66069,10 @@
       {
         "path": "config/runtime.json",
         "present": false
+      },
+      {
+        "path": "config/script_import_pin_sealed_runtime_waivers.yml",
+        "present": true
       },
       {
         "path": "config/seasonality_universe.yml",
@@ -69907,6 +70003,10 @@
         "present": true
       },
       {
+        "path": "research/prophet_fusion/PR2_C2_REDUNDANCY.md",
+        "present": true
+      },
+      {
         "path": "research/prophet_fusion/families.yml",
         "present": true
       },
@@ -69916,6 +70016,14 @@
       },
       {
         "path": "research/prophet_fusion/pr1b_baseline_race/report.json",
+        "present": true
+      },
+      {
+        "path": "research/prophet_fusion/pr2_c2",
+        "present": false
+      },
+      {
+        "path": "research/prophet_fusion/pr2_c2/report.json",
         "present": true
       },
       {
@@ -71556,6 +71664,10 @@
       },
       {
         "path": "scripts/project_market_memory_context.py",
+        "present": true
+      },
+      {
+        "path": "scripts/prophet_fusion_c2.py",
         "present": true
       },
       {
