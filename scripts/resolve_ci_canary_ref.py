@@ -53,7 +53,7 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
             "source_kind": "trusted-main",
             "tested_ref": tested_sha,
             "tested_sha": tested_sha,
-            "base_sha": tested_sha,
+            "base_sha": parent,
             "head_sha": tested_sha,
             "contamination_sha": parent,
         }
@@ -84,6 +84,13 @@ def resolve(repository: str, github_sha: str, pr_number: int, token: str) -> dic
     if api_merge and api_merge != tested_sha:
         raise ResolutionError(
             f"merge ref moved during resolution: API={api_merge}, fetched={tested_sha}"
+        )
+    fetched_base = git("rev-parse", f"{tested_sha}^1")
+    fetched_head = git("rev-parse", f"{tested_sha}^2")
+    if fetched_base != base_sha or fetched_head != head_sha:
+        raise ResolutionError(
+            "fetched merge parents do not match the frozen API base/head: "
+            f"fetched={fetched_base}/{fetched_head}, API={base_sha}/{head_sha}"
         )
     return {
         "source_kind": "same-repository-pr-merge",

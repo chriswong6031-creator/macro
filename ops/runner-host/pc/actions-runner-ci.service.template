@@ -10,10 +10,14 @@ Type=simple
 User=macroci
 Group=macroci
 WorkingDirectory=__RUNNER_ROOT__
+Environment=ACTIONS_RUNNER_HOOK_JOB_STARTED=/usr/local/libexec/mastermind-ci-admission-pc-ci.js
+Environment=MASTERMIND_CI_PROFILE=pc-ci
+Environment=MASTERMIND_CI_RUNNER_ROOT=__RUNNER_ROOT__
+Environment=HOME=__RUNNER_ROOT__/_work/_home
 ExecStartPre=/usr/local/libexec/mastermind-ci-resource-guard --path __RUNNER_ROOT__
 ExecStart=/usr/local/libexec/mastermind-ci-runner __RUNNER_ROOT__
-Restart=on-failure
-RestartSec=60
+Restart=always
+RestartSec=5
 KillMode=control-group
 KillSignal=SIGTERM
 TimeoutStopSec=5min
@@ -36,8 +40,8 @@ RestrictSUIDSGID=true
 RestrictNamespaces=true
 RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 InaccessiblePaths=/mnt/c /mnt/d /home/longr /root
-ReadOnlyPaths=/var/cache/mastermind-ci/macro.git
-ReadWritePaths=__RUNNER_ROOT__ /var/lib/macroci
+ReadOnlyPaths=__RUNNER_ROOT__ /var/cache/mastermind-ci/macro.git
+ReadWritePaths=__RUNNER_ROOT__/_work __RUNNER_ROOT__/_diag
 UMask=0027
 
 [Install]

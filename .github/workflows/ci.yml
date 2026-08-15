@@ -1408,6 +1408,7 @@ on:
       - "scripts/monitor_ci_host_resources.py"
       - "scripts/capture_ci_canary_receipt.py"
       - "scripts/compare_ci_canary_receipts.py"
+      - "ops/runner-host/**"
       - "tests/test_runner_policy.py"
       - "tests/test_ci_canary_tools.py"
       - "tests/test_ci_canary_workflows.py"

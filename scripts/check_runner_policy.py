@@ -24,6 +24,12 @@ CUSTOM_LABELS = {
     "m1-light",
 }
 HOSTED = "ubuntu-latest"
+RUNTIME_WORKFLOWS = {
+    "mastermindx-market-intelligence/macro/.github/workflows/selfhosted-ci-canary.yml@refs/heads/main",
+    "mastermindx-market-intelligence/macro/.github/workflows/m1-runner-canary.yml@refs/heads/main",
+    "mastermindx-market-intelligence/macro/.github/workflows/engine-render.yml@refs/heads/main",
+    "mastermindx-market-intelligence/macro/.github/workflows/render.yml@refs/heads/main",
+}
 
 
 @dataclass(frozen=True)
@@ -57,9 +63,26 @@ def runs_on_text(job: dict) -> str:
     return str(value)
 
 
-def same_repo_guard(job: dict) -> bool:
-    text = runs_on_text(job) + " " + str(job.get("if", ""))
-    return "head.repo.full_name == github.repository" in text
+def needs_names(job: dict) -> set[str]:
+    raw = job.get("needs", [])
+    if isinstance(raw, str):
+        return {raw}
+    if isinstance(raw, list):
+        return {str(item) for item in raw}
+    return set()
+
+
+def reaches_trust_gate(jobs: dict, job_id: str, seen: set[str] | None = None) -> bool:
+    if job_id == "trust-gate":
+        return True
+    seen = set() if seen is None else seen
+    if job_id in seen:
+        return False
+    seen.add(job_id)
+    job = jobs.get(job_id)
+    if not isinstance(job, dict):
+        return False
+    return any(reaches_trust_gate(jobs, name, seen) for name in needs_names(job))
 
 
 def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Finding]:
@@ -78,6 +101,17 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
     }
     if registry.get("scenario_routes") != expected_scenarios:
         findings.append(Finding("R1", "synthetic trust-routing scenarios drifted"))
+    runtime_group = registry.get("runtime_runner_group") or {}
+    if (
+        runtime_group.get("name") != "macro-home-canary"
+        or runtime_group.get("repository") != "mastermindx-market-intelligence/macro"
+        or runtime_group.get("allows_public_repositories") is not True
+        or runtime_group.get("restricted_to_workflows") is not True
+        or set(runtime_group.get("selected_workflows") or []) != RUNTIME_WORKFLOWS
+    ):
+        findings.append(
+            Finding("R1", "server-side macro-home-canary runner-group policy drifted")
+        )
 
     documents: dict[str, dict] = {}
     for path in sorted(workflows_dir.glob("*.y*ml")):
@@ -92,17 +126,23 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
         if "pull_request_target" in workflow_triggers:
             findings.append(Finding("R2", f"{relative}: pull_request_target is forbidden"))
         for job_id, job in (document.get("jobs") or {}).items():
-            if not isinstance(job, dict) or "runs-on" not in job:
+            if not isinstance(job, dict):
                 continue
-            text = runs_on_text(job)
-            custom = {label for label in CUSTOM_LABELS if label in text}
-            if custom and "pull_request" in workflow_triggers and not same_repo_guard(job):
-                findings.append(
-                    Finding(
-                        "R3",
-                        f"{relative}:{job_id} exposes a migration label to pull_request without a same-repo guard",
+            if "pull_request" in workflow_triggers:
+                if "uses" in job:
+                    findings.append(
+                        Finding(
+                            "R3",
+                            f"{relative}:{job_id} may not delegate to a reusable workflow on pull_request during Wave B/C",
+                        )
                     )
-                )
+                elif job.get("runs-on") != HOSTED:
+                    findings.append(
+                        Finding(
+                            "R3",
+                            f"{relative}:{job_id} must remain exactly {HOSTED} on pull_request during Wave B/C",
+                        )
+                    )
 
     for route in registry.get("protected_hosted_routes") or []:
         workflow = route.get("workflow")
@@ -130,7 +170,20 @@ def evaluate(root: Path, registry_path: Path, workflows_dir: Path) -> list[Findi
             findings.append(
                 Finding("R5", f"{workflow}:{job_id} must be dispatch-only")
             )
-        job = (document.get("jobs") or {}).get(job_id)
+        jobs = document.get("jobs") or {}
+        trust = jobs.get("trust-gate")
+        trust_text = str(trust)
+        if (
+            not isinstance(trust, dict)
+            or trust.get("runs-on") != HOSTED
+            or "refs/heads/main" not in trust_text
+            or "github.ref" not in trust_text
+            or not reaches_trust_gate(jobs, job_id)
+        ):
+            findings.append(
+                Finding("R5", f"{workflow}:{job_id} is not downstream of the hosted main trust-gate")
+            )
+        job = jobs.get(job_id)
         if not isinstance(job, dict):
             findings.append(Finding("R5", f"custom-route job missing: {workflow}:{job_id}"))
             continue

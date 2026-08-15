@@ -68,7 +68,35 @@ def test_one_slot_and_three_slot_routes_cannot_consume_render() -> None:
 
 
 def test_m1_canary_has_no_old_generic_route_or_checkout() -> None:
-    job = workflow("m1-runner-canary.yml")["jobs"]["m1-service-canary"]
+    document = workflow("m1-runner-canary.yml")
+    job = document["jobs"]["m1-service-canary"]
     assert job["runs-on"] == ["self-hosted", "m1-theta"]
+    assert job["needs"] == "trust-gate"
+    assert document["jobs"]["trust-gate"]["runs-on"] == "ubuntu-latest"
+    assert "refs/heads/main" in str(document["jobs"]["trust-gate"])
     assert not {"macstudio", "macstudio-light", "theta-m1", "codex", "render-heavy"} & set(job["runs-on"])
     assert all("uses" not in step for step in job["steps"])
+
+
+def test_every_candidate_checkout_uses_the_frozen_sha_not_the_movable_merge_ref() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    rendered = str(document)
+    assert "steps.ref.outputs.tested_sha" in rendered
+    assert rendered.count("needs.plan.outputs.tested_sha") >= 4
+    for job_name in ("hosted-control", "selfhosted-pack"):
+        checkout = next(
+            step
+            for step in document["jobs"][job_name]["steps"]
+            if step.get("uses") == "actions/checkout@v4"
+            and "tested_sha" in str(step.get("with", {}).get("ref", ""))
+        )
+        assert "tested_ref" not in str(checkout)
+
+
+def test_process_contamination_probe_intentionally_abandons_and_then_rejects_a_child() -> None:
+    document = workflow("selfhosted-ci-canary.yml")
+    pack = str(document["jobs"]["selfhosted-pack"]["steps"])
+    probe = str(document["jobs"]["contamination-probe"]["steps"])
+    assert "env -u RUNNER_TRACKING_ID" in pack
+    assert "mastermind-ci-leak-$GITHUB_RUN_ID" in pack
+    assert "[m]astermind-ci-leak-${{ github.run_id }}" in probe

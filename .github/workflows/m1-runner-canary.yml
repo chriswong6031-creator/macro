@@ -7,8 +7,23 @@ permissions:
   contents: read
 
 jobs:
+  trust-gate:
+    name: diagnostic-m1-trusted-main-gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: refuse a workflow definition outside main
+        env:
+          TRUSTED_REF: ${{ github.ref }}
+        run: |
+          test "$TRUSTED_REF" = refs/heads/main || {
+            echo "::error title=m1-canary-trust::dispatch must use the main workflow definition"
+            exit 1
+          }
+
   m1-service-canary:
     name: diagnostic-m1-service-canary
+    needs: trust-gate
     runs-on: [self-hosted, m1-theta]
     timeout-minutes: 8
     steps:

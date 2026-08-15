@@ -10,10 +10,12 @@ flock -w 120 9
 
 test -f "$cache/.mastermind-cache-identity.json"
 test "$(git --git-dir="$cache" rev-parse --is-bare-repository)" = true
+git --git-dir="$cache" config gc.auto 0
+git --git-dir="$cache" config maintenance.auto false
 
 # No prune, repack, or gc belongs in the migration window. The only mutation is an
 # atomic main-ref advance plus the objects reachable from it.
-git --git-dir="$cache" fetch --no-tags origin \
+git --git-dir="$cache" fetch --no-auto-maintenance --no-tags origin \
   +refs/heads/main:refs/heads/main
 
 # The peer seed is intentionally shallow at the audited bootstrap commit. Its

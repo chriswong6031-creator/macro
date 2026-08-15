@@ -79,9 +79,11 @@ jobs:
       - name: checkout the exact candidate tree on hosted control
         uses: actions/checkout@v4
         with:
-          ref: ${{ steps.ref.outputs.tested_ref }}
+          ref: ${{ steps.ref.outputs.tested_sha }}
           filter: blob:none
           fetch-depth: 0
+      - name: prove the planner is on the frozen tree
+        run: test "$(git rev-parse HEAD)" = "${{ steps.ref.outputs.tested_sha }}"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -91,8 +93,6 @@ jobs:
           "$RUNNER_TEMP/ci-canary-plan-runner/bin/pip" install pyyaml
       - id: plan
         name: freeze the current logical plan
-        env:
-          CI_SCOPE_ARG: ${{ inputs.pr_number != '0' && format('--changed-from {0}', steps.ref.outputs.base_sha) || '' }}
         run: >-
           "$RUNNER_TEMP/ci-canary-plan-runner/bin/python" scripts/run_ci_pack.py
           --workflow .github/ci/legacy-jobs.yml
@@ -103,7 +103,7 @@ jobs:
           --github-output "$GITHUB_OUTPUT"
           --emit-plan-json "$RUNNER_TEMP/ci-canary-plan/plan.json"
           --emit-changed-files "$RUNNER_TEMP/ci-canary-plan/changed-files.json"
-          $CI_SCOPE_ARG
+          --changed-from "${{ steps.ref.outputs.base_sha }}"
       - id: select
         name: select the current heaviest non-empty pack or top three
         run: |
@@ -146,11 +146,13 @@ jobs:
         env:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
         with:
-          ref: ${{ needs.plan.outputs.tested_ref }}
+          ref: ${{ needs.plan.outputs.tested_sha }}
           filter: blob:none
           fetch-depth: 1
       - name: close candidate checkout timing
         run: |
+          test "$(git rev-parse HEAD)" = "${{ needs.plan.outputs.tested_sha }}"
+          git cat-file -e "${{ needs.plan.outputs.base_sha }}^{commit}"
           checkout_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/checkout-start")" -v end="$checkout_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/checkout-seconds"
           date +%s.%N > "$RUNNER_TEMP/dependency-start"
@@ -253,6 +255,8 @@ jobs:
             --repository-url "https://github.com/${{ github.repository }}.git" \
             --base-sha "${{ needs.plan.outputs.control_sha }}" \
             | tee "$RUNNER_TEMP/prewarm.log"
+          GIT_NO_LAZY_FETCH=1 git -C "$GITHUB_WORKSPACE" \
+            cat-file -e "${{ needs.plan.outputs.base_sha }}^{commit}"
       - name: preserve root-owned-control-compatible receipt helpers
         run: |
           mkdir -p "$RUNNER_TEMP/ci-canary-control"
@@ -264,7 +268,7 @@ jobs:
         env:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
         with:
-          ref: ${{ needs.plan.outputs.tested_ref }}
+          ref: ${{ needs.plan.outputs.tested_sha }}
           filter: blob:none
           fetch-depth: 1
       - name: verify exact checkout and close timing
@@ -297,7 +301,19 @@ jobs:
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
+          test "$HOME" = "$RUNNER_WORKSPACE/_home"
           touch .ci-canary-contamination-sentinel
+          touch "$RUNNER_WORKSPACE/.ci-canary-outside-sentinel"
+          touch "$HOME/.ci-canary-home-sentinel"
+          setsid env -u RUNNER_TRACKING_ID bash -c \
+            "exec -a mastermind-ci-leak-$GITHUB_RUN_ID sleep 1800" \
+            </dev/null >/dev/null 2>&1 &
+          leak_pid=$!
+          if ! kill -0 "$leak_pid"; then
+            echo "::error title=process-contamination::failed to plant abandoned child"
+            exit 1
+          fi
+          echo "intentionally abandoned untracked process pid=$leak_pid"
           python3 "$RUNNER_TEMP/ci-canary-control/monitor_ci_host_resources.py" \
             --output "$RUNNER_TEMP/resources.jsonl" --path "$GITHUB_WORKSPACE" &
           monitor_pid=$!
@@ -400,9 +416,12 @@ jobs:
           test "${{ needs.plan.outputs.contamination_sha }}" != "${{ needs.plan.outputs.tested_sha }}"
           test -z "$(git status --porcelain)"
           test ! -e .ci-canary-contamination-sentinel
+          test ! -e "$RUNNER_WORKSPACE/.ci-canary-outside-sentinel"
+          test ! -e "$HOME/.ci-canary-home-sentinel"
           test ! -e .git/index.lock
           test ! -w /var/cache/mastermind-ci/macro.git
           ! pgrep -f '[m]onitor_ci_host_resources.py'
+          ! pgrep -f "[m]astermind-ci-leak-${{ github.run_id }}"
           test ! -e /mnt/c/Users/longr
           echo "second_tree=${{ needs.plan.outputs.contamination_sha }} runner=${RUNNER_NAME:-unknown} clean=true"
 

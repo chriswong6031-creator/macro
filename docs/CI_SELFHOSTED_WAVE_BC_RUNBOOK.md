@@ -66,7 +66,30 @@ cache and requires exit 66 before `.git` exists.
 The CI runner account has no login shell and no sudo. Its systemd units have no
 capabilities, enable `NoNewPrivileges`, use a read-only system view and private `/tmp`,
 hide `/mnt/c`, `/mnt/d`, `/home/longr`, and `/root`, and expose the shared cache
-read-only. The only writable paths are that runner's root and `/var/lib/macroci`.
+read-only. The runner application/configuration root is also read-only to a job; only
+that slot's `_work` and `_diag` are writable, preventing candidate code from replacing
+the next listener. The runner is registered with updates disabled because binaries
+are sealed and updated only by the host operator.
+
+The runtime admission boundary is the organization-owned `macro-home-canary` runner
+group. GitHub restricts that group server-side to this public repository and exact
+workflow paths pinned to `refs/heads/main`; a pull-request workflow version cannot
+request the group. PC CI accepts only the main-defined `selfhosted-ci-canary.yml`, M1
+accepts only the main-defined no-op canary, and the render listener accepts only the
+two main render workflows. Repository lint and the host start hook are independent
+defense-in-depth checks, not substitutes for that server-side boundary.
+
+The start hook performs admission only and never mutates the workspace GitHub has
+already prepared. Each PC CI listener uses the runner's one-job `--once` mode. After
+the job and all post-actions finish, the listener exits; systemd tears down the whole
+service cgroup, including an intentionally abandoned child, then starts a fresh
+listener. The wrapper scrubs every entry under that slot's `_work`, recreates empty
+private `_temp` and HOME directories, and clears the unit's private `/tmp`/`/var/tmp`
+before the listener can accept another job. This also recovers a killed or crashed
+job. `_diag` remains writable for runner diagnostics and is outside the candidate-state
+cleanliness claim. The design trades action/tool cache warmth for a clean next-job
+boundary; Git objects remain fast because the shared alternate is outside candidate
+write authority.
 
 The pre-start resource guard refuses a job at 85% disk use or below 100 GiB free,
 below 4 GiB available memory, or under combined high swap/low-memory pressure. It
@@ -84,6 +107,11 @@ Each owner LaunchAgent has `RunAtLoad=true`, `KeepAlive.SuccessfulExit=false`, a
 60-second throttle. The guarded launcher executes `Runner.Listener` directly, so a
 listener death becomes a launchd state transition instead of being hidden inside the
 runner's nested Node supervisor.
+
+This proves crash recovery inside the active GUI session. It does not prove unattended
+reboot recovery: FileVault is off, but automatic login is unset and the current user
+cannot install root LaunchDaemons non-interactively. Administrator installation of the
+same guarded listener definitions as LaunchDaemons remains an explicit host action.
 
 The guard reports free bytes, percentage, inodes, `_work`, `_temp`, and `_diag`.
 Warnings start at 70% used, critical at 80%, full/data-heavy work is refused at 85%

@@ -3,6 +3,17 @@ phase: wave-bc-canary
 repository_visibility: public
 ordinary_pr_ci: github-hosted
 
+runtime_runner_group:
+  name: macro-home-canary
+  repository: mastermindx-market-intelligence/macro
+  allows_public_repositories: true
+  restricted_to_workflows: true
+  selected_workflows:
+    - mastermindx-market-intelligence/macro/.github/workflows/selfhosted-ci-canary.yml@refs/heads/main
+    - mastermindx-market-intelligence/macro/.github/workflows/m1-runner-canary.yml@refs/heads/main
+    - mastermindx-market-intelligence/macro/.github/workflows/engine-render.yml@refs/heads/main
+    - mastermindx-market-intelligence/macro/.github/workflows/render.yml@refs/heads/main
+
 scenario_routes:
   same_repo_ordinary_pr: github-hosted
   fork_pr: github-hosted

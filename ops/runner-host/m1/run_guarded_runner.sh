@@ -28,5 +28,7 @@ if [ -f "$runner_root/.env" ]; then
     export "$key=$value"
   done < "$runner_root/.env"
 fi
+export ACTIONS_RUNNER_HOOK_JOB_STARTED="$guard_root/runner_admission_m1_canary.js"
+export MASTERMIND_CI_PROFILE=m1-canary
 cd "$runner_root"
 exec "$runner_root/bin/Runner.Listener" run --startuptype service

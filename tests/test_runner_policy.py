@@ -61,6 +61,21 @@ def test_fork_scenario_cannot_mutate_to_selfhosted(tmp_path: Path) -> None:
     assert "R1" in result.stdout
 
 
+def test_server_side_runner_group_cannot_lose_main_pinned_workflow_restriction(
+    tmp_path: Path,
+) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    mutate_registry(
+        registry,
+        lambda doc: doc["runtime_runner_group"].__setitem__(
+            "restricted_to_workflows", False
+        ),
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "runner-group policy drifted" in result.stdout
+
+
 def test_ordinary_ci_and_fences_cannot_move_off_hosted(tmp_path: Path) -> None:
     root, registry, workflows = fixture_tree(tmp_path)
     ci = yaml.safe_load((workflows / "ci.yml").read_text(encoding="utf-8"))
@@ -113,3 +128,40 @@ def test_pull_request_target_is_never_registerable(tmp_path: Path) -> None:
     result = run_guard(root, registry, workflows)
     assert result.returncode == 1
     assert "R2" in result.stdout
+
+
+def test_computed_migration_label_cannot_hide_a_pull_request_selfhosted_route(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    (workflows / "rogue.yml").write_text(
+        "on:\n  pull_request:\njobs:\n  rogue:\n"
+        "    runs-on: [self-hosted, \"m1-${{ 'theta' }}\"]\n"
+        "    steps:\n      - run: true\n",
+        encoding="utf-8",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R3" in result.stdout
+
+
+def test_pull_request_job_cannot_delegate_to_a_reusable_workflow(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    (workflows / "rogue.yml").write_text(
+        "on:\n  pull_request:\njobs:\n  delegated:\n"
+        "    uses: ./.github/workflows/hidden-selfhosted.yml\n",
+        encoding="utf-8",
+    )
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R3" in result.stdout
+    assert "may not delegate" in result.stdout
+
+
+def test_migration_job_cannot_bypass_hosted_main_trust_gate(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "m1-runner-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    document["jobs"]["m1-service-canary"].pop("needs")
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R5" in result.stdout
