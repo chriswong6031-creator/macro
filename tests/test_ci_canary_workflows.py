@@ -148,6 +148,9 @@ def test_process_contamination_probe_intentionally_abandons_and_then_rejects_a_c
     document = workflow("selfhosted-ci-canary.yml")
     pack = str(document["jobs"]["selfhosted-pack"]["steps"])
     probe = str(document["jobs"]["contamination-probe"]["steps"])
+    assert 'expected_home="$(dirname "$RUNNER_TEMP")/_home"' in pack
+    assert 'test "$HOME" = "$expected_home"' in pack
+    assert 'test "$HOME" = "$RUNNER_WORKSPACE/_home"' not in pack
     assert "env -u RUNNER_TRACKING_ID" in pack
     assert "mastermind-ci-leak-$GITHUB_RUN_ID" in pack
     assert "[m]astermind-ci-leak-${{ github.run_id }}" in probe

@@ -313,7 +313,8 @@ jobs:
           dependency_end=$(date +%s.%N)
           awk -v start="$(cat "$RUNNER_TEMP/dependency-start")" -v end="$dependency_end" 'BEGIN {print end-start}' > "$RUNNER_TEMP/dependency-seconds"
           test_start=$(date +%s.%N)
-          test "$HOME" = "$RUNNER_WORKSPACE/_home"
+          expected_home="$(dirname "$RUNNER_TEMP")/_home"
+          test "$HOME" = "$expected_home"
           touch .ci-canary-contamination-sentinel
           touch "$RUNNER_WORKSPACE/.ci-canary-outside-sentinel"
           touch "$HOME/.ci-canary-home-sentinel"
