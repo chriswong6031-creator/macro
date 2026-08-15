@@ -96,7 +96,7 @@ danger_areas:
   - "trust_mtime: checkout mtimes are checkout-time (false-fresh); only the live estate (ADMIN_DEPLOYED=1 / --trust-mtime) may treat write time as evidence, and only under a write-time contract (asof_field null + SLA non-null)."
   - "The T1 AST meta-test freezes live-invoking call shapes — new tests touching the T1 builder must use fixture roots."
 
-prs: []
+prs: [5721]
 decisions:
   - "DEC:EVAL-OS-T4-ADMIN-SURFACE"
 ---
