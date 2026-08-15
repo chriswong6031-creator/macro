@@ -61,11 +61,50 @@ from engine.entry_radar.contracts import AUTHORITY_BLOCK
 
 SCHEMA_ENTRY_EVENT = "mastermind.entry_event.v1"
 
-#: FROZEN — minted from emitter receipts at contract §18 A4.3, never invented
-#: ahead of them.  ``grey_dot`` is the raw anticipation dot (§3.1 mask); the two
-#: ``washout_*`` keys are the BOTTOM_WATCH subtypes; the three ``oracle_*`` keys
-#: are the keeper/reclaim verdict streams, whose ``subtype`` is the emitter's
-#: own quality string verbatim.
+#: Radar's OWN producer id — W3's Radar-native families are emitted by this
+#: package, not read from an artifact, and the distinction must be visible on the
+#: event.  ``producer`` is what tells a later reader whether a row is Terminal's
+#: observation or Radar's own.
+RADAR_PRODUCER = "radar.entry_radar"
+
+#: Radar's native signal era.  Rides the event ADDRESS (``compute_event_id``), so
+#: a future Radar era can never pool with this one by accident.
+RADAR_SIGNAL_ERA = "radar_w3_a5"
+
+#: The spec-era fence for every Radar-native family (contract §18 A5.8).  These
+#: families did NOT exist live before W3/W4, and the honest receipt is an ERA, not
+#: a manufactured live-emission date: a dated value here would let a consumer read
+#: "no radar_1d_turn events in 2019" as a fact about the market.
+RADAR_SPEC_ERA_FENCE = "2026-08-14 contract §18 A5"
+
+#: FROZEN — the exact six C2 variants of contract §18 A5.3, in the amendment's
+#: order.  Defined HERE, at the schema root, and re-exported as
+#: ``challengers.C2_VARIANTS`` so the enum has exactly one source: a subtype set
+#: and a variant list that can drift are two facts pretending to be one.
+RADAR_1D_TURN_SUBTYPES: tuple[str, ...] = (
+    "c2a_kd_cross",
+    "c2b_k_slope",
+    "c2c_higher_k_low",
+    "c2d_hist_trough",
+    "c2e_hist_curvature",
+    "c2f_rebound_atr",
+)
+
+RADAR_1D_LIVE_WASHOUT_SUBTYPE = "live_k_lt_20"
+RADAR_4H_RECOVERY_SUBTYPE = "confirmed_4h_hist_trough"
+
+#: FROZEN — minted from emitter receipts at contract §18 A4.3 (the first six),
+#: extended by contract §18 A5.8 (the last three, Radar-native).  ``grey_dot`` is
+#: the raw anticipation dot (§3.1 mask); the two ``washout_*`` keys are the
+#: BOTTOM_WATCH subtypes; the three ``oracle_*`` keys are the keeper/reclaim
+#: verdict streams, whose ``subtype`` is the emitter's own quality string
+#: verbatim; the three ``radar_*`` keys are C1/C2/C3.
+#:
+#: C4 IS ABSENT ON PURPOSE.  ``C4_MTF_TURN@1`` is registered
+#: ``role=stratification_only`` and gets no family at all, so it cannot address an
+#: event — `DNR:KILL-WASHOUT-TURN` enforced by schema rather than by convention.
+#: C5 mints nothing either: it REFERENCES the preserved Terminal watch events
+#: (A5.6) instead of duplicating the market observation under a second id.
 FAMILY_KEYS: tuple[str, ...] = (
     "grey_dot",
     "washout_early_watch",
@@ -73,7 +112,31 @@ FAMILY_KEYS: tuple[str, ...] = (
     "oracle_buy",
     "oracle_rebuy",
     "oracle_reclaim",
+    "radar_1d_live_washout",
+    "radar_1d_turn",
+    "radar_1d_4h_recovery",
 )
+
+#: The Radar-native families and their closed subtype sets (§18 A5.8).
+RADAR_NATIVE_SUBTYPES: dict[str, frozenset[str]] = {
+    "radar_1d_live_washout": frozenset({RADAR_1D_LIVE_WASHOUT_SUBTYPE}),
+    "radar_1d_turn": frozenset(RADAR_1D_TURN_SUBTYPES),
+    "radar_1d_4h_recovery": frozenset({RADAR_4H_RECOVERY_SUBTYPE}),
+}
+
+RADAR_NATIVE_FAMILIES: tuple[str, ...] = tuple(RADAR_NATIVE_SUBTYPES)
+
+#: THE list of detectors that may never emit.  Held HERE — at the schema root,
+#: where every event door already passes — so there is exactly one of it:
+#: ``challengers.assert_can_fire`` consumes this tuple rather than keeping a
+#: second copy derived from its own spec blocks.
+#:
+#: W3-7: family-level refusal was not enough.  ``C4_MTF_TURN@1`` under a LAWFUL
+#: family (``radar_1d_turn``) walked straight through both the builder and the
+#: direct ``EntryEvent`` constructor, so the `DNR:KILL-WASHOUT-TURN` fence held
+#: only for the one shape nobody would try.  The refusal is now on the
+#: ``detector_id``, at construction, where no door can route around it.
+STRATIFICATION_ONLY_DETECTOR_IDS: tuple[str, ...] = ("C4_MTF_TURN@1",)
 
 #: FROZEN — the collapses A1.2 forbids.  The first four are flattenings (a
 #: family that dissolves the distinction it was recorded to preserve); the last
@@ -176,6 +239,17 @@ FAMILY_FIRST_AVAILABLE: dict[tuple[str, str | None], dict[str, Any]] = {
     ("oracle_reclaim", "block_repair"): {"kind": "scored_promotion",
                                          "value": "2026-07-16"},
     ("oracle_reclaim", "stop_sweep_reclaim"): {"kind": "unrecorded", "value": None},
+    # Radar-native families (§18 A5.8).  An ERA FENCE, never a date: these
+    # families have no live history before W3/W4 and inventing one would let a
+    # consumer read Radar's own birth as market evidence.  ``era_fence`` is
+    # undated by construction, so `is_pre_channel_reconstruction` correctly
+    # refuses to put any of these events on the wrong side of a line nobody drew.
+    ("radar_1d_live_washout", RADAR_1D_LIVE_WASHOUT_SUBTYPE): {
+        "kind": "era_fence", "value": RADAR_SPEC_ERA_FENCE},
+    ("radar_1d_4h_recovery", RADAR_4H_RECOVERY_SUBTYPE): {
+        "kind": "era_fence", "value": RADAR_SPEC_ERA_FENCE},
+    **{("radar_1d_turn", _variant): {"kind": "era_fence", "value": RADAR_SPEC_ERA_FENCE}
+       for _variant in RADAR_1D_TURN_SUBTYPES},
 }
 
 FIELD_ORIGINS: frozenset[str] = frozenset({
@@ -205,6 +279,13 @@ FINALITY_KNOWN_TS = "known_ts_settled(known_ts<as_of)"
 #: count is only meaningful with the calendar that produced it named.
 FINALITY_SIDE_CHANNEL = "side_channel_conservative_bound(ts+3s<=as_of)"
 FINALITY_NO_CLOCK = "no_known_ts(artifact_absent)"
+
+#: A 1D-LIVE Radar observation.  The OBSERVATION is immutable — it happened at
+#: that instant on the data knowable then — but the BAR it read is provisional
+#: until the session closes, and ``final`` is a claim about the bar.  Marking a
+#: live fire ``final`` would tell a consumer the daily value behind it can no
+#: longer move, which is the one thing that is certainly untrue intraday.
+FINALITY_LIVE_PROVISIONAL = "live_provisional_daily_bar(1D LIVE; settles at session close)"
 
 #: FROZEN key order for serialisation.  ``event_id`` first because it is the
 #: address every episode joins on.
@@ -434,6 +515,22 @@ class EntryEvent:
         if self.family in WATCH_SUBTYPES and self.subtype != WATCH_SUBTYPES[self.family]:
             raise EntryEventError(f"{self.family} requires subtype "
                                   f"{WATCH_SUBTYPES[self.family]!r}, got {self.subtype!r}")
+        if self.family in RADAR_NATIVE_SUBTYPES:
+            if self.detector_id in STRATIFICATION_ONLY_DETECTOR_IDS:
+                raise EntryEventError(
+                    f"detector_id {self.detector_id!r} is registered "
+                    f"role=stratification_only and may never address an event — not "
+                    f"even under a lawful family like {self.family!r}.  Its features "
+                    f"stratify C2 episodes in later analysis; an arming interaction is "
+                    f"DNR:KILL-WASHOUT-TURN's construction re-cut at a new grain "
+                    f"(contract §18 A5.5)")
+            allowed = RADAR_NATIVE_SUBTYPES[self.family]
+            if self.subtype not in allowed:
+                raise EntryEventError(
+                    f"{self.family} subtype {self.subtype!r} is not a registered W3 "
+                    f"mechanism ({sorted(allowed)}); the C2 variant family is exactly "
+                    f"six and a seventh is a contract amendment, not a new string "
+                    f"(contract §18 A5.3/A5.8)")
         if not str(self.producer or "").strip():
             raise EntryEventError("producer is required — an event with no producer "
                                   "has no provenance and cannot be graded later")
@@ -606,6 +703,82 @@ def is_pre_channel_reconstruction(signal_ts: str,
     if bound is None:
         return False
     return str(signal_ts) < bound
+
+
+def radar_field_origin() -> dict[str, str]:
+    """Per-field provenance for a Radar-NATIVE event: every field ``radar_derived``.
+
+    There is no emitter to be verbatim about.  Radar computed the oscillator,
+    Radar chose the family, Radar stamped the clock — so claiming
+    ``emitter_verbatim`` anywhere here would attribute Radar's own work to
+    somebody else (contract §18 A5.8: "all new Radar-native event fields are
+    ``radar_derived``").
+    """
+    return {name: "radar_derived" for name in EVENT_FIELDS}
+
+
+def build_radar_native_event(*, detector_id: str, detector_spec_hash: str,
+                             ticker: str, family: str, subtype: str,
+                             signal_ts: str, market_session: str, bar_state: str,
+                             context: Mapping[str, Any] | None = None,
+                             signal_known_ts: str | None = None,
+                             finality_basis: str | None = None) -> EntryEvent:
+    """One Radar-native `mastermind.entry_event.v1` record (C1 / C2 / C3).
+
+    THE DOOR C4 CANNOT WALK THROUGH.  ``family`` must be one of the three A5.8
+    Radar-native keys; ``C4_MTF_TURN@1`` has none, so the stratification family
+    cannot mint an event even if some future caller forgets the explicit refusal
+    in ``challengers.assert_can_fire``.  Two independent fences, one law.
+
+    ``final`` is DERIVED from ``bar_state`` rather than accepted from the caller —
+    the two can never disagree, and a live provisional fire cannot be labelled
+    settled by a caller in a hurry.  A confirmed-bar family must STATE its
+    finality basis: "confirmed" with no stated basis is an unauditable claim.
+    """
+    if family not in RADAR_NATIVE_SUBTYPES:
+        raise EntryEventError(
+            f"family {family!r} is not a Radar-native family "
+            f"({list(RADAR_NATIVE_FAMILIES)}); C4 is registered "
+            f"role=stratification_only and has no family at all, so it cannot address "
+            f"an event (contract §18 A5.5/A5.8, DNR:KILL-WASHOUT-TURN)")
+    if detector_id in STRATIFICATION_ONLY_DETECTOR_IDS:
+        raise EntryEventError(
+            f"detector_id {detector_id!r} is registered role=stratification_only and "
+            f"may never mint an event, whatever family it names "
+            f"(contract §18 A5.5, DNR:KILL-WASHOUT-TURN)")
+    if bar_state not in BAR_STATES:
+        raise EntryEventError(f"bar_state {bar_state!r} not in {sorted(BAR_STATES)}")
+    final = bar_state == "confirmed"
+    if final and not str(finality_basis or "").strip():
+        raise EntryEventError(
+            f"{family}/{subtype} claims a CONFIRMED bar with no finality_basis; a "
+            f"finality claim with no stated basis cannot be audited")
+    basis = finality_basis or FINALITY_LIVE_PROVISIONAL
+    payload = dict(context or {})
+    payload.setdefault("market_session", market_session)
+    return EntryEvent(
+        producer=RADAR_PRODUCER,
+        detector_id=detector_id,
+        ticker=ticker,
+        family=family,
+        subtype=subtype,
+        stage=None,
+        quality=None,
+        context=payload,
+        signal_ts=signal_ts,
+        signal_known_ts=signal_known_ts,
+        source_identity=SourceIdentity(source_hash=None,
+                                       signal_era=RADAR_SIGNAL_ERA,
+                                       detector_spec_hash=detector_spec_hash),
+        # Radar IS the emitter here, and Radar does not score: this records
+        # Radar's own honest statement about its own artifact, not a grant.
+        scored_authority=False,
+        family_era=RADAR_SIGNAL_ERA,
+        field_origin=radar_field_origin(),
+        bar_state=bar_state,
+        final=final,
+        finality_basis=basis,
+    )
 
 
 class EntryEventStore:

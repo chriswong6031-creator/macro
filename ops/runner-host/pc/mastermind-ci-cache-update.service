@@ -1,0 +1,19 @@
+[Unit]
+Description=Update the Mastermind shared CI Git object cache
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/usr/local/libexec/mastermind-ci-cache-update
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/cache/mastermind-ci /run/lock
+UMask=0027

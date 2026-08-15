@@ -17,16 +17,28 @@ PR-4; the durable episode ledger (`mastermind.live_entry_episode.v1`) is PR-5 an
 is the only lane allowed to write ``data/``.  A framework that grows an evaluator
 before its detectors are specified acquires exactly one detector's shape.
 
-EXACTLY ONE SPEC IS REGISTERED.  ``G0_GREY_DOT@1`` — the champion, whose spec
-block and hash live in ``g0_adapter`` (the code that implements it), so the
-registry cannot drift from the implementation: the registered hash IS
-``g0_adapter.g0_spec_hash()``, asserted in the W2 guard suite.
+SIX SPECS ARE REGISTERED (W2's champion + W3's five challengers).  Every spec
+block and its hash live in the module that IMPLEMENTS the detector — ``g0_adapter``
+for G0, ``challengers`` for C1/C2/C4, ``four_hour`` for C3, ``c5_adapter`` for C5 —
+so the registry cannot drift from the code it describes: each registered hash IS
+that module's own ``*_spec_hash()``, asserted by
+``assert_registry_matches_implementations``.  The import direction is one-way
+(registry reads implementation), which is why ``challengers`` reaches the §13
+lifecycle through a deferred import rather than a module-level one.
 
-RESERVED IDS CARRY NO SPEC.  ``C1..C5`` and ``F1`` are named here so two lanes
-cannot mint the same id, and ``get_spec`` on one raises ``NotYetSpecified``
-rather than returning a plausible default.  PR-3 locks their constants; a
-detector whose spec is a placeholder is a detector whose ``spec_hash`` means
-nothing, and ``spec_hash`` is what makes a result attributable later.
+ONE RESERVED ID REMAINS.  ``F1_FUSION`` is named here so two lanes cannot mint it,
+and ``get_spec("F1_FUSION")`` raises ``NotYetSpecified`` rather than returning a
+plausible default.  §4 is explicit that F1 is **not in V1** and is registered only
+after individual detector results exist — a fusion detector specified before its
+inputs have been measured is champion by definition, which is exactly what the
+contract forbids.  A detector whose spec is a placeholder is a detector whose
+``spec_hash`` means nothing, and ``spec_hash`` is what makes a result attributable
+later.
+
+C4 IS REGISTERED AND CANNOT FIRE.  ``C4_MTF_TURN@1`` carries
+``role=stratification_only`` in its spec; it has no entry-event family and
+``challengers.assert_can_fire`` refuses it.  Registration records its identity for
+later stratification; it grants nothing (`DNR:KILL-WASHOUT-TURN`).
 
 LIFECYCLE ≠ PRIORITY (contract §13).  ``detector_state`` is independent of any
 score: a priority move from 91 to 63 changes no lifecycle fact.  Nothing in this
@@ -38,7 +50,43 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from engine.entry_radar.c5_adapter import (
+    C5_BAR_FAMILY,
+    C5_DETECTOR_ID,
+    C5_GRAIN,
+    C5_SPEC,
+    C5_VERSION,
+    c5_spec_hash,
+)
+from engine.entry_radar.challengers import (
+    C1_BAR_FAMILY,
+    C1_DETECTOR_ID,
+    C1_GRAIN,
+    C1_SPEC,
+    C1_VERSION,
+    C2_BAR_FAMILY,
+    C2_DETECTOR_ID,
+    C2_GRAIN,
+    C2_SPEC,
+    C2_VERSION,
+    C4_BAR_FAMILY,
+    C4_DETECTOR_ID,
+    C4_GRAIN,
+    C4_SPEC,
+    C4_VERSION,
+    c1_spec_hash,
+    c2_spec_hash,
+    c4_spec_hash,
+)
 from engine.entry_radar.entry_events import EntryEventError, sha16
+from engine.entry_radar.four_hour import (
+    C3_BAR_FAMILY,
+    C3_DETECTOR_ID,
+    C3_GRAIN,
+    C3_SPEC,
+    C3_VERSION,
+    c3_spec_hash,
+)
 from engine.entry_radar.g0_adapter import (
     G0_BAR_FAMILY,
     G0_DETECTOR_ID,
@@ -111,18 +159,48 @@ G0_SPEC_RECORD = DetectorSpec(
     spec=G0_SPEC,
 )
 
-#: The registry.  Exactly one entry in W2.
-DETECTORS: dict[str, DetectorSpec] = {G0_SPEC_RECORD.detector_id: G0_SPEC_RECORD}
+C1_SPEC_RECORD = DetectorSpec(detector_id=C1_DETECTOR_ID, version=C1_VERSION,
+                              grain=C1_GRAIN, bar_family=C1_BAR_FAMILY, spec=C1_SPEC)
+C2_SPEC_RECORD = DetectorSpec(detector_id=C2_DETECTOR_ID, version=C2_VERSION,
+                              grain=C2_GRAIN, bar_family=C2_BAR_FAMILY, spec=C2_SPEC)
+C3_SPEC_RECORD = DetectorSpec(detector_id=C3_DETECTOR_ID, version=C3_VERSION,
+                              grain=C3_GRAIN, bar_family=C3_BAR_FAMILY, spec=C3_SPEC)
+C4_SPEC_RECORD = DetectorSpec(detector_id=C4_DETECTOR_ID, version=C4_VERSION,
+                              grain=C4_GRAIN, bar_family=C4_BAR_FAMILY, spec=C4_SPEC)
+C5_SPEC_RECORD = DetectorSpec(detector_id=C5_DETECTOR_ID, version=C5_VERSION,
+                              grain=C5_GRAIN, bar_family=C5_BAR_FAMILY, spec=C5_SPEC)
 
-#: Names only — no specs, no constants, no defaults (PR-3 locks them).
-RESERVED_DETECTOR_IDS: tuple[str, ...] = (
-    "C1_1D_LIVE_WASHOUT",
-    "C2_1D_TURN",
-    "C3_1D_4H_RECOVERY",
-    "C4_MTF_TURN",
-    "C5_BOTTOM_WATCH",
-    "F1_FUSION",
-)
+#: The registry.  Champion + the five W3 challengers.
+DETECTORS: dict[str, DetectorSpec] = {
+    record.detector_id: record for record in (
+        G0_SPEC_RECORD, C1_SPEC_RECORD, C2_SPEC_RECORD, C3_SPEC_RECORD,
+        C4_SPEC_RECORD, C5_SPEC_RECORD,
+    )
+}
+
+#: Name only — no spec, no constants, no defaults.  §4: F1 is NOT in V1 and is
+#: registered only after individual detector results exist.
+RESERVED_DETECTOR_IDS: tuple[str, ...] = ("F1_FUSION",)
+
+#: Registered id -> the ``*_spec_hash()`` of the module that implements it.  Held
+#: as data so ``assert_registry_matches_implementations`` cannot go vacuous by
+#: forgetting a detector: the check iterates the REGISTRY and demands an entry
+#: here for every member.
+IMPLEMENTATION_HASHES = {
+    G0_DETECTOR_ID: g0_spec_hash,
+    C1_DETECTOR_ID: c1_spec_hash,
+    C2_DETECTOR_ID: c2_spec_hash,
+    C3_DETECTOR_ID: c3_spec_hash,
+    C4_DETECTOR_ID: c4_spec_hash,
+    C5_DETECTOR_ID: c5_spec_hash,
+}
+
+#: Detectors registered ``role=stratification_only`` — read from the SPEC blocks,
+#: never restated, so the registry's view and the implementation's fence agree by
+#: construction (`DNR:KILL-WASHOUT-TURN`, contract §18 A5.5).
+STRATIFICATION_ONLY: tuple[str, ...] = tuple(
+    sorted(did for did, record in DETECTORS.items()
+           if record.spec.get("role") == "stratification_only"))
 
 
 def get_spec(detector_id: str) -> DetectorSpec:
@@ -132,9 +210,11 @@ def get_spec(detector_id: str) -> DetectorSpec:
         return got
     if detector_id in RESERVED_DETECTOR_IDS:
         raise NotYetSpecified(
-            f"{detector_id} is a RESERVED id with no locked spec — PR-3 locks its "
-            f"constants.  A placeholder spec would produce a spec_hash that means "
-            f"nothing, and spec_hash is what makes a result attributable later")
+            f"{detector_id} is a RESERVED id with no locked spec.  §4: F1 is NOT in "
+            f"V1 — it is registered only after G0/C1/C2/C3/C5 have independent-"
+            f"information results, and never champion by definition.  A placeholder "
+            f"spec would produce a spec_hash that means nothing, and spec_hash is "
+            f"what makes a result attributable later")
     raise DetectorError(f"unknown detector_id {detector_id!r}; registered "
                         f"{sorted(DETECTORS)}, reserved {list(RESERVED_DETECTOR_IDS)}")
 
@@ -246,3 +326,23 @@ def assert_g0_registry_matches_implementation() -> None:
     if registered != implemented:
         raise DetectorError(
             f"G0 spec_hash drift: registry {registered} != g0_adapter {implemented}")
+
+
+def assert_registry_matches_implementations() -> None:
+    """EVERY registered detector's hash IS its implementing module's hash.
+
+    Iterates the REGISTRY, not the hash table, so adding a detector without
+    wiring its ``*_spec_hash()`` is a loud failure rather than a silent gap — the
+    shape a "check the ones we remembered" guard degrades into.
+    """
+    for detector_id, record in sorted(DETECTORS.items()):
+        implementation = IMPLEMENTATION_HASHES.get(detector_id)
+        if implementation is None:
+            raise DetectorError(
+                f"{detector_id} is registered but names no implementing "
+                f"*_spec_hash(); a registry entry nobody can cross-check is a second "
+                f"source of truth for the detector's identity")
+        if record.spec_hash != implementation():
+            raise DetectorError(
+                f"{detector_id} spec_hash drift: registry {record.spec_hash} != "
+                f"implementation {implementation()}")
