@@ -513,7 +513,18 @@ def test_t7_family_control_policy_table_is_pinned_verbatim(tmp_path):
     assert benchmark == {
         "intel_hub", "altdata", "altdata_event", "altdata_flow", "altdata_mid",
         "altdata_slow", "radar", "policy", "whitehouse", "thematic_desk",
-        "basket_turn.v1", "flip_confirmation.v1"}
+        "basket_turn.v1", "flip_confirmation.v1",
+        # Live Entry Radar W5, prereg §17 (2026-08-15). Registration populates
+        # `control` mechanically from the sector map; matched-control AUTHORITY
+        # stays a later governed act pending prospective coverage (census §5).
+        # C4_MTF_TURN@1 / F1_FUSION are deliberately absent — they never
+        # register, so they have no population to classify.
+        "entry_radar",
+        "entry_radar_G0_GREY_DOT@1",
+        "entry_radar_C1_1D_LIVE_WASHOUT@1",
+        "entry_radar_C2_1D_TURN@1",
+        "entry_radar_C3_1D_4H_RECOVERY@1",
+        "entry_radar_C5_BOTTOM_WATCH@1"}
     assert not_applicable == {
         "china_news", "cn_importance_v0", "cn_importance_v0_pit",
         "us_importance_v0", "us_importance_v0_pit", "cn_special_sits",

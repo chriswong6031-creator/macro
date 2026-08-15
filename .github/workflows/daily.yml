@@ -4524,6 +4524,34 @@ jobs:
           else
             echo "::warning::price_pressure R2 publish SKIPPED (restore=$PP_RESTORE build=$PP_BUILD) — a failed restore or build must never overwrite the canonical ledger"
           fi
+      - name: Entry Radar nightly reconcile (W5 forward evidence)
+        # The SOLE durable writer of data/entry_radar/** (W5 prereg §8,
+        # research/live_entry_radar/W5_FORWARD_EVIDENCE_PREREG.md). The W4
+        # intraday lane spools events and writes nothing durable; this step is
+        # the single advancer, and it asserts that itself: --nightly calls
+        # engine.ledger_lane.nightly_advance_enabled() BEFORE any read and exits
+        # 2 having written NOTHING when the gate is down. The gate PASSES here
+        # (COLLECT_LANE=nightly is set at job level), so exit 2 in this lane would
+        # mean the job env changed underneath the law — which is exactly when the
+        # step should go red.
+        #
+        # WHY continue-on-error IS NOT SET. The script itself exits 0 on missing
+        # inputs, which is the normal state today: W4 does not exist, so there is
+        # no event spool, and the correct output is the ledger state
+        # WAITING_FOR_LIVE_SOURCE with a session stamp. It never manufactures
+        # observations from nightly artifacts and never backfills. The only
+        # non-zero exit is the lane refusal above, and that must not be swallowed:
+        # a lane error that produced a partial artifact is indistinguishable from
+        # a healthy pass to every staleness instrument we own.
+        #
+        # Outputs (data/entry_radar/{ledger_state.json,forward.parquet,
+        # qledger_registration_log.jsonl}) are covered by the broad `git add data/`
+        # in 'commit engine outputs' below — verified: that step runs `git add
+        # data/ site/ reports/`, and none of the three paths is gitignored.
+        # qledger claims (§17, live-forward rows only) land in data/qledger/,
+        # already committed by the same step.
+        timeout-minutes: 10
+        run: python3 scripts/reconcile_entry_radar.py --nightly --verbose
       - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
         # Full ALFRED output_type=2 matrices let the target engine select current
         # and prior levels from ONE release-date vintage.  They are additive to
