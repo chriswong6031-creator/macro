@@ -51,7 +51,7 @@ waves:
     status: in_progress
     depends_on: [P-B2]
     next_action: >-
-      PREREG FROZEN (this wave, freeze-only): 
+      PREREG FROZEN (PR #5729, freeze-only):
       research/cn_prophet_audit/PB3_PERSISTENCE_ROBUST_CERT_PREREG_2026-08-15.md
       (DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE). A = primary within-name
       transition contrast; B = corroborative persistence-preserving null.

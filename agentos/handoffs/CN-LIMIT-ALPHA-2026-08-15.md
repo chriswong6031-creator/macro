@@ -46,7 +46,7 @@ danger_areas:
   - "A later session that flips MA200 to onset-under, or DD to exit, because the primary edge is null, has shopped the edge. That result does not exist."
   - "Session worktrees are sparse: materialize data/ before any later panel run. This freeze session must not write into data/ or site/."
   - "P-B2's permutation remains diagnostic-only and anticonservative; do not import it as a P-B3 gate."
-prs: []
+prs: [5729]
 decisions: [DEC:CN-PB3-A-PRIMARY-B-CORROBORATIVE]
 discoveries: [DSC:CN-PERSISTENT-STATE-DEFEATS-PLACEBO-SHIFT]
 ---
