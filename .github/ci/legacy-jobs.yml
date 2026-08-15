@@ -2292,7 +2292,7 @@ jobs:
       - name: install minimal deps
         run: pip install pytest pandas numpy pyarrow pyyaml
       - name: neural-web registry + envelope + bus-doc freshness tests
-        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
+        run: python -m pytest tests/test_synapse_registry.py tests/test_neuralweb_envelope.py tests/test_signal_bus_doc.py tests/test_admin_neural_web.py tests/test_admin_intelligence_os.py tests/test_admin_metabolism.py tests/test_admin_metabolism_history.py tests/test_entity_thesis_registry.py tests/test_check_entity_thesis_registry.py tests/test_nw_lobe_descriptions.py tests/test_synapse_registry_contract.py -q
       - name: Neural Web constitution A0-A7 regression (A7 refusal + Wilson-gate sweep)
         run: python -m pytest tests/test_constitution.py -q
       - name: Mastermind semantic registry + generated global system map
@@ -2373,6 +2373,22 @@ jobs:
     # narrow those.
     scope: exclusive
     paths:
+      # Eval OS T4 additions. app/: reached through scripts/freshness_sentinel.py, which
+      # T4's reader-plane adapter imports for the surface table rather than copying it;
+      # the sentinel's alert path imports app.mailer lazily and the closure walker sees
+      # it. Named files, not `app/**` — the job touches these two and nothing else under
+      # app/. lib/dataos/: the WHOLE package, enumerated per the 2026-08-15 lib idiom —
+      # lib/dataos/__init__.py re-exports every sibling, so importing the temporal model
+      # executes all seven files and all seven are genuinely in this job's closure.
+      - "app/__init__.py"
+      - "app/mailer.py"
+      - "lib/dataos/__init__.py"
+      - "lib/dataos/identity.py"
+      - "lib/dataos/nulls.py"
+      - "lib/dataos/price.py"
+      - "lib/dataos/quality.py"
+      - "lib/dataos/registry.py"
+      - "lib/dataos/temporal.py"
       - "collectors/__init__.py"
       - "collectors/_drip.py"
       - "collectors/base.py"
@@ -2443,6 +2459,7 @@ jobs:
       - "scripts/build_market_heatmap.py"
       - "scripts/build_market_memory_page.py"
       - "scripts/build_market_structure_page.py"
+      - "scripts/build_output_health.py"
       - "scripts/build_rr_banner.py"
       - "scripts/build_site.py"
       - "scripts/build_sp500_heatmap.py"
@@ -2463,6 +2480,7 @@ jobs:
       - "scripts/check_template_site_sync.py"
       - "scripts/close_pass_publish.py"
       - "scripts/close_pass_reconcile.py"
+      - "scripts/freshness_sentinel.py"
       - "scripts/inject_wh_banner.py"
       - "scripts/notify.py"
       - "scripts/optimize_assets.py"
@@ -2480,6 +2498,7 @@ jobs:
       - "site/qledger/**"
       - "tests/test_check_intelligence_registry.py"
       - "tests/test_intelligence_registry.py"
+      - "tests/test_output_health.py"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -2501,6 +2520,18 @@ jobs:
           python3 scripts/check_intelligence_registry.py
       - name: intelligence engine registry derivation + gate tests
         run: python -m pytest tests/test_intelligence_registry.py tests/test_check_intelligence_registry.py -q
+      # Eval OS T4 — the output-level health contract, which JOINS the T1 view above with
+      # synapse and the existing health surfaces. Same job because it reads the same two
+      # registries; APPENDED, never inserted, because run_ci_pack.py::_run_job returns on
+      # the first non-zero step and a new FIRST step would hide the T1 guard behind it
+      # (#4779 — an absence of red is not a pass).
+      #
+      # Fixture-rooted by construction: the suite asserts nothing about live synapse
+      # contents or live estate freshness, so a nightly append and a genuinely stale
+      # artifact are both invisible to it. The resolver is pure, so this step needs no
+      # dependency beyond the pytest/pyyaml line already installed above.
+      - name: "output health contract (Eval OS T4)"
+        run: python -m pytest tests/test_output_health.py -q
 
   neural-web-core:
     if: ${{ false }}
