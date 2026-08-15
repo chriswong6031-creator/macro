@@ -3545,6 +3545,12 @@ on:
       - "tests/test_cn_prophet_audit.py"
       - "tests/test_htf_super_tiers.py"
       - "tests/test_prophet_stage_fusion.py"
+      # P-B3 persistence-robust certification (#5729): the suite and its
+      # research-resident instrument. research/** already starts this workflow;
+      # these lines are the executable provenance so a test-only or instrument-
+      # only edit still names the job that runs them.
+      - "tests/test_pb3_persistence_robust_cert.py"
+      - "research/cn_prophet_audit/pb3_persistence_robust_cert.py"
       - "engine/postmortem.py"
       - "scripts/prophet_postmortem.py"
       - "scripts/exit_policy_study.py"

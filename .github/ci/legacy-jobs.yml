@@ -8901,6 +8901,17 @@ jobs:
         run: pip install pytest pandas numpy pyarrow pyyaml jinja2 plotly requests beautifulsoup4 openpyxl scikit-learn
       - name: prophet learning loop — postmortem forensics, exit-policy horse race, CN loser audit, HTF tiers, stage fusion
         run: python -m pytest tests/test_prophet_postmortem.py tests/test_exit_policy_study.py tests/test_cn_prophet_audit.py tests/test_htf_super_tiers.py tests/test_prophet_stage_fusion.py -q
+      # P-B3 persistence-robust certification (#5729). The suite was named by no
+      # run: step, so the unrun-suite gate reds workflow-yaml. It belongs HERE
+      # for the reason every research-resident step on signal-contract does: it
+      # pins the CN prophet-audit instrument this job already owns
+      # (tests/test_cn_prophet_audit.py / engine/cn_prophet_audit.py), one layer
+      # down — the frozen P-B3 headline/spell/dwell/regime contract in
+      # research/cn_prophet_audit/pb3_persistence_robust_cert.py. Own step so a
+      # learning-loop regression is the first failure a reader sees. Synthetic
+      # only (numpy frames + source pins); install line already has numpy/pandas.
+      - name: research-resident P-B3 persistence-robust certification
+        run: python -m pytest tests/test_pb3_persistence_robust_cert.py -q
 
   unrun-intl-collectors:
     # China/HK collectors and the collect.py sweeps + store-freshness tripwires.
