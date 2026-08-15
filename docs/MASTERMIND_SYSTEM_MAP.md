@@ -3588,6 +3588,6 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
 | `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
-| `config/synapse.yml` | `7c4e9450900f764b3e56073c45fc42892cdd5ce50b8cfa01c068b4e0e0d6d385` |
+| `config/synapse.yml` | `9ace9cebbf8fdfc451516d79a73796006dcf83c955b088905dfebf1ba5173dc5` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.
