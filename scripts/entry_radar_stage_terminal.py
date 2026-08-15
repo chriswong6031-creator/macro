@@ -426,7 +426,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                      if ln.strip()]
         else:
             import pandas as pd  # noqa: PLC0415
-            mem = pd.read_parquet(ROOT / "data/universe/membership.parquet")
+            mem = pd.read_parquet(REPO_ROOT / "data/universe/membership.parquet")
             names = sorted(set(mem["ticker"].astype(str)))
         tmp2: tempfile.TemporaryDirectory | None = None
         if args.dest:

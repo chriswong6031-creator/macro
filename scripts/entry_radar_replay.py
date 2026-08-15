@@ -548,7 +548,25 @@ def gather_episodes(*, cache_dir: Path, panel: str,
                       if prereg.REPLAY_ERA_START <= s <= prereg.HOLDOUT_BOUNDARY]
             if not screen:
                 continue
-            out = ep_mod.c1_c2_episodes(t, daily, reader, screen, panel=panel)
+            # Evaluate the screen PLUS each hit's 15-session tail: a C2 turn may
+            # lawfully fire on a later session of the same nonterminal episode
+            # whose own K never dipped below the screen (A5.3 — the turn needs
+            # no current K<20).  Omitting tails would silently under-count C2.
+            import pandas as _pd  # noqa: PLC0415
+            sess_index = [ _pd.Timestamp(x).date() for x in daily.index ]
+            pos_of = {s: i for i, s in enumerate(sess_index)}
+            eval_set = set()
+            for s in screen:
+                i = pos_of.get(s)
+                if i is None:
+                    continue
+                for j in range(i, min(i + 16, len(sess_index))):
+                    d2 = sess_index[j]
+                    if prereg.REPLAY_ERA_START <= d2 <= prereg.HOLDOUT_BOUNDARY:
+                        eval_set.add(d2)
+            sessions_to_eval = sorted(eval_set)
+            out = ep_mod.c1_c2_episodes(t, daily, reader, sessions_to_eval,
+                                        panel=panel)
             c1c2 = list(out.get("episodes") or [])
             fired_by_episode = {e.get("decision_session"): bool(e.get("c2_variants_fired"))
                                 for e in c1c2 if e.get("detector_id", "").startswith("C1")}
@@ -560,7 +578,7 @@ def gather_episodes(*, cache_dir: Path, panel: str,
             for r in out.get("refusals") or []:
                 refusals.append({"reason": "minute_refusal", "panel": panel,
                                  "ticker": t, "detail": r})
-            c3 = ep_mod.c3_episodes(t, daily, reader, screen, panel=panel)
+            c3 = ep_mod.c3_episodes(t, daily, reader, sessions_to_eval, panel=panel)
             c3_eps = list(c3.get("episodes") or [])
             c3_sessions = {e.get("decision_session") for e in c3_eps}
             c2a_sessions = {e.get("decision_session") for e in c1c2
