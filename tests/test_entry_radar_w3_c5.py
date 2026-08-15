@@ -275,3 +275,57 @@ def test_every_c5_reading_and_episode_is_display_tier(stores, symbol):
         assert episode.candidate_at == episode.first_armed_at
         assert episode.state.value == "CANDIDATE"
         assert episode.event_ids, "the episode names the preserved event as evidence"
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-14 adversarial-review regression (W3-6)
+# ---------------------------------------------------------------------------
+
+def _shared_bar_store_without_known_ts() -> EntryEventStore:
+    """A same-bar pair whose LOSING dot carries no emitter clock."""
+    store = EntryEventStore()
+    loser = _watch("2026-07-01", "2026-07-03", "early_dot")
+    loser.pop("known_ts")
+    g0_events(load_slice(_micro_slice([
+        loser,
+        _watch("2026-07-01", "2026-07-03", "blocked_trigger"),
+    ])), store)
+    return store
+
+
+def test_W3_6_an_unknowable_superseded_watch_is_unavailable_not_confirmed():
+    """W3-6: the superseded branch dated an unknowable watch at ``signal_ts`` and
+    stamped it ``confirmed`` — the exact substitution ``c5_reading`` refuses on the
+    winning side, arriving through the door nobody looked at.  A 3D-open date is
+    not a decision clock, whichever side of a precedence contest it sits on.
+    """
+    store = _shared_bar_store_without_known_ts()
+    run = c5.run_c5(store)
+    loser = next(r for r in run.readings if r.variant == "early_dot")
+    assert loser.availability == "unavailable"
+    assert loser.condition_met is None, "no clock is not a measured loss"
+    assert loser.source_bar_known_at is None
+    assert loser.source_bar_time == "2026-07-01"
+    assert loser.features["knowability_basis"] == "signal_known_ts (absent)"
+    assert loser.features["superseded_by_event_id"]
+    assert loser.bar_state == "provisional"
+
+
+def test_W3_6_a_KNOWABLE_superseded_watch_still_records_the_evaluated_loss():
+    """The other branch is unchanged: it was evaluated, and it lost."""
+    store = _shared_bar_store()
+    run = c5.run_c5(store)
+    loser = next(r for r in run.readings
+                 if r.variant == "early_dot" and r.condition_met is False)
+    assert loser.availability in ("confirmed", "provisional")
+    assert loser.source_bar_known_at == "2026-07-03"
+    assert loser.observed_at == "2026-07-03"
+    assert loser.features["knowability_basis"] == "signal_known_ts"
+
+
+def test_W3_6_both_branches_keep_the_losing_event_in_the_store():
+    for store in (_shared_bar_store(), _shared_bar_store_without_known_ts()):
+        before = len(store)
+        run = c5.run_c5(store)
+        assert len(store) == before, "C5 mints nothing and deletes nothing"
+        assert run.counts["superseded"] == 1

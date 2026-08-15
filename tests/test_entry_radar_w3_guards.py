@@ -680,3 +680,133 @@ def test_c5_mints_no_event_type_at_all():
         RADAR_DIR / "c5_adapter.py").read_text(encoding="utf-8"), \
         "C5 references the preserved watch events; it never mints (A5.8)"
     assert c5.C5_SPEC["implementation"].startswith("interpretation of the two")
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-14 adversarial-review regressions (W3-3, W3-4)
+# ---------------------------------------------------------------------------
+
+def _module_numeric_constants(path: Path) -> dict[str, float]:
+    """Module-level ALL-CAPS constants bound to a plain number."""
+    out: dict[str, float] = {}
+    for node in ast.parse(path.read_text(encoding="utf-8"), filename=path.name).body:
+        targets = (node.targets if isinstance(node, ast.Assign)
+                   else [node.target] if isinstance(node, ast.AnnAssign) else [])
+        for target in targets:
+            if not (isinstance(target, ast.Name) and target.id.isupper()):
+                continue
+            value = node.value
+            if isinstance(value, ast.Constant) and \
+                    isinstance(value.value, (int, float)) and \
+                    not isinstance(value.value, bool):
+                out[target.id] = float(value.value)
+    return out
+
+
+def _spec_numbers() -> set[float]:
+    from engine.entry_radar.detectors import DETECTORS
+
+    found: set[float] = set()
+
+    def walk(node):
+        if isinstance(node, dict):
+            for value in node.values():
+                walk(value)
+        elif isinstance(node, list):
+            for value in node:
+                walk(value)
+        elif isinstance(node, bool):
+            return
+        elif isinstance(node, (int, float)):
+            found.add(float(node))
+
+    for record in DETECTORS.values():
+        walk(record.spec)
+    return found
+
+
+#: W3-4 allowlist: module-level numeric constants that are NOT firing-relevant and
+#: therefore need not ride a spec hash.  EMPTY on purpose — every constant in the
+#: four W3 modules currently reaches a spec by value.  A new row needs a one-line
+#: reason, and "it was inconvenient" is not one.
+NON_FIRING_CONSTANTS: dict[str, str] = {}
+
+
+def test_W3_4_every_numeric_constant_rides_a_spec_hash_by_value():
+    """W3-4: firing-relevant constants lived OUTSIDE the hashes.
+
+    ``ATR_LEN`` and ``MINUTE_BAR_SECONDS`` decided what fired while sitting in
+    prose, and the §10 re-arm numbers were hand-typed into a sentence beside the
+    constants they were supposed to describe — a spec that can lie with a stable
+    hash.  The sweep below is the mechanical version of "carry it by value".
+    """
+    numbers = _spec_numbers()
+    missing: list[str] = []
+    for module in ("indicator_core.py", "challengers.py", "four_hour.py",
+                   "c5_adapter.py"):
+        for name, value in sorted(_module_numeric_constants(RADAR_DIR / module).items()):
+            if name in NON_FIRING_CONSTANTS:
+                continue
+            if value not in numbers:
+                missing.append(f"{module}:{name}={value}")
+    assert missing == [], \
+        f"constant(s) decide behaviour but ride no spec hash: {missing}"
+
+
+def test_W3_4_CONTROL_the_constant_sweep_fires_on_a_planted_unhashed_constant(tmp_path):
+    planted = tmp_path / "planted.py"
+    planted.write_text("SOME_THRESHOLD = 1234567\nOTHER = 'x'\n", encoding="utf-8")
+    constants = _module_numeric_constants(planted)
+    assert constants == {"SOME_THRESHOLD": 1234567.0}
+    assert 1234567.0 not in _spec_numbers()
+
+
+def test_W3_4_the_named_constants_are_the_ones_that_moved():
+    assert ic.INDICATOR_CORE["atr_len"] == ic.ATR_LEN == 14
+    assert ch.C1_SPEC["minute_bar_seconds"] == ch.MINUTE_BAR_SECONDS == 60
+    assert ch.C2_SPEC["sampling"]["minute_bar_seconds"] == ch.MINUTE_BAR_SECONDS
+    assert ch.C2_SPEC["sampling"]["interval_minutes"] == ch.SAMPLE_INTERVAL_MINUTES
+    rearm = ch.C1_SPEC["rearm_law"]
+    assert rearm["confirmed_k_floor"] == ch.REARM_K_FLOOR == 50
+    assert rearm["consecutive_sessions"] == ch.REARM_K_SESSIONS == 2
+    assert rearm["max_sessions"] == ch.REARM_MAX_SESSIONS == 15
+    assert fh.C3_SPEC["arm_expiry_sessions"] == fh.C3_ARM_EXPIRY_SESSIONS == 15
+    assert "non-positive" in ch.C2_SPEC["variants"]["c2f_rebound_atr"]  # W3-13
+
+
+def test_W3_3_no_reading_in_ANY_w3_suite_cites_an_event_from_its_own_future():
+    """W3-3, swept across every W3 detector that mints or references an event.
+
+    The invariant is one line — a reading may only cite what already existed —
+    and it is checked on C1/C2 (Radar-minted), C3 (Radar-minted) and C5
+    (Terminal-preserved) in one place, because a per-detector version of it is
+    how one detector ends up exempt.
+    """
+    from engine.entry_radar import c5_adapter as c5_mod
+    from engine.entry_radar.g0_adapter import g0_events
+    from engine.entry_radar.indicator_ingest import load_slice
+    from engine.entry_radar.entry_events import EntryEventStore
+
+    checked = 0
+
+    fixture = load_fixture()
+    path = observation_path(fixture)
+    c1 = ch.run_c1(path)
+    c2 = ch.run_c2(path, c1.episode)
+    clocks = {str(e.event_id): e.signal_ts for e in list(c1.events) + list(c2.events)}
+    for reading in list(c1.readings) + list(c2.readings):
+        for ref in reading.evidence_refs:
+            assert clocks[ref] <= reading.observed_at
+            checked += 1
+
+    store = EntryEventStore()
+    g0_events(load_slice(ROOT / "tests" / "fixtures" / "entry_radar" /
+                         "NFLX.slice.json"), store)
+    watch_clocks = {str(e.event_id): (e.signal_known_ts or e.signal_ts)
+                    for e in store.events()}
+    for reading in c5_mod.run_c5(store).readings:
+        for ref in reading.evidence_refs:
+            assert watch_clocks[ref] <= reading.observed_at
+            checked += 1
+
+    assert checked > 100, "the sweep must actually inspect citations"

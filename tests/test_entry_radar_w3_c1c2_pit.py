@@ -41,6 +41,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import pytest
 
+from engine import session_anchor
 from engine.entry_radar import challengers as ch
 from engine.entry_radar import indicator_core as ic
 from engine.entry_radar.four_hour import tape_from_rows
@@ -195,12 +196,20 @@ def test_the_rearm_rule_is_section_10s_frozen_rule(ks, elapsed, expected):
 
 
 def test_every_reading_is_display_tier_and_unavailable_is_never_false(c1_run, c2_run):
+    """TRUTH CHANGE (W3-8): a fully-available fixture now yields NO nulls at all.
+
+    Pre-arm used to be encoded ``unavailable``+None even though the input was
+    present; it is now the evaluated non-fire it always was, so this healthy path
+    is null-free by construction.  The null law is exercised where an input really
+    is missing: ``test_PIT18_*`` (no ATR), ``test_W3_1_*`` (basis disagreement),
+    ``test_W3_5_*`` (stale history) and the empty-tape test below.
+    """
     for reading in list(c1_run.readings) + list(c2_run.readings):
         assert reading.authority == {k: False for k in reading.authority}
-        if reading.availability == "unavailable":
+        if reading.availability in ("unavailable", "stale"):
             assert reading.condition_met is None
-    assert any(r.condition_met is None for r in c2_run.readings), \
-        "the null state must actually occur, or the law is untested here"
+    assert all(r.condition_met is not None for r in c2_run.readings), \
+        "every input in this fixture is present, so every verdict is a real verdict"
 
 
 # ---------------------------------------------------------------------------
@@ -318,8 +327,17 @@ def test_nothing_fires_before_the_c1_arm(path, c1_run, c2_run):
         assert all(t >= armed for t in fires), variant
     pre_arm = [r for r in c2_run.readings if r.observed_at < armed]
     assert pre_arm, "the fixture must contain pre-arm observations"
-    assert all(r.availability == "unavailable" and r.condition_met is None
-               for r in pre_arm), "pre-arm is UNAVAILABLE, never a measured False"
+    # TRUTH CHANGE (W3-8): pre-arm is an EVALUATED non-fire, not a missing input.
+    # C2's condition is "inside a nonterminal C1 episode AND the turn"; before the
+    # arm the first conjunct is known-False, so the conjunction is False.  C3
+    # already encoded the same situation this way; this is the harmonization.
+    assert all(r.condition_met is False for r in pre_arm)
+    assert all(r.availability == "provisional" for r in pre_arm), \
+        "the INPUT was there — only the episode clause was not"
+    assert all(r.features["eligible"] is False and r.features["pre_arm"] is True
+               for r in pre_arm)
+    post = [r for r in c2_run.readings if r.observed_at >= armed]
+    assert all(r.features["eligible"] is True for r in post)
 
 
 # ---------------------------------------------------------------------------
@@ -450,7 +468,11 @@ def test_PIT18_removing_the_ATR_input_makes_c2f_unavailable_not_false(fixture, c
     blind = observation_path(fixture, daily=daily_history(fixture, blank_ohlc=True))
     assert all(o.atr_prior_confirmed is None for o in blind)
     run = ch.run_c2(blind, ch.run_c1(blind).episode)
-    c2f = [r for r in run.readings if r.variant == "c2f_rebound_atr"]
+    armed = ch.run_c1(blind).episode.first_armed_at
+    # POST-ARM only: pre-arm is the W3-8 evaluated non-fire and says nothing about
+    # the ATR.  Post-arm, the missing ATR is the whole verdict.
+    c2f = [r for r in run.readings
+           if r.variant == "c2f_rebound_atr" and r.observed_at >= armed]
     assert c2f
     assert all(r.condition_met is None for r in c2f), \
         "a rebound we could not measure is not a measured non-rebound"
@@ -466,8 +488,10 @@ def test_PIT18_a_basis_disagreement_makes_c2f_unavailable_too(fixture):
     assert all(o.atr_prior_confirmed is None for o in mixed)
     run = ch.run_c2(mixed, ch.run_c1(mixed).episode)
     assert run.fires["c2f_rebound_atr"] == ()
-    assert all(r.condition_met is None
-               for r in run.readings if r.variant == "c2f_rebound_atr")
+    # W3-1 made this stronger than c2f: a disagreeing basis voids the WHOLE
+    # observation, so no variant carries a verdict and no episode ever arms.
+    assert all(r.condition_met is None for r in run.readings)
+    assert ch.run_c1(mixed).episodes == ()
 
 
 # ---------------------------------------------------------------------------
@@ -608,3 +632,251 @@ def test_a_session_with_no_prints_yet_is_unavailable_not_zero(fixture):
     run = ch.run_c1(blank)
     assert run.episodes == ()
     assert all(r.condition_met is None for r in run.readings)
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-14 adversarial-review regressions (W3-1, W3-3, W3-5, W3-8, W3-9,
+# W3-12, W3-15).  Each pins the fixed behaviour of one reproduced finding.
+# ---------------------------------------------------------------------------
+
+def test_W3_1_a_raw_tape_against_an_adjusted_daily_voids_the_whole_observation(fixture):
+    """W3-1: the basis check gated only the ATR, so the OSCILLATOR was computed on
+    a series whose two halves were on different adjustment bases.  The seam alone
+    fabricated a move — and the reviewer's reproduction turned that into a K cross
+    and a minted `radar_1d_live_washout` event.  A disagreeing basis now voids the
+    entire observation, exactly as c2f already refused (§5 price-basis row).
+    """
+    mixed = observation_path(fixture,
+                             tapes=session_tapes(fixture, price_basis=ch.BASIS_RAW))
+    assert mixed, "the grid still exists — the sessions did open"
+    assert all(o.availability == "unavailable" for o in mixed)
+    assert all(o.k is None and o.d is None and o.hist is None for o in mixed)
+
+    c1 = ch.run_c1(mixed)
+    assert c1.events == () and c1.episodes == ()
+    assert all(r.condition_met is None for r in c1.readings)
+    c2 = ch.run_c2(mixed, c1.episode)
+    assert c2.events == ()
+    assert all(fires == () for fires in c2.fires.values())
+    assert all(r.condition_met is None for r in c2.readings)
+
+
+def test_W3_1_the_basis_pair_is_recorded_on_every_reading(fixture, c1_run, c2_run):
+    """Auditable, not merely correct: BOTH bases ride the reading."""
+    for reading in list(c1_run.readings) + list(c2_run.readings):
+        assert reading.features["price_basis"] == ch.BASIS_ADJUSTED
+        assert reading.features["daily_price_basis"] == ch.BASIS_ADJUSTED
+    mixed = observation_path(fixture,
+                             tapes=session_tapes(fixture, price_basis=ch.BASIS_RAW))
+    reading = ch.run_c1(mixed).readings[0]
+    assert reading.features["price_basis"] == ch.BASIS_RAW
+    assert reading.features["daily_price_basis"] == ch.BASIS_ADJUSTED
+
+
+def test_W3_1_CONTROL_agreeing_bases_are_byte_identical_to_the_baseline(
+        fixture, c1_run, c2_run):
+    """The refusal must cost the healthy path nothing."""
+    same = observation_path(fixture,
+                            tapes=session_tapes(fixture, price_basis=ch.BASIS_ADJUSTED))
+    again_c1 = ch.run_c1(same)
+    assert canonical_readings(again_c1.readings) == canonical_readings(c1_run.readings)
+    assert canonical_readings(ch.run_c2(same, again_c1.episode).readings) == \
+        canonical_readings(c2_run.readings)
+
+
+def test_W3_3_no_reading_cites_an_event_that_did_not_exist_yet(c1_run, c2_run):
+    """W3-3: every C2 reading carried the C1 event id — including readings dated
+    hours BEFORE that event existed.  A forward citation inside the one record
+    whose job is to say what was knowable when.
+    """
+    minted = {str(e.event_id): e.signal_ts for e in c1_run.events}
+    assert minted, "the fixture must mint a C1 event"
+    cited = [r for r in c2_run.readings if r.evidence_refs]
+    assert cited, "post-arm readings must still cite it — the fix is a filter, not a ban"
+    for reading in c2_run.readings:
+        for ref in reading.evidence_refs:
+            assert minted[ref] <= reading.observed_at, \
+                f"{reading.observed_at} cites an event minted at {minted[ref]}"
+    armed = c1_run.episode.first_armed_at
+    assert all(r.evidence_refs == () for r in c2_run.readings if r.observed_at < armed)
+
+
+def test_W3_3_an_event_with_no_recorded_clock_is_never_cited():
+    """Fail-closed: an unknown clock excludes the reference rather than assuming it."""
+    episode = ch.DetectorEpisode(ticker="ZZTOP", detector_id=ch.C1_DETECTOR_ID)
+    episode.record_event("aaaa", "2026-06-24T14:00:00Z")
+    episode.event_ids.append("bbbb")  # deliberately WITHOUT a clock
+    assert ch.lawful_evidence_refs(episode, "2026-06-24T15:00:00Z") == ("aaaa",)
+    assert ch.lawful_evidence_refs(episode, "2026-06-24T13:00:00Z") == ()
+    assert ch.lawful_evidence_refs(None, "2026-06-24T13:00:00Z") == ()
+
+
+def _stale_daily(fixture) -> ch.DailyHistory:
+    """The reviewer's shape: a confirmed history that stops well before the tape.
+
+    Cut at the end of April against a late-June tape — ~37 reference sessions of
+    gap, and still long enough that every oscillator would happily compute.  That
+    is the point: the refusal is about the CALENDAR, not about running out of bars.
+    """
+    cutoff = "2026-04-30"
+    rows = [r for r in fixture["daily"]["rows"] if r[0] <= cutoff]
+    assert len(rows) > 60, "the stale frame must still be long enough to compute on"
+    tape_session = date.fromisoformat(fixture["tape_sessions"][0])
+    reference = session_anchor.reference_sessions("US")
+    gap = int(reference.searchsorted(pd.Timestamp(tape_session))
+              - reference.searchsorted(pd.Timestamp(rows[-1][0])))
+    assert gap > 30, f"the gap must be material, got {gap} sessions"
+    return daily_history(fixture, rows=rows)
+
+
+def test_W3_5_a_three_month_old_feed_is_stale_and_carries_no_verdict(fixture):
+    """W3-5: `stale` sits in the §5 vocabulary and was UNREACHABLE — a feed that
+    stopped in March produced `confirmed` readings and measured non-fires against a
+    June tape.  Freshness is now continuity against the reference calendar.
+    """
+    stale = observation_path(fixture, daily=_stale_daily(fixture))
+    assert stale
+    assert all(o.availability == "stale" for o in stale)
+    assert all(o.history_freshness == "stale" for o in stale)
+    assert all(o.k is None for o in stale), "a %K off an old base is not today's %K"
+
+    c1 = ch.run_c1(stale)
+    assert c1.events == () and c1.episodes == ()
+    assert all(r.availability == "stale" and r.condition_met is None
+               for r in c1.readings)
+    c2 = ch.run_c2(stale, c1.episode)
+    assert c2.events == ()
+    assert all(r.condition_met is None for r in c2.readings)
+
+
+def test_W3_5_CONTROL_a_contiguous_history_is_unchanged(fixture, c1_run):
+    fresh = observation_path(fixture)
+    assert all(o.history_freshness == "confirmed" for o in fresh)
+    assert canonical_readings(ch.run_c1(fresh).readings) == \
+        canonical_readings(c1_run.readings)
+
+
+def test_W3_5_freshness_is_continuity_against_the_reference_calendar(fixture):
+    session = date.fromisoformat(fixture["tape_sessions"][1])
+    prior = ch.prior_reference_session(session)
+    assert prior is not None and prior < session
+    assert ch.freshness_state(prior, session) == "confirmed"
+    assert ch.freshness_state(prior - timedelta(days=1), session) == "stale"
+    assert ch.freshness_state(None, session) == "unavailable"
+
+
+def test_W3_5_a_stale_reading_may_not_carry_a_boolean():
+    from engine.entry_radar.readings import ReadingError
+
+    with pytest.raises(ReadingError, match="null law"):
+        ch.DetectorReading(ticker="ZZTOP", detector_id=ch.C1_DETECTOR_ID,
+                           detector_version=1, detector_spec_hash="x",
+                           observed_at="2026-06-24T14:00:00Z",
+                           market_session="2026-06-24", availability="stale",
+                           bar_state="provisional", condition_met=False)
+
+
+def test_W3_8_pre_arm_is_an_evaluated_non_fire_matching_C3s_encoding(path, c1_run,
+                                                                    c2_run):
+    """W3-8: C2 said `unavailable`+None for a present input while C3 said
+    `confirmed`+False+pre_arm for the same situation.  One vocabulary now.
+    """
+    armed = c1_run.episode.first_armed_at
+    pre = [r for r in c2_run.readings if r.observed_at < armed]
+    post = [r for r in c2_run.readings if r.observed_at >= armed]
+    assert pre and post
+    assert {r.condition_met for r in pre} == {False}
+    assert {r.features["eligible"] for r in pre} == {False}
+    assert {r.features["pre_arm"] for r in pre} == {True}
+    assert {r.availability for r in pre} == {"provisional"}, \
+        "the input was present — only the episode clause was false"
+    assert {r.features["eligible"] for r in post} == {True}
+
+
+def test_W3_8_an_unavailable_input_dominates_the_pre_arm_encoding(fixture):
+    """Not knowing beats knowing the answer is no."""
+    empty = copy.deepcopy(fixture)
+    empty["tapes"] = [empty["tapes"][0]]
+    empty["tapes"][0]["rows"] = []
+    blank = observation_path(empty)
+    run = ch.run_c2(blank, None)
+    assert all(r.availability == "unavailable" and r.condition_met is None
+               for r in run.readings)
+    assert all(r.features["eligible"] is False for r in run.readings)
+
+
+def _rth_tape() -> ch.SessionTape:
+    raw = load_fixture("w3_rth_filter_tape.json")
+    return tape_from_rows(date.fromisoformat(raw["session"]), raw["rows"],
+                          price_basis=raw["price_basis"], vintage="w3-fixture", tz=ET)
+
+
+def test_W3_9_the_rth_filter_excludes_extended_hours_prints():
+    """W3-9: deleting ``rth_minutes`` survived the WHOLE battery, because every
+    other tape prints from 09:30 — so the filter had nothing to exclude that would
+    have changed a number.  This tape has premarket prints, postmarket prints, and
+    an opening GAP.
+    """
+    tape = _rth_tape()
+    open_dt, close_dt = ch.session_window_et(tape.session)
+    outside = [m for m in tape.minutes
+               if m.start < open_dt or m.knowable_at > close_dt]
+    assert len(outside) == 4, "2 premarket + 2 postmarket prints"
+    kept = ch.rth_minutes(tape)
+    assert all(open_dt <= m.start and m.knowable_at <= close_dt for m in kept)
+    assert len(kept) == len(tape.minutes) - 4
+
+
+def test_W3_9_the_opening_gap_is_unavailable_until_the_first_lawful_print():
+    tape = _rth_tape()
+    points = ch.sample_session_path(tape)
+    open_dt, _close = ch.session_window_et(tape.session)
+    by_end = {p.observed_at: p for p in points}
+    for offset in (5, 10, 15):  # 09:35, 09:40, 09:45 — before the 09:47 print
+        assert by_end[open_dt + timedelta(minutes=offset)].sampled_close is None
+    first = by_end[open_dt + timedelta(minutes=20)]  # 09:50
+    assert first.sampled_close is not None, "the 09:47-09:49 prints are knowable by 09:50"
+
+
+def test_W3_9_MUTATION_removing_the_rth_filter_changes_the_opening_sample(monkeypatch):
+    """The control the battery lacked: with the filter gone, the 08:00 premarket
+    print becomes the 09:35 sampled value — so this test FAILS if the filter is
+    deleted, which is what makes the two above non-vacuous.
+    """
+    tape = _rth_tape()
+    open_dt, _close = ch.session_window_et(tape.session)
+    lawful = ch.sample_session_path(tape)[0]
+    assert lawful.sampled_close is None
+
+    monkeypatch.setattr(ch, "rth_minutes",
+                        lambda t: tuple(sorted(t.minutes, key=lambda b: b.start)))
+    unfiltered = ch.sample_session_path(tape)[0]
+    assert unfiltered.sampled_close is not None, \
+        "without the filter the premarket print reaches the opening interval"
+    assert unfiltered.observed_at == lawful.observed_at == \
+        open_dt + timedelta(minutes=5)
+
+
+def test_W3_12_a_duplicated_or_unordered_daily_index_is_refused(fixture):
+    """W3-12: a doubled session shifts every rolling window and nothing downstream
+    can see it; a frame handed in out of order is the same defect, and silently
+    sorting it would hide that the caller's 'last bar' and ours disagree.
+    """
+    rows = fixture["daily"]["rows"]
+    with pytest.raises(ch.ChallengerError, match="duplicate session"):
+        daily_history(fixture, rows=rows + [rows[-1]])
+    with pytest.raises(ch.ChallengerError, match="monotonically increasing"):
+        daily_history(fixture, rows=list(reversed(rows)))
+    daily_history(fixture)  # the healthy frame still constructs
+
+
+def test_W3_15_a_live_event_is_knowable_at_its_own_observation_instant(c1_run, c2_run):
+    """W3-15: C1/C2 events carried ``signal_known_ts=None``, which reads as "the
+    emitter recorded no clock" — but Radar IS the emitter and a 1D-LIVE observation
+    is knowable exactly when it is observed.  Finality is unchanged: the BAR is
+    still provisional until the close.
+    """
+    for event in list(c1_run.events) + list(c2_run.events):
+        assert event.signal_known_ts == event.signal_ts
+        assert event.final is False and event.bar_state == "provisional"
+        assert event.finality_basis.startswith("live_provisional_daily_bar")

@@ -332,7 +332,10 @@ def test_the_c3_setup_has_an_arm_with_turns_on_both_sides(c3_setup):
     armed = [s for s in sessions if fh.c3_daily_leg(daily, s).washed is True]
     assert armed, "the synthetic daily must reach a confirmed washout"
     run = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=buckets)
-    assert run.armed_at == armed[0].isoformat()
+    # W3-14: armed_at is an INSTANT (that session's 09:30 ET open, UTC-normalised);
+    # armed_session is the date eligibility compares against.
+    assert run.armed_session == armed[0].isoformat()
+    assert run.armed_at == ch.utc_iso(session_window_et(armed[0])[0])
     assert any(t < run.armed_at for t in run.turns), "a pre-arm turn must exist"
     assert any(t >= run.armed_at for t in run.turns), "and a post-arm one"
 
@@ -423,3 +426,203 @@ def test_c3_mints_no_event_when_the_daily_leg_never_arms(c3_setup):
     assert run.events == () and run.episodes == ()
     assert all(r.condition_met is None for r in run.readings), \
         "a flat series has no oscillator at all — unavailable, never False"
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-14 adversarial-review regressions (W3-2, W3-5, W3-11, W3-14)
+# ---------------------------------------------------------------------------
+
+def _expiry_daily(n_sessions: int = 200) -> tuple[ch.DailyHistory, list[date]]:
+    """Like :func:`_synthetic_daily`, but the decline sits MID-RUN.
+
+    The arm has to land early enough that 16 more sessions still fit, which the
+    late-decline frame (built so a pre-arm 4H turn exists) cannot provide.
+    """
+    reference = session_anchor.reference_sessions("US")
+    sessions = [ts.date() for ts in
+                reference[reference <= pd.Timestamp("2026-06-26")][-n_sessions:]]
+    t = np.arange(n_sessions, dtype=float)
+    wobble = 1 + 0.004 * np.sin(t / 2.3)
+    closes = 100.0 * np.exp(0.0035 * t) * wobble
+    start, span = n_sessions // 2, 20
+    tail = np.linspace(0.0, 1.0, span)
+    closes[start:start + span] = (closes[start - 1] * (1 - 0.18 * tail ** 0.7)
+                                  * (1 + 0.004 * np.sin(np.arange(span) / 2.3)))
+    rally = np.arange(n_sessions - (start + span), dtype=float)
+    closes[start + span:] = closes[start + span - 1] * np.exp(0.004 * (rally + 1))
+    frame = pd.DataFrame({"open": closes, "high": closes * 1.004,
+                          "low": closes * 0.996, "close": closes},
+                         index=pd.DatetimeIndex(sessions))
+    return ch.DailyHistory(frame=frame, vintage="synthetic-expiry"), sessions
+
+
+def _expiry_case(turn_offset: int):
+    """An arm, then a first post-arm 4H turn ``turn_offset`` sessions later.
+
+    The 4H series is built so the ONLY lawful turn lands on a chosen session:
+    a long monotone decline (histogram falling, no trough) followed by one clean
+    upturn.  That isolates §10's clock from every other reason C3 might not fire.
+    """
+    daily, sessions = _expiry_daily()
+    armed = [s for s in sessions if fh.c3_daily_leg(daily, s).washed is True]
+    assert armed, "the synthetic daily must reach a confirmed washout"
+    arm_index = sessions.index(armed[0])
+
+    n_buckets = 2 * len(sessions)
+    closes = [100.0 * (0.996 ** i) for i in range(n_buckets)]
+    turn_at = 2 * (arm_index + turn_offset)
+    assert turn_at + 6 < n_buckets, "the turn must fit inside the run"
+    for j in range(turn_at, n_buckets):
+        closes[j] = closes[turn_at - 1] * (1.0 + 0.010 * (j - turn_at + 1))
+    buckets = _synthetic_buckets(sessions, closes)
+    return daily, sessions, buckets, arm_index
+
+
+def test_W3_2_an_arm_that_waits_out_the_15_session_clock_EXPIRES(c3_setup):
+    """W3-2: a C3 ARMED episode never expired.  The reviewer promoted a candidate
+    88 sessions after the arm, with the confirmed daily K back at 95.8 — a washout
+    that had healed months earlier still buying the first 4H turn that arrived.
+    §10 already froze the instrument: ARMED without promotion expires at 15
+    sessions.
+    """
+    daily, sessions, buckets, arm_index = _expiry_case(16)
+    run = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=buckets)
+    assert run.armed_session == sessions[arm_index].isoformat()
+    assert run.expired_at is not None, "the clock must have run out"
+    assert run.events == (), "no candidate may be minted at or after expiry"
+    episode = run.episode
+    assert episode.state.value == "EXPIRED"
+    assert episode.candidate_at is None
+    # the turn DID arrive — it simply arrived too late
+    assert any(t > run.expired_at for t in run.turns)
+    assert run.expired_at == ch.utc_iso(
+        session_window_et(sessions[arm_index + fh.C3_ARM_EXPIRY_SESSIONS])[0])
+
+
+def test_W3_2_a_turn_inside_the_clock_still_promotes(c3_setup):
+    """CONTROL: the expiry must not eat a lawful candidate.
+
+    The price inflection is placed 10 sessions after the arm; the HISTOGRAM turn
+    that follows it lands a bar or two later still (the RSI-MACD is smoothed), so
+    the assertion below is on the OBSERVED candidate session rather than on the
+    offset — an offset is an input, and the clock is about the outcome.
+    """
+    daily, sessions, buckets, arm_index = _expiry_case(10)
+    run = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=buckets)
+    assert run.expired_at is None
+    assert len(run.events) == 1
+    assert run.episode.state.value == "CANDIDATE"
+    assert run.episode.candidate_at >= run.armed_at
+    candidate_session = date.fromisoformat(run.events[0].context["market_session"])
+    elapsed = sessions.index(candidate_session) - arm_index
+    assert 0 <= elapsed < fh.C3_ARM_EXPIRY_SESSIONS, \
+        f"the candidate must land inside the clock, got {elapsed} sessions"
+
+
+def test_W3_2_MUTATION_without_the_clock_the_stale_arm_promotes(monkeypatch):
+    """The before/after receipt, on the real code path.
+
+    Raise the constant out of reach and the SAME inputs promote a candidate long
+    after the arm — the reviewer's finding, reproduced here rather than described.
+    Restore it and the promotion is refused.
+    """
+    expiry = fh.C3_ARM_EXPIRY_SESSIONS  # captured BEFORE the patch moves it
+    daily, sessions, buckets, arm_index = _expiry_case(16)
+    fenced = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=buckets)
+    assert fenced.events == () and fenced.expired_at is not None
+
+    monkeypatch.setattr(fh, "C3_ARM_EXPIRY_SESSIONS", 10_000)
+    unfenced = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=buckets)
+    assert unfenced.expired_at is None
+    assert len(unfenced.events) == 1, "without the clock the stale arm still fires"
+    late = date.fromisoformat(unfenced.events[0].context["market_session"])
+    elapsed = sessions.index(late) - arm_index
+    assert elapsed > expiry, \
+        f"the promotion must be provably late, got {elapsed} sessions vs {expiry}"
+    fired = [r for r in unfenced.readings
+             if r.observed_at == unfenced.events[0].signal_ts][0]
+    assert fired.features["daily_k"] > ic.OVERSOLD, \
+        "and the washout it claims to be buying has long since healed"
+
+
+def test_W3_2_the_expiry_constant_is_section_10s_frozen_fifteen():
+    assert fh.C3_ARM_EXPIRY_SESSIONS == 15
+    assert fh.C3_SPEC["arm_expiry_sessions"] == fh.C3_ARM_EXPIRY_SESSIONS
+    assert "still oversold" not in fh.C3_SPEC["turn_rule"], \
+        "the REJECTED fix would have rebuilt A5.3's forbidden requirement at 4H"
+
+
+def test_W3_5_a_stale_daily_leg_arms_nothing(c3_setup):
+    """W3-5: a confirmed history that stops short of the prior reference session is
+    `stale`; a stale leg carries no washout verdict and cannot arm.
+    """
+    daily, sessions, buckets = c3_setup
+    stale_frame = daily.frame.iloc[:-60]
+    stale = ch.DailyHistory(frame=stale_frame, vintage="stale")
+    late = sessions[-1]
+    leg = fh.c3_daily_leg(stale, late)
+    assert leg.availability == "stale"
+    assert leg.washed is None and leg.k is None
+
+    run = fh.run_c3(ticker=TICKER, daily=stale,
+                    buckets_by_session=[(late, buckets[-1][1])])
+    assert run.armed_at is None and run.events == ()
+    assert all(r.availability == "stale" and r.condition_met is None
+               for r in run.readings)
+
+
+def test_W3_5_CONTROL_a_contiguous_daily_leg_is_unchanged(c3_setup):
+    daily, sessions, _buckets = c3_setup
+    leg = fh.c3_daily_leg(daily, sessions[-1])
+    assert leg.availability == "confirmed"
+    assert leg.k is not None
+
+
+def test_W3_11_a_confirmed_but_empty_bucket_is_disclosed_not_silently_dropped(
+        c3_setup):
+    """W3-11: an empty CONFIRMED bucket contributed no close, so two non-adjacent
+    bars became adjacent in the indicator's input with nothing recording it.  No
+    close is fabricated (that would be worse); the gap is now counted per reading
+    and listed on the run.
+    """
+    daily, sessions, buckets = c3_setup
+    holed = []
+    for index, (session, session_buckets) in enumerate(buckets):
+        if index in (40, 41):
+            session_buckets = [
+                fh.FourHourBucket(session=b.session, index=b.index, start=b.start,
+                                  effective_end=b.effective_end, confirmed=True,
+                                  close=None, minutes=0)
+                for b in session_buckets]
+        holed.append((session, session_buckets))
+
+    run = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=holed)
+    dropped = [row for row in run.provisional if row.get("reason") == "confirmed_empty"]
+    assert len(dropped) == 4, "two sessions x two buckets"
+    assert {row["session"] for row in dropped} == {
+        buckets[40][0].isoformat(), buckets[41][0].isoformat()}
+    assert all({"session", "index", "reason"} <= set(row) for row in dropped)
+    tail = [r for r in run.readings if r.market_session > buckets[41][0].isoformat()]
+    assert tail and all(r.features["completed_4h_gaps"] == 4 for r in tail)
+    head = [r for r in run.readings if r.market_session < buckets[40][0].isoformat()]
+    assert head and all(r.features["completed_4h_gaps"] == 0 for r in head)
+
+
+def test_W3_14_the_arm_is_an_instant_and_a_same_session_turn_stays_eligible(c3_setup):
+    """W3-14: ``armed_at`` was a bare date beside a UTC candidate instant, so the
+    two could not be ordered without guessing.  It is now the arming session's
+    09:30 ET open; eligibility still compares SESSION to SESSION, so a bucket
+    completing later on the arming session is post-arm and stays eligible.
+    """
+    daily, sessions, buckets = c3_setup
+    run = fh.run_c3(ticker=TICKER, daily=daily, buckets_by_session=buckets)
+    assert run.armed_at is not None and run.armed_at.endswith("Z")
+    assert run.armed_at == ch.utc_iso(
+        session_window_et(date.fromisoformat(run.armed_session))[0])
+    assert run.armed_at > run.armed_session, "an instant sorts after its bare date"
+
+    same_session = [r for r in run.readings if r.market_session == run.armed_session]
+    assert same_session, "the arming session must contribute buckets"
+    assert all(r.features["eligible"] is True for r in same_session), \
+        "a 13:30 bucket on the arming session is AFTER a 09:30 arm"
+    assert all(r.features["pre_arm"] is False for r in same_session)

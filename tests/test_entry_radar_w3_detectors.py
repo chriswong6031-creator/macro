@@ -63,10 +63,18 @@ from engine.entry_radar.g0_adapter import G0_DETECTOR_ID, g0_spec_hash
 #: breaks this test ON PURPOSE (the W2 precedent, `test_entry_radar_w2_guards.py`).
 FROZEN_SPEC_HASHES = {
     "G0_GREY_DOT@1": "9be89a8acc8b905c",
-    "C1_1D_LIVE_WASHOUT@1": "55cb3269d02a02d1",
-    "C2_1D_TURN@1": "fbaee598c99910fc",
-    "C3_1D_4H_RECOVERY@1": "f9487fce57130fa4",
-    "C4_MTF_TURN@1": "c126fcd3f4727119",
+    # TRUTH CHANGE, 2026-08-14 adversarial review: W3-4 moved four firing-relevant
+    # constants INTO the spec blocks by value (ATR window, minute-knowability
+    # offset, the three §10 re-arm numbers), W3-2 added C3's arm-expiry constant,
+    # and W3-1/W3-5/W3-13 stated the basis, freshness and non-positive-ATR
+    # refusals.  Those are spec CHANGES, so the hashes move — which is the
+    # mechanism working, not a golden regenerated to hide a failure.  Lawful
+    # because no result has ever been attributed to the old values: nothing has
+    # shipped from this branch.
+    "C1_1D_LIVE_WASHOUT@1": "f0bbd6cf3a6e2339",
+    "C2_1D_TURN@1": "d8ba60a25cfa7400",
+    "C3_1D_4H_RECOVERY@1": "d54dc1e55c4261c8",
+    "C4_MTF_TURN@1": "dce21ac680233ee2",
     "C5_BOTTOM_WATCH@1": "13dec66345a0376c",
 }
 
@@ -95,16 +103,25 @@ REQUIRED_SPEC_KEYS = {
     C1_DETECTOR_ID: ("arm_condition", "oversold_threshold", "promotion_rule",
                      "candidates_per_episode", "depth_requirement", "sampling_law",
                      "interval_minutes", "minute_knowability",
-                     "provisional_close_rule", "confirmed_history", "indicator_core"),
+                     "provisional_close_rule", "confirmed_history", "indicator_core",
+                     # W3-4 / W3-1 / W3-5
+                     "minute_bar_seconds", "rearm_law", "price_basis_law",
+                     "freshness_law"),
     C2_DETECTOR_ID: ("variants", "variant_count", "primary_variant",
                      "combination_rule", "rebound_atr_multiple", "rebound_low_law",
                      "atr_law", "basis_law", "eligibility",
-                     "current_oversold_requirement", "pre_arm_rule", "indicator_core"),
+                     "current_oversold_requirement", "pre_arm_rule", "indicator_core",
+                     # W3-4 / W3-8 / W3-1 / W3-5
+                     "sampling", "pre_arm_encoding", "price_basis_law",
+                     "freshness_law"),
     C3_DETECTOR_ID: ("daily_condition", "daily_knowability", "arm_rule", "turn_rule",
                      "turn_primitive", "grid_anchor", "grid_nominal_minutes",
                      "grid_key", "grid_effective_end", "grid_early_close",
                      "bucket_confirmation", "partial_bucket", "warm_up",
-                     "extended_hours", "indicator_core"),
+                     "extended_hours", "indicator_core",
+                     # W3-2 / W3-5 / W3-11
+                     "arm_expiry_sessions", "arm_expiry_rule", "freshness_law",
+                     "empty_bucket_law"),
     C4_DETECTOR_ID: ("role", "can_fire", "firing_fence", "base_population", "anchor",
                      "anchor_era", "anchor_rejected", "grains", "turn_primitive",
                      "recent_os", "recent_os_window", "recovery_count",
@@ -259,3 +276,32 @@ def test_c4_is_registered_stratification_only_and_declares_it_cannot_fire():
     assert DETECTORS[C4_DETECTOR_ID].spec["can_fire"] is False
     assert "radar_mtf_turn" not in RADAR_NATIVE_SUBTYPES
     assert len(RADAR_NATIVE_SUBTYPES) == 3
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-14 adversarial-review regressions (W3-10, W3-13)
+# ---------------------------------------------------------------------------
+
+def test_W3_13_the_c2f_spec_states_the_non_positive_ATR_refusal():
+    """W3-13: the guard was implemented and unstated.  A spec that omits a
+    refusal the code performs is a spec a reader cannot reason from — and the
+    omission is invisible, because the hash covers what IS written.
+    """
+    formula = C2_SPEC["variants"]["c2f_rebound_atr"]
+    assert "non-positive" in formula and "unavailable" in formula
+    assert "never a trivial pass" in formula
+
+
+def test_W3_10_the_run_helpers_state_that_their_episodes_are_not_a_ledger():
+    """W3-10 (docstring-only ruling): a per-path trace is not a §10 ledger, and
+    the §10 clocks belong to PR-4/PR-5.  Pinned so the statement cannot quietly
+    disappear and leave a reader assuming the ledger is here.
+    """
+    from engine.entry_radar import challengers as ch
+
+    for func in (ch.run_c1, ch.run_c2):
+        doc = func.__doc__ or ""
+        assert "NOT" in doc or "not a" in doc.lower()
+        assert "PR-4" in doc or "PR-5" in doc
+    assert "rearm_eligible" in (ch.run_c1.__doc__ or "")
+    assert callable(ch.rearm_eligible)

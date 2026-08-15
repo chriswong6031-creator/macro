@@ -163,7 +163,9 @@ def test_PIT14_a_bucket_completing_later_never_rewrites_an_earlier_snapshot(fixt
 def test_a_partial_bucket_rides_debug_context_and_not_the_registered_value(daily):
     session = date.fromisoformat(daily.frame.index[-1].date().isoformat())
     state = ch.c4_snapshot(ticker=TICKER, daily=daily, market_session=session)
-    assert set(state.provisional_context) == {"d2", "d3", "note"}
+    # W3-5 added the freshness receipt beside the partial-bucket debug context.
+    assert set(state.provisional_context) == {"d2", "d3", "note", "history_freshness"}
+    assert state.provisional_context["history_freshness"] == "confirmed"
     registered = state.to_dict()
     assert "partial_buckets" not in registered["d2"]
     assert registered["role"] == "stratification_only"
@@ -357,3 +359,83 @@ def test_recovery_count_is_one_plus_the_two_grain_turns(daily, fixture):
         pytest.skip("both grains unavailable on this session")
     assert state.recovery_count == 1 + int(state.d2.turn) + int(state.d3.turn)
     assert 1 <= state.recovery_count <= 3
+
+
+# ---------------------------------------------------------------------------
+# 2026-08-14 adversarial-review regressions (W3-5, W3-7)
+# ---------------------------------------------------------------------------
+
+def test_W3_7_the_builder_refuses_c4_even_under_a_LAWFUL_family():
+    """W3-7 (PIT-13, reproduction 1): the fence was on the FAMILY only, so
+    ``detector_id="C4_MTF_TURN@1"`` under ``radar_1d_turn`` walked straight
+    through the builder.  The refusal is now on the detector_id.
+    """
+    with pytest.raises(EntryEventError, match="stratification_only"):
+        build_radar_native_event(
+            detector_id=ch.C4_DETECTOR_ID, detector_spec_hash=ch.c4_spec_hash(),
+            ticker=TICKER, family="radar_1d_turn", subtype="c2a_kd_cross",
+            signal_ts="2026-06-24T14:00:00Z", market_session="2026-06-24",
+            bar_state="provisional")
+
+
+def test_W3_7_the_direct_constructor_refuses_c4_too():
+    """W3-7 (PIT-13, reproduction 2): bypassing the builder bypassed the fence."""
+    from engine.entry_radar.entry_events import SourceIdentity, radar_field_origin
+
+    with pytest.raises(EntryEventError, match="stratification_only"):
+        EntryEvent(producer="radar.entry_radar", detector_id=ch.C4_DETECTOR_ID,
+                   ticker=TICKER, family="radar_1d_turn", subtype="c2a_kd_cross",
+                   signal_ts="2026-06-24T14:00:00Z",
+                   source_identity=SourceIdentity(signal_era="radar_w3_a5"),
+                   field_origin=radar_field_origin(), bar_state="provisional",
+                   final=False, finality_basis="x")
+
+
+def test_W3_7_CONTROL_a_lawful_detector_under_the_same_family_still_mints():
+    event = build_radar_native_event(
+        detector_id=ch.C2_DETECTOR_ID, detector_spec_hash=ch.c2_spec_hash(),
+        ticker=TICKER, family="radar_1d_turn", subtype="c2a_kd_cross",
+        signal_ts="2026-06-24T14:00:00Z", market_session="2026-06-24",
+        bar_state="provisional")
+    assert event.detector_id == ch.C2_DETECTOR_ID
+
+
+def test_W3_7_there_is_exactly_one_stratification_only_list():
+    """The refusal list and the declared roles must be the same set, both ways."""
+    from engine.entry_radar.detectors import DETECTORS, STRATIFICATION_ONLY
+    from engine.entry_radar.entry_events import STRATIFICATION_ONLY_DETECTOR_IDS
+
+    assert ch.STRATIFICATION_ONLY_IDS == frozenset(STRATIFICATION_ONLY_DETECTOR_IDS)
+    declared = {did for did, record in DETECTORS.items()
+                if record.spec.get("role") == "stratification_only"}
+    assert declared == set(STRATIFICATION_ONLY_DETECTOR_IDS), \
+        "a detector fenced at one door and open at another is the W3-7 defect"
+    assert set(STRATIFICATION_ONLY) == declared
+
+
+def test_W3_5_a_stale_daily_frame_withholds_the_c4_features(fixture):
+    """W3-5: a stratification snapshot computed on an aged frame reads as a current
+    higher-timeframe state.  Features are withheld and the reason is recorded.
+    """
+    rows = [r for r in fixture["daily"]["rows"] if r[0] <= "2026-04-30"]
+    stale = daily_history(fixture, rows=rows)
+    session = date.fromisoformat(fixture["tape_sessions"][1])
+    state = ch.c4_snapshot(ticker=TICKER, daily=stale, market_session=session)
+
+    assert state.d2.availability == "stale" and state.d3.availability == "stale"
+    assert state.d2.turn is None and state.d3.turn is None
+    assert state.d2.recent_washout is None and state.d3.recent_washout is None
+    assert state.recovery_count is None
+    assert state.provisional_context["history_freshness"] == "stale"
+
+    reading = ch.c4_reading(state, observed_at="2026-06-25T14:00:00Z")
+    assert reading.availability == "stale"
+    assert reading.condition_met is None
+    assert reading.features["recovery_count"] is None
+
+
+def test_W3_5_CONTROL_a_contiguous_frame_still_produces_the_features(fixture, daily):
+    session = date.fromisoformat(fixture["tape_sessions"][1])
+    state = ch.c4_snapshot(ticker=TICKER, daily=daily, market_session=session)
+    assert state.d2.availability == "confirmed"
+    assert state.provisional_context["history_freshness"] == "confirmed"
