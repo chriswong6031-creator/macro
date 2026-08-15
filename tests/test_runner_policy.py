@@ -162,8 +162,9 @@ def test_canary_candidate_checkout_cannot_persist_the_job_token(tmp_path: Path) 
     document = yaml.safe_load(path.read_text(encoding="utf-8"))
     checkout = next(
         step
-        for step in document["jobs"]["selfhosted-pack"]["steps"]
+        for step in document["jobs"]["hosted-control"]["steps"]
         if step.get("uses") == "actions/checkout@v4"
+        and "tested_sha" in str(step.get("with", {}).get("ref", ""))
     )
     checkout["with"].pop("persist-credentials")
     path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
@@ -171,6 +172,62 @@ def test_canary_candidate_checkout_cannot_persist_the_job_token(tmp_path: Path) 
     assert result.returncode == 1
     assert "R10" in result.stdout
     assert "credential persistence" in result.stdout
+
+
+def test_selfhosted_candidate_fetch_cannot_restore_no_negotiation_transfer(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "selfhosted-ci-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    materialize = next(
+        step
+        for step in document["jobs"]["selfhosted-pack"]["steps"]
+        if step.get("name", "").startswith("materialize exact candidate")
+    )
+    materialize["run"] = materialize["run"].replace(
+        "fetch.negotiationAlgorithm=skipping", "fetch.negotiationAlgorithm=noop"
+    )
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R9" in result.stdout
+    assert "candidate fetch" in result.stdout
+
+
+def test_selfhosted_candidate_fetch_checks_credentials_before_network(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "selfhosted-ci-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    materialize = next(
+        step
+        for step in document["jobs"]["selfhosted-pack"]["steps"]
+        if step.get("name", "").startswith("materialize exact candidate")
+    )
+    lines = materialize["run"].splitlines()
+    guard = next(i for i, line in enumerate(lines) if "extraheader" in line)
+    lines.append(lines.pop(guard))
+    materialize["run"] = "\n".join(lines) + "\n"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R9" in result.stdout
+    assert "credential-free" in result.stdout
+
+
+def test_contamination_probe_cannot_fetch_missing_objects(tmp_path: Path) -> None:
+    root, registry, workflows = fixture_tree(tmp_path)
+    path = workflows / "selfhosted-ci-canary.yml"
+    document = yaml.safe_load(path.read_text(encoding="utf-8"))
+    detach = next(
+        step
+        for step in document["jobs"]["contamination-probe"]["steps"]
+        if step.get("name", "").startswith("detach the second")
+    )
+    detach["run"] += "git fetch origin main\n"
+    path.write_text(yaml.safe_dump(document, sort_keys=False), encoding="utf-8")
+    result = run_guard(root, registry, workflows)
+    assert result.returncode == 1
+    assert "R9" in result.stdout
+    assert "cache-only" in result.stdout
 
 
 def test_migration_job_cannot_bypass_hosted_main_trust_gate(tmp_path: Path) -> None:

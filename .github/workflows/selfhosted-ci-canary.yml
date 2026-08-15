@@ -267,15 +267,22 @@ jobs:
           cp scripts/monitor_ci_host_resources.py \
              scripts/capture_ci_canary_receipt.py \
              "$RUNNER_TEMP/ci-canary-control/"
-      - name: checkout exact candidate tree after cache prewarm
-        uses: actions/checkout@v4
+      - name: materialize exact candidate with negotiated incremental fetch
         env:
           GIT_TRACE2_EVENT: ${{ runner.temp }}/git-trace2.json
-        with:
-          ref: ${{ needs.plan.outputs.tested_sha }}
-          persist-credentials: false
-          filter: blob:none
-          fetch-depth: 1
+          TESTED_SHA: ${{ needs.plan.outputs.tested_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -z "$(git config --get-regexp '^http\..*\.extraheader$' || true)"
+          GIT_TERMINAL_PROMPT=0 GIT_ASKPASS=/bin/false \
+          git -c credential.helper= -c fetch.negotiationAlgorithm=skipping fetch \
+            --no-tags --no-write-fetch-head --recurse-submodules=no \
+            --filter=blob:none --depth=1 origin "$TESTED_SHA"
+          GIT_NO_LAZY_FETCH=0 git checkout --force --detach "$TESTED_SHA"
+          git reset --hard "$TESTED_SHA"
+          git clean -ffdx
+          test -z "$(git config --local --get-regexp '^http\..*\.extraheader$' || true)"
       - name: verify exact checkout and close timing
         run: |
           test "$(git rev-parse HEAD)" = "${{ needs.plan.outputs.tested_sha }}"
@@ -407,13 +414,13 @@ jobs:
             --repository "${{ github.repository }}" \
             --repository-url "https://github.com/${{ github.repository }}.git" \
             --base-sha "${{ needs.plan.outputs.control_sha }}"
-      - name: checkout a second different exact tree
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ needs.plan.outputs.contamination_sha }}
-          persist-credentials: false
-          filter: blob:none
-          fetch-depth: 1
+      - name: detach the second different exact tree from the shared cache
+        env:
+          GIT_NO_LAZY_FETCH: "1"
+        run: |
+          git checkout --force --detach "${{ needs.plan.outputs.contamination_sha }}"
+          git reset --hard "${{ needs.plan.outputs.contamination_sha }}"
+          git clean -ffdx
       - name: prove the persistent workspace is clean and isolated
         shell: bash
         run: |
