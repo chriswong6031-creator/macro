@@ -4134,3 +4134,57 @@ def test_only_skipped_ci_gates_do_not_resolve_to_a_run(monkeypatch):
     with pytest.raises(Exception, match="multiple latest ci-gate workflow runs"):
         GUARD._semantic_evidence_for_head("o", "r", "0123456789ab", check_runs=runs)
     assert called["n"] == 0
+
+
+# ── a merged head cannot bind its own proof base (2026-08-15) ────────────────
+#
+# GitHub drops `pull_requests` from check-runs once the PR closes — measured on #5754's
+# ci-gate: `n_prs: 0` on BOTH entries — so `_semantic_pr_base_sha` returns None for every
+# merged head and the loader refused with "does not identify the exact PR proof base".
+# Same trap shape as the skipped-gate artifact: no session-side repair exists. The merged
+# pull request record still carries the authoritative base, so `_check_ci` threads it in.
+
+def _capture_base(monkeypatch):
+    seen: dict = {}
+
+    def _fake_loader(owner, repo, head_sha, *, check_runs=None, expected_base_sha=None):
+        seen["expected_base_sha"] = expected_base_sha
+        raise RuntimeError("stop after base binding")
+
+    monkeypatch.setattr(GUARD, "_semantic_evidence_for_head", _fake_loader)
+    monkeypatch.setattr(GUARD, "_head_can_advertise_semantic_evidence", lambda runs: True)
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda owner, repo, sha: [
+            {"name": "ci-pack-1", "status": "completed", "conclusion": "failure"}
+        ],
+    )
+    return seen
+
+
+def test_merged_head_binds_its_proof_base_from_the_pull_request(monkeypatch, tmp_path):
+    """No association metadata survives the merge — the PR record is the fallback."""
+    seen = _capture_base(monkeypatch)
+    monkeypatch.setattr(GUARD, "_semantic_pr_base_sha", lambda *a, **k: None)
+    GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
+                    "claude/x", "b9473646cfba")
+    assert seen["expected_base_sha"] == "b9473646cfba"
+
+
+def test_check_run_bound_base_still_wins_over_the_pull_request_record(monkeypatch, tmp_path):
+    """The immutable, event-frozen base outranks the mutable PR record wherever it exists."""
+    seen = _capture_base(monkeypatch)
+    monkeypatch.setattr(GUARD, "_semantic_pr_base_sha", lambda *a, **k: "aaaaaaaaaaaa")
+    GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
+                    "claude/x", "b9473646cfba")
+    assert seen["expected_base_sha"] == "aaaaaaaaaaaa"
+
+
+def test_absent_base_everywhere_stays_none_rather_than_empty_string(monkeypatch, tmp_path):
+    """Fail-closed: an unbindable base must read as absent, never as a falsy base."""
+    seen = _capture_base(monkeypatch)
+    monkeypatch.setattr(GUARD, "_semantic_pr_base_sha", lambda *a, **k: None)
+    GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
+                    "claude/x", "")
+    assert seen["expected_base_sha"] is None
