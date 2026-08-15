@@ -989,6 +989,10 @@ on:
       - "tests/test_china_einteraction_collector.py"
       - "tests/test_china_reports_collector.py"
       - "tests/test_china_holder_counts_collector.py"
+      # Post-P-B2 China Intelligence PIT hist (wired into china-native-collectors).
+      # collectors/** already covers the five subject modules; the suite itself
+      # must be named so a test-only re-pin still starts the pack.
+      - "tests/test_cn_intel_pit_accrual.py"
       # W3 CNH policy/OMO/trade-detail collectors. Same wiring law: collectors/**
       # already triggers the job, but a test-only edit (a re-pinned live fixture) must
       # re-run it too. test_china_official_corpora.py was named by NO job before this —

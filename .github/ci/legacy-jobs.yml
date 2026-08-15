@@ -2094,6 +2094,15 @@ jobs:
         run: pip install pytest pandas pyarrow requests beautifulsoup4 lxml pyyaml jsonschema
       - name: china native interaction + sell-side collector tests (W1 CNH)
         run: python -m pytest tests/test_china_irm_collector.py tests/test_china_einteraction_collector.py tests/test_china_reports_collector.py tests/test_china_holder_counts_collector.py -q
+      # Post-P-B2 China Intelligence PIT hist stores (broker 金股 / per-name margin /
+      # block trades / buybacks). Same WIRING LAW as every step above: the suite was
+      # named by NO run: step when it landed (#5730), so workflow-yaml painted
+      # pack-1 red. Belongs here — first_seen keep-first dialect already owned by
+      # the holder_counts step; subjects are China native collectors
+      # (tushare_broker, tushare_margin, china_block_trades, china_buyback,
+      # _first_seen_store). Offline, no new deps.
+      - name: china intel PIT hist accrual (broker / margin / blocks / buybacks)
+        run: python -m pytest tests/test_cn_intel_pit_accrual.py -q
       - name: china native policy / OMO / trade-detail collector tests (W3 CNH)
         run: python -m pytest tests/test_china_omo_collector.py tests/test_china_trade_detail_collector.py tests/test_china_official_corpora.py -q
       # W3 part B: the five native flash wires (futu/ths joined here) and the forward
