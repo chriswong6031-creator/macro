@@ -1,7 +1,7 @@
 {
   "schema": "research_vault.catalog.v1",
-  "generated_at": "2026-08-15T00:14:43.457519+00:00",
-  "count": 1101,
+  "generated_at": "2026-08-15T00:45:20.572173+00:00",
+  "count": 1102,
   "institutions": [
     "Academy Securities",
     "Alger",
@@ -636,6 +636,26 @@
       "tickers": [],
       "top_pick": false,
       "pages": 4,
+      "language": "en",
+      "needs_metadata": false
+    },
+    {
+      "id": "marketdesk-k9j5e5zidek-591581",
+      "title": "Strategy Daily",
+      "institution": "Mizuho",
+      "side": "sell",
+      "desk": "",
+      "published_at": "2026-08-13T15:19:24Z",
+      "summary_points": [
+        "**US CPI & Fed Policy Probability**: Soft 0.1% MoM core CPI expected, increasing September hold probability (12bp OIS strip), while oil near $89.5b (US/Iran tensions) and Fed hike by year-end drive rates.",
+        "**Geopolitical Oil Volatility**: Middle East and Pakistan/Qatar tensions keep oil near $90 and markets volatile, directly impacting rates and equity flows.",
+        "**UK GDP Catalyst**: Tomorrow's UK GDP critical; soft US CPI may extend relief rally but oil near $90 and mixed US data risk UK underperformance.",
+        "**Gilts Oil/Rates Sensitivity**: UK gilts show acute sensitivity to oil/rates trade (5% 10Y yield test), with Qatar/Pakistan headlines amplifying volatility."
+      ],
+      "tags": [],
+      "tickers": [],
+      "top_pick": false,
+      "pages": 3,
       "language": "en",
       "needs_metadata": false
     },
