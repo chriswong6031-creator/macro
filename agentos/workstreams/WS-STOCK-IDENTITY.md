@@ -46,13 +46,18 @@ waves:
       its miner interpretation is withdrawn, and PR #5660 carries the B-only Barrick
       addendum without changing any W1 measurement. The governed receipt overlays the
       effective miner roster as NEM/AEM/PAAS/WPM/AG/B; B is permanently design-touched
-      and nonconfirmatory. NEXT: merge W1-A1, then the §16.9 OPERATOR RETURN (Atlas +
-      dossiers review; dead-name source decision) gates W2 — do not start expert replay
-      before it.
+      and nonconfirmatory. W1-A1 MERGED as PR #5660 (2026-08-14T21:05Z). The §16.9
+      operator return that authorized W2 stands; identity overlay is now on main.
   - id: W2
     title: Expert replay + provenance pinning (Class R families; R1-rail extend-or-justify)
-    status: todo
+    status: in_progress
+    pr: 5643
     depends_on: [W1]
+    next_action: >
+      HEAL in flight 2026-08-16: rebase W2 onto merged W1-A1 (#5660). Keep expert
+      replay + provenance. Drop the duplicate `data/stock_identity/ohlcv/B.parquet`
+      plane and the sealed GOLD.md/svg rewrite — those belong to W1-A1 (baskets
+      B.parquet + disclosure-only GOLD envelope). Then merge #5643.
   - id: W3
     title: Episode ruler engine + estimability census
     status: todo
@@ -75,7 +80,7 @@ waves:
     depends_on: [W6]
 landmines:
   - "DNR:KILL-OUTCOME-AUDITION is TWO-RULER — switching to a localization ruler does not escape it; no per-name outcome argmax anywhere (masterplan §2)."
-  - "Live Entry Radar PR-0 (#5578) is UNMERGED — its contract and entry_event.v1 schema are proposed, not ratified; revalidate at W1/W2 before consuming."
+  - "Live Entry Radar PR-0 (#5578) MERGED 2026-08-14 — entry_event.v1 vocabulary is ratified and adopted (W2, field_origin extended for replay provenance); the Radar STORE lands at Radar PR-2 and is never written by this program."
   - "data/massive_stock_day is RAW (splits uncorrected) and ~2021+ only — prohibited for any behavioral math until its adjustment transform is traced."
   - "Reused-ticker splices put a different company's history in a per-ticker file 'born clean' (ECHO/SATS class) — run identity hygiene checks before trusting any joined history."
   - "W1-A1 identity overlay: PR #5612's GOLD measurements are the Gold.com/A-Mark DEALER tape, never Barrick/miner evidence. Preserve the sealed tuple for reproduction; every current miner consumer must call engine.stock_identity.pilot.current_miner_probe() and receive NEM/AEM/PAAS/WPM/AG/B."
@@ -85,15 +90,16 @@ do_not_redo:
   - "Do not silently build a parallel replay harness — evaluate extending the R1 rule-replay rail first and justify any divergence in writing (research/rule_replay/R1_CHARTER.md)."
   - "Do not re-run killed PSS families (F1-F4, SR1-SR3) as standalone timers; their measurements are retained only as fingerprint descriptors."
   - "Do not rebuild SEA — data/stock_events is the signal-anchored event store; this program's catalog is path-anchored and complements it."
+  - "Do not collect Barrick B into data/stock_identity/ohlcv — W1-A1 / #5632 owns curated data/baskets/ohlcv/B.parquet. Do not rewrite sealed GOLD.md measured rows or GOLD.svg; W1-A1 disclosure envelope only."
 artifacts:
   - research/STOCK_IDENTITY_EXPERT_ROUTING_MASTERPLAN_BY_FABLE.md
   - research/STOCK_IDENTITY_PR0_ARCHAEOLOGY.md
   - research/stock_identity/W1_IDENTITY_ATLAS_V0_REGISTRATION.md
   - data/stock_identity/amendments/w1a1_gold_wrong_issuer.json
 next_action: >
-  Merge the registered W1-A1 overlay in PR #5660, then conduct the §16.9 operator return
-  over the sealed Atlas plus the additive B dossier. W2 remains closed until that return;
-  no expert replay, fit table, partition redraw, or frozen-constant revision is authorized.
+  Land the #5643 heal: W2 expert replay onto merged W1-A1, without duplicating B
+  onto the program OHLCV plane or rewriting sealed GOLD. W3 still needs its own
+  operator go — no auto-roll.
 ---
 
 ## Context
