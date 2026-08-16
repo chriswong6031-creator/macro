@@ -438,15 +438,18 @@ def validate_phase0(folder: Path, report: Report):
 
 
 def detect_kind(path: Path) -> str:
+    if (path / "route-family-registry.json").exists():
+        return "topology"
     if (path / "product-route-inventory.json").exists() or path.name == "00-product-map":
         return "phase0"
     return "page"
 
 
 def format_report(report: Report) -> str:
+    gate = "TOPOLOGY MACHINE GATE" if "00-product-map" in str(getattr(report, "target", "")) and Path(str(report.target)).joinpath("route-family-registry.json").exists() else "DOSSIER VALIDATION"
     if report.ok:
-        return f"DOSSIER VALIDATION: PASS\n{report.target}"
-    lines = [f"DOSSIER VALIDATION: FAIL", report.target]
+        return f"{gate}: PASS\n{report.target}"
+    lines = [f"{gate}: FAIL", report.target]
     for msg in report.p0:
         lines.append(f"P0: {msg}")
     for msg in report.p1:
@@ -460,6 +463,10 @@ def validate_path(path: Path) -> Report:
         report.fail("path does not exist")
         return report
     kind = detect_kind(path)
+    if kind == "topology":
+        from validate_topology import validate_topology
+
+        return validate_topology(path)
     if kind == "phase0":
         validate_phase0(path, report)
     else:

@@ -16,5 +16,7 @@
     {"name": "390x844", "width": 390, "height": 844}
   ],
   "source_parity_method": "sha256_live_vs_local_generated_html",
-  "supported_schema_versions": ["1.0-candidate", "1.0"]
+  "supported_schema_versions": ["1.0-candidate", "1.0"],
+  "topology_schema_version": "1.1-candidate",
+  "page_dossier_schema_version": "1.0"
 }
