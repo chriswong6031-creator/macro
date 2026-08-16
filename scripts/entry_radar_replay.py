@@ -57,6 +57,7 @@ import json
 import logging
 import subprocess
 import sys
+import time
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from pathlib import Path
@@ -141,6 +142,87 @@ class ReplayInputs:
     row16_agreement: float = float("nan")
     #: Pre-assembled §7 false-start sensitivity grid rows (cell/fav/adv/h/…).
     fs_grid: Any = None
+
+
+# --------------------------------------------------------------------------- #
+# progress heartbeat (STDERR ONLY)
+# --------------------------------------------------------------------------- #
+#: Wall-clock seconds between heartbeat lines, and the share of the item count
+#: that also forces one.  Whichever falls due FIRST wins, so a fast loop over
+#: many items still prints ~20 lines and a slow loop over few items still proves
+#: it is alive every minute.
+_HEARTBEAT_SECONDS = 60.0
+_HEARTBEAT_FRACTION = 0.05
+
+
+class _Heartbeat:
+    """A ``[phase] k/N (elapsed Xs)`` liveness line, on STDERR and nowhere else.
+
+    WHY STDERR.  This runner's stdout carries the gate receipts, the census
+    lines and (downstream) the results contract that tests and operators parse;
+    a progress line printed there would be a parse hazard for every consumer.
+    stderr is the channel with no contract, which is exactly where liveness
+    belongs.
+
+    WHY IT EXISTS.  Measured 2026-08-15: a Panel-B run went ~2 wall-hours silent
+    between the post-gather census line and the results write, and the only
+    liveness evidence available to the operator was ``ps`` CPU-time forensics —
+    made worse because the macOS spawn workers do not match a ``pgrep`` on this
+    script's name.  A phase that cannot say "still working, k of N" is a phase
+    that cannot be distinguished from a hang.
+
+    The instrument must never be able to kill the work it watches: a write that
+    raises (closed/broken stderr) disables further emission rather than
+    propagating out of a loop that has been running for an hour.
+    """
+
+    def __init__(self, phase: str, total: int, *, stream: Any = None,
+                 every_seconds: float = _HEARTBEAT_SECONDS,
+                 every_fraction: float = _HEARTBEAT_FRACTION) -> None:
+        self.phase = phase
+        self.total = max(0, int(total))
+        self._stream = stream if stream is not None else sys.stderr
+        self._every_seconds = float(every_seconds)
+        #: Emit at least every this many items; never 0 (a 0-item loop still
+        #: prints its opening line, which is what proves the phase was entered).
+        self._step = max(1, int(self.total * every_fraction))
+        self._start = time.monotonic()
+        self._last_emit = self._start
+        self._k = 0
+        self._emitted_k = 0
+        self._live = True
+        self._emit(0)
+
+    def _emit(self, k: int) -> None:
+        if not self._live:
+            return
+        elapsed = time.monotonic() - self._start
+        try:
+            print(f"[{self.phase}] {k}/{self.total} (elapsed {elapsed:.0f}s)",
+                  file=self._stream, flush=True)
+        except (OSError, ValueError):  # closed/broken stderr — go quiet, keep working
+            self._live = False
+
+    def tick(self, n: int = 1) -> None:
+        """Count ``n`` more items REACHED; print iff a threshold is due.
+
+        Every call site ticks at the top of its loop body, so ``k`` is the item
+        currently being worked, not the last one finished — which is the reading
+        an operator wants when the question is "what is it stuck on".
+        """
+        self._k += n
+        now = time.monotonic()
+        if (now - self._last_emit >= self._every_seconds
+                or self._k - self._emitted_k >= self._step):
+            self._last_emit = now
+            self._emitted_k = self._k
+            self._emit(self._k)
+
+    def done(self) -> None:
+        """Close the phase with a final count, unless the last tick already did."""
+        if self._k != self._emitted_k:
+            self._emitted_k = self._k
+            self._emit(self._k)
 
 
 # --------------------------------------------------------------------------- #
@@ -386,7 +468,9 @@ def _finalize_candidates(cands: list[dict[str, Any]], *, panel: str,
             return None
 
     out: list[Any] = []
+    beat = _Heartbeat(f"finalize:{panel}", len(cands))
     for cand in cands:
+        beat.tick()
         ticker = str(cand["ticker"])
         daily = _daily_cached(cache_dir, ticker)
         if daily is None:
@@ -440,6 +524,7 @@ def _finalize_candidates(cands: list[dict[str, Any]], *, panel: str,
                              "ticker": ticker, "detail": str(exc)})
             continue
         out.append(ref)
+    beat.done()
     return out
 
 
@@ -511,7 +596,9 @@ def gather_episodes(*, cache_dir: Path, panel: str,
         if names:
             members = [t for t in members if t in set(names)]
         tables_dir = cache_dir / "staged_tables"
+        beat = _Heartbeat(f"gather:{panel}", len(members))
         for t in members:
+            beat.tick()
             path = tables_dir / f"{t}.json"
             if not path.exists():
                 refusals.append({"reason": "no_staged_table", "panel": panel,
@@ -537,12 +624,15 @@ def gather_episodes(*, cache_dir: Path, panel: str,
             cands.extend(c5_c)
             refusals.extend({**r, "panel": panel, "ticker": t} for r in c5_r)
             cands.extend(ep_mod.incumbent_candidates(t, daily, panel=panel))
+        beat.done()
     elif panel == "A":
         members = panels.panel_a_names(ROOT)
         if names:
             members = [t for t in members if t in set(names)]
         reader = _minute_reader_cache_only(cache_dir)
+        beat = _Heartbeat(f"gather:{panel}", len(members))
         for t in members:
+            beat.tick()
             daily = _daily_cached(cache_dir, t)
             if daily is None:
                 refusals.append({"reason": "no_daily_plane", "panel": panel,
@@ -595,6 +685,7 @@ def gather_episodes(*, cache_dir: Path, panel: str,
                 refusals.append({"reason": "c3_refusal", "panel": panel,
                                  "ticker": t, "detail": r})
             del fired_by_episode
+        beat.done()
     else:  # pragma: no cover — argparse constrains
         raise ReplayRefusal(f"unknown panel {panel!r}")
 
@@ -768,7 +859,7 @@ def main(argv: list[str] | None = None) -> int:
         frame, q5_pairs = _assemble_frame(kept_eps, rows, matches,
                                           cache_dir=cache_dir, panel=panel,
                                           ctx=ctx)
-        fs_grid = _fs_grid(kept_eps, cache_dir=cache_dir)
+        fs_grid = _fs_grid(kept_eps, cache_dir=cache_dir, panel=panel)
         inputs = ReplayInputs(
             gate_receipts=tuple(receipts),
             episodes=tuple(kept_eps),
@@ -828,7 +919,9 @@ def _attach_and_match(episodes: Sequence[Any], *, cache_dir: Path,
     matches: list[tuple[controls.ControlMatch, controls.ControlMatch] | None] = []
     kept_eps: list[Any] = []
     refusals: list[dict[str, Any]] = []
+    beat = _Heartbeat(f"attach+match:{panel}", len(episodes))
     for ep in episodes:
+        beat.tick()
         start = ep.decision_session - timedelta(days=_PLANE_BACK_DAYS)
         end = ep.decision_session + timedelta(days=_PLANE_FORWARD_DAYS)
         try:
@@ -872,6 +965,7 @@ def _attach_and_match(episodes: Sequence[Any], *, cache_dir: Path,
                              "ticker": getattr(ep, "ticker", None),
                              "panel": panel, "detail": repr(exc)})
             matches.append(None)
+    beat.done()
     return rows, matches, refusals, kept_eps
 
 
@@ -962,7 +1056,9 @@ def build_match_context(episodes_list: Sequence[Any], *, cache_dir: Path,
             return None
 
     frames = []
+    beat = _Heartbeat(f"featurize:{panel}", len(members))
     for t in members:
+        beat.tick()
         daily = _daily_cached(cache_dir, t)
         if daily is None:
             continue
@@ -974,6 +1070,7 @@ def build_match_context(episodes_list: Sequence[Any], *, cache_dir: Path,
             continue
         if len(rows):
             frames.append(rows)
+    beat.done()
     if not frames:
         raise ReplayRefusal(f"panel {panel}: no feature rows could be built")
     features = feature_panel.cross_sectionalize(pd.concat(frames, ignore_index=True))
@@ -1156,11 +1253,12 @@ def _assemble_frame(kept_eps, rows, matches, *, cache_dir: Path, panel: str,
     return frame, q5_pairs
 
 
-def _fs_grid(kept_eps, *, cache_dir: Path):
+def _fs_grid(kept_eps, *, cache_dir: Path, panel: str | None = None):
     """§7's 27x5 diagnostic grid: false-start rate per (fav, adv, h, detector).
 
     Re-attaches outcomes per grid cell over cached planes — bounded, cache-only,
-    and skipped (None) when no episodes exist.
+    and skipped (None) when no episodes exist.  ``panel`` labels the heartbeat
+    only; the grid itself is panel-agnostic (it grades whatever it is handed).
     """
     import pandas as pd  # noqa: PLC0415
 
@@ -1176,7 +1274,10 @@ def _fs_grid(kept_eps, *, cache_dir: Path):
                "C2_1D_TURN@1": "C2A", "C3_1D_4H_RECOVERY@1": "C3",
                "C5_BOTTOM_WATCH@1": "C5"}
     fs_by_cell: dict[tuple[float, float, int, str], list[bool]] = {}
+    beat = _Heartbeat("fs_grid" if panel is None else f"fs_grid:{panel}",
+                      len(by_ticker))
     for ticker, refs in by_ticker.items():
+        beat.tick()
         plane = _daily_cached(cache_dir, ticker)
         if plane is None:
             continue
@@ -1197,6 +1298,7 @@ def _fs_grid(kept_eps, *, cache_dir: Path):
                         if row.false_start is not None:
                             fs_by_cell.setdefault((fav, adv, h, key),
                                                   []).append(row.false_start)
+    beat.done()
     for (fav, adv, h, key), vals in sorted(fs_by_cell.items()):
         grid_rows.append({
             "cell": f"fs_grid_f{int(fav*100):03d}_a{int(adv*100):03d}_h{h}_{key}",
