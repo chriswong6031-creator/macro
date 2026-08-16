@@ -7,6 +7,7 @@ import stat
 import threading
 from pathlib import Path
 from typing import Any
+from uuid import uuid4
 
 import pytest
 
@@ -223,6 +224,40 @@ def _assert_zero_authority(payload: Any) -> None:
     elif isinstance(payload, (list, tuple)):
         for item in payload:
             _assert_zero_authority(item)
+
+
+def _plant_post_link_pre_unlink(dest: Path, relative: str, body: bytes) -> Path:
+    path = dest.joinpath(*relative.split("/"))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    for directory in (dest, *path.parents):
+        if directory == dest or dest in directory.parents:
+            directory.chmod(0o700)
+    temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{uuid4().hex}"
+    flags = (
+        os.O_WRONLY
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    descriptor = os.open(temporary, flags, 0o600)
+    try:
+        os.write(descriptor, body)
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    os.chmod(temporary, 0o600)
+    os.link(temporary, path, follow_symlinks=False)
+    path.chmod(0o600)
+    assert path.stat().st_nlink == 2
+    assert os.lstat(temporary).st_ino == os.lstat(path).st_ino
+    return temporary
+
+
+def _conflict_high_water(high_water: Any, **overrides: Any) -> dict[str, Any]:
+    payload = dict(high_water)
+    payload.update(overrides)
+    return payload
 
 
 @pytest.fixture
@@ -523,6 +558,111 @@ def test_crash_before_head_preserves_previous_publication(
         previous_high_water=first.publication.high_water,
     )
     assert retry.publication.descriptor["sequence"] == 1
+
+
+def test_post_link_pre_unlink_crash_recovers_without_weakening_nlink_fence(
+    replica_roots: dict[str, Any],
+) -> None:
+    source = replica_roots["source"]
+    dest = replica_roots["dest"]
+    head_body = (source / "HEAD.json").read_bytes()
+    digest = hashlib.sha256(head_body).hexdigest()
+    relative = f"heads/{digest[:2]}/{digest}.json"
+    stranded = _plant_post_link_pre_unlink(dest, relative, head_body)
+    final = dest.joinpath(*relative.split("/"))
+    assert final.stat().st_nlink == 2
+    result = replica.replicate_publication(
+        source, dest, expected_root=replica_roots["identity"]
+    )
+    assert result.unchanged is False
+    assert not stranded.exists()
+    assert final.stat().st_nlink == 1
+    assert final.read_bytes() == head_body
+    accepted = local_receipts.read_publication(
+        dest, expected_root=replica_roots["identity"]
+    )
+    assert accepted.head["publication_id"] == replica_roots["head"]["publication_id"]
+    assert accepted.descriptor["upstream_head_sha256"] == digest
+
+
+def test_empty_destination_rejects_non_null_high_water_without_mutation(
+    replica_roots: dict[str, Any],
+) -> None:
+    before = _tree_snapshot(replica_roots["dest"])
+    forged = {
+        "schema": local_receipts.HIGH_WATER_SCHEMA,
+        "store_id": replica_roots["identity"].store_id,
+        "root_marker_sha256": replica_roots["identity"].marker_sha256,
+        "descriptor_count": 1,
+        "sequence": 0,
+        "descriptor_sha256": "a" * 64,
+        "publication_id": "omctxpub_" + "b" * 64,
+        "published_at": "2026-08-12T15:00:00Z",
+        "upstream_head_sha256": "c" * 64,
+    }
+    with pytest.raises(replica.LocalReplicaError, match="impossible without a local HEAD"):
+        replica.replicate_publication(
+            replica_roots["source"],
+            replica_roots["dest"],
+            expected_root=replica_roots["identity"],
+            previous_high_water=forged,
+        )
+    assert _tree_snapshot(replica_roots["dest"]) == before
+    assert not (replica_roots["dest"] / "HEAD.json").exists()
+
+
+def test_same_source_conflicting_high_water_is_not_a_noop(
+    replica_roots: dict[str, Any],
+) -> None:
+    first = replica.replicate_publication(
+        replica_roots["source"],
+        replica_roots["dest"],
+        expected_root=replica_roots["identity"],
+    )
+    before = _tree_snapshot(replica_roots["dest"])
+    conflicting = _conflict_high_water(
+        first.publication.high_water, descriptor_sha256="d" * 64
+    )
+    with pytest.raises(replica.LocalReplicaError, match="failed verification"):
+        replica.replicate_publication(
+            replica_roots["source"],
+            replica_roots["dest"],
+            expected_root=replica_roots["identity"],
+            previous_high_water=conflicting,
+        )
+    assert _tree_snapshot(replica_roots["dest"]) == before
+
+
+def test_newer_source_conflicting_high_water_fails_before_mutation(
+    replica_roots: dict[str, Any],
+) -> None:
+    first = replica.replicate_publication(
+        replica_roots["source"],
+        replica_roots["dest"],
+        expected_root=replica_roots["identity"],
+    )
+    _publish_upstream(
+        replica_roots["source"],
+        references=[_reference(suffix="2")],
+        audited_at="2026-08-12T16:00:00Z",
+    )
+    before = _tree_snapshot(replica_roots["dest"])
+    too_new = _conflict_high_water(
+        first.publication.high_water,
+        descriptor_count=2,
+        sequence=1,
+        descriptor_sha256="e" * 64,
+        publication_id="omctxpub_" + "f" * 64,
+        published_at="2026-08-12T16:00:00Z",
+    )
+    with pytest.raises(replica.LocalReplicaError, match="failed verification"):
+        replica.replicate_publication(
+            replica_roots["source"],
+            replica_roots["dest"],
+            expected_root=replica_roots["identity"],
+            previous_high_water=too_new,
+        )
+    assert _tree_snapshot(replica_roots["dest"]) == before
 
 
 def test_concurrent_producers_do_not_fork_descriptor_chain(

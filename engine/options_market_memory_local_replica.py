@@ -20,6 +20,7 @@ import fcntl
 import hashlib
 import json
 import os
+import re
 import stat
 from collections.abc import Mapping
 from contextlib import contextmanager
@@ -39,6 +40,7 @@ _MAX_AUDIT_BYTES = 64 * 1024
 _MAX_REFERENCE_SET_BYTES = 8 * 1024 * 1024 + 16 * 1024
 _MAX_DESCRIPTOR_BYTES = 32 * 1024
 _MAX_LOCAL_HEAD_BYTES = 16 * 1024
+_PRODUCER_TMP = re.compile(r"\A\.(?P<final>.+)\.tmp\.\d+\.[0-9a-f]{32}\Z")
 
 # Tests assign a fault name to inject a crash at a protocol boundary.
 _FAULT: str | None = None
@@ -116,19 +118,24 @@ def _require_dir(path: Path, *, owner: tuple[int, int], label: str) -> None:
         _fail(f"{label} owner does not match the destination root")
 
 
-def _require_file(path: Path, *, owner: tuple[int, int], label: str) -> os.stat_result:
+def _owned_regular_file(path: Path, *, owner: tuple[int, int], label: str) -> os.stat_result:
     try:
         metadata = os.lstat(path)
     except OSError as exc:
         raise LocalReplicaError(f"{label} is unavailable") from exc
     if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
         _fail(f"{label} is not a regular non-symlink")
-    if metadata.st_nlink != 1:
-        _fail(f"{label} is hardlinked")
     if stat.S_IMODE(metadata.st_mode) != 0o600:
         _fail(f"{label} mode is not exactly 0600")
     if (metadata.st_uid, metadata.st_gid) != owner:
         _fail(f"{label} owner does not match the destination root")
+    return metadata
+
+
+def _require_file(path: Path, *, owner: tuple[int, int], label: str) -> os.stat_result:
+    metadata = _owned_regular_file(path, owner=owner, label=label)
+    if metadata.st_nlink != 1:
+        _fail(f"{label} is hardlinked")
     return metadata
 
 
@@ -298,29 +305,53 @@ def _ensure_descendant_dir(root: Path, relative: str, *, owner: tuple[int, int])
         _require_dir(cursor, owner=owner, label=f"replica directory {cursor.name}")
 
 
-def _reclaim_tmp(path: Path) -> None:
-    prefix = f".{path.name}.tmp."
+def _is_producer_temp_name(final_name: str, candidate_name: str) -> bool:
+    matched = _PRODUCER_TMP.fullmatch(candidate_name)
+    return matched is not None and matched.group("final") == final_name
+
+
+def _reclaim_stranded_producer_link(
+    path: Path, *, owner: tuple[int, int], label: str
+) -> None:
+    """Drop this protocol's post-link temp so the final object can return to nlink 1.
+
+    External hardlinks are not producer temps and remain fail-closed.
+    """
+
+    metadata = _owned_regular_file(path, owner=owner, label=label)
+    if metadata.st_nlink == 1:
+        return
     try:
         names = os.listdir(path.parent)
-    except OSError:
-        return
-    dest_stat = os.lstat(path)
+    except OSError as exc:
+        raise LocalReplicaError(f"cannot inspect stranded producer temps for {label}") from exc
+    reclaimed = False
     for name in names:
-        if not name.startswith(prefix):
+        if not _is_producer_temp_name(path.name, name):
             continue
         candidate = path.parent / name
         try:
-            metadata = os.lstat(candidate)
+            other = os.lstat(candidate)
         except OSError:
             continue
-        if not stat.S_ISREG(metadata.st_mode):
+        if stat.S_ISLNK(other.st_mode) or not stat.S_ISREG(other.st_mode):
             continue
-        if metadata.st_ino == dest_stat.st_ino or metadata.st_nlink == 1:
-            try:
-                os.unlink(candidate)
-            except OSError:
-                continue
-    _fsync_dir(path.parent)
+        if (other.st_dev, other.st_ino) != (metadata.st_dev, metadata.st_ino):
+            continue
+        if stat.S_IMODE(other.st_mode) != 0o600:
+            continue
+        if (other.st_uid, other.st_gid) != owner:
+            continue
+        try:
+            os.unlink(candidate)
+        except OSError as exc:
+            raise LocalReplicaError(
+                f"cannot reclaim stranded producer temp for {label}"
+            ) from exc
+        reclaimed = True
+    if reclaimed:
+        _fsync_dir(path.parent)
+    _require_file(path, owner=owner, label=label)
 
 
 def _create_once(
@@ -340,14 +371,12 @@ def _create_once(
         raise LocalReplicaError(f"{label} escaped the destination root") from exc
     _ensure_descendant_dir(root, str(Path(relative).parent), owner=owner)
     if path.exists() or path.is_symlink():
+        _reclaim_stranded_producer_link(
+            path, owner=owner, label=f"existing {label}"
+        )
         existing = _read_exact(path, limit=len(body), owner=owner, label=f"existing {label}")
         if existing != body:
             _fail(f"immutable {label} already exists with conflicting bytes")
-        _reclaim_tmp(path)
-        metadata = _require_file(path, owner=owner, label=f"existing {label}")
-        if metadata.st_nlink != 1:
-            _fail(f"immutable {label} remained hardlinked after create-once reclaim")
-        _fsync_dir(path.parent)
         return False
     temporary = path.parent / f".{path.name}.tmp.{os.getpid()}.{uuid4().hex}"
     descriptor: int | None = None
@@ -368,6 +397,9 @@ def _create_once(
         try:
             os.link(temporary, path, follow_symlinks=False)
         except FileExistsError:
+            _reclaim_stranded_producer_link(
+                path, owner=owner, label=f"raced {label}"
+            )
             existing = _read_exact(
                 path, limit=len(body), owner=owner, label=f"raced {label}"
             )
@@ -440,25 +472,10 @@ def _local_head_path(root: Path) -> Path:
     return root / "HEAD.json"
 
 
-def _classify(
-    dest: Path,
+def _classify_from_current(
+    current: local_receipts.VerifiedPublication,
     captured: Mapping[str, Any],
-    *,
-    expected_root: local_receipts.RootIdentity,
-    owner: tuple[int, int],
-) -> dict[str, Any] | None:
-    head_path = _local_head_path(dest)
-    try:
-        metadata = os.lstat(head_path)
-    except FileNotFoundError:
-        return None
-    if stat.S_ISLNK(metadata.st_mode):
-        _fail("local receipt HEAD is a symlink")
-    _require_file(head_path, owner=owner, label="local receipt HEAD")
-    try:
-        current = local_receipts.read_publication(dest, expected_root=expected_root)
-    except local_receipts.LocalReceiptError as exc:
-        raise LocalReplicaError("existing local W1A publication failed verification") from exc
+) -> dict[str, Any]:
     descriptor = dict(current.descriptor)
     captured_head = captured["head"]
     if (
@@ -478,9 +495,26 @@ def _classify(
         "unchanged": False,
         "previous_descriptor_sha256": current.high_water["descriptor_sha256"],
         "sequence": int(descriptor["sequence"]) + 1,
-        "store_id": expected_root.store_id,
         "previous_publication": current,
     }
+
+
+def _read_current_publication(
+    dest: Path,
+    *,
+    expected_root: local_receipts.RootIdentity,
+    previous_high_water: Mapping[str, Any] | None,
+) -> local_receipts.VerifiedPublication:
+    try:
+        return local_receipts.read_publication(
+            dest,
+            expected_root=expected_root,
+            previous_high_water=previous_high_water,
+        )
+    except local_receipts.LocalReceiptError as exc:
+        raise LocalReplicaError(
+            "existing local W1A publication failed verification"
+        ) from exc
 
 
 def _descriptor_for(
@@ -610,12 +644,29 @@ def replicate_publication(
         if identity != expected_root:
             _fail("destination root was substituted")
         owner = (expected_root.uid, expected_root.gid)
-        captured = _authenticate_source(source)
-        classified = _classify(
-            dest, captured, expected_root=expected_root, owner=owner
-        )
-        if classified is not None and classified.get("unchanged") is True:
-            return ReplicaResult(unchanged=True, publication=classified["publication"])
+        head_path = _local_head_path(dest)
+        try:
+            head_metadata = os.lstat(head_path)
+        except FileNotFoundError:
+            if previous_high_water is not None:
+                _fail("previous high-water is impossible without a local HEAD")
+            captured = _authenticate_source(source)
+            classified: dict[str, Any] | None = None
+        else:
+            if stat.S_ISLNK(head_metadata.st_mode):
+                _fail("local receipt HEAD is a symlink")
+            _require_file(head_path, owner=owner, label="local receipt HEAD")
+            current = _read_current_publication(
+                dest,
+                expected_root=expected_root,
+                previous_high_water=previous_high_water,
+            )
+            captured = _authenticate_source(source)
+            classified = _classify_from_current(current, captured)
+            if classified.get("unchanged") is True:
+                return ReplicaResult(
+                    unchanged=True, publication=classified["publication"]
+                )
 
         if classified is None:
             sequence = 0
