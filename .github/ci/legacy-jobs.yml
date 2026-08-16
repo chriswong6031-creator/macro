@@ -2618,7 +2618,85 @@ jobs:
     # isolation, premature_stop_noise unimplemented (F5), never-raise, data_gap honesty,
     # F1 regime-stamp sequencing, F2 window-unit Wilson, F6 ticks-based timing.
     # F9: test_china_standout_track added — covers species_id/regime-stamp changes.
+    #
+    # CURATED SCOPE (2026-08-15 wave 4). `scope: exclusive` makes the paths below
+    # REPLACE inference. This job had NO owned tier at all — every one of its 28
+    # inferred patterns was opaque fallback, so it selected on `*` and on whole
+    # trees it never reads. Cause: #5754 gave scripts/build_china_library.py an
+    # import of engine/china_intel_interest.py, which lazy-imports china_intel_hub
+    # and reads the full altdata convergence universe. That subtree's own opaque
+    # constructs then widened this job's scan roots to the fallback tier, and it
+    # began matching templates/index.html — a file no suite here reads. Measured:
+    # that smear was one of the two +1s that took the index.html probe from 127
+    # to 129 in tests/test_ci_pack.py::test_exclusive_curation_narrows_ordinary_code_prs,
+    # which was re-based to absorb it rather than fixed. This is that fix.
+    #
+    # THE GLOBS ARE EARNED, and each names the construct that earns it:
+    #   engine/** + scripts/**  — test_cn_board_lane_gate.py:361 and
+    #     test_cn_entry_price_integrity.py:527 rglob("*.py") over BOTH trees and
+    #     AST-scan every hit for unlaned CN sink calls. The trees are those two
+    #     guards' SUBJECT, not their incidental dependency: a new script carrying
+    #     a forgotten `lane=` is exactly what they exist to catch, so enumerating
+    #     either one would make this job stop covering the files it is for. This
+    #     is why scripts/ is globbed here and ENUMERATED in coiled-mtf-anchor-era,
+    #     whose two suites contain no traversal at all.
+    #   collectors/**  — scripts/build_china_library.py:1807 runs
+    #     importlib.import_module(_mod).refresh() over a tuple of collectors.*
+    #     drip modules. The walker cannot resolve the loop variable, so those
+    #     seven tushare_* modules are NOT in the static closure and the test below
+    #     cannot see them: enumeration would silently drop them. The dynamic
+    #     targets are all collectors.*, so this glob is the honest width of that
+    #     construct — the rest of its CODE_SCAN_ROOTS widening (templates/**,
+    #     site/**/*.py, docs/**, tools/**) is the smear being removed.
+    #   config/** + data/**  — engine/smart_money.py (x5), lib/ai_costs.py:417 and
+    #     collectors/base.py:124 traverse roots=config,data for .parquet/.jsonl,
+    #     and scripts/seed_china_ths_baskets.py:318 traverses data/ with NO suffix
+    #     filter. Runtime reads the static closure cannot enumerate.
+    #
+    # ENUMERATION IS SAFE ONLY WHERE THE TEST CAN SEE. lib/, research/ and the
+    # named suites are reached by ordinary static import, so a newcomer is caught
+    # loudly by test_curated_exclusive_scopes_cover_their_own_import_closure. The
+    # site/ artifacts are runtime JSON the test canNOT re-derive, so the five
+    # china-only trees (1-4 files each) stay globbed; only the three files inside
+    # the shared basketdata/ (49 files) and factordata/ (310) trees are named, to
+    # keep 356 unrelated artifacts out of this job's scope.
+    #
+    # WIDENING IS THE SAFE DIRECTION. Exclusivity SKIPS inference, so a closure
+    # file with no matching pattern is a job that stops running when its own
+    # dependency changes and reports green forever. Do not hand-prune this list:
+    # when a new import lands, the test above names the exact uncovered file.
+    # Do not add templates/**.
     runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/**"
+      - "scripts/**"
+      - "collectors/**"
+      - "config/**"
+      - "data/**"
+      - "lib/__init__.py"
+      - "lib/ai_costs.py"
+      - "lib/closes_panel.py"
+      - "lib/cn_calendar.py"
+      - "lib/config.py"
+      - "lib/filing_value_units.py"
+      - "lib/nyse_calendar.py"
+      - "lib/store.py"
+      - "lib/ticker_aliases.py"
+      - "lib/ticker_popularity.py"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "site/china_intel/**"
+      - "site/chinaaltdata/**"
+      - "site/chinanews/**"
+      - "site/chinaradar/**"
+      - "site/chinaspecialdata/**"
+      - "site/basketdata/fear_greed.json"
+      - "site/factordata/basket_washout_state.json"
+      - "site/factordata/china_standouts.json"
+      - "tests/test_china_standout_track.py"
+      - "tests/test_cn_board_lane_gate.py"
+      - "tests/test_cn_entry_price_integrity.py"
+      - "tests/test_cn_standout_audit.py"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -8126,7 +8204,74 @@ jobs:
     # (data/china/000001.SS.parquet) and skips that single test if absent.
     if: ${{ false }}
     timeout-minutes: 6
+    #
+    # CURATED SCOPE (2026-08-15 wave 4). `scope: exclusive` makes the paths below
+    # REPLACE inference. Like cn-standout-audit above, this job had NO owned tier:
+    # all 28 inferred patterns were opaque fallback. Same cause — test_coiled.py
+    # imports scripts/build_china_library.py, which #5754 pointed at
+    # engine/china_intel_interest.py -> china_intel_hub and the full altdata
+    # convergence universe — and the same measured effect: it began matching
+    # templates/index.html, a file neither suite reads.
+    #
+    # SCRIPTS IS ENUMERATED HERE, DELIBERATELY UNLIKE cn-standout-audit. That job
+    # globs scripts/** because two of its suites rglob the tree and AST-scan it;
+    # these two suites contain no traversal whatsoever (verified 2026-08-15: zero
+    # rglob/glob/os.walk/subprocess in either file, and
+    # tests/test_coiled_mtf_anchor_invariance.py derives ZERO ambiguities). The
+    # only construct that put scripts/** in this job's fallback tier is the
+    # dynamic import at scripts/build_china_library.py:1807, whose real targets
+    # are all collectors.* — covered by the collectors/** glob below. So the six
+    # scripts/ files named here ARE this job's whole scripts/ closure.
+    #
+    # THE GLOBS ARE EARNED: collectors/** for that dynamic import (its seven
+    # tushare_* drip modules are unresolvable by the walker and therefore
+    # invisible to the coverage test — enumeration would silently drop them);
+    # engine/** because enumeration would rot on every engine import, and
+    # engine/risk_radar.py:375 traverses roots=data,engine anyway; config/** and
+    # data/** for the roots=config,data parquet/jsonl traversals in
+    # engine/smart_money.py, lib/ai_costs.py:417 and collectors/base.py:124, plus
+    # the no-suffix data/ traversal at scripts/seed_china_ths_baskets.py:318.
+    # data/** is additionally REQUIRED by this job specifically: the invariance
+    # battery reads the tracked CN reference store at
+    # tests/test_coiled_mtf_anchor_invariance.py:268
+    # (config.data_dir()/"china"/"000001.SS.parquet") and SKIPS if absent — a
+    # runtime read that resolves through no literal, so under-naming data/ would
+    # turn the era's start-invariance guard green-by-skip on the very edits that
+    # can break it. Widening is the safe direction; do not add templates/**.
     runs-on: ubuntu-latest
+    scope: exclusive
+    paths:
+      - "engine/**"
+      - "collectors/**"
+      - "config/**"
+      - "data/**"
+      - "lib/__init__.py"
+      - "lib/ai_costs.py"
+      - "lib/closes_panel.py"
+      - "lib/cn_calendar.py"
+      - "lib/config.py"
+      - "lib/filing_value_units.py"
+      - "lib/nyse_calendar.py"
+      - "lib/store.py"
+      - "lib/ticker_aliases.py"
+      - "lib/ticker_popularity.py"
+      - "research/US_BOARD_MEASUREMENT.md"
+      - "scripts/__init__.py"
+      - "scripts/build_chart_data.py"
+      - "scripts/build_china_library.py"
+      - "scripts/seed_china_ths_baskets.py"
+      - "scripts/thematic_rotation_phase0.py"
+      - "scripts/validate_regime_fwd.py"
+      - "site/china_intel/**"
+      - "site/chinaaltdata/**"
+      - "site/chinanews/**"
+      - "site/chinaradar/**"
+      - "site/chinaspecialdata/**"
+      - "site/basketdata/fear_greed.json"
+      - "site/factordata/basket_washout_state.json"
+      - "site/factordata/china_standouts.json"
+      - "tests/test_coiled.py"
+      - "tests/test_coiled_mtf_anchor_invariance.py"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

@@ -2572,6 +2572,25 @@ CURATED_EXCLUSIVE = {
     # (site/flow_desk.json, site/options.html). This test is the check that
     # catches it; a sparse local run of it is not evidence that it passes.
     "options-estate-guards",
+    # 2026-08-15 wave 4. The two jobs the #5754 re-base below deferred. Both had
+    # NO owned tier at all — every inferred pattern was opaque fallback — after
+    # scripts/build_china_library.py gained engine/china_intel_interest.py, whose
+    # lazy china_intel_hub import reaches the full altdata convergence universe.
+    # Neither reads templates/index.html; both matched it, which is what took
+    # that probe 127 -> 129. Curated at the source instead of paid for again.
+    #
+    # These two are NOT the same declaration, and the difference is the point:
+    # cn-standout-audit globs `scripts/**` because two of its suites rglob that
+    # tree and AST-scan every hit (test_cn_board_lane_gate.py:361,
+    # test_cn_entry_price_integrity.py:527) — the tree is their SUBJECT, so
+    # enumerating it would stop the guard covering the new scripts it exists to
+    # catch. coiled-mtf-anchor-era's two suites carry no traversal at all, so its
+    # six scripts/ files are enumerated. Both glob `collectors/**`: the dynamic
+    # import at build_china_library.py:1807 resolves seven collectors.tushare_*
+    # drip modules the walker cannot see, so they are invisible to the coverage
+    # test and enumeration would drop them silently.
+    "cn-standout-audit",
+    "coiled-mtf-anchor-era",
 }
 
 
@@ -2729,10 +2748,40 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     curation of those two jobs is the smear-at-source fix, but their
     closures run through ``build_china_library`` and would be a third
     exclusive-scope wave, not this packing-contract heal.
+
+    THAT DEFERRAL IS NOW PAID (wave 4, 2026-08-15). Both jobs are curated
+    ``scope: exclusive`` in the manifest, and the ceiling above comes back
+    DOWN from 129 to 127. Neither job had an owned tier at all before this —
+    every one of their 28 inferred patterns was opaque fallback, so they
+    selected on ``*`` and on whole trees no suite in them reads. Re-measured
+    on the curated manifest, they are the ONLY delta and NOTHING was added to
+    any probe:
+
+        templates/index.html          128 -> 126 jobs, 5,310 -> 5,292 weight
+        scripts/build_free_content.py 123 -> 122 jobs, 5,044 -> 5,038 weight
+        engine/prophet/plan_book.py   118 -> 118 jobs, 5,040 -> 5,040 weight
+
+    Both jobs leave templates/index.html; only ``coiled-mtf-anchor-era``
+    leaves build_free_content.py, because ``cn-standout-audit`` KEEPS
+    ``scripts/**`` on the declared tier — two of its suites rglob that tree
+    and AST-scan every hit for unlaned CN sink calls, so the tree is their
+    subject and narrowing it would be the silent-stop failure this file's
+    coverage test exists to prevent. Both keep ``engine/**`` for the same
+    kind of reason, which is why plan_book.py does not move at all. That is
+    the shape a correct curation has: it removes the fallback claims and
+    keeps every earned one.
+
+    The ceiling is set at measurement + 1 per the wave-3 note above, so 126
+    measured -> 127. Note this lands exactly where wave 3 had it before
+    #5754, which is the confirmation that these two jobs were the whole of
+    that +2 and that no other drift hid inside the re-base. WEIGHT and PACK
+    ceilings are again NOT moved: the 18 weight-seconds removed here are two
+    orders of magnitude below the ~1,550 a fallback-tier regression costs,
+    and packs were 9 on every probe before and after.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 129, 5_800),
+        ("templates/index.html", 127, 5_800),
         ("scripts/build_free_content.py", 124, 5_600),
         ("engine/prophet/plan_book.py", 119, 5_600),
     ):
