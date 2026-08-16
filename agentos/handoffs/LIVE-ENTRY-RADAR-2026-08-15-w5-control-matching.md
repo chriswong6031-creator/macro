@@ -45,6 +45,14 @@ changed:
       and what must still be run."
   - path: agentos/discoveries/DSC-REFUSAL-BRANCH-HIDES-A-DEAD-LOOKUP.md
     what: "New discovery record."
+  - path: tests/test_entry_radar_w5_perf.py
+    what: "Revisited #5775's `test_ctx_session_rows_equals_the_boolean_mask_it_replaced`
+      on its own written instruction — it asserted the index AGREED with the mask it
+      replaced, which on the object/date shape meant agreeing on finding nothing. Now
+      `test_ctx_session_rows_returns_every_row_of_the_session`: the datetime64 leg still
+      pins the row-for-row identity (and shared `attrs`) that licensed the refactor, the
+      object/date leg pins the fixed behaviour, and a mutation control keeps the legacy
+      mask's failure on that shape on the record."
 
 verified:
   - claim: "The production builder emits an object `session` column of `datetime.date`,
@@ -64,13 +72,15 @@ verified:
       control_match_unavailable /Users/chriswong/Documents/Cluade /Users/chriswong/.claude"
     result: "both empty"
   - claim: "The new tests fail on the pre-fix code (mutation controls, both defects)."
-    command: "restore `mask = column == pd.Timestamp(key)`, then
+    command: "restore `by_session.get(pd.Timestamp(session))`, then
       `attach_session_positions(features)`, running the -k subset after each"
-    result: "2 failed for D1; 1 failed for D2 with `assert 2 == 400` — the pre-fix map
-      held 2 entries for sessions 20 trading sessions apart, so the offset read 1"
+    result: "post-rebase: 3 failed for D1 (incl. the revised #5775 leg); 1 failed for D2
+      with `assert 2 == 400` — the pre-fix map held 2 entries for sessions 20 trading
+      sessions apart, so the offset read 1. Both were RE-RUN against the rebased
+      implementation, not carried over: the lookup changed shape on the rebase."
   - claim: "The radar suite is green with the fix in place."
     command: "python3 -m pytest $(ls tests/test_entry_radar_*.py | tr '\\n' ' ') -q"
-    result: "1375 passed, 3 skipped"
+    result: "1394 passed, 2 skipped (post-rebase onto #5775)"
 
 unverified:
   - claim: "Panel-A behaves like Panel-B under the fix."

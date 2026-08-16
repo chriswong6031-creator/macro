@@ -113,10 +113,29 @@ The choice was "make the panel `datetime64` throughout" vs "key the lookup on `d
 
 So: `_session_key` pins the canonical spelling; `build_match_context` normalizes the
 column once at the seam where the panel is born; `_ctx_session_rows` keys on `date` and
-handles a datetime64 column explicitly rather than assuming (the cost of guessing wrong
-here is silence). D2 is fixed by passing `panels.session_calendar(spy)` — the bench
+looks up the datetime64 spelling explicitly rather than assuming (the cost of guessing
+wrong here is silence). D2 is fixed by passing `panels.session_calendar(spy)` — the bench
 calendar the docstring already demanded. Both `controls._session_offset` and
 `assembly.q5_pairs` read the same corrected map.
+
+### Rebased onto #5775
+
+This PR now sits on top of the merged 58x perf refactor, and keeps both properties. The
+lookup stays #5775's `groupby.indices` + `take` (no return to the whole-panel boolean
+scan) and is simply keyed correctly; the position map stays wrapped in
+`panels.SessionPositions` so it is shared rather than deep-copied through `attrs` — which
+matters *more* here, not less, because the bench calendar makes the map larger than the
+panel-derived one it replaces.
+
+#5775's `test_ctx_session_rows_equals_the_boolean_mask_it_replaced` asserted the index
+agreed with the mask on both shapes — which on the object/date shape meant agreeing on
+finding nothing. Its own closing comment instructed the revision: *"if a later change
+makes the object/date lookup start matching, this test must be revisited together with
+the control-matching refusal census it would change."* It is now
+`test_ctx_session_rows_returns_every_row_of_the_session`: the datetime64 leg still pins
+the row-for-row identity that licensed the refactor (including shared `attrs`), the
+object/date leg pins the fixed behaviour, and a mutation control keeps the legacy mask's
+failure on that shape on the record.
 
 **No frozen law changed.** §7's text is unmodified; this repairs the code's ability to
 apply it. Both repairs move strictly toward the frozen law — D1 from "no controls" to
@@ -146,6 +165,10 @@ the per-episode refusal path; a structural impossibility must not be reportable 
 |---|---|---|
 | D1 reproduces through the production builder | the snippet in §2 | `object` / `datetime.date` / `0` / `1` |
 | new tests pass | `pytest tests/test_entry_radar_w5_data.py -k "session_key or ctx_session_rows or match_context"` | 6 passed |
-| D1 mutation control | restore `mask = column == pd.Timestamp(key)` | 2 failed |
-| D2 mutation control | restore `attach_session_positions(features)` | 1 failed, `assert 2 == 400` |
-| no regression in the radar suite | `pytest tests/test_entry_radar_*.py` | 1375 passed, 3 skipped |
+| D1 mutation control (post-rebase) | restore `by_session.get(pd.Timestamp(session))` | 3 failed, incl. the revised #5775 leg |
+| D2 mutation control (post-rebase) | restore `attach_session_positions(features)` | 1 failed, `assert 2 == 400` |
+| no regression in the radar suite | `pytest tests/test_entry_radar_*.py` | 1394 passed, 2 skipped |
+
+Both mutation controls were re-run against the rebased implementation rather than
+carried over — the lookup changed shape on the rebase, so the pre-rebase proofs no
+longer covered it.
