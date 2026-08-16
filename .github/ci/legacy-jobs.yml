@@ -7982,7 +7982,7 @@ jobs:
       # surfaces join the lane that owns the dashboard organs. (Distinct from
       # the #4331 prophet-board suites, whose staging follows that PR's merge.)
       - name: prophet live user-facing surfaces
-        run: python -m pytest tests/test_prophet_live_surface.py -q
+        run: python -m pytest tests/test_prophet_live_surface.py tests/test_cn_live_surface.py -q
       # Unrun backfill 2026-08-09: the W-L1 board-state surface (#5148 — "which
       # board am I looking at?") landed named by no run: step; the unrun-suite
       # gate reds main on it.  It joins this lane because it is a shipped
