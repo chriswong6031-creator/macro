@@ -1175,6 +1175,15 @@ jobs:
         # observed-filing-state artifact and byte-identical public twin; terms,
         # capacity, runway, scores, probabilities, and Prophet authority stay absent.
         run: python -m scripts.build_capital_structure_projection
+      - name: gate capital-structure ingestion health (fail closed)
+        id: cs_health
+        # After compilers so telemetry.as_of (compiler generation time) is
+        # distinguishable from latest_source_retrieved_at. A selected queue
+        # with zero durable verified evidence must red THIS job — collect stays
+        # green so the market plane is not frozen. No continue-on-error, no
+        # `|| echo`: that is how 2026-08-08→08-14 PutObject AccessDenied nights
+        # stayed green while source_manifest froze at 1,258.
+        run: python -m scripts.check_capital_structure_health
       # Diagnostics only — changes NO behavior. When the compiler above fails, the
       # ledger it rejected is the one artifact that identifies WHY, and today it is
       # unrecoverable: the failure skips every later step, so the post-collect tree
@@ -1206,6 +1215,8 @@ jobs:
             data/capital_structure/source_manifest.jsonl
             data/capital_structure/source_manifest.parquet
             data/capital_structure/telemetry.json
+            data/capital_structure/ingestion_run.json
+            data/capital_structure/health.json
           if-no-files-found: warn
           retention-days: 14
       # ── THE CAPITAL-STRUCTURE CHECKPOINT ────────────────────────────────────
@@ -1260,6 +1271,7 @@ jobs:
           && steps.cs_spine.outcome == 'success'
           && steps.cs_terms.outcome == 'success'
           && steps.cs_projection.outcome == 'success'
+          && steps.cs_health.outcome == 'success'
         id: commitcs
         run: |
           echo "committed=false" >> "$GITHUB_OUTPUT"

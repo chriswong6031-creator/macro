@@ -1501,6 +1501,40 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# CN PROPHET LIVE lane (CN-PR-1). Own block — a widened regex would restart the
+# US prophet timer whenever this unit changed. Same self-arming contract: go-live
+# is a REPO COMMIT, so a CHANGED-only trigger would install a timer nobody ever
+# enables. The live-fast guard marks the serving VPS. The .service is NEVER
+# restarted (oneshot — that would run a pass off the CST-windowed schedule).
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-cnprophet\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-cnprophet.timer ]; }; then
+	CNPROPHET_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-cnprophet.service"
+		"$APP_DIR/app/deploy/macro-live-cnprophet.timer"
+	)
+	if systemd-analyze verify "${CNPROPHET_UNIT_SOURCES[@]}"; then
+		CNPROPHET_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${CNPROPHET_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				CNPROPHET_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$CNPROPHET_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-cnprophet.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-cnprophet units updated"
+		fi
+		systemctl enable --now macro-live-cnprophet.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-cnprophet.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-cnprophet unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # CLOSE-PASS MIRROR lane (W-L1a). Its own block for the same reason the Prophet
 # block is separate: a widened regex would restart unrelated timers whenever this
 # unit changed. Same self-arming contract — go-live for this lane is a REPO COMMIT

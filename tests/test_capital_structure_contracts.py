@@ -152,6 +152,55 @@ def _document_term() -> dict:
     }
 
 
+def _ingestion_health() -> dict:
+    return {
+        "schema": "capital_structure.ingestion_health/v1",
+        "generated_at": "2026-08-16T04:00:00Z",
+        "authority": {
+            "is_context_only": True, "rank_authority": False,
+            "sizing_authority": False, "entry_authority": False,
+            "prophet_authority": False,
+        },
+        "compiler_generated_at": "2026-08-16T03:13:21Z",
+        "latest_source_retrieved_at": "2026-08-02T00:32:54Z",
+        "latest_source_filing_date": "2026-07-31",
+        "store_id": "r2_shared",
+        "counters": {
+            "selected": 200, "retrieved": 0, "verified_retained_sources": 0,
+            "manifested_sources": 0, "compiled_events": 400, "deferred": 200,
+            "parser_deferred": 0, "storage_deferred": 200, "parked": 403,
+        },
+        "source_high_watermark_before": {
+            "source_manifest_count": 1258, "complete_submission_count": 400,
+            "latest_retrieved_at": "2026-08-02T00:32:54Z",
+            "latest_filing_date": "2026-07-31",
+        },
+        "source_high_watermark_after": {
+            "source_manifest_count": 1258, "complete_submission_count": 400,
+            "latest_retrieved_at": "2026-08-02T00:32:54Z",
+            "latest_filing_date": "2026-07-31",
+        },
+        "census": [{
+            "stage": "storage", "outcome": "storage_deferred",
+            "error_class": "ClientError",
+            "error_fingerprint": "source-store write/readback verification failed (operation=PutObject store_id=r2_capital_structure http_status=N reason=put-failed): Access Denied",
+            "http_status": 403, "storage_operation": "PutObject",
+            "lane": "registration", "count": 200,
+            "first_occurrence": "2026-08-08T01:00:00Z",
+            "latest_occurrence": "2026-08-14T01:19:50Z",
+        }],
+        "backlog": {
+            "pending": 17659, "parked": 403,
+            "oldest_pending_first_seen": "2026-08-01T15:35:40Z",
+            "deferred_count": 17659, "selected_count": 200,
+        },
+        "verdict": "fail",
+        "verdict_reason": "filings were eligible/selected but zero durable verified evidence progressed",
+        "no_new_work_proven": False,
+        "no_new_work_reason": None,
+    }
+
+
 def _metric() -> dict:
     return {"value": None, "unit": "shares", "state": "unknown", "evidence_ids": []}
 
@@ -297,6 +346,7 @@ def _retrieval_queue_receipt() -> dict:
     ("capital_structure_review_item.schema.json", _review_item),
     ("capital_structure_telemetry.schema.json", _telemetry),
     ("capital_structure_retrieval_queue_receipt.schema.json", _retrieval_queue_receipt),
+    ("capital_structure_ingestion_health.schema.json", _ingestion_health),
 ])
 def test_contracts_are_strict_draft_2020_12(name, factory):
     schema = _schema(name)

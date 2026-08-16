@@ -1935,6 +1935,12 @@ jobs:
       #                this lane's US files prove it stays byte-unchanged), and
       #                lib.cn_calendar.sessions_behind. Same package, same deps
       #                (pandas via armed_pack), so it rides here, not in a new lane.
+      #   CN pack      tests/test_cn_live_pack.py — CN-W-L3 PR-1: calendar=cn_calendar,
+      #                per-class ±10/±20 probe span, schema cn_prophet_live.armed/v1.
+      #   CN evaluator tests/test_cn_live_evaluator.py — close-board coverage, lunch
+      #                freeze, quote-age, pending remnant in last minute of post_close.
+      #   CN VPS lane  tests/test_cn_live_vps_lane.py — CN timer, served-path gate,
+      #                kill switch, health absent-ok, update.sh self-arm.
       # It is LAST in this lane and that is now a cost of ~48s of sibling guards
       # ahead of it, not of a 357-second sweep.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
@@ -1945,7 +1951,10 @@ jobs:
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
           tests/test_prophet_live_vps_lane.py
-          tests/test_cn_live_clock.py -q
+          tests/test_cn_live_clock.py
+          tests/test_cn_live_pack.py
+          tests/test_cn_live_evaluator.py
+          tests/test_cn_live_vps_lane.py -q
 
   collector-registry:
     if: ${{ false }}
@@ -2055,6 +2064,7 @@ jobs:
           tests/test_capital_structure_api.py
           tests/test_capital_structure_source_identity.py
           tests/test_capital_structure_source_manifest.py
+          tests/test_capital_structure_ingestion_health.py
           tests/test_capital_structure_share_count_truth.py
           tests/test_capital_structure_companyfacts_authenticated_read.py
           tests/test_capital_structure_share_count_materializer_model.py

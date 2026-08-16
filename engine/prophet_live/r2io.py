@@ -33,6 +33,12 @@ PACK_KEY = "live_flow/prophet_live_armed.json"
 LIVE_KEY = "live_flow/prophet_live.json"
 EVENTS_PREFIX = "live_flow/prophet_live_events"
 
+#: CN Breathing Platform (CN-PR-1). Separate keys so the US lane's debounce
+#: predecessor and the CN evaluator can never read each other's artifact.
+CN_PACK_KEY = "live_flow/cn_prophet_live_armed.json"
+CN_LIVE_KEY = "live_flow/cn_prophet_live.json"
+CN_EVENTS_PREFIX = "live_flow/cn_prophet_live_events"
+
 
 def public_base() -> str:
     """The R2 public base URL (no trailing slash). config.yml → in-code fallback."""
@@ -112,6 +118,14 @@ def put_json(key: str, payload: Any, *, s3=None) -> bool:
     """
     if os.environ.get("PROPHET_LIVE_NO_PUBLISH", "").strip() not in ("", "0", "false"):
         print(f"::warning title=prophet-live::PROPHET_LIVE_NO_PUBLISH is set — "
+              f"refusing to write {key}", flush=True)
+        return False
+    # Separate kill switch for the CN lane (spec §5). A US rehearsal must not
+    # stand down the mainland evaluator, and the reverse is equally true.
+    if str(key).startswith("live_flow/cn_prophet_live") and (
+            os.environ.get("CN_PROPHET_LIVE_NO_PUBLISH", "").strip()
+            not in ("", "0", "false")):
+        print(f"::warning title=cn-prophet-live::CN_PROPHET_LIVE_NO_PUBLISH is set — "
               f"refusing to write {key}", flush=True)
         return False
     cl = s3 if s3 is not None else client()
