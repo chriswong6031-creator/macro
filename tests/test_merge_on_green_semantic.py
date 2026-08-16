@@ -122,6 +122,42 @@ def test_main_target_ignores_only_inactive_pilot_authority_context() -> None:
     assert names == ["ci-authority/main (failure)"]
 
 
+def test_failing_check_names_excludes_the_inactive_context_like_decide_verdict() -> None:
+    """The two halves of the sweeper must name the same reds.
+
+    `decide_verdict` drops the inactive ci-authority context; `failing_check_names`
+    did not, and that disagreement did not merely annoy — it DISABLED both
+    consumers of this set (2026-08-16):
+
+      * `_live_inherited_extras` sees the context as a non-pack "extra", so the
+        live inherited-red waiver could never apply to any pull request;
+      * the base-inherited-red refresh needs `bad_names <= proof.clean_names`,
+        and main's proof carries JOB names — never a check-only context — so the
+        containment could never hold and the mechanism that drains an armed
+        backlog once main heals (#5037) was structurally dead.
+
+    `ci-authority/main` stays binding in both, which is the whole point of the
+    inactive context being a separate name from it.
+    """
+    runs = [
+        _check("ci-pack-5", "failure"),
+        _check("ci-gate", "failure"),
+        _check("ci-authority/codex/merge-queue-pilot", "failure"),
+        _check("ci-authority/main", "success"),
+    ]
+    names = MOG.failing_check_names(runs)
+    assert names == {"ci-pack-5", "ci-gate"}
+    # Consumer 1: nothing outside the pack/ci-gate family survives, so the live
+    # inherited-red waiver is reachable at all.
+    assert MOG._live_inherited_extras(names) == set()
+    # Consumer 2: main's clean JOB names can now contain the whole red set.
+    assert names <= {"ci-pack-5", "ci-gate", "unrun-foo"}
+
+    active_red = [dict(run) for run in runs]
+    active_red[3]["conclusion"] = "failure"
+    assert "ci-authority/main" in MOG.failing_check_names(active_red)
+
+
 def test_main_red_without_semantic_overlap_does_not_pause_candidate(monkeypatch):
     monkeypatch.setattr(
         MOG.semantic_proof,

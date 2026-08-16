@@ -648,3 +648,116 @@ def test_malformed_later_main_artifact_cannot_resurrect_older_valid_pass(monkeyp
 
     monkeypatch.setattr(GUARD, "_semantic_evidence_for_run", load)
     assert GUARD._recent_main_semantic_evidence("acme", "widgets") == [older]
+
+
+# ---------------------------------------------------------------------------
+# The other edge of the inactive-context exclusion (#5773/#5776 -> this).
+#
+# Excluding a check from the reds must not promote the head to PROVEN. The
+# inactive context is red on every pull request in this repository, so its
+# standing failure was accidentally the only thing keeping a head that proved
+# NOTHING out of `_check_ci`'s cheap green return — `NON_RED_CONCLUSIONS` holds
+# `skipped` and `neutral`. Measured on 65f9669f: all three shapes below returned
+# `(True, "")`, releasing a session on a head with no CI verdict at all.
+# ---------------------------------------------------------------------------
+
+#: Spelled out rather than read off the guard: this suite must be able to fail
+#: against a build that dropped the exclusion, and a test that reads its
+#: subject's own constant cannot do that.
+INACTIVE_CONTEXT = "ci-authority/codex/merge-queue-pilot"
+
+
+def _merged_check(name: str, conclusion: str, *, details: bool = False) -> dict:
+    """A check run on a MERGED head: `_check` minus the associations GitHub drops."""
+    run = _check(name, conclusion, details=details)
+    run["pull_requests"] = []
+    return run
+
+
+def test_the_inactive_context_literal_is_the_one_the_guard_excludes() -> None:
+    assert GUARD.CI_AUTHORITY_INACTIVE_CONTEXT == INACTIVE_CONTEXT
+    assert GUARD._is_non_binding_check(INACTIVE_CONTEXT)
+    assert not GUARD._is_non_binding_check("ci-authority/main")
+
+
+@pytest.mark.parametrize(
+    "runs",
+    [
+        pytest.param(
+            [
+                _merged_check("ci-plan", "skipped"),
+                _merged_check("ci-gate", "skipped"),
+                _merged_check(INACTIVE_CONTEXT, "failure"),
+            ],
+            id="every binding check skipped",
+        ),
+        pytest.param(
+            [
+                _merged_check("some-app", "neutral"),
+                _merged_check(INACTIVE_CONTEXT, "failure"),
+            ],
+            id="neutral only",
+        ),
+        pytest.param(
+            [
+                _merged_check(INACTIVE_CONTEXT, "failure"),
+                _merged_check("Workers Builds: macro", "failure"),
+            ],
+            id="nothing binding at all",
+        ),
+    ],
+)
+def test_check_ci_refuses_a_merged_head_with_no_affirmative_pass(
+    monkeypatch, tmp_path, runs
+):
+    """An unproven head must not read as green just because nothing is red."""
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+    monkeypatch.setattr(
+        GUARD,
+        "_semantic_evidence_for_head",
+        lambda *_a, **_k: pytest.fail("an unproven head must not buy evidence"),
+    )
+    ok, reason = GUARD._check_ci(
+        tmp_path, "acme", "widgets", HEAD, MERGE, "2026-08-16T01:32:13Z", "claude/x", BASE
+    )
+    assert ok is False
+    assert "no affirmative passing check" in reason
+    # `_stop` files anything starting with "Failing" as the INTERNAL `ci_failed`
+    # ladder (10 consecutive / 15 total). A merged head with no CI verdict must
+    # not be the cheap external 2/3 exit, which any other wording would make it.
+    assert reason.startswith("Failing")
+
+
+def test_check_ci_still_greens_a_normally_merged_head(monkeypatch, tmp_path):
+    """Bound on the rule above: one real success is all it asks for.
+
+    The sweeper refuses to merge a head with no `success` at all, so every head
+    reaching `_check_ci` merged has one — measured 10 of 17 on the records-only
+    PR #5772. `skipped` siblings and the inactive context do not change that.
+    """
+    runs = [
+        _merged_check("ci-gate", "success"),
+        _merged_check("ci-plan", "skipped"),
+        _merged_check(INACTIVE_CONTEXT, "failure"),
+    ]
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+    assert GUARD._check_ci(
+        tmp_path, "acme", "widgets", HEAD, MERGE, "2026-08-16T01:32:13Z", "claude/x", BASE
+    ) == (True, "")
+
+
+def test_a_pending_head_is_still_reported_as_running_not_unproven(
+    monkeypatch, tmp_path
+):
+    """Pending outranks the new rule: a head still working is not a head that failed."""
+    runs = [
+        _merged_check("ci-gate", "skipped"),
+        dict(_merged_check("ci-pack-3", "success"), status="in_progress", conclusion=None),
+        _merged_check(INACTIVE_CONTEXT, "failure"),
+    ]
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+    ok, reason = GUARD._check_ci(
+        tmp_path, "acme", "widgets", HEAD, MERGE, "2026-08-16T01:32:13Z", "claude/x", BASE
+    )
+    assert ok is False
+    assert reason.startswith("CI still running")
