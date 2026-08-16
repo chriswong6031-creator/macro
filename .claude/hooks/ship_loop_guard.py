@@ -1990,8 +1990,9 @@ def _check_ci(
         # retarget-invalidation receipt. Every PR touching a ci-authority path
         # hit this. `ci-authority/main` stays binding here exactly as elsewhere;
         # this skips ONLY the one literal pilot context, and widens nothing.
-        if name == "ci-authority/codex/merge-queue-pilot":
-            continue
+        # (The literal that stood here is gone: `_is_non_binding_check` above
+        # already answers it, and leaving a second spelling behind is how this
+        # loop drifted from its siblings in the first place.)
         if run.get("status") != "completed":
             pending.append(name)
         elif run.get("conclusion") not in non_red:
@@ -2006,6 +2007,47 @@ def _check_ci(
         # is only ever gathered to argue about a red.
         if pending:
             return False, "CI still running: " + ", ".join(pending[:8])
+        # AN ABSENCE OF RED IS NOT A PASS — the other edge of the exclusion above,
+        # and the reason the sweeper's verdict has an `unproven` state at all
+        # (#4779; `scripts/merge_on_green.py`: "a head whose every surviving check
+        # concluded `skipped`/`neutral` is that same nothing wearing a name").
+        #
+        # `NON_RED_CONCLUSIONS` holds `skipped` and `neutral`, so this return has
+        # always been reachable by a head that proved NOTHING. What kept such a
+        # head out of it was an accident: the inactive pilot context is red on
+        # every pull request in this repository, so `bad` was never empty for it.
+        # Excluding that context — correctly, #5773/#5776 — removed the accident
+        # and left the hole. Measured on 65f9669f: a merged head whose every
+        # binding check was `skipped`, one whose only check was `neutral`, and one
+        # carrying NOTHING but the pilot and the spurious Cloudflare X all
+        # returned `(True, "")`. The guard released a session on a head with no CI
+        # verdict whatsoever, which is the failure it exists to prevent, in the
+        # direction that costs the most: a false red pins a session, a false green
+        # ships unproven work.
+        #
+        # So require what the sweeper requires of the same head: one check that
+        # actually said `success`. Excluding a check from the reds must never
+        # promote the head to proven.
+        #
+        # Scoped to THIS return deliberately. The two green returns below are
+        # reached only after a real red was argued away on evidence, which means
+        # CI demonstrably ran; this is the cheap path that gathers nothing. It
+        # cannot strand a normal merge either — the sweeper refuses to merge a
+        # head with no `success` at all, and even the records-only PR #5772
+        # carried 10 of them.
+        binding = [
+            run
+            for run in runs
+            if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
+        ]
+        if not any(run.get("conclusion") == "success" for run in binding):
+            names = [str(run.get("name") or "unnamed check") for run in binding]
+            return False, (
+                "Failing CI: the merged head carries no affirmative passing check "
+                f"({len(binding)} binding check(s) concluded, none `success`"
+                + (f": {', '.join(names[:8])}" if names else "")
+                + "). An absence of red is not a pass."
+            )
         return True, ""
 
     semantic_notes: list[str] = []

@@ -4982,11 +4982,25 @@ def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
     Derived from the runs rather than parsed back out of `decide_verdict`'s
     display strings, which carry a " (conclusion)" suffix — re-deriving keeps the
     comparison exact and independent of that formatting.
+
+    The inactive pilot context is excluded on exactly the ground `decide_verdict`
+    excludes it: this sweeper only admits pull requests targeting main, so
+    `ci-authority/codex/merge-queue-pilot`'s standing failure is a
+    retarget-invalidation receipt, not a verdict. Leaving it in here while
+    `decide_verdict` dropped it did not merely disagree — it DISABLED both
+    consumers of this set (2026-08-16). `_live_inherited_extras` classifies the
+    pilot as a non-pack "extra", so `live_inherited_red` returned None for every
+    pull request; and the base-inherited-red refresh needs
+    `bad_names <= proof.clean_names`, where the right side holds main's JOB names
+    and can never contain a check-only context — so the containment could never
+    hold and the mechanism that drains an armed backlog once main heals (#5037)
+    was structurally dead. Both are mechanisms this sweeper exists to run.
     """
     return {
         str(run.get("name") or "")
         for run in runs
         if not is_spurious_check(str(run.get("name") or ""))
+        and str(run.get("name") or "") != "ci-authority/codex/merge-queue-pilot"
         and run.get("status") == "completed"
         and run.get("conclusion") not in CLEAN_CONCLUSIONS
     }
