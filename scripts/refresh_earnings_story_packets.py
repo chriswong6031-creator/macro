@@ -18,6 +18,7 @@ import json
 import os
 from pathlib import Path
 import sys
+import time
 from typing import Any, Callable, Mapping
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -49,6 +50,8 @@ from scripts.publish_earnings_story_packets_r2 import (
 
 
 DOWNLOAD_WORKERS = 12
+DEFAULT_MAX_NEW_EVENTS = 500
+DEFAULT_VERIFY_LINEAGE_DEPTH = 1
 
 
 class RefreshError(RuntimeError):
@@ -223,7 +226,7 @@ def _download_receipts(
         raise RefreshError(str(errors[0])) from errors[0]
 
 
-def _hydrate_story_lineage(
+def _hydrate_current_story_root(
     s3: Any,
     bucket: str,
     *,
@@ -231,38 +234,58 @@ def _hydrate_story_lineage(
     marker: Mapping[str, Any],
     marker_raw: bytes,
 ) -> None:
-    """Hydrate the current packet catalog, plus every immutable parent marker."""
+    """Hydrate only the current packet catalog.
+
+    Compilation reuses unchanged packets from the live root.  Hourly
+    verification binds the new generation to that same direct parent.  Walking
+    every historical parent and re-downloading their receipts is what pushed
+    the 6,000-packet projection through the 20-minute job ceiling; the daily
+    ``--audit-remote`` job still replays the full chain.
+    """
     _atomic_bytes(root / "manifest.json", marker_raw)
     generation_id = str(marker["generation_id"])
     _atomic_bytes(root / "generations" / generation_id / "manifest.json", marker_raw)
-    current: Mapping[str, Any] = marker
-    seen = {generation_id}
-    lineage_files: dict[str, Mapping[str, Any]] = {
+    current_files = {
         str(value["object_key"]): value for value in marker["files"].values()
     }
-    while current.get("parent_generation_id") is not None:
-        parent_id = str(current["parent_generation_id"])
-        if parent_id in seen:
-            raise RefreshError("earnings story packet parent chain has a cycle")
-        seen.add(parent_id)
-        parent_raw = _read_object(s3, bucket, f"{STORY_PREFIX}/generations/{parent_id}/manifest.json")
-        assert parent_raw is not None
-        parent = _canonical_object(parent_raw, label=f"story packet parent {parent_id}")
-        try:
-            validate_story_packet_manifest(parent)
-        except Exception as exc:  # noqa: BLE001
-            raise RefreshError(f"story packet parent {parent_id} fails its contract: {exc}") from exc
-        if parent.get("generation_id") != parent_id:
-            raise RefreshError("earnings story packet parent generation id mismatch")
-        _atomic_bytes(root / "generations" / parent_id / "manifest.json", parent_raw)
-        for receipt in parent["files"].values():
-            object_key = str(receipt["object_key"])
-            prior = lineage_files.get(object_key)
-            if prior is not None and dict(prior) != dict(receipt):
-                raise RefreshError(f"story packet lineage receipt collision: {object_key}")
-            lineage_files[object_key] = receipt
-        current = parent
-    _download_receipts(s3, bucket, prefix=STORY_PREFIX, root=root, receipts=lineage_files)
+    _download_receipts(s3, bucket, prefix=STORY_PREFIX, root=root, receipts=current_files)
+
+
+def _catalog_is_complete(
+    evidence: Mapping[str, Any],
+    prior: Mapping[str, Any] | None,
+    *,
+    policy_sha256: str,
+) -> bool:
+    """True when the prior packet catalog already covers this evidence root."""
+    if prior is None:
+        return False
+    prior_policy = prior.get("policy")
+    if not (isinstance(prior_policy, Mapping) and prior_policy.get("sha256") == policy_sha256):
+        return False
+    prior_packets = prior.get("packets")
+    if not isinstance(prior_packets, Mapping):
+        return False
+    if set(prior_packets) != set(evidence["events"]):
+        return False
+    for key, event in evidence["events"].items():
+        index = prior_packets.get(key)
+        if not isinstance(index, Mapping) or index.get("source_sha256") != event.get("source_sha256"):
+            return False
+    return True
+
+
+def _phase(name: str) -> Callable[[str], None]:
+    started = time.monotonic()
+
+    def done(detail: str = "") -> None:
+        extra = f" {detail}" if detail else ""
+        print(
+            f"earnings story packets: phase {name} {time.monotonic() - started:.1f}s{extra}",
+            flush=True,
+        )
+
+    return done
 
 
 def _evidence_receipts_needed(
@@ -270,12 +293,15 @@ def _evidence_receipts_needed(
     prior: Mapping[str, Any] | None,
     *,
     policy_sha256: str,
+    only_keys: set[str] | None = None,
 ) -> dict[str, Mapping[str, Any]]:
     prior_packets = prior.get("packets") if isinstance(prior, Mapping) else None
     prior_policy = prior.get("policy") if isinstance(prior, Mapping) else None
     same_policy = isinstance(prior_policy, Mapping) and prior_policy.get("sha256") == policy_sha256
     needed: dict[str, Mapping[str, Any]] = {}
     for key, event in evidence["events"].items():
+        if only_keys is not None and key not in only_keys:
+            continue
         prior_index = prior_packets.get(key) if isinstance(prior_packets, Mapping) else None
         if (
             same_policy
@@ -298,6 +324,8 @@ def refresh(
     promote: bool = False,
     s3: Any | None = None,
     bucket: str | None = None,
+    max_new_events: int | None = DEFAULT_MAX_NEW_EVENTS,
+    verify_lineage_depth: int | None = DEFAULT_VERIFY_LINEAGE_DEPTH,
 ) -> int:
     """Hydrate, deterministically compile, verify, and optionally CAS-publish."""
     client = s3 if s3 is not None else _client()
@@ -311,6 +339,7 @@ def refresh(
     scratch.mkdir(parents=True, exist_ok=True)
     evidence_dir = scratch / "evidence"
     output = Path(out_dir) if out_dir is not None else scratch / "output"
+    root_done = _phase("root_manifest")
     evidence, evidence_raw, _evidence_digest = _root_snapshot(
         client,
         target_bucket,
@@ -330,19 +359,14 @@ def refresh(
     )
     policy = load_promotion_policy()
     policy_sha = promotion_policy_sha256(policy)
-    evidence_receipt = {
-        "schema": evidence["schema"],
-        "generation_id": evidence["generation_id"],
-        "manifest_sha256": canonical_json_sha256(evidence),
-    }
-    if (
-        prior is not None
-        and prior.get("evidence_root") == evidence_receipt
-        and isinstance(prior.get("policy"), Mapping)
-        and prior["policy"].get("sha256") == policy_sha
-    ):
+    root_done(
+        f"evidence_events={len(evidence['events'])} "
+        f"prior_packets={0 if prior is None else len(prior.get('packets') or {})}"
+    )
+    if _catalog_is_complete(evidence, prior, policy_sha256=policy_sha):
+        assert prior is not None
         print(
-            "earnings story packets: evidence root and policy unchanged; "
+            "earnings story packets: evidence catalog already fully projected; "
             f"generation={prior['generation_id']} is a true no-op"
         )
         return 0
@@ -351,54 +375,126 @@ def refresh(
         raise RefreshError("local story marker exists while the authoritative R2 root is absent")
     if prior is not None:
         assert prior_raw is not None
-        _hydrate_story_lineage(client, target_bucket, root=output, marker=prior, marker_raw=prior_raw)
+        hydrate_done = _phase("prior_root_hydration")
+        _hydrate_current_story_root(
+            client, target_bucket, root=output, marker=prior, marker_raw=prior_raw,
+        )
+        hydrate_done(f"prior_objects={len(prior['files'])}")
 
     _atomic_bytes(evidence_dir / "manifest.json", evidence_raw)
     _atomic_bytes(
         evidence_dir / "generations" / str(evidence["generation_id"]) / "manifest.json",
         evidence_raw,
     )
-    needed = _evidence_receipts_needed(evidence, prior, policy_sha256=policy_sha)
+    from engine.earnings_narrative.story_store import _pending_new_event_keys
+
+    prior_packets = prior.get("packets") if isinstance(prior, Mapping) else {}
+    if not isinstance(prior_packets, Mapping):
+        prior_packets = {}
+    policy_ref = (
+        dict(prior["policy"])
+        if prior is not None and isinstance(prior.get("policy"), Mapping)
+        else {"schema": "", "sha256": policy_sha, "snapshot": policy}
+    )
+    pending = _pending_new_event_keys(
+        evidence, prior_packets, policy_ref=policy_ref, prior=prior,
+    )
+    if max_new_events is not None and pending:
+        rank_done = _phase("rank_new_event_dates")
+        rank_receipts: dict[str, Mapping[str, Any]] = {}
+        for key in pending:
+            logical = evidence["events"][key]["fact_pack"]
+            receipt = evidence["files"].get(logical)
+            if not isinstance(receipt, Mapping):
+                raise RefreshError(f"earnings evidence receipt missing: {logical}")
+            rank_receipts[str(logical)] = receipt
+        _download_receipts(
+            client, target_bucket, prefix=EVIDENCE_PREFIX, root=evidence_dir, receipts=rank_receipts,
+        )
+        pending = _pending_new_event_keys(
+            evidence,
+            prior_packets,
+            policy_ref=policy_ref,
+            prior=prior,
+            evidence_root=evidence_dir,
+        )[:max_new_events]
+        rank_done(f"selected={len(pending)}")
+    fetch_keys = set(prior_packets) | set(pending) if max_new_events is not None else None
+    needed = _evidence_receipts_needed(
+        evidence, prior, policy_sha256=policy_sha, only_keys=fetch_keys,
+    )
+    fetch_done = _phase("new_evidence_downloads")
     _download_receipts(client, target_bucket, prefix=EVIDENCE_PREFIX, root=evidence_dir, receipts=needed)
+    fetch_done(f"objects={len(needed)}")
+    compile_done = _phase("story_compilation")
     try:
         _generation, manifest = write_story_packet_generation(
             output,
             evidence_dir,
             policy=policy,
             prior_manifest=prior,
+            max_new_events=max_new_events,
         )
     except (ContractError, OSError, ValueError) as exc:
         raise RefreshError(f"story packet compilation refused: {exc}") from exc
-    health = verify_story_packet_store(output, manifest=manifest)
+    compile_done(f"packets={len(manifest['packets'])}")
+    verify_done = _phase("verification")
+    health = verify_story_packet_store(
+        output, manifest=manifest, lineage_depth=verify_lineage_depth,
+    )
     if health.get("status") != "ready":
         raise RefreshError("story packet store verification failed: " + ", ".join(health.get("warnings") or []))
+    verify_done()
     tier_counts = {"B": 0, "C": 0}
     for index in manifest["packets"].values():
         receipt = manifest["files"][index["object_key"]]
         packet = json.loads((output / receipt["object_key"]).read_text(encoding="utf-8"))
         tier = str(packet["promotion"]["tier"])
         tier_counts[tier] = tier_counts.get(tier, 0) + 1
+    remaining = len(evidence["events"]) - len(manifest["packets"])
+    from engine.earnings_narrative.story_store import _event_call_date
+
+    newest_packet = max(
+        (
+            _event_call_date(evidence_dir, evidence["events"][key], evidence["files"])
+            for key in manifest["packets"]
+        ),
+        default="",
+    )
+    evidence_newest = str((evidence.get("coverage") or {}).get("newest_call_date") or "")
     print(
         "earnings story packets: verified deterministic projection "
         f"generation={manifest['generation_id']} packets={health['packet_count']} "
         f"tier_b={tier_counts.get('B', 0)} tier_c={tier_counts.get('C', 0)} "
-        f"evidence_objects_fetched={len(needed)}"
+        f"evidence_objects_fetched={len(needed)} remaining={remaining} "
+        f"complete={remaining == 0} newest_packet={newest_packet} "
+        f"newest_evidence={evidence_newest}"
     )
+    if remaining:
+        print(
+            f"::warning title=earnings-story-packets-catchup::earnings story packets: "
+            f"projected {health['packet_count']} of {len(evidence['events'])} evidence "
+            f"events; {remaining} remain for later bounded runs",
+            flush=True,
+        )
     if not promote:
         print("earnings story packets: public root not promoted")
         return 0
+    publish_done = _phase("r2_promotion")
     result = publish_story_packets(
         output,
         expected_base_marker_sha256=prior_digest,
         require_absent_root=prior is None,
         s3=client,
         bucket=target_bucket,
+        verify_lineage_depth=verify_lineage_depth,
     )
     if result == PUBLISH_CONFLICT:
         print("earnings story packets: root promotion lost a safe compare-and-swap race")
         return result
     if result != 0:
         raise RefreshError(f"story packet R2 publication failed with exit code {result}")
+    publish_done()
     print("earnings story packets: immutable generation published and root marker promoted")
     return 0
 
@@ -408,9 +504,29 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--work-dir", type=Path, required=True, help="Disposable hydration scratch parent")
     parser.add_argument("--out-dir", type=Path, default=None, help="Optional verified generation handoff directory")
     parser.add_argument("--promote", action="store_true", help="CAS-promote the verified packet root")
+    parser.add_argument(
+        "--max-new-events",
+        type=int,
+        default=DEFAULT_MAX_NEW_EVENTS,
+        help="Newest-first new-event cap per run (0 disables the cap)",
+    )
+    parser.add_argument(
+        "--verify-lineage-depth",
+        type=int,
+        default=DEFAULT_VERIFY_LINEAGE_DEPTH,
+        help="Parent hops to replay (0 = current generation only, negative = full chain)",
+    )
     args = parser.parse_args(argv)
+    max_new = None if args.max_new_events <= 0 else args.max_new_events
+    lineage_depth = None if args.verify_lineage_depth < 0 else args.verify_lineage_depth
     try:
-        return refresh(args.work_dir, out_dir=args.out_dir, promote=args.promote)
+        return refresh(
+            args.work_dir,
+            out_dir=args.out_dir,
+            promote=args.promote,
+            max_new_events=max_new,
+            verify_lineage_depth=lineage_depth,
+        )
     except RefreshError as exc:
         print(f"earnings story packets: refresh refused: {exc}", file=sys.stderr)
         return 1
