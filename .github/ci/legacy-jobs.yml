@@ -7789,8 +7789,13 @@ jobs:
       # pandas/pyyaml ride the existing install line.
       # 2026-08-15 (#5746): Massive close truth is the same lane — same publisher,
       # same BOARD_KEY — so its suite rides this step rather than a new job.
-      - name: evening close-pass provisional board lane (W-L1a, #5154)
-        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py -q
+      # The host-native PRIMARY clock joins the same lane's suite (Breathing
+      # PR-B, 2026-08-15): scripts/close_pass_host_runner.py is what actually
+      # fires the evening pass now, the workflow being a bounded backstop. Its
+      # suite is stdlib-only and subprocess-free (every command is faked at the
+      # _sh seam), so it costs the lane nothing and rides the same install line.
+      - name: evening close-pass provisional board lane (W-L1a, #5154; host clock PR-B)
+        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py tests/test_close_pass_host_runner.py -q
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
   # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a
