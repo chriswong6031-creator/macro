@@ -126,8 +126,8 @@ unresolved:
     admits them as flat names so production does not stay red; they are not
     canonical. Producer cleanup is a later PR.
   - >
-    PR #5804 already owns decoupling macro-api restart from W2C attestation.
-    Not edited here.
+    PR #5804 merged to main as 021553985cbe during this session. API restart is
+    no longer coupled to W2C attestation. Not edited here.
   - Breadth service also failed independently and is not on the W2C owner chain as first cause.
 next_actions:
   - Push this branch, open the M0A PR, arm merge-on-green, and own it through merge.
@@ -138,7 +138,7 @@ do_not_redo:
   - Do not reject leftover mixed-case root names in the same PR as the nested-path admit; that would keep technicals red on the live 820-member residue.
   - Do not backfill a missed W2C row or fabricate the first opportunity.
   - Do not weaken PIT, authority, or freshness validators to make the timer look armed.
-  - Do not edit app/deploy/update.sh or the deploy tests owned by PR #5804.
+  - Do not edit app/deploy/update.sh or the deploy tests that #5804 already merged.
   - Do not retarget PR #5801 local receipt replica files.
 danger_areas:
   - Nested-path admission must round-trip the producer. Accepting any slash, mixed-case nested names, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
@@ -242,7 +242,7 @@ Open / future. Zero dispositions. Do not infer an admitted row.
 
 ## 13. API deployment state
 
-`macro-api` was running at freeze (`commit=ba6a6665a97`, `checkout=80b7e77ee1b`). API-restart coupling is PR #5804 (Branch D), not this repair.
+`macro-api` was running at freeze (`commit=ba6a6665a97`, `checkout=80b7e77ee1b`). API-restart coupling shipped separately as #5804 / `021553985cbe` and is not this repair.
 
 ## 14. Remaining blockers
 
@@ -263,11 +263,11 @@ Recommended later wave/PR: producer cleanup, then fail-closed consumer
 Files not changed: publisher
 
 ID: M0A-R3 API restart coupling
-Observed evidence: PR #5804 already owns `app/deploy/update.sh`
-Why out of scope: Branch D; not the W2C activation first cause
-Potential severity: API restart blocked while W2C attestation fails
-Canonical owner: PR #5804
-Recommended later wave/PR: let #5804 merge separately
+Observed evidence: PR #5804 merged to main as 021553985cbe during this session (`fix(deploy): restart macro-api before W2C owner-replay attestation`)
+Why out of scope: Branch D; already shipped on a separate PR. Not the W2C activation first cause
+Potential severity: previously API restart blocked while W2C attestation failed; now independent
+Canonical owner: merged #5804
+Recommended later wave/PR: none for M0A
 Files not changed: `app/deploy/update.sh`, deploy tests
 
 ID: M0A-R4 breadth failure
@@ -282,7 +282,7 @@ Files not changed: breadth modules
 
 - #5801 W1A-B local receipt replica — adjacent; not edited
 - #5802 BioCatalyst P0-B1 diagnosis docs — the M0A handoff's "freshness/API restart" label was stale; not edited
-- #5804 decouple macro-api restart from W2C attestation — Branch D; not edited
+- #5804 decouple macro-api restart from W2C attestation — merged to main as 021553985cbe during this session; not edited here
 
 ## 16. Exact next PR recommendation
 

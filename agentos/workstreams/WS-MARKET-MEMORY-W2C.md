@@ -38,7 +38,7 @@ do_not_redo:
   - Do not reject leftover mixed-case root names in the same PR as admitting canonical nested __case_v1 paths.
   - Do not backfill a missed W2C row or fabricate the first opportunity.
   - Do not weaken PIT, authority, or freshness validators to make the timer look armed.
-  - Do not edit app/deploy/update.sh or deploy tests owned by PR #5804.
+  - Do not edit app/deploy/update.sh or deploy tests that #5804 already merged.
 landmines:
   - Nested-path admission must round-trip artifact_relative_path. Any slash, mixed-case nested name, or hex that decodes to an uppercase ticker reopens traversal and identity-fold bugs.
   - Experience timer enabled-but-inactive is not proof the owner is healthy.
