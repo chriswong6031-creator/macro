@@ -26,6 +26,7 @@ waves:
   - id: FF-0
     title: Freshness truth and visible degradation
     status: awaiting_ci
+    pr: 5794
   - id: FF-1
     title: Next forensics wave (forbidden until FF-0 is merged and live-verified)
     status: todo

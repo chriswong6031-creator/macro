@@ -3,6 +3,7 @@ workstream: WS:FUNDAMENTAL-FORENSICS
 session: claude/ff-0-freshness-truth
 model: local
 ended_because: complete
+prs: [5794]
 
 mission: >
   FF-0 — Freshness Truth and Visible Degradation. Add the health contract and
