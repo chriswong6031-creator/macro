@@ -18,11 +18,20 @@ Hermetic by construction: every test passes ``root=tmp_path`` and
 from __future__ import annotations
 
 import json
+from unittest import mock
 
 import pandas as pd
 import pytest
 
+from engine import us_board_rank as ubr
 from engine import us_context_vector as ucv
+from engine import us_prophet_fusion as fus
+
+# The fusion suite OWNS the shape of a live US board row, and a shadow-column test
+# built on a hand-copied row would drift away from it the first time a family reads a
+# new field — so the row builder is imported rather than mirrored.  Cross-suite helper
+# imports are the house idiom here (see tests/test_action_board_hover_cards.py).
+from tests.test_us_prophet_fusion import _row as _board_row
 
 
 # --------------------------------------------------------------------------- #
@@ -539,6 +548,188 @@ class TestBuildRecords:
         by_ticker = {r["ticker"]: r for r in records}
         assert by_ticker["AAA"]["turnover_pctile_20d"] == 0.85
         assert by_ticker["AAA"]["turnover_pctile_60d"] is None
+
+
+class TestTheRetiredScorerAccruesUnderItsOwnName:
+    """The ``prophet_shadow_*`` family — the defect the fusion override shipped with.
+
+    WHAT WENT WRONG.  The Chairman override of 2026-08-15 made the C1 evidence-family
+    fusion the canonical US ranker and moved the retired five-leg heuristic's
+    ``components``/``points`` off the published ``prophet`` block onto ``prophet_shadow``.
+    This store reads its ten leg columns off ``prophet``, so from the FIRST fusion night
+    ``prophet_signal`` … ``prophet_quality_points`` were null on every US row — while the
+    values sat one field away, recomputed nightly and dropped.  Nothing red: the US suite
+    hand-built its ``prophet`` fixture (``TestBuildRecords`` above still does, correctly,
+    for the pre-fusion shape) and every ``prophet_signal`` assertion in ``tests/`` is
+    China-side, so no test could see a US board that no test ever built.
+
+    WHY THE BOARD IS SCORED, NOT TYPED.  Every fixture here goes through
+    ``us_board_rank.score_rows`` — the production path — because a hand-built ``prophet``
+    dict is precisely what let this ship silent: a fixture written from the same
+    assumption as the code agrees with it whether or not the assumption is true.  The
+    definition is read back with ``published_definition``, never from the module
+    constant, for the reason that function's own docstring gives: the constant is the
+    intent, the rows are the fact.
+
+    THE DECISION THIS PINS.  ``prophet_*`` stays NULL on a ``us_prophet_v3`` row — the
+    canonical ranker genuinely has no legs, and attributing the shadow's to it would be
+    misattribution — and the retired champion accrues under its own name instead, with
+    its composite AND its own rank, because a forward race between two rankers needs a
+    score and an order, not only a decomposition.
+    """
+
+    OFF_BOARD = "OFFB"
+
+    @staticmethod
+    def _pool():
+        """A genuine fusion board whose shadow DISAGREES with the canonical order.
+
+        Copied from ``test_us_prophet_fusion.TestTheBoardRanksByFusion._pool``: BROAD is
+        the fusion board's leader on breadth of evidence and the retired scorer's WORST
+        name on alpha, so a shadow column silently fed from the canonical block — or a
+        canonical column silently fed from the shadow — cannot coincidentally agree.
+        """
+        return [
+            # BROAD: every family speaks for it, but its alpha is the pool's worst.
+            _board_row("BROAD", alpha=0.1, off_high=-3.0, tier="T2", sue_z=2.0,
+                       smartmoney=True, insiders=3, gex="confirm", news=5),
+            # NARROW: the retired scorer's favourite — best alpha, nothing else.
+            _board_row("NARROW", alpha=9.0, off_high=-1.0, tier="T2", gex="neutral"),
+            _board_row("MID", alpha=4.0, off_high=-8.0, tier="T1", sue_z=1.0,
+                       smartmoney=True),
+        ]
+
+    @classmethod
+    def _stamp(cls, *, degraded=False):
+        """``(definition, board_rows, records_by_ticker)`` for one night.
+
+        ``degraded`` takes the fusion plane down the way a real bad night does — the
+        pass raises and ``score_rows`` publishes under ``FALLBACK_DEFINITION`` — rather
+        than by hand-stamping a definition string onto rows fusion actually ranked.
+
+        The verdict spine carries one name the board never scored (:data:`OFF_BOARD`),
+        because "null off the board" is half of what this family has to get right.
+        """
+        pool = cls._pool()
+        if degraded:
+            with mock.patch.object(fus, "fuse_board",
+                                   side_effect=RuntimeError("plane down")):
+                scored = ubr.score_rows(pool, board_asof="2026-08-15")
+        else:
+            scored = ubr.score_rows(pool, board_asof="2026-08-15")
+        defn = ubr.published_definition(scored)
+        board_rows = {r["ticker"]: r for r in scored}
+        verdicts = {ticker: _verdict() for ticker in board_rows}
+        verdicts[cls.OFF_BOARD] = _verdict(eligible=False, tier=None)
+        records = ucv.build_records(
+            verdicts, stamp_date="2026-08-15", board_definition=defn,
+            is_buyable=_is_buyable, board_rows=board_rows)
+        return defn, board_rows, {r["ticker"]: r for r in records}
+
+    def test_the_fixture_really_is_a_fusion_board(self):
+        """The premise check.  If the pool stops producing ``us_prophet_v3`` — a family
+        floor moves, the row shape drifts — every other test in this class is asserting
+        against the fallback path and proving nothing about the state it was written
+        for.  Read through ``published_definition``, never the module constant."""
+        defn, board_rows, _ = self._stamp()
+        assert defn == "us_prophet_v3"
+        assert board_rows["BROAD"]["prophet_shadow"]["version"] == "us_prophet_v2_shadow"
+
+    def test_the_canonical_legs_stay_null_on_a_fusion_row(self):
+        """NOT a bug being preserved — a misattribution being refused.
+
+        The C1 fusion score has no five-leg decomposition; its receipt is
+        ``prophet.fusion``.  Filling ``prophet_signal`` from the shadow would stamp the
+        retired heuristic's arithmetic under the canonical ranker's name, and the store
+        is append-only, so those rows would pool with genuine v2 rows forever.  Asserted
+        so a later change cannot quietly "repair" the nulls that way.
+        """
+        _defn, board_rows, records = self._stamp()
+        assert board_rows["BROAD"]["prophet"].get("components") is None
+        row = records["BROAD"]
+        for leg in ucv.SCORE_COMPONENTS:
+            assert row[f"prophet_{leg}"] is None
+            assert row[f"prophet_{leg}_points"] is None
+
+    def test_the_shadow_legs_are_read_off_the_shadow_block(self):
+        """The assertion that failed before this change: read off, never recomputed.
+
+        Compared against the row's OWN block rather than against literals — a literal
+        would pin today's arithmetic instead of the plumbing, and the arithmetic is
+        frozen elsewhere (``test_us_prophet_fusion.TestLegacyV2ByteParity``).
+        """
+        _defn, board_rows, records = self._stamp()
+        for ticker, board in board_rows.items():
+            block = board["prophet_shadow"]
+            row = records[ticker]
+            assert row["prophet_shadow_definition"] == block["version"]
+            assert row["prophet_shadow_score"] == block["score"]
+            assert row["prophet_shadow_score_rank"] == block["score_rank"]
+            for leg in ucv.SCORE_COMPONENTS:
+                assert row[f"prophet_shadow_{leg}"] == block["components"][leg]
+                assert row[f"prophet_shadow_{leg}_points"] == block["points"][leg]
+        # the champion's own ORDER, not the board's — the point of carrying score_rank
+        shadow_order = sorted(board_rows, key=lambda t:
+                              records[t]["prophet_shadow_score_rank"])
+        canonical_order = sorted(board_rows, key=lambda t: records[t]["score_rank"])
+        assert shadow_order != canonical_order
+
+    def test_a_measured_zero_survives_and_an_absence_stays_null(self):
+        """NULL IS NOT ZERO, both directions, on one board (#4485).
+
+        BROAD genuinely earns 0.0 on the shadow's ``edge`` and ``quality`` legs — it is
+        the pool's worst alpha and carries no quality confirmation — so those columns
+        must read 0.0, not null.  :data:`OFF_BOARD` was never scored at all, so every
+        column in the family must read null, not 0.0.  A store that collapses the two
+        cannot answer "did the retired scorer rate this name at the floor, or did it
+        never see it", which is the whole question a forward race asks.
+        """
+        _defn, board_rows, records = self._stamp()
+        # premise: the fixture really does produce measured zeros, else this is vacuous
+        measured = board_rows["BROAD"]["prophet_shadow"]["components"]
+        assert measured["edge"] == 0.0 and measured["quality"] == 0.0
+
+        row = records["BROAD"]
+        for leg in ("edge", "quality"):
+            assert row[f"prophet_shadow_{leg}"] is not None
+            assert row[f"prophet_shadow_{leg}"] == 0.0
+            assert row[f"prophet_shadow_{leg}_points"] is not None
+            assert row[f"prophet_shadow_{leg}_points"] == 0.0
+
+        off_board = records[self.OFF_BOARD]
+        for column in ucv.SHADOW_COLUMNS:
+            assert off_board[column] is None
+
+    def test_a_degraded_night_publishes_the_legs_and_carries_no_shadow(self):
+        """The path that was already correct, pinned so this change cannot break it.
+
+        When the fusion plane refuses, the retired scorer IS the published ranker and
+        the board stamps ``us_prophet_v2_fallback``.  Its arithmetic therefore belongs
+        in the ordinary ``prophet_*`` columns, and ``score_rows`` withholds
+        ``prophet_shadow`` on purpose — publishing the same number twice under two names
+        would hand a forward race a guaranteed tie and let it score that as an
+        observation.  Null here is the correct reading, not a gap.
+        """
+        defn, board_rows, records = self._stamp(degraded=True)
+        assert defn == ubr.FALLBACK_DEFINITION
+        assert "prophet_shadow" not in board_rows["BROAD"]
+
+        row = records["BROAD"]
+        block = board_rows["BROAD"]["prophet"]
+        for leg in ucv.SCORE_COMPONENTS:
+            assert row[f"prophet_{leg}"] == block["components"][leg]
+            assert row[f"prophet_{leg}_points"] == block["points"][leg]
+            assert row[f"prophet_{leg}"] is not None
+        for column in ucv.SHADOW_COLUMNS:
+            assert row[column] is None
+
+    def test_every_row_carries_the_whole_family_present_or_null(self):
+        """Same law as ``POOL_COLUMNS`` and ``HUB_COLUMNS``: a column that appears only
+        where the shadow ran cannot be told apart from a night nothing computed it."""
+        for degraded in (False, True):
+            _defn, _board_rows, records = self._stamp(degraded=degraded)
+            for row in records.values():
+                assert set(ucv.SHADOW_COLUMNS) <= set(row)
 
 
 class TestTelemetryColumns:

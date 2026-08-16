@@ -115,6 +115,44 @@ TIER_SCAN = "scan"
 #: already computes them.  Read off, never recomputed here.
 SCORE_COMPONENTS = ("signal", "entry", "edge", "runway", "quality")
 
+#: The RETIRED v2 scorer's own output, carried under its OWN name (fusion override,
+#: 2026-08-15).  Same read-off-never-recompute rule as the legs above.
+#:
+#: WHY THE SHADOW NEEDS ITS OWN COLUMN FAMILY.  The Chairman override made the C1
+#: evidence-family fusion the canonical US ranker (``us_board_rank.BOARD_DEFINITION``
+#: is ``us_prophet_v3``) and moved the five-leg heuristic's ``components``/``points``
+#: off the published ``prophet`` block onto ``prophet_shadow``.  The ``prophet_*`` legs
+#: directly above are read off ``prophet``, so on every ``us_prophet_v3`` row all ten of
+#: them are null — correctly, because the canonical ranker HAS no legs and attributing
+#: the shadow's to it would be misattribution.  Without this family the retired
+#: champion's nightly output is computed on every row and then dropped on the floor:
+#: the store's ten leg columns went null the first fusion night, and the numbers were
+#: sitting one field away the whole time.
+#:
+#: WHY THE COMPOSITE AND THE RANK ARE HERE, NOT ONLY THE FIVE LEGS.  ``prophet_score``,
+#: ``score_rank``, ``display_rank`` and ``featured`` are the CANONICAL ranker's numbers
+#: on a v3 night — the challenger's, by construction — so they cannot double as the
+#: champion's record, and a forward race between the two rankers needs the champion's
+#: score AND its own order, not merely a decomposition.  ``score_rank`` is the shadow's
+#: own ``(stage_rank, -score, ticker)`` position over the same pool, frozen onto the row
+#: by ``score_rows`` before the canonical sort precisely so it survives as a number
+#: rather than something a reader has to re-derive by re-sorting the artifact.
+#:
+#: NULL ON A DEGRADED NIGHT IS CORRECT, NOT A GAP.  When the fusion plane cannot be
+#: built the board publishes under ``us_prophet_v2_fallback`` and ``score_rows``
+#: WITHHOLDS ``prophet_shadow`` on purpose: there the retired scorer IS the published
+#: ranker, so the ordinary ``prophet_*`` legs carry its arithmetic and a shadow beside
+#: them would publish the same number twice under two names — and a forward race joining
+#: shadow rank against canonical rank would score a guaranteed tie as though it were an
+#: observation.  The definition stamp on the row is what tells the two nights apart.
+SHADOW_COLUMNS = (
+    "prophet_shadow_definition",
+    "prophet_shadow_score",
+    "prophet_shadow_score_rank",
+    *(f"prophet_shadow_{component}" for component in SCORE_COMPONENTS),
+    *(f"prophet_shadow_{component}_points" for component in SCORE_COMPONENTS),
+)
+
 #: DISPLAY-TIER candidate-pool columns (operator commission 2026-08-11).  The lossless
 #: four-lane partition of tonight's cascade-eligible pool, produced by
 #: :mod:`engine.us_candidate_lanes` and READ off this same night's board — this store
@@ -899,6 +937,9 @@ def build_records(
         prophet = _mapping(board.get("prophet"))
         components = _mapping(prophet.get("components"))
         points = _mapping(prophet.get("points"))
+        shadow = _mapping(board.get("prophet_shadow"))
+        shadow_components = _mapping(shadow.get("components"))
+        shadow_points = _mapping(shadow.get("points"))
         pulse = _mapping(theme_pulse.get(ticker))
         relay_row = _mapping(relay.get(ticker))
         event = _mapping(event_rows.get(ticker))
@@ -1069,6 +1110,27 @@ def build_records(
         for component in SCORE_COMPONENTS:
             record[f"prophet_{component}"] = _finite(components.get(component))
             record[f"prophet_{component}_points"] = _finite(points.get(component))
+        # The retired v2 scorer's own row, under its own name — see SHADOW_COLUMNS for
+        # why the champion needs a family separate from the canonical ranker's.  Every
+        # SHADOW_COLUMNS key lands on EVERY row, the same law the pool and hub families
+        # below and above follow: a column that appears only where the shadow ran cannot
+        # be told apart from a night nothing computed it.
+        #
+        # `_text`/`_finite` on an absent block yield None, which is the honest reading
+        # both for a degraded night (the shadow deliberately did not run separately) and
+        # for every name off the buy lane.  NEVER 0.0: a shadow leg that genuinely
+        # measured 0.0 — an `edge` leg at the bottom of tonight's alpha percentiles, a
+        # `quality` leg on a name with no confirmation — and a leg that was never
+        # computed are different facts, and this store is the permanent record of which
+        # one happened (#4485 null-not-false, the same rule the veto legs live under).
+        record["prophet_shadow_definition"] = _text(shadow.get("version"))
+        record["prophet_shadow_score"] = _finite(shadow.get("score"))
+        record["prophet_shadow_score_rank"] = _finite(shadow.get("score_rank"))
+        for component in SCORE_COMPONENTS:
+            record[f"prophet_shadow_{component}"] = _finite(
+                shadow_components.get(component))
+            record[f"prophet_shadow_{component}_points"] = _finite(
+                shadow_points.get(component))
         # ── candidate pool (display tier) ─────────────────────────────────
         # Every POOL_COLUMNS key is written on EVERY row, null off the pool: a column
         # that appears only for pool members cannot be told apart from a night the
@@ -1194,6 +1256,12 @@ def context_dimension_frame(
 
 _OBJECT_COLUMNS = (
     "stamp_date", "ticker", "tier", "name", "sector", "board_definition", "lane",
+    # The retired v2 scorer's own stamp (`us_prophet_v2_shadow`).  Board provenance,
+    # so it sits with `board_definition` — and it is exactly the case this tuple was
+    # written for: null on every off-board row AND on every degraded night, so a month
+    # in which the fusion plane never built has an all-null text column that would
+    # otherwise read back float and collide with the next month's strings.
+    "prophet_shadow_definition",
     "tier_cascade", "tier_sub", "gate_state", "gate_reason", "near_miss_reason",
     "signal_asof", "stage", "theme_membership_ids", "theme_primary_id",
     "theme_primary_name", "theme_label", "theme_reco", "relay_basket_id",

@@ -456,6 +456,7 @@ def _pool_row(
     """One published pool row.  Pure — never aliases or mutates the source row."""
     source = _mapping(board_row) or _mapping(meta_row)
     prophet = _mapping(_mapping(board_row).get("prophet"))
+    shadow = _mapping(_mapping(board_row).get("prophet_shadow"))
     signal = _mapping(source.get("signal"))
     reason_list = [str(r) for r in reasons] or ["off_board_reason_unknown"]
 
@@ -474,8 +475,17 @@ def _pool_row(
         "stage": _text(source.get("stage")),
         "selection_era": selection_era,
         # The full prophet block is deliberately NOT duplicated per row (its
-        # ``zero_score_authority`` list would repeat once per buy row); the score, its
-        # legs and the alpha percentile are what a graduation reader needs.
+        # ``zero_score_authority`` list would repeat once per buy row); the score, the
+        # alpha percentile and whatever legs the canonical block carries are what a
+        # graduation reader needs.
+        #
+        # ON A FUSION BOARD THE CANONICAL BLOCK HAS NO LEGS (Chairman override,
+        # 2026-08-15).  ``us_prophet_v3`` ranks by the C1 evidence-family fusion, whose
+        # decomposition is its ``fusion`` receipt, not a five-leg ``components`` map — so
+        # ``components``/``points`` come back EMPTY here on a v3 row.  They are kept
+        # verbatim rather than dropped because a sibling board and a degraded US night
+        # both still publish the five legs on this block, and because no consumer reads
+        # the inner shape.  The retired scorer's legs live on ``prophet_shadow`` below.
         "prophet": ({
             "score": _finite(prophet.get("score")),
             "components": deepcopy(dict(_mapping(prophet.get("components")))),
@@ -485,6 +495,25 @@ def _pool_row(
         # See the module docstring: a score computed on any pool other than the published
         # buy lane is a second ruler, so off-board rows carry no score and say so.
         "prophet_score_basis": "buy_lane_pool" if prophet else None,
+        # The RETIRED ``us_prophet_v2`` scorer, carried under its own name.  DISPLAY and
+        # FORWARD-GRADING ONLY, exactly like every other field in this module: it
+        # originates no plan, controls no Featured slot, sets no priority and moves no
+        # lane — ``_classify_buy_row`` above never reads it.  Carried so the champion the
+        # fusion override replaced keeps a gradeable score AND its own order beside the
+        # canonical one instead of vanishing on the night it was superseded.
+        #
+        # NULL BY DESIGN on a degraded night (``us_prophet_v2_fallback``) and on every
+        # off-board row.  On a degraded night ``score_rows`` withholds the block because
+        # the retired scorer IS the published ranker there, so a shadow beside it would
+        # publish the same number twice under two names; off the buy lane there is no
+        # score at all, for the cross-sectional reason the module docstring gives.
+        "prophet_shadow": ({
+            "version": _text(shadow.get("version")),
+            "score": _finite(shadow.get("score")),
+            "score_rank": _finite(shadow.get("score_rank")),
+            "components": deepcopy(dict(_mapping(shadow.get("components")))),
+            "points": deepcopy(dict(_mapping(shadow.get("points")))),
+        } if shadow else None),
     }
     return row
 
