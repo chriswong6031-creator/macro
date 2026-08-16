@@ -2055,6 +2055,7 @@ jobs:
           tests/test_capital_structure_api.py
           tests/test_capital_structure_source_identity.py
           tests/test_capital_structure_source_manifest.py
+          tests/test_capital_structure_ingestion_health.py
           tests/test_capital_structure_share_count_truth.py
           tests/test_capital_structure_companyfacts_authenticated_read.py
           tests/test_capital_structure_share_count_materializer_model.py
