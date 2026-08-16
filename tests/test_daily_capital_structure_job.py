@@ -70,6 +70,8 @@ CAPITAL_STRUCTURE_MODULES = {
         "term ledger — must not commit a partial ledger (#4640 SEC grammar)",
     "scripts.build_capital_structure_projection":
         "projection — canonical/public twin must stay byte-identical",
+    "scripts.check_capital_structure_health":
+        "ingestion-truth gate — selected filings with zero durable evidence must fail",
 }
 
 # The compilers that must stay fatal for their OWN checkpoint.  The two
@@ -79,6 +81,7 @@ FATAL_COMPILERS = (
     "scripts.compile_capital_structure_events",
     "scripts.compile_capital_structure_document_terms",
     "scripts.build_capital_structure_projection",
+    "scripts.check_capital_structure_health",
 )
 
 # Staged path -> the step ids in THIS job that produce it.
@@ -90,8 +93,8 @@ FATAL_COMPILERS = (
 # collector's ledger in THIS tree and fails closed unless the bytes match the
 # receipt `collect` stamped.
 CS_STAGED_PATH_PRODUCERS = {
-    "data/capital_structure": ("cs_handoff", "cs_spine", "cs_terms", "cs_projection"),
-    "site/capital-structure-data": ("cs_handoff", "cs_spine", "cs_terms", "cs_projection"),
+    "data/capital_structure": ("cs_handoff", "cs_spine", "cs_terms", "cs_projection", "cs_health"),
+    "site/capital-structure-data": ("cs_handoff", "cs_spine", "cs_terms", "cs_projection", "cs_health"),
 }
 CS_GATING_PRODUCERS = sorted(
     {sid for ids in CS_STAGED_PATH_PRODUCERS.values() for sid in ids}

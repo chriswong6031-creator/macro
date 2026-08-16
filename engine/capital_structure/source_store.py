@@ -14,6 +14,7 @@ from hashlib import sha256
 import logging
 import os
 from pathlib import Path
+from typing import Any
 
 from engine.research_vault.r2_store import BoundedStrictReadStore, LocalStore, R2Store, Store
 
@@ -102,15 +103,25 @@ class ContentAddressedSourceStore:
                 f"store_id {store_id!r} does not match backend {self.backend!r}"
             )
         self.store_id = store_id
+        self.last_failure: dict[str, Any] | None = None
 
     def put_verified(
         self, raw_bytes: bytes, *, media_type: str = "application/octet-stream"
     ) -> SourceReceipt | None:
+        self.last_failure = None
         if not isinstance(raw_bytes, bytes):
             raise TypeError("raw_bytes must be bytes")
         digest = sha256(raw_bytes).hexdigest()
         key = object_key_for_sha256(digest)
         if not self.store.put_bytes(key, raw_bytes, content_type=media_type):
+            inner = getattr(self.store, "last_put_error", None)
+            self.last_failure = _store_failure(
+                operation="PutObject",
+                reason="put-failed",
+                store_id=self.store_id,
+                exc=inner if isinstance(inner, BaseException) else None,
+                detail=None if inner else "put_bytes returned False",
+            )
             log.warning("capital_structure source-store defer key=%s reason=put-failed", key)
             return None
         try:
@@ -120,12 +131,24 @@ class ContentAddressedSourceStore:
                 key, expected_byte_length=len(raw_bytes), max_byte_length=len(raw_bytes),
             )
         except Exception as exc:  # noqa: BLE001 - no legacy fail-open readback fallback
+            self.last_failure = _store_failure(
+                operation="GetObject",
+                reason="bounded-readback-failed",
+                store_id=self.store_id,
+                exc=exc,
+            )
             log.warning(
                 "capital_structure source-store defer key=%s reason=bounded-readback-failed: %s",
                 key, exc,
             )
             return None
         if readback != raw_bytes or sha256(readback or b"").hexdigest() != digest:
+            self.last_failure = _store_failure(
+                operation="GetObject",
+                reason="readback-mismatch",
+                store_id=self.store_id,
+                detail="readback bytes or digest did not match the put payload",
+            )
             log.warning("capital_structure source-store defer key=%s reason=readback-mismatch", key)
             return None
         return SourceReceipt(
@@ -185,46 +208,164 @@ class ContentAddressedSourceStore:
         return raw
 
 
+WRITE_PROBE_PAYLOAD = b"capital-structure-write-probe/v1\n"
+
+
+def http_status_from_error(exc: BaseException | None) -> int | None:
+    """Extract an HTTP status from a boto/requests exception without guessing."""
+    if exc is None:
+        return None
+    response = getattr(exc, "response", None)
+    if isinstance(response, dict):
+        meta = response.get("ResponseMetadata") or {}
+        status = meta.get("HTTPStatusCode")
+        if isinstance(status, int) and not isinstance(status, bool):
+            return status
+    status = getattr(response, "status_code", None)
+    if isinstance(status, int) and not isinstance(status, bool):
+        return status
+    return None
+
+
+def _store_failure(
+    *,
+    operation: str,
+    reason: str,
+    store_id: str,
+    exc: BaseException | None = None,
+    detail: str | None = None,
+) -> dict[str, Any]:
+    message = detail
+    error_class = reason
+    if exc is not None:
+        error_class = type(exc).__name__
+        message = f"{type(exc).__name__}: {exc}"
+    return {
+        "operation": operation,
+        "reason": reason,
+        "store_id": store_id,
+        "error_class": error_class,
+        "error": message or reason,
+        "http_status": http_status_from_error(exc),
+    }
+
+
+def format_store_failure(failure: dict[str, Any] | None) -> str:
+    """Stable collector error string carrying store operation and HTTP status."""
+    if not failure:
+        return "source-store write/readback verification failed"
+    status = failure.get("http_status")
+    status_bit = f" http_status={status}" if status is not None else ""
+    return (
+        "source-store write/readback verification failed "
+        f"(operation={failure.get('operation')} store_id={failure.get('store_id')}"
+        f"{status_bit} reason={failure.get('reason')}): {failure.get('error')}"
+    )
+
+
+def _probe_writable(store: ContentAddressedSourceStore) -> bool:
+    """Return True only when put+readback of a tiny probe object succeeds."""
+    try:
+        return store.put_verified(WRITE_PROBE_PAYLOAD, media_type="text/plain") is not None
+    except Exception as exc:  # noqa: BLE001 - a probe must never abort store selection
+        log.warning(
+            "capital_structure source-store write probe raised store_id=%s: %s",
+            store.store_id, exc,
+        )
+        return False
+
+
 def build_source_store(
-    *, local_dir: str | Path | None = None
+    *, local_dir: str | Path | None = None, require_writable: bool = False
 ) -> ContentAddressedSourceStore | None:
     """Build the nightly SEC evidence store.
 
     Local storage is explicit. Production prefers a dedicated bucket but can
     use the existing private-research bucket or the main R2 bucket so Wave 1
     does not require a new secret before it can accrue public SEC evidence.
+
+    ``require_writable=True`` (the collector write path) probes put+readback
+    and falls through when the preferred store is constructed but cannot
+    PutObject. Measured 2026-08-08→08-14: ``R2_CAPITAL_STRUCTURE_BUCKET`` was
+    set, the client constructed, and every PutObject returned AccessDenied,
+    so preferring dedicated without a write probe froze the source ledger
+    while workflows stayed green.
     """
     resolved_local = local_dir or os.environ.get("CAPITAL_STRUCTURE_LOCAL_STORE")
     if resolved_local:
-        return ContentAddressedSourceStore(
+        local = ContentAddressedSourceStore(
             LocalStore(resolved_local), backend="local", store_id=STORE_ID_LOCAL
         )
+        if not require_writable or _probe_writable(local):
+            return local
+        return None
+
+    candidates: list[tuple[str, ContentAddressedSourceStore]] = []
     capital_bucket = os.environ.get("R2_CAPITAL_STRUCTURE_BUCKET")
     if capital_bucket:
-        store = R2Store(capital_bucket, client=_capital_structure_r2_client())
-        if not store.available:
+        capital = R2Store(capital_bucket, client=_capital_structure_r2_client())
+        if capital.available:
+            candidates.append((
+                STORE_ID_DEDICATED_R2,
+                ContentAddressedSourceStore(
+                    capital, backend="r2", store_id=STORE_ID_DEDICATED_R2
+                ),
+            ))
+        else:
             log.info(
-                "R2_CAPITAL_STRUCTURE_BUCKET set but capital/shared R2 creds absent -- no store"
+                "R2_CAPITAL_STRUCTURE_BUCKET set but capital/shared R2 creds absent "
+                "-- trying the next configured store"
             )
-            return None
-        return ContentAddressedSourceStore(
-            store, backend="r2", store_id=STORE_ID_DEDICATED_R2
-        )
 
     research_bucket = os.environ.get("R2_RESEARCH_BUCKET")
     if research_bucket:
-        store = R2Store(research_bucket)
-    else:
-        shared_bucket = os.environ.get("R2_BUCKET")
-        if not shared_bucket:
-            return None
-        # R2Store's default client deliberately prefers R2_RESEARCH_* credentials.
-        # The main bucket fallback must use the shared R2_* account explicitly.
-        store = R2Store(shared_bucket, client=_shared_r2_client())
-    if not store.available:
-        return None
-    store_id = STORE_ID_RESEARCH_R2 if research_bucket else STORE_ID_SHARED_R2
-    return ContentAddressedSourceStore(store, backend="r2", store_id=store_id)
+        research = R2Store(research_bucket)
+        if research.available:
+            candidates.append((
+                STORE_ID_RESEARCH_R2,
+                ContentAddressedSourceStore(
+                    research, backend="r2", store_id=STORE_ID_RESEARCH_R2
+                ),
+            ))
+
+    shared_bucket = os.environ.get("R2_BUCKET")
+    if shared_bucket:
+        shared = R2Store(shared_bucket, client=_shared_r2_client())
+        if shared.available:
+            candidates.append((
+                STORE_ID_SHARED_R2,
+                ContentAddressedSourceStore(
+                    shared, backend="r2", store_id=STORE_ID_SHARED_R2
+                ),
+            ))
+
+    for store_id, wrapper in candidates:
+        if not require_writable:
+            return wrapper
+        if _probe_writable(wrapper):
+            if store_id != STORE_ID_DEDICATED_R2 and capital_bucket:
+                print(
+                    "::warning title=capital-structure-store-fallback::"
+                    f"preferred dedicated store failed the write probe; "
+                    f"using {store_id} so SEC evidence can still be retained",
+                    flush=True,
+                )
+            return wrapper
+        log.warning(
+            "capital_structure source-store %s failed write probe — trying next store",
+            store_id,
+        )
+        print(
+            f"::warning title=capital-structure-store-unwritable::"
+            f"{store_id} put/readback probe failed"
+            + (
+                f": {format_store_failure(wrapper.last_failure)}"
+                if wrapper.last_failure
+                else ""
+            ),
+            flush=True,
+        )
+    return None
 
 
 def build_source_stores(
