@@ -15,7 +15,8 @@ import json
 import os
 import re
 import stat
-from collections.abc import Mapping
+import weakref
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -81,6 +82,22 @@ def _fail(message: str) -> NoReturn:
     raise LocalReceiptError(message)
 
 
+def _freeze(value: object) -> Any:
+    if isinstance(value, Mapping):
+        return MappingProxyType({key: _freeze(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(_freeze(item) for item in value)
+    return value
+
+
+def _thaw(value: object) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _thaw(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_thaw(item) for item in value]
+    return value
+
+
 def _canonical_bytes(value: object) -> bytes:
     try:
         return json.dumps(
@@ -95,9 +112,10 @@ def _canonical_bytes(value: object) -> bytes:
 
 
 def _mapping(value: object, fields: set[str], *, label: str) -> dict[str, Any]:
-    if not isinstance(value, Mapping) or set(value) != fields:
+    thawed = _thaw(value) if isinstance(value, Mapping) else value
+    if type(thawed) is not dict or set(thawed) != fields:
         _fail(f"{label} fields are not canonical")
-    return copy.deepcopy(dict(value))
+    return copy.deepcopy(thawed)
 
 
 def _digest(value: object, *, label: str) -> str:
@@ -148,11 +166,51 @@ class VerifiedPublication:
     """One authenticated historical publication and current monotone fence."""
 
     root_identity: RootIdentity
-    high_water: dict[str, Any]
-    descriptor: dict[str, Any]
-    head: dict[str, Any]
-    audit: dict[str, Any]
-    references: tuple[dict[str, Any], ...]
+    high_water: Mapping[str, Any]
+    descriptor: Mapping[str, Any]
+    head: Mapping[str, Any]
+    audit: Mapping[str, Any]
+    references: tuple[Mapping[str, Any], ...]
+
+
+_AUTHENTICATED_IDS: set[int] = set()
+_HEAD_MIRRORS = (
+    "publication_id",
+    "published_at",
+    "deployed_commit",
+    "audit_id",
+    "audit_sha256",
+    "audit_object_key",
+    "reference_set_sha256",
+    "reference_set_object_sha256",
+    "reference_set_object_key",
+    "reference_count",
+    "evidence_policy",
+    "authority",
+)
+_FILE_IDENTITY = (
+    "st_dev",
+    "st_ino",
+    "st_nlink",
+    "st_uid",
+    "st_gid",
+    "st_size",
+    "st_mtime_ns",
+)
+
+
+def _file_identity(metadata: os.stat_result) -> tuple[Any, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        stat.S_IFMT(metadata.st_mode),
+        stat.S_IMODE(metadata.st_mode),
+        metadata.st_uid,
+        metadata.st_gid,
+        metadata.st_nlink,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+    )
 
 
 class _RootReader:
@@ -212,7 +270,7 @@ class _RootReader:
             _fail("receipt object path is not normalized and relative")
         return parts
 
-    def read_bytes(self, relative: str, *, limit: int, label: str) -> bytes:
+    def _open_relative_file(self, relative: str, *, label: str) -> int:
         parts = self._relative_parts(relative)
         directory = os.dup(self.fd)
         directory_flags = (
@@ -238,57 +296,58 @@ class _RootReader:
                 | getattr(os, "O_NOFOLLOW", 0)
             )
             try:
-                descriptor = os.open(parts[-1], file_flags, dir_fd=directory)
+                return os.open(parts[-1], file_flags, dir_fd=directory)
             except OSError as exc:
                 raise LocalReceiptError(
                     f"{label} is missing or symlink-substituted"
                 ) from exc
-            try:
-                before = os.fstat(descriptor)
-                if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
-                    _fail(f"{label} is not a single-link regular file")
-                if stat.S_IMODE(before.st_mode) != 0o600:
-                    _fail(f"{label} mode is not exactly 0600")
-                if (before.st_uid, before.st_gid) != self.expected_owner:
-                    _fail(f"{label} owner differs from the receipt root")
-                if before.st_size > limit:
-                    _fail(f"{label} exceeds its byte bound")
-                chunks: list[bytes] = []
-                remaining = limit + 1
-                while remaining:
-                    chunk = os.read(descriptor, min(128 * 1024, remaining))
-                    if not chunk:
-                        break
-                    chunks.append(chunk)
-                    remaining -= len(chunk)
-                body = b"".join(chunks)
-                if len(body) > limit:
-                    _fail(f"{label} exceeds its byte bound")
-                after = os.fstat(descriptor)
-                if (
-                    not stat.S_ISREG(after.st_mode)
-                    or after.st_nlink != 1
-                    or stat.S_IMODE(after.st_mode) != 0o600
-                    or (after.st_uid, after.st_gid) != self.expected_owner
-                ):
-                    _fail(f"{label} metadata changed during verification")
-                fence = (
-                    "st_dev",
-                    "st_ino",
-                    "st_nlink",
-                    "st_uid",
-                    "st_gid",
-                    "st_size",
-                    "st_mtime_ns",
-                    "st_mode",
-                )
-                if any(getattr(before, field) != getattr(after, field) for field in fence):
-                    _fail(f"{label} changed during verification")
-                return body
-            finally:
-                os.close(descriptor)
         finally:
             os.close(directory)
+
+    def _require_regular_file(self, metadata: os.stat_result, *, label: str) -> None:
+        if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+            _fail(f"{label} is not a single-link regular file")
+        if stat.S_IMODE(metadata.st_mode) != 0o600:
+            _fail(f"{label} mode is not exactly 0600")
+        if (metadata.st_uid, metadata.st_gid) != self.expected_owner:
+            _fail(f"{label} owner differs from the receipt root")
+
+    def read_bytes(self, relative: str, *, limit: int, label: str) -> bytes:
+        descriptor = self._open_relative_file(relative, label=label)
+        try:
+            before = os.fstat(descriptor)
+            self._require_regular_file(before, label=label)
+            if before.st_size > limit:
+                _fail(f"{label} exceeds its byte bound")
+            chunks: list[bytes] = []
+            remaining = limit + 1
+            while remaining:
+                chunk = os.read(descriptor, min(128 * 1024, remaining))
+                if not chunk:
+                    break
+                chunks.append(chunk)
+                remaining -= len(chunk)
+            body = b"".join(chunks)
+            if len(body) > limit:
+                _fail(f"{label} exceeds its byte bound")
+            after = os.fstat(descriptor)
+            self._require_regular_file(after, label=label)
+            if any(
+                getattr(before, field) != getattr(after, field)
+                for field in (*_FILE_IDENTITY, "st_mode")
+            ):
+                _fail(f"{label} changed during verification")
+            resolved = self._open_relative_file(relative, label=label)
+            try:
+                path_stat = os.fstat(resolved)
+                self._require_regular_file(path_stat, label=label)
+                if _file_identity(path_stat) != _file_identity(after):
+                    _fail(f"{label} path identity changed during verification")
+            finally:
+                os.close(resolved)
+            return body
+        finally:
+            os.close(descriptor)
 
     def read_json(
         self, relative: str, *, limit: int, label: str
@@ -307,6 +366,18 @@ class _RootReader:
         for field in ("st_dev", "st_ino", "st_uid", "st_gid", "st_mode"):
             if getattr(current, field) != getattr(self.metadata, field):
                 _fail("receipt root identity changed during verification")
+
+    def assert_configured_path_is_this_root(self) -> None:
+        self.assert_root_unchanged()
+        reopened = self._open_absolute_directory(self.path)
+        try:
+            current = os.fstat(reopened)
+            self._require_directory(current, label="receipt root")
+            for field in ("st_dev", "st_ino", "st_uid", "st_gid", "st_mode"):
+                if getattr(current, field) != getattr(self.metadata, field):
+                    _fail("receipt root path no longer resolves to the attested directory")
+        finally:
+            os.close(reopened)
 
     def close(self) -> None:
         os.close(self.fd)
@@ -374,7 +445,7 @@ def attest_root(
         root, expected_uid=expected_uid, expected_gid=expected_gid
     )
     try:
-        reader.assert_root_unchanged()
+        reader.assert_configured_path_is_this_root()
         return identity
     finally:
         reader.close()
@@ -614,6 +685,50 @@ def _reference_set(payload: object) -> tuple[dict[str, Any], ...]:
     return tuple(copy.deepcopy(references))
 
 
+def _bind_authenticated_objects(
+    descriptor: Mapping[str, Any],
+    head: Mapping[str, Any],
+    audit: Mapping[str, Any],
+    references: Sequence[Mapping[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any], tuple[dict[str, Any], ...]]:
+    clean_descriptor = _validate_descriptor(descriptor)
+    try:
+        clean_head = upstream_store.validate_head(_thaw(head))
+    except upstream_store.OptionsMarketMemoryReceiptStoreError as exc:
+        raise LocalReceiptError("historical upstream HEAD is malformed") from exc
+    if any(clean_descriptor[field] != clean_head[field] for field in _HEAD_MIRRORS):
+        _fail("publication descriptor conflicts with historical upstream HEAD")
+    thawed_references = _thaw(list(references))
+    if type(thawed_references) is not list:
+        _fail("historical reference-set references are malformed")
+    try:
+        reference_body = context_bridge.canonical_reference_set_bytes(thawed_references)
+    except context_bridge.OptionsMarketMemoryContextError as exc:
+        raise LocalReceiptError("historical reference-set contract failed") from exc
+    if hashlib.sha256(reference_body).hexdigest() != clean_descriptor["reference_set_sha256"]:
+        _fail("historical reference-set identity differs from its references")
+    if len(thawed_references) != clean_descriptor["reference_count"]:
+        _fail("historical reference-set count differs from its references")
+    try:
+        clean_audit = context_bridge.validate_audit_receipt(
+            _thaw(audit), references=thawed_references
+        )
+    except context_bridge.OptionsMarketMemoryContextError as exc:
+        raise LocalReceiptError("historical audit contract failed") from exc
+    if (
+        clean_audit["audit_id"] != clean_head["audit_id"]
+        or clean_audit["audited_at"] != clean_head["published_at"]
+        or clean_audit["reference_set_sha256"] != clean_head["reference_set_sha256"]
+        or len(thawed_references) != clean_head["reference_count"]
+    ):
+        _fail("historical audit/reference objects conflict with upstream HEAD")
+    _authority(clean_head["authority"], label="historical upstream HEAD")
+    _authority(clean_audit["authority"], label="historical audit")
+    for reference in thawed_references:
+        _authority(reference["authority"], label="historical reference")
+    return clean_head, clean_audit, tuple(copy.deepcopy(thawed_references))
+
+
 def _authenticate_publication(
     reader: _RootReader, descriptor: Mapping[str, Any]
 ) -> tuple[dict[str, Any], dict[str, Any], tuple[dict[str, Any], ...]]:
@@ -624,27 +739,6 @@ def _authenticate_publication(
     )
     if hashlib.sha256(head_body).hexdigest() != descriptor["upstream_head_sha256"]:
         _fail("historical upstream HEAD was rewritten")
-    try:
-        head = upstream_store.validate_head(head_payload)
-    except upstream_store.OptionsMarketMemoryReceiptStoreError as exc:
-        raise LocalReceiptError("historical upstream HEAD is malformed") from exc
-    mirrors = {
-        "publication_id",
-        "published_at",
-        "deployed_commit",
-        "audit_id",
-        "audit_sha256",
-        "audit_object_key",
-        "reference_set_sha256",
-        "reference_set_object_sha256",
-        "reference_set_object_key",
-        "reference_count",
-        "evidence_policy",
-        "authority",
-    }
-    if any(descriptor[field] != head[field] for field in mirrors):
-        _fail("publication descriptor conflicts with historical upstream HEAD")
-
     reference_payload, reference_body = reader.read_json(
         descriptor["reference_set_object_key"],
         limit=_MAX_REFERENCE_SET_BYTES,
@@ -662,24 +756,9 @@ def _authenticate_publication(
     )
     if hashlib.sha256(audit_body).hexdigest() != descriptor["audit_sha256"]:
         _fail("historical audit object was rewritten")
-    try:
-        audit = context_bridge.validate_audit_receipt(
-            audit_payload, references=references
-        )
-    except context_bridge.OptionsMarketMemoryContextError as exc:
-        raise LocalReceiptError("historical audit contract failed") from exc
-    if (
-        audit["audit_id"] != head["audit_id"]
-        or audit["audited_at"] != head["published_at"]
-        or audit["reference_set_sha256"] != head["reference_set_sha256"]
-        or len(references) != head["reference_count"]
-    ):
-        _fail("historical audit/reference objects conflict with upstream HEAD")
-    _authority(head["authority"], label="historical upstream HEAD")
-    _authority(audit["authority"], label="historical audit")
-    for reference in references:
-        _authority(reference["authority"], label="historical reference")
-    return head, audit, references
+    return _bind_authenticated_objects(
+        descriptor, head_payload, audit_payload, references
+    )
 
 
 def read_publication(
@@ -734,34 +813,52 @@ def read_publication(
             "HEAD.json", limit=_MAX_LOCAL_HEAD_BYTES, label="local receipt HEAD"
         ) != local_head_body:
             _fail("local receipt HEAD changed during verification")
-        reader.assert_root_unchanged()
-        return VerifiedPublication(
+        reader.assert_configured_path_is_this_root()
+        publication = VerifiedPublication(
             root_identity=identity,
-            high_water=high_water,
-            descriptor=copy.deepcopy(descriptor),
-            head=upstream_head,
-            audit=audit,
-            references=references,
+            high_water=_freeze(high_water),
+            descriptor=_freeze(descriptor),
+            head=_freeze(upstream_head),
+            audit=_freeze(audit),
+            references=_freeze(references),
         )
+        ident = id(publication)
+        _AUTHENTICATED_IDS.add(ident)
+        weakref.finalize(publication, _AUTHENTICATED_IDS.discard, ident)
+        return publication
     finally:
         reader.close()
 
 
+def _require_authenticated_publication(publication: object) -> VerifiedPublication:
+    if (
+        type(publication) is not VerifiedPublication
+        or id(publication) not in _AUTHENTICATED_IDS
+    ):
+        _fail("an authenticated historical publication is required")
+    return publication
+
+
 def read_exact_reference(
-    publication: VerifiedPublication,
+    publication: object,
     *,
     owner_schema: str,
     owner_id: str,
     requested_as_of: str,
     source_record_sha256: str,
-) -> dict[str, Any]:
+) -> Mapping[str, Any]:
     """Return one exact owner/as-of/source-hash reference with no fallback."""
 
-    if not isinstance(publication, VerifiedPublication):
-        _fail("an authenticated historical publication is required")
+    authenticated = _require_authenticated_publication(publication)
+    _head, _audit, references = _bind_authenticated_objects(
+        authenticated.descriptor,
+        authenticated.head,
+        authenticated.audit,
+        authenticated.references,
+    )
     matches = [
         row
-        for row in publication.references
+        for row in references
         if row["owner"]["schema"] == owner_schema and row["owner"]["id"] == owner_id
     ]
     if len(matches) != 1:
@@ -774,7 +871,7 @@ def read_exact_reference(
         _fail("exact requested-as-of binding failed")
     if reference["owner"]["record_sha256"] != source_record_sha256:
         _fail("exact owner source hash binding failed")
-    return copy.deepcopy(reference)
+    return _freeze(reference)
 
 
 __all__ = [

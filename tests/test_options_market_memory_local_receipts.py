@@ -3,6 +3,8 @@ import hashlib
 import json
 import os
 import shutil
+from collections.abc import Mapping
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -509,7 +511,82 @@ def test_hardlink_added_during_read_is_refused(
         return body
 
     monkeypatch.setattr(local_receipts.os, "read", add_link_after_read)
-    with pytest.raises(local_receipts.LocalReceiptError, match="metadata changed"):
+    with pytest.raises(local_receipts.LocalReceiptError, match="single-link"):
+        local_receipts.read_publication(root, expected_root=identity)
+
+
+def _json_copy(value: object) -> Any:
+    if isinstance(value, Mapping):
+        return {key: _json_copy(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_json_copy(item) for item in value]
+    return copy.deepcopy(value)
+
+
+def _restore_private_modes(root: Path) -> None:
+    for path in (root, *sorted(root.rglob("*"))):
+        path.chmod(0o700 if path.is_dir() else 0o600)
+
+
+def test_rename_and_replace_of_immutable_object_is_refused(
+    receipt_store: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = receipt_store["local_root"]
+    identity = _attest(root)
+    publication = local_receipts.read_publication(root, expected_root=identity)
+    key = publication.descriptor["audit_object_key"]
+    target = root / key
+    original = target.stat()
+    real_read = os.read
+    replaced = False
+
+    def replace_after_read(descriptor: int, size: int) -> bytes:
+        nonlocal replaced
+        body = real_read(descriptor, size)
+        if replaced:
+            return body
+        try:
+            metadata = os.fstat(descriptor)
+        except OSError:
+            return body
+        if (metadata.st_dev, metadata.st_ino) != (original.st_dev, original.st_ino):
+            return body
+        relocated = target.with_name("relocated-audit.json")
+        target.rename(relocated)
+        _write_private(root, key, relocated.read_bytes())
+        replaced = True
+        return body
+
+    monkeypatch.setattr(local_receipts.os, "read", replace_after_read)
+    with pytest.raises(local_receipts.LocalReceiptError, match="path identity"):
+        local_receipts.read_publication(root, expected_root=identity)
+
+
+def test_rename_and_replace_of_root_is_refused(
+    receipt_store: dict[str, Any], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = receipt_store["local_root"]
+    identity = _attest(root)
+    real_read = os.read
+    replaced = False
+
+    def replace_root_after_read(descriptor: int, size: int) -> bytes:
+        nonlocal replaced
+        body = real_read(descriptor, size)
+        if replaced:
+            return body
+        original = root.with_name("original-local-w1a")
+        root.rename(original)
+        shutil.copytree(original, root, copy_function=shutil.copy2)
+        _restore_private_modes(root)
+        replaced = True
+        return body
+
+    monkeypatch.setattr(local_receipts.os, "read", replace_root_after_read)
+    with pytest.raises(
+        local_receipts.LocalReceiptError,
+        match="no longer resolves to the attested directory",
+    ):
         local_receipts.read_publication(root, expected_root=identity)
 
 
@@ -587,9 +664,107 @@ def test_local_contract_schema_validates_every_persisted_object(
         _read_json(root / local_receipts.ROOT_MARKER),
         _read_json(root / "HEAD.json"),
         _read_json(root / descriptor_key),
-        publication.high_water,
+        _json_copy(publication.high_water),
     ):
         validator.validate(value)
     fractional = _read_json(root / "HEAD.json")
     fractional["current_published_at"] = "2026-08-12T15:00:00.1Z"
     assert not validator.is_valid(fractional)
+
+
+def test_returned_publication_is_recursively_immutable(
+    receipt_store: dict[str, Any],
+) -> None:
+    root = receipt_store["local_root"]
+    identity = _attest(root)
+    publication = local_receipts.read_publication(root, expected_root=identity)
+    with pytest.raises(TypeError):
+        publication.high_water["sequence"] = 99  # type: ignore[index]
+    with pytest.raises(TypeError):
+        publication.descriptor["reference_count"] = 0  # type: ignore[index]
+    with pytest.raises(TypeError):
+        publication.head["authority"]["may_trade"] = True  # type: ignore[index]
+    with pytest.raises(TypeError):
+        publication.audit["source_artifacts"][0]["sha256"] = "f" * 64  # type: ignore[index]
+    with pytest.raises(TypeError):
+        publication.references[0]["owner"]["record_sha256"] = "f" * 64  # type: ignore[index]
+    bound = local_receipts.read_exact_reference(
+        publication,
+        owner_schema=receipt_store["reference"]["owner"]["schema"],
+        owner_id=receipt_store["reference"]["owner"]["id"],
+        requested_as_of=receipt_store["reference"]["owner"]["requested_as_of"],
+        source_record_sha256=receipt_store["reference"]["owner"]["record_sha256"],
+    )
+    with pytest.raises(TypeError):
+        bound["owner"]["record_sha256"] = "f" * 64  # type: ignore[index]
+
+
+def test_caller_constructed_and_mutated_publications_are_not_authenticated(
+    receipt_store: dict[str, Any],
+) -> None:
+    root = receipt_store["local_root"]
+    identity = _attest(root)
+    authentic = local_receipts.read_publication(root, expected_root=identity)
+    reference = receipt_store["reference"]
+    exact_kwargs = {
+        "owner_schema": reference["owner"]["schema"],
+        "owner_id": reference["owner"]["id"],
+        "requested_as_of": reference["owner"]["requested_as_of"],
+        "source_record_sha256": reference["owner"]["record_sha256"],
+    }
+
+    forged_row = _json_copy(authentic.references[0])
+    forged_row["owner"]["record_sha256"] = "f" * 64
+    forged = local_receipts.VerifiedPublication(
+        root_identity=authentic.root_identity,
+        high_water=_json_copy(authentic.high_water),
+        descriptor=_json_copy(authentic.descriptor),
+        head=_json_copy(authentic.head),
+        audit=_json_copy(authentic.audit),
+        references=(forged_row,),
+    )
+    assert type(forged) is local_receipts.VerifiedPublication
+    with pytest.raises(
+        local_receipts.LocalReceiptError,
+        match="authenticated historical publication",
+    ):
+        local_receipts.read_exact_reference(
+            forged,
+            owner_schema=forged_row["owner"]["schema"],
+            owner_id=forged_row["owner"]["id"],
+            requested_as_of=forged_row["owner"]["requested_as_of"],
+            source_record_sha256="f" * 64,
+        )
+
+    consistent = local_receipts.VerifiedPublication(
+        root_identity=authentic.root_identity,
+        high_water=_json_copy(authentic.high_water),
+        descriptor=_json_copy(authentic.descriptor),
+        head=_json_copy(authentic.head),
+        audit=_json_copy(authentic.audit),
+        references=tuple(_json_copy(row) for row in authentic.references),
+    )
+    with pytest.raises(
+        local_receipts.LocalReceiptError,
+        match="authenticated historical publication",
+    ):
+        local_receipts.read_exact_reference(consistent, **exact_kwargs)
+
+    replaced = replace(
+        authentic,
+        references=(forged_row,),
+    )
+    with pytest.raises(
+        local_receipts.LocalReceiptError,
+        match="authenticated historical publication",
+    ):
+        local_receipts.read_exact_reference(
+            replaced,
+            owner_schema=forged_row["owner"]["schema"],
+            owner_id=forged_row["owner"]["id"],
+            requested_as_of=forged_row["owner"]["requested_as_of"],
+            source_record_sha256="f" * 64,
+        )
+
+    bound = local_receipts.read_exact_reference(authentic, **exact_kwargs)
+    assert bound == reference

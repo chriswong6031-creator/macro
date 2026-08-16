@@ -115,9 +115,14 @@ errors, never abstention-shaped evidence invented by this reader.
 
 All path traversal and object reads are rooted in persistent `O_NOFOLLOW`
 directory descriptors. File identity is fenced before and after each bounded
-read; marker, local HEAD, and root identity are rechecked before return. The
-reader exposes no publish or repair function and performs no filesystem
-mutation.
+read, then re-resolved from the anchored root so a rename-and-replace at the
+original path cannot keep the open descriptor. Marker, local HEAD, and the
+configured absolute root path are reopened and compared before return.
+Returned authenticated structures are recursively immutable; exact-reference
+extraction revalidates the canonical reference-set, audit, historical HEAD,
+and descriptor mirrors and does not treat caller construction as
+authentication. The reader exposes no publish or repair function and performs
+no filesystem mutation.
 
 Malformed or conflicting local HEAD, rollback, root substitution, symlink or
 hardlink substitution, owner/mode drift, missing objects, omitted descriptors,

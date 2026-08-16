@@ -744,8 +744,17 @@ jobs:
       # equivalence pins dark. It adds no wheel (pandas/numpy/pyarrow already on this
       # job's install line) and no data/ or network dependency: every case runs on
       # tmp_path parquet and synthetic frames.
+      #
+      # W5 HEARTBEAT (2026-08-16) joins the SAME step: tests/test_entry_radar_w5_
+      # heartbeat.py pins the replay runner's `[phase] k/N (elapsed Xs)` liveness
+      # lines — stderr-only (stdout carries the receipt contract), both thresholds
+      # firing independently, a broken stream never raising out of a loop, and the
+      # five instrumented phases named by construction site so a deleted call site
+      # reds instead of going quiet. Hermetic and dependency-free: StringIO streams
+      # plus one tmp_path call into the real `_finalize_candidates` with an empty
+      # candidate list. 15 tests in ~1.6s, no new wheel.
       - name: entry-radar W1+W2+W3+W4+W5 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py -q
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
@@ -1211,6 +1220,7 @@ jobs:
       - "engine/options_issue_desk.py"
       - "engine/options_ivspread.py"
       - "engine/options_market_memory_context.py"
+      - "engine/options_market_memory_local_receipts.py"
       - "engine/options_market_memory_receipt_store.py"
       - "engine/options_matrix.py"
       - "engine/options_signal_campaign.py"
@@ -1352,6 +1362,7 @@ jobs:
       - "tests/test_options_issue_desk_api.py"
       - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_options_matrix.py"
+      - "tests/test_options_market_memory_local_receipts.py"
       - "tests/test_options_signal_campaign.py"
       - "tests/test_options_signal_episode.py"
       - "tests/test_options_sparse_selector_prereg.py"
@@ -1402,7 +1413,8 @@ jobs:
         run: >-
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
-          tests/test_private_auth_dict.py -q -rs
+          tests/test_private_auth_dict.py
+          tests/test_options_market_memory_local_receipts.py -q -rs
       - name: sparse selector sealed runtime carrier + bounded paper-only canary runner
         run: >-
           python -m pytest
@@ -1926,6 +1938,12 @@ jobs:
       #                this lane's US files prove it stays byte-unchanged), and
       #                lib.cn_calendar.sessions_behind. Same package, same deps
       #                (pandas via armed_pack), so it rides here, not in a new lane.
+      #   CN pack      tests/test_cn_live_pack.py — CN-W-L3 PR-1: calendar=cn_calendar,
+      #                per-class ±10/±20 probe span, schema cn_prophet_live.armed/v1.
+      #   CN evaluator tests/test_cn_live_evaluator.py — close-board coverage, lunch
+      #                freeze, quote-age, pending remnant in last minute of post_close.
+      #   CN VPS lane  tests/test_cn_live_vps_lane.py — CN timer, served-path gate,
+      #                kill switch, health absent-ok, update.sh self-arm.
       # It is LAST in this lane and that is now a cost of ~48s of sibling guards
       # ahead of it, not of a 357-second sweep.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
@@ -1936,7 +1954,10 @@ jobs:
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
           tests/test_prophet_live_vps_lane.py
-          tests/test_cn_live_clock.py -q
+          tests/test_cn_live_clock.py
+          tests/test_cn_live_pack.py
+          tests/test_cn_live_evaluator.py
+          tests/test_cn_live_vps_lane.py -q
 
   collector-registry:
     if: ${{ false }}
