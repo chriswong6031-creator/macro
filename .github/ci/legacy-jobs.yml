@@ -1221,6 +1221,7 @@ jobs:
       - "engine/options_ivspread.py"
       - "engine/options_market_memory_context.py"
       - "engine/options_market_memory_local_receipts.py"
+      - "engine/options_market_memory_local_replica.py"
       - "engine/options_market_memory_receipt_store.py"
       - "engine/options_matrix.py"
       - "engine/options_signal_campaign.py"
@@ -1363,6 +1364,7 @@ jobs:
       - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_options_matrix.py"
       - "tests/test_options_market_memory_local_receipts.py"
+      - "tests/test_options_market_memory_local_replica.py"
       - "tests/test_options_signal_campaign.py"
       - "tests/test_options_signal_episode.py"
       - "tests/test_options_sparse_selector_prereg.py"
@@ -1414,7 +1416,8 @@ jobs:
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
           tests/test_private_auth_dict.py
-          tests/test_options_market_memory_local_receipts.py -q -rs
+          tests/test_options_market_memory_local_receipts.py
+          tests/test_options_market_memory_local_replica.py -q -rs
       - name: sparse selector sealed runtime carrier + bounded paper-only canary runner
         run: >-
           python -m pytest
@@ -1957,7 +1960,8 @@ jobs:
           tests/test_cn_live_clock.py
           tests/test_cn_live_pack.py
           tests/test_cn_live_evaluator.py
-          tests/test_cn_live_vps_lane.py -q
+          tests/test_cn_live_vps_lane.py
+          tests/test_cn_live_reconcile.py -q
 
   collector-registry:
     if: ${{ false }}
