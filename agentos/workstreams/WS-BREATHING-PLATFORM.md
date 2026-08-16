@@ -48,14 +48,13 @@ waves:
       #5495. The 5-consecutive-green-session SLA clock ACCRUES from 2026-08-13.
   - id: W-L1R
     title: Revival wave — coverage + latency + ruler (Chairman directive 2026-08-15)
-    status: in_progress
+    status: done
     next_action: >
-      PR-A MERGED (#5746: replay 253→1,684 evaluated, parity 1,741/1,741, 58
-      corp-action darked). Browser replay acceptance DONE on receipts (73-card
-      board mounts on frozen N−1 page; expired state refused; mobile clean).
-      REMAINING: land #5760 (clock) + #5761 (ruler) — both armed; deploy
-      scripts/install_closepass_launchd.sh on the Mac Studio after #5760;
-      verify sentinel pickup after #5761.
+      ALL MERGED + DEPLOYED 2026-08-16: #5746 (coverage 253→1,684 measured),
+      #5760 (com.macro.closepass installed, kickstart rc=0 with receipt),
+      #5761 (armed-pack watchdog live-verified on production staleness.json).
+      Replay acceptance done on receipts. Program completion now rides
+      W-ACCEPT alone.
   - id: W-L2
     title: Breathing board — full-universe arming coverage + alerts
     status: todo

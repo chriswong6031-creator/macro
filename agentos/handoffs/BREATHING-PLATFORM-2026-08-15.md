@@ -54,13 +54,20 @@ verified:
   - claim: The sweeper ignores the new pilot authority check by name
     command: read scripts/merge_on_green.py:838-848 on main
     result: ci-authority/codex/merge-queue-pilot excluded as an invalidation receipt
+  - claim: "#5760 and #5761 merged (post-close addendum)"
+    command: gh pr view 5760/5761 --json state,mergedAt
+    result: "#5761 MERGED 2026-08-16T01:00:50Z; #5760 MERGED 02:53:58Z after two CI repairs (repo-root pin; both-import-paths absence simulation)"
+  - claim: The launchd primary is installed and its plumbing runs end-to-end (post-close addendum)
+    command: launchctl print gui/501/com.macro.closepass; python3 scripts/close_pass_host_runner.py --dry-run --now 2026-08-14T20:26:00Z
+    result: "agent loaded; rc=0 in 147.6s; receipt runs/2026-08-14.json carries code_sha 964ec2b1d602, heal_rc 0, publish_rc 0, dedup exercised"
+  - claim: The armed-pack watchdog reads production (post-close addendum)
+    command: curl https://www.mastermind-x.com/live/staleness.json
+    result: "01:12Z tick carries prophet_live_armed (asof 2026-08-15, 0 sessions behind, bake_age 10.6h)"
 unverified:
   - claim: The launchd primary fires and publishes by ~16:10 ET on a live session
     what_would_verify: Monday 2026-08-17 16:00 ET firing + scripts/close_pass_slo_report.py
   - claim: Snapshot day.c settles to the official close within minutes of a LIVE bell
     what_would_verify: Monday 16:01-16:20 ET polls vs next-day grouped (DSC falsifier command)
-  - claim: "#5760 and #5761 merged"
-    what_would_verify: gh pr view 5760/5761 --json state (armed at session close, checks running)
 unresolved:
   - "16:15 ET product SLO vs measured ~7-8 min single-threaded collect: first live sessions decide whether W-L2 parallelization is required for the SLO or only for comfort."
   - "Arming-budget coverage (88/3,046 armed, probe_cap_cross 2,764) — W-L2."

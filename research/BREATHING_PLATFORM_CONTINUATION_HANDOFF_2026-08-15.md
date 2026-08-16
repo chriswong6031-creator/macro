@@ -15,8 +15,18 @@ the main loop finished, reviewed, and shipped the dead builders' work itself.
 | #5743 | WS + DEC + DSC records; replay launch config | MERGED |
 | #5746 | **PR-A: Massive close truth** — grouped-daily primary / snapshot fallback with session-identity check, corp-action darking (fail-closed guard-down), case-exact vendor matching, store-bar-wins basis law, provenance meta, parity battery | MERGED |
 | #5758 | Mid-flight loss-proof handoff | MERGED (superseded by this doc) |
-| #5760 | **PR-B: host-native primary clock** — `com.macro.closepass` launchd 13:00 PT weekdays; runner (locked lane worktree, fetch/reset receipts, wait-for-close decision table, alarm, run receipts); close-pass.yml demoted to fail-open backstop with keyless stand-down | armed, checks running at close of session |
-| #5761 | **PR-C: liveness ruler** — sentinel latency decomposition (close→candidate→visible with disclosed 1800s resolution), stale-armed-pack watchdog, `close_pass_slo_report.py` acceptance-record tool | armed, checks running at close of session |
+| #5760 | **PR-B: host-native primary clock** — `com.macro.closepass` launchd 13:00 PT weekdays; runner (locked lane worktree, fetch/reset receipts, wait-for-close decision table, alarm, run receipts); close-pass.yml demoted to fail-open backstop with keyless stand-down | **MERGED 02:53:58Z** after two in-flight CI repairs (repo-root pin — a real wrong-CWD hazard; and the module-absence test now severs BOTH import paths, because `from pkg import name` resolves via the parent package's attribute when a sibling suite imported it first — sys.modules alone tests nothing) |
+| #5761 | **PR-C: liveness ruler** — sentinel latency decomposition (close→candidate→visible with disclosed 1800s resolution), stale-armed-pack watchdog, `close_pass_slo_report.py` acceptance-record tool | **MERGED 01:00:50Z + LIVE-VERIFIED**: production `staleness.json` carried the `prophet_live_armed` surface on the 01:12Z tick (asof 2026-08-15, 0 sessions behind) |
+
+**DEPLOYED (2026-08-16 ~03:0xZ):** `com.macro.closepass` installed and loaded on
+the Mac Studio (`launchctl print gui/501/com.macro.closepass` confirms); lane
+worktree minted at `.claude/worktrees/closepass-host-lane` (locked, FULL
+checkout, detached at `origin/main`); dry-run kickstart `--now
+2026-08-14T20:26:00Z` → **rc=0 in 147.6s**, run receipt at
+`~/Library/Application Support/macro-closepass/runs/2026-08-14.json`
+(`code_sha 964ec2b1d602`, `code_stale false`, `heal_rc 0`, `publish_rc 0`;
+the publisher's dedup fired correctly on the already-published Friday board —
+the compute half was proven separately by the in-process replay).
 
 ## Measured facts the next session stands on
 
@@ -56,32 +66,38 @@ the main loop finished, reviewed, and shipped the dead builders' work itself.
   sweeper excludes `ci-authority/codex/merge-queue-pilot` BY NAME (an
   invalidation receipt, not a check — scripts/merge_on_green.py:838).
 
-## Remaining to DONE (exact order)
+## Remaining to DONE (exact order — items 1-3 of the earlier list are DONE, see above)
 
-1. **Land #5760 + #5761** (armed; sweeper merges on green — verify, don't
-   assume; on a DIRTY re-run rebase from the lane worktrees
-   `agent-a32af4cc3baeb108d` / `agent-a6a3be5eb79bcc32f`).
-2. **Deploy the primary clock (after #5760 is on main):** from a fresh main
-   checkout run `bash scripts/install_closepass_launchd.sh`, then
-   `launchctl print gui/$UID/com.macro.closepass | head -5`, then a plumbing
-   kickstart `python3 scripts/close_pass_host_runner.py --dry-run --now
-   2026-08-14T20:26:00Z` (dry-run publishes nothing; proves lane worktree +
-   venv + env + wait loop end-to-end). Confirm a run receipt lands under
-   `~/Library/Application Support/macro-closepass/runs/`.
-3. **PR-C live verification (after #5761 merges):** VPS pulls within ~3 min;
-   next sentinel tick within 30 min. Verify the armed-pack surface appears in
-   the sentinel report and `scripts/close_pass_slo_report.py --sessions 3`
-   runs against the real state file.
-4. **Monday 2026-08-17 live acceptance (W-ACCEPT, three sessions):** watch the
+0. **START HERE, Monday session:** per the operator broadcast
+   `macro-main/agentos/handoffs/STALE-PRIMARY-SESSION-BROADCAST-2026-08-15.md`,
+   new sessions start from `/Users/chriswong/Documents/Cluade/macro-main`
+   (fetch, then a fresh worktree off `origin/main`) — never from the stale
+   primary folder. The `closepass-host-lane` worktree is broadcast-compliant
+   by construction: the runner fetches and hard-resets it to `origin/main` on
+   every firing and uses the primary only as the gitdir vantage point.
+1. **Monday 2026-08-17 live acceptance (W-ACCEPT, three sessions):** watch the
    16:00 ET launchd fire; expect board on R2 ~16:08–16:14 ET at ~95% coverage,
    mirror ≤5 min, browser ≤2 min poll → **user-visible ≤16:20 ET** (the 16:15
    SLO may need the W-L2 parallel collect — measure first, then decide);
    the GH 16:25 lane must stand down with its notice. Grade with
    `close_pass_slo_report.py`; record in the workstream per session.
-5. **W-L2 next wave:** parallelize/raise the arming budget (2,764 probe-capped)
+2. **W-L2 next wave:** parallelize/raise the arming budget (2,764 probe-capped)
    and the collect() gate loop (~7–8 min single-threaded → ProcessPoolExecutor
    per the pack builder's pattern) — each behind its own before/after timing
    verification.
+3. **Open fleet condition, not this workstream's to fix:** the merge-control
+   semantic-proof machinery (WS:CI-MERGE-CONTROL-PLANE, mid-bootstrap) held a
+   stable `ci_failed` complaint against the MERGED #5766's historical run
+   ("does not identify the exact PR proof base") that survived a postdating
+   green baseline; that lane was already shipping the fix class at session end
+   (#5776 "merged-head gate stops owning a designed red"). If a Monday session
+   hits the same class on a merged head: verify the merge + a postdating green
+   baseline, file the SHIP LOOP BLOCKED evidence, and do not modify that
+   lane's files.
+4. **Chipped follow-up:** vendor-ticker case-collision census
+   (`task_6fb8d4c3`; DSC:MASSIVE-TICKER-CASE-IS-IDENTITY names
+   collectors/massive_stock_day.py filename keying as the durable-artifact
+   suspect).
 
 ## Standing constraints (unchanged)
 G0.2 no data/ writes from the lane; corp-action darking fail-closed;
