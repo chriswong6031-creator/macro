@@ -69,6 +69,7 @@ What it checks (the user-visible truth, not the pipeline's own claims):
     weekend or a market holiday can never manufacture a breach, so the budget
     can be far tighter than the page budgets above without flapping.
 
+<<<<<<< HEAD
   * the Prophet Live ARMED PACK's own watermark — ``as_of`` in the public R2
     object ``live_flow/prophet_live_armed.json``. The nightly builds it
     (daily.yml) and the */5 intraday evaluator reads it and nothing else, so a
@@ -88,6 +89,37 @@ What it checks (the user-visible truth, not the pipeline's own claims):
     module inventing a threshold it has no standing to set; printing the three
     numbers every pass is what makes the next wave's threshold arguable from
     evidence instead of from memory.
+=======
+  * the CN Prophet Live runtime board — ``built_at`` in the live-plane artifact
+    ``/live/cn_prophet_live.json`` (CN-PR-4, research/CN_BREATHING_PLATFORM_
+    ARCHITECTURE_2026-08-15.md §6/§8). This is the fourth shape, and it is the
+    first one judged on a SESSION PHASE rather than on a budget that runs all
+    day. A */5-class runtime lane cannot be expressed by the 26h bake budget in
+    either direction: 26h would let the board sit dead for a whole session, and
+    a flat 10-minute budget would page every night, every weekend, every Golden
+    Week and through every lunch break — mainland sessions run 09:30-11:30 and
+    13:00-15:00 CST with a 90-minute close in the middle, and NOTHING is owed
+    outside them. So the budget is the phase: 10 minutes while the session is
+    live, 100 minutes through the 11:30 lunch freeze (states freeze at the
+    11:30 anchor by contract — a pass that does not tick through lunch is
+    correct behaviour, not an outage), and outside a mainland session the
+    surface is quiet — not read at all, and never a breach.
+
+    ``absent_ok`` for the same reason us_board_provisional carries it, one step
+    earlier: this lane has not shipped its first artifact yet, so absence is the
+    ordinary state rather than blindness. First SIGHT is recorded (``cn_first_
+    seen`` in the SLA record), which is what lets the close-board check tell "the
+    lane was never live" from "the lane was live yesterday and is gone today".
+
+    The close-board SLA is a CLOCK question the staleness budget cannot ask:
+    by 15:20 CST on a session day the payload must either carry
+    ``liveness.first_close_board_at`` no later than 15:15 CST, or honestly
+    disclose ``close_pending`` with ``revision == intraday_provisional``. A
+    disclosed pending is NOT a breach — upstream being unresolved is a fact the
+    reader is told; a silent miss is not. It alerts through the same transport
+    with its own dedup namespace, at most once per session (the
+    ``record_first_fresh`` idempotency, mirrored).
+>>>>>>> efcf483c819d (WIP checkpoint: CN Breathing Platform session-1 close — DO NOT MERGE)
 
 Verdict discipline (borrowed from scripts/audit_r2.py): a definitive server answer
 (HTTP 200 with an over-budget stamp) is a BREACH and alerts immediately; a network
@@ -262,6 +294,7 @@ FIRST_FRESH_SCHEMA = "sentinel.first_fresh/v1"
 #: writes it is the same `needs: engine` chain whose death this catches.
 PROPHET_MAX_SESSIONS_BEHIND = 1
 
+<<<<<<< HEAD
 #: The sentinel's own cadence in seconds (app/deploy/macro-sentinel.timer fires
 #: every 30 minutes). It is the RESOLUTION of every "first user-visible at"
 #: instant this module records, and it is published beside those measurements
@@ -295,6 +328,55 @@ VISIBLE_RESOLUTION_SECONDS = 1800
 #: than anything here uses, so it belongs to a wave that can prove it against a
 #: month of real landing times rather than to this one.
 ARMED_PACK_MAX_SESSIONS_BEHIND = 1
+=======
+# --------------------------------------------------------------------------- #
+# CN Prophet Live (CN-PR-4) — the mainland runtime board's phase clock.
+#
+# Every boundary below is Asia/Shanghai, which has no DST, so the UTC twins are
+# fixed year-round and are the ones the drills quote:
+#     09:10 CST = 01:10 UTC   pre-open warmup begins
+#     09:30 CST = 01:30 UTC   morning session opens        ── 10-minute budget
+#     11:30 CST = 03:30 UTC   lunch freeze begins          ── 100-minute budget
+#     13:00 CST = 05:00 UTC   afternoon session opens      ── 10-minute budget
+#     15:15 CST = 07:15 UTC   post-close pass stands down
+#     15:20 CST = 07:20 UTC   close-board SLA is judged
+#     17:00 CST = 09:00 UTC   watch window closes
+# --------------------------------------------------------------------------- #
+#: Minutes the artifact's ``built_at`` may lag while a mainland session is LIVE.
+#: The evaluator ticks every 5 minutes (§5), so 10 absorbs exactly one missed
+#: pass and pages on the second — the same "breach by the second miss" shape
+#: PROPHET_MAX_SESSIONS_BEHIND uses one cadence up.
+CN_LIVE_SESSION_BUDGET_MIN = 10.0
+#: Minutes allowed through the 11:30-13:00 CST lunch break. States FREEZE at the
+#: 11:30 anchor by contract (§2 session_break: passes may run but no transitions,
+#: no fades), so a lane that stops writing across lunch is behaving correctly.
+#: 100 clears the full 90-minute break with 10 minutes of slack, which means the
+#: first afternoon pass is what re-arms the tight budget — not the clock.
+CN_LIVE_LUNCH_BUDGET_MIN = 100.0
+#: Completed A-share sessions the artifact's own ``session`` may lag. During a
+#: live session the artifact names TODAY while the calendar's newest COMPLETED
+#: session is yesterday, so a healthy in-flight board reads 0 behind; 1 absorbs
+#: one missed session and the second pages.
+CN_MAX_SESSIONS_BEHIND = 1
+#: When the sentinel judges the close board (Asia/Shanghai).
+CN_CLOSE_SLA_BY_CST = "15:20"
+#: What ``liveness.first_close_board_at`` must beat (Asia/Shanghai). §2's
+#: post_close window ends at 15:15; a board stamped later than that missed it.
+CN_CLOSE_BOARD_BY_CST = "15:15"
+#: Session-day CST window in which the CN surface is read at all. Opens with the
+#: pre-open warmup and stays open past the close SLA so a late board can still be
+#: SEEN and judged; outside it the lane owes nothing and is not observed.
+CN_WATCH_OPEN_CST = "09:10"
+CN_WATCH_CLOSE_CST = "17:00"
+#: Where the close-board SLA stamps live inside the (shared) first_fresh record.
+#: A sibling key of ``sessions`` rather than a second file: same append-only
+#: discipline, same atomic write, nothing new to rotate.
+CN_CLOSE_SLA_KEY = "cn_close_sla"
+#: First-sight marker. ``absent_ok`` says a missing artifact is not blindness;
+#: this says whether it was ever there, which is the difference between "the
+#: lane has not shipped yet" and "the lane shipped and is gone at the close".
+CN_FIRST_SEEN_KEY = "cn_first_seen"
+>>>>>>> efcf483c819d (WIP checkpoint: CN Breathing Platform session-1 close — DO NOT MERGE)
 
 # Per-surface freshness budgets. ``delay_budget_days`` applies to the board's own
 # delayed-board disclosure (see module docstring): the marker only renders when
@@ -428,6 +510,7 @@ SURFACES: list[dict] = [
             "client_session_path": ("board_state", "board", "as_of"),
         },
     },
+<<<<<<< HEAD
     # PR-C — the intraday lane's INPUT, on the public R2 read base.
     #
     # Read over HTTP rather than off a live-plane path because the VPS does not
@@ -462,6 +545,54 @@ SURFACES: list[dict] = [
         "asof_max_sessions_behind": ARMED_PACK_MAX_SESSIONS_BEHIND,
         # Coverage is DISCLOSED, never budgeted — see the module docstring.
         "facts": "armed_pack",
+=======
+    # CN-PR-4 — the mainland runtime board on the same live plane. It follows
+    # the us_board_provisional precedent exactly where the precedent applies
+    # (live_file kind, live-plane root, absent_ok, a sessions-behind budget on
+    # the artifact's own session stamp) and diverges in the one place a runtime
+    # lane must: ``phase_clock`` routes it to a check that asks the mainland
+    # session calendar what is owed RIGHT NOW instead of budgeting a whole day.
+    #
+    # ``absent_ok`` is doing more work here than it does above, because this
+    # lane has not shipped its FIRST artifact yet. Absence alerts nothing until
+    # first sight, and first sight is recorded (CN_FIRST_SEEN_KEY) so the
+    # exemption cannot quietly become permanent: once the board has been seen,
+    # a missing artifact at the close is a breach like any other.
+    #
+    # ``close_sla`` is deliberately NOT named ``sla``. The SLA machinery above
+    # walks the NYSE calendar and compares against ``by_et``; pointing it at a
+    # mainland artifact would measure this board against the wrong exchange's
+    # sessions and the wrong clock. Same idea, own calendar, own function.
+    #
+    # The id is ``cn_live_board`` and NOT ``cn_prophet_live``, which would read
+    # more naturally against the filename. The reader-side client artifact this
+    # module deliberately never makes a surface is ``/live/prophet_live.json``,
+    # and the structural guard that proves it (tests/test_freshness_sentinel.py
+    # ``test_a_dark_reader_never_breaches_never_blinds_and_never_pages``) asserts
+    # that NO surface key contains the substring ``prophet_live``. A surface
+    # named for this artifact would trip that guard on a substring while being a
+    # completely different file — and the fix for a name collision is a name,
+    # never a weakened guard.
+    {
+        "id": "cn_live_board",
+        "kind": "live_file",
+        "path": "/live/cn_prophet_live.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        # The artifact's own CN session date (§6 top-level ``session``), not a
+        # publication clock — the same "never monitor the run stamp" rule the
+        # prophet_us entry states at length.
+        "asof_field": "session",
+        "asof_max_sessions_behind": CN_MAX_SESSIONS_BEHIND,
+        "absent_ok": True,
+        "phase_clock": "cn",
+        "close_sla": {
+            "by_cst": CN_CLOSE_SLA_BY_CST,
+            "board_by_cst": CN_CLOSE_BOARD_BY_CST,
+            "liveness_field": "first_close_board_at",
+            "pending_revision": "intraday_provisional",
+        },
+>>>>>>> efcf483c819d (WIP checkpoint: CN Breathing Platform session-1 close — DO NOT MERGE)
     },
 ]
 
@@ -482,6 +613,16 @@ class FetchResult:
     last_modified: datetime | None = None
     body: str | None = None
     error: str | None = None
+
+
+#: The read a surface gets when this pass deliberately performed none — the CN
+#: live surface outside its watch window (run() skips the read; there is nothing
+#: to judge and nothing owed) — or when a caller supplied no read for it at all.
+#: It maps to INDETERMINATE through the ordinary path, which is the honest
+#: verdict for "I did not look": only the phase-aware check may turn a
+#: not-looked-at CN surface into a quiet ``ok``, and it does that BEFORE reading
+#: this. An unlooked-at surface must never be able to read as fresh.
+_NOT_READ = FetchResult(error="no read performed for this surface")
 
 
 # --------------------------------------------------------------------------- #
@@ -564,6 +705,34 @@ def sessions_behind(asof: str, now: datetime) -> int:
     from lib import nyse_calendar  # noqa: PLC0415 — see docstring
 
     return nyse_calendar.sessions_behind(_date.fromisoformat(asof), now)
+
+
+def cn_sessions_behind(asof: str, now: datetime) -> int:
+    """Completed A-share sessions the artifact stamped ``asof`` is missing.
+
+    The mainland twin of ``sessions_behind`` above, composed INLINE from the two
+    primitives lib/cn_calendar.py already exports rather than added to that
+    module: ``expected_last_session`` knows the 15:00 CST close plus its settle
+    buffer, and ``sessions_between`` counts sessions strictly after a date, so
+    ``sessions_between(stamp, expected_last_session(now))`` is exactly "how many
+    completed sessions has this artifact missed" with zero new calendar code to
+    keep in step. ``sessions_between`` returns 0 when the end is not past the
+    start, so an artifact naming TODAY's in-flight session (the healthy runtime
+    case, where the newest COMPLETED session is yesterday) reads 0 behind rather
+    than going negative.
+
+    Same lazy, failure-guarded import discipline as its NYSE sibling: an
+    unimportable calendar must degrade the surface to "I can't tell", never take
+    the watchdog down and never fabricate a verdict. Raises so the caller maps
+    it to INDETERMINATE.
+    """
+    from datetime import date as _date  # noqa: PLC0415 — stdlib, kept with its one caller
+
+    from lib import cn_calendar  # noqa: PLC0415 — see docstring
+
+    return cn_calendar.sessions_between(
+        _date.fromisoformat(asof), cn_calendar.expected_last_session(now)
+    )
 
 
 def board_delay_stamp(body: str) -> str | None:
@@ -718,6 +887,13 @@ def _seconds_between(earlier: object, later: object) -> float | None:
 # --------------------------------------------------------------------------- #
 def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
     """One surface → {id, status ∈ ok|stale|indeterminate, ages, detail}."""
+    if surface.get("phase_clock") == "cn":
+        # CN-PR-4: judged on the mainland session clock, not on the wall-clock
+        # budgets below. Dispatched HERE rather than in evaluate() so that every
+        # caller — run(), the tests, scripts/build_output_health.py's importer —
+        # reaches the phase-aware check through the one entry point they already
+        # use, and a future surface cannot get the wrong check by calling around.
+        return check_cn_live_surface(surface, fr, now)
     out: dict = {
         "id": surface["id"],
         "kind": surface["kind"],
@@ -874,6 +1050,227 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
     return out
 
 
+# --------------------------------------------------------------------------- #
+# CN Prophet Live (CN-PR-4) — the phase-aware check.
+#
+# Kept whole and separate from check_surface ON PURPOSE. The generic path budgets
+# a stamp against a number of hours; this one asks a calendar what is owed right
+# now and budgets minutes against the answer. Folding a session-phase clock into
+# the 26h page logic would either force every page surface to carry a phase table
+# it has no use for, or force this surface to express "quiet through lunch" as a
+# budget wide enough to swallow a dead session. They are different questions.
+# --------------------------------------------------------------------------- #
+def cn_phase(now: datetime) -> dict:
+    """Where ``now`` sits in the mainland session day, and what that phase owes.
+
+    ``{phase, session, in_window, budget_min, error}``. ``budget_min`` is the
+    minutes the artifact's ``built_at`` may lag IN THIS PHASE, or None when the
+    phase owes no tick at all (pre-open warmup, the post-close watch tail).
+    ``in_window`` is whether the surface is observed at all.
+
+    ``error`` set ⇒ the clock or the calendar could not be read, and the caller
+    must go INDETERMINATE. It deliberately leaves ``in_window`` True in that
+    case: a sentinel that cannot place the phase must report its own blindness,
+    not silently skip the surface — skipping is how a watchdog goes quiet
+    forever and reads green while doing it.
+    """
+    out: dict = {"phase": "unknown", "session": None, "in_window": True,
+                 "budget_min": None, "error": None}
+    cst = _cst(now)
+    if cst is None:
+        out["error"] = "no Asia/Shanghai clock available (tzdata missing)"
+        return out
+    try:
+        from lib import cn_calendar  # noqa: PLC0415 — lazy, see sessions_behind
+        is_session = cn_calendar.is_session(cst.date())
+    except Exception as exc:  # noqa: BLE001 — an unimportable calendar is blindness
+        out["error"] = (
+            f"cannot read the A-share calendar ({type(exc).__name__}: {exc})"
+        )
+        return out
+
+    if not is_session:
+        # Weekends and mainland holidays owe NOTHING. Golden Week is ~10 sessionless
+        # calendar days and Spring Festival is longer; a surface that pages through
+        # them is the false-positive machine the module's falsifier law forbids.
+        out["phase"] = "weekend" if cst.weekday() >= 5 else "holiday"
+        out["in_window"] = False
+        return out
+
+    out["session"] = cst.date().isoformat()
+    hhmm = cst.strftime("%H:%M")            # zero-padded ⇒ lexical compare is time order
+    if hhmm < CN_WATCH_OPEN_CST or hhmm >= CN_WATCH_CLOSE_CST:
+        out["phase"] = "closed"
+        out["in_window"] = False
+    elif hhmm < "09:30":
+        out["phase"] = "pre_open"           # one warmup pass ALLOWED, none owed
+    elif hhmm < "11:30":
+        out["phase"] = "morning"
+        out["budget_min"] = CN_LIVE_SESSION_BUDGET_MIN
+    elif hhmm < "13:00":
+        # States freeze at the 11:30 anchor by contract — not ticking is correct.
+        out["phase"] = "session_break"
+        out["budget_min"] = CN_LIVE_LUNCH_BUDGET_MIN
+    elif hhmm < "15:00":
+        out["phase"] = "afternoon"
+        out["budget_min"] = CN_LIVE_SESSION_BUDGET_MIN
+    elif hhmm < "15:15":
+        out["phase"] = "post_close"         # close observability + close board pass
+        out["budget_min"] = CN_LIVE_SESSION_BUDGET_MIN
+    else:
+        # 15:15-17:00: the passes have stood down and the close SLA is judged in
+        # here, so the artifact is still READ (a late board must be seeable) and
+        # no tick is owed.
+        out["phase"] = "post_close_watch"
+    return out
+
+
+def cn_watch_open(now: datetime) -> bool:
+    """Whether the CN surface is observed at all on this pass."""
+    return bool(cn_phase(now)["in_window"])
+
+
+def check_cn_live_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
+    """The CN runtime board → the same verdict shape every other surface returns.
+
+    Same three verdicts and the same discipline: ``stale`` only on a definitive
+    over-budget read, ``indeterminate`` for everything the sentinel cannot see,
+    ``ok`` otherwise. The one thing this adds is a fourth honest state that the
+    other surfaces do not need — QUIET — and it is reported as ``ok`` with a
+    phase note rather than as a verdict of its own, because "nothing is owed" is
+    genuinely not a problem and must not colour the report's ``ok`` fold.
+    """
+    out: dict = {
+        "id": surface["id"],
+        "kind": surface["kind"],
+        "status": "ok",
+        "bake_budget_hours": surface["bake_budget_hours"],
+        "delay_budget_days": surface["delay_budget_days"],
+        "bake_stamp": None,
+        "bake_age_hours": None,
+        "board_delayed": False,
+        "board_price_through": None,
+        "board_delay_days": None,
+        "asof": None,
+        "asof_sessions_behind": None,
+        "absent": False,
+        "detail": "",
+        # The phase block. Published on staleness.json so a human reading the
+        # estate can tell "quiet because the mainland is closed" from "quiet
+        # because the sentinel is broken" without re-deriving the calendar.
+        "cn": {"phase": "unknown", "session": None, "budget_min": None,
+               "built_at": None, "built_age_min": None, "payload_seen": False,
+               "first_close_board_at": None, "close_pending": None,
+               "revision": None, "market_phase": None},
+    }
+    phase = cn_phase(now)
+    out["cn"]["phase"] = phase["phase"]
+    out["cn"]["session"] = phase["session"]
+    out["cn"]["budget_min"] = phase["budget_min"]
+
+    if phase["error"]:
+        out["status"] = "indeterminate"
+        out["detail"] = phase["error"]
+        return out
+
+    if not phase["in_window"]:
+        out["detail"] = (
+            f"quiet — {phase['phase']}: no mainland session pass is owed"
+        )
+        return out
+
+    if fr.error or fr.status != 200:
+        out["status"] = "indeterminate"
+        out["detail"] = fr.error or f"HTTP {fr.status}"
+        # Same narrow exemption as us_board_provisional: ONLY a genuinely
+        # missing file. This lane has not shipped its first artifact yet, so
+        # absence is the ordinary state — and first sight is recorded elsewhere
+        # (CN_FIRST_SEEN_KEY) so the exemption cannot outlive the reason for it.
+        if surface.get("absent_ok") and "FileNotFoundError" in (fr.error or ""):
+            out["absent"] = True
+            out["detail"] = "not published yet (absence is a normal state here)"
+        return out
+
+    try:
+        doc = json.loads(fr.body or "")
+    except ValueError as exc:
+        # Transport-shaped, not staleness-shaped: a half-written file mid-rename,
+        # an error shell, a truncated read. Blindness, never an outage verdict.
+        out["status"] = "indeterminate"
+        out["detail"] = f"live payload is not JSON ({exc})"
+        return out
+    if not isinstance(doc, dict):
+        out["status"] = "indeterminate"
+        out["detail"] = "live payload is not a JSON object"
+        return out
+
+    liveness = doc.get("liveness")
+    liveness = liveness if isinstance(liveness, dict) else {}
+    out["cn"].update({
+        "payload_seen": True,
+        "market_phase": doc.get("market_phase"),
+        "close_pending": doc.get("close_pending"),
+        "revision": doc.get("revision"),
+        "first_close_board_at": liveness.get("first_close_board_at"),
+    })
+
+    problems: list[str] = []
+
+    built_at = _instant(doc.get("built_at"))
+    if built_at is None:
+        # A payload that cannot say when it was built is a definitive regression
+        # in the artifact, exactly like a prophet index with no source_asof: the
+        # writer dropped the one field the surface is judged on. Breach, not
+        # blindness — a board that cannot vouch for its own instant must never
+        # read as fresh.
+        problems.append(
+            f"live payload carries no usable 'built_at' instant"
+            f" ({doc.get('built_at')!r}) — the board cannot vouch for its own tick"
+        )
+    else:
+        age_min = (now - built_at).total_seconds() / 60.0
+        out["cn"]["built_at"] = built_at.isoformat()
+        out["cn"]["built_age_min"] = round(age_min, 1)
+        budget = phase["budget_min"]
+        if budget is not None and age_min > budget:
+            problems.append(
+                f"runtime board last built {age_min:.1f} min ago"
+                f" (budget {budget:.0f} min in phase {phase['phase']})"
+            )
+
+    stamp = doc.get(surface["asof_field"])
+    if not isinstance(stamp, str) or not stamp:
+        problems.append(
+            f"live payload carries no usable {surface['asof_field']!r} field"
+            f" ({stamp!r}) — the board cannot vouch for its own session"
+        )
+    else:
+        out["asof"] = stamp
+        try:
+            behind = cn_sessions_behind(stamp, now)
+        except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
+            out["status"] = "indeterminate"
+            out["detail"] = (
+                f"cannot measure {stamp!r} against the A-share calendar"
+                f" ({type(exc).__name__}: {exc})"
+            )
+            return out
+        out["asof_sessions_behind"] = behind
+        budget_sessions = surface["asof_max_sessions_behind"]
+        if behind > budget_sessions:
+            problems.append(
+                f"board session {stamp} is {behind} completed A-share session(s)"
+                f" behind the calendar (budget {budget_sessions})"
+            )
+
+    if problems:
+        out["status"] = "stale"
+        out["detail"] = "; ".join(problems)
+    else:
+        out["detail"] = f"{phase['phase']} — board is ticking inside its budget"
+    return out
+
+
 _PVC_HREF_RE = re.compile(r"[A-Za-z0-9._/-]+(?:#[A-Za-z0-9._-]+)?\Z")
 _PVC_MAX_AGE_SECONDS = 96 * 60 * 60
 _PVC_CLIENT_CONTRACT = "wl1.provisional_cards/paintable-v1"
@@ -1021,7 +1418,13 @@ def evaluate(results: dict[str, FetchResult], now: datetime,
     "I can't tell the reader saw it" must never score as a pass.
     """
     surfaces = SURFACES if surfaces is None else surfaces
-    checked = {s["id"]: check_surface(s, results[s["id"]], now) for s in surfaces}
+    # ``_NOT_READ`` for a surface this pass did not observe (the CN live surface
+    # outside its watch window — run() skips that read deliberately). It maps to
+    # INDETERMINATE everywhere except the phase-aware check, which decides for
+    # itself whether "not read" meant "nothing owed"; a surface can never reach
+    # ``ok`` merely by being absent from the results dict.
+    checked = {s["id"]: check_surface(s, results.get(s["id"], _NOT_READ), now)
+               for s in surfaces}
     for s in surfaces:
         sla = s.get("sla") or {}
         if not sla.get("client_path"):
@@ -1074,6 +1477,26 @@ def _et(stamp: datetime) -> datetime | None:
         from zoneinfo import ZoneInfo  # noqa: PLC0415 — see docstring
         return stamp.astimezone(ZoneInfo("America/New_York"))
     except Exception:  # noqa: BLE001 — no tzdata must never fabricate a verdict
+        return None
+
+
+def _cst(stamp: datetime) -> datetime | None:
+    """A UTC instant on the Asia/Shanghai clock, or None when that is unknowable.
+
+    The mainland sibling of ``_et``, and it degrades the same way for the same
+    reason. Asia/Shanghai has no DST, so a box with no tzdata could in principle
+    be answered with a fixed +08:00 offset — and that is exactly the shortcut
+    this refuses. A hardcoded offset is a SECOND clock: it would keep answering
+    confidently if the mainland ever moved (it did, five times before 1991), and
+    a watchdog whose clock cannot be wrong is a watchdog whose clock is never
+    checked. Unknown here degrades the CN surface to INDETERMINATE — the
+    sentinel reports its own blindness rather than budgeting against a phase it
+    guessed at.
+    """
+    try:
+        from zoneinfo import ZoneInfo  # noqa: PLC0415 — see docstring
+        return stamp.astimezone(ZoneInfo("Asia/Shanghai"))
+    except Exception:  # noqa: BLE001 — no tzdata must never fabricate a phase
         return None
 
 
@@ -1242,6 +1665,7 @@ def sla_summary(record: dict, now: datetime,
     return out
 
 
+<<<<<<< HEAD
 def public_report(report: dict) -> dict:
     """The pass report minus every PRIVATE annotation — what /live/staleness.json gets.
 
@@ -1269,6 +1693,161 @@ def public_report(report: dict) -> dict:
         for sid, c in (report.get("surfaces") or {}).items()
     }
     return out
+=======
+# --------------------------------------------------------------------------- #
+# CN close-board SLA (CN-PR-4) — "was there a close board by 15:20 CST, or an
+# honest reason there was not?"
+#
+# This is a CLOCK question, and the staleness budget above cannot ask it: an
+# artifact can tick every five minutes all session, stay perfectly inside its
+# 10-minute budget, and never produce a close board at all. The two verdicts are
+# orthogonal and both are needed — one watches the heartbeat, this watches the
+# deliverable.
+#
+# It PAGES, unlike the US SLA record beside it, and the difference is deliberate.
+# The US record measures a lane that was brand new when it was written (arming an
+# alarm on a brand-new lane is how sentinels get muted); this condition is a
+# same-day miss on a board a reader is looking at, it is bounded to at most one
+# alert per session by the same append-only stamp, and it has an explicit honest
+# escape — a disclosed close_pending is not a breach.
+# --------------------------------------------------------------------------- #
+def cn_close_sla_alert(record: dict, report: dict, now: datetime,
+                       surfaces: list[dict] | None = None) -> tuple[str | None, dict]:
+    """(alert to send now or None, updated record). Never raises.
+
+    Terminal verdicts only. A stamp is written when the session's question has
+    an answer that cannot change:
+
+      * met — ``liveness.first_close_board_at`` exists and is no later than
+        15:15 CST ON THE SESSION'S OWN CST DAY. The date half is not pedantry:
+        a board stamped 15:14 the NEXT morning reads "15:14 ≤ 15:15" and would
+        score as a pass on a session it missed entirely (the exact trap
+        record_first_fresh documents one clock over).
+      * missed — the deadline has passed with no board, or with a late one, and
+        the payload does not disclose why. ALERT.
+
+    A disclosed ``close_pending`` (with ``revision == intraday_provisional``) is
+    NOT terminal and stamps NOTHING: upstream being unresolved is a fact the
+    reader has been told, and the honest state may still resolve into a board
+    ten minutes later. Leaving the session unstamped is what lets a later pass
+    still judge it once the disclosure drops — stamping "met" there would let a
+    lane mute this alarm permanently by leaving a flag on.
+
+    An artifact that has NEVER been seen stamps nothing either (``absent_ok``:
+    absence alerts nothing until first sight). Once first sight is recorded, an
+    artifact that is missing at the close is a miss like any other — the
+    exemption covers a lane that has not shipped, not a lane that died.
+    """
+    out = dict(record or {})
+    try:
+        surfaces = SURFACES if surfaces is None else surfaces
+        surface = next(
+            (s for s in surfaces if s.get("close_sla") and s.get("phase_clock") == "cn"),
+            None,
+        )
+        if surface is None:
+            return None, out
+        sla = surface["close_sla"]
+        c = (report.get("surfaces") or {}).get(surface["id"]) or {}
+        cn = c.get("cn") or {}
+
+        # First sight, recorded once and never rewritten — the marker that ends
+        # the absent_ok exemption for this lane.
+        if cn.get("payload_seen") and not out.get(CN_FIRST_SEEN_KEY):
+            out[CN_FIRST_SEEN_KEY] = {"at": now.isoformat(),
+                                      "session": cn.get("session")}
+
+        cst = _cst(now)
+        if cst is None:
+            return None, out          # no clock ⇒ no verdict, ever
+        session = cn.get("session")
+        if not session:
+            return None, out          # not a session day (or the phase is unknown)
+        if cst.strftime("%H:%M") < sla["by_cst"]:
+            return None, out          # the deadline has not arrived yet
+
+        stamps = dict(out.get(CN_CLOSE_SLA_KEY) or {})
+        if session in stamps:
+            return None, out          # first is first: one session alerts at most once
+
+        board_raw = cn.get("first_close_board_at")
+        board_at = _instant(board_raw)
+        board_cst = _cst(board_at) if board_at is not None else None
+        pending_ok = (
+            cn.get("close_pending") is True
+            and cn.get("revision") == sla["pending_revision"]
+        )
+
+        entry: dict = {"by_cst": sla["by_cst"], "board_by_cst": sla["board_by_cst"],
+                       "checked_at": now.isoformat(),
+                       "first_close_board_at": board_raw}
+        reason: str | None = None
+
+        if board_cst is not None:
+            on_time = (board_cst.date().isoformat() == session
+                       and board_cst.strftime("%H:%M") <= sla["board_by_cst"])
+            entry["met"] = on_time
+            entry["first_close_board_cst"] = board_cst.isoformat()
+            if not on_time:
+                reason = (
+                    f"close board stamped {board_cst.isoformat()}, later than"
+                    f" {sla['board_by_cst']} CST on session {session}"
+                )
+        elif board_raw is not None:
+            entry["met"] = False
+            reason = (
+                f"liveness.first_close_board_at is present but unreadable"
+                f" ({board_raw!r}) — an unparseable stamp is not a delivered board"
+            )
+        elif pending_ok:
+            # Honest disclosure. No stamp, no alert, keep watching.
+            return None, out
+        elif not cn.get("payload_seen"):
+            if not out.get(CN_FIRST_SEEN_KEY):
+                return None, out      # the lane has never shipped — absent_ok
+            entry["met"] = False
+            reason = (
+                "the runtime board is absent at the close on a session day, and"
+                " this lane HAS published before"
+                f" (first seen {(out.get(CN_FIRST_SEEN_KEY) or {}).get('at')})"
+            )
+        else:
+            entry["met"] = False
+            reason = (
+                "no liveness.first_close_board_at and no honest disclosure"
+                f" (close_pending={cn.get('close_pending')!r},"
+                f" revision={cn.get('revision')!r}) — a silent miss"
+            )
+
+        if reason is not None:
+            entry["reason"] = reason
+        stamps[session] = entry
+        for stale_key in sorted(stamps)[:-SLA_HISTORY_SESSIONS]:
+            stamps.pop(stale_key, None)
+        out[CN_CLOSE_SLA_KEY] = stamps
+        out["updated_at"] = now.isoformat()
+        if entry["met"]:
+            return None, out
+
+        return (
+            "CN CLOSE BOARD MISSED — no close board for A-share session "
+            f"{session} by {sla['by_cst']} CST ({now.isoformat()}).\n"
+            f"  • {reason}\n"
+            "  • The board is the deliverable; a ticking artifact is not a"
+            " substitute for one. Diagnose the stage with"
+            " `python -m scripts.cn_live_rescue --classify`.\n"
+            "  • Upstream unresolved is allowed IF disclosed: close_pending=true"
+            " with revision=intraday_provisional silences this by telling the"
+            " reader the truth. Silence does not.",
+            out,
+        )
+    except Exception as exc:  # noqa: BLE001 — a watchdog branch must never take the pass down
+        print(
+            f"sentinel: CN close-SLA check failed ({type(exc).__name__}: {exc})",
+            file=sys.stderr,
+        )
+        return None, dict(record or {})
+>>>>>>> efcf483c819d (WIP checkpoint: CN Breathing Platform session-1 close — DO NOT MERGE)
 
 
 def decide_alerts(report: dict, state: dict, now: datetime) -> tuple[list[str], dict]:
@@ -1477,6 +2056,26 @@ def notify_operator(msg: str, now: datetime,
     return delivered
 
 
+def cn_close_transports(now: datetime) -> list:
+    """The close-board SLA's fan — same three vendors, DIFFERENT dedup namespace.
+
+    ``send_email`` folds (template, REALERT_HOURS bucket, message digest) into
+    the mailer's idem_key, so a close-board alert that shared the freshness
+    template could be swallowed as a "duplicate" of an unrelated staleness page
+    sent in the same six-hour window — or swallow one. Its own template name
+    keys it apart. No new vendor (the GATE-4 precedent,
+    scripts/commercial_path_sentinel._transports).
+    """
+    return [
+        ("telegram", send_telegram),
+        ("discord", send_discord),
+        ("email", lambda m: send_email(
+            m, now, subject="Mastermind CN close-board SLA alert",
+            template="cn_close_board_sla",
+        )),
+    ]
+
+
 # --------------------------------------------------------------------------- #
 # State I/O
 # --------------------------------------------------------------------------- #
@@ -1570,6 +2169,13 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
     served_dir = Path(DEFAULT_SERVED_DIR) if served_dir is None else served_dir
     results: dict[str, FetchResult] = {}
     for s in SURFACES:
+        if s.get("phase_clock") == "cn" and not cn_watch_open(now):
+            # Outside the mainland watch window there is nothing owed and
+            # nothing to judge, so the pass does not manufacture an observation
+            # it would then have to explain away. The check still runs (below)
+            # and reports the phase — quiet is a REPORTED state, not a gap.
+            results[s["id"]] = _NOT_READ
+            continue
         if s["kind"] == "served_file":
             results[s["id"]] = served_reader(served_dir, s["path"])
             continue
@@ -1639,6 +2245,12 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
 
     alerts, new_state = decide_alerts(report, load_state(state_dir), now)
 
+    # The CN close-board SLA rides the same record file and the same
+    # alerts-before-state ordering. Computed here so its stamp is part of the
+    # ONE first_fresh write below rather than a second file to keep in step.
+    first_fresh = load_first_fresh(state_dir)
+    cn_alert, first_fresh = cn_close_sla_alert(first_fresh, report, now)
+
     # ALERTS FIRST, state files second: a full disk or a permissions break on
     # /var/lib must never silence the alarm it should be raising.
     delivered_any = True
@@ -1647,6 +2259,13 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         print(f"sentinel alert ({', '.join(delivered) or 'NO TRANSPORT DELIVERED'}):\n{msg}")
         if not delivered:
             delivered_any = False
+    if cn_alert:
+        cn_delivered = notify_operator(cn_alert, now, transports=cn_close_transports(now))
+        print(f"sentinel alert ({', '.join(cn_delivered) or 'NO TRANSPORT DELIVERED'}):"
+              f"\n{cn_alert}")
+        if not cn_delivered:
+            delivered_any = False
+            alerts = [*alerts, cn_alert]   # so the undelivered notice below fires
     if alerts and not delivered_any:
         print(
             "sentinel: ALERT UNDELIVERED — configure TELEGRAM_BOT_TOKEN/"
@@ -1673,7 +2292,7 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
     # The SLA record rides the same pass but is a SEPARATE file: state.json is
     # rewritten wholesale every pass and this must not be, so mixing them would
     # put an append-only record inside an overwrite-only one.
-    first_fresh = record_first_fresh(load_first_fresh(state_dir), report, now)
+    first_fresh = record_first_fresh(first_fresh, report, now)
     report["sla"] = sla_summary(first_fresh, now)
 
     for target, payload in (

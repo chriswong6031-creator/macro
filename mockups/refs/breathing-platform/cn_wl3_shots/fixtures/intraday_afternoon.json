@@ -1,0 +1,255 @@
+{
+  "schema": "cn_prophet_live.states/v1",
+  "session": "2026-08-15",
+  "built_at": "2026-08-15T06:12:00Z",
+  "market_phase": "afternoon",
+  "pack_as_of": "2026-08-14",
+  "revision": "intraday_provisional",
+  "close_pending": false,
+  "quote_source": "yahoo_spark",
+  "delay_floor_min": 15,
+  "coverage": {
+    "universe_n": 1450,
+    "armed_n": 141,
+    "observable_n": 128,
+    "coverage_pct": 90.8
+  },
+  "repaint_disclosure": {
+    "t2_repaint_pct": 15.1
+  },
+  "names": {
+    "600879.SS": {
+      "state": "forming",
+      "since_ts": "2026-08-15T05:42:00Z",
+      "market_status": "trading",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "002466.SZ": {
+      "state": "near",
+      "since_ts": "2026-08-15T06:05:00Z",
+      "market_status": "trading",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "002709.SZ": {
+      "state": "at_risk",
+      "since_ts": "2026-08-15T05:11:00Z",
+      "market_status": "trading",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "002460.SZ": {
+      "state": "forming",
+      "since_ts": "2026-08-15T02:31:00Z",
+      "market_status": "limit_up_locked",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "002050.SZ": {
+      "state": "faded",
+      "since_ts": "2026-08-15T02:58:00Z",
+      "market_status": "trading",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "600118.SS": {
+      "state": "at_risk",
+      "since_ts": "2026-08-15T01:41:00Z",
+      "market_status": "limit_down_locked",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "001301.SZ": {
+      "state": "near",
+      "since_ts": "2026-08-15T01:30:00Z",
+      "market_status": "suspended_suspected",
+      "price": null,
+      "quote_ts": null,
+      "quote_age_sec": null,
+      "price_basis": null,
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "002048.SZ": {
+      "state": "forming",
+      "since_ts": "2026-08-15T03:02:00Z",
+      "market_status": "unavailable",
+      "price": null,
+      "quote_ts": null,
+      "quote_age_sec": null,
+      "price_basis": null,
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "603920.SS": {
+      "state": "dormant",
+      "since_ts": null,
+      "market_status": "trading",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    },
+    "002756.SZ": {
+      "state": "unknown",
+      "since_ts": null,
+      "market_status": "trading",
+      "price": 12.34,
+      "quote_ts": "2026-08-15T06:12:00Z",
+      "quote_age_sec": 902,
+      "price_basis": "minute",
+      "prev_close_feed": 12.1,
+      "as_of_close_pack": "2026-08-14",
+      "trigger_px": 12.34,
+      "fade_px": 11.74,
+      "band_lo_px": 11.98,
+      "band_hi_px": 12.83,
+      "frozen": {
+        "score": 78.4,
+        "rank": 3,
+        "lane": "featured"
+      },
+      "dark_reason": null
+    }
+  },
+  "close_board": null,
+  "liveness": {
+    "expected_session": "2026-08-15",
+    "market_phase": "afternoon",
+    "source": "yahoo_spark",
+    "source_asof": "2026-08-15T06:12:00Z",
+    "quote_age_sec_p50": 902,
+    "universe_n": 1450,
+    "observable_n": 128,
+    "candidate_n": 141,
+    "coverage_pct": 90.8,
+    "evaluation_started_at": "2026-08-15T06:12:00Z",
+    "artifact_written_at": "2026-08-15T06:12:00Z",
+    "close_observed_at": null,
+    "first_close_board_at": null,
+    "provisional_revision": "intraday_provisional",
+    "canonical_revision": null,
+    "confirmation_status": null,
+    "failure_stage": null,
+    "failure_reason": null
+  },
+  "prev_states": null,
+  "dark": null
+}

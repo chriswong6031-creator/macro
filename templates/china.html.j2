@@ -3209,6 +3209,21 @@ html[data-lang="zh"][data-theme="light"] body.page-china .ms-red .cnx-big-score 
       <span class="muted" style="font-size:10.5px;display:block;margin-top:2px"><span class="l-en">{{ _do.get('reason','') }}</span><span class="l-zh">{{ _do.get('reason_zh', _do.get('reason','')) }}</span></span>
     </div>
     {% endif %}
+    {# ── CN-W-L3 / CN-PR-3: the runtime board strip ────────────────────────────────
+       An EMPTY, hidden container and nothing else. templates/cn_prophet_live.js fills it
+       from live/cn_prophet_live.json during the mainland session and tears it back to
+       exactly this on any refusal, so a reader with no runtime layer — gated out,
+       offline, out of session, or served a stale artifact — sees the nightly board
+       byte-for-byte. It sits BELOW the data-outage banner on purpose: a degraded board is
+       the more urgent thing to read first.
+
+       `data-session` is the feed floor's anchor. It is the board's OWN as-of — the
+       session these cards were built from — and not `latest.date`, because the floor has
+       to be the session the reader is actually looking at. Yesterday's feed can then
+       never repaint today's render, and today's feed upgrades yesterday's page, which is
+       the whole point of the module. Contract:
+       research/CN_BREATHING_PLATFORM_ARCHITECTURE_2026-08-15.md §7. #}
+    <div id="cn-live-board" data-session="{{ setups.get('as_of','') }}" hidden></div>
     {# ── W8-E: count chips row (live-updated by JS when in table mode) ── #}
     <div id="st-count-chips" style="display:none"></div>
 
@@ -4561,6 +4576,12 @@ window.__CHART_SWAP__ = {
 {%- endif %}
 <script src="theme.js"></script>
 <script src="china_risk_state_live.js"></script>
+{# CN-W-L3 / CN-PR-3 — the runtime board client. stocks mode ONLY: its two write targets
+   (#cn-live-board and the cards' reserved .pv-live slots) exist nowhere on china.html, so
+   loading it there would be bytes that can only no-op. No ?v= stamp is authored here —
+   lib.pages.optimize_assets_text adds the content hash and `defer` at render, the same as
+   every sibling above. #}
+{% if mode == 'stocks' %}<script src="cn_prophet_live.js"></script>{% endif %}
 <script defer src="illus.js"></script>
 <script src="chart_i18n.js"></script>
 <script src="mtf.js"></script>
