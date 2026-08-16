@@ -2,22 +2,108 @@
 workstream: WS:PROPHET-CONDITIONAL-FUSION
 title: Prophet Conditional Fusion — deep audit and W3 build handoff
 date: 2026-08-16
-model: GPT-5.6 Sol
+session: prophet-fusion-deep-audit-w3-build-plan
+model: codex
+ended_because: complete
+prs: ["#5807"]
 repo: mastermindx-market-intelligence/macro
 main_at_audit: 021553985cbe6bf950413c7cb10fc302d05a9633
-session: prophet-fusion-deep-audit-w3-build-plan
-ended_because: deep audit complete; implementation deliberately not started in this session
 mission: >
   Reconcile the real post-W2B state of Prophet Conditional Fusion, identify stale records
   versus real blockers, harden the W3 design before prospective outcome data exists, and
   leave an implementation-grade sequence that a cold new session can execute without
   re-litigating settled C1 decisions or contaminating the forward race.
-continuation_status: >
-  C1/us_prophet_v3 is live-accepted. W3 is NOT built. The next session should start W3A:
-  governance/semantic reconciliation plus W3 preregistration, before any forward outcome
-  read. W3 durable paired-race N is still 0 at this audit because no candidates-store commit
-  has landed since #5769 and the first accepted v3 board was Pages-only after engine push
-  failure.
+state_before: >
+  C1/us_prophet_v3 is live-accepted (Pages artifact of run 31913143619; #5784). W2
+  machinery merged as #5700 but the workstream still labelled w2 in_progress. W3 is
+  NOT built. Durable paired-race N is 0 because no candidates-store commit has landed
+  since #5769 and the first accepted v3 board was Pages-only after engine push failure.
+changed:
+  - path: agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-16-W3-BUILD-HANDOFF.md
+    what: "Durable post-W2B deep-audit handoff: reconciled W2/W2B/C1 status, stale vs
+      real blockers, W3A-W3D sequence, prereg requirements, and do-not-redo. This
+      follow-up makes the record schema-valid (model/ended_because enums plus the
+      required verified/unverified/next_actions blocks) without changing the audit body."
+verified:
+  - claim: W2 machinery PR #5700 is merged
+    command: "gh pr view 5700 --json state,mergeCommit"
+    result: "MERGED 2026-08-15T01:18:37Z as 6adf8b7287856c7ac02e3a71cbb26a0c5771cae7"
+  - claim: workstream YAML still labels w2 in_progress after that merge
+    command: "rg -n 'id: w2' -A3 agentos/workstreams/WS-PROPHET-CONDITIONAL-FUSION.md"
+    result: "status: in_progress under id: w2; w2b is already done"
+  - claim: #5769 already shipped the prophet_shadow_* store family
+    command: "gh pr view 5769 --json state,mergeCommit"
+    result: "MERGED 2026-08-16T02:43:09Z as 0233445657e8a6e40f3f5260d9cad7af4bb3e456"
+  - claim: DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY already exists
+    command: "test -f agentos/decisions/DEC-US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY.md"
+    result: "present; the remaining work is citing it from the workstream, not minting it"
+  - claim: #5705 already replaced settlement+10 calendar days with the 8th NYSE session
+    command: "gh pr view 5705 --json state,mergeCommit"
+    result: "MERGED 2026-08-15T07:44:38Z as 7811075a4dedd3172176866e0d588f83a3b6dc41"
+  - claim: Fusion registry/arena still carry the retired +10-calendar refusal
+    command: "rg -n 'BACKTEST_LAWFUL_STATUSES|settlement \\+ 10' scripts/prophet_fusion_arena.py research/prophet_fusion/families.yml"
+    result: "BACKTEST_LAWFUL_STATUSES = frozenset({PIT_OK}); families.yml still says
+      knowable_date (= settlement + 10 calendar days) and BACKTEST ADMISSION DEFERRED"
+  - claim: families.yml still declares bare canonical columns as champion_baseline
+    command: "rg -n -A16 '^champion_baseline:' research/prophet_fusion/families.yml"
+    result: "prophet_score, score_rank, display_rank, featured, and the ten prophet_*
+      leg columns remain under a timeless champion_baseline list"
+  - claim: no candidates-store commit has landed since #5769
+    command: "git log --oneline 0233445657e8a6e40f3f5260d9cad7af4bb3e456..origin/main -- data/us_prophet_rank/candidates/"
+    result: "empty. Latest candidates-path commit on origin/main is 071017a30b99
+      (2026-08-14), before #5769. W3 durable paired-race N remains 0."
+unverified:
+  - claim: the first post-merge nightly's Pages board still matches the 14/14 acceptance
+    what_would_verify: "re-fetch the Pages artifact of run 31913143619; already closed
+      by agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-16-ACCEPTANCE.md"
+  - claim: C2 still needs 91 graded dates / 67 more than held
+    what_would_verify: "re-run the #5700 C2 harness against the current graded frame;
+      the 24/91 figure is a dated distance receipt, not re-measured in this session"
+unresolved:
+  - "W3 is not built. Start PR-3A only: AgentOS reconciliation, definition-aware
+    baseline semantics, #5705 PIT integration, and freeze W3_RACE_PREREG.md before
+    any forward outcome read."
+  - "Registry baseline-role drift: bare champion_baseline names the wrong semantic
+    object on a v3 row (DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER)."
+  - "No durable post-#5769 paired stamp yet. Do not backfill the Pages-only night."
+  - "#5742 availability/push contention remains external; keep the fail-closed
+    checkpoint fence."
+  - "Workstream landmine still carries pre-#5769 task_8c904665 / shadow-legs-null
+    wording. Reconcile in W3A; do not copy shadow values into canonical prophet_*."
+  - "C2 commissioning is data-gated, not a code project. Do not rebuild #5700."
+next_actions:
+  - "PR-3A only, in a fresh session after this record lands: reconcile AgentOS
+    status/landmines/decisions (w2 done/#5700; cite DEC:US-SHADOW; drop stale
+    task_8c904665 landmine)."
+  - "Make baseline roles definition-aware in research/prophet_fusion/families.yml
+    and pin the role-swap mutation in tests."
+  - "Reconcile pit_settlement with #5705 in families.yml + prophet_fusion_arena.py
+    + tests; keep shallow-depth caveats."
+  - "Write research/prophet_fusion/W3_RACE_PREREG.md with a numeric honest-N floor
+    and an unambiguous adverse tripwire. Do not inspect forward outcome deltas."
+  - "Stop after PR-3A. PR-3B is a later session."
+do_not_redo:
+  - "Do not re-litigate C1 adoption. us_prophet_v3 is canonical."
+  - "Do not copy prophet_shadow legs into canonical prophet_* columns on v3."
+  - "Do not create a second board-definition row for the shadow."
+  - "Do not stamp shadow on a degraded us_prophet_v2_fallback night."
+  - "Do not backfill the lost Pages-only v3 night into the candidates store."
+  - "Do not count retries of one as_of as independent nights."
+  - "Do not rebuild C2 or relax the fold law."
+  - "Do not build a second v2 scorer or a second grader for W3."
+  - "Do not weaken #5742's fail-closed checkpoint fence."
+  - "Do not bump SELECTION_ERA for the C1 rank change."
+danger_areas:
+  - "prophet_score historically meant the v1/v2 heuristic and now means C1 on v3.
+    Always pair with board_definition. Shadow values live under prophet_shadow_*."
+  - "A board can ship via Pages while failing to reach git. W3 counts durable paired
+    stamps, not what a browser served."
+  - "Retries of a stale session are not new observations. Key by session/as_of."
+  - "Live C1 extracts several members from the board row that the candidates store
+    does not preserve in the same raw form. Never answer 'what C1 used tonight'
+    from a candidates-only replay."
+  - "This file's body is the W3 charter. It is not W3_RACE_PREREG.md and does not
+    freeze the numeric honest-N floor or the tripwire. Do not read outcomes from it."
 ---
 
 # 0. Executive verdict
