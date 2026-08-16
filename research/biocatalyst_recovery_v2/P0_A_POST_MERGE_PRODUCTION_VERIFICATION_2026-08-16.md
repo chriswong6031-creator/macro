@@ -193,10 +193,28 @@ Expected 401 console noise on the anonymous page is not a `pageerror`.
 - No `systemctl restart macro-api`.
 - No application-code, frontend error-classification, collector, or generation edit.
 - No JWT printed or committed.
-- Importing `app.biocatalyst` in a *second* VPS interpreter (checkout positive control of `trial_screen({id})`) was abandoned after it blocked; serving proof uses `/api/health.commit` + `git show` of that commit, not a second import.
+- Importing `app.biocatalyst` in a *second* VPS interpreter (checkout positive control, not PID 372997) initially blocked during the main probe. It later completed successfully after this PR was already open; see the late positive-control section below. Serving-stack proof remains `/api/health.commit` + `git show` of that commit.
+
+## Late checkout positive control — completed after the original evidence capture.
+
+**Recorded:** 2026-08-16T13:01:28Z (full six-route dump). An earlier screen-only import finished 2026-08-16T12:46:29Z. Both completed in a separate `/opt/macro-api/.venv` interpreter importing the production checkout; neither is the running uvicorn PID 372997. These results were ingested after PR #5800 was already open.
+
+A production-shaped caller `{id}` (no `tier`) produced:
+
+| Surface | Result |
+|---|---|
+| Trial Screen | HTTP 200, `trial_screen_read_model.v1`, 4 rows |
+| Peer Matrix | HTTP 200, both requested covered NCTs resolved (`NCT04528082`, `NCT05020236`; `requested_count=2`, `covered_count=2`) |
+| Milestones | HTTP 200, 0 rows, valid empty |
+| Change Tape | HTTP 200, first page 50 rows |
+| First-seen Tape | HTTP 200, 0 rows, valid current coverage state |
+| Trial dossier | HTTP 200 |
+| Caller binding | `subject=<authenticated id>`, `entitlement=site_full` |
+
+This proves the #5793 code works when imported from the deployed checkout. It is **not** proof that the running production API serves it: `/api/health.commit` remained `ba6a6665a97` and PID 372997 remained unchanged.
 
 ## Rollback
 
 This report is documentation only. Production bytes were not changed by this session.
 
-P0-A PRODUCTION FIX VERIFIED — NEXT FAILURE: running macro-api still imported pre-#5793 caller-binding (`health.commit=ba6a6665a97`, PID 372997 since 09:51Z) because `macro-update` `exit 1`s at W2C owner replay (`macro-market-memory-context`) before the API restart trigger; Trial Screen/Peer Matrix on the serving process still 503 for production-shaped users
+P0-A CODE FIX VERIFIED ON PRODUCTION CHECKOUT — PRODUCTION SERVING NOT UPDATED; NEXT FAILURE: macro-update exits during W2C owner replay before the macro-api restart phase
