@@ -349,6 +349,54 @@ jobs:
             { echo "### ❌ build china a-share dashboard (build_china) failed (rc=$rc)"; echo '```'; tail -n 40 "$RUNNER_TEMP/step.log"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           fi
           exit 0
+      - name: CN Prophet Live arming pass (settled-close trigger pack -> R2)
+        # AFTER build_china (the library rebuild is in-process there). Probes
+        # per-name trigger/fade edges from settled adjusted closes and publishes
+        # live_flow/cn_prophet_live_armed.json so the VPS 5-minute lane compares
+        # a delayed quote to a level (research/CN_BREATHING_PLATFORM_ARCHITECTURE
+        # _2026-08-15.md §4). WRITES NO data/ PATH. timeout-minutes 12 +
+        # continue-on-error: a hung pack must not eat the asia job.
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          STOCK_LIB_WORKERS: "4"
+          CN_LANE: asia
+        run: |
+          set +e
+          echo "::group::build_cn_live_pack (arm the next mainland session)"
+          python -m scripts.build_cn_live_pack --publish \
+            --out "$RUNNER_TEMP/cn_prophet_live_armed.json" > "$RUNNER_TEMP/cn_live_pack.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/cn_live_pack.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=build_cn_live_pack::rc=$rc (non-fatal — the mainland lane darks on a missing pack)"; fi
+          exit 0
+      - name: CN Prophet Live reconciler (event spool -> forward ledger + receipt)
+        # AFTER the arming pass. Sole writer of data/cn_prophet_live/forward.parquet.
+        # CN_LANE=asia is the ledger-write gate. Receipt-in-hand (#5220): the
+        # close_board vs china_standouts comparison runs in THIS job, the same
+        # asia run that just rendered the canonical board. timeout-minutes 12 +
+        # continue-on-error — never red the asia job.
+        timeout-minutes: 12
+        continue-on-error: true
+        env:
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+          CN_LANE: asia
+        run: |
+          set +e
+          echo "::group::reconcile_cn_live --asia"
+          python -m scripts.reconcile_cn_live --asia \
+            --pack "$RUNNER_TEMP/cn_prophet_live_armed.json" > "$RUNNER_TEMP/cn_live_reconcile.log" 2>&1; rc=$?
+          cat "$RUNNER_TEMP/cn_live_reconcile.log"
+          echo "::endgroup::"
+          if [ "$rc" -ne 0 ]; then echo "::warning title=reconcile_cn_live::rc=$rc (non-fatal — the R2 spool is durable, tomorrow picks the day back up)"; fi
+          exit 0
       - name: timings band — builders-parallel (W2)
         run: python3 scripts/nightly_timings.py mark --band builders-parallel || echo "::warning::timings band mark failed (non-fatal)"
       - name: CN/HK builder band A (parallelised — 5 independent clusters, barrier before cross-cluster consumers)
