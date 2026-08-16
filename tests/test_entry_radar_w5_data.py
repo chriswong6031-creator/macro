@@ -30,6 +30,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -431,6 +432,163 @@ def test_panel_attrs_feed_the_control_session_offset():
         pd.DataFrame({"c": np.ones(300)}, index=pd.bdate_range("2016-01-04", periods=300)))
     bench_positions = feature_panel.attach_session_positions(panel, calendar)
     assert len(bench_positions) == 300, "a bench calendar must override the panel's own"
+
+
+# --------------------------------------------------------------------------- #
+# §7 control matching — the panel lookup, and the calendar its offsets count on
+#
+# Both defects pinned here produced NO error and NO empty output: they produced a
+# refusal census and a shrunken control pool, which read exactly like sparse data.
+# Every test below therefore carries a mutation control that fails on the old code.
+# --------------------------------------------------------------------------- #
+def test_session_key_collapses_every_spelling_to_one_date():
+    """``date`` is the panel's canonical spelling; everything else converts to it."""
+    from scripts import entry_radar_replay as runner
+
+    day = date(2020, 2, 26)
+    for value in (day, pd.Timestamp("2020-02-26"), pd.Timestamp("2020-02-26 15:59"),
+                  datetime(2020, 2, 26, 9, 30), "2020-02-26"):
+        assert runner._session_key(value) == day
+        assert type(runner._session_key(value)) is date, f"{value!r} must yield a date"
+
+
+def test_ctx_session_rows_reads_the_dtype_the_production_builder_emits():
+    """The §7 panel lookup must key on the column the REAL builder produces.
+
+    ``feature_panel._as_dates`` returns ``datetime.date``, so ``build_feature_rows``
+    writes an OBJECT column and ``cross_sectionalize`` preserves it — and
+    ``date(2020, 2, 26) == pd.Timestamp("2020-02-26")`` is **False** in Python.  The
+    lookup keyed on ``pd.Timestamp`` therefore matched zero rows for EVERY session
+    and pushed EVERY episode into the ``control_match_unavailable`` branch: a total
+    §7 control blackout that arrived as a plausible refusal census.
+
+    MUTATION CONTROL: the last assertion IS the pre-fix expression.  It must match
+    zero rows, so a regression to the Timestamp key cannot pass this test, and the
+    pin above cannot quietly go vacuous if the builder's dtype ever changes.
+    """
+    from scripts import entry_radar_replay as runner
+
+    panel = feature_panel.cross_sectionalize(_panel_rows(6))
+    session = list(panel["session"])[0]
+    assert panel["session"].dtype == object, "production panels are object dtype"
+    assert type(session) is date, "...holding plain datetime.date"
+
+    rows = runner._ctx_session_rows({"features": panel}, session)
+    assert len(rows) == 6, "every name on the session must be visible to §7"
+    assert (panel["session"] == pd.Timestamp(session)).sum() == 0, (
+        "MUTATION CONTROL: the pre-fix Timestamp key must match nothing")
+
+
+def test_ctx_session_rows_also_answers_a_datetime64_panel():
+    """The other spelling: the lookup handles both dtypes rather than assuming one.
+
+    The cost of guessing wrong here is silence, not an exception, so the branch is
+    tested rather than reasoned about.
+    """
+    from scripts import entry_radar_replay as runner
+
+    panel = feature_panel.cross_sectionalize(_panel_rows(4))
+    session = list(panel["session"])[0]
+    panel["session"] = pd.to_datetime(panel["session"])
+    assert panel["session"].dtype.kind == "M"
+    assert len(runner._ctx_session_rows({"features": panel}, session)) == 4
+
+
+def test_ctx_session_rows_still_refuses_an_absent_session():
+    """The fix widens the KEY, never the match: an unknown session still raises."""
+    from scripts import entry_radar_replay as runner
+
+    panel = feature_panel.cross_sectionalize(_panel_rows(3))
+    with pytest.raises(KeyError):
+        runner._ctx_session_rows({"features": panel}, date(1990, 1, 2))
+
+
+def test_build_match_context_counts_offsets_on_the_bench_calendar(monkeypatch):
+    """§7 offsets are TRADING sessions — never slots between decision sessions.
+
+    ``build_match_context`` derived ``session_pos_by_date`` from the panel's own
+    rows, and the panel carries ONLY decision sessions.  Two fires 20 trading
+    sessions apart then read as 1 slot apart, so the frozen "did NOT fire within ±5
+    sessions of D" window excluded a name the law admits, and every control pool
+    silently shrank.  ``attach_session_positions`` takes a bench calendar for
+    exactly this reason; production never passed one.
+
+    MUTATION CONTROL: the two decision sessions are deliberately SPARSE (20 trading
+    sessions apart).  Panel-derived positions give an offset of 1 — inside ±5, so
+    excluded; the bench calendar gives 20 — outside, so kept.  Both assertions
+    invert under a regression.
+    """
+    from scripts import entry_radar_replay as runner
+
+    names = ["AA", "BB", "CC"]
+    bench = _frame(np.linspace(100.0, 160.0, 400))
+    planes = {t: _frame(_saw(400), volume=np.full(400, 1e6 * (i + 1)))
+              for i, t in enumerate(names)}
+    calendar = bench.index
+    picks = [calendar[300].date(), calendar[320].date()]  # 20 trading sessions apart
+
+    monkeypatch.setattr(runner, "_daily_cached",
+                        lambda _cache, t: bench if t == "SPY" else planes.get(t))
+    monkeypatch.setattr(panels, "panel_b_names", lambda _root: list(names))
+    monkeypatch.setattr(panels, "sector_of", lambda _root: dict.fromkeys(names, "Tech"))
+
+    eps = [SimpleNamespace(ticker=t, decision_session=s,
+                           detector_id="C5_BOTTOM_WATCH@1")
+           for t in names for s in picks]
+    ctx = runner.build_match_context(eps, cache_dir=Path("/nonexistent"), panel="B")
+
+    positions = ctx["session_pos"]
+    assert len(positions) == len(calendar), (
+        "positions must span the BENCH calendar, not the 2 decision sessions")
+    assert (positions[pd.Timestamp(picks[1])]
+            - positions[pd.Timestamp(picks[0])]) == 20
+
+    # The law, not just the map: a fire 20 sessions back is outside ±5 and the name
+    # stays eligible.  Panel-derived slots read it as 1 session and dropped it.
+    pool = controls.eligible_pool(
+        runner._ctx_session_rows(ctx, picks[1]),
+        detector_fire_sessions={"AA": [picks[0]]},
+        candidate_session=picks[1])
+    assert "AA" in set(pool["ticker"]), (
+        "a fire 20 trading sessions back must remain in the §7 control pool")
+
+
+def test_build_match_context_refuses_a_panel_that_answers_no_session(monkeypatch):
+    """A lookup that resolves ZERO decision sessions is broken, not sparse.
+
+    The original defect's whole cost was that it stayed inside the per-episode
+    refusal path and so produced a census instead of a stack trace.  A panel that
+    can answer nothing now refuses loudly.
+    """
+    from scripts import entry_radar_replay as runner
+
+    names = ["AA", "BB"]
+    bench = _frame(np.linspace(100.0, 160.0, 400))
+    planes = {t: _frame(_saw(400)) for t in names}
+    picks = [bench.index[300].date()]
+
+    monkeypatch.setattr(runner, "_daily_cached",
+                        lambda _cache, t: bench if t == "SPY" else planes.get(t))
+    monkeypatch.setattr(panels, "panel_b_names", lambda _root: list(names))
+    monkeypatch.setattr(panels, "sector_of", lambda _root: dict.fromkeys(names, "Tech"))
+    # Re-introduce the defect at its source: a panel whose sessions cannot be keyed.
+    monkeypatch.setattr(runner, "_session_key", lambda v: v)
+    monkeypatch.setattr(feature_panel, "cross_sectionalize",
+                        _sessions_as_timestamps(feature_panel.cross_sectionalize))
+
+    eps = [SimpleNamespace(ticker=t, decision_session=picks[0],
+                           detector_id="C5_BOTTOM_WATCH@1") for t in names]
+    with pytest.raises(runner.ReplayRefusal, match="structurally broken"):
+        runner.build_match_context(eps, cache_dir=Path("/nonexistent"), panel="B")
+
+
+def _sessions_as_timestamps(inner):
+    """Wrap ``cross_sectionalize`` so its session column comes back as datetime64."""
+    def _wrapped(rows):
+        out = inner(rows)
+        out["session"] = pd.to_datetime(out["session"])
+        return out
+    return _wrapped
 
 
 # --------------------------------------------------------------------------- #

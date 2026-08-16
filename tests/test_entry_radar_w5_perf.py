@@ -171,40 +171,52 @@ def _legacy_or_raise(frame, session):
 
 
 @pytest.mark.parametrize("session_dtype", ["datetime64", "object_date"])
-def test_ctx_session_rows_equals_the_boolean_mask_it_replaced(session_dtype):
-    """Equivalence on BOTH panel shapes — including the one production emits.
+def test_ctx_session_rows_returns_every_row_of_the_session(session_dtype):
+    """The indexed lookup resolves the session on BOTH panel shapes.
 
-    On the object/date shape both formulations find nothing (`date == Timestamp`
-    is False in Python), so this asserts they AGREE, not that either succeeds.
-    That agreement is exactly what makes the refactor identity-preserving; the
-    underlying lookup defect is pre-existing and tracked separately.
+    REVISITED BY #5780, on this test's own instruction — its previous revision
+    ended "if a later change makes the object/date lookup start matching, this
+    test must be revisited together with the control-matching refusal census it
+    would change".  That change is #5780.
+
+    What it used to assert was equivalence to the boolean mask this index
+    replaced.  On the object/date shape production actually emits, that meant the
+    two agreed on finding NOTHING — ``date == pd.Timestamp`` is False in Python,
+    so both formulations missed every session, every episode fell into
+    ``control_match_unavailable``, and the §7 control arm was structurally empty.
+    Identity with a broken baseline can no longer be the contract.
+
+    What survives unchanged is the part that licensed the groupby refactor: on
+    the datetime64 shape the index must still reproduce the mask row for row and
+    index label for index label, with ``attrs`` SHARED rather than deep-copied.
     """
     from scripts import entry_radar_replay as rr
 
     frame = _panel(session_dtype=session_dtype)
     frame.attrs["session_pos_by_date"] = _positions()
     ctx = {"features": frame}
-    agreed_rows = 0
-    for session in sorted({pd.Timestamp(s).date() for s in frame["session"]}):
-        try:
-            legacy = _legacy_or_raise(frame, session)
-        except KeyError:
-            with pytest.raises(KeyError):
-                rr._ctx_session_rows(ctx, session)
-            continue
+    all_sessions = sorted({pd.Timestamp(s).date() for s in frame["session"]})
+    seen = 0
+    for session in all_sessions:
         got = rr._ctx_session_rows(ctx, session)
-        pd.testing.assert_frame_equal(got, legacy, check_exact=True)
-        assert list(got.index) == list(legacy.index)
+        assert len(got), f"{session_dtype}: session {session} must resolve"
+        assert {pd.Timestamp(s).date() for s in got["session"]} == {session}
         assert got.attrs["session_pos_by_date"] is frame.attrs["session_pos_by_date"]
-        agreed_rows += len(got)
+        if session_dtype == "datetime64":
+            pd.testing.assert_frame_equal(got, _legacy_or_raise(frame, session),
+                                          check_exact=True)
+            assert list(got.index) == list(_legacy_or_raise(frame, session).index)
+        seen += len(got)
+    assert seen == len(frame), "every row must be reachable through its own session"
 
-    if session_dtype == "datetime64":
-        assert agreed_rows == len(frame), "the datetime64 leg must actually match rows"
-    else:
-        # Pins the production reality rather than blessing it: if a later change
-        # makes the object/date lookup start matching, this test must be revisited
-        # together with the control-matching refusal census it would change.
-        assert agreed_rows == 0
+    if session_dtype == "object_date":
+        # MUTATION CONTROL and provenance in one: the mask this index replaced
+        # still finds nothing on the shape production emits.  That is precisely
+        # the defect #5780 repaired, and the reason equivalence-to-legacy cannot
+        # be the contract on this leg.  If this stops raising, the panel dtype
+        # moved and both this file and the §7 lookup need re-reading.
+        with pytest.raises(KeyError):
+            _legacy_or_raise(frame, all_sessions[0])
 
 
 def test_ctx_session_rows_still_raises_on_a_session_with_no_rows():
