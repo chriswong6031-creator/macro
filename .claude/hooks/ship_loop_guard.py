@@ -203,10 +203,15 @@ def _run_raw(root: Path, *args: str, timeout: int = 45) -> str:
 
 
 def _repo_root(payload: dict[str, Any]) -> Path | None:
+    # Prefer the session's explicit cwd over an inherited primary-checkout
+    # CLAUDE_PROJECT_DIR. Settings.json launches this file from
+    # $CLAUDE_PROJECT_DIR, so the environment path is the hook *source*, not
+    # the tree being evaluated (#5756/#5757 class: stale primary logic against
+    # a current worktree).
     candidates = [
-        os.environ.get("CLAUDE_PROJECT_DIR"),
         payload.get("cwd"),
         os.getcwd(),
+        os.environ.get("CLAUDE_PROJECT_DIR"),
     ]
     for candidate in candidates:
         if not candidate:
@@ -3591,10 +3596,192 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         pass
 
 
-def main() -> None:
+# Settings.json launches this file via $CLAUDE_PROJECT_DIR, so the executing
+# copy is often the primary checkout. The tree being evaluated is resolved
+# separately from the hook payload. When those two identities differ and they
+# share a git object store (linked worktrees of the same clone), this process
+# is only a bootstrap: it delegates exactly once to the evaluated tree's own
+# ship_loop_guard.py. A stale primary can then no longer enforce old Stop
+# logic against a current worktree. If delegation is required but impossible,
+# Stop fails closed as hook_source_mismatch rather than a misleading ci_failed.
+DELEGATION_ENV = "SHIP_LOOP_GUARD_DELEGATED"
+TARGET_HOOK_REL = Path(".claude") / "hooks" / "ship_loop_guard.py"
+
+
+def _hook_source_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _short_head(root: Path) -> str:
     try:
-        payload = json.load(sys.stdin)
+        return _run(root, "git", "rev-parse", "--short=12", "HEAD") or "UNKNOWN"
     except Exception:
+        return "UNKNOWN"
+
+
+def _git_common_dir(root: Path) -> Path | None:
+    try:
+        found = _run(root, "git", "rev-parse", "--git-common-dir")
+    except Exception:
+        return None
+    if not found:
+        return None
+    common = Path(found)
+    if not common.is_absolute():
+        common = (root / common)
+    try:
+        return common.resolve()
+    except OSError:
+        return None
+
+
+def _same_git_repository(source: Path, evaluated: Path) -> bool:
+    source_common = _git_common_dir(source)
+    evaluated_common = _git_common_dir(evaluated)
+    return bool(source_common and evaluated_common and source_common == evaluated_common)
+
+
+def _classify_hook_target(path: Path) -> str:
+    """Return 'ok', 'missing', 'unreadable', or 'malformed'."""
+    try:
+        if not path.is_file():
+            return "missing"
+    except OSError:
+        return "unreadable"
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return "unreadable"
+    if not text.strip():
+        return "malformed"
+    try:
+        compile(text, str(path), "exec")
+    except SyntaxError:
+        return "malformed"
+    return "ok"
+
+
+def _format_hook_source_mismatch(source: Path, evaluated: Path, detail: str) -> str:
+    return (
+        "hook_source_mismatch: "
+        f"executing={source}@{_short_head(source)} "
+        f"evaluating={evaluated}@{_short_head(evaluated)} "
+        f"{detail}"
+    )
+
+
+def _emit_hook_source_mismatch(event: str, reason: str) -> None:
+    if event == "Stop":
+        _emit(
+            {
+                "decision": "block",
+                "reason": f"SHIP LOOP hook_source_mismatch: {reason}",
+            }
+        )
+        return
+    _emit({"systemMessage": f"SHIP LOOP hook_source_mismatch: {reason}"})
+
+
+def _spawn_delegated_guard(target: Path, raw: bytes, *, cwd: Path) -> int:
+    env = os.environ.copy()
+    env[DELEGATION_ENV] = "1"
+    proc = subprocess.run(
+        [sys.executable, "-u", str(target)],
+        input=raw,
+        env=env,
+        cwd=str(cwd),
+        capture_output=True,
+        check=False,
+    )
+    if proc.stdout:
+        sys.stdout.buffer.write(proc.stdout)
+        sys.stdout.flush()
+    if proc.stderr:
+        sys.stderr.buffer.write(proc.stderr)
+        sys.stderr.flush()
+    return int(proc.returncode)
+
+
+def _load_payload_and_raw() -> tuple[dict[str, Any] | None, bytes]:
+    """Read stdin once so a delegated child can receive the original bytes.
+
+    Prefer ``stdin.buffer`` so the child sees the exact bytes Claude sent.
+    Fall back to ``json.load`` so existing tests that patch it still drive
+    ``main()``.
+    """
+    stream = sys.stdin
+    raw = b""
+    buf = getattr(stream, "buffer", None)
+    if buf is not None:
+        try:
+            raw = buf.read()
+        except Exception:
+            raw = b""
+        if raw:
+            try:
+                payload = json.loads(raw.decode("utf-8"))
+            except Exception:
+                return None, raw
+            if isinstance(payload, dict):
+                return payload, raw
+            return None, raw
+    try:
+        payload = json.load(stream)
+    except Exception:
+        return None, raw
+    if not isinstance(payload, dict):
+        return None, raw
+    return payload, json.dumps(payload, ensure_ascii=False).encode("utf-8")
+
+
+def _delegate_to_evaluated_hook(payload: dict[str, Any], raw: bytes) -> bool:
+    """True when this process is done (delegated, or mismatch already emitted).
+
+    Unrelated repositories (including the tmp repos in this hook's own tests)
+    are not a source mismatch — only linked worktrees of the same clone.
+    """
+    if os.environ.get(DELEGATION_ENV):
+        return False
+    source = _hook_source_root().resolve()
+    evaluated = _repo_root(payload)
+    if evaluated is None:
+        return False
+    evaluated = evaluated.resolve()
+    if source == evaluated:
+        return False
+    if not _same_git_repository(source, evaluated):
+        return False
+    event = str(payload.get("hook_event_name") or "")
+    target = evaluated / TARGET_HOOK_REL
+    status = _classify_hook_target(target)
+    if status != "ok":
+        detail = {
+            "missing": "target hook unavailable",
+            "unreadable": "target hook unreadable",
+            "malformed": "target hook malformed",
+        }.get(status, status)
+        _emit_hook_source_mismatch(
+            event,
+            _format_hook_source_mismatch(source, evaluated, detail),
+        )
+        return True
+    try:
+        _spawn_delegated_guard(target, raw, cwd=evaluated)
+    except Exception as exc:
+        _emit_hook_source_mismatch(
+            event,
+            _format_hook_source_mismatch(
+                source, evaluated, f"target hook spawn failed: {exc}"
+            ),
+        )
+    return True
+
+
+def main() -> None:
+    payload, raw = _load_payload_and_raw()
+    if payload is None:
+        return
+    if _delegate_to_evaluated_hook(payload, raw):
         return
     root = _repo_root(payload)
     if root is None:
