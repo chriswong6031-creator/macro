@@ -1197,9 +1197,49 @@ def _is_spurious_check(name: str) -> bool:
     Widening this allowlist is a RULING, not a refactor — a broadened predicate
     waves a genuine red through as noise, which is the most expensive mistake this
     function can make. Change it here and in the sweeper together, or in neither.
+
+    NOT the whole "is this a red we own" question — see :func:`_is_non_binding_check`,
+    which adds the one context this hook must also skip. Call that one from a gate;
+    this predicate stays narrow so the spurious allowlist keeps its own meaning.
     """
     lowered = str(name or "").lower()
     return "workers builds" in lowered and "macro" in lowered
+
+
+#: The inactive `ci-authority` base context. `.github/workflows/ci-authority.yml`
+#: publishes two complementary exact-head contexts — `ci-authority/main` and
+#: `ci-authority/codex/merge-queue-pilot` — and states that "each PR run FAILS the
+#: inactive context so an edited retarget cannot reuse a success earned against
+#: another base". Stop-hook sessions only ever track pull requests targeting main,
+#: so on every one of them this context is red BY DESIGN. It is retarget-invalidation
+#: state, not a verdict. `ci-authority/main` stays binding everywhere.
+CI_AUTHORITY_INACTIVE_CONTEXT = "ci-authority/codex/merge-queue-pilot"
+
+
+def _is_non_binding_check(name: str) -> bool:
+    """Is this check name one no gate here may read as a red we own?
+
+    THE ONE DEFINITION, and it is now actually one. This is NOT a widening of the
+    spurious allowlist: `_split_head_runs` and `_red_checks` have BOTH skipped
+    `CI_AUTHORITY_INACTIVE_CONTEXT` since it was introduced, and the sweeper carries
+    the identical rule (`scripts/merge_on_green.py`, `is_spurious_check` call sites).
+    The merged-head CI gate did not — while its own comment claimed "ONE definition
+    of 'not a red', shared with `_split_head_runs` above and with the sweeper's own
+    copy". A comment asserting parity is not parity, and the divergence is exactly
+    the kind a reader cannot see: three loops that look alike, one filtering less.
+
+    THE SCAR. The gate blocked a session whose work had MERGED GREEN, naming a
+    context that is red on every pull request in this repository — measured on the
+    sibling PR #5767, whose single failing check was this context and which merged
+    clean. It stayed invisible because the semantic proof path ahead of it raised
+    first (#5771) and produced a different refusal; repairing that unmasked this,
+    which is the ordinary shape of a first failing gate hiding the second.
+
+    Deliberately still narrow. `_is_spurious_check` keeps its own meaning and its own
+    "widening is a RULING, not a refactor" contract; this adds exactly one name, and
+    that name's redness is a documented property of the workflow that emits it.
+    """
+    return _is_spurious_check(name) or str(name or "") == CI_AUTHORITY_INACTIVE_CONTEXT
 
 
 def _open_pull(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
@@ -1227,13 +1267,9 @@ def _red_pairs(runs: list[dict[str, Any]]) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
-            continue
-        # ci-authority deliberately fails the inactive pilot context before it
-        # publishes the active main verdict. Stop-hook sessions only track PRs
-        # targeting main, so this exact pilot context is retarget-invalidation
-        # state, not a red. ci-authority/main remains binding everywhere.
-        if name == "ci-authority/codex/merge-queue-pilot":
+        # `_is_non_binding_check` carries both rules (spurious Cloudflare X, and the
+        # ci-authority inactive base context that is red on every PR by design).
+        if _is_non_binding_check(name):
             continue
         if run.get("status") != "completed":
             continue
@@ -1258,9 +1294,7 @@ def _split_head_runs(
     passed: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
-            continue
-        if name == "ci-authority/codex/merge-queue-pilot":
+        if _is_non_binding_check(name):
             continue
         if run.get("status") != "completed":
             pending.append(name)
@@ -1575,7 +1609,7 @@ def _armed_pull_status(owner: str, repo: str, branch: str, head: str) -> tuple[s
         starts = [
             stamp
             for run in runs
-            if not _is_spurious_check(str(run.get("name") or "unnamed check"))
+            if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
             and run.get("conclusion") == "failure"
             for stamp in (_started_stamp(run, "started_at", "completed_at"),)
             if stamp
@@ -1927,14 +1961,36 @@ def _check_ci(
     if not runs:
         return False, "No CI check runs were found for the pull-request head."
     # ONE definition of "not a red", shared with `_split_head_runs` above and with
-    # the sweeper's own copy in `scripts/merge_on_green.py`.
+    # the sweeper's own copy in `scripts/merge_on_green.py` — and it is `_is_non_
+    # binding_check`, not `_is_spurious_check`. This loop called the narrower one
+    # while the comment claimed parity, so it alone counted the ci-authority
+    # inactive base context as a red we own and blocked sessions whose work had
+    # merged GREEN on a context that is red on every PR in this repository.
     non_red = NON_RED_CONCLUSIONS
     bad: list[tuple[str, str]] = []
     pending: list[str] = []
     failure_starts: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
+        if _is_non_binding_check(name):
+            continue
+        # The inactive pilot authority context, excluded on the MERGED path too
+        # (2026-08-16). `_red_pairs` and `_split_head_runs` above have always
+        # skipped it and `scripts/merge_on_green.py` carries the same rule, but
+        # this loop did not — so the three disagreed about one check on one head.
+        # Measured on #5765's merged head 8c279038: `_red_pairs` returned [] while
+        # this loop returned [("ci-authority/codex/merge-queue-pilot","failure")],
+        # and the session was blocked after a fully green merge. It is worse than
+        # a plain false red: a non-empty `bad` is what ARMS the semantic-evidence
+        # path, and a merged head can no longer bind its proof base (GitHub drops
+        # `pull_requests` from check-runs once the PR closes), so the block
+        # surfaced as "advertised semantic evidence is unusable ... does not
+        # identify the exact PR proof base" — a message about proof plumbing that
+        # named nothing the session could fix, for a check that is BY DESIGN a
+        # retarget-invalidation receipt. Every PR touching a ci-authority path
+        # hit this. `ci-authority/main` stays binding here exactly as elsewhere;
+        # this skips ONLY the one literal pilot context, and widens nothing.
+        if name == "ci-authority/codex/merge-queue-pilot":
             continue
         if run.get("status") != "completed":
             pending.append(name)
@@ -3280,6 +3336,19 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
     pull_key = f"{branch}:{head}"
     pull = _proof(state, "merged_pull", pull_key)
+    if pull is not None and not str((pull.get("base") or {}).get("sha") or ""):
+        # A PRE-FIX CACHE SHAPE IS NOT A PROOF. The narrowing below did not keep
+        # `base.sha` until 2026-08-16, and this proof is keyed by branch+head —
+        # neither of which ever moves again once the branch is merged — so a
+        # session that already remembered the old shape would keep reading its own
+        # stale record and stay blocked by the very defect the narrowing fix
+        # repairs. The cache, not the API, is what the CI gate would be answering
+        # from. Treat an incomplete record as no record and pay one call: the
+        # refetch re-remembers the complete shape and every later Stop hits the
+        # cache again. A pull request whose API record genuinely carries no base
+        # re-asks once per Stop, which is the cheap direction — the alternative is
+        # pinning a session forever on a record that can never answer.
+        pull = None
     if pull is None:
         try:
             pull = _latest_merged_pr(owner, repo, branch)
@@ -3287,14 +3356,35 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return
         if pull:
-            # A merged PR and its head/merge identities are immutable. Keep only
-            # the fields the remaining gates consume, not the full API payload.
+            # A merged PR and its head/merge/base identities are immutable. Keep
+            # only the fields the remaining gates consume, not the full API
+            # payload — and `base.sha` IS one of them, as of #5757: the CI gate
+            # threads it in as the MERGED head's semantic proof base, because
+            # GitHub drops `pull_requests` from check-runs the moment a pull
+            # request closes, so `_semantic_pr_base_sha` returns None on every
+            # merged head and this record is the only surviving source of the
+            # exact base.
+            #
+            # Dropping it is why that fallback shipped dead. #3746 narrowed this
+            # record long before the fallback existed, so `_check_ci` was handed
+            # `""` on every merged head, `_semantic_evidence_for_run` found no
+            # bound base on either side, and it refused with "run <id> does not
+            # identify the exact PR proof base" — surfacing as `ci_failed` on
+            # work that had merged GREEN, fleet-wide, with no session-side
+            # remedy: check runs on a merged commit are immutable. Measured on
+            # PR #5769 (merged 2026-08-16T02:43:09Z): run 31921385097 concluded
+            # `success` carrying `prs: []`, while `/pulls/5769` still carried
+            # base c2484fe7134b63b8acba50471396edf9929d20a3.
+            #
+            # Only the sha is kept. The narrowing exists to bound what is written
+            # into the state file, and no gate reads anything else off the base.
             pull = {
                 "number": pull.get("number"),
                 "head": {
                     "sha": (pull.get("head") or {}).get("sha"),
                     "ref": (pull.get("head") or {}).get("ref"),
                 },
+                "base": {"sha": (pull.get("base") or {}).get("sha")},
                 "merge_commit_sha": pull.get("merge_commit_sha"),
                 "merged_at": pull.get("merged_at"),
             }
