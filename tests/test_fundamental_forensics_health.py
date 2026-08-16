@@ -418,7 +418,7 @@ def test_health_endpoint_is_private_no_store_and_does_not_leak(monkeypatch) -> N
     monkeypatch.setattr(
         forensics_api,
         "evaluate_health",
-        lambda _root: evaluate_health(
+        lambda _root, **_kwargs: evaluate_health(
             ROOT,
             now=AUGUST,
             loaded=LoadedState(blob=blob, origin=ORIGIN_R2),
@@ -452,7 +452,7 @@ def test_health_endpoint_missing_state_is_unavailable(monkeypatch) -> None:
     monkeypatch.setattr(
         forensics_api,
         "evaluate_health",
-        lambda _root: health_from_inputs(
+        lambda _root, **_kwargs: health_from_inputs(
             loaded=LoadedState(blob=None, origin=ORIGIN_MISSING),
             document=None,
             now=AUGUST,

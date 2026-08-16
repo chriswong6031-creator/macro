@@ -253,14 +253,18 @@ def health_from_inputs(
 def evaluate_health(
     root: str | Path,
     *,
-    now: datetime | None = None,
+    now: datetime,
     store_factory: Callable[[], Any] | None = None,
     cache_seconds: float | None = None,
     loaded: LoadedState | None = None,
     document: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Return the private health contract for one repository root."""
-    evaluated = _aware_utc(now or datetime.now(timezone.utc))
+    """Return the private health contract for one repository root.
+
+    ``now`` is required.  The kernel must not mint a wall clock; the request
+    path or a test supplies the evaluation instant.
+    """
+    evaluated = _aware_utc(now)
     record = loaded if loaded is not None else load_state_record(
         root,
         store_factory=store_factory,

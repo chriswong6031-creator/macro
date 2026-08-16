@@ -8,6 +8,7 @@ import re
 import threading
 from bisect import bisect_right
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -146,7 +147,7 @@ def forensics_state(_user: dict = Depends(require_site_full_user)) -> Response:
 @router.get("/api/forensics/health")
 def forensics_health(_user: dict = Depends(require_site_full_user)) -> JSONResponse:
     """Return operational/source freshness, never private rows or storage keys."""
-    payload = evaluate_health(REPO)
+    payload = evaluate_health(REPO, now=datetime.now(timezone.utc))
     return JSONResponse(payload, headers=dict(_PRIVATE_HEADERS))
 
 
