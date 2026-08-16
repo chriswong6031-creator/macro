@@ -1220,6 +1220,7 @@ jobs:
       - "engine/options_issue_desk.py"
       - "engine/options_ivspread.py"
       - "engine/options_market_memory_context.py"
+      - "engine/options_market_memory_local_receipts.py"
       - "engine/options_market_memory_receipt_store.py"
       - "engine/options_matrix.py"
       - "engine/options_signal_campaign.py"
@@ -1361,6 +1362,7 @@ jobs:
       - "tests/test_options_issue_desk_api.py"
       - "tests/test_options_episode_outcome_coverage.py"
       - "tests/test_options_matrix.py"
+      - "tests/test_options_market_memory_local_receipts.py"
       - "tests/test_options_signal_campaign.py"
       - "tests/test_options_signal_episode.py"
       - "tests/test_options_sparse_selector_prereg.py"
@@ -1411,7 +1413,8 @@ jobs:
         run: >-
           python -m pytest
           tests/test_options_sparse_selector_runtime.py
-          tests/test_private_auth_dict.py -q -rs
+          tests/test_private_auth_dict.py
+          tests/test_options_market_memory_local_receipts.py -q -rs
       - name: sparse selector sealed runtime carrier + bounded paper-only canary runner
         run: >-
           python -m pytest
