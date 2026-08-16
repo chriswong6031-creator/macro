@@ -2009,9 +2009,10 @@ app.include_router(market_memory_router)
 # this route enforces the same authenticated site_full entitlement as the paid
 # site before reading the private Research Vault bucket. These are paid product
 # contracts, so router wiring errors fail startup loudly — the same rule the
-# BioCatalyst block below states. A swallowed ImportError here deleted all five
-# entitled routes (/api/forensics/state plus the four attested-history receipt
-# routes) at once and presented only as a 404 on a paid endpoint: no startup
+# BioCatalyst block below states. A swallowed ImportError here deleted all six
+# entitled routes (/api/forensics/state, /api/forensics/health, plus the four
+# attested-history receipt routes) at once and presented only as a 404 on a
+# paid endpoint: no startup
 # error, no log line, nothing anybody would attribute to a renamed dependency
 # or a missing optional package on the VPS.
 from app.forensics import router as forensics_router  # noqa: E402

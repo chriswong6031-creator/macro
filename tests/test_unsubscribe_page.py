@@ -701,7 +701,8 @@ PUBLIC_EXACT = frozenset({
     # Ratified here deliberately, per this set's own rule: neither file carries a
     # finding, a company row, a receipt field, or any embedded payload. The CSS is
     # presentation and the JS is a pure fetcher whose only network calls are
-    # /api/forensics/state and /api/forensics/v1/attested-history — both still
+    # /api/forensics/state, /api/forensics/health, and
+    # /api/forensics/v1/attested-history — still
     # behind require_site_full_user (401 signed out, 403 unentitled). This changes
     # who can read the WORKBENCH, never who can read the WORK.
     "/fundamental_forensics.css", "/fundamental_forensics.js",

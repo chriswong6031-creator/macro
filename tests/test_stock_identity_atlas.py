@@ -59,7 +59,8 @@ CONSTANTS = DATA / "constants" / "si_constants_v1.json"
 #: W1 by law", and a test that punished honest wording would push the docs to lie.
 BANNED_TOKENS = ("expert", "fit_score", "expert_rank", "best_")
 
-#: Modules the Identity Atlas must never import (the G-8 protected set).
+#: Modules the IDENTITY LAYER must never import (the G-8 protected set). This ban is
+#: TOTAL for the identity layer — the episode catalog stays expert-free (G-3).
 FORBIDDEN_IMPORTS = (
     "engine.entry_signal",
     "engine.signal_gate",
@@ -72,6 +73,54 @@ FORBIDDEN_IMPORTS = (
     "engine.entry_radar",
 )
 FORBIDDEN_PREFIXES = ("engine.prophet_", "engine.prophet.", "scripts.", "scripts")
+
+#: W2 registration §2 — the ONE scoped exemption. ``engine/stock_identity/replay/**`` may
+#: import, read-only, exactly these producers, so a family is recomputed by the engine's
+#: OWN function instead of being re-implemented (re-implementation is the silent-fork
+#: hazard, archaeology §4.2). Anything not on this list stays banned there too.
+REPLAY_ALLOWED_PRODUCERS = (
+    "engine.signal_quality",
+    "engine.confluence_tiers",
+    "engine.washout_turn",
+    "engine.canon",
+    "engine.us_early_turn",
+)
+
+#: Never imported ANYWHERE under engine/stock_identity/**, replay included. These are
+#: authority modules and Prophet/Radar internals — not event math.
+REPLAY_FORBIDDEN = (
+    "engine.signal_gate",
+    "engine.entry_signal",
+    "engine.mtf_upturn",
+    "engine.stock_personality",
+    "engine.oracle.personality_context",
+    "engine.entry_radar",
+)
+REPLAY_FORBIDDEN_PREFIXES = (
+    "engine.prophet_", "engine.prophet.", "engine.entry_radar.", "engine.oracle.",
+    "scripts.", "scripts",
+)
+
+
+def _identity_layer_sources() -> list[Path]:
+    """The identity layer: the package's own top-level modules (the TOTAL-ban set)."""
+    return sorted(PKG.glob("*.py"))
+
+
+def _replay_sources() -> list[Path]:
+    """The replay subpackage: the ONLY scoped-exemption set."""
+    return sorted((PKG / "replay").rglob("*.py"))
+
+
+def _imported_modules(src: Path) -> list[str]:
+    tree = ast.parse(src.read_text(encoding="utf-8"), filename=str(src))
+    mods: list[str] = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            mods.extend(a.name for a in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.module:
+            mods.append(node.module)
+    return mods
 
 
 def _json_files() -> list[Path]:
@@ -231,22 +280,64 @@ class TestBlindArmIsInvisible:
 
 
 class TestImportDiscipline:
-    def test_package_imports_no_protected_module(self):
-        for src in sorted(PKG.glob("*.py")):
-            tree = ast.parse(src.read_text(encoding="utf-8"), filename=str(src))
-            mods: list[str] = []
-            for node in ast.walk(tree):
-                if isinstance(node, ast.Import):
-                    mods.extend(a.name for a in node.names)
-                elif isinstance(node, ast.ImportFrom) and node.module:
-                    mods.append(node.module)
-            for mod in mods:
+    """The firewall, in two scopes (W2 registration §2).
+
+    The identity layer keeps the TOTAL ban. ``replay/**`` carries the single scoped
+    exemption and nothing wider — which is why this class enumerates the allowlist rather
+    than merely subtracting the forbidden set: a producer that quietly appears in a replay
+    module without being registered here fails, in the direction that matters.
+    """
+
+    def test_identity_layer_imports_no_protected_module(self):
+        srcs = _identity_layer_sources()
+        assert srcs, "the identity layer has no modules — the walk is looking in the wrong place"
+        for src in srcs:
+            for mod in _imported_modules(src):
                 assert mod not in FORBIDDEN_IMPORTS, f"{src.name} imports {mod}"
                 for prefix in FORBIDDEN_PREFIXES:
                     assert not mod.startswith(prefix), f"{src.name} imports {mod}"
 
+    def test_replay_layer_imports_only_the_scoped_allowlist(self):
+        srcs = _replay_sources()
+        if not srcs:
+            pytest.skip("replay subpackage not present in this checkout")
+        for src in srcs:
+            for mod in _imported_modules(src):
+                if not mod.startswith("engine."):
+                    continue
+                if mod.startswith("engine.stock_identity"):
+                    continue                      # in-package imports are unrestricted
+                assert mod in REPLAY_ALLOWED_PRODUCERS, (
+                    f"{src.name} imports {mod}, which is not on the registration §2 "
+                    f"scoped allowlist {REPLAY_ALLOWED_PRODUCERS}"
+                )
+
+    def test_replay_layer_never_imports_an_authority_module(self):
+        srcs = _replay_sources()
+        if not srcs:
+            pytest.skip("replay subpackage not present in this checkout")
+        for src in srcs:
+            for mod in _imported_modules(src):
+                assert mod not in REPLAY_FORBIDDEN, f"{src.name} imports {mod}"
+                for prefix in REPLAY_FORBIDDEN_PREFIXES:
+                    assert not mod.startswith(prefix), f"{src.name} imports {mod}"
+
+    def test_the_allowlist_in_code_matches_the_allowlist_in_this_test(self):
+        # The package publishes the same tuple it is judged by, so the law cannot drift
+        # away from the guard by editing only one of them.
+        try:
+            from engine.stock_identity.replay import (
+                ALLOWED_PRODUCER_IMPORTS,
+                FORBIDDEN_PRODUCER_IMPORTS,
+            )
+        except Exception:  # pragma: no cover - subpackage absent
+            pytest.skip("replay subpackage not importable in this checkout")
+        assert tuple(sorted(ALLOWED_PRODUCER_IMPORTS)) == tuple(sorted(REPLAY_ALLOWED_PRODUCERS))
+        for mod in FORBIDDEN_PRODUCER_IMPORTS:
+            assert mod in REPLAY_FORBIDDEN
+
     def test_package_imports_nothing_from_scripts(self):
-        for src in sorted(PKG.glob("*.py")):
+        for src in _identity_layer_sources() + _replay_sources():
             text = src.read_text(encoding="utf-8")
             assert "from scripts" not in text, src.name
             assert "import scripts" not in text, src.name

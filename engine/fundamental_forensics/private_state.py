@@ -8,6 +8,7 @@ assembled premium artifact never gets a public static URL.
 """
 from __future__ import annotations
 
+from dataclasses import dataclass
 import gzip
 import hashlib
 import io
@@ -16,7 +17,7 @@ import logging
 import threading
 import time
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Literal
 
 log = logging.getLogger("fundamental_forensics.private_state")
 
@@ -27,8 +28,28 @@ MAX_COMPRESSED_BYTES = 5 * 1024 * 1024
 MAX_DECOMPRESSED_BYTES = 32 * 1024 * 1024
 DEFAULT_CACHE_SECONDS = 60.0
 
+ORIGIN_LOCAL = "local"
+ORIGIN_R2 = "r2"
+ORIGIN_LAST_GOOD = "last_good"
+ORIGIN_MISSING = "missing"
+StateOrigin = Literal["local", "r2", "last_good", "missing"]
+
 _cache_lock = threading.Lock()
 _cache: dict[str, tuple[float, bytes]] = {}
+
+
+@dataclass(frozen=True)
+class LoadedState:
+    """One state read, with the origin health needs to classify last-good."""
+
+    blob: bytes | None
+    origin: StateOrigin
+
+    @property
+    def sha256(self) -> str | None:
+        if self.blob is None:
+            return None
+        return hashlib.sha256(self.blob).hexdigest()
 
 
 def decode_state_blob(blob: bytes) -> dict[str, Any]:
@@ -70,20 +91,21 @@ def clear_state_cache() -> None:
         _cache.clear()
 
 
-def load_state_blob(
+def load_state_record(
     root: str | Path,
     *,
     store_factory: Callable[[], Any] | None = None,
-    cache_seconds: float = DEFAULT_CACHE_SECONDS,
-) -> bytes | None:
-    """Return a validated local/private-R2 blob, retaining last-good on R2 error."""
+    cache_seconds: float | None = DEFAULT_CACHE_SECONDS,
+) -> LoadedState:
+    """Return a validated blob plus the origin health uses to flag last-good."""
+    ttl = DEFAULT_CACHE_SECONDS if cache_seconds is None else cache_seconds
     root_path = Path(root)
     local = local_state_path(root_path)
     if local.is_file():
         try:
             blob = local.read_bytes()
             decode_state_blob(blob)
-            return blob
+            return LoadedState(blob=blob, origin=ORIGIN_LOCAL)
         except Exception as exc:  # noqa: BLE001
             log.warning("ignored invalid local forensics state %s: %s", local, exc)
 
@@ -93,7 +115,7 @@ def load_state_blob(
     with _cache_lock:
         cached = _cache.get(cache_key)
         if cached and now < cached[0]:
-            return cached[1]
+            return LoadedState(blob=cached[1], origin=ORIGIN_R2)
 
     try:
         store = factory()
@@ -101,8 +123,8 @@ def load_state_blob(
         if blob is not None:
             decode_state_blob(blob)
             with _cache_lock:
-                _cache[cache_key] = (now + max(0.0, cache_seconds), blob)
-            return blob
+                _cache[cache_key] = (now + max(0.0, ttl), blob)
+            return LoadedState(blob=blob, origin=ORIGIN_R2)
     except Exception as exc:  # noqa: BLE001
         log.warning("private forensics state fetch failed: %s", exc)
 
@@ -110,7 +132,23 @@ def load_state_blob(
     # turning a transient object-store miss into a blank paid product.
     with _cache_lock:
         cached = _cache.get(cache_key)
-        return cached[1] if cached else None
+        if cached:
+            return LoadedState(blob=cached[1], origin=ORIGIN_LAST_GOOD)
+    return LoadedState(blob=None, origin=ORIGIN_MISSING)
+
+
+def load_state_blob(
+    root: str | Path,
+    *,
+    store_factory: Callable[[], Any] | None = None,
+    cache_seconds: float = DEFAULT_CACHE_SECONDS,
+) -> bytes | None:
+    """Return a validated local/private-R2 blob, retaining last-good on R2 error."""
+    return load_state_record(
+        root,
+        store_factory=store_factory,
+        cache_seconds=cache_seconds,
+    ).blob
 
 
 def load_state(

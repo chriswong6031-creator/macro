@@ -33,8 +33,8 @@ def test_workbench_renders_seven_functional_views_and_external_assets():
         assert f'id="ff-panel-{tab}"' in html
     assert 'id="ff-company-search"' in html
     assert 'id="ff-evidence"' in html
-    assert 'href="fundamental_forensics.css?v=20260811-ux"' in html
-    assert 'src="fundamental_forensics.js?v=20260811-ux"' in html
+    assert 'href="fundamental_forensics.css?v=20260816-ff0r1"' in html
+    assert 'src="fundamental_forensics.js?v=20260816-ff0r1"' in html
     assert 'https://www.mastermind-x.com/fundamental_forensics.html' in html
     assert 'src="theme.js"' in html
     # There is no executable page-inline JS; the SEO structured data block is
@@ -116,6 +116,7 @@ def test_runtime_contract_accessibility_and_security_guards():
     js = (TEMPLATES / "fundamental_forensics.js").read_text(encoding="utf-8")
     for token in (
         "/api/forensics/state",
+        "/api/forensics/health",
         "/data/fundamental_forensics/private/state.json.gz",
         "DecompressionStream",
         "ranked_findings",
@@ -143,6 +144,10 @@ def test_runtime_contract_accessibility_and_security_guards():
         "prior_receipt",
         "current_receipt",
         "renderEvidence",
+        "openAnalysisDrawer",
+        "data-analysis-open",
+        "Open signal analysis",
+        "applyHealth",
         "ATTESTED_HISTORY_URL",
         "historyRequest",
         "/api/forensics/v1/attested-history",
@@ -185,6 +190,9 @@ def test_runtime_contract_accessibility_and_security_guards():
     assert "if (!receiptReadyPayload(payload)) throw new Error('Receipt identity is malformed');" in js
     assert "credentials: 'same-origin'" in js
     assert "cache: 'no-store'" in js
+    assert "See why it matters" not in js
+    assert "Last refreshed" not in js
+    assert "ff-generated-at" not in js
 
 
 def test_runtime_is_valid_javascript():
@@ -198,6 +206,35 @@ def test_runtime_is_valid_javascript():
         check=False,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_cta_opens_analysis_drawer_on_desktop():
+    node = shutil.which("node")
+    if node is None:
+        return
+    result = subprocess.run(
+        [node, "--test", str(ROOT / "tests" / "fundamental_forensics_cta_contract.test.mjs")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+
+def test_freshness_meta_and_cta_copy_are_explicit():
+    html = _render()
+    assert "Open signal analysis" in html
+    assert "打开信号分析" in html
+    assert "See why it matters" not in html
+    assert "Last refreshed" not in html
+    assert 'id="ff-freshness-status"' in html
+    assert 'id="ff-source-snapshot"' in html
+    assert 'id="ff-run-meta"' in html
+    assert 'data-freshness="unavailable"' in html
+    assert "Source status" in html
+    assert "Latest source filing" in html
+    assert "Source snapshot" in html
+    assert 'id="ff-generated-at"' not in html
 
 
 def test_receipt_runtime_contract_rejects_malformed_dynamic_payloads():
@@ -220,6 +257,11 @@ def test_responsive_evidence_lens_has_desktop_drawer_and_mobile_sheet():
     assert "@media (min-width: 701px) and (max-width: 1300px)" in css
     assert "@media (max-width: 700px)" in css
     assert ".ff-evidence.is-open" in css
+    assert "@keyframes ff-analysis-open" in css
+    assert ".ff-run-meta[data-freshness=\"current\"]" in css
+    assert ".ff-run-meta[data-freshness=\"stale\"]" in css
+    assert ".ff-run-meta[data-freshness=\"degraded\"]" in css
+    assert ".ff-run-meta[data-freshness=\"unavailable\"]" in css
     assert ".ff-scrim" in css
     assert ".ff-disclosure-card" in css
     assert ".ff-redline-card" in css
