@@ -309,14 +309,21 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
         "function paintLockedWorkspace()",
         "function paintAppendFailure()",
         "function paintUnavailableWorkspace()",
+        "function paintIntegrityWorkspace()",
+        "function paintSourceOutageWorkspace()",
+        "function handleHydrationFailure(error, options)",
     ):
         assert token in js
 
     # Access errors clear all prior rows before the finally block can repaint;
     # transient append failures instead retain the last verified cursor/rows.
     assert "state.rows = []; state.nextCursor = ''; state.payload = null" in js
-    assert "if (options.append && state.rows.length) { preserveAppendFailure(); return; }" in js
-    assert "handleUnavailable(error, { append: append });" in js
+    assert "if (options.append && state.rows.length && kind !== 'integrity_block') { preserveAppendFailure(); return; }" in js
+    load_body = js[js.index("function loadMilestones(") : js.index("function applyFilters()")]
+    assert "handleHydrationFailure(error, { append: append });" in load_body
+    assert "handleUnavailable(error, { append: append });" not in load_body
+    assert "paintUnavailableWorkspace()" not in load_body
+    assert "throw markHydration(contractError, 'integrity_block', 200);" in load_body
 
     # Entitlement loss invalidates both concurrent request lanes before any paid
     # rows are cleared, so a late dossier response cannot repaint the workspace.

@@ -230,7 +230,13 @@ def test_the_decision_sentence_ships_even_when_the_answer_is_nothing():
     # It is painted before the first payload lands and on every terminal state,
     # so no surface can render with a blank stance.
     assert "writeUrl(); paintFrame();" in JS
-    for painter in ("paintLockedWorkspace", "paintUnavailableWorkspace", "renderQueue"):
+    for painter in (
+        "paintLockedWorkspace",
+        "paintUnavailableWorkspace",
+        "paintIntegrityWorkspace",
+        "paintSourceOutageWorkspace",
+        "renderQueue",
+    ):
         body = JS[JS.index(f"function {painter}(") :]
         assert "paintFrame();" in body[: body.index("\n  }") + 6]
 
