@@ -1,0 +1,60 @@
+# Live Entry Radar pack builder — the frozen evaluation substrate
+# (research/live_entry_radar/W4_LIVE_EVALUATOR_DESIGN.md §1, §3). One artifact per
+# session, built PRE-OPEN, carrying the confirmed daily substrate verbatim, the
+# solved inverted thresholds, the embedded Probe Set snapshot and the inversion
+# proof battery. The RTH evaluator refuses to run against a pack whose as_of is not
+# the last completed session (§2 step 3), so this lane is what makes the 5-minute
+# lane possible at all: no intraday pass ever re-derives a signal from a mutable
+# store.
+#
+# It writes no data/ path and runs no git command (LEDGER LAW G0.2). data/stocks is
+# READ, through a reader that never mkdirs; the pack lands in the state dir and the
+# proof receipt beside it.
+#
+# RESOURCE CAPS ARE INHERITED FROM THE PROPHET LANE'S MEASURED ENVELOPE, NOT
+# MEASURED HERE — same reasoning as macro-live-entry-radar.service, and the same
+# honesty: this unit ships DORMANT behind ENTRY_RADAR_LIVE_ENABLE=1 (design §3b),
+# so there has been no armed production build to measure, and macro-live-prophet's
+# header is the only measurement on this box for a same-shaped job (a capped
+# oneshot publishing to R2 + the live dir on 2 vCPUs with thin burst headroom).
+# Sharing ONE cap set with the evaluator is deliberate: two units of the same
+# program that drift apart on limits are two different failure envelopes to reason
+# about, and the arm gate means both go live in the same operator act.
+#
+# WHERE THIS LANE HONESTLY DIFFERS FROM THE EVALUATOR, and what that costs:
+#   * it reads a per-name daily parquet substrate across the whole probe set, so it
+#     is the memory-hungriest thing this program does. MemoryHigh 256M is a SOFT
+#     throttle — a build that wants more gets reclaim pressure and takes longer,
+#     which the generous timeout below is sized for; MemoryMax 512M is the hard
+#     stop that bounds a runaway. If an armed session shows the build genuinely
+#     needs more than 512M, that is a MEASUREMENT that moves this number, not a
+#     reason to have shipped it looser unmeasured.
+#   * TimeoutStartSec is 1800, not 120: this is a bounded batch build, not a
+#     5-minute tick. 1800 s is half the hourly retry period below, so two pack
+#     builds can never overlap, and a wedged build still frees the slot before the
+#     next attempt.
+# Nice/CPUWeight/IOWeight stay in the LOWEST tier on the box: this runs pre-open,
+# but it shares the machine with the quote lanes that are already awake, and a pack
+# build must never be the reason a tape lane misses a publish.
+[Unit]
+Description=Mastermind Live Entry Radar nightly/pre-open evaluation pack builder
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/macro
+EnvironmentFile=-/etc/macro-live.env
+ExecStart=/opt/macro/.venv/bin/python -m scripts.entry_radar_live_pack
+TimeoutStartSec=1800
+Nice=10
+CPUWeight=20
+CPUQuota=60%
+MemoryHigh=256M
+MemoryMax=512M
+IOWeight=20
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

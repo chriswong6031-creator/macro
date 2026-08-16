@@ -428,6 +428,44 @@ SURFACES: list[dict] = [
             "client_session_path": ("board_state", "board", "as_of"),
         },
     },
+    # W4 — the Live Entry Radar intraday payload, on the VPS live plane (kind
+    # live_file, same plane as the entry above: the daemons write it, NOT the
+    # git-rsynced site.served tree). This is the mandated positive liveness
+    # registration for that lane (research/live_entry_radar/
+    # W4_LIVE_EVALUATOR_DESIGN.md §3b): silence pages through the sentinel plane
+    # that already exists rather than through a new watchdog of its own.
+    #
+    # ``absent_ok`` is the load-bearing key, for the same reason it is above but
+    # from a different cause. The evening board is absent for most of every DAY;
+    # this artifact is absent until the OPERATOR ARMS THE LANE. The units ship
+    # staged-not-armed behind ENTRY_RADAR_LIVE_ENABLE=1 (design §3b — go-live is
+    # an explicit operator act), so from the merge until that act there is no
+    # writer and there is nothing to serve. Without the exemption a missing file
+    # would count toward the blindness escalation and page "the sentinel is
+    # blind" every 30 minutes from the day W4 lands — the false-positive factory
+    # the module's own falsifier law forbids. Absence here is the ordinary
+    # PRE-ACTIVATION state, not blindness; what this entry measures is whether an
+    # ARMED lane keeps advancing.
+    #
+    # ``asof`` (not a publication clock) for the re-stamp reason the prophet_us
+    # entry records: the payload's own ``asof`` is the evaluated session, so a
+    # re-run over a frozen pack cannot green it. The budget is 1 session — a
+    # single missed session is absorbed, the SECOND is a definitive breach —
+    # matching us_board_provisional and prophet_us, and it is a SESSION-grain
+    # question on purpose: the 5-minute cadence describes itself inside the
+    # payload's own health receipt (``pass.prev_gap_intervals``), which is the
+    # right instrument for an intraday gap. A richer intraday watchdog is a
+    # follow-up, not this entry.
+    {
+        "id": "entry_radar_live",
+        "kind": "live_file",
+        "path": "/live/entry_radar.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "asof",
+        "asof_max_sessions_behind": 1,
+        "absent_ok": True,
+    },
     # PR-C — the intraday lane's INPUT, on the public R2 read base.
     #
     # Read over HTTP rather than off a live-plane path because the VPS does not

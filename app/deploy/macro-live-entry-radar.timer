@@ -1,0 +1,40 @@
+# Live Entry Radar evaluator cadence. systemd calendars have no ET, so the window
+# is expressed as the UTC SPAN that covers 09:2x-16:2x ET (session window + cron
+# grace) in BOTH DST regimes — 13:2xZ..20:2xZ under EDT, 14:2xZ..21:2xZ under EST —
+# and the pass itself stands down on the EASTERN clock via
+# engine/entry_radar/live_eval.py's in_window (which also consults the NYSE
+# calendar, so holidays cost nothing). One schedule, one window definition, no
+# second copy of "when is the market open".
+#
+# The ~24 out-of-window ticks a day are a Python start that exits at in_window and
+# publishes health.state="out_of_window"; the cost of getting a UTC-pinned window
+# wrong is a dark hour every session for five months of the year.
+#
+# :04/5 IS A WRITER-RACE OFFSET, and the three-way spacing is the point:
+#   :00/5   macro-live-snapshot fires on the 5-minute boundary and takes up to
+#           ~230 s to publish the full-universe quote file;
+#   :03/5   macro-live-prophet reads it three minutes later;
+#   :04/5   this lane, one minute behind Prophet.
+# This lane reads the SAME quote artifacts Prophet does (design §3b: state/
+# quotes_full.json + the live/quotes.json overlay, freshest-wins) and must not race
+# the writer — four minutes of head start is the difference between reading this
+# cycle's snapshot and the previous one. Publication is an atomic rename either
+# way, so a read is never partial; the offset buys CURRENCY, not safety. The extra
+# minute past Prophet is also cheap separation on a 2-vCPU box: two capped oneshots
+# that both wake on the same second contend for the same cores for nothing.
+#
+# Persistent=false — a missed pass is a missed 5-minute interval, and replaying it
+# later would evaluate a stale tape against a live clock. The next tick is the
+# recovery; health.pass.prev_gap_intervals is how the gap is reported.
+[Unit]
+Description=Run the Live Entry Radar evaluator every five minutes across the US session
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 13..21:04/5:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=10s
+Persistent=false
+Unit=macro-live-entry-radar.service
+
+[Install]
+WantedBy=timers.target
