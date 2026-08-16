@@ -277,8 +277,15 @@ def _read_daily_cache(path: Path) -> pd.DataFrame | None:
     the memo and re-reads.  Every branch ``daily_ohlcv`` takes afterwards —
     ``_cache_covers``, fetch-or-not, ``_slice`` — is byte-identical either way.
 
-    The memoized frame is shared, and the callers treat it as read-only
-    (``_slice`` copies, ``_merge_daily`` concatenates); do not mutate it in place.
+    The memoized frame is SHARED — never mutate it in place.  Today every path
+    out of ``daily_ohlcv`` is read-only, but one of them hands the memo object
+    itself back rather than a derivative: ``_merge_daily`` returns ``old``
+    UNCHANGED when the fetch came back empty (delisted name, holiday-only span,
+    an entitlement gap), so ``merged`` is then the memoized frame and it reaches
+    both ``to_parquet`` and ``_slice``.  Both only read, and ``_slice`` copies,
+    so this is safe as written; it is documented because that empty-fetch
+    passthrough is precisely the branch where an in-place edit would corrupt
+    every later episode's plane for that ticker.
     """
     if not path.exists():
         return None

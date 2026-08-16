@@ -138,31 +138,73 @@ def test_cross_sectionalize_attaches_the_shared_map_not_a_plain_dict():
 # --------------------------------------------------------------------------- #
 # _ctx_session_rows — indexed lookup must equal the full-frame boolean mask
 # --------------------------------------------------------------------------- #
-def _panel(n_names: int = 25, n_sessions: int = 30) -> pd.DataFrame:
+def _panel(n_names: int = 25, n_sessions: int = 30, *,
+           session_dtype: str = "datetime64") -> pd.DataFrame:
+    """A feature-panel-shaped frame.
+
+    ``session_dtype`` matters and is not a detail: ``cross_sectionalize`` emits
+    ``session`` as an OBJECT column of ``datetime.date`` (``feature_panel._as_dates``
+    returns dates and ``build_feature_rows`` writes them straight through), so a
+    fixture built from ``pd.bdate_range`` tests a dtype the production panel never
+    has.  Both shapes are exercised below.
+    """
     rng = np.random.default_rng(4242)
     sessions = pd.bdate_range("2021-03-01", periods=n_sessions)
+    col = (np.repeat(sessions, n_names) if session_dtype == "datetime64"
+           else np.repeat(np.asarray([s.date() for s in sessions], dtype=object), n_names))
     names = [f"N{i:03d}" for i in range(n_names)]
     frame = pd.DataFrame({
         "ticker": np.tile(np.asarray(names, dtype=object), n_sessions),
-        "session": np.repeat(sessions, n_names),
+        "session": col,
         "proximity_decile": rng.integers(0, 10, n_names * n_sessions),
     })
     # shuffle so "grouped order" and "row order" cannot coincide by accident
     return frame.sample(frac=1.0, random_state=7).reset_index(drop=True)
 
 
-def test_ctx_session_rows_equals_the_boolean_mask_it_replaced():
+def _legacy_or_raise(frame, session):
+    """The expression `_ctx_session_rows` replaced, incl. its empty->KeyError leg."""
+    rows = frame[frame["session"] == pd.Timestamp(session)]
+    if rows.empty:
+        raise KeyError(f"no feature rows for session {session}")
+    return rows
+
+
+@pytest.mark.parametrize("session_dtype", ["datetime64", "object_date"])
+def test_ctx_session_rows_equals_the_boolean_mask_it_replaced(session_dtype):
+    """Equivalence on BOTH panel shapes — including the one production emits.
+
+    On the object/date shape both formulations find nothing (`date == Timestamp`
+    is False in Python), so this asserts they AGREE, not that either succeeds.
+    That agreement is exactly what makes the refactor identity-preserving; the
+    underlying lookup defect is pre-existing and tracked separately.
+    """
     from scripts import entry_radar_replay as rr
 
-    frame = _panel()
+    frame = _panel(session_dtype=session_dtype)
     frame.attrs["session_pos_by_date"] = _positions()
     ctx = {"features": frame}
+    agreed_rows = 0
     for session in sorted({pd.Timestamp(s).date() for s in frame["session"]}):
-        legacy = frame[frame["session"] == pd.Timestamp(session)]   # the old expression
+        try:
+            legacy = _legacy_or_raise(frame, session)
+        except KeyError:
+            with pytest.raises(KeyError):
+                rr._ctx_session_rows(ctx, session)
+            continue
         got = rr._ctx_session_rows(ctx, session)
         pd.testing.assert_frame_equal(got, legacy, check_exact=True)
         assert list(got.index) == list(legacy.index)
         assert got.attrs["session_pos_by_date"] is frame.attrs["session_pos_by_date"]
+        agreed_rows += len(got)
+
+    if session_dtype == "datetime64":
+        assert agreed_rows == len(frame), "the datetime64 leg must actually match rows"
+    else:
+        # Pins the production reality rather than blessing it: if a later change
+        # makes the object/date lookup start matching, this test must be revisited
+        # together with the control-matching refusal census it would change.
+        assert agreed_rows == 0
 
 
 def test_ctx_session_rows_still_raises_on_a_session_with_no_rows():
