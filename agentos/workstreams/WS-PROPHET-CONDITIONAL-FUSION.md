@@ -32,7 +32,21 @@ owns_paths:
 decisions:
   - DEC:PROPHET-ZERO-AUTHORITY-SUPERSEDED-BY-EARNED-CONDITIONAL-AUTHORITY
   - DEC:PROPHET-FUSION-IS-THE-CANONICAL-US-RANKER
+  - DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW
+  - DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-REGISTRY-QUESTION
 landmines:
+  - "A NIGHTLY CAN PUBLISH TO THE SITE AND NOT TO GIT. On 2026-08-16 run 31913143619
+    the `publish` job deployed a canonical us_prophet_v3 board (Pages, 06:12:24Z) while
+    `engine` concluded FAILURE on push contention, so main kept the pre-override v2
+    artifact (as_of 2026-08-13). The first v3 board was never committed. Anything that
+    reads the repo to learn 'what shipped' is wrong on such a night — in either
+    direction. Acceptance evidence for the override is the Pages artifact + that run's
+    engine log, NOT site/factordata/us_standouts.json on main."
+  - "Five per-leg store columns go NULL from the first us_prophet_v3 night —
+    us_context_vector.py:899-901/:1070-1071 and us_candidate_lanes.py:481-482 read
+    components/points off `prophet`, but on a v3 row the legs live on prophet_shadow.
+    Null-not-zero (so no gate breaks) and no US test pins them, so it is silent. Chipped
+    task_8c904665; leaving them null is a defensible answer."
   - "Context-vector store accrual STOPPED 2026-08-07 (4 stamped days total) while the
     board runs nightly — chipped for diagnosis; PR-1 verifies the fix. Masterplan §4.0."
   - "short_int historical leakage FIXED in #5602: pit_settlement via knowable_date
@@ -95,12 +109,21 @@ waves:
   - id: w2b
     depends_on: [w2]
     title: "PR-2b — CHAIRMAN OVERRIDE: C1 canonical (us_prophet_v3), v2 frozen to
-      us_prophet_v2_shadow, as-of-night presence+variance floors, board comparison"
+      us_prophet_v2_shadow, as-of-night presence+variance floors, board comparison.
+      LIVE-ACCEPTED 2026-08-16: the first post-merge nightly (run 31913143619) published
+      a canonical v3 board over 71 rows passing all 14 acceptance items — read from the
+      Pages deployment, because that run's engine job failed to PUSH (see landmines).
+      Order comparison re-run on the new pool. Receipts:
+      agentos/handoffs/PROPHET-CONDITIONAL-FUSION-2026-08-16-ACCEPTANCE.md"
     status: done
   - id: w3
     depends_on: [w2b]
-    title: "PR-3 — nightly shadow-scoring lane + forward race instrumentation
-      (MEASUREMENT, no longer the production blocker for C1)"
+    title: "PR-3 — forward race instrumentation, RE-CUT 2026-08-15 against the live
+      prophet_shadow lane rather than a replayed G0 (the second scorer is deleted, not
+      deferred — production stamps the champion side nightly). Three lanes: forward race
+      (accrue now, read later, pre-registered, no promotion arm), family discrimination
+      via LOFO, coverage drift. Contract:
+      research/prophet_fusion/W3_SHADOW_RACE_RECUT.md"
     status: todo
   - id: w4
     depends_on: [w3]
@@ -126,15 +149,24 @@ next_action: >
   pinned against 69 published scores), the as-of-night presence+variance floors #5700
   left unimplemented are in production, and
   research/prophet_fusion/FUSION_BOARD_COMPARISON.md is the operator acceptance surface.
-  NEXT: (1) verify the first post-merge nightly publishes rank_by=us_prophet_v3 with a
-  fusion receipt and NO degradation stamp; (2) w3's shadow lane now instruments a race
-  whose champion side is already stamped nightly — re-cut its prereg against
-  `prophet_shadow` rather than a replayed G0; (3) the §18.5 honest limits are the first
-  measurement question, not a defect: F8/F4 handed 99%/97% of rows an identical
-  contribution on the first live pool, so today's ordering work is mostly F2 then F1/F5,
-  and whether a near-constant family should keep a vote is a REGISTRY question for w3 —
-  it may NOT be answered by re-tuning the variance floor (PR-2 do_not_redo). STILL OPEN
-  from w1: the §13.0 live closure (first post-#5604 nightly with a fresh curated stamp).
+  LIVE ACCEPTANCE CLOSED 2026-08-16 (handoff
+  PROPHET-CONDITIONAL-FUSION-2026-08-16-ACCEPTANCE.md): run 31913143619 published a
+  canonical `us_prophet_v3` board over 71 rows — 14 of 14 acceptance items PASS, order
+  comparison re-run on the new pool. Read from the PAGES DEPLOYMENT: that run's engine
+  job failed to push, so main still carries the pre-override v2 artifact and the ledger
+  day was lost (infrastructure, #5742 — not fusion). Both CEO adjudications recorded
+  (DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW, DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-
+  REGISTRY-QUESTION) and w3 re-cut (research/prophet_fusion/W3_SHADOW_RACE_RECUT.md).
+  NEXT: w3 Lane A — build the forward-race accrual and PRE-REGISTER before any read; it
+  has no promotion arm and cannot "win". Lane B — lofo_displacement(), already
+  computable via aggregate(family_keys=...). Lane C — the OPEN question: LOFO reproduced
+  the same family ordering on the live pool (F1 6.28 > F2 5.66 > F5 2.54 >> F4 0.62 >
+  F8 0.11), but that pool overlaps the previous one 92% at the SAME as_of, so honest-N
+  is ONE session and whether F4/F8 near-constancy persists is unanswered. Note the
+  method finding: tie-share MISRANKS ordering contribution (F1 sits at 48% ties vs F2's
+  3% yet moves the order most), so the published separation table is a proxy, not the
+  measure. STILL OPEN from w1: the §13.0 live closure (first post-#5604 nightly with a
+  fresh curated stamp).
 ---
 
 ## Context
