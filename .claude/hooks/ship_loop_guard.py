@@ -1974,6 +1974,24 @@ def _check_ci(
         name = str(run.get("name") or "unnamed check")
         if _is_non_binding_check(name):
             continue
+        # The inactive pilot authority context, excluded on the MERGED path too
+        # (2026-08-16). `_red_pairs` and `_split_head_runs` above have always
+        # skipped it and `scripts/merge_on_green.py` carries the same rule, but
+        # this loop did not — so the three disagreed about one check on one head.
+        # Measured on #5765's merged head 8c279038: `_red_pairs` returned [] while
+        # this loop returned [("ci-authority/codex/merge-queue-pilot","failure")],
+        # and the session was blocked after a fully green merge. It is worse than
+        # a plain false red: a non-empty `bad` is what ARMS the semantic-evidence
+        # path, and a merged head can no longer bind its proof base (GitHub drops
+        # `pull_requests` from check-runs once the PR closes), so the block
+        # surfaced as "advertised semantic evidence is unusable ... does not
+        # identify the exact PR proof base" — a message about proof plumbing that
+        # named nothing the session could fix, for a check that is BY DESIGN a
+        # retarget-invalidation receipt. Every PR touching a ci-authority path
+        # hit this. `ci-authority/main` stays binding here exactly as elsewhere;
+        # this skips ONLY the one literal pilot context, and widens nothing.
+        if name == "ci-authority/codex/merge-queue-pilot":
+            continue
         if run.get("status") != "completed":
             pending.append(name)
         elif run.get("conclusion") not in non_red:
