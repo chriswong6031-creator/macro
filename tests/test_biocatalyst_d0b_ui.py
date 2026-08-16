@@ -235,6 +235,7 @@ def test_the_decision_sentence_ships_even_when_the_answer_is_nothing():
         "paintUnavailableWorkspace",
         "paintIntegrityWorkspace",
         "paintSourceOutageWorkspace",
+        "paintClientFaultWorkspace",
         "renderQueue",
     ):
         body = JS[JS.index(f"function {painter}(") :]

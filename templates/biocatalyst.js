@@ -114,6 +114,7 @@
     stateCodes: [],
     contractFailed: false,
     workspaceDown: false,
+    displayFailed: false,
     evidenceCell: null
   };
   var ui = {};
@@ -309,7 +310,8 @@
     if (error.hydration) return error.hydration;
     if (isAccessError(error)) return 'locked';
     if (error.status === 404) return 'not_found';
-    return 'source_outage';
+    if (typeof error.status === 'number' && error.status >= 500) return 'source_outage';
+    return '';
   }
   function fetchJson(url, signal) {
     return withAuth({ Accept: 'application/json' }).then(function (headers) {
@@ -1038,7 +1040,7 @@
 
   function setStatus(kind, label, detail) {
     ui.runStatus.classList.toggle('is-stale', kind === 'stale' || kind === 'restarted');
-    ui.runStatus.classList.toggle('is-unavailable', kind === 'unavailable' || kind === 'locked' || kind === 'source_outage' || kind === 'integrity_block');
+    ui.runStatus.classList.toggle('is-unavailable', kind === 'unavailable' || kind === 'locked' || kind === 'source_outage' || kind === 'integrity_block' || kind === 'withheld');
     text(ui.status, label); text(ui.statusDetail, detail);
   }
   function setNotice(kind, message) { ui.notice.hidden = !message; ui.notice.className = 'bci-state-notice' + (kind ? ' is-' + kind : ''); text(ui.notice, message || ''); }
@@ -1486,7 +1488,7 @@
     if (healthState === 'stale' || state.restarted) noteState(list, 'stale', knownAt, 'the register moved while this page loaded.', '本页加载期间登记库已更新。');
     if (isChangeMode() && state.rows.length) noteState(list, 'historical', knownAt, 'these are superseded record versions.', '这些是已被取代的记录版本。');
     if (partial) noteState(list, 'partial', knownAt, 'part of this set is not on the record.', '其中一部分未收录在记录中。');
-    if (state.hasLoaded && !state.rows.length && !state.accessLocked && !state.workspaceDown && !state.contractFailed) {
+    if (state.hasLoaded && !state.rows.length && !state.accessLocked && !state.workspaceDown && !state.contractFailed && !state.displayFailed) {
       if (isProspectiveMode()) noteState(list, 'empty', knownAt, 'no first-seen observations yet.', '尚无首次观测记录。');
       else if (isScreenMode()) noteState(list, 'empty', knownAt, 'nothing matches what you asked for.', '没有内容符合你的条件。');
       else if (isPeerMode() && !state.cohort.length) noteState(list, 'empty', knownAt, 'list the trials to compare.', '请列出要对照的试验。');
@@ -1500,6 +1502,15 @@
     return list;
   }
   function paintDecision() {
+    if (state.displayFailed) {
+      var withheld = RESEARCH_STANCE.none;
+      state.stateCodes = [];
+      ui.decisionStance.className = 'bci-stamp-mark' + (withheld[2] ? ' ' + withheld[2] : '');
+      text(ui.decisionStance, tr(withheld[0], withheld[1]));
+      text(ui.decisionWhy, tr('this page could not be shown.', '此页面无法展示。'));
+      ui.decision.setAttribute('data-state', 'withheld');
+      return;
+    }
     var states = resolveStates(), primary = states[0], stance = RESEARCH_STANCE[STATE_STANCE[primary.code]] || RESEARCH_STANCE.none;
     state.stateCodes = states.map(function (item) { return item.code; });
     ui.decisionStance.className = 'bci-stamp-mark' + (stance[2] ? ' ' + stance[2] : '');
@@ -2006,6 +2017,7 @@
     abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1; ui.refresh.classList.remove('is-spinning');
     state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = '';
     state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.appendFailed = false; state.accessLocked = true;
+    state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
     paintLockedWorkspace();
   }
   function paintAppendFailure() {
@@ -2047,6 +2059,15 @@
     showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when the current page is available.', '当前页面可用后，请选择一项' + activeSingularNoun() + '。'));
     paintFrame();
   }
+  function paintClientFaultWorkspace() {
+    ui.workspace.dataset.state = 'withheld'; clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', 'false'); ui.queueFooter.hidden = true;
+    setStatus('withheld', tr('This page could not be shown', '此页面无法展示'), tr('Nothing is shown', '不予展示'));
+    setNotice('error', tr('The workspace hit an unexpected problem while drawing this page. Nothing is shown.', '工作台在绘制此页面时出现意外问题。因此不予展示。'));
+    ui.queue.appendChild(emptyCard(tr('This page could not be shown', '此页面无法展示'), tr('The workspace hit an unexpected problem while drawing this page. Nothing is shown.', '工作台在绘制此页面时出现意外问题。因此不予展示。'), '×', true));
+    announce(tr('This page could not be shown.', '此页面无法展示。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('This page could not be shown.', '此页面无法展示。'));
+    paintFrame();
+  }
   function handleUnavailable(error, options) {
     options = options || {};
     if (isAccessError(error)) {
@@ -2066,17 +2087,26 @@
       showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when full access is confirmed.', '完整访问权限确认后，请选择一项' + activeSingularNoun() + '。'));
       return;
     }
-    if (options.append && state.rows.length && kind !== 'integrity_block') { preserveAppendFailure(); return; }
+    if (options.append && state.rows.length && kind !== 'integrity_block' && kind !== 'client_fault') { preserveAppendFailure(); return; }
     state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.selectedKey = ''; state.appendFailed = false; state.accessLocked = false;
-    if (kind === 'integrity_block' || state.contractFailed) {
+    if (kind === 'integrity_block') {
       state.contractFailed = true;
       state.workspaceDown = false;
+      state.displayFailed = false;
       paintIntegrityWorkspace();
       return;
     }
+    if (kind === 'source_outage' || kind === 'not_found') {
+      state.contractFailed = false;
+      state.workspaceDown = true;
+      state.displayFailed = false;
+      paintSourceOutageWorkspace();
+      return;
+    }
     state.contractFailed = false;
-    state.workspaceDown = true;
-    paintSourceOutageWorkspace();
+    state.workspaceDown = false;
+    state.displayFailed = true;
+    paintClientFaultWorkspace();
   }
   function loadMilestones(options) {
     options = options || {}; var append = options.append === true, cursor = append ? state.nextCursor : '';
@@ -2085,6 +2115,7 @@
     state.loading = !append; state.pageLoading = append;
     if (!append) {
       state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false; if (!options.restarted) state.restarted = false;
+      state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
       ui.workspace.dataset.state = options.restarted ? 'generation-restarted' : (state.hasLoaded ? 'loading' : 'first-load'); loadingQueue(false);
       text(ui.subtitle, tr('Retrieving the verified ' + activeNoun() + ' page…', '正在获取已核验' + activeNoun() + '页面…')); setStatus('ready', tr('Retrieving ' + activeNoun(), '正在获取' + activeNoun()), tr('No records are in this page shell', '此页面外壳不含记录'));
     } else {
@@ -2094,7 +2125,7 @@
     if (!append) loadFacets();
     if (isPeerMode() && state.cohort.length < PEER_MIN_COHORT) {
       state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.loading = false; state.pageLoading = false;
-      state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.contractFailed = false; state.workspaceDown = false;
+      state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
       ui.refresh.classList.remove('is-spinning');
       ui.workspace.dataset.state = 'empty'; setStatus('ready', tr('Waiting for your list', '等待你的清单'), tr('Nothing is compared until you list it', '未列出前不会进行任何对照'));
       setNotice('', ''); text(ui.subtitle, tr('Exactly the trials you listed, side by side', '完全按你列出的试验并排显示')); text(ui.asOf, ''); renderQueue();
@@ -2102,35 +2133,46 @@
     }
     requestPage(cursor, controller.signal).then(function (payload) {
       if (token !== state.listToken) return;
-      state.contractFailed = false;
+      state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
+      var incomingGeneration, existingRows, pagination, rows;
       try {
         if (isProspectiveMode()) validateProspectiveEnvelope(payload);
         else if (isScreenMode()) validateScreenEnvelope(payload);
         else if (isPeerMode()) validatePeerEnvelope(payload);
         else if (isChangeMode()) validateChangeEnvelope(payload);
         else validateMilestoneEnvelope(payload);
-        var incomingGeneration = generationKey(payload);
-        if (append && state.generation && incomingGeneration !== state.generation) {
-          state.restarted = true; announce(tr('The registry page changed. Reloading the selected filters.', '登记页面已变化。正在重新加载所选筛选条件。'));
-          loadMilestones({ replace: true, restarted: true }); return;
-        }
-        var existingRows = append ? state.rows : [], pagination = payload.pagination, rows;
+        incomingGeneration = generationKey(payload);
+      } catch (contractError) {
+        state.contractFailed = true;
+        throw markHydration(contractError, 'integrity_block', 200);
+      }
+      if (append && state.generation && incomingGeneration !== state.generation) {
+        state.restarted = true; announce(tr('The registry page changed. Reloading the selected filters.', '登记页面已变化。正在重新加载所选筛选条件。'));
+        loadMilestones({ replace: true, restarted: true }); return;
+      }
+      try {
+        existingRows = append ? state.rows : []; pagination = payload.pagination;
         if (isProspectiveMode()) { rows = validateProspectivePage(payload.prospective_changes, existingRows); validateProspectivePagination(payload, existingRows, cursor, append ? state.payload : null); }
         else if (isScreenMode()) { rows = validateScreenPage(payload.rows, existingRows); validateScreenPagination(payload, existingRows, cursor, append ? state.payload : null); }
         else if (isPeerMode()) { rows = validatePeerPage(payload.trials, existingRows); validatePeerPagination(payload, existingRows, cursor, append ? state.payload : null); }
         else if (isChangeMode()) { rows = validateChangePage(payload.change_tape, existingRows); validateChangePagination(payload, existingRows, cursor, append ? state.payload : null); }
         else { rows = validateMilestonePage(payload.milestones, existingRows); validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null); }
-        if (append) state.rows = state.rows.concat(rows); else state.rows = rows;
-        state.payload = payload; state.generation = incomingGeneration; state.nextCursor = clean(valueAt(pagination, 'next_cursor')); state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.workspaceDown = false;
+      } catch (contractError) {
+        state.contractFailed = true;
+        throw markHydration(contractError, 'integrity_block', 200);
+      }
+      if (append) state.rows = state.rows.concat(rows); else state.rows = rows;
+      state.payload = payload; state.generation = incomingGeneration; state.nextCursor = clean(valueAt(pagination, 'next_cursor')); state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.workspaceDown = false; state.displayFailed = false;
+      try {
         ui.workspace.dataset.state = state.restarted ? 'generation-restarted' : (state.rows.length ? 'ready' : 'empty'); updateMetadata(payload); setSubtitle(payload); renderQueue();
         announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' ' + activeNoun() + '.', '已加载' + state.rows.length + '项' + activeNoun() + '。') : tr('No ' + activeNoun() + ' match these filters.', '没有' + activeNoun() + '匹配这些筛选条件。'));
         if (!append && state.selectedId) {
           var activeRow = selectedRow();
           selectTrial(state.selectedId, activeRow && rowTrial(activeRow), activeRow && (valueAt(activeRow, 'evidence') || valueAt(activeRow, 'source')), false, null, activeRow && rowIdentity(activeRow));
         }
-      } catch (contractError) {
-        state.contractFailed = true;
-        throw markHydration(contractError, 'integrity_block', 200);
+      } catch (displayError) {
+        state.rows = []; state.payload = null; state.nextCursor = ''; state.generation = ''; state.displayFailed = true; state.contractFailed = false; state.workspaceDown = false;
+        throw markHydration(displayError, 'client_fault', 200);
       }
     }).catch(function (error) {
       if (token !== state.listToken || (error && error.name === 'AbortError')) return;
@@ -2143,7 +2185,7 @@
       handleHydrationFailure(error, { append: append });
     }).finally(function () {
       if (state.listController === controller) state.listController = null;
-      if (token === state.listToken) { ui.refresh.classList.remove('is-spinning'); state.loading = false; state.pageLoading = false; if (state.rows.length && !state.accessLocked) renderQueue(); }
+      if (token === state.listToken) { ui.refresh.classList.remove('is-spinning'); state.loading = false; state.pageLoading = false; if (state.rows.length && !state.accessLocked && !state.contractFailed && !state.workspaceDown && !state.displayFailed) renderQueue(); }
     });
   }
   function applyFilters() {
@@ -2182,7 +2224,7 @@
     if (!MODE_VALUES[value] || state.mode === value) return;
     abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1; abort('facetsController'); state.facetsToken += 1;
     state.mode = value; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false; state.restarted = false;
-    state.facets = null; state.contractFailed = false; state.workspaceDown = false;
+    state.facets = null; state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
     state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.returnFocus = null;
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
     syncControls(); localizeControls(); writeUrl();
@@ -2226,6 +2268,7 @@
     document.addEventListener('langchange', function () {
       syncControls(); localizeControls();
       if (state.accessLocked) { paintLockedWorkspace(); showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when full access is confirmed.', '完整访问权限确认后，请选择一项' + activeSingularNoun() + '。')); return; }
+      if (state.displayFailed) { paintClientFaultWorkspace(); return; }
       if (state.contractFailed) { paintIntegrityWorkspace(); return; }
       if (state.workspaceDown) { paintSourceOutageWorkspace(); return; }
       if (ui.workspace.dataset.state === 'unavailable') { paintUnavailableWorkspace(); return; }

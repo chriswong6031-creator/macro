@@ -423,7 +423,7 @@ function snapshot() {
 }
 
 function settled(state) {
-  return ['locked', 'empty', 'ready', 'integrity_block', 'source_outage', 'unavailable', 'generation-restarted'].indexOf(state) >= 0;
+  return ['locked', 'empty', 'ready', 'integrity_block', 'source_outage', 'unavailable', 'generation-restarted', 'withheld'].indexOf(state) >= 0;
 }
 
 function waitFor(predicate, leftover) {
@@ -441,16 +441,20 @@ function waitFor(predicate, leftover) {
 
 waitFor(function () { return settled(workspace.dataset.state || workspace.getAttribute('data-state')); }).then(function () {
   var first = snapshot();
-  if (!scenario.clickMode) {
+  if (scenario.secondRoutes) scenario.routes = scenario.secondRoutes;
+  if (scenario.clickRefresh) {
+    byId['bci-refresh'].click();
+  } else if (scenario.clickMode) {
+    var button = byId['bci-mode-' + scenario.clickMode];
+    button.click();
+  } else {
     process.stdout.write(JSON.stringify({ first: first, second: null }));
     return;
   }
-  if (scenario.secondRoutes) scenario.routes = scenario.secondRoutes;
-  var button = byId['bci-mode-' + scenario.clickMode];
-  button.click();
+  var callsBefore = first.fetchCalls.length;
   return waitFor(function () {
     var state = workspace.dataset.state || workspace.getAttribute('data-state');
-    return settled(state) && state !== first.workspaceState;
+    return settled(state) && fetchCalls.length > callsBefore;
   }).then(function () {
     process.stdout.write(JSON.stringify({ first: first, second: snapshot() }));
   }, function () {

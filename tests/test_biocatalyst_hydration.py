@@ -385,6 +385,115 @@ def test_switching_from_failed_mode_to_healthy_mode_clears_failure(tmp_path: Pat
 
 
 @needs_node
+def test_same_mode_refresh_from_integrity_to_503_is_source_outage(tmp_path: Path) -> None:
+    out = _run(
+        tmp_path,
+        {
+            "routes": {
+                "/api/biocatalyst/v1/trials/milestones": _route(
+                    200, _json({"schema_version": "not-the-contract", "milestones": []})
+                )
+            },
+            "clickRefresh": True,
+            "secondRoutes": {
+                "/api/biocatalyst/v1/trials/milestones": _route(
+                    503, '{"detail":"trial intelligence temporarily unavailable"}'
+                )
+            },
+        },
+    )
+    first, second = out["first"], out["second"]
+    assert first["workspaceState"] == "integrity_block"
+    assert "Results withheld" in first["queue"]
+    assert second["workspaceState"] == "source_outage"
+    assert second["decisionState"] == "source_outage"
+    assert "Temporarily unavailable" in second["queue"]
+    assert "Results withheld" not in second["queue"]
+    assert "received records failed an integrity check" not in (second["queue"] + second["notice"] + second["why"]).lower()
+    assert "Integrity check did not pass" not in second["status"] + second["statusDetail"] + second["queue"]
+
+
+@needs_node
+def test_same_mode_refresh_from_503_to_wrong_contract_is_integrity_block(tmp_path: Path) -> None:
+    out = _run(
+        tmp_path,
+        {
+            "routes": {
+                "/api/biocatalyst/v1/trials/milestones": _route(
+                    503, '{"detail":"trial intelligence temporarily unavailable"}'
+                )
+            },
+            "clickRefresh": True,
+            "secondRoutes": {
+                "/api/biocatalyst/v1/trials/milestones": _route(
+                    200, _json({"schema_version": "not-the-contract", "milestones": []})
+                )
+            },
+        },
+    )
+    first, second = out["first"], out["second"]
+    assert first["workspaceState"] == "source_outage"
+    assert "Temporarily unavailable" in first["queue"]
+    assert second["workspaceState"] == "integrity_block"
+    assert second["decisionState"] == "integrity_block"
+    assert "Results withheld" in second["queue"]
+    assert "Temporarily unavailable" not in second["queue"]
+    assert "the trial service is not answering" not in (second["queue"] + second["notice"] + second["why"]).lower()
+
+
+@needs_node
+def test_html_content_type_on_valid_json_is_integrity_block(tmp_path: Path) -> None:
+    out = _run(
+        tmp_path,
+        {
+            "routes": {
+                "/api/biocatalyst/v1/trials/milestones": _route(
+                    200, _json(milestone_empty()), "text/html"
+                )
+            }
+        },
+    )["first"]
+    assert out["workspaceState"] == "integrity_block"
+    assert out["decisionState"] == "integrity_block"
+    assert "Results withheld" in out["queue"]
+    assert "Temporarily unavailable" not in out["queue"]
+    _forbidden_machine_text(out["queue"] + out["notice"] + out["status"] + out["why"])
+
+
+@needs_node
+def test_post_validation_render_exception_is_not_source_or_integrity(tmp_path: Path) -> None:
+    needle = (
+        "ui.workspace.dataset.state = state.restarted ? 'generation-restarted' : "
+        "(state.rows.length ? 'ready' : 'empty'); updateMetadata(payload); "
+        "setSubtitle(payload); renderQueue();"
+    )
+    hostile = (
+        "ui.workspace.dataset.state = state.restarted ? 'generation-restarted' : "
+        "(state.rows.length ? 'ready' : 'empty'); throw new Error('hostile render'); "
+        "updateMetadata(payload); setSubtitle(payload); renderQueue();"
+    )
+    source = JS.read_text(encoding="utf-8")
+    mutated = source.replace(needle, hostile, 1)
+    assert mutated != source
+    out = _run(
+        tmp_path,
+        {"routes": {"/api/biocatalyst/v1/trials/milestones": _route(200, _json(milestone_empty()))}},
+        js_text=mutated,
+    )["first"]
+    copy = (out["queue"] + out["notice"] + out["status"] + out["statusDetail"] + out["why"]).lower()
+    assert out["workspaceState"] not in ("source_outage", "integrity_block")
+    assert out["decisionState"] not in ("source_outage", "integrity_block")
+    assert "the trial service is not answering" not in copy
+    assert "received records failed an integrity check" not in copy
+    assert "results withheld" not in copy
+    assert "hostile render" not in copy
+    assert "typeerror" not in copy
+    assert out["workspaceState"] == "withheld"
+    assert "This page could not be shown" in out["queue"]
+    _forbidden_machine_text(out["queue"] + out["notice"] + out["status"] + out["why"])
+
+
+@needs_node
 def test_mutation_routing_validator_through_generic_unavailable_fails_regression(
     tmp_path: Path,
 ) -> None:
