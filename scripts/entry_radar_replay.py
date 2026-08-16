@@ -58,7 +58,7 @@ import logging
 import subprocess
 import sys
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any, Callable, Sequence
 
@@ -875,6 +875,22 @@ def _attach_and_match(episodes: Sequence[Any], *, cache_dir: Path,
     return rows, matches, refusals, kept_eps
 
 
+def _session_key(value: Any) -> date:
+    """The feature panel's canonical session spelling: a plain ``datetime.date``.
+
+    ``pd.Timestamp`` subclasses ``datetime`` which subclasses ``date``, and
+    ``date(2020, 2, 26) == pd.Timestamp("2020-02-26")`` is **False**.  A lookup that
+    keys on the wrong one of the two therefore matches ZERO rows instead of raising,
+    which is why the defect below survived: it looked like data, not like a bug.
+    Every session that crosses the panel boundary goes through here.
+    """
+    import pandas as pd  # noqa: PLC0415
+
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return value
+    return pd.Timestamp(value).date()
+
+
 def _ctx_session_rows(ctx: dict[str, Any], session: date):
     """One session's cross-sectionalized feature rows from the prebuilt panel.
 
@@ -886,6 +902,17 @@ def _ctx_session_rows(ctx: dict[str, Any], session: date):
     ascending order of appearance, so row order, index labels, dtypes and the
     propagated ``attrs`` all match the mask exactly (pinned by
     ``tests/test_entry_radar_w5_perf.py``).
+
+    Keyed on the panel's canonical ``datetime.date`` (see :func:`_session_key`).
+    Both this index and the mask it replaced used to key on ``pd.Timestamp``,
+    against the OBJECT column of ``date`` objects that ``feature_panel._as_dates``
+    -> ``build_feature_rows`` -> ``cross_sectionalize`` actually produces — so both
+    missed EVERY session and pushed EVERY episode into the
+    ``control_match_unavailable`` refusal branch, a total §7 control blackout
+    indistinguishable from ordinary sparse refusals in the census.  (That the two
+    implementations missed identically is exactly why the perf refactor's
+    byte-identity proof held.)  Both column spellings are looked up explicitly
+    rather than assumed, because the failure mode of guessing wrong is silence.
     """
     import pandas as pd  # noqa: PLC0415
 
@@ -894,7 +921,13 @@ def _ctx_session_rows(ctx: dict[str, Any], session: date):
     if by_session is None:
         by_session = panel_frame.groupby("session", sort=False).indices
         ctx["_rows_by_session"] = by_session
-    positions = by_session.get(pd.Timestamp(session))
+    key = _session_key(session)
+    positions = by_session.get(key)
+    if positions is None:
+        # datetime64 panel (fixtures, or a future builder): groupby labels are
+        # Timestamps there and dates here.  Ask for the other spelling rather
+        # than assume one — a miss returns None, it does not raise.
+        positions = by_session.get(pd.Timestamp(key))
     if positions is None or not len(positions):
         raise KeyError(f"no feature rows for session {session}")
     return panel_frame.take(positions)
@@ -944,12 +977,50 @@ def build_match_context(episodes_list: Sequence[Any], *, cache_dir: Path,
     if not frames:
         raise ReplayRefusal(f"panel {panel}: no feature rows could be built")
     features = feature_panel.cross_sectionalize(pd.concat(frames, ignore_index=True))
-    # SessionPositions, never a plain dict: this rides in ``attrs`` and pandas
-    # DEEP-COPIES attrs on every metadata-propagating op (see panels.SessionPositions).
+    # Pin the canonical ``datetime.date`` spelling ONCE, at the only seam where the
+    # panel is born, so no downstream lookup has to guess the dtype (§7 reads it
+    # through ``_ctx_session_rows``; ``controls.ControlMatch.session`` is a ``date``).
+    features["session"] = [_session_key(s) for s in features["session"]]
+
+    # §7 offsets are TRADING sessions ("did NOT fire within ±5 sessions of D";
+    # "does NOT fire anywhere in (D, D+H]"), so positions must come from the BENCH
+    # calendar.  Deriving them from the panel's own rows measures slots between
+    # DECISION sessions — the panel only carries those — which is <= the true
+    # trading-session distance, so both exclusions silently over-exclude and shrink
+    # every control pool.  ``attach_session_positions`` takes the calendar for
+    # exactly this reason ("a bench calendar must override the panel's own"); it was
+    # simply never passed one here.
+    #
+    # Wrapped in SessionPositions, never a plain dict: this rides in ``attrs`` and
+    # pandas DEEP-COPIES attrs on every metadata-propagating op (see
+    # panels.SessionPositions).  The bench calendar makes the map BIGGER than the
+    # panel-derived one it replaces, so sharing rather than copying matters more here,
+    # not less.
+    if spy is None:
+        raise ReplayRefusal(
+            f"panel {panel}: no cached SPY plane, so the §7 session calendar cannot "
+            f"be built — offsets guessed from the panel's own decision sessions are "
+            f"not trading-session offsets and would silently mis-scale the ±5 and "
+            f"(D, D+H] control exclusions")
     pos = panels.SessionPositions(
-        (pd.Timestamp(s), i) for i, s in enumerate(sorted(
-            {pd.Timestamp(x) for x in features["session"].unique()})))
+        feature_panel.attach_session_positions(
+            features, panels.session_calendar(spy)))
     features.attrs["session_pos_by_date"] = pos
+
+    # A lookup that answers ZERO of the decision sessions is a broken panel, not a
+    # sparse one, and must never be reported as a census of ordinary refusals.
+    have = set(features["session"])
+    resolvable = sum(1 for s in sessions if _session_key(s) in have)
+    if not resolvable:
+        raise ReplayRefusal(
+            f"panel {panel}: the feature panel answers 0 of {len(sessions)} decision "
+            f"sessions (session dtype {features['session'].dtype}) — the §7 control "
+            f"lookup is structurally broken, not merely sparse. Refusing rather than "
+            f"emitting a 100% control_match_unavailable census that reads like data.")
+    if resolvable < len(sessions):
+        print(f"::warning title=entry-radar-panel-coverage::panel {panel}: the feature "
+              f"panel answers {resolvable}/{len(sessions)} decision sessions; the "
+              f"remainder refuse control matching", flush=True)
 
     fire_sessions: dict[str, dict[str, list[date]]] = {}
     for ep in episodes_list:
@@ -979,7 +1050,8 @@ def build_match_context(episodes_list: Sequence[Any], *, cache_dir: Path,
             if blocked:
                 suppressed[(det_id, s)] = frozenset(blocked)
     return {"features": features, "fire_sessions": fire_sessions,
-            "suppressed": suppressed, "session_pos": pos}
+            "suppressed": suppressed, "session_pos": pos,
+            "sessions_resolvable": resolvable, "sessions_total": len(sessions)}
 
 
 def _sector_etf(episode: Any) -> str | None:
