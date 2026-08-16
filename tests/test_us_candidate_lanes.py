@@ -331,6 +331,81 @@ class TestLaneTaxonomy:
                 assert row["prophet_score_basis"] is None
 
 
+class TestTheRetiredScorerRidesAlongWithNoAuthority:
+    """``prophet_shadow`` on a pool row — the fusion override's leftover (2026-08-15).
+
+    Since the Chairman override the canonical ``prophet`` block on a ``us_prophet_v3``
+    board carries NO five-leg decomposition, so the ``components``/``points`` this module
+    copies off it come back as empty dicts — which read as "measured nothing" rather than
+    "this ranker has no legs".  The retired champion's legs, its composite and its own
+    rank live on ``prophet_shadow``, and they are carried here under that name so a
+    graduation reader and a forward race can both see the ranker that was replaced.
+
+    ZERO AUTHORITY, unchanged: this is the display tier, ``TestNoAuthorityLeak`` below
+    still pins that no admission-path module can read any of it, and the shadow block is
+    read from the board row rather than computed here.
+    """
+
+    @staticmethod
+    def _scored_v3_rows():
+        """REAL ``prophet``/``prophet_shadow`` pairs, minted by the production ranker.
+
+        Hand-typing the shadow block would make this test agree with whatever shape the
+        implementation happens to have; ``score_rows`` is the only thing that mints one,
+        so the fixture asks it.  The row builder comes from the suite that owns the
+        fusion board for the same reason.
+        """
+        from engine import us_board_rank as ubr
+        from tests.test_us_prophet_fusion import _row as _board_row
+
+        pool = [
+            _board_row("BROAD", alpha=0.1, off_high=-3.0, tier="T2", sue_z=2.0,
+                       smartmoney=True, insiders=3, gex="confirm", news=5),
+            _board_row("NARROW", alpha=9.0, off_high=-1.0, tier="T2", gex="neutral"),
+        ]
+        scored = ubr.score_rows(pool, board_asof="2026-08-15")
+        assert ubr.published_definition(scored) == "us_prophet_v3"    # premise check
+        return {r["ticker"]: r for r in scored}
+
+    def test_a_fusion_board_row_carries_the_shadow_block(self, board):
+        scored = self._scored_v3_rows()["BROAD"]
+        board["buy"][0]["prophet"] = scored["prophet"]
+        board["buy"][0]["prophet_shadow"] = scored["prophet_shadow"]
+        row = next(r for r in _build(board)["rows"] if r["ticker"] == "AAA")
+
+        shadow = row["prophet_shadow"]
+        assert shadow["version"] == scored["prophet_shadow"]["version"]
+        assert shadow["score"] == scored["prophet_shadow"]["score"]
+        assert shadow["score_rank"] == scored["prophet_shadow"]["score_rank"]
+        assert shadow["components"] == scored["prophet_shadow"]["components"]
+        assert shadow["points"] == scored["prophet_shadow"]["points"]
+        # and the canonical block is the one that has no legs on this board
+        assert row["prophet"]["score"] == scored["prophet"]["score"]
+        assert row["prophet"]["components"] == {}
+
+    def test_a_board_row_with_no_shadow_carries_null_not_an_empty_block(self, board):
+        """A degraded night (``us_prophet_v2_fallback``) and a sibling board both
+        publish no ``prophet_shadow`` at all — there the retired scorer IS the published
+        ranker, so a block beside it would print the same number twice under two names.
+        An empty dict here would read as "the shadow ran and measured nothing"."""
+        for row in _build(board)["rows"]:                 # the fixture carries none
+            assert row["prophet_shadow"] is None
+
+    def test_the_shadow_block_is_copied_not_aliased(self, board):
+        """Same purity law as ``TestBuyLaneUntouched``: the artifact's own row comes
+        back byte-identical, nested structures included."""
+        scored = self._scored_v3_rows()["BROAD"]
+        board["buy"][0]["prophet"] = scored["prophet"]
+        board["buy"][0]["prophet_shadow"] = scored["prophet_shadow"]
+        row = next(r for r in _build(board)["rows"] if r["ticker"] == "AAA")
+
+        signal_before = board["buy"][0]["prophet_shadow"]["components"]["signal"]
+        row["prophet_shadow"]["components"]["signal"] = -99
+        row["prophet_shadow"]["points"]["signal"] = -99
+        assert board["buy"][0]["prophet_shadow"]["components"]["signal"] == signal_before
+        assert board["buy"][0]["prophet_shadow"]["points"]["signal"] != -99
+
+
 # --------------------------------------------------------------------------- #
 # 4. disclosure — display caps, declined basis, featured divergence
 # --------------------------------------------------------------------------- #
