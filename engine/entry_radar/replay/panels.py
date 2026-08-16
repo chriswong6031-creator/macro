@@ -179,14 +179,68 @@ def session_calendar(frames: Mapping[str, pd.DataFrame] | pd.DataFrame,
     return pd.DatetimeIndex(equity, name="session")
 
 
-def session_positions(calendar: pd.DatetimeIndex) -> dict[pd.Timestamp, int]:
+class SessionPositions(dict):
+    """``Timestamp -> ordinal`` lookup that is safe to SHARE instead of copy.
+
+    A plain dict here costs the W5 replay hours.  pandas propagates
+    ``DataFrame.attrs`` through ``NDFrame.__finalize__``, which **deep-copies**
+    the attrs payload on every metadata-propagating operation — so every column
+    access, comparison and boolean mask inside ``controls.eligible_pool`` /
+    ``controls.match`` re-copied this entire session map, once per operation,
+    once per episode.  Measured on a 300-name x 600-session panel (400 episodes):
+    92% of ``_attach_and_match``'s runtime was ``copy.deepcopy`` under
+    ``__finalize__``, 74M deepcopy calls, and the cost grows with the panel's
+    session count — which is why the definitive full-era runs spent CPU-hours
+    where the arithmetic is milliseconds.
+
+    Copying buys nothing: the map is derived, read-only substrate.  This subclass
+    makes that a PROPERTY rather than a hope — mutation is refused, which is what
+    makes returning ``self`` from ``__deepcopy__`` provably safe.  Every read
+    behaviour (``get`` / ``in`` / ``len`` / iteration / equality against a plain
+    dict) is dict's own, unchanged, so ``controls._session_offset`` and the panel
+    attrs contract see exactly what they saw before.
+    """
+
+    __slots__ = ()
+
+    def _immutable(self, *_args, **_kwargs):
+        raise TypeError(
+            "SessionPositions is read-only: it is shared (never deep-copied) "
+            "across every frame derived from a feature panel, so an in-place "
+            "edit would silently retune the +/-5-session control exclusion for "
+            "already-derived frames.  Build a new mapping instead.")
+
+    __setitem__ = _immutable
+    __delitem__ = _immutable
+    __ior__ = _immutable
+    clear = _immutable
+    pop = _immutable
+    popitem = _immutable
+    setdefault = _immutable
+    update = _immutable
+
+    def __copy__(self) -> "SessionPositions":
+        return self
+
+    def __deepcopy__(self, memo) -> "SessionPositions":  # noqa: ANN001
+        return self
+
+    def __reduce__(self):
+        # Rebuild through the constructor: the blocked ``__setitem__``/``update``
+        # would otherwise break the default dict-subclass unpickling path (and
+        # ProcessPool hand-off).
+        return (self.__class__, (dict(self),))
+
+
+def session_positions(calendar: pd.DatetimeIndex) -> SessionPositions:
     """``Timestamp -> ordinal position`` — what ``controls._session_offset`` reads.
 
     Attached to a feature panel as ``attrs["session_pos_by_date"]``.  Positions are
     over the BENCH calendar, so "±5 sessions" means five TRADING sessions for every
     name, including one that did not trade on some of them.
     """
-    return {pd.Timestamp(ts): pos for pos, ts in enumerate(pd.DatetimeIndex(calendar))}
+    return SessionPositions(
+        (pd.Timestamp(ts), pos) for pos, ts in enumerate(pd.DatetimeIndex(calendar)))
 
 
 def common_eligible(frames: Mapping[str, pd.DataFrame], *, warmup: int,
@@ -206,5 +260,6 @@ def common_eligible(frames: Mapping[str, pd.DataFrame], *, warmup: int,
 
 
 __all__ = ["BENCH", "PANEL_A", "PANEL_B", "PANEL_DISCLOSURE", "PanelError",
-           "panel_a_names", "panel_b_names", "sector_of", "load_panel_daily",
-           "session_calendar", "session_positions", "common_eligible"]
+           "SessionPositions", "panel_a_names", "panel_b_names", "sector_of",
+           "load_panel_daily", "session_calendar", "session_positions",
+           "common_eligible"]
