@@ -37,11 +37,17 @@ from engine.capital_structure.source_identity import (
     validate_manifest_identity,
     validate_manifest_ledger,
 )
+from engine.capital_structure.ingestion_health import (
+    INGESTION_RUN_FILENAME,
+    build_ingestion_run,
+    source_high_watermark,
+)
 from engine.capital_structure.source_ledger_io import (
     read_source_ledger,
     source_ledger_path,
     write_source_ledger,
 )
+from engine.capital_structure.source_store import format_store_failure
 
 log = logging.getLogger(__name__)
 
@@ -163,6 +169,7 @@ _COVERAGE_COLUMNS = [
 _ATTEMPT_COLUMNS = [
     "attempt_id", "accession", "source_id", "canonical_url", "attempted_at",
     "state", "error", "content_sha256", "retrieval_lane", "collection_scope",
+    "http_status", "storage_operation", "store_id", "error_class",
 ]
 
 class IndexNotPublished(RuntimeError):
@@ -1355,7 +1362,7 @@ class SecCapitalStructureAdapter(Adapter):
         if self._injected_source_store is not None:
             return self._injected_source_store
         from engine.capital_structure.source_store import build_source_store
-        return build_source_store()
+        return build_source_store(require_writable=True)
 
     def _fetch_index(self, value: date, ua: str) -> str:
         url = _DAILY_IDX.format(yr=value.year, q=_qtr(value), ds=value.strftime("%Y%m%d"))
@@ -1652,6 +1659,7 @@ class SecCapitalStructureAdapter(Adapter):
         selected_lanes = queue.attrs["retrieval_lanes_by_accession"]
 
         source_store = self._source_store()
+        watermark_before = source_high_watermark(manifests)
         new_manifests: list[dict] = []
         new_attempts: list[dict] = []
         sanitized_fields: list[str] = []
@@ -1686,7 +1694,9 @@ class SecCapitalStructureAdapter(Adapter):
                     raw, media_type=complete_inspection.media_type
                 )
                 if receipt is None:
-                    raise RuntimeError("source-store write/readback verification failed")
+                    raise RuntimeError(
+                        format_store_failure(getattr(source_store, "last_failure", None))
+                    )
                 stored_children: list[tuple] = []
                 for role, document in select_relevant_documents(
                     str(row["form"]), bundle.documents
@@ -1703,8 +1713,10 @@ class SecCapitalStructureAdapter(Adapter):
                     )
                     if doc_receipt is None:
                         raise RuntimeError(
-                            "source-store verification failed for "
-                            f"{document.filename or document.sequence}"
+                            format_store_failure(
+                                getattr(source_store, "last_failure", None)
+                            )
+                            + f" for {document.filename or document.sequence}"
                         )
                     stored_children.append(
                         (role, document, filename, inspection, doc_receipt)
@@ -1762,10 +1774,29 @@ class SecCapitalStructureAdapter(Adapter):
                         f"corruption_state={complete_inspection.corruption_state}"
                     )
                 content_hash = hashlib.sha256(raw).hexdigest()
+                http_status = None
+                storage_operation = None
+                error_class = None
+                attempt_store_id = getattr(source_store, "store_id", None)
             except Exception as exc:  # noqa: BLE001
                 state = "storage_deferred" if "store" in str(exc).lower() else "transient_error"
                 error = f"{type(exc).__name__}: {exc}"
                 content_hash = None
+                error_class = type(exc).__name__
+                http_status = None
+                storage_operation = None
+                attempt_store_id = getattr(source_store, "store_id", None)
+                failure = getattr(source_store, "last_failure", None)
+                if isinstance(failure, dict) and state == "storage_deferred":
+                    http_status = failure.get("http_status")
+                    storage_operation = failure.get("operation")
+                    error_class = failure.get("error_class") or error_class
+                    if failure.get("store_id"):
+                        attempt_store_id = failure.get("store_id")
+                response = getattr(exc, "response", None)
+                status_code = getattr(response, "status_code", None)
+                if http_status is None and isinstance(status_code, int):
+                    http_status = status_code
                 log.warning("sec_capital_structure: %s deferred: %s", accession, error)
             attempt_id = hashlib.sha256(
                 f"{source_id}|{attempted_at}|{state}".encode("utf-8")
@@ -1776,6 +1807,10 @@ class SecCapitalStructureAdapter(Adapter):
                 "error": error, "content_sha256": content_hash,
                 "retrieval_lane": selected_lane,
                 "collection_scope": row.get("collection_scope"),
+                "http_status": http_status,
+                "storage_operation": storage_operation,
+                "store_id": attempt_store_id,
+                "error_class": error_class,
             })
             time.sleep(PACE_SECONDS)
 
@@ -1803,12 +1838,56 @@ class SecCapitalStructureAdapter(Adapter):
         _atomic_write(attempts, attempts_path)
 
         successful = sum(1 for attempt in new_attempts if attempt["state"] == "stored")
+        parser_deferred = sum(
+            1 for attempt in new_attempts if attempt["state"] == "stored_parser_deferred"
+        )
+        storage_deferred = sum(
+            1 for attempt in new_attempts if attempt["state"] == "storage_deferred"
+        )
+        verified_retained = sum(
+            1
+            for record in new_manifests
+            if (record.get("document") or {}).get("document_role") == "complete_submission"
+            and (record.get("parser") or {}).get("eligibility") == "eligible"
+            and (record.get("parser") or {}).get("corruption_state") == "clean"
+        )
         retained_after_run = _eligible_complete_accessions(manifests)
         # Recomputed from the POST-run attempts ledger, so tonight's failures count
         # toward the bound immediately rather than one night late.  The bound is the
         # one resolved before the queue was built, so a run reports against a single
         # bound even if the environment changes underneath it.
         parked_after_run = parked_accessions(attempts, max_attempts=attempt_bound)
+        selected_count = int(queue_receipt.get("selected_count") or 0)
+        no_new_work_proven = selected_count == 0
+        ingestion_run = build_ingestion_run(
+            as_of=now_iso,
+            store_id=getattr(source_store, "store_id", None),
+            selected=selected_count,
+            retrieved=successful,
+            verified_retained=verified_retained,
+            manifested=len(new_manifests),
+            deferred=len(new_attempts) - successful,
+            parser_deferred=parser_deferred,
+            storage_deferred=storage_deferred,
+            parked=len(parked_after_run),
+            watermark_before=watermark_before,
+            watermark_after=source_high_watermark(manifests),
+            no_new_work_proven=no_new_work_proven,
+            no_new_work_reason=(
+                "queue selected no new filings; already-known or empty work"
+                if no_new_work_proven
+                else None
+            ),
+        )
+        _atomic_write_json(ingestion_run, root / INGESTION_RUN_FILENAME)
+        if ingestion_run["verdict"] == "fail":
+            print(
+                "::warning title=capital-structure-zero-progress::"
+                f"{ingestion_run['verdict_reason']} "
+                f"selected={selected_count} manifested={len(new_manifests)} "
+                f"storage_deferred={storage_deferred}",
+                flush=True,
+            )
         pending_after_run = _retrieval_queue_candidates(
             discovery, have_complete=retained_after_run, parked=parked_after_run,
         )

@@ -217,6 +217,14 @@ lanes:
           event compiler's telemetry-last receipt before publishing a canonical JSON
           artifact and byte-identical public twin. Context-only; unknown terms and
           issuer-state capabilities remain explicitly unavailable.
+      - id: check_capital_structure_health
+        module: scripts.check_capital_structure_health
+        note: >
+          Fail-closed ingestion-truth gate. Distinguishes compiler generation time
+          (telemetry.as_of) from latest retained source freshness. Reds this job
+          when filings were selected but zero durable verified evidence progressed;
+          a proven empty/already-known queue is the only permitted zero-progress
+          non-fail. Collect stays green so the market plane is not frozen.
 
   # ── daily.yml / collect_tail ─────────────────────────────────────────────
   # 2026-07-14 collect split: the slow post-adapter accrual band (ThetaData
