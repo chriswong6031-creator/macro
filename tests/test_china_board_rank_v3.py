@@ -589,7 +589,7 @@ def test_v2_shadow_can_never_own_the_headline_definition():
     assert len(graded) == 2
 
 
-def test_tripwire_specs_cover_the_three_slate_items():
+def test_tripwire_specs_cover_the_four_slate_items():
     specs = cn_v3_tripwires.tripwire_specs()
 
     # R4 is the V4 ordering race (see test_china_board_rank_v4.py).
