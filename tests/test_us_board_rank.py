@@ -100,8 +100,19 @@ class TestFrozenConstants:
         2026-08-05.md` §7).  An ADMISSION change makes v1 and v2 different products, so this
         string is what keeps their forward ledgers from pooling — the same move HK made at
         `hk_prophet_v2` (#4470).  Do not update this assertion to match the constant without
-        a ratified admission change to point at."""
-        assert ubr.BOARD_DEFINITION == "us_prophet_v2"
+        a ratified change to point at.
+
+        v2 -> v3 on 2026-08-15: the CHAIRMAN OVERRIDE that made the C1 evidence-family
+        fusion the canonical ranker (`research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_
+        BY_FABLE.md` §18, `DEC:PROPHET-FUSION-IS-THE-CANONICAL-US-RANKER`).  Note what
+        kind of change that is: NOT an admission change — the population, the gate and
+        the lanes are untouched, and `SELECTION_ERA` deliberately does not move (its own
+        test below pins that).  It is a RANK-AUTHORITY change, and it bumps this string
+        for the same reason an admission change does: a board ordered by a different
+        ranker publishes a different top-30 from the same evidence, so pooling v2's
+        forward record with v3's would read as one track record of a ranker that never
+        ran."""
+        assert ubr.BOARD_DEFINITION == "us_prophet_v3"
 
     def test_the_displaced_era_stamp_was_appended_in_the_same_pr(self):
         """A bump that forgets the displaced stamp orphans every row already written under
@@ -386,7 +397,7 @@ class TestEdgeLeg:
 
     def test_a_lone_scored_row_gets_zero_edge_points_end_to_end(self):
         scored = ubr.score_rows([_row("A", alpha=5.0)], board_asof="2026-07-31")
-        assert scored[0]["prophet"]["points"]["edge"] == 0.0
+        assert scored[0]["prophet_shadow"]["points"]["edge"] == 0.0
         assert scored[0]["prophet"]["alpha_percentile"] is None
 
     def test_a_pool_of_two_still_spans_the_full_range(self):
@@ -664,14 +675,29 @@ class TestBasingStage:
         # a bottom-watch row it moves with the bucket exactly as `stage` does — the
         # featured FLAG below is what must not move, and it does not).
         _positional = {"stage", "display_rank", "score_rank", "featured_blocked_by"}
+
+        def _comparable(row):
+            """The row minus every POSITION stamp, canonical and shadow alike.
+
+            `prophet_shadow.score_rank` is the retired scorer's own position and
+            its key opens on `stage_rank` exactly as the canonical one does, so
+            the shelf moves it by design (2026-08-15).  Only that one key is
+            dropped — the shadow SCORE, components and points stay pinned, which
+            is the half of the block this test exists to hold still.
+            """
+            out = {k: v for k, v in row.items() if k not in _positional}
+            if isinstance(out.get("prophet_shadow"), dict):
+                out["prophet_shadow"] = {k: v for k, v
+                                         in out["prophet_shadow"].items()
+                                         if k != "score_rank"}
+            return out
         by_before = {r["ticker"]: r for r in before}
         by_after = {r["ticker"]: r for r in after}
         assert set(by_before) == set(by_after)
         for tk, lhs in by_before.items():
             rhs = by_after[tk]
             assert rhs["stage"] == ("basing" if tk in moved else lhs["stage"]), tk
-            assert {k: v for k, v in lhs.items() if k not in _positional} == {
-                k: v for k, v in rhs.items() if k not in _positional}, tk
+            assert _comparable(lhs) == _comparable(rhs), tk
             # The excluded field is not waved through: the flag is identical, and the
             # ONLY reason that may differ is the stage token.
             assert lhs["featured"] == rhs["featured"], tk
@@ -1022,7 +1048,10 @@ class TestExtensionUnknownIsDisclosed:
         still earns 0 runway.  If this ever pays out, an outage starts INFLATING
         scores, which is strictly worse than the lane going dark."""
         scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
-        assert scored[0]["prophet"]["components"]["runway"] == 0.0
+        # The five legs are the RETIRED v2 scorer's and since the 2026-08-15 fusion
+        # override they live on `prophet_shadow` — still computed, still fail-closed,
+        # just no longer the rank authority.
+        assert scored[0]["prophet_shadow"]["components"]["runway"] == 0.0
 
     def test_the_2026_08_06_shape_no_longer_darks_the_lane(self):
         """69 rows, every ext_z unknown — the board that shipped `featured: 0`."""
@@ -1172,24 +1201,27 @@ class TestScoreRows:
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
         assert scored[0]["ticker"] == "A"
-        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(100.0)
-        assert scored[0]["prophet"]["points"]["entry"] == pytest.approx(25.0)
-        assert scored[0]["prophet"]["score"] == pytest.approx(100.0)
+        # On `prophet_shadow` since the 2026-08-15 override: the flat-ladder ruling is
+        # a property of the v2 ENTRY LEG, which still runs, and this test still pins it.
+        shadow = scored[0]["prophet_shadow"]
+        assert sum(shadow["points"].values()) == pytest.approx(100.0)
+        assert shadow["points"]["entry"] == pytest.approx(25.0)
+        assert shadow["score"] == pytest.approx(100.0)
 
     def test_a_lone_best_case_row_tops_out_at_the_scoreable_range(self):
         scored = ubr.score_rows(
             [_row("A", status="bounce_wait", tier="T2", ticks=1, alpha=1.0,
                   ext_z=0.0, coiled={"star": True})],
             board_asof="2026-07-31")
-        assert sum(scored[0]["prophet"]["points"].values()) == pytest.approx(75.0)
-        assert scored[0]["prophet"]["score"] == pytest.approx(75.0)
+        assert sum(scored[0]["prophet_shadow"]["points"].values()) == pytest.approx(75.0)
+        assert scored[0]["prophet_shadow"]["score"] == pytest.approx(75.0)
 
     def test_points_reconstruct_the_score(self):
         scored = ubr.score_rows([_row("A", ext_z=1.0, coiled={"coiled": True})],
                                 board_asof="2026-07-31")
-        prophet = scored[0]["prophet"]
-        assert sum(prophet["points"].values()) == pytest.approx(
-            prophet["score"], abs=0.05)
+        shadow = scored[0]["prophet_shadow"]
+        assert sum(shadow["points"].values()) == pytest.approx(
+            shadow["score"], abs=0.05)
 
     def test_rows_are_stamped_in_place(self):
         """The US builder shares one row object across lanes; copying would strand
@@ -1211,7 +1243,7 @@ class TestScoreRows:
         row = _row("A", tier="T3")
         ubr.score_rows([row], verdict_by={"A": _verdict("T2", 1)},
                        board_asof="2026-07-31")
-        assert row["prophet"]["components"]["signal"] == pytest.approx(1.0)
+        assert row["prophet_shadow"]["components"]["signal"] == pytest.approx(1.0)
 
     def test_stage_counts_report_every_bucket(self):
         scored = ubr.score_rows([_row("A")], board_asof="2026-07-31")
@@ -1322,8 +1354,12 @@ class TestRankingBlock:
         # Read from the PRODUCER, not a literal: this assertion exists to prove the block
         # carries the live era stamp, and a hand-copied string turns that into a test of
         # the copy (the exact drift `tests/test_china_standouts_serialization.py` documents).
-        assert block["definition"] == ubr.BOARD_DEFINITION == "us_prophet_v2"
-        assert block["score_kind"] == ubr.SCORE_KIND
+        assert block["definition"] == ubr.BOARD_DEFINITION == "us_prophet_v3"
+        # `score_kind` follows the CANONICAL ranker: on a fusion board it is the
+        # fusion's own epistemic label, and `weights`/`formula_points` below now
+        # describe the shadow — which the block says in `fusion.shadow_note`.
+        assert block["score_kind"] == ubr.FUSION_SCORE_KIND
+        assert block["fusion"]["shadow_note"]
         assert {p["component"] for p in block["formula_points"]} == set(
             ubr.SCORE_WEIGHTS)
         assert sum(p["points"] for p in block["formula_points"]) == 100.0
@@ -2348,9 +2384,17 @@ class TestScoreScopeContract:
         ran = ubr.score_rows([_row("A", status="hold", alpha=1.0, ext_z=0.0)],
                              board_asof="2026-07-31")[0]
         assert live["stage"] == "live" and ran["stage"] == "ran"
-        for leg in ("signal", "edge", "runway", "quality"):
-            assert live["prophet"]["points"][leg] == ran["prophet"]["points"][leg]
-        assert live["prophet"]["points"]["entry"] == ran["prophet"]["points"]["entry"]
+        for leg in ("signal", "edge", "runway", "quality", "entry"):
+            assert (live["prophet_shadow"]["points"][leg]
+                    == ran["prophet_shadow"]["points"][leg])
+        # The contract binds the CANONICAL column too, and more strongly: stage is not
+        # an input to any registered fusion member, so identical evidence in different
+        # buckets must produce the identical fusion score and the identical family
+        # contributions.  The bucket is the binding constraint on ORDER; it is never
+        # allowed to become a discount on the number.
+        assert live["prophet"]["score"] == ran["prophet"]["score"]
+        assert (live["prophet"]["fusion"]["family_contribution"]
+                == ran["prophet"]["fusion"]["family_contribution"])
 
 
 # ---------------------------------------------------------------------------
@@ -2530,12 +2574,26 @@ class TestCommittedArtifactIntegration:
         # re-groups the board, it does not re-score it.  (R2 made the veto reason name
         # the refusing bucket, so it moves with the bucket; the flag still must not.)
         _positional = {"stage", "display_rank", "score_rank", "featured_blocked_by"}
+
+        def _comparable(row):
+            """The row minus every POSITION stamp, canonical and shadow alike.
+
+            `prophet_shadow.score_rank` is the retired scorer's own position and
+            its key opens on `stage_rank` exactly as the canonical one does, so
+            the shelf moves it by design (2026-08-15).  Only that one key is
+            dropped — the shadow SCORE, components and points stay pinned, which
+            is the half of the block this test exists to hold still.
+            """
+            out = {k: v for k, v in row.items() if k not in _positional}
+            if isinstance(out.get("prophet_shadow"), dict):
+                out["prophet_shadow"] = {k: v for k, v
+                                         in out["prophet_shadow"].items()
+                                         if k != "score_rank"}
+            return out
         assert set(by_before) == set(by_after)
         for tk, lhs in by_before.items():
             rhs = by_after[tk]
-            assert {k: v for k, v in lhs.items() if k not in _positional} == {
-                k: v for k, v in rhs.items()
-                if k not in _positional}, tk
+            assert _comparable(lhs) == _comparable(rhs), tk
             assert lhs["featured"] == rhs["featured"], tk
             assert ([r for r in (lhs.get("featured_blocked_by") or [])
                      if not r.startswith("stage_")]

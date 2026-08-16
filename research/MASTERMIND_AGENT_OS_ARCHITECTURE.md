@@ -683,7 +683,7 @@ later. C4 and C5 were found by adversarial review of this document's own first d
 |---|---|---|
 | **C1** | First-class Task registry? | **APPROVED AS DESIGNED** — no task store in Agent OS V1; waves + PRs. A true pre-PR Task/Job store arrives later in the **Executive OS dispatcher**, not here, when autonomous assignment is built. `DEC:AGENTOS-NO-TASK-STORE` |
 | **C2** | Heartbeats / session tracking? | **APPROVED WITH SEMANTIC FIX** — no new tracking service; claim notes are advisory and must never be shown as authoritative live activity. A Control Pane may *display* Executive OS heartbeat/job state; it may not become a second runtime authority. `DEC:AGENTOS-CLAIMS-ARE-NOT-LIVE-ACTIVITY` |
-| **C3** | Two next-work lists? | **CHANGED** — `improvement_agenda.py` is the SOLE canonical queue. Agent OS owns readiness only; feed it into the agenda and retire the independent list. Renamed to UNBLOCKED in the interim. `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA` |
+| **C3** | Two next-work lists? | **CHANGED AND IMPLEMENTED IN PHASE 2B** — `improvement_agenda.py` is the SOLE canonical queue. Agent OS publishes identity-sorted readiness as its machine input; the interim UNBLOCKED list and keys are retired. `DEC:AGENTOS-READINESS-FEEDS-THE-AGENDA` |
 | **C4** | Merge decisions into `governance.jsonl`? | **APPROVED — SEPARATION PERMANENT BY DEFAULT.** Explicitly reverses the previously recorded reversal condition: do NOT merge them merely because governance may become git-tracked later. `DEC:AGENTOS-DECISION-MEMORY-STAYS-SEPARATE` |
 | **C5** | Clear `DNR:KILL-PARALLEL-KNOWLEDGE-BASE`? | **OVERRULED** — kill lifted; Phase 1 may mandate `DSC-*`. `DEC:AGENTOS-CXI-R12-OVERRULED` |
 

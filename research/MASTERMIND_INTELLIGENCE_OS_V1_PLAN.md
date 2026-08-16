@@ -201,6 +201,27 @@ accrual still yield no alpha number.
 | **Validation** | Synthetic stale/missing input flips the state; a healthy input set resolves `healthy` (both directions pinned) |
 | **Acceptance** | Not done unless: state is computed from the **reader's** view, not the producer's (a green producer with stale consumers must not resolve `healthy`); `unavailable` is rendered as "could not look", never as a neutral reading (standards §9.2); `degraded` measurably lowers displayed confidence |
 
+**As built (2026-08-14, `WS:EVAL-OS-OUTPUT-HEALTH`, commissioning directive + CEO admin
+amendment).** Two sharpenings supersede the row above where they differ:
+
+- `unavailable` ("looked; a required thing is definitively absent") and `could_not_look`
+  (observer blindness) are **separate fields**, never conflated: `state` ∈ healthy / degraded /
+  stale / unavailable / null and `assessment_status` ∈ complete / partial / could_not_look.
+  Blindness — sparse checkout, unreadable R2, missing promised `asof_field`, date-only watermark
+  with no lawful calendar — short-circuits to `could_not_look` and never manufactures a state.
+- "degraded lowers displayed confidence" is the **categorical** `display_confidence_state`
+  (full / reduced / none / unknown); model/predictive confidence is never multiplied.
+
+Unit of account is `(engine_id, artifact_id)` — schema `mastermind.output_health.v1`; per-output
+`dependency_bound: exact|upper` (exact only for single-output producers); `staleness_from`
+honored; reader-plane content evidence outranks producer-plane; mtime lawful only under a
+write-time contract with a trusted clock plane. Files as built: `engine/output_health.py` (pure
+resolver), `scripts/build_output_health.py` (CLI, nothing committed),
+`tests/test_output_health.py`, plus the CEO-amended read-only admin surface
+`admin/intelligence_os.py` + Intelligence OS SPA page (derived on demand, fixture-reflective,
+cross-linked with the Neural Web Observatory — `DEC:EVAL-OS-T4-ADMIN-SURFACE`). T7 consumes the
+records; T4 grants no authority and alters no prediction.
+
 ---
 
 ### T5 — Failure taxonomy · T5b — clustering

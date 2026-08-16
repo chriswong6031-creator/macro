@@ -34,7 +34,8 @@ from engine import china_signals  # noqa: E402  — A-share reversal tech + QVIX
 from engine import china_liquidity  # noqa: E402  — dollar-ADV liquidity floor + turnover-shape discriminator
 from engine.china_reversal import is_st  # noqa: E402  — ST/*ST/退 delisting-risk exclusion
 from engine import china_standout_track  # noqa: E402  — board-ORDER forward ledger (keystone)
-from engine import china_board_rank  # noqa: E402  — Prophet v2 score + execution/lifecycle lanes
+from engine import china_board_rank  # noqa: E402  — Prophet v4 score + execution/lifecycle lanes
+from engine import china_intel_interest  # noqa: E402  — V4 board-INDEPENDENT interest composite
 from engine import stock_view  # noqa: E402
 from engine import dispersion  # noqa: E402  — cross-sectional selection-regime gross dial
 from engine import entry_signal  # noqa: E402  — WHEN/at-what-price entry-timing gauge (market-agnostic)
@@ -59,6 +60,46 @@ JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's 
 # only execution-ready T1-T3 names can enter the featured lane.  Every other raw
 # gate-eligible name is preserved in one of the explicit depth lanes.
 BOARD_BUY_CAP = china_board_rank.FEATURED_CAP
+
+# Tradability floors (P6). Lifted so the CN live pack can apply the SAME
+# predicate the nightly board uses without importing this module's builder.
+# 30.0 exactly is the placeholder cap → treated as unknown, not a drop.
+MCAP_FLOOR_YI = 30.0
+STALE_DAYS = 15
+
+
+def stock_tradability_ok(
+    ticker: str,
+    *,
+    st_flag: bool = False,
+    name_zh: str | None = None,
+    mktcap: float | None = None,
+    adv_yi: float | None = None,
+) -> str | None:
+    """Return the drop reason (``st`` / ``mcap`` / ``adv``) or None if tradable.
+
+    Fail-closed on ST. The ADV / cap floors only exclude names we can PROVE are
+    below them — missing values pass through. Nightly behaviour is this function
+    plus the counter increment in the builder's inner wrapper.
+    """
+    del ticker  # identity is carried by the maps; kept for call-site symmetry
+    if st_flag or is_st(name_zh, None):
+        return "st"
+    if mktcap is not None and mktcap != MCAP_FLOOR_YI and mktcap < MCAP_FLOOR_YI:
+        return "mcap"
+    if adv_yi is not None and adv_yi < china_liquidity.ADV_FLOOR_YI:
+        return "adv"
+    return None
+
+
+def universe_price_adjustment() -> dict[str, str]:
+    """Per-name basis map for the CN store (yfinance ``auto_adjust=True``).
+
+    Empty = every name is on the default ``split_and_dividend_adjusted`` family.
+    The US stock library returns exceptions (breadth-cache raw accruals); the
+    China deep store does not have that split, so there is nothing to mark.
+    """
+    return {}
 
 
 def _prophet_ranking_contract() -> dict:
@@ -93,6 +134,29 @@ def _prophet_ranking_contract() -> dict:
         # V3 R2: ``narrative`` left this list because theme timing now has exactly
         # the bounded theme_timing authority in SCORE_WEIGHTS — and nothing more.
         "zero_score_authority": list(china_board_rank.ZERO_SCORE_AUTHORITY),
+        # V4: rank by interestingness, gate by entry. The SCORE above is v3's,
+        # unchanged — no intelligence term enters it. The ORDER is new.
+        "ordering": {
+            "key": china_board_rank.INTEL_INTEREST_ORDER,
+            "primary": "intel_interest_score (engine/china_intel_interest.py)",
+            "secondary": "prophet_score (the v3 score above)",
+            "tiebreak": "ticker",
+            "fallback": (
+                "a name with no measurable board-independent intelligence keeps its "
+                "v3 priority and is stamped intel_interest_basis=fallback_v3; it is "
+                "never scored zero"
+            ),
+            "authority": (
+                "engine/china_board_rank.py is the sole live ranking authority. "
+                "China Intelligence supplies board-independent evidence only: no "
+                "board direction, no board label edge, no board-absent bonus, no "
+                "board term in the leading-vs-lagging gap, and no Prophet score or "
+                "rank in any intelligence input. The raw china_intel_hub "
+                "opportunity_score is never read."
+            ),
+            "excludes": list(china_intel_interest.BOARD_DERIVED_TERMS_EXCLUDED),
+            "shadow": china_board_rank.V3_SHADOW_DEFINITION,
+        },
     }
 
 
@@ -1004,6 +1068,11 @@ def _cn_era_label(date_from: str | None, date_to: str | None) -> tuple[str, str]
 #: and #4509 shipped without it, which is how 72 v2 rows fell out of every cohort.
 _CN_SUPERSEDED_ERA_STAMPS: tuple[str, ...] = (
     "cn_prophet_v2",   # #4509: live 2026-07-30 → 2026-08-05, displaced by cn_prophet_v3
+    # V4 (2026-08-15): live 2026-08-05 → 2026-08-15, displaced by cn_prophet_v4 when the
+    # board moved to intelligence ORDERING. The v3 admission rules did not change, but
+    # the shelf COMPOSITION did, so v3's accrued rows stay a closed era and are never
+    # pooled with v4's. Historical rows are untouched; v4 accrues prospectively.
+    "cn_prophet_v3",
 )
 
 
@@ -2116,18 +2185,17 @@ def main(alpha: dict | None = None) -> dict | None:
     STALE_DAYS = 15                 # a name whose last bar is >15 calendar days stale is likely
     #                                suspended/delisted (e.g. a frozen HK/A name) — never a live buy.
     def _tradability_ok(_t: str) -> bool:
-        # ST from the Tushare name field (carries the prefix) OR the name_zh fallback (usually
-        # blind — see the ST-flag sourcing above). Fail-CLOSED: either source flags → drop.
-        if st_flag_by.get(_t, False) or is_st(name_zh_by.get(_t), None):
-            screen_drop["st"] += 1
-            return False
-        _cap = mktcap_by.get(_t)
-        if _cap is not None and _cap != MCAP_FLOOR_YI and _cap < MCAP_FLOOR_YI:  # real sub-floor cap only
-            screen_drop["mcap"] += 1
-            return False
-        _adv = (liq_by.get(_t) or {}).get("adv_yi")
-        if _adv is not None and _adv < china_liquidity.ADV_FLOOR_YI:  # proven illiquid
-            screen_drop["adv"] += 1
+        # Same predicate the CN live pack applies (stock_tradability_ok). Counters
+        # stay here so the nightly log line is unchanged.
+        reason = stock_tradability_ok(
+            _t,
+            st_flag=st_flag_by.get(_t, False),
+            name_zh=name_zh_by.get(_t),
+            mktcap=mktcap_by.get(_t),
+            adv_yi=(liq_by.get(_t) or {}).get("adv_yi"),
+        )
+        if reason:
+            screen_drop[reason] += 1
             return False
         return True
 
@@ -2965,6 +3033,42 @@ def main(alpha: dict | None = None) -> dict | None:
         _chase_by_ticker = {}
         _relay_by_ticker = {}
 
+    # ── V4 INTELLIGENCE INTEREST (ordering authority, zero score authority) ──────
+    # The board-INDEPENDENT interest composite that v4 ranks by. It reads upstream
+    # evidence only — altdata convergence (recomputed in process, NOT the top-30
+    # by_ticker display slice, and NOT the intel-hub artifact that asia-close.yml
+    # builds AFTER this step), the divergence radar, special-sits overhang, and the
+    # CSI300-relative price plane. It never reads the board or the hub's own
+    # opportunity_score, so ranking by it closes no feedback loop.
+    # Failure is not fatal and is not silent: every row falls back to its v3
+    # priority, which orders the board exactly as v3 ordered it.
+    _intel_by_ticker: dict = {}
+    _intel_coverage: dict = {}
+    try:
+        _t0_intel = time.time()
+        _intel_by_ticker = china_intel_interest.build_interest_map(
+            str(r.get("ticker") or "") for r in _candidate_rows
+        )
+        _intel_coverage = china_intel_interest.coverage(_intel_by_ticker)
+        log.info(
+            "[timing] V4 intel interest: %d rows, %d measured (%.1f%%), %d fallback_v3 "
+            "in %.1fs",
+            _intel_coverage.get("n_rows", 0), _intel_coverage.get("n_measured", 0),
+            _intel_coverage.get("measured_rate_pct", 0.0),
+            _intel_coverage.get("n_fallback_v3", 0), time.time() - _t0_intel,
+        )
+        if not _intel_coverage.get("n_measured"):
+            print("::warning title=cn-prophet-v4-intel-blind::China Intelligence "
+                  "measured 0 board rows — v4 is ordering exactly as v3 tonight",
+                  flush=True)
+    except Exception as _intel_exc:  # noqa: BLE001 — ordering degrades, board never dies
+        log.warning(
+            "V4 intel interest unavailable (%s) — board orders on v3 priority tonight",
+            _intel_exc,
+        )
+        _intel_by_ticker = {}
+        _intel_coverage = {"error": str(_intel_exc)}
+
     # China Prophet v3 score authority is intentionally small and transparent:
     # confluence 30 + entry 20 + runway 15 + bottom quality 10 + membership in the
     # broad reversal sleeve 10 + theme timing 15.  Residual alpha, the legacy setup
@@ -2987,6 +3091,8 @@ def main(alpha: dict | None = None) -> dict | None:
         basket_cycle_by=_basket_cycle_by_ticker,
         chase_by=_chase_by_ticker,
         relay_by=_relay_by_ticker,
+        # V4: ordering input only — adds no score, feeds board_rank.
+        intel_by=_intel_by_ticker,
         # Each packet carries its own as-of.  Passing the board date here lets
         # _micro_is_fresh require both the batch and per-name dates to match.
         micro_asof=_micro_doc.get("as_of"),
@@ -3104,7 +3210,13 @@ def main(alpha: dict | None = None) -> dict | None:
     #     the existing blend_sorted order UNCHANGED (F3 discipline: no rank change here).
     #     Each buy row gains stage / sublabel / detail / why_ranked fields.
     def _why_ranked(r: dict) -> str:
-        """Compact receipt of the actual Prophet v2 score — display only."""
+        """Compact receipt of what actually ordered this row — display only.
+
+        V4 ranks by intelligence interest first, so the receipt LEADS with the number
+        that did the ordering and keeps the unchanged v3 score decomposition behind
+        it. A row with no intelligence read says so in plain words rather than
+        printing a zero it never measured.
+        """
         prophet = r.get("prophet") or {}
         points = prophet.get("points") or {}
         if not points:
@@ -3120,7 +3232,15 @@ def main(alpha: dict | None = None) -> dict | None:
             f"{label} {float(points.get(key) or 0):.1f}"
             for key, label in labels
         ]
-        return f"Prophet {float(prophet.get('score') or 0):.1f}: " + " + ".join(receipt)
+        score = r.get("intel_interest_score")
+        lead = (
+            f"Interest {float(score):.1f}"
+            if r.get("intel_interest_basis") == china_board_rank.INTEL_BASIS_MEASURED
+            and score is not None
+            else "Interest — (no intelligence read)"
+        )
+        return (f"{lead} · Prophet {float(prophet.get('score') or 0):.1f}: "
+                + " + ".join(receipt))
 
     for r in eligible_rows:
         _t = r.get("ticker")
@@ -3535,6 +3655,27 @@ def main(alpha: dict | None = None) -> dict | None:
                         _shadow_rule_e)
             _v2_shadow_rows = []
 
+        # ── V4 SHADOW RACE ────────────────────────────────────────────────────
+        # The DISPLACED v3 ORDERING (rank by prophet_score alone), re-run on the
+        # SAME scored rows with the SAME admission rule and caps. It isolates the
+        # ONE thing v4 changed — the order — so the v4-vs-v3 race accrues from
+        # merge day with v4 live. Never displayed, never the headline grade
+        # (china_standout_track.WATCH_DEFINITIONS excludes it).
+        _v3_shadow_rows: list[dict] = []
+        try:
+            _v3_shadow_rows = china_board_rank.v3_shadow_featured(eligible_rows)
+            _v4_only = ({str(r.get("ticker")) for r in _buy_rows}
+                        - {str(r.get("ticker")) for r in _v3_shadow_rows})
+            log.info(
+                "V4 ordering race: %d featured on v4 vs %d on the v3 order; "
+                "%d name(s) featured only under v4",
+                len(_buy_rows), len(_v3_shadow_rows), len(_v4_only),
+            )
+        except Exception as _v3_shadow_e:  # noqa: BLE001 — the race never blocks the board
+            log.warning("V4 v3-shadow shelf failed (%s) — race not logged tonight",
+                        _v3_shadow_e)
+            _v3_shadow_rows = []
+
         # laggards watch-strip: weakest residual-alpha names, independent of the buy gate.
         laggards = dedupe_dual_class(sorted(
             (r for _s, r in cand if r.get("alpha") is not None),
@@ -3542,6 +3683,10 @@ def main(alpha: dict | None = None) -> dict | None:
         _ranking_contract = _prophet_ranking_contract()
         _ranking_contract["input_coverage"] = {
             "reversal": _reversal_coverage,
+            # V4: how many rows the ordering key was actually MEASURED on. A board
+            # where every row fell back is a board ordered exactly as v3 ordered it,
+            # and this is how that stays visible rather than silent.
+            "intel_interest": _intel_coverage,
         }
 
         # ── WASHOUT REVERSAL WATCH shelf (prereg §5.4 measurement lane) ────────
@@ -3837,6 +3982,14 @@ def main(alpha: dict | None = None) -> dict | None:
                 _bn_sh = china_standout_track.append_board(
                     _v2_shadow_rows, asof=as_of, lane=_lane)
                 log.info("china v2-shadow board-track: logged %d rows", _bn_sh)
+            # V4 ORDERING RACE: the displaced v3 order accrues its own forward record
+            # under cn_prophet_v3_shadow. Same store, own definition, same keep-first
+            # (date, ticker, board_definition) key — a name featured on both shelves
+            # keeps one row per definition.
+            if _v3_shadow_rows:
+                _bn_v3 = china_standout_track.append_board(
+                    _v3_shadow_rows, asof=as_of, lane=_lane)
+                log.info("china v3-shadow board-track: logged %d rows", _bn_v3)
             # CONTINUATION WATCH cohort (§2.7 / §5 W-C) — appended LAST so no
             # other definition's append order is disturbed.  Same store, own
             # board_definition; WATCH_DEFINITIONS keeps it out of headline-grade

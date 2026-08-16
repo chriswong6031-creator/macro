@@ -36,13 +36,22 @@ GRADE SCHEMA (reflex.factor_attention.grade.v1)
   graded_at         str   — ISO date (today)
   grader_version    str
   falsifier_class   str   — 'realized_move' (all factor_attention claims)
-  outcome_hit       bool  — True if name underperformed SPY at horizon_d=21
-  outcome_detail    dict  — evidence detail
+  outcome_hit       bool | None — True/False if graded; None = disclosed null
+  outcome_detail    dict  — evidence detail (ungradeable_reason when null)
   horizon_d         int
   asof              str
   symbol            str
-  direction         int   — always -1
-  base_rate         float — 0.5 (prior)
+  direction         int | None — -1 (live contract), +1 if it appears, else None
+  base_rate         float | None — 0.5 on signed-excess grades; None on nulls
+
+DIRECTION
+---------
+The live producer always writes direction=-1 (underperform SPY).  A missing,
+blank, unparseable, or direction=0 field is NOT a SHORT and is NOT a
+salience-magnitude flag — this reflex never asked for a magnitude path.
+Those rows are disclosed nulls and are excluded from the A2 denominator.
+`int(claim.get("direction") or -1)` is the latent defect this file must not
+reintroduce: it maps 0 / None / "" / absent alike onto -1.
 
 A2 EARN-IN (DISPLAY-ONLY PROBATION)
 ------------------------------------
@@ -71,10 +80,11 @@ sys.path.insert(0, str(_ROOT))
 
 log = logging.getLogger(__name__)
 
-_GRADER_VERSION = "P1D-v1"
+_GRADER_VERSION = "P1D-v2"
 _GRADE_SCHEMA = "reflex.factor_attention.grade.v1"
 _BASE_RATE_DEFAULT = 0.5
 _REFLEX_NAME = "factor_attention"
+_SIGNED_DIRECTIONS = frozenset((-1, 1))
 
 
 # ---------------------------------------------------------------------------
@@ -126,6 +136,31 @@ def _graded_ids(root: Path) -> set[str]:
     return {r.get("claim_id") for r in _load_jsonl(_grades_path(root)) if r.get("claim_id")}
 
 
+def _claim_direction(claim: dict) -> int | None:
+    """Parse a signed underperform/outperform bet. Missing / 0 / junk → None.
+
+    The latent form ``int(claim.get("direction") or -1)`` collapses 0, None, ""
+    and an absent key alike onto -1, silently turning a missing or
+    direction-free claim into a SHORT.  This reflex's live contract is
+    direction=-1 (name underperforms SPY).  direction=+1 is kept as a signed
+    long if it ever appears.  direction=0 is not a signed bet and is not a
+    salience-magnitude flag — that is a different reflex (options_flow_attention
+    / cortex), a different producer, and a different grader.
+    """
+    if "direction" not in claim:
+        return None
+    raw = claim.get("direction")
+    if raw is None or raw == "":
+        return None
+    try:
+        value = int(raw)
+    except (TypeError, ValueError):
+        return None
+    if value not in _SIGNED_DIRECTIONS:
+        return None
+    return value
+
+
 # ---------------------------------------------------------------------------
 # Close loader (same as grade_cortex_attention.py)
 # ---------------------------------------------------------------------------
@@ -156,26 +191,41 @@ def _grade_realized_move(
     claim: dict,
     root: Path,
     today: date,
-) -> tuple[bool, dict]:
-    """Grade realized-move claims via forward_metrics vs SPY.
+) -> tuple[bool | None, dict]:
+    """Grade realized-move claims via signed excess vs SPY.
 
-    Hit criterion: excess vs SPY < 0 when direction=-1 (name underperforms SPY).
-    This is the falsifier for factor_attention per RULING-G.
+    direction=-1 → hit iff excess < 0 (name underperforms SPY; the live contract).
+    direction=+1 → hit iff excess > 0 (kept if a long ever appears).
+    Missing / 0 / unparseable → disclosed null.  This is a signed
+    underperform-SPY bet, not a salience flag: a magnitude / placebo path
+    would invent a contract this reflex never asked.
+
+    Returns (None, detail) when the criterion cannot be evaluated.  A null is
+    disclosed, never rounded down to a miss.
     """
     symbol = claim.get("scope_key") or claim.get("symbol") or ""
     horizon_d = int(claim.get("horizon_d") or 21)
-    direction = int(claim.get("direction") or -1)
+    direction = _claim_direction(claim)
     asof_str = str(claim.get("asof") or "")
 
     detail: dict[str, Any] = {
         "symbol": symbol,
         "horizon_d": horizon_d,
         "direction": direction,
+        "criterion": "signed_excess_vs_spy",
     }
 
+    if direction is None:
+        detail["ungradeable_reason"] = (
+            "direction is not a signed bet "
+            "(missing / blank / unparseable / 0); "
+            "factor_attention grades signed excess vs SPY only"
+        )
+        return None, detail
+
     if not symbol or not asof_str:
-        detail["note"] = "missing symbol or asof"
-        return False, detail
+        detail["ungradeable_reason"] = "missing symbol or asof"
+        return None, detail
 
     try:
         from engine.grading import forward_metrics  # type: ignore[import]
@@ -184,15 +234,15 @@ def _grade_realized_move(
         spy_close = _load_close(root, "SPY")
 
         if close is None or len(close) < 5:
-            detail["note"] = f"no price data for {symbol}"
-            return False, detail
+            detail["ungradeable_reason"] = f"no price data for {symbol}"
+            return None, detail
 
         fm = forward_metrics(close, asof_str, horizons=(horizon_d,))
         fwd_ret = fm.get(f"fwd_ret_{horizon_d}")
 
         if fwd_ret is None:
-            detail["note"] = f"horizon {horizon_d}d not yet elapsed"
-            return False, detail
+            detail["ungradeable_reason"] = f"horizon {horizon_d}d not yet elapsed"
+            return None, detail
 
         spy_ret = None
         if spy_close is not None:
@@ -205,16 +255,25 @@ def _grade_realized_move(
             "fwd_ret": round(float(fwd_ret), 4),
             "spy_ret": round(float(spy_ret), 4) if spy_ret is not None else None,
             "excess": round(float(excess), 4),
+            "base_rate": _BASE_RATE_DEFAULT,
         })
 
-        # Hit: direction=-1 means we expect the name to underperform SPY (excess < 0)
-        hit = (excess > 0) if direction > 0 else (excess < 0)
+        if direction == 1:
+            hit = excess > 0
+        elif direction == -1:
+            hit = excess < 0
+        else:
+            detail["ungradeable_reason"] = (
+                f"direction={direction!r} is not a signed bet"
+            )
+            return None, detail
         return bool(hit), detail
 
     except Exception as exc:  # noqa: BLE001
         log.debug("grade_factor_attention: _grade_realized_move %s (%s)", symbol, exc)
         detail["error"] = str(exc)
-        return False, detail
+        detail["ungradeable_reason"] = f"grader raised: {exc}"
+        return None, detail
 
 
 # ---------------------------------------------------------------------------
@@ -290,11 +349,14 @@ def _evaluate_a2_earn_in(
         log.warning("grade_factor_attention: constitution import failed (%s)", exc)
         return {"granted": False, "reason": f"constitution import failed: {exc}"}
 
-    n = len(grades)
-    hits = sum(1 for g in grades if g.get("outcome_hit"))
+    evaluable = [g for g in grades if g.get("outcome_hit") is not None]
+    n = len(evaluable)
+    hits = sum(1 for g in evaluable if g.get("outcome_hit") is True)
+    ungradeable = len(grades) - n
     evidence_asof = None
-    if grades:
-        dates = [g.get("graded_at") for g in grades if g.get("graded_at")]
+    dated = evaluable or grades
+    if dated:
+        dates = [g.get("graded_at") for g in dated if g.get("graded_at")]
         if dates:
             evidence_asof = max(str(d)[:10] for d in dates)
 
@@ -328,7 +390,8 @@ def _evaluate_a2_earn_in(
         "attention_track_record": {
             "n": n,
             "hits": hits,
-            "base_rate": _BASE_RATE_DEFAULT,
+            "ungradeable": ungradeable,
+            "base_rate": _BASE_RATE_DEFAULT if n else None,
         },
         "is_context_only": True,
     }
@@ -401,7 +464,7 @@ def grade_factor_attention(
         cid = claim.get("claim_id", "unknown")
         symbol = claim.get("scope_key") or claim.get("symbol") or "macro"
         horizon_d = int(claim.get("horizon_d") or 21)
-        direction = int(claim.get("direction") or -1)
+        direction = _claim_direction(claim)
         asof_str = str(claim.get("asof") or "")[:10]
 
         # All factor_attention claims use realized_move falsifier class
@@ -419,7 +482,7 @@ def grade_factor_attention(
             "asof": asof_str,
             "symbol": symbol,
             "direction": direction,
-            "base_rate": _BASE_RATE_DEFAULT,
+            "base_rate": _BASE_RATE_DEFAULT if hit is not None else None,
         }
         new_grades.append(grade_row)
         log.info(

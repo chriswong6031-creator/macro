@@ -1,0 +1,54 @@
+[Unit]
+Description=Mastermind isolated GitHub Actions CI runner __RUNNER_NAME__
+After=network-online.target
+Wants=network-online.target
+# A successful one-job listener exit is the normal steady state, not a crash.
+# Do not strand a slot after six short jobs; the pressure guard supplies its own
+# bounded refusal backoff before systemd retries an unsafe host.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=macroci
+Group=macroci
+WorkingDirectory=__RUNNER_ROOT__
+Environment=ACTIONS_RUNNER_HOOK_JOB_STARTED=/usr/local/libexec/mastermind-ci-admission-pc-ci.js
+Environment=MASTERMIND_CI_PROFILE=pc-ci
+Environment=MASTERMIND_CI_RUNNER_ROOT=__RUNNER_ROOT__
+Environment=HOME=__RUNNER_ROOT__/_work/_home
+ExecStartPre=/usr/local/libexec/mastermind-ci-resource-guard --path __RUNNER_ROOT__ --refusal-backoff-seconds 300
+ExecStart=/usr/local/libexec/mastermind-ci-runner __RUNNER_ROOT__
+Restart=always
+RestartSec=5
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=5min
+TimeoutStartSec=10min
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+InaccessiblePaths=/mnt/c /mnt/d /home/longr /root
+ReadOnlyPaths=__RUNNER_ROOT__ /var/cache/mastermind-ci/macro.git
+ReadWritePaths=__RUNNER_ROOT__/_work __RUNNER_ROOT__/_diag
+# Match GitHub-hosted checkout/temp semantics. Several CI contracts intentionally
+# require executable/traversable 0755 directories created inside the isolated
+# runner work tree; 0027 silently turns those into 0750.
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

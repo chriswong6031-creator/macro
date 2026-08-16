@@ -130,12 +130,14 @@ jobs:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - run: printf leak > leaked.tmp
+      - name: create the leak fixture
+        run: printf leak > leaked.tmp
   second:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - run: test ! -e leaked.tmp
+      - name: prove the checkout was restored
+        run: test ! -e leaked.tmp
 """
     )
     subprocess.run(["git", "init"], cwd=repo, check=True, capture_output=True)
@@ -1021,8 +1023,18 @@ def test_shadow_mode_emits_machine_readable_plan_and_job_results(
     assert plan["predicted_skipped"] == ["would-skip"]
 
     monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
-    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
-    monkeypatch.setattr(PACK, "_run_job", lambda *args, **kwargs: None)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
+    monkeypatch.setattr(
+        PACK,
+        "_run_job",
+        lambda job, **_kwargs: PACK.JobExecution(
+            logical_job_id=job.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(job),
+            infrastructure={"outcome": "passed"},
+            steps=(),
+            failure=None,
+        ),
+    )
     assert PACK.execute_pack(jobs, shadow_predicted=frozenset({"owner"})) == 0
     records = [
         json.loads(line.split("=", 1)[1])
@@ -1040,18 +1052,34 @@ def test_execute_pack_emits_legacy_job_annotations_and_failed_job_ids(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     """merge_on_green parses `title=legacy-job-<id>` for live-inherited reds."""
-    definition = {"steps": [{"run": "true"}], "runs-on": "ubuntu-latest"}
+    definition = {
+        "steps": [{"name": "semantic proof", "run": "true"}],
+        "runs-on": "ubuntu-latest",
+    }
     jobs = [
         PACK.LegacyJob("unrun-government-revenue", definition, 0, 1, ("engine/**",)),
         PACK.LegacyJob("other", definition, 1, 1, ("engine/**",)),
     ]
     monkeypatch.setattr(PACK, "_workspace_root", lambda: ROOT)
-    monkeypatch.setattr(PACK, "_restore_workspace", lambda: None)
+    monkeypatch.setattr(PACK, "_restore_workspace", lambda *_args: None)
 
     def fake_run(job, **_kwargs):
-        if job.job_id == "unrun-government-revenue":
-            return f"{job.job_id}: step 'pytest' exited 1"
-        return None
+        failed = job.job_id == "unrun-government-revenue"
+        specs = PACK.semantic_step_specs(job)
+        return PACK.JobExecution(
+            logical_job_id=job.job_id,
+            job_exec_sha256=PACK.semantic_job_digest(job),
+            infrastructure={"outcome": "passed"},
+            steps=tuple(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "failed" if failed else "passed",
+                    "failure_signature": None,
+                }
+                for spec in specs
+            ),
+            failure=(f"{job.job_id}: step 'pytest' exited 1" if failed else None),
+        )
 
     monkeypatch.setattr(PACK, "_run_job", fake_run)
     assert PACK.execute_pack(jobs) == 1
@@ -1135,12 +1163,30 @@ def _isolate_pack_runner_planner_env(monkeypatch: pytest.MonkeyPatch) -> None:
     changed-file artifact, and it OUT-RANKS the inline form, so leaving it
     ambient would leak the live PR diff into these fixtures exactly as #5560's
     inline value did.
+
+    Semantic identity env joined on 2026-08-15 (PR #5750 pack-1 / job
+    95003903089). ``build_plan`` now infers ``role=pr_head`` from
+    ``GITHUB_EVENT_NAME=pull_request`` and then refuses a full-suite plan
+    (``changed is None``) as "a PR semantic plan requires an exact
+    changed-file inventory". Packing-contract tests that call
+    ``plan_from_workflow(..., changed_from=None)`` or ``--plan-only``
+    without ``--event/--role`` inherited the live PR event and the
+    hosted-runner packing contract exited 1. Strip the identity vars so
+    those tests keep the local ``workflow_dispatch`` / ``main`` default;
+    tests that want a PR plan pass ``event``/``role`` or a file list
+    explicitly. The production ci-plan path still passes ``--event`` and
+    ``--role`` on the command line, so this does not weaken that gate.
     """
     for name in (
         "CI_CHANGED_FILES_FILE",
         "CI_CHANGED_FILES_JSON",
         "CI_SCOPE_MODE",
         "CI_DYNAMIC_MATRIX_MODE",
+        "GITHUB_EVENT_NAME",
+        "CI_SEMANTIC_ROLE",
+        "CI_TESTED_TREE_SHA",
+        "CI_SUBJECT_HEAD_SHA",
+        "CI_BASE_SHA",
     ):
         monkeypatch.delenv(name, raising=False)
 
@@ -1184,6 +1230,28 @@ def test_packing_contract_ignores_ambient_ci_changed_files_json(
     assert set(plan.eligible_job_ids) == {"owner"}
     assert plan.skipped_job_ids == ("would-skip",)
     assert PACK.resolve_changed_files("base-sha") == ["engine/example.py"]
+
+
+def test_packing_contract_strips_ambient_pr_event_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The leak that redded pack-1 on PR #5750 head 168e8e1f.
+
+    Autouse isolation must leave ``GITHUB_EVENT_NAME`` unset so
+    ``_full_plan()`` mints a local main plan. Planting the live Actions
+    PR event afterwards must raise the inventory ManifestError — that is
+    the law that fired inside the packing contract when the fixture
+    still inherited ``pull_request``.
+    """
+    assert os.environ.get("GITHUB_EVENT_NAME") != "pull_request"
+    assert "CI_SEMANTIC_ROLE" not in os.environ
+    plan = _full_plan()
+    assert plan.event == "workflow_dispatch"
+    assert plan.role == "main"
+    assert plan.changed_from is None
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "pull_request")
+    with pytest.raises(PACK.ManifestError, match="exact changed-file inventory"):
+        _full_plan()
 
 
 def _freeze_scope_inference(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -1249,6 +1317,14 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
     """The hash is what makes twelve independent derivations one decision."""
     plan = _full_plan()
     payload = PACK.plan_hash_payload(
+        workflow_run_id=plan.workflow_run_id,
+        workflow=plan.workflow,
+        event=plan.event,
+        role=plan.role,
+        tested_tree_sha=plan.tested_tree_sha,
+        subject_head_sha=plan.subject_head_sha,
+        base_sha=plan.base_sha,
+        authority_changed=plan.authority_changed,
         changed_from=plan.changed_from,
         scope_mode=plan.scope_mode,
         changed_files_sha256=plan.changed_files_sha256,
@@ -1256,6 +1332,7 @@ def test_plan_hash_covers_job_assignment_but_not_prose() -> None:
         eligible_job_ids=plan.eligible_job_ids,
         pack_jobs=plan.pack_jobs,
         pack_weights=plan.pack_weights,
+        semantic_jobs=plan.semantic_jobs,
     )
     assert PACK._canonical_digest(payload) == plan.plan_sha256
 
@@ -1896,13 +1973,16 @@ def test_emit_plan_json_prints_exactly_one_machine_line(
         "skipped_job_count", "skipped_jobs", "packs", "nonempty_pack_indices",
         "matrix", "has_work", "plan_sha256",
         "changed_files_sha256", "changed_files_count",
+        "workflow_run_id", "workflow", "event", "role",
+        "tested_tree_sha", "subject_head_sha", "base_sha",
+        "authority_changed", "semantic_jobs",
     }
     # The full-suite baseline carries the affirmative "no list" encoding, which
     # is what lets a pack tell "planned everything" from "planned this exact
     # diff" without a second flag.
     assert document["changed_files_sha256"] == ""
     assert document["changed_files_count"] == 0
-    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v1"
+    assert document["schema"] == PACK.PLAN_SCHEMA == "ci.pack_plan.v2"
     assert [entry["index"] for entry in document["packs"]] == list(range(12))
 
     # A path gets the same document, indented, and no marker line on stdout.
@@ -1962,16 +2042,9 @@ def test_the_pack_report_survived_the_plan_refactor(
 def test_workflow_scopes_only_pull_requests() -> None:
     """Main's baseline must never pass --changed-from: it runs the full manifest."""
     pack = _yaml(WORKFLOW)["jobs"]["ci-pack"]
-    step = next(
-        s for s in pack["steps"]
-        if isinstance(s, dict) and "legacy CI pack" in str(s.get("name", ""))
-    )
-    scope_arg = str(step["env"]["CI_SCOPE_ARG"])
-    assert "github.event_name == 'pull_request'" in scope_arg
-    assert "--changed-from" in scope_arg
-    assert "pull_request.base.sha" in scope_arg
-    assert "github.base_ref" not in scope_arg
-    assert step["env"]["CI_SCOPE_MODE"] == "${{ vars.CI_SCOPE_MODE == 'off' && 'off' || 'active' }}"
+    step = next(s for s in pack["steps"] if s.get("id") == "execute_semantic_pack")
+    assert "CI_SCOPE_ARG" not in step.get("env", {})
+    assert "--changed-from" not in step["run"]
     # A leftover `shadow` GitHub Actions variable must not hostage the fleet:
     # anything other than exact `off` is active. Quote: before #5515 the var
     # could sit at `shadow` and run the full 185-job suite while reporting a
@@ -1988,13 +2061,18 @@ def test_workflow_scopes_only_pull_requests() -> None:
     assert plan_step["env"]["CI_DYNAMIC_MATRIX_MODE"] == (
         "${{ vars.CI_DYNAMIC_MATRIX_MODE == 'off' && 'off' || 'active' }}"
     )
+    scope_arg = str(plan_step["env"]["CI_SCOPE_ARG"])
+    assert "github.event_name == 'pull_request'" in scope_arg
+    assert "--changed-from" in scope_arg
+    assert "steps.identity.outputs.tested_base_sha" in scope_arg
+    assert "github.base_ref" not in scope_arg
     on = _yaml(WORKFLOW).get("on") or _yaml(WORKFLOW).get(True)
     pull_paths = on["pull_request"]["paths"]
     assert "**" in pull_paths
     assert "worker/**" in pull_paths
     assert "content/**" in pull_paths
     assert "wrangler.toml" in pull_paths
-    assert "$CI_SCOPE_ARG" in str(step["run"])
+    assert "$CI_SCOPE_ARG" in str(plan_step["run"])
 
 
 def test_pack_command_folds_to_exactly_one_shell_command() -> None:
@@ -2455,6 +2533,64 @@ CURATED_EXCLUSIVE = {
     "unrun-subsector-themes",
     "inline-js",
     "unrun-picks-boards",
+    "intelligence-registry",
+    # 2026-08-14 wave 2: the manifest grew 180→193 jobs and the new fallback
+    # riders pushed scripts/build_free_content.py to 127 > 126, redding pack-1
+    # fleet-wide. Curated: the three NEW subject-guards whose owner-written
+    # `paths:` cover their measured import closure (dataos-foundation widened
+    # by 6 files per the audit below; momoedge/vintage covered as written).
+    # dataos-identity-seams was EVALUATED AND REJECTED — its genuine closure
+    # spans 43 files across engine/, so exclusivity would either lie about
+    # coverage or degenerate to fallback breadth; it stays inferred, like the
+    # other new riders without paths (product-experience-capture/-registry,
+    # wri-risk-core).
+    "dataos-foundation",
+    "momoedge-browser-observe",
+    "vintage-pin-fence",
+    # 2026-08-14 wave 3. options-estate-guards was listed above as a rider that
+    # would stay inferred; that call is superseded. #5634 gave it
+    # tests/test_options_gap_discipline.py, whose closure carries an opaque
+    # construct, and the resulting whole-tree fallback claim made this job a
+    # NEW selector on all three ratchet probes — smear, not evidence, and the
+    # reason scripts/build_free_content.py ran out of headroom. The
+    # dataos-identity-seams rejection does not transfer: an engine-heavy
+    # closure only degenerates to fallback breadth when it needs `engine/**`,
+    # and this one does not — its 35 engine files are top-level modules plus
+    # four whole subpackages, so `engine/*` + four `engine/<pkg>/**` covers the
+    # closure exactly and leaves engine/prophet/** outside. Measured: 100
+    # closure files, zero uncovered; fallback tier drops to (); all four
+    # probes in the test below were fallback-tier before and are unmatched
+    # after, so nothing owned was lost.
+    #
+    # Derive that closure against a FULL checkout. `site` is in
+    # audit_unrun_tests.FIRST_PARTY, but site/ literals are admitted through
+    # `(ROOT / rel).is_file()`, which answers False for a tree a sparse
+    # worktree omitted -- so the same job derives 85 files there and silently
+    # loses all 15 site/ members. The first version of this curation was
+    # derived sparse, declared `site/<dir>/**` for the 13 members it could
+    # see, and was red HERE on the two top-level ones it could not
+    # (site/flow_desk.json, site/options.html). This test is the check that
+    # catches it; a sparse local run of it is not evidence that it passes.
+    "options-estate-guards",
+    # 2026-08-15 wave 4. The two jobs the #5754 re-base below deferred. Both had
+    # NO owned tier at all — every inferred pattern was opaque fallback — after
+    # scripts/build_china_library.py gained engine/china_intel_interest.py, whose
+    # lazy china_intel_hub import reaches the full altdata convergence universe.
+    # Neither reads templates/index.html; both matched it, which is what took
+    # that probe 127 -> 129. Curated at the source instead of paid for again.
+    #
+    # These two are NOT the same declaration, and the difference is the point:
+    # cn-standout-audit globs `scripts/**` because two of its suites rglob that
+    # tree and AST-scan every hit (test_cn_board_lane_gate.py:361,
+    # test_cn_entry_price_integrity.py:527) — the tree is their SUBJECT, so
+    # enumerating it would stop the guard covering the new scripts it exists to
+    # catch. coiled-mtf-anchor-era's two suites carry no traversal at all, so its
+    # six scripts/ files are enumerated. Both glob `collectors/**`: the dynamic
+    # import at build_china_library.py:1807 resolves seven collectors.tushare_*
+    # drip modules the walker cannot see, so they are invisible to the coverage
+    # test and enumeration would drop them silently.
+    "cn-standout-audit",
+    "coiled-mtf-anchor-era",
 }
 
 
@@ -2535,7 +2671,7 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     templates/index.html 129 jobs / 6,677 weight-seconds; build_free_content.py
     129 / 6,430; engine/prophet/plan_book.py 123 / 6,416. Bounds below carry
     headroom so an unrelated job gaining or losing a scope does not red this,
-    while a regression that gives the fallback tier back to the curated eight
+    while a regression that gives the fallback tier back to the curated nine
     (~1,550 weight-seconds and three of twelve packs per shape) does.
 
     The templates/index.html job ceiling is 128 rather than 126 because
@@ -2544,12 +2680,110 @@ def test_exclusive_curation_narrows_ordinary_code_prs() -> None:
     (`express-render-guards`, `attested-history-guards`) still fallback-match
     it. That is +2 jobs / +210 weight-seconds vs the single pre-split job, not
     a return of the curated eight. Weight and pack ceilings are unchanged.
+
+    JOB COUNTS RE-BASED +1 (129/127/121) for #5620, which added ONE new job,
+    `intelligence-registry` (Eval OS T1). Measured against the pre-#5620
+    manifest, it is the sole newcomer on all three probes and the ONLY delta:
+
+        templates/index.html          128 -> 129 jobs, 5,253 -> 5,266 weight
+        scripts/build_free_content.py 126 -> 127 jobs, 5,016 -> 5,029 weight
+        engine/prophet/plan_book.py   120 -> 121 jobs, 5,002 -> 5,015 weight
+
+    +13 weight-seconds per probe. The WEIGHT and PACK ceilings are deliberately
+    NOT moved: they are what bound the incident this wave exists to prevent, and
+    a regression that gave the fallback tier back to the curated eight would be
+    ~1,550 weight-seconds and three of twelve packs — two orders of magnitude
+    above this, so it still reds here. What moved is only the job count, and only
+    because the previous bounds carried zero headroom on that axis: 128/126/120
+    were the exact pre-#5620 measurements, so the very first honest new job
+    breached all three. The docstring above promises headroom "so an unrelated
+    job gaining or losing a scope does not red this"; `intelligence-registry` is
+    exactly such a job, and that promise was not funded. Re-based to the new
+    measurement rather than padded, so the next new job is again a visible event.
+
+    This re-base is the same change carried by PR #5669 (authored there first).
+    It is duplicated here because both fixes land in the SAME `workflow-yaml`
+    job: run_ci_pack abandons a job's remaining steps on the first non-zero
+    exit, so this assertion (step 5) masks `audit_unrun_tests.py` (step 12).
+    A PR that healed only one of the two would leave `ci-pack-1` red and neither
+    PR could ever merge — the two-partial-heals deadlock. Whichever lands second
+    resolves to an identical tree.
+
+    JOB COUNTS LOWERED to 127/124/119 (wave 3, 2026-08-14). The re-base above
+    absorbed TWO newcomers on the two code probes, and only one of them was
+    evidence. `intelligence-registry` matched on the DECLARED tier and stands.
+    `options-estate-guards` matched on the FALLBACK tier: #5634 gave it
+    tests/test_options_gap_discipline.py, an opaque construct in that suite's
+    closure widened it to whole-tree scan roots, and it began selecting on
+    files it does not read. That is smear, so it is curated away at the source
+    (`scope: exclusive` in the manifest) rather than paid for here.
+
+    Re-measured on the curated manifest, `options-estate-guards` is the sole
+    delta and the ONLY job that leaves any probe:
+
+        templates/index.html          127 -> 126 jobs, 5,259 -> 5,235 weight
+        scripts/build_free_content.py 124 -> 123 jobs, 5,009 -> 4,985 weight
+        engine/prophet/plan_book.py   119 -> 118 jobs, 5,001 -> 4,977 weight
+
+    The ceilings are set at measurement + 1, not at measurement. The #5620
+    re-base note above diagnosed zero headroom as the defect — "the very first
+    honest new job breached all three" — and then re-based exact, funding the
+    docstring's headroom promise with nothing again. One job of slack absorbs
+    the next honest newcomer and still makes the second a visible event. Note
+    the pre-curation measurements had already drifted BELOW the 129/127/121
+    ceilings as later curation waves landed, so those bounds carried accidental
+    slack of 2-3 jobs; this restores a ratchet that is tight on purpose.
+
+    WEIGHT and PACK ceilings are again deliberately NOT moved, for the reason
+    given above: they bound the incident, and a fallback-tier regression is
+    ~1,550 weight-seconds — two orders of magnitude above the 24 removed here.
+
+    JOB COUNT RE-BASED +2 on templates/index.html only (129, 2026-08-15).
+    ``engine/china_intel_interest.py`` lazy-imports ``china_intel_hub``, and
+    that hub's opaque constructs smear ``templates/**`` onto two inferred
+    jobs that already imported ``build_china_library`` /
+    ``china_standout_track`` (``cn-standout-audit``,
+    ``coiled-mtf-anchor-era``). Measured 126 → 128 on this probe; the other
+    two probes are unchanged. Weight and pack ceilings stay. Exclusive
+    curation of those two jobs is the smear-at-source fix, but their
+    closures run through ``build_china_library`` and would be a third
+    exclusive-scope wave, not this packing-contract heal.
+
+    THAT DEFERRAL IS NOW PAID (wave 4, 2026-08-15). Both jobs are curated
+    ``scope: exclusive`` in the manifest, and the ceiling above comes back
+    DOWN from 129 to 127. Neither job had an owned tier at all before this —
+    every one of their 28 inferred patterns was opaque fallback, so they
+    selected on ``*`` and on whole trees no suite in them reads. Re-measured
+    on the curated manifest, they are the ONLY delta and NOTHING was added to
+    any probe:
+
+        templates/index.html          128 -> 126 jobs, 5,310 -> 5,292 weight
+        scripts/build_free_content.py 123 -> 122 jobs, 5,044 -> 5,038 weight
+        engine/prophet/plan_book.py   118 -> 118 jobs, 5,040 -> 5,040 weight
+
+    Both jobs leave templates/index.html; only ``coiled-mtf-anchor-era``
+    leaves build_free_content.py, because ``cn-standout-audit`` KEEPS
+    ``scripts/**`` on the declared tier — two of its suites rglob that tree
+    and AST-scan every hit for unlaned CN sink calls, so the tree is their
+    subject and narrowing it would be the silent-stop failure this file's
+    coverage test exists to prevent. Both keep ``engine/**`` for the same
+    kind of reason, which is why plan_book.py does not move at all. That is
+    the shape a correct curation has: it removes the fallback claims and
+    keeps every earned one.
+
+    The ceiling is set at measurement + 1 per the wave-3 note above, so 126
+    measured -> 127. Note this lands exactly where wave 3 had it before
+    #5754, which is the confirmation that these two jobs were the whole of
+    that +2 and that no other drift hid inside the re-base. WEIGHT and PACK
+    ceilings are again NOT moved: the 18 weight-seconds removed here are two
+    orders of magnitude below the ~1,550 a fallback-tier regression costs,
+    and packs were 9 on every probe before and after.
     """
     jobs, _ = PACK.infer_job_scopes(PACK.load_legacy_jobs(MANIFEST))
     for probe, max_jobs, max_weight in (
-        ("templates/index.html", 128, 5_800),
-        ("scripts/build_free_content.py", 126, 5_600),
-        ("engine/prophet/plan_book.py", 120, 5_600),
+        ("templates/index.html", 127, 5_800),
+        ("scripts/build_free_content.py", 124, 5_600),
+        ("engine/prophet/plan_book.py", 119, 5_600),
     ):
         selected, reason = PACK.select_jobs(jobs, [probe])
         weight = sum(job.weight for job in selected)
@@ -2597,12 +2831,14 @@ jobs:
     paths:
       - "engine/example/**"
     steps:
-      - run: echo engine/example only
+      - name: curated semantic proof
+        run: echo engine/example only
   plain:
     if: ${{ false }}
     runs-on: ubuntu-latest
     steps:
-      - run: echo unscoped
+      - name: plain semantic proof
+        run: echo unscoped
 """,
         encoding="utf-8",
     )
@@ -2625,7 +2861,8 @@ jobs:
     paths:
       - "engine/example/**"
     steps:
-      - run: python -m pytest tests/test_ci_pack.py -q
+      - name: outside-scope semantic proof
+        run: python -m pytest tests/test_ci_pack.py -q
 """,
         encoding="utf-8",
     )

@@ -1,8 +1,15 @@
 # Biopharma Seasonality Intelligence — continuation handoff (2026-08-07)
 
+> **SUPERSEDED 2026-08-16** by
+> `research/BIOPHARMA_SEASONALITY_INTELLIGENCE_HANDOFF_2026-08-16.md`.
+> Read that file for current state. This one's "what to do next" list is stale: later
+> sessions closed its three deferred follow-ups (#5195) and corrected a defect in the
+> W4 calibration output it describes (#5594). Its account of what was *built* on
+> 2026-08-07 remains accurate as history.
+
 | Field | Binding value |
 |---|---|
-| Status | Waves 1–7 implemented; authority remains shadow/unapproved |
+| Status | SUPERSEDED — see the 2026-08-16 handoff |
 | Supersedes | The current-state and remaining-work sections of `BIOPHARMA_SEASONALITY_INTELLIGENCE_CLAUDE_CONTINUATION_HANDOFF_2026-08-06.md` |
 | Still authoritative in the 08-06 file | §1 binding gates, §13 exclusions, and the statistical/product law. **Those are unchanged and still govern.** |
 | Detailed product/statistical spec | `research/SEASONAX_BIOPHARMA_SEASONALITY_INTELLIGENCE_BUILD_DOCKET_FOR_FABLE.md` |

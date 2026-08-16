@@ -9,7 +9,7 @@ objective: >
   can never render "could not look" as "0 violations", enforced in an isolated CI job that
   cannot mask sibling suites. Done when the fix-wave PR is merged and the guard runs green
   in its own legacy job on main.
-status: awaiting_ci
+status: active
 program: qualitative-intelligence
 repos:
   - macro
@@ -33,13 +33,13 @@ waves:
     next_action: "None — parked with research/EVAL_OS_T1_CONTINUATION_HANDOFF_2026-08-12.md; recovered verbatim 2026-08-14."
   - id: W2
     title: Fix wave — B1/B2/B3 + M1-M4 + adversarial review findings + isolated CI job
-    status: awaiting_ci
+    status: done
     pr: 5620
-    next_action: "Sweeper merges on green; then verify the intelligence-registry job ran on the merge and read its two step logs."
+    next_action: "None — merged d13259abc51c 2026-08-14T17:31Z; ci-pack-7 (the pack carrying intelligence-registry) was green on the PR's own proof run; merged files byte-verified on main. The head run keeps a permanent frozen-vintage ci-pack-8 red (govrev dag drift #5516, healed on main by #5655 AFTER this merge; a rerun re-executes the pre-heal merge commit and cannot green) — disposition recorded in the 2026-08-14 handoff."
   - id: W3
     title: output_class bounded adjudication (the curated overlay)
-    status: todo
-    next_action: "Take the enumerated required set (session report 2026-08-14) to a curation session; fill config/intelligence_registry_overlay.yml output_class rows with citations, never mechanically."
+    status: done
+    next_action: "None — 107 of 109 required engines curated with evidence-cited rationales (59 descriptive / 21 predictive / 15 classification_state / 7 detection_event / 3 ranking / 2 salience); 2 deliberate nulls kept (cortex two-species CEO exception, options_structure unbuilt schema). Method: 12 evidence packets -> main-loop adjudication -> 4 adversarial opus reviews over 52 rows (7 class flips accepted, 1 unresolved refuted on partition law, 2 confirmed, ~18 rationale defects fixed). OUTPUT_CLASS_MISSING 109 -> 2; content findings 212 -> 105. Provenance in the 2026-08-14 handoff W3 addendum."
 do_not_redo:
   - "Do not commit a generated registry artifact or add a --check/equality/drift mode — two parked rounds did and both were scheduled fleet-wide reds (handoff §2; the volatile-input measurement now reads N commits/14d on FULL history)."
   - "Do not re-fold the T1 CI steps into neural-web at either end — run_ci_pack returns on the first non-zero step; front masks nine sibling suites, back goes dark (CEO ruling 2026-08-14: isolated job)."
@@ -50,7 +50,7 @@ do_not_redo:
 landmines:
   - "The AST meta-test in tests/test_check_intelligence_registry.py enumerates live-invoking call shapes with a frozen allowlist — a new test that runs the guard/builder against the live repo must either take --root fixtures or be added to the allowlist with a justification; the detector has canned-source controls for each evasive shape it knows."
   - "engine/neuralweb/synapse.py 2k2 (scored_path_surfaces value validation) is a values-only validate-when-present hard gate in the ALWAYS-ON synapse validator — reviewed and kept 2026-08-14; requiring the key on all artifacts would change every open PR."
-next_action: "After merge: W3 — hand the output_class required set to a curation session."
+next_action: "W3 shipped. Next decision is the CEO's at the next checkpoint: T4 output-health, T12 Agent OS tier interface, or let prospective evidence accrue; T7/T8 stay calendar-bound. Standing residue: 2 deliberate output_class nulls (cortex — needs a CEO ruling on the two-species cell, and its attention grader coerces direction 0 to a long bet, repair before evaluating that half; options_structure — curate when the Package D producer ships), plus the desk hit-rate metric-binding warning (hit is a non-refutation endpoint, no-skill null far above 0.5 — T7 must bind dir_accuracy or placebo-netted rates)."
 ---
 
 ## State (2026-08-14)

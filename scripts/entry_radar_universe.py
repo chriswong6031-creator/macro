@@ -46,8 +46,13 @@ from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+# UNCONDITIONAL, and at position 0 on purpose.  The `if str(ROOT) not in sys.path`
+# form this replaced is not a pin: when ROOT is already on the path but sits BEHIND
+# a foreign package, the guard skips the insert and the foreign package still wins
+# the import.  tests/test_check_script_import_pinning.py::_strong_pin rejects the
+# conditional shape for exactly that reason — this is a file-path entry script, so
+# `python scripts/entry_radar_universe.py` puts scripts/ (not the repo root) first.
+sys.path.insert(0, str(ROOT))
 
 from engine.entry_radar.contracts import ProducerRead, utcnow  # noqa: E402
 from engine.entry_radar.nomination_bus import NominationBus  # noqa: E402

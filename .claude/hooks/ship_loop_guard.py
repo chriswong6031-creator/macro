@@ -61,6 +61,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib.util
+import io
 import json
 import os
 import re
@@ -71,12 +72,20 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import zipfile
 from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 import fcntl
+
+
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPOSITORY_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPOSITORY_ROOT))
+from scripts import ci_semantic_proof as semantic_proof
+from scripts.ci_authority_paths import AuthorityPathError, is_ci_authority_path
 
 
 LIVE_HEALTH_URL = "https://mastermind-x.com/api/health"
@@ -102,6 +111,10 @@ MAIN_PROOF_WORKFLOWS = ("ci.yml", "fences.yml")
 # the same base vintage. Used by both the sibling-head window and the main-proof
 # staleness bound.
 BASE_SIDE_WINDOW = timedelta(hours=24)
+SEMANTIC_ARTIFACT_PREFIX = "ci-semantic-evidence-"
+SEMANTIC_ARTIFACT_FILE = "ci-semantic-evidence.json"
+SEMANTIC_RUN_LOOKBACK = 12
+SEMANTIC_ARTIFACT_MAX_BYTES = 8 * 1024 * 1024
 EXTERNAL_BLOCKERS = {
     "github_unreachable",
     "github_rate_limited",
@@ -639,6 +652,526 @@ def _get_json(url: str) -> Any:
             raise _http_failure(exc) from exc
 
 
+class _ArtifactRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Follow GitHub's signed artifact redirect without forwarding its token."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[no-untyped-def]
+        redirected = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if redirected is not None and (
+            urllib.parse.urlsplit(req.full_url).hostname
+            != urllib.parse.urlsplit(newurl).hostname
+        ):
+            redirected.remove_header("Authorization")
+        return redirected
+
+
+def _get_artifact_bytes(url: str) -> bytes:
+    """Fetch one bounded artifact archive; called only on semantic red paths."""
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "macro-dashboard-ship-loop-guard",
+    }
+    token = _github_token()
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    directory = _github_cache_directory(token)
+    _reserve_github_request(directory, token)
+    request = urllib.request.Request(url, headers=headers)
+    opener = urllib.request.build_opener(_ArtifactRedirectHandler())
+    try:
+        with opener.open(request, timeout=25) as response:
+            _record_rate_limit(directory, response.headers)
+            payload = response.read(SEMANTIC_ARTIFACT_MAX_BYTES + 1)
+    except urllib.error.HTTPError as exc:
+        _record_rate_limit(directory, exc.headers)
+        raise _http_failure(exc) from exc
+    if len(payload) > SEMANTIC_ARTIFACT_MAX_BYTES:
+        raise semantic_proof.SemanticProofError(
+            f"semantic artifact exceeds {SEMANTIC_ARTIFACT_MAX_BYTES} byte bound"
+        )
+    return payload
+
+
+def _semantic_json_from_archive(archive: bytes) -> Any:
+    try:
+        with zipfile.ZipFile(io.BytesIO(archive)) as bundle:
+            members = [
+                entry
+                for entry in bundle.infolist()
+                if not entry.is_dir() and entry.filename == SEMANTIC_ARTIFACT_FILE
+            ]
+            if len(members) != 1:
+                raise semantic_proof.SemanticProofError(
+                    f"semantic artifact contains {len(members)} canonical JSON members"
+                )
+            member = members[0]
+            if member.file_size > SEMANTIC_ARTIFACT_MAX_BYTES:
+                raise semantic_proof.SemanticProofError(
+                    "semantic evidence JSON exceeds the bounded artifact size"
+                )
+            raw = bundle.read(member)
+    except semantic_proof.SemanticProofError:
+        raise
+    except (OSError, ValueError, zipfile.BadZipFile) as exc:
+        raise semantic_proof.SemanticProofError(
+            f"semantic artifact is not a readable zip: {exc}"
+        ) from exc
+    return semantic_proof.parse_semantic_json(raw)
+
+
+def _bind_pr_tested_tree(
+    owner: str,
+    repo: str,
+    loaded: Any,
+    *,
+    bound_base_sha: str,
+    subject_head_sha: str,
+) -> Any:
+    """Bind the artifact's synthetic PR merge to GitHub's exact parents."""
+    evidence = getattr(loaded, "evidence", None)
+    tested_tree_sha = str(
+        evidence.get("tested_tree_sha") if isinstance(evidence, dict) else ""
+    ).lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", tested_tree_sha):
+        raise semantic_proof.SemanticProofError(
+            "semantic PR artifact carries no exact tested_tree_sha"
+        )
+    commit = _get_json(
+        f"https://api.github.com/repos/{owner}/{repo}/git/commits/{tested_tree_sha}"
+    )
+    if not isinstance(commit, dict):
+        raise semantic_proof.SemanticProofError(
+            "semantic tested-tree commit lookup returned no object"
+        )
+    resolved_sha = str(commit.get("sha") or "").lower()
+    if resolved_sha != tested_tree_sha:
+        raise semantic_proof.SemanticProofError(
+            "semantic tested-tree lookup returned a different commit "
+            f"({resolved_sha or 'missing'} != {tested_tree_sha})"
+        )
+    parents = commit.get("parents")
+    parent_shas = (
+        [str(parent.get("sha") or "").lower() for parent in parents]
+        if isinstance(parents, list) and all(isinstance(parent, dict) for parent in parents)
+        else []
+    )
+    expected_parents = [bound_base_sha.lower(), subject_head_sha.lower()]
+    if parent_shas != expected_parents:
+        raise semantic_proof.SemanticProofError(
+            "semantic tested tree is not the exact two-parent PR merge "
+            f"{expected_parents} (observed {parent_shas})"
+        )
+    return loaded
+
+
+def _semantic_evidence_for_run(
+    owner: str,
+    repo: str,
+    run: dict[str, Any],
+    *,
+    role: str,
+    expected_base_sha: str | None = None,
+) -> Any:
+    """Shared-law load for one run; a claimed broken v1 never becomes legacy."""
+    run_id = run.get("id")
+    head_sha = str(run.get("head_sha") or "")
+    if run_id is None:
+        raise semantic_proof.SemanticProofError("workflow run carries no id")
+    if str(run.get("name") or "") != "ci":
+        raise semantic_proof.SemanticProofError(
+            f"workflow run {run_id} is not the ci workflow"
+        )
+    workflow_path = str(run.get("path") or "").split("@", 1)[0]
+    if workflow_path != ".github/workflows/ci.yml":
+        raise semantic_proof.SemanticProofError(
+            f"workflow run {run_id} is not from .github/workflows/ci.yml"
+        )
+    expected_event = "pull_request" if role == "pr_head" else "workflow_dispatch"
+    if str(run.get("event") or "") != expected_event:
+        raise semantic_proof.SemanticProofError(
+            f"workflow run {run_id} event does not match semantic role {role}"
+        )
+    associated_bases = {
+        str(((pull.get("base") or {}).get("sha")) or "").lower()
+        for pull in (run.get("pull_requests") or [])
+        if isinstance(pull, dict)
+        and str(((pull.get("head") or {}).get("sha")) or "").lower()
+        == head_sha.lower()
+        and str(((pull.get("base") or {}).get("sha")) or "")
+    }
+    bound_base_sha = (expected_base_sha or "").lower() or (
+        next(iter(associated_bases)) if len(associated_bases) == 1 else ""
+    )
+    payload = _get_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/runs/{run_id}"
+        "/artifacts?per_page=100"
+    )
+    artifact_rows = payload.get("artifacts") or []
+    if int(payload.get("total_count") or len(artifact_rows)) > len(artifact_rows):
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id}'s artifact listing is truncated at {len(artifact_rows)}"
+        )
+    expected_name = f"{SEMANTIC_ARTIFACT_PREFIX}{run_id}"
+    advertised = [
+        item
+        for item in artifact_rows
+        if isinstance(item, dict) and str(item.get("name") or "") == expected_name
+    ]
+    if not advertised:
+        semantic_tree = False
+        shas = [head_sha, bound_base_sha, *sorted(associated_bases)]
+        for pull in run.get("pull_requests") or []:
+            if isinstance(pull, dict):
+                base_sha = str(((pull.get("base") or {}).get("sha")) or "")
+                if base_sha:
+                    shas.append(base_sha)
+        for sha in dict.fromkeys(sha for sha in shas if sha):
+            marker = (
+                f"https://api.github.com/repos/{owner}/{repo}/contents/"
+                "scripts/ci_semantic_proof.py?"
+                + urllib.parse.urlencode({"ref": sha})
+            )
+            try:
+                _get_json(marker)
+                semantic_tree = True
+                break
+            except RuntimeError as exc:
+                if "HTTP 404" in str(exc):
+                    continue
+                raise
+        return semantic_proof.load_semantic_evidence(
+            None, advertised=semantic_tree
+        )
+    if len(advertised) != 1:
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id} advertises {len(advertised)} semantic artifacts"
+        )
+    if len(associated_bases) > 1:
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id} identifies multiple PR proof bases"
+        )
+    if expected_base_sha and associated_bases and associated_bases != {bound_base_sha}:
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id}'s PR base metadata disagrees with the expected proof base"
+        )
+    artifact = advertised[0]
+    if role == "pr_head" and not bound_base_sha:
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id} does not identify the exact PR proof base"
+        )
+    if artifact.get("expired"):
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id}'s advertised semantic artifact is expired"
+        )
+    download_url = str(artifact.get("archive_download_url") or "")
+    if not download_url:
+        raise semantic_proof.SemanticProofError(
+            f"run {run_id}'s advertised semantic artifact has no download URL"
+        )
+    source = _semantic_json_from_archive(_get_artifact_bytes(download_url))
+    expected_tree = head_sha if role == "main" else None
+    loaded = semantic_proof.load_semantic_evidence(
+        source,
+        advertised=True,
+        expected_run_id=run_id,
+        expected_subject_head_sha=head_sha,
+        expected_tested_tree_sha=expected_tree,
+        expected_base_sha=bound_base_sha or None,
+        expected_event=expected_event,
+        expected_role=role,
+        expected_workflow="ci",
+    )
+    if role == "pr_head":
+        return _bind_pr_tested_tree(
+            owner,
+            repo,
+            loaded,
+            bound_base_sha=bound_base_sha,
+            subject_head_sha=head_sha,
+        )
+    return loaded
+
+
+def _semantic_pr_base_sha(
+    runs: list[dict[str, Any]], head_sha: str, number: Any = None
+) -> str | None:
+    """Exact event base already bound to the linked ci-gate check run."""
+    bases = {
+        str(((association.get("base") or {}).get("sha")) or "").lower()
+        for run in runs
+        if str(run.get("name") or "") == "ci-gate"
+        for association in (run.get("pull_requests") or [])
+        if isinstance(association, dict)
+        and (number is None or str(association.get("number") or "") == str(number))
+        and str(((association.get("head") or {}).get("sha")) or "").lower()
+        == head_sha.lower()
+        and str(((association.get("base") or {}).get("sha")) or "")
+    }
+    if len(bases) > 1:
+        raise semantic_proof.SemanticProofError(
+            "ci-gate identifies multiple immutable PR proof bases"
+        )
+    return next(iter(bases), None)
+
+
+def _semantic_evidence_for_head(
+    owner: str,
+    repo: str,
+    head_sha: str,
+    *,
+    check_runs: list[dict[str, Any]] | None = None,
+    expected_base_sha: str | None = None,
+) -> Any:
+    """Newest exact-head PR evidence; costs nothing unless a caller is already red."""
+    linked: list[tuple[int, dict[str, Any]]] = []
+    for check in check_runs or []:
+        if str(check.get("name") or "") != "ci-gate":
+            continue
+        match = re.search(r"/actions/runs/(\d+)(?:/|$)", str(check.get("details_url") or ""))
+        if match:
+            linked.append((int(match.group(1)), check))
+    # MERGE ARTIFACTS ARE NOT COMPETING VERDICTS (2026-08-15). Merging fires
+    # `pull_request: closed`, and ci.yml's concurrency block deliberately starts a
+    # ZERO-RUNNER replacement in the same group for it ("The closed event starts a
+    # zero-runner replacement ... cancelling a long CI pack when its PR merges or
+    # closes").  So EVERY cleanly merged head carries two ci-gate check-runs: the real
+    # concluded one, plus a `skipped` artifact created 12-15s later by the merge itself.
+    # Counting that artifact as a second opinion made this raise on every merged head —
+    # measured on two independently authored PRs the same afternoon:
+    #   #5754 c02fc9eac6e8: success 14:22:00Z (run 31887298300) + skipped 14:22:15Z (31889718105)
+    #   #5753 f9bdefd484b6: success 13:17:16Z              + skipped 13:17:28Z
+    # which blocked their authoring sessions from stopping on work that had merged GREEN,
+    # with no session-side remedy: check-runs on a merged commit are immutable and
+    # `gh run rerun` preserves the run id, so the two ids can never be collapsed.
+    #
+    # A `skipped` ci-gate asserts nothing, so it cannot CONFLICT with anything. Drop it
+    # and reason on what remains. Ambiguity is still fail-closed: two runs that both
+    # reached a real conclusion remain irreconcilable and still raise, and a head whose
+    # ONLY evidence is skipped still resolves to no usable evidence below.
+    decisive = [
+        (run_id, check)
+        for run_id, check in linked
+        if str(check.get("conclusion") or "").lower() != "skipped"
+    ]
+    if decisive:
+        linked = decisive
+    linked_ids = {run_id for run_id, _check in linked}
+    if len(linked_ids) > 1:
+        raise semantic_proof.SemanticProofError(
+            f"head {head_sha[:12]} links multiple latest ci-gate workflow runs"
+        )
+    if linked:
+        run_id, _check = linked[0]
+        run = _get_json(
+            f"https://api.github.com/repos/{owner}/{repo}/actions/runs/{run_id}"
+        )
+        if not isinstance(run, dict) or str(run.get("id") or "") != str(run_id):
+            raise semantic_proof.SemanticProofError(
+                "linked ci-gate workflow run id mismatch"
+            )
+        if str(run.get("head_sha") or "") != head_sha:
+            raise semantic_proof.SemanticProofError(
+                "linked ci-gate workflow run head mismatch"
+            )
+        return _semantic_evidence_for_run(
+            owner,
+            repo,
+            run,
+            role="pr_head",
+            expected_base_sha=expected_base_sha,
+        )
+    query = urllib.parse.urlencode(
+        {
+            "head_sha": head_sha,
+            "event": "pull_request",
+            "status": "completed",
+            "per_page": str(SEMANTIC_RUN_LOOKBACK),
+        }
+    )
+    payload = _get_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/ci.yml/runs?{query}"
+    )
+    for run in (payload.get("workflow_runs") or [])[:SEMANTIC_RUN_LOOKBACK]:
+        if not isinstance(run, dict) or str(run.get("head_sha") or "") != head_sha:
+            continue
+        loaded = _semantic_evidence_for_run(
+            owner,
+            repo,
+            run,
+            role="pr_head",
+            expected_base_sha=expected_base_sha,
+        )
+        if getattr(loaded, "mode", "") == "semantic":
+            return loaded
+    return semantic_proof.load_semantic_evidence(None, advertised=False)
+
+
+def _recent_main_semantic_evidence(owner: str, repo: str) -> list[Any]:
+    """Bounded newest-first main artifacts, including artifacts from red runs."""
+    query = urllib.parse.urlencode(
+        {
+            "branch": "main",
+            "status": "completed",
+            "per_page": str(SEMANTIC_RUN_LOOKBACK),
+        }
+    )
+    payload = _get_json(
+        f"https://api.github.com/repos/{owner}/{repo}/actions/workflows/ci.yml/runs?{query}"
+    )
+    evidence: list[Any] = []
+    for run in (payload.get("workflow_runs") or [])[:SEMANTIC_RUN_LOOKBACK]:
+        if not isinstance(run, dict):
+            continue
+        if str(run.get("conclusion") or "").lower() in {
+            "cancelled",
+            "skipped",
+            "neutral",
+            "stale",
+        }:
+            continue
+        try:
+            loaded = _semantic_evidence_for_run(owner, repo, run, role="main")
+        except semantic_proof.SemanticProofError:
+            # This row is not a witness. It must never be treated as legacy or
+            # PASS, but it also cannot resurrect an old blocker after a different,
+            # independently valid descendant PASS in the bounded window.
+            continue
+        if getattr(loaded, "mode", "") == "semantic":
+            evidence.append(getattr(loaded, "evidence", None))
+    return evidence
+
+
+def _semantic_authority_touched(owner: str, repo: str, number: Any) -> bool:
+    """Fail-closed pull-files inventory for the semantic self-excuse fence."""
+    if number is None:
+        return True
+    paths: list[str] = []
+    seen: set[str] = set()
+    for page in range(1, 4):
+        query = urllib.parse.urlencode({"per_page": "100", "page": str(page)})
+        payload = _get_json(
+            f"https://api.github.com/repos/{owner}/{repo}/pulls/{number}/files?{query}"
+        )
+        if not isinstance(payload, list):
+            return True
+        for item in payload:
+            if not isinstance(item, dict):
+                return True
+            # A rename touches both identities.  In particular, moving an
+            # authority file to an innocuous destination cannot erase the old
+            # authority path from this self-excuse fence.
+            for key in ("filename", "previous_filename"):
+                path = str(item.get(key) or "")
+                if path and path not in seen:
+                    seen.add(path)
+                    paths.append(path)
+        if len(payload) < 100:
+            break
+    else:
+        return True
+    try:
+        return any(is_ci_authority_path(path) for path in paths)
+    except AuthorityPathError:
+        return True
+
+
+def _semantic_gate(loaded: Any) -> Any | None:
+    if loaded is None or getattr(loaded, "mode", "") != "semantic":
+        return None
+    return semantic_proof.semantic_gate_verdict(getattr(loaded, "evidence", None))
+
+
+def _semantic_unit_detail(unit: Any) -> str:
+    """Operator-facing semantic identity; transport is disclosed, never causal."""
+    signature = getattr(unit, "failure_signature", None)
+    if isinstance(signature, (list, tuple)):
+        signature_text = ",".join(str(atom) for atom in signature)
+    else:
+        signature_text = str(signature or "unavailable")
+    return (
+        f"logical job={getattr(unit, 'logical_job_id', '?')}; "
+        f"proof id={getattr(unit, 'proof_id', '?')}; "
+        f"classification={getattr(unit, 'classification', 'unknown')}; "
+        f"failure signature={signature_text}; "
+        f"base SHA={str(getattr(unit, 'base_sha', '') or '?')}; "
+        f"head SHA={str(getattr(unit, 'head_sha', '') or '?')}; "
+        f"transport pack={getattr(unit, 'pack_index', '?')}; "
+        f"detail={getattr(unit, 'detail', '') or 'none'}"
+    )
+
+
+def _semantic_unit_details(units: Any, *, limit: int = 8) -> list[str]:
+    return [_semantic_unit_detail(unit) for unit in tuple(units)[:limit]]
+
+
+def _semantic_nonunit_refusal(loaded: Any) -> str:
+    """Explain a shared-gate refusal that has no semantic unit to format."""
+    evidence = getattr(loaded, "evidence", None)
+    if not isinstance(evidence, dict):
+        return "semantic evidence has no readable gate payload"
+    if evidence.get("authority_changed") is True:
+        return (
+            "semantic evidence records authority_changed=true; candidate-era proof "
+            "may not excuse this authority-changing pull request"
+        )
+    infrastructure = evidence.get("infrastructure")
+    if isinstance(infrastructure, list) and infrastructure:
+        return "semantic infrastructure ambiguity: " + str(infrastructure[:4])[:800]
+    job_infrastructure = [
+        {
+            "logical_job_id": job.get("logical_job_id"),
+            "infrastructure": job.get("infrastructure"),
+        }
+        for job in evidence.get("jobs", [])
+        if isinstance(job, dict)
+        and isinstance(job.get("infrastructure"), dict)
+        and job["infrastructure"].get("outcome") != "passed"
+    ]
+    if job_infrastructure:
+        return "semantic job infrastructure ambiguity: " + str(
+            job_infrastructure[:4]
+        )[:800]
+    return (
+        f"semantic evidence status={evidence.get('status')!r} is not clear and "
+        "contains no classified blocking unit"
+    )
+
+
+def _semantic_has_nonunit_blocker(loaded: Any, gate: Any | None = None) -> bool:
+    evidence = getattr(loaded, "evidence", None)
+    if not isinstance(evidence, dict):
+        return True
+    if evidence.get("authority_changed") is True or bool(
+        evidence.get("infrastructure")
+    ):
+        return True
+    try:
+        resolved_gate = gate if gate is not None else _semantic_gate(loaded)
+    except (semantic_proof.SemanticProofError, RuntimeError, ValueError):
+        return True
+    return bool(
+        resolved_gate is not None
+        and getattr(resolved_gate, "infrastructure_blocking", False)
+    )
+
+
+def _semantic_authority_refusal(number: Any) -> str:
+    return (
+        f"PR #{number} changes CI proof authority and may not use candidate-era "
+        "semantic evidence to excuse its own red; bootstrap under the old gate"
+    )
+
+
+def _head_can_advertise_semantic_evidence(runs: list[dict[str, Any]]) -> bool:
+    return any(
+        str(run.get("name") or "") == "ci-gate"
+        and "/actions/runs/" in str(run.get("details_url") or "")
+        and str(run.get("status") or "").lower() == "completed"
+        and bool(str(run.get("conclusion") or ""))
+        for run in runs
+    )
+
+
 def _github_block_code(exc: Exception) -> str:
     """Spent quota and unreachable API are both external, but they are not the same problem."""
     return "github_rate_limited" if isinstance(exc, RateLimited) else "github_unreachable"
@@ -664,9 +1197,49 @@ def _is_spurious_check(name: str) -> bool:
     Widening this allowlist is a RULING, not a refactor — a broadened predicate
     waves a genuine red through as noise, which is the most expensive mistake this
     function can make. Change it here and in the sweeper together, or in neither.
+
+    NOT the whole "is this a red we own" question — see :func:`_is_non_binding_check`,
+    which adds the one context this hook must also skip. Call that one from a gate;
+    this predicate stays narrow so the spurious allowlist keeps its own meaning.
     """
     lowered = str(name or "").lower()
     return "workers builds" in lowered and "macro" in lowered
+
+
+#: The inactive `ci-authority` base context. `.github/workflows/ci-authority.yml`
+#: publishes two complementary exact-head contexts — `ci-authority/main` and
+#: `ci-authority/codex/merge-queue-pilot` — and states that "each PR run FAILS the
+#: inactive context so an edited retarget cannot reuse a success earned against
+#: another base". Stop-hook sessions only ever track pull requests targeting main,
+#: so on every one of them this context is red BY DESIGN. It is retarget-invalidation
+#: state, not a verdict. `ci-authority/main` stays binding everywhere.
+CI_AUTHORITY_INACTIVE_CONTEXT = "ci-authority/codex/merge-queue-pilot"
+
+
+def _is_non_binding_check(name: str) -> bool:
+    """Is this check name one no gate here may read as a red we own?
+
+    THE ONE DEFINITION, and it is now actually one. This is NOT a widening of the
+    spurious allowlist: `_split_head_runs` and `_red_checks` have BOTH skipped
+    `CI_AUTHORITY_INACTIVE_CONTEXT` since it was introduced, and the sweeper carries
+    the identical rule (`scripts/merge_on_green.py`, `is_spurious_check` call sites).
+    The merged-head CI gate did not — while its own comment claimed "ONE definition
+    of 'not a red', shared with `_split_head_runs` above and with the sweeper's own
+    copy". A comment asserting parity is not parity, and the divergence is exactly
+    the kind a reader cannot see: three loops that look alike, one filtering less.
+
+    THE SCAR. The gate blocked a session whose work had MERGED GREEN, naming a
+    context that is red on every pull request in this repository — measured on the
+    sibling PR #5767, whose single failing check was this context and which merged
+    clean. It stayed invisible because the semantic proof path ahead of it raised
+    first (#5771) and produced a different refusal; repairing that unmasked this,
+    which is the ordinary shape of a first failing gate hiding the second.
+
+    Deliberately still narrow. `_is_spurious_check` keeps its own meaning and its own
+    "widening is a RULING, not a refactor" contract; this adds exactly one name, and
+    that name's redness is a documented property of the workflow that emits it.
+    """
+    return _is_spurious_check(name) or str(name or "") == CI_AUTHORITY_INACTIVE_CONTEXT
 
 
 def _open_pull(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
@@ -694,7 +1267,9 @@ def _red_pairs(runs: list[dict[str, Any]]) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
+        # `_is_non_binding_check` carries both rules (spurious Cloudflare X, and the
+        # ci-authority inactive base context that is red on every PR by design).
+        if _is_non_binding_check(name):
             continue
         if run.get("status") != "completed":
             continue
@@ -719,7 +1294,7 @@ def _split_head_runs(
     passed: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
+        if _is_non_binding_check(name):
             continue
         if run.get("status") != "completed":
             pending.append(name)
@@ -949,6 +1524,80 @@ def _armed_pull_status(owner: str, repo: str, branch: str, head: str) -> tuple[s
     runs = _head_check_runs(owner, repo, head_sha)
     red, pending, passed = _split_head_runs(runs)
     if red:
+        try:
+            loaded = (
+                _semantic_evidence_for_head(
+                    owner,
+                    repo,
+                    head_sha,
+                    check_runs=runs,
+                    expected_base_sha=_semantic_pr_base_sha(
+                        runs, head_sha, number
+                    ),
+                )
+                if _head_can_advertise_semantic_evidence(runs)
+                else None
+            )
+            gate = _semantic_gate(loaded)
+        except RateLimited:
+            raise
+        except Exception as exc:  # advertised/malformed v1 is never legacy
+            return CI_FAILED_UNMERGED, (
+                f"Failing CI on pull request #{number}: advertised semantic evidence "
+                "is unusable and may not downgrade to legacy pack reasoning: "
+                f"{str(exc)[:500]}."
+            )
+        if gate is not None:
+            if gate.clear and _semantic_authority_touched(owner, repo, number):
+                return CI_FAILED_UNMERGED, _semantic_authority_refusal(number)
+            if not gate.clear:
+                reasons = _semantic_unit_details(gate.blocking)
+                if _semantic_has_nonunit_blocker(loaded, gate):
+                    reasons.append(_semantic_nonunit_refusal(loaded))
+                detail = "; ".join(reasons) or _semantic_nonunit_refusal(loaded)
+                return CI_FAILED_UNMERGED, (
+                    f"Failing semantic CI on pull request #{number}: "
+                    f"{detail}. "
+                    "The refusal is keyed to logical job/proof identity, not ci-pack-N."
+                )
+
+            non_transport = [
+                run
+                for run in runs
+                if not re.fullmatch(r"ci-pack-\d+", str(run.get("name") or ""))
+            ]
+            semantic_red, semantic_pending, semantic_passed = _split_head_runs(
+                non_transport
+            )
+            if semantic_red:
+                return CI_FAILED_UNMERGED, (
+                    f"Failing CI on pull request #{number}: "
+                    + ", ".join(semantic_red[:8])
+                    + ". Semantic evidence cleared pack transport only; this "
+                    "non-transport failure remains authoritative."
+                )
+            inherited = "; ".join(_semantic_unit_details(gate.inherited))
+            waiting = (
+                f" Still running: {', '.join(semantic_pending[:8])}."
+                if semantic_pending
+                else ""
+            )
+            if inherited:
+                return "unmerged", (
+                    f"Pull request #{number} is armed and NOT merged. Its exact-base "
+                    f"semantic failure is inherited: {inherited}. ci-pack-N is transport "
+                    f"only; the sweeper still applies ProofFreshness before merging.{waiting}"
+                )
+            if semantic_pending:
+                return "unmerged", (
+                    f"Pull request #{number} has clear semantic evidence but remains "
+                    f"unmerged while checks run: {', '.join(semantic_pending[:8])}."
+                )
+            if semantic_passed:
+                return "unmerged", (
+                    f"Pull request #{number} has complete clear semantic evidence and "
+                    "is still armed; the next sweep owns ProofFreshness and merge."
+                )
         pairs = _red_pairs(runs)
         # Only `failure` is base-side excludable, for `_check_ci`'s reason: a
         # `cancelled`/`timed_out` genuinely can green on a re-run, so it stays the
@@ -960,7 +1609,7 @@ def _armed_pull_status(owner: str, repo: str, branch: str, head: str) -> tuple[s
         starts = [
             stamp
             for run in runs
-            if not _is_spurious_check(str(run.get("name") or "unnamed check"))
+            if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
             and run.get("conclusion") == "failure"
             for stamp in (_started_stamp(run, "started_at", "completed_at"),)
             if stamp
@@ -1228,6 +1877,7 @@ def _check_ci(
     merge_sha: str,
     merged_at: str,
     head_branch: str,
+    base_sha: str = "",
 ) -> tuple[bool, str]:
     """Judge the merged pull request's OWN head commit, then ask whose red it is.
 
@@ -1311,15 +1961,38 @@ def _check_ci(
     if not runs:
         return False, "No CI check runs were found for the pull-request head."
     # ONE definition of "not a red", shared with `_split_head_runs` above and with
-    # the sweeper's own copy in `scripts/merge_on_green.py`.
+    # the sweeper's own copy in `scripts/merge_on_green.py` — and it is `_is_non_
+    # binding_check`, not `_is_spurious_check`. This loop called the narrower one
+    # while the comment claimed parity, so it alone counted the ci-authority
+    # inactive base context as a red we own and blocked sessions whose work had
+    # merged GREEN on a context that is red on every PR in this repository.
     non_red = NON_RED_CONCLUSIONS
     bad: list[tuple[str, str]] = []
     pending: list[str] = []
     failure_starts: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
+        if _is_non_binding_check(name):
             continue
+        # The inactive pilot authority context, excluded on the MERGED path too
+        # (2026-08-16). `_red_pairs` and `_split_head_runs` above have always
+        # skipped it and `scripts/merge_on_green.py` carries the same rule, but
+        # this loop did not — so the three disagreed about one check on one head.
+        # Measured on #5765's merged head 8c279038: `_red_pairs` returned [] while
+        # this loop returned [("ci-authority/codex/merge-queue-pilot","failure")],
+        # and the session was blocked after a fully green merge. It is worse than
+        # a plain false red: a non-empty `bad` is what ARMS the semantic-evidence
+        # path, and a merged head can no longer bind its proof base (GitHub drops
+        # `pull_requests` from check-runs once the PR closes), so the block
+        # surfaced as "advertised semantic evidence is unusable ... does not
+        # identify the exact PR proof base" — a message about proof plumbing that
+        # named nothing the session could fix, for a check that is BY DESIGN a
+        # retarget-invalidation receipt. Every PR touching a ci-authority path
+        # hit this. `ci-authority/main` stays binding here exactly as elsewhere;
+        # this skips ONLY the one literal pilot context, and widens nothing.
+        # (The literal that stood here is gone: `_is_non_binding_check` above
+        # already answers it, and leaving a second spelling behind is how this
+        # loop drifted from its siblings in the first place.)
         if run.get("status") != "completed":
             pending.append(name)
         elif run.get("conclusion") not in non_red:
@@ -1334,12 +2007,186 @@ def _check_ci(
         # is only ever gathered to argue about a red.
         if pending:
             return False, "CI still running: " + ", ".join(pending[:8])
+        # AN ABSENCE OF RED IS NOT A PASS — the other edge of the exclusion above,
+        # and the reason the sweeper's verdict has an `unproven` state at all
+        # (#4779; `scripts/merge_on_green.py`: "a head whose every surviving check
+        # concluded `skipped`/`neutral` is that same nothing wearing a name").
+        #
+        # `NON_RED_CONCLUSIONS` holds `skipped` and `neutral`, so this return has
+        # always been reachable by a head that proved NOTHING. What kept such a
+        # head out of it was an accident: the inactive pilot context is red on
+        # every pull request in this repository, so `bad` was never empty for it.
+        # Excluding that context — correctly, #5773/#5776 — removed the accident
+        # and left the hole. Measured on 65f9669f: a merged head whose every
+        # binding check was `skipped`, one whose only check was `neutral`, and one
+        # carrying NOTHING but the pilot and the spurious Cloudflare X all
+        # returned `(True, "")`. The guard released a session on a head with no CI
+        # verdict whatsoever, which is the failure it exists to prevent, in the
+        # direction that costs the most: a false red pins a session, a false green
+        # ships unproven work.
+        #
+        # So require what the sweeper requires of the same head: one check that
+        # actually said `success`. Excluding a check from the reds must never
+        # promote the head to proven.
+        #
+        # Scoped to THIS return deliberately. The two green returns below are
+        # reached only after a real red was argued away on evidence, which means
+        # CI demonstrably ran; this is the cheap path that gathers nothing. It
+        # cannot strand a normal merge either — the sweeper refuses to merge a
+        # head with no `success` at all, and even the records-only PR #5772
+        # carried 10 of them.
+        binding = [
+            run
+            for run in runs
+            if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
+        ]
+        if not any(run.get("conclusion") == "success" for run in binding):
+            names = [str(run.get("name") or "unnamed check") for run in binding]
+            return False, (
+                "Failing CI: the merged head carries no affirmative passing check "
+                f"({len(binding)} binding check(s) concluded, none `success`"
+                + (f": {', '.join(names[:8])}" if names else "")
+                + "). An absence of red is not a pass."
+            )
         return True, ""
+
+    semantic_notes: list[str] = []
+    try:
+        loaded = (
+            _semantic_evidence_for_head(
+                owner,
+                repo,
+                head_sha,
+                check_runs=runs,
+                # A MERGED head has no PR associations left to bind its base with
+                # (2026-08-15): GitHub drops `pull_requests` from check-runs once the
+                # pull request closes — measured on #5754's ci-gate, `n_prs: 0` on BOTH
+                # entries — so `_semantic_pr_base_sha` returns None here every time and
+                # the loader then refused with "does not identify the exact PR proof
+                # base". That is the same shape as the skipped-gate artifact above: a
+                # merged head cannot repair its own metadata, and no session-side action
+                # exists. The merged pull request record itself still carries the
+                # authoritative base, so pass it as the fallback. Preference order is
+                # deliberate — the check-run-bound base is immutable and exact, so it
+                # still wins whenever it is present (open heads, and any future API that
+                # keeps associations after merge).
+                expected_base_sha=(
+                    _semantic_pr_base_sha(runs, head_sha) or base_sha or None
+                ),
+            )
+            if _head_can_advertise_semantic_evidence(runs)
+            else None
+        )
+        gate = _semantic_gate(loaded)
+    except RateLimited:
+        raise
+    except Exception as exc:
+        return False, (
+            "Failing CI: advertised semantic evidence is unusable and may not "
+            f"downgrade to legacy reasoning ({str(exc)[:500]})."
+        )
+    if gate is not None:
+        semantic_resolved = bool(gate.clear)
+        witness_notes: list[str] = []
+        unresolved_units: list[Any] = []
+        if not gate.clear:
+            if _semantic_has_nonunit_blocker(loaded, gate):
+                return False, (
+                    "Failing semantic CI on the frozen merged head: "
+                    f"{_semantic_nonunit_refusal(loaded)}. Descendant unit healing "
+                    "cannot erase infrastructure or authority ambiguity."
+                )
+            if not gate.blocking:
+                return False, (
+                    "Failing semantic CI on the frozen merged head: the artifact "
+                    "is not clear but exposes no healable semantic unit ("
+                    f"{_semantic_nonunit_refusal(loaded)}). Descendant healing is "
+                    "unavailable."
+                )
+            try:
+                # Candidate commits are often newer than this checkout. Fetch once;
+                # every per-unit witness then uses real local git ancestry.
+                try:
+                    _run(root, "git", "fetch", "origin", "main", timeout=90)
+                except Exception:
+                    pass
+                candidates = _recent_main_semantic_evidence(owner, repo)
+                ancestry_cache: dict[tuple[str, str], bool] = {}
+
+                def ancestry_witness(ancestor: str, descendant: str) -> bool:
+                    key = (ancestor, descendant)
+                    if key not in ancestry_cache:
+                        ancestry_cache[key] = _is_ancestor(root, ancestor, descendant)
+                    return ancestry_cache[key]
+
+                for unit in gate.blocking:
+                    witness = semantic_proof.find_descendant_pass_witness(
+                        unit.logical_job_id,
+                        unit.proof_id,
+                        merge_sha,
+                        candidates,
+                        ancestry_witness,
+                        old_step_spec_sha=unit.step_spec_sha256,
+                        max_candidates=SEMANTIC_RUN_LOOKBACK,
+                    )
+                    if witness is None:
+                        unresolved_units.append(unit)
+                        continue
+                    witness_notes.append(
+                        f"{unit.logical_job_id}/{unit.proof_id} healed by main run "
+                        f"{getattr(witness, 'workflow_run_id', '?')} at "
+                        f"{str(getattr(witness, 'tested_tree_sha', '') or '?')} "
+                        f"(old spec "
+                        f"{str(getattr(witness, 'old_step_spec_sha', '') or '?')}, "
+                        f"witness spec "
+                        f"{str(getattr(witness, 'witness_step_spec_sha', '') or '?')}, "
+                        "contract_changed="
+                        f"{str(bool(getattr(witness, 'contract_changed', False))).lower()})"
+                    )
+                semantic_resolved = not unresolved_units
+            except Exception as exc:
+                unresolved_units = list(gate.blocking)
+                semantic_notes.append(
+                    "descendant semantic witness search unavailable: "
+                    + str(exc)[:300]
+                )
+
+        if not semantic_resolved:
+            detail = "; ".join(_semantic_unit_details(unresolved_units or gate.blocking))
+            if semantic_notes:
+                detail += "; " + "; ".join(semantic_notes)
+            return False, (
+                "Failing semantic CI on the frozen merged head: "
+                f"{detail}. No ancestry-valid descendant PASS was found in the "
+                f"bounded {SEMANTIC_RUN_LOOKBACK}-artifact main history."
+            )
+
+        # A valid semantic artifact makes pack identities transport-only. A
+        # descendant PASS also supersedes the frozen ci-gate failure for those
+        # exact semantic units, even when its own overall workflow stayed red.
+        def semantic_transport(entry: tuple[str, str]) -> bool:
+            name = entry[0]
+            return bool(re.fullmatch(r"ci-pack-\d+", name)) or (
+                bool(witness_notes) and name == "ci-gate"
+            )
+
+        bad = [entry for entry in bad if not semantic_transport(entry)]
+        semantic_notes.extend(witness_notes)
+        if not bad:
+            if pending:
+                return False, "CI still running: " + ", ".join(pending[:8])
+            inherited = "; ".join(_semantic_unit_details(gate.inherited))
+            note = "; ".join(semantic_notes)
+            if inherited:
+                note = (note + "; " if note else "") + (
+                    "exact-base inherited semantic failure: " + inherited
+                )
+            return True, note
 
     display = {entry: f"{entry[0]} ({entry[1]})" for entry in bad}
     excluded: set[tuple[str, str]] = set()
     evidence: dict[str, list[str]] = {}
-    notes: list[str] = []
+    notes: list[str] = list(semantic_notes)
     unavailable: list[str] = []
 
     try:
@@ -2441,7 +3288,7 @@ def _branch_was_pushed(root: Path, branch: str) -> bool:
 def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     """Judge the completion chain, in the order the cheapest evidence answers it.
 
-    Dirty tree -> no-op/stand-down exemptions -> branch -> pushed -> merged pull
+    Dirty tree -> no-op exemption -> branch -> stand-down -> pushed -> merged pull
     request -> CI -> origin/main -> render -> live. Each gate blocks with a code
     `_block` can count, and every gate that proved something durable stores a
     proof so a later Stop turn does not re-poll GitHub for it.
@@ -2476,8 +3323,15 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
 
     branch = _run(root, "git", "branch", "--show-current")
-    if not branch or branch in {"main", "master"}:
-        _block(path, state, payload, "unsafe_branch", f"Work is on {branch or 'detached HEAD'}.")
+    if not branch.startswith("claude/"):
+        location = branch or "detached HEAD"
+        _block(
+            path,
+            state,
+            payload,
+            "unsafe_branch",
+            f"Work is on {location}; project work must use a claude/* branch.",
+        )
         return
 
     # A stand-down session may stop — but only one that never pushed anything.
@@ -2524,6 +3378,19 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
     pull_key = f"{branch}:{head}"
     pull = _proof(state, "merged_pull", pull_key)
+    if pull is not None and not str((pull.get("base") or {}).get("sha") or ""):
+        # A PRE-FIX CACHE SHAPE IS NOT A PROOF. The narrowing below did not keep
+        # `base.sha` until 2026-08-16, and this proof is keyed by branch+head —
+        # neither of which ever moves again once the branch is merged — so a
+        # session that already remembered the old shape would keep reading its own
+        # stale record and stay blocked by the very defect the narrowing fix
+        # repairs. The cache, not the API, is what the CI gate would be answering
+        # from. Treat an incomplete record as no record and pay one call: the
+        # refetch re-remembers the complete shape and every later Stop hits the
+        # cache again. A pull request whose API record genuinely carries no base
+        # re-asks once per Stop, which is the cheap direction — the alternative is
+        # pinning a session forever on a record that can never answer.
+        pull = None
     if pull is None:
         try:
             pull = _latest_merged_pr(owner, repo, branch)
@@ -2531,14 +3398,35 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return
         if pull:
-            # A merged PR and its head/merge identities are immutable. Keep only
-            # the fields the remaining gates consume, not the full API payload.
+            # A merged PR and its head/merge/base identities are immutable. Keep
+            # only the fields the remaining gates consume, not the full API
+            # payload — and `base.sha` IS one of them, as of #5757: the CI gate
+            # threads it in as the MERGED head's semantic proof base, because
+            # GitHub drops `pull_requests` from check-runs the moment a pull
+            # request closes, so `_semantic_pr_base_sha` returns None on every
+            # merged head and this record is the only surviving source of the
+            # exact base.
+            #
+            # Dropping it is why that fallback shipped dead. #3746 narrowed this
+            # record long before the fallback existed, so `_check_ci` was handed
+            # `""` on every merged head, `_semantic_evidence_for_run` found no
+            # bound base on either side, and it refused with "run <id> does not
+            # identify the exact PR proof base" — surfacing as `ci_failed` on
+            # work that had merged GREEN, fleet-wide, with no session-side
+            # remedy: check runs on a merged commit are immutable. Measured on
+            # PR #5769 (merged 2026-08-16T02:43:09Z): run 31921385097 concluded
+            # `success` carrying `prs: []`, while `/pulls/5769` still carried
+            # base c2484fe7134b63b8acba50471396edf9929d20a3.
+            #
+            # Only the sha is kept. The narrowing exists to bound what is written
+            # into the state file, and no gate reads anything else off the base.
             pull = {
                 "number": pull.get("number"),
                 "head": {
                     "sha": (pull.get("head") or {}).get("sha"),
                     "ref": (pull.get("head") or {}).get("ref"),
                 },
+                "base": {"sha": (pull.get("base") or {}).get("sha")},
                 "merge_commit_sha": pull.get("merge_commit_sha"),
                 "merged_at": pull.get("merged_at"),
             }
@@ -2586,7 +3474,8 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
     else:
         try:
             ci_ok, ci_reason = _check_ci(
-                root, owner, repo, head_sha, merge_sha, merged_at, head_ref
+                root, owner, repo, head_sha, merge_sha, merged_at, head_ref,
+                str((pull.get("base") or {}).get("sha") or ""),
             )
         except Exception as exc:
             _block(path, state, payload, _github_block_code(exc), str(exc))

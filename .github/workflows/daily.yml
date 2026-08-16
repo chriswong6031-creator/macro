@@ -1,4 +1,8 @@
 name: daily
+# Embed the fired cron (or event) so watchdogs can tell a real slot from an
+# et_gate no-op without a second jobs API call. 2026-08-14/15: the EST-guard
+# survivor concluded success and read as "the nightly ran".
+run-name: daily ${{ github.event.schedule || github.event_name }}
 on:
   schedule:
     # Build B — the sole authoritative / ledger-advancing build (two-build design 2026-07).
@@ -21,11 +25,10 @@ on:
     # The off-regime firing costs one ~15-second ubuntu job, because every downstream job
     # takes `needs: [et_gate, ...]` and gates on `needs.et_gate.outputs.run != 'false'`.
     # That comparison is deliberately fail-OPEN: a broken or errored gate makes BOTH
-    # firings run, the pipeline-daily concurrency group serializes them, and two
-    # simultaneous dailies simply dedup to the latest (see the concurrency block below) —
-    # so a gate outage can double-run a night but can never silently zero-run one.
-    # During EDT the 23:30Z no-op typically sits PENDING behind the real run and skips
-    # when it finally starts; regime (not clock) decides, so that is still correct.
+    # firings run (each cron has its own concurrency group, so they cannot supersede
+    # each other — see the concurrency block). A gate outage can double-run a night
+    # but can never silently zero-run one. The off-regime firing is a ~15s ubuntu
+    # no-op in its OWN group; it must never share a group with the real slot.
     # Known accepted edge: a firing whose START is delayed ACROSS the 02:00-ET flip itself
     # resolves to the NEW regime — worst case one skipped or one doubled run on flip
     # weekend, backstopped by the next evening's run and by workflow_dispatch.
@@ -40,30 +43,25 @@ permissions:
   id-token: write
 
 concurrency:
-  # Daily runs in its OWN lane so a long-running backfill / weekly job can never
-  # queue-cancel or starve the daily data refresh (the bug: a 2-3h special-sits
-  # backfill held the shared "pipeline" lane and the data on the site froze for
-  # hours while feature deploys kept happening). Every push step in this workflow
-  # uses a rebase-retry loop, so running concurrently with a batch job is race-safe.
-  # cancel-in-progress stays false: a queued daily still runs (two simultaneous
-  # dailies would simply dedup to the latest).
-  # 2026-08-12 incident note: when this FILE exceeds ~512,000 bytes GitHub stops
-  # processing the workflow SILENTLY — cron does not fire and dispatched runs sit
-  # queued with zero jobs forever (uncancellable, HTTP 500). Guard:
-  # tests/test_workflow_file_size.py. Shrink by extraction, never by deleting docs.
-  # Versioned away from "pipeline-daily" by #5422 on the theory that the group's
-  # unkillable zombie records (oversized-file era) made the server cancel every new
-  # run placed in it. That theory is REFUTED and this rename is not load-bearing:
-  # run 31583415065 — the first dispatch into "-3", 09:32:58Z 2026-08-12 — was killed
-  # anyway at 09:44:12Z, 11 min into collect, by an explicit
-  # `POST /actions/runs/31583415065/force-cancel` from a live FLEET session (receipt:
-  # PR #5422 review comment). All five dead bakes that night share that one cause.
-  # Kept only because renaming back is pointless churn. Lesson for the next lane that
-  # keeps dying: kill delays that VARY (20s/90s/6min/11min) are a poll cycle, not a
-  # server rule — grep the fleet's session transcripts for the run id before ever
-  # concluding "no canceller exists"; the repo grep only clears repo automation, and
-  # an agent conflict is fixed by arbitration, never by editing this file.
-  group: pipeline-daily-3
+  # Daily stays off the shared "pipeline" lane (a 2-3h backfill once starved it).
+  # Push steps rebase-retry, so overlap with a batch job is race-safe.
+  #
+  # THE 2026-08-14/15 KILL. Both DST crons used to share one group. GitHub still
+  # cancels a PENDING run in a group even when cancel-in-progress is false
+  # (fences.yml 2026-08-09 measured the same pending-supersede). EDT run
+  # 31848262472 sat queued from 22:52Z and was CANCELLED ("superseded") at ~23:45Z
+  # when EST-guard 31851452961 entered the group; the survivor then skipped every
+  # real job (wrong slot). Event-conditional cancel-in-progress (the fences.yml
+  # fix) cannot save a queued slot — only distinct groups can. Each cron gets its
+  # own group; workflow_dispatch stays on pipeline-daily-3 so manuals serialize
+  # with each other, never with a cron. cancel-in-progress stays false so a
+  # second fire of the SAME slot cannot kill a running bake.
+  #
+  # File-size cliff (~512,000 bytes, silent strand): tests/test_workflow_file_size.py.
+  # #5422 renamed pipeline-daily → pipeline-daily-3 on a now-refuted zombie-group
+  # theory; kept to avoid churn. Varying kill delays are a poll cycle — grep
+  # session transcripts for the run id before concluding "no canceller exists".
+  group: ${{ github.event_name == 'schedule' && format('pipeline-daily-3-cron-{0}', github.event.schedule) || 'pipeline-daily-3' }}
   cancel-in-progress: false
 
 jobs:
@@ -1177,6 +1175,15 @@ jobs:
         # observed-filing-state artifact and byte-identical public twin; terms,
         # capacity, runway, scores, probabilities, and Prophet authority stay absent.
         run: python -m scripts.build_capital_structure_projection
+      - name: gate capital-structure ingestion health (fail closed)
+        id: cs_health
+        # After compilers so telemetry.as_of (compiler generation time) is
+        # distinguishable from latest_source_retrieved_at. A selected queue
+        # with zero durable verified evidence must red THIS job — collect stays
+        # green so the market plane is not frozen. No continue-on-error, no
+        # `|| echo`: that is how 2026-08-08→08-14 PutObject AccessDenied nights
+        # stayed green while source_manifest froze at 1,258.
+        run: python -m scripts.check_capital_structure_health
       # Diagnostics only — changes NO behavior. When the compiler above fails, the
       # ledger it rejected is the one artifact that identifies WHY, and today it is
       # unrecoverable: the failure skips every later step, so the post-collect tree
@@ -1208,6 +1215,8 @@ jobs:
             data/capital_structure/source_manifest.jsonl
             data/capital_structure/source_manifest.parquet
             data/capital_structure/telemetry.json
+            data/capital_structure/ingestion_run.json
+            data/capital_structure/health.json
           if-no-files-found: warn
           retention-days: 14
       # ── THE CAPITAL-STRUCTURE CHECKPOINT ────────────────────────────────────
@@ -1262,6 +1271,7 @@ jobs:
           && steps.cs_spine.outcome == 'success'
           && steps.cs_terms.outcome == 'success'
           && steps.cs_projection.outcome == 'success'
+          && steps.cs_health.outcome == 'success'
         id: commitcs
         run: |
           echo "committed=false" >> "$GITHUB_OUTPUT"
@@ -1912,10 +1922,12 @@ jobs:
       # _board_continuity_warning had been printing "22 builds all claiming
       # as_of=2026-07-31" throughout, but it is display-only and gates nothing.
       #
-      # Dropping the restore-key makes this job's cache lookup MISS by design. That is the
-      # point: on a miss the job simply uses the panel already in the git checkout, which is
-      # collect's fresh one. The key still carries github.run_id so the within-run save/
-      # restore handoff is unaffected.
+      # Dropping the prefix restore-key makes a tracked panel use the fresh copy already in
+      # the git checkout instead of overlaying it with an older run's cache. The Russell panel
+      # is different: its close cache is gitignored, so engine MUST restore the exact same-run
+      # key that collect saved. Keep that producer/consumer key byte-identical; the old
+      # `russell-closes-engine-*` key was a guaranteed cold-runner miss and cut ~1,220 names
+      # from the keep-FIRST name-score stamp (2026-08-10..14 incident).
       - name: restore breadth close cache (stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
@@ -1932,10 +1944,10 @@ jobs:
           path: data/midcap_breadth/_closes_cache.parquet
           key: midcap-closes-engine-${{ github.run_id }}
       - name: restore Russell 2000 breadth close cache (stock library needs constituent closes)
-        uses: actions/cache@v4
+        uses: actions/cache/restore@v4
         with:
           path: data/russell_breadth/_closes_cache.parquet
-          key: russell-closes-engine-${{ github.run_id }}
+          key: russell-closes-${{ github.run_id }}
       - name: restore hk breadth close cache (hk stock search library needs constituent closes)
         uses: actions/cache@v4
         with:
@@ -4524,6 +4536,34 @@ jobs:
           else
             echo "::warning::price_pressure R2 publish SKIPPED (restore=$PP_RESTORE build=$PP_BUILD) — a failed restore or build must never overwrite the canonical ledger"
           fi
+      - name: Entry Radar nightly reconcile (W5 forward evidence)
+        # The SOLE durable writer of data/entry_radar/** (W5 prereg §8,
+        # research/live_entry_radar/W5_FORWARD_EVIDENCE_PREREG.md). The W4
+        # intraday lane spools events and writes nothing durable; this step is
+        # the single advancer, and it asserts that itself: --nightly calls
+        # engine.ledger_lane.nightly_advance_enabled() BEFORE any read and exits
+        # 2 having written NOTHING when the gate is down. The gate PASSES here
+        # (COLLECT_LANE=nightly is set at job level), so exit 2 in this lane would
+        # mean the job env changed underneath the law — which is exactly when the
+        # step should go red.
+        #
+        # WHY continue-on-error IS NOT SET. The script itself exits 0 on missing
+        # inputs, which is the normal state today: W4 does not exist, so there is
+        # no event spool, and the correct output is the ledger state
+        # WAITING_FOR_LIVE_SOURCE with a session stamp. It never manufactures
+        # observations from nightly artifacts and never backfills. The only
+        # non-zero exit is the lane refusal above, and that must not be swallowed:
+        # a lane error that produced a partial artifact is indistinguishable from
+        # a healthy pass to every staleness instrument we own.
+        #
+        # Outputs (data/entry_radar/{ledger_state.json,forward.parquet,
+        # qledger_registration_log.jsonl}) are covered by the broad `git add data/`
+        # in 'commit engine outputs' below — verified: that step runs `git add
+        # data/ site/ reports/`, and none of the three paths is gitignored.
+        # qledger claims (§17, live-forward rows only) land in data/qledger/,
+        # already committed by the same step.
+        timeout-minutes: 10
+        run: python3 scripts/reconcile_entry_radar.py --nightly --verbose
       - name: Release Radar coherent-target vintage stores (truth substrate, non-fatal)
         # Full ALFRED output_type=2 matrices let the target engine select current
         # and prior levels from ONE release-date vintage.  They are additive to

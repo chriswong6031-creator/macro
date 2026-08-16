@@ -177,7 +177,17 @@ def translate_row(row: dict, *, family: str, direction: int,
     if sector_of is not None:
         try:
             sector = sector_of(subject)
-        except Exception:  # noqa: BLE001 — a control leg is optional, never fatal
+        except Exception as exc:  # noqa: BLE001 — a control leg is optional, never fatal
+            # NON-FATAL BUT NEVER SILENT (review round 2, F2). A resolver that
+            # RAISES produced exactly the same claim as a resolver that answered
+            # None, and the refusal counted as an ordinary `sector_absent`: a
+            # broken store, a bad closure or a renamed column read as "this
+            # ticker is off-index". That is the null-tolerance failure mode this
+            # whole contract exists to close, one layer up from where it was
+            # closed.
+            log.warning("qledger[%s]: sector resolver raised for %s (%s: %s) — "
+                        "claim registers with NO control leg",
+                        family, subject, type(exc).__name__, exc)
             sector = None
 
     claim = qledger.make_claim(
@@ -249,13 +259,103 @@ def outcome_not_yet_determined(claim: dict, today: date) -> tuple[bool, str]:
 # --------------------------------------------------------------------------- #
 # registration — translate + gate + register a batch for ONE family
 # --------------------------------------------------------------------------- #
+#: P0d C2.4 — the refusal classes a control construction can land in. They are
+#: SEPARATE because one operator lever fixes only one of them: `no_sector_source`
+#: is a WIRING defect (no resolver was passed at all — demand_chain's state until
+#: this PR), `sector_absent` is a coverage gap in the universe file,
+#: `vocabulary_unmapped` is census D0-2's alias mismatch (the one that killed
+#: intel_hub's controls for four months), and `control_equals_subject_or_bench`
+#: is C2.2's self-netting refusal. Collapsing them into one "missing" bucket
+#: would report the same number for "nobody wired it" and "one ADR is off-index".
+CONTROL_REFUSAL_NO_SOURCE = "no_sector_source"
+CONTROL_REFUSAL_SECTOR_ABSENT = "sector_absent"
+CONTROL_REFUSAL_VOCABULARY = "vocabulary_unmapped"
+CONTROL_REFUSAL_SELF_OR_BENCH = "control_equals_subject_or_bench"
+
+#: How many distinct offending `sector` values the `::warning` samples. The
+#: SAMPLE is the load-bearing part: a bare count says "controls are missing", the
+#: values say "the file is handing us 'Technology' and the map wants 'Information
+#: Technology'" — which is exactly what would have caught D0-1/D0-2 from a
+#: nightly log instead of from a four-months-later census.
+_CONTROL_WARN_SAMPLE = 5
+
+
 def _empty_stats(family: str, *, dry_run: bool, source_error: str | None) -> dict[str, Any]:
     return {
         "family": family, "dry_run": bool(dry_run), "source_error": source_error,
         "n_rows": 0, "n_skipped_no_call": 0, "n_region_excluded": 0,
         "n_retrospective_skipped": 0, "n_candidates": 0,
         "n_accepted": 0, "n_rejected": 0, "clock_started": False, "error": None,
+        # P0d C2.4 — the control outcome of every candidate, counted. None/0 is
+        # the honest shape for a family that produced no candidates.
+        "control_policy": None, "n_control_valid": 0, "n_control_missing": 0,
+        "control_refusals": {},
     }
+
+
+def _classify_control(claim: dict, *, has_resolver: bool,
+                      raw_sector_of: Callable[[str | None], str | None] | None = None
+                      ) -> tuple[str | None, str | None]:
+    """(refusal class, offending raw sector) for ONE candidate claim — (None,
+    None) when its control leg is VALID.
+
+    Read off the CLAIM wherever the claim can answer: `make_claim` has already
+    stored both `sector` (the resolved vocabulary value) and `control` (its own
+    `control_for_sector` lookup), so no second implementation of the resolution
+    can drift from the one that actually registered.
+
+    `raw_sector_of` IS THE FIX FOR A COLLAPSED BUCKET (review round 2, F1). A
+    NORMALISING resolver — `qledger.membership_gics_sector_of`, the C2.3
+    construction — returns None for BOTH "this ticker is absent from
+    membership.parquet" AND "this ticker's sector is a vocabulary the alias table
+    cannot map". Both then reach here with an empty `claim["sector"]`, so every
+    D0-2 mismatch was reported as `sector_absent` and the `::warning` carried no
+    vocabulary sample at all: the one family this wiring serves could not report
+    the refusal class the census demands ("normalise the alias set explicitly AND
+    count what it refuses"). Measured before the fix, a store holding
+    `{NVDA: "Technology", WEIRD: "Quantum Widgets", OFFIDX: absent}` reported
+    `{'sector_absent': 2}` and named nothing.
+
+    So when — and ONLY when — the claim carries no `sector`, the RAW resolver is
+    asked what the universe file actually held for that ticker. A non-empty raw
+    value means the file HAD an answer and the alias table could not map it: that
+    is `vocabulary_unmapped`, and the value itself is returned so the annotation
+    can name it. Nothing else changes: `make_claim` never sees this resolver, the
+    stored claim schema is untouched, and a caller that passes no
+    `raw_sector_of` keeps exactly the previous (collapsed-to-`sector_absent`)
+    behaviour rather than guessing."""
+    if qledger.control_leg_is_valid(claim):
+        return None, None
+    if not has_resolver:
+        # No `sector_of` was passed at all — every claim of this run is
+        # uncontrolled BY WIRING, which is a different (and much louder) finding
+        # than a data gap.
+        return CONTROL_REFUSAL_NO_SOURCE, None
+    sector = str(claim.get("sector") or "").strip()
+    if not sector:
+        raw = None
+        if raw_sector_of is not None:
+            try:
+                scope = claim.get("scope") if isinstance(claim.get("scope"), dict) else {}
+                raw = raw_sector_of(scope.get("key"))
+            except Exception as exc:  # noqa: BLE001 — telemetry must never be fatal
+                log.warning("qledger: raw sector probe raised for %s: %s",
+                            (claim.get("scope") or {}).get("key"), exc)
+                raw = None
+        raw = str(raw or "").strip()
+        if raw:
+            # The file HAD a sector for this ticker; the alias table could not
+            # map it. Census D0-2's defect, named and sampled.
+            return CONTROL_REFUSAL_VOCABULARY, raw
+        return CONTROL_REFUSAL_SECTOR_ABSENT, None
+    if not str(claim.get("control") or "").strip():
+        # A RAW-vocabulary resolver (stock_desk's `identity.sector`, intel_hub's
+        # ETF stamps) puts its unmappable value straight on the claim — census
+        # D0-1's shape, reachable without any raw probe.
+        return CONTROL_REFUSAL_VOCABULARY, sector
+    # A control that IS present but did not pass `control_leg_is_valid` can only
+    # be C2.2's self-netted / bench-relabelling case.
+    return CONTROL_REFUSAL_SELF_OR_BENCH, None
 
 
 def register_prospective(rows: Iterable[dict], *, family: str,
@@ -263,6 +363,7 @@ def register_prospective(rows: Iterable[dict], *, family: str,
                          root: Path | str | None = None,
                          today: date | None = None,
                          sector_of: Callable[[str], str | None] | None = None,
+                         raw_sector_of: Callable[[str | None], str | None] | None = None,
                          git_sha: str | None = None,
                          dry_run: bool = False,
                          source_error: str | None = None) -> dict[str, Any]:
@@ -276,6 +377,27 @@ def register_prospective(rows: Iterable[dict], *, family: str,
     LOUDER state than "collected fine, 0 rows to register": it short-circuits
     before any translation is attempted and emits its own `::warning`, so a
     "could not look" run is never confused with an honest zero.
+
+    `sector_of` — the registration-time control construction (P0d C2.3):
+    `subject ticker -> sector NAME`, which `translate_row` hands to
+    `qledger.make_claim(sector=...)`, which resolves the sector ETF itself. The
+    resolver must return a GICS sector NAME, never an ETF ticker (census D0-1 in
+    reverse); `qledger.membership_gics_sector_of(root)` is the canonical one.
+    Whatever it returns, EVERY candidate's control outcome is counted into
+    `n_control_valid` / `n_control_missing` / `control_refusals` (C2.4), and a
+    `matched_control_required` family with any missing control emits one
+    `::warning` naming the split and the offending vocabulary values — silence is
+    how a dead control wiring survives four months.
+
+    `raw_sector_of` — TELEMETRY ONLY, never used to build a claim: the
+    UN-normalised `ticker -> raw sector value` read (for demand_chain,
+    `qledger.sector_of_ticker`). It is consulted only for a candidate whose
+    `sector` came back empty, to tell "the universe file has no row for this
+    ticker" (`sector_absent`) from "the file HAD a value and the alias table
+    could not map it" (`vocabulary_unmapped`) — a distinction a normalising
+    `sector_of` structurally cannot report, and the one census D0-2 exists to
+    make countable. Omitting it is safe and keeps the previous behaviour; the
+    cost is that every such refusal reads as `sector_absent`.
 
     `dry_run=True` runs the EXACT same translate/gate/register_batch path
     against a throwaway temporary store (never the real `root`) so the
@@ -344,6 +466,58 @@ def register_prospective(rows: Iterable[dict], *, family: str,
         candidates.append(claim)
 
     stats["n_candidates"] = len(candidates)
+
+    # ----------------------------------------------------------------------- #
+    # P0d C2.4 — COUNT THE CONTROL OUTCOME OF EVERY CANDIDATE.
+    #
+    # "A silent None is the defect class that stayed dead four months": a control
+    # lookup that misses returns None, a null control is a LEGAL claim state, and
+    # nothing anywhere alarmed — so intel_hub registered 454 sector-stamped,
+    # zero-controlled claims and the census had to find it by reading the store
+    # (DSC:CONTROL-VOCABULARY-MISMATCH-KILLED-EVERY-WIRED-CONTROL). Null-tolerance
+    # is correct for display tiers and lethal for evidence wiring unless the
+    # caller counts the refusal, which is what this block is.
+    #
+    # Classified BEFORE registration so a `dry_run` reports the same numbers the
+    # live path would, and read off the candidate claims themselves (see
+    # `_classify_control`) rather than by re-resolving the sector a second time.
+    # ----------------------------------------------------------------------- #
+    stats["control_policy"] = qledger.family_control_policy(family)[0]
+    unmapped_sectors: list[str] = []
+    for claim in candidates:
+        refusal, offending = _classify_control(
+            claim, has_resolver=sector_of is not None, raw_sector_of=raw_sector_of)
+        if refusal is None:
+            stats["n_control_valid"] += 1
+            continue
+        stats["n_control_missing"] += 1
+        stats["control_refusals"][refusal] = stats["control_refusals"].get(refusal, 0) + 1
+        if refusal == CONTROL_REFUSAL_VOCABULARY and offending:
+            if offending not in unmapped_sectors:
+                unmapped_sectors.append(offending)
+
+    if (stats["control_policy"] == qledger.CONTROL_POLICY_REQUIRED
+            and stats["n_control_missing"] > 0):
+        # ONE annotation per run, and a BARE print with the `::` starting the
+        # line — a logger's prefixing formatter turns this into an invisible
+        # `WARNING ::warning ...` that GitHub silently drops (house law, pinned
+        # by tests/test_gh_annotation_line_start.py).
+        split = ", ".join(f"{k}={v}" for k, v in sorted(stats["control_refusals"].items()))
+        sample = (f" unmapped sector value(s) seen: "
+                  f"{', '.join(repr(s) for s in unmapped_sectors[:_CONTROL_WARN_SAMPLE])}."
+                  if unmapped_sectors else "")
+        print(f"::warning title={family}-qledger-control-missing::{family} is "
+              f"matched_control_required (P0d C2.3) but {stats['n_control_missing']} "
+              f"of {len(candidates)} prospective candidate(s) carry NO valid "
+              f"control leg this run ({stats['n_control_valid']} valid). "
+              f"Refusals: {split}.{sample} An uncontrolled claim can never carry "
+              f"matched-control evidence for this family (contract C4.1/C5.1)",
+              flush=True)
+        log.warning("qledger[%s]: %d/%d candidates uncontrolled (%s)%s",
+                    family, stats["n_control_missing"], len(candidates), split,
+                    f"; unmapped sectors: {unmapped_sectors[:_CONTROL_WARN_SAMPLE]}"
+                    if unmapped_sectors else "")
+
     if not candidates:
         if stats["n_rows"]:
             log.info(

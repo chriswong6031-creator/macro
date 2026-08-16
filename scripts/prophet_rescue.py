@@ -81,6 +81,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 # UNCONDITIONAL, like every other guard script here: this runs as a bare
@@ -135,6 +136,15 @@ HTTP_TIMEOUT_S = 15
 #: any run created at or after D 22:00Z is the D bake.  Deliberately 30 min early:
 #: a floor for existence, never a punctuality check.
 FIRE_BOUNDARY_UTC = time(22, 0)
+
+#: Keep in lockstep with daily.yml's schedule / et_gate (tests/test_daily_et_gate.py).
+EDT_CRON = "30 22 * * *"
+EST_CRON = "30 23 * * *"
+
+# run_started_at on a concurrency-queued skip equals created_at (31851452961:
+# both 23:45:40Z) while et_gate did not start until 02:16:14Z.  Wall-clock span
+# is therefore not a skip signal.  Pre-run-name receipts use the cancelled-
+# sibling rule in counts_as_bake().
 
 #: The deadline ladder, expressed as offsets from the fire boundary so it is
 #: DST-stable and needs no second calendar.  For a session D whose boundary is
@@ -299,13 +309,64 @@ class RunFacts:
     any_success: bool = False
     dead_detail: str | None = None
     anomalies: tuple[str, ...] = ()
+    gate_skips: tuple[dict, ...] = ()
 
     @property
     def in_flight_id(self):
         return self.in_flight.get("id") if self.in_flight else None
 
 
-def run_facts(runs: list[dict] | None, boundary: datetime) -> RunFacts:
+def intended_schedule_cron(when: datetime) -> str:
+    """Which daily.yml cron the America/New_York regime intends at ``when``.
+
+    Mirrors daily.yml et_gate: EDT (UTC-4) → 22:30Z, anything else → 23:30Z.
+    """
+    instant = when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+    offset = instant.astimezone(ZoneInfo("America/New_York")).utcoffset()
+    return EDT_CRON if offset == timedelta(hours=-4) else EST_CRON
+
+
+def is_et_gate_skip(row: dict, *, now: datetime) -> bool:
+    """True when a schedule run's ``run-name`` is the off-regime DST cron.
+
+    workflow_dispatch never skips (et_gate proceeds).  An unlabelled success
+    (pre-run-name ``display_title: daily``) is handled by ``counts_as_bake``.
+    """
+    if row.get("event") != "schedule" or row.get("conclusion") != "success":
+        return False
+    title = " ".join(str(row.get(k) or "") for k in ("display_title", "name"))
+    if EDT_CRON not in title and EST_CRON not in title:
+        return False
+    when = _parse_dt(row.get("created_at")) or now
+    return intended_schedule_cron(when) not in title
+
+
+def counts_as_bake(row: dict, recent: list[dict], *, now: datetime) -> bool:
+    """A ``success`` that actually ran the nightly, not an et_gate no-op.
+
+    Named off-regime cron → skip.  Unlabelled schedule success sitting next to
+    a cancelled schedule sibling is the 2026-08-14/15 shape (31851452961
+    display_title was just ``daily``; run_started_at equalled created_at while
+    the run sat pending, so duration cannot tell).  A lone unlabelled success
+    still counts — that is a pre-run-name real bake.
+    """
+    if row.get("conclusion") != "success":
+        return False
+    if is_et_gate_skip(row, now=now):
+        return False
+    if row.get("event") == "schedule":
+        title = " ".join(str(row.get(k) or "") for k in ("display_title", "name"))
+        named = EDT_CRON in title or EST_CRON in title
+        if not named and any(
+            sib.get("event") == "schedule" and sib.get("conclusion") == "cancelled"
+            for sib in recent
+        ):
+            return False
+    return True
+
+
+def run_facts(runs: list[dict] | None, boundary: datetime,
+              *, now: datetime | None = None) -> RunFacts:
     """Classify the run list.
 
     THE IN-FLIGHT TEST IGNORES ``created_at`` ENTIRELY, and that is the safe
@@ -322,10 +383,12 @@ def run_facts(runs: list[dict] | None, boundary: datetime) -> RunFacts:
     """
     if runs is None:
         return RunFacts()
+    clock = now if now is not None else boundary
     recent: list[dict] = []
     in_flight: dict | None = None
     any_success = False
     anomalies: list[str] = []
+    gate_skips: list[dict] = []
     for row in runs:
         status = row.get("status")
         created = _parse_dt(row.get("created_at"))
@@ -341,15 +404,20 @@ def run_facts(runs: list[dict] | None, boundary: datetime) -> RunFacts:
                 )
         if created is not None and created >= boundary:
             recent.append(row)
-            if row.get("conclusion") == "success":
-                any_success = True
+    for row in recent:
+        if row.get("conclusion") != "success":
+            continue
+        if counts_as_bake(row, recent, now=clock):
+            any_success = True
+        else:
+            gate_skips.append(row)
     dead_detail = None
     if recent and in_flight is None and not any_success:
         dead_detail = ", ".join(
             f"{r.get('status')}/{r.get('conclusion') or '-'}" for r in recent
         )
     return RunFacts(tuple(recent), in_flight, any_success, dead_detail,
-                    tuple(anomalies))
+                    tuple(anomalies), tuple(gate_skips))
 
 
 def budget_window_start(now: datetime) -> datetime:
@@ -542,7 +610,7 @@ def decide(state: WatchdogState) -> list[Action]:
     actions: list[Action] = []
 
     # ── run facts ───────────────────────────────────────────────────────────
-    facts = run_facts(state.runs, boundary)
+    facts = run_facts(state.runs, boundary, now=now)
     in_flight, recent, dead_detail = facts.in_flight, facts.recent, facts.dead_detail
 
     # ── data facts (source_asof + cohort, NEVER top-level asof) ─────────────
@@ -576,13 +644,36 @@ def decide(state: WatchdogState) -> list[Action]:
             "class), a disabled workflow or a dropped schedule all look like this — "
             "check the file size against tests/test_workflow_file_size.py first."
         )
-    elif not data_current and now >= stale_deadline:
+    elif not data_current and (
+        now >= stale_deadline
+        or (
+            now >= strand_deadline
+            and in_flight is None
+            and recent
+            and state.main_index is not None
+        )
+    ):
+        # 09:40Z is the "bake might still be running" deadline. Once every run
+        # has completed and a readable store has not moved, waiting further is
+        # how 2026-08-14/15 stayed quiet: cancelled EDT 31848262472 + 5s
+        # EST-guard success 31851452961 concluded at 02:16Z, and the 02:40Z
+        # wake printed WAIT until 09:40Z because a gate-skip success looked
+        # like a bake. An unreadable index is API_DARK, not this branch.
         wants = STALE
         seen = src.isoformat() if src else (state.main_error or "unreadable")
+        skip_note = ""
+        if facts.gate_skips and any(
+            r.get("conclusion") == "cancelled" for r in recent
+        ):
+            skip_note = (
+                " Cancelled real slot + surviving et_gate no-op is not a bake "
+                "(2026-08-14/15: 31848262472 superseded by 31851452961)."
+            )
         why = (
             f"Prophet source_asof reads {seen} but session {session.isoformat()} is "
             f"owed ({behind if behind is not None else '?'} completed sessions "
             f"behind){f'; runs concluded [{dead_detail}]' if dead_detail else ''}."
+            f"{skip_note}"
         )
 
     if wants is not None:
@@ -796,6 +887,10 @@ def fetch_runs(repo: str, token: str | None) -> tuple[list[dict] | None, str | N
             "created_at": r.get("created_at"),
             "event": r.get("event"),
             "html_url": r.get("html_url"),
+            "display_title": r.get("display_title"),
+            "name": r.get("name"),
+            "run_started_at": r.get("run_started_at"),
+            "updated_at": r.get("updated_at"),
         }
         for r in runs if isinstance(r, dict)
     ], None

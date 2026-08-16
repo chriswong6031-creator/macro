@@ -1,0 +1,42 @@
+# Live Entry Radar pack cadence — hourly ATTEMPTS at :20 past, 10:20Z-13:20Z.
+#
+# HOURLY BECAUSE AN ATTEMPT IS ALMOST FREE. scripts/entry_radar_live_pack exits 0
+# with "already current" the moment it sees a pack whose as_of is the session it
+# would build for, so three of these four ticks are a Python start and a stat on
+# the state dir. Retry-by-schedule is the cheapest recovery there is: no retry
+# logic in the script, no failure state to reason about, no operator step — a build
+# that failed at 10:20Z (store not yet rsynced, a transient read error) simply
+# happens at 11:20Z instead.
+#
+# THE SPAN COVERS TWO THINGS AT ONCE. systemd calendars have no ET, so the window
+# is UTC and has to hold in BOTH DST regimes:
+#   EDT  10:20Z = 06:20 ET  ...  13:20Z = 09:20 ET
+#   EST  10:20Z = 05:20 ET  ...  13:20Z = 08:20 ET
+# Every tick is PRE-OPEN in both regimes, and the LAST one still lands ahead of the
+# 09:25 ET start of the evaluator's window — so the pack is frozen before the first
+# RTH pass can ask for it, which is the ordering the stale-pack gate depends on. It
+# also absorbs a nightly that finished late: the confirmed daily substrate this
+# builder reads is written by the overnight bake, and a bake that runs long has
+# until 09:20 ET to land rather than costing the whole session.
+#
+# AccuracySec=1m and RandomizedDelaySec=60s, both looser than the evaluator's 1s/10s:
+# nothing downstream cares which second a pre-open batch job starts, and a minute of
+# jitter keeps this off the top-of-minute contention the live-plane timers share.
+# Even at the worst case the 13:20Z tick starts by 09:21 ET, four minutes clear.
+#
+# Persistent=false — a box that was down through the whole pre-open window must not
+# fire a pack build at 11:00 ET against a session already in progress. The RTH
+# evaluator's stale-pack gate is the correct response to a missing pack: refuse the
+# cycle honestly, publish it in the health receipt, evaluate nothing.
+[Unit]
+Description=Build the Live Entry Radar evaluation pack before the US open
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 10..13:20:00 UTC
+AccuracySec=1m
+RandomizedDelaySec=60s
+Persistent=false
+Unit=macro-entry-radar-pack.service
+
+[Install]
+WantedBy=timers.target

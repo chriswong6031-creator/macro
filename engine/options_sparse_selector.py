@@ -6,10 +6,10 @@ This module implements that rule without granting signal, issue, score, rank,
 size, trade, publication, training, Prophet, Neural Web, or completion
 authority.  ``propose`` means only a private research-review proposal.
 
-The production registry remains deliberately unarmed in this change.  Tests
-exercise the complete private planner/transaction harness directly; every
-public planning and write entry point stays inert until a later reviewed code
-change flips the constant after the deployment receipts exist.
+The production registry admits only the bounded paper-only canary.  Its sole
+mutation entry point is ``advance``; public planning and commit entry points
+remain inert.  The separate code-only W1A/proposal arm remains false, so
+the canary can accrue an honest abstention denominator but cannot propose.
 """
 
 from __future__ import annotations
@@ -122,8 +122,12 @@ LIFECYCLE_RULE_SHA256 = (
 )
 
 # Code-only arming.  No environment value, marker file, host config, first
-# observation, or CLI argument may turn this on.
-SELECTOR_RUNTIME_ARMED = False
+# observation, or CLI argument may turn these rails on.  The first operational
+# slice accrues one bounded, paper-only abstention denominator on the reviewed
+# M1 carrier.  Private proposals remain separately code-unarmed: while that
+# rail is false, a caller cannot attach a W1A publication to ``advance``.
+SELECTOR_RUNTIME_ARMED = True
+SELECTOR_PROPOSALS_ARMED = False
 
 CAMPAIGNS_PATH = "data/options_signal_campaign/campaigns.jsonl"
 EPISODES_PATH = "data/options_signal_episode/episodes.jsonl"
@@ -16110,11 +16114,11 @@ def plan_cycle(
     scheduled_at: str,
     clock: Callable[[], datetime],
 ) -> NoReturn:
-    """Public planning is inert until the reviewed code constant is armed."""
+    """Public planning stays inert; the reviewed carrier owns ``advance``."""
 
     del root, source, evidence_inputs, scheduled_at, clock
     raise SparseSelectorUnarmed(
-        "sparse selector runtime is code-unarmed pending M1 deployment receipts"
+        "sparse selector public planning is inert; use the reviewed advance carrier"
     )
 
 
@@ -16129,8 +16133,31 @@ def commit_cycle(
 
     del root, plan, evidence_inputs, hook
     raise SparseSelectorUnarmed(
-        "sparse selector runtime is code-unarmed pending M1 deployment receipts"
+        "sparse selector public commit is inert; use the reviewed advance carrier"
     )
+
+
+def _assert_proposal_boundary_closed(plan: CyclePlan) -> None:
+    """Refuse proposal-bearing authority before publishing a canary WAL seal."""
+
+    if plan.head.get("proposal_session_count") != 0:
+        raise SparseSelectorUnarmed(
+            "sparse selector private proposals are code-unarmed; "
+            "the planned HEAD contains proposal state"
+        )
+    for item in plan.objects:
+        schema = item.value.get("schema")
+        if (
+            schema == "options.sparse_selector_decision/v1"
+            and item.value.get("action") != "abstain"
+        ) or (
+            schema == "options.sparse_selector_cycle_receipt/v1"
+            and item.value.get("propose_count") != 0
+        ):
+            raise SparseSelectorUnarmed(
+                "sparse selector private proposals are code-unarmed; "
+                "the planned transition contains proposal authority"
+            )
 
 
 def advance(
@@ -16148,9 +16175,26 @@ def advance(
         raise SparseSelectorUnarmed(
             "sparse selector runtime is code-unarmed pending M1 deployment receipts"
         )
+    if (
+        SELECTOR_PROPOSALS_ARMED is not True
+        and evidence_inputs.w1a_receipt_root is not None
+    ):
+        raise SparseSelectorUnarmed(
+            "sparse selector private proposals are code-unarmed; "
+            "a W1A receipt root is forbidden"
+        )
     root = validate_private_root(private_root, create=True)
     with _store_lock(root):
-        if _read_intent(root) is not None:
+        durable_intent = _read_intent(root)
+        if durable_intent is not None:
+            if SELECTOR_PROPOSALS_ARMED is not True:
+                recovering = _plan_from_intent(
+                    root,
+                    durable_intent,
+                    evidence_inputs=evidence_inputs,
+                    _sealed_recovery=True,
+                )
+                _assert_proposal_boundary_closed(recovering)
             return _commit_cycle_locked(
                 root,
                 None,
@@ -16179,6 +16223,8 @@ def advance(
             clock=clock,
             runtime_armed=True,
         )
+        if SELECTOR_PROPOSALS_ARMED is not True:
+            _assert_proposal_boundary_closed(plan)
         return _commit_cycle_locked(
             root,
             plan,
@@ -16197,6 +16243,7 @@ def status(
     if not root.exists():
         return {
             "runtime_armed": SELECTOR_RUNTIME_ARMED,
+            "proposals_armed": SELECTOR_PROPOSALS_ARMED,
             "initialized": False,
             "head": None,
             "recovery_intent": False,
@@ -16214,10 +16261,12 @@ def status(
             )
             return {
                 "runtime_armed": SELECTOR_RUNTIME_ARMED,
+                "proposals_armed": SELECTOR_PROPOSALS_ARMED,
                 "initialized": True,
                 "head": _load_head(root),
                 "recovery_intent": True,
                 "intent_next_head_id": plan.head["head_id"],
+                "intent_next_head": copy.deepcopy(plan.head),
             }
         head, _decisions, _body = authenticate_store(
             root,
@@ -16225,6 +16274,7 @@ def status(
         )
         return {
             "runtime_armed": SELECTOR_RUNTIME_ARMED,
+            "proposals_armed": SELECTOR_PROPOSALS_ARMED,
             "initialized": head is not None,
             "head": head,
             "recovery_intent": False,
@@ -16243,6 +16293,7 @@ __all__ = [
     "LIFECYCLE_RULE_SHA256",
     "RULE_ID",
     "SELECTOR_RULE_SHA256",
+    "SELECTOR_PROPOSALS_ARMED",
     "SELECTOR_RUNTIME_ARMED",
     "SOURCE_CAMPAIGN_RULE_SHA256",
     "EvidenceInputs",

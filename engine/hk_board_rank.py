@@ -1,7 +1,7 @@
 """HK Prophet v1 — the US priority engine, parameterised for the Hong Kong board.
 
 Program: ``research/HK_BOARD_RESURRECTION_MASTERPLAN_BY_FABLE.md`` (gates G1-G8).
-Machinery: :mod:`engine.us_board_rank` (``us_prophet_v1``).  This module holds the
+Machinery: :mod:`engine.us_board_rank` (the shared scoring pass).  This module holds the
 HK PARAMETERS and the two-and-a-half HK-specific lanes; it does not re-implement
 the score.  Weights, the tier/entry maps, the stage buckets, the featured cascade,
 the percentile transform, the freshness resolver and the ran-lane anchor discipline

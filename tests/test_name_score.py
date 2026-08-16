@@ -169,6 +169,153 @@ def test_us_emitter_passes_bar_asof():
     assert calls[0]["ticker"] == "T" and calls[0]["score"] == 55
 
 
+# --- store date key = the board's session, never the host clock -------------------
+# DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES: until 2026-08-14 the US append was
+# stamped pd.Timestamp.utcnow().date() at append time. The nightly's library band
+# runs after 00:00 UTC, so session D's calls landed under calendar D+1 (plus Sat/Sun
+# echo stamps from weekend lanes) and the store agreed with the published board on
+# only 22-29% of names same-date — measured board(D) ≡ store(D+1), level match 1.000.
+def test_us_name_score_stamp_is_board_session_not_wall_clock():
+    from scripts import build_stock_library as bsl
+    # the session anchor wins verbatim, regardless of what the host clock says
+    assert bsl._name_score_asof("2026-08-13") == ("2026-08-13", True)
+    # absent/corrupt anchor: loud wall-clock fallback, still an ISO date, and the
+    # rows are marked session_keyed=False. Both calls sit INSIDE the before/after
+    # clock bracket so a UTC-midnight crossing cannot flake the assertion.
+    before = str(pd.Timestamp.utcnow().date())
+    out_none = bsl._name_score_asof(None)
+    out_bad = bsl._name_score_asof("not-a-date")
+    after = str(pd.Timestamp.utcnow().date())
+    assert out_none[0] in (before, after) and out_none[1] is False
+    assert out_bad[0] in (before, after) and out_bad[1] is False
+
+
+def test_us_store_stamp_wired_to_session_asof():
+    """Wiring pin (mutation-proof): the single call-site line could be reverted to
+    the wall-clock stamp and every behavioral test would stay green while the two
+    memories of name_score diverged again. Pin the source, not just the helper."""
+    from pathlib import Path
+    from scripts import build_stock_library as bsl
+    src = Path(bsl.__file__).read_text()
+    us_append = src.index('append_name_calls(_calls, market="US", asof=_asof')
+    stamp = src.rindex("_asof, _session_keyed = _name_score_asof(alpha_asof)", 0, us_append)
+    # the session stamp is what feeds THIS append (no wall-clock stamp in between)
+    assert "utcnow" not in src[stamp:us_append]
+
+
+def test_sibling_store_stamps_use_session_anchor():
+    """HK/CA/INTL shared the same wall-clock stamp defect; each append now passes
+    its own session anchor with utcnow demoted to the fallback, and persists the
+    session_keyed flag so a fallback row is marked in the store itself."""
+    from pathlib import Path
+    import scripts.build_stock_library as bsl
+    root = Path(bsl.__file__).resolve().parent
+    pins = {
+        "build_hk_library.py": ['asof=str(as_of) if as_of else',
+                                'session_keyed=bool(as_of)'],
+        "build_canada_library.py": ['asof=str(_ca_asof) if _ca_asof else',
+                                    'session_keyed=bool(_ca_asof)'],
+        "build_intl_library.py": ['asof=_intl_asof, session_keyed=_intl_sk'],
+    }
+    for fname, want in pins.items():
+        src = (root / fname).read_text()
+        for pin in want:
+            assert pin in src, f"{fname}: name-score append lost its session anchor ({pin})"
+        # no append passes a bare wall-clock stamp any more
+        assert "asof=str(pd.Timestamp.utcnow().date())" not in src, fname
+
+
+def test_intl_session_anchor_resolves_without_alpha_as_of():
+    """Adversarial review D1 (PR #5674): compute_intl_alpha carries NO as_of key, so
+    an `(alpha or {}).get("as_of")` anchor is ALWAYS None and a text pin on that
+    expression is vacuous. The INTL anchor must genuinely resolve — from the library
+    tip (max per-rec asof) — and only mark session_keyed=False when nothing does."""
+    from scripts.build_intl_library import _intl_session_asof
+    # the real alpha shape: per_ticker/markets/n, no as_of anywhere
+    alpha = {"per_ticker": {"X": {}}, "markets": {}, "n": 1}
+    to_write = [("a", {"asof": "2026-08-12"}), ("b", {"asof": "2026-08-13"}),
+                ("c", {"asof": None}), ("d", {})]
+    assert _intl_session_asof(alpha, to_write) == ("2026-08-13", True)
+    # a future alpha as_of, if one ever appears, outranks the tip
+    assert _intl_session_asof({"as_of": "2026-08-11"}, to_write) == ("2026-08-11", True)
+    # nothing resolves -> wall-clock, marked as such
+    before = str(pd.Timestamp.utcnow().date())
+    out = _intl_session_asof(None, [("x", {})])
+    after = str(pd.Timestamp.utcnow().date())
+    assert out[0] in (before, after) and out[1] is False
+
+
+def test_append_persists_session_keyed_and_unions_legacy_rows(tmp_path, monkeypatch):
+    """The cutover marker: post-fix rows carry session_keyed True/False; rows written
+    before the column existed read back as null (the wall-clock era). Consumers must
+    partition on this before comparing forward metrics across 2026-08-14 (the fill
+    convention moved one session — adversarial review D3/D5, PR #5674)."""
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
+    # a legacy store WITHOUT the column (pre-cutover shape)
+    legacy = pd.DataFrame({"date": ["2026-08-01"], "ticker": ["OLD"], "score": [5],
+                           "tier": ["watch"], "fuel": [0.1], "trigger": [0.1],
+                           "level": [10.0]})
+    (tmp_path / "name_score").mkdir()
+    legacy.to_parquet(tmp_path / "name_score" / "us_calls.parquet", index=False)
+    call = [{"ticker": "NEW", "score": 50, "tier": "watch", "fuel": 0.5,
+             "trigger": 0.5, "level": 20.0}]
+    assert gr.append_name_calls(call, market="US", asof="2026-08-14") == 2
+    assert gr.append_name_calls([{**call[0], "ticker": "WC"}], market="US",
+                                asof="2026-08-15", session_keyed=False) == 3
+    df = pd.read_parquet(tmp_path / "name_score" / "us_calls.parquet")
+    by = df.set_index("ticker")["session_keyed"]
+    assert bool(by["NEW"]) is True and bool(by["WC"]) is False
+    assert pd.isna(by["OLD"])                     # pre-cutover era stays null
+
+
+def test_stamp_gap_cadence_uses_trailing_window(tmp_path, monkeypatch):
+    """Adversarial review D2 (PR #5674): the store's HISTORY contains Sat/Sun stamps
+    from the wall-clock era, but post-cutover the ledger is weekday-cadence. An
+    all-history dow set would flag every future weekend as a PIT gap forever,
+    saturating stamp_gap_dates[:14] until a real missed weekday could never surface.
+    Cadence must come from the trailing window so the dead era ages out."""
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
+    sdir = tmp_path / "stocks"
+    sdir.mkdir(parents=True)
+    bars = pd.date_range("2026-06-01", periods=120, freq="D")
+    pd.DataFrame({"close": [100.0 + 0.1 * j for j in range(len(bars))]},
+                 index=bars).to_parquet(sdir / "T1.parquet")
+    # wall-clock era: two weekend stamps; then > _GAP_DOW_WINDOW weekday stamps
+    # (Mon-Fri over 4+ weeks) spanning several weekends, with ONE weekday missing.
+    era_wall = ["2026-06-06", "2026-06-07"]                      # Sat, Sun
+    weekdays = [str(d.date()) for d in pd.date_range("2026-06-08", "2026-07-03", freq="B")]
+    missing = weekdays.pop(8)                                    # one real PIT gap
+    rows = [{"date": d, "ticker": "T1", "score": 10, "tier": "watch", "fuel": 0.5,
+             "trigger": 0.2, "level": 100.0 + i}                 # levels vary — no echoes
+            for i, d in enumerate(era_wall + weekdays)]
+    (tmp_path / "name_score").mkdir()
+    pd.DataFrame(rows).to_parquet(tmp_path / "name_score" / "us_calls.parquet", index=False)
+    out = gr.grade("US")
+    assert out["available"] is True
+    gaps = set(out["stamp_gap_dates"])
+    assert missing in gaps                                       # real weekday gap surfaces
+    # no weekend inside the scan range is counted once the trailing window is weekday-only
+    assert not any(pd.Timestamp(g).dayofweek >= 5 for g in gaps), gaps
+
+
+def test_producer_relationship_store_row_equals_published_potential(tmp_path, monkeypatch):
+    """The intended end-to-end relationship the divergence receipt asked for: the
+    store row for (session, ticker) carries the SAME score the board publishes,
+    under the SAME date key the snapshot fossil uses (wide["as_of"])."""
+    from scripts import build_stock_library as bsl
+    monkeypatch.setattr(gr.config, "data_dir", lambda: tmp_path)
+    session = "2026-08-13"
+    pot = ns.potential_score(_rec("FRESH BUY"), market="US", edge_z=1.0)
+    rec = {"asof": session, "tech": {"price": 42.5}, "conviction": {"potential": pot}}
+    calls = bsl._collect_potential_calls([("t", rec)])
+    stamp, keyed = bsl._name_score_asof(session)
+    assert gr.append_name_calls(calls, market="US", asof=stamp, session_keyed=keyed) == 1
+    stored = pd.read_parquet(tmp_path / "name_score" / "us_calls.parquet")
+    assert stored["date"].tolist() == [session]          # session key, not run date
+    assert int(stored["score"].iloc[0]) == pot["score"]  # published == stored
+    assert bool(stored["session_keyed"].iloc[0]) is True # cutover marker persisted
+
+
 # --- grade()-side quarantine: pre-gate frozen echoes never reach measurement -----
 def test_grade_quarantines_frozen_echo_runs(tmp_path, monkeypatch):
     """98 fabricated rows (18 buy-tier, e.g. QCOM `setting_up` 63 off a 24d-stale

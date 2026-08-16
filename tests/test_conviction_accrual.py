@@ -93,6 +93,24 @@ def test_theme_meta_missing_still_archives_stats(tmp_path, monkeypatch):
     assert snap["theme_asof"] is None
 
 
+def test_asof_none_falls_back_to_wall_clock_utc(tmp_path, monkeypatch):
+    """INTL's library used to pass asof=None forever (compute_intl_alpha has no
+    as_of key). That is NOT a refused row and NOT a null stamp: normalize_asof
+    (None) is empty, so archive_member_conviction substitutes the host's UTC
+    date. Historical conviction_intl rows therefore carry wall-clock dates
+    (including weekend stamps), never nulls — disclose, do not backfill."""
+    from datetime import datetime, timezone
+    _patch_plane(monkeypatch)
+    before = datetime.now(timezone.utc).date().isoformat()
+    assert ca.archive_member_conviction("us", _PROFILES, asof=None,
+                                        archive_dir=tmp_path) is True
+    after = datetime.now(timezone.utc).date().isoformat()
+    df = sa.load_archive("conviction_us", archive_dir=tmp_path)
+    assert len(df) == 1
+    assert df.iloc[0]["asof"] in (before, after)
+    assert df.iloc[0]["asof"]  # never null / empty
+
+
 def test_stats_median_iqr():
     assert ca._stats([]) == {"median": None, "iqr": None}
     assert ca._stats([10.0]) == {"median": 10.0, "iqr": 0.0}

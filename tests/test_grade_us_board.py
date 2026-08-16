@@ -1148,7 +1148,11 @@ class TestErasAreNeverPooled:
     reimplementation that narrows or drops the partition cannot pass these by accident.
     """
 
-    _V1, _V2 = "us_prophet_v1", "us_prophet_v2"
+    # A SUPERSEDED era and the LIVE one — read from the producer for the live half
+    # so an era bump moves the fixture with it instead of quietly re-testing a
+    # partition between two dead stamps (which is what this fixture became on
+    # 2026-08-15 when v2 was displaced by v3).
+    _V1, _V2 = "us_prophet_v2", ubr.BOARD_DEFINITION
     _V2_DATE = "2026-07-15"
 
     @classmethod

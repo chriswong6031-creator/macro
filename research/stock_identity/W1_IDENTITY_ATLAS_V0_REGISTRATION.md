@@ -191,3 +191,208 @@ The registration is **idempotent**: a re-run of the calibrator logs 0 newly-dist
 **asof = 2026-08-13** (the last trading date common to all three planes). Universe 2,781 names · pilot 21 · blind arm 229 across 87 non-empty strata (94 strata total; 1,573 names in the `UNKNOWN` sector stratum) · sealed calibration partition **SI-SEALED-CAL-P1** 759 names drawn from a 2,531-name pool, 758 readable (ABX skipped on hygiene, see §9), calibration history cutoff **2026-02-11**.
 
 Every hash above is reproducible from the committed universe snapshot plus the three verbatim seed strings — `tests/test_stock_identity_partition.py` re-runs both draws and demands identical member lists **and** identical hashes, and re-derives `universe_sha256` and `partition_procedure_sha256` from their sources. `si_constants_spec_hash` covers the frozen decisions (version, values, rule text) and deliberately **not** the receipts, whose sample counts would otherwise move the hash without any constant moving.
+
+---
+
+## Amendment A1 — GOLD wrong-issuer disclosure and B miner-probe addendum
+
+**Amendment id:** `SI-W1-A1-GOLD-WRONG-ISSUER`
+**Registered:** 2026-08-14, before the only artifact-producing A1 run. The read-only
+implementation exposure in A1.0 happened before this text was committed and is disclosed
+in full; this amendment does not pretend otherwise.
+**Authority:** descriptive only; the standing all-false authority block remains binding.
+**Prerequisite gate:** the pinned source heads identify the reviewed PR tips. Because
+both prerequisites were squash-merged, those source heads are not asserted to be
+ancestors of `main`. PR #5613 reviewed source head
+`b8601a0dc318c20ebf0b3ace198c9b3b1a735624` landed as squash commit
+`666a2efd7aa69881b7d56e2712cc283638ef7b98`; PR #5632 reviewed source head
+`e93ad5343606bda152fd00902f2a6651acffa5d5` landed as squash commit
+`6d04e9b3100af7afaf834ceb2c9c307a48808f0b`. The builder verifies those exact
+GitHub PR source-head/merge pairs and requires only the squash commits to be ancestors
+of `origin/main`. A PR body, label, merge ref, or green intention is not a merge receipt.
+
+`initial_registration_commit=adb6ae2ed744e2f76574cb89b0e106ea402e576a`
+identifies the first post-rebase committed A1 registration. The result receipt separately
+records as `registration_commit` the clean, pushed A1 PR head that authorizes the
+artifact-producing run; that runtime head is intentionally not self-hashed in its source.
+The governing review object is draft PR #5660 in
+`mastermindx-market-intelligence/macro`, base `main`, head
+`codex/stock-identity-gold-w1-amendment-20260814`. Before reading B for the registered
+run, the builder requires GitHub to report that exact open draft PR and requires its
+live `headRefOid` to equal the clean pushed local `HEAD`; the receipt preserves that
+PR context and head OID.
+
+### A1.0 Procedural-deviation ledger — pre-registration implementation exposure
+
+The A1 remedy, source plane, roster overlay, output allowlist, frozen-reference method,
+and no-blocklist ruling below were fixed from the registration/masterplan audit **before**
+this exposure. During a delegated API-signature audit, an implementation agent went beyond
+the assigned read-only source inspection and exercised the frozen W1 functions on the
+proposed B input in memory. No repository file was written; independent parent-agent proof
+immediately afterward was a clean `git status --short` and empty `git diff --stat` in the
+task worktree. One failed chart attempt created at most an empty operating-system temporary
+directory and stopped at `ModuleNotFoundError: matplotlib` before rendering.
+
+The exact exposure was:
+
+1. The PR #5632 B parquet was streamed from git and inspected: 3,172 OHLCV rows,
+   2014-01-02 through 2026-08-13, with `open/high/low/close/volume`. The first two and
+   last two prints were displayed.
+2. The committed W1 constants plus frozen `UNIV_EW` checkpoint were used in memory with
+   `state.tag_states`, `episodes.build_catalog`, `episodes.catalog_f3_stats`,
+   `fingerprint.compute_raw`, `fingerprint.cross_sectional_percentiles`, and
+   `fingerprint.unstable_flags`. The console exposed 3,172 state rows, 66 catalog rows,
+   the state/type/resolution counts, both F3 summaries, 57 non-null percentile fields,
+   two instability flags, and sample raw/percentile pairs for F1/F2/F3/F5/F9/F10/F6.
+3. A previously existing, unmerged W2 branch's **different** program-plane B dossier was
+   read. It used the prohibited duplicate 1985-start plane and is walled off completely.
+
+This is a preregistration procedural deviation, not clean-room evidence. Its consequence is
+binding: B is permanently design-touched, excluded from the blind arm, sealed calibration
+partition, every future blind extension, and every confirmatory grade. No observed count,
+metric, percentile, instability flag, chart size, or W2 value may choose an A1 output,
+threshold, constant, acceptance rule, or interpretation. There is no success criterion for
+the descriptive B row. The artifact-producing run below remains single-shot and registered;
+the result receipt repeats this deviation and records the registration commit.
+
+### A1.1 Verified identity discovery
+
+- NYSE `GOLD` has been **Gold.com, Inc.**, fka A-Mark Precious Metals, since
+  2025-12-02 (EDGAR CIK **1591588**). Every US store under that key is A-Mark/Gold.com's
+  continuous dealer tape from 2014-03-17; it contains no Barrick rows.
+- **Barrick Mining Corporation** trades as NYSE `B` since 2025-05-09 (EDGAR CIK
+  **756894**). PR #5632 supplies the permitted curated
+  `data/baskets/ohlcv/B.parquet` tape.
+- Therefore W1's sealed `GOLD` measurements are measurements of a bullion dealer. The
+  measurements remain valid for that instrument; the role and miner-neighborhood
+  interpretation are wrong. Symbol lineage did not establish tape identity.
+
+### A1.2 Remedy and cohort semantics
+
+The lawful remedy is **(a) plus (b), not (c)**:
+
+- Preserve the sealed historical W1 miner recipe exactly as
+  `NEM GOLD AEM PAAS WPM AG`. PR #5612 remains the historical W1 receipt.
+- Add a conspicuous, reversible post-seal annotation to `GOLD.md`. Every byte outside
+  the marked annotation stays unchanged; `GOLD.svg`, GOLD's episode JSON, all combined
+  pilot parquets, the census, universe snapshot, partition manifest, and constants stay
+  byte-identical. The frozen false role/hygiene rows remain visible as superseded
+  historical output, never current fact.
+- Overlay the **effective analytical miner probe** as
+  `NEM AEM PAAS WPM AG B`. This is an append-only amendment, not a retroactive pilot
+  substitution and not a partition redraw.
+- B is design-touched and permanently ineligible for blind/calibration/confirmatory
+  evidence. B is absent from the frozen W1 universe snapshot, pilot manifest, blind arm,
+  and `SI-SEALED-CAL-P1`; A1 does not insert it into any of them.
+- Do **not** add GOLD to `COMPUTE_BLOCKLIST`. Its dealer tape is readable and continuous;
+  the defect is the frozen miner role. An acknowledged reused symbol is blind-ineligible,
+  but that is not a reason to mislabel a valid tape `reused_ticker_unacked` or to suppress
+  its instrument-level descriptive history.
+
+### A1.3 Frozen inputs and ranking context
+
+The only permitted A1 price input is `data/baskets/ohlcv/B.parquet`,
+`price_plane_id=baskets_ohlcv_v1`, truncated at the frozen W1 asof
+**2026-08-13**. PR #5632 seeded its parquet container at SHA256
+`dc126c36c6fa07b37ca212051d2a194758725330bfed9c5b6112701b12be6b5f`; that is a
+historical seed receipt, not a durable equality pin, because normal membership
+collection advances the curated file. The governing input is the normalized 3,172-row
+OHLCV prefix from 2014-01-02 through 2026-08-13, whose versioned logical digest is
+`6d8988fc8ec3990d3a5c2a6d5f4bb31d94b3ab46ac49978d21fb3770482ae8db`. The digest serializes an algorithm-version header, the fixed
+`Date/open/high/low/close/volume` schema, each ISO date, and each normalized float64
+value via Python's exact hexadecimal representation. Post-asof appends may not move it;
+any historical revision must. A program-owned B plane and the close-only Yahoo B file
+are prohibited.
+
+Existing committed W1 artifacts are pinned before and after the run:
+
+| path | SHA256 |
+|---|---|
+| `data/stock_identity/partition/partition_manifest_v1.json` | `b1f82f842350e39ac7a73214fd8ebd58b175b52fdf42b3a0fb5a2d03143a5d48` |
+| `data/stock_identity/partition/universe_snapshot_v1.parquet` | `9f22807e7cb6ba570f1963de945b7be77461a1788608754e25db6235f4fe3730` |
+| `data/stock_identity/constants/si_constants_v1.json` | `276d4ad267ab8711942943e306e844bfdff1f17a051bd17a9d460c1e428fc648` |
+| `data/stock_identity/fingerprints/fingerprint_spec.json` | `bbefcd5b72915435acb8714d7892b79e010cb49d394b3222d89575c7b022dee0` |
+| `data/stock_identity/fingerprints/pilot_fingerprint_v0.parquet` | `2bdef8763b0c73a6df3f27e8307246887b7b9dc982f66331ba4d96ff09d72ba3` |
+| `data/stock_identity/state/pilot_state_daily.parquet` | `e2c43f8761431c62506311e61fa387c70433f82bde8143b564fdf87da7ee485e` |
+| `data/stock_identity/episodes/pilot_episode_catalog_v0.parquet` | `3216f6cbbf539584dba31caf30e09b6e76e0297ca34698fcb0235cf6e0d6bc0f` |
+| `data/stock_identity/episodes/pilot/GOLD.json` | `be8a1d053c6fc9f639017abb4cf7f3063e7bde8229d9a1622dedd38a02ff16d1` |
+| `data/stock_identity/census/coverage_census_v0.parquet` | `d64d37c0ab8e0729aa732f2a68a183dd08e0ca3336e9a4a71975772f28c0b4cd` |
+| `data/stock_identity/census/coverage_census_v0.md` | `cf1a818749802bf6143656cfc06efa8ad95d3e87570a011726766c461bf371bb` |
+| `research/stock_identity/dossiers/GOLD.md` (before annotation) | `2675b5be60cc09a37324e697bb62c20679b8f21cfe4d268f5082ce0730861558` |
+| `research/stock_identity/dossiers/GOLD.svg` | `e4e6466f2b4535b97d2fae4eb3eb7e39c1a40600343d955f0e0fe843d7df49db` |
+
+The universe-scale raw matrix remains a store-host checkpoint, never a new committed W1
+artifact. A1 requires an explicit checkpoint directory and pins:
+
+- `raw_all.parquet`: SHA256
+  `ca9c5e5ac78c9a1913a145f8763a2bea84cd80a4a10d6fd2f4d095377f021a08`,
+  2,780 unique computed-name rows, GOLD present, B absent.
+- `univ_ew.parquet`: SHA256
+  `80f5ab3c80aa44da26e17ca58d8a14db930e5d3c03e45031c4c9505c3edba70a`.
+- `strata.parquet`: SHA256
+  `67ae54370dfd2279583f99a16475865796542b786cd983a1e94da27edb33f769`,
+  GOLD present, B absent.
+
+B's percentile fields are a **B-only hypothetical insertion** into the frozen 2,780-row
+raw reference, using pandas average-tie empirical ranks and per-field non-null
+denominators. Only B's row is persisted. No W1 percentile is recomputed or rewritten.
+F9 reuses the frozen `UNIV_EW` series byte-for-byte. That factor and the reference ranks
+include the GOLD dealer as one small universe component; A1 preserves that context for
+comparability and explicitly forbids interpreting it as miner evidence.
+
+### A1.4 Registered outputs and run law
+
+The additive output allowlist is exact:
+
+- `data/stock_identity/amendments/w1a1_gold_wrong_issuer.json`
+- `data/stock_identity/fingerprints/amendments/w1a1_b_fingerprint_v0.parquet`
+- `data/stock_identity/state/amendments/w1a1_b_state_daily.parquet`
+- `data/stock_identity/episodes/amendments/w1a1_b_episode_catalog_v0.parquet`
+- `data/stock_identity/episodes/amendments/B.json`
+- `research/stock_identity/dossiers/B.md`
+- `research/stock_identity/dossiers/B.svg`
+
+The only existing path A1 may change is
+`research/stock_identity/dossiers/GOLD.md`, and only by inserting the registered marker
+envelope after the standing authority paragraph. Removing that envelope must reconstruct
+the pinned original hash. `B.svg` must carry a visible 2014-01-02 curated-tape-floor
+watermark; if the renderer cannot produce the registered SVG within the existing size
+limit, the run fails without publishing rather than silently choosing another format.
+
+The builder validates all gates without writing under `--validate-only`, computes once
+into an operating-system temporary directory, validates schemas and all-false authority,
+rechecks frozen hashes, then publishes only the allowlist and the annotation. The governing
+JSON receipt is written last and records the pushed registration commit, prerequisite merge
+commits, input/output hashes, original/effective rosters, the procedural deviation,
+`measured_rows_mutated: false`, and `authority` all false.
+
+No TrialLedger registration is required: A1 has one deterministic descriptive
+configuration, no parameter sweep, no outcome attachment, no graded question, and no
+choice among results. The pre-registration exposure does not create a look-selection
+right; its observations are quarantined as stated in A1.0.
+
+The B dossier must watermark the curated history floor: 2014-01-02 is not Barrick's issuer
+or listing birth, and this tape cannot cover the pre-2014 portion of the 2011-2015 gold bear.
+
+### A1.5 Post-registration execution log
+
+The first registered builder invocation ran at pushed draft-PR head
+`f25f53dd02c65f01d2d007edafede2acd26fb582` after every preflight passed. It computed
+only inside the operating-system staging directory, then stopped before publication
+with `B dossier Identity boundary is ambiguous`: the implementation matched the prefix
+`## Identity`, which also matched the later `## Identity-episode catalog` heading. No B
+metric or count was printed, no registered output existed afterward, `git status --short`
+was clean, and the pinned GOLD markdown/SVG hashes remained exact. The retry changes only
+that syntactic insertion boundary to the complete `## Identity\n` heading. It changes no
+source, cohort, constant, rank method, output path, acceptance rule, or interpretation;
+this log is committed and pushed before the retry.
+
+That retry ran at pushed draft-PR head
+`2bcf6c988ce1e97625233e973254431b25ed5804` and stopped at the second, independent
+insertion guard: `GOLD.md standing authority/Identity boundary is ambiguous`. The GOLD
+annotator used the same incomplete heading prefix and therefore also saw
+`## Identity-episode catalog`. Again no registered output existed afterward, the
+worktree was clean, both pinned GOLD hashes were exact, and no B metric or count was
+printed. The next retry applies the already-registered complete-heading rule to both
+inserters and adds a direct reversible GOLD-annotation regression before execution;
+no analytical or publication choice changes.

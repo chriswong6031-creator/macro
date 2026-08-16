@@ -728,8 +728,23 @@ def test_no_radar_module_imports_a_protected_module(path):
         assert banned not in code, f"{path.name} imports protected module {banned!r}"
 
 
-def test_branch_diff_touches_no_protected_path():
-    """``git diff --name-only <base>...HEAD`` must not name a protected path."""
+# The two diff guards below are RADAR-LANE boundary contracts, and they must
+# SELF-SCOPE to diffs that actually touch Radar code. They run inside the shared
+# always-on signal-contract job, where CI checks out the PR *merge ref* — so an
+# unscoped ``git diff base...HEAD`` names EVERY pr's own files. Unscoped, these
+# asserts red ci-pack-4 for every non-Radar PR in the fleet (measured 2026-08-14:
+# a research-only PR's files printed as "strays"; main's own baseline passes only
+# because its diff is empty). A per-lane scope guard wired into an always-on job
+# is a fleet control plane — it may only bind the lane it governs.
+# Triggers are the RUNTIME surfaces only. Deliberately NOT ``tests/test_entry_
+# radar_``: the guards contain runtime scope, which a tests-only diff cannot
+# stray from — and a fleet heal of these very guards must not re-trigger them.
+_RADAR_CODE_PREFIXES = ("engine/entry_radar/", "scripts/entry_radar_", "scripts/reconcile_entry_radar.py",
+                        "config/entry_radar.yml")
+
+
+def _branch_diff_vs_base() -> list[str] | None:
+    """Changed paths vs origin/main (merge-base three-dot), or None if no base."""
     base = None
     for candidate in ("origin/main", "main"):
         probe = subprocess.run(["git", "rev-parse", "--verify", candidate],
@@ -738,46 +753,85 @@ def test_branch_diff_touches_no_protected_path():
             base = candidate
             break
     if base is None:
-        pytest.skip("no origin/main or main ref in this checkout — the import guard "
-                    "above still covers non-interference")
+        return None
     got = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
                          cwd=ROOT, capture_output=True, text=True, check=False)
+    if got.returncode != 0 and "no merge base" in (got.stderr or ""):
+        # A depth-limited CI checkout can hold the ref while lacking the history
+        # that joins it to HEAD (`fatal: origin/main...HEAD: no merge base`) —
+        # the same environmental impossibility as the missing-ref case, with the
+        # same answer: the git-independent import guard still carries
+        # non-interference. Receipt: run 31838336391 pack-4, hosted runner.
+        return None
     assert got.returncode == 0, got.stderr
-    changed = [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
+    return [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
+
+
+def test_branch_diff_touches_no_protected_path():
+    """``git diff --name-only <base>...HEAD`` must not name a protected path."""
+    changed = _branch_diff_vs_base()
+    if changed is None:
+        pytest.skip("no origin/main or main ref in this checkout — the import guard "
+                    "above still covers non-interference")
+    if not any(p.startswith(_RADAR_CODE_PREFIXES) for p in changed):
+        pytest.skip("diff touches no Radar code — the boundary guard binds Radar "
+                    "lanes only; the import guard above still covers non-interference")
     offenders = [p for p in changed if any(p.startswith(x) for x in PROTECTED_PATHS)]
     assert not offenders, f"Radar PR touched protected Prophet paths: {offenders}"
 
 
 def test_radar_owns_only_its_declared_paths():
-    """§16: new paths only."""
-    base = None
-    for candidate in ("origin/main", "main"):
-        probe = subprocess.run(["git", "rev-parse", "--verify", candidate],
-                               cwd=ROOT, capture_output=True, text=True, check=False)
-        if probe.returncode == 0:
-            base = candidate
-            break
-    if base is None:
-        pytest.skip("no base ref in this checkout")
-    got = subprocess.run(["git", "diff", "--name-only", f"{base}...HEAD"],
-                         cwd=ROOT, capture_output=True, text=True, check=False)
-    changed = [ln.strip() for ln in got.stdout.splitlines() if ln.strip()]
-    allowed_prefixes = ("engine/entry_radar/", "scripts/entry_radar_",
-                        "tests/test_entry_radar_", "config/entry_radar.yml",
-                        "research/LIVE_ENTRY_RADAR_", "research/live_entry_radar/",
-                        "agentos/",
-                        # CI-hygiene touches MANDATED by repo checkers, not scope creep:
-                        # audit_unrun_tests.py errors on any suite named by no run: step
-                        # (wired into signal-contract), check_synapse_reads.py warns on
-                        # undeclared artifact readers (producers declared), and
-                        # docs/SIGNAL_BUS.md is GENERATED from synapse.yml (drift-checked)
-                        # so the consumer declarations require its regeneration in the
-                        # same PR. None grant behavior; the Prophet-path guard above
-                        # stays absolute.
-                        ".github/ci/legacy-jobs.yml", "config/synapse.yml",
-                        "docs/SIGNAL_BUS.md")
-    strays = [p for p in changed if not p.startswith(allowed_prefixes)]
-    assert not strays, f"PR-1 touched paths outside the Radar-owned set: {strays}"
+    """§16 ("Radar owns — NEW PATHS ONLY"), as a property of the TREE.
+
+    This guard used to read ``git diff --name-only <base>...HEAD`` and fail on any
+    changed path outside a Radar allowlist.  That form polices the scope of ONE pull
+    request — #5625, which has merged — so on main it asks every OTHER pull request
+    to be a Radar pull request, and fails all of them.  Receipt: run 31825207851, a
+    qledger ship branch, red with "PR-1 touched paths outside the Radar-owned set:
+    ['engine/demand_ledger.py', 'engine/qledger.py', ...]" — files that have nothing
+    to do with the Radar and that no Radar rule forbids.
+
+    It was also unfixable as a diff check.  A repo-wide CI heal is REQUIRED to pin
+    scripts/entry_radar_universe.py (tests/test_check_script_import_pinning.py) while
+    also carrying unrelated heals; under the allowlist those two mandates contradict,
+    so no arming condition on "touched a Radar path" can be satisfied by both.
+
+    NON-INTERFERENCE IS NOT WEAKENED BY THIS, because it was never this test's job.
+    The contract's boundary is carried by the two guards directly above, both intact:
+    ``test_no_radar_module_imports_a_protected_module`` (git-independent, parametrized
+    over every Radar source, and the one §16 calls mechanical) and
+    ``test_branch_diff_touches_no_protected_path`` (a diff guard that names PROTECTED
+    paths only, so it reds a PR that touches Prophet gate code and nothing else).
+
+    What remains enforceable — and is enforced here — is §16's own sentence: the
+    Radar's footprint LIVES at the declared paths.  A Radar module dropped into
+    engine/ root, or a radar script outside scripts/entry_radar_*.py, is sprawl this
+    catches in any checkout, with no base ref and no PR context.
+    """
+    owned_exact = {"config/entry_radar.yml", "templates/entry_radar.html.j2",
+                   "site/entry_radar.html"}
+    owned_prefixes = ("engine/entry_radar/", "scripts/entry_radar_",
+                      # the contract (§7.3) names the reconciler VERBATIM as the
+                      # sole durable writer — an owned path by the frozen text:
+                      "scripts/reconcile_entry_radar.py",
+                      "tests/test_entry_radar_", "tests/fixtures/entry_radar/",
+                      "data/entry_radar/",
+                      "research/LIVE_ENTRY_RADAR_", "research/live_entry_radar/",
+                      "mockups/refs/entry_radar/", "agentos/")
+    listed = subprocess.run(["git", "ls-files"], cwd=ROOT,
+                            capture_output=True, text=True, check=False)
+    assert listed.returncode == 0, listed.stderr
+    tracked = [ln.strip() for ln in listed.stdout.splitlines() if ln.strip()]
+    radar_named = [p for p in tracked
+                   if "entry_radar" in p or "LIVE_ENTRY_RADAR" in p]
+    # Vacuity guard, same reason as test_radar_sources_exist: an empty census would
+    # make this pass for the wrong reason forever.
+    assert len(radar_named) >= 10, radar_named
+    strays = [p for p in radar_named
+              if p not in owned_exact and not p.startswith(owned_prefixes)]
+    assert not strays, (
+        "Radar files exist outside the §16 owned path set (new paths only): "
+        f"{strays}")
 
 
 # ---------------------------------------------------------------------------

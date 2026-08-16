@@ -386,6 +386,11 @@ def top_by_dollar_volume(
     for ticker, rec in (pack.get("tickers") or {}).items():
         if not isinstance(rec, dict):
             continue
+        raw_ticker = str(ticker).strip()
+        if raw_ticker != raw_ticker.upper():
+            # The marketing/quote plane is an uppercase house universe. A mixed-case
+            # Massive identity must be omitted, never relabelled as another security.
+            continue
         rank = rec.get("adv_rank")
         adv = _finite(rec.get("adv20_dollars"))
         if rank is None or adv is None:
@@ -395,8 +400,8 @@ def top_by_dollar_volume(
         except (TypeError, ValueError):
             continue
         items.append({
-            "ticker": str(ticker).upper(),
-            "_sort": (rank_i, str(ticker).upper()),
+            "ticker": raw_ticker,
+            "_sort": (rank_i, raw_ticker),
             "why": f"dollar-volume rank #{rank_i} ({_human_dollars(adv)} a day)",
             "asof": str(rec.get("last_date") or trade_date)[:10],
             "source": "hot_tape_pack",

@@ -44,12 +44,14 @@ Never imported anywhere: `engine.signal_gate` (authority, not event math), `engi
 - `stoch2w_cross`: 2W-grid StochRSI (canon 14/3/3) %K crosses up through %D with both <20 at the prior completed 2W bar (the PSS incumbent gauge shape).
 All three: canon oscillator core only (one RSI family — indicator-core law), completed bars, close basis; spec-hashed in the registry.
 
-## §6. Pilot addendum (ruling 3 applied)
+## §6. Pilot addendum (ruling 3) — **superseded by W1-A1**
 
-- **B (Barrick Mining, NYSE)** collected into the program-owned plane `data/stock_identity/ohlcv/B.parquet` via `collectors._stock_ohlc.fetch_ohlc` (`auto_adjust=True`, full listing history; provenance manifest extended). Identity note: the tape is the continuous Barrick NYSE listing through its renames (ABX→2019-01-02→GOLD→2025-05-09→B — one instrument, key migrations; #5613 receipts). B joins the **pilot-class set** (design-touched). B never entered the W1 universe snapshot, so it is in neither the blind arm nor SI-SEALED-CAL-P1 **by construction** — sealed hashes untouched, verified by test.
-- **Miner probe roster (for future §10 emergence work): NEM, AEM, PAAS, WPM, AG, B.** GOLD is struck from the miner role and re-labeled **"reused-ticker hygiene case study (bullion dealer instrument)"** — it remains a pilot member (the frozen W1 exclusion lists reference it) and its dossier is REGENERATED with the true Gold.com/A-Mark identity, the ruling citation, and a dated correction note. The W1 registration file is not edited (its §4 text is hash-pinned by `partition_procedure_sha256`); this addendum is the governing correction record.
-- **B's W1-layer artifacts** (fingerprint snapshot, state series, episode catalog, dossier) are generated with the FROZEN W1 constants + fingerprint spec; B's cross-sectional percentiles rank against the frozen W1 asof universe distribution (documented as such — descriptive display, not a re-draw). The W1 pilot artifacts for the other 21 names are not regenerated.
-- Untouched here (sibling lane): `config.yml` acks (#5613), `gold_miners` basket membership, any `data/baskets/**` write.
+W2 originally collected Barrick `B` onto `data/stock_identity/ohlcv/` and regenerated sealed `GOLD.md`/`GOLD.svg`. That construction is **withdrawn**. PR **#5660** (merged 2026-08-14T21:05Z) is the registered overlay:
+
+- **B** lives on curated `baskets_ohlcv_v1` (`data/baskets/ohlcv/B.parquet`, tape floor 2014-01-02; PR #5632). W1-A1 published additive fingerprint/state/episode/dossier artifacts under `data/stock_identity/{fingerprints,state,episodes}/amendments/` and `research/stock_identity/dossiers/B.md` + `B.svg`. B is permanently design-touched and nonconfirmatory.
+- **GOLD** keeps its sealed measured body and `GOLD.svg` byte-identical. The only lawful annotation is the reversible W1-A1 disclosure envelope (`SI-W1-A1-GOLD-WRONG-ISSUER`).
+- **Miner probe roster (effective):** NEM, AEM, PAAS, WPM, AG, B via `engine.stock_identity.pilot.current_miner_probe()`. GOLD remains in the frozen W1 pilot as the dealer instrument; its miner-role interpretation is withdrawn.
+- W2 expert-event rows for symbol `B` remain in `pilot_events_v0.parquet` as **descriptive inventory only** — they are not confirmatory, not a second identity plane, and must not be rebuilt by re-collecting `data/stock_identity/ohlcv/B.parquet`.
 
 ## §7. Leak fixtures (green before any family's events ship)
 
@@ -58,8 +60,8 @@ Per family: (i) **truncation invariance** — events computed on `df.iloc[:k]` a
 ## §8. Deliverables + tests
 
 - `engine/stock_identity/replay/` — `__init__.py`, `grid.py` (2D/3D/weekly bucketing exactly matching each producer's own convention incl. the Macro absolute-anchor `_tf_grid` vs Terminal `resample("2B")` pair), one module per family group (`grey_dot.py`, `confirmed_buy.py`, `tiers.py`, `washout_turn.py`, `reclaim_waiver.py`, `bottom_watch.py`, `starter.py`, `sea.py`, `naive.py`), `events.py` (schema/edges/ids), `attribution.py`.
-- `scripts/stock_identity_replay_pilot.py` — CLI (stage-resumable): registry → per-family extraction over the 22 pilot names → leak fixtures → events + edges + attribution + inventory counts; `scripts/stock_identity_pilot_addendum.py` — B collection + B W1-layer artifacts + GOLD dossier regeneration.
-- Artifacts: `data/stock_identity/expert_events/{family_registry.json, pilot_events_v0.parquet, event_edges_v0.parquet, attribution_v0.parquet, inventory_v0.md}` (+ B rows in the W1-layer stores as clearly-versioned additions: `fingerprints/addendum_b_fingerprint.parquet`, `state/addendum_b_state.parquet`, `episodes/addendum_b_catalog.parquet`), dossiers `B.md/.svg` + regenerated `GOLD.md/.svg`.
+- `scripts/stock_identity_replay_pilot.py` — CLI (stage-resumable): registry → per-family extraction over the W1 pilot names → leak fixtures → events + edges + attribution + inventory counts. Identity overlay for B/GOLD is W1-A1 (`scripts/stock_identity_build_w1a1.py` + `data/stock_identity/amendments/w1a1_gold_wrong_issuer.json`), not a W2 collector.
+- Artifacts: `data/stock_identity/expert_events/{family_registry.json, pilot_events_v0.parquet, event_edges_v0.parquet, attribution_v0.parquet, inventory_v0.md}`. B/GOLD identity artifacts are the W1-A1 amendment set (not `addendum_b_*`, not a regenerated GOLD.svg).
 - Tests `tests/test_stock_identity_replay*.py`: firewall amendment (identity layer total, replay allowlist exact), leak fixtures on synthetic frames, event-id determinism, Class-P zero-rows, no-ruler-metric guard (banned columns: lead_lag, price_dist, mae, capture, recall, precision, composite, fit, rank, best), attribution-window correctness on synthetic episodes, B-not-in-sealed-lists, schema-vocabulary conformance. Wired into the same trial-ledger guards CI job (minimal-deps law: no matplotlib in test import paths).
 - STARTER resolution + parity counts land in `inventory_v0.md` + this doc's §9 fill.
 
@@ -155,14 +157,19 @@ The confirmed-buy gap is a **known-ts law consequence, measured**: a §7 marker 
 
 `site/factordata/basket_washout_state.json` is a **single nightly vintage**, `as_of = 2026-08-13`, and `reclaim_waiver_for` refuses any marker outside `[as_of, as_of + 5 sessions]` in both directions — a state published after a label was knowable may never relieve it. 7 of 22 pilot names qualify at notch 20 in that vintage (AEM, AG, GOLD, HL, NEM, PAAS, UEC); **0 markers of any name became knowable inside the one-vintage window, so the family ships 0 rows** with the reason attached per name. A zero here is a **structural absence** — the state history was never kept — never evidence that the waiver does nothing. Manufacturing pre-`as_of` rows would require inventing peer-group state, which §3 forbids by name.
 
-### 9.9 Pilot addendum receipts (ruling 3)
+### 9.9 Pilot addendum receipts (ruling 3) — **withdrawn 2026-08-16**
 
-- **`B` (Barrick Mining, NYSE) collected**: `data/stock_identity/ohlcv/B.parquet`, **10,454 rows, 1985-02-13 → 2026-08-13**, via `collectors._stock_ohlc.fetch_ohlc` (`auto_adjust=True`, `period='max'`). The 1985 first print is itself the receipt for the lineage claim: this is the continuous Barrick NYSE listing, not a 2025 fragment. `ohlcv/manifest.json` **extended** (BABA and WPM untouched) with B's provenance plus the `ABX → GOLD (2019-01-02) → B (2025-05-09)` lineage note and the pointer that both retired symbols are today occupied by DIFFERENT instruments.
-- **B's W1-layer artifacts as separate addendum files**, built with the frozen constants and fingerprint spec: `fingerprints/addendum_b_fingerprint.parquet`, `state/addendum_b_state.parquet` (10,454 rows), `episodes/addendum_b_catalog.parquet` (**193 episodes**), receipts at `addendum/pilot_addendum_v1.json`. Percentiles rank against the **frozen W1 asof cross-section** (2,780 names); B is inserted for its own ranking only and no W1 percentile is recomputed. The W1 pilot stores for the other 21 names are **not** rewritten — test-enforced.
-- **B is in no sealed list by construction** (it never entered the W1 universe snapshot): blind arm, SI-SEALED-CAL-P1, the universe snapshot and the frozen pilot list are all clean, and all four W1 hashes (`blind_sha256`, `calibration_sha256`, `fingerprint_spec_hash`, `partition_procedure_sha256`) plus `universe_sha256` **recompute byte-identical through W1's own hashing functions** after the whole W2 build.
-- **`GOLD` dossier regenerated** (`GOLD.md` + `GOLD.svg`) with the true identity: Gold.com, Inc. (fka A-Mark; `AMRK → GOLD` 2025-12-02), tape = A-Mark's spinoff listing 2014-03-17→, role **"reused-ticker hygiene case study (bullion dealer instrument)"**, a dated 2026-08-14 correction note citing the ruling and #5613, and a rewritten hygiene block. The identity header calls it a miner nowhere; the word survives only inside the correction that withdraws that reading and points at `B` — test-enforced. W1's registration text is untouched (its §4 is hash-pinned), so this addendum is the governing correction record.
-- **`B` dossier** written as `B.md` + `B.png` — the chart exceeded the module's 300 KB SVG commit limit and fell back to PNG, which ruling 6 accepts (mixed SVG/PNG dossiers, no conversion work).
-- **Miner probe roster** recorded as NEM, AEM, PAAS, WPM, AG, **B**; GOLD is struck from it.
+The 2026-08-14 W2 build collected Barrick onto `data/stock_identity/ohlcv/B.parquet` (10,454 rows from 1985) and regenerated sealed `GOLD.md`/`GOLD.svg`. That construction **preceded** the registered overlay and is **not** the identity record.
+
+**Heal (this PR, 2026-08-16):** those files are dropped. Identity overlay is W1-A1 (#5660):
+
+- Curated B tape: `data/baskets/ohlcv/B.parquet` (2014-01-02 floor)
+- Additive B fingerprint/state/episodes/dossier under `data/stock_identity/**/amendments/` and `research/stock_identity/dossiers/B.md` + `B.svg`
+- GOLD: reversible disclosure envelope only; `GOLD.svg` sealed hash `e4e6466f…` unchanged
+- Governing receipt: `data/stock_identity/amendments/w1a1_gold_wrong_issuer.json`
+- W2 event rows for symbol `B` stay in the expert-event store as descriptive inventory, never confirmatory, never a reason to re-collect a program-owned B parquet
+
+B remains in no sealed W1 list. Miner probe roster is NEM/AEM/PAAS/WPM/AG/B via `current_miner_probe()`.
 
 ### 9.10 Standing obligations carried forward (not built here)
 

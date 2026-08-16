@@ -25,6 +25,7 @@ import pytest
 
 from engine.marketing import hot_tape as HT
 from engine.marketing import hot_tape_pack as HP
+from lib.massive_ticker import artifact_relative_path
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +76,10 @@ def _write(tmp_path, ticker: str, closes, volume=5_000_000, dates=None,
     df = pd.DataFrame(cols, index=idx)
     store = tmp_path / store_rel
     store.mkdir(parents=True, exist_ok=True)
-    df.to_parquet(store / f"{ticker}.parquet")
+    path = (store / artifact_relative_path(ticker)
+            if store_rel == HP.STORE_REL else store / f"{ticker}.parquet")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(path)
 
 
 def _base_series(n: int = N_ROWS, start: float = 100.0) -> list[float]:
@@ -443,6 +447,21 @@ class TestFreshestSourceWins:
         found = HP.store_universe(tmp_path)
         assert set(found) == {"AAA", "BBB"}
         assert [p.parent.name for p in found["AAA"]] == ["stocks", "massive_stock_day"]
+
+    def test_case_distinct_massive_artifacts_stay_distinct_in_the_durable_pack(self, tmp_path):
+        _write(tmp_path, "TPC", [94.67] * 60)
+        _write(tmp_path, "TpC", [16.98] * 60)
+        _write(tmp_path, "BCPC", [177.14] * 60)
+        _write(tmp_path, "BCpC", [23.9999] * 60)
+
+        found = HP.store_universe(tmp_path)
+        assert set(found) == {"TPC", "TpC", "BCPC", "BCpC"}
+        pack = _build(tmp_path)
+        assert set(pack["tickers"]) == {"TPC", "TpC", "BCPC", "BCpC"}
+        assert pack["tickers"]["TPC"]["last_close"] == pytest.approx(94.67)
+        assert pack["tickers"]["TpC"]["last_close"] == pytest.approx(16.98)
+        assert pack["tickers"]["BCPC"]["last_close"] == pytest.approx(177.14)
+        assert pack["tickers"]["BCpC"]["last_close"] == pytest.approx(23.9999)
 
     def test_polygon_test_symbols_never_enter_the_universe(self, tmp_path):
         """ZAZZT held adv_rank 1 in the shipped pack on a $615B fake ADV."""

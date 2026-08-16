@@ -374,9 +374,14 @@ ARTIFACT_MANIFEST = [
      ],
      "schema_item_fields": [
          "ab_tier", "adv_yi", "align_tier", "alpha", "alpha_entry",
-         "board_definition", "cap_bucket", "coiled", "conviction", "data_through",
+         # V4: board_rank is the live display/admission ORDER (interest, then v3
+         # score); score_rank below stays the v3 SCORE order. intel* carry the
+         # board-independent interest receipt and its basis.
+         "board_definition", "board_rank", "cap_bucket", "coiled", "conviction",
+         "data_through",
          "days_since_signal", "dir", "display_rank", "entry_signal", "eq_dir",
-         "extension", "hold", "label", "label_zh", "lane", "lane_reasons",
+         "extension", "hold", "intel", "intel_interest_basis",
+         "intel_interest_score", "label", "label_zh", "lane", "lane_reasons",
          "macd_d2", "macd_d3", "macd_hist_d", "mcap", "microstructure",
          "muted_entry", "name", "narrative", "off_high", "price", "prophet",
          "quality", "rev_percentile", "rev_z",
@@ -547,6 +552,45 @@ ARTIFACT_MANIFEST = [
      "as_of_field": None,
      "consumers": ["bot:hk_book"],
      "note": "HK regime timeline"},
+    # 1.0.0 (2026-08-13, prophet §J.9(c) PR-0(c)): first registration of the Prophet
+    # plan book. Like hk_standouts above, the artifact has shipped for months with NO
+    # drift guard at all — registering it now IS the guard. The ruling
+    # (research/PROPHET_RULING_J9C_J10_LIFECYCLE_CELLS.md §8) directs the additive
+    # lifecycle keys through "the optional-fields path with a schema version bump and
+    # manifest regen"; there was no prior entry to bump, so this is a 1.0.0 first
+    # registration and the three `lifecycle_*` keys land in optional_fields for the
+    # usual transition window — the contract lands one render BEFORE the artifact
+    # carrying them, and a required field the artifact has not been rebuilt with yet
+    # reads as `removed` drift (the #5395 J-15 lesson exactly). They GRADUATE to
+    # schema_fields on a minor bump once the first nightly bake carrying them is
+    # committed. `origination_disclosure` is conditional BY DESIGN and stays optional
+    # permanently: build_prophet.py sets it after the index literal precisely so the
+    # key is absent, not present-and-null, on a night nothing was reconstructed.
+    #
+    # as_of_field is `source_asof`, NOT `asof`: build_prophet.py documents `asof` as a
+    # compatibility run clock that a successful rerun can refresh while its INPUT
+    # freezes, so a freshness read against it can score green on stale data.
+    {"artifact": "site/prophet/index.json",
+     "kind": "plan_book",
+     "schema_version": "1.0.0",
+     "schema_fields": [
+         "active_count", "active_count_by_age", "asof", "authority_tier", "cadence",
+         "gate_go", "intake", "ledger_corrections", "ledger_quarantine", "note",
+         "open_count", "plan_count", "plan_integrity", "plans", "plans_sort_key",
+         "record", "recorded_at", "schema", "selection_era", "source_asof",
+         "source_basis", "source_board_asof", "source_delayed", "source_mixed_vintage",
+         "source_unknown",
+     ],
+     "optional_fields": [
+         "lifecycle_counts", "lifecycle_grand_total", "lifecycle_live_total",
+         "origination_disclosure",
+     ],
+     "expected_max_age_td": 2,
+     "as_of_field": "source_asof",
+     "consumers": ["terminal:oracle-tab"],
+     "note": "Prophet plan book — every active plan with its management state inline. "
+             "authority_tier=display; the lifecycle_* keys are a derived display-tier "
+             "projection over phase/closed and carry no engine judgment"},
 ]
 
 

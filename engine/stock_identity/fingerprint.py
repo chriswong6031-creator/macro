@@ -844,6 +844,37 @@ def cross_sectional_percentiles(
     return pd.DataFrame(out, index=values.index)
 
 
+def candidate_percentiles_against_reference(
+    reference: pd.DataFrame,
+    candidate: pd.Series,
+    names: Sequence[str] | None = None,
+) -> pd.Series:
+    """Rank one design-touched candidate without reranking the frozen reference.
+
+    The result is exactly the candidate row that pandas ``rank(pct=True,
+    method="average")`` would produce after a hypothetical insertion. Reference
+    rows are only counted; their percentiles are never recomputed. Null candidate
+    values stay null and every field uses its own non-null denominator.
+    """
+    cols = list(names) if names is not None else [
+        c for c in reference.columns if c in set(METRIC_NAMES) | set(DIAGNOSTIC_NUMERIC)
+    ]
+    out: dict[str, float] = {}
+    for column in cols:
+        ref = pd.to_numeric(reference[column], errors="coerce").dropna()
+        value = pd.to_numeric(pd.Series([candidate.get(column)]), errors="coerce").iloc[0]
+        if pd.isna(value):
+            out[column] = np.nan
+            continue
+        less = int((ref < value).sum())
+        equal = int((ref == value).sum())
+        # The candidate joins ``equal`` reference ties. Their joint positions run
+        # from less+1 through less+equal+1, so this is the average tied rank.
+        average_rank = less + (equal + 2.0) / 2.0
+        out[column] = 100.0 * average_rank / float(len(ref) + 1)
+    return pd.Series(out, name=candidate.name, dtype=float)
+
+
 def _quartile(pct: float | None) -> int | None:
     if pct is None or not np.isfinite(pct):
         return None

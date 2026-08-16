@@ -12,7 +12,6 @@
   "fetcher": "collectors._stock_ohlc.fetch_ohlc",
   "gate": "registration \u00a79: BABA and WPM are absent from both curated TR-adjusted planes; \u00a713's collection clause fires for exactly these two names.",
   "gate_check": {
-    "B": "absent_from_both_curated_planes",
     "BABA": "absent_from_both_curated_planes",
     "WPM": "absent_from_both_curated_planes"
   },
@@ -20,22 +19,6 @@
   "schema": "stock_identity.ohlcv_manifest.v1",
   "source": "yfinance",
   "symbols": {
-    "B": {
-      "collected_by": "W2 pilot addendum (registration \u00a76, ruling 3)",
-      "columns": [
-        "open",
-        "high",
-        "low",
-        "close",
-        "volume"
-      ],
-      "fetched_at": "2026-08-14T12:45:55.698253+00:00",
-      "first_date": "1985-02-13",
-      "last_date": "2026-08-13",
-      "lineage_note": "ABX -> GOLD (2019-01-02 rename) -> B (2025-05-09 rename): ONE continuous NYSE listing for Barrick through two symbol changes, not a splice of three instruments. The tape collected here is that listing under its current symbol. Barrick's retired symbols are separately occupied today \u2014 data/baskets/ohlcv/ABX.parquet (2020-09 onward) and data/baskets/ohlcv/GOLD.parquet (2014-03-17 onward) are DIFFERENT instruments on reused symbols. operator/CEO W1-return ruling 3, 2026-08-14 (#5613 ticker-identity forensics).",
-      "path": "data/stock_identity/ohlcv/B.parquet",
-      "rows": 10454
-    },
     "BABA": {
       "columns": [
         "open",
@@ -62,12 +45,5 @@
       "path": "data/stock_identity/ohlcv/WPM.parquet",
       "rows": 5310
     }
-  },
-  "w2_addendum": {
-    "gate": "registration \u00a76 (ruling 3): Barrick Mining trades as NYSE B and is absent from both curated TR-adjusted planes; the collection clause fires for it.",
-    "lineage_note": "ABX -> GOLD (2019-01-02 rename) -> B (2025-05-09 rename): ONE continuous NYSE listing for Barrick through two symbol changes, not a splice of three instruments. The tape collected here is that listing under its current symbol. Barrick's retired symbols are separately occupied today \u2014 data/baskets/ohlcv/ABX.parquet (2020-09 onward) and data/baskets/ohlcv/GOLD.parquet (2014-03-17 onward) are DIFFERENT instruments on reused symbols. operator/CEO W1-return ruling 3, 2026-08-14 (#5613 ticker-identity forensics).",
-    "ruling": "operator/CEO W1-return ruling 3, 2026-08-14 (#5613 ticker-identity forensics)",
-    "sealed_objects": "B never entered the W1 universe snapshot, so it is in neither the blind arm nor SI-SEALED-CAL-P1 by construction; no sealed hash is touched.",
-    "symbol": "B"
   }
 }

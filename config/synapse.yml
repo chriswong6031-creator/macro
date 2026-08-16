@@ -36,7 +36,11 @@ meta:
                       # foresight, ops rails, cortex, governance)
 
 # ============================================================
-# DATA-PLANE ARTIFACTS (sorted by descending consumer_count)
+# DATA-PLANE ARTIFACTS
+# Order is the frozen 2026-07-04 W0-census order (roughly descending consumer
+# count at that time); later entries are appended in place, so position is NOT
+# a live ranking. Consumer counts are never restated in comments — an entry's
+# `consumers:` list IS its count (pinned by scripts/check_synapse_registry.py).
 # ============================================================
 artifacts:
 
@@ -258,7 +262,6 @@ artifacts:
       will be the crypto hub H6 tile and landing product card; later brain lenses
       must quote this artifact rather than re-derive the BTC read.
 
-  # --- 27 consumers ---
   regime-latest:
     path: data/regime/latest.json
     format: json
@@ -321,9 +324,8 @@ artifacts:
       - terminal:pull_macro_intel
       - mastermind:curve
     qual_ladder_ref: null
-    notes: "Highest-consumer artifact in the bus (28 Python modules + 3 external). census confirmed 27 unique module files at W7a; cortex.py added as declared consumer at W7b (reads data/regime/latest.json via read_artifact tool). NW-CI W2: context_api.py reads latest.json for current-date regime (pit_live basis). W3-E: engine/crossasset_shadow.py reads cross_asset block for pressure_pctile; scripts/build_crossasset.py reads confirm block. Producer: engine/run.py:705 json.dump."
+    notes: "Highest-consumer artifact in the bus — the `consumers:` list above is the live count; no restated total is kept here. Census confirmed 27 unique module files at W7a (a dated census figure, not a current one); cortex.py added as declared consumer at W7b (reads data/regime/latest.json via read_artifact tool). NW-CI W2: context_api.py reads latest.json for current-date regime (pit_live basis). W3-E: engine/crossasset_shadow.py reads cross_asset block for pressure_pctile; scripts/build_crossasset.py reads confirm block. Producer: engine/run.py:705 json.dump."
 
-  # --- 16 consumers ---
   baskets-membership:
     path: data/baskets/membership.json
     format: json
@@ -363,7 +365,6 @@ artifacts:
     external_consumers: []
     notes: "known_extra_writers: promote_candidate.py makes hand edits post-seed; both are additive/idempotent."
 
-  # --- 16 consumers ---
   regime-history:
     path: data/regime/regime_history.parquet
     format: parquet
@@ -406,7 +407,6 @@ artifacts:
       - mastermind:analogues
     notes: "extra_writers are per-region paths (canada/china/hk), NOT this US path. Producer line: engine/run.py:83 store_df.to_parquet."
 
-  # --- 15 consumers ---
   breadth-breadth:
     path: data/breadth/breadth.parquet
     format: parquet
@@ -445,7 +445,6 @@ artifacts:
       - mastermind:analogues
     notes: "Producer: collectors/breadth.py BreadthAdapter (group='breadth') via collectors/base.py:run_adapter -> store.upsert -> data/breadth/breadth.parquet."
 
-  # --- 15 consumers ---
   altdata-by-ticker:
     path: data/altdata/by_ticker.json
     format: json
@@ -481,7 +480,6 @@ artifacts:
     qual_ladder_ref: altdata.signal_score
     notes: "engine/altdata_signals.py:72 writes both data/ and site/ copies. schema=altdata.by_ticker.v2."
 
-  # --- 12 consumers ---
   qledger-claims:
     path: data/qledger/claims.jsonl
     format: jsonl
@@ -522,7 +520,6 @@ artifacts:
     qual_ladder_ref: null
     notes: "QI-owned ledger. Producer: engine/qledger.py:326 append-only per-claim row. Backfill writers are additive only (never overwrite)."
 
-  # --- 11 consumers ---
   breadth-sp1500-pit:
     path: data/breadth/sp1500_pit_membership.parquet
     format: parquet
@@ -553,7 +550,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/midsmall_pit.py:118 to_parquet. Run once offline to reconstruct S&P 400+600 PIT membership. Census listed collectors/sp1500_pit_collector.py which does not exist on origin/main; midsmall_pit.py is the verified writer."
 
-  # --- 10 consumers ---
   qbus-items:
     path: data/qbus/items.parquet
     format: parquet
@@ -583,7 +579,6 @@ artifacts:
     external_consumers: []
     notes: "QI-owned rail, registered not modified (D2). Producer: engine/qbus.py:83 append to data/qbus/items.parquet, keep-FIRST on item_id."
 
-  # --- 8 consumers ---
   radar-theses:
     path: data/radar/theses.jsonl
     format: jsonl
@@ -612,7 +607,6 @@ artifacts:
     qual_ladder_ref: null
     notes: "Producer: engine/radar.py:284 append, idempotent by id."
 
-  # --- 8 consumers ---
   us-board-ledger-retro-grades:
     path: data/us_board_ledger/retro_grades.parquet
     format: parquet
@@ -703,7 +697,6 @@ artifacts:
     external_consumers: []
     notes: "SA-W5 v2 track summary. NEVER included in us_board_track.json aggregates. board_version=v2 field distinguishes from main track. Lanes: v2_entry_open, v2_setting_up. Consumer list is empty by design: flip-gate accrual artifact — unconsumed until the v2 flip decision; producer is scripts/grade_us_board.py."
 
-  # --- 6 consumers ---
   signal-archive-mtf:
     path: data/signal_archive/mtf_signals_latest.json
     format: json
@@ -731,7 +724,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_signal_quality.py:97 write_text. Brain-leaf for the signal engine."
 
-  # --- 6 consumers ---
   vector-calibration:
     path: data/vector/calibration.json
     format: json
@@ -760,7 +752,6 @@ artifacts:
     qual_ladder_ref: null
     notes: "Scored tier: calibrate_vector.py runs after an OOS validation pass (backtest evidence in calibration.json itself). Producer: scripts/calibrate_vector.py:942 write_text after OOS pass."
 
-  # --- 6 consumers ---
   market-state-latest:
     path: data/market_state/latest.json
     format: json
@@ -789,7 +780,6 @@ artifacts:
     external_consumers: []
     notes: "weights=hand: composite uses docstring-declared weights 0.24/0.18/0.16/0.16/0.14/0.12 for its six sub-components. W3 measurement plan will replace hand weights with measured. Producer: engine/market_state.py:795 persist() called from scripts/build_site.py:1700."
 
-  # --- 6 consumers ---
   cycle-ontology-falsifiers:
     path: data/cycle_ontology/falsifiers.json
     format: json
@@ -815,7 +805,6 @@ artifacts:
     external_consumers: []
     notes: "Written via cycle DSL compile step. on-demand cadence: recompile when cycle ontology changes."
 
-  # --- 5 consumers ---
   spine-predictions:
     path: data/spine/predictions.parquet
     format: parquet
@@ -842,7 +831,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/spine.py:132 append per build; SCHEMA=spine.predictions.v1."
 
-  # --- 5 consumers ---
   risk-radar-forward-log:
     path: data/risk_radar/forward_log.jsonl
     format: jsonl
@@ -1645,7 +1633,6 @@ artifacts:
       printed — but not degraded-driving).  RESTORE the real operational SLA
       (200h, weekly cadence) when the first row lands.
 
-  # --- 5 consumers ---
   china-sector-cycles-forward-log:
     path: data/china_sector_cycles/forward_log.parquet
     format: parquet
@@ -1672,7 +1659,6 @@ artifacts:
     external_consumers: []
     notes: "Census flags china_sector_cycles_grader.py as extra writer (it appends graded rows). keep-FIRST PIT contract on (date, id) enforces immutability."
 
-  # --- 4 consumers ---
   altdata-theses:
     path: data/altdata/theses.jsonl
     format: jsonl
@@ -1696,7 +1682,6 @@ artifacts:
     external_consumers: []
     qual_ladder_ref: altdata.action
 
-  # --- 4 consumers ---
   sector-cycles-forward-log:
     path: data/sector_cycles/forward_log.parquet
     format: parquet
@@ -1727,7 +1712,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_sector_cycles.py:88 via engine/cycle_forward_log.py:append_forward_log('sector_cycles')."
 
-  # --- 4 consumers ---
   country-cycles-forward-log:
     path: data/country_cycles/forward_log.parquet
     format: parquet
@@ -1752,7 +1736,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_country_cycles.py:88 via engine/cycle_forward_log.py:append_forward_log('country_cycles')."
 
-  # --- 4 consumers ---
   species-registry:
     path: data/species/registry.json
     format: json
@@ -1779,7 +1762,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/species_registry.py:365 sync/write. Daily mirror: species_registry.sync() in daily.yml. Additive writes from backfill scripts do not overwrite existing entries. build_stock_library.py loads it at :2632 (config.data_dir()/species/registry.json) into the setup_compatibility entries — a real read, declared 2026-08-10 to clear the Article-2 read-gate."
 
-  # --- 4 consumers ---
   hazard-model:
     path: data/hazard/model_price_c4414dcb.json
     format: json
@@ -1804,7 +1786,7 @@ artifacts:
     external_consumers: []
     notes: "Scored tier: model refit via scripts/fit_cycle_hazard.py runs only after OOS validation pass. weights=measured (allocation_bootstrap in payload)."
 
-  # --- 0 consumers (IX-1 substrate; the trial wave decides wiring/cadence) ---
+  # --- IX-1 substrate; the trial wave decides wiring/cadence ---
   hazard-panel-index-v0:
     path: data/hazard/panel_index_v0.parquet
     format: parquet
@@ -1835,7 +1817,6 @@ artifacts:
       decides cadence and consumers. Never mutates the member panel or its epoch.
       Census: research/cycle_masterplan/IX1_SUBSTRATE_CENSUS.md.
 
-  # --- 4 consumers ---
   regime-spvector-latest:
     path: data/regime/spvector_latest.json
     format: json
@@ -1859,7 +1840,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_spvector.py:319 write_text."
 
-  # --- 4 consumers ---
   experiments-registry-seed:
     path: data/experiments/registry_seed.json
     format: json
@@ -1886,7 +1866,6 @@ artifacts:
     external_consumers: []
     notes: "Three writers — engine/species_registry.py (daily mirror of species into the seed), backfill_forward_logs.py, build_measurement.py. All additive/idempotent; no single-writer enforcement — this is the rot class the masterplan targets in N1."
 
-  # --- 3 consumers ---
   regime-base-effect-fwd:
     path: data/regime/base_effect_fwd.jsonl
     format: jsonl
@@ -1909,7 +1888,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/run.py:187 append per daily build."
 
-  # --- 3 consumers ---
   market-state-forward-log:
     path: data/market_state/forward_log.jsonl
     format: jsonl
@@ -1932,7 +1910,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/market_state_audit.py append, idempotent by as-of."
 
-  # --- 3 consumers ---
   vol-regime-gate:
     path: data/vol_regime/gate.json
     format: json
@@ -1966,7 +1943,6 @@ artifacts:
       reflects that validated defensive results gate access to the overlay, not that
       this artifact is itself a scored-path surface.
 
-  # --- 2 consumers ---
   vol-regime-basket-overlay-gate:
     path: data/vol_regime/basket_overlay_gate.json
     format: json
@@ -1997,7 +1973,7 @@ artifacts:
       a validated additive-value verdict is required before the caution haircut
       influences sizing, not that this artifact is itself a scored-path surface.
 
-  # --- 4 consumers (gitignored-local) ---
+  # --- gitignored-local ---
   regime-vector:
     path: data/regime/regime_vector.parquet
     format: parquet
@@ -2022,7 +1998,6 @@ artifacts:
     external_consumers: []
     notes: "gitignored-local: NOT git-tracked per census audit. board_ledger, qledger, grade_us_board all require it — this is a gap since CI clones lack the file."
 
-  # --- 2 consumers ---
   altdata-feed:
     path: data/altdata/feed.json
     format: json
@@ -2044,7 +2019,6 @@ artifacts:
     external_consumers: []
     qual_ladder_ref: altdata.action
 
-  # --- 2 consumers ---
   radar-track-record:
     path: data/radar/track_record.json
     format: json
@@ -2065,7 +2039,6 @@ artifacts:
       - engine/radar_ic.py
     external_consumers: []
 
-  # --- 2 consumers ---
   altdata-track-record:
     path: data/altdata/track_record.json
     format: json
@@ -2087,7 +2060,6 @@ artifacts:
     external_consumers: []
     qual_ladder_ref: altdata.signal_score
 
-  # --- 2 consumers ---
   archetypes-history:
     path: data/archetypes/history.parquet
     format: parquet
@@ -2111,7 +2083,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/stock_fundamentals.py:1480 to_parquet write."
 
-  # --- 2 consumers ---
   sector-central-calls:
     path: data/sector_central/calls.parquet
     format: parquet
@@ -2134,7 +2105,6 @@ artifacts:
     external_consumers: []
     notes: "Producer is engine/sector_central.py; build_sector_central.py is the runner/orchestrator. Census note: these are append calls per build."
 
-  # --- 2 consumers ---
   china-sector-central-calls:
     path: data/china_sector_central/calls.parquet
     format: parquet
@@ -2835,10 +2805,13 @@ artifacts:
       engine/validation.deflated_sharpe() for DSR haircut. Exempt from spine federation.
 
 # ============================================================
-# SITE-PLANE ARTIFACTS (sorted by descending consumer_count)
+# SITE-PLANE ARTIFACTS
+# Order is the frozen 2026-07-04 W0-census order (roughly descending consumer
+# count at that time); later entries are appended in place, so position is NOT
+# a live ranking. Consumer counts are never restated in comments — an entry's
+# `consumers:` list IS its count (pinned by scripts/check_synapse_registry.py).
 # ============================================================
 
-  # --- 13 consumers ---
   site-us-standouts:
     path: site/factordata/us_standouts.json
     format: json
@@ -2878,7 +2851,6 @@ artifacts:
       - terminal:screener
     notes: "Producer: scripts/build_stock_library.py:2412 write_text. Mastermind anchor_1 contract; Terminal screener contract per export_signal_contracts.py:171."
 
-  # --- 11 consumers ---
   site-baskets-json:
     path: site/basketdata/baskets.json
     format: json
@@ -2913,7 +2885,6 @@ artifacts:
       - mastermind:vendored
     notes: "known_extra_writers are SEPARATE regional paths (not this path). Producer: scripts/build_baskets.py:99."
 
-  # --- 9 consumers ---
   site-altdata-mastermind:
     path: site/altdata/mastermind.json
     format: json
@@ -2944,7 +2915,7 @@ artifacts:
     qual_ladder_ref: altdata.signal_score
     notes: "Producer: engine/altdata_emit.py:259 write_text. schema=altdata.mastermind.v1 inline constant at altdata_emit.py:65."
 
-  # --- 7 consumers --- (single-writer restored by neural-web W0 PR5)
+  # --- single-writer restored by neural-web W0 PR5 ---
   site-radar-json:
     path: site/basketdata/radar.json
     format: json
@@ -2971,7 +2942,6 @@ artifacts:
     external_consumers: []
     notes: "Single-writer restored (W0 PR5). build_radar_plus now reads this file and writes site/basketdata/radar_enriched.json as its own artifact; build_intelligence reads financial.json and writes site/basketdata/radar_news.json. Neither mutates radar.json."
 
-  # --- 9 consumers ---
   site-basketdata-radar-enriched:
     path: site/basketdata/radar_enriched.json
     format: json
@@ -2997,7 +2967,6 @@ artifacts:
     external_consumers: []
     notes: "OWN artifact of build_radar_plus (W0 PR5). Contains per-flag edge_score, confirm legs, regime, decay, drivers, edge_ranked, enriched_utc. Consumers read edge_score from here; radar.json no longer carries enrichment fields. radar_ic.py has a one-cycle fallback to radar.json for legacy snapshots."
 
-  # --- 1 consumer ---
   site-basketdata-radar-news:
     path: site/basketdata/radar_news.json
     format: json
@@ -3018,7 +2987,6 @@ artifacts:
     external_consumers: []
     notes: "OWN artifact of build_intelligence (W0 PR5). Shape: {baskets: {basket_id: {headlines: [...]}}}. Per-flag news headlines sourced from site/news/financial.json; previously these were cross-surfaced onto radar.json by _crosssurface_radar (second-writer rot). Client-side merge in radar_panel.js::_mergeEnrichment()."
 
-  # --- 8 consumers ---
   site-altdata-by-ticker:
     path: site/altdata/by_ticker.json
     format: json
@@ -3047,7 +3015,6 @@ artifacts:
     qual_ladder_ref: altdata.signal_score
     notes: "Mirror of data/altdata/by_ticker.json. Producer: engine/altdata_signals.py:72 write_text mirrors to both data/ and site/."
 
-  # --- 6 consumers ---
   site-signals-per-ticker:
     path: site/signals/<SYM>.json
     format: json
@@ -3074,7 +3041,6 @@ artifacts:
       - mastermind:vendored
     notes: "Per-ticker placeholder path. The ONLY jsonschema-enforced artifact family (Draft202012). Producer: scripts/build_signal_quality.py writes each file itself (json.dumps of the analyze() payload after engine/marker_integrity.py:merge_payload applies the append-only merge law). The retired engine/signal_gate.py:write_signal_file never wrote these — it had zero callers."
 
-  # --- 6 consumers ---
   site-qledger-track-record:
     path: site/qledger/track_record.json
     format: json
@@ -3102,7 +3068,6 @@ artifacts:
       - mastermind:context
     notes: "Two writers: engine/qledger.py:979 (emit_track_record) and scripts/grade_qledger.py:576 (merges ladder_states). Both are additive/in-place-update, not clobber."
 
-  # --- 5 consumers ---
   site-signal-gate:
     path: site/factordata/signal_gate.json
     format: json
@@ -3128,7 +3093,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_stock_library.py:1833 write_text. Schema: {as_of, verdicts: {ticker: verdict}}."
 
-  # --- 5 consumers ---
   site-regime-timeline:
     path: site/regime_timeline.json
     format: json
@@ -3152,7 +3116,6 @@ artifacts:
       - mastermind:vendored
     notes: "asof_field: null — as_of is the last entry of the dates array. Producer: scripts/build_site.py:2701 write_text."
 
-  # --- 5 consumers ---
   site-sector-pulse:
     path: site/basketdata/sector_pulse.json
     format: json
@@ -3813,7 +3776,6 @@ artifacts:
       Forward ledger accrues as expected-NULL; first descriptive read 2026-08-15.
       authority.may_rank/gate/size/escalate=false.
 
-  # --- 4 consumers ---
   site-radar-ticker:
     path: site/basketdata/radar_ticker.json
     format: json
@@ -3839,7 +3801,6 @@ artifacts:
       - mastermind:context
     notes: "Producer: scripts/build_radar_plus.py:3 via engine/radar_ticker.py:14."
 
-  # --- 4 consumers ---
   site-intelligence-by-ticker:
     path: site/intelligence/by_ticker.json
     format: json
@@ -3863,7 +3824,6 @@ artifacts:
       - terminal:pull_macro_intel
     notes: "Producer: scripts/build_intelligence.py:60 write_text. Merges news + altdata."
 
-  # --- 4 consumers ---
   site-china-standouts:
     path: site/factordata/china_standouts.json
     format: json
@@ -3906,7 +3866,6 @@ artifacts:
       Adjudication note: display-defect fix + display regrouping; primary imminence
       key retained; no rank-weight change; CN-SYS-R7 lane respected.
 
-  # --- 3 consumers ---
   site-basket-oracle-state:
     path: site/basketdata/oracle_state.json
     format: json
@@ -4118,7 +4077,6 @@ artifacts:
       is not wired into any .github/workflows/ file (grep confirms zero references) and
       the artifact has never been produced. freshness_sla_hours already at 9999.
 
-  # --- 3 consumers ---
   site-basket-flow:
     path: site/basketdata/flow.json
     format: json
@@ -4141,7 +4099,6 @@ artifacts:
       - mastermind:vendored
     notes: "Producer: scripts/build_baskets.py:113 via engine/group_flow.py."
 
-  # --- 3 consumers ---
   site-allocation:
     path: site/allocationdata/allocation.json
     format: json
@@ -4163,7 +4120,6 @@ artifacts:
       - mastermind:vendored
     notes: "Producer: scripts/build_allocation.py:134 write_text for US region."
 
-  # --- 3 consumers ---
   site-ai-desk-us:
     path: site/allocationdata/ai_desk_us.json
     format: json
@@ -4185,7 +4141,6 @@ artifacts:
       - mastermind:vendored
     notes: "Producer: scripts/build_allocation.py:240 via ai_desk.ThematicDeskWriter."
 
-  # --- 3 consumers ---
   site-china-intel-briefing:
     path: site/china_intel/briefing.json
     format: json
@@ -4379,7 +4334,6 @@ artifacts:
       - "mastermind:context"
     notes: "Producer: scripts/build_china_market_state.py (W6 sovereign spine). Assembles W1-W4 lobe artifacts into china_market_state.v1 — phase, participation, microstructure, policy, rotation, macro, external, allocation. No fused score (CN-SYS-R13). Authority=context_only (CN-SYS-R1). W7 NW adapter: world_state china_market_state lobe, mastermind_context macro_weather.china labels, daily_brief china_market_state block, ask_brain China router + decision packet."
 
-  # --- 3 consumers ---
   site-artifact-manifest:
     path: site/factordata/contracts/artifact_manifest.json
     format: json
@@ -4402,7 +4356,6 @@ artifacts:
       - mastermind:vendored
     notes: "Producer: scripts/export_signal_contracts.py:216 write_text. schema=artifact_manifest/v1."
 
-  # --- 3 consumers ---
   site-golden-signals:
     path: site/factordata/contracts/golden_signals.json
     format: json
@@ -4425,7 +4378,6 @@ artifacts:
       - mastermind:vendored
     notes: "Producer: scripts/export_signal_contracts.py:214 write_text. inputs_hash + signal snapshots for conformance."
 
-  # --- 3 consumers ---
   site-marketdata-subsector-rotation:
     path: site/marketdata/subsector_rotation.json
     format: json
@@ -4447,7 +4399,7 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_subsector_rotation.py:63 write_text."
 
-  # --- 0 consumers (display rail only) ---
+  # --- display rail only ---
   site-marketdata-rotation-events-china:
     path: site/marketdata/rotation_events_china.json
     format: json
@@ -4499,7 +4451,7 @@ artifacts:
       by new rows, never re-dated or deleted). Events flagged replayed=true are cold-start
       replay rows — no retro credit. Expected-NULL until RC-R9 pre-registered studies mature.
 
-  # --- 0 consumers (display rail only) ---
+  # --- display rail only ---
   site-marketdata-rotation-events-hk:
     path: site/marketdata/rotation_events_hk.json
     format: json
@@ -4552,7 +4504,6 @@ artifacts:
       replay rows — no retro credit. Expected-NULL until RC-R9 pre-registered studies mature.
       Southbound context embedded in rotation_events_hk.json as display receipt (HKRV-R2).
 
-  # --- 2 consumers ---
   site-foresight-cascade:
     path: site/basketdata/foresight_cascade.json
     format: json
@@ -4578,7 +4529,6 @@ artifacts:
       No in-repo reader yet (2026-07-17 audit) — machine-readable mirror; candidate for theme-page wiring.
     qual_ladder_ref: null
 
-  # --- 2 consumers ---
   site-narrative-brain:
     path: site/basketdata/narrative_brain.json
     format: json
@@ -4599,7 +4549,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: engine/narrative_brain.py:363 write_text."
 
-  # --- 2 consumers ---
   site-member-context:
     path: site/basketdata/member_context.json
     format: json
@@ -4620,7 +4569,6 @@ artifacts:
     external_consumers: []
     notes: "Producer: scripts/build_theme_addons.py:76 via engine/basket_member_context.py:231."
 
-  # --- 2 consumers ---
   site-experiments:
     path: site/marketdata/experiments.json
     format: json
@@ -4643,7 +4591,6 @@ artifacts:
       - admin:console
     notes: "Producer: engine/experiments_registry.py:310 write_text."
 
-  # --- 2 consumers ---
   site-regime-prior-js:
     path: site/regimedata/regime_prior.js
     format: js
@@ -4665,7 +4612,6 @@ artifacts:
     external_consumers: []
     notes: "JS data file (window.REGIME_PRIOR). Producer: scripts/build_regime_prior.py:77 write_text."
 
-  # --- 2 consumers ---
   site-macro-signals:
     path: site/macrodata/macro_signals.json
     format: json
@@ -4686,7 +4632,6 @@ artifacts:
       - terminal:pull_macro_intel
     notes: "Producer: scripts/build_site.py write_text. MSX-2: additive keys market_state_color (green/yellow/red), stances ({hero,liquidity,credit} stance pairs), fx (compact dollar-desk: dollar_desk, state_changes, regime_radar {dominant,active,intensity}, strength). Absent until first nightly post-merge; existing keys byte-compatible."
 
-  # --- 2 consumers ---
   site-factors:
     path: site/factordata/factors.json
     format: json
@@ -5356,7 +5301,7 @@ artifacts:
       NOT present in the git tree at origin/main — gitignored locally, canonical on R2.
 
 
-  # --- 0 consumers (tier infrastructure, W7a) ---
+  # --- tier infrastructure, W7a ---
   governance-ledger:
     path: data/neuralweb/governance.jsonl
     format: jsonl
@@ -5392,7 +5337,7 @@ artifacts:
       Estimated append rate: 5-20 events per quarter.  Schema version bumped on breaking
       field changes; backward-incompatible reader must gate on schema field.
 
-  # --- 0 consumers (tier shadow, W7b) — cortex artifacts ---
+  # --- tier shadow, W7b — cortex artifacts ---
 
   cortex-memo:
     path: data/neuralweb/cortex/memo.json
@@ -5913,7 +5858,6 @@ artifacts:
       (RO-3/F-21). Graded field set when maturity arrives (horizon: 10d post-expiry).
       Accruing from 2026-07; maturity_date 2026-09-30. Sole writer: scripts/build_vol_regime.py.
 
-  # --- 1 consumer ---
   options-flow-index:
     path: site/flow/index.json
     format: json
@@ -5944,7 +5888,6 @@ artifacts:
       signing_gate root is true.
 
   # --- FL-B: Cohort flow aggregation (flow-continuity-program) ---
-  # --- 1 consumer ---
   options-flow-cohorts-parquet:
     path: data/options_flow/cohorts_*.parquet
     format: parquet
@@ -5984,7 +5927,6 @@ artifacts:
       Display-only: no arithmetic path; direction is SOFT. FL-B deliverable (06-26 lesson:
       Mag7 call-bid and memory put-hedge invisible inside a single GICS bucket).
 
-  # --- 1 consumer ---
   options-flow-cohorts-json:
     path: site/flowdata/cohorts.json
     format: json
@@ -6013,7 +5955,6 @@ artifacts:
       Display-only: no score or rank path; direction is SOFT (net_premium_mn ~).
       P/C ratio and gross premium magnitude are solid reads.
 
-  # --- 4 consumers ---
   polygon-gex-summaries:
     path: data/polygon_gex/summary_*.parquet
     format: parquet
@@ -10424,12 +10365,6 @@ artifacts:
       - engine/neuralweb/evidence_clock.py
     external_consumers: []
     notes: >
-      PR-D compact history of daily brief snapshots. One row per as_of date;
-      upserted (same as_of → replace row) by scripts/build_neuralweb_brief --finalize.
-      Chronologically sorted. Used for delta detection in next run. Display/ops only.
-      - scripts/build_measurement.py
-    external_consumers: []
-    notes: >
       CPI substrate v0 — 15-seed truth ledger (truths.jsonl) for cycle-pattern
       claims. Fields: truth_id, statement, target, scope, effect_class, status,
       n_summary, ci_summary, pit_class, era_stability, evidence_refs, falsifiers,
@@ -12330,7 +12265,7 @@ artifacts:
       display/context only: authority=false and every rank, score, gate, size,
       escalation, and trading action is explicitly disabled.
 
-  # --- 1 consumer (NW context feed — DARK) ---
+  # --- NW context feed — DARK ---
   # DARK: registered + plumbed but NOT consumed by any scored/Article-2 surface.
   # Nothing flows until a signal earns confirmer tier via an Article-3 gauntlet.
   # GATE: promotion to confirmer requires §3 gauntlet pass (n_dates>=25,
@@ -12791,16 +12726,6 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/neuralweb/query.py
-    external_consumers: []
-    notes: >
-      DARK (NW context feed — Wave-2 tech-signal suite). Display-only descriptive
-      fire-metrics from engine.tech_catalog over the mega-cap survivor universe.
-      Registered and plumbed into the NW spine index as direction=0 / is_context=True
-      rows; NOT consumed by any Article-2 surface (alert_triage, board_ordering,
-      top_setups, attention_queue, push_floor). Promotion gate: Article-3 gauntlet
-      with n_dates>=25 and Wilson CI lower-bound > 0 vs matched control. Until that
-      gate fires, these rows are pure display context.
-      - engine/neuralweb/world_state.py
     external_consumers: []
     notes: >
       R5 macro context rail — daily intelligence briefing snapshot.
@@ -14359,7 +14284,7 @@ artifacts:
 
   # ── Metabolism Phase 0 (F3 capability broker) ────────────────────────────
 
-  # --- 0 consumers (config artifact — read by capability_broker.py at runtime) ---
+  # --- config artifact — read by capability_broker.py at runtime ---
   capability-manifest:
     path: config/capability_manifest.yml
     format: other
@@ -14387,7 +14312,7 @@ artifacts:
       string or secrets.* value reference in this file.
       IMMUTABLE: loop PRs may never modify this file (F2 self-mod fence).
 
-  # --- 0 consumers (append-only audit tape) ---
+  # --- append-only audit tape ---
   capability-audit:
     path: data/neuralweb/capability_audit.jsonl
     format: jsonl
@@ -15249,6 +15174,7 @@ artifacts:
       - scripts/capture_market_memory_options_episodes.py
       - scripts/audit_options_market_memory_context.py
       - engine/options_signal_campaign.py
+      - scripts/run_options_sparse_selector.py
     external_consumers: []
     notes: >
       Immutable point-in-time option-flow decision episodes. Event, observation,
@@ -15262,7 +15188,10 @@ artifacts:
       it binds exact committed bytes in a private zero-authority store, never writes
       this owner ledger, and excludes the frozen initial prefix from forward proof.
       The context audit and canonical campaign engine also read the exact ledger but
-      receive no writer or decision authority.
+      receive no writer or decision authority. The bounded M1 sparse-selector canary
+      starts fresh epochs from authenticated current-origin/main Git blobs and pins
+      active epochs to that exact ancestor. It cannot write this ledger, use W1A, emit a proposal, publish a
+      public artifact, or attach a downstream consumer; every authority remains false.
 
   options-signal-episode-h60-outcomes:
     path: data/options_signal_episode/outcomes_h60.jsonl
@@ -15389,14 +15318,18 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/options_signal_campaign.py
+      - scripts/run_options_sparse_selector.py
     external_consumers: []
     notes: >
       Append-only exact-contract/session campaign census. Every valid source group,
       including singletons, receives a stable campaign identity; later source-prefix
       extension creates a new immutable revision and preserves lineage. The nightly
-      campaign engine is the sole writer and consumer. All selection, ranking,
-      scoring, gating, sizing, trading, publication, training, Neural Web, and
-      Prophet authority remains false.
+      campaign engine is the sole writer. The bounded M1 sparse-selector canary is
+      an authenticated read-only consumer: fresh epochs use exact current-origin/main
+      Git blobs and active epochs stay pinned to their exact ancestor;
+      W1A and proposals are forbidden and it has no public or handoff consumer. All
+      selection, ranking, scoring, gating, sizing, trading, publication, training,
+      Neural Web, Prophet, and completion authority remains false.
 
   options-signal-campaign-outcomes:
     path: data/options_signal_campaign/outcomes.jsonl
@@ -15440,12 +15373,16 @@ artifacts:
     scored_path_surfaces: []
     consumers:
       - engine/options_signal_campaign.py
+      - scripts/run_options_sparse_selector.py
     external_consumers: []
     notes: >
       Deterministic checkpoint written only after canonical campaign revisions and
       outcomes are durably replaced. It binds exact immutable source and output
       prefixes and fails closed on shrink or drift. The nightly campaign engine is
-      the sole writer and consumer and the checkpoint grants no downstream authority.
+      the sole writer. The bounded M1 sparse-selector canary authenticates this exact
+      blob from current-origin/main for a fresh epoch, then pins that exact ancestor
+      alongside both source ledgers until the epoch drains; it receives no
+      writer, proposal, handoff, public-output, trade, or downstream authority.
 
   options-signal-episode-checkpoint:
     path: data/options_signal_episode/checkpoint.json
@@ -18891,6 +18828,46 @@ artifacts:
       land quietly. Licensing tags travel with the receipt: house-authored curation is
       internal/display/redistribution true, vendor-derived (同花顺) rows keep
       redistribution false. Corroborating and contradictory receipts are separate rows.
+
+  theme-graph-capability:
+    path: data/theme_graph/capability.parquet
+    format: parquet
+    producer: scripts/build_theme_graph.py
+    known_extra_writers: []
+    owner_program: gmi-theme-graph
+    cadence: daily-engine
+    storage: git
+    asof_field: computed_at
+    freshness_sla_hours: 36
+    schema: theme_graph.capability.v1
+    tier: display
+    horizon_role: context
+    weights: none
+    scored_path_surfaces: []
+    consumers: []
+    external_consumers: []
+    authority:
+      can_rank: false
+      can_size: false
+      can_gate: false
+      can_originate_signal: false
+      can_add_candidates: false
+      can_escalate: false
+    notes: >
+      Capability classification of the source-local theme plane (rule capability.v1,
+      W3A): semantic_only | measurement_candidate | measurable, where
+      measurement_candidate means >=3 live members resolve to a price artifact — the
+      definitional minimum for a cross-sectional aggregate to BE an aggregate, not an
+      eligibility judgment and not a market state. INTERNAL: never user-facing, never an
+      input to a rank, size or gate. A SIDE-CAR rather than a nodes.parquet column
+      because node rows are keep-first write-once: a capability on the row would be a
+      one-way ratchet whose first verdict outlived every later substrate improvement.
+      Rows are re-derived by every build and the current view is the max computed_at per
+      node_id, so a classification moves in BOTH directions — W3B may promote a
+      semantic_only node whose substrate improved, and may demote any candidate its
+      preregistered gates fail. measurable is unreachable in W3A. Row contract:
+      contracts/theme_graph/capability.v1.schema.json, checked by
+      scripts/check_theme_graph_contracts.py.
 
   # --- Price Pressure lobe (DRL W1) — display-tier single-name residual shocks ---
 

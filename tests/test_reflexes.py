@@ -112,6 +112,60 @@ class TestReflexRegistry:
         assert "commodity_shock" in reflexes, "commodity_shock must be registered"
         assert reflexes["commodity_shock"]["migration_status"] == "mirroring"
 
+    def test_graded_true_names_an_implementing_grader(self):
+        """`graded: true` is a promise the repo must keep — name the grader.
+
+        Defect (W3 review, PR #5679, reviewer R3): commodity_shock declared
+        graded: true with a note promising "Graded at 1d/5d horizon vs commodity
+        ETF bench" while NO grader implemented it anywhere.  Its firings accrue
+        nightly and adapt_reflexes() folds every one of them with
+        outcome_graded=False, so the registry advertised a forward meter that was
+        never running.  Two siblings (btc_flash_crash, shock_deescalation) carried
+        the same false declaration and were corrected in the same PR.
+
+        WHAT THIS PINS: a graded: true entry must name an implementing file in
+        `grader:` and that file must exist.  WHAT IT DOES NOT PROVE: that the
+        named grader is wired into a lane, or that it actually reads this
+        reflex's firings — grade_qledger.py, for instance, grades whitehouse
+        claims generically and never names the reflex.  The cheap half of the
+        defect (a promise with no file behind it at all) is what closes here.
+        """
+        raw = yaml.safe_load((ROOT / "config" / "reflexes.yml").read_text())
+        offenders: list[str] = []
+        for name, entry in (raw.get("reflexes") or {}).items():
+            if not entry.get("graded"):
+                continue
+            grader = entry.get("grader")
+            if not grader:
+                offenders.append(
+                    f"{name}: graded: true but no `grader:` key — either name the "
+                    f"file that grades it or set graded: false"
+                )
+            elif not (ROOT / str(grader)).exists():
+                offenders.append(f"{name}: grader {grader!r} does not exist")
+        assert not offenders, (
+            "reflexes.yml declares grading it does not implement:\n"
+            + "\n".join(f"  - {o}" for o in offenders)
+        )
+
+    def test_commodity_shock_grading_declaration_is_truthful(self):
+        """The specific regression: commodity_shock must not re-acquire a
+        graded: true it cannot back.  Flipping it back is legal ONLY in a PR
+        that also ships the grader (which this guard then requires to exist)."""
+        raw = yaml.safe_load((ROOT / "config" / "reflexes.yml").read_text())
+        entry = (raw.get("reflexes") or {})["commodity_shock"]
+        if entry.get("graded"):
+            grader = ROOT / str(entry.get("grader") or "")
+            assert entry.get("grader") and grader.exists(), (
+                "commodity_shock re-declared graded: true with no grader behind "
+                "it — this is the exact W3 review defect (PR #5679, R3)"
+            )
+        else:
+            assert entry.get("graded_note"), (
+                "an ungraded shadow reflex must still say what happens to its "
+                "firings — nulls printed, not hidden"
+            )
+
     def test_whitehouse_is_registered_not_mirroring(self):
         """Whitehouse is sacred — must be registered only, NOT mirroring in W6a."""
         raw = yaml.safe_load((ROOT / "config" / "reflexes.yml").read_text())

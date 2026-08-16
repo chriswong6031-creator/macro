@@ -249,6 +249,7 @@
     "alpha",
     "alpha_entry",
     "board_definition",
+    "board_rank",
     "cap_bucket",
     "coiled",
     "conviction",
@@ -260,6 +261,9 @@
     "eq_dir",
     "extension",
     "hold",
+    "intel",
+    "intel_interest_basis",
+    "intel_interest_score",
     "label",
     "label_zh",
     "lane",
@@ -574,6 +578,50 @@
     "bot:hk_book"
    ],
    "note": "HK regime timeline"
+  },
+  {
+   "artifact": "site/prophet/index.json",
+   "kind": "plan_book",
+   "schema_version": "1.0.0",
+   "schema_fields": [
+    "active_count",
+    "active_count_by_age",
+    "asof",
+    "authority_tier",
+    "cadence",
+    "gate_go",
+    "intake",
+    "ledger_corrections",
+    "ledger_quarantine",
+    "note",
+    "open_count",
+    "plan_count",
+    "plan_integrity",
+    "plans",
+    "plans_sort_key",
+    "record",
+    "recorded_at",
+    "schema",
+    "selection_era",
+    "source_asof",
+    "source_basis",
+    "source_board_asof",
+    "source_delayed",
+    "source_mixed_vintage",
+    "source_unknown"
+   ],
+   "optional_fields": [
+    "lifecycle_counts",
+    "lifecycle_grand_total",
+    "lifecycle_live_total",
+    "origination_disclosure"
+   ],
+   "expected_max_age_td": 2,
+   "as_of_field": "source_asof",
+   "consumers": [
+    "terminal:oracle-tab"
+   ],
+   "note": "Prophet plan book \u2014 every active plan with its management state inline. authority_tier=display; the lifecycle_* keys are a derived display-tier projection over phase/closed and carry no engine judgment"
   }
  ]
 }

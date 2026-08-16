@@ -185,6 +185,8 @@ jobs:
           filter: blob:none
           sparse-checkout: |
             scripts/merge_on_green.py
+            scripts/ci_semantic_proof.py
+            scripts/ci_authority_paths.py
             scripts/gh_path_filter.py
             scripts/run_ci_pack.py
             .github/workflows

@@ -1,4 +1,40 @@
 name: close-pass
+# DEMOTED TO A BOUNDED BACKSTOP, 2026-08-15 (Breathing PR-B). THE PRIMARY CLOCK
+# IS NOT THIS FILE. It is `com.macro.closepass`, a launchd agent on the Mac
+# Studio firing 13:00 local (PT) Mon-Fri — 16:00 ET in both DST regimes, because
+# PT and ET flip together — running `scripts/close_pass_host_runner.py`
+# (installer: `scripts/install_closepass_launchd.sh`, plist:
+# `ops/launchd/com.macro.closepass.plist`).
+#
+# WHY THE SWAP. GitHub cron is not purchasable as a product clock. MEASURED
+# Friday 2026-08-14 on this very lane: the 20:25 UTC line's run was CREATED at
+# 20:52 — 27 minutes of scheduler drift before a runner was even asked for — and
+# its DST sibling at 21:47 then sat 95 minutes in the queue on the two-host pool
+# below. The board published ~19:20 ET against a 16:15 ET product target.
+# Estate-wide the same instrument measures worse: cron gaps of 90 min to 3h12m
+# (agentos/decisions/DEC-LER-LIVE-LANE-VPS-5MIN-REST.md), which is why Live
+# Entry Radar's live lane runs off a VPS timer rather than Actions. Everything
+# below this paragraph — the schedule pair, the DST reasoning, the pool capacity
+# measurement, the minute choice — is UNCHANGED and still correct; it is simply
+# describing a rescue lane now rather than the clock.
+#
+# WHAT A BACKSTOP OWES. Two things, and the first step in the job is both:
+#   * STAND DOWN when the primary already landed the session's board (a keyless
+#     read of the public R2 mirror). GitHub has no early-exit, so the check sets
+#     one output and every later step is guarded on it.
+#   * FAIL OPEN. An unreadable mirror, an unreachable config, a broken probe —
+#     all PROCEED. A backstop that stands itself down on its own failure is not
+#     a backstop, and the pass's own dedup (`already_published`) is the second
+#     net underneath: republishing the same session is a no-op, not a fault.
+# And when it does publish, it says so as a ::warning — a primary that quietly
+# stopped firing is otherwise invisible, because a lane that never ran and a
+# lane that was killed leave the same trace: nothing.
+#
+# THE VPS MIRROR IS UNCHANGED. Whichever lane publishes, `live_flow/us_board_provisional.json`
+# lands in R2 and app/deploy/macro-live-closepass.timer pulls it to the live
+# plane every five minutes through 23:00 UTC. Neither clock touches the served
+# copy directly (CLOSE_PASS_SERVED_PATH is "" on both).
+#
 # W-L1a — the evening PROVISIONAL US board, off every render critical path.
 #
 # WHY THIS IS NOT A STEP IN closing-bell.yml. That lane (Build A) already ships a
@@ -129,31 +165,141 @@ jobs:
       # COLLECT_LANE deliberately UNSET — see the header.
     steps:
       - uses: actions/checkout@v4
+
+      # ── THE BACKSTOP'S FIRST QUESTION ────────────────────────────────────────
+      # Did the host-native primary already land this session's board? If so this
+      # whole job is ~20 minutes of the two-host pool spent recomputing an
+      # artifact that is already correct, so it stands down before the venv, the
+      # pip install and the price-store heal — i.e. before it costs anything.
+      #
+      # KEYLESS on purpose: the public R2 mirror answers with no credential, so
+      # the cheap check needs none of the secrets the expensive step does. The
+      # base comes from config.yml's r2_data_plane.public_base (the authority
+      # engine/prophet_live/r2io.public_base reads), parsed with stdlib regex
+      # because pip has not run yet and there is no pyyaml on this interpreter.
+      #
+      # FAIL-OPEN, TWICE OVER. Inside the script every failure path sets
+      # stand_down=0, and `continue-on-error` makes that structural rather than a
+      # promise: a step that dies outright leaves the output EMPTY, which is
+      # `!= '1'`, which proceeds. The only thing that stands this lane down is a
+      # positive reading — the published board's `as_of` equals today's ET
+      # session, or today is not a session at all.
+      - name: backstop fast-exit (has the host-native primary already landed?)
+        id: standdown
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          BASE="$(python3 - <<'PY'
+          import pathlib, re
+          text = pathlib.Path("config.yml").read_text(encoding="utf-8")
+          _, _, tail = text.partition("\nr2_data_plane:")
+          match = re.search(r'^\s+public_base:\s*"?([^"\s#]+)', tail, re.M)
+          print((match.group(1) if match else "").rstrip("/"))
+          PY
+          )"
+          if [ -z "$BASE" ]; then
+            echo "::notice title=close-pass::public R2 base unreadable from config.yml — backstop proceeding"
+            echo "stand_down=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # The body goes through a FILE, never a pipe. `python3 - <<'PY'` already
+          # takes its script from stdin, so a pipe into it is silently discarded
+          # and the reader sees an empty board — which reads as "mirror
+          # unreadable" and would make this check permanently fail-open. Caught
+          # by executing this step body locally before merge (rc=141, SIGPIPE).
+          BOARD_FILE="${RUNNER_TEMP:-${TMPDIR:-/tmp}}/us_board_provisional.json"
+          curl -fsS --max-time 20 "$BASE/live_flow/us_board_provisional.json" \
+            -o "$BOARD_FILE" || : > "$BOARD_FILE"
+          BOARD_FILE="$BOARD_FILE" python3 - <<'PY'
+          import json, os, pathlib, sys
+          from datetime import datetime, timezone
+
+          sys.path.insert(0, ".")
+          stand, reason = "0", "no reading"
+          try:
+              # The SAME session discipline the pass uses (close_pass_publish.session_date):
+              # today's ET date when it is a session, never expected_last_session(),
+              # which still resolves to YESTERDAY before the 17:00 ET settle buffer.
+              from lib.nyse_calendar import ET, is_session
+              today = datetime.now(timezone.utc).astimezone(ET).date()
+              session = today.isoformat() if is_session(today) else None
+              body = pathlib.Path(os.environ["BOARD_FILE"]).read_text(
+                  encoding="utf-8", errors="replace").strip()
+              if session is None:
+                  stand, reason = "1", "not a NYSE session day"
+              elif not body:
+                  reason = "public mirror unreadable — fail-open"
+              else:
+                  as_of = (json.loads(body) or {}).get("as_of")
+                  if as_of == session:
+                      stand, reason = "1", f"primary already landed {session}"
+                  else:
+                      reason = f"published board is as_of={as_of!r}, this session is {session}"
+          except Exception as exc:                       # noqa: BLE001 — fail-open
+              reason = f"stand-down check failed ({type(exc).__name__}) — fail-open"
+          out = os.environ.get("GITHUB_OUTPUT")
+          if out:
+              with open(out, "a", encoding="utf-8") as fh:
+                  fh.write(f"stand_down={stand}\nreason={reason}\n")
+          tail = "backstop standing down" if stand == "1" else "backstop proceeding"
+          print(f"::notice title=close-pass::{reason} — {tail}", flush=True)
+          PY
+
       - name: python 3.12 (Homebrew venv — self-hosted runner)
+        if: steps.standdown.outputs.stand_down != '1'
         run: |
           VENV="$HOME/.cache/mm-venv-${RUNNER_NAME:-default}"
           [ -x "$VENV/bin/python" ] || /opt/homebrew/bin/python3.12 -m venv "$VENV"
           echo "$VENV/bin" >> "$GITHUB_PATH"
           "$VENV/bin/python" -m pip install --quiet --upgrade pip
-      - run: pip install -r requirements.txt
+      - if: steps.standdown.outputs.stand_down != '1'
+        run: pip install -r requirements.txt
 
       # Best-effort, non-fatal: at 16:20 ET the daily bar may not be finalized
       # yet. Names without today's close are SKIPPED and counted, never carried
       # at yesterday's price — so a partial heal degrades coverage, never truth.
       - name: price-store freshness prefetch (--heal, keyless, best-effort)
+        if: steps.standdown.outputs.stand_down != '1'
         continue-on-error: true
         run: python -m scripts.check_price_store_freshness --heal
 
       - name: publish the provisional board (R2 only — the VPS mirrors it)
+        if: steps.standdown.outputs.stand_down != '1'
         env:
           R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
           R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
           R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          # Same-day close truth. The keyless prefetch above refreshes the index
+          # group only, so without this the pass evaluates ~14% of the universe
+          # (measured 2026-08-14: 253 of 1,763). Unset = store-only + a warning,
+          # never a wrong board.
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}
           # No live plane on a runner: the served copy belongs to the VPS.
           CLOSE_PASS_SERVED_PATH: ""
         run: |
+          # pipefail is load-bearing: without it `tee` reports success and a
+          # failed pass ships as a green step.
+          set -o pipefail
           python -m scripts.close_pass_publish \
-            ${{ inputs.force && '--force' || '' }}
+            ${{ inputs.force && '--force' || '' }} 2>&1 \
+            | tee "$RUNNER_TEMP/close_pass_publish.log"
+
+      # A backstop that publishes silently is indistinguishable from a primary
+      # that is working. This is the ONLY place the swap is observable from
+      # GitHub, so it is loud — and it distinguishes the two shapes rather than
+      # crying wolf on the harmless one: reaching this step having DEDUPED means
+      # the primary landed between the fast-exit read and the publish (seconds),
+      # while reaching it having genuinely published means the primary did not
+      # fire at all for this session.
+      - name: announce a backstop publish (the primary missed this session)
+        if: steps.standdown.outputs.stand_down != '1'
+        run: |
+          LOG="$RUNNER_TEMP/close_pass_publish.log"
+          if grep -q "board already published" "$LOG" 2>/dev/null; then
+            echo "::notice title=close-pass::the pass deduped — the host-native primary had already landed this session (the fast-exit read missed it by seconds)"
+          else
+            echo "::warning title=close-pass::BACKSTOP publish — the host-native primary missed this session"
+          fi
 
       # DISCARD, then prove. Added 2026-08-13 after this lane was found to have
       # FAILED EVERY RUN since it shipped (2026-08-09, commit 5b083a2a73e — the
@@ -174,6 +320,7 @@ jobs:
       # of closing-bell's stage-BEFORE-checkout ordering hazard — there is nothing to
       # stage, and nothing here could be pushed even if there were.
       - name: discard the prefetch's data/ writes (this lane commits nothing)
+        if: steps.standdown.outputs.stand_down != '1'
         run: |
           git checkout -- data/ 2>/dev/null || true
           git clean -fdq data/ 2>/dev/null || true
@@ -187,6 +334,7 @@ jobs:
       # ledger write. What it no longer does is red the whole lane over a price-cache
       # refresh the lane itself asked for.
       - name: prove the pass wrote no data/ path
+        if: steps.standdown.outputs.stand_down != '1'
         run: |
           if [ -n "$(git status --porcelain -- data/)" ]; then
             echo "::error title=close-pass::the pass modified data/ — G0.2 violation"

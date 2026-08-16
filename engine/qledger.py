@@ -36,7 +36,7 @@ import re
 from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Iterable, NamedTuple
+from typing import Any, Callable, Iterable, NamedTuple
 
 import pandas as pd
 
@@ -1412,6 +1412,33 @@ FAMILY_CONTROL_POLICY: dict[str, str] = {
     "thematic_desk": CONTROL_POLICY_BENCHMARK_ONLY,
     "basket_turn.v1": CONTROL_POLICY_BENCHMARK_ONLY,
     "flip_confirmation.v1": CONTROL_POLICY_BENCHMARK_ONLY,
+    # Live Entry Radar W5 (prereg §17, `research/live_entry_radar/
+    # W5_FORWARD_EVIDENCE_PREREG.md`) — the five detectors that register, plus
+    # the `entry_radar` desk fallback for any claim whose family resolves to the
+    # desk name. C4_MTF_TURN@1 and F1_FUSION are ABSENT on purpose: C4 is
+    # registered role=stratification_only and cannot fire, F1 has no locked
+    # spec, and neither ever produces a claim — an entry for a family that never
+    # registers would be a policy for a population that does not exist.
+    #
+    # WHY benchmark_only, when the reconciler DOES populate `control`. The two
+    # are different acts, and the P0d contract (research/
+    # PREREG_P0D_MATCHED_CONTROL_CONTRACT.md, C1.4) turns exactly on the
+    # difference: registration fills `control` MECHANICALLY from
+    # `control_for_sector(sector)` — that is a field, produced by a lookup, on a
+    # family with no accrued coverage yet. Matched-control AUTHORITY is a later
+    # GOVERNED act, taken only after prospective coverage clears the census §5
+    # condition, and it is never inferred from the fact that rows happen to
+    # carry control legs. Classifying these families the other way today would
+    # claim matched-control evaluation on zero prospective observations, which
+    # is the precise defect P0d repaired. Radar's own §7 matched controls are a
+    # separate, richer construction inside W5's replay and are not this table's
+    # subject; §17's separation law keeps the two rulers apart.
+    "entry_radar": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_G0_GREY_DOT@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C1_1D_LIVE_WASHOUT@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C2_1D_TURN@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C3_1D_4H_RECOVERY@1": CONTROL_POLICY_BENCHMARK_ONLY,
+    "entry_radar_C5_BOTTOM_WATCH@1": CONTROL_POLICY_BENCHMARK_ONLY,
     # --- not_applicable ------------------------------------------------------
     # Salience/descriptive species: no directional skill proposition exists, so
     # no directional matched-control contract can apply. They grade MAGNITUDE
@@ -1531,6 +1558,55 @@ def sector_of_ticker(ticker: str | None, root: Path | str | None = None) -> str 
     if not mapping:
         return None
     return mapping.get(key)
+
+
+def gics_sector_name(sector: str | None) -> str | None:
+    """Raw vocabulary value -> CANONICAL GICS sector NAME (alias-normalised), or
+    None for an empty, unknown or unmapped value. Returns the NAME, never the ETF.
+
+    THE NAME IS THE ANSWER A REGISTRAR WANTS, and returning the ETF instead would
+    re-create census D0-1 in reverse. `make_claim(sector=...)` resolves the
+    control ITSELF (`control = control_for_sector(sector)`), so a `sector_of`
+    resolver that handed back `"XLK"` would be feeding an ETF TICKER into a
+    GICS-NAME->ETF map — the exact vocabulary mismatch that killed intel_hub's
+    control wiring for four months (DSC:CONTROL-VOCABULARY-MISMATCH-KILLED-EVERY-
+    WIRED-CONTROL). The composition that must hold for EVERY input, pinned by
+    `test_alias_composition_matches_the_direct_etf_map`:
+
+        control_for_sector(gics_sector_name(v)) == sector_gics_etf(v)
+
+    i.e. normalising to the canonical NAME and then letting `make_claim` do its
+    own ETF lookup lands on exactly the ETF the direct map would have chosen.
+    None propagates cleanly (`control_for_sector(None) is None`), so an unmapped
+    vocabulary value stays a COUNTABLE refusal at the caller (C2.4) rather than a
+    plausible-looking wrong control."""
+    key = str(sector or "").strip()
+    if not key:
+        return None
+    canonical = _SECTOR_ALIASES.get(key, key)
+    return canonical if canonical in _GICS_ETF else None
+
+
+def membership_gics_sector_of(root: Path | str | None = None
+                              ) -> Callable[[str | None], str | None]:
+    """THE C2.3 CONSTRUCTION for `demand_chain`'s control leg: a resolver
+    `ticker -> canonical GICS sector NAME`, via `data/universe/membership.parquet`
+    plus the explicit alias normalisation (census D0-2).
+
+    Handed to `qledger_desk_adapter.register_prospective(sector_of=...)`, whose
+    `translate_row` passes the answer to `make_claim(sector=...)`, which resolves
+    `control_for_sector(sector)`. So this returns the NAME, not the ETF — see
+    `gics_sector_name` for why the ETF would be D0-1 in reverse.
+
+    The membership file is read at most once per root per process
+    (`sector_of_ticker`'s cache) and a missing file fails OPEN to None, so a
+    checkout without `data/universe/` registers uncontrolled claims rather than
+    refusing to register at all — and the adapter COUNTS that outcome
+    (`no_sector_source`/`sector_absent`/`vocabulary_unmapped`), because a silent
+    None is the defect class that stayed dead four months."""
+    def _sector_of(ticker: str | None) -> str | None:
+        return gics_sector_name(sector_of_ticker(ticker, root))
+    return _sector_of
 
 
 def control_leg_is_valid(claim: dict) -> bool:
@@ -2721,6 +2797,144 @@ def grade_claim(claim: dict, root: Path | str | None = None,
 
 
 # --------------------------------------------------------------------------- #
+# P0d — MATURITY-AWARE COHORT ACCOUNTING (review finding 4)
+#
+# THE PERVERSE INCENTIVE THIS KILLS. `grade_claim` rule 5 refuses the WHOLE grade
+# row when a DECLARED control cannot price over the shared window (a control leg
+# on a different window is not a null — see the rule-5 note above). So that claim
+# produces NO ROW at that horizon, and `matched_control_check` counted its cohort
+# from grade rows alone: the claim simply left the coverage denominator. Net
+# effect: declaring an unpriceable control IMPROVED reported coverage versus
+# declaring no control at all — no control leaves a row that counts as uncovered,
+# an unpriceable control leaves nothing that counts as anything. A gate whose
+# cheapest path to "covered" is to declare a control that cannot be measured is
+# not a gate.
+#
+# The repair needs a reason, not a count: a cohort claim with no row at the
+# evaluated horizon can be rowless because it has not matured, because its
+# horizon never grades there at all, because the SUBJECT could not price, or
+# because the CONTROL could not. Only the last one is a control refusal and only
+# the last one joins the coverage denominator. `_cohort_rowless_class` answers
+# that question with the SAME primitives `grade_claim` uses — one clock, reused,
+# never re-derived — and short-circuits before any price read wherever it can.
+# --------------------------------------------------------------------------- #
+COHORT_ROWLESS_NOT_YET_MATURED = "not_yet_matured"
+COHORT_ROWLESS_CONTROL_REFUSED = "control_leg_refused"
+COHORT_ROWLESS_PRIMARY_REFUSED = "primary_leg_refused"
+COHORT_ROWLESS_AWAITING_GRADING = "matured_awaiting_grading"
+COHORT_ROWLESS_WINDOW_UNRESOLVABLE = "window_unresolvable"
+COHORT_ROWLESS_HORIZON_OUT_OF_SCOPE = "horizon_out_of_scope"
+COHORT_ROWLESS_OTHER_BASIS = "other_basis"
+COHORT_ROWLESS_UNGRADEABLE = "ungradeable_embargo"
+#: The classifier itself raised. NOT a synonym for `window_unresolvable` (review
+#: round 2, F4): that is a legitimate, expected outcome whose count carries no
+#: alarm, so folding a crash into it hid the crash inside a normal number — and
+#: in the direction that RAISES coverage, since neither class enters a
+#: denominator. A distinct key makes a non-zero count visible in `cohort_rowless`
+#: on the readiness row, and the log line is a WARNING rather than DEBUG.
+COHORT_ROWLESS_CLASSIFIER_ERROR = "classifier_error"
+
+
+def _cohort_rowless_class(claim: dict, horizon: int,
+                          root: Path, today: date) -> tuple[str, str | None]:
+    """(class, clock_basis) — WHY this cohort claim has no grade row at `horizon`.
+
+    Every step mirrors `grade_claim` exactly, in `grade_claim`'s own order, so the
+    answer is the real reason the grader wrote nothing rather than a second
+    model of it. Returns the row's would-be `clock_basis` alongside the class
+    (None when no window resolved), because a rowless claim on ANOTHER basis is
+    not this basis's business.
+
+    THE ORDER IS THE CONTRACT:
+
+      1. embargo — a non-gradeable timestamp_quality never produces a row at all;
+      2. `in_scope_horizons` — ESSENTIAL. A claim whose declared horizon never
+         grades at the evaluated horizon is not a refusal of anything, and
+         counting it would put claims into a denominator they can never leave
+         (demand_chain declares 126 trading days and grades at 5/21/63);
+      3/4. the window and its basis — no window is a fail-closed
+         `window_unresolvable`, a different basis is simply not this evaluation;
+      5. THE CALENDAR ALONE — `today < coverage_date` is the ONLY thing that
+         makes a claim `not_yet_matured`. `_matured_window` conflates that with
+         "a leg's series does not reach the close", so asking it here reported a
+         permanently delisted subject as young forever (review round 1 defect 2,
+         ported from #5661 after #5665 merged first);
+      6. SUBJECT+BENCH, maturity and pricing together, on a window that HAS
+         closed. `grade_claim` puts the control in the same `_matured_window`
+         legs list, so an unpriceable control shows up there as "not matured" —
+         indistinguishable from a young claim. Asking about the primary legs
+         ALONE is what makes step 7 attributable: only once subject and bench
+         are both measurable is a missing row the CONTROL's fault. A refusal
+         here is the PRIMARY leg's and must not enter the coverage denominator
+         (attributing a delisted subject to the control would manufacture a
+         coverage failure out of a data gap);
+      7. the control leg — matured and priceable, or `control_leg_refused`;
+      8. otherwise the claim is fully gradeable and the grader has simply not run
+         yet (`matured_awaiting_grading`) — a scheduling fact, NOT a refusal.
+    """
+    try:
+        gradeable, _embargo_applied = _embargo_ok(claim)
+        if not gradeable:
+            return COHORT_ROWLESS_UNGRADEABLE, None
+
+        horizon_d = int(claim.get("horizon_d"))
+        if horizon not in in_scope_horizons(horizon_d):
+            return COHORT_ROWLESS_HORIZON_OUT_OF_SCOPE, None
+
+        start = _entry_date(claim)
+        window = claim_window(claim, horizon, entry_anchor=start)
+        if window is None:
+            return COHORT_ROWLESS_WINDOW_UNRESOLVABLE, None
+        basis = clock_basis_key(window.clock_version, window.horizon_unit,
+                                window.market)
+
+        scope = claim.get("scope") or {}
+        subject = scope.get("key")
+        bench = claim.get("bench") or _DEFAULT_BENCH
+        control = claim.get("control")
+
+        # TIME FIRST, DATA SECOND (review round 1 defect 2, ported from #5661).
+        # `_matured_window` answers False for TWO unrelated reasons — the window
+        # has not closed yet, and a leg's series does not reach `coverage_date`
+        # — so asking it first reported a permanently dead subject as
+        # `not_yet_matured`, i.e. as YOUNG, forever. That is the exact confusion
+        # C4.4's table exists to prevent ("a young cohort is legible as young
+        # rather than as broken"), and it made `primary_leg_refused` reachable
+        # only through the rarer rule-5 endpoint-hole shape. The calendar
+        # question is also free, so asking it first costs no price read for a
+        # young cohort.
+        if today < window.coverage_date:
+            return COHORT_ROWLESS_NOT_YET_MATURED, basis
+        if (not _matured_window(root, window, today, [subject, bench])
+                or _leg_ret_in_window(subject, root, window) is None
+                or _leg_ret_in_window(bench, root, window) is None):
+            # The window HAS closed, so this is the primary leg's data gap: a
+            # delisted or never-collected subject, or a series that reaches the
+            # close without holding the window's own endpoint bars (rule 5).
+            return COHORT_ROWLESS_PRIMARY_REFUSED, basis
+        if control:
+            if (not _matured_window(root, window, today, [control])
+                    or _leg_ret_in_window(control, root, window) is None):
+                return COHORT_ROWLESS_CONTROL_REFUSED, basis
+        return COHORT_ROWLESS_AWAITING_GRADING, basis
+    except Exception as exc:  # noqa: BLE001 — a classifier must never take the
+        # gate down, and "I could not tell" must never read as a control refusal
+        # (that would ADD to a denominator on a guess). Fail closed to a
+        # non-attributing class — but to its OWN class, not to
+        # `window_unresolvable`: that is a legitimate expected outcome, so a
+        # crash folded into it was a crash hidden inside a normal number, and
+        # hidden in the coverage-FAVOURABLE direction (neither class enters a
+        # denominator, so every misclassified control refusal silently raised
+        # coverage). Behaviour is unchanged; the count is now nameable and the
+        # log is a WARNING (review round 2, F4).
+        log.warning("_cohort_rowless_class(%s h=%s) RAISED — counted as %s, "
+                    "excluded from every denominator: %s: %s",
+                    claim.get("claim_id"), horizon, COHORT_ROWLESS_CLASSIFIER_ERROR,
+                    type(exc).__name__, exc)
+        return COHORT_ROWLESS_CLASSIFIER_ERROR, None
+
+
+# --------------------------------------------------------------------------- #
 # WILSON CI + track-record aggregation
 # --------------------------------------------------------------------------- #
 def wilson_ci_low(hits: int, n: int, z: float = 1.96) -> float | None:
@@ -3377,13 +3591,28 @@ class PromotionResult:
     onto the full family's, so a rate measured on 37 rows can never be stated at
     a 100-row N. Every field defaults to None/False, so a benchmark verdict is
     unchanged in shape and no consumer has to know about P0d to keep working.
+
+    P0d REVIEW FINDING 4 — MATURITY-AWARE COHORT ACCOUNTING. A cohort claim whose
+    DECLARED control cannot price over the shared window produces NO grade row at
+    all (`grade_claim` rule 5 refuses the row rather than nulling the leg), so it
+    used to leave the coverage denominator entirely — which made declaring an
+    unpriceable control strictly BETTER for reported coverage than declaring no
+    control at all. Those claims now rejoin the denominator as uncovered members,
+    and the verdict discloses both the size of that set
+    (`n_control_refused_rows` / `n_control_refused_dates`) and the full reason
+    census of every rowless cohort claim (`cohort_rowless`: `not_yet_matured`,
+    `primary_leg_refused`, `horizon_out_of_scope`, `other_basis`, …). ONLY
+    `control_leg_refused` enters a denominator; the rest are disclosed precisely
+    so a young cohort can be told apart from a broken one without either being
+    silently converted into a coverage number.
     """
     __slots__ = ("eligible", "reason", "n_dates", "wilson_ci_low",
                  "current_state", "demote", "pinned_reason", "clock_basis",
                  "clock_migration", "clock_prior_n_dates", "migration_note",
                  "evidence_basis", "control_coverage", "n_cohort_dates",
                  "n_controlled_dates", "n_cohort_rows", "n_controlled_rows",
-                 "control_clock_start", "unclassified")
+                 "n_control_refused_rows", "n_control_refused_dates",
+                 "cohort_rowless", "control_clock_start", "unclassified")
 
     def __init__(self, eligible: bool, reason: str, n_dates: int,
                  ci_low: float | None, current_state: str,
@@ -3398,6 +3627,9 @@ class PromotionResult:
                  n_controlled_dates: int | None = None,
                  n_cohort_rows: int | None = None,
                  n_controlled_rows: int | None = None,
+                 n_control_refused_rows: int | None = None,
+                 n_control_refused_dates: int | None = None,
+                 cohort_rowless: dict | None = None,
                  control_clock_start: str | None = None,
                  unclassified: bool = False) -> None:
         self.eligible = eligible
@@ -3419,6 +3651,11 @@ class PromotionResult:
         self.n_controlled_dates = n_controlled_dates
         self.n_cohort_rows = n_cohort_rows
         self.n_controlled_rows = n_controlled_rows
+        # P0d review finding 4 — default-safe like every other P0d field: a
+        # benchmark verdict keeps its exact previous shape.
+        self.n_control_refused_rows = n_control_refused_rows
+        self.n_control_refused_dates = n_control_refused_dates
+        self.cohort_rowless = dict(cohort_rowless or {})
         self.control_clock_start = control_clock_start
         self.unclassified = unclassified
 
@@ -3441,6 +3678,9 @@ class PromotionResult:
             "n_controlled_dates": self.n_controlled_dates,
             "n_cohort_rows": self.n_cohort_rows,
             "n_controlled_rows": self.n_controlled_rows,
+            "n_control_refused_rows": self.n_control_refused_rows,
+            "n_control_refused_dates": self.n_control_refused_dates,
+            "cohort_rowless": self.cohort_rowless,
             "control_clock_start": self.control_clock_start,
             "unclassified": self.unclassified,
         }
@@ -3880,7 +4120,8 @@ def promotion_check_by_market(claim_family: str, horizon: int,
 
 def matched_control_check(claim_family: str, horizon: int,
                           root: Path | str | None = None,
-                          clock_basis: str | None = None) -> PromotionResult:
+                          clock_basis: str | None = None,
+                          today: date | str | None = None) -> PromotionResult:
     """P0d C5.1 — THE MATCHED-CONTROL GATE for a `matched_control_required` family.
 
     Such a family's AUTHORITY BASIS IS THE MATCHED CONTROL. This returns
@@ -3927,11 +4168,31 @@ def matched_control_check(claim_family: str, horizon: int,
        the clock, or enter the N. Historical rows are untouched, never
        backfilled, never combined with cohort evidence.
 
+    REVIEW FINDING 4 (2026-08-14) closed the third: A DECLARED CONTROL THAT
+    CANNOT PRICE USED TO IMPROVE COVERAGE. `grade_claim`'s rule 5 refuses the
+    whole grade row when the control leg cannot be measured over the shared
+    window, and this function counted its cohort from GRADE ROWS — so that claim
+    left the denominator entirely, while a claim declaring NO control left a row
+    that counted as uncovered. Declaring an unpriceable control was therefore
+    strictly better for reported coverage than declaring none. Cohort claims with
+    no row are now CLASSIFIED (`_cohort_rowless_class`) and the
+    `control_leg_refused` ones REJOIN the coverage denominator as uncovered
+    members. Nothing else does: `not_yet_matured` is a young claim,
+    `primary_leg_refused` is the subject's data gap, `horizon_out_of_scope` can
+    never grade here at all, and attributing any of them to the control would
+    manufacture a coverage failure out of an unrelated fact. The numerators and
+    the Wilson arithmetic are UNCHANGED (C4.3, controlled rows only), so this can
+    only LOWER a coverage number, never raise one.
+
     Refusals NAME their failing clause and print both date counts and the
     coverage. `clock_basis` names ONE basis explicitly (the per-market escape
-    hatch, mirroring `promotion_check`'s parameter of the same name).
+    hatch, mirroring `promotion_check`'s parameter of the same name). `today`
+    exists so the maturity half of the rowless classification is deterministic in
+    tests; it defaults to `date.today()`, the same default `grade_claim` uses.
     """
     root = _root(root)
+    today_dt = (today if isinstance(today, date)
+                else pd.Timestamp(today).date() if today else date.today())
     clock = read_control_clock_start(claim_family, root)
     if clock is None:
         # C5.1 first refusal — and it is NEVER a miss, a zero, or a bench
@@ -4091,14 +4352,70 @@ def matched_control_check(claim_family: str, horizon: int,
             control_clock_start=clock_start,
         )
 
-    rows = [g for g in rows if grade_clock_basis(g) == basis]
+    rows = [g for g in rows if grade_clock_basis(g) == basis] if basis else []
+
+    # ----------------------------------------------------------------------- #
+    # REVIEW FINDING 4 — WHY each cohort claim has NO row at this horizon.
+    #
+    # A rowless cohort claim is not one fact. `grade_claim` writes nothing when
+    # the claim has not matured, when its declared horizon never grades here,
+    # when the SUBJECT cannot price — and when the DECLARED CONTROL cannot price
+    # (rule 5, which refuses the whole row rather than nulling the control leg).
+    # Only that last case is a control refusal, and before this it was the ONLY
+    # rowless case that silently improved the reported coverage, because a
+    # claim with no row left the denominator while an uncontrolled claim's row
+    # stayed in it as uncovered.
+    # ----------------------------------------------------------------------- #
+    graded_ids = {str(g.get("claim_id")) for g in rows}
+    rowless_raw: list[tuple[str, str, str | None]] = [
+        (cid, *_cohort_rowless_class(c, horizon, root, today_dt))
+        for cid, c in cohort.items() if cid not in graded_ids]
+
+    # THE ZERO-ROW COHORT. `bases` is derived from grade rows, so a cohort whose
+    # controls ALL fail to price has no rows, no bases, and no basis — and used
+    # to report "the cohort is EMPTY ... accruing", i.e. finding 4 in its worst
+    # form: a family whose control legs systematically cannot be measured reading
+    # as "no evidence yet" forever. The evaluation basis then comes from the
+    # control-refused claims' OWN resolved windows. One basis is unambiguous; two
+    # or more is a real straddle and is REFUSED with the straddle named, never
+    # silently resolved by picking one.
+    straddled_refused: list[str] = []
+    if basis is None and not bases:
+        refused_bases = sorted({b for _cid, k, b in rowless_raw
+                                if k == COHORT_ROWLESS_CONTROL_REFUSED and b})
+        if len(refused_bases) == 1:
+            basis = refused_bases[0]
+        elif len(refused_bases) > 1:
+            straddled_refused = refused_bases
+
+    # C3.2 step 4, applied by the CALLER (the classifier returns the claim's own
+    # basis): a rowless claim resolving on ANOTHER basis is not this evaluation's
+    # business and enters no count of it.
+    cohort_rowless: dict[str, int] = {}
+    control_refused_ids: list[str] = []
+    for cid, klass, row_basis in rowless_raw:
+        if (basis is not None and row_basis is not None and row_basis != basis):
+            klass = COHORT_ROWLESS_OTHER_BASIS
+        cohort_rowless[klass] = cohort_rowless.get(klass, 0) + 1
+        if klass == COHORT_ROWLESS_CONTROL_REFUSED:
+            control_refused_ids.append(cid)
+
     prior_n_dates = {b: n for b, n in n_dates_by_basis.items() if b != basis}
 
     # C4.1 — the issued cohort is the denominator, ALWAYS. Missing-control rows
-    # stay in it; that is what coverage measures.
-    n_cohort_rows = len(rows)
-    n_cohort_dates = len({
-        _date_cluster(str(cohort[str(g.get("claim_id"))].get("asof", ""))) for g in rows})
+    # stay in it; that is what coverage measures. AMENDED (review finding 4):
+    # control-refused claims REJOIN it as uncovered members, so an unpriceable
+    # declared control can no longer buy a better coverage number than declaring
+    # no control at all.
+    n_control_refused_rows = len(control_refused_ids)
+    control_refused_dates = {
+        _date_cluster(str(cohort[cid].get("asof", ""))) for cid in control_refused_ids}
+    n_control_refused_dates = len(control_refused_dates)
+
+    n_cohort_rows = len(rows) + n_control_refused_rows
+    n_cohort_dates = len(
+        {_date_cluster(str(cohort[str(g.get("claim_id"))].get("asof", ""))) for g in rows}
+        | control_refused_dates)
     controlled = [g for g in rows
                   if g.get("control_ret") is not None
                   and control_leg_is_valid(cohort[str(g.get("claim_id"))])]
@@ -4116,6 +4433,23 @@ def matched_control_check(claim_family: str, horizon: int,
         excluded_note += (f" {excluded_unresolvable} claim(s) excluded as "
                           f"UNRESOLVABLE (unparseable stamp or unresolvable "
                           f"window — fail-closed, C3.2).")
+    if n_control_refused_rows:
+        sample = sorted({str(cohort[cid].get("control") or "?")
+                         for cid in control_refused_ids})[:5]
+        excluded_note += (
+            f" {n_control_refused_rows} cohort claim(s) / "
+            f"{n_control_refused_dates} date(s) have NO grade row because their "
+            f"DECLARED CONTROL could not be priced over the shared window "
+            f"(grade_claim rule 5); they are counted as UNCOVERED cohort members, "
+            f"not as absent — declaring an unpriceable control must never read "
+            f"better than declaring none (review finding 4). Control(s): "
+            f"{', '.join(sample)}.")
+    if any(k != COHORT_ROWLESS_CONTROL_REFUSED for k in cohort_rowless):
+        other = {k: v for k, v in sorted(cohort_rowless.items())
+                 if k != COHORT_ROWLESS_CONTROL_REFUSED}
+        excluded_note += (f" Rowless cohort claims not attributed to the control "
+                          f"leg (excluded from every denominator): "
+                          f"{', '.join(f'{k}={v}' for k, v in other.items())}.")
     basis_note = (f" Evaluated on clock basis {basis!r}."
                   f" Cohort: {n_cohort_rows} row(s) / {n_cohort_dates} date(s);"
                   f" controlled: {n_controlled_rows} row(s) /"
@@ -4126,10 +4460,31 @@ def matched_control_check(claim_family: str, horizon: int,
         "n_controlled_dates": n_controlled_dates,
         "n_cohort_rows": n_cohort_rows,
         "n_controlled_rows": n_controlled_rows,
+        "n_control_refused_rows": n_control_refused_rows,
+        "n_control_refused_dates": n_control_refused_dates,
+        "cohort_rowless": cohort_rowless,
         "control_clock_start": clock_start,
         "clock_basis": basis,
         "clock_prior_n_dates": prior_n_dates,
     }
+
+    if straddled_refused:
+        return PromotionResult(
+            eligible=False,
+            reason=(f"claim_family={claim_family!r} horizon={horizon}d: every "
+                    f"cohort claim that could have graded here had its DECLARED "
+                    f"CONTROL refused by the shared window (grade_claim rule 5), "
+                    f"and those claims straddle {len(straddled_refused)} "
+                    f"grading-clock bases ({', '.join(straddled_refused)}) with "
+                    f"no single explicit clock to evaluate on — refusing to pool. "
+                    f"This is NOT an empty cohort: {n_control_refused_rows} "
+                    f"claim(s) are uncovered, not absent. Evaluate ONE basis by "
+                    f"name (clock_basis=...).{excluded_note}"),
+            n_dates=0, ci_low=None,
+            current_state=STATE_MIXED_CLOCK,
+            control_coverage=None,
+            **common,
+        )
 
     if n_cohort_dates == 0:
         return PromotionResult(
@@ -4300,7 +4655,8 @@ def _apply_policy_label(pr: "PromotionResult", policy: str,
 
 
 def promotion_check_dispatch(claim_family: str, horizon: int,
-                             root: Path | str | None = None) -> PromotionResult:
+                             root: Path | str | None = None,
+                             today: date | str | None = None) -> PromotionResult:
     """P0d C5 — THE PRODUCTION ENTRY POINT: dispatch by the family's POLICY.
 
     This is what replaces the blanket `promotion_check(control_only=True)` on
@@ -4319,23 +4675,40 @@ def promotion_check_dispatch(claim_family: str, horizon: int,
         computed as description, but eligibility is forced False and the verdict
         says so (C5.3). These are salience/descriptive species; they grade
         magnitude against the placebo tape, not direction against a control.
-    """
+
+    `today` — THE POINT-IN-TIME REFERENCE, threaded rather than re-read (F5).
+    `scripts/grade_qledger.py --today` exists for replay, and it reaches
+    `grade_claim`; it did NOT reach here, so a replay graded against date T while
+    the matched-control gate judged cohort maturity against `date.today()`. The
+    drift was conservative in direction — extra claims looked matured and mostly
+    landed in `matured_awaiting_grading` — but it was a point-in-time
+    inconsistency INSIDE one run, and C4.4's whole premise is that the rowless
+    CLASS is the truth about why a row is missing. Defaults to `date.today()`
+    exactly as before when omitted; nothing about a normal nightly changes."""
     policy, classified = family_control_policy(claim_family)
 
     if policy == CONTROL_POLICY_REQUIRED:
-        return matched_control_check(claim_family, horizon, root=root)
+        return matched_control_check(claim_family, horizon, root=root, today=today)
 
+    # The benchmark arm reads only graded rows, so it has no maturity question to
+    # ask and takes no `today` — deliberately NOT threaded, rather than
+    # threaded-and-ignored.
     pr = promotion_check(claim_family, horizon, root=root, control_only=False)
     return _apply_policy_label(pr, policy, classified)
 
 
 def emit_ladder_states(root: Path | str | None = None,
-                       families: list[str] | None = None) -> dict:
+                       families: list[str] | None = None,
+                       today: date | str | None = None) -> dict:
     """Run promotion_check at every GRADE_HORIZON for each claim_family found in
     claims.jsonl and emit the results into track_record.json under 'ladder_states'.
 
     Called by grade_qledger.py at end-of-collect so the ladder state is always
     current alongside the grade stats. Returns the per-family results dict.
+
+    `today` is the run's point-in-time reference (F5), forwarded to the
+    matched-control gate so a `--today` replay judges cohort maturity on the same
+    date it graded on. Defaults to `date.today()`; a normal nightly is unchanged.
     """
     root = _root(root)
     claims = load_claims(root)
@@ -4362,7 +4735,7 @@ def emit_ladder_states(root: Path | str | None = None,
             # P0d C5.4: the blanket `control_only=True` call is GONE from
             # production. Which basis a family is evaluated on is decided by its
             # governed policy, and the verdict says which basis it used.
-            pr = promotion_check_dispatch(fam, h, root=root)
+            pr = promotion_check_dispatch(fam, h, root=root, today=today)
             entry = pr.as_dict()
             # P0a MAJOR 2 (round 5): the pooled default refuses a bi-market
             # family as STATE_MIXED_CLOCK — correctly, it never pools — but
@@ -4382,7 +4755,8 @@ def emit_ladder_states(root: Path | str | None = None,
             if pr.current_state == STATE_MIXED_CLOCK:
                 if policy == CONTROL_POLICY_REQUIRED:
                     per_market = {
-                        b: matched_control_check(fam, h, root=root, clock_basis=b)
+                        b: matched_control_check(fam, h, root=root, clock_basis=b,
+                                                 today=today)
                         for b in sorted(pr.clock_prior_n_dates or {})
                         if b != CLOCK_LEGACY
                     }

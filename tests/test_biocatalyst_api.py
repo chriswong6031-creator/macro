@@ -227,7 +227,6 @@ def entitled_client(promoted_config, monkeypatch) -> Iterator[TestClient]:
     app.include_router(biocatalyst_api.router)
     app.dependency_overrides[biocatalyst_api.require_site_full_user] = lambda: {
         "id": "paid-user",
-        "tier": "pro",
     }
     with TestClient(app) as client:
         yield client
@@ -976,6 +975,7 @@ def test_trial_screen_s1_cursor_binds_query_caller_and_generation_before_read(
         "ctgov_run_20260228_screen_fixture",
         "paid-user",
         "pro",
+        "site_full",
         "northstar",
     ):
         assert secret_text not in raw
@@ -1003,7 +1003,7 @@ def test_trial_screen_s1_cursor_binds_query_caller_and_generation_before_read(
 
     entitled_client.app.dependency_overrides[
         biocatalyst_api.require_site_full_user
-    ] = lambda: {"id": "other-paid-user", "tier": "pro"}
+    ] = lambda: {"id": "other-paid-user"}
     changed_caller = entitled_client.get(
         "/api/biocatalyst/v1/trials:screen",
         params={"limit": "2", "cursor": cursor},
@@ -1014,7 +1014,7 @@ def test_trial_screen_s1_cursor_binds_query_caller_and_generation_before_read(
 
     entitled_client.app.dependency_overrides[
         biocatalyst_api.require_site_full_user
-    ] = lambda: {"id": "paid-user", "tier": "pro"}
+    ] = lambda: {"id": "paid-user"}
     changed_generation = _screen_projection(
         snapshots,
         generation_id="ctgov_run_20260301_screen_fixture",
@@ -1049,7 +1049,7 @@ def test_trial_screen_s1_rejects_forgery_foreign_cursor_and_oversized_offset_bef
     binding = biocatalyst_api._trial_screen_query_binding(
         filters=filters,
         page_limit=2,
-        user={"id": "paid-user", "tier": "pro"},
+        user={"id": "paid-user"},
     )
     generation_id = "ctgov_run_20260228_screen_fixture"
     cursor = biocatalyst_api._encode_trial_screen_cursor(
@@ -1145,7 +1145,7 @@ def test_trial_screen_rejects_overlong_caller_identity_before_public_read(
 ) -> None:
     entitled_client.app.dependency_overrides[
         biocatalyst_api.require_site_full_user
-    ] = lambda: {"id": "x" * 257, "tier": "pro"}
+    ] = lambda: {"id": "x" * 257}
     monkeypatch.setattr(
         biocatalyst_api,
         "_read_bundle",
@@ -1158,6 +1158,223 @@ def test_trial_screen_rejects_overlong_caller_identity_before_public_read(
     assert response.json() == {
         "detail": "trial intelligence temporarily unavailable"
     }
+    _assert_private_headers(response)
+
+
+def test_peer_set_caller_binding_uses_authenticated_id_and_site_full_domain() -> None:
+    assert biocatalyst_api._peer_set_caller_binding({"id": "paid-user"}) == {
+        "subject": "paid-user",
+        "entitlement": "site_full",
+    }
+
+
+def test_peer_set_caller_binding_ignores_incidental_tier_and_user_metadata() -> None:
+    expected = {"subject": "paid-user", "entitlement": "site_full"}
+    assert biocatalyst_api._peer_set_caller_binding({"id": "paid-user"}) == expected
+    assert (
+        biocatalyst_api._peer_set_caller_binding({"id": "paid-user", "tier": "pro"})
+        == expected
+    )
+    assert (
+        biocatalyst_api._peer_set_caller_binding(
+            {"id": "paid-user", "tier": "essential"}
+        )
+        == expected
+    )
+    assert (
+        biocatalyst_api._peer_set_caller_binding({"id": "paid-user", "tier": ""})
+        == expected
+    )
+    assert (
+        biocatalyst_api._peer_set_caller_binding(
+            {
+                "id": "paid-user",
+                "user_metadata": {"tier": "pro", "role": "admin"},
+            }
+        )
+        == expected
+    )
+    empty_filters = {
+        "sponsor": None,
+        "condition": None,
+        "intervention": None,
+        "phase": None,
+        "status": None,
+        "study_type": None,
+        "primary_completion_from": None,
+        "primary_completion_to": None,
+    }
+    assert biocatalyst_api._trial_screen_query_binding(
+        filters=empty_filters,
+        page_limit=50,
+        user={"id": "paid-user"},
+    ) == biocatalyst_api._trial_screen_query_binding(
+        filters=empty_filters,
+        page_limit=50,
+        user={"id": "paid-user", "tier": "pro"},
+    )
+    assert biocatalyst_api._peer_set_query_binding(
+        cohort_nct_ids=("NCT00000001", "NCT00000002"),
+        page_limit=1,
+        user={"id": "paid-user"},
+    ) == biocatalyst_api._peer_set_query_binding(
+        cohort_nct_ids=("NCT00000001", "NCT00000002"),
+        page_limit=1,
+        user={"id": "paid-user", "tier": "pro"},
+    )
+
+
+@pytest.mark.parametrize(
+    "user",
+    (
+        {},
+        {"id": ""},
+        {"id": "   "},
+        {"id": None},
+        {"id": 12},
+        {"tier": "pro"},
+        {"id": "x" * 257},
+        {"email": "paid@example.com", "user_metadata": {"tier": "pro"}},
+    ),
+)
+def test_peer_set_caller_binding_fails_closed_without_usable_subject(user) -> None:
+    with pytest.raises(HTTPException) as caught:
+        biocatalyst_api._peer_set_caller_binding(user)
+    assert caught.value.status_code == 503
+    assert caught.value.detail == "trial intelligence temporarily unavailable"
+    _assert_private_exception(caught.value)
+
+
+@pytest.mark.parametrize(
+    "user",
+    (
+        {},
+        {"id": ""},
+        {"id": "   "},
+        {"id": None},
+        {"id": 12},
+        {"tier": "pro"},
+    ),
+)
+def test_trial_screen_malformed_subject_fails_closed_before_read(
+    entitled_client, monkeypatch, user
+) -> None:
+    entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ] = lambda bound=user: bound
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("malformed caller identity reached the public reader")
+        ),
+    )
+    response = entitled_client.get("/api/biocatalyst/v1/trials:screen")
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "trial intelligence temporarily unavailable"
+    }
+    _assert_private_headers(response)
+
+
+def test_trial_screen_production_shaped_id_only_user_returns_rows(entitled_client) -> None:
+    user = entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ]()
+    assert user == {"id": "paid-user"}
+    assert "tier" not in user
+    response = entitled_client.get("/api/biocatalyst/v1/trials:screen")
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["contract_id"] == "trial_screen_read_model.v1"
+    assert [row["nct_id"] for row in payload["rows"]] == ["NCT00000001"]
+
+
+def test_trial_peer_set_production_shaped_id_only_user_resolves(entitled_client) -> None:
+    user = entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ]()
+    assert user == {"id": "paid-user"}
+    response = entitled_client.post(
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
+        json={"nct_ids": ["NCT99999999", "NCT00000001"], "limit": 25},
+    )
+    assert response.status_code == 200
+    _assert_private_headers(response)
+    payload = response.json()
+    assert payload["contract_id"] == "trial_peer_set.v1"
+    assert payload["trials"][0]["nct_id"] == "NCT00000001"
+    assert payload["uncovered_nct_ids"] == ["NCT99999999"]
+
+
+def test_trial_screen_incidental_tier_does_not_change_cursor_binding(
+    entitled_client, monkeypatch
+) -> None:
+    snapshots = [
+        _screen_snapshot("NCT00000010", primary_completion=("2026-01", "ESTIMATED")),
+        _screen_snapshot("NCT00000011", primary_completion=("2026-02", "ESTIMATED")),
+        _screen_snapshot("NCT00000012", primary_completion=("2026-03", "ESTIMATED")),
+    ]
+    projection = _screen_projection(
+        snapshots,
+        generation_id="ctgov_run_20260228_screen_fixture",
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (projection, _milestone_operational()),
+    )
+    first = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2"},
+    )
+    assert first.status_code == 200
+    cursor = first.json()["pagination"]["next_cursor"]
+    entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ] = lambda: {"id": "paid-user", "tier": "pro"}
+    second = entitled_client.get(
+        "/api/biocatalyst/v1/trials:screen",
+        params={"limit": "2", "cursor": cursor},
+    )
+    assert second.status_code == 200
+    assert [row["nct_id"] for row in second.json()["rows"]] == ["NCT00000012"]
+
+
+def test_trial_peer_set_rejects_foreign_subject_cursor_before_read(
+    entitled_client, monkeypatch
+) -> None:
+    binding = biocatalyst_api._peer_set_query_binding(
+        cohort_nct_ids=("NCT00000001", "NCT00000002"),
+        page_limit=1,
+        user={"id": "paid-user"},
+    )
+    cursor = biocatalyst_api._encode_peer_set_cursor(
+        1,
+        generation_id="ctgov_run_20260802_peer_fixture",
+        query_binding=binding,
+    )
+    monkeypatch.setattr(
+        biocatalyst_api,
+        "_read_bundle",
+        lambda: (_ for _ in ()).throw(
+            AssertionError("foreign caller cursor reached the public reader")
+        ),
+    )
+    entitled_client.app.dependency_overrides[
+        biocatalyst_api.require_site_full_user
+    ] = lambda: {"id": "other-paid-user"}
+    response = entitled_client.post(
+        "/api/biocatalyst/v1/trial-peer-sets:resolve",
+        json={
+            "nct_ids": ["NCT00000001", "NCT00000002"],
+            "limit": 1,
+            "cursor": cursor,
+        },
+    )
+    assert response.status_code == 400
+    assert response.json() == {"detail": "cursor query mismatch"}
     _assert_private_headers(response)
 
 
@@ -1556,7 +1773,7 @@ def test_trial_peer_set_authenticates_before_json_decoding() -> None:
 
 
 def test_trial_peer_set_cursor_is_signed_and_binds_cohort_limit_caller_and_generation() -> None:
-    user = {"id": "paid-user", "tier": "pro"}
+    user = {"id": "paid-user"}
     binding = biocatalyst_api._peer_set_query_binding(
         cohort_nct_ids=("NCT00000001", "NCT00000002"),
         page_limit=1,
@@ -1590,7 +1807,7 @@ def test_trial_peer_set_cursor_is_signed_and_binds_cohort_limit_caller_and_gener
         biocatalyst_api._peer_set_query_binding(
             cohort_nct_ids=("NCT00000001", "NCT00000002"),
             page_limit=1,
-            user={"id": "another-paid-user", "tier": "pro"},
+            user={"id": "another-paid-user"},
         )
     ) != query_digest
 

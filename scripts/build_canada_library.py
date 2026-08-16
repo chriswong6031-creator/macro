@@ -981,8 +981,14 @@ def main(alpha: dict | None = None) -> dict | None:
             _cacalls.append({**_pot["call"], "level": (_rec.get("tech") or {}).get("price")})
     try:
         if _cacalls:
-            name_score_grader.append_name_calls(_cacalls, market="CA",
-                                                asof=str(pd.Timestamp.utcnow().date()))
+            # session stamp, not host clock — same date key the board publishes
+            # (US measured board(D)≡store(D+1) under utcnow stamping;
+            # DSC:NAME-SCORE-HAS-TWO-DISAGREEING-MEMORIES)
+            _ca_asof = (alpha or {}).get("as_of")
+            name_score_grader.append_name_calls(
+                _cacalls, market="CA",
+                asof=str(_ca_asof) if _ca_asof else str(pd.Timestamp.utcnow().date()),
+                session_keyed=bool(_ca_asof))
     except Exception as e:  # noqa: BLE001 — grading is additive, never fatal
         log.warning("CA name-score grader append failed (%s)", e)
     # ---- B2 accrual (research/LABEL_FALTERING_PHASE0.md §2) — archive per-basket member-

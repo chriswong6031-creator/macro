@@ -1192,6 +1192,107 @@ def test_this_suite_imports_only_what_its_pack_installs():
         "ERROR on CI: %s" % (sorted(PACK_DEPS), sorted(set(offenders))))
 
 
+# ===========================================================================
+# W4 2026-08-15 signed-in acceptance repair
+# Receipts: production refs watchlist.js?v=8, portfolio.js?v=5,
+# watchlist_risk.js?v=5, risk_core.js?v=2, watchstore.js?v=5
+# ===========================================================================
+
+def _render_t_macro(en: str, zh: str = "") -> str:
+    """Render the page's own t() macro under the same autoescape=True the bake uses."""
+    jinja2 = pytest.importorskip("jinja2")
+    src = TEMPLATE.read_text()
+    start = src.index("{% macro t(")
+    end = src.index("{%- endmacro %}") + len("{%- endmacro %}")
+    env = jinja2.Environment(autoescape=True)
+    tmpl = env.from_string(src[start:end] + "\n{{ t(en, zh) }}")
+    return tmpl.render(en=en, zh=zh)
+
+
+def test_authored_markup_in_t_is_not_shown_as_escaped_text():
+    """Defect 1. Footer <b>, &rsquo;, and tab &amp; shipped as literal text because
+    the local t() macro autoescaped authored HTML.
+
+    MUTATION CHECK: drop `|safe` from the macro and the footer shows `&lt;b&gt;`."""
+    footer = _render_t_macro(
+        "Analyzing a watchlist reads it as an <b>equal-weighted structure</b> — x.",
+        "分析自选股列表时按 <b>等权重结构</b> 处理。")
+    assert "<b>equal-weighted structure</b>" in footer
+    assert "&lt;b&gt;" not in footer
+    assert "<b>等权重结构</b>" in footer
+
+    asof = _render_t_macro("as of last night&rsquo;s close", "数据截至昨夜收盘")
+    assert "&amp;rsquo;" not in asof
+    assert "last night" in asof
+
+    tabs = _render_t_macro("Factors &amp; macro", "因子与宏观")
+    assert "&amp;amp;" not in tabs
+    assert "Factors" in tabs
+    weak = _render_t_macro("Weak links &amp; strengths", "弱点与支撑")
+    assert "&amp;amp;" not in weak
+
+
+@needs_node
+def test_watchlist_name_emits_explicit_napp_for_position_scoped_lanes():
+    """Defect 5. Book Risk / Risk Desk / Stage were silently omitted on a watchlist
+    name. Portfolio role already spoke; these must too, as n/app, never a score.
+
+    MUTATION CHECK: delete positionScopedRows() from intelSections and this reds."""
+    out = _wr("OUT({html: WR.intelSections('AAPL', {}, {inBook:false}), "
+              "held: WR.intelSections('AAPL', {}, {inBook:true}), "
+              "napp: WR.W4_NAPP});")
+    html = out["html"]
+    for key, lab in out["napp"].items():
+        assert lab["en"] in html, "watchlist drawer omitted %s" % key
+        assert html.count('class="st n/app"') >= 3
+    assert "%" not in _rs_text(html), "a watchlist name was given a fabricated score"
+    # a held name must NOT get the n/app copies — those lanes apply there
+    for lab in out["napp"].values():
+        assert lab["en"] not in out["held"], lab["en"]
+
+
+@needs_node
+def test_watchlist_drawer_tier1_gap_is_named_when_the_lead_is_empty():
+    """Defect 5, Tier-1. The lead is name-level (not n/app). If it fails to load,
+    the drawer must say so — not shrink.
+
+    MUTATION CHECK: drop the else-branch on `if (t1)` in drawerHTML and a thrown
+    intelTier1 leaves no Tier-1 note."""
+    out = _run(
+        "var WR = require(%s);\n"
+        "var WL = require(%s);\n"
+        "global.SD = { lz: function (a, b) { return a; } };\n"
+        "global.WRI = { intelTier1: function () { throw new Error('boom'); },\n"
+        "               intelSections: WR.intelSections };\n"
+        "WL.__setDetail('AAPL', {raw: PAY, tech: PAY.tech, flag: null, evt: null});\n"
+        "OUT({html: WL.drawerHTML({t:'AAPL', n:'Apple', s:'Technology'}, 8)});"
+        % (json.dumps(str(WRISK)), json.dumps(str(WATCHLIST))), {"PAY": FULL})
+    assert "Tier-1" in out["html"]
+    assert "gap" in out["html"]
+
+
+@needs_node
+def test_details_toggle_carries_aria_expanded_and_escape_closes():
+    """Defect 4. Enter-on-Details already opened (it is a button). Escape did not
+    close; the toggle had no aria-expanded; render() dropped focus to body.
+
+    MUTATION CHECK: strip aria-expanded from the button in rowHTML and this reds.
+    Delete closeOpenDrawers and the Escape path has nothing to call."""
+    out = _run(
+        "var WL = require(%s);\n"
+        "OUT({closed: WL.rowHTML({t:'AAPL', n:'Apple', s:''}),\n"
+        "     afterOpen: (function () { WL.toggleExp('AAPL'); return WL.rowHTML({t:'AAPL', n:'Apple', s:''}); })(),\n"
+        "     stillOpen: WL.drawerOpen('AAPL'),\n"
+        "     afterEsc: (function () { var n = WL.closeOpenDrawers(); return {n:n, open: WL.drawerOpen('AAPL')}; })()});"
+        % json.dumps(str(WATCHLIST)))
+    assert 'aria-expanded="false"' in out["closed"]
+    assert 'data-exp="AAPL"' in out["closed"]
+    assert 'aria-expanded="true"' in out["afterOpen"]
+    assert out["stillOpen"] is True
+    assert out["afterEsc"]["n"] is True
+    assert out["afterEsc"]["open"] is False
+
+
 def test_the_pack_dep_list_matches_the_job_that_runs_this_file():
     """PACK_DEPS above is a copy of a list that lives in the workflow. A copy that can
     drift is worse than no copy, so it is checked against the source of truth."""

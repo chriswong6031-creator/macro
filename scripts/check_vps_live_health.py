@@ -134,6 +134,23 @@ def evaluate(payload: dict[str, Any], *, now: datetime | None = None) -> list[st
         _require_age(failures, checks, "risk_state", 6)
     if weekday and 1 <= hour < 9:
         _require_age(failures, checks, "china_risk_state", 6)
+    # CN Breathing Platform (CN-PR-1, spec §5). ABSENT-OK until the first ship:
+    # the status endpoint does not grow a key until the evaluator is live, and
+    # requiring it here would red the whole dead-man on every existing box.
+    # Phase-aware ages: ≤6 min in morning/afternoon, ≤20 min through lunch,
+    # close_board present by 07:20 UTC on sessions. Windows are UTC hour bands
+    # (CST = UTC+8, no DST) so this file stays standard-library-only.
+    cn_live = checks.get("cn_prophet_live")
+    if weekday and isinstance(cn_live, dict):
+        if (1 <= hour < 3) or (5 <= hour < 7):
+            _require_age(failures, checks, "cn_prophet_live", 6)
+        elif 3 <= hour < 5:
+            _require_age(failures, checks, "cn_prophet_live", 20)
+        if hour > 7 or (hour == 7 and current.minute >= 20):
+            if not cn_live.get("close_board"):
+                failures.append(
+                    "cn_prophet_live: close_board missing after 07:20 UTC"
+                )
     # First bar is scheduled at 13:37 UTC. Allow it to complete before making
     # the hourly accrual/flow lane part of the external contract.
     if weekday and 14 <= hour <= 22:

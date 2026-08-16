@@ -15,11 +15,19 @@ Tests
 8. validator_dup_path          — synthetic dup-path entry is caught.
 9. validator_hand_weights_no_notes — weights=hand without notes is caught.
 10. validator_scored_no_evidence   — scored tier without qual_ladder_ref/notes is caught.
+11. no_restated_consumer_counts    — no prose in the registry restates a consumer
+                                     count (both the flag and the negative-control
+                                     side, so the rule can't pass by matching nothing).
+15. duplicate_yaml_keys_rejected   — repeated mapping keys hard-fail even though
+                                     yaml.safe_load succeeds (negative control).
+16. live_registry_has_no_duplicate_keys — committed synapse.yml is clean.
 """
 from __future__ import annotations
 
 import copy
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -34,6 +42,9 @@ from engine.neuralweb.synapse import (  # noqa: E402
     artifacts_by_owner,
     load_registry,
     validate_registry,
+)
+from scripts.check_synapse_registry import (  # noqa: E402
+    duplicate_yaml_key_violations,
 )
 
 _PLACEHOLDER_RE = re.compile(r"<[A-Z_]+>")
@@ -364,4 +375,120 @@ def test_validator_bad_horizon_role_enum(base_reg):
     violations = validate_registry(mutated, root=REPO_ROOT)
     assert any("horizon_role" in v for v in violations), (
         f"Expected horizon_role enum violation, got: {violations}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Test 11: no restated consumer counts in the registry prose
+# ---------------------------------------------------------------------------
+# Added 2026-08-14. config/synapse.yml carried 77 `# --- N consumers ---` section
+# headers; 43 of them disagreed with the `consumers:` list they sat on top of
+# (site-us-standouts said 13 for a 14-item list, regime-latest said 27 for 37),
+# and the regime-latest notes field claimed "28 Python modules + 3 external"
+# against an actual 37 + 4. A restated total is a hand-maintained copy of the
+# line below it, so it can only drift — the counts were removed rather than
+# regenerated, and these tests keep them out.
+
+def test_registry_has_no_restated_consumer_counts():
+    """The live registry must not restate a consumer count anywhere in prose."""
+    from scripts.check_synapse_registry import check_consumer_count_claims
+
+    violations = check_consumer_count_claims(REGISTRY_PATH.read_text(encoding="utf-8"))
+    assert violations == [], (
+        f"{len(violations)} restated consumer count(s) in config/synapse.yml:\n"
+        + "\n".join(f"  {v}" for v in violations)
+    )
+
+
+# Tests 15-16: duplicate YAML keys (safe_load is blind)
+# ---------------------------------------------------------------------------
+
+_PLANTED_DUP_YAML = (
+    "meta:\n"
+    "  schema_version: 1\n"
+    "artifacts:\n"
+    "  _selftest_dup_keys:\n"
+    "    notes: first-value-discarded-by-safe-load\n"
+    "    notes: last-value-kept-by-safe-load\n"
+)
+
+
+def test_duplicate_yaml_keys_rejected_even_when_safe_load_succeeds():
+    """A repeated mapping key must hard-fail even though yaml.safe_load accepts it.
+
+    Negative control: if this assertion used the parsed dict from safe_load,
+    the duplicate would already be gone and the test would pass vacuously.
+    """
+    safe_loaded = yaml.safe_load(_PLANTED_DUP_YAML)
+    assert isinstance(safe_loaded, dict), "negative control: safe_load must succeed"
+    assert (
+        safe_loaded["artifacts"]["_selftest_dup_keys"]["notes"]
+        == "last-value-kept-by-safe-load"
+    ), "negative control: safe_load must keep the last value"
+
+    violations = duplicate_yaml_key_violations(_PLANTED_DUP_YAML)
+    assert any("notes" in v and "duplicate YAML key" in v for v in violations), (
+        "duplicate-key loader must report the repeated 'notes' key that "
+        f"safe_load discarded; got: {violations}"
+    )
+
+
+def test_live_registry_has_no_duplicate_keys():
+    """Committed config/synapse.yml must not repeat a mapping key."""
+    text = REGISTRY_PATH.read_text(encoding="utf-8")
+    violations = duplicate_yaml_key_violations(text)
+    assert violations == [], (
+        f"synapse.yml has {len(violations)} duplicate YAML key(s):\n"
+        + "\n".join(f"  {v}" for v in violations)
+    )
+
+
+@pytest.mark.parametrize("sample", [
+    "  # --- 13 consumers ---",                              # bare section header
+    "  # --- 0 consumers (display rail only) ---",           # annotated header
+    "  # --- 1 consumer ---",                                # singular
+    "  # --- 7 consumers --- (single-writer restored)",      # trailing note
+    '    notes: "highest-consumer artifact (28 consumers)."',  # notes-field prose
+])
+def test_consumer_count_claim_is_flagged(sample):
+    """Every shape the registry had actually drifted in must be caught."""
+    from scripts.check_synapse_registry import check_consumer_count_claims
+
+    assert check_consumer_count_claims(sample), f"not flagged: {sample!r}"
+
+
+@pytest.mark.parametrize("sample", [
+    "  # --- W2 sweep 1: China Standout Board ---",          # labelled header
+    "      six named placements without new arithmetic. W2 consumers",
+    "  # NAR-W3 shared-contract stores (W4 consumer)",
+    "      konseki.market_memory/v1 consumer seam at context_only/weight=0.",
+    "      - engine/neuralweb/cortex.py",                    # a real consumers row
+    "    consumers: []",
+])
+def test_non_count_consumer_prose_is_not_flagged(sample):
+    """Negative control — the rule must key on a COUNT, not the word 'consumer'.
+
+    Every string here is a real line of config/synapse.yml. Without this test the
+    flag-side assertions above would still pass under a regex that matched any
+    mention of 'consumer', which would red the whole registry.
+    """
+    from scripts.check_synapse_registry import check_consumer_count_claims
+
+    assert check_consumer_count_claims(sample) == [], f"false positive: {sample!r}"
+def test_check_synapse_registry_selftest_covers_duplicate_keys():
+    """--selftest must plant a safe_load-blind duplicate and catch it."""
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "check_synapse_registry.py"), "--selftest"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"--selftest exited {result.returncode}\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "duplicate YAML keys" in result.stdout, (
+        "--selftest must exercise the duplicate-key case; stdout was:\n"
+        f"{result.stdout}"
     )

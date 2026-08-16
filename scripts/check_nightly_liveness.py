@@ -85,6 +85,7 @@ import urllib.request
 from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 # UNCONDITIONAL by contract (tests/test_check_script_import_pinning.py). A
@@ -121,6 +122,10 @@ DEFAULT_REPO = (
 #: is a floor for "a run exists", not a punctuality check.
 FIRE_BOUNDARY_UTC = time(22, 0)
 
+#: Keep in lockstep with daily.yml's schedule / et_gate (tests/test_daily_et_gate.py).
+EDT_CRON = "30 22 * * *"
+EST_CRON = "30 23 * * *"
+
 #: How far behind the calendar ``source_asof`` may sit before check C fails.
 #: 1 session, because the watchdog's own schedule (see the workflow) runs AFTER the
 #: bake window: at 08:00Z on D+1 a healthy store reads D (0 behind), and a bake that
@@ -153,6 +158,51 @@ def _parse_date(value: object) -> "date | None":
         return date.fromisoformat(value[:10])
     except ValueError:
         return None
+
+
+def intended_schedule_cron(when: datetime) -> str:
+    """Which daily.yml cron the America/New_York regime intends at ``when``."""
+    instant = when if when.tzinfo else when.replace(tzinfo=timezone.utc)
+    offset = instant.astimezone(ZoneInfo("America/New_York")).utcoffset()
+    return EDT_CRON if offset == timedelta(hours=-4) else EST_CRON
+
+
+def is_et_gate_skip(row: dict, *, now: datetime) -> bool:
+    """True when a schedule run's run-name is the off-regime DST cron.
+
+    Duplicated in scripts/prophet_rescue.py on purpose (the two organs must not
+    share fate).  Unlabelled successes use ``counts_as_bake``.
+    """
+    if row.get("event") != "schedule" or row.get("conclusion") != "success":
+        return False
+    title = " ".join(str(row.get(k) or "") for k in ("display_title", "name"))
+    if EDT_CRON not in title and EST_CRON not in title:
+        return False
+    when = _parse_dt(row.get("created_at")) or now
+    return intended_schedule_cron(when) not in title
+
+
+def counts_as_bake(row: dict, recent: list, *, now: datetime) -> bool:
+    """A success that ran the nightly, not an et_gate no-op.
+
+    31851452961's display_title was just ``daily`` and run_started_at equalled
+    created_at (queued pending), so duration cannot identify a skip.  An
+    unlabelled schedule success next to a cancelled schedule sibling is that
+    night's shape.
+    """
+    if row.get("conclusion") != "success":
+        return False
+    if is_et_gate_skip(row, now=now):
+        return False
+    if row.get("event") == "schedule":
+        title = " ".join(str(row.get(k) or "") for k in ("display_title", "name"))
+        named = EDT_CRON in title or EST_CRON in title
+        if not named and any(
+            sib.get("event") == "schedule" and sib.get("conclusion") == "cancelled"
+            for sib in recent
+        ):
+            return False
+    return True
 
 
 def expected_fire_after(now: datetime) -> "tuple[date, datetime]":
@@ -221,7 +271,14 @@ def evaluate(
     if recent:
         conclusions = [(r.get("status"), r.get("conclusion")) for r in recent]
         facts["conclusions"] = [f"{s}/{c or '-'}" for s, c in conclusions]
-        if any(c == "success" for _, c in conclusions):
+        skips = [
+            r for r in recent
+            if r.get("conclusion") == "success" and not counts_as_bake(r, recent, now=now)
+        ]
+        if skips:
+            facts["gate_skips"] = [r.get("id") for r in skips]
+        real_success = any(counts_as_bake(r, recent, now=now) for r in recent)
+        if real_success:
             baked = True
         elif any(s != "completed" for s, _ in conclusions):
             # Still baking.  The nightly legitimately runs for hours; check C is the
@@ -444,6 +501,40 @@ def _selftest() -> int:
     r = evaluate([{"created_at": "2026-08-11T22:30:00Z", "status": "completed",
                    "conclusion": "success"}], advanced, now)
     _check("healthy", r["ok"], True)
+
+    # 2026-08-14/15: cancelled EDT real slot + surviving EST-guard no-op. The
+    # no-op concluded success in ~5s; that must NOT count as a bake (otherwise
+    # this reads RAN GREEN BUT DID NOT ADVANCE — "the nightly ran").
+    r = evaluate([
+        {"id": 31848262472, "created_at": "2026-08-14T22:52:00Z",
+         "event": "schedule", "status": "completed", "conclusion": "cancelled",
+         "display_title": "daily 30 22 * * *"},
+        {"id": 31851452961, "created_at": "2026-08-14T23:45:00Z",
+         "event": "schedule", "status": "completed", "conclusion": "success",
+         "display_title": "daily 30 23 * * *",
+         "run_started_at": "2026-08-15T02:16:00Z",
+         "updated_at": "2026-08-15T02:16:05Z"},
+    ], {"source_asof": "2026-08-13"},
+       datetime(2026, 8, 15, 8, 0, tzinfo=timezone.utc))
+    _check("B/cancelled-real-plus-gate-skip", r["ok"], False)
+    assert any("NO SUCCESS" in f for f in r["fail_reasons"]), r
+    assert not any("DID NOT ADVANCE" in f for f in r["fail_reasons"]), r
+
+    # Live API shape: display_title was just "daily"; run_started_at == created_at.
+    r = evaluate([
+        {"id": 31848262472, "created_at": "2026-08-14T22:52:07Z",
+         "event": "schedule", "status": "completed", "conclusion": "cancelled",
+         "display_title": "daily"},
+        {"id": 31851452961, "created_at": "2026-08-14T23:45:40Z",
+         "event": "schedule", "status": "completed", "conclusion": "success",
+         "display_title": "daily",
+         "run_started_at": "2026-08-14T23:45:40Z",
+         "updated_at": "2026-08-15T02:16:21Z"},
+    ], {"source_asof": "2026-08-13"},
+       datetime(2026, 8, 15, 8, 0, tzinfo=timezone.utc))
+    _check("B/unlabelled-skip-plus-cancelled-sibling", r["ok"], False)
+    assert any("NO SUCCESS" in f for f in r["fail_reasons"]), r
+    assert not any("DID NOT ADVANCE" in f for f in r["fail_reasons"]), r
 
     # Blindness is never a breach.
     r = evaluate(None, None, now)

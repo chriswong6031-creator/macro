@@ -432,9 +432,20 @@ class TestFeaturedExtensionVeto:
         assert by["KNOWN"]["ext_unknown"] is False
         # The SCORE still fails closed on the unmeasured row — the runway leg pays 0,
         # so the two rows are not scored as if the gap were a reading of "fine".
+        #
+        # The five legs are the RETIRED v2 scorer's and since the 2026-08-15 fusion
+        # override they live on `prophet_shadow` (`engine/us_board_rank.legacy_v2_values`)
+        # — except on a DEGRADED night, where the retired scorer is what published and
+        # its legs ride the `prophet` block itself.  This two-row fixture is exactly
+        # that case: no registered fusion member can order two rows that differ only in
+        # `ext_z`, so the plane refuses and the board stamps `us_prophet_v2_fallback`.
+        # Either way the fail-closed rule is unchanged, which is why this assertion
+        # follows the legs rather than being deleted with them.
+        legs = ("prophet" if by["UNKNOWN"]["prophet"].get("degradation")
+                else "prophet_shadow")
         assert by["UNKNOWN"]["prophet"]["score"] > 0
-        assert by["UNKNOWN"]["prophet"]["components"]["runway"] == 0.0
-        assert by["KNOWN"]["prophet"]["components"]["runway"] == 1.0
+        assert by["UNKNOWN"][legs]["components"]["runway"] == 0.0
+        assert by["KNOWN"][legs]["components"]["runway"] == 1.0
 
     def test_the_block_counts_the_rows_whose_evidence_is_missing(self):
         """A board that features rows it could not measure must SAY so. The count is

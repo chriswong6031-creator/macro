@@ -877,9 +877,12 @@ def stage_assemble() -> None:
 
     # --- attribution ---------------------------------------------------------
     catalog = pd.read_parquet(DATA / "episodes" / "pilot_episode_catalog_v0.parquet")
-    add_cat = DATA / "episodes" / "addendum_b_catalog.parquet"
+    add_cat = DATA / "episodes" / "amendments" / "w1a1_b_episode_catalog_v0.parquet"
     if add_cat.exists():
-        catalog = pd.concat([catalog, pd.read_parquet(add_cat)], ignore_index=True)
+        extra = pd.read_parquet(add_cat)
+        shared = [c for c in catalog.columns if c in extra.columns]
+        if shared:
+            catalog = pd.concat([catalog, extra[shared]], ignore_index=True)
     cal = pd.DatetimeIndex(sorted({
         d for s in symbols
         for d in pd.DatetimeIndex(_load(s, planes[s], asof).index)

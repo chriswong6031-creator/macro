@@ -1194,7 +1194,10 @@ fi
 #                          rejections are admin-only (see the admin list below).
 #   engine/live_quotes.py  app/tape.py REST quote fetch (→ lib/config.py)
 #   lib/*                  ai_costs + mastermind_response_log log every chat call;
-#                          config.py is a module-level dep of live_quotes
+#                          config.py is a module-level dep of live_quotes;
+#                          commercial_path.py is the GATE-4 emit module reached
+#                          from billing / require_user / brain_gateway (function-
+#                          level, cached after the first money-path event)
 #
 # Deliberately NOT here (do not "fix" these — they would blip /api for nothing):
 #   - Doctrine CONTENT (engine/neuralweb/doctrine/*.md AND analyst/*.md): both
@@ -1209,7 +1212,7 @@ fi
 API_RESTART_CONFIRMED=0
 API_RESTART_NEEDED=0
 # BEGIN MACRO_API_RESTART_TRIGGER
-if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
+if [ "$API_UNIT_UPDATED" -eq 1 ] || ! mm_api_fence_marker_ready || grep -qE '^(app/.*\.py|app/requirements\.txt|app/deploy/macro-api\.service|config/site_access\.yml|engine/neuralweb/(ask_brain|cortex|brain_gateway|chart_perception|chat_plain_words|company_intelligence_reader|earnings_context_reader|doctrine|analyst_doctrine|market_packet|market_memory|market_memory_pit|market_memory_playback|market_memory_projection|market_memory_trusted|brain_market_intel|brain_analogues|brain_curve|brain_user_memory|envelope|key_pool|synapse)\.py|engine/earnings_narrative/(__init__|context_packets|contracts|digest|private_publication|promotion|public_wire|story|story_packets)\.py|engine/press/(__init__|earnings_adapter)\.py|engine/(codex_provider|llm_auth|options_issue_desk|portfolio_brief|portfolio_changes|portfolio_vocab|live_quotes|tushare_freshness)\.py|engine/codex_lane/runner\.py|engine/research_vault/.*\.py|engine/fundamental_forensics/.*\.py|engine/biocatalyst/.*\.py|engine/sector_intelligence/.*\.py|engine/company_intelligence/.*\.py|engine/seasonality/(__init__|contracts|event_clock|model|multiplicity|program_watch|prophet_bridge|regime|screener|universe)\.py|engine/capital_structure/(__init__|document_terms|event_spine|projection|source_identity)\.py|engine/government_revenue/(__init__|amount_semantics|award_events|budget_program|candidates|dossiers|entity_resolution|federation|freshness|idv_bridge|idv_dossiers|metrics|opportunities|point_in_time|subaward_dossiers|workspace)\.py|contracts/government_revenue/(government_entity_coverage\.v1|government_idv_bridge\.v1|government_idv_dossiers\.v1|government_procurement_(event|workspace)\.v2|government_recipient_resolution_coverage\.v1|government_revenue_candidate(_queue|_historical_suppressions|_issuance_corrections)?\.v1|government_revenue_dossiers\.v1|government_subaward_dossiers\.v1)\.schema\.json|contracts/options/options\.(issue_desk(_proposal|_decision)?|issue_receipt)\.v1\.schema\.json|engine/context_index/(packet|fusion|gitinfo|lexical|structured)\.py|engine/marketing/(__init__|authority|chart_render|charter|claims|cmo|confluence_source|departments|economics|events|ledgers|opportunity_bus|publication|state)\.py|lib/(config|ai_costs|commercial_path|mastermind_response_log|nyse_calendar|user_prefs|tiers)\.py)$' <<<"$CHANGED" || \
    [ "$API_DEPS_UPDATED" -eq 1 ]; then
 	API_RESTART_NEEDED=1
 
@@ -1498,6 +1501,40 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# CN PROPHET LIVE lane (CN-PR-1). Own block — a widened regex would restart the
+# US prophet timer whenever this unit changed. Same self-arming contract: go-live
+# is a REPO COMMIT, so a CHANGED-only trigger would install a timer nobody ever
+# enables. The live-fast guard marks the serving VPS. The .service is NEVER
+# restarted (oneshot — that would run a pass off the CST-windowed schedule).
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-live-cnprophet\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-live-cnprophet.timer ]; }; then
+	CNPROPHET_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-live-cnprophet.service"
+		"$APP_DIR/app/deploy/macro-live-cnprophet.timer"
+	)
+	if systemd-analyze verify "${CNPROPHET_UNIT_SOURCES[@]}"; then
+		CNPROPHET_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${CNPROPHET_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				CNPROPHET_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$CNPROPHET_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-live-cnprophet.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-live-cnprophet units updated"
+		fi
+		systemctl enable --now macro-live-cnprophet.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-live-cnprophet.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-live-cnprophet unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
 # CLOSE-PASS MIRROR lane (W-L1a). Its own block for the same reason the Prophet
 # block is separate: a widened regex would restart unrelated timers whenever this
 # unit changed. Same self-arming contract — go-live for this lane is a REPO COMMIT
@@ -1573,6 +1610,127 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 			echo "macro-update: macro-sentinel.timer could not be enabled" >&2
 	else
 		echo "macro-update: refusing macro-sentinel unit update — systemd-analyze verify failed" >&2
+	fi
+fi
+
+# LIVE ENTRY RADAR lanes — the pre-open pack builder and the 5-min RTH evaluator
+# (research/live_entry_radar/W4_LIVE_EVALUATOR_DESIGN.md §3b, W4_DEPLOY_PLAN.md).
+# Four units in ONE block because they are one program: they go live together, they
+# share a cap set, and a session evaluated against a pack built by a different code
+# version is exactly the thing pack_hash exists to refuse.
+#
+# THE ARM GATE IS WHAT MAKES THIS BLOCK DIFFERENT FROM THE FOUR ABOVE. For Prophet,
+# close-pass and the sentinel, go-live is a REPO COMMIT and nothing else. For this
+# program the commissioning drew the deployment boundary at ACTIVATION (design §3b:
+# build + validate, no autonomous production service state), so go-live is an
+# explicit OPERATOR act — `ENTRY_RADAR_LIVE_ENABLE=1` in /etc/macro-live.env — and
+# the merge alone must leave the box exactly as it found it. The code path is still
+# the house self-arming shape: once the flag is set, the next macro-update tick
+# installs, verifies, enables and heals with no further operator step, and the
+# absent-file clause self-heals a failed verify or a removed unit.
+#
+# ENTRY_RADAR_LIVE_ENABLE is read by GREP, not by sourcing. update.sh reads no env
+# file anywhere else and runs under `set -euo pipefail` as root: sourcing an
+# operator-edited file here would execute whatever is in it, inside this script's
+# shell, with its `set -e` semantics — a deploy script that can be killed (or worse)
+# by a stray line in an unrelated env file. The `|| true` is load-bearing for the
+# same reason: under pipefail an unmatched grep is exit 1, which `set -e` would take
+# as a fatal error on the ordinary unarmed path.
+#
+# The ARM CHECK SITS OUTSIDE THE CHANGED TRIGGER, deliberately. A disarm has to work
+# on a tick where nothing changed at all: the operator's rollback is to DELETE the
+# env line, which touches no repo file, so a CHANGED-gated block would never notice
+# and the timers would run on forever. So the structure is: live-plane guard →
+# armed? → (CHANGED or absent) install/enable : disarm-if-installed. Only the INSTALL
+# half is CHANGED-gated; both arm directions are evaluated every pass.
+#
+# The .service files are NEVER restarted. They are oneshots — `systemctl restart`
+# would RUN a pass out of band: an evaluator pass outside the ET window against a
+# stale pack, or a pack build mid-session that the stale-pack gate would then have to
+# refuse. Only the timers are (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1; then
+	ENTRY_RADAR_ARM=$(grep -E '^ENTRY_RADAR_LIVE_ENABLE=' /etc/macro-live.env 2>/dev/null \
+		| tail -1 | cut -d= -f2- | tr -d "\"'[:space:]" || true)
+	if [ "${ENTRY_RADAR_ARM:-}" = "1" ]; then
+		if echo "$CHANGED" | grep -qE '^(app/deploy/macro-(live-entry-radar|entry-radar-pack)\.(service|timer)|scripts/entry_radar_live(_pack)?\.py|engine/entry_radar/live_.*\.py)$' || \
+		   [ ! -f /etc/systemd/system/macro-live-entry-radar.timer ] || \
+		   [ ! -f /etc/systemd/system/macro-entry-radar-pack.timer ]; then
+			ENTRY_RADAR_UNIT_SOURCES=(
+				"$APP_DIR/app/deploy/macro-live-entry-radar.service"
+				"$APP_DIR/app/deploy/macro-live-entry-radar.timer"
+				"$APP_DIR/app/deploy/macro-entry-radar-pack.service"
+				"$APP_DIR/app/deploy/macro-entry-radar-pack.timer"
+			)
+			if systemd-analyze verify "${ENTRY_RADAR_UNIT_SOURCES[@]}"; then
+				ENTRY_RADAR_UNIT_UPDATED=0
+				for UNIT_SOURCE in "${ENTRY_RADAR_UNIT_SOURCES[@]}"; do
+					UNIT=$(basename "$UNIT_SOURCE")
+					if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+						install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+						ENTRY_RADAR_UNIT_UPDATED=1
+					fi
+				done
+				if [ "$ENTRY_RADAR_UNIT_UPDATED" -eq 1 ]; then
+					systemctl daemon-reload
+					systemctl restart macro-live-entry-radar.timer macro-entry-radar-pack.timer 2>/dev/null || true
+					RECONCILED=1
+					echo "macro-update: entry-radar units updated"
+				fi
+				systemctl enable --now macro-live-entry-radar.timer macro-entry-radar-pack.timer >/dev/null 2>&1 || \
+					echo "macro-update: entry-radar timers could not be enabled" >&2
+			else
+				echo "macro-update: refusing entry-radar unit update — systemd-analyze verify failed" >&2
+			fi
+		fi
+	else
+		echo "macro-update: entry-radar: staged, not armed (ENTRY_RADAR_LIVE_ENABLE unset)"
+		# SYMMETRIC DISARM. Rollback is "remove the env line", so the block that
+		# arms on a flag must also stand the lane down when the flag goes away —
+		# otherwise the only rollback is a manual systemctl call the deploy plan
+		# does not describe. `disable --now` both stops the running timer and
+		# removes the timers.target wants link, so a reboot does not resurrect it.
+		if [ -f /etc/systemd/system/macro-live-entry-radar.timer ] || \
+		   [ -f /etc/systemd/system/macro-entry-radar-pack.timer ]; then
+			systemctl disable --now macro-live-entry-radar.timer macro-entry-radar-pack.timer >/dev/null 2>&1 || true
+			RECONCILED=1
+			echo "macro-update: entry-radar: disarmed — both timers disabled and stopped"
+		fi
+	fi
+fi
+
+# CUSTOMER-TABLE BACKUP — MMX-001 / GATE-1. Same self-arming contract as the
+# sentinel: go-live is a REPO COMMIT, so a CHANGED-only trigger would install a
+# timer nobody ever enables. Gated on macro-api.service (the box that already
+# holds Supabase + R2 env). The .service is a oneshot and is NEVER restarted;
+# only the timer is (re)armed. Absent-file clause self-heals an earlier failed
+# verify or an operator removal. The job fail-closes without
+# BACKUP_ENCRYPTION_KEY — that is visible, not silent.
+if systemctl is-enabled macro-api.service >/dev/null 2>&1 && \
+   { echo "$CHANGED" | grep -qE '^app/deploy/macro-user-backup\.(service|timer)$' || \
+     [ ! -f /etc/systemd/system/macro-user-backup.timer ]; }; then
+	USER_BACKUP_UNIT_SOURCES=(
+		"$APP_DIR/app/deploy/macro-user-backup.service"
+		"$APP_DIR/app/deploy/macro-user-backup.timer"
+	)
+	if systemd-analyze verify "${USER_BACKUP_UNIT_SOURCES[@]}"; then
+		USER_BACKUP_UNIT_UPDATED=0
+		for UNIT_SOURCE in "${USER_BACKUP_UNIT_SOURCES[@]}"; do
+			UNIT=$(basename "$UNIT_SOURCE")
+			if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+				install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+				USER_BACKUP_UNIT_UPDATED=1
+			fi
+		done
+		if [ "$USER_BACKUP_UNIT_UPDATED" -eq 1 ]; then
+			systemctl daemon-reload
+			systemctl restart macro-user-backup.timer 2>/dev/null || true
+			RECONCILED=1
+			echo "macro-update: macro-user-backup units updated"
+		fi
+		systemctl enable --now macro-user-backup.timer >/dev/null 2>&1 || \
+			echo "macro-update: macro-user-backup.timer could not be enabled" >&2
+	else
+		echo "macro-update: refusing macro-user-backup unit update — systemd-analyze verify failed" >&2
 	fi
 fi
 
@@ -1842,7 +2000,7 @@ fi
 # the panel queueing against the OLD rule out of sys.modules — the outbox gap
 # (2026-07-26) again, but on the path where being stale means a wrong-desk or
 # double-owner post rather than a stale reading.
-if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|project_runtime_state|tiers)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|social_publisher|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/marketing_publisher\.py)$'; then
+if [ "$ADMIN_UNIT_UPDATED" -eq 1 ] || echo "$CHANGED" | grep -qE '^(admin/.*|lib/(ai_costs|mastermind_response_log|project_runtime_state|tiers)\.py|lib/dataos/(__init__|identity|nulls|price|quality|registry|temporal)\.py|engine/(codex_provider|llm_auth|macro_thesis|prophet_integrity|intelligence_registry|output_health)\.py|engine/codex_lane/runner\.py|engine/neuralweb/(key_pool|ask_brain|support_map|orchestrator_log|trade_memory)\.py|engine/metabolism/(throttle|budget_gate)\.py|engine/marketing/(__init__|accounts|ad_allocator|ad_arena|ad_central|ad_stats|approval_desk|authority|cadence_resolver|charter|claims|cmo|cold_read|copywriter|departments|economics|events|ledgers|market_clock|media_publish|opportunity_bus|outbox|personas|publication|rejections|blind_identity|health_monitor|labels|learned_rules|reply_critics|reply_discovery|reply_drafter|reply_export|reply_producer|reply_queue|reply_voice|rewrite|sentinel|social_publisher|state|story_lock|wire_routing)\.py|engine/press/(__init__|desk_planner)\.py|scripts/(marketing_publisher|build_intelligence_registry|build_output_health)\.py)$'; then
 	systemctl is-enabled admin >/dev/null 2>&1 && systemctl restart admin || true
 fi
 

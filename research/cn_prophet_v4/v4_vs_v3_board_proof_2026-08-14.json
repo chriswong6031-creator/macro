@@ -1,0 +1,2922 @@
+{
+ "generated_from": "site/factordata/china_standouts.json",
+ "board_asof": "2026-08-14",
+ "live_definition": "cn_prophet_v4",
+ "shadow_definition": "cn_prophet_v3_shadow",
+ "ordering": "intel_interest_then_v3_score",
+ "n_rows": 116,
+ "featured_cap": 24,
+ "sector_cap": 4,
+ "reconstruction_matches_live_shelf": true,
+ "intel_coverage": {
+  "definition": "cn_intel_interest_v1",
+  "n_rows": 116,
+  "n_measured": 116,
+  "n_fallback_v3": 0,
+  "measured_rate_pct": 100.0,
+  "fallback_reasons": {},
+  "score_min": 0.0,
+  "score_median": 0.0,
+  "score_max": 47.25
+ },
+ "excludes": [
+  "board_row_direction",
+  "board_label_edge",
+  "board_absent_bonus",
+  "board_lagging_desk_gap",
+  "prophet_score",
+  "prophet_rank",
+  "hub_opportunity_score"
+ ],
+ "top_v4": [
+  {
+   "ticker": "688018.SS",
+   "name": "Espressif Systems (Shanghai) Co., Ltd. / 乐鑫科技",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 65,
+   "v4_rank": 1,
+   "rank_move": 64,
+   "prophet_score_v3": 75.26,
+   "intel_interest_score": 47.25,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-29% off high",
+    "RS +4.8% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.444,
+   "intel_edge_remaining": 0.926,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688083.SS",
+   "name": "Zwsoft Co.,Ltd. / 中望软件",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 71,
+   "v4_rank": 2,
+   "rank_move": 69,
+   "prophet_score_v3": 72.81,
+   "intel_interest_score": 43.99,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS -0.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.383,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301631.SZ",
+   "name": "Shenzhen Uniconn Technology Co., Ltd. / 壹连科技",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 41,
+   "v4_rank": 3,
+   "rank_move": 38,
+   "prophet_score_v3": 80.72,
+   "intel_interest_score": 43.1,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-32% off high",
+    "RS +14.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.561,
+   "intel_edge_remaining": 0.668,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688029.SS",
+   "name": "Micro-Tech (Nanjing) Co.,Ltd / 南微医学",
+   "sector": "Healthcare",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "hold",
+   "stage": "ENTRY",
+   "v3_rank": 92,
+   "v4_rank": 4,
+   "rank_move": 88,
+   "prophet_score_v3": 64.36,
+   "intel_interest_score": 32.49,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-26% off high",
+    "RS -3.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.332,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688252.SS",
+   "name": "Jadard Technology Inc. / 天德钰",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 60,
+   "v4_rank": 5,
+   "rank_move": 55,
+   "prophet_score_v3": 76.62,
+   "intel_interest_score": 31.76,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +19.1% vs CSI300 (20d)",
+    "drag: 22% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.488,
+   "intel_edge_remaining": 0.566,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600392.SS",
+   "name": "Shenghe Resources Holding Co., Ltd / 盛和资源",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 77,
+   "v4_rank": 6,
+   "rank_move": 71,
+   "prophet_score_v3": 70.55,
+   "intel_interest_score": 29.19,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-30% off high",
+    "RS +10.0% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.348,
+   "intel_edge_remaining": 0.758,
+   "intel_leading_gap": 2,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002048.SZ",
+   "name": "Ningbo Huaxiang Electronic Co., Ltd. / 宁波华翔",
+   "sector": "Consumer Cyclical",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 9,
+   "v4_rank": 7,
+   "rank_move": 2,
+   "prophet_score_v3": 90.9,
+   "intel_interest_score": 25.78,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +1.0% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.268,
+   "intel_edge_remaining": 0.985,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002706.SZ",
+   "name": "Shanghai Liangxin Electrical Co.,LTD. / 良信股份",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "hold",
+   "stage": "ENTRY",
+   "v3_rank": 75,
+   "v4_rank": 8,
+   "rank_move": 67,
+   "prophet_score_v3": 71.86,
+   "intel_interest_score": 22.78,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +5.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.255,
+   "intel_edge_remaining": 0.914,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300014.SZ",
+   "name": "EVE Energy Co., Ltd. / 亿纬锂能",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 44,
+   "v4_rank": 9,
+   "rank_move": 35,
+   "prophet_score_v3": 80.05,
+   "intel_interest_score": 21.03,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-38% off high",
+    "RS +6.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.238,
+   "intel_edge_remaining": 0.904,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300001.SZ",
+   "name": "Qingdao TGOOD Electric Co., Ltd. / 特锐德",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 88,
+   "v4_rank": 10,
+   "rank_move": 78,
+   "prophet_score_v3": 66.33,
+   "intel_interest_score": 21.02,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-10% off high",
+    "RS +16.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.366,
+   "intel_edge_remaining": 0.499,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300442.SZ",
+   "name": "Range Intelligent Computing Technology Group Company Limited / 润泽科技",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 23,
+   "v4_rank": 11,
+   "rank_move": 12,
+   "prophet_score_v3": 85.51,
+   "intel_interest_score": 20.71,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-31% off high",
+    "RS +7.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.238,
+   "intel_edge_remaining": 0.89,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301358.SZ",
+   "name": "Hunan Yuneng New Energy Battery Material Co.,Ltd. / 湖南裕能",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 53,
+   "v4_rank": 12,
+   "rank_move": 41,
+   "prophet_score_v3": 78.18,
+   "intel_interest_score": 20.41,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-37% off high",
+    "RS +12.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.297,
+   "intel_edge_remaining": 0.702,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002518.SZ",
+   "name": "Shenzhen KSTAR Science and Technology Co., Ltd. / 科士达",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 15,
+   "v4_rank": 13,
+   "rank_move": 2,
+   "prophet_score_v3": 88.96,
+   "intel_interest_score": 19.24,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +2.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.205,
+   "intel_edge_remaining": 0.961,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603876.SS",
+   "name": "Jiangsu Dingsheng New Materials Joint-Stock Co.,Ltd / 鼎胜新材",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 48,
+   "v4_rank": 14,
+   "rank_move": 34,
+   "prophet_score_v3": 79.5,
+   "intel_interest_score": 19.15,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-31% off high",
+    "RS +13.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.285,
+   "intel_edge_remaining": 0.688,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300953.SZ",
+   "name": "Ningbo Zhenyu Technology Co., Ltd. / 震裕科技",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 18,
+   "v4_rank": 15,
+   "rank_move": 3,
+   "prophet_score_v3": 88.06,
+   "intel_interest_score": 19.02,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-42% off high",
+    "RS +3.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.205,
+   "intel_edge_remaining": 0.95,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688068.SS",
+   "name": "Beijing Hotgen Biotech Co., Ltd. / 热景生物",
+   "sector": "Healthcare",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "featured_cap"
+   ],
+   "entry_status": "partial",
+   "stage": "ENTRY",
+   "v3_rank": 111,
+   "v4_rank": 16,
+   "rank_move": 95,
+   "prophet_score_v3": 51.29,
+   "intel_interest_score": 18.47,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "RS -11.8% vs CSI300 (20d)",
+    "-54% off high (falling)"
+   ],
+   "intel_signal_core": 0.323,
+   "intel_edge_remaining": 0.585,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002709.SZ",
+   "name": "Guangzhou Tinci Materials Technology Co., Ltd. / 天赐材料",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 3,
+   "v4_rank": 17,
+   "rank_move": -14,
+   "prophet_score_v3": 93.51,
+   "intel_interest_score": 16.82,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-38% off high",
+    "RS +7.8% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.196,
+   "intel_edge_remaining": 0.88,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600773.SS",
+   "name": "Tibet Urban Development and Investment Co.,LTD / 西藏城投",
+   "sector": "Real Estate",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 64,
+   "v4_rank": 18,
+   "rank_move": 46,
+   "prophet_score_v3": 75.7,
+   "intel_interest_score": 16.63,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-60% off high",
+    "RS +3.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.178,
+   "intel_edge_remaining": 0.953,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301031.SZ",
+   "name": "Xi'an Sinofuse Electric Co., Ltd. / 中熔电气",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 8,
+   "v4_rank": 19,
+   "rank_move": -11,
+   "prophet_score_v3": 90.95,
+   "intel_interest_score": 16.08,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +13.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.238,
+   "intel_edge_remaining": 0.691,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002338.SZ",
+   "name": "Changchun UP Optotech Co.,Ltd. / 奥普光电",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 17,
+   "v4_rank": 20,
+   "rank_move": -3,
+   "prophet_score_v3": 88.09,
+   "intel_interest_score": 15.89,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +11.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.223,
+   "intel_edge_remaining": 0.73,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600259.SS",
+   "name": "Rising Nonferrous Metals Share Co.,Ltd. / 中稀有色",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "confirmed_late"
+   ],
+   "entry_status": "partial",
+   "stage": "ENTRY",
+   "v3_rank": 99,
+   "v4_rank": 21,
+   "rank_move": 78,
+   "prophet_score_v3": 61.33,
+   "intel_interest_score": 14.98,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-22% off high",
+    "RS +21.5% vs CSI300 (20d)",
+    "drag: 25% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.297,
+   "intel_edge_remaining": 0.515,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002240.SZ",
+   "name": "Chengxin Lithium Group Co., Ltd. / 盛新锂能",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 19,
+   "v4_rank": 22,
+   "rank_move": -3,
+   "prophet_score_v3": 87.34,
+   "intel_interest_score": 14.61,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +14.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.224,
+   "intel_edge_remaining": 0.666,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "601609.SS",
+   "name": "Ningbo Jintian Copper (Group) Co., Ltd. / 金田股份",
+   "sector": "Basic Materials",
+   "lane": "late_or_unfillable",
+   "lane_reasons": [
+    "unfillable",
+    "chase_veto",
+    "extended",
+    "non_entry_stage"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "RAN_LATE",
+   "v3_rank": 69,
+   "v4_rank": 23,
+   "rank_move": 46,
+   "prophet_score_v3": 73.5,
+   "intel_interest_score": 14.19,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-25% off high",
+    "RS +11.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.199,
+   "intel_edge_remaining": 0.73,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301488.SZ",
+   "name": "Longhorn Auto Co., Ltd. / 豪恩汽电",
+   "sector": "Consumer Cyclical",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 46,
+   "v4_rank": 24,
+   "rank_move": 22,
+   "prophet_score_v3": 79.75,
+   "intel_interest_score": 14.02,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-53% off high",
+    "RS +1.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.146,
+   "intel_edge_remaining": 0.981,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002460.SZ",
+   "name": "Ganfeng Lithium Group Co., Ltd. / 赣锋锂业",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 4,
+   "v4_rank": 25,
+   "rank_move": -21,
+   "prophet_score_v3": 92.95,
+   "intel_interest_score": 13.97,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS +8.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.163,
+   "intel_edge_remaining": 0.876,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300684.SZ",
+   "name": "Jones Tech PLC / 中石科技",
+   "sector": "Technology",
+   "lane": "late_or_unfillable",
+   "lane_reasons": [
+    "unfillable",
+    "chase_veto",
+    "extended",
+    "non_entry_stage"
+   ],
+   "entry_status": "partial",
+   "stage": "RAN_LATE",
+   "v3_rank": 95,
+   "v4_rank": 26,
+   "rank_move": 69,
+   "prophet_score_v3": 63.94,
+   "intel_interest_score": 12.69,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-9% off high",
+    "RS +20.6% vs CSI300 (20d)",
+    "drag: 24% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.323,
+   "intel_edge_remaining": 0.402,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600673.SS",
+   "name": "Guangdong HEC Technology Holding Co., Ltd / 东阳光",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "featured_cap"
+   ],
+   "entry_status": "partial",
+   "stage": "ENTRY",
+   "v3_rank": 94,
+   "v4_rank": 27,
+   "rank_move": 67,
+   "prophet_score_v3": 64.01,
+   "intel_interest_score": 12.53,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-15% off high",
+    "RS +8.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.162,
+   "intel_edge_remaining": 0.794,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600186.SS",
+   "name": "Lotus Holdings Co.,Ltd. / 莲花控股",
+   "sector": "Consumer Defensive",
+   "lane": "late_or_unfillable",
+   "lane_reasons": [
+    "unfillable",
+    "chase_veto",
+    "extended",
+    "non_entry_stage"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "RAN_LATE",
+   "v3_rank": 97,
+   "v4_rank": 28,
+   "rank_move": 69,
+   "prophet_score_v3": 62.3,
+   "intel_interest_score": 10.79,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-23% off high",
+    "RS +31.6% vs CSI300 (20d)",
+    "drag: 35% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.315,
+   "intel_edge_remaining": 0.351,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "000065.SZ",
+   "name": "NORINCO International Cooperation Ltd. / 北方国际",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 80,
+   "v4_rank": 29,
+   "rank_move": 51,
+   "prophet_score_v3": 69.7,
+   "intel_interest_score": 9.97,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-44% off high",
+    "RS -0.9% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.102,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002756.SZ",
+   "name": "Yongxing Special Materials Technology Co.,Ltd / 永兴材料",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 11,
+   "v4_rank": 30,
+   "rank_move": -19,
+   "prophet_score_v3": 90.19,
+   "intel_interest_score": 8.67,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +10.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.119,
+   "intel_edge_remaining": 0.745,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  }
+ ],
+ "top_v3": [
+  {
+   "ticker": "600879.SS",
+   "name": "China Aerospace Times Electronics CO., LTD. / 航天电子",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 1,
+   "v4_rank": 54,
+   "rank_move": -53,
+   "prophet_score_v3": 95.0,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS -5.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002466.SZ",
+   "name": "Tianqi Lithium Corporation / 天齐锂业",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 2,
+   "v4_rank": 31,
+   "rank_move": -29,
+   "prophet_score_v3": 94.01,
+   "intel_interest_score": 8.55,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-40% off high",
+    "RS +0.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.088,
+   "intel_edge_remaining": 0.989,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002709.SZ",
+   "name": "Guangzhou Tinci Materials Technology Co., Ltd. / 天赐材料",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 3,
+   "v4_rank": 17,
+   "rank_move": -14,
+   "prophet_score_v3": 93.51,
+   "intel_interest_score": 16.82,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-38% off high",
+    "RS +7.8% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.196,
+   "intel_edge_remaining": 0.88,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002460.SZ",
+   "name": "Ganfeng Lithium Group Co., Ltd. / 赣锋锂业",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 4,
+   "v4_rank": 25,
+   "rank_move": -21,
+   "prophet_score_v3": 92.95,
+   "intel_interest_score": 13.97,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS +8.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.163,
+   "intel_edge_remaining": 0.876,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002050.SZ",
+   "name": "Zhejiang Sanhua Intelligent Controls Co.,Ltd / 三花智控",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 5,
+   "v4_rank": 55,
+   "rank_move": -50,
+   "prophet_score_v3": 92.28,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-35% off high",
+    "RS -6.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600118.SS",
+   "name": "China Spacesat Co.,Ltd. / 中国卫星",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 6,
+   "v4_rank": 56,
+   "rank_move": -50,
+   "prophet_score_v3": 91.58,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +4.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.935,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "001301.SZ",
+   "name": "Shijiazhuang Shangtai Technology Co., Ltd. / 尚太科技",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 7,
+   "v4_rank": 57,
+   "rank_move": -50,
+   "prophet_score_v3": 90.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +6.0% vs CSI300 (20d)",
+    "drag: altdata crowding flag"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.642,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301031.SZ",
+   "name": "Xi'an Sinofuse Electric Co., Ltd. / 中熔电气",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 8,
+   "v4_rank": 19,
+   "rank_move": -11,
+   "prophet_score_v3": 90.95,
+   "intel_interest_score": 16.08,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +13.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.238,
+   "intel_edge_remaining": 0.691,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002048.SZ",
+   "name": "Ningbo Huaxiang Electronic Co., Ltd. / 宁波华翔",
+   "sector": "Consumer Cyclical",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 9,
+   "v4_rank": 7,
+   "rank_move": 2,
+   "prophet_score_v3": 90.9,
+   "intel_interest_score": 25.78,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +1.0% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.268,
+   "intel_edge_remaining": 0.985,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603920.SS",
+   "name": "Olympic Circuit Technology Co., Ltd / 世运电路",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 10,
+   "v4_rank": 58,
+   "rank_move": -48,
+   "prophet_score_v3": 90.83,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +11.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.736,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002756.SZ",
+   "name": "Yongxing Special Materials Technology Co.,Ltd / 永兴材料",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 11,
+   "v4_rank": 30,
+   "rank_move": -19,
+   "prophet_score_v3": 90.19,
+   "intel_interest_score": 8.67,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +10.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.119,
+   "intel_edge_remaining": 0.745,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300065.SZ",
+   "name": "Beijing Highlander Digital Technology Co., Ltd. / 海兰信",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 12,
+   "v4_rank": 59,
+   "rank_move": -47,
+   "prophet_score_v3": 89.5,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-43% off high",
+    "RS -4.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300322.SZ",
+   "name": "Huizhou Speed Wireless Technology Co.,Ltd. / 硕贝德",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 13,
+   "v4_rank": 32,
+   "rank_move": -19,
+   "prophet_score_v3": 89.0,
+   "intel_interest_score": 7.71,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-46% off high",
+    "RS +4.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.085,
+   "intel_edge_remaining": 0.928,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301662.SZ",
+   "name": "Ongoal Technology Co., Ltd. / 宏工科技",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 14,
+   "v4_rank": 35,
+   "rank_move": -21,
+   "prophet_score_v3": 89.0,
+   "intel_interest_score": 5.98,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-48% off high",
+    "RS +6.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.068,
+   "intel_edge_remaining": 0.899,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002518.SZ",
+   "name": "Shenzhen KSTAR Science and Technology Co., Ltd. / 科士达",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 15,
+   "v4_rank": 13,
+   "rank_move": 2,
+   "prophet_score_v3": 88.96,
+   "intel_interest_score": 19.24,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +2.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.205,
+   "intel_edge_remaining": 0.961,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688676.SS",
+   "name": "Hainan Jinpan Smart Technology Co., Ltd. / 金盘科技",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 16,
+   "v4_rank": 60,
+   "rank_move": -44,
+   "prophet_score_v3": 88.22,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-33% off high",
+    "RS +9.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.776,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002338.SZ",
+   "name": "Changchun UP Optotech Co.,Ltd. / 奥普光电",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 17,
+   "v4_rank": 20,
+   "rank_move": -3,
+   "prophet_score_v3": 88.09,
+   "intel_interest_score": 15.89,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +11.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.223,
+   "intel_edge_remaining": 0.73,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300953.SZ",
+   "name": "Ningbo Zhenyu Technology Co., Ltd. / 震裕科技",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 18,
+   "v4_rank": 15,
+   "rank_move": 3,
+   "prophet_score_v3": 88.06,
+   "intel_interest_score": 19.02,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-42% off high",
+    "RS +3.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.205,
+   "intel_edge_remaining": 0.95,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002240.SZ",
+   "name": "Chengxin Lithium Group Co., Ltd. / 盛新锂能",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 19,
+   "v4_rank": 22,
+   "rank_move": -3,
+   "prophet_score_v3": 87.34,
+   "intel_interest_score": 14.61,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +14.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.224,
+   "intel_edge_remaining": 0.666,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002465.SZ",
+   "name": "Guangzhou Haige Communications Group Incorporated Company / 海格通信",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 20,
+   "v4_rank": 61,
+   "rank_move": -41,
+   "prophet_score_v3": 86.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-60% off high",
+    "RS +5.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.915,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688205.SS",
+   "name": "Wuxi Taclink Optoelectronics Technology Co., Ltd. / 德科立",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 21,
+   "v4_rank": 62,
+   "rank_move": -41,
+   "prophet_score_v3": 86.67,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-47% off high",
+    "RS +14.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.662,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300913.SZ",
+   "name": "Zhejiang Zhaolong Interconnect Technology Co.,Ltd. / 兆龙互连",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 22,
+   "v4_rank": 43,
+   "rank_move": -21,
+   "prophet_score_v3": 85.75,
+   "intel_interest_score": 2.63,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-46% off high",
+    "RS +5.8% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.029,
+   "intel_edge_remaining": 0.91,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300442.SZ",
+   "name": "Range Intelligent Computing Technology Group Company Limited / 润泽科技",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 23,
+   "v4_rank": 11,
+   "rank_move": 12,
+   "prophet_score_v3": 85.51,
+   "intel_interest_score": 20.71,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-31% off high",
+    "RS +7.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.238,
+   "intel_edge_remaining": 0.89,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603308.SS",
+   "name": "Anhui Yingliu Electromechanical Co., Ltd. / 应流股份",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 24,
+   "v4_rank": 63,
+   "rank_move": -39,
+   "prophet_score_v3": 85.33,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS +7.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.885,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002549.SZ",
+   "name": "Hunan Kaimeite Gases Co., Ltd. / 凯美特气",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 25,
+   "v4_rank": 64,
+   "rank_move": -39,
+   "prophet_score_v3": 84.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-49% off high",
+    "RS +1.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.978,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002922.SZ",
+   "name": "Eaglerise Electric & Electronic (China) Co., Ltd / 伊戈尔",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 26,
+   "v4_rank": 36,
+   "rank_move": -10,
+   "prophet_score_v3": 84.95,
+   "intel_interest_score": 4.97,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +10.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.068,
+   "intel_edge_remaining": 0.748,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300456.SZ",
+   "name": "Sai MicroElectronics Inc. / 赛微电子",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 27,
+   "v4_rank": 65,
+   "rank_move": -38,
+   "prophet_score_v3": 84.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-51% off high",
+    "RS +3.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.951,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300763.SZ",
+   "name": "Ginlong Technologies Co., Ltd. / 锦浪科技",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 28,
+   "v4_rank": 49,
+   "rank_move": -21,
+   "prophet_score_v3": 84.95,
+   "intel_interest_score": 0.46,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-47% off high",
+    "RS +6.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.005,
+   "intel_edge_remaining": 0.897,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603119.SS",
+   "name": "Zhejiang Rongtai Electric Material Co.,Ltd. / 浙江荣泰",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 29,
+   "v4_rank": 66,
+   "rank_move": -37,
+   "prophet_score_v3": 84.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-42% off high",
+    "RS +3.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.946,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688726.SS",
+   "name": "LAPLACE Renewable Energy Technology Co., Ltd. / 拉普拉斯",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 30,
+   "v4_rank": 67,
+   "rank_move": -37,
+   "prophet_score_v3": 84.36,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-46% off high",
+    "RS +14.0% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.673,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  }
+ ],
+ "featured_v3": [
+  "600879.SS",
+  "002466.SZ",
+  "002709.SZ",
+  "002460.SZ",
+  "002050.SZ",
+  "600118.SS",
+  "001301.SZ",
+  "002048.SZ",
+  "603920.SS",
+  "002756.SZ",
+  "300065.SZ",
+  "300322.SZ",
+  "002338.SZ",
+  "601689.SS",
+  "000767.SZ",
+  "000766.SZ",
+  "301488.SZ",
+  "002812.SZ",
+  "000833.SZ",
+  "301363.SZ",
+  "688351.SS",
+  "600773.SS",
+  "688029.SS",
+  "002174.SZ"
+ ],
+ "featured_v4": [
+  "688018.SS",
+  "688083.SS",
+  "301631.SZ",
+  "688029.SS",
+  "688252.SS",
+  "600392.SS",
+  "002048.SZ",
+  "002706.SZ",
+  "300014.SZ",
+  "300001.SZ",
+  "301358.SZ",
+  "603876.SS",
+  "688068.SS",
+  "002709.SZ",
+  "600773.SS",
+  "002240.SZ",
+  "301488.SZ",
+  "601689.SS",
+  "002174.SZ",
+  "000767.SZ",
+  "000766.SZ",
+  "002812.SZ",
+  "000833.SZ",
+  "301363.SZ"
+ ],
+ "featured_added_by_v4": [
+  {
+   "ticker": "688018.SS",
+   "name": "Espressif Systems (Shanghai) Co., Ltd. / 乐鑫科技",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 65,
+   "v4_rank": 1,
+   "rank_move": 64,
+   "prophet_score_v3": 75.26,
+   "intel_interest_score": 47.25,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-29% off high",
+    "RS +4.8% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.444,
+   "intel_edge_remaining": 0.926,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688083.SS",
+   "name": "Zwsoft Co.,Ltd. / 中望软件",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 71,
+   "v4_rank": 2,
+   "rank_move": 69,
+   "prophet_score_v3": 72.81,
+   "intel_interest_score": 43.99,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS -0.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.383,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301631.SZ",
+   "name": "Shenzhen Uniconn Technology Co., Ltd. / 壹连科技",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 41,
+   "v4_rank": 3,
+   "rank_move": 38,
+   "prophet_score_v3": 80.72,
+   "intel_interest_score": 43.1,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-32% off high",
+    "RS +14.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.561,
+   "intel_edge_remaining": 0.668,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688252.SS",
+   "name": "Jadard Technology Inc. / 天德钰",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 60,
+   "v4_rank": 5,
+   "rank_move": 55,
+   "prophet_score_v3": 76.62,
+   "intel_interest_score": 31.76,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +19.1% vs CSI300 (20d)",
+    "drag: 22% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.488,
+   "intel_edge_remaining": 0.566,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600392.SS",
+   "name": "Shenghe Resources Holding Co., Ltd / 盛和资源",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 77,
+   "v4_rank": 6,
+   "rank_move": 71,
+   "prophet_score_v3": 70.55,
+   "intel_interest_score": 29.19,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-30% off high",
+    "RS +10.0% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.348,
+   "intel_edge_remaining": 0.758,
+   "intel_leading_gap": 2,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002706.SZ",
+   "name": "Shanghai Liangxin Electrical Co.,LTD. / 良信股份",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "hold",
+   "stage": "ENTRY",
+   "v3_rank": 75,
+   "v4_rank": 8,
+   "rank_move": 67,
+   "prophet_score_v3": 71.86,
+   "intel_interest_score": 22.78,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +5.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.255,
+   "intel_edge_remaining": 0.914,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300014.SZ",
+   "name": "EVE Energy Co., Ltd. / 亿纬锂能",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 44,
+   "v4_rank": 9,
+   "rank_move": 35,
+   "prophet_score_v3": 80.05,
+   "intel_interest_score": 21.03,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-38% off high",
+    "RS +6.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.238,
+   "intel_edge_remaining": 0.904,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300001.SZ",
+   "name": "Qingdao TGOOD Electric Co., Ltd. / 特锐德",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 88,
+   "v4_rank": 10,
+   "rank_move": 78,
+   "prophet_score_v3": 66.33,
+   "intel_interest_score": 21.02,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-10% off high",
+    "RS +16.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.366,
+   "intel_edge_remaining": 0.499,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "301358.SZ",
+   "name": "Hunan Yuneng New Energy Battery Material Co.,Ltd. / 湖南裕能",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 53,
+   "v4_rank": 12,
+   "rank_move": 41,
+   "prophet_score_v3": 78.18,
+   "intel_interest_score": 20.41,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-37% off high",
+    "RS +12.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.297,
+   "intel_edge_remaining": 0.702,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603876.SS",
+   "name": "Jiangsu Dingsheng New Materials Joint-Stock Co.,Ltd / 鼎胜新材",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 48,
+   "v4_rank": 14,
+   "rank_move": 34,
+   "prophet_score_v3": 79.5,
+   "intel_interest_score": 19.15,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-31% off high",
+    "RS +13.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.285,
+   "intel_edge_remaining": 0.688,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688068.SS",
+   "name": "Beijing Hotgen Biotech Co., Ltd. / 热景生物",
+   "sector": "Healthcare",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "featured_cap"
+   ],
+   "entry_status": "partial",
+   "stage": "ENTRY",
+   "v3_rank": 111,
+   "v4_rank": 16,
+   "rank_move": 95,
+   "prophet_score_v3": 51.29,
+   "intel_interest_score": 18.47,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "RS -11.8% vs CSI300 (20d)",
+    "-54% off high (falling)"
+   ],
+   "intel_signal_core": 0.323,
+   "intel_edge_remaining": 0.585,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002240.SZ",
+   "name": "Chengxin Lithium Group Co., Ltd. / 盛新锂能",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 19,
+   "v4_rank": 22,
+   "rank_move": -3,
+   "prophet_score_v3": 87.34,
+   "intel_interest_score": 14.61,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +14.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.224,
+   "intel_edge_remaining": 0.666,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  }
+ ],
+ "featured_dropped_by_v4": [
+  {
+   "ticker": "600879.SS",
+   "name": "China Aerospace Times Electronics CO., LTD. / 航天电子",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 1,
+   "v4_rank": 54,
+   "rank_move": -53,
+   "prophet_score_v3": 95.0,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS -5.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002466.SZ",
+   "name": "Tianqi Lithium Corporation / 天齐锂业",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 2,
+   "v4_rank": 31,
+   "rank_move": -29,
+   "prophet_score_v3": 94.01,
+   "intel_interest_score": 8.55,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-40% off high",
+    "RS +0.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.088,
+   "intel_edge_remaining": 0.989,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002460.SZ",
+   "name": "Ganfeng Lithium Group Co., Ltd. / 赣锋锂业",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 4,
+   "v4_rank": 25,
+   "rank_move": -21,
+   "prophet_score_v3": 92.95,
+   "intel_interest_score": 13.97,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS +8.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.163,
+   "intel_edge_remaining": 0.876,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002050.SZ",
+   "name": "Zhejiang Sanhua Intelligent Controls Co.,Ltd / 三花智控",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 5,
+   "v4_rank": 55,
+   "rank_move": -50,
+   "prophet_score_v3": 92.28,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-35% off high",
+    "RS -6.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600118.SS",
+   "name": "China Spacesat Co.,Ltd. / 中国卫星",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 6,
+   "v4_rank": 56,
+   "rank_move": -50,
+   "prophet_score_v3": 91.58,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +4.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.935,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "001301.SZ",
+   "name": "Shijiazhuang Shangtai Technology Co., Ltd. / 尚太科技",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 7,
+   "v4_rank": 57,
+   "rank_move": -50,
+   "prophet_score_v3": 90.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +6.0% vs CSI300 (20d)",
+    "drag: altdata crowding flag"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.642,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603920.SS",
+   "name": "Olympic Circuit Technology Co., Ltd / 世运电路",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 10,
+   "v4_rank": 58,
+   "rank_move": -48,
+   "prophet_score_v3": 90.83,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +11.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.736,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002756.SZ",
+   "name": "Yongxing Special Materials Technology Co.,Ltd / 永兴材料",
+   "sector": "Basic Materials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 11,
+   "v4_rank": 30,
+   "rank_move": -19,
+   "prophet_score_v3": 90.19,
+   "intel_interest_score": 8.67,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +10.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.119,
+   "intel_edge_remaining": 0.745,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300065.SZ",
+   "name": "Beijing Highlander Digital Technology Co., Ltd. / 海兰信",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 12,
+   "v4_rank": 59,
+   "rank_move": -47,
+   "prophet_score_v3": 89.5,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-43% off high",
+    "RS -4.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300322.SZ",
+   "name": "Huizhou Speed Wireless Technology Co.,Ltd. / 硕贝德",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 13,
+   "v4_rank": 32,
+   "rank_move": -19,
+   "prophet_score_v3": 89.0,
+   "intel_interest_score": 7.71,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-46% off high",
+    "RS +4.7% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.085,
+   "intel_edge_remaining": 0.928,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002338.SZ",
+   "name": "Changchun UP Optotech Co.,Ltd. / 奥普光电",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 17,
+   "v4_rank": 20,
+   "rank_move": -3,
+   "prophet_score_v3": 88.09,
+   "intel_interest_score": 15.89,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-34% off high",
+    "RS +11.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.223,
+   "intel_edge_remaining": 0.73,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688351.SS",
+   "name": "Shanghai MicroPort EP MedTech Co., Ltd. / 微电生理",
+   "sector": "Healthcare",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 59,
+   "v4_rank": 88,
+   "rank_move": -29,
+   "prophet_score_v3": 76.74,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-25% off high",
+    "RS +1.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.979,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  }
+ ],
+ "biggest_promotions": [
+  {
+   "ticker": "688068.SS",
+   "name": "Beijing Hotgen Biotech Co., Ltd. / 热景生物",
+   "sector": "Healthcare",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "featured_cap"
+   ],
+   "entry_status": "partial",
+   "stage": "ENTRY",
+   "v3_rank": 111,
+   "v4_rank": 16,
+   "rank_move": 95,
+   "prophet_score_v3": 51.29,
+   "intel_interest_score": 18.47,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "RS -11.8% vs CSI300 (20d)",
+    "-54% off high (falling)"
+   ],
+   "intel_signal_core": 0.323,
+   "intel_edge_remaining": 0.585,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688029.SS",
+   "name": "Micro-Tech (Nanjing) Co.,Ltd / 南微医学",
+   "sector": "Healthcare",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "hold",
+   "stage": "ENTRY",
+   "v3_rank": 92,
+   "v4_rank": 4,
+   "rank_move": 88,
+   "prophet_score_v3": 64.36,
+   "intel_interest_score": 32.49,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-26% off high",
+    "RS -3.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.332,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300001.SZ",
+   "name": "Qingdao TGOOD Electric Co., Ltd. / 特锐德",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 88,
+   "v4_rank": 10,
+   "rank_move": 78,
+   "prophet_score_v3": 66.33,
+   "intel_interest_score": 21.02,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-10% off high",
+    "RS +16.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.366,
+   "intel_edge_remaining": 0.499,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600259.SS",
+   "name": "Rising Nonferrous Metals Share Co.,Ltd. / 中稀有色",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "confirmed_late"
+   ],
+   "entry_status": "partial",
+   "stage": "ENTRY",
+   "v3_rank": 99,
+   "v4_rank": 21,
+   "rank_move": 78,
+   "prophet_score_v3": 61.33,
+   "intel_interest_score": 14.98,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-22% off high",
+    "RS +21.5% vs CSI300 (20d)",
+    "drag: 25% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.297,
+   "intel_edge_remaining": 0.515,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "000048.SZ",
+   "name": "Shenzhen Kingkey Smart Agriculture Times Co.,Ltd / 京基智农",
+   "sector": "Consumer Defensive",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "confirmed_late"
+   ],
+   "entry_status": "buy_now",
+   "stage": "ENTRY",
+   "v3_rank": 107,
+   "v4_rank": 34,
+   "rank_move": 73,
+   "prophet_score_v3": 57.31,
+   "intel_interest_score": 6.09,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "RS +24.3% vs CSI300 (20d)",
+    "-2% off high",
+    "drag: 27% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.316,
+   "intel_edge_remaining": 0.197,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688331.SS",
+   "name": "RemeGen Co., Ltd. / 荣昌生物",
+   "sector": "Healthcare",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "entry_status_topping"
+   ],
+   "entry_status": "topping",
+   "stage": "ENTRY",
+   "v3_rank": 114,
+   "v4_rank": 41,
+   "rank_move": 73,
+   "prophet_score_v3": 44.19,
+   "intel_interest_score": 2.97,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-15% off high",
+    "RS +9.9% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.043,
+   "intel_edge_remaining": 0.7,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600392.SS",
+   "name": "Shenghe Resources Holding Co., Ltd / 盛和资源",
+   "sector": "Basic Materials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 77,
+   "v4_rank": 6,
+   "rank_move": 71,
+   "prophet_score_v3": 70.55,
+   "intel_interest_score": 29.19,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-30% off high",
+    "RS +10.0% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.348,
+   "intel_edge_remaining": 0.758,
+   "intel_leading_gap": 2,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688083.SS",
+   "name": "Zwsoft Co.,Ltd. / 中望软件",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 71,
+   "v4_rank": 2,
+   "rank_move": 69,
+   "prophet_score_v3": 72.81,
+   "intel_interest_score": 43.99,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS -0.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.383,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300684.SZ",
+   "name": "Jones Tech PLC / 中石科技",
+   "sector": "Technology",
+   "lane": "late_or_unfillable",
+   "lane_reasons": [
+    "unfillable",
+    "chase_veto",
+    "extended",
+    "non_entry_stage"
+   ],
+   "entry_status": "partial",
+   "stage": "RAN_LATE",
+   "v3_rank": 95,
+   "v4_rank": 26,
+   "rank_move": 69,
+   "prophet_score_v3": 63.94,
+   "intel_interest_score": 12.69,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-9% off high",
+    "RS +20.6% vs CSI300 (20d)",
+    "drag: 24% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.323,
+   "intel_edge_remaining": 0.402,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600186.SS",
+   "name": "Lotus Holdings Co.,Ltd. / 莲花控股",
+   "sector": "Consumer Defensive",
+   "lane": "late_or_unfillable",
+   "lane_reasons": [
+    "unfillable",
+    "chase_veto",
+    "extended",
+    "non_entry_stage"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "RAN_LATE",
+   "v3_rank": 97,
+   "v4_rank": 28,
+   "rank_move": 69,
+   "prophet_score_v3": 62.3,
+   "intel_interest_score": 10.79,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-23% off high",
+    "RS +31.6% vs CSI300 (20d)",
+    "drag: 35% 20d return (extended)"
+   ],
+   "intel_signal_core": 0.315,
+   "intel_edge_remaining": 0.351,
+   "intel_leading_gap": 1,
+   "intel_unavailable_reason": null
+  }
+ ],
+ "biggest_demotions": [
+  {
+   "ticker": "600879.SS",
+   "name": "China Aerospace Times Electronics CO., LTD. / 航天电子",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 1,
+   "v4_rank": 54,
+   "rank_move": -53,
+   "prophet_score_v3": 95.0,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS -5.4% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002050.SZ",
+   "name": "Zhejiang Sanhua Intelligent Controls Co.,Ltd / 三花智控",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 5,
+   "v4_rank": 55,
+   "rank_move": -50,
+   "prophet_score_v3": 92.28,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-35% off high",
+    "RS -6.6% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "600118.SS",
+   "name": "China Spacesat Co.,Ltd. / 中国卫星",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 6,
+   "v4_rank": 56,
+   "rank_move": -50,
+   "prophet_score_v3": 91.58,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +4.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.935,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "001301.SZ",
+   "name": "Shijiazhuang Shangtai Technology Co., Ltd. / 尚太科技",
+   "sector": "Industrials",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 7,
+   "v4_rank": 57,
+   "rank_move": -50,
+   "prophet_score_v3": 90.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-50% off high",
+    "RS +6.0% vs CSI300 (20d)",
+    "drag: altdata crowding flag"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.642,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603920.SS",
+   "name": "Olympic Circuit Technology Co., Ltd / 世运电路",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 10,
+   "v4_rank": 58,
+   "rank_move": -48,
+   "prophet_score_v3": 90.83,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-45% off high",
+    "RS +11.1% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.736,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "300065.SZ",
+   "name": "Beijing Highlander Digital Technology Co., Ltd. / 海兰信",
+   "sector": "Technology",
+   "lane": "featured",
+   "lane_reasons": [
+    "buyable_signal",
+    "entry_stage",
+    "prime_entry_window",
+    "liquid",
+    "microstructure_clear",
+    "not_extended"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 12,
+   "v4_rank": 59,
+   "rank_move": -47,
+   "prophet_score_v3": 89.5,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-43% off high",
+    "RS -4.3% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 1.0,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688676.SS",
+   "name": "Hainan Jinpan Smart Technology Co., Ltd. / 金盘科技",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 16,
+   "v4_rank": 60,
+   "rank_move": -44,
+   "prophet_score_v3": 88.22,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-33% off high",
+    "RS +9.2% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.776,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "002465.SZ",
+   "name": "Guangzhou Haige Communications Group Incorporated Company / 海格通信",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 20,
+   "v4_rank": 61,
+   "rank_move": -41,
+   "prophet_score_v3": 86.95,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-60% off high",
+    "RS +5.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.915,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "688205.SS",
+   "name": "Wuxi Taclink Optoelectronics Technology Co., Ltd. / 德科立",
+   "sector": "Technology",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 21,
+   "v4_rank": 62,
+   "rank_move": -41,
+   "prophet_score_v3": 86.67,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-47% off high",
+    "RS +14.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.662,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  },
+  {
+   "ticker": "603308.SS",
+   "name": "Anhui Yingliu Electromechanical Co., Ltd. / 应流股份",
+   "sector": "Industrials",
+   "lane": "more_actionable",
+   "lane_reasons": [
+    "sector_cap"
+   ],
+   "entry_status": "bounce_wait",
+   "stage": "ENTRY",
+   "v3_rank": 24,
+   "v4_rank": 63,
+   "rank_move": -39,
+   "prophet_score_v3": 85.33,
+   "intel_interest_score": 0.0,
+   "intel_interest_basis": "measured",
+   "intel_drivers": [
+    "-41% off high",
+    "RS +7.5% vs CSI300 (20d)"
+   ],
+   "intel_signal_core": 0.0,
+   "intel_edge_remaining": 0.885,
+   "intel_leading_gap": 0,
+   "intel_unavailable_reason": null
+  }
+ ]
+}

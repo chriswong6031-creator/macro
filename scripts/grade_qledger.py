@@ -157,7 +157,8 @@ def _projected_ready_date(n_dates: int, rate_per_day: float | None) -> str | Non
     return proj.isoformat()
 
 
-def compute_promotion_readiness(root: Path, families: list[str] | None = None) -> dict:
+def compute_promotion_readiness(root: Path, families: list[str] | None = None,
+                                today: date | str | None = None) -> dict:
     """Compute W6 promotion-readiness metrics for each claim family × grade horizon.
 
     For each (family, horizon):
@@ -175,6 +176,13 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
     Placebo tape duel summary per horizon (duel_context):
       champion vs challenger vs placebo |excess| at 5d — the key decision evidence
       for the human reviewer in the admin Experiments tab.
+
+    `today` — the run's point-in-time reference (F5). `--today` already reached
+    `grade_claim`; it did not reach the matched-control gate, so a replay graded
+    against date T while cohort maturity was judged against `date.today()` —
+    two dates inside one run, in the very classification (C4.4's
+    `cohort_rowless`) whose job is to say WHY a row is missing. Defaults to
+    `date.today()`, so an ordinary nightly is byte-identical.
 
     Returns a dict: {family: {horizon_str: {…}, …}, "_duel_context": {…}}
     """
@@ -299,6 +307,17 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             "n_controlled_dates": getattr(pr, "n_controlled_dates", None),
             "n_cohort_rows": getattr(pr, "n_cohort_rows", None),
             "n_controlled_rows": getattr(pr, "n_controlled_rows", None),
+            # P0d review finding 4 — a cohort claim whose DECLARED control could
+            # not be priced over the shared window has NO grade row at all, so it
+            # used to vanish from the coverage denominator: declaring an
+            # unpriceable control read BETTER than declaring none. These three
+            # publish the repair — the refused set is counted INTO
+            # `n_cohort_rows`/`n_cohort_dates` above, and `cohort_rowless` is the
+            # full reason census for every rowless cohort claim so a young cohort
+            # is legible as young rather than as broken (or vice versa).
+            "n_control_refused_rows": getattr(pr, "n_control_refused_rows", None),
+            "n_control_refused_dates": getattr(pr, "n_control_refused_dates", None),
+            "cohort_rowless": getattr(pr, "cohort_rowless", None),
             "control_clock_start": getattr(pr, "control_clock_start", None),
             "unclassified": getattr(pr, "unclassified", False),
         }
@@ -312,7 +331,7 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             # blanket `control_only=True` call — which evaluated every family
             # "vs matched control" against a store holding zero control legs —
             # is gone from production.
-            pr = q.promotion_check_dispatch(fam, h, root=root)
+            pr = q.promotion_check_dispatch(fam, h, root=root, today=today)
             entry = _readiness_row(pr, fam, h)
             # P0a MAJOR 2 (round 5): `promotion_check`'s pooled default refuses
             # a bi-market family as STATE_MIXED_CLOCK, correctly — but this is
@@ -344,7 +363,8 @@ def compute_promotion_readiness(root: Path, families: list[str] | None = None) -
             if policy == q.CONTROL_POLICY_REQUIRED:
                 if pr.current_state == q.STATE_MIXED_CLOCK:
                     per_basis = {
-                        b: q.matched_control_check(fam, h, root=root, clock_basis=b)
+                        b: q.matched_control_check(fam, h, root=root, clock_basis=b,
+                                                   today=today)
                         for b in sorted(pr.clock_prior_n_dates or {})
                         if b != q.CLOCK_LEGACY
                     }
@@ -553,7 +573,8 @@ def _update_grader_quiet_log(root: Path, n_graded_today: int, n_open: int) -> in
 
 
 def run_readiness_post_step(root: Path, n_graded_today: int, n_open: int,
-                             dry_run: bool = False) -> dict:
+                             dry_run: bool = False,
+                             today: date | str | None = None) -> dict:
     """W6 promotion-readiness post-step. Called after emit_ladder_states().
 
     1. Computes per-family×horizon readiness metrics.
@@ -566,7 +587,7 @@ def run_readiness_post_step(root: Path, n_graded_today: int, n_open: int,
     """
     try:
         families = _load_qual_ladder_families(root)
-        readiness = compute_promotion_readiness(root, families)
+        readiness = compute_promotion_readiness(root, families, today=today)
 
         # Merge into track_record.json
         if not dry_run:
@@ -775,7 +796,7 @@ def run(root: Path | str | None = None, today: date | None = None,
     if not dry_run:
         q.emit_track_record(root)
         try:
-            q.emit_ladder_states(root)
+            q.emit_ladder_states(root, today=today_dt)
         except Exception as e:  # noqa: BLE001
             log.warning("emit_ladder_states failed (non-fatal): %s", e)
 
@@ -785,7 +806,8 @@ def run(root: Path | str | None = None, today: date | None = None,
     if not dry_run:
         try:
             w6_readiness = run_readiness_post_step(
-                root, n_graded_today=n_graded_today, n_open=n_open, dry_run=dry_run
+                root, n_graded_today=n_graded_today, n_open=n_open,
+                dry_run=dry_run, today=today_dt
             )
         except Exception as e:  # noqa: BLE001
             log.warning("run_readiness_post_step failed (non-fatal): %s", e)

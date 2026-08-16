@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/theme_graph/capability.v1.schema.json",
+  "title": "GMI theme-graph capability row v1",
+  "description": "One ROW of data/theme_graph/capability.parquet, as a JSON object. Rule capability.v1 (W3A §4, review amendment §9.3). A SIDE-CAR, never a node column: node rows are keep-first write-once, so a capability stored on the row would be a one-way ratchet whose first verdict outlived every later substrate improvement. Here rows are re-derived on every build and the current view is the max computed_at per node_id, so a classification can move in BOTH directions — which is what makes it a measurement rather than a label. INTERNAL: capability is never user-facing, never a market state, and never an input to a rank, size or gate.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["node_id", "capability", "capability_basis", "computed_at", "engine_version"],
+  "properties": {
+    "node_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The node this row classifies. Must resolve to a row in nodes.parquet (guard-enforced)."
+    },
+    "capability": {
+      "enum": ["semantic_only", "measurement_candidate", "measurable"],
+      "description": "measurement_candidate iff >=3 live members resolve to a price artifact — the definitional minimum for a cross-sectional aggregate to BE an aggregate, not an eligibility judgment. semantic_only otherwise, including every concept with no membership substrate. measurable is UNREACHABLE in W3A: it is minted by W3B after measurement, and a builder may not mint it by classifying."
+    },
+    "capability_basis": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Self-describing: the rule id, the counts, the membership path (direct source claim vs basket join — they are different facts) and the substrate that satisfied the rule. A reader must never have to re-derive why a node was classified the way it was."
+    },
+    "computed_at": {"$ref": "#/$defs/clock"},
+    "engine_version": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "clock": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    }
+  }
+}

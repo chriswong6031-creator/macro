@@ -1051,7 +1051,7 @@ Connect global themes, evidence, transmission, and contagion into a governed gra
 
 - Synapse owners: `gmi-theme-graph`
 - Lobe owners: `gmi-theme-graph`
-- Synapse artifacts: **3**; tier mix: display=3
+- Synapse artifacts: **4**; tier mix: display=4
 - Lobe charters: **0**
 - Information domains: none declared
 
@@ -3449,7 +3449,7 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 | `macro` | `flow-continuity` | `subprogram_of` | `options-intelligence` | 3 | 0 |
 | `macro` | `flow-leaders-desk` | `subprogram_of` | `options-intelligence` | 2 | 0 |
 | `macro` | `fundamental-forensics` | `mapped` | `fundamental-forensics` | 3 | 0 |
-| `macro` | `gmi-theme-graph` | `mapped` | `gmi-theme-graph` | 3 | 0 |
+| `macro` | `gmi-theme-graph` | `mapped` | `gmi-theme-graph` | 4 | 0 |
 | `macro` | `government-revenue-foresight` | `mapped` | `government-revenue-foresight` | 42 | 0 |
 | `macro` | `hk-canada` | `unresolved_split` | `china-system, international-risk-intelligence` | 2 | 0 |
 | `macro` | `hk-pick-lab` | `subprogram_of` | `prophet-cn` | 3 | 0 |
@@ -3588,15 +3588,6 @@ Every raw owner from the Synapse/lobe-charter union must have one explicit dispo
 |---|---|
 | `config/lobe_charters.yml` | `87b9f27ef1703f676fc5b34b0fc58bc835eb2b00a5ef8f469c8032046a7409ef` |
 | `config/mastermind_programs.yml` | `2aaa81173b3256e128802c5d640769795ce9ec9088136822f443f789f594b2a5` |
-| `config/synapse.yml` | `dce0faebfdb5f98a54415f578be60f77a1d27074eaf189a4893996e35c5e9057` |
-
-### Legacy registry compatibility notes
-
-The curated semantic registry rejects duplicate keys. These pre-existing operational-registry duplicates are nonblocking here so this architecture build does not mutate an unrelated authority source:
-
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 10429, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 10430, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'external_consumers' at line 12802, column 5; compatibility load kept the last value
-- config/synapse.yml: duplicate YAML key 'notes' at line 12803, column 5; compatibility load kept the last value
+| `config/synapse.yml` | `9ace9cebbf8fdfc451516d79a73796006dcf83c955b088905dfebf1ba5173dc5` |
 
 The renderer records no wall-clock timestamp. Identical source bytes produce byte-identical output.

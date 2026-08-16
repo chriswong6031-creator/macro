@@ -5520,6 +5520,7 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
         "scripts/capture_market_memory_options_episodes.py",
         "scripts/audit_options_market_memory_context.py",
         "engine/options_signal_campaign.py",
+        "scripts/run_options_sparse_selector.py",
     ]
     assert registry["artifacts"]["options-signal-episode-h60-outcomes"][
         "consumers"
@@ -5531,15 +5532,24 @@ def test_campaign_registry_has_one_writer_and_no_authority_consumers() -> None:
         "engine/options_episode_coverage.py",
     ]
 
-    for artifact_id in (
-        "options-signal-campaign-revisions",
-        "options-signal-campaign-outcomes",
-        "options-signal-campaign-checkpoint",
-    ):
+    expected_campaign_consumers = {
+        "options-signal-campaign-revisions": [
+            "engine/options_signal_campaign.py",
+            "scripts/run_options_sparse_selector.py",
+        ],
+        "options-signal-campaign-outcomes": [
+            "engine/options_signal_campaign.py",
+        ],
+        "options-signal-campaign-checkpoint": [
+            "engine/options_signal_campaign.py",
+            "scripts/run_options_sparse_selector.py",
+        ],
+    }
+    for artifact_id, consumers in expected_campaign_consumers.items():
         artifact = registry["artifacts"][artifact_id]
         assert artifact["producer"] == "engine/options_signal_campaign.py"
         assert artifact["known_extra_writers"] == []
-        assert artifact["consumers"] == ["engine/options_signal_campaign.py"]
+        assert artifact["consumers"] == consumers
         assert artifact["external_consumers"] == []
         assert artifact["weights"] == "none"
         assert artifact["scored_path_surfaces"] == []

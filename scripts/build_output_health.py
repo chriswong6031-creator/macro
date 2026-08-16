@@ -1,0 +1,1006 @@
+"""scripts/build_output_health.py — evidence gathering for Eval OS T4 (output health).
+
+THE ADAPTER, NOT THE CONTRACT. Every rule about what a state MEANS lives in the pure
+resolver :mod:`engine.output_health`; this file only goes and looks. It probes presence,
+reads the one declared watermark field, normalizes the existing health surfaces
+(freshness sentinel, R2 audit, Neural Web lobes, foresight legs, provider telemetry) into
+the resolver's input shapes, and prints the resulting view.
+
+IT WRITES NOTHING, EVER. The view is derived on demand and emitted on stdout — same
+architecture as the T1 registry it joins against, and for the same measured reason: there
+is no stable input to pin a committed health file against (``config/synapse.yml`` alone
+took 69 commits in the trailing 14 days), so a committed artifact plus an equality check
+would be a scheduled fleet-wide red. A caller that wants the view holds it in memory or
+reads this JSON.
+
+THE PRESENCE LADDER IS STORAGE-AWARE, AND ITS DEFAULTS ARE ASYMMETRIC ON PURPOSE
+-------------------------------------------------------------------------------
+``git`` / ``git+r2``   worktree file, else the blob at HEAD (``read_tracked``'s ladder).
+                       A tracked-but-unmaterialized artifact read from HEAD is a REAL
+                       observation, not blindness — that is what makes a sparse agent
+                       worktree answer the same as a full checkout. Unreachable BOTH ways
+                       is a definitive absence **only when git itself answered**; where
+                       git cannot be consulted at all the same silence is blindness, and
+                       minting 600 "unavailable" verdicts out of a broken probe is the
+                       failure this asymmetry exists to prevent.
+                       The HEAD half is answered from ONE batched ``git ls-tree``
+                       (:func:`_head_blobs`) rather than a probe per artifact; a miss
+                       there decides nothing and falls through to the per-path probe,
+                       which remains the sole authority for every negative.
+``gitignored-local``   worktree only. Absent means INVISIBLE FROM A CHECKOUT (the file is
+                       written at runtime on another host), never ``exists=False``.
+``r2``                 not probeable from here at all: ``exists=None`` unless the R2 audit
+                       carries an explicit VERDICT for its anchor, in which case the
+                       reader plane supplies presence. An anchor merely LISTED in the
+                       audit is not a verdict about anything and yields no row: presence
+                       is never fabricated from an inventory.
+unprobeable paths      a `<SYM>` family, a directory, a glob, a ``YYYY-MM`` template or
+                       ``embedded:`` prose is not one file — no probe, and a miss against
+                       it is blindness rather than absence
+                       (:func:`engine.output_health.unprobeable_path_reason`).
+
+WATERMARKS: THE DECLARED FIELD ONLY
+-----------------------------------
+The governing field is ``staleness_from`` when declared, else ``asof_field``, and this
+adapter looks for THAT KEY AND NO OTHER. When it is absent from the content it reports the
+absence (``asof_field_present=False``) instead of reaching for whatever timestamp the file
+happens to carry — ``engine/neuralweb/health.py``'s ``_AS_OF_KEYS`` fallback ladder is
+deliberately NOT inherited, because a fallback makes a frozen store read fresh forever.
+
+``--trust-mtime`` IS OFF BY DEFAULT. File mtimes in this repo are observer-stamped —
+``git status`` sweeps, a Finder visit and ``reflog expire`` all rewrite them, measured
+across the fleet pinning 137 of 143 dead worktrees as "fresh" — so from a checkout mtime
+is not freshness evidence. A live-estate caller whose files are only written by their
+producer opts in.
+
+Usage
+-----
+  python3 scripts/build_output_health.py                 # the whole view as JSON
+  python3 scripts/build_output_health.py --summary        # counts + top reason codes
+  python3 scripts/build_output_health.py --now 2026-08-14T00:00:00+00:00 --root <path>
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import subprocess
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+import yaml  # noqa: E402
+
+from engine.output_health import (  # noqa: E402
+    governing_watermark_field,
+    resolve_output_health,
+    unprobeable_path_reason,
+)
+from scripts.build_intelligence_registry import (  # noqa: E402
+    _READ_CACHE,
+    _tracked_file_exists,
+    build as build_registry,
+    read_tracked,
+)
+
+SYNAPSE_REL = Path("config") / "synapse.yml"
+NW_HEALTH_REL = Path("data") / "neuralweb" / "health.json"
+FORESIGHT_CASCADE_REL = Path("site") / "basketdata" / "foresight_cascade.json"
+PROVIDER_HEALTH_REL = Path("data") / "ai_costs" / "provider_health.jsonl"
+R2_AUDIT_REL = Path("data") / "quality" / "r2_audit.json"
+STALENESS_REL = Path("site") / "live" / "staleness.json"
+
+#: Bytes above which an artifact's content is NOT read for its watermark. A watermark
+#: lives in a header or a last line; nothing here justifies pulling a multi-megabyte store
+#: into memory, and the cap is disclosed as a parse error rather than as a clean read.
+CONTENT_READ_CAP = 8 * 1024 * 1024
+
+#: Neural Web lobe status -> the resolver's normalized semantic vocabulary (§9).
+#: ``stale`` maps to ``ok`` DELIBERATELY: NW's staleness verdict is weekend-aware and runs
+#: its own as_of fallback ladder, and T4's own watermark read is the freshness authority.
+#: Importing NW's verdict would import its calendar rule with it.
+NW_STATUS_MAP = {
+    "fresh": "ok",
+    "fresh_partial": "degraded",
+    "degraded": "degraded",
+    "stale": "ok",
+    "missing": "missing",
+    "not_locally_verifiable": "unknown",
+    "unknown": "unknown",
+}
+
+
+# ---------------------------------------------------------------------------
+# Reads
+# ---------------------------------------------------------------------------
+
+def _git_answers(root: Path) -> bool:
+    """True when ``git`` can resolve HEAD at *root*.
+
+    The whole absence/blindness split hangs on this one question: a both-ways miss means
+    the artifact is gone only if the second way was actually consulted.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--verify", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return result.returncode == 0
+
+
+#: HEAD's blob inventory, resolved ONCE per root. Measured on this repo's sparse agent
+#: worktree: 601 of 642 artifacts are unmaterialized, and asking git about each of them
+#: separately spent minutes of process spawn on an answer a single ``ls-tree`` already
+#: holds (66,789 blobs in ~1s).
+_HEAD_TREE_CACHE: dict[str, frozenset[str] | None] = {}
+
+
+def _head_blobs_uncached(root: Path) -> frozenset[str] | None:
+    try:
+        result = subprocess.run(
+            # -r WITHOUT -t: blobs only, never the trees between them. -z: NUL-separated
+            # and UNQUOTED — the default applies core.quotePath, which wraps any path
+            # holding a non-ASCII byte in quotes with octal escapes and would silently
+            # make that path miss the inventory.
+            ["git", "ls-tree", "-r", "-z", "--name-only", "HEAD"],
+            cwd=root,
+            capture_output=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    if result.returncode != 0:
+        return None
+    names = result.stdout.decode("utf-8", errors="surrogateescape").split("\0")
+    return frozenset(name for name in names if name)
+
+
+#: Blobs above this are left to the per-path ladder. The prewarm holds every body it
+#: reads until the observe loop consumes it, so the cap is a memory bound, not a policy:
+#: the live estate's watermark sources total ~256 MB and one of them is 44 MB, while the
+#: median is 22 kB. Capping at 1 MB warms ~90% of them for a few tens of MB and hands the
+#: fat tail back to the one-at-a-time path that was always going to read it.
+PREWARM_SIZE_CAP = 1024 * 1024
+
+
+def _prewarm_head_contents(root: Path, rels: list[str]) -> int:
+    """Fill ``read_tracked``'s cache for *rels* from ONE ``git cat-file --batch``.
+
+    PURELY A COST OPTIMIZATION, AND FAIL-SAFE BY CONSTRUCTION. Every entry it writes is
+    byte-for-byte what ``_read_tracked_uncached`` would have returned for the same path
+    (including its universal-newline translation), and everything it declines to warm —
+    an oversized blob, a non-UTF-8 body, a protocol it did not recognize — simply falls
+    through to that function. Getting this wrong can cost time. It cannot change a verdict.
+
+    Why it exists: presence became one call (:func:`_head_blobs`), which left the WATERMARK
+    reads as the whole cost. Measured on this repo's sparse worktree — where 601 of 642
+    artifacts live only in HEAD — that was ~630 ``git show`` spawns and the bulk of a
+    6-minute walk, for content one batch already streams.
+
+    Only paths NOT in the worktree are passed in, so warming ``"git"`` here can never
+    shadow a worktree copy the ladder would have preferred.
+    """
+    wanted = sorted({r for r in rels if r and "\n" not in r})
+    if not wanted:
+        return 0
+    payload = "".join(f"HEAD:{rel}\n" for rel in wanted).encode("utf-8", "surrogateescape")
+    try:
+        proc = subprocess.run(
+            ["git", "cat-file", "--batch"],
+            cwd=root,
+            input=payload,
+            capture_output=True,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError, ValueError):
+        return 0
+    if proc.returncode != 0:
+        return 0
+
+    out, pos, warmed = proc.stdout, 0, 0
+    for rel in wanted:
+        newline = out.find(b"\n", pos)
+        if newline < 0:
+            break
+        header, pos = out[pos:newline], newline + 1
+        parts = header.split(b" ")
+        if len(parts) == 2 and parts[1] in (b"missing", b"ambiguous"):
+            # The ladder's own answer for an object git cannot resolve is "absent", and
+            # 161 of these are envelope sidecars that simply do not exist. Caching the
+            # negative is what stops each of them costing a process to say so.
+            _READ_CACHE[(str(root), rel)] = (None, "absent")
+            warmed += 1
+            continue
+        if len(parts) != 3:
+            break  # protocol desync: stop reading rather than mis-attribute bodies
+        try:
+            size = int(parts[2])
+        except ValueError:
+            break
+        body, pos = out[pos:pos + size], pos + size + 1
+        if parts[1] != b"blob" or size > PREWARM_SIZE_CAP:
+            continue
+        if not body:
+            # AN EMPTY BLOB READS AS ABSENT, because that is what the function this warms
+            # returns: `_read_tracked_uncached` gates on `returncode == 0 and stdout`, and
+            # empty stdout is falsy. Caching "" instead moved two live artifacts from
+            # `watermark_unread` to a JSON parse error — a reason code changed by a
+            # PERFORMANCE patch, which is exactly the class of drift this branch prevents.
+            _READ_CACHE[(str(root), rel)] = (None, "absent")
+            warmed += 1
+            continue
+        try:
+            text = body.decode("utf-8")
+        except UnicodeDecodeError:
+            continue
+        # subprocess(text=True) decodes with universal newlines; matching it is what makes
+        # a warmed read byte-identical to the read it replaces.
+        _READ_CACHE[(str(root), rel)] = (
+            text.replace("\r\n", "\n").replace("\r", "\n"),
+            "git",
+        )
+        warmed += 1
+    return warmed
+
+
+def _head_blobs(root: Path) -> frozenset[str] | None:
+    """Every path that is a BLOB at HEAD, or None when git could not be consulted.
+
+    THE POSITIVE FAST PATH ONLY, and it is a fast path precisely because it cannot say
+    anything the per-path probe would not have said:
+
+    * membership means BLOB — ``-r`` without ``-t`` never lists a tree, so
+      ``_tracked_file_exists``'s directory-is-not-a-file refusal survives intact (the
+      refusal that stopped an authority-bearing artifact from being pointed at a folder);
+    * an ``ls-tree`` listing is repo-relative by construction, so it can never name an
+      absolute path or one reached through ``..`` — the path-escape refusal survives too;
+    * a MISS decides NOTHING. It falls through to ``_tracked_file_exists``, which stays
+      the sole authority for every negative and every oddity. Being wrong here can only
+      cost time, never a verdict.
+    """
+    key = str(root)
+    if key not in _HEAD_TREE_CACHE:
+        _HEAD_TREE_CACHE[key] = _head_blobs_uncached(root)
+    return _HEAD_TREE_CACHE[key]
+
+
+def _load_yaml(root: Path, rel: Path) -> tuple[dict | None, str]:
+    text, source = read_tracked(root, rel)
+    if text is None:
+        return None, source
+    try:
+        data = yaml.safe_load(text)
+    except yaml.YAMLError:
+        return None, "unparseable"
+    return (data, source) if isinstance(data, dict) else (None, "unparseable")
+
+
+def _load_json(root: Path, rel: Path) -> tuple[Any, str]:
+    text, source = read_tracked(root, rel)
+    if text is None:
+        return None, source
+    try:
+        return json.loads(text), source
+    except (json.JSONDecodeError, ValueError):
+        return None, "unparseable"
+
+
+def _content_text(root: Path, rel: str) -> tuple[str | None, str | None]:
+    """Artifact content through the same ladder, size-capped. Returns (text, parse_error).
+
+    The read_tracked cache is dropped for artifact content: it exists so ONE build is a
+    function of one snapshot of its CONFIG inputs, and holding several hundred artifact
+    bodies for the life of the process is not what it is for.
+    """
+    path = Path(rel)
+    try:
+        on_disk = root / path
+        if on_disk.is_file() and on_disk.stat().st_size > CONTENT_READ_CAP:
+            size = on_disk.stat().st_size
+            return None, f"content is {size} bytes (cap {CONTENT_READ_CAP}) — not read"
+    except OSError:
+        pass
+    text, _ = read_tracked(root, path)
+    _READ_CACHE.pop((str(root), path.as_posix()), None)
+    if text is None:
+        return None, None
+    if len(text) > CONTENT_READ_CAP:
+        return None, f"content is {len(text)} chars (cap {CONTENT_READ_CAP}) — not read"
+    return text, None
+
+
+# ---------------------------------------------------------------------------
+# Observation per artifact
+# ---------------------------------------------------------------------------
+
+def _watermark_from_json(payload: Any, field: str) -> tuple[bool, Any]:
+    """(field_present, raw_value) for a top-level key, else ``meta.<field>`` one level."""
+    if isinstance(payload, dict):
+        if field in payload:
+            return True, payload[field]
+        meta = payload.get("meta")
+        if isinstance(meta, dict) and field in meta:
+            return True, meta[field]
+    return False, None
+
+
+def _record_watermark(out: dict[str, Any], present: bool, raw: Any, field: str) -> None:
+    """Fill the observation's watermark keys from what the declared field held.
+
+    A non-string value is NOT stringified: ``20260814`` would then parse as an ISO basic
+    date and land as a midnight timestamp, quietly skipping the conservative end-of-date
+    reading a date is entitled to. Naming it unreadable is the honest answer.
+    """
+    out["asof_field_present"] = present
+    if isinstance(raw, str):
+        out["content_asof_raw"] = raw
+    elif present and raw is not None:
+        out["parse_error"] = (
+            f"declared field {field!r} holds a {type(raw).__name__}, not a timestamp string"
+        )
+
+
+def watermark_source_path(entry: dict) -> str | None:
+    """The ONE file whose bytes carry this artifact's declared watermark, or None.
+
+    THE SINGLE DEFINITION of that question. :func:`_read_watermark` reads from it and
+    :func:`_prewarm_head_contents` warms it; a second copy of the rule would drift, and
+    the failure mode of drift here is a prewarm that misses — or worse, warms the wrong
+    file's bytes under the right file's key.
+    """
+    fmt = str(entry.get("format") or "").lower()
+    rel = str(entry.get("path") or "")
+    if not rel:
+        return None
+    if fmt == "parquet":
+        # The envelope sidecar or nothing — pyarrow is deliberately kept off this path.
+        return rel + ".envelope.json"
+    return rel if fmt in ("json", "jsonl") else None
+
+
+def _watermark_sources_to_warm(
+    root: Path, entries: list[dict], head_blobs: frozenset[str]
+) -> list[str]:
+    """Exactly the paths the observe loop is about to read out of HEAD, and no others.
+
+    Mirrors :func:`observe`'s own gates — an artifact with no governing field is never
+    read, a ``gitignored-local``/``r2`` artifact is never probed, and an artifact that is
+    not present has no content to read. A path already in the worktree is excluded so the
+    warm can never shadow the copy the ladder would rather have.
+    """
+    out: list[str] = []
+    for entry in entries:
+        storage = str(entry.get("storage") or "")
+        rel = str(entry.get("path") or "")
+        if not rel or storage in ("gitignored-local", "r2"):
+            continue
+        if unprobeable_path_reason(rel):
+            continue                                   # not one file: never read
+        if not governing_watermark_field(entry):
+            continue
+        if not (root / rel).is_file() and rel not in head_blobs:
+            continue                                  # not present: nothing will be read
+        source = watermark_source_path(entry)
+        if source and not (root / source).is_file():
+            out.append(source)
+    return out
+
+
+def _read_watermark(root: Path, entry: dict, field: str) -> dict[str, Any]:
+    """Read ONLY the declared field. Never falls back to another timestamp key."""
+    fmt = str(entry.get("format") or "").lower()
+    rel = str(entry.get("path") or "")
+    out: dict[str, Any] = {
+        "content_asof_raw": None,
+        "asof_field_present": None,
+        "watermark_field_used": field,
+        "parse_error": None,
+    }
+    if fmt == "parquet":
+        sidecar, err = _content_text(root, watermark_source_path(entry) or "")
+        if sidecar is None:
+            out["parse_error"] = err or "watermark_unreadable_format"
+            return out
+        try:
+            payload = json.loads(sidecar)
+        except (json.JSONDecodeError, ValueError) as exc:
+            out["parse_error"] = f"envelope sidecar does not parse ({type(exc).__name__})"
+            return out
+        _record_watermark(out, *_watermark_from_json(payload, field), field)
+        return out
+    if fmt not in ("json", "jsonl"):
+        out["parse_error"] = "watermark_unreadable_format"
+        return out
+
+    text, err = _content_text(root, rel)
+    if text is None:
+        out["parse_error"] = err
+        return out
+    if fmt == "jsonl":
+        lines = [line for line in text.splitlines() if line.strip()]
+        if not lines:
+            out["parse_error"] = "jsonl store has no rows"
+            return out
+        try:
+            payload = json.loads(lines[-1])
+        except (json.JSONDecodeError, ValueError) as exc:
+            out["parse_error"] = f"last jsonl row does not parse ({type(exc).__name__})"
+            return out
+    else:
+        try:
+            payload = json.loads(text)
+        except (json.JSONDecodeError, ValueError) as exc:
+            out["parse_error"] = f"content does not parse ({type(exc).__name__})"
+            return out
+    _record_watermark(out, *_watermark_from_json(payload, field), field)
+    return out
+
+
+def observe(
+    root: Path,
+    entry: dict,
+    *,
+    trust_mtime: bool,
+    git_ok: bool,
+    head_blobs: frozenset[str] | None = None,
+) -> dict[str, Any]:
+    """One storage-aware observation of one artifact. No verdicts — evidence only.
+
+    *head_blobs* is the optional batched HEAD inventory (:func:`_head_blobs`). It only
+    ever short-circuits a POSITIVE presence answer; every negative still goes through
+    ``_tracked_file_exists``. Omitting it changes the runtime and nothing else.
+    """
+    rel = str(entry.get("path") or "")
+    storage = str(entry.get("storage") or "")
+    obs: dict[str, Any] = {
+        "exists": None,
+        "presence_source": None,
+        "content_asof_raw": None,
+        "asof_field_present": None,
+        "watermark_field_used": None,
+        "mtime_utc": None,
+        "mtime_trusted": trust_mtime,
+        "parse_error": None,
+        "sparse_unmaterialized": False,
+    }
+    if not rel or unprobeable_path_reason(rel):
+        # NOT ONE FILE — a family, a directory, a glob, a date template or prose. There is
+        # no single path to ask about, so nothing is asked and `exists` stays None. The
+        # probe used to run anyway and answer False: 29 live roots reported as deleted
+        # because of how the registry SPELLS them, plus everything downstream folded to
+        # `unavailable` behind them. A question we never asked has no negative answer.
+        return obs
+
+    on_disk = root / rel
+    if on_disk.is_file():
+        obs["exists"] = True
+        obs["presence_source"] = "filesystem"
+        try:
+            obs["mtime_utc"] = datetime.fromtimestamp(
+                on_disk.stat().st_mtime, tz=timezone.utc
+            )
+        except OSError:
+            pass
+    elif storage == "gitignored-local":
+        # Written at runtime and never committed: from a checkout its absence says
+        # nothing about the live estate, so it stays unobserved rather than missing.
+        return obs
+    elif storage == "r2":
+        return obs
+    elif head_blobs is not None and rel in head_blobs:
+        obs["exists"] = True
+        obs["presence_source"] = "git_head"
+    elif _tracked_file_exists(root, rel):
+        obs["exists"] = True
+        obs["presence_source"] = "git_head"
+    elif git_ok:
+        obs["exists"] = False
+        obs["presence_source"] = "git_head"
+    else:
+        obs["sparse_unmaterialized"] = True
+        return obs
+
+    field = governing_watermark_field(entry)
+    if field and obs["exists"]:
+        obs.update(_read_watermark(root, entry, field))
+    return obs
+
+
+# ---------------------------------------------------------------------------
+# Semantic self-health adapters (§9) — normalize, never import a rollup
+# ---------------------------------------------------------------------------
+
+def _artifact_by_path(synapse: dict) -> dict[str, str]:
+    return {
+        str(entry.get("path") or ""): aid
+        for aid, entry in (synapse.get("artifacts") or {}).items()
+        if isinstance(entry, dict) and entry.get("path")
+    }
+
+
+def neural_web_self_health(root: Path, synapse: dict) -> dict[str, dict[str, Any]]:
+    """Per-lobe NW statuses, normalized. ``overall_status`` is NOT imported."""
+    payload, _ = _load_json(root, NW_HEALTH_REL)
+    if not isinstance(payload, dict):
+        return {}
+    by_path = _artifact_by_path(synapse)
+    source_artifact = by_path.get(NW_HEALTH_REL.as_posix())
+    out: dict[str, dict[str, Any]] = {}
+    for lobe in payload.get("lobes") or []:
+        if not isinstance(lobe, dict):
+            continue
+        aid = str(lobe.get("id") or "")
+        status = NW_STATUS_MAP.get(str(lobe.get("status") or ""), "unknown")
+        if not aid:
+            continue
+        row: dict[str, Any] = {
+            "source": f"neuralweb_health:{NW_HEALTH_REL.as_posix()}",
+            "status": status,
+            "detail": f"lobe status {lobe.get('status')!r}",
+        }
+        if source_artifact:
+            # Lets the resolver refuse this evidence wherever the monitor would be
+            # grading its own producer's output — mechanically, with no hand list.
+            row["source_artifact"] = source_artifact
+        out[aid] = row
+    return out
+
+
+def foresight_self_health(root: Path, synapse: dict) -> dict[str, dict[str, Any]]:
+    """Per-leg foresight completeness for the cascade artifact itself.
+
+    A DARK sub-leg is reduced completeness, not a missing output: the cascade file exists
+    and the presence axis owns absence.
+    """
+    payload, _ = _load_json(root, FORESIGHT_CASCADE_REL)
+    if not isinstance(payload, dict):
+        return {}
+    health = payload.get("health")
+    if not isinstance(health, dict):
+        return {}
+    aid = _artifact_by_path(synapse).get(FORESIGHT_CASCADE_REL.as_posix())
+    if not aid:
+        return {}
+    legs = health.get("legs") if isinstance(health.get("legs"), dict) else {}
+    reduced = sorted(
+        name
+        for name, leg in legs.items()
+        if isinstance(leg, dict) and str(leg.get("status")) in ("PARTIAL", "DARK")
+    )
+    confirmer_only = str(health.get("mode") or "") == "CONFIRMER-ONLY"
+    if not legs:
+        status, detail = "unknown", "cascade carries no leg statuses"
+    elif reduced or confirmer_only:
+        status = "degraded"
+        detail = "reduced legs: " + (", ".join(reduced) or "none")
+        if confirmer_only:
+            detail += "; mode CONFIRMER-ONLY"
+    else:
+        status, detail = "ok", "every leg LIVE"
+    return {
+        aid: {
+            "source": f"foresight_health:{FORESIGHT_CASCADE_REL.as_posix()}",
+            "status": status,
+            "detail": detail,
+        }
+    }
+
+
+def provider_events(root: Path, synapse: dict) -> dict[str, list[dict[str, Any]]]:
+    """Failed provider rungs, joined to artifacts by producer name. DIAGNOSTIC ONLY.
+
+    Filesystem only — the store is gitignored, so from a checkout its absence is normal
+    and means nothing. A failed rung with a successful fallback never degrades an output;
+    the resolver enforces that, and this function only supplies the rows.
+    """
+    path = root / PROVIDER_HEALTH_REL
+    if not path.is_file():
+        return {}
+    try:
+        text = path.read_text(encoding="utf-8")
+    except OSError:
+        return {}
+    rows: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        try:
+            row = json.loads(line)
+        except (json.JSONDecodeError, ValueError):
+            continue
+        if isinstance(row, dict) and row.get("event") == "attempt" and not row.get("ok"):
+            rows.append(row)
+    if not rows:
+        return {}
+    out: dict[str, list[dict[str, Any]]] = {}
+    for aid, entry in (synapse.get("artifacts") or {}).items():
+        if not isinstance(entry, dict):
+            continue
+        stem = Path(str(entry.get("producer") or "").split(":")[0]).stem
+        if not stem:
+            continue
+        hits = [
+            row
+            for row in rows
+            if stem in (str(row.get("lane") or ""), str(row.get("context") or ""))
+        ]
+        if hits:
+            out[str(aid)] = hits
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Reader plane (§8)
+# ---------------------------------------------------------------------------
+
+_SENTINEL_STATUS_MAP = {"ok": "fresh", "stale": "stale", "indeterminate": "indeterminate"}
+
+
+def sentinel_readers(payload: Any, synapse: dict) -> dict[str, list[dict[str, Any]]]:
+    """Freshness-sentinel surfaces joined to artifacts by the surface's own path.
+
+    The surface table is IMPORTED from ``scripts.freshness_sentinel`` rather than copied —
+    a second copy of the path list is a second thing to rot. Most artifacts have no
+    sentinel surface at all; that is a census fact, not an error.
+    """
+    if not isinstance(payload, dict):
+        return {}
+    surfaces = payload.get("surfaces")
+    if not isinstance(surfaces, dict):
+        return {}
+    try:
+        from scripts.freshness_sentinel import SURFACES
+    except Exception:  # noqa: BLE001 — the sentinel is a VPS script; absence is not fatal
+        return {}
+    by_path = _artifact_by_path(synapse)
+    out: dict[str, list[dict[str, Any]]] = {}
+    for surface in SURFACES:
+        record = surfaces.get(surface.get("id"))
+        if not isinstance(record, dict):
+            continue
+        rel = str(surface.get("path") or "").lstrip("/")
+        aid = by_path.get(f"site/{rel}") if surface.get("kind") != "r2" else None
+        if not aid:
+            continue
+        verdict = _SENTINEL_STATUS_MAP.get(str(record.get("status") or ""))
+        if verdict is None:
+            continue
+        # CLOCK KIND BY WHAT WAS ACTUALLY MEASURED: the store's own asof and the board's
+        # self-reported delay are content clocks; a bake stamp is transport.
+        content = record.get("asof") is not None or bool(record.get("board_delayed"))
+        row: dict[str, Any] = {
+            "source": f"freshness_sentinel:{surface.get('id')}",
+            "verdict": verdict,
+            "clock_kind": "content" if content else "transport",
+            # WHICH FIELD THE SENTINEL MEASURED, off its own surface config — never
+            # inferred. `prophet_us` reads `source_asof` (the ranked-price watermark)
+            # while the artifact declares `asof`, so the resolver demotes that row to
+            # diagnostic rather than letting one watermark stand in for another. A page
+            # surface names no field at all: its content clock is the board's delay
+            # marker, which is not a declared artifact watermark either.
+            "asof_field": surface.get("asof_field"),
+        }
+        if record.get("asof"):
+            row["observed_asof"] = str(record["asof"])
+        if record.get("detail"):
+            row["detail"] = str(record["detail"])
+        out.setdefault(aid, []).append(row)
+    return out
+
+
+def _r2_subject(text: str) -> tuple[str, str]:
+    """``(head, anchor)`` for one audit reason line — its verdict word and its subject.
+
+    ``scripts/audit_r2.py`` writes its lines in TWO shapes and the subject sits on a
+    different side of the colon in each:
+
+        ``R2 STALE: stockdata last published 40h ago``   -> subject after the colon
+        ``asof probe stockdata/SPY.json: HTTP 500``      -> subject inside the head
+
+    Reading the second shape the first way yields the anchor ``"HTTP"``, which matches no
+    artifact — so every ``asof probe`` / ``coverage probe`` warning silently addressed
+    nothing. Harmless while those map to ``indeterminate``, and a trap the moment they do
+    not; both shapes are parsed rather than one.
+    """
+    head, _, rest = text.partition(":")
+    head = head.strip()
+    subject = (
+        (rest.strip().split() or [""])[0]
+        if head.startswith("R2 ")
+        else (head.split() or [""])[-1]
+    )
+    return head, subject.split("/")[0]
+
+
+def _r2_anchor_verdicts(doc: dict) -> dict[str, dict[str, Any]]:
+    """anchor -> a reader row, built ONLY from the audit's EXPLICIT verdicts.
+
+    BEING LISTED IS NOT A VERDICT. ``anchors`` is an inventory: each entry records the
+    ``Last-Modified`` the probe saw, which says when bytes were served and nothing about
+    what is in them — and the audit already emits ``R2 STALE`` when that stamp is over
+    budget, so reading "fresh" out of mere membership invented a pass the audit never
+    gave. It also fabricated PRESENCE for pure-r2 artifacts (a fresh reader row rescues
+    ``exists``), so an artifact under a listed anchor could be reported healthy without
+    anything ever having looked at it.
+
+    What DOES map, one line at a time, and nothing else:
+
+    ``anchors[k].asof``      a definitive CONTENT probe — the audit fetched the object and
+                             read its ``asof``. Content clock, field ``asof``.
+    ``R2 CONTENT STALE``     stale on the content clock (overrides the probe row above,
+                             which is why the fail reasons are folded in second)
+    ``R2 STALE``             stale on the transport clock (an over-budget Last-Modified)
+    ``R2 DARK``              INDETERMINATE. The audit found no anchor object — that is the
+                             audit failing to resolve the anchor, not proof the artifact
+                             under it was deleted, and "missing" here mints an outage out
+                             of a probe's silence.
+    ``R2 FORBIDDEN``         indeterminate: the bucket refused the read (401/403). Nothing
+                             was observed about the object at all.
+    anything else            indeterminate. An unrecognized reason is a reason we have not
+                             taught this adapter, never a pass.
+    ``warnings``             indeterminate, and only where nothing definitive was recorded.
+    """
+    verdicts: dict[str, dict[str, Any]] = {}
+    for name, row in (doc.get("anchors") or {}).items():
+        if not isinstance(row, dict) or not row.get("asof"):
+            continue
+        verdicts[str(name).split("/")[0]] = {
+            "verdict": "fresh",
+            "clock_kind": "content",
+            "asof_field": "asof",
+            "observed_asof": str(row["asof"]),
+            "detail": f"content probe {name} asof={row['asof']}",
+        }
+    for reason in doc.get("fail_reasons") or []:
+        text = str(reason)
+        head, anchor = _r2_subject(text)
+        if not anchor:
+            continue
+        if head.startswith("R2 CONTENT STALE"):
+            verdicts[anchor] = {
+                "verdict": "stale", "clock_kind": "content", "asof_field": "asof",
+            }
+        elif head.startswith("R2 STALE"):
+            verdicts[anchor] = {"verdict": "stale", "clock_kind": "transport"}
+        else:
+            verdicts[anchor] = {"verdict": "indeterminate", "clock_kind": "transport"}
+        verdicts[anchor]["detail"] = text
+    for warning in doc.get("warnings") or []:
+        text = str(warning)
+        _head, anchor = _r2_subject(text)
+        if anchor and anchor not in verdicts:
+            verdicts[anchor] = {
+                "verdict": "indeterminate", "clock_kind": "transport", "detail": text,
+            }
+    return verdicts
+
+
+def r2_readers(doc: Any, synapse: dict) -> dict[str, list[dict[str, Any]]]:
+    """R2 audit verdicts joined to artifacts whose R2 key sits under the anchor prefix."""
+    if not isinstance(doc, dict):
+        return {}
+    verdicts = _r2_anchor_verdicts(doc)
+    out: dict[str, list[dict[str, Any]]] = {}
+    for aid, entry in (synapse.get("artifacts") or {}).items():
+        if not isinstance(entry, dict) or entry.get("storage") not in ("r2", "git+r2"):
+            continue
+        anchor = str(entry.get("path") or "").split("/")[0]
+        hit = verdicts.get(anchor)
+        if not hit:
+            continue
+        row = dict(hit)
+        row["source"] = f"r2_audit:{anchor}"
+        row["detail"] = (
+            f"{row.get('detail') or 'anchor ' + anchor} "
+            f"(per data/quality/r2_audit.json)"
+        )
+        out.setdefault(str(aid), []).append(row)
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Build
+# ---------------------------------------------------------------------------
+
+def reset_caches() -> None:
+    """Drop every in-process read cache, so the next build starts from the disk again.
+
+    The caches exist to make ONE build cheap, never to memoize across builds: a build is
+    supposed to be a function of one snapshot of its inputs, and a long-lived caller (the
+    admin panel derives this view on demand inside a server process) would otherwise be
+    served a HEAD inventory and a registry frozen at the moment the process booted —
+    a health view that cannot report an outage that started after the last restart.
+    """
+    _READ_CACHE.clear()
+    _HEAD_TREE_CACHE.clear()
+
+
+def build(
+    root: Path,
+    *,
+    now: datetime,
+    trust_mtime: bool = False,
+    staleness_json: Path | None = None,
+    r2_audit: Path | None = None,
+    limit_artifacts: list[str] | None = None,
+) -> dict[str, Any]:
+    """Gather evidence and resolve. Reads only; writes nothing."""
+    return build_with_registry(
+        root,
+        now=now,
+        trust_mtime=trust_mtime,
+        staleness_json=staleness_json,
+        r2_audit=r2_audit,
+        limit_artifacts=limit_artifacts,
+    )[0]
+
+
+def build_with_registry(
+    root: Path,
+    *,
+    now: datetime,
+    trust_mtime: bool = False,
+    staleness_json: Path | None = None,
+    r2_audit: Path | None = None,
+    limit_artifacts: list[str] | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """``(output-health view, the T1 registry it was resolved against)`` from ONE pass.
+
+    The T4 record carries the engine ID it joined on but not the engine's own fields —
+    producer, owner_program, the adjudicated output_class RATIONALE. A caller that needs
+    both (the admin surface does) would otherwise pay for the T1 producer scan twice, so
+    the pass hands back what it already built rather than being run again.
+
+    NOT thread-safe: the read caches it warms are module-level, so a caller running two
+    builds at once must serialize them (``admin/intelligence_os.py`` holds a lock).
+    """
+    reset_caches()
+    synapse, synapse_source = _load_yaml(root, SYNAPSE_REL)
+    if synapse is None:
+        raise SystemExit(
+            f"FATAL: {SYNAPSE_REL} is unreadable or unparseable ({synapse_source}) — "
+            f"there is no artifact census to grade."
+        )
+    registry, _ = build_registry(root)
+
+    artifacts = {
+        aid: entry
+        for aid, entry in (synapse.get("artifacts") or {}).items()
+        if isinstance(entry, dict)
+    }
+    wanted = set(limit_artifacts) if limit_artifacts else None
+    git_ok = _git_answers(root)
+    head_blobs = _head_blobs(root)
+    if head_blobs is not None:
+        _prewarm_head_contents(
+            root,
+            _watermark_sources_to_warm(
+                root,
+                [e for aid, e in sorted(artifacts.items()) if wanted is None or aid in wanted],
+                head_blobs,
+            ),
+        )
+    observations = {
+        aid: observe(
+            root, entry, trust_mtime=trust_mtime, git_ok=git_ok, head_blobs=head_blobs
+        )
+        for aid, entry in sorted(artifacts.items())
+        if wanted is None or aid in wanted
+    }
+
+    self_health = neural_web_self_health(root, synapse)
+    self_health.update(foresight_self_health(root, synapse))
+
+    staleness_payload: Any = None
+    if staleness_json is not None and staleness_json.is_file():
+        try:
+            staleness_payload = json.loads(staleness_json.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError, ValueError):
+            staleness_payload = None
+    audit_doc: Any
+    if r2_audit is not None:
+        audit_doc = None
+        if r2_audit.is_file():
+            try:
+                audit_doc = json.loads(r2_audit.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError, ValueError):
+                audit_doc = None
+    else:
+        audit_doc, _ = _load_json(root, R2_AUDIT_REL)
+
+    readers = sentinel_readers(staleness_payload, synapse)
+    for aid, rows in r2_readers(audit_doc, synapse).items():
+        readers.setdefault(aid, []).extend(rows)
+
+    view = resolve_output_health(
+        synapse=synapse,
+        registry=registry,
+        observations=observations,
+        reader_observations=readers,
+        self_health=self_health,
+        provider_events=provider_events(root, synapse),
+        now=now,
+    )
+    return view, registry
+
+
+def render_summary(view: dict[str, Any]) -> str:
+    summary = view["summary"]
+    lines = [
+        f"output health ({view['schema']}) — {summary['n_outputs']} artifacts, "
+        f"observed_at {view['generated']['observed_at']} "
+        f"(root_mode {view['generated']['root_mode']})",
+        f"  state:      {summary['by_state']}",
+        f"  assessment: {summary['by_assessment_status']}",
+        f"  decided_by: {summary['by_decided_by']}",
+        f"  bound:      {summary['by_dependency_bound']}",
+        "  top reason codes:",
+    ]
+    top = sorted(summary["reason_codes"].items(), key=lambda kv: (-kv[1], kv[0]))[:12]
+    lines += [f"    {count:>5}  {code}" for code, count in top]
+    return "\n".join(lines)
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--json", action="store_true", help="the whole view as JSON (default)")
+    parser.add_argument("--summary", action="store_true", help="counts + top reason codes")
+    parser.add_argument(
+        "--now",
+        default=None,
+        help="ISO instant to resolve against (offset-bearing); default now(UTC)",
+    )
+    parser.add_argument(
+        "--trust-mtime",
+        action="store_true",
+        help="treat file mtimes as write-time evidence (live estate only)",
+    )
+    parser.add_argument("--staleness-json", type=Path, default=None)
+    parser.add_argument("--r2-audit", type=Path, default=None)
+    parser.add_argument(
+        "--limit-artifacts",
+        default=None,
+        help="comma-separated artifact ids to OBSERVE (debug; the rest stay unobserved)",
+    )
+    args = parser.parse_args(argv)
+
+    now = (
+        datetime.fromisoformat(args.now)
+        if args.now
+        else datetime.now(timezone.utc)
+    )
+    staleness = args.staleness_json
+    if staleness is None:
+        candidate = args.root / STALENESS_REL
+        staleness = candidate if candidate.is_file() else None
+
+    view = build(
+        args.root,
+        now=now,
+        trust_mtime=args.trust_mtime,
+        staleness_json=staleness,
+        r2_audit=args.r2_audit,
+        limit_artifacts=(
+            [a.strip() for a in args.limit_artifacts.split(",") if a.strip()]
+            if args.limit_artifacts
+            else None
+        ),
+    )
+    if args.summary:
+        print(render_summary(view), flush=True)
+        return 0
+    print(json.dumps(view, indent=1, ensure_ascii=False), flush=True)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

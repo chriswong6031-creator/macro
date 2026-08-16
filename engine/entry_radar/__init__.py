@@ -28,9 +28,45 @@ The **funnel** and the **bus**, nothing else:
   ``producers/``         one adapter per artifact-based producer (Track C census)
   ``spool.py``           the durable prospective nomination spool
 
-NO DETECTOR CODE LIVES HERE.  No StochRSI, no MACD, no oscillator math of any
-kind — those are PR-2 (G0) and PR-3 (C1–C5).  This package computes admission,
-and admission is a *coverage* decision.
+WHAT PR-2 (W2) ADDED
+--------------------
+  ``entry_events.py``     the append-only `mastermind.entry_event.v1` store
+  ``indicator_ingest.py`` the governed `mastermind.indicator/v1` ingest door
+  ``g0_adapter.py``       champion G0, an artifact CONSUMER of Terminal's dot
+  ``detectors.py``        detector identity + the §13 lifecycle, not evaluation
+
+WHAT PR-3 (W3) ADDED — AND WHERE THE MATH NOW LIVES
+----------------------------------------------------
+W1 and W2 remain **math-free**: G0 carries Terminal's already-computed dot across
+the boundary and recomputes nothing (asserted — no W2 module may import
+pandas/numpy).  W3 is where Radar starts computing, and it does so in exactly
+three modules, on exactly one pinned indicator family:
+
+  ``indicator_core.py``  the ONLY oscillator door — canon (R-A) StochRSI /
+                         RSI-MACD / crossover plus true-range Wilder ATR(14),
+                         PIT-shifted.  ``engine.technicals`` is never imported
+                         (§4 indicator-core law), and no second RSI family exists
+                         anywhere in Radar.
+  ``readings.py``        `mastermind.entry_detector_reading.v1` — the ephemeral
+                         per-observation record, with the tri-state null law
+                         (`unavailable` is not `false`) enforced at construction
+  ``challengers.py``     C1 (arm IS candidate), the six C2 variants, and C4's
+                         stratification features
+  ``four_hour.py``       the RTH 4H session grid and C3 (confirmed bars only)
+  ``c5_adapter.py``      C5 as an INTERPRETATION of W2's preserved watch events —
+                         referenced by ``event_id``, never mutated, never
+                         duplicated
+
+C4 CANNOT FIRE and C5 MINTS NOTHING.  ``C4_MTF_TURN@1`` is registered
+``role=stratification_only``, has no entry-event family, and every firing door
+refuses it (`DNR:KILL-WASHOUT-TURN` made structural).  C5 reuses Terminal's watch
+events rather than minting a second record for the same market observation.
+
+W3 WRITES NOTHING, ANYWHERE.  No ``data/`` path, no ledger, no spool, no SQLite,
+no network.  Every input is passed in; the live evaluator is PR-4 and the only
+durable writer is PR-5's nightly reconciler behind
+``ledger_lane.nightly_advance_enabled()``.  ``F1_FUSION`` stays reserved by name
+with no spec: §4 registers it only after the individual detectors have results.
 
 ADMISSION IS NOT BULLISHNESS
 ----------------------------

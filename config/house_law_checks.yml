@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-14"
+updated: "2026-08-16"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1279,6 +1279,39 @@ checks:
     notes: >
       Allowlist is config/dag.yml divergences section.
 
+  - law_id: cs.ingestion_health_gate
+    summary: >
+      Capital Structure selected filings with zero durable verified evidence
+      must fail the isolated capital_structure job. Compiler telemetry.as_of
+      is generation time, not source freshness. A proven empty/already-known
+      queue is the only permitted non-failing zero-progress result. Collect
+      stays green so the market plane is not frozen.
+    source_ref:
+      - scripts/check_capital_structure_health.py
+      - engine/capital_structure/ingestion_health.py
+      - "PR #5792"
+    severity: hard
+    check_script: scripts/check_capital_structure_health.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: capital_structure
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Gate script over on-disk ingestion_run/health artifacts; behavioral
+      coverage is tests/test_capital_structure_ingestion_health.py, including
+      an all-storage-failure path that must exit 1.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The gate reads collector receipts after the CS compilers; it cannot
+        repair a dedicated-R2 AccessDenied ACL, only fail closed or fall back
+        at collect time via build_source_store(require_writable=True).
+    owner_program: capital-structure-intelligence
+    notes: >
+      Measured 2026-08-08→08-14: dedicated PutObject AccessDenied froze
+      source_manifest at 1,258 while both nightly jobs stayed green.
+
   - law_id: ops.builder_failstreaks
     summary: >
       Nightly observability sentinel (added by #2704): scans the engine job's
@@ -1438,6 +1471,48 @@ checks:
     owner_program: qualitative-intelligence-masterplan
     notes: >
       Manual run required at each LLM model upgrade. Gate threshold: field_agree_rate >= 0.85.
+
+  - law_id: site.stretch_oracle_disclosure
+    summary: >
+      The per-ticker drawer renders TWO independent answers to "has this name
+      already run" — ladder.alignment.overextended (a 4-leg, oscillator-dominant
+      entry-timing brake) and entry_signal.status == "extended" (a relabel of
+      ladder.entry.urgency == "caution"). They disagree on roughly 38% of names
+      and that divergence is LEGITIMATE (a measurement versus a bucket label), so
+      this guard does not force them equal. What it enforces is that the
+      divergence stays DISCLOSED: every flagged name must carry the leg that
+      actually fired, so no consumer has to guess a cause. HARD invariants:
+      overextended=True implies a non-empty overextended_legs; overextended=False
+      implies an empty one; overextended_basis equals
+      overextension_basis(overextended_legs); and an oscillator-only basis may not
+      coexist with a qualifying distance reading (producer and disclosure computed
+      from different inputs).
+    source_ref:
+      - scripts/check_stretch_oracle_contract.py
+      - docs/site_semantics/stretch_oracles.md
+    severity: manual
+    check_script: scripts/check_stretch_oracle_contract.py
+    ci_wiring: []
+    selftest: false
+    selftest_exempt_reason: >
+      The script takes a built store directory as its argument and has no
+      synthetic self-test mode; its invariants are exercised instead by
+      tests/test_stretch_oracle_contract.py, which the engine-render-guards job
+      runs on every PR.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - Needs a BUILT stock store to read; it cannot run against a bare checkout,
+        which is why it carries no ci_wiring entry of its own.
+      - The O1 x O2 confusion counters are annotation-only and never fatal; only
+        the four disclosure invariants exit 1.
+    owner_program: per-ticker-stock-intelligence
+    notes: >
+      Enforced at BUILD time rather than as a CI step: scripts/build_stock_library.py
+      lazy-imports `check` and runs it over the store it just wrote, so a violation
+      fails the producer. Registered here per the census rule after the script
+      shipped unregistered in #5574, which reddened the house-law meta-guard on main
+      and every PR branched from it.
 
   - law_id: ops.live_worker
     summary: >
@@ -1836,6 +1911,49 @@ checks:
       Complements nw.dag_conformance (lane-sequence drift on declared lanes)
       by asserting bare loadability of ALL workflow files, lane or not.
 
+  - law_id: ops.runner_routing_policy
+    summary: >
+      Public-repository pull-request workflows remain exactly GitHub-hosted during
+      Wave B/C, cannot delegate through reusable-workflow call jobs, and cannot
+      consume the bounded PC/M1 migration labels. Only registered main-branch
+      workflow-dispatch canaries may request those labels, downstream of a hosted
+      trust gate. PC render and CI labels remain disjoint and the M1 canary cannot
+      regain a broad production label.
+    source_ref:
+      - scripts/check_runner_policy.py
+      - .github/runner-policy.yml
+      - tests/test_runner_policy.py
+      - docs/CI_SELFHOSTED_WAVE_BC_RUNBOOK.md
+    severity: hard
+    check_script: scripts/check_runner_policy.py
+    ci_wiring:
+      - workflow: .github/ci/legacy-jobs.yml
+        job: workflow-yaml
+        lane: pr_ci
+    selftest: false
+    selftest_exempt_reason: >
+      The checker has a mutation-focused pytest suite covering fork-route drift,
+      computed migration labels, reusable-workflow delegation, trust-gate removal,
+      topology overlap, and unregistered custom-label consumers; the checker and
+      suite run together in the registered workflow-yaml legacy job.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - >-
+        Repository lint is a merge guard, not a runtime admission boundary. The
+        live home runners must also reside in the organization runner group that
+        is restricted server-side to exact workflow paths pinned to refs/heads/main.
+      - >-
+        Existing pre-Wave-B/C production self-hosted labels are outside this
+        migration-label registry; this law prevents new fork/ordinary-PR routes
+        from reaching the canary labels without changing those production lanes.
+    owner_program: ci-recovery-wave-bc
+    notes: >
+      Registered after the first full PR pack correctly caught the new
+      check_runner_policy.py in the house-law census. The runtime counterpart is
+      the macro-home-canary organization runner group; static ordering alone is
+      not treated as a security boundary.
+
   - law_id: ops.no_skip_only_suites
     summary: >
       No test may skip in every CI job that names it. A suite can be named by a
@@ -2141,6 +2259,37 @@ checks:
     notes: >
       Landed on main concurrently with this registry (2026-07-06); registered
       during the registry PR's merge-with-main — the census pass caught it.
+
+  - law_id: auth.no_client_supplied_identity
+    summary: >
+      Route handlers must not derive user_id (or equivalent identity) from the
+      request body, query string, or path. _pg() uses SUPABASE_SERVICE_ROLE_KEY,
+      which bypasses RLS, so token-derived identity is the only thing preventing
+      cross-tenant access. Law source: MASTERMIND_SECURITY_AUTH_BILLING_AUDIT.md
+      §2.1 (WS-9 / GATE-6).
+    source_ref:
+      - scripts/check_no_client_supplied_identity.py
+      - research/MASTERMIND_SECURITY_AUTH_BILLING_AUDIT.md
+      - research/MASTERMIND_RED_TEAM_REMEDIATION_PLAN.md
+      - "WS-9 GATE-6 MMX isolation invariant"
+    severity: hard
+    check_script: scripts/check_no_client_supplied_identity.py
+    ci_wiring:
+      - workflow: .github/workflows/ci.yml
+        job: no-client-supplied-identity
+        lane: pr_ci
+    selftest: true
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - AST over app/** FastAPI/Starlette handlers only. Operator admin tools are a different trust boundary and are not scanned.
+      - Dynamic key construction (body.get("user_" + "id"), getattr with a non-literal) is invisible.
+      - Pydantic models defined in another module are not joined; only same-file body models are checked for identity fields.
+      - A Depends() wrapper that itself reads a client field is a known miss — the parameter then looks injected.
+    owner_program: mastermind-security-auth-billing
+    notes: >
+      Mutation-proven in-script (--selftest plants each surface, then requires
+      the live app/ tree to stay clean). Registering the file is not the proof.
 
   # ── Discipline-only laws (no check_script, no ci_wiring) ──────────────────
 
@@ -3261,3 +3410,55 @@ checks:
       config/synapse.yml — it repairs the canonical source rather than papering over the
       gap in a side file. T1 deliberately did NOT invent those citations: a prereg pointer
       that does not exist is worse than a null one.
+
+  - law_id: cycles.stretch_oracle_disclosure
+    summary: >
+      The two stretch/extension oracles (O1 ladder.alignment.overextended, the
+      oscillator-dominant 4-leg brake; O2 entry_signal.status == "extended", a
+      relabel of urgency=="caution") legitimately disagree on ~38% of names, so the
+      contract is DISCLOSURE, not agreement: every flagged name must carry the leg
+      that actually fired (invariants I1-I4 in the checker; contract doc
+      docs/site_semantics/stretch_oracles.md), and the divergence counter is
+      re-emitted nightly against the store the render just wrote, so a stale
+      divergence number can never again be the newest one anybody has.
+    source_ref:
+      - scripts/check_stretch_oracle_contract.py
+      - docs/site_semantics/stretch_oracles.md
+      - tests/test_stretch_oracle_contract.py
+      - "PR #5574 (feat(cycles): disclose which leg fires the overextension brake)"
+    severity: warn
+    check_script: scripts/check_stretch_oracle_contract.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: engine
+        lane: hook
+      - workflow: .github/workflows/engine-render.yml
+        job: engine-render
+        lane: hook
+    selftest: false
+    selftest_exempt_reason: >
+      No selftest flag; the invariant battery (I1-I4 plus the confusion-matrix
+      shape) lives in tests/test_stretch_oracle_contract.py against synthetic
+      stores, run in pr_ci by the legacy picks-boards pytest sweep, and the live
+      gate is the warn-only in-process self-check at the end of
+      scripts/build_stock_library.py's stockdata render.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - site/stockdata is nightly-render output and is NOT committed, so no pr_ci
+        lane can run the checker against a real store (CLI exits 2 "nothing to
+        check" in a plain checkout); PR-tier coverage is the synthetic-store pytest
+        suite only.
+      - The in-process nightly invocation is display-tier and never fatal (the
+        guard must never break the render); violations surface as line-start
+        ::warning annotations, never exit codes — lane=hook mirrors the
+        surface_freshness precedent for builder-embedded gates.
+    owner_program: cycles
+    notes: >
+      Invoked in-process (lazy import, never a workflow run: body) by
+      `scripts/build_stock_library.py` after the stockdata render in the daily and
+      engine-render lanes. Operator CLI:
+      `python3 scripts/check_stretch_oracle_contract.py site/stockdata`.
+      Registered 2026-08-14 by the PR-1b fusion session healing the
+      house-law-registry census red that #5574 left (checker shipped without an
+      entry; every full-suite ci-pack run since was red on this job).

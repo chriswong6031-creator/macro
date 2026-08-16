@@ -52,6 +52,8 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+from lib.massive_ticker import iter_artifact_paths, ticker_from_artifact_path
+
 log = logging.getLogger(__name__)
 
 SCHEMA_ID = "marketing.hot_tape_pack/v1"
@@ -270,7 +272,7 @@ def scan_ticker(args: tuple) -> dict | None:
     ticker_s, paths_in, min_adv, always_keep = args
     paths = [Path(p) for p in ([paths_in] if isinstance(paths_in, (str, Path))
                                else list(paths_in))]
-    ticker = str(ticker_s or (paths[0].stem if paths else "")).upper()
+    ticker = str(ticker_s or (paths[0].stem if paths else "")).strip()
     try:
         import numpy as np  # noqa: PLC0415
         import pandas as pd  # noqa: PLC0415
@@ -539,10 +541,13 @@ def store_universe(root: Path | str) -> dict[str, list[Path]]:
         d = Path(root) / sub
         if not d.exists():
             continue
-        for p in sorted(d.glob("*.parquet")):
+        paths = (iter_artifact_paths(d) if sub == STORE_REL else d.glob("*.parquet"))
+        for p in sorted(paths):
             if p.name.startswith("_"):
                 continue
-            ticker = p.stem.upper()
+            ticker = (ticker_from_artifact_path(p, d) if sub == STORE_REL else p.stem)
+            if not ticker:
+                continue
             if _TEST_SYMBOL_RE.match(ticker):
                 continue
             out.setdefault(ticker, []).append(p)

@@ -856,8 +856,13 @@ def test_rung_text_bounds_are_config_driven_with_global_fallback():
     assert eq._rung_text_bounds(
         cfg, {"openai_compat": {"max_chars": 6000}}, "openai_compat"
     ) == (6000, 3000)
-    # partial/garbage config falls back instead of raising
-    assert eq._rung_text_bounds({}, {}, "openai_compat") == (24000, 8000)
+    # partial/garbage config falls back instead of raising, on the CURRENT
+    # defaults — a stale literal here would let _DEFAULT_CFG drift back to a
+    # narrower window without any test noticing.
+    assert eq._rung_text_bounds({}, {}, "openai_compat") == (
+        eq._DEFAULT_CFG["max_chars"],
+        eq._DEFAULT_CFG["tail_chars"],
+    )
     assert eq._rung_text_bounds(
         {"max_chars": 24000, "tail_chars": 8000, "openai_compat": {"max_chars": "x"}},
         {},
@@ -869,17 +874,23 @@ def test_shipped_config_lets_the_local_rung_inherit_the_global_bound():
     """No rung ships narrowed — the local endpoint reads the full budget.
 
     #4784 capped openai_compat at 8,000 chars for a 4,096-token Ollama default.
-    The host now sets OLLAMA_CONTEXT_LENGTH=32768 and serves 24,000 chars at
+    The host now sets OLLAMA_CONTEXT_LENGTH=32768 and serves the full budget at
     finish_reason "stop" with usable JSON (8,797 prompt_tokens on prose, 14,156
-    token-dense), so a local cap would truncate transcripts for no reason.
-    Re-introducing one — in the YAML or in _DEFAULT_CFG — fails here.
+    token-dense, both at 24,000 chars), so a local cap would truncate transcripts
+    for no reason.  Re-introducing one — in the YAML or in _DEFAULT_CFG — fails
+    here.
+
+    The budget moved 24,000 -> 48,000 on 2026-08-14: at 24,000, 86% of calls were
+    truncated and the median truncated call lost 42% of its own text.  The new
+    bound is derived from those same density measurements and is guarded against
+    the window by tests/test_earnings_prompt_quality.py.
     """
     cfg = eq.load_config()
-    assert int(cfg["max_chars"]) == 24000
-    assert int(cfg["tail_chars"]) == 8000
-    assert eq._rung_text_bounds(cfg, {}, "openai_compat") == (24000, 8000)
+    assert int(cfg["max_chars"]) == 48000
+    assert int(cfg["tail_chars"]) == 16000
+    assert eq._rung_text_bounds(cfg, {}, "openai_compat") == (48000, 16000)
     for cloud in ("deepseek", "kimi", "anthropic", "codex"):
-        assert eq._rung_text_bounds(cfg, {}, cloud) == (24000, 8000)
+        assert eq._rung_text_bounds(cfg, {}, cloud) == (48000, 16000)
 
     # ...and the bound must be INHERITED, not restated at the global value:
     # a restated copy silently drifts the next time the global moves.
@@ -919,7 +930,7 @@ def test_shipped_config_sends_the_full_global_budget_to_the_local_rung(monkeypat
     cloud_prompts = [u for name, u in seen if name == "deepseek"]
     assert local_prompts and cloud_prompts
     for prompt in local_prompts + cloud_prompts:
-        assert _prompt_body_chars(prompt) == int(cfg["max_chars"]) == 24000
+        assert _prompt_body_chars(prompt) == int(cfg["max_chars"]) == 48000
 
 
 def test_server_side_prompt_truncation_is_logged(caplog):

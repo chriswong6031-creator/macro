@@ -24,6 +24,7 @@ owns_paths:
   - data/entry_radar/
   - research/live_entry_radar/
   - mockups/refs/entry_radar/
+  - tests/fixtures/entry_radar/
 waves:
   - id: W0
     title: PR-0 archaeology + frozen research contract (Tracks A–E, kill-registry compliance)
@@ -31,34 +32,54 @@ waves:
     pr: 5578
   - id: W1
     title: PR-1 probe universe + candidate enlistment bus
-    status: in_progress
+    status: done
     pr: 5625
     depends_on: [W0]
-    next_action: >
-      Build in flight (operator CONTINUE directive 2026-08-14): funnel layers A–D +
-      mastermind.entry_probe_nomination.v1 per contract §6 and the Track C producer census;
-      ephemeral producers spooled prospectively from day one (§5); admission never grants
-      score authority. Acceptance: a lobe-nominated small cap outside the hot universe
-      lands in the Probe Set with provenance/freshness/eligibility intact. PR number added
-      at ship.
+    # Reconciled 2026-08-14 by the W2 session from merged evidence: PR #5625 MERGED
+    # 2026-08-14T17:31:07Z, merge commit 000732bd80d594a62f9923466e5be1cbe9b86ec7
+    # (gh pr view 5625 --json state,mergeCommit,mergedAt). Historical in_progress row
+    # predated the merge; no other state transition manufactured.
   - id: W2
     title: PR-2 detector framework + G0 Grey Dot exact + parity fixtures
-    status: todo
+    status: done
+    pr: 5698
     depends_on: [W0]
-    next_action: >
-      G0-VIS is CLOSED (operator confirmed the raw grey family 2026-08-13, contract §18
-      A1) — the parity freeze is unblocked. PR-2 additionally owns the A1 adapter
-      obligation: ingest the unified indicator/v1 signals stream preserving emitter
-      type/subtype/quality/stage verbatim, and mint expert-family keys from emitter
-      receipts (STARTER/RE-ENTRY enumerations are PR-2 archaeology).
+    # Reconciled 2026-08-14 by the W3 session from merged evidence: PR #5698 MERGED
+    # 2026-08-15T01:19:08Z, merge commit cf4134feaa99262cfd3bfa9b921d3444f48d5bf2
+    # (gh pr view 5698; git merge-base --is-ancestor confirms it on origin/main).
+    # Historical in_progress row predated the merge; no other state manufactured.
   - id: W3
     title: PR-3 1D/4H challenger family + PIT mutation tests
-    status: todo
+    status: done
+    pr: 5724
     depends_on: [W2]
+    # DONE at ACTUAL merge (never at armed): PR #5724 MERGED 2026-08-15T06:55:31Z,
+    # squash commit 4b9706ef058eab3bccaa36966ca89ebd0c49936d; merged-main verified
+    # (owned-path byte diff vs origin/main empty; registry probe on merged bytes:
+    # C1 f0bbd6cf3a6e2339 · C2 d8ba60a25cfa7400 · C3 d54dc1e55c4261c8 ·
+    # C4 dce21ac680233ee2 · C5 13dec66345a0376c · G0 9be89a8acc8b905c unchanged;
+    # F1 still NotYetSpecified). Contract lock = §18 A5; review receipts =
+    # research/live_entry_radar/W3_REVIEW_DISPOSITIONS.md; handoff =
+    # agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15.md.
   - id: W4
     title: PR-4 live evaluator on the VPS plane (5-min RTH)
-    status: todo
+    status: done
+    pr: 5768
     depends_on: [W1, W3]
+    # DONE at ACTUAL merge (never at armed): PR #5768 MERGED 2026-08-16T03:13:45Z,
+    # squash commit 1a170f9ceba1005ca79af6a631cb02045bf62f36; merged-main verified
+    # (owned-path byte diff head-vs-squash empty; six frozen detector hashes
+    # asserted in-suite, F1 still NotYetSpecified; entry-radar CI step now the
+    # W1..W5 union, 22 suites). Ships STAGED NOT ARMED behind
+    # ENTRY_RADAR_LIVE_ENABLE per the commissioning's deployment boundary;
+    # activation + the §15 full-RTH cadence measurement are the operator's per
+    # research/live_entry_radar/W4_DEPLOY_PLAN.md. Adversarial receipts:
+    # research/live_entry_radar/W4_REVIEW_DISPOSITIONS.md; real-data receipts
+    # (incl. closing W3's vendor-minute unverified row): W4_REAL_DATA_SMOKE.md;
+    # handoff: agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15-w4.md. The parallel
+    # W5 lane's code merged mid-session; #5768 reconciled the shared files
+    # (producers-guard union, sentinel SURFACES union, update.sh sibling
+    # blocks); W5's own row/handoff remain that session's to write.
   - id: W5
     title: PR-5 forward evidence + replay under Evaluation OS
     status: todo
@@ -87,7 +108,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: Land PR-0 (W0); then W1 (universe/bus) and W2 (G0 parity) can start in parallel sessions off the frozen contract.
+next_action: W4 DONE (PR #5768, squash 1a170f9c, 2026-08-16) — live evaluator merged STAGED-NOT-ARMED; operator activation per W4_DEPLOY_PLAN.md closes the §15 full-RTH cadence line. W5 code is on main (replay/**, reconciler, vendor, stage-terminal) with its records still unwritten — that session owns them. Next fresh commissionings: W6 (Research Priority, needs W5 records/acceptance closed) and W8 (UI reference), per the wave graph.
 ---
 
 ## Context

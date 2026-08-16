@@ -2434,6 +2434,11 @@ class TestRadarUniverse:
         got = RADAR.radar_universe(pack, {"tiles": []}, cfg=HT.DEFAULTS)
         assert "THICK" in got and "THIN" not in got
 
+    def test_mixed_case_vendor_identity_is_not_aliased_into_the_house_universe(self):
+        pack = {"tickers": {"TPC": {"adv_rank": 1}, "TpC": {"adv_rank": 2}}}
+        got = RADAR.radar_universe(pack, {"tiles": []}, cfg=HT.DEFAULTS)
+        assert "TPC" in got and "TpC" not in got
+
     def test_the_contrarian_index_proxy_is_always_fetched(self):
         got = RADAR.radar_universe(None, None, cfg=HT.DEFAULTS)
         assert got == ["SPY"], got

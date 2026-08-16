@@ -1,0 +1,97 @@
+{
+  "extracted_at_utc": "2026-08-15T00:30:55+00:00",
+  "extractor": "extract_themes_tree.py",
+  "source": "finviz-themes-map (webpack lazy data chunk)",
+  "trace": {
+    "map_page_url": "https://finviz.com/map?t=themes",
+    "map_js_url": "https://finviz.com/assets/dist/map.v1.6775885d.js",
+    "runtime_js_url": "https://finviz.com/assets/dist/runtime.v1.f0939ef5.js",
+    "chunk_url": "https://finviz.com/assets/dist/6574.v1.6c9683c9.js",
+    "chunk_id": "6574",
+    "module_id": "13014",
+    "chunk_hash": "6c9683c9",
+    "literal_bytes": 41492
+  },
+  "counts": {
+    "themes": 40,
+    "subthemes": 268,
+    "memberships": 2339,
+    "unique_tickers": 924
+  },
+  "tree_sha256": "1d597c44c8ce0ffba6ce548a08d090c8c702199356830fd7b02739f09f1dba45",
+  "parse_notes": [
+    "level-1 supergroup layer: 6 groups (1=10, 2=10, 3=8, 4=7, 5=3, 6=2) \u2014 flattened in group order to match the committed schema"
+  ],
+  "supergroups_dropped_by_schema": [
+    {
+      "group": "1",
+      "themes": [
+        "Artificial Intelligence",
+        "Cloud Computing",
+        "Semiconductors",
+        "Cybersecurity",
+        "Software",
+        "Hardware",
+        "Quantum Computing",
+        "Virtual & Augmented Reality",
+        "Biometrics",
+        "Big Data"
+      ]
+    },
+    {
+      "group": "2",
+      "themes": [
+        "Electric Vehicles",
+        "Industrial Automation",
+        "Defense & Aerospace",
+        "Transportation & Logistics",
+        "Space Tech",
+        "Robotics",
+        "Telecommunications",
+        "Nanotechnology",
+        "Internet of Things",
+        "Autonomous Systems"
+      ]
+    },
+    {
+      "group": "3",
+      "themes": [
+        "E-commerce",
+        "Social Media",
+        "Digital Entertainment",
+        "Real Estate & REITs",
+        "Consumer Goods",
+        "Smart Home",
+        "Wearables",
+        "Education Technology"
+      ]
+    },
+    {
+      "group": "4",
+      "themes": [
+        "Energy Renewable",
+        "Energy Traditional",
+        "Commodities Energy",
+        "Commodities Metals",
+        "Commodities Agriculture",
+        "Agriculture & FoodTech",
+        "Environmental Sustainability"
+      ]
+    },
+    {
+      "group": "5",
+      "themes": [
+        "Healthcare & Biotech",
+        "Aging Population & Longevity",
+        "Healthy Food & Nutrition"
+      ]
+    },
+    {
+      "group": "6",
+      "themes": [
+        "FinTech",
+        "Crypto & Blockchain"
+      ]
+    }
+  ]
+}

@@ -516,7 +516,7 @@ class TestSealedObjectsUntouched:
         digest, _ = partition_procedure_sha256(reg)
         assert digest == _manifest()["partition_procedure_sha256"], (
             "W1 registration §4 was edited — that text is hash-pinned, which is why the "
-            "GOLD correction lives in the W2 addendum instead"
+            "GOLD correction lives in the registered W1-A1 overlay instead"
         )
 
     def test_the_fingerprint_spec_hash_recomputes_from_the_spec(self):
@@ -535,8 +535,8 @@ class TestSealedObjectsUntouched:
         assert "B" not in set(m["calibration_partition"]["members"])
         assert "B" not in set(m["universe"]["plane_by_symbol"])
         assert "B" not in set(m["pilot"]["members"]), (
-            "B is a W2 ADDENDUM name; adding it to the frozen W1 pilot list would "
-            "re-open a sealed artifact"
+            "B is a W1-A1 design-touched addendum; adding it to the frozen W1 pilot "
+            "list would re-open a sealed artifact"
         )
 
     def test_the_w1_pilot_stores_were_not_rewritten_to_include_b(self):
@@ -555,54 +555,59 @@ class TestSealedObjectsUntouched:
 
 # ---------------------------------------------------------------------------
 class TestAddendum:
-    def test_b_ships_as_separate_addendum_artifacts(self):
-        for name in ("fingerprints/addendum_b_fingerprint.parquet",
-                     "state/addendum_b_state.parquet",
-                     "episodes/addendum_b_catalog.parquet"):
+    def test_b_ships_as_separate_w1a1_amendment_artifacts(self):
+        for name in (
+            "fingerprints/amendments/w1a1_b_fingerprint_v0.parquet",
+            "state/amendments/w1a1_b_state_daily.parquet",
+            "episodes/amendments/w1a1_b_episode_catalog_v0.parquet",
+        ):
             p = DATA / name
             if not p.exists():
-                pytest.skip("addendum artifacts not present in this checkout")
+                pytest.skip("W1-A1 amendment artifacts not present in this checkout")
             df = pd.read_parquet(p)
             assert set(df["symbol"].astype(str)) == {"B"}
 
-    def test_the_ohlcv_manifest_records_b_with_its_lineage(self):
+    def test_the_ohlcv_manifest_does_not_duplicate_b(self):
         p = DATA / "ohlcv" / "manifest.json"
         if not p.exists():
             pytest.skip("program-owned store absent")
         m = json.loads(p.read_text(encoding="utf-8"))
-        if "B" not in m.get("symbols", {}):
-            pytest.skip("B not collected in this checkout")
-        entry = m["symbols"]["B"]
-        assert entry["rows"] > 0
-        note = entry.get("lineage_note", "")
-        assert "ABX" in note and "GOLD" in note, "the ABX->GOLD->B lineage is not recorded"
-        # The W1 names must still be there — the manifest is EXTENDED, not replaced.
+        assert "B" not in m.get("symbols", {}), (
+            "B belongs on curated baskets_ohlcv_v1 (PR #5632 / W1-A1), not a "
+            "duplicate stock_identity/ohlcv plane"
+        )
         assert {"BABA", "WPM"} <= set(m["symbols"])
+        curated = ROOT / "data" / "baskets" / "ohlcv" / "B.parquet"
+        if curated.exists():
+            assert len(pd.read_parquet(curated)) > 0
 
-    def test_the_gold_dossier_no_longer_calls_it_a_miner(self):
+    def test_the_gold_dossier_carries_the_w1a1_disclosure_envelope(self):
         p = ROOT / "research" / "stock_identity" / "dossiers" / "GOLD.md"
         if not p.exists():
             pytest.skip("GOLD dossier absent")
         text = p.read_text(encoding="utf-8")
-        head = text.split("## Behavioral fingerprint", 1)[0]
-        # "miner" may appear only inside the dated correction that WITHDRAWS that identity.
-        for line in head.splitlines():
-            if "miner" in line.lower():
-                assert ("correction" in line.lower() or "withdraw" in line.lower()
-                        or "NYSE `B`" in line), f"GOLD identity still reads as a miner: {line[:120]}"
+        assert "SI-W1-A1-GOLD-WRONG-ISSUER" in text
         assert "Gold.com" in text and "A-Mark" in text
-        assert "reused-ticker hygiene case study" in text
+        # Sealed measured body is preserved; miner-role withdrawal is the envelope.
+        assert "miner neighborhood probe" in text
+        svg = ROOT / "research" / "stock_identity" / "dossiers" / "GOLD.svg"
+        if svg.exists():
+            import hashlib
+            digest = hashlib.sha256(svg.read_bytes()).hexdigest()
+            assert digest == (
+                "e4e6466f2b4535b97d2fae4eb3eb7e39c1a40600343d955f0e0fe843d7df49db"
+            ), "sealed GOLD.svg was rewritten"
 
     def test_the_addendum_receipts_cite_the_ruling(self):
-        p = DATA / "addendum" / "pilot_addendum_v1.json"
+        p = DATA / "amendments" / "w1a1_gold_wrong_issuer.json"
         if not p.exists():
-            pytest.skip("addendum receipts absent")
+            pytest.skip("W1-A1 receipts absent")
         r = json.loads(p.read_text(encoding="utf-8"))
-        assert "2026-08-14" in r["ruling"]
-        assert r["symbol_corrected"]["symbol"] == "GOLD"
-        assert r["symbol_added"]["symbol"] == "B"
-        assert set(r["miner_probe_roster"]) == {"NEM", "AEM", "PAAS", "WPM", "AG", "B"}
-        assert "GOLD" not in r["miner_probe_roster"]
+        assert r["amendment_id"] == "SI-W1-A1-GOLD-WRONG-ISSUER"
+        assert r["measured_rows_mutated"] is False
+        roster = set(r["miner_probe_roster"]["effective_w1a1"])
+        assert roster == {"NEM", "AEM", "PAAS", "WPM", "AG", "B"}
+        assert "GOLD" not in roster
 
 
 # ---------------------------------------------------------------------------

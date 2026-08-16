@@ -91,6 +91,33 @@ def test_normalise_tickers_sorted_unique():
     assert result["tickers"].count("NVDA") == 1
 
 
+def test_polygon_articles_keep_case_distinct_vendor_tags_and_sentiment():
+    rows = [{
+        "title": "Four companies report material market updates",
+        "article_url": "https://example.com/case-sensitive-tickers",
+        "published_utc": "2026-08-15T12:00:00Z",
+        "publisher": {"name": "Example", "homepage_url": "https://example.com"},
+        "tickers": ["TPC", "TpC", "BCPC", "BCpC"],
+        "insights": [
+            {"ticker": "TPC", "sentiment": "positive"},
+            {"ticker": "TpC", "sentiment": "negative"},
+            {"ticker": "BCPC", "sentiment": "positive"},
+            {"ticker": "BCpC", "sentiment": "negative"},
+        ],
+    }]
+
+    items = fn._polygon_articles(rows, _NOW)
+    assert len(items) == 1
+    item = items[0]
+    assert set(item["tickers"]) == {"TPC", "TpC", "BCPC", "BCpC"}
+    assert item["per_ticker_sentiment"] == {
+        "TPC": "pos", "TpC": "neg", "BCPC": "pos", "BCpC": "neg",
+    }
+    by_ticker, excluded = fn._assemble_by_ticker(items)
+    assert excluded == {}
+    assert set(by_ticker) == {"TPC", "TpC", "BCPC", "BCpC"}
+
+
 def test_normalise_id_field_present():
     result = fn._normalise("Fed news headline", "https://bloomberg.com/a",
                            "bloomberg.com", "2026-06-19T12:00:00+00:00",
