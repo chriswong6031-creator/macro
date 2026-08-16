@@ -40,6 +40,7 @@ SETTINGS_PATH = ROOT / ".claude" / "settings.json"
 CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
 CODEX_ENVIRONMENT_PATH = ROOT / ".codex" / "environments" / "environment.toml"
 CODEX_HOOKS_PATH = ROOT / ".codex" / "hooks.json"
+CURSOR_HOOKS_PATH = ROOT / ".cursor" / "hooks.json"
 
 
 def _load_hook():
@@ -168,20 +169,42 @@ def test_auto_profile_never_changes_the_primary_checkout(synthetic_repo: Path):
     assert (synthetic_repo / "data" / "keep.txt").is_file()
 
 
+def _session_linked(synthetic_repo: Path, tmp_path: Path, name: str) -> Path:
+    """A linked worktree under a session root — the only tree ``auto`` will touch."""
+    linked = tmp_path / ".claude" / "worktrees" / name
+    linked.parent.mkdir(parents=True, exist_ok=True)
+    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    return linked
+
+
 def test_auto_profile_applies_to_a_new_linked_worktree(
         synthetic_repo: Path, tmp_path: Path):
-    linked = tmp_path / "linked"
-    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    linked = _session_linked(synthetic_repo, tmp_path, "linked")
     assert WS.is_linked_worktree(linked) is True
+    assert WS.is_session_worktree(linked) is True
     assert WS.auto_profile(linked, CONFIG_PATH) == 0
     assert WS.missing_dirs(linked) == ["data", "mockups", "site"]
     assert _git(linked, "status", "--porcelain") == ""
 
 
+def test_auto_profile_skips_a_linked_worktree_outside_session_roots(
+        synthetic_repo: Path, tmp_path: Path):
+    """macro-main is a linked worktree of the occupied primary; SessionStart must
+    not sparsify it. The discriminator is the session-root path, not merely
+    git-dir != common-dir.
+    """
+    linked = tmp_path / "macro-main-analog"
+    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    assert WS.is_linked_worktree(linked) is True
+    assert WS.is_session_worktree(linked) is False
+    assert WS.auto_profile(linked, CONFIG_PATH) == 0
+    assert WS.is_sparse(linked) is False
+    assert (linked / "data" / "keep.txt").is_file()
+
+
 def test_auto_profile_respects_the_repo_wide_off_switch(
         synthetic_repo: Path, tmp_path: Path):
-    linked = tmp_path / "linked-disabled"
-    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    linked = _session_linked(synthetic_repo, tmp_path, "linked-disabled")
     profile = tmp_path / "disabled.json"
     profile.write_text('{"enabled": false, "exclude_dirs": ["data", "site"]}',
                        encoding="utf-8")
@@ -191,8 +214,7 @@ def test_auto_profile_respects_the_repo_wide_off_switch(
 
 def test_auto_profile_preserves_a_sessions_manual_sparse_addition(
         synthetic_repo: Path, tmp_path: Path):
-    linked = tmp_path / "linked-custom"
-    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    linked = _session_linked(synthetic_repo, tmp_path, "linked-custom")
     _make_sparse(linked, ["engine", "scripts", "templates", "site"])
     assert (linked / "site" / "asset.js").is_file()
     assert WS.auto_profile(linked, CONFIG_PATH) == 0
@@ -365,6 +387,21 @@ def test_codex_session_start_fallback_is_wired_in_checked_in_hooks():
     commands = [hook["command"] for entry in entries for hook in entry["hooks"]]
     assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
                for command in commands), commands
+
+
+def test_cursor_session_hooks_apply_the_same_sparse_profile():
+    """Cursor IDE has no WorktreeCreate; sessionStart + workspaceOpen are the analog."""
+    settings = json.loads(CURSOR_HOOKS_PATH.read_text(encoding="utf-8"))
+    assert settings.get("version") == 1
+    for event in ("sessionStart", "workspaceOpen"):
+        entries = settings["hooks"][event]
+        commands = [
+            hook["command"]
+            for entry in entries
+            for hook in (entry if isinstance(entry, list) else [entry])
+        ]
+        assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
+                   for command in commands), (event, commands)
 
 
 def test_hook_name_validation_rejects_path_traversal():

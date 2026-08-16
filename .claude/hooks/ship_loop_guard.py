@@ -1197,9 +1197,49 @@ def _is_spurious_check(name: str) -> bool:
     Widening this allowlist is a RULING, not a refactor — a broadened predicate
     waves a genuine red through as noise, which is the most expensive mistake this
     function can make. Change it here and in the sweeper together, or in neither.
+
+    NOT the whole "is this a red we own" question — see :func:`_is_non_binding_check`,
+    which adds the one context this hook must also skip. Call that one from a gate;
+    this predicate stays narrow so the spurious allowlist keeps its own meaning.
     """
     lowered = str(name or "").lower()
     return "workers builds" in lowered and "macro" in lowered
+
+
+#: The inactive `ci-authority` base context. `.github/workflows/ci-authority.yml`
+#: publishes two complementary exact-head contexts — `ci-authority/main` and
+#: `ci-authority/codex/merge-queue-pilot` — and states that "each PR run FAILS the
+#: inactive context so an edited retarget cannot reuse a success earned against
+#: another base". Stop-hook sessions only ever track pull requests targeting main,
+#: so on every one of them this context is red BY DESIGN. It is retarget-invalidation
+#: state, not a verdict. `ci-authority/main` stays binding everywhere.
+CI_AUTHORITY_INACTIVE_CONTEXT = "ci-authority/codex/merge-queue-pilot"
+
+
+def _is_non_binding_check(name: str) -> bool:
+    """Is this check name one no gate here may read as a red we own?
+
+    THE ONE DEFINITION, and it is now actually one. This is NOT a widening of the
+    spurious allowlist: `_split_head_runs` and `_red_checks` have BOTH skipped
+    `CI_AUTHORITY_INACTIVE_CONTEXT` since it was introduced, and the sweeper carries
+    the identical rule (`scripts/merge_on_green.py`, `is_spurious_check` call sites).
+    The merged-head CI gate did not — while its own comment claimed "ONE definition
+    of 'not a red', shared with `_split_head_runs` above and with the sweeper's own
+    copy". A comment asserting parity is not parity, and the divergence is exactly
+    the kind a reader cannot see: three loops that look alike, one filtering less.
+
+    THE SCAR. The gate blocked a session whose work had MERGED GREEN, naming a
+    context that is red on every pull request in this repository — measured on the
+    sibling PR #5767, whose single failing check was this context and which merged
+    clean. It stayed invisible because the semantic proof path ahead of it raised
+    first (#5771) and produced a different refusal; repairing that unmasked this,
+    which is the ordinary shape of a first failing gate hiding the second.
+
+    Deliberately still narrow. `_is_spurious_check` keeps its own meaning and its own
+    "widening is a RULING, not a refactor" contract; this adds exactly one name, and
+    that name's redness is a documented property of the workflow that emits it.
+    """
+    return _is_spurious_check(name) or str(name or "") == CI_AUTHORITY_INACTIVE_CONTEXT
 
 
 def _open_pull(owner: str, repo: str, branch: str) -> dict[str, Any] | None:
@@ -1227,13 +1267,9 @@ def _red_pairs(runs: list[dict[str, Any]]) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
-            continue
-        # ci-authority deliberately fails the inactive pilot context before it
-        # publishes the active main verdict. Stop-hook sessions only track PRs
-        # targeting main, so this exact pilot context is retarget-invalidation
-        # state, not a red. ci-authority/main remains binding everywhere.
-        if name == "ci-authority/codex/merge-queue-pilot":
+        # `_is_non_binding_check` carries both rules (spurious Cloudflare X, and the
+        # ci-authority inactive base context that is red on every PR by design).
+        if _is_non_binding_check(name):
             continue
         if run.get("status") != "completed":
             continue
@@ -1258,9 +1294,7 @@ def _split_head_runs(
     passed: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
-            continue
-        if name == "ci-authority/codex/merge-queue-pilot":
+        if _is_non_binding_check(name):
             continue
         if run.get("status") != "completed":
             pending.append(name)
@@ -1575,7 +1609,7 @@ def _armed_pull_status(owner: str, repo: str, branch: str, head: str) -> tuple[s
         starts = [
             stamp
             for run in runs
-            if not _is_spurious_check(str(run.get("name") or "unnamed check"))
+            if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
             and run.get("conclusion") == "failure"
             for stamp in (_started_stamp(run, "started_at", "completed_at"),)
             if stamp
@@ -1927,14 +1961,18 @@ def _check_ci(
     if not runs:
         return False, "No CI check runs were found for the pull-request head."
     # ONE definition of "not a red", shared with `_split_head_runs` above and with
-    # the sweeper's own copy in `scripts/merge_on_green.py`.
+    # the sweeper's own copy in `scripts/merge_on_green.py` — and it is `_is_non_
+    # binding_check`, not `_is_spurious_check`. This loop called the narrower one
+    # while the comment claimed parity, so it alone counted the ci-authority
+    # inactive base context as a red we own and blocked sessions whose work had
+    # merged GREEN on a context that is red on every PR in this repository.
     non_red = NON_RED_CONCLUSIONS
     bad: list[tuple[str, str]] = []
     pending: list[str] = []
     failure_starts: list[str] = []
     for run in runs:
         name = str(run.get("name") or "unnamed check")
-        if _is_spurious_check(name):
+        if _is_non_binding_check(name):
             continue
         # The inactive pilot authority context, excluded on the MERGED path too
         # (2026-08-16). `_red_pairs` and `_split_head_runs` above have always
@@ -1952,8 +1990,9 @@ def _check_ci(
         # retarget-invalidation receipt. Every PR touching a ci-authority path
         # hit this. `ci-authority/main` stays binding here exactly as elsewhere;
         # this skips ONLY the one literal pilot context, and widens nothing.
-        if name == "ci-authority/codex/merge-queue-pilot":
-            continue
+        # (The literal that stood here is gone: `_is_non_binding_check` above
+        # already answers it, and leaving a second spelling behind is how this
+        # loop drifted from its siblings in the first place.)
         if run.get("status") != "completed":
             pending.append(name)
         elif run.get("conclusion") not in non_red:
@@ -1968,6 +2007,47 @@ def _check_ci(
         # is only ever gathered to argue about a red.
         if pending:
             return False, "CI still running: " + ", ".join(pending[:8])
+        # AN ABSENCE OF RED IS NOT A PASS — the other edge of the exclusion above,
+        # and the reason the sweeper's verdict has an `unproven` state at all
+        # (#4779; `scripts/merge_on_green.py`: "a head whose every surviving check
+        # concluded `skipped`/`neutral` is that same nothing wearing a name").
+        #
+        # `NON_RED_CONCLUSIONS` holds `skipped` and `neutral`, so this return has
+        # always been reachable by a head that proved NOTHING. What kept such a
+        # head out of it was an accident: the inactive pilot context is red on
+        # every pull request in this repository, so `bad` was never empty for it.
+        # Excluding that context — correctly, #5773/#5776 — removed the accident
+        # and left the hole. Measured on 65f9669f: a merged head whose every
+        # binding check was `skipped`, one whose only check was `neutral`, and one
+        # carrying NOTHING but the pilot and the spurious Cloudflare X all
+        # returned `(True, "")`. The guard released a session on a head with no CI
+        # verdict whatsoever, which is the failure it exists to prevent, in the
+        # direction that costs the most: a false red pins a session, a false green
+        # ships unproven work.
+        #
+        # So require what the sweeper requires of the same head: one check that
+        # actually said `success`. Excluding a check from the reds must never
+        # promote the head to proven.
+        #
+        # Scoped to THIS return deliberately. The two green returns below are
+        # reached only after a real red was argued away on evidence, which means
+        # CI demonstrably ran; this is the cheap path that gathers nothing. It
+        # cannot strand a normal merge either — the sweeper refuses to merge a
+        # head with no `success` at all, and even the records-only PR #5772
+        # carried 10 of them.
+        binding = [
+            run
+            for run in runs
+            if not _is_non_binding_check(str(run.get("name") or "unnamed check"))
+        ]
+        if not any(run.get("conclusion") == "success" for run in binding):
+            names = [str(run.get("name") or "unnamed check") for run in binding]
+            return False, (
+                "Failing CI: the merged head carries no affirmative passing check "
+                f"({len(binding)} binding check(s) concluded, none `success`"
+                + (f": {', '.join(names[:8])}" if names else "")
+                + "). An absence of red is not a pass."
+            )
         return True, ""
 
     semantic_notes: list[str] = []

@@ -736,6 +736,15 @@ jobs:
       # reason and passes on correct input, so the shipped all-refuse state cannot
       # hide a gate that stopped discriminating.
       #
+      # `_w5_perf` (#5775) joins the same step for the same reason the W4 names were
+      # pre-registered above: this file has NO catch-all pytest run — 1,555 of the
+      # 2,451 test files under tests/ are enumerated somewhere and the rest never
+      # execute — so a suite that is not named here does not run, and a perf refactor
+      # whose whole warrant is "output is byte-identical" would ship with its
+      # equivalence pins dark. It adds no wheel (pandas/numpy/pyarrow already on this
+      # job's install line) and no data/ or network dependency: every case runs on
+      # tmp_path parquet and synthetic frames.
+      #
       # W5 HEARTBEAT (2026-08-16) joins the SAME step: tests/test_entry_radar_w5_
       # heartbeat.py pins the replay runner's `[phase] k/N (elapsed Xs)` liveness
       # lines — stderr-only (stdout carries the receipt contract), both thresholds
@@ -745,7 +754,7 @@ jobs:
       # plus one tmp_path call into the real `_finalize_candidates` with an empty
       # candidate list. 15 tests in ~1.6s, no new wheel.
       - name: entry-radar W1+W2+W3+W4+W5 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_heartbeat.py -q
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py tests/test_entry_radar_w5_perf.py tests/test_entry_radar_w5_heartbeat.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight

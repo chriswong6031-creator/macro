@@ -354,7 +354,7 @@ def cross_sectionalize(rows: pd.DataFrame) -> pd.DataFrame:
     """
     if rows is None or not len(rows):
         out = pd.DataFrame(columns=list(PANEL_COLUMNS))
-        out.attrs["session_pos_by_date"] = {}
+        out.attrs["session_pos_by_date"] = attach_session_positions(out)
         return out
     frame = rows.copy()
     missing = [c for c in RAW_COLUMNS if c not in frame.columns]
@@ -421,7 +421,7 @@ def _bucket(frame: pd.DataFrame, keys: list[str], column: str, n: int) -> pd.Ser
 
 def attach_session_positions(panel: pd.DataFrame,
                              calendar: pd.DatetimeIndex | None = None,
-                             ) -> dict[pd.Timestamp, int]:
+                             ) -> "panels.SessionPositions":
     """``{Timestamp: position}`` for ``controls._session_offset``.
 
     Derived from the panel's own distinct sessions unless a bench ``calendar`` is
@@ -429,14 +429,19 @@ def attach_session_positions(panel: pd.DataFrame,
     names: a panel that happens to hold no rows on a session would otherwise make
     that session invisible to the ±5-session exclusion, quietly admitting a control
     that fired four sessions ago.  ``panels.session_calendar`` is the bench source.
+
+    The returned mapping is a read-only :class:`panels.SessionPositions` (a dict
+    subclass) so that riding in ``DataFrame.attrs`` costs nothing: see that class
+    for why a plain dict here is measured in CPU-hours.
     """
+    from engine.entry_radar.replay import panels  # noqa: PLC0415 — leaf import
+
     if calendar is not None:
-        return {pd.Timestamp(ts): pos
-                for pos, ts in enumerate(pd.DatetimeIndex(calendar))}
+        return panels.session_positions(pd.DatetimeIndex(calendar))
     if panel is None or not len(panel) or "session" not in panel.columns:
-        return {}
+        return panels.SessionPositions()
     stamps = pd.DatetimeIndex(sorted({pd.Timestamp(s) for s in panel["session"]}))
-    return {ts: pos for pos, ts in enumerate(stamps)}
+    return panels.SessionPositions((ts, pos) for pos, ts in enumerate(stamps))
 
 
 __all__ = ["PANEL_COLUMNS", "RAW_COLUMNS", "UNRANKED", "PENDING_SMALLCAP",

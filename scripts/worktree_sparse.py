@@ -134,6 +134,43 @@ def is_linked_worktree(root: Path = ROOT) -> bool:
         return git_dir != common_dir
 
 
+# Path markers that identify a *session* worktree rather than any linked checkout.
+# The operator's designated local root (macro-main) is itself a linked worktree of
+# the occupied primary; a SessionStart/workspaceOpen hook that keyed only on
+# :func:`is_linked_worktree` would sparsify that 3.8 GiB tree on every Cursor
+# chat. Keep this tuple in step with ``config/worktree_gc.json`` roots plus the
+# Cursor/Grok in-repo worktree folders those harnesses mint.
+SESSION_WORKTREE_MARKERS: tuple[tuple[str, ...], ...] = (
+    (".claude", "worktrees"),
+    (".claire", "worktrees"),
+    (".codex", "worktrees"),
+    (".codex-worktrees",),
+    (".cursor", "worktrees"),
+    (".grok", "worktrees"),
+)
+
+
+def is_session_worktree(root: Path = ROOT) -> bool:
+    """True when ``root`` is a linked worktree sitting under a session root.
+
+    Linked-worktree is necessary but not sufficient. ``auto`` must refuse the
+    operator's designated local project root even though that folder is a
+    linked worktree of the occupied primary.
+    """
+    if not is_linked_worktree(root):
+        return False
+    try:
+        parts = Path(root).resolve().parts
+    except OSError:
+        parts = Path(root).parts
+    for marker in SESSION_WORKTREE_MARKERS:
+        length = len(marker)
+        for index in range(len(parts) - length + 1):
+            if parts[index:index + length] == marker:
+                return True
+    return False
+
+
 def _cone_included(root: Path) -> list[str]:
     """Cone-mode include set (top-level directory names); [] when not cone mode."""
     if (_git(root, "config", "--get", "core.sparseCheckoutCone") or "").lower() != "true":
@@ -228,13 +265,15 @@ def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> i
 def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
     """Apply the configured profile once to a newly created linked worktree.
 
-    This is the safe entry point for Codex lifecycle automation.  It deliberately
-    skips the primary checkout and preserves any sparse selection already present
-    in a linked worktree, including a session's explicit ``add site`` opt-in.
+    This is the safe entry point for Codex/Cursor/Grok lifecycle automation.
+    It deliberately skips the primary checkout, skips a linked checkout that
+    is not under a session worktree root (the operator's designated local
+    root is one of those), and preserves any sparse selection already present
+    in a session worktree, including an explicit ``add site`` opt-in.
     ``enabled: false`` remains the single repo-wide off switch.
     """
-    if not is_linked_worktree(root):
-        print("worktree-sparse: auto skipped — primary checkout is never changed")
+    if not is_session_worktree(root):
+        print("worktree-sparse: auto skipped — only session worktrees are changed")
         return 0
 
     profile_path = config_path or root / "config" / "sparse_worktree.json"

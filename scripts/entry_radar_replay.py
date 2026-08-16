@@ -970,14 +970,28 @@ def _attach_and_match(episodes: Sequence[Any], *, cache_dir: Path,
 
 
 def _ctx_session_rows(ctx: dict[str, Any], session: date):
-    """One session's cross-sectionalized feature rows from the prebuilt panel."""
+    """One session's cross-sectionalized feature rows from the prebuilt panel.
+
+    Indexed, not scanned.  The straightforward
+    ``panel_frame[panel_frame["session"] == Timestamp(session)]`` compares EVERY
+    row of the whole-era panel (millions) once per episode; ``groupby.indices``
+    pays that scan once for the run and turns each lookup into a ``take`` of just
+    that session's rows.  Identical output — group positions come out in
+    ascending order of appearance, so row order, index labels, dtypes and the
+    propagated ``attrs`` all match the mask exactly (pinned by
+    ``tests/test_entry_radar_w5_perf.py``).
+    """
     import pandas as pd  # noqa: PLC0415
 
     panel_frame = ctx["features"]
-    rows = panel_frame[panel_frame["session"] == pd.Timestamp(session)]
-    if rows.empty:
+    by_session = ctx.get("_rows_by_session")
+    if by_session is None:
+        by_session = panel_frame.groupby("session", sort=False).indices
+        ctx["_rows_by_session"] = by_session
+    positions = by_session.get(pd.Timestamp(session))
+    if positions is None or not len(positions):
         raise KeyError(f"no feature rows for session {session}")
-    return rows
+    return panel_frame.take(positions)
 
 
 def build_match_context(episodes_list: Sequence[Any], *, cache_dir: Path,
@@ -1027,8 +1041,11 @@ def build_match_context(episodes_list: Sequence[Any], *, cache_dir: Path,
     if not frames:
         raise ReplayRefusal(f"panel {panel}: no feature rows could be built")
     features = feature_panel.cross_sectionalize(pd.concat(frames, ignore_index=True))
-    pos = {pd.Timestamp(s): i for i, s in enumerate(sorted(
-        {pd.Timestamp(x) for x in features["session"].unique()}))}
+    # SessionPositions, never a plain dict: this rides in ``attrs`` and pandas
+    # DEEP-COPIES attrs on every metadata-propagating op (see panels.SessionPositions).
+    pos = panels.SessionPositions(
+        (pd.Timestamp(s), i) for i, s in enumerate(sorted(
+            {pd.Timestamp(x) for x in features["session"].unique()})))
     features.attrs["session_pos_by_date"] = pos
 
     fire_sessions: dict[str, dict[str, list[date]]] = {}
