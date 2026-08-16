@@ -856,7 +856,7 @@ jobs:
       # narrow-diff ceiling.  No dependency widened: probed at RUN time it loads only
       # pandas/numpy/pyarrow/pyyaml, exactly this job's install line.
       - name: stock-identity atlas guards
-        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py -q
+        run: python -m pytest tests/test_stock_identity_partition.py tests/test_stock_identity_fingerprint.py tests/test_stock_identity_state_episodes.py tests/test_stock_identity_atlas.py tests/test_audit_reused_tickers.py tests/test_stock_identity_replay.py tests/test_stock_identity_replay_leak.py -q
       - name: promotion-stat DISPLAY gate — the published DSR must be the computed one
         # Registering the trial budget (above) is only half the chain: the number the
         # PAGE shows must equal the number the calibrator produced. The BTC Vector card
@@ -1590,6 +1590,11 @@ jobs:
       # conviction-profile / B2 sites in scripts/build_intl_library.py. It belongs
       # next to test_intl_library_limited.py on this same run: line — same subject,
       # same pandas/pyarrow install, no new job.
+      #
+      # tests/test_fundamental_forensics_health.py rides this step (FF-0): same
+      # Filing Forensics workbench family as test_fundamental_forensics_ui.py and
+      # test_forensics_api.py. The install line already has fastapi/httpx/jsonschema;
+      # no new dependency.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1646,6 +1651,7 @@ jobs:
           tests/test_stock_personality_w4_surfaces.py
           tests/test_fundamental_forensics_page.py
           tests/test_fundamental_forensics_private_state.py
+          tests/test_fundamental_forensics_health.py
           tests/test_fundamental_forensics_ui.py
           tests/test_fundamental_forensics_acquisition.py
           tests/test_fundamental_forensics_disclosure_diff.py

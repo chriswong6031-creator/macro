@@ -13,7 +13,7 @@
 {% include "_seo_head.html.j2" %}
 <link rel="stylesheet" href="theme.css">
 <link rel="stylesheet" href="tier_preview.css">
-<link rel="stylesheet" href="fundamental_forensics.css?v=20260811-ux">
+<link rel="stylesheet" href="fundamental_forensics.css?v=20260816-ff0r1">
 </head>
 <body class="ff-page">
 {% set nav_search_placeholder_en = "Search any stock — US, China, HK, Canada & more…" %}
@@ -49,14 +49,18 @@
       </div>
     </header>
 
-    <dl class="ff-run-meta" aria-label="Dataset status">
+    <dl class="ff-run-meta" id="ff-run-meta" aria-label="Source freshness" data-freshness="unavailable">
       <div>
-        <dt>{{ t('Filing data through', '财报数据截至') }}</dt>
+        <dt>{{ t('Source status', '来源状态') }}</dt>
+        <dd id="ff-freshness-status">{{ t('Unavailable', '不可用') }}</dd>
+      </div>
+      <div>
+        <dt>{{ t('Latest source filing', '最新来源披露日') }}</dt>
         <dd id="ff-as-of">—</dd>
       </div>
       <div>
-        <dt>{{ t('Last refreshed', '最近更新') }}</dt>
-        <dd id="ff-generated-at">—</dd>
+        <dt>{{ t('Source snapshot', '来源快照') }}</dt>
+        <dd id="ff-source-snapshot">—</dd>
       </div>
       <div>
         <dt>{{ t('Built from', '数据来源') }}</dt>
@@ -226,7 +230,7 @@
             <p id="ff-quick-signal-summary">{{ t('We are comparing the latest filing with the prior period.', '正在将最新财报与上一期进行对比。') }}</p>
           </div>
           <button class="ff-quick-signal-open" type="button" data-open-primary-finding>
-            {{ t('See why it matters', '查看为什么重要') }} <span aria-hidden="true">→</span>
+            {{ t('Open signal analysis', '打开信号分析') }} <span aria-hidden="true">→</span>
           </button>
         </article>
       </div>
@@ -497,6 +501,6 @@
 
 <script src="theme.js" defer></script>
 <script src="tier_preview.js" defer></script>
-<script src="fundamental_forensics.js?v=20260811-ux" defer></script>
+<script src="fundamental_forensics.js?v=20260816-ff0r1" defer></script>
 </body>
 </html>

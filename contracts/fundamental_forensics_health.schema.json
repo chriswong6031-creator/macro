@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_health.schema.json",
+  "title": "Filing Forensics operational and source freshness",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "status",
+    "reason_code",
+    "age_seconds",
+    "freshness_budget_seconds",
+    "evaluated_at",
+    "clocks",
+    "private_object"
+  ],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.health.v1"},
+    "status": {"enum": ["current", "stale", "degraded", "unavailable"]},
+    "reason_code": {
+      "type": "string",
+      "pattern": "^[A-Z][A-Z0-9_]+$"
+    },
+    "age_seconds": {"type": ["integer", "null"], "minimum": 0},
+    "freshness_budget_seconds": {"type": "integer", "minimum": 1},
+    "evaluated_at": {"type": "string", "minLength": 20},
+    "clocks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "broad_source_at",
+        "latest_source_filing_date",
+        "composed_state_at",
+        "private_object_at",
+        "disclosure_projection_at",
+        "last_successful_build_at",
+        "last_publication_at"
+      ],
+      "properties": {
+        "broad_source_at": {"type": ["string", "null"]},
+        "latest_source_filing_date": {"type": ["string", "null"]},
+        "composed_state_at": {"type": ["string", "null"]},
+        "private_object_at": {"type": ["string", "null"]},
+        "disclosure_projection_at": {"type": ["string", "null"]},
+        "last_successful_build_at": {"type": ["string", "null"]},
+        "last_publication_at": {"type": ["string", "null"]}
+      }
+    },
+    "private_object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "sha256", "origin"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "sha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "origin": {"enum": ["local", "r2", "last_good", "missing"]}
+      }
+    }
+  }
+}
