@@ -1,34 +1,30 @@
-# REVIEW START HERE — Phase 0
+# REVIEW START HERE — Phase 0.1 topology
 
-**Run ID:** `20260816T172029Z-e5431db1`
-**Schema:** 1.0
-**Repo SHA:** `e5431db19e69902d8b93fbb60d12c9085e5f8ecc`
-**Collector:** `e5431db19e69902d8b93fbb60d12c9085e5f8ecc`
+**Topology schema:** 1.1-candidate (not frozen)
+**Page evidence schema:** 1.0 (unchanged)
+**Run ID:** `20260816T181752Z-931bb3c6`
+**Repo SHA:** `931bb3c67a82f86f47a808e50874395b3ffbebbf`
+**working_tree_dirty:** False
+**Supersedes:** `20260816T172029Z-e5431db1` (retained under `prior-runs/`)
 
-## What was collected
+## Machine status
 
-- Shallow topology for nav-declared routes plus representative parameterized families.
-- 1440 and 390 default screenshots per sampled instance.
-- Shared-shell menu-open shots (US mega-nav, Research mega-nav, mobile nav).
-- Route family vs instance distinction (do not treat every `stock.html#TICKER` as a new page).
+See `VALIDATION.md` after the topology validator runs.
 
-## What was not collected
+## Counts
 
-- Five-width responsive sets, keyboard, motion, every tooltip/tab/filter.
-- Deep dossiers beyond Prophet calibration.
-- Every generated `site/stocks/*` and every `strategy_*` / `fund_*` instance.
+Use the JSON metrics; do not treat families and instances as the same number.
 
-## Validation
+## Index
 
-See `VALIDATION.md` after `validate_dossier.py` is run.
-
-## Key files
-
-- `product-route-inventory.md` / `.json`
-- `navigation-graph.md`
-- `surface-inventory.json`
+- `route-family-registry.md`
+- `navigation-tree.md`
+- `surface-inventory.md`
 - `capability-map-draft.md`
 - `workflow-map-draft.md`
-- `topology-observations.md`
+- `terminology-map.md`
+- `consolidation-history-observations.md`
 - `source-route-reconciliation.md`
-- `screenshots/`
+- `screenshots/` (reused from Phase 0 unless noted)
+
+No product decisions live here.

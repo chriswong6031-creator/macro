@@ -1,0 +1,611 @@
+{
+  "https://www.mastermind-x.com/start.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "MastermindX — Global Macro Regime & Market Cycle Intelligence",
+    "heading": "MASTERMINDX",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/macro.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Macro Regime Dashboard — 2026-08-13 | MastermindX",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/us_stocks.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "US Stock Dashboard — 2026-08-13 | MastermindX",
+    "heading": "US Stocks",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/intraday_flow.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Intraday Flow · 盘中资金流",
+    "heading": "Quiet tape — nothing set up to chase right now.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/stage_analysis.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Stage Analysis — Where Each Market Sits in Its Cycle",
+    "heading": "The market, placed on the cycle",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/winner_health.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Winner Health — Has Your Winner Changed Character?",
+    "heading": "Has your winner changed character?",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/sector_central.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "US Sector Intelligence — sectors, themes & rotation — Mastermind",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/strategies.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Strategy Scorecards — Market Intelligence",
+    "heading": "What do you want to know?",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/news.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Markets News — What matters now · Mastermind",
+    "heading": "What matters now",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/alerts.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Alert Command Center — what the tape is saying, ranked & triaged",
+    "heading": "Alert Command Center",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/options.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Options — one workspace · 期权工作台",
+    "heading": "Options\nOne workspace for the settled close — brief, scanner, per-name, leaders.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/darkpool.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Dark Pool — how much of each stock trades off the public tape",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/market_structure.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Market Structure",
+    "heading": "How the market is built right now",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/leader_radar.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Leader Radar · Early-entry desk",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China A-Share Regime — 2026-08-14",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_stocks.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China A-Share Stock Dashboard — 2026-08-14",
+    "heading": " A-Share Stock Dashboard ?",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/sector_central_china.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Sector Intelligence — Mastermind",
+    "heading": "CHINA SECTOR INTELLIGENCE ",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_heatmap.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China A-Share Heatmap — Live Sector Map — MastermindX",
+    "heading": "🔥 China A-share Heatmap",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_strategies.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Strategy Scorecards — Market Intelligence",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_news.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Tape — Macro Dashboard",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_intel.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Intelligence — Macro Dashboard",
+    "heading": "China Intelligence Hub",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_mechanics.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "A-Share Market Mechanics — Mastermind",
+    "heading": "A-Share Market Mechanics",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/baskets_china_ths.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China thematic baskets · 同花顺 — vs CSI 300",
+    "heading": "China thematic baskets · 同花顺 themes",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/flow_velocity.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Capital Flow Velocity — China & Hong Kong",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_altdata.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Alternative Data — Mastermind",
+    "heading": "China Alternative-Data Desk",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_policy_watch.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "PBoC & Policy Watch — Macro Dashboard",
+    "heading": "China Policy & State-Hand Watch",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_radar.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Divergence Radar — Macro Dashboard",
+    "heading": "China Divergence Radar",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/china_special_situations.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Special Situations — MastermindX",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/narrative_radar.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Narrative Basket Radar — Market Intelligence",
+    "heading": "What do you want to know?",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/hk.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Hong Kong Regime — 2026-08-14",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/hk_stocks.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Hong Kong Stock & Exposure Board — 2026-08-14",
+    "heading": " HK Stock Desk",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/hk_heatmap.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Hong Kong Stock Heatmap — Sector Map — MastermindX",
+    "heading": "🔥 Hong Kong Stock Heatmap",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/baskets_hk.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Hong Kong thematic baskets — performance vs HSI",
+    "heading": "Hong Kong thematic baskets",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/allocation_hk.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Hong Kong Narrative Rotation — where to allocate across themes",
+    "heading": "Narrative Rotation · Hong Kong",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/canada.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Canada — S&P/TSX Regime — 2026-08-13",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/canada_stocks.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Canada — S&P/TSX Stock Dashboard — 2026-08-13",
+    "heading": "TSX Stock Dashboard",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/canada_heatmap.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Canada TSX Heatmap — Sector Map — MastermindX",
+    "heading": "🔥 Canada · TSX Heatmap",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/baskets_canada.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Canada thematic baskets — performance vs S&P/TSX",
+    "heading": "Canada thematic baskets",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/allocation_canada.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Canada / TSX Narrative Rotation — where to allocate across themes",
+    "heading": "Narrative Rotation · Canada / TSX",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/intl.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "International Economies — 2026-08-14",
+    "heading": "What do you want to know?",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/japan.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Japan Macro Dashboard — MastermindX",
+    "heading": "🇯🇵Japan Macro",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/south_korea.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "South Korea Macro Dashboard — MastermindX",
+    "heading": "🇰🇷South Korea Macro",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/euro_area.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Euro Area Macro Dashboard — MastermindX",
+    "heading": "🇪🇺Euro Area Macro",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/united_kingdom.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "United Kingdom Macro Dashboard — MastermindX",
+    "heading": "🇬🇧United Kingdom Macro",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/india.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "India Macro Dashboard — MastermindX",
+    "heading": "🇮🇳India Macro",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/intl_stocks.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "International Stock Boards — 2026-08-14",
+    "heading": "International Stock Dashboard",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/baskets_intl.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "International baskets vs Intl ex-US",
+    "heading": "International thematic baskets",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/commodities.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Commodities — Aug 13, 2026",
+    "heading": "COMMODITIES",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/commodity_strategies.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Commodity Strategy Scorecards — Market Intelligence",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/spr.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Strategic Petroleum Reserves — Aug 07, 2026",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/forex.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Forex Vector — Aug 14, 2026",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/bonds.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Bonds & Bond Health — Aug 13, 2026",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/intelligence_hub.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Intelligence Hub",
+    "heading": "Intelligence Hub",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/watchlist.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Portfolio Intelligence — what you hold, what changed, what it adds up to",
+    "heading": "Portfolio Intelligence",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/reports.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Research Reports — Macro Dashboard",
+    "heading": "Research Reports",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/research_vault.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Research Vault — Institutional Desk Research | MastermindX",
+    "heading": "The desk research, the way the analysts wrote it.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/stocks/earnings/index.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Earnings call records — MastermindX",
+    "heading": "Source-first earnings records.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/fundamental_forensics.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Filing Forensics — Understand What Changed — MastermindX",
+    "heading": "Spot the changes that matter.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/neural_web.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Neural Web — The intelligence behind every signal",
+    "heading": "Signals do not arrive unchallenged.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/market_memory.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Market Memory — MastermindX",
+    "heading": "Market Memory",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/foresight.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Thematic Foresight Desk — Macro Dashboard",
+    "heading": "Catch the theme early",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/state_of_themes.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Theme Tracker — Market Intelligence",
+    "heading": "What do you want to know?",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/radar.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Divergence Radar — real activity vs price",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/stock_seasonality.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Stock seasonality — which calendar windows actually repeat | MastermindX",
+    "heading": "SPY\nSPDR S&P 500 ETF Trust",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/confluence_screener.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Signals Lining Up — 2026-08-14 | MastermindX",
+    "heading": "3 setups lining up today",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/smart_money.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Ownership Intelligence Desk — 13F Smart-Money Context",
+    "heading": "Ownership Intelligence Desk",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/etfs.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Which Stocks Fund Managers Are Buying — MastermindX",
+    "heading": "Real fund moves",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/cycle.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Cycle Intelligence — Mastermind",
+    "heading": "Where every cycle stands",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/macro_context.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Macro Weather Station — 2026-08-14",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/policy_watch.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Fed & Policy Watch — Macro Dashboard",
+    "heading": "Fed & Policy Watch",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/government_revenue.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Government Revenue Foresight — Mastermind",
+    "heading": "Government Revenue Foresight",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/alt_data.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Alternative Data — Signal Intelligence",
+    "heading": "Alternative Data",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/special_situations.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Special Situations — event-driven desk | MastermindX",
+    "heading": null,
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/biocatalyst.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "BioCatalyst Intelligence — Trial Intelligence Workspace — MastermindX",
+    "heading": "Trial Intelligence Workspace",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/capital_structure.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Capital Structure — MastermindX",
+    "heading": "Observed Filing State",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/markets.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Global Market Cycles — Mastermind",
+    "heading": "Where every market stands",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/country_cycles.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Country Cycle Intelligence — Mastermind",
+    "heading": "Where every market stands",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/sector_cycles.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Sector Cycle Intelligence — Mastermind",
+    "heading": "Where every US sector stands",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/sector_cycles_china.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "China Sector Cycle Intelligence — Mastermind",
+    "heading": "Where every China sector stands",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/crypto.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Crypto Intelligence Cockpit — 2026-08-14",
+    "heading": "MARKET STATE",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/vector.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Bitcoin Vector — Aug 14, 2026",
+    "heading": "NEUTRAL",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/fund_index.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Fund Directory — 13F Ownership Context",
+    "heading": "Fund Directory",
+    "meaningful": true
+  },
+  "https://bot.mastermind-x.com": {
+    "http_status": 403,
+    "lock_cta": false,
+    "title": "Mastermind Bot · Pro",
+    "heading": "Mastermind Bot comes with Pro.",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/stock.html#ONTO": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "Stock analyzer — cycle & momentum",
+    "heading": "Onto Innovation (ONTO)",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/canada_stock.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "TSX analyzer — cycle & momentum",
+    "heading": "TSX analyzer",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/intl_stock.html": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "International analyzer — cycle & momentum",
+    "heading": "International analyzer",
+    "meaningful": true
+  },
+  "https://www.mastermind-x.com/sector_central.html#confluence": {
+    "http_status": 200,
+    "lock_cta": false,
+    "title": "US Sector Intelligence — sectors, themes & rotation — Mastermind",
+    "heading": null,
+    "meaningful": true
+  }
+}

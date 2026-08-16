@@ -1,59 +1,29 @@
-# Calibration v2.1 + Evidence Schema v1 + Phase 0
+# Calibration + Phase 0.1
 
-**Status:** v2.1 hardening PASS. Evidence Schema **1.0 frozen**. Phase 0 complete. Stopped. No Phase 1 deep capture.
+**Status:** Prophet/page evidence PASS. Phase 0 raw crawl kept. Phase 0 semantic topology was rejected by Sol and repaired as Phase 0.1. Topology schema is **1.1-candidate** (not frozen). No Phase 1.
 
-**Primary reviewer:** GPT-5.6 Sol Extra High
-
-## Gate
+## Gates
 
 | Item | Result |
 |---|---|
-| Evidence Schema v1 | **PASS** (frozen `schema_version: "1.0"`) |
-| Board dossier validator | **PASS** |
-| Detail dossier validator | **PASS** |
-| Phase 0 validator | **PASS** |
-| Secret scan | **PASS** |
-| Referential integrity | **PASS** |
-| Artifact hashes | **PASS** |
-| Validator mutation tests | **PASS** (13/13) |
+| Page Evidence Contract | **1.0 KEEP** |
+| Prophet Board validator | **PASS** |
+| Prophet Detail validator | **PASS** |
+| Phase 0 raw screenshots | **KEPT** under `00-product-map/screenshots/` |
+| Phase 0 first semantic topology | **REJECTED** — archived at `00-product-map/prior-runs/20260816T172029Z-e5431db1/` |
+| Product Topology Contract | **1.1-candidate** (reopened; not frozen) |
+| Topology machine gate | **PASS** |
+| Topology semantic gate | **PENDING SOL REVIEW** |
 
 ## Runs
 
-| Run | ID | SHA at collection |
-|---|---|---|
-| v2 calibration (Sol-reviewed) | — | `e5431db19e69902d8b93fbb60d12c9085e5f8ecc` |
-| v2.1 hardening | `20260816T171140Z-e5431db1` | `e5431db19e69902d8b93fbb60d12c9085e5f8ecc` |
-| Phase 0 topology | `20260816T172029Z-e5431db1` | `e5431db19e69902d8b93fbb60d12c9085e5f8ecc` |
-
-Collector version in run manifests is the full 40-character SHA at run time (v2 head). This commit is the v2.1 + Phase 0 evidence commit on top of that SHA.
-
-## What v2.1 changed (no full Prophet recapture)
-
-- Generic committed architecture under `ux-evidence/_tools`, `_schema`, `_config`.
-- Selector contract: expected cardinality 1 does not silently pick `.first`.
-- Cycle targeting: `details.sv-deep` / `details.sv-deep > summary`.
-- Verified `I.detail.cycle`: `details.sv-deep.open === true` → canonical `CYCLE_EXPANDED_1440x1000.png`.
-- Detail sections rematerialized. `S.detail.identity` is the `.topline` (71px), `S.detail.decision` is `#sv-decision` (292px). The old 2.8-viewport `S.hero`/`#result` binding is gone.
-- Chart controls (`1D`/`3D`/`1W`/`1M`/EMA/RSI/Stoch/MACD/Stoch RSI/Full screen/Alerts/Ask Mastermind/Cycle) now have unique selectors; tested IDs resolve.
-- Capture fidelity vs product layout split. 390 detail overflow (scrollWidth 401) is product layout, not a capture fail.
-- Artifact manifests + compact errors (`raw/logs/` for Playwright dumps).
-- Fail-closed `validate_dossier.py` with mutation tests.
-
-## Phase 0
-
-See `00-product-map/REVIEW_START_HERE.md` and `00-product-map/VALIDATION.md`.
-
-Do not treat “151 families” and “88 sampled instances” as the same count.
-
-## Still missing / do not treat as captured
-
-- Keyboard traversal
-- Verified chart tooltip/crosshair (`I.detail.chart_hover` remains FAILED)
-- Ahead/behind/closed/empty/gated board badges
-- `#prophet-live` visible panel (section found, height 0)
-- Deep five-width / interaction audit of non-Prophet pages
-- Independent parity for `stockdata/ONTO.json` (still UNVERIFIED / gated)
+| Run | ID | SHA | dirty |
+|---|---|---|---|
+| v2.1 hardening | `20260816T171140Z-e5431db1` | `e5431db1…` | true (superseded constraint) |
+| Phase 0 crawl | `20260816T172029Z-e5431db1` | `e5431db1…` | true (superseded) |
+| Phase 0.1 tooling | — | `931bb3c67a82f86f47a808e50874395b3ffbebbf` | committed first |
+| Phase 0.1 canonical topology | `20260816T181752Z-931bb3c6` | `931bb3c67a82f86f47a808e50874395b3ffbebbf` | **false** |
 
 ## Stop
 
-No Phase 1. No redesign. Waiting for Sol to choose the deep-audit order from Phase 0 topology.
+No Phase 1. No redesign. Waiting for Sol Extra High semantic review of topology 1.1-candidate.

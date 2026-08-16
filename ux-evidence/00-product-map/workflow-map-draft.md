@@ -1,8 +1,9 @@
-# Workflow map (draft, Phase 0)
+# Workflow map
 
-Observed vs inferred are separated.
+Edges come from contextual/card/CTA links, not the global menu.
 
-- `W.board_to_detail` **OBSERVED** (HIGH): RF.us.stock_dashboard card → RF.us.stock_detail. Evidence: a.pvcard[data-ticker] href=stock.html#TICKER on us_stocks.html
-- `W.search_to_detail` **OBSERVED_SOURCE** (HIGH): global nav search → stock analyzer. Evidence: templates/_site_nav.html.j2 search + theme.js routes picks to the owning analyzer
-- `W.nav_geo_to_dashboard` **OBSERVED** (HIGH): geo mega-nav → market or stock dashboard. Evidence: PRIMARY_NAV hrefs in _navlinks.html.j2
-- `W.detail_to_monitoring` **INFERRED** (LOW): stock detail → watchlist/portfolio. Evidence: No direct contextual control from stock.html to watchlist was exercised. Inferred only from both existing as product surfaces.
+Atomic edges: 5769
+
+- `W.board_card_to_detail` **OBSERVED_BROWSER** (HIGH): Board card to security analyzer. a.pvcard href=stock.html#TICKER
+- `W.search_to_analyzer` **OBSERVED_SOURCE** (HIGH): Global search to owning analyzer. templates/_site_nav.html.j2 search + theme.js routes picks
+- `W.detail_to_watchlist` **INFERRED** (LOW): Security analyzer to watchlist / portfolio. No contextual control from stock.html to watchlist was observed in Phase 0.1.

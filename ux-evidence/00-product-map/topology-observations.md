@@ -1,11 +1,10 @@
 # Topology observations (facts only)
 
-- Prophet Stock Signals (`#us-standouts`) is a large surface inside the U.S. Stock Dashboard (`us_stocks.html`), not a standalone route.
-- The U.S. security analyzer is entered through `stock.html#<ticker>` from multiple product surfaces (Prophet cards, search). Canada/Intl have sibling analyzer families.
-- Navigation is geography-first (United States / China / Hong Kong / Canada / International / Other Assets) plus a Research mega-menu.
-- The term “Stock Dashboard” is reused across US/China/HK/Canada/International with market-specific destinations.
-- Two different numeric fields can appear as confidence-like values on the U.S. board: card “Priority” vs table `conviction_score` (see Prophet decision-data-map).
-- `index.html` is the marketing landing; `start.html` is the signed-in home (brand `a.nav-brand` href).
-- Options destinations other than `options.html` / `darkpool.html` / `market_structure.html` were collapsed into the options workspace (nav comments). Old URLs may still exist as redirects — record live final_url on samples.
-- Thousands of generated instance pages exist under `site/stocks/` and are not separate route families.
-- Strategy and fund profile HTML files are generated families, mostly source-discovered rather than primary-nav destinations.
+- Prophet Stock Signals (`#us-standouts`) is a large surface inside `us_stocks.html`, not its own route.
+- `stock.html#<ticker>`, `canada_stock.html#<ticker>`, and `intl_stock.html#<ticker>` are three families, not one U.S. pattern.
+- `index.html`, `stocks/earnings/index.html`, and `bot.mastermind-x.com` are different families.
+- China → Research → Market Mechanics is a real nav path; it is not a top-level Research item.
+- Global navigation can reach most live routes; that is not a product workflow.
+- Board “Priority” and table `conviction_score` are different producer fields (see Prophet decision-data-map).
+- Thousands of `site/stocks/*.html` files are a generated instance family, not thousands of live product routes.
+- Several former options/sector URLs are redirect stubs with meta-refresh + `location.replace`.

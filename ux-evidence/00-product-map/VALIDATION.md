@@ -1,25 +1,26 @@
-# Phase 0 validation
+# Phase 0.1 validation
 
-**Status:** see `python3 ux-evidence/_tools/validate_dossier.py ux-evidence/00-product-map`
+Run: `python3 ux-evidence/_tools/validate_topology.py`
 
 | Metric | Value |
 |---|---|
-| schema version | 1.0 |
-| run ID | `20260816T172029Z-e5431db1` |
-| repo SHA | `e5431db19e69902d8b93fbb60d12c9085e5f8ecc` |
-| route families discovered | 151 |
-| route instances sampled | 88 |
-| browser-discovered routes | 80 |
-| source-discovered routes | 248 |
-| browser+source intersection | 78 |
-| browser-only | 2 |
-| source-only | 169 |
-| redirects recorded | not separately counted; see each instance `final_url` |
-| broken routes (sampled) | 1 |
-| gated routes (sampled lock-cta) | 0 |
-| surfaces | 87 |
-| provisional capabilities | 8 |
-| observed workflows | 3 |
-| inferred workflows | 1 |
-| unresolved semantic selectors | 0 (Phase 0 uses coarse sections, not the deep selector contract) |
-| secret-scan | run by validator |
+| topology schema | 1.1-candidate |
+| run ID | `20260816T181752Z-931bb3c6` |
+| repo SHA | `931bb3c67a82f86f47a808e50874395b3ffbebbf` |
+| dirty | False |
+| families | 185 |
+| sampled instances | 110 |
+| surfaces | 192 |
+| capabilities | 28 |
+| workflow edges | 5769 |
+| workflows | 3 |
+| anonymous probes | 87 |
+| access unknown | 0 |
+| class LIVE_PRODUCT | 86 |
+| class LEGACY_ORPHAN | 47 |
+| class GENERATED_INSTANCE | 17 |
+| class REDIRECT_STUB | 10 |
+| class UTILITY | 9 |
+| class MARKETING | 8 |
+| class UNKNOWN | 6 |
+| class SEO_TWIN | 2 |
