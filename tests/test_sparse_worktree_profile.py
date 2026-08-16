@@ -27,6 +27,7 @@ from __future__ import annotations
 import importlib.util
 import json
 import subprocess
+import tomllib
 from pathlib import Path
 
 import pytest
@@ -37,6 +38,8 @@ ROOT = Path(__file__).resolve().parents[1]
 HOOK_PATH = ROOT / ".claude" / "hooks" / "worktree_create_sparse.py"
 SETTINGS_PATH = ROOT / ".claude" / "settings.json"
 CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
+CODEX_ENVIRONMENT_PATH = ROOT / ".codex" / "environments" / "environment.toml"
+CODEX_HOOKS_PATH = ROOT / ".codex" / "hooks.json"
 
 
 def _load_hook():
@@ -156,6 +159,46 @@ def test_apply_profile_is_reversible_and_drops_husks(synthetic_repo: Path):
     assert WS.apply_profile(synthetic_repo, exclude_dirs=["data", "site"]) == 0
     assert WS.missing_dirs(synthetic_repo) == ["data", "site"]
     assert not (synthetic_repo / "data").exists(), "husk directories are cleaned up"
+
+
+def test_auto_profile_never_changes_the_primary_checkout(synthetic_repo: Path):
+    assert WS.is_linked_worktree(synthetic_repo) is False
+    assert WS.auto_profile(synthetic_repo, CONFIG_PATH) == 0
+    assert WS.is_sparse(synthetic_repo) is False
+    assert (synthetic_repo / "data" / "keep.txt").is_file()
+
+
+def test_auto_profile_applies_to_a_new_linked_worktree(
+        synthetic_repo: Path, tmp_path: Path):
+    linked = tmp_path / "linked"
+    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    assert WS.is_linked_worktree(linked) is True
+    assert WS.auto_profile(linked, CONFIG_PATH) == 0
+    assert WS.missing_dirs(linked) == ["data", "mockups", "site"]
+    assert _git(linked, "status", "--porcelain") == ""
+
+
+def test_auto_profile_respects_the_repo_wide_off_switch(
+        synthetic_repo: Path, tmp_path: Path):
+    linked = tmp_path / "linked-disabled"
+    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    profile = tmp_path / "disabled.json"
+    profile.write_text('{"enabled": false, "exclude_dirs": ["data", "site"]}',
+                       encoding="utf-8")
+    assert WS.auto_profile(linked, profile) == 0
+    assert WS.is_sparse(linked) is False
+
+
+def test_auto_profile_preserves_a_sessions_manual_sparse_addition(
+        synthetic_repo: Path, tmp_path: Path):
+    linked = tmp_path / "linked-custom"
+    _git(synthetic_repo, "worktree", "add", "-q", "--detach", str(linked), "HEAD")
+    _make_sparse(linked, ["engine", "scripts", "templates", "site"])
+    assert (linked / "site" / "asset.js").is_file()
+    assert WS.auto_profile(linked, CONFIG_PATH) == 0
+    assert (linked / "site" / "asset.js").is_file(), (
+        "Codex startup must not undo an explicit `worktree_sparse.py add site` opt-in"
+    )
 
 
 def test_apply_profile_refuses_to_exclude_everything(synthetic_repo: Path):
@@ -305,6 +348,23 @@ def test_worktree_create_hook_is_wired_in_checked_in_settings():
     commands = [h["command"] for entry in entries for h in entry["hooks"]]
     assert any("worktree_create_sparse.py" in c for c in commands), commands
     assert HOOK_PATH.is_file(), "the wired hook script must exist in the repo"
+
+
+def test_codex_default_environment_applies_the_same_sparse_profile():
+    environment = tomllib.loads(CODEX_ENVIRONMENT_PATH.read_text(encoding="utf-8"))
+    assert environment["version"] == 1
+    assert environment["name"]
+    script = environment["setup"]["script"]
+    assert "scripts/worktree_sparse.py auto" in script
+
+
+def test_codex_session_start_fallback_is_wired_in_checked_in_hooks():
+    settings = json.loads(CODEX_HOOKS_PATH.read_text(encoding="utf-8"))
+    entries = settings["hooks"]["SessionStart"]
+    assert any(entry.get("matcher") == "^startup$" for entry in entries)
+    commands = [hook["command"] for entry in entries for hook in entry["hooks"]]
+    assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
+               for command in commands), commands
 
 
 def test_hook_name_validation_rejects_path_traversal():
