@@ -1,0 +1,5 @@
+{
+  "setup-worktree-unix": [
+    "python3 \"$(git rev-parse --show-toplevel)/scripts/worktree_sparse.py\" auto"
+  ]
+}

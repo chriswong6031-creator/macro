@@ -1,0 +1,17 @@
+{
+  "description": "Macro Dashboard Grok lifecycle hooks — sparse session worktrees.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/worktree_sparse.py\" auto",
+            "timeout": 180,
+            "statusMessage": "Applying the Macro sparse-worktree profile"
+          }
+        ]
+      }
+    ]
+  }
+}

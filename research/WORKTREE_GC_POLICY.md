@@ -211,8 +211,18 @@ worktree under a session root (`.claude/worktrees/` and siblings). That extra
 path check exists because the operator's designated local project root is
 itself a linked worktree of the occupied primary — a SessionStart hook keyed
 only on `git-dir != common-dir` would sparsify that 3.8 GiB tree on every
-Cursor chat. Cursor CLI / Agents Window post-create setup (`.cursor/worktrees.json`)
-and Grok Build `SessionStart` (`.grok/hooks/`) are a separate lane.
+Cursor chat.
+
+**Cursor CLI + Grok mechanism (shipped 2026-08-15).** Cursor CLI / Agents
+Window runs `.cursor/worktrees.json` `setup-worktree-unix` after it creates
+the worktree. Grok Build runs `.grok/hooks/sparse-worktree.json` on
+`SessionStart` (unknown Claude events such as `WorktreeCreate` are skipped).
+Both call `python3 scripts/worktree_sparse.py auto`, so they share the
+post-checkout thinning, session-root refusal, and "do not re-apply over an
+existing sparse selection" rule. Grok project hooks need one-time
+`/hooks-trust`. `--worktree` / `-w` still bases on current HEAD unless the
+session passes `--ref origin/main` (Grok) or `--worktree-base origin/main`
+(Cursor).
 
 **Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
 was deliberately left alone by the shipping session: repointing it before the merge
