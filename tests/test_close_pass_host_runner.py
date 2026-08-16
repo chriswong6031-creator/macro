@@ -456,10 +456,18 @@ def test_an_absent_massive_close_reports_unavailable_rather_than_failing(
     the lean broke in CI the same hour (status came back 'error' — present
     module, no API key — not 'unavailable'). The CONTRACT outlives the sibling:
     a sparse checkout, a revert, or a future package split must still skip the
-    wait rather than traceback, so the import failure is forced explicitly —
-    a ``sys.modules`` entry of ``None`` makes the import machinery raise."""
+    wait rather than traceback, so the import failure is forced explicitly.
+
+    BOTH import paths are severed, and the second is the one that bit in CI:
+    ``from engine.close_pass import massive_close`` consults ``sys.modules``
+    only when the parent package does not already carry the submodule as an
+    ATTRIBUTE — and the massive_close suite runs earlier in this very CI step,
+    so the attribute is set and a sys.modules-only patch tests nothing. The
+    attribute is removed too, making the simulation order-independent."""
     import sys as _sys
+    import engine.close_pass as _pkg
     monkeypatch.setitem(_sys.modules, "engine.close_pass.massive_close", None)
+    monkeypatch.delattr(_pkg, "massive_close", raising=False)
     assert R.probe_close_main(SESSION) == 0
     payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert payload["status"] == "unavailable"
