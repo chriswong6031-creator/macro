@@ -1,0 +1,67 @@
+{
+  "ticker": "ONTO",
+  "as_of_board_page_title": "2026-08-13 (browser title US Stock Dashboard — 2026-08-13)",
+  "fields": [
+    {
+      "surface": "board card",
+      "visible": "Buy",
+      "selector": "a.pvcard[data-ticker=ONTO].pv-buy .pv-chip",
+      "source_component": "templates/_prophet_card.html.j2 verb chip",
+      "backing": "cx.verb → class pv-{{verb}} and chip label; US board maps nightly ranking verb",
+      "as_of": "card .pv-dt Aug 13"
+    },
+    {
+      "surface": "board card",
+      "visible": "Triggered",
+      "selector": "a.pvcard[data-ticker=ONTO] .pv-trg",
+      "source_component": "_prophet_card.html.j2 trigger chip",
+      "backing": "cx.trigger.kind == fired; tooltip says last-few-days entry trigger. Independent of verb chip.",
+      "as_of": "tooltip mentions options ceiling as of 2026-08-14"
+    },
+    {
+      "surface": "board card",
+      "visible": "Priority 95",
+      "selector": "a.pvcard[data-ticker=ONTO] .pv-edn",
+      "source_component": "_prophet_card.html.j2 edge slot labeled Priority",
+      "backing": "cx.edge (featured/priority engine, us_board_rank). Distinct from table conviction_score."
+    },
+    {
+      "surface": "board table island",
+      "visible": "not on card; in #us-stocktable-data",
+      "selector": "#us-stocktable-data rows[ticker=ONTO]",
+      "source_component": "dashboard.html.j2 stock table payload",
+      "backing": {
+        "stage": "ENTRY",
+        "lane": "bottoming",
+        "price": 337.82,
+        "conviction_score": 55,
+        "entry_status": "partial",
+        "sig_tier": "T2",
+        "alpha": 1.56,
+        "days_since_signal": 0
+      },
+      "note": "conviction_score 55 ≠ card Priority 95. Two different scores on the same page."
+    },
+    {
+      "surface": "detail hero",
+      "visible": "WAIT / Extended — wait for a pullback / suggested size 0%",
+      "selector": "#sv-decision",
+      "source_component": "templates/stock.html.j2 render() / ladderAction / DISP",
+      "backing": "stockdata/ONTO.json (account-gated). Comments in stock.html.j2: 'cycle caps the verdict'; conviction/board rank is context. WAIT is the cycle-ladder ACTION half, not the nightly board verb.",
+      "payload_url": "/stockdata/ONTO.json",
+      "payload_access": "401/x-regwall for anonymous; populated when session cookies present",
+      "as_of_visible": "data through 2026-08-14 on prior cookied capture"
+    }
+  ],
+  "discrepancy_trace": {
+    "observed": "Board card Buy+Triggered+Priority 95 vs detail WAIT+Extended+size 0% on 2026-08-16 cookied capture",
+    "mechanism_from_source": "Two producers. Board verb/priority baked in us_stocks.html from nightly prophet rank (build_site dashboard.html.j2 + _prophet_card). Detail verb/size computed in stock.html.j2 from stockdata/ONTO.json cycle ladder (DISP/ladderAction); comment says cycle caps the verdict and board rank is context. Trigger chip on the card even warns: if card says Wait do not chase — implying verb and trigger can disagree; here the card verb is Buy while detail action is Wait.",
+    "timestamps": {
+      "board_title_asof": "2026-08-13",
+      "card_date_chip": "Aug 13",
+      "caution_options_asof": "2026-08-14",
+      "detail_data_through_prior_capture": "2026-08-14"
+    },
+    "judgment": "not made — evidence only"
+  }
+}

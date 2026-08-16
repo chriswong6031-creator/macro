@@ -1,78 +1,806 @@
 [
   {
-    "id": "I001",
-    "control": "first featured prophet card",
-    "type": "hover",
-    "action": "mouseenter/mouseover",
-    "result": {
-      "box": {
-        "h": 202.25,
-        "w": 254.1875,
-        "x": 59,
-        "y": 398.6875
-      },
-      "href": "stock.html#ONTO",
-      "ok": true,
-      "ticker": "ONTO"
+    "id": "I.board.table",
+    "element_stable_id": "E.board.view.table",
+    "control": "Table view",
+    "section": "board-tools",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "TABLE_VIEW",
+      "aria_selected": "true"
     },
-    "url_change": null
-  },
-  {
-    "id": "I002",
-    "control": "board help ?",
-    "type": "hover/focus",
-    "result": {
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
       "ok": true,
-      "text": "?"
-    }
-  },
-  {
-    "id": "I003",
-    "control": "Table view toggle",
-    "type": "button",
-    "action": "click #us-st-btn-table",
-    "result": {
-      "grid_sel": "false",
-      "href": "https://www.mastermind-x.com/us_stocks.html",
-      "table_sel": "true",
+      "aria": "true",
       "table_visible": true
     },
-    "motion_frames": {
-      "before": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_table_toggle/table_00_before.png",
-      "start": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_table_toggle/table_01_start.png",
-      "mid": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_table_toggle/table_02_mid.png",
-      "settled": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_table_toggle/table_03_settled.png"
-    },
-    "url_change": "https://www.mastermind-x.com/us_stocks.html"
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "TABLE_VIEW",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_table_view_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 812,
+          "w": 1440,
+          "h": 4166
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
   },
   {
-    "id": "I004",
+    "id": "I.board.track",
+    "element_stable_id": "E.board.track.btn",
     "control": "Track record",
-    "type": "dialog",
-    "action": "click #trd-btn",
-    "result": {
-      "dlg_display": "block",
-      "dlg_text": "US BUY BOARD · VS S&P 500\nTrack record\nMore often right than wrong so far — but the record is still too short to lean on.\nShort record — 386 finished trades, but only 15 separate board days behind them. Picks from one night tend to rise and fall together, so the range below is wide and will tighten as more days accrue.\nWIN RATE\n59.6%\nof 386 finished trades · likely 54.4–63.7%\nAVERAGE TRADE\n+1.19%\nwins and losses together · likely +0.3% to +1.88%\nWHEN RIGHT VS WRONG\n+5.29% / -4.84%\na typical win vs a typical loss · adding it all up, 1.61x as much made as lost\nSTILL RUNNING\n224\ntoo recent to score — listed below, not counted above\nTYPICAL HOLD\n8 sessions\nsold at 10 sessions, or sooner on a hot run or a broken base\nWHAT WAS ON THE TABLE\n+3.83% / -2.68%\nThe best and worst a typical trade touched while held — selling by the rule kept about 40% of the best. Nobody sells the exact high; this is the room, not a result.\nMEASUREMENT UPDATED2026-08-07\n\nThe timing used to decide when a trade is sold used to shift as older price history rolled out of our window — which moved the results of trades that had already closed. It no longer shifts. How picks are chosen, bought and sold has not changed.\n\nBefore · to 2026-07-31\nmade money\n64%\naverage trade\n+1.19%\nfinished trades\n173\nNow\nmade money\n60%\naverage trade\n+1.19%\nfinished trades\n386\n\nMore than the measurement separates these two columns: 386 trades have finished now against 173 on 2026-07-31, so part of the move is simply more results, no",
-      "dlg_visibility": "visible",
+    "section": "track",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "TRACK_RECORD_OPEN",
       "expanded": "true"
     },
-    "motion_frames": {
-      "before": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_track_record/trd_00_before.png",
-      "start": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_track_record/trd_01_start.png",
-      "mid": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_track_record/trd_02_mid.png",
-      "settled": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/motion_track_record/trd_03_settled.png"
-    }
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
+      "ok": true,
+      "expanded": "true",
+      "display": "block",
+      "text": "US BUY BOARD · VS S&P 500\nTrack record\nMore often right than wrong so far — but the record is still too short to lean on.\nShort record — 386 finished trades, but only 15 separate board days behind the"
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "TRACK_RECORD_OPEN",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_track_record_open_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 1000
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
   },
   {
-    "id": "I005",
-    "control": "wcd-btn",
-    "type": "filter/button",
-    "result": {
-      "cards_after": 69,
-      "cards_before": 69,
-      "id": "wcd-btn",
+    "id": "I.board.stage.live",
+    "element_stable_id": "E.stage.live",
+    "control": "Stage filter live",
+    "section": "filters",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "STAGE_LIVE",
+      "pressed": "live"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
       "ok": true,
-      "text": "What changed today ·30"
-    }
+      "pressed": true,
+      "data_stagef": "live",
+      "visible_cards": 28
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "STAGE_LIVE",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_live_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 3270
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
+  },
+  {
+    "id": "I.board.stage.setting_up",
+    "element_stable_id": "E.stage.setting_up",
+    "control": "Stage filter setting_up",
+    "section": "filters",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "STAGE_SETTING_UP",
+      "pressed": "setting_up"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
+      "ok": true,
+      "pressed": true,
+      "data_stagef": "setting_up",
+      "visible_cards": 31
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "STAGE_SETTING_UP",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_setting_up_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 3474
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
+  },
+  {
+    "id": "I.board.stage.ran",
+    "element_stable_id": "E.stage.ran",
+    "control": "Stage filter ran",
+    "section": "filters",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "STAGE_RAN",
+      "pressed": "ran"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
+      "ok": true,
+      "pressed": true,
+      "data_stagef": "ran",
+      "visible_cards": 8
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "STAGE_RAN",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_ran_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 2927
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
+  },
+  {
+    "id": "I.board.stage.basing",
+    "element_stable_id": "E.stage.basing",
+    "control": "Stage filter basing",
+    "section": "filters",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "STAGE_BASING",
+      "pressed": "basing"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
+      "ok": true,
+      "pressed": true,
+      "data_stagef": "basing",
+      "visible_cards": 1
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "STAGE_BASING",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_basing_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 2201
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
+  },
+  {
+    "id": "I.board.stage.blocked",
+    "element_stable_id": "E.stage.blocked",
+    "control": "Stage filter blocked",
+    "section": "filters",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "STAGE_BLOCKED",
+      "pressed": "blocked"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
+      "ok": true,
+      "pressed": true,
+      "data_stagef": "blocked",
+      "visible_cards": 1
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "STAGE_BLOCKED",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_blocked_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 2201
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
+  },
+  {
+    "id": "I.board.stage.all",
+    "element_stable_id": "E.stage.all",
+    "control": "Stage filter all",
+    "section": "filters",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "STAGE_ALL",
+      "pressed": "all"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "url_before": "https://www.mastermind-x.com/us_stocks.html",
+    "observed_postcondition": {
+      "ok": true,
+      "pressed": true,
+      "data_stagef": "all",
+      "visible_cards": 14
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/us_stocks.html",
+    "url_changed": false,
+    "resulting_state": "STAGE_ALL",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_all_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 3179
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ],
+    "attempt_status": "passed"
+  },
+  {
+    "id": "I.board.more",
+    "element_stable_id": "E.board.more",
+    "control": "Show 15 more",
+    "section": "board",
+    "starting_state": "DEFAULT_GRID",
+    "action": "click button:has-text(Show 15 more)",
+    "expected_postcondition": {
+      "visible_cards_increase": true
+    },
+    "observed_postcondition": {
+      "before": 14,
+      "after": 28
+    },
+    "pass": true,
+    "attempt_status": "passed",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "resulting_state": "SHOW_MORE",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_show_more_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 1179,
+          "w": 1440,
+          "h": 3873
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ]
+  },
+  {
+    "id": "I.board.card_hover",
+    "element_stable_id": "E.card.ONTO",
+    "control": "ONTO card hover",
+    "section": "cards",
+    "starting_state": "DEFAULT_GRID",
+    "action": "hover",
+    "expected_postcondition": {
+      "hovered": true
+    },
+    "observed_postcondition": {
+      "ok": true,
+      "transform": "matrix(1, 0, 0, 1, 0, -2)",
+      "ticker": "ONTO"
+    },
+    "pass": true,
+    "attempt_status": "passed",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "resulting_state": "CARD_HOVER",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_card_hover_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 199,
+          "w": 1440,
+          "h": 3179
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ]
+  },
+  {
+    "id": "I.board.onto_caution",
+    "element_stable_id": "E.card.ONTO",
+    "control": "ONTO caution hover/focus",
+    "section": "cards",
+    "starting_state": "DEFAULT_GRID",
+    "action": "hover+focus .pv-cau-btn",
+    "expected_postcondition": {
+      "popover_visible": true
+    },
+    "observed_postcondition": {
+      "ok": true,
+      "w": 264,
+      "h": 300,
+      "text": "BEFORE YOU ACT\nAccounting quality looks weak.\nTrades 48% above its long-term trend line. Buying here is chasing.\nIts market cycle still argues for waiting (bottoming).\nIts Semiconductor Equipment (WFE) basket is crowded and stretched. Cap y"
+    },
+    "pass": true,
+    "attempt_status": "passed",
+    "reason": null,
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "resulting_state": "CAUTION_OPEN",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_onto_caution_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 516,
+          "w": 1440,
+          "h": 3179
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ]
+  },
+  {
+    "id": "I.board.theme_light",
+    "element_stable_id": null,
+    "control": "theme localStorage=light + reload",
+    "section": "shell",
+    "starting_state": "DEFAULT_GRID",
+    "action": "set theme light, reload",
+    "expected_postcondition": {
+      "data-theme": "light"
+    },
+    "observed_postcondition": {
+      "theme": "light"
+    },
+    "pass": true,
+    "attempt_status": "passed",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "resulting_state": "THEME_LIGHT",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_theme_light_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 3179
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ]
+  },
+  {
+    "id": "I.board.lang_zh",
+    "element_stable_id": null,
+    "control": "lang localStorage=zh + reload",
+    "section": "shell",
+    "starting_state": "DEFAULT_GRID",
+    "action": "set lang zh, reload",
+    "expected_postcondition": {
+      "data-lang": "zh"
+    },
+    "observed_postcondition": {
+      "lang": "zh",
+      "zh_title": "Prophet 选股"
+    },
+    "pass": true,
+    "attempt_status": "passed",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/us_stocks.html",
+      "session": "playwright-chrome",
+      "cookies_injected": true
+    },
+    "resulting_state": "LANG_ZH",
+    "screenshots": [
+      {
+        "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_lang_zh_1440x1000.png",
+        "requested": {
+          "w": 1440,
+          "h": 1000,
+          "full": false
+        },
+        "inner": {
+          "w": 1440,
+          "h": 1000
+        },
+        "visual": {
+          "w": 1440,
+          "h": 1000
+        },
+        "outer": {
+          "w": 1440,
+          "h": 1000
+        },
+        "dpr": 1,
+        "scroll": {
+          "x": 0,
+          "y": 0,
+          "w": 1440,
+          "h": 3141
+        },
+        "screenshot_px": {
+          "w": 1440,
+          "h": 1000
+        },
+        "horizontal_overflow": false,
+        "pass": true
+      }
+    ]
   }
 ]

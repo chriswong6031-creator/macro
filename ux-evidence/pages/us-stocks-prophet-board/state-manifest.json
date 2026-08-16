@@ -1,11 +1,7 @@
 {
-  "observed_states": [
-    "DEFAULT_GRID",
-    "CARD_HOVER",
-    "HELP_TOOLTIP",
+  "observed_verified_states": [
     "TABLE_VIEW",
-    "TRACK_RECORD_DIALOG",
-    "WHAT_CHANGED_TODAY_PANEL",
+    "TRACK_RECORD_OPEN",
     "STAGE_LIVE",
     "STAGE_SETTING_UP",
     "STAGE_RAN",
@@ -13,38 +9,25 @@
     "STAGE_BLOCKED",
     "STAGE_ALL",
     "SHOW_MORE",
+    "CARD_HOVER",
+    "CAUTION_OPEN",
     "THEME_LIGHT",
-    "LANG_ZH_ON_LIGHT",
-    "SCROLLED"
+    "LANG_ZH"
   ],
+  "failed_attempts": [],
   "transitions": [
-    "DEFAULT_GRID -> CARD_HOVER",
     "DEFAULT_GRID -> TABLE_VIEW",
-    "DEFAULT_GRID -> TRACK_RECORD_DIALOG -> DEFAULT_GRID",
-    "DEFAULT_GRID -> WHAT_CHANGED_TODAY_PANEL",
-    "DEFAULT_GRID -> STAGE_LIVE -> STAGE_SETTING_UP -> STAGE_RAN -> STAGE_BASING -> STAGE_BLOCKED -> STAGE_ALL",
-    "DEFAULT_GRID -> THEME_LIGHT -> LANG_ZH_ON_LIGHT -> DEFAULT_GRID"
-  ],
-  "stage_filter_counts_observed": {
-    "all_badge": 81,
-    "header_shown": 69,
-    "header_setups": 77,
-    "live_visible_cards": 28,
-    "setting_up_visible_cards": 31,
-    "ran_badge": 20,
-    "ran_visible_cards": 8,
-    "basing_visible_cards": 1,
-    "blocked_visible_cards": 1,
-    "all_visible_after_filter_cycle": 14
-  },
-  "url_changes": "none for stage, table, dialog, or theme",
-  "source_states_not_triggered": [
-    "ahead / tonight's picks badge (.pbs-ahead hidden)",
-    "behind / last confirmed badge (.pbs-behind hidden)",
-    "closed market badge (.pbs-closed hidden)",
-    "empty board",
-    "paid/locked/gated board (tier_preview.js can gate #us-standouts; not active on this anonymous load)",
-    "#prophet-live forming-today panel (present, hidden)",
-    "signed-in account menu"
+    "DEFAULT_GRID -> TRACK_RECORD_OPEN",
+    "DEFAULT_GRID -> STAGE_LIVE",
+    "DEFAULT_GRID -> STAGE_SETTING_UP",
+    "DEFAULT_GRID -> STAGE_RAN",
+    "DEFAULT_GRID -> STAGE_BASING",
+    "DEFAULT_GRID -> STAGE_BLOCKED",
+    "DEFAULT_GRID -> STAGE_ALL",
+    "DEFAULT_GRID -> SHOW_MORE",
+    "DEFAULT_GRID -> CARD_HOVER",
+    "DEFAULT_GRID -> CAUTION_OPEN",
+    "DEFAULT_GRID -> THEME_LIGHT",
+    "DEFAULT_GRID -> LANG_ZH"
   ]
 }

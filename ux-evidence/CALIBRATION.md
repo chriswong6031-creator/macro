@@ -1,87 +1,74 @@
-# Calibration dossier — Prophet Board + Prophet detail
+# Calibration v2 — CONDITIONAL PASS follow-up
 
-**Status:** captured and stopped. No product-wide crawl. No redesign.
+**Status:** second Prophet-only run complete. Stopped. No Phase 0.
 
-**Root:** `/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/`
+**Collector:** Playwright + installed Google Chrome (`channel=chrome`), real window 1440/1280/1024/768/390, `deviceScaleFactor=1`.  
+**Not used:** AionUi in-app webview emulation.
 
-**When:** 2026-08-16T12:12–12:15Z  
-**How:** AionUi in-app browser CDP (anonymous, EN/dark unless noted)  
-**Local SHA:** `36e8f7dc8b28`  
-**origin/main SHA:** `3c6f4ffa3a9a`  
-**Live host:** `https://www.mastermind-x.com`
+**When:** 2026-08-16T12:57–13:15Z  
+**Session:** 3 `mastermind-x.com` cookies copied in memory from AionUi CDP (not written to disk).
 
-This is the calibration control surface asked for in the Sol handoff. Review this schema before any 50-page crawl.
+## What changed vs v1
 
-## What was captured
+| Review item | v2 behavior |
+|---|---|
+| P0 capture fidelity | Real Chrome viewport; `innerWidth/Height` must match requested ±1px or the shot is deleted. Full-page tiling fails. |
+| P0 re-extract | `extract-<viewport>.json` after every size. Boxes are `viewport_box` + `page_box`. |
+| P0 verified states | `interaction-manifest.json` has expected vs observed postcondition, pass/fail. Failed states are not named as success. |
+| P0 target focus | Chart hover used `#tvbox` (1058×559, canvases 1004×297). Caution used `.pv-cau-btn` hover/focus, not a 29px SVG. |
+| P0 independent branches | Each board interaction family used a fresh context + `goto`. |
+| P1 coverage | `control-coverage.json` + full interaction records. |
+| P1 page structure | `page-sections.json` + full-page and/or viewport-height segments. |
+| P1 active language | `visible-text-active-language.txt` + `text-i18n-raw.json`. |
+| P1 source parity | `pages/source-parity.json`. |
+| P1 decision map | `decision-data-map.json` (ONTO Buy vs WAIT). |
+| P2 AX | `accessibility-summary.json` + snapshot (not multi-MB raw CDP tree). |
 
-### Board — `pages/us-stocks-prophet-board/`
+## Source parity
 
-Route: `/us_stocks.html`  
-Visible title: **Prophet Stock Signals**  
-Browser title: `US Stock Dashboard — 2026-08-13 | MastermindX`  
-Nav: United States → Stock Dashboard  
-69 `.pvcard` in DOM (12 featured, 23 buy, 8 near, 34 wait, 4 hold, 0 avoid)
+| Artifact | Status |
+|---|---|
+| live `us_stocks.html` vs `site/us_stocks.html` | **VERIFIED** (sha256 `7a014653c9d8abe1…`, 1,123,351 bytes) |
+| live `stock.html` vs `site/stock.html` | **VERIFIED** (sha256 `b981b9bd3fa9a0ae…`) |
+| live `stockdata/ONTO.json` | **UNVERIFIED** — HTTP 401 `x-regwall`; local `site/stockdata/` gitignored |
 
-Includes:
+## Verified interactions (board)
 
-- `00-meta.json`
-- `element-manifest.json` + annotated 1440 / 390 shots
-- `visible-text.txt` (raw board copy, not summarized)
-- `accessibility-tree.json`
-- `interaction-manifest.json`
-- `state-manifest.json`
-- `layout-style.json` (selected computed styles + token counts)
-- `source-map.md`
-- `runtime-observations.md`
-- viewports: 1440, 1280, 1024, 768, 390; full-page 1440 and 390
-- states: default grid, card hover, help, table view, track-record dialog, “what changed today”, stage filters (all six), show-more, light theme, light+zh
-- motion frames: table toggle, track-record open
+Passed: table view, track-record dialog, all six stage filters, show-more (second attempt), ONTO hover, ONTO caution popover, light theme, ZH.
 
-### Detail — `pages/stock-detail/`
+Failed (recorded, not mislabeled): first show-more helper (no target); then recovered.
 
-Route: `/stock.html#ONTO` (first featured card href)  
-Browser title: `Stock analyzer — cycle & momentum`  
-H1: Onto Innovation (ONTO)
+## Verified / failed (detail)
 
-Includes the same dossier set (meta, elements, text, AX, interactions, states, source-map, runtime) plus 1440/1280/1024/768/390, full-page 1440/390, chart hover, 1W chip, cycle-details click.
+Passed: cookied load populated (not lock-cta); 1W chip `class=on`.
 
-## Factual mismatches Sol should see (not recommendations)
+Failed (honest):
 
-- Board card ONTO = **BUY / Triggered / Priority 95 / zone $304.30–$337.80**. Detail header = **WAIT / Extended / size 0%**. Same ticker, same session.
-- Three board counts at once: filter **All 81**, subtitle **69 shown · 77 setups**.
-- Stage **Ran** badge 20, only 8 cards visible (pagination).
-- Detail `<title>` does not include the ticker.
-- EN+ZH both sit in the DOM; `innerText` often concatenates them.
+- `I.detail.cycle` — first `details>summary` in the DOM is not visible (not the Cycle & timing control). `CYCLE_EXPANDED` was **not** claimed.
+- `I.detail.chart_hover` — real plot found (1004×297 canvas) but tooltip/crosshair text was **not** verified. Shot kept only as a failed-attempt frame (`detail_chart_hover_1440x1000.png`); do not treat as CHART_HOVER.
 
-## Capture caveats
+## ONTO Buy vs WAIT (evidence only)
 
-- 1440 shots often include a **right-hand duplicate strip**. The in-app webview is narrower than the emulated 1440; use the left frame.
-- Anonymous only. Gated/empty/ahead-of-close board states exist in source (hidden badges, `#prophet-live`, `tier_preview.js`) and were **not** triggered.
-- Keyboard traversal not fully walked.
-- Help tooltip hover did not reliably expose the long tip string as `innerText`.
-- Cycle `<details>` click reported `open:false` after click.
-- No Phase 0 product map (intentionally stopped).
+See `pages/stock-detail/decision-data-map.json`.
 
-## Completion check
+- Board card (baked HTML, VERIFIED = live): verb **Buy**, **Triggered**, **Priority 95**, zone $304.30–$337.80, date Aug 13. Table island on the same page: `conviction_score` 55, `stage` ENTRY, `entry_status` partial.
+- Detail (cookied `stockdata/ONTO.json`): **WAIT**, Extended, size 0%. `stock.html.j2` comments: cycle ladder caps the verdict; board rank is context.
+- No product judgment.
 
-| Question | Board | Detail |
-|---|---|---|
-| Default desktop visible? | YES | YES |
-| Default mobile visible? | YES | YES |
-| Entire page structure understandable? | YES (board + table + dialog) | PARTIAL — long page; full-page shot exists but lower sections not separately annotated |
-| All significant copy readable? | YES in `visible-text.txt` | YES in `visible-text.txt` (EN+ZH concatenated) |
-| Every major control identified? | YES (grid/table, stage pills, cards, track record, show more) | PARTIAL — chart chips yes; lower-page modules only in full-page shot |
-| Important state transitions? | YES for stage/table/dialog/theme | PARTIAL — 1W + details; no second “tab” role |
-| Hover / modal / drawer? | YES hover + modal | YES chart hover; no drawer observed |
-| Responsive restructuring? | YES 1440→390 | YES 1440→390 |
-| Source components identified? | YES `dashboard.html.j2` + `_prophet_card.html.j2` | YES `stock.html.j2` + stock scripts |
-| Stable IDs on major shots? | YES 1440/390 annotated | YES 1440/390 annotated |
-| Loading/empty/error/locked? | NO — populated anonymous only | NO lock/empty/error reached |
-| Navigation placement? | YES | YES (from card hash) |
-| Where it leads next? | YES `stock.html#TICKER` | PARTIAL — many shell links in meta; in-page next-step not isolated |
-| Animations as behavior? | YES frame sequences | NO material page transition beyond chip/details |
-| Runtime anomalies recorded? | YES | YES |
+## Capture self-check (sample)
+
+1440 board default: requested 1440×1000, inner 1440×1000, screenshot 1440×1000, dpr 1. No right-hand duplicate strip (visual check).
+
+390 board default: requested 390×844, inner 390×844, screenshot 390×844. Title of `#us-standouts` scrolled into view (page y≈1774).
+
+## Still missing / do not treat as captured
+
+- Keyboard traversal
+- Chart tooltip/crosshair as a verified state
+- Cycle `<details open===true>` verified state
+- Ahead/behind/closed/empty/gated board badges
+- `#prophet-live` visible panel
 
 ## Stop
 
-Calibration only. Waiting for Sol Extra High to name missing evidence fields before Phase 0 / remaining pages.
+No Phase 0. Waiting for Sol to review this second calibration.

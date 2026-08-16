@@ -1,0 +1,515 @@
+[
+  {
+    "id": "S.shell",
+    "label": "Global shell",
+    "found": true,
+    "order": 0,
+    "selector": "header, .topbar, nav",
+    "page_box": {
+      "x": 16,
+      "y": 44,
+      "w": 1408,
+      "h": 42
+    },
+    "viewport_height_footprint": 0.042,
+    "major_children": [
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "nav-toggle",
+        "text": ""
+      },
+      {
+        "tag": "link",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-links",
+        "text": "MASTERMINDX United States ▾ China ▾ Hong Kong ▾ Canada ▾ International ▾ Other A"
+      },
+      {
+        "tag": "script",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "script",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "script",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "script",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-search ticker-search",
+        "text": "600519."
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-ctrls",
+        "text": "Terminal"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Toggle navigation menu"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "MASTERMINDX"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "United States ▾"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Dashboard宏观仪表盘Regime, growth and inflation now当前周期、增长与通胀"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Stock Dashboard股票仪表盘Standouts, sectors and flows领涨股、板块与资金流"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Intraday Flow Tracker盘中资金流追踪Live session board — volume, tape and stance lanes ·"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Sector Intelligence行业情报Sectors, themes & rotation in one read板块、主题与轮动一页读"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Subsector Confluence子行业汇聚Entry-ready subsectors and stocks to review可关注的子行业与个股"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Strategies策略Tactical scorecards and positioning战术记分卡与仓位"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Alert Center警报中心Ranked market-moving alerts分级的市场异动警报"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "News Feed新闻流Catalysts, headlines and sentiment催化事件、头条与情绪"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Options — the workspace期权工作台Daily Brief · Flow · Scanner · Ticker · Leaders每日简报 "
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Dark Pool Desk暗池成交Off-exchange volume · short ratio · ATS venues场外成交量 · 融券比率 · A"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Structure市场结构GEX regime · machine flows · dispersion · weekly range做市商持仓 "
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Heatmap市场热力图↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Subsector Confluence子行业汇聚↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Browse U.S. markets浏览美国全部页面↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China ▾"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Dashboard宏观仪表盘A-share regime and breadthA股市况与市场广度"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Stock Dashboard股票仪表盘Standouts, alpha and setups强势股、超额收益与买点"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Heatmap市场热力图Every A-share at a glance全部A股一眼看尽"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China Intelligence中国情报中心Signals, policy and narratives信号、政策与市场叙事"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Sector Intelligence行业情报Gated board, cycle map and rotation in one研判、周期图谱和轮动，一页看完"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Narrative Radar题材雷达See which stories are running看清现在哪些题材在走"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Policy Watch政策观察PBoC and sector policy shifts央行动向与行业政策"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Mechanics盘面机制Participation, limits and tape参与度、涨跌停与盘面"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Special Situations特殊事件Unlocks, pledges and catalysts解禁、质押与催化事件"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China News中国新闻↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Strategies策略↗"
+      }
+    ],
+    "source": "shared nav"
+  },
+  {
+    "id": "S.hero",
+    "label": "Name + decision",
+    "found": true,
+    "order": 1,
+    "selector": "#sv-decision, #result",
+    "page_box": {
+      "x": 170,
+      "y": 136,
+      "w": 1100,
+      "h": 2812
+    },
+    "viewport_height_footprint": 2.812,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "panel",
+        "text": "Onto Innovation (ONTO) $331.71 BOTTOMING Entry ▲ +32 light High-beta momentum 🔔"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "panel",
+        "text": "Chart 1D 3D 1W 1M EMA RSI Stoch MACD Stoch RSI ONTO ~recon 2026-08-13 O 337.35 H"
+      },
+      {
+        "tag": "div",
+        "id": "panel_mtf",
+        "cls": "panel",
+        "text": "Momentum across timeframes DAILY RSI 59 neutral Stoch 98 overbought MACD ▲ bulli"
+      },
+      {
+        "tag": "div",
+        "id": "sv-evidence",
+        "cls": "",
+        "text": "THE EVIDENCE TREND Up · +44% vs 200-day Where price sits vs its 200-day average,"
+      },
+      {
+        "tag": "div",
+        "id": "sv-country",
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "details",
+        "id": null,
+        "cls": "sv-group",
+        "text": "Outlook & AI view前瞻与 AI 观点 Anticipation — multi-horizon outcome cone预判 — 多周期结果锥 "
+      },
+      {
+        "tag": "details",
+        "id": null,
+        "cls": "sv-group",
+        "text": "Fundamentals & financials"
+      },
+      {
+        "tag": "details",
+        "id": null,
+        "cls": "sv-group",
+        "text": "Options, positioning & ownership"
+      },
+      {
+        "tag": "div",
+        "id": "panel_personality",
+        "cls": "panel",
+        "text": "How this stock trades Archetype High-beta momentum Factor DNA quality_growth · m"
+      },
+      {
+        "tag": "div",
+        "id": "panel_cal",
+        "cls": "panel",
+        "text": "How much to trust the state — measured 2000→2026 ? state samples up next month a"
+      },
+      {
+        "tag": "p",
+        "id": null,
+        "cls": "muted sv-method",
+        "text": "How to read this page: the verdict band is the one call; the timing line, finger"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": "r_afbtn",
+        "text": "🔔 Alerts 40 ▾"
+      },
+      {
+        "tag": "button",
+        "id": "af-close",
+        "text": "Close"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": ""
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": ""
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": ""
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": ""
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": ""
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": ""
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1D"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "3D"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1W"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1M"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "EMA"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "RSI"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stoch"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "MACD"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stoch RSI"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Full screen"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "all assets →全部标的 →"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": ""
+      }
+    ],
+    "source": "stock.html.j2 render()"
+  },
+  {
+    "id": "S.cycle",
+    "label": "Cycle & timing detail",
+    "found": true,
+    "order": 2,
+    "selector": "details",
+    "page_box": {
+      "x": 1000,
+      "y": 331,
+      "w": 410,
+      "h": 36
+    },
+    "viewport_height_footprint": 0.036,
+    "major_children": [
+      {
+        "tag": "summary",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "af-detail",
+        "text": ""
+      }
+    ],
+    "major_controls": [],
+    "source": "stock.html.j2"
+  },
+  {
+    "id": "S.chart",
+    "label": "Price chart",
+    "found": true,
+    "order": 3,
+    "selector": "#tvbox",
+    "page_box": {
+      "x": 191,
+      "y": 904,
+      "w": 1058,
+      "h": 559
+    },
+    "viewport_height_footprint": 0.559,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "bchart",
+        "text": "1D 3D 1W 1M EMA RSI Stoch MACD Stoch RSI ONTO ~recon 2026-08-13 O 337.35 H 353.9"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1D"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "3D"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1W"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1M"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "EMA"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "RSI"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stoch"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "MACD"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stoch RSI"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Full screen"
+      }
+    ],
+    "source": "lightweight-charts #tvbox"
+  }
+]

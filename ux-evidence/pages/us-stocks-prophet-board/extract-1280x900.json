@@ -1,0 +1,1495 @@
+{
+  "href": "https://www.mastermind-x.com/us_stocks.html",
+  "title": "US Stock Dashboard — 2026-08-13 | MastermindX",
+  "lang": "en",
+  "theme": "dark",
+  "elements": [
+    {
+      "id": "E.board.root",
+      "section": "board",
+      "selector": "#us-standouts",
+      "found": true,
+      "visible": true,
+      "visible_label": "PROPHET STOCK SIGNALS ⊞ Grid Table 69 shown · 77 setups · green dot = entry open, yellow = wait for pullback. ? 13 of 22 confirmed overnight · 0 adjusted, 9 left the board? All 81 Live now 28 Setting up 31 Ran — don’t chase 20 Basing 1 Bloc",
+      "tag": "div",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 40,
+        "y": 16,
+        "w": 1200,
+        "h": 2127
+      },
+      "page_box": {
+        "x": 40,
+        "y": 874,
+        "w": 1200,
+        "h": 2127,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.board.title",
+      "section": "board",
+      "selector": "#us-standouts h2",
+      "found": true,
+      "visible": true,
+      "visible_label": "PROPHET STOCK SIGNALS",
+      "tag": "h2",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 59,
+        "y": 36,
+        "w": 216,
+        "h": 23
+      },
+      "page_box": {
+        "x": 59,
+        "y": 894,
+        "w": 216,
+        "h": 23,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.board.view.grid",
+      "section": "board-tools",
+      "selector": "#us-st-btn-grid",
+      "found": true,
+      "visible": true,
+      "visible_label": "⊞ Grid",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": "true",
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 297,
+        "y": 37,
+        "w": 58,
+        "h": 23
+      },
+      "page_box": {
+        "x": 297,
+        "y": 895,
+        "w": 58,
+        "h": 23,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.board.view.table",
+      "section": "board-tools",
+      "selector": "#us-st-btn-table",
+      "found": true,
+      "visible": true,
+      "visible_label": "Table",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": "false",
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 358,
+        "y": 37,
+        "w": 72,
+        "h": 23
+      },
+      "page_box": {
+        "x": 358,
+        "y": 895,
+        "w": 72,
+        "h": 23,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.board.sub",
+      "section": "board",
+      "selector": "#us-board-sub",
+      "found": true,
+      "visible": true,
+      "visible_label": "69 shown · 77 setups · green dot = entry open, yellow = wait for pullback. ?",
+      "tag": "span",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 442,
+        "y": 40,
+        "w": 423,
+        "h": 17
+      },
+      "page_box": {
+        "x": 442,
+        "y": 898,
+        "w": 423,
+        "h": 17,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.board.note",
+      "section": "board",
+      "selector": "#us-standouts .pbs-note",
+      "found": true,
+      "visible": true,
+      "visible_label": "13 of 22 confirmed overnight · 0 adjusted, 9 left the board?",
+      "tag": "div",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 59,
+        "y": 71,
+        "w": 681,
+        "h": 17
+      },
+      "page_box": {
+        "x": 59,
+        "y": 929,
+        "w": 681,
+        "h": 17,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.stage.all",
+      "section": "filters",
+      "selector": "#us-stage-filter [data-stagepick=all]",
+      "found": true,
+      "visible": true,
+      "visible_label": "All 81",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": "true",
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 64,
+        "y": 96,
+        "w": 78,
+        "h": 29
+      },
+      "page_box": {
+        "x": 64,
+        "y": 954,
+        "w": 78,
+        "h": 29,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.stage.live",
+      "section": "filters",
+      "selector": "#us-stage-filter [data-stagepick=live]",
+      "found": true,
+      "visible": true,
+      "visible_label": "Live now 28",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": "false",
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 146,
+        "y": 96,
+        "w": 115,
+        "h": 29
+      },
+      "page_box": {
+        "x": 146,
+        "y": 954,
+        "w": 115,
+        "h": 29,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.stage.setting_up",
+      "section": "filters",
+      "selector": "#us-stage-filter [data-stagepick=setting_up]",
+      "found": true,
+      "visible": true,
+      "visible_label": "Setting up 31",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": "false",
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 265,
+        "y": 96,
+        "w": 125,
+        "h": 29
+      },
+      "page_box": {
+        "x": 265,
+        "y": 954,
+        "w": 125,
+        "h": 29,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.stage.ran",
+      "section": "filters",
+      "selector": "#us-stage-filter [data-stagepick=ran]",
+      "found": true,
+      "visible": true,
+      "visible_label": "Ran — don’t chase 20",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": "false",
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 394,
+        "y": 96,
+        "w": 175,
+        "h": 29
+      },
+      "page_box": {
+        "x": 394,
+        "y": 954,
+        "w": 175,
+        "h": 29,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.stage.basing",
+      "section": "filters",
+      "selector": "#us-stage-filter [data-stagepick=basing]",
+      "found": true,
+      "visible": true,
+      "visible_label": "Basing 1",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": "false",
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 573,
+        "y": 96,
+        "w": 96,
+        "h": 29
+      },
+      "page_box": {
+        "x": 573,
+        "y": 954,
+        "w": 96,
+        "h": 29,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.stage.blocked",
+      "section": "filters",
+      "selector": "#us-stage-filter [data-stagepick=blocked]",
+      "found": true,
+      "visible": true,
+      "visible_label": "Blocked 1",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": "false",
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 673,
+        "y": 96,
+        "w": 104,
+        "h": 29
+      },
+      "page_box": {
+        "x": 673,
+        "y": 954,
+        "w": 104,
+        "h": 29,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.card.ONTO",
+      "section": "cards",
+      "selector": "a.pvcard[data-ticker=ONTO]",
+      "found": true,
+      "visible": true,
+      "visible_label": "BUY Triggered 7 $337.82 — ONTO Onto Innovation PRIORITY 95 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $304.30–$337.80 Aug 13",
+      "tag": "a",
+      "href": "stock.html#ONTO",
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": "ONTO",
+      "viewport_box": {
+        "x": 59,
+        "y": 186,
+        "w": 283,
+        "h": 202
+      },
+      "page_box": {
+        "x": 59,
+        "y": 1044,
+        "w": 283,
+        "h": 202,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.card.ONTO.verb",
+      "section": "cards",
+      "selector": "a.pvcard[data-ticker=ONTO] .pv-chip",
+      "found": true,
+      "visible": true,
+      "visible_label": "BUY",
+      "tag": "span",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 69,
+        "y": 195,
+        "w": 44,
+        "h": 20
+      },
+      "page_box": {
+        "x": 69,
+        "y": 1053,
+        "w": 44,
+        "h": 20,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.card.ONTO.trigger",
+      "section": "cards",
+      "selector": "a.pvcard[data-ticker=ONTO] .pv-trg",
+      "found": true,
+      "visible": true,
+      "visible_label": "Triggered",
+      "tag": "span",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 118,
+        "y": 195,
+        "w": 85,
+        "h": 20
+      },
+      "page_box": {
+        "x": 118,
+        "y": 1053,
+        "w": 85,
+        "h": 20,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.card.ONTO.priority",
+      "section": "cards",
+      "selector": "a.pvcard[data-ticker=ONTO] .pv-edn",
+      "found": true,
+      "visible": true,
+      "visible_label": "95",
+      "tag": "span",
+      "href": null,
+      "aria_expanded": null,
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 311,
+        "y": 264,
+        "w": 19,
+        "h": 14
+      },
+      "page_box": {
+        "x": 311,
+        "y": 1122,
+        "w": 19,
+        "h": 14,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    },
+    {
+      "id": "E.board.track.btn",
+      "section": "track",
+      "selector": "#trd-btn",
+      "found": true,
+      "visible": true,
+      "visible_label": "Track record·60% win · +1.19% a trade",
+      "tag": "button",
+      "href": null,
+      "aria_expanded": "false",
+      "aria_pressed": null,
+      "aria_selected": null,
+      "data_ticker": null,
+      "viewport_box": {
+        "x": 59,
+        "y": 1519,
+        "w": 347,
+        "h": 36
+      },
+      "page_box": {
+        "x": 59,
+        "y": 2377,
+        "w": 347,
+        "h": 36,
+        "scrollX": 0,
+        "scrollY": 858
+      }
+    }
+  ],
+  "i18n_pairs": [
+    {
+      "en": "United States",
+      "zh": "美国"
+    },
+    {
+      "en": "United States",
+      "zh": "美国"
+    },
+    {
+      "en": "Macro context, stocks, sectors and live market desks.",
+      "zh": "宏观环境、个股、板块与实时行情台。"
+    },
+    {
+      "en": "11 destinations",
+      "zh": "11 个入口"
+    },
+    {
+      "en": "Market overview",
+      "zh": "市场总览"
+    },
+    {
+      "en": "Market Dashboard",
+      "zh": "宏观仪表盘"
+    },
+    {
+      "en": "Regime, growth and inflation now",
+      "zh": "当前周期、增长与通胀"
+    },
+    {
+      "en": "Stock Dashboard",
+      "zh": "股票仪表盘"
+    },
+    {
+      "en": "Standouts, sectors and flows",
+      "zh": "领涨股、板块与资金流"
+    },
+    {
+      "en": "Intraday Flow Tracker",
+      "zh": "盘中资金流追踪"
+    },
+    {
+      "en": "Live session board — volume, tape and stance lanes · ≈15-min delayed",
+      "zh": "盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟"
+    },
+    {
+      "en": "Sector Intelligence",
+      "zh": "行业情报"
+    },
+    {
+      "en": "Sectors, themes & rotation in one read",
+      "zh": "板块、主题与轮动一页读"
+    },
+    {
+      "en": "Signals & strategy",
+      "zh": "信号与策略"
+    },
+    {
+      "en": "Subsector Confluence",
+      "zh": "子行业汇聚"
+    },
+    {
+      "en": "Entry-ready subsectors and stocks to review",
+      "zh": "可关注的子行业与个股"
+    },
+    {
+      "en": "Strategies",
+      "zh": "策略"
+    },
+    {
+      "en": "Tactical scorecards and positioning",
+      "zh": "战术记分卡与仓位"
+    },
+    {
+      "en": "Alert Center",
+      "zh": "警报中心"
+    },
+    {
+      "en": "Ranked market-moving alerts",
+      "zh": "分级的市场异动警报"
+    },
+    {
+      "en": "News Feed",
+      "zh": "新闻流"
+    },
+    {
+      "en": "Catalysts, headlines and sentiment",
+      "zh": "催化事件、头条与情绪"
+    },
+    {
+      "en": "Market structure",
+      "zh": "市场结构"
+    },
+    {
+      "en": "Options — the workspace",
+      "zh": "期权工作台"
+    },
+    {
+      "en": "Daily Brief · Flow · Scanner · Ticker · Leaders",
+      "zh": "每日简报 · 资金流 · 筛选 · 个股 · 领头股"
+    },
+    {
+      "en": "Dark Pool Desk",
+      "zh": "暗池成交"
+    },
+    {
+      "en": "Off-exchange volume · short ratio · ATS venues",
+      "zh": "场外成交量 · 融券比率 · ATS 交易平台"
+    },
+    {
+      "en": "Market Structure",
+      "zh": "市场结构"
+    },
+    {
+      "en": "GEX regime · machine flows · dispersion · weekly range",
+      "zh": "做市商持仓 · 程序化资金 · 离散度 · 周内区间"
+    },
+    {
+      "en": "Explore",
+      "zh": "探索"
+    },
+    {
+      "en": "Market Heatmap",
+      "zh": "市场热力图"
+    },
+    {
+      "en": "Subsector Confluence",
+      "zh": "子行业汇聚"
+    },
+    {
+      "en": "Browse U.S. markets",
+      "zh": "浏览美国全部页面"
+    },
+    {
+      "en": "Built for quick decisions",
+      "zh": "为快速决策而建"
+    },
+    {
+      "en": "The most-used desks stay one click away.",
+      "zh": "最常用的页面永远一键可达。"
+    },
+    {
+      "en": "China",
+      "zh": "中国"
+    },
+    {
+      "en": "China",
+      "zh": "中国"
+    },
+    {
+      "en": "A-shares, policy, capital flows and fast-moving themes.",
+      "zh": "A股、政策、资金流，以及轮动最快的那些题材。"
+    },
+    {
+      "en": "10 destinations",
+      "zh": "10 个入口"
+    },
+    {
+      "en": "Market overview",
+      "zh": "市场总览"
+    },
+    {
+      "en": "Market Dashboard",
+      "zh": "宏观仪表盘"
+    },
+    {
+      "en": "A-share regime and breadth",
+      "zh": "A股市况与市场广度"
+    },
+    {
+      "en": "Stock Dashboard",
+      "zh": "股票仪表盘"
+    },
+    {
+      "en": "Standouts, alpha and setups",
+      "zh": "强势股、超额收益与买点"
+    },
+    {
+      "en": "Market Heatmap",
+      "zh": "市场热力图"
+    },
+    {
+      "en": "Every A-share at a glance",
+      "zh": "全部A股一眼看尽"
+    },
+    {
+      "en": "China Intelligence",
+      "zh": "中国情报中心"
+    },
+    {
+      "en": "Signals, policy and narratives",
+      "zh": "信号、政策与市场叙事"
+    },
+    {
+      "en": "Themes & rotation",
+      "zh": "主题与轮动"
+    },
+    {
+      "en": "Sector Intelligence",
+      "zh": "行业情报"
+    },
+    {
+      "en": "Gated board, cycle map and rotation in one",
+      "zh": "研判、周期图谱和轮动，一页看完"
+    },
+    {
+      "en": "Narrative Radar",
+      "zh": "题材雷达"
+    },
+    {
+      "en": "See which stories are running",
+      "zh": "看清现在哪些题材在走"
+    },
+    {
+      "en": "Flows & policy",
+      "zh": "资金与政策"
+    },
+    {
+      "en": "Capital Flow Velocity",
+      "zh": "资金流速"
+    },
+    {
+      "en": "Where big money accelerates",
+      "zh": "主力资金在哪里加速"
+    },
+    {
+      "en": "Policy Watch",
+      "zh": "政策观察"
+    },
+    {
+      "en": "PBoC and sector policy shifts",
+      "zh": "央行动向与行业政策"
+    },
+    {
+      "en": "Market Mechanics",
+      "zh": "盘面机制"
+    },
+    {
+      "en": "Participation, limits and tape",
+      "zh": "参与度、涨跌停与盘面"
+    },
+    {
+      "en": "Special Situations",
+      "zh": "特殊事件"
+    },
+    {
+      "en": "Unlocks, pledges and catalysts",
+      "zh": "解禁、质押与催化事件"
+    },
+    {
+      "en": "Explore",
+      "zh": "探索"
+    },
+    {
+      "en": "China News",
+      "zh": "中国新闻"
+    },
+    {
+      "en": "Strategies",
+      "zh": "策略"
+    },
+    {
+      "en": "Alternative Data",
+      "zh": "另类数据"
+    },
+    {
+      "en": "Browse China research",
+      "zh": "浏览中国全部研究"
+    },
+    {
+      "en": "One China system",
+      "zh": "中国板块，一套系统"
+    },
+    {
+      "en": "Market, policy and capital context stay connected.",
+      "zh": "市场、政策和资金脉络始终连在一起。"
+    },
+    {
+      "en": "Hong Kong",
+      "zh": "香港"
+    },
+    {
+      "en": "Hong Kong",
+      "zh": "香港"
+    },
+    {
+      "en": "HSI context, southbound flows and Hong Kong-listed leaders.",
+      "zh": "恒指环境、南向资金与港股龙头。"
+    },
+    {
+      "en": "6 destinations",
+      "zh": "6 个入口"
+    },
+    {
+      "en": "Market overview",
+      "zh": "市场总览"
+    },
+    {
+      "en": "Market Dashboard",
+      "zh": "宏观仪表盘"
+    },
+    {
+      "en": "HSI, liquidity and global risk",
+      "zh": "恒指、流动性与全球风险"
+    },
+    {
+      "en": "Stock Dashboard",
+      "zh": "股票仪表盘"
+    },
+    {
+      "en": "Hong Kong standouts and alpha",
+      "zh": "港股领涨股与阿尔法"
+    },
+    {
+      "en": "Market Heatmap",
+      "zh": "市场热力图"
+    },
+    {
+      "en": "Turnover-sized market overview",
+      "zh": "按成交额加权的全景"
+    },
+    {
+      "en": "Capital Flow Velocity",
+      "zh": "资金流速"
+    },
+    {
+      "en": "Southbound money in motion",
+      "zh": "南向资金动向"
+    },
+    {
+      "en": "Themes & rotation",
+      "zh": "主题与轮动"
+    },
+    {
+      "en": "Thematic Baskets",
+      "zh": "主题篮子"
+    },
+    {
+      "en": "Equal-weight themes versus HSI",
+      "zh": "等权主题篮子 vs 恒指"
+    },
+    {
+      "en": "Narrative Rotation",
+      "zh": "主题轮动"
+    },
+    {
+      "en": "What to hold and rotate",
+      "zh": "持有哪个主题 · 何时轮动"
+    },
+    {
+      "en": "Quick access",
+      "zh": "快速入口"
+    },
+    {
+      "en": "China Intelligence",
+      "zh": "中国情报中心"
+    },
+    {
+      "en": "Policy Watch",
+      "zh": "政策观察"
+    },
+    {
+      "en": "Hong Kong baskets",
+      "zh": "香港主题篮子"
+    },
+    {
+      "en": "Browse Hong Kong",
+      "zh": "浏览香港全部页面"
+    },
+    {
+      "en": "Lean by design",
+      "zh": "精简设计"
+    },
+    {
+      "en": "Six core destinations cover the Hong Kong workflow.",
+      "zh": "六个核心页面覆盖香港的完整流程。"
+    },
+    {
+      "en": "Canada",
+      "zh": "加拿大"
+    },
+    {
+      "en": "Canada",
+      "zh": "加拿大"
+    },
+    {
+      "en": "TSX context, commodity sensitivity and Canadian market leaders.",
+      "zh": "多伦多指数环境、商品敏感度与加股龙头。"
+    },
+    {
+      "en": "5 destinations",
+      "zh": "5 个入口"
+    },
+    {
+      "en": "Market overview",
+      "zh": "市场总览"
+    },
+    {
+      "en": "Market Dashboard",
+      "zh": "宏观仪表盘"
+    },
+    {
+      "en": "TSX, BoC and commodities",
+      "zh": "TSX、加央行与大宗商品"
+    },
+    {
+      "en": "Stock Dashboard",
+      "zh": "股票仪表盘"
+    },
+    {
+      "en": "Canadian standouts and alpha",
+      "zh": "加股领涨股与阿尔法"
+    },
+    {
+      "en": "Market Heatmap",
+      "zh": "市场热力图"
+    },
+    {
+      "en": "Every TSX name at a glance",
+      "zh": "全部TSX个股一眼看尽"
+    },
+    {
+      "en": "Themes & rotation",
+      "zh": "主题与轮动"
+    },
+    {
+      "en": "Thematic Baskets",
+      "zh": "主题篮子"
+    },
+    {
+      "en": "Themes versus the TSX",
+      "zh": "主题篮子 vs 标普/多伦多"
+    },
+    {
+      "en": "Narrative Rotation",
+      "zh": "主题轮动"
+    },
+    {
+      "en": "What to hold and rotate",
+      "zh": "持有哪个主题 · 何时轮动"
+    },
+    {
+      "en": "Quick access",
+      "zh": "快速入口"
+    },
+    {
+      "en": "Banks & insurers",
+      "zh": "银行与保险"
+    },
+    {
+      "en": "Energy complex",
+      "zh": "能源板块"
+    },
+    {
+      "en": "Gold & materials",
+      "zh": "黄金与原材料"
+    },
+    {
+      "en": "Browse Canada",
+      "zh": "浏览加拿大全部页面"
+    },
+    {
+      "en": "Home-market aware",
+      "zh": "识别主场市场"
+    },
+    {
+      "en": "Search examples and popular tickers adapt to Canada.",
+      "zh": "搜索示例与热门代码会跟着切到加拿大。"
+    },
+    {
+      "en": "International",
+      "zh": "国际"
+    },
+    {
+      "en": "International",
+      "zh": "国际"
+    },
+    {
+      "en": "Compare major markets, global leaders and cross-country themes.",
+      "zh": "比较主要市场、全球龙头与跨国主题。"
+    },
+    {
+      "en": "5 destinations",
+      "zh": "5 个入口"
+    },
+    {
+      "en": "Global markets",
+      "zh": "全球市场"
+    },
+    {
+      "en": "World Dashboard",
+      "zh": "全球仪表盘"
+    },
+    {
+      "en": "Major markets compared together",
+      "zh": "主要市场同台对比"
+    },
+    {
+      "en": "Stock Dashboard",
+      "zh": "股票仪表盘"
+    },
+    {
+      "en": "Cross-market standouts and sectors",
+      "zh": "跨市场领涨股与板块"
+    },
+    {
+      "en": "Global Market Cycles",
+      "zh": "全球市场周期"
+    },
+    {
+      "en": "Every major market on one clock",
+      "zh": "主要市场同在一张周期钟上"
+    },
+    {
+      "en": "Country Cycles",
+      "zh": "国家周期"
+    },
+    {
+      "en": "Countries and regions compared",
+      "zh": "国家与区域对比"
+    },
+    {
+      "en": "Themes",
+      "zh": "主题"
+    },
+    {
+      "en": "Thematic Baskets",
+      "zh": "主题篮子"
+    },
+    {
+      "en": "Cross-country themes outside America",
+      "zh": "跨国主题篮子 · 除美"
+    },
+    {
+      "en": "Regions",
+      "zh": "国家与区域"
+    },
+    {
+      "en": "Japan",
+      "zh": "日本"
+    },
+    {
+      "en": "South Korea",
+      "zh": "韩国"
+    },
+    {
+      "en": "Euro Area",
+      "zh": "欧元区"
+    },
+    {
+      "en": "United Kingdom",
+      "zh": "英国"
+    },
+    {
+      "en": "India",
+      "zh": "印度"
+    },
+    {
+      "en": "One global lens",
+      "zh": "一个全球视角"
+    },
+    {
+      "en": "Country context without a maze of nested menus.",
+      "zh": "看懂各国脉络，不必层层翻菜单。"
+    },
+    {
+      "en": "Other Assets",
+      "zh": "其他资产"
+    },
+    {
+      "en": "Other Assets",
+      "zh": "其他资产"
+    },
+    {
+      "en": "Digital assets, commodities, currencies and fixed income.",
+      "zh": "数字资产、大宗商品、货币与固定收益。"
+    },
+    {
+      "en": "8 destinations",
+      "zh": "8 个入口"
+    },
+    {
+      "en": "Digital assets",
+      "zh": "数字资产"
+    },
+    {
+      "en": "Crypto Intelligence",
+      "zh": "加密情报"
+    },
+    {
+      "en": "Market state, flows, leverage and asset lanes",
+      "zh": "市场状态、资金流、杠杆与资产分道"
+    },
+    {
+      "en": "Bitcoin Vector",
+      "zh": "比特币向量"
+    },
+    {
+      "en": "Bitcoin state, risk and cycle evidence",
+      "zh": "比特币状态、风险与周期实证"
+    },
+    {
+      "en": "Strategy Track Record",
+      "zh": "策略战绩"
+    },
+    {
+      "en": "Cycle and allocation evidence",
+      "zh": "周期与配置的实证"
+    },
+    {
+      "en": "Commodities",
+      "zh": "大宗商品"
+    },
+    {
+      "en": "Commodity Dashboard",
+      "zh": "商品仪表盘"
+    },
+    {
+      "en": "Gold, oil, copper and silver",
+      "zh": "黄金、原油、铜与白银"
+    },
+    {
+      "en": "Commodity Strategies",
+      "zh": "商品策略"
+    },
+    {
+      "en": "Tactical views by commodity",
+      "zh": "分品种的战术观点"
+    },
+    {
+      "en": "Strategic Reserves",
+      "zh": "战略储备"
+    },
+    {
+      "en": "Global stockpiles versus oil",
+      "zh": "各国储备水平与油价对照"
+    },
+    {
+      "en": "Rates & FX",
+      "zh": "利率与外汇"
+    },
+    {
+      "en": "Forex",
+      "zh": "外汇"
+    },
+    {
+      "en": "Dollar, carry and currency pairs",
+      "zh": "美元、套息与货币对"
+    },
+    {
+      "en": "Bonds",
+      "zh": "债券"
+    },
+    {
+      "en": "Curve, credit and duration",
+      "zh": "曲线、信用与久期"
+    },
+    {
+      "en": "Quick access",
+      "zh": "快速入口"
+    },
+    {
+      "en": "Gold",
+      "zh": "黄金"
+    },
+    {
+      "en": "Crude oil",
+      "zh": "原油"
+    },
+    {
+      "en": "Copper",
+      "zh": "铜"
+    },
+    {
+      "en": "Bitcoin Terminal",
+      "zh": "比特币终端"
+    },
+    {
+      "en": "Browse other assets",
+      "zh": "浏览其他资产"
+    },
+    {
+      "en": "Grouped by behavior",
+      "zh": "按行为分组"
+    },
+    {
+      "en": "Related assets sit together without extra hover layers.",
+      "zh": "相关资产放在一起，不必再多一层悬停。"
+    },
+    {
+      "en": "Research",
+      "zh": "研究"
+    },
+    {
+      "en": "Core Research",
+      "zh": "核心研究"
+    },
+    {
+      "en": "Intelligence Hub",
+      "zh": "情报中心"
+    },
+    {
+      "en": "Your complete market command center",
+      "zh": "你的完整市场指挥中心"
+    },
+    {
+      "en": "Mastermind Portfolio",
+      "zh": "Mastermind 组合"
+    },
+    {
+      "en": "Your holdings with tonight’s signals",
+      "zh": "你的持仓与今晚信号"
+    },
+    {
+      "en": "Mastermind Bot",
+      "zh": "Mastermind 交易机器人"
+    },
+    {
+      "en": "The AI’s own paper account — every trade explained",
+      "zh": "AI 自己的模拟账户，每笔交易都附理由"
+    },
+    {
+      "en": "Research Reports",
+      "zh": "研究报告"
+    },
+    {
+      "en": "Deep dives and market calls",
+      "zh": "深度研究与市场判断"
+    },
+    {
+      "en": "Research Vault",
+      "zh": "研报库"
+    },
+    {
+      "en": "Search every published research note",
+      "zh": "搜索所有已发布研究"
+    },
+    {
+      "en": "Earnings Wire",
+      "zh": "财报情报线"
+    },
+    {
+      "en": "Verified calls, weekly intelligence and company context",
+      "zh": "已核验电话会、每周情报与公司语境"
+    },
+    {
+      "en": "Filing Forensics",
+      "zh": "财报排雷"
+    },
+    {
+      "en": "Find the accounting changes worth reviewing",
+      "zh": "找出值得复核的会计变动"
+    },
+    {
+      "en": "Neural Web",
+      "zh": "智脑"
+    },
+    {
+      "en": "See how every signal votes",
+      "zh": "查看每个信号如何投票"
+    },
+    {
+      "en": "Market Memory",
+      "zh": "市场记忆"
+    },
+    {
+      "en": "Put today beside comparable episodes",
+      "zh": "将今天与可比历史片段并排"
+    },
+    {
+      "en": "Find the Edge",
+      "zh": "找到你的优势"
+    },
+    {
+      "en": "Foresight",
+      "zh": "前瞻"
+    },
+    {
+      "en": "Themes before markets price them",
+      "zh": "市场定价前的主题"
+    },
+    {
+      "en": "Theme Tracker",
+      "zh": "主题追踪"
+    },
+    {
+      "en": "What’s strengthening and fading now",
+      "zh": "正在增强与减弱的主题"
+    },
+    {
+      "en": "Divergence Radar",
+      "zh": "背离雷达"
+    },
+    {
+      "en": "Where price and reality split",
+      "zh": "价格与现实的分歧"
+    },
+    {
+      "en": "Stock Seasonality",
+      "zh": "个股季节性"
+    },
+    {
+      "en": "Which calendar windows actually repeat",
+      "zh": "哪些日历窗口真的会重演"
+    },
+    {
+      "en": "Signal Board",
+      "zh": "信号看板"
+    },
+    {
+      "en": "Today’s strongest confirmed setups",
+      "zh": "今日最强确认信号"
+    },
+    {
+      "en": "Capital & Regimes",
+      "zh": "资金与周期"
+    },
+    {
+      "en": "Smart Money",
+      "zh": "聪明钱"
+    },
+    {
+      "en": "How top investors are positioned",
+      "zh": "顶级投资者的仓位"
+    },
+    {
+      "en": "Fund Flows",
+      "zh": "基金流向"
+    },
+    {
+      "en": "Where institutional capital is moving",
+      "zh": "机构资金流向"
+    },
+    {
+      "en": "Cycle Intelligence",
+      "zh": "周期情报"
+    },
+    {
+      "en": "Where the economy is heading",
+      "zh": "经济周期的下一站"
+    },
+    {
+      "en": "Macro Weather",
+      "zh": "宏观气象"
+    },
+    {
+      "en": "Growth, inflation and liquidity now",
+      "zh": "当前增长、通胀与流动性"
+    },
+    {
+      "en": "Explore",
+      "zh": "探索"
+    },
+    {
+      "en": "Policy Watch",
+      "zh": "政策观察"
+    },
+    {
+      "en": "Government Revenue",
+      "zh": "政府收入"
+    },
+    {
+      "en": "Alternative Data",
+      "zh": "另类数据"
+    },
+    {
+      "en": "Special Situations",
+      "zh": "特殊事件"
+    },
+    {
+      "en": "BioCatalyst Intelligence",
+      "zh": "生物医药催化剂情报"
+    },
+    {
+      "en": "Capital Structure",
+      "zh": "资本结构"
+    },
+    {
+      "en": "Global Cycles",
+      "zh": "全球周期"
+    },
+    {
+      "en": "Research",
+      "zh": "研究"
+    },
+    {
+      "en": "Global Cycles",
+      "zh": "全球周期"
+    },
+    {
+      "en": "Global Market Cycles",
+      "zh": "全球市场周期"
+    },
+    {
+      "en": "Compare national equity clocks",
+      "zh": "比较各国股市周期"
+    },
+    {
+      "en": "Country Cycles",
+      "zh": "国家周期"
+    },
+    {
+      "en": "Track countries and regions",
+      "zh": "追踪国家与区域"
+    },
+    {
+      "en": "U.S. Sector Cycles",
+      "zh": "美国行业周期"
+    },
+    {
+      "en": "See every sector clock",
+      "zh": "查看所有行业周期"
+    },
+    {
+      "en": "China Sector Cycles",
+      "zh": "中国行业周期"
+    },
+    {
+      "en": "Read China sector rotation",
+      "zh": "查看中国行业轮动"
+    },
+    {
+      "en": "Cycle Intelligence",
+      "zh": "周期情报"
+    },
+    {
+      "en": "Where the economy is heading",
+      "zh": "理解完整经济周期"
+    },
+    {
+      "en": "Macro Weather",
+      "zh": "宏观气象"
+    },
+    {
+      "en": "Growth, inflation and liquidity now",
+      "zh": "读取当前宏观环境"
+    },
+    {
+      "en": "Browse all research",
+      "zh": "浏览全部研究"
+    },
+    {
+      "en": "Cleaner by design",
+      "zh": "简洁设计"
+    },
+    {
+      "en": "Detailed diagnostics and proprietary labs move to the admin console.",
+      "zh": "详细诊断和专有实验室移至管理控制台。"
+    },
+    {
+      "en": "Browse all research",
+      "zh": "浏览全部研究"
+    },
+    {
+      "en": "Terminal",
+      "zh": "终端"
+    },
+    {
+      "en": "US Stocks",
+      "zh": "美国股票"
+    },
+    {
+      "en": "Fresh",
+      "zh": "新鲜"
+    },
+    {
+      "en": "Regime",
+      "zh": "周期"
+    },
+    {
+      "en": "Reflation",
+      "zh": "再通胀"
+    },
+    {
+      "en": "Posture",
+      "zh": "姿态"
+    },
+    {
+      "en": "DEFENSIVE",
+      "zh": "防御"
+    },
+    {
+      "en": "Market posture",
+      "zh": "市场姿态"
+    },
+    {
+      "en": "Pick Lab",
+      "zh": "选股实验室"
+    },
+    {
+      "en": "Alerts",
+      "zh": "提醒"
+    },
+    {
+      "en": "Mega-cap tape",
+      "zh": "超大盘行情"
+    },
+    {
+      "en": "Plain tape facts: how far each name has already moved over the last 5 and 21 sessions, and where that sits in the stock's own full trading history. Descriptive only — no forecast, no call, and nothing here changes the board below. The windows overlap, so a percentile ranks this move against the stock's past, it is not an independent-sample statistic.",
+      "zh": "纯粹的行情事实：每只股票在过去5个及21个交易日内已经走出的幅度，以及它在该股自身完整交易历史中的位置。仅为描述，不含预测或建议，也不会改变下方看板。窗口互相重叠，因此分位是对本次走势相对该股过去的排序，并非独立样本统计。"
+    },
+    {
+      "en": "as of 2026-08-13",
+      "zh": "截至 2026-08-13"
+    }
+  ],
+  "visible_text_active": "MASTERMINDX\nUnited States\n▾\nChina\n▾\nHong Kong\n▾\nCanada\n▾\nInternational\n▾\nOther Assets\n▾\nResearch\n▾\n6\nTerminal\nUS Stocks\nFresh\n2026-08-13\nRegime\nReflation\nPosture\nDEFENSIVE\nMarket posture →\n Pick Lab →\nAlerts →\nMEGA-CAP TAPE\n?\nas of 2026-08-13\nMSFT\n+25.6%\nover 21 sessions — last bigger in Aug 2026top 2% of its 40-year record\n\nWatch — don't chase. A name that has already run sits in the board's “Ran” lane below; the entry watched is the next clean base.\n\nMARKET STATE\nRisk-on\nconditions supportive\nRisk radar →\nWHAT TO ACT ON NOW ? THEME REASONS → SECTOR INTELLIGENCE\nBUY NOW\n9\nEntry confirmed today\nAI Software & Platforms\n≈\n74\n+10.0% 20d vs market\nNon-AI Software\n≈\n71\n+22.8% 20d vs market\nAI Agents & Applications\n≈\n70\n+10.4% 20d vs market\nShow more (6) ▾\nALMOST READY\n3\nSetting up — wait for the trigger, not a buy yet\nDefense & Aerospace\n≈\n59\n+8.6% 20d vs market\nData-Center Power & Cooling\n≈\n56\n+0.4% 20d vs market\nQuantum Computing\n≈\n53\n+13.0% 20d vs market\nIN FAVOUR — DON'T CHASE\n5\nUptrend intact but extended · wait for a pullback\nUS Energy Complex\n≈\n↻\n67\n+2.3% 20d vs market\nSpace Economy\n≈\n↻\n64\n+28.2% 20d vs market\nAI Neoclouds & HPC Hosting\n≈\n↻\n50\n+4.5% 20d vs market\nShow more (2) ▾\nTAKE PROFITS\n2\nLate in the cycle / topping — protect gains\nFinancials\nlate cycle · 14d ago\nReal Estate\nlate cycle · today\nSTAND ASIDE\n27\nHold what you own · no new buying\nCybersecurity\n25%\n≈\n72\n+12.2% 20d vs market\nMemory, HBM & Storage\n25%\n≈\n71\n+9.1% 20d vs market\nRobotics & Automation\n≈\n68\n+8.0% 20d vs market\nView all 28 ↗\nPROPHET STOCK SIGNALS\n⊞ Grid\n Table\n69 shown · 77 setups · green dot = entry open, yellow = wait for pullback. ?\n13 of 22 confirmed overnight · 0 adjusted, 9 left the board?\nAll\n81\nLive now\n28\nSetting up\n31\nRan — don’t chase\n20\nBasing\n1\nBlocked\n1\nLIVE NOW\n28\nentry window is open\nBUY\nTriggered\n7\n$337.82\n—\nONTO\nOnto Innovation\nPRIORITY\n95\nInformation Technology\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$304.30–$337.80\nAug 13\nBUY\nTriggered\n1\n$76.67\n—\nFTI\nTechnipFMC\nPRIORITY\n84\nEnergy\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$74.14–$76.67\nAug 13\nBUY\nTriggered\n2\n$339.35\n—\nFDX\nFedEx\nPRIORITY\n82\nIndustrials\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$333.20–$339.40\nAug 13\nBUY\nTriggered\n1\n$65.74\n—\nDAR\nDarling Ingredients\nPRIORITY\n80\nConsumer Staples\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$63.21–$65.74\nAug 13\nBUY\n3\n$1073.78\n—\nEQIX\nEquinix Inc\nPRIORITY\n77\nReal Estate\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$1046.40–$1073.80\nAug 13\nBUY\n$607.10\n—\nCVCO\nCavco Industries, Inc.\nPRIORITY\n76\nConsumer Discretionary\n FEATURED\nNEW\nContinuation\nBottoming\nTurning\nReady\nTrend\nZONE\n$588.80–$607.10\nAug 13\nBUY\n2\n$9.02\n—\nGNL\nGlobal Net Lease, Inc.\nPRIORITY\n74\nReal Estate\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$8.87–$9.02\nAug 13\nBUY\n2\n$199.68\n—\nTKO\nTko Group Holdings Inc\nPRIORITY\n73\nCommunication Services\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$195.70–$199.70\nAug 13\nBUY\n6\n$163.81\n—\nENTG\nEntegris\nPRIORITY\n72\nInformation Technology\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$150.20–$163.80\nAug 13\nBUY\n2\n$13.68\n—\nEFC\nEllington Financial, Inc.\nPRIORITY\n69\nFinancials\n FEATURED\nNEW\nContinuation\nBottoming\nTurning\nReady\nTrend\nZONE\n$13.52–$13.68\nAug 13\nBUY\n3\n$54.29\n—\nTEM\nTempus AI\nPRIORITY\n69\nHealth Care\nNEW\nContinuation\nAI Agents & Applications\nBottoming\nTurning\nReady\nTrend\nZONE\n$51.81–$54.29\nAug 13\nShowing 12 of 74\n▾\nShow 12 more\nShow all 74\nPassed on tonight\n20 of 69\nEarnings watch\nLUNR\nLAC\nThe setups are still there, but earnings can reprice them fast. Prophet waits through the report date.\nRECENTLY FIRED\n12\nRecently fired — the entry window has passed; wait for the next setup.\nQNST\nQuinStreet, Inc.\n+34.1% since signal · fired 6 sessions ago\nRPD\nRapid7 Inc\n+26.9% since signal · fired 6 sessions ago\nPTGX\nProtagonist Therapeutics, Inc.\n+10.3% since signal · fired 6 sessions ago\nKREF\nKKR Real Estate Finance Trust Inc\n+8.0% since signal · fired 6 sessions ago\nSKY\nChampion Homes, Inc.\n+5.6% since signal · fired 6 sessions ago\nRYTM\nRhythm Pharmaceuticals Inc\n+4.8% since signal · fired 6 sessions ago\nGNE\nGenie Energy Ltd\n+3.8% since signal · fired 6 sessions ago\nSWIM\nLatham Group Inc\n+3.6% since signal · fired 6 sessions ago\nOC\nOwens Corning\n+2.2% since signal · fired 6 sessions ago\nITB\nITB\n-1.3% since signal · fired 6 sessions ago\nBXC\nBluelinx Hldgs Inc\n+65.3% since signal · fired 9 sessions ago\nCURI\nCuriosityStream Inc\n+63.5% since signal · fired 9 sessions ago\n\nHigher Priority means the setup is more ready today, not more likely to win. Featured highlights up to 12 of the most ready names, with no more than four per sector; every qualifying name still appears on this board.\n\nTrack record·60% win · +1.19% a trade\nmeasurement updated\nWhat changed today ·30\n More fresh triggers\nMore names flashing a buy signal today. Signals already shown on cards carry a . ?\nTop Picks →\n\n Every actionable signal is already on the board above, marked .\n\n Market leaders\nThe strongest runners over the past three months. No fresh entry yet — watch, don’t chase. ?\nSTOCK↕\tSECTOR↕\tTHEME↕\trelative strength↕\tOFF HIGH↕\tSTATE↕\tENTRY↕\nSNOW Snowflake\tInformation Technology\tAI Software & Platforms\t+0.06\t+0.0%\tNEARING A HIGH\tpullback zone $303.60–$322.10 extended\nMAN ManpowerGroup\tIndustrials\t—\t-0.30\t+0.0%\tNEARING A HIGH\tpullback zone $54.13–$55.57 extended\nQLYS Qualys\tInformation Technology\t—\t-0.05\t+0.0%\tNEARING A HIGH\tpullback zone $176.30–$176.60 extended\nGTLB GitLab\tInformation Technology\tNon-AI Software\t-0.93\t-15.1%\tNEARING A HIGH\tpullback zone $38.44–$38.44 extended\nCBRL Cracker Barrel\tConsumer Discretionary\t—\t-0.19\t-4.6%\tNEARING A HIGH\tpullback zone $55.74–$57.53 extended\nVSXY Victoria's Secret\tConsumer Discretionary\t—\t+2.30\t-8.9%\tBOTTOMING\tpullback zone $89.44–$89.44\nAZTA Azenta, Inc.\tHealth Care\t—\t-0.65\t-17.3%\tNEARING A HIGH\tpullback zone $30.52–$31.69\nNEO NeoGenomics Laboratories, Inc.\tHealth Care\t—\t+0.95\t-1.4%\tUPTREND\tpullback zone $15.22–$16.12\nOKTA Okta, Inc.\tInformation Technology\t—\t+0.54\t+0.0%\tNEARING A HIGH\tpullback zone $143.80–$147.40 extended\nCAKE The Cheesecake Factory, Inc.\tConsumer Discretionary\t—\t+0.68\t-4.6%\tNEARING A HIGH\tpullback zone $100.70–$108.30 extended\nCORT Corcept Therapeutics Incorporated\tHealth Care\t—\t+0.34\t-6.6%\tBOTTOMING\tpullback zone $103.60–$103.60 extended\nPATH UiPath\tInformation Technology\tAI Agents & Applications ◦\t-0.49\t-13.5%\tNEARING A HIGH\tpullback zone $14.60–$14.60\nEAT Brinker International, Inc.\tConsumer Discretionary\t—\t+0.12\t-3.0%\tNEARING A HIGH\tpullback zone $214.70–$226.90 extended\nPANW Palo Alto Networks Inc\tInformation Technology\tAI Software & Platforms\t+1.21\t+0.0%\tNEARING A HIGH\tpullback zone $356.40–$368.30 extended\nTHEME HEAT\n?\nas of 2026-08-13\nCommodities Metals hottest · 4 live names on the board · 5 more off the heat list — where to look, not what to buy.\n© 2026 Mastermind Inc\nAsk Mastermind\nBrain · your desk copilot",
+  "auth_hint": {
+    "user_attr": null,
+    "lock_cta": false
+  }
+}

@@ -1,0 +1,164 @@
+[
+  {
+    "id": "E.shell.brand",
+    "section": "shell",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.shell.search",
+    "section": "shell",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.shell.nav.us",
+    "section": "shell",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.root",
+    "section": "board",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.title",
+    "section": "board",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.view.grid",
+    "section": "board-tools",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.view.table",
+    "section": "board-tools",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.board.sub",
+    "section": "board",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.note",
+    "section": "board",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.help",
+    "section": "board",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.stage.all",
+    "section": "filters",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.stage.live",
+    "section": "filters",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.stage.setting_up",
+    "section": "filters",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.stage.ran",
+    "section": "filters",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.stage.basing",
+    "section": "filters",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.stage.blocked",
+    "section": "filters",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.card.ONTO",
+    "section": "cards",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.card.ONTO.verb",
+    "section": "cards",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.card.ONTO.trigger",
+    "section": "cards",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.card.ONTO.priority",
+    "section": "cards",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.card.ONTO.zone",
+    "section": "cards",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.card.ONTO.date",
+    "section": "cards",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.more",
+    "section": "board",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.board.track.btn",
+    "section": "track",
+    "status": "tested",
+    "reason": null
+  },
+  {
+    "id": "E.board.track.dlg",
+    "section": "track",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.board.fn",
+    "section": "board",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  },
+  {
+    "id": "E.live.panel",
+    "section": "prophet-live",
+    "status": "not tested",
+    "reason": "no independent interaction branch in this calibration"
+  }
+]

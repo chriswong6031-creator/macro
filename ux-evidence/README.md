@@ -1,14 +1,6 @@
 # Mastermind-X UX evidence
 
-Calibration run only (2026-08-16). See `CALIBRATION.md`.
+Calibration **v2** (Playwright Chrome). See `CALIBRATION.md`.
 
-```
-ux-evidence/
-  CALIBRATION.md
-  pages/
-    us-stocks-prophet-board/
-    stock-detail/
-  _tools/          # CDP collector used for this run (not production)
-```
-
-No production code was modified. These files are untracked evidence.
+Collector: `_tools/pw_lib.py` + `_tools/recapture_board_defaults.py`.  
+v1 AionUi-CDP shots were rejected (tiled/duplicate viewports) and must not be used.
