@@ -691,6 +691,24 @@ jobs:
       # the adversarial-review fixes (W3's own six suites are 401 of them; the 50 new
       # tests are the W3-1..W3-15 regressions).
       #
+      # W4+W5 MERGE NOTE (2026-08-16): both waves joined this step in the same
+      # day from parallel lanes; the two comment blocks below are both true and
+      # kept verbatim. ONE step remains the masking unit; the run line is the
+      # union of the W4 and W5 suite lists.
+      # W4 (PR-4, 2026-08-15) joins the SAME step: the frozen-substrate pack
+      # (engine/entry_radar/live_pack.py — nightly threshold inversion, the four §7.1
+      # degeneracies, the inversion PROOF battery) and the runtime episode ledger
+      # (live_ledger.py — §13 records, spool-before-consume, the §10 clock overlay and
+      # re-arm chain). Deps are unchanged: pandas/numpy (already installed for the
+      # forensic step) plus the pyarrow the adjusted-basis fixtures brought in, which
+      # the pack's substrate.parquet round-trip needs. Substrate is SYNTHETIC (a
+      # deterministic trend+ripple built in the suite, no new fixture file) plus the
+      # existing COMMITTED slice fixtures for the G0/C5 lane — still no data/, no
+      # site/, no network, no wall clock. ALL SEVEN W4 suite names are listed here
+      # from the first W4 PR: five are placeholders Builder B populates, and naming
+      # them now is what stops a later suite shipping dark behind a wiring edit nobody
+      # made. Cost (whole step, all eighteen suites): 825 tests + 1 skip in ~48s
+      # steady-state, measured 2026-08-15 (W4's own two suites are 135 of them).
       # W5 (PR-5b, 2026-08-15) joins the SAME step: the §14 prereg gates, the §15
       # adversarial battery (A/B/E/F/G/H/I/J/K/L/M), the nightly reconciler's write
       # discipline, and the replay data plane. THE HERMETIC/PANDAS SPLIT IS NOT A
@@ -717,8 +735,8 @@ jobs:
       # merged prereg), and the gate suite pins that each gate refuses for its OWN
       # reason and passes on correct input, so the shipped all-refuse state cannot
       # hide a gate that stopped discriminating.
-      - name: entry-radar W1+W2+W3+W5 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, W5 prereg gates + forward evidence
-        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py -q
+      - name: entry-radar W1+W2+W3+W4+W5 — probe universe, entry_event.v1 store, G0 parity, C1-C5 PIT battery, live pack + episode ledger + live evaluator, W5 prereg gates + forward evidence
+        run: python -m pytest tests/test_entry_radar_w1.py tests/test_entry_radar_producers.py tests/test_entry_radar_g0_parity.py tests/test_entry_radar_events.py tests/test_entry_radar_w2_guards.py tests/test_entry_radar_w3_detectors.py tests/test_entry_radar_w3_c1c2_pit.py tests/test_entry_radar_w3_c3_4h_pit.py tests/test_entry_radar_w3_c4.py tests/test_entry_radar_w3_c5.py tests/test_entry_radar_w3_guards.py tests/test_entry_radar_w4_pack.py tests/test_entry_radar_w4_ledger.py tests/test_entry_radar_w4_live.py tests/test_entry_radar_w4_pit.py tests/test_entry_radar_w4_liveness.py tests/test_entry_radar_w4_c3_reader.py tests/test_entry_radar_w4_lane.py tests/test_entry_radar_w5_gates.py tests/test_entry_radar_w5_battery.py tests/test_entry_radar_w5_reconciler.py tests/test_entry_radar_w5_data.py -q
 
   session-anchor-era:
     # Absolute session-calendar anchor, both eras. The confluence 2D/3D + fortnight
@@ -7789,8 +7807,13 @@ jobs:
       # pandas/pyyaml ride the existing install line.
       # 2026-08-15 (#5746): Massive close truth is the same lane — same publisher,
       # same BOARD_KEY — so its suite rides this step rather than a new job.
-      - name: evening close-pass provisional board lane (W-L1a, #5154)
-        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py -q
+      # The host-native PRIMARY clock joins the same lane's suite (Breathing
+      # PR-B, 2026-08-15): scripts/close_pass_host_runner.py is what actually
+      # fires the evening pass now, the workflow being a bounded backstop. Its
+      # suite is stdlib-only and subprocess-free (every command is faked at the
+      # _sh seam), so it costs the lane nothing and rides the same install line.
+      - name: evening close-pass provisional board lane (W-L1a, #5154; host clock PR-B)
+        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py tests/test_close_pass_host_runner.py -q
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
   # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a

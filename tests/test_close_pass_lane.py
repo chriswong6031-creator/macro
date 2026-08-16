@@ -1710,3 +1710,355 @@ def test_live_setup_installs_and_arms_the_mirror():
     """A fresh provision must not need a second manual step to arm the lane."""
     assert "macro-live-closepass.service macro-live-closepass.timer" in LIVE_SETUP
     assert "macro-live-closepass.timer >/dev/null" in LIVE_SETUP
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE CLOCK SWAP (Breathing PR-B, 2026-08-15)
+#
+# The workflow above is no longer the product clock; `com.macro.closepass` on the
+# Mac Studio is. Measured Friday 2026-08-14 on this very lane: the 20:25 UTC line's
+# run was CREATED at 20:52 (27 min of scheduler drift), its DST sibling at 21:47
+# then sat 95 minutes in the queue, and the board published ~19:20 ET against a
+# 16:15 ET product target. Estate-wide the instrument measures worse — cron gaps of
+# 90 min to 3h12m, agentos/decisions/DEC-LER-LIVE-LANE-VPS-5MIN-REST.md.
+#
+# Everything above this line still holds: the schedule, both DST regimes, the pool
+# measurement and the minute choice are UNCHANGED and still pinned. What is added
+# here is the demotion contract — stand down when the primary landed, fail open on
+# every failure, and say so out loud when the backstop had to publish.
+# ─────────────────────────────────────────────────────────────────────────────
+import os                                                        # noqa: E402
+import platform                                                  # noqa: E402
+import plistlib                                                  # noqa: E402
+import subprocess                                                # noqa: E402
+import textwrap                                                  # noqa: E402
+
+PLIST = ROOT / "ops" / "launchd" / "com.macro.closepass.plist"
+INSTALLER = ROOT / "scripts" / "install_closepass_launchd.sh"
+HOST_RUNNER = ROOT / "scripts" / "close_pass_host_runner.py"
+
+STEPS = WORKFLOW["jobs"]["publish"]["steps"]
+GUARD = "steps.standdown.outputs.stand_down != '1'"
+
+
+def _step_index(needle: str) -> int:
+    for i, step in enumerate(STEPS):
+        if needle in (step.get("name") or ""):
+            return i
+    raise AssertionError(f"no step named ~{needle!r}: "
+                         f"{[s.get('name') for s in STEPS]}")
+
+
+def test_the_fast_exit_runs_before_anything_it_could_save():
+    """The stand-down is worth ~20 minutes of a two-host pool, and only if it
+    happens BEFORE the venv, the pip install and the price-store heal. A check
+    placed after them saves nothing and is therefore not a backstop discipline,
+    just a log line."""
+    fast = _step_index("backstop fast-exit")
+    assert fast == 1, [s.get("name") or s.get("uses") for s in STEPS]
+    assert STEPS[0]["uses"].startswith("actions/checkout")   # sys.path needs it
+    assert STEPS[fast]["id"] == "standdown"
+    assert fast < _step_index("python 3.12")
+    assert fast < _step_index("freshness prefetch")
+    assert fast < _step_index("publish the provisional board")
+
+
+def test_every_step_after_the_fast_exit_is_guarded_by_it():
+    """GitHub has no early-exit, so "stand down" can only mean "every later step
+    is skipped". One unguarded step and the job still spends the pool."""
+    for step in STEPS[2:]:
+        assert step.get("if") == GUARD, step.get("name") or step.get("run")
+
+
+def test_the_fast_exit_fails_open_structurally_not_by_promise():
+    """`continue-on-error` is the load-bearing half. A step that dies outright
+    leaves its outputs EMPTY, which is `!= '1'`, which PROCEEDS — so a broken
+    stand-down check can never stand the backstop down. The in-script fail-open
+    paths are the belt; this is the braces."""
+    assert STEPS[_step_index("backstop fast-exit")]["continue-on-error"] is True
+    body = STEPS[_step_index("backstop fast-exit")]["run"]
+    assert "stand_down=0" in body
+    assert "fail-open" in body
+    # Keyless: the cheap check must not need the secrets the expensive step does.
+    assert "secrets." not in body
+    assert "curl -fsS" in body and "|| : >" in body
+    # The session is computed with the SAME discipline as the pass, from the
+    # same module — not a second definition of "when is the market open".
+    assert "from lib.nyse_calendar import ET, is_session" in body
+    # Comment lines stripped for the same reason CODE exists at the top of this
+    # file: the step's own comment NAMES the call it deliberately does not make,
+    # and deleting that sentence to satisfy a grep would make the step worse.
+    live = "\n".join(ln for ln in body.splitlines() if not ln.strip().startswith("#"))
+    assert "expected_last_session" not in live
+
+
+def _run_fast_exit(tmp_path, *, board, is_session_returns: bool,
+                   public_base="") -> dict:
+    """Execute the REAL step body, hermetically.
+
+    Not a paraphrase of it: the body is read out of the workflow and run by
+    bash, because the two defects this step can have are both shell-level. One
+    already happened here — `printf … | python3 - <<'PY'` looks like it pipes
+    the board in, and does not: the heredoc IS stdin, so the piped body was
+    silently discarded and the check read every board as unreadable. A test that
+    re-implemented the logic in Python would have passed on that.
+
+    `lib.nyse_calendar` is stubbed in the sandbox cwd (the step does
+    `sys.path.insert(0, ".")`) so the outcome never depends on today's date.
+    """
+    (tmp_path / "lib").mkdir(exist_ok=True)
+    (tmp_path / "lib" / "__init__.py").write_text("", encoding="utf-8")
+    (tmp_path / "lib" / "nyse_calendar.py").write_text(textwrap.dedent(f"""
+        from datetime import timedelta, timezone
+        ET = timezone(timedelta(hours=-4))          # fixed: no DST arithmetic here
+        def is_session(d):
+            return {is_session_returns!r}
+    """), encoding="utf-8")
+
+    base_dir = tmp_path / "mirror"
+    (base_dir / "live_flow").mkdir(parents=True, exist_ok=True)
+    if board is not None:
+        (base_dir / "live_flow" / "us_board_provisional.json").write_text(
+            board, encoding="utf-8")
+    if public_base == "":
+        public_base = f"file://{base_dir}"
+    config = "" if public_base is None else (
+        f'r2_data_plane:\n  public_base: "{public_base}"\n  anchors: [live_flow]\n')
+    (tmp_path / "config.yml").write_text(f"other: 1\n{config}", encoding="utf-8")
+
+    out_file = tmp_path / "gh_output.txt"
+    out_file.write_text("", encoding="utf-8")
+    env = dict(os.environ, GITHUB_OUTPUT=str(out_file), RUNNER_TEMP=str(tmp_path))
+    proc = subprocess.run(
+        ["bash", "-e", "-c", STEPS[_step_index("backstop fast-exit")]["run"]],
+        cwd=tmp_path, env=env, capture_output=True, text=True, timeout=120)
+    parsed = dict(line.split("=", 1) for line in
+                  out_file.read_text(encoding="utf-8").splitlines() if "=" in line)
+    parsed["_rc"] = str(proc.returncode)
+    parsed["_stdout"] = proc.stdout
+    return parsed
+
+
+def _stub_session() -> str:
+    """Today's date in the stub's fixed ET, as the step will compute it."""
+    from datetime import timedelta
+    return datetime.now(timezone.utc).astimezone(
+        timezone(timedelta(hours=-4))).date().isoformat()
+
+
+def test_the_backstop_stands_down_when_the_primary_already_landed(tmp_path):
+    before = _stub_session()
+    got = _run_fast_exit(tmp_path, board=json.dumps({"as_of": before}),
+                         is_session_returns=True)
+    if before != _stub_session():
+        pytest.skip("the ET date rolled mid-test")
+    assert got["stand_down"] == "1", got
+    assert "primary already landed" in got["reason"]
+    assert "backstop standing down" in got["_stdout"]
+    assert got["_stdout"].startswith("::notice title=close-pass::")
+
+
+def test_a_stale_published_board_does_NOT_stand_the_backstop_down(tmp_path):
+    """The whole point. Yesterday's board on the mirror means the primary did
+    not fire today, which is precisely when the backstop has to run."""
+    got = _run_fast_exit(tmp_path, board=json.dumps({"as_of": "1999-01-04"}),
+                         is_session_returns=True)
+    assert got["stand_down"] == "0", got
+    assert "1999-01-04" in got["reason"]
+
+
+@pytest.mark.parametrize("board,base,why", [
+    (None, "", "an unreadable public mirror"),
+    ("not json at all", "", "an unparseable board"),
+    ("", None, "an unreadable config.yml"),
+])
+def test_every_failure_path_proceeds(tmp_path, board, base, why):
+    """A backstop that stands itself down on its own failure is not a backstop.
+    The pass's own dedup is the second net underneath: republishing a session
+    that is already up is a no-op notice, not a fault."""
+    got = _run_fast_exit(tmp_path, board=board, is_session_returns=True,
+                         public_base=base)
+    assert got["stand_down"] == "0", f"{why}: {got}"
+    assert got["_rc"] == "0", got
+
+
+def test_a_non_session_day_stands_the_backstop_down_too(tmp_path):
+    """Not a session means the pass would no-op anyway, so this saves the whole
+    job on the ~9 full-day closures a year. It is a POSITIVE reading, which is
+    the only kind allowed to stand this lane down."""
+    got = _run_fast_exit(tmp_path, board=None, is_session_returns=False)
+    assert got["stand_down"] == "1"
+    assert "not a NYSE session day" in got["reason"]
+
+
+def test_a_backstop_publish_announces_itself():
+    """A backstop that publishes silently is indistinguishable from a primary
+    that is working — and a primary that quietly stopped firing leaves no other
+    trace at all. So the swap is announced as a ::warning, and the harmless
+    shape (the pass deduped seconds after the fast-exit read) is a ::notice
+    rather than a second cry of wolf."""
+    step = STEPS[_step_index("announce a backstop publish")]
+    assert step["if"] == GUARD
+    assert _step_index("announce a backstop publish") > \
+        _step_index("publish the provisional board")
+    body = step["run"]
+    assert "::warning title=close-pass::BACKSTOP publish" in body
+    assert "the host-native primary missed this session" in body
+    assert "board already published" in body            # the publisher's dedup line
+    # And the annotation starts its line — echo, not a logger, per the house law.
+    for line in body.splitlines():
+        stripped = line.strip()
+        if "::warning" in stripped or "::notice" in stripped:
+            assert stripped.startswith('echo "::'), stripped
+
+    # The dedup line it greps for is the publisher's REAL wording, not a guess.
+    assert "already published" in PUBLISH_SRC
+
+
+def test_the_publish_step_cannot_go_green_through_the_tee():
+    """`| tee` makes the pipeline's status tee's, so a failed pass would ship as
+    a green step and the announcement would fire on nothing. pipefail is the fix
+    and it is asserted rather than trusted (memory: a pipe swallows a nonzero
+    exit in chained ship commands)."""
+    body = STEPS[_step_index("publish the provisional board")]["run"]
+    assert "set -o pipefail" in body
+    assert "| tee" in body
+    assert body.index("set -o pipefail") < body.index("| tee")
+
+
+def test_the_header_names_the_primary_and_keeps_the_old_reasoning():
+    """The demotion is documented where the next reader of this file will be: at
+    the top of it. And the paragraphs that made the schedule what it is stay —
+    they are still correct, they now describe a rescue lane."""
+    head = WORKFLOW_SRC.split("\non:", 1)[0]
+    assert "com.macro.closepass" in head
+    assert "close_pass_host_runner.py" in head
+    assert "BOUNDED BACKSTOP" in head
+    assert "20:52" in head and "95 minutes" in head        # the measurement
+    assert "DEC-LER-LIVE-LANE-VPS-5MIN-REST" in head
+    # Unchanged, and still the only definition of the window in this file.
+    assert "MEASURED POOL CAPACITY (2026-08-09)" in WORKFLOW_SRC
+    assert "SCHEDULE — DST pair, one window" in WORKFLOW_SRC
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# The primary clock's host wiring
+# ─────────────────────────────────────────────────────────────────────────────
+def _plist() -> dict:
+    return plistlib.loads(PLIST.read_bytes())
+
+
+@pytest.mark.skipif(platform.system() != "Darwin", reason="plutil is macOS-only")
+def test_the_plist_is_a_valid_property_list():
+    """launchd rejects a malformed plist with a log line nobody reads, so the
+    lane would simply never fire. `plutil -lint` is the same check the installer
+    runs before bootstrapping."""
+    proc = subprocess.run(["plutil", "-lint", str(PLIST)],
+                          capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+
+
+def test_the_schedule_is_thirteen_hundred_pacific_on_weekdays():
+    """13:00 PT is 16:00 ET in BOTH DST regimes, because PT and ET flip on the
+    same instant and the offset between them is a constant -3h:
+
+        PDT (Mar-Nov)  13:00 PT = 20:00 UTC = 16:00 EDT
+        PST (Nov-Mar)  13:00 PT = 21:00 UTC = 16:00 EST
+
+    That is why a LOCAL calendar entry needs no DST pair while the UTC cron
+    above does — and why there is no off-season line here to self-skip."""
+    entries = _plist()["StartCalendarInterval"]
+    assert len(entries) == 5
+    assert sorted(e["Weekday"] for e in entries) == [1, 2, 3, 4, 5]
+    assert {e["Hour"] for e in entries} == {13}
+    assert {e["Minute"] for e in entries} == {0}
+    # The arithmetic above, computed rather than asserted in prose.
+    from zoneinfo import ZoneInfo
+    pt, et = ZoneInfo("America/Los_Angeles"), ZoneInfo("America/New_York")
+    for day in (datetime(2026, 8, 14), datetime(2026, 12, 14)):     # EDT then EST
+        local = day.replace(hour=13, tzinfo=pt)
+        assert local.astimezone(et).hour == 16, day
+        assert local.astimezone(timezone.utc).hour in (20, 21), day
+
+
+def test_the_plist_carries_no_secret_and_no_repo_exec_path():
+    """Two host facts, both learned the hard way:
+
+    A plist is world-readable, so the R2 credentials stay in the primary's
+    chmod-600 .env and the runner sources them into the subprocess environment.
+
+    launchd cannot exec out of ~/Documents at all (the wall
+    ops/launchd/com.macro.chainheat.plist documents), so the runner is COPIED to
+    Application Support at install time and the plist points there."""
+    plist = _plist()
+    body = PLIST.read_text(encoding="utf-8")
+    for secret in ("R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "MASSIVE_API_KEY",
+                   "R2_ENDPOINT"):
+        assert secret not in body, secret
+    assert plist["EnvironmentVariables"] == {
+        "PATH": "/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"}
+    argv = plist["ProgramArguments"]
+    assert argv[0] == "/usr/bin/python3"
+    assert argv[1] == "__SUPPORT_DIR__/close_pass_host_runner.py"
+    assert "Documents" not in argv[1]
+    # Bootstrapping the agent at 11:00 must not fire a close pass at 11:00.
+    assert plist["RunAtLoad"] is False
+    assert plist["Label"] == "com.macro.closepass"
+
+
+def test_the_installer_is_syntactically_valid_and_operator_run():
+    """It is never run by a session. Arming a scheduled publisher on a host is
+    an operator act — ordering the design (Chairman directive 2026-08-15) is a
+    different act from arming the host, and the installer says so."""
+    proc = subprocess.run(["bash", "-n", str(INSTALLER)],
+                          capture_output=True, text=True, timeout=60)
+    assert proc.returncode == 0, proc.stdout + proc.stderr
+    body = INSTALLER.read_text(encoding="utf-8")
+    assert "OPERATOR-RUN" in body
+    assert "NOTHING INSTALLS THIS AUTOMATICALLY" in body
+    assert "set -euo pipefail" in body
+    # The prophet-rescue idiom, verbatim-adapted: template + sed, bootout then
+    # bootstrap, a kickstart hint, and the one-time TCC grant.
+    for expected in ("launchctl bootout", "launchctl bootstrap",
+                     "launchctl kickstart", "plutil -lint",
+                     # The TCC note is carried verbatim-adapted from
+                     # install_prophet_rescue_launchd.sh, where it wraps across
+                     # three echo lines — hence "Full Disk" rather than the
+                     # whole phrase.
+                     "NOTE (macOS TCC)", "Privacy & Security", "Full Disk",
+                     "/usr/bin/python3",
+                     "Library/Application Support/macro-closepass",
+                     "Library/Logs/macro_closepass", "worktree remove"):
+        assert expected in body, expected
+    # It reports on the .env; it never reads a value out of it.
+    assert "stat -f" in body
+    assert "cat " not in body and "grep " not in body
+
+
+def test_the_installed_runner_is_plumbing_and_the_lane_is_the_policy():
+    """The copy under Application Support is frozen at install time — which is
+    fine, and is the same contract scripts/prophet_rescue_launchd.py carries:
+    the wrapper is plumbing, the POLICY it launches always comes from
+    origin/main. Both vintages land in every receipt so drift is visible."""
+    runner = HOST_RUNNER.read_text(encoding="utf-8").replace("'", '"')
+    assert '"reset", "--hard", "origin/main"' in runner
+    assert "runner_sha" in runner and "code_sha" in runner
+    assert "re-run this installer" in INSTALLER.read_text(encoding="utf-8").lower()
+
+
+def test_the_primary_and_the_backstop_publish_the_same_artifact_the_same_way():
+    """One board, one key, one mirror. The host lane forces the same R2-only
+    contract the workflow sets in its publish step, so whichever clock fires,
+    app/deploy/macro-live-closepass pulls the identical object."""
+    runner = HOST_RUNNER.read_text(encoding="utf-8")
+    assert 'env["CLOSE_PASS_SERVED_PATH"] = ""' in runner
+    assert 'env["RENDER_NO_DRIP"] = "1"' in runner
+    assert 'env.pop("COLLECT_LANE", None)' in runner
+    assert "scripts.close_pass_publish" in runner
+    publish = STEPS[_step_index("publish the provisional board")]
+    assert publish["env"]["CLOSE_PASS_SERVED_PATH"] == ""
+    assert WORKFLOW["jobs"]["publish"]["env"]["RENDER_NO_DRIP"] == "1"
+    # ...and the host lane never NAMES the served path in code — it belongs to
+    # the VPS. Docstrings stripped (_code) because the runner's own explanation
+    # of why it does not write there necessarily says where "there" is.
+    assert "/var/lib/macro-live" not in _code(runner)

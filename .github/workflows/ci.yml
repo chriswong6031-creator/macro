@@ -2066,6 +2066,20 @@ on:
       # PR touching only a unit file must retrigger the suite that reads it.
       - "app/deploy/macro-live-closepass.service"
       - "app/deploy/macro-live-closepass.timer"
+      # CLOSE-PASS HOST CLOCK (Breathing PR-B, 2026-08-15). The evening pass's
+      # PRIMARY clock is now launchd on the Mac Studio, not the close-pass.yml
+      # cron — measured 27 min of schedule drift plus a 95 min queue wait on
+      # 2026-08-14, publishing ~19:20 ET against a 16:15 ET target. Neither the
+      # runner nor its host wiring lives under a directory any other entry
+      # covers (ops/launchd/** is named by nothing here), so without these lines
+      # a PR editing ONLY the clock would run no guard at all — the #3488 shape
+      # again, on the lane that decides when the board ships. Both halves, as
+      # always: the subjects AND their suites.
+      - "scripts/close_pass_host_runner.py"
+      - "scripts/install_closepass_launchd.sh"
+      - "ops/launchd/com.macro.closepass.plist"
+      - "tests/test_close_pass_host_runner.py"
+      - "tests/test_close_pass_lane.py"
       # altdata-W1: Finnhub transcript catalog + StockTwits sentiment collectors.
       - "collectors/finnhub_transcripts.py"
       - "collectors/stocktwits.py"

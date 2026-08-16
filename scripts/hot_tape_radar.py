@@ -2169,6 +2169,37 @@ def run(
         cfg=cfg,
         demo=demo,
     )
+    # THE W1-DESIGNATED PR-4 INTEGRATION POINT (engine/entry_radar/spool.py module
+    # docstring, "HOT-TAPE TAP"). hot_tape is Radar's one nomination producer with
+    # NO artifact to adapt — the detection exists only in this variable, so it is
+    # captured here or it is unreconstructible forever. `source_asof` is the LIVE
+    # QUOTE MERGE vintage (`live["asof"]`, an ISO string from live_verify), parsed
+    # to an aware datetime; `ts` is now and `as_of` is an ET date, and neither is
+    # the vintage of the tape these events were detected on.
+    # `spool_hot_tape` degrades rather than raises on every sink failure it models
+    # (unencodable payload, R2 PUT exception, local-write OSError): each prints a
+    # line-start ::warning and returns None, so this lane's FAIL-TOWARD-NO-POST
+    # contract holds. Nothing about detection, composition or what this lane posts
+    # changes — the tap is a read of `events` plus one R2 object on a private
+    # operational prefix. ENTRY_RADAR_NO_PUBLISH=1 stands the spool down for any
+    # rehearsal that runs this lane end to end.
+    #
+    # GATED ON demo AND dry_run, deliberately — the two-line W1 sketch was not.
+    # `--demo` exists to run the detectors against a QUIET OR CLOSED tape under a
+    # relaxed freshness ceiling, so its detections are real code paths over an
+    # unreal tape; spooled, they would enter the accrual stream carrying
+    # data_quality="ok" and a vintage that reads as current, and
+    # engine/entry_radar/spool.py is explicit that a fabricated row joined to real
+    # closes is indistinguishable from a genuine one forever. `--dry-run` is gated
+    # for consistency with every other side effect in this function (roll_ring,
+    # emit and dispatch_ids are all `if not dry_run`): a rehearsal that silently
+    # published to a private operational prefix would be the one write a dry run
+    # did not disclose. ENTRY_RADAR_NO_PUBLISH stays the operator-side stand-down;
+    # this is the caller-side one, and it needs no environment to be right.
+    from engine.entry_radar.spool import spool_hot_tape  # noqa: PLC0415
+
+    if not demo and not dry_run:
+        spool_hot_tape(events, source_asof=_parse_iso(live.get("asof")))
     print(f"hot-tape scan pack={'yes' if pack else 'no'} "
           f"bridge={int(HT.bridge_ok(pack, ts, cfg=cfg))} "
           f"tiles={len((heatmap or {}).get('tiles') or [])} signals={len(signals)} "
