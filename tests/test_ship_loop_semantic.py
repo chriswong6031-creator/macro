@@ -137,6 +137,54 @@ def test_main_target_split_ignores_only_inactive_pilot_authority_context() -> No
     assert passed == ["ci-gate", "fence-pack"]
 
 
+def test_merged_head_ignores_the_inactive_pilot_context_like_its_siblings(
+    monkeypatch,
+) -> None:
+    """`_check_ci` must agree with `_red_pairs`/`_split_head_runs` on ONE check.
+
+    All three claim to share one definition of "not a red" — `_check_ci`'s own
+    comment says so — but only two implemented the inactive-pilot exclusion.
+    Measured on #5765's merged head: `_red_pairs` returned [] while `_check_ci`
+    called the same head red, blocking a session whose PR had merged fully green.
+    The damage is not just a false red: a non-empty `bad` ARMS the semantic
+    evidence path, and a merged head cannot bind its proof base (GitHub drops
+    `pull_requests` from check-runs once the PR closes), so the session was told
+    "advertised semantic evidence is unusable ... does not identify the exact PR
+    proof base" — proof plumbing it could not act on, for a check that is by
+    design a retarget-invalidation receipt.
+    """
+    runs = [
+        _check("ci-gate", "success"),
+        _check("fence-pack", "success"),
+        _check("ci-authority/main", "success"),
+        _check("ci-authority/codex/merge-queue-pilot", "failure"),
+    ]
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: runs)
+
+    # The sibling paths already agreed this head is clean.
+    assert GUARD._red_pairs(runs) == []
+    assert GUARD._split_head_runs(runs)[0] == []
+
+    ok, detail = GUARD._check_ci(
+        ROOT, "acme", "widgets", HEAD, MERGE,
+        "2026-08-16T03:22:46Z", "claude/example", BASE,
+    )
+    assert ok, detail
+    assert "merge-queue-pilot" not in detail
+
+    # The ACTIVE context stays binding on this path too — the exclusion is one
+    # literal, not a widening of the spurious-check allowlist.
+    active_red = [dict(run) for run in runs]
+    active_red[2]["conclusion"] = "failure"
+    monkeypatch.setattr(GUARD, "_head_check_runs", lambda *_a: active_red)
+    ok_red, detail_red = GUARD._check_ci(
+        ROOT, "acme", "widgets", HEAD, MERGE,
+        "2026-08-16T03:22:46Z", "claude/example", BASE,
+    )
+    assert not ok_red
+    assert "ci-authority/main" in detail_red
+
+
 def test_unmerged_unknown_semantic_red_says_exact_refusal(monkeypatch):
     runs = [
         _check("ci-pack-7", "failure"),
