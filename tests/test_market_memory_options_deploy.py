@@ -632,7 +632,7 @@ def test_updater_reconciles_disarms_and_runs_exact_option_closure() -> None:
     assert "trap options_fail_closed_on_exit EXIT" in update
     assert "OPTIONS_RECONCILIATION_COMPLETE=1" in update
     start = update.index("MARKET_MEMORY_OPTIONS_UNIT_UPDATED=0")
-    end = update.index("# macro-api: restart ONLY", start)
+    end = update.index("OPTIONS_API_FENCE_READY=0", start)
     block = update[start:end]
     for token in (
         "macro-market-memory-options.service",
@@ -676,17 +676,18 @@ def test_updater_reconciles_disarms_and_runs_exact_option_closure() -> None:
     ):
         assert runtime_trigger.fullmatch(path), f"missing updater trigger for {path}"
 
-    api_restart = update.index("systemctl restart macro-api", end)
+    api_restart = update.index("systemctl restart macro-api")
     marker = update.index("mm_write_api_fence_marker", api_restart)
+    w2c = update.index("# BEGIN W2C_RUNTIME_ATTESTATION")
     immediate = update.index(
         "systemctl start macro-market-memory-options.service", marker
     )
     timer_enable = update.index(
         "systemctl enable --now macro-market-memory-options.timer", immediate
     )
+    assert api_restart < marker < w2c < start
     assert (
-        api_restart
-        < marker
+        marker
         < update.index(full_prereq, marker)
         < immediate
         < timer_enable
