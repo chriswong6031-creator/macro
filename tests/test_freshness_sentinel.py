@@ -118,6 +118,37 @@ def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
 #: reader stub that confuses them breaches this surface on every case.
 RADAR_PATH = "/live/entry_radar.json"
 
+#: CN-W-L3 runtime board. Path is the artifact the client polls; the surface
+#: id is cn_board_live (must not contain the substring prophet_live).
+CN_PATH = "/live/cn_prophet_live.json"
+#: NOW is Saturday 2026-08-08 05:00Z = 13:00 CST; last completed mainland
+#: session is Friday 2026-08-07, same date as the NYSE fixture.
+CN_CURRENT_SESSION = "2026-08-07"
+
+
+def _cn_board(session: str | None = CN_CURRENT_SESSION, *,
+              mtime_age_hours: float = 0.1,
+              first_close_board_at: str | None = None) -> fs.FetchResult:
+    """One live-plane read of /live/cn_prophet_live.json.
+
+    Default shape is an INTRADAY tick (no close_board): that is most of every
+    session, and the 15:20 CST SLA must not stamp it. Tests that exercise the
+    close-board SLA pass ``first_close_board_at``.
+    """
+    doc: dict = {"schema": "cn_prophet_live.states/v1", "market": "CN",
+                 "status": "live", "close_pending": True}
+    if session is not None:
+        doc["session"] = session
+        doc["pack_as_of"] = session
+    if first_close_board_at is not None:
+        doc["close_pending"] = False
+        doc["close_board"] = {"first_close_board_at": first_close_board_at}
+        doc["liveness"] = {"first_close_board_at": first_close_board_at}
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
+        body=json.dumps(doc),
+    )
+
 
 def _entry_radar(asof: str | None = PROPHET_CURRENT_ASOF, *,
                  mtime_age_hours: float = 0.1) -> fs.FetchResult:
@@ -241,30 +272,35 @@ ABSENT = fs.FetchResult(error="served read failed: FileNotFoundError: [Errno 2] 
 
 def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
             strip: fs.FetchResult | None = None,
-            radar: fs.FetchResult | None = None):
+            radar: fs.FetchResult | None = None,
+            cn: fs.FetchResult | None = None):
     """A served_reader stand-in.
 
-    PATH-AWARE, because one reader now answers four different artifacts: the
+    PATH-AWARE, because one reader now answers five different artifacts: the
     git-rsynced site.served tree (``/prophet/index.json``), the daemon-written
     close-pass board (``/live/us_board_provisional.json``), the client artifact
-    the SLA is measured against (``/live/prophet_live.json``) and the Live Entry
-    Radar payload (``/live/entry_radar.json``). A stub that answered them with the
-    same body would hand one surface's payload to a surface judged on a different
-    field and manufacture a breach that has nothing to do with the case under test
-    — the board carries ``as_of`` and the radar payload carries ``asof``, so a
-    shared fallback breaches the radar surface on every single case. And, for the
-    strip specifically, it would let a board payload with no ``board_state``
-    masquerade as a reader who can see something.
+    the SLA is measured against (``/live/prophet_live.json``), the Live Entry
+    Radar payload (``/live/entry_radar.json``) and the CN runtime board
+    (``/live/cn_prophet_live.json``, judged on ``session``). A stub that answered
+    them with the same body would hand one surface's payload to a surface judged
+    on a different field and manufacture a breach that has nothing to do with
+    the case under test — the board carries ``as_of`` and the radar payload
+    carries ``asof``, so a shared fallback breaches the radar surface on every
+    single case. And, for the strip specifically, it would let a board payload
+    with no ``board_state`` masquerade as a reader who can see something.
     """
     fallback = _provisional() if live is None else live
     strip = _live_strip() if strip is None else strip
     radar = _entry_radar() if radar is None else radar
+    cn = _cn_board() if cn is None else cn
 
     def _read(root, path):
         if path == CLIENT_PATH:
             return strip
         if path == RADAR_PATH:
             return radar
+        if path == CN_PATH:
+            return cn
         return fallback if path.startswith("/live/") else result
     return _read
 
@@ -278,6 +314,7 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
+        "cn_board_live": _cn_board(),
 
         "prophet_live_armed": _armed(),
     }
@@ -314,6 +351,7 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
+        "cn_board_live": _cn_board(),
 
         # The three content surfaces are judged on content, not on a stamp —
         # they stay ok here, which is the point: the four bake surfaces answer
@@ -411,6 +449,7 @@ def _stale_report(now: datetime = NOW) -> dict:
             "prophet_us": _prophet(),
             "us_board_provisional": _provisional(),
             "entry_radar_live": _entry_radar(),
+            "cn_board_live": _cn_board(),
 
             "prophet_live_armed": _armed(),
         },
@@ -928,6 +967,8 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
             return _live_strip()
         if path == RADAR_PATH:
             return _entry_radar()
+        if path == CN_PATH:
+            return _cn_board()
         return _provisional() if path.startswith("/live/") else _prophet()
 
     rc = fs.run(
@@ -958,6 +999,7 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
         ("/opt/macro/site.served", "/prophet/index.json"),
         (str(tmp_path / "public"), "/live/us_board_provisional.json"),
         (str(tmp_path / "public"), RADAR_PATH),
+        (str(tmp_path / "public"), CN_PATH),
         (str(tmp_path / "public"), CLIENT_PATH),
     ]
     assert not [u for u in urls if "us_board_provisional" in u], urls
@@ -1769,6 +1811,7 @@ def _results_at(now: datetime, board: fs.FetchResult) -> dict[str, fs.FetchResul
         "prophet_us": _prophet(FRI_SESSION),
         "us_board_provisional": board,
         "entry_radar_live": _entry_radar(FRI_SESSION),
+        "cn_board_live": _cn_board(FRI_SESSION),
         "prophet_live_armed": _armed(FRI_SESSION),
     }
 
@@ -1936,7 +1979,8 @@ def test_the_private_facts_never_ride_the_publicly_served_staleness_file(
            served_reader=_served(_prophet(FRI_SESSION), live=board,
                                  strip=_live_strip(FRI_SESSION,
                                                    observed_at=FRI_VISIBLE),
-                                 radar=_entry_radar(FRI_SESSION)))
+                                 radar=_entry_radar(FRI_SESSION),
+                                 cn=_cn_board(FRI_SESSION)))
 
     raw = (tmp_path / "public" / "live" / "staleness.json").read_text()
     served = json.loads(raw)
