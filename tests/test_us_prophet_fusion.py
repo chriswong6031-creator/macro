@@ -434,6 +434,63 @@ class TestLegacyV2ByteParity:
             assert row["v2_rank"] and row["new_rank"]
             assert row["n_families"] == len(row["family_contribution"])
 
+    def test_the_comparison_survives_the_board_it_is_run_on_becoming_v3(
+            self, committed_board, tmp_path, monkeypatch):
+        """The acceptance surface must still work once the board IS the new ranker.
+
+        THE TRAP THIS PINS.  The committed comparison was generated against a
+        `us_prophet_v2` board, where the published `prophet.score` and the frozen v2
+        replay are the SAME number and `display_rank` IS the retired order.  From the
+        first fusion nightly onward neither holds: the published score is C1 and the
+        retired scorer has moved to `prophet_shadow`.  Read the wrong block and the
+        script fails twice — the freeze check compares a C1 score against a v2 score
+        and refuses all 69 rows, and `old_rank` becomes the FUSION rank, which would
+        compare the new order against itself and report every delta as zero.  The test
+        above cannot see any of this: it only ever runs against the committed v2
+        board.
+
+        The invariant asserted here is the strong one — the SAME pool must produce the
+        SAME comparison whichever generation of board it is read from.
+        """
+        from scripts import us_prophet_fusion_compare as cmp_mod
+
+        gate = json.loads((BOARD.parent / "signal_gate.json").read_text())
+        from_v2 = cmp_mod.compare(top=30)
+
+        # Build the artifact the first fusion nightly actually publishes.
+        rows = [dict(r) for r in committed_board["buy"]]
+        for r in rows:
+            for key in ("prophet", "prophet_shadow", "score_rank", "display_rank",
+                        "featured", "featured_blocked_by", "stage"):
+                r.pop(key, None)
+        floors: dict = {}
+        scored = ubr.score_rows(rows, verdict_by=gate.get("verdicts") or {},
+                                board_asof=committed_board.get("as_of"),
+                                bottom_watch_stage=ubr.STAGE_BASING,
+                                fusion_floors=floors)
+        board_v3 = dict(committed_board)
+        board_v3["buy"] = scored
+        board_v3["rank_by"] = board_v3["board_definition"] = ubr.published_definition(scored)
+        v3_path = tmp_path / "us_standouts.json"
+        v3_path.write_text(json.dumps(board_v3))
+        monkeypatch.setattr(cmp_mod, "BOARD", v3_path)
+        monkeypatch.setattr(cmp_mod, "_REPO", tmp_path)
+
+        from_v3 = cmp_mod.compare(top=30)
+
+        assert from_v3["old_definition"] == ubr.SHADOW_DEFINITION
+        assert from_v3["old_rank_basis"] == "prophet_shadow.score_rank"
+        assert from_v3["new_definition"] == ubr.BOARD_DEFINITION
+        # Not merely "it ran": the deltas must be the real ones, not a wall of zeros.
+        assert any(r["rank_change"] for r in from_v3["new_top"])
+        assert ({r["ticker"]: r["rank_change"] for r in from_v3["new_top"]}
+                == {r["ticker"]: r["rank_change"] for r in from_v2["new_top"]})
+        assert from_v3["promoted_into_top"] == from_v2["promoted_into_top"]
+        assert from_v3["demoted_out_of_top"] == from_v2["demoted_out_of_top"]
+        # The shadow ranks but never features, so there is no retired featured set to
+        # differ from — an empty list, never every featured name listed as a change.
+        assert from_v3["featured_changed"] == []
+
 
 # --------------------------------------------------------------------------- #
 # 4. the shadow has no authority; a degraded night says so
