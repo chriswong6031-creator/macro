@@ -137,7 +137,21 @@ def build_proof(top: int = 30) -> dict[str, Any]:
         })
 
     v3_order = sorted(rows, key=lambda r: (-r["_prophet_score"], str(r["ticker"])))
-    v4_order = sorted(rows, key=lambda r: r["_v4_key"])
+    ranked_like = [
+        {
+            "ticker": r["ticker"],
+            "prophet_score": r["_prophet_score"],
+            "intel_interest_score": r["_intel_score"],
+            "intel_interest_basis": r["_intel_basis"],
+        }
+        for r in rows
+    ]
+    coverage_complete = R.intel_coverage_complete(ranked_like)
+    provenance = R.order_provenance(ranked_like)
+    if coverage_complete:
+        v4_order = sorted(rows, key=lambda r: r["_v4_key"])
+    else:
+        v4_order = list(v3_order)
     v3_rank = {str(r["ticker"]): i for i, r in enumerate(v3_order, start=1)}
     v4_rank = {str(r["ticker"]): i for i, r in enumerate(v4_order, start=1)}
 
@@ -148,13 +162,16 @@ def build_proof(top: int = 30) -> dict[str, Any]:
     v3_featured = _allocate(sorted(clear, key=lambda r: (-r["_prophet_score"],
                                                         str(r["ticker"]))),
                             featured_cap, sector_cap)
-    v4_featured = _allocate(sorted(clear, key=lambda r: r["_v4_key"]),
-                            featured_cap, sector_cap)
+    if coverage_complete:
+        v4_featured = _allocate(sorted(clear, key=lambda r: r["_v4_key"]),
+                                featured_cap, sector_cap)
+    else:
+        v4_featured = list(v3_featured)
 
     # Sanity: the reconstruction must reproduce the live shelf exactly, or the
     # comparison below is measuring the reconstruction rather than the change.
     live_featured = [str(r["ticker"]) for r in rows if r["_lane"] == "featured"]
-    reconstruction_ok = set(v3_featured) == set(live_featured)
+    reconstruction_ok = set(v4_featured) == set(live_featured)
 
     by_ticker = {str(r["ticker"]): r for r in rows}
 
@@ -187,7 +204,11 @@ def build_proof(top: int = 30) -> dict[str, Any]:
         "board_asof": board.get("as_of"),
         "live_definition": R.BOARD_DEFINITION,
         "shadow_definition": R.V3_SHADOW_DEFINITION,
-        "ordering": R.INTEL_INTEREST_ORDER,
+        "ordering": provenance["effective_order_basis"],
+        "requested_order_basis": provenance["requested_order_basis"],
+        "effective_order_basis": provenance["effective_order_basis"],
+        "order_mode": provenance["order_mode"],
+        "fallback_reason": provenance["fallback_reason"],
         "n_rows": len(rows),
         "featured_cap": featured_cap,
         "sector_cap": sector_cap,
