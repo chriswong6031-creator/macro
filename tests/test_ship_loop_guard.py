@@ -1350,6 +1350,91 @@ def test_check_ci_passes_only_when_every_real_check_is_green(monkeypatch, tmp_pa
     assert len(urls) == 1
 
 
+def test_check_ci_does_not_own_the_ci_authority_inactive_base_context(monkeypatch, tmp_path):
+    """The merged-head gate filtered LESS than the two loops it claimed parity with.
+
+    `.github/workflows/ci-authority.yml` publishes two complementary exact-head
+    contexts and states that "each PR run FAILS the inactive context so an edited
+    retarget cannot reuse a success earned against another base". Sessions here only
+    track pull requests targeting main, so `ci-authority/codex/merge-queue-pilot` is
+    red on EVERY one of them, by design — measured on sibling PR #5767, whose single
+    failing check was this context and which merged clean.
+
+    `_red_checks` and `_split_head_runs` had both always skipped it, and so does the
+    sweeper; this loop called `_is_spurious_check` instead, under a comment claiming
+    "ONE definition of 'not a red', shared with `_split_head_runs` above and with the
+    sweeper's own copy". So it alone blocked sessions whose work had merged GREEN.
+    Invisible until #5771 repaired the semantic proof path ahead of it, which had
+    been raising first and producing a different refusal.
+    """
+    repo = _repo(tmp_path)
+    urls = _fake_ci_api(
+        monkeypatch,
+        head_pages={
+            1: _head_page(
+                _check_run("ci", "success"),
+                _check_run("ci-authority/main", "success"),
+                _check_run(GUARD.CI_AUTHORITY_INACTIVE_CONTEXT, "failure"),
+            )
+        },
+    )
+    assert _ci_verdict(repo) == (True, "")
+    assert len(urls) == 1, (
+        "the inactive base context must not even be treated as a red worth "
+        "gathering base-side evidence about"
+    )
+
+
+def test_check_ci_still_owns_the_ACTIVE_ci_authority_context(monkeypatch, tmp_path):
+    """The fix adds exactly one name. `ci-authority/main` stays binding.
+
+    The failure mode of a non-binding-check list is waving a genuine red through as
+    noise, so the sibling context — the one that actually adjudicates this PR's base
+    — must still block, on the same head shape as the test above.
+    """
+    repo = _repo(tmp_path)
+    _fake_ci_api(
+        monkeypatch,
+        head_pages={
+            1: _head_page(
+                _check_run("ci", "success"),
+                _check_run("ci-authority/main", "failure"),
+                _check_run(GUARD.CI_AUTHORITY_INACTIVE_CONTEXT, "failure"),
+            )
+        },
+    )
+    ok, reason = _ci_verdict(repo)
+    assert ok is False
+    assert "ci-authority/main (failure)" in reason
+    assert GUARD.CI_AUTHORITY_INACTIVE_CONTEXT not in reason, (
+        "the inactive context must not be named as a red the session owns"
+    )
+
+
+def test_every_gate_shares_one_non_binding_definition():
+    """Parity asserted BEHAVIOURALLY, because a comment claiming it is what failed.
+
+    `_red_pairs`, `_split_head_runs` and the merged-head loop must agree on every
+    name. Driving all three with the same runs is the only form of this assertion
+    that a fourth loop filtering less could not quietly pass.
+    """
+    runs = [
+        {"name": "ci", "status": "completed", "conclusion": "success"},
+        {"name": "Workers Builds: macro", "status": "completed", "conclusion": "failure"},
+        {"name": GUARD.CI_AUTHORITY_INACTIVE_CONTEXT, "status": "completed",
+         "conclusion": "failure"},
+    ]
+    assert GUARD._red_pairs(runs) == []
+    red, pending, passed = GUARD._split_head_runs(runs)
+    assert red == [] and pending == [] and passed == ["ci"]
+    for name in ("Workers Builds: macro", GUARD.CI_AUTHORITY_INACTIVE_CONTEXT):
+        assert GUARD._is_non_binding_check(name) is True
+    # …and it is still narrow: nothing else is waved through.
+    for name in ("ci", "ci-authority/main", "ci-gate", "ci-pack-3", "fence-pack"):
+        assert GUARD._is_non_binding_check(name) is False
+        assert GUARD._is_spurious_check(name) is False
+
+
 def test_check_ci_green_path_fetches_only_the_head_listing(monkeypatch, tmp_path):
     """The common case must stay a single API call — evidence is only gathered for a red."""
     repo = _repo(tmp_path)
