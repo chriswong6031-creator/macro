@@ -199,3 +199,27 @@ def sessions_between(start: date, end: date) -> int:
         if is_session(d):
             n += 1
     return n
+
+
+def sessions_behind(latest: date, now: datetime | None = None) -> int:
+    """How many completed mainland sessions a store/artifact holding `latest` is missing.
+
+    Mirrors lib/nyse_calendar.sessions_behind, which is the reader every staleness
+    surface in the estate already reasons about — the CN twin exists so a China surface
+    can state its own lag in SESSIONS rather than in calendar days (the freshness
+    sentinel's phase-aware CN budget, spec §8).
+
+    Counts sessions strictly after `latest` up to and including `expected_last_session(now)`
+    — NOT up to today. On a session morning today's bar does not exist yet, so counting to
+    today would report every store as one session staler than it is and trip an SLA a day
+    early. The 17:00 CST settle buffer in `expected_last_session` is what makes that true
+    through the whole mainland session.
+
+    0 = current. Negative is impossible: a store ahead of the calendar (a future-dated row)
+    returns 0, since no completed session is missing.
+
+    NOTE the return-type difference from the NYSE module: `sessions_between` here already
+    RETURNS A COUNT (the NYSE one returns the list of dates), so there is no `len()` in
+    this expression and adding one would be a TypeError, not a style choice.
+    """
+    return sessions_between(latest, expected_last_session(now))
