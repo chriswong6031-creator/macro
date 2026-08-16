@@ -1,0 +1,202 @@
+MASTERMINDX
+United States
+▾
+China
+▾
+Hong Kong
+▾
+Canada
+▾
+International
+▾
+Other Assets
+▾
+Research
+▾
+7203.T
+Terminal
+
+🔎 Search any stock, ETF, commodity or crypto in the bar above.
+
+Onto Innovation (ONTO)
+$331.71
+BOTTOMING
+Entry ▲ +32
+light
+High-beta momentum
+🔔
+Alerts
+40
+▾
+data through 2026-08-14
+THE NAME
+Solid name
+62/100
+board rank
+🛈 Validated edge
+ACT NOW?
+WAIT
+Extended — wait for a pullback
+Ran too far, too fast — wait for a pullback, don't chase.
+Timing: BOTTOMING · HALF SIZE · bottom-confidence 29
+Suggested size
+0%
+avoid
+⚠ Top board rank, but timing, accounting, fundamentals blocks a buy now — the rank measures the name, not the moment.
+Mixed tape — balanced momentum / earnings edge
+earnings · insider · revisions
+58
+Entry timing
+19
+Sector / theme
+50
+Quality / durability
+42
+WHY IT COULD WORK
+Leads on earnings · insider · revisions
+WHAT WOULD FLIP THIS
+Accounting quality looks weak.
+Trades 44% above its long-term trend line. Buying here is chasing.
+Its market cycle still argues for waiting (bottoming).
+Its Semiconductor Equipment (WFE) basket is crowded and stretched. Cap your size and do not add aggressively.
+Base 1d
+Anchor: §7 take marker · 2026-08-13 · 1d
+display-only · W6-C
+Inv $211.76 (trough×0.97)
+Cycle & timing detail
+Chart
+1D
+3D
+1W
+1M
+EMA
+RSI
+Stoch
+MACD
+Stoch RSI
+ONTO ~recon 2026-08-13
+O 337.35 H 353.97 L 321.67 C 337.82 +0.14%
+EMA20 294.49 EMA50 290.44 EMA200 240.52
+RSI 60.6
+Stoch RSI %K 100.0 · %D 96.2
+	
+	
+
+
+
+	
+	
+
+
+
+	
+	
+
+	
+	
+Momentum across timeframes
+DAILY
+RSI
+59
+neutral
+Stoch
+98
+overbought
+MACD
+▲
+bullish
+3-DAY
+RSI
+58
+neutral
+Stoch
+44
+neutral
+MACD
+▼
+≈2d to ↑cross
+WEEKLY
+RSI
+63
+neutral
+Stoch
+33
+neutral
+MACD
+▼
+bearish
+THE EVIDENCE
+TREND
+Up · +44% vs 200-day
+Where price sits vs its 200-day average, and how strong the trend is (ADX).
+MOMENTUM
+Daily ▲ · 3-Day ▼ · Weekly ▼
+Trend strength across daily/3-day/weekly clocks.
+EXTENSION
+Parabolic — chase-risk
+Ran too far above trend — high pullback risk.
+VOL SQUEEZE
+Expansion — move underway
+Compression → a move is loading; direction unconfirmed until it breaks.
+RELATIVE STRENGTH
+alpha z +1.45 · #26/222 in sector
+Price strength vs sector — context.
+VALUATION
+Rich vs market
+Cheap/rich vs the market — context, not a buy signal.
+QUALITY
+Accounting warning
+Accounting flags — verify before trusting the numbers.
+POSITIONING
+short 5% float
+Insider buying (an edge) and short interest (a risk).
+RISK & SIZE
+typical dip -12% · bad-case -34% · → suggested size 0%
+Expected downside drives how big to size.
+MACRO EXPOSURE
+rate β -0.30 · neutral-duration
+Rate / inflation sensitivity — context, never scored.
+CATALYST
+earnings 2026-08-06 · SUE -1.6 · revisions +0.8
+Next earnings date and any earnings/revision edge.
+Fundamentals & financials
+Options, positioning & ownership
+How this stock trades
+Archetype
+High-beta momentum
+Factor DNA
+quality_growth · mixed
+2026-08-13 00:00:00
+Chart pattern
+Volatile momentum vehicle
+Ownership
+Passive-index magnet
+PLAYBOOK
+Rent it, never own it; exit at climax volume, not on thesis.
+Entry timing scales with HV percentile; chart is blind post-event.
+Inclusion pop is gone; trade the deletion overshoot reversion.
+No active mode — slow playbook applies; read archetype + chart.
+
+DNA class T-1 as of 2026-08-13 00:00:00 · coverage: chart 80% · ownership 67% · micro 0% · 1 axis(es) missing · Context only — never ranks, sizes or gates
+
+Full doctrine: research/STOCK_PERSONALITY_OPERATOR_PLAYBOOK_BY_FABLE.md
+
+How much to trust the state — measured 2000→2026
+?
+state	samples	up next month	avg next month	typical dip	bad-case dip
+DOWNTREND · AVOID	13909	59.7%	2.28%	-3.52%	-15.12%
+NEARING A LOW · GET READY	7531	58.1%	1.65%	-3.16%	-12.03%
+BOTTOMING · BUY SETUP ▸ you are here	30693	58.5%	1.55%	-2.96%	-11.03%
+BUY ZONE · BUY	7337	58%	1.12%	-2.82%	-10.7%
+UPTREND · HOLD	7330	59.1%	1.28%	-2.76%	-10.8%
+NEARING A HIGH · TAKE PROFITS	20935	56.5%	1.12%	-2.99%	-10.55%
+TOPPING · SELL SETUP	554	60.1%	1.21%	-3.3%	-11.84%
+UNCONFIRMED TURN · HIGH-RISK · NIMBLE ONLY	27159	58%	1.38%	-3.2%	-12.43%
+
+How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation.
+
+Generated 2026-08-14 23:12 UTC · charts rendered in-house with Lightweight Charts™ on our own price data · methodology & caveats: see any sector page footer.
+
+© 2026 Mastermind Inc
+Ask Mastermind
+Brain · your desk copilot

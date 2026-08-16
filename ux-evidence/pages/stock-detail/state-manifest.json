@@ -1,0 +1,13 @@
+{
+  "observed_states": [
+    "DEFAULT",
+    "NO_SECOND_TAB",
+    "CHART_HOVER"
+  ],
+  "transitions": [],
+  "ticker": "ONTO",
+  "url": "https://www.mastermind-x.com/stock.html#ONTO",
+  "lock": {
+    "present": false
+  }
+}

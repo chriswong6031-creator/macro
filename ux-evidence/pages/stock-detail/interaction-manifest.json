@@ -1,0 +1,18 @@
+[
+  {
+    "id": "DI002",
+    "control": "lock/cta presence",
+    "result": {
+      "present": false
+    }
+  },
+  {
+    "id": "DI003",
+    "control": "first svg mousemove",
+    "result": {
+      "h": 29,
+      "ok": true,
+      "w": 29
+    }
+  }
+]

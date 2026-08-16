@@ -1,0 +1,916 @@
+[
+  {
+    "bounding_box": {
+      "h": 36,
+      "w": 270,
+      "x": 191,
+      "y": 155
+    },
+    "id": "E001",
+    "role": "h1",
+    "selector": "#r_name",
+    "tag": "h1",
+    "visible": true,
+    "visible_label": "Onto Innovation (ONTO)"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D001",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "United States美国"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D002",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "China中国"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D003",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Hong Kong香港"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D004",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Canada加拿大"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D005",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "International国际"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D006",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Other Assets其他资产"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D007",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Core Research核心研究"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D008",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Find the Edge找到你的优势"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D009",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Capital & Regimes资金与周期"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D010",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Explore探索"
+  },
+  {
+    "bounding_box": {
+      "h": 12,
+      "w": 61,
+      "x": 1104,
+      "y": 102
+    },
+    "id": "D011",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": ""
+  },
+  {
+    "bounding_box": {
+      "h": 36,
+      "w": 270,
+      "x": 191,
+      "y": 155
+    },
+    "id": "D012",
+    "role": "h1",
+    "section": "headings",
+    "selector": "#r_name",
+    "tag": "h1",
+    "visible": true,
+    "visible_label": "Onto Innovation (ONTO)"
+  },
+  {
+    "bounding_box": {
+      "h": 20,
+      "w": 1047,
+      "x": 191,
+      "y": 871
+    },
+    "id": "D013",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": true,
+    "visible_label": "Chart"
+  },
+  {
+    "bounding_box": {
+      "h": 20,
+      "w": 1047,
+      "x": 191,
+      "y": 1517
+    },
+    "id": "D014",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": true,
+    "visible_label": "Momentum across timeframes"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D015",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "Anticipation — multi-horizon outcome cone预判 — 多周期结果锥 all assets →全部标的 →"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D016",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "AI judgment — accountable leanAI 研判 — 可问责判断"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "D017",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": false,
+    "visible_label": "AI brief — research contextAI 简报 — 研究背景"
+  },
+  {
+    "bounding_box": {
+      "h": 20,
+      "w": 1047,
+      "x": 191,
+      "y": 2101
+    },
+    "id": "D018",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": true,
+    "visible_label": ""
+  },
+  {
+    "bounding_box": {
+      "h": 20,
+      "w": 1047,
+      "x": 191,
+      "y": 2252
+    },
+    "id": "D019",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": true,
+    "visible_label": ""
+  },
+  {
+    "bounding_box": {
+      "h": 20,
+      "w": 1047,
+      "x": 191,
+      "y": 2637
+    },
+    "id": "D020",
+    "role": "h2",
+    "section": "headings",
+    "selector": "h2",
+    "tag": "h2",
+    "visible": true,
+    "visible_label": ""
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I001",
+    "role": "button",
+    "section": "controls",
+    "selector": "button",
+    "tag": "button",
+    "visible": false,
+    "visible_label": ""
+  },
+  {
+    "bounding_box": {
+      "h": 35,
+      "w": 168,
+      "x": 11,
+      "y": 48
+    },
+    "id": "I002",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": true,
+    "visible_label": "MASTERMINDX"
+  },
+  {
+    "bounding_box": {
+      "h": 42,
+      "w": 140,
+      "x": 187,
+      "y": 44
+    },
+    "id": "I003",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": true,
+    "visible_label": "United States ▾"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I004",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Dashboard宏观仪表盘Regime, growth and inflation now当前周期、增长与通胀"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I005",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Stock Dashboard股票仪表盘Standouts, sectors and flows领涨股、板块与资金流"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I006",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Intraday Flow Tracker盘中资金流追踪Live session board — volume, tape and stance lanes · ≈15-min delayed盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I007",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Sector Intelligence行业情报Sectors, themes & rotation in one read板块、主题与轮动一页读"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I008",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Subsector Confluence子行业汇聚Entry-ready subsectors and stocks to review可关注的子行业与个股"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I009",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Strategies策略Tactical scorecards and positioning战术记分卡与仓位"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I010",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Alert Center警报中心Ranked market-moving alerts分级的市场异动警报"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I011",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "News Feed新闻流Catalysts, headlines and sentiment催化事件、头条与情绪"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I012",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Options — the workspace期权工作台Daily Brief · Flow · Scanner · Ticker · Leaders每日简报 · 资金流 · 筛选 · 个股 · 领头股"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I013",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Dark Pool Desk暗池成交Off-exchange volume · short ratio · ATS venues场外成交量 · 融券比率 · ATS 交易平台"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I014",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Structure市场结构GEX regime · machine flows · dispersion · weekly range做市商持仓 · 程序化资金 · 离散度 · 周内区间"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I015",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Heatmap市场热力图↗"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I016",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Subsector Confluence子行业汇聚↗"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I017",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Browse U.S. markets浏览美国全部页面↗"
+  },
+  {
+    "bounding_box": {
+      "h": 42,
+      "w": 93,
+      "x": 328,
+      "y": 44
+    },
+    "id": "I018",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": true,
+    "visible_label": "China ▾"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I019",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Dashboard宏观仪表盘A-share regime and breadthA股市况与市场广度"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I020",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Stock Dashboard股票仪表盘Standouts, alpha and setups强势股、超额收益与买点"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I021",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Heatmap市场热力图Every A-share at a glance全部A股一眼看尽"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I022",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "China Intelligence中国情报中心Signals, policy and narratives信号、政策与市场叙事"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I023",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Sector Intelligence行业情报Gated board, cycle map and rotation in one研判、周期图谱和轮动，一页看完"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I024",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Narrative Radar题材雷达See which stories are running看清现在哪些题材在走"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I025",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I026",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Policy Watch政策观察PBoC and sector policy shifts央行动向与行业政策"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I027",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Mechanics盘面机制Participation, limits and tape参与度、涨跌停与盘面"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I028",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Special Situations特殊事件Unlocks, pledges and catalysts解禁、质押与催化事件"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I029",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "China News中国新闻↗"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I030",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Strategies策略↗"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I031",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Alternative Data另类数据↗"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I032",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Browse China research浏览中国全部研究↗"
+  },
+  {
+    "bounding_box": {
+      "h": 42,
+      "w": 125,
+      "x": 424,
+      "y": 44
+    },
+    "id": "I033",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": true,
+    "visible_label": "Hong Kong ▾"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I034",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Dashboard宏观仪表盘HSI, liquidity and global risk恒指、流动性与全球风险"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I035",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Stock Dashboard股票仪表盘Hong Kong standouts and alpha港股领涨股与阿尔法"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I036",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Market Heatmap市场热力图Turnover-sized market overview按成交额加权的全景"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I037",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Capital Flow Velocity资金流速Southbound money in motion南向资金动向"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I038",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Thematic Baskets主题篮子Equal-weight themes versus HSI等权主题篮子 vs 恒指"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I039",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "Narrative Rotation主题轮动What to hold and rotate持有哪个主题 · 何时轮动"
+  },
+  {
+    "bounding_box": {
+      "h": 0,
+      "w": 0,
+      "x": 0,
+      "y": 0
+    },
+    "id": "I040",
+    "role": "a",
+    "section": "controls",
+    "selector": "a",
+    "tag": "a",
+    "visible": false,
+    "visible_label": "China Intelligence中国情报中心↗"
+  }
+]

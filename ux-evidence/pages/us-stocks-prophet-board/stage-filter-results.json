@@ -1,0 +1,266 @@
+[
+  {
+    "info": {
+      "displayNone": 41,
+      "href": "https://www.mastermind-x.com/us_stocks.html",
+      "label": "Live now 28",
+      "ok": true,
+      "pressed": [
+        {
+          "n": "81",
+          "pick": "all",
+          "pressed": "false"
+        },
+        {
+          "n": "28",
+          "pick": "live",
+          "pressed": "true"
+        },
+        {
+          "n": "31",
+          "pick": "setting_up",
+          "pressed": "false"
+        },
+        {
+          "n": "20",
+          "pick": "ran",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "basing",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "blocked",
+          "pressed": "false"
+        }
+      ],
+      "stage": "live",
+      "visibleCards": 28
+    },
+    "shot": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_live_1440x1000.png",
+    "bytes": 296529
+  },
+  {
+    "info": {
+      "displayNone": 38,
+      "href": "https://www.mastermind-x.com/us_stocks.html",
+      "label": "Setting up 31",
+      "ok": true,
+      "pressed": [
+        {
+          "n": "81",
+          "pick": "all",
+          "pressed": "false"
+        },
+        {
+          "n": "28",
+          "pick": "live",
+          "pressed": "false"
+        },
+        {
+          "n": "31",
+          "pick": "setting_up",
+          "pressed": "true"
+        },
+        {
+          "n": "20",
+          "pick": "ran",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "basing",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "blocked",
+          "pressed": "false"
+        }
+      ],
+      "stage": "setting_up",
+      "visibleCards": 31
+    },
+    "shot": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_setting_up_1440x1000.png",
+    "bytes": 266914
+  },
+  {
+    "info": {
+      "displayNone": 61,
+      "href": "https://www.mastermind-x.com/us_stocks.html",
+      "label": "Ran \u2014 don\u2019t chase 20",
+      "ok": true,
+      "pressed": [
+        {
+          "n": "81",
+          "pick": "all",
+          "pressed": "false"
+        },
+        {
+          "n": "28",
+          "pick": "live",
+          "pressed": "false"
+        },
+        {
+          "n": "31",
+          "pick": "setting_up",
+          "pressed": "false"
+        },
+        {
+          "n": "20",
+          "pick": "ran",
+          "pressed": "true"
+        },
+        {
+          "n": "1",
+          "pick": "basing",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "blocked",
+          "pressed": "false"
+        }
+      ],
+      "stage": "ran",
+      "visibleCards": 8
+    },
+    "shot": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_ran_1440x1000.png",
+    "bytes": 186250
+  },
+  {
+    "info": {
+      "displayNone": 68,
+      "href": "https://www.mastermind-x.com/us_stocks.html",
+      "label": "Basing 1",
+      "ok": true,
+      "pressed": [
+        {
+          "n": "81",
+          "pick": "all",
+          "pressed": "false"
+        },
+        {
+          "n": "28",
+          "pick": "live",
+          "pressed": "false"
+        },
+        {
+          "n": "31",
+          "pick": "setting_up",
+          "pressed": "false"
+        },
+        {
+          "n": "20",
+          "pick": "ran",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "basing",
+          "pressed": "true"
+        },
+        {
+          "n": "1",
+          "pick": "blocked",
+          "pressed": "false"
+        }
+      ],
+      "stage": "basing",
+      "visibleCards": 1
+    },
+    "shot": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_basing_1440x1000.png",
+    "bytes": 206287
+  },
+  {
+    "info": {
+      "displayNone": 68,
+      "href": "https://www.mastermind-x.com/us_stocks.html",
+      "label": "Blocked 1",
+      "ok": true,
+      "pressed": [
+        {
+          "n": "81",
+          "pick": "all",
+          "pressed": "false"
+        },
+        {
+          "n": "28",
+          "pick": "live",
+          "pressed": "false"
+        },
+        {
+          "n": "31",
+          "pick": "setting_up",
+          "pressed": "false"
+        },
+        {
+          "n": "20",
+          "pick": "ran",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "basing",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "blocked",
+          "pressed": "true"
+        }
+      ],
+      "stage": "blocked",
+      "visibleCards": 1
+    },
+    "shot": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_blocked_1440x1000.png",
+    "bytes": 203308
+  },
+  {
+    "info": {
+      "displayNone": 55,
+      "href": "https://www.mastermind-x.com/us_stocks.html",
+      "label": "All 81",
+      "ok": true,
+      "pressed": [
+        {
+          "n": "81",
+          "pick": "all",
+          "pressed": "true"
+        },
+        {
+          "n": "28",
+          "pick": "live",
+          "pressed": "false"
+        },
+        {
+          "n": "31",
+          "pick": "setting_up",
+          "pressed": "false"
+        },
+        {
+          "n": "20",
+          "pick": "ran",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "basing",
+          "pressed": "false"
+        },
+        {
+          "n": "1",
+          "pick": "blocked",
+          "pressed": "false"
+        }
+      ],
+      "stage": "all",
+      "visibleCards": 14
+    },
+    "shot": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots/board_stage_all_1440x1000.png",
+    "bytes": 259694
+  }
+]

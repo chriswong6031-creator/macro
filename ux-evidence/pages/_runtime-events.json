@@ -1,0 +1,166 @@
+[
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Ping"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Document"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Script"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Stylesheet"
+  },
+  {
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "level": "error",
+        "networkRequestId": "11193.444",
+        "source": "network",
+        "text": "Failed to load resource: the server responded with a status of 503 ()",
+        "timestamp": 1786882338583.191,
+        "url": "https://www.mastermind-x.com/live/prophet_live.json"
+      }
+    }
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Ping"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Network.loadingFailed",
+    "url": "net::ERR_ABORTED",
+    "type": "Fetch"
+  },
+  {
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "level": "error",
+        "networkRequestId": "11193.545",
+        "source": "network",
+        "text": "Failed to load resource: the server responded with a status of 503 ()",
+        "timestamp": 1786882383700.601,
+        "url": "https://www.mastermind-x.com/signals/ONTO.json"
+      }
+    }
+  },
+  {
+    "method": "Log.entryAdded",
+    "params": {
+      "entry": {
+        "level": "error",
+        "networkRequestId": "11193.548",
+        "source": "network",
+        "text": "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "timestamp": 1786882383906.314,
+        "url": "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/live_flow/tickers/ONTO.json"
+      }
+    }
+  }
+]

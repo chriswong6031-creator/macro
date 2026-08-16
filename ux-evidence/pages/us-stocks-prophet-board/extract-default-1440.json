@@ -1,0 +1,5423 @@
+{
+  "auth_hint": {
+    "body_class": "page-stocks",
+    "has_account_chip": false,
+    "html_attrs": {
+      "lang": "en",
+      "theme": "dark",
+      "user": null
+    }
+  },
+  "cards": [
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 186
+      },
+      "featured": true,
+      "href": "stock.html#ONTO",
+      "stage": "live",
+      "text": "BUY Triggered 7 $337.82 — ONTO Onto Innovation PRIORITY 95 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $304.30–$337.80 Aug 13",
+      "ticker": "ONTO",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 186
+      },
+      "featured": true,
+      "href": "stock.html#FTI",
+      "stage": "live",
+      "text": "BUY Triggered 1 $76.67 — FTI TechnipFMC PRIORITY 84 Energy FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $74.14–$76.67 Aug 13",
+      "ticker": "FTI",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 186
+      },
+      "featured": true,
+      "href": "stock.html#FDX",
+      "stage": "live",
+      "text": "BUY Triggered 2 $339.35 — FDX FedEx PRIORITY 82 Industrials FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $333.20–$339.40 Aug 13",
+      "ticker": "FDX",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 186
+      },
+      "featured": true,
+      "href": "stock.html#DAR",
+      "stage": "live",
+      "text": "BUY Triggered 1 $65.74 — DAR Darling Ingredients PRIORITY 80 Consumer Staples FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $63.21–$65.74 Aug 13",
+      "ticker": "DAR",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 186
+      },
+      "featured": true,
+      "href": "stock.html#EQIX",
+      "stage": "live",
+      "text": "BUY 3 $1073.78 — EQIX Equinix Inc PRIORITY 77 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $1046.40–$1073.80 Aug 13",
+      "ticker": "EQIX",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 398
+      },
+      "featured": true,
+      "href": "stock.html#CVCO",
+      "stage": "live",
+      "text": "BUY $607.10 — CVCO Cavco Industries, Inc. PRIORITY 76 Consumer Discretionary FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $588.80–$607.10 Aug 13",
+      "ticker": "CVCO",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 398
+      },
+      "featured": true,
+      "href": "stock.html#GNL",
+      "stage": "live",
+      "text": "BUY 2 $9.02 — GNL Global Net Lease, Inc. PRIORITY 74 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $8.87–$9.02 Aug 13",
+      "ticker": "GNL",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 398
+      },
+      "featured": false,
+      "href": "stock.html#TKO",
+      "stage": "live",
+      "text": "BUY 2 $199.68 — TKO Tko Group Holdings Inc PRIORITY 73 Communication Services NEW Bottoming Bottoming Turning Ready Trend ZONE $195.70–$199.70 Aug 13",
+      "ticker": "TKO",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 398
+      },
+      "featured": true,
+      "href": "stock.html#ENTG",
+      "stage": "live",
+      "text": "BUY 6 $163.81 — ENTG Entegris PRIORITY 72 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $150.20–$163.80 Aug 13",
+      "ticker": "ENTG",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 398
+      },
+      "featured": true,
+      "href": "stock.html#EFC",
+      "stage": "live",
+      "text": "BUY 2 $13.68 — EFC Ellington Financial, Inc. PRIORITY 69 Financials FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $13.52–$13.68 Aug 13",
+      "ticker": "EFC",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 59,
+        "y": 610
+      },
+      "featured": false,
+      "href": "stock.html#TEM",
+      "stage": "live",
+      "text": "BUY 3 $54.29 — TEM Tempus AI PRIORITY 69 Health Care NEW Continuation AI Agents & Applications Bottoming Turning Ready Trend ZONE $51.81–$54.29 Aug 13",
+      "ticker": "TEM",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 323,
+        "y": 610
+      },
+      "featured": true,
+      "href": "stock.html#ARR",
+      "stage": "live",
+      "text": "BUY 2 $16.72 — ARR Armour Residential REIT PRIORITY 67 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $16.56–$16.72 Aug 13",
+      "ticker": "ARR",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 587,
+        "y": 610
+      },
+      "featured": false,
+      "href": "stock.html#MC",
+      "stage": "live",
+      "text": "BUY 2 $70.38 — MC Moelis & Company PRIORITY 67 Financials NEW Continuation Bottoming Turning Ready Trend ZONE $67.66–$70.38 Aug 13",
+      "ticker": "MC",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 852,
+        "y": 610
+      },
+      "featured": false,
+      "href": "stock.html#SNPS",
+      "stage": "live",
+      "text": "BUY 3 $411.75 — SNPS Synopsys PRIORITY 66 Information Technology NEW Bottoming Bottoming Turning Ready Trend ZONE $401.60–$411.80 Aug 13",
+      "ticker": "SNPS",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#KMI",
+      "stage": "live",
+      "text": "Near临近 2Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its US Energy Complex basket is crowded and stretched. Cap your size and do not add aggressively.所属 美国能源综合 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。 $32.08— KMIKinder Morgan IncKinder Morgan Inc Priority优先级65 Energy能源Ne",
+      "ticker": "KMI",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#AYI",
+      "stage": "live",
+      "text": "Buy买入 1Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。 $359.77— AYIAcuity BrandsAcuity Brands Priority优先级65 Industrials工业New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$349.90–$359.80Aug 1308-13",
+      "ticker": "AYI",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#DKNG",
+      "stage": "live",
+      "text": "Buy买入 $25.42— DKNGDraftKingsDraftKings Priority优先级65 Consumer Discretionary可选消费New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$24.42–$25.42Aug 1308-13",
+      "ticker": "DKNG",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#SMPL",
+      "stage": "live",
+      "text": "Buy买入 1Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。 $11.18— SMPLSimply Good Foods CompanySimply Good Foods Company Priority优先级65 Consumer Staples必需消费New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$10.81–$11.18Aug 1308-13",
+      "ticker": "SMPL",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#DXYZ",
+      "stage": "live",
+      "text": "Buy买入 1Before you act动手之前Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $31.92— DXYZDestiny Tech100 (holds SpaceX)Destiny Tech100 (holds SpaceX) Priority优先级63 Financials金融New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$29.",
+      "ticker": "DXYZ",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#MBC",
+      "stage": "live",
+      "text": "Buy买入 $9.29— MBCMasterBrand, Inc.MasterBrand, Inc. Priority优先级62 Industrials工业New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$8.82–$9.29Aug 1308-13",
+      "ticker": "MBC",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#NNE",
+      "stage": "live",
+      "text": "Buy买入 2Before you act动手之前Its Nuclear & SMR Power basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one.所属 核电与小型模块化反应堆 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。Options ceiling 1.7% above (as of 2026-08-14) — price tends to stall where ",
+      "ticker": "NNE",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": true,
+      "href": "stock.html#UCB",
+      "stage": "live",
+      "text": "Buy买入 2Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $36.76— UCBUnited Community Banks, Inc.United Community Banks, Inc. Priority优先级61 Financials金融 Featured 精选",
+      "ticker": "UCB",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#OZK",
+      "stage": "live",
+      "text": "Buy买入 1Before you act动手之前Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $52.24— OZKBank OZKBank OZK Priority优先级59 Financials金融New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$51.73–$52.24Aug 1308-13",
+      "ticker": "OZK",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#TREX",
+      "stage": "live",
+      "text": "Buy买入 4Before you act动手之前Straight-up move. The easy part is behind it.急涨行情。轻松阶段已经过去。Its market cycle still argues for waiting (buy zone).所处的市场周期仍建议等待（买入区）。Stretched unusually far above its trend line, so chasing is risky.远高于趋势线，追高风险较大。Parabolic tail. Treat any entry here as a cha",
+      "ticker": "TREX",
+      "verb": "pv-buy"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#AWR",
+      "stage": "live",
+      "text": "Near临近 4Before you act动手之前Straight-up move. The easy part is behind it.急涨行情。轻松阶段已经过去。Its market cycle still argues for waiting (bottoming).所处的市场周期仍建议等待（筑底中）。Stretched unusually far above its trend line, so chasing is risky.远高于趋势线，追高风险较大。Parabolic tail. Treat any entry here as a c",
+      "ticker": "AWR",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#SWX",
+      "stage": "live",
+      "text": "Near临近 1Before you act动手之前Accounting quality looks weak.财务质量偏弱。 $92.09— SWXSouthwest Gas CorpSouthwest Gas Corp Priority优先级41 Utilities公用事业New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$90.69–$92.09Aug 1308-13",
+      "ticker": "SWX",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#HSIC",
+      "stage": "live",
+      "text": "Near临近 2Before you act动手之前Its Health Care (Equal-Weight) basket is crowded and stretched. Cap your size and do not add aggressively.所属 医疗保健（等权） 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $90.12— HSICHenry S",
+      "ticker": "HSIC",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#NVR",
+      "stage": "live",
+      "text": "Near临近 $6375.00— NVRNVR, Inc.NVR, Inc. Priority优先级34 Consumer Discretionary可选消费New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$6223.90–$6375.00Aug 1308-13",
+      "ticker": "NVR",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": true,
+      "href": "stock.html#FORM",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 6Before you act动手之前Trades 35% above its long-term trend line. Buying here is chasing.股价高于长期趋势线 35%。此价位买入属于追高。Its market cycle still argues for waiting (unconfirmed turn).所处的市场周期仍建议等待（未确认转向）。Its Semiconductor Equipment (WFE) basket is crowded and stretched. Cap",
+      "ticker": "FORM",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#CIEN",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 4Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its AI Infrastructure basket is crowded and stretched. Cap your size and do not add aggressively.所属 AI 基础设施 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。Already moving. Don't chase above the buy zone.已在异动。不要在买区",
+      "ticker": "CIEN",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#BG",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 3Before you act动手之前Accounting quality looks weak.财务质量偏弱。Its Consumer Staples (Equal-Weight) basket is deteriorating. Trim, or take a smaller position than usual.所属 必需消费（等权） 篮子正在恶化。减仓，或将仓位控制在平常水平以下。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 ",
+      "ticker": "BG",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#BWA",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 $67.87— BWABorgWarnerBorgWarner Priority优先级89 Consumer Discretionary可选消费New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$65.05–$66.68Aug 1308-13",
+      "ticker": "BWA",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#PL",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 $24.75— PLPlanet LabsPlanet Labs Priority优先级87 Industrials工业New新Bottoming筑底Space Economy太空经济 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$22.28–$22.99Aug 1308-13",
+      "ticker": "PL",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#SITM",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 5Before you act动手之前Accounting quality looks weak.财务质量偏弱。Trades 45% above its long-term trend line. Buying here is chasing.股价高于长期趋势线 45%。此价位买入属于追高。Its market cycle still argues for waiting (unconfirmed turn).所处的市场周期仍建议等待（未确认转向）。Already moving. Don't chase above",
+      "ticker": "SITM",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#TRLV",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $9.60— TRLVTrulieve CannabisTrulieve Cannabis Priority优先级86 Health Care医疗保健New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$8.74–$8.94Aug 1308-13",
+      "ticker": "TRLV",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#NVT",
+      "stage": "setting_up",
+      "text": "Wait等待 Triggered已触发 2Before you act动手之前Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。Options ceiling 1.5% above (as of 2026-08-14) — price tends to stall where dealer hedging is heaviest上方1.5%有期权天花板（截至2026-08-14） — 价格倾向在做市商对冲最重处停滞 $170.01— NVTnVent Electric plcnVe",
+      "ticker": "NVT",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#IREN",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。Reports in 14 d14日后公布业绩Sector stance is cautious. This is a single-stock trigger, not a sector call.板块态度为谨慎。个股信号，非板块判断。 $44.76— IRENIREN (Iris Energy)IREN (Iris Energy) Priority优先级83 Informati",
+      "ticker": "IREN",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#RKLB",
+      "stage": "setting_up",
+      "text": "Wait等待 $80.10— RKLBRocket LabRocket Lab Priority优先级79 Industrials工业New新Bottoming筑底Space Economy太空经济 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$71.24–$76.45Aug 1308-13",
+      "ticker": "RKLB",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#SGML",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Its Critical Minerals & Rare Earths basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one.所属 关键矿产与稀土 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。 $11.33— SGMLSigma LithiumSigma Lithium Priority优先级78 Materials原材料",
+      "ticker": "SGML",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#ORA",
+      "stage": "setting_up",
+      "text": "Wait等待 2Before you act动手之前Accounting quality looks weak.财务质量偏弱。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $113.52— ORAOrmat TechnologiesOrmat Technologies Priority优先级78 Utilities公用事业New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$103.70–$106.20Aug 13",
+      "ticker": "ORA",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#BIIB",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its Health Care (Equal-Weight) basket is crowded and stretched. Cap your size and do not add aggressively.所属 医疗保健（等权） 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。Sector stance is reduce. This is a single-stock trigger, not",
+      "ticker": "BIIB",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#AA",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Accounting quality looks weak.财务质量偏弱。 $49.59— AAAlcoaAlcoa Priority优先级74 Materials原材料New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$46.55–$48.81Aug 1308-13",
+      "ticker": "AA",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#JBL",
+      "stage": "setting_up",
+      "text": "Wait等待 5Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Trades 30% above its long-term trend line. Buying here is chasing.股价高于长期趋势线 30%。此价位买入属于追高。Its market cycle still argues for waiting (unconfirmed turn).所处的市场周期仍建议等待（未确认转向）。Already moving. Don't chase a",
+      "ticker": "JBL",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#IONQ",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Sector stance is cautious. This is a single-stock trigger, not a sector call.板块态度为谨慎。个股信号，非板块判断。 $44.98— IONQIonQIonQ Priority优先级72 Information Technology信息技术New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$38.05–$41.72Aug 1308-13",
+      "ticker": "IONQ",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#CWEN",
+      "stage": "setting_up",
+      "text": "Wait等待 $34.22— CWENClearway Energy, Inc. (Class C)Clearway Energy, Inc. (Class C) Priority优先级71 Utilities公用事业New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$32.71–$32.84Aug 1308-13",
+      "ticker": "CWEN",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#AMR",
+      "stage": "setting_up",
+      "text": "Wait等待 $155.60— AMRAlpha Metallurgical Resources, Inc.Alpha Metallurgical Resources, Inc. Priority优先级70 Materials原材料New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$146.20–$148.90Aug 1308-13",
+      "ticker": "AMR",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#OKE",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Accounting quality looks weak.财务质量偏弱。Its US Energy Complex basket is crowded and stretched. Cap your size and do not add aggressively.所属 美国能源综合 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。Options ceiling 0.0% above (as of 2026-08-14) — price tends to stall where dealer hedgin",
+      "ticker": "OKE",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#TMUS",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $183.38— TMUST Mobile Us IncT Mobile Us Inc Priority优先级67 Communication Services通信服务New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$177.50–$180.50Aug 1308-13",
+      "ticker": "TMUS",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#HLI",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $132.21— HLIHoulihan LokeyHoulihan Lokey Pr",
+      "ticker": "HLI",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#AGNT",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。Base broken: price hit the level that voids the thesis.筑底破位：价格已触及使论点失效的水平。 $4.28— AGNTeXp World Holdings, ",
+      "ticker": "AGNT",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#MTDR",
+      "stage": "setting_up",
+      "text": "Wait等待 2Before you act动手之前Accounting quality looks weak.财务质量偏弱。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $51.60— MTDRMatador ResourcesMatador Resources Priority优先级64 Energy能源New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$49.90–$50.21Aug 1308-13",
+      "ticker": "MTDR",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#SM",
+      "stage": "setting_up",
+      "text": "Wait等待 2Before you act动手之前Accounting quality looks weak.财务质量偏弱。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $32.42— SMSM Energy CompanySM Energy Company Priority优先级64 Energy能源New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$31.12–$31.46Aug 1308-13",
+      "ticker": "SM",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#PNW",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Its Utilities (Equal-Weight) basket is deteriorating. Trim, or take a smaller position than usual.所属 公用事业（等权） 篮子正在恶化。减仓，或将仓位控制在平常水平以下。 $100.72— PNWPinnacle West CapitalPinnacle West Capital Priority优先级55 Utilities公用事业New新Bottoming筑底 Bottoming筑底Turning转向R",
+      "ticker": "PNW",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#JNJ",
+      "stage": "setting_up",
+      "text": "Near临近 4Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its Health Care (Equal-Weight) basket is crowded and stretched. Cap your size and do not add aggressively.所属 医疗保健（等权） 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追",
+      "ticker": "JNJ",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#LNTH",
+      "stage": "setting_up",
+      "text": "Wait等待 1Before you act动手之前Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $100.94— LNTHLantheus HoldingsLantheus Holdings Priority优先级42 Health Care医疗保健New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$98.62–$99.78Aug 1308-13",
+      "ticker": "LNTH",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#XEL",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its Utilities (Equal-Weight) basket is deteriorating. Trim, or take a smaller position than usual.所属 公用事业（等权） 篮子正在恶化。减仓，或将仓位控制在平常水平以下。Options ceiling 1.3% above (as of 2026-08-14) — price tends to sta",
+      "ticker": "XEL",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#BXMT",
+      "stage": "setting_up",
+      "text": "Wait等待 3Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $14.50— BXMTBlackstone Mortgage Trust, Inc.",
+      "ticker": "BXMT",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#JBSS",
+      "stage": "setting_up",
+      "text": "Near临近 4Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Earnings in 5 days. The result can override the setup, so size down.5 天后公布财报。业绩结果可能压过技术形态，宜减小仓位。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。Reports in 6 d6日后公布业绩 $86.69— JBSSJohn B. ",
+      "ticker": "JBSS",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#WFC",
+      "stage": "setting_up",
+      "text": "Near临近 4Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its Financials (Equal-Weight) basket is deteriorating. Trim, or take a smaller position than usual.所属 金融（等权） 篮子正在恶化。减仓，或将仓位控制在平常水平以下。Sector stance is reduce. This is a single-stock trigger, not a sect",
+      "ticker": "WFC",
+      "verb": "pv-near"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#LBRT",
+      "stage": "ran",
+      "text": "Hold持有 2Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $21.12— LBRTLiberty Energy, Inc.Liberty Energy, Inc. Priority优先级80 Energy能源New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Re-add回补$20",
+      "ticker": "LBRT",
+      "verb": "pv-hold"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#CAVA",
+      "stage": "ran",
+      "text": "Hold持有 1Before you act动手之前Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $72.18— CAVACava GroupCava Group Priority优先级68 Consumer Discretionary可选消费New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Re-add回补$64.80Aug 1308-13",
+      "ticker": "CAVA",
+      "verb": "pv-hold"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#EW",
+      "stage": "ran",
+      "text": "Hold持有 3Before you act动手之前Its Health Care (Equal-Weight) basket is crowded and stretched. Cap your size and do not add aggressively.所属 医疗保健（等权） 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。Options ceiling 0.7%",
+      "ticker": "EW",
+      "verb": "pv-hold"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#META",
+      "stage": "ran",
+      "text": "Hold持有 1Before you act动手之前Options ceiling 1.7% above (as of 2026-08-14) — price tends to stall where dealer hedging is heaviest上方1.7%有期权天花板（截至2026-08-14） — 价格倾向在做市商对冲最重处停滞 $594.97— METAMeta Platforms Inc Class AMeta Platforms Inc Class A Priority优先级66 Communication Services通信服务Ne",
+      "ticker": "META",
+      "verb": "pv-hold"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#ECPG",
+      "stage": "ran",
+      "text": "Wait等待 Triggered已触发 4Before you act动手之前Accounting quality looks weak.财务质量偏弱。Trades 45% above its long-term trend line. Buying here is chasing.股价高于长期趋势线 45%。此价位买入属于追高。Its market cycle still argues for waiting (nearing a high).所处的市场周期仍建议等待（接近高点）。Sector stance is reduce. This is a s",
+      "ticker": "ECPG",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#HZO",
+      "stage": "ran",
+      "text": "Wait等待 5Before you act动手之前Straight-up move. The easy part is behind it.急涨行情。轻松阶段已经过去。Trades 75% above its long-term trend line. Buying here is chasing.股价高于长期趋势线 75%。此价位买入属于追高。Its market cycle still argues for waiting (nearing a high).所处的市场周期仍建议等待（接近高点）。Stretched unusually far abo",
+      "ticker": "HZO",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#SPOT",
+      "stage": "ran",
+      "text": "Wait等待 1Before you act动手之前Its market cycle still argues for waiting (nearing a high).所处的市场周期仍建议等待（接近高点）。 $498.24— SPOTSpotify (ADR)Spotify (ADR) Priority优先级41 Communication Services通信服务New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$491.10–$492.60Aug 1308-13",
+      "ticker": "SPOT",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#HEI",
+      "stage": "ran",
+      "text": "Wait等待 3Before you act动手之前Its market cycle still argues for waiting (nearing a high).所处的市场周期仍建议等待（接近高点）。Reports in 12 d12日后公布业绩Options pricing a bigger move than usual — in the top fifth of its own 26-session record (short history)期权定价高于平常的波动 — 处于自身26次记录的前五分之一（历史尚短） $371.56— HEIH",
+      "ticker": "HEI",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#EU",
+      "stage": "basing",
+      "text": "Wait等待 2Before you act动手之前Its Uranium & Nuclear Fuel basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one.所属 铀矿与核燃料 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。Already moving. Don't chase above the buy zone.已在异动。不要在买区上方追高。 $1.14— EUenCo",
+      "ticker": "EU",
+      "verb": "pv-wait"
+    },
+    {
+      "box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "featured": false,
+      "href": "stock.html#MGM",
+      "stage": "blocked",
+      "text": "Wait等待 1Before you act动手之前Its market cycle still argues for waiting (downtrend).所处的市场周期仍建议等待（下跌趋势）。 $44.07— MGMMGM ResortsMGM Resorts Priority优先级26 Consumer Discretionary可选消费New新Bottoming筑底 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone sets on confirmation买区待确认后生成Aug 1308-13",
+      "ticker": "MGM",
+      "verb": "pv-wait"
+    }
+  ],
+  "counts": {
+    "avoid": 0,
+    "buttons": 127,
+    "buy": 23,
+    "featured": 12,
+    "headings": 24,
+    "hold": 4,
+    "links": 418,
+    "near": 8,
+    "pvcards": 69,
+    "wait": 34
+  },
+  "elements": [
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E001",
+      "note": "brand",
+      "role": "div",
+      "section": "shell",
+      "selector": "div.logo",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "logo",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "div",
+      "visible": false,
+      "visible_label": ""
+    },
+    {
+      "bounding_box": {
+        "h": 35,
+        "w": 168,
+        "x": 11,
+        "y": -764
+      },
+      "id": "E101",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.nav-brand",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-brand",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "start.html"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "MASTERMINDX"
+    },
+    {
+      "bounding_box": {
+        "h": 42,
+        "w": 140,
+        "x": 187,
+        "y": -769
+      },
+      "id": "E102",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.nav-link.active",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-link active",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "macro.html"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "United States ▾"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E103",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "macro.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Dashboard宏观仪表盘Regime, growth and inflation now当前周期、增长与通胀"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E104",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item.active",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item active",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "us_stocks.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Stock Dashboard股票仪表盘Standouts, sectors and flows领涨股、板块与资金流"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E105",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "intraday_flow.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Intraday Flow Tracker盘中资金流追踪Live session board — volume, tape and stance lanes · ≈15-min delayed盘中实时看板 — 量能、盘面与操作分级 · 约延迟15分钟"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E106",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "sector_central.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Sector Intelligence行业情报Sectors, themes & rotation in one read板块、主题与轮动一页读"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E107",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "sector_central.html#confluence"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Subsector Confluence子行业汇聚Entry-ready subsectors and stocks to review可关注的子行业与个股"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E108",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "strategies.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Strategies策略Tactical scorecards and positioning战术记分卡与仓位"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E109",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "alerts.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Alert Center警报中心Ranked market-moving alerts分级的市场异动警报"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E110",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "news.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "News Feed新闻流Catalysts, headlines and sentiment催化事件、头条与情绪"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E111",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "options.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Options — the workspace期权工作台Daily Brief · Flow · Scanner · Ticker · Leaders每日简报 · 资金流 · 筛选 · 个股 · 领头股"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E112",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "darkpool.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Dark Pool Desk暗池成交Off-exchange volume · short ratio · ATS venues场外成交量 · 融券比率 · ATS 交易平台"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E113",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "market_structure.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Structure市场结构GEX regime · machine flows · dispersion · weekly range做市商持仓 · 程序化资金 · 离散度 · 周内区间"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E114",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "sector_central.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Heatmap市场热力图↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E115",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "sector_central.html#confluence"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Subsector Confluence子行业汇聚↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E116",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "macro.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Browse U.S. markets浏览美国全部页面↗"
+    },
+    {
+      "bounding_box": {
+        "h": 42,
+        "w": 93,
+        "x": 328,
+        "y": -768
+      },
+      "id": "E117",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.nav-link",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-link",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china.html"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "China ▾"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E118",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Dashboard宏观仪表盘A-share regime and breadthA股市况与市场广度"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E119",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_stocks.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Stock Dashboard股票仪表盘Standouts, alpha and setups强势股、超额收益与买点"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E120",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_heatmap.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Heatmap市场热力图Every A-share at a glance全部A股一眼看尽"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E121",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_intel.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "China Intelligence中国情报中心Signals, policy and narratives信号、政策与市场叙事"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E122",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "sector_central_china.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Sector Intelligence行业情报Gated board, cycle map and rotation in one研判、周期图谱和轮动，一页看完"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E123",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "narrative_radar.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Narrative Radar题材雷达See which stories are running看清现在哪些题材在走"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E124",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "flow_velocity.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E125",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_policy_watch.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Policy Watch政策观察PBoC and sector policy shifts央行动向与行业政策"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E126",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_mechanics.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Mechanics盘面机制Participation, limits and tape参与度、涨跌停与盘面"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E127",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_special_situations.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Special Situations特殊事件Unlocks, pledges and catalysts解禁、质押与催化事件"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E128",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_news.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "China News中国新闻↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E129",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_strategies.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Strategies策略↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E130",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_altdata.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Alternative Data另类数据↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E131",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_intel.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Browse China research浏览中国全部研究↗"
+    },
+    {
+      "bounding_box": {
+        "h": 42,
+        "w": 125,
+        "x": 424,
+        "y": -768
+      },
+      "id": "E132",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.nav-link",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-link",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "hk.html"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "Hong Kong ▾"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E133",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "hk.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Dashboard宏观仪表盘HSI, liquidity and global risk恒指、流动性与全球风险"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E134",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "hk_stocks.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Stock Dashboard股票仪表盘Hong Kong standouts and alpha港股领涨股与阿尔法"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E135",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "hk_heatmap.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Market Heatmap市场热力图Turnover-sized market overview按成交额加权的全景"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E136",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "flow_velocity.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Capital Flow Velocity资金流速Southbound money in motion南向资金动向"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E137",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "baskets_hk.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Thematic Baskets主题篮子Equal-weight themes versus HSI等权主题篮子 vs 恒指"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E138",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.mega-item.nav-market-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "mega-item nav-market-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "allocation_hk.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Narrative Rotation主题轮动What to hold and rotate持有哪个主题 · 何时轮动"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E139",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_intel.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "China Intelligence中国情报中心↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E140",
+      "role": "a",
+      "section": "shell-nav",
+      "selector": "a.rail-link.nav-market-rail-item",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "rail-link nav-market-rail-item",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": "china_policy_watch.html"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Policy Watch政策观察↗"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E040",
+      "note": "global-search",
+      "role": "input",
+      "section": "shell",
+      "selector": "input",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "input",
+      "visible": false,
+      "visible_label": ""
+    },
+    {
+      "bounding_box": {
+        "h": 34,
+        "w": 34,
+        "x": 1385,
+        "y": -764
+      },
+      "id": "E041",
+      "role": "button",
+      "section": "shell",
+      "selector": "#settings-open",
+      "state": {
+        "aria_expanded": "false",
+        "aria_selected": null,
+        "className": "nav-settings-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": ""
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E042",
+      "role": "div",
+      "section": "prophet-live",
+      "selector": "#prophet-live",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "panel span12",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": true,
+        "href": null
+      },
+      "tag": "div",
+      "visible": false,
+      "visible_label": "Forming today今日正在形成 ? settles 4:00 pm ET美东 16:00 结算 Now当前 Cross level上穿价位 Since起始"
+    },
+    {
+      "bounding_box": {
+        "h": 2127,
+        "w": 1349,
+        "x": 40,
+        "y": 16
+      },
+      "id": "E043",
+      "role": "div",
+      "section": "board",
+      "selector": "#us-standouts",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "panel span12 notable",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "div",
+      "visible": true,
+      "visible_label": "PROPHET STOCK SIGNALS ⊞ Grid Table 69 shown · 77 setups · green dot = entry open, yellow = wait for pullback. ? 13 of 22 confirmed overnight · 0 adjusted, 9 left the board? All 81 Live now 28 Setting up 31 Ran — don’t chase 20 Basing 1 Bloc"
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 216,
+        "x": 59,
+        "y": 36
+      },
+      "id": "E044",
+      "note": "board-title",
+      "role": "h2",
+      "section": "board",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": true,
+      "visible_label": "PROPHET STOCK SIGNALS"
+    },
+    {
+      "bounding_box": {
+        "h": 31,
+        "w": 141,
+        "x": 293,
+        "y": 33
+      },
+      "id": "E045",
+      "role": "group",
+      "section": "board-tools",
+      "selector": "#us-st-view-toggle",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "st-view-toggle",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "span",
+      "visible": true,
+      "visible_label": "⊞ Grid Table"
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 58,
+        "x": 297,
+        "y": 37
+      },
+      "id": "E046",
+      "role": "button",
+      "section": "board-tools",
+      "selector": "#us-st-btn-grid",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": "true",
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "⊞ Grid"
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 72,
+        "x": 358,
+        "y": 37
+      },
+      "id": "E047",
+      "role": "button",
+      "section": "board-tools",
+      "selector": "#us-st-btn-table",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": "false",
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Table"
+    },
+    {
+      "bounding_box": {
+        "h": 17,
+        "w": 423,
+        "x": 442,
+        "y": 40
+      },
+      "id": "E048",
+      "role": "span",
+      "section": "board",
+      "selector": "#us-board-sub",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "muted",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "span",
+      "visible": true,
+      "visible_label": "69 shown · 77 setups · green dot = entry open, yellow = wait for pullback. ?"
+    },
+    {
+      "bounding_box": {
+        "h": 17,
+        "w": 681,
+        "x": 59,
+        "y": 71
+      },
+      "id": "E049",
+      "role": "div",
+      "section": "board",
+      "selector": "div.pbs-note",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pbs-note",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "div",
+      "visible": true,
+      "visible_label": "13 of 22 confirmed overnight · 0 adjusted, 9 left the board?"
+    },
+    {
+      "bounding_box": {
+        "h": 36,
+        "w": 347,
+        "x": 59,
+        "y": 1519
+      },
+      "id": "E050",
+      "role": "button",
+      "section": "board-tools",
+      "selector": "#trd-btn",
+      "state": {
+        "aria_expanded": "false",
+        "aria_selected": null,
+        "className": "trd-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Track record·60% win · +1.19% a trade"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E051",
+      "role": "dialog",
+      "section": "board-tools",
+      "selector": "#trd-dlg",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "trd-dlg",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "div",
+      "visible": false,
+      "visible_label": "US buy board · vs S&P 500美股买入榜 · 对比标普500 Track record榜单往绩 More often right than wrong so far — but the record is still too short to lean on.目前胜多于负——但记录尚短，不足以依赖。 Short record — 386 finished trades, but only 15 separate board days behind them"
+    },
+    {
+      "bounding_box": {
+        "h": 48,
+        "w": 1311,
+        "x": 59,
+        "y": 1513
+      },
+      "id": "E052",
+      "role": "div",
+      "section": "board-tools",
+      "selector": "div.prophet-board-tools",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "prophet-board-tools",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "div",
+      "visible": true,
+      "visible_label": "Track record·60% win · +1.19% a trade measurement updated What changed today ·30"
+    },
+    {
+      "bounding_box": {
+        "h": 17,
+        "w": 1311,
+        "x": 59,
+        "y": 1486
+      },
+      "id": "E053",
+      "role": "p",
+      "section": "board",
+      "selector": "p.pb-fn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pb-fn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "p",
+      "visible": true,
+      "visible_label": "Higher Priority means the setup is more ready today, not more likely to win. Featured highlights up to 12 of the most ready names, with no more than four per sector; every qualifying name still appears on this board."
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 58,
+        "x": 297,
+        "y": 37
+      },
+      "id": "E201",
+      "role": "button",
+      "section": "filters",
+      "selector": "#us-st-btn-grid",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": "true",
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "⊞ Grid"
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 72,
+        "x": 358,
+        "y": 37
+      },
+      "id": "E202",
+      "role": "button",
+      "section": "filters",
+      "selector": "#us-st-btn-table",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": "false",
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Table"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E203",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.stf-clear",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-clear",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": ""
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E204",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.stf-dd-btn",
+      "state": {
+        "aria_expanded": "false",
+        "aria_selected": null,
+        "className": "stf-dd-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Stage阶段All全部"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E205",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.stf-dd-btn",
+      "state": {
+        "aria_expanded": "false",
+        "aria_selected": null,
+        "className": "stf-dd-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Sector板块All全部"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E206",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.stf-dd-btn",
+      "state": {
+        "aria_expanded": "false",
+        "aria_selected": null,
+        "className": "stf-dd-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Lane通道All全部"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E207",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.stf-chipbtn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-chipbtn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Fresh only仅新信号 ≤2d"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E208",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.stf-ghost",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-ghost",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Clear filters清除筛选"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E209",
+      "role": "button",
+      "section": "filters",
+      "selector": "#st-reset-order",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-ghost",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "↺ Reset order恢复默认排序"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E210",
+      "role": "button",
+      "section": "filters",
+      "selector": "#st-col-btn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-colbtn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Columns列设置 9/12"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E211",
+      "role": "button",
+      "section": "filters",
+      "selector": "#st-chooser-close",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-ch-close",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": ""
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E212",
+      "role": "button",
+      "section": "filters",
+      "selector": "#st-chooser-reset",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "stf-ch-reset",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": false,
+      "visible_label": "Reset to default恢复默认"
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 78,
+        "x": 64,
+        "y": 96
+      },
+      "id": "E213",
+      "role": "button",
+      "section": "filters",
+      "selector": "button",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "All 81"
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 115,
+        "x": 146,
+        "y": 96
+      },
+      "id": "E214",
+      "role": "button",
+      "section": "filters",
+      "selector": "button",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Live now 28"
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 125,
+        "x": 265,
+        "y": 96
+      },
+      "id": "E215",
+      "role": "button",
+      "section": "filters",
+      "selector": "button",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Setting up 31"
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 175,
+        "x": 394,
+        "y": 96
+      },
+      "id": "E216",
+      "role": "button",
+      "section": "filters",
+      "selector": "button",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Ran — don’t chase 20"
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 96,
+        "x": 573,
+        "y": 96
+      },
+      "id": "E217",
+      "role": "button",
+      "section": "filters",
+      "selector": "button",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Basing 1"
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 104,
+        "x": 673,
+        "y": 96
+      },
+      "id": "E218",
+      "role": "button",
+      "section": "filters",
+      "selector": "button",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "Blocked 1"
+    },
+    {
+      "bounding_box": {
+        "h": 28,
+        "w": 1311,
+        "x": 59,
+        "y": 144
+      },
+      "id": "E219",
+      "role": "div",
+      "section": "filters",
+      "selector": "div.nb-stage-hd.sg-live",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nb-stage-hd sg-live",
+        "data_stage": "live",
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "div",
+      "visible": true,
+      "visible_label": "LIVE NOW 28 entry window is open"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 186
+      },
+      "id": "E220",
+      "role": "a",
+      "section": "filters",
+      "selector": "a.pvcard[data-ticker=\"ONTO\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "ONTO",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#ONTO"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 7 $337.82 — ONTO Onto Innovation PRIORITY 95 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $304.30–$337.80 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 20,
+        "w": 39,
+        "x": 69,
+        "y": 217
+      },
+      "id": "E221",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.pv-cau-btn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pv-cau-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "7"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 186
+      },
+      "id": "E222",
+      "role": "a",
+      "section": "filters",
+      "selector": "a.pvcard[data-ticker=\"FTI\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "FTI",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#FTI"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 1 $76.67 — FTI TechnipFMC PRIORITY 84 Energy FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $74.14–$76.67 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 20,
+        "w": 38,
+        "x": 472,
+        "y": 195
+      },
+      "id": "E223",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.pv-cau-btn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pv-cau-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "1"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 186
+      },
+      "id": "E224",
+      "role": "a",
+      "section": "filters",
+      "selector": "a.pvcard[data-ticker=\"FDX\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "FDX",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#FDX"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 2 $339.35 — FDX FedEx PRIORITY 82 Industrials FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $333.20–$339.40 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 20,
+        "w": 39,
+        "x": 597,
+        "y": 217
+      },
+      "id": "E225",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.pv-cau-btn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pv-cau-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "2"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 186
+      },
+      "id": "E226",
+      "role": "a",
+      "section": "filters",
+      "selector": "a.pvcard[data-ticker=\"DAR\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "DAR",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#DAR"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 1 $65.74 — DAR Darling Ingredients PRIORITY 80 Consumer Staples FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $63.21–$65.74 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 20,
+        "w": 38,
+        "x": 1000,
+        "y": 195
+      },
+      "id": "E227",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.pv-cau-btn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pv-cau-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "1"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 186
+      },
+      "id": "E228",
+      "role": "a",
+      "section": "filters",
+      "selector": "a.pvcard[data-ticker=\"EQIX\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "EQIX",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#EQIX"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 3 $1073.78 — EQIX Equinix Inc PRIORITY 77 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $1046.40–$1073.80 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 20,
+        "w": 39,
+        "x": 1175,
+        "y": 195
+      },
+      "id": "E229",
+      "role": "button",
+      "section": "filters",
+      "selector": "button.pv-cau-btn",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pv-cau-btn",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "button",
+      "visible": true,
+      "visible_label": "3"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 398
+      },
+      "id": "E230",
+      "role": "a",
+      "section": "filters",
+      "selector": "a.pvcard[data-ticker=\"CVCO\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "CVCO",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#CVCO"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY $607.10 — CVCO Cavco Industries, Inc. PRIORITY 76 Consumer Discretionary FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $588.80–$607.10 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 186
+      },
+      "id": "E301",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"ONTO\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "ONTO",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#ONTO"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 7 $337.82 — ONTO Onto Innovation PRIORITY 95 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $304.30–$337.80 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 186
+      },
+      "id": "E302",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"FTI\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "FTI",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#FTI"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 1 $76.67 — FTI TechnipFMC PRIORITY 84 Energy FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $74.14–$76.67 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 186
+      },
+      "id": "E303",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"FDX\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "FDX",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#FDX"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 2 $339.35 — FDX FedEx PRIORITY 82 Industrials FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $333.20–$339.40 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 186
+      },
+      "id": "E304",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"DAR\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "DAR",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#DAR"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY Triggered 1 $65.74 — DAR Darling Ingredients PRIORITY 80 Consumer Staples FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $63.21–$65.74 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 186
+      },
+      "id": "E305",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"EQIX\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "EQIX",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#EQIX"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 3 $1073.78 — EQIX Equinix Inc PRIORITY 77 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $1046.40–$1073.80 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 398
+      },
+      "id": "E306",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"CVCO\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "CVCO",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#CVCO"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY $607.10 — CVCO Cavco Industries, Inc. PRIORITY 76 Consumer Discretionary FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $588.80–$607.10 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 398
+      },
+      "id": "E307",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"GNL\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "GNL",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#GNL"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 2 $9.02 — GNL Global Net Lease, Inc. PRIORITY 74 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $8.87–$9.02 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 398
+      },
+      "id": "E308",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"TKO\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-triage",
+        "data_stage": "live",
+        "data_ticker": "TKO",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#TKO"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 2 $199.68 — TKO Tko Group Holdings Inc PRIORITY 73 Communication Services NEW Bottoming Bottoming Turning Ready Trend ZONE $195.70–$199.70 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 398
+      },
+      "id": "E309",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"ENTG\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "ENTG",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#ENTG"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 6 $163.81 — ENTG Entegris PRIORITY 72 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $150.20–$163.80 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 398
+      },
+      "id": "E310",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"EFC\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "EFC",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#EFC"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 2 $13.68 — EFC Ellington Financial, Inc. PRIORITY 69 Financials FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $13.52–$13.68 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 223,
+        "w": 254,
+        "x": 59,
+        "y": 610
+      },
+      "id": "E311",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"TEM\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy",
+        "data_stage": "live",
+        "data_ticker": "TEM",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#TEM"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 3 $54.29 — TEM Tempus AI PRIORITY 69 Health Care NEW Continuation AI Agents & Applications Bottoming Turning Ready Trend ZONE $51.81–$54.29 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 223,
+        "w": 254,
+        "x": 323,
+        "y": 610
+      },
+      "id": "E312",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"ARR\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured",
+        "data_stage": "live",
+        "data_ticker": "ARR",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#ARR"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 2 $16.72 — ARR Armour Residential REIT PRIORITY 67 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $16.56–$16.72 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 223,
+        "w": 254,
+        "x": 587,
+        "y": 610
+      },
+      "id": "E313",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"MC\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-triage",
+        "data_stage": "live",
+        "data_ticker": "MC",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#MC"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 2 $70.38 — MC Moelis & Company PRIORITY 67 Financials NEW Continuation Bottoming Turning Ready Trend ZONE $67.66–$70.38 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 223,
+        "w": 254,
+        "x": 852,
+        "y": 610
+      },
+      "id": "E314",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"SNPS\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy",
+        "data_stage": "live",
+        "data_ticker": "SNPS",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#SNPS"
+      },
+      "tag": "a",
+      "visible": true,
+      "visible_label": "BUY 3 $411.75 — SNPS Synopsys PRIORITY 66 Information Technology NEW Bottoming Bottoming Turning Ready Trend ZONE $401.60–$411.80 Aug 13"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E315",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"KMI\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-near sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "KMI",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#KMI"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Near临近 2Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Its US Energy Complex basket is crowded and stretched. Cap your size and do not add aggressively.所属 美国能源综合 篮子拥挤且过度拉伸。控制仓位，不要激进加仓。 $32.08— KMIKinder Morgan IncKi"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E316",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"AYI\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-triage sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "AYI",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#AYI"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 1Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。 $359.77— AYIAcuity BrandsAcuity Brands Priority优先级65 Industrials工业New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$349.90–$359.80Aug 1308-13"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E317",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"DKNG\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "DKNG",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#DKNG"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 $25.42— DKNGDraftKingsDraftKings Priority优先级65 Consumer Discretionary可选消费New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$24.42–$25.42Aug 1308-13"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E318",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"SMPL\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "SMPL",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#SMPL"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 1Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。 $11.18— SMPLSimply Good Foods CompanySimply Good Foods Company Priority优先级65 Consumer Staples必需消费New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$10"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E319",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"DXYZ\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "DXYZ",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#DXYZ"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 1Before you act动手之前Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $31.92— DXYZDestiny Tech100 (holds SpaceX)Destiny Tech100 (holds SpaceX) Priority优先级63 Financials金融New新Bottoming筑底 Botto"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E320",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"MBC\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "MBC",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#MBC"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 $9.29— MBCMasterBrand, Inc.MasterBrand, Inc. Priority优先级62 Industrials工业New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$8.82–$9.29Aug 1308-13"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E321",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"NNE\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "NNE",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#NNE"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 2Before you act动手之前Its Nuclear & SMR Power basket is below its long-term trend. Size down: the tape is rewarding leaders, and this basket is not one.所属 核电与小型模块化反应堆 篮子已跌破长期趋势。减小仓位：当前行情奖励领先板块，该篮子并不在其中。Options ceiling 1.7% above (as of 2"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E322",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"UCB\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy pv-featured sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "UCB",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#UCB"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 2Before you act动手之前Accounting quality is worth a second look.财务质量值得再核查一次。Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $36.76— UCBUnited Community Banks, Inc.United Community Banks, Inc"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E323",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"OZK\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "OZK",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#OZK"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 1Before you act动手之前Sector stance is reduce. This is a single-stock trigger, not a sector call.板块态度为减配。个股信号，非板块判断。 $52.24— OZKBank OZKBank OZK Priority优先级59 Financials金融New新Continuation延续 Bottoming筑底Turning转向Ready就绪Trend趋势 Zone买区$51.73"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E324",
+      "note": "prophet-card",
+      "role": "a",
+      "section": "card-grid",
+      "selector": "a.pvcard[data-ticker=\"TREX\"]",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "pvcard pv-buy sm-hidden",
+        "data_stage": "live",
+        "data_ticker": "TREX",
+        "disabled": false,
+        "hidden": false,
+        "href": "stock.html#TREX"
+      },
+      "tag": "a",
+      "visible": false,
+      "visible_label": "Buy买入 4Before you act动手之前Straight-up move. The easy part is behind it.急涨行情。轻松阶段已经过去。Its market cycle still argues for waiting (buy zone).所处的市场周期仍建议等待（买入区）。Stretched unusually far above its trend line, so chasing is risky.远高于趋势线，追高风险较大。Parab"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E401",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.nav-market-name",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-market-name",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "United States美国"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E402",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.nav-market-name",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-market-name",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "China中国"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E403",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.nav-market-name",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-market-name",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Hong Kong香港"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E404",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.nav-market-name",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-market-name",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Canada加拿大"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E405",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.nav-market-name",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-market-name",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "International国际"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E406",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.nav-market-name",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "nav-market-name",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Other Assets其他资产"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E407",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.section-label.nav-mega-h",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "section-label nav-mega-h",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Core Research核心研究"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E408",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.section-label.nav-mega-h",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "section-label nav-mega-h",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Find the Edge找到你的优势"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E409",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.section-label.nav-mega-h",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "section-label nav-mega-h",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Capital & Regimes资金与周期"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E410",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.section-label.nav-mega-h",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "section-label nav-mega-h",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Explore探索"
+    },
+    {
+      "bounding_box": {
+        "h": 12,
+        "w": 61,
+        "x": 1104,
+        "y": -710
+      },
+      "id": "E411",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": ""
+    },
+    {
+      "bounding_box": {
+        "h": 29,
+        "w": 116,
+        "x": 61,
+        "y": -690
+      },
+      "id": "E412",
+      "role": "h1",
+      "section": "headings",
+      "selector": "h1",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h1",
+      "visible": true,
+      "visible_label": "US Stocks"
+    },
+    {
+      "bounding_box": {
+        "h": 13,
+        "w": 121,
+        "x": 59,
+        "y": -579
+      },
+      "id": "E413",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.m7t-eyebrow",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "m7t-eyebrow",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": true,
+      "visible_label": "MEGA-CAP TAPE"
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 1311,
+        "x": 59,
+        "y": -344
+      },
+      "id": "E414",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": true,
+      "visible_label": "WHAT TO ACT ON NOW ? THEME REASONS → SECTOR INTELLIGENCE"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E415",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.plv-title",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "plv-title",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Forming today今日正在形成"
+    },
+    {
+      "bounding_box": {
+        "h": 23,
+        "w": 216,
+        "x": 59,
+        "y": 36
+      },
+      "id": "E416",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": true,
+      "visible_label": "PROPHET STOCK SIGNALS"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E417",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Market breadth — S&P 1500市场广度 — 标普1500 ?How broad is the tape. Advancers vs decliners, % of the S&P 1500 above their 50- and 200-day lines, and net new 52-week highs — refreshed intraday from a ~15-min-delayed feed when US markets are open,"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E418",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Market breadth — full board市场广度 — 完整看板"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E419",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Sector buy/sell setups — short-term timing板块买卖配置 — 短线择时 ? The house sector-timing read, checked against the 200-day trend and sorted most-actionable first. Measured over 1998-2026 — the base-rate column is what each state actually went on t"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E420",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Turn Setups — early bottoming signs by stock拐点形态 — 个股早期筑底迹象 ? A per-stock checklist of early bottoming signs — more filled boxes = more timeframes agreeing. Not a buy list and not a return forecast: in 26 past cases about 6 in 10 of these s"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E421",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Accumulation watch — sector ETFs增持监测 — 板块 ETF ?Each sector SPDR's top-10 holdings. Beyond price = the weight a stock gained above what its own price move explains — a sign real money flowed in, not just drift. Est. $ flow applies that to th"
+    },
+    {
+      "bounding_box": {
+        "h": 0,
+        "w": 0,
+        "x": 0,
+        "y": 0
+      },
+      "id": "E422",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": false,
+      "visible_label": "Real fund moves — strongest conviction基金真实动作 — 信念最强 ?The top conviction-ranked ACCUMULATION decisions across curated thematic/industry funds (SPDR sector, Global X) and actively managed funds (ARK), with mechanical flow AND price moves stri"
+    },
+    {
+      "bounding_box": {
+        "h": 13,
+        "w": 106,
+        "x": 59,
+        "y": 2178
+      },
+      "id": "E423",
+      "role": "h2",
+      "section": "headings",
+      "selector": "h2.tt-eyebrow",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "tt-eyebrow",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h2",
+      "visible": true,
+      "visible_label": "THEME HEAT"
+    },
+    {
+      "bounding_box": {
+        "h": 47,
+        "w": 378,
+        "x": 1007,
+        "y": 432
+      },
+      "id": "E424",
+      "role": "h1",
+      "section": "headings",
+      "selector": "h1",
+      "state": {
+        "aria_expanded": null,
+        "aria_selected": null,
+        "className": "",
+        "data_stage": null,
+        "data_ticker": null,
+        "disabled": false,
+        "hidden": false,
+        "href": null
+      },
+      "tag": "h1",
+      "visible": false,
+      "visible_label": ""
+    }
+  ],
+  "href": "https://www.mastermind-x.com/us_stocks.html",
+  "interactive": [
+    {
+      "aria": "Search tickers",
+      "box": {
+        "h": 38,
+        "w": 128,
+        "x": 1129,
+        "y": -766
+      },
+      "href": null,
+      "id": null,
+      "idx": 0,
+      "role": null,
+      "selector": "button.search-trigger",
+      "tag": "button",
+      "text": "SHOP.TO",
+      "type": "button"
+    },
+    {
+      "aria": "Settings",
+      "box": {
+        "h": 34,
+        "w": 34,
+        "x": 1385,
+        "y": -764
+      },
+      "href": null,
+      "id": "settings-open",
+      "idx": 1,
+      "role": null,
+      "selector": "#settings-open",
+      "tag": "button",
+      "text": "",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 32,
+        "w": 231,
+        "x": 70,
+        "y": -74
+      },
+      "href": null,
+      "id": null,
+      "idx": 2,
+      "role": null,
+      "selector": "button.lst-more.act-more",
+      "tag": "button",
+      "text": "Show more (6) ▾",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 32,
+        "w": 231,
+        "x": 599,
+        "y": -60
+      },
+      "href": null,
+      "id": null,
+      "idx": 3,
+      "role": null,
+      "selector": "button.lst-more.act-more",
+      "tag": "button",
+      "text": "Show more (2) ▾",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 27,
+        "w": 231,
+        "x": 1128,
+        "y": -77
+      },
+      "href": null,
+      "id": null,
+      "idx": 4,
+      "role": null,
+      "selector": "button.lst-more.lst-viewall",
+      "tag": "button",
+      "text": "View all 28 ↗",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 23,
+        "w": 58,
+        "x": 297,
+        "y": 37
+      },
+      "href": null,
+      "id": "us-st-btn-grid",
+      "idx": 5,
+      "role": null,
+      "selector": "#us-st-btn-grid",
+      "tag": "button",
+      "text": "⊞ Grid",
+      "type": null
+    },
+    {
+      "aria": "Table view",
+      "box": {
+        "h": 23,
+        "w": 72,
+        "x": 358,
+        "y": 37
+      },
+      "href": null,
+      "id": "us-st-btn-table",
+      "idx": 6,
+      "role": null,
+      "selector": "#us-st-btn-table",
+      "tag": "button",
+      "text": "Table",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 29,
+        "w": 78,
+        "x": 64,
+        "y": 96
+      },
+      "href": null,
+      "id": null,
+      "idx": 7,
+      "role": null,
+      "selector": "button",
+      "tag": "button",
+      "text": "All 81",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 29,
+        "w": 115,
+        "x": 146,
+        "y": 96
+      },
+      "href": null,
+      "id": null,
+      "idx": 8,
+      "role": null,
+      "selector": "button",
+      "tag": "button",
+      "text": "Live now 28",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 29,
+        "w": 125,
+        "x": 265,
+        "y": 96
+      },
+      "href": null,
+      "id": null,
+      "idx": 9,
+      "role": null,
+      "selector": "button",
+      "tag": "button",
+      "text": "Setting up 31",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 29,
+        "w": 175,
+        "x": 394,
+        "y": 96
+      },
+      "href": null,
+      "id": null,
+      "idx": 10,
+      "role": null,
+      "selector": "button",
+      "tag": "button",
+      "text": "Ran — don’t chase 20",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 29,
+        "w": 96,
+        "x": 573,
+        "y": 96
+      },
+      "href": null,
+      "id": null,
+      "idx": 11,
+      "role": null,
+      "selector": "button",
+      "tag": "button",
+      "text": "Basing 1",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 29,
+        "w": 104,
+        "x": 673,
+        "y": 96
+      },
+      "href": null,
+      "id": null,
+      "idx": 12,
+      "role": null,
+      "selector": "button",
+      "tag": "button",
+      "text": "Blocked 1",
+      "type": "button"
+    },
+    {
+      "aria": "Fresh signal",
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 186
+      },
+      "href": "stock.html#ONTO",
+      "id": null,
+      "idx": 13,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"ONTO\"]",
+      "tag": "a",
+      "text": "BUY Triggered 7 $337.82 — ONTO Onto Innovation PRIORITY 95 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $304.30–$337.80 Aug ",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (7)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 69,
+        "y": 217
+      },
+      "href": null,
+      "id": null,
+      "idx": 14,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "7",
+      "type": "button"
+    },
+    {
+      "aria": "Fresh signal",
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 186
+      },
+      "href": "stock.html#FTI",
+      "id": null,
+      "idx": 15,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"FTI\"]",
+      "tag": "a",
+      "text": "BUY Triggered 1 $76.67 — FTI TechnipFMC PRIORITY 84 Energy FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $74.14–$76.67 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (1)",
+      "box": {
+        "h": 20,
+        "w": 38,
+        "x": 472,
+        "y": 195
+      },
+      "href": null,
+      "id": null,
+      "idx": 16,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "1",
+      "type": "button"
+    },
+    {
+      "aria": "Fresh signal",
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 186
+      },
+      "href": "stock.html#FDX",
+      "id": null,
+      "idx": 17,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"FDX\"]",
+      "tag": "a",
+      "text": "BUY Triggered 2 $339.35 — FDX FedEx PRIORITY 82 Industrials FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $333.20–$339.40 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (2)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 597,
+        "y": 217
+      },
+      "href": null,
+      "id": null,
+      "idx": 18,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "2",
+      "type": "button"
+    },
+    {
+      "aria": "Fresh signal",
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 186
+      },
+      "href": "stock.html#DAR",
+      "id": null,
+      "idx": 19,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"DAR\"]",
+      "tag": "a",
+      "text": "BUY Triggered 1 $65.74 — DAR Darling Ingredients PRIORITY 80 Consumer Staples FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $63.21–$65.74 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (1)",
+      "box": {
+        "h": 20,
+        "w": 38,
+        "x": 1000,
+        "y": 195
+      },
+      "href": null,
+      "id": null,
+      "idx": 20,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "1",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 186
+      },
+      "href": "stock.html#EQIX",
+      "id": null,
+      "idx": 21,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"EQIX\"]",
+      "tag": "a",
+      "text": "BUY 3 $1073.78 — EQIX Equinix Inc PRIORITY 77 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $1046.40–$1073.80 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (3)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 1175,
+        "y": 195
+      },
+      "href": null,
+      "id": null,
+      "idx": 22,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "3",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 59,
+        "y": 398
+      },
+      "href": "stock.html#CVCO",
+      "id": null,
+      "idx": 23,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"CVCO\"]",
+      "tag": "a",
+      "text": "BUY $607.10 — CVCO Cavco Industries, Inc. PRIORITY 76 Consumer Discretionary FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $588.80–$607.10 Aug 13",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 323,
+        "y": 398
+      },
+      "href": "stock.html#GNL",
+      "id": null,
+      "idx": 24,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"GNL\"]",
+      "tag": "a",
+      "text": "BUY 2 $9.02 — GNL Global Net Lease, Inc. PRIORITY 74 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $8.87–$9.02 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (2)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 382,
+        "y": 407
+      },
+      "href": null,
+      "id": null,
+      "idx": 25,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "2",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 587,
+        "y": 398
+      },
+      "href": "stock.html#TKO",
+      "id": null,
+      "idx": 26,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"TKO\"]",
+      "tag": "a",
+      "text": "BUY 2 $199.68 — TKO Tko Group Holdings Inc PRIORITY 73 Communication Services NEW Bottoming Bottoming Turning Ready Trend ZONE $195.70–$199.70 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (2)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 646,
+        "y": 407
+      },
+      "href": null,
+      "id": null,
+      "idx": 27,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "2",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 852,
+        "y": 398
+      },
+      "href": "stock.html#ENTG",
+      "id": null,
+      "idx": 28,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"ENTG\"]",
+      "tag": "a",
+      "text": "BUY 6 $163.81 — ENTG Entegris PRIORITY 72 Information Technology FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $150.20–$163.80 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (6)",
+      "box": {
+        "h": 20,
+        "w": 40,
+        "x": 910,
+        "y": 407
+      },
+      "href": null,
+      "id": null,
+      "idx": 29,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "6",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 202,
+        "w": 254,
+        "x": 1116,
+        "y": 398
+      },
+      "href": "stock.html#EFC",
+      "id": null,
+      "idx": 30,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"EFC\"]",
+      "tag": "a",
+      "text": "BUY 2 $13.68 — EFC Ellington Financial, Inc. PRIORITY 69 Financials FEATURED NEW Continuation Bottoming Turning Ready Trend ZONE $13.52–$13.68 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (2)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 1175,
+        "y": 407
+      },
+      "href": null,
+      "id": null,
+      "idx": 31,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "2",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 59,
+        "y": 610
+      },
+      "href": "stock.html#TEM",
+      "id": null,
+      "idx": 32,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"TEM\"]",
+      "tag": "a",
+      "text": "BUY 3 $54.29 — TEM Tempus AI PRIORITY 69 Health Care NEW Continuation AI Agents & Applications Bottoming Turning Ready Trend ZONE $51.81–$54.29 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (3)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 118,
+        "y": 619
+      },
+      "href": null,
+      "id": null,
+      "idx": 33,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "3",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 323,
+        "y": 610
+      },
+      "href": "stock.html#ARR",
+      "id": null,
+      "idx": 34,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"ARR\"]",
+      "tag": "a",
+      "text": "BUY 2 $16.72 — ARR Armour Residential REIT PRIORITY 67 Real Estate FEATURED NEW Bottoming Bottoming Turning Ready Trend ZONE $16.56–$16.72 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (2)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 382,
+        "y": 619
+      },
+      "href": null,
+      "id": null,
+      "idx": 35,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "2",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 587,
+        "y": 610
+      },
+      "href": "stock.html#MC",
+      "id": null,
+      "idx": 36,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"MC\"]",
+      "tag": "a",
+      "text": "BUY 2 $70.38 — MC Moelis & Company PRIORITY 67 Financials NEW Continuation Bottoming Turning Ready Trend ZONE $67.66–$70.38 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (2)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 646,
+        "y": 619
+      },
+      "href": null,
+      "id": null,
+      "idx": 37,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "2",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 223,
+        "w": 254,
+        "x": 852,
+        "y": 610
+      },
+      "href": "stock.html#SNPS",
+      "id": null,
+      "idx": 38,
+      "role": null,
+      "selector": "a.pvcard[data-ticker=\"SNPS\"]",
+      "tag": "a",
+      "text": "BUY 3 $411.75 — SNPS Synopsys PRIORITY 66 Information Technology NEW Bottoming Bottoming Turning Ready Trend ZONE $401.60–$411.80 Aug 13",
+      "type": null
+    },
+    {
+      "aria": "Caution notes (3)",
+      "box": {
+        "h": 20,
+        "w": 39,
+        "x": 910,
+        "y": 619
+      },
+      "href": null,
+      "id": null,
+      "idx": 39,
+      "role": null,
+      "selector": "button.pv-cau-btn",
+      "tag": "button",
+      "text": "3",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 38,
+        "w": 139,
+        "x": 652,
+        "y": 848
+      },
+      "href": null,
+      "id": null,
+      "idx": 40,
+      "role": null,
+      "selector": "button.sm-btn",
+      "tag": "button",
+      "text": "▾ Show 15 more",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 38,
+        "w": 96,
+        "x": 799,
+        "y": 848
+      },
+      "href": null,
+      "id": null,
+      "idx": 41,
+      "role": null,
+      "selector": "button.sm-btn.sm-ghost",
+      "tag": "button",
+      "text": "Show all 74",
+      "type": "button"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 27,
+        "w": 1311,
+        "x": 59,
+        "y": 912
+      },
+      "href": null,
+      "id": null,
+      "idx": 42,
+      "role": null,
+      "selector": "summary.pvr-sum",
+      "tag": "summary",
+      "text": "Passed on tonight 20 of 69",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 36,
+        "w": 347,
+        "x": 59,
+        "y": 1519
+      },
+      "href": null,
+      "id": "trd-btn",
+      "idx": 43,
+      "role": null,
+      "selector": "#trd-btn",
+      "tag": "button",
+      "text": "Track record·60% win · +1.19% a trade",
+      "type": "button"
+    },
+    {
+      "aria": "Standout",
+      "box": {
+        "h": 48,
+        "w": 249,
+        "x": 556,
+        "y": 1513
+      },
+      "href": null,
+      "id": "wcd-btn",
+      "idx": 44,
+      "role": null,
+      "selector": "#wcd-btn",
+      "tag": "button",
+      "text": "What changed today ·30",
+      "type": "button"
+    },
+    {
+      "aria": "Filter table rows",
+      "box": {
+        "h": 36,
+        "w": 280,
+        "x": 59,
+        "y": 1655
+      },
+      "href": null,
+      "id": null,
+      "idx": 45,
+      "role": null,
+      "selector": "input",
+      "tag": "input",
+      "text": "",
+      "type": "search"
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 40,
+        "w": 1311,
+        "x": 59,
+        "y": 2178
+      },
+      "href": null,
+      "id": null,
+      "idx": 46,
+      "role": null,
+      "selector": "summary.tt-all-s",
+      "tag": "summary",
+      "text": "THEME HEAT ? as of 2026-08-13 Commodities Metals hottest · 4 live names on the board · 5 more off the heat list — where to look, not what to buy.",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 40,
+        "w": 1311,
+        "x": 59,
+        "y": 2249
+      },
+      "href": null,
+      "id": null,
+      "idx": 47,
+      "role": null,
+      "selector": "summary.tt-s",
+      "tag": "summary",
+      "text": "",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 40,
+        "w": 1311,
+        "x": 59,
+        "y": 2290
+      },
+      "href": null,
+      "id": null,
+      "idx": 48,
+      "role": null,
+      "selector": "summary.tt-s",
+      "tag": "summary",
+      "text": "",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 62,
+        "w": 1311,
+        "x": 59,
+        "y": 2330
+      },
+      "href": null,
+      "id": null,
+      "idx": 49,
+      "role": null,
+      "selector": "summary.tt-s",
+      "tag": "summary",
+      "text": "",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 62,
+        "w": 1311,
+        "x": 59,
+        "y": 2393
+      },
+      "href": null,
+      "id": null,
+      "idx": 50,
+      "role": null,
+      "selector": "summary.tt-s",
+      "tag": "summary",
+      "text": "",
+      "type": null
+    },
+    {
+      "aria": null,
+      "box": {
+        "h": 62,
+        "w": 1311,
+        "x": 59,
+        "y": 2455
+      },
+      "href": null,
+      "id": null,
+      "idx": 51,
+      "role": null,
+      "selector": "summary.tt-s",
+      "tag": "summary",
+      "text": "",
+      "type": null
+    },
+    {
+      "aria": "Ask Mastermind",
+      "box": {
+        "h": 56,
+        "w": 202,
+        "x": 1205,
+        "y": 922
+      },
+      "href": null,
+      "id": "mmb-launch",
+      "idx": 52,
+      "role": "button",
+      "selector": "#mmb-launch",
+      "tag": "div",
+      "text": "Ask Mastermind Brain · your desk copilot",
+      "type": null
+    }
+  ],
+  "lang": "en",
+  "ready": "complete",
+  "styles": {
+    "board": {
+      "backgroundColor": "rgb(21, 24, 32)",
+      "borderRadius": "14px",
+      "boxShadow": "none",
+      "color": "rgb(200, 208, 220)",
+      "display": "block",
+      "fontSize": "15px",
+      "fontWeight": "400",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "height": "2127.38px",
+      "lineHeight": "22.5px",
+      "margin": "0px",
+      "maxWidth": "none",
+      "overflow": "visible",
+      "padding": "16px 18px",
+      "position": "static",
+      "top": "auto",
+      "width": "1349px",
+      "zIndex": "auto"
+    },
+    "first_card": {
+      "backgroundColor": "color(srgb 0.11 0.136569 0.164216)",
+      "borderRadius": "12px",
+      "boxShadow": "color(srgb 0.270588 0.721569 0.45098 / 0.24) 0px 0px 0px 1px, color(srgb 0.270588 0.721569 0.45098 / 0.32) 0px 0px 16px -6px, rgba(0, 0, 0, 0.7) 0px 10px 26px -14px",
+      "color": "rgb(200, 208, 220)",
+      "display": "flex",
+      "fontSize": "15px",
+      "fontWeight": "400",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "height": "202.25px",
+      "lineHeight": "22.5px",
+      "margin": "0px",
+      "maxWidth": "none",
+      "overflow": "hidden",
+      "padding": "0px",
+      "position": "relative",
+      "top": "0px",
+      "width": "254.188px",
+      "zIndex": "auto"
+    },
+    "h2": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "color": "rgb(139, 147, 161)",
+      "display": "block",
+      "fontSize": "15px",
+      "fontWeight": "700",
+      "gap": "normal",
+      "gridTemplateColumns": "none",
+      "height": "22.5px",
+      "lineHeight": "22.5px",
+      "margin": "0px",
+      "maxWidth": "none",
+      "overflow": "visible",
+      "padding": "0px",
+      "position": "static",
+      "top": "auto",
+      "width": "216.219px",
+      "zIndex": "auto"
+    },
+    "header": {
+      "backgroundColor": "rgba(0, 0, 0, 0)",
+      "borderRadius": "0px",
+      "boxShadow": "none",
+      "color": "rgb(200, 208, 220)",
+      "display": "grid",
+      "fontSize": "15px",
+      "fontWeight": "400",
+      "gap": "8px 10px",
+      "gridTemplateColumns": "1112.64px 124px 151.359px",
+      "height": "42px",
+      "lineHeight": "22.5px",
+      "margin": "18px -29.5px 16px",
+      "maxWidth": "none",
+      "overflow": "visible",
+      "padding": "0px",
+      "position": "relative",
+      "top": "0px",
+      "width": "1408px",
+      "zIndex": "auto"
+    },
+    "track": {
+      "backgroundColor": "color(srgb 0.105882 0.121569 0.156863 / 0.52)",
+      "borderRadius": "999px",
+      "boxShadow": "rgba(255, 255, 255, 0.09) 0px 1px 0px 0px inset, rgba(3, 7, 18, 0.18) 0px 1px 2px 0px",
+      "color": "rgb(200, 208, 220)",
+      "display": "flex",
+      "fontSize": "12.5px",
+      "fontWeight": "600",
+      "gap": "9px",
+      "gridTemplateColumns": "none",
+      "height": "36px",
+      "lineHeight": "12.5px",
+      "margin": "0px",
+      "maxWidth": "100%",
+      "overflow": "hidden",
+      "padding": "8px 15px 8px 12px",
+      "position": "relative",
+      "top": "0px",
+      "width": "346.984px",
+      "zIndex": "auto"
+    }
+  },
+  "theme": "dark",
+  "title": "US Stock Dashboard — 2026-08-13 | MastermindX",
+  "token_proliferation": {
+    "color_count": 18,
+    "colors": [
+      "rgb(0, 0, 0)",
+      "rgb(239, 239, 239)",
+      "rgb(200, 208, 220)",
+      "color(srgb 0.478431 0.654902 0.878431)",
+      "rgb(220, 228, 243)",
+      "rgba(103, 130, 230, 0.16)",
+      "rgb(255, 255, 255)",
+      "rgb(240, 243, 248)",
+      "rgba(17, 21, 29, 0.992)",
+      "rgb(143, 155, 174)",
+      "rgb(23, 28, 37)",
+      "rgb(154, 165, 182)",
+      "rgb(155, 168, 186)",
+      "rgb(18, 23, 32)",
+      "rgb(215, 222, 234)",
+      "rgb(171, 180, 194)",
+      "rgb(203, 211, 223)",
+      "rgb(170, 181, 198)"
+    ],
+    "font_size_count": 13,
+    "font_sizes": [
+      "13.3333px",
+      "15px",
+      "13.5px",
+      "12.5px",
+      "9px",
+      "20px",
+      "11.5px",
+      "8.5px",
+      "11px",
+      "13px",
+      "14px",
+      "17px",
+      "12px"
+    ],
+    "radii": [
+      "0px",
+      "11px",
+      "9px",
+      "3px",
+      "21px",
+      "999px",
+      "13px"
+    ],
+    "radius_count": 7,
+    "shadow_count": 3,
+    "shadows": [
+      "color(srgb 0.784314 0.815686 0.862745 / 0.4) 0px 0px 0px 1px",
+      "rgba(0, 0, 0, 0.46) 0px 28px 74px 0px, rgba(0, 0, 0, 0.32) 0px 2px 8px 0px",
+      "color(srgb 0.784314 0.815686 0.862745 / 0.24) 0px 0px 0px 1px"
+    ]
+  },
+  "viewport": {
+    "dpr": 1,
+    "h": 1000,
+    "scrollH": 3179,
+    "scrollY": 812,
+    "w": 1440
+  },
+  "visible_text": "PROPHET STOCK SIGNALS\n⊞ Grid\n Table\n69 shown · 77 setups · green dot = entry open, yellow = wait for pullback. ?\n13 of 22 confirmed overnight · 0 adjusted, 9 left the board?\nAll\n81\nLive now\n28\nSetting up\n31\nRan — don’t chase\n20\nBasing\n1\nBlocked\n1\nLIVE NOW\n28\nentry window is open\nBUY\nTriggered\n7\n$337.82\n—\nONTO\nOnto Innovation\nPRIORITY\n95\nInformation Technology\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$304.30–$337.80\nAug 13\nBUY\nTriggered\n1\n$76.67\n—\nFTI\nTechnipFMC\nPRIORITY\n84\nEnergy\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$74.14–$76.67\nAug 13\nBUY\nTriggered\n2\n$339.35\n—\nFDX\nFedEx\nPRIORITY\n82\nIndustrials\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$333.20–$339.40\nAug 13\nBUY\nTriggered\n1\n$65.74\n—\nDAR\nDarling Ingredients\nPRIORITY\n80\nConsumer Staples\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$63.21–$65.74\nAug 13\nBUY\n3\n$1073.78\n—\nEQIX\nEquinix Inc\nPRIORITY\n77\nReal Estate\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$1046.40–$1073.80\nAug 13\nBUY\n$607.10\n—\nCVCO\nCavco Industries, Inc.\nPRIORITY\n76\nConsumer Discretionary\n FEATURED\nNEW\nContinuation\nBottoming\nTurning\nReady\nTrend\nZONE\n$588.80–$607.10\nAug 13\nBUY\n2\n$9.02\n—\nGNL\nGlobal Net Lease, Inc.\nPRIORITY\n74\nReal Estate\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$8.87–$9.02\nAug 13\nBUY\n2\n$199.68\n—\nTKO\nTko Group Holdings Inc\nPRIORITY\n73\nCommunication Services\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$195.70–$199.70\nAug 13\nBUY\n6\n$163.81\n—\nENTG\nEntegris\nPRIORITY\n72\nInformation Technology\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$150.20–$163.80\nAug 13\nBUY\n2\n$13.68\n—\nEFC\nEllington Financial, Inc.\nPRIORITY\n69\nFinancials\n FEATURED\nNEW\nContinuation\nBottoming\nTurning\nReady\nTrend\nZONE\n$13.52–$13.68\nAug 13\nBUY\n3\n$54.29\n—\nTEM\nTempus AI\nPRIORITY\n69\nHealth Care\nNEW\nContinuation\nAI Agents & Applications\nBottoming\nTurning\nReady\nTrend\nZONE\n$51.81–$54.29\nAug 13\nBUY\n2\n$16.72\n—\nARR\nArmour Residential REIT\nPRIORITY\n67\nReal Estate\n FEATURED\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$16.56–$16.72\nAug 13\nBUY\n2\n$70.38\n—\nMC\nMoelis & Company\nPRIORITY\n67\nFinancials\nNEW\nContinuation\nBottoming\nTurning\nReady\nTrend\nZONE\n$67.66–$70.38\nAug 13\nBUY\n3\n$411.75\n—\nSNPS\nSynopsys\nPRIORITY\n66\nInformation Technology\nNEW\nBottoming\nBottoming\nTurning\nReady\nTrend\nZONE\n$401.60–$411.80\nAug 13\nShowing 15 of 74\n▾\nShow 15 more\nShow all 74\nPassed on tonight\n20 of 69\nEarnings watch\nLUNR\nLAC\nThe setups are still there, but earnings can reprice them fast. Prophet waits through the report date.\nRECENTLY FIRED\n12\nRecently fired — the entry window has passed; wait for the next setup.\nQNST\nQuinStreet, Inc.\n+34.1% since signal · fired 6 sessions ago\nRPD\nRapid7 Inc\n+26.9% since signal · fired 6 sessions ago\nPTGX\nProtagonist Therapeutics, Inc.\n+10.3% since signal · fired 6 sessions ago\nKREF\nKKR Real Estate Finance Trust Inc\n+8.0% since signal · fired 6 sessions ago\nSKY\nChampion Homes, Inc.\n+5.6% since signal · fired 6 sessions ago\nRYTM\nRhythm Pharmaceuticals Inc\n+4.8% since signal · fired 6 sessions ago\nGNE\nGenie Energy Ltd\n+3.8% since signal · fired 6 sessions ago\nSWIM\nLatham Group Inc\n+3.6% since signal · fired 6 sessions ago\nOC\nOwens Corning\n+2.2% since signal · fired 6 sessions ago\nITB\nITB\n-1.3% since signal · fired 6 sessions ago\nBXC\nBluelinx Hldgs Inc\n+65.3% since signal · fired 9 sessions ago\nCURI\nCuriosityStream Inc\n+63.5% since signal · fired 9 sessions ago\n\nHigher Priority means the setup is more ready today, not more likely to win. Featured highlights up to 12 of the most ready names, with no more than four per sector; every qualifying name still appears on this board.\n\nTrack record·60% win · +1.19% a trade\nmeasurement updated\nWhat changed today ·30\n More fresh triggers\nMore names flashing a buy signal today. Signals already shown on cards carry a . ?\nTop Picks →\n\n Every actionable signal is already on the board above, marked .\n\n Market leaders\nThe strongest runners over the past three months. No fresh entry yet — watch, don’t chase. ?\nSTOCK↕\tSECTOR↕\tTHEME↕\trelative strength↕\tOFF HIGH↕\tSTATE↕\tENTRY↕\nSNOW Snowflake\tInformation Technology\tAI Software & Platforms\t+0.06\t+0.0%\tNEARING A HIGH\tpullback zone $303.60–$322.10 extended\nMAN ManpowerGroup\tIndustrials\t—\t-0.30\t+0.0%\tNEARING A HIGH\tpullback zone $54.13–$55.57 extended\nQLYS Qualys\tInformation Technology\t—\t-0.05\t+0.0%\tNEARING A HIGH\tpullback zone $176.30–$176.60 extended\nGTLB GitLab\tInformation Technology\tNon-AI Software\t-0.93\t-15.1%\tNEARING A HIGH\tpullback zone $38.44–$38.44 extended\nCBRL Cracker Barrel\tConsumer Discretionary\t—\t-0.19\t-4.6%\tNEARING A HIGH\tpullback zone $55.74–$57.53 extended\nVSXY Victoria's Secret\tConsumer Discretionary\t—\t+2.30\t-8.9%\tBOTTOMING\tpullback zone $89.44–$89.44\nAZTA Azenta, Inc.\tHealth Care\t—\t-0.65\t-17.3%\tNEARING A HIGH\tpullback zone $30.52–$31.69\nNEO NeoGenomics Laboratories, Inc.\tHealth Care\t—\t+0.95\t-1.4%\tUPTREND\tpullback zone $15.22–$16.12\nOKTA Okta, Inc.\tInformation Technology\t—\t+0.54\t+0.0%\tNEARING A HIGH\tpullback zone $143.80–$147.40 extended\nCAKE The Cheesecake Factory, Inc.\tConsumer Discretionary\t—\t+0.68\t-4.6%\tNEARING A HIGH\tpullback zone $100.70–$108.30 extended\nCORT Corcept Therapeutics Incorporated\tHealth Care\t—\t+0.34\t-6.6%\tBOTTOMING\tpullback zone $103.60–$103.60 extended\nPATH UiPath\tInformation Technology\tAI Agents & Applications ◦\t-0.49\t-13.5%\tNEARING A HIGH\tpullback zone $14.60–$14.60\nEAT Brinker International, Inc.\tConsumer Discretionary\t—\t+0.12\t-3.0%\tNEARING A HIGH\tpullback zone $214.70–$226.90 extended\nPANW Palo Alto Networks Inc\tInformation Technology\tAI Software & Platforms\t+1.21\t+0.0%\tNEARING A HIGH\tpullback zone $356.40–$368.30 extended"
+}
