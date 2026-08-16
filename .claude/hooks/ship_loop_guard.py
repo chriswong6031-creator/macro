@@ -1936,6 +1936,24 @@ def _check_ci(
         name = str(run.get("name") or "unnamed check")
         if _is_spurious_check(name):
             continue
+        # The inactive pilot authority context, excluded on the MERGED path too
+        # (2026-08-16). `_red_pairs` and `_split_head_runs` above have always
+        # skipped it and `scripts/merge_on_green.py` carries the same rule, but
+        # this loop did not — so the three disagreed about one check on one head.
+        # Measured on #5765's merged head 8c279038: `_red_pairs` returned [] while
+        # this loop returned [("ci-authority/codex/merge-queue-pilot","failure")],
+        # and the session was blocked after a fully green merge. It is worse than
+        # a plain false red: a non-empty `bad` is what ARMS the semantic-evidence
+        # path, and a merged head can no longer bind its proof base (GitHub drops
+        # `pull_requests` from check-runs once the PR closes), so the block
+        # surfaced as "advertised semantic evidence is unusable ... does not
+        # identify the exact PR proof base" — a message about proof plumbing that
+        # named nothing the session could fix, for a check that is BY DESIGN a
+        # retarget-invalidation receipt. Every PR touching a ci-authority path
+        # hit this. `ci-authority/main` stays binding here exactly as elsewhere;
+        # this skips ONLY the one literal pilot context, and widens nothing.
+        if name == "ci-authority/codex/merge-queue-pilot":
+            continue
         if run.get("status") != "completed":
             pending.append(name)
         elif run.get("conclusion") not in non_red:
@@ -3280,6 +3298,19 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
         return
     pull_key = f"{branch}:{head}"
     pull = _proof(state, "merged_pull", pull_key)
+    if pull is not None and not str((pull.get("base") or {}).get("sha") or ""):
+        # A PRE-FIX CACHE SHAPE IS NOT A PROOF. The narrowing below did not keep
+        # `base.sha` until 2026-08-16, and this proof is keyed by branch+head —
+        # neither of which ever moves again once the branch is merged — so a
+        # session that already remembered the old shape would keep reading its own
+        # stale record and stay blocked by the very defect the narrowing fix
+        # repairs. The cache, not the API, is what the CI gate would be answering
+        # from. Treat an incomplete record as no record and pay one call: the
+        # refetch re-remembers the complete shape and every later Stop hits the
+        # cache again. A pull request whose API record genuinely carries no base
+        # re-asks once per Stop, which is the cheap direction — the alternative is
+        # pinning a session forever on a record that can never answer.
+        pull = None
     if pull is None:
         try:
             pull = _latest_merged_pr(owner, repo, branch)
@@ -3287,14 +3318,35 @@ def _stop(root: Path, path: Path, payload: dict[str, Any]) -> None:
             _block(path, state, payload, _github_block_code(exc), str(exc))
             return
         if pull:
-            # A merged PR and its head/merge identities are immutable. Keep only
-            # the fields the remaining gates consume, not the full API payload.
+            # A merged PR and its head/merge/base identities are immutable. Keep
+            # only the fields the remaining gates consume, not the full API
+            # payload — and `base.sha` IS one of them, as of #5757: the CI gate
+            # threads it in as the MERGED head's semantic proof base, because
+            # GitHub drops `pull_requests` from check-runs the moment a pull
+            # request closes, so `_semantic_pr_base_sha` returns None on every
+            # merged head and this record is the only surviving source of the
+            # exact base.
+            #
+            # Dropping it is why that fallback shipped dead. #3746 narrowed this
+            # record long before the fallback existed, so `_check_ci` was handed
+            # `""` on every merged head, `_semantic_evidence_for_run` found no
+            # bound base on either side, and it refused with "run <id> does not
+            # identify the exact PR proof base" — surfacing as `ci_failed` on
+            # work that had merged GREEN, fleet-wide, with no session-side
+            # remedy: check runs on a merged commit are immutable. Measured on
+            # PR #5769 (merged 2026-08-16T02:43:09Z): run 31921385097 concluded
+            # `success` carrying `prs: []`, while `/pulls/5769` still carried
+            # base c2484fe7134b63b8acba50471396edf9929d20a3.
+            #
+            # Only the sha is kept. The narrowing exists to bound what is written
+            # into the state file, and no gate reads anything else off the base.
             pull = {
                 "number": pull.get("number"),
                 "head": {
                     "sha": (pull.get("head") or {}).get("sha"),
                     "ref": (pull.get("head") or {}).get("ref"),
                 },
+                "base": {"sha": (pull.get("base") or {}).get("sha")},
                 "merge_commit_sha": pull.get("merge_commit_sha"),
                 "merged_at": pull.get("merged_at"),
             }
