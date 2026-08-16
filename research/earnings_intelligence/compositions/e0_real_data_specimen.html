@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>E0 specimen — AAPL Q3 FY2026 event workspace</title>
+  <style>
+    :root {
+      --bg: #0c0f12;
+      --bg-2: #14191e;
+      --line: #2a333c;
+      --text: #e8eef4;
+      --muted: #8b98a5;
+      --accent: #d4a017;
+      --good: #3dbe8c;
+      --warn: #e0a14a;
+      --bad: #d4676a;
+      --chip: #1c242c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font: 14px/1.45 "Inter", "SF Pro Text", system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    header.shell {
+      position: sticky; top: 0; z-index: 2;
+      display: flex; gap: 16px; align-items: center;
+      padding: 10px 20px;
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+      font-size: 12px; color: var(--muted);
+    }
+    header.shell b { color: var(--text); font-weight: 600; }
+    .wrap { display: grid; grid-template-columns: 1fr 320px; gap: 0; min-height: calc(100vh - 42px); }
+    main { padding: 28px 32px 80px; }
+    aside.rail {
+      border-left: 1px solid var(--line);
+      background: var(--bg-2);
+      padding: 20px;
+    }
+    .kicker { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+    h1 { font-size: 28px; letter-spacing: -0.03em; margin: 8px 0 6px; font-weight: 560; }
+    .stance { font-size: 16px; color: var(--text); max-width: 40rem; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0 24px; }
+    .chip {
+      background: var(--chip); border: 1px solid var(--line);
+      padding: 4px 8px; border-radius: 999px; font-size: 12px; color: var(--muted);
+    }
+    .chip.warn { color: var(--warn); border-color: #5a4420; }
+    .chip.ok { color: var(--good); }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 12px 0 28px; }
+    .metric { background: var(--bg-2); border: 1px solid var(--line); padding: 14px; border-radius: 10px; }
+    .metric span { display: block; font-size: 11px; color: var(--muted); }
+    .metric b { display: block; font-size: 22px; letter-spacing: -0.03em; margin-top: 4px; }
+    .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 20px; }
+    .tabs a { color: var(--muted); text-decoration: none; padding: 8px 12px; font-size: 13px; }
+    .tabs a.on { color: var(--text); border-bottom: 2px solid var(--accent); }
+    section { margin: 0 0 36px; }
+    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; }
+    .pending { color: var(--warn); font-size: 11px; }
+    .quote { border-left: 2px solid var(--accent); padding: 8px 12px; color: var(--text); margin: 8px 0; }
+    .note { font-size: 12px; color: var(--muted); }
+    aside.rail h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    .src { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin: 8px 0; }
+    .src b { display: block; font-size: 13px; }
+    .ask { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+    .ask input { width: 100%; background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 10px; border-radius: 8px; }
+    @media (max-width: 1100px) {
+      .wrap { grid-template-columns: 1fr; }
+      aside.rail { border-left: 0; border-top: 1px solid var(--line); }
+      .metrics { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 480px) {
+      main { padding: 16px; }
+      h1 { font-size: 22px; }
+      .metrics { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <b>Terminal</b>
+    <span>Analysis</span>
+    <span>AAPL</span>
+    <span>Intelligence</span>
+    <span style="margin-left:auto">E0 specimen · not a product route · context only</span>
+  </header>
+  <div class="wrap">
+    <main>
+      <div class="kicker">Company Event Brief · existing Terminal grammar</div>
+      <h1>AAPL · Q3 FY2026</h1>
+      <p class="stance">Devices ran hot; supply and memory are the constraint.</p>
+      <div class="meta">
+        <span class="chip">30 Jul 2026</span>
+        <span class="chip warn">partial</span>
+        <span class="chip warn">wording not span-checked</span>
+        <span class="chip">cie_98e318c37ec1a2a1f83c45e1</span>
+        <span class="chip">target evt_cik0000320193_2026q3_results</span>
+        <span class="chip ok">transcript present</span>
+        <span class="chip warn">release not bound</span>
+        <span class="chip warn">slides not ingested</span>
+        <span class="chip">context only</span>
+      </div>
+      <div class="metrics">
+        <div class="metric"><span>Revenue</span><b>$109.4B</b><span class="pending">history overlay · pending span</span></div>
+        <div class="metric"><span>YoY</span><b>+16%</b><span class="pending">pending span</span></div>
+        <div class="metric"><span>Gross margin</span><b>50.1%</b><span class="pending">pending span</span></div>
+        <div class="metric"><span>Analyst Qs</span><b>14</b><span class="pending">count, not exchanges</span></div>
+      </div>
+      <nav class="tabs" aria-label="Event lenses">
+        <a class="on" href="#brief">Brief</a>
+        <a href="#results">Results</a>
+        <a href="#guidance">Guidance</a>
+        <a href="#qa">Q&amp;A</a>
+        <a href="#timeline">Timeline</a>
+        <a href="#peers">Peers</a>
+        <a href="#sources">Sources</a>
+      </nav>
+
+      <section id="brief">
+        <h2>What happened</h2>
+        <p>June-quarter revenue $109.4B (+16%). iPhone +22%, Mac +29%, Services $30.7B. Overlay wording says demand beat the internal forecast; Q4 supply constraints rise sequentially; memory costs described as a 100-year flood; FX a further 2.5 ppt sequential growth headwind.</p>
+        <p class="note">This paragraph is the live CI overlay as of 16 Aug 2026. E1 must replace it with span-cited claims or typed absences. It is not a recommendation.</p>
+      </section>
+
+      <section id="results">
+        <h2>Results</h2>
+        <table>
+          <thead><tr><th>Metric</th><th>Reported</th><th>Prior Δ</th><th>Evidence</th></tr></thead>
+          <tbody>
+            <tr><td>Revenue</td><td>$109.4B</td><td>−1 ppt growth vs prior event metric</td><td class="pending">earnings_history · not 8-K</td></tr>
+            <tr><td>EPS growth</td><td>+29%</td><td>+7 ppt</td><td class="pending">earnings_history</td></tr>
+            <tr><td>Gross margin</td><td>50.1%</td><td>+0.8 ppt</td><td class="pending">earnings_history</td></tr>
+            <tr><td>iPhone</td><td>+22%</td><td>—</td><td class="pending">highlight</td></tr>
+            <tr><td>Mac</td><td>+29%</td><td>—</td><td class="pending">highlight</td></tr>
+            <tr><td>Services</td><td>$30.7B +12%</td><td>—</td><td class="pending">highlight</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="guidance">
+        <h2>Guidance</h2>
+        <p class="note">Typed absence on the live CI object — do not invent a beat/miss. Control grammar already live on IEX Wire:</p>
+        <div class="quote">“For the third quarter of 2026, we expect 5%-7% organic growth, adjusted EBITDA margin in the 27%-27.5% range, and adjusted EPS of $2.20-$2.25.” — Sean Gillen, IEX Q2 FY2026, claim_08e3f9dfdc802b94cb7c06618d54069e, segment 18, bytes 0–142</div>
+      </section>
+
+      <section id="qa">
+        <h2>Q&amp;A pressure (tags, not topics)</h2>
+        <p>14 questions counted. Live tags include supply_constraints, memory_costs, fx_headwinds, ai_everywhere. These are history tags, not Q&amp;A clusters. Next research action: search the transcript for “memory”.</p>
+      </section>
+
+      <section id="timeline">
+        <h2>Narrative timeline</h2>
+        <p class="note">Empty honest state: digest narrative_deltas is []. Do not draw a fake commitment ledger in E2.</p>
+      </section>
+
+      <section id="peers">
+        <h2>Peer wave (disabled in E2)</h2>
+        <p>Golden wave: GOOGL printed Cloud +82% / $514B backlog on 22 Jul; AAPL printed devices + memory squeeze on 30 Jul; NVDA/TSM not-yet-reporting at the GOOGL print. Mechanism = AI capex vs memory/foundry cost. Not “all peers bullish.”</p>
+      </section>
+    </main>
+    <aside class="rail" id="sources">
+      <h3>Evidence rail</h3>
+      <div class="src"><b>earnings_history</b><span class="pending">metadata_only</span></div>
+      <div class="src"><b>score_overlay</b><span class="pending">metadata_only · drives the summary</span></div>
+      <div class="src"><b>transcript</b><span>present · citation_precision document · Brief cannot open a span</span></div>
+      <div class="src"><b>8-K / Exhibit 99.1</b><span class="pending">not bound on this event</span></div>
+      <div class="src"><b>slides</b><span class="pending">not_ingested</span></div>
+      <div class="src"><b>consensus</b><span class="pending">unlicensed_absent</span></div>
+      <div class="ask">
+        <h3>Ask Mastermind</h3>
+        <input placeholder="What did they say about memory costs?" />
+        <p class="note">Must return a locator chip or decline. Today: Brain compact context, no claim locators.</p>
+      </div>
+    </aside>
+  </div>
+</body>
+</html>
