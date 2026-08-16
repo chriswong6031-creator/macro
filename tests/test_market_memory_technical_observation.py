@@ -19,6 +19,7 @@ from jsonschema import Draft202012Validator, ValidationError
 
 from engine.neuralweb import market_memory_technical_observation as technical
 from lib import nyse_calendar
+from lib.massive_ticker import artifact_relative_path
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_SCHEMA_PATH = (
@@ -104,7 +105,7 @@ def _parquet_bytes(frame: pd.DataFrame, *, row_group_size: int | None = None) ->
     return buffer.getvalue()
 
 
-def _manifest(frame: pd.DataFrame) -> dict:
+def _manifest(frame: pd.DataFrame, extra_files: list[str] | None = None) -> dict:
     first = frame.index[0].date()
     last = frame.index[-1].date()
     gaps = [
@@ -112,14 +113,14 @@ def _manifest(frame: pd.DataFrame) -> dict:
         for previous, current in zip(frame.index, frame.index[1:])
     ]
     tickers = [f"T{index:03d}.parquet" for index in range(99)] + ["SPY.parquet"]
-    files = sorted([*tickers, "_backfill_state.json"])
+    files = sorted([*tickers, "_backfill_state.json", *(extra_files or [])])
     return {
         "dir": "massive_stock_day",
         "count": len(files),
         "files": files,
         "store": {
             "store": "massive_stock_day",
-            "n_tickers": len(tickers),
+            "n_tickers": len(files) - 1,
             "latest_date": last.isoformat(),
             "updated_at": "2026-08-10T01:35:00.000000+00:00",
             "coverage": {
@@ -850,3 +851,77 @@ def test_json_schemas_are_meta_valid_exact_and_reject_semantic_drift() -> None:
 def test_last_modified_format_fixture_is_canonical_utc() -> None:
     parsed = datetime(2026, 8, 10, 1, 37, 37, tzinfo=timezone.utc)
     assert format_datetime(parsed, usegmt=True) == MANIFEST_MODIFIED
+
+
+def test_live_case_v1_manifest_member_is_admitted() -> None:
+    """Production 2026-08-16 02:29Z listing added __case_v1/547043.parquet (TpC).
+
+    The previous basename-only check rejected that exact member and failed
+    closed the W2C technical owner. This fixture is that production path.
+    """
+    live_member = artifact_relative_path("TpC").as_posix()
+    assert live_member == "__case_v1/547043.parquet"
+    frame = _frame()
+    manifest = _manifest(frame, extra_files=[live_member])
+    technical.fetch_current_spy_daily_inputs(
+        fetcher=ScriptedFetcher(_responses(frame=frame, manifest=manifest))
+    )
+
+
+@pytest.mark.parametrize(
+    "filename",
+    [
+        "foo/bar.parquet",
+        "../SPY.parquet",
+        "__case_v1/../TPC.parquet",
+        "__case_v1/not-hex.parquet",
+        "__case_v1/547043.parquetx",
+        "__case_v1/545043.parquet",
+        "__case_v1/" + "TPC".encode("utf-8").hex() + ".parquet",
+        "__case_v1//547043.parquet",
+        r"__case_v1\547043.parquet",
+        "massive_stock_day/SPY.parquet",
+    ],
+)
+def test_noncanonical_nested_manifest_paths_remain_rejected(filename: str) -> None:
+    frame = _frame()
+    manifest = _manifest(frame, extra_files=[filename])
+    with pytest.raises(
+        technical.MarketMemoryTechnicalObservationError,
+        match="unsafe or noncanonical filename",
+    ):
+        technical.fetch_current_spy_daily_inputs(
+            fetcher=ScriptedFetcher(_responses(frame=frame, manifest=manifest))
+        )
+
+
+def test_one_byte_change_in_canonical_case_v1_path_fails() -> None:
+    live_member = artifact_relative_path("TpC").as_posix()
+    # 547043 is UTF-8 "TpC"; flipping one hex digit to 545043 decodes as
+    # uppercase "TPC", which the producer stores as TPC.parquet, not nested.
+    mutated = "__case_v1/545043.parquet"
+    assert mutated != live_member
+    assert bytes.fromhex("545043").decode("utf-8") == "TPC"
+    frame = _frame()
+    manifest = _manifest(frame, extra_files=[mutated])
+    with pytest.raises(
+        technical.MarketMemoryTechnicalObservationError,
+        match="unsafe or noncanonical filename",
+    ):
+        technical.fetch_current_spy_daily_inputs(
+            fetcher=ScriptedFetcher(_responses(frame=frame, manifest=manifest))
+        )
+
+
+def test_producer_consumer_share_the_case_v1_posix_contract() -> None:
+    for ticker in ("SPY", "TPC", "TpC", "BCPC", "BCpC", "Åbc"):
+        posix = artifact_relative_path(ticker).as_posix()
+        if "/" in posix:
+            assert technical._admissible_public_manifest_filename(posix) is True
+        else:
+            assert posix == f"{ticker}.parquet"
+            assert technical._admissible_public_manifest_filename(posix) is True
+    assert technical._admissible_public_manifest_filename("TpC.parquet") is True
+    assert technical._admissible_public_manifest_filename(
+        artifact_relative_path("TpC").as_posix()
+    ) is True

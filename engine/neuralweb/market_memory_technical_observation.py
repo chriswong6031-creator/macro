@@ -41,6 +41,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import requests
 
+from lib.massive_ticker import is_canonical_artifact_posix
+
 SOURCE_OBSERVATION_SCHEMA = "market_memory.spy_daily_price_source_observation.v1"
 SNAPSHOT_SCHEMA = "market_memory.spy_raw_close_ratio_snapshot.v1"
 PROFILE = "public_r2_massive_stock_day_spy_raw.v1"
@@ -1151,6 +1153,30 @@ def _exact_int(value: object, *, field: str, minimum: int, maximum: int) -> int:
     return value
 
 
+def _admissible_public_manifest_filename(filename: object) -> bool:
+    """Admit the current Massive path contract, plus leftover flat names.
+
+    Nested members must be exactly ``__case_v1/<UTF-8 hex>.parquet``. Flat
+    ``*.parquet`` names remain admissible because the live listing still
+    carries leftover mixed-case root objects; those are not newly legalized
+    here and are not a substitute for the canonical nested form.
+    """
+    if type(filename) is not str or not filename:
+        return False
+    if filename == "_backfill_state.json":
+        return True
+    if (
+        filename in {".", ".."}
+        or "\\" in filename
+        or len(filename.encode("utf-8")) > _MAX_FILENAME_BYTES
+        or not filename.endswith(".parquet")
+    ):
+        return False
+    if "/" in filename:
+        return is_canonical_artifact_posix(filename)
+    return filename == Path(filename).name
+
+
 def _validate_manifest(body: bytes) -> dict[str, Any]:
     manifest = _strict_json_object(body, label="public R2 manifest")
     _exact_fields(
@@ -1174,15 +1200,7 @@ def _validate_manifest(body: bytes) -> dict[str, Any]:
             "public R2 manifest file list does not match its count"
         )
     for filename in files:
-        if (
-            type(filename) is not str
-            or not filename
-            or filename != Path(filename).name
-            or filename in {".", ".."}
-            or "\\" in filename
-            or len(filename.encode("utf-8")) > _MAX_FILENAME_BYTES
-            or not (filename.endswith(".parquet") or filename == "_backfill_state.json")
-        ):
+        if not _admissible_public_manifest_filename(filename):
             raise MarketMemoryTechnicalObservationError(
                 "public R2 manifest contains an unsafe or noncanonical filename"
             )
