@@ -24,7 +24,13 @@ so_what: >
   a null announces itself at the first `isna()`, a column that silently changed meaning
   does not, and both eras pool under one name in an append-only store. `families.yml`
   is a sibling builder's deliverable and was NOT edited to record this — the drift is
-  live in the registry until w3 re-cuts it.
+  live in the registry until w3 re-cuts it. Concretely for W3
+  (research/prophet_fusion/W3_SHADOW_RACE_RECUT.md, #5767): its champion side is
+  "stamped nightly by production" as `prophet_shadow.score`/`score_rank`, which are
+  BOARD ROW fields; the store names are `prophet_shadow_score` /
+  `prophet_shadow_score_rank` and they exist only from #5769. The store forbids
+  retroactive backfill, so the champion side is null for every night between the
+  2026-08-15 override and #5769's first nightly.
 kind: landmine
 verified_at: 2026-08-15
 verified_by: >

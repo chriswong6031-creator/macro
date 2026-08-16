@@ -109,24 +109,33 @@ unresolved:
     builder's deliverable, is the arena law, and is test-pinned. It belongs to the w3
     re-cut, which is the wave that will actually read those columns.
     DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER."
-  - "(carried from the OVERRIDE handoff) SHADOW STORE GRAIN — the shadow's outcomes are
-    still not separately KEYED by board_definition; this PR gives the join its second
-    rank column but does not reopen the grain question, which was weighed and declined
-    on store cost. Still flagged for adjudication."
-  - "(carried) F8 handed 99% of rows and F4 97% an IDENTICAL contribution on the first
-    live pool — five active families is not five independent votes, today's ordering is
-    mostly F2 then F1 and F5. REGISTERED behaviour, published in the comparison's
-    separation table. Must NOT be answered by re-tuning the floor."
+  - "RESOLVED MID-FLIGHT, not by this session — #5767 merged to main at 2026-08-15
+    02:06Z while #5769's packs were running, closing the two items the OVERRIDE handoff
+    carried. SHADOW STORE GRAIN is now DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW (paired
+    row ACCEPTED over a second board_definition key, conditional on same population +
+    same ticker-level outcome + zero shadow authority). F8/F4 near-constancy is now
+    DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-REGISTRY-QUESTION (admissibility and
+    discrimination are separate properties; no floor re-tune). Both are listed here as
+    RESOLVED rather than dropped because the OVERRIDE handoff this file supersedes still
+    carries them as open, and a reader arriving through that chain would otherwise
+    re-open settled questions."
   - "(carried) insider_cluster remains serving-dead (collector stopped at 2026q1); stood
     down by the variance floor on any night it is constant, never pre-excluded"
   - "(carried) the §13.0 live closure; the short_int knowable-lag reconciliation
     (task_a85de1cd); sue_z re-home; PR-1a advisories A3/A4/A5/A7"
 next_actions:
-  - "w3 re-cut, now cheaper: the champion side is stamped nightly in the store as
-    prophet_shadow_score / prophet_shadow_score_rank rather than existing only on the
-    in-memory board row. Re-cut the prereg against those columns, NOT against
-    prophet_score / score_rank, which are the challenger's on a v3 row. Register the
-    F8/F4 near-constancy question as a REGISTRY decision in the same pass."
+  - "W3 MUST READ THE STORE COLUMNS, AND ITS CHAMPION SIDE STARTS THE NIGHT #5769
+    MERGES. research/prophet_fusion/W3_SHADOW_RACE_RECUT.md (#5767, merged while this
+    PR's packs ran) puts the champion side as 'stamped nightly by production' and names
+    `prophet_shadow.score`/`score_rank`. Those live on the BOARD ROW. The race frame is
+    the candidates store (scripts/prophet_fusion_race.py:88), and until #5769 the store
+    had no shadow column at all — the numbers were computed nightly and dropped. So:
+    read `prophet_shadow_score` / `prophet_shadow_score_rank` (store names, this PR),
+    not `prophet_score`/`score_rank` (the CHALLENGER's on a v3 row —
+    DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER). And the store forbids
+    retroactive backfill, so the champion side is NULL for every night between the
+    override (2026-08-15) and #5769's first nightly. W3's champion window opens then,
+    not at the override date. Neither #5767 nor #5753 knows this."
   - "(inherited) Verify the first post-merge nightly publishes rank_by=us_prophet_v3
     with a fusion receipt and no degradation stamp"
   - "(inherited) C2 re-enters when the fold law is satisfiable: 91 graded dates needed,

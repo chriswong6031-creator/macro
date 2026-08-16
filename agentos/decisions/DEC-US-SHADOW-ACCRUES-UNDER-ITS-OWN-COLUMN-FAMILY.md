@@ -51,12 +51,17 @@ alternatives:
       as "the published ranker's legs" would then be wrong on exactly the nights the
       distinction matters.
   - option: Stamp a second `board_definition` row per name for the shadow
-    why_not: The store's append_candidates() contract requires the COMPLETE verdict map,
-      so a second definition duplicates ~2,900 rows and ~200 context columns per night
-      to vary two numbers. This was already weighed and declined in the override's own
-      handoff (its "SHADOW STORE GRAIN" unresolved item); this decision does not reopen
-      it. The shadow's outcomes remain unkeyed by board_definition — what changes is
-      that the join now has a champion side to join against.
+    why_not: >
+      Settled independently and concurrently by
+      DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW (#5767, merged 2026-08-15 02:06Z while
+      this PR's packs were running), which ACCEPTS the paired row over a second key —
+      the store's append_candidates() contract requires the COMPLETE verdict map, so a
+      second definition duplicates ~2,900 rows and ~200 context columns per night to
+      vary two numbers. That decision and this one are complements rather than rivals.
+      It ratifies a forward race that is "a JOIN of the same ticker-level graded
+      outcomes against two rank columns", and this one is what puts the SECOND rank
+      column in the store. Before it, the shadow's score and rank existed only on the
+      in-memory board row, so the ratified design had one column to join.
   - option: Fix `research/prophet_fusion/families.yml` to repoint `champion_baseline`
     why_not: Out of scope and not this session's to take. families.yml is a sibling
       builder's deliverable, is the arena LAW, and is test-pinned. The drift is recorded
