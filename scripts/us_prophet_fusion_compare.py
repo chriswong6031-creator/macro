@@ -90,17 +90,36 @@ def compare(*, top: int = 30) -> dict[str, Any]:
     if not buy:
         raise SystemExit("the committed board carries no buy lane — nothing to compare")
 
-    # The published order, exactly as it shipped, before anything is recomputed.
+    # The RETIRED scorer's own order, exactly as the loaded board published it.
+    #
+    # TWO BOARD GENERATIONS REACH THIS SCRIPT AND THE v2 NUMBERS LIVE IN DIFFERENT
+    # PLACES ON EACH.  On a pre-override board (`us_prophet_v2`) the published
+    # `prophet` block IS the retired scorer and `display_rank` IS its order.  On a
+    # fusion board the published block is C1 and the retired scorer has moved to
+    # `prophet_shadow`, carrying its own `score_rank`.  Reading `prophet` on a fusion
+    # board fails twice and both failures are silent-ish: the freeze check below
+    # compares a C1 score against a v2 score and refuses every row, and if it did not,
+    # `old_rank` would be the FUSION rank — the new order compared against itself,
+    # every delta zero.  Which block to read is therefore a property of the artifact,
+    # never an assumption: the shadow is the basis whenever the board publishes one.
+    shadow_basis = any(row.get("prophet_shadow") for row in buy)
     old = {}
     for row in buy:
+        shadow = (row.get("prophet_shadow") or {})
         published = (row.get("prophet") or {})
+        retired = shadow if shadow_basis else published
         old[str(row.get("ticker"))] = {
-            "rank": int(row.get("display_rank") or 0),
-            "score": float(published.get("score") or 0.0),
-            "version": str(published.get("version") or ""),
+            "rank": int((shadow.get("score_rank") if shadow_basis
+                         else row.get("display_rank")) or 0),
+            "score": float(retired.get("score") or 0.0),
+            "version": str(retired.get("version") or ""),
             "stage": str(row.get("stage") or ""),
             "entry_status": _entry_status(row),
-            "featured": bool(row.get("featured")),
+            # The shadow ranks but does not FEATURE — featuring is a canonical-order
+            # act, so on a fusion board `row["featured"]` is already the new set and
+            # there is no retired one to compare it to.  Null says that; False would
+            # claim the retired board featured nothing.
+            "featured": (None if shadow_basis else bool(row.get("featured"))),
         }
 
     rows = [dict(r) for r in buy]
@@ -158,7 +177,10 @@ def compare(*, top: int = 30) -> dict[str, Any]:
             "stage": row.get("stage"),
             "entry_status": _entry_status(row),
             "featured_new": bool(row.get("featured")),
-            "featured_old": bool(prior.get("featured")),
+            # None on a fusion board — see the `featured` note above; `bool(None)`
+            # here would publish "the retired board featured nothing".
+            "featured_old": (None if prior.get("featured") is None
+                             else bool(prior.get("featured"))),
             "n_families": len(fam),
             "family_contribution": fam,
             "families_abstaining": (block.get("fusion") or {}).get(
@@ -197,7 +219,12 @@ def compare(*, top: int = 30) -> dict[str, Any]:
     return {
         "as_of": board.get("as_of"),
         "source_artifact": str(BOARD.relative_to(_REPO)),
-        "old_definition": board.get("rank_by"),
+        # The definition of the order in the `old_rank` column — which is the SHADOW's
+        # name on a fusion board, not the artifact's `rank_by` (that is already v3).
+        "old_definition": (sorted({o["version"] for o in old.values() if o["version"]})
+                           or [board.get("rank_by")])[0],
+        "old_rank_basis": ("prophet_shadow.score_rank" if shadow_basis
+                           else "display_rank"),
         "new_definition": definition,
         "n_buy": len(scored),
         "top_n": top,
@@ -217,8 +244,12 @@ def compare(*, top: int = 30) -> dict[str, Any]:
                           sorted(table, key=lambda r: -r["rank_change"])[:10]],
         "biggest_losses": [r["ticker"] for r in
                            sorted(table, key=lambda r: r["rank_change"])[:10]],
+        # Empty on a fusion board rather than "everything changed": there is no retired
+        # featured set to differ FROM (see `featured_old`), and `!= None` would list
+        # every featured name as a change the shadow never made.
         "featured_changed": sorted(r["ticker"] for r in table
-                                   if r["featured_new"] != r["featured_old"]),
+                                   if r["featured_old"] is not None
+                                   and r["featured_new"] != r["featured_old"]),
         "new_top": by_new[:top],
         "old_top": by_old[:top],
         "all_rows": by_new,

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  com.macro.closepass — the evening close pass's PRIMARY clock (Breathing PR-B).
+
+  Template. Installed by scripts/install_closepass_launchd.sh, which substitutes
+  __HOME__ and __SUPPORT_DIR__ and copies it to ~/Library/LaunchAgents/.
+  DO NOT load it directly out of the repo — the placeholders are not paths.
+
+  WHY THIS EXISTS. .github/workflows/close-pass.yml used to be the product clock
+  and cannot be one. Measured Friday 2026-08-14: the 20:25 UTC cron line's run
+  was CREATED at 20:52 — 27 minutes of scheduler drift before a runner was even
+  asked for — and its DST sibling at 21:47 then sat 95 minutes in the queue on
+  the two-host `macstudio` pool. The board published ~19:20 ET against a
+  16:15 ET product target. Estate-wide the same measurement is worse: GitHub
+  cron gaps of 90 min to 3 h 12 m (agentos/decisions/DEC-LER-LIVE-LANE-VPS-5MIN-REST.md),
+  which is why Live Entry Radar's live lane runs off a VPS timer too. The
+  workflow stays armed as a BOUNDED BACKSTOP; this is the clock.
+
+  TIMING — 13:00 local, Monday to Friday, and that IS 16:00 ET year-round.
+    The Mac is PT (ops/launchd/com.macro.chainheat.plist says the same thing in
+    its own words: "Mac is PT (ET - 3h year-round)"). PT and ET are both US
+    zones and flip on the SAME instant in both directions, so the offset between
+    them is a constant -3 h through PDT/EDT and PST/EST alike:
+      PDT (Mar-Nov)  13:00 PT = 20:00 UTC = 16:00 EDT
+      PST (Nov-Mar)  13:00 PT = 21:00 UTC = 16:00 EST
+    That is the whole reason a LOCAL StartCalendarInterval is correct here and a
+    UTC cron needs a DST pair: launchd calendar entries are local, so one entry
+    covers both regimes and there is no off-season line to self-skip.
+
+    The runner then holds for the closes itself (16:00:10 -> 16:12 ET) and the
+    session-day question is answered by lib.nyse_calendar inside the checkout —
+    so "when is the market open" still has exactly one definition in this lane,
+    and this file carries no ET literal, no holiday list, and no deadline.
+
+  WHAT RUNS. __SUPPORT_DIR__/close_pass_host_runner.py, executed by the system
+  /usr/bin/python3 (the runner's outer half is stdlib-only, deliberately). The
+  copy under Application Support is HOST-INSTALLED PLUMBING: launchd cannot exec
+  out of ~/Documents at all, and the primary checkout is routinely parked on an
+  old commit. The POLICY it runs is never this vintage — the runner resets a
+  locked worktree to origin/main on every run and publishes from there.
+
+  RunAtLoad is false ON PURPOSE: bootstrapping this agent at 11:00 must not fire
+  a close pass at 11:00.
+
+  INSTALL / UNINSTALL / TEST — see scripts/install_closepass_launchd.sh. In short:
+    bash scripts/install_closepass_launchd.sh
+    launchctl kickstart gui/$(id -u)/com.macro.closepass      # manual run
+    launchctl bootout   gui/$(id -u)/com.macro.closepass      # stop
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.macro.closepass</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>__SUPPORT_DIR__/close_pass_host_runner.py</string>
+  </array>
+
+  <!-- 13:00 local (PT) = 16:00 ET in BOTH DST regimes; weekdays only, because a
+       NYSE session never falls on a weekend. Holidays are the runner's job, not
+       the schedule's: it asks lib.nyse_calendar and exits before any network. -->
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict>
+      <key>Weekday</key><integer>1</integer>
+      <key>Hour</key><integer>13</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>2</integer>
+      <key>Hour</key><integer>13</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>3</integer>
+      <key>Hour</key><integer>13</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>4</integer>
+      <key>Hour</key><integer>13</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+    <dict>
+      <key>Weekday</key><integer>5</integer>
+      <key>Hour</key><integer>13</integer>
+      <key>Minute</key><integer>0</integer>
+    </dict>
+  </array>
+
+  <!-- git and the Homebrew python3.12 the lane venv is built from. Secrets are
+       NEVER here: the plist is world-readable. The runner sources the primary
+       checkout's chmod-600 .env into the subprocess environment instead. -->
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <!-- Below the render pools on purpose: this lane is ~20 minutes of price-store
+       reads and must never win a CPU fight with a nightly bake. -->
+  <key>Nice</key>
+  <integer>5</integer>
+
+  <key>StandardOutPath</key>
+  <string>__HOME__/Library/Logs/macro_closepass/launchd.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>__HOME__/Library/Logs/macro_closepass/launchd.err.log</string>
+</dict>
+</plist>

@@ -49,6 +49,7 @@ not in it is omitted. The emptiness heuristic is only the non-cone fallback.
 
 Usage:
     python3 scripts/worktree_sparse.py status        # what is / is not materialized
+    python3 scripts/worktree_sparse.py auto          # new linked worktree: apply profile
     python3 scripts/worktree_sparse.py full          # opt IN to a full checkout
     python3 scripts/worktree_sparse.py sparse        # re-apply the configured profile
     python3 scripts/worktree_sparse.py add site      # materialize ONE excluded dir
@@ -111,6 +112,26 @@ def _git(root: Path, *args: str) -> str | None:
 def sparse_enabled(root: Path = ROOT) -> bool:
     """True when this worktree has sparse-checkout switched on."""
     return (_git(root, "config", "--get", "core.sparseCheckout") or "").lower() == "true"
+
+
+def is_linked_worktree(root: Path = ROOT) -> bool:
+    """True for a linked Git worktree, false for the repository's primary checkout.
+
+    Codex has no pre-checkout equivalent of Claude's ``WorktreeCreate`` event.
+    Its supported local-environment setup and ``SessionStart`` hooks therefore
+    call :func:`auto_profile` after Git has created the checkout.  Both hooks can
+    also fire for a Local chat, so this discriminator is load-bearing: the
+    occupied primary checkout must never be sparsified as a side effect of
+    starting Codex.
+    """
+    git_dir = _git(root, "rev-parse", "--path-format=absolute", "--git-dir")
+    common_dir = _git(root, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    if not git_dir or not common_dir:
+        return False
+    try:
+        return Path(git_dir).resolve() != Path(common_dir).resolve()
+    except OSError:
+        return git_dir != common_dir
 
 
 def _cone_included(root: Path) -> list[str]:
@@ -202,6 +223,32 @@ def apply_profile(root: Path = ROOT, exclude_dirs: list[str] | None = None) -> i
     _drop_husks(root, sorted(excludes))
     print(f"worktree-sparse: profile applied — omitting {', '.join(sorted(excludes))}")
     return 0
+
+
+def auto_profile(root: Path = ROOT, config_path: Path | None = None) -> int:
+    """Apply the configured profile once to a newly created linked worktree.
+
+    This is the safe entry point for Codex lifecycle automation.  It deliberately
+    skips the primary checkout and preserves any sparse selection already present
+    in a linked worktree, including a session's explicit ``add site`` opt-in.
+    ``enabled: false`` remains the single repo-wide off switch.
+    """
+    if not is_linked_worktree(root):
+        print("worktree-sparse: auto skipped — primary checkout is never changed")
+        return 0
+
+    profile_path = config_path or root / "config" / "sparse_worktree.json"
+    profile = load_profile(profile_path)
+    if not profile["enabled"]:
+        print("worktree-sparse: auto disabled by config/sparse_worktree.json")
+        return 0
+
+    if sparse_enabled(root):
+        print("worktree-sparse: auto skipped — linked worktree is already sparse; "
+              "preserving its current selection")
+        return 0
+
+    return apply_profile(root, exclude_dirs=list(profile["exclude_dirs"]))
 
 
 def disable_profile(root: Path = ROOT) -> int:
@@ -326,6 +373,8 @@ def main(argv: list[str]) -> int:
     cmd = argv[0] if argv else "status"
     if cmd == "status":
         return status()
+    if cmd == "auto":
+        return auto_profile()
     if cmd == "full":
         return disable_profile()
     if cmd == "sparse":

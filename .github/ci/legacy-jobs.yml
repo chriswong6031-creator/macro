@@ -1910,6 +1910,13 @@ jobs:
       #                The lane behaviour it feeds is pinned in the evaluator and
       #                reconciler files above. LISTED HERE ON PURPOSE — this job
       #                enumerates its files, so an unlisted new suite never runs.
+      #   CN clock     tests/test_cn_live_clock.py — CN-W-L3 PR-0 (#5759): the mainland
+      #                session-state contract (lunch = session_break, per-board limit
+      #                bands incl. 301/689, the delay-aware quote-age anchor), the
+      #                armed_pack calendar threading (calendar=None IS the NYSE path —
+      #                this lane's US files prove it stays byte-unchanged), and
+      #                lib.cn_calendar.sessions_behind. Same package, same deps
+      #                (pandas via armed_pack), so it rides here, not in a new lane.
       # It is LAST in this lane and that is now a cost of ~48s of sibling guards
       # ahead of it, not of a 357-second sweep.
       - name: prophet-live P0 (G0.1 parity, ledger law, debounce, degradation)
@@ -1919,7 +1926,8 @@ jobs:
           tests/test_prophet_live_evaluator.py
           tests/test_prophet_live_reconcile.py
           tests/test_prophet_live_basis.py
-          tests/test_prophet_live_vps_lane.py -q
+          tests/test_prophet_live_vps_lane.py
+          tests/test_cn_live_clock.py -q
 
   collector-registry:
     if: ${{ false }}
@@ -7799,8 +7807,13 @@ jobs:
       # pandas/pyyaml ride the existing install line.
       # 2026-08-15 (#5746): Massive close truth is the same lane — same publisher,
       # same BOARD_KEY — so its suite rides this step rather than a new job.
-      - name: evening close-pass provisional board lane (W-L1a, #5154)
-        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py -q
+      # The host-native PRIMARY clock joins the same lane's suite (Breathing
+      # PR-B, 2026-08-15): scripts/close_pass_host_runner.py is what actually
+      # fires the evening pass now, the workflow being a bounded backstop. Its
+      # suite is stdlib-only and subprocess-free (every command is faked at the
+      # _sh seam), so it costs the lane nothing and rides the same install line.
+      - name: evening close-pass provisional board lane (W-L1a, #5154; host clock PR-B)
+        run: python -m pytest tests/test_close_pass_lane.py tests/test_close_pass_massive_close.py tests/test_close_pass_host_runner.py -q
 
   # ── P1 UNRUN-SUITE CENSUS JOBS (2026-07-26) ────────────────────────────────
   # Thirteen lanes covering the 138 wired P1 suites: unrun by any workflow, but on a
