@@ -1,6 +1,6 @@
 # BioCatalyst Recovery + Alpha Engine Masterplan V2
 
-This directory is the canonical V2 recovery masterplan assembled on 2026-08-16.
+This directory is the canonical repository form of the V2 recovery masterplan assembled on 2026-08-16.
 
 The document is split into eight ordered Markdown parts to keep repository writes reviewable and resilient. Read them strictly in numeric order:
 
@@ -13,9 +13,7 @@ The document is split into eight ordered Markdown parts to keep repository write
 7. `BIOCATALYST_RECOVERY_AND_ALPHA_ENGINE_MASTERPLAN_V2_PART_07.md`
 8. `BIOCATALYST_RECOVERY_AND_ALPHA_ENGINE_MASTERPLAN_V2_PART_08.md`
 
-Concatenating the eight files byte-for-byte in that order reconstructs the local V2 source used for this upload. Expected SHA-256 of the reconstructed Markdown:
-
-`36f5f50ffbda6c927ca0191b01307cf938e50072447a3d126d001e180d80d1fc`
+The split files preserve the masterplan's reading order and execution intent. Treat this directory, rather than any stale local copy or historical SHA mentioned inside the document, as the repository source of truth for the recovery program.
 
 ## Execution rule
 
