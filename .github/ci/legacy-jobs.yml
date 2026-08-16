@@ -1957,7 +1957,8 @@ jobs:
           tests/test_cn_live_clock.py
           tests/test_cn_live_pack.py
           tests/test_cn_live_evaluator.py
-          tests/test_cn_live_vps_lane.py -q
+          tests/test_cn_live_vps_lane.py
+          tests/test_cn_live_reconcile.py -q
 
   collector-registry:
     if: ${{ false }}
