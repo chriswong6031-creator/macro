@@ -194,35 +194,65 @@ def clean_closes(close: Any) -> pd.Series | None:
     return s
 
 
+# ─────────────────────────────────────────────────────────────────────────────
+# CALENDAR THREADING (additive, 2026-08-15, CN-PR-1). Every helper below that has
+# to answer "what is the next session" takes an optional ``calendar``. It is a
+# MODULE-SHAPED protocol — anything exposing ``is_session(date) -> bool``, which
+# both :mod:`lib.nyse_calendar` and :mod:`lib.cn_calendar` do.
+#
+# ``calendar=None`` IS THE NYSE PATH, BYTE-UNCHANGED. It still goes through
+# ``nyse_calendar.sessions_between`` rather than the generic walk, so no US caller
+# and no US test changes behaviour or needs an argument. The generic branch exists
+# because the two calendars' ``sessions_between`` do not share a return type
+# (NYSE returns the list of dates, CN returns a COUNT), so the one primitive they
+# genuinely agree on is ``is_session``.
+# ─────────────────────────────────────────────────────────────────────────────
+
+#: How far ahead a next-session search may look. The longest mainland closure
+#: (Spring Festival / National Day Golden Week) runs ~9-10 calendar days end to end
+#: — lib.cn_calendar.MAX_LEGIT_CLOSURE_DAYS is 11 — so 21 clears both markets with
+#: room, and a search that exhausts it means the calendar rules are broken, not that
+#: the market is shut.
+_NEXT_SESSION_HORIZON_DAYS = 21
+
+
 @lru_cache(maxsize=8192)
-def _next_session_after(day: date) -> date:
-    """The first NYSE session STRICTLY after ``day``, off the repo's own calendar.
+def _next_session_after(day: date, calendar: Any = None) -> date:
+    """The first session STRICTLY after ``day``, off the repo's own calendar.
 
     Never weekday arithmetic: a hand-rolled business day puts the appended bar on a
     market holiday, and every 2D/3D bucket the gate reads is a position in the session
     calendar (:mod:`engine.session_anchor`), so one fabricated session re-phases the
     whole cascade. Cached because the probe asks this ~25 times per probed name and
-    the answer is a function of one date.
+    the answer is a function of one date (and, now, of one calendar).
     """
-    from lib.nyse_calendar import sessions_between  # noqa: PLC0415
-    ahead = sessions_between(day + timedelta(days=1), day + timedelta(days=14))
-    if not ahead:  # pragma: no cover - the longest NYSE closure is a few days
-        raise ValueError(f"no NYSE session within 14 days of {day} — calendar rules broken")
-    return ahead[0]
+    if calendar is None:
+        from lib.nyse_calendar import sessions_between  # noqa: PLC0415
+        ahead = sessions_between(day + timedelta(days=1), day + timedelta(days=14))
+        if not ahead:  # pragma: no cover - the longest NYSE closure is a few days
+            raise ValueError(f"no NYSE session within 14 days of {day} — calendar rules broken")
+        return ahead[0]
+    d = day + timedelta(days=1)
+    for _ in range(_NEXT_SESSION_HORIZON_DAYS):
+        if calendar.is_session(d):
+            return d
+        d += timedelta(days=1)
+    raise ValueError(f"no session within {_NEXT_SESSION_HORIZON_DAYS} days of {day} "
+                     f"on {getattr(calendar, '__name__', calendar)} — calendar rules broken")
 
 
-def next_session_stamp(last: Any) -> pd.Timestamp:
+def next_session_stamp(last: Any, calendar: Any = None) -> pd.Timestamp:
     """The index label the probe's appended bar takes: the next session after ``last``.
 
     ``last`` need not itself be a session — a store whose tip is a holiday still has a
     well-defined next session, and refusing there would silently unprobe the name.
     """
     ts = pd.Timestamp(last)
-    nxt = pd.Timestamp(_next_session_after(ts.date()))
+    nxt = pd.Timestamp(_next_session_after(ts.date(), calendar))
     return nxt.tz_localize(ts.tz) if ts.tz is not None else nxt
 
 
-def probe_series(close: pd.Series, candidate: float) -> pd.Series:
+def probe_series(close: pd.Series, candidate: float, calendar: Any = None) -> pd.Series:
     """``close`` with ``candidate`` APPENDED as the NEXT session's bar.
 
     The provisional close is TOMORROW's bar, not a restatement of today's — see the
@@ -238,14 +268,14 @@ def probe_series(close: pd.Series, candidate: float) -> pd.Series:
     gone by design, and :func:`probe_name` measures the anchor verdict instead of
     inheriting it.
     """
-    idx = pd.DatetimeIndex([next_session_stamp(close.index[-1])])
+    idx = pd.DatetimeIndex([next_session_stamp(close.index[-1], calendar)])
     tail = pd.Series([float(candidate)], index=idx, dtype="float64", name=close.name)
     return pd.concat([close, tail])
 
 
 def _buyable_at(ticker: str, close: pd.Series, px: float,
-                gate_fn: Callable[[str, Any], dict]) -> bool:
-    return bool(signal_gate.is_buyable(gate_fn(ticker, probe_series(close, px))))
+                gate_fn: Callable[[str, Any], dict], calendar: Any = None) -> bool:
+    return bool(signal_gate.is_buyable(gate_fn(ticker, probe_series(close, px, calendar))))
 
 
 def _round_edge(px: float, *, up: bool) -> float:
@@ -278,7 +308,8 @@ def _side_safe_round(edge: float | None, as_of_close: float,
 
 
 def _bisect_edge(ticker: str, close: pd.Series, *, false_px: float, true_px: float,
-                 iters: int, gate_fn: Callable[[str, Any], dict]) -> tuple[float, float, int]:
+                 iters: int, gate_fn: Callable[[str, Any], dict],
+                 calendar: Any = None) -> tuple[float, float, int]:
     """Refine one verdict boundary; returns (known-FALSE bound, known-TRUE bound, calls).
 
     Invariant on entry and on exit: the gate is false at the first return value and
@@ -293,7 +324,7 @@ def _bisect_edge(ticker: str, close: pd.Series, *, false_px: float, true_px: flo
     for _ in range(max(0, int(iters))):
         mid = (lo + hi) / 2.0
         calls += 1
-        if _buyable_at(ticker, close, mid, gate_fn):
+        if _buyable_at(ticker, close, mid, gate_fn, calendar):
             hi = mid
         else:
             lo = mid
@@ -378,7 +409,8 @@ def centre_record(ticker: str, close: pd.Series, *, cfg: dict[str, Any],
 
 def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
                cfg: dict[str, Any],
-               gate_fn: Callable[[str, Any], dict] | None = None) -> dict[str, Any]:
+               gate_fn: Callable[[str, Any], dict] | None = None,
+               calendar: Any = None) -> dict[str, Any]:
     """Structure grid + edge bisection over ``rec["span"]``.
 
     Returns ``{lower_edge, upper_edge, lower_false, upper_false, irregular,
@@ -397,7 +429,7 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
     grid = probe_grid(rec["span"], cfg["grid_points"])
     as_of = rec.get("as_of_close")
     as_of = float(as_of) if as_of is not None else float(close.iloc[-1])
-    center = _buyable_at(ticker, close, as_of, g)
+    center = _buyable_at(ticker, close, as_of, g, calendar)
     known = {as_of: center}
 
     # Snap grid points onto the anchor price, whose verdict was just measured. The
@@ -415,7 +447,7 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
             grid[i] = hit
             flags.append(bool(known[hit]))
             continue
-        flags.append(_buyable_at(ticker, close, px, g))
+        flags.append(_buyable_at(ticker, close, px, g, calendar))
         calls += 1
 
     out: dict[str, Any] = {"lower_edge": None, "upper_edge": None,
@@ -435,12 +467,14 @@ def probe_name(ticker: str, close: pd.Series, rec: dict[str, Any], *,
     iters = int(cfg["bisect_iters"])
     if start > 0:
         false_px, edge, c = _bisect_edge(ticker, close, false_px=grid[start - 1],
-                                         true_px=grid[start], iters=iters, gate_fn=g)
+                                         true_px=grid[start], iters=iters, gate_fn=g,
+                                         calendar=calendar)
         out["lower_edge"], out["lower_false"] = edge, false_px
         out["gate_calls"] += c
     if end < len(grid) - 1:
         false_px, edge, c = _bisect_edge(ticker, close, false_px=grid[end + 1],
-                                         true_px=grid[end], iters=iters, gate_fn=g)
+                                         true_px=grid[end], iters=iters, gate_fn=g,
+                                         calendar=calendar)
         out["upper_edge"], out["upper_false"] = edge, false_px
         out["gate_calls"] += c
     return out
@@ -638,12 +672,18 @@ def edge_checks(entry: dict[str, Any], probe: dict[str, Any] | None) -> list[tup
 
 
 def verify_edges(ticker: str, close: pd.Series, checks: list[tuple[float, bool]],
-                 gate_fn: Callable[[str, Any], dict] | None = None) -> tuple[list[str], int]:
-    """Re-run the real gate at each checked price; returns (mismatch lines, gate calls)."""
+                 gate_fn: Callable[[str, Any], dict] | None = None,
+                 calendar: Any = None) -> tuple[list[str], int]:
+    """Re-run the real gate at each checked price; returns (mismatch lines, gate calls).
+
+    ``calendar`` MUST be the same one the probe measured the edge on: the check's whole
+    value is that it re-runs the gate through the SAME construction, and an appended bar
+    landing on a different session date is a different construction.
+    """
     g = gate_fn or signal_gate.gate
     bad: list[str] = []
     for px, expected in checks:
-        got = _buyable_at(ticker, close, float(px), g)
+        got = _buyable_at(ticker, close, float(px), g, calendar)
         if got != expected:
             bad.append(f"{ticker}: gate says buyable={got} at published price {px!r} "
                        f"but the pack's interval requires {expected}")
@@ -830,22 +870,31 @@ def as_of_date(closes: Iterable[pd.Series]) -> str | None:
     return str(best.date()) if best is not None else None
 
 
-def session_lag(bar_date: str, tip: str | None) -> int:
-    """NYSE sessions between a name's last bar and the store tip (0 = current).
+def session_lag(bar_date: str, tip: str | None, calendar: Any = None) -> int:
+    """Exchange sessions between a name's last bar and the store tip (0 = current).
 
     Exchange sessions, not weekdays: a holiday week would otherwise read as a
-    two-session lag and strip healthy names out of the probe set.
+    two-session lag and strip healthy names out of the probe set. ``calendar=None``
+    is the NYSE path, unchanged; a module exposing ``is_session`` counts on that
+    market's calendar instead.
     """
     if not (bar_date and tip):
         return 0
     try:
-        from lib.nyse_calendar import sessions_between  # noqa: PLC0415
         from datetime import date as _date, timedelta as _td  # noqa: PLC0415
         b = _date.fromisoformat(str(bar_date)[:10])
         t = _date.fromisoformat(str(tip)[:10])
         if b >= t:
             return 0
-        return len(sessions_between(b + _td(days=1), t))
+        if calendar is None:
+            from lib.nyse_calendar import sessions_between  # noqa: PLC0415
+            return len(sessions_between(b + _td(days=1), t))
+        n, d = 0, b
+        while d < t:
+            d += _td(days=1)
+            if calendar.is_session(d):
+                n += 1
+        return n
     except Exception:  # noqa: BLE001
         return 0
 
@@ -932,7 +981,8 @@ def order_probes(recs: dict[str, dict[str, Any]], cfg: dict[str, Any],
 
 def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None = None,
                now: datetime | None = None,
-               gate_fn: Callable[[str, Any], dict] | None = None) -> dict[str, Any]:
+               gate_fn: Callable[[str, Any], dict] | None = None,
+               calendar: Any = None) -> dict[str, Any]:
     """Serial reference build over ``[(ticker, close_series), ...]``.
 
     The nightly script fans :func:`centre_record`/:func:`probe_name` across a
@@ -959,7 +1009,7 @@ def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None
     series: dict[str, pd.Series] = {}
     gate_calls = 0
     for tkr, s in cleaned:
-        lag = session_lag(str(pd.Timestamp(s.index[-1]).date()), tip)
+        lag = session_lag(str(pd.Timestamp(s.index[-1]).date()), tip, calendar)
         if lag > max_lag:
             recs[tkr] = stale_record(tkr, s, lag)
             skipped["stale_series"] = skipped.get("stale_series", 0) + 1
@@ -978,7 +1028,8 @@ def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None
     for cls in CLASSES:
         t_cls = _time.time()
         for tkr in split[cls]:
-            p = probe_name(tkr, series[tkr], recs[tkr], cfg=c, gate_fn=gate_fn)
+            p = probe_name(tkr, series[tkr], recs[tkr], cfg=c, gate_fn=gate_fn,
+                           calendar=calendar)
             gate_calls += p["gate_calls"]
             probes[tkr] = p
             if p.get("irregular"):
@@ -994,7 +1045,8 @@ def build_pack(entries: Sequence[tuple[str, Any]], *, cfg: dict[str, Any] | None
         checks = edge_checks(entry, probes.get(tkr))
         if not checks:
             continue
-        lines, n = verify_edges(tkr, series[tkr], checks, gate_fn=gate_fn)
+        lines, n = verify_edges(tkr, series[tkr], checks, gate_fn=gate_fn,
+                                calendar=calendar)
         bad.extend(lines)
         edges += n
         gate_calls += n
