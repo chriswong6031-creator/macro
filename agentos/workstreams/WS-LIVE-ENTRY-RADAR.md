@@ -63,8 +63,23 @@ waves:
     # agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15.md.
   - id: W4
     title: PR-4 live evaluator on the VPS plane (5-min RTH)
-    status: todo
+    status: done
+    pr: 5768
     depends_on: [W1, W3]
+    # DONE at ACTUAL merge (never at armed): PR #5768 MERGED 2026-08-16T03:13:45Z,
+    # squash commit 1a170f9ceba1005ca79af6a631cb02045bf62f36; merged-main verified
+    # (owned-path byte diff head-vs-squash empty; six frozen detector hashes
+    # asserted in-suite, F1 still NotYetSpecified; entry-radar CI step now the
+    # W1..W5 union, 22 suites). Ships STAGED NOT ARMED behind
+    # ENTRY_RADAR_LIVE_ENABLE per the commissioning's deployment boundary;
+    # activation + the §15 full-RTH cadence measurement are the operator's per
+    # research/live_entry_radar/W4_DEPLOY_PLAN.md. Adversarial receipts:
+    # research/live_entry_radar/W4_REVIEW_DISPOSITIONS.md; real-data receipts
+    # (incl. closing W3's vendor-minute unverified row): W4_REAL_DATA_SMOKE.md;
+    # handoff: agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15-w4.md. The parallel
+    # W5 lane's code merged mid-session; #5768 reconciled the shared files
+    # (producers-guard union, sentinel SURFACES union, update.sh sibling
+    # blocks); W5's own row/handoff remain that session's to write.
   - id: W5
     title: PR-5 forward evidence + replay under Evaluation OS
     status: todo
@@ -93,7 +108,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W3 DONE (PR #5724, merge 4b9706ef, 2026-08-15) — C1–C5 locked under §18 A5 with the PIT battery green. Next = W4 (PR-4 live evaluator; wires rearm_eligible + its own raw-quote basis audit BEFORE the engine) and W5 (PR-5 forward evidence; first outcome read), each a fresh commissioning — deliberately NOT auto-rolled by the W3 session.
+next_action: W4 DONE (PR #5768, squash 1a170f9c, 2026-08-16) — live evaluator merged STAGED-NOT-ARMED; operator activation per W4_DEPLOY_PLAN.md closes the §15 full-RTH cadence line. W5 code is on main (replay/**, reconciler, vendor, stage-terminal) with its records still unwritten — that session owns them. Next fresh commissionings: W6 (Research Priority, needs W5 records/acceptance closed) and W8 (UI reference), per the wave graph.
 ---
 
 ## Context
