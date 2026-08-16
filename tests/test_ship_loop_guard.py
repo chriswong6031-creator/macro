@@ -2203,7 +2203,17 @@ def test_claude_branch_still_reaches_the_full_delivery_chain(
     assert verdict == "unpushed"
 
 
-_MERGED_PR = {"merged_at": "2026-07-25T22:18:56Z", "head": {"sha": "a" * 40}, "merge_commit_sha": "b" * 40}
+# `base` is part of the real `/pulls` shape and the CI gate reads it (the merged
+# head's semantic proof base — see the merged-PR base tests at the end of this
+# file), so a fixture without one is a pull request GitHub never returns. It also
+# keeps the proof-reuse tests below honest: an incomplete cached record is
+# deliberately refetched, so only a COMPLETE one can prove the cache is reused.
+_MERGED_PR = {
+    "merged_at": "2026-07-25T22:18:56Z",
+    "head": {"sha": "a" * 40},
+    "base": {"sha": "c" * 40},
+    "merge_commit_sha": "b" * 40,
+}
 
 
 def _stub_remote_git(monkeypatch) -> None:
@@ -4188,3 +4198,207 @@ def test_absent_base_everywhere_stays_none_rather_than_empty_string(monkeypatch,
     GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
                     "claude/x", "")
     assert seen["expected_base_sha"] is None
+
+
+# ── the merged-PR fallback must actually HAVE a base to fall back to (2026-08-16) ──
+#
+# The three tests above prove `_check_ci` threads its `base_sha` argument through to
+# the semantic loader. What they cannot see is where `_stop` gets that argument from,
+# and there the fix above shipped DEAD ON ARRIVAL: #3746 had already narrowed the
+# cached `merged_pull` record to "only the fields the remaining gates consume", and
+# `base` was not among them. So #5757's fallback read a key that no longer existed,
+# `str((pull.get("base") or {}).get("sha") or "")` was ALWAYS `""`, and every merged
+# head advertising semantic evidence refused with "does not identify the exact PR
+# proof base" — `ci_failed` at Stop on work that had merged green, fleet-wide.
+#
+# Measured on PR #5769 (merged 2026-08-16T02:43:09Z): run 31921385097 concluded
+# `success` with `prs: []`, while `/pulls/5769` still carried its authoritative base
+# c2484fe7134b63b8acba50471396edf9929d20a3. The data was there the whole time; only
+# the narrowing lost it.
+
+_PROOF_BASE_SHA = "e" * 40
+
+
+def _merged_pr_api_record() -> dict:
+    """The `/pulls` shape GitHub returns for a merged pull request, unnarrowed."""
+    return {
+        "number": 5769,
+        "head": {"sha": "a" * 40, "ref": "claude/feature", "label": "acme:claude/feature"},
+        "base": {"sha": _PROOF_BASE_SHA, "ref": "main", "label": "acme:main"},
+        "merge_commit_sha": "b" * 40,
+        "merged_at": "2026-08-16T02:43:09Z",
+        "_links": {"self": {"href": "https://api.github.com/repos/acme/widgets/pulls/5769"}},
+    }
+
+
+def _merged_pr_stop(monkeypatch, repo, state_path, *, merged_pr, ci_calls: list):
+    """Drive one Stop over a merged pull request, capturing the CI gate's arguments.
+
+    It halts at a pending render on purpose: a CLEAN stop unlinks the state file,
+    and the remembered `merged_pull` proof is half of what these tests assert on.
+    """
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: merged_pr())
+    monkeypatch.setattr(
+        GUARD, "_check_ci", lambda *args: (ci_calls.append(args), (True, ""))[1]
+    )
+    monkeypatch.setattr(GUARD, "_needs_render", lambda *_a: True)
+    monkeypatch.setattr(
+        GUARD, "_render_status", lambda *_a: ("pending", "Render workflow is queued.")
+    )
+    _stub_remote_git(monkeypatch)
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+
+def test_narrowed_merged_pull_record_keeps_the_semantic_proof_base(
+    monkeypatch, tmp_path, capsys
+):
+    """#3746's narrowing dropped the exact field #5757's merged-head fallback reads.
+
+    The record `_stop` caches and hands to `_check_ci` must still carry `base.sha`,
+    because a merged head has no surviving PR association to bind its proof base
+    with. Assert the VALUE, not the key: a base of `None` reads as `""` at the call
+    site and is the same always-empty fallback the defect shipped.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    ci_calls: list = []
+
+    _merged_pr_stop(
+        monkeypatch, repo, state_path, merged_pr=_merged_pr_api_record, ci_calls=ci_calls
+    )
+    capsys.readouterr()
+
+    assert ci_calls, "the CI gate never ran"
+    # `_check_ci(root, owner, repo, head_sha, merge_sha, merged_at, head_ref, base_sha)`
+    assert ci_calls[0][-1] == _PROOF_BASE_SHA
+    value = json.loads(state_path.read_text(encoding="utf-8"))["ship_proofs"]["merged_pull"][
+        "value"
+    ]
+    assert value["base"] == {"sha": _PROOF_BASE_SHA}
+    # Still narrowed: the state file must not grow the rest of the API payload.
+    assert set(value) == {"number", "head", "base", "merge_commit_sha", "merged_at"}
+
+
+def test_cached_merged_pull_proof_without_a_base_is_refetched_not_reused(
+    monkeypatch, tmp_path, capsys
+):
+    """The cache, not the API, is what a re-blocked session reads.
+
+    #3746 narrowed the record; #5757 then wired the merged-head proof base to a key
+    that narrowing had already dropped. Keeping the field is only half the repair —
+    the proof is keyed by branch+head, and neither moves again after a merge, so a
+    session that already remembered the pre-fix shape would stay pinned forever on
+    its own stale record.
+    """
+    repo, state_path = _session_repo(tmp_path)
+    head = _git(repo, "rev-parse", "HEAD")
+    state = json.loads(state_path.read_text(encoding="utf-8"))
+    state["ship_proofs"] = {
+        "merged_pull": {
+            "key": f"claude/feature:{head}",
+            # The exact pre-fix narrowing, verbatim: no `base` at all.
+            "value": {
+                "number": 5769,
+                "head": {"sha": "a" * 40, "ref": "claude/feature"},
+                "merge_commit_sha": "b" * 40,
+                "merged_at": "2026-08-16T02:43:09Z",
+            },
+        }
+    }
+    GUARD._save(state_path, state)
+    ci_calls: list = []
+    fetches = {"n": 0}
+
+    def refetched() -> dict:
+        fetches["n"] += 1
+        return _merged_pr_api_record()
+
+    _merged_pr_stop(monkeypatch, repo, state_path, merged_pr=refetched, ci_calls=ci_calls)
+    capsys.readouterr()
+
+    assert fetches["n"] == 1, "the stale cache shape was reused instead of refetched"
+    assert ci_calls and ci_calls[0][-1] == _PROOF_BASE_SHA
+    # And the refetch re-remembers the complete shape, so the next Stop is a cache hit.
+    value = json.loads(state_path.read_text(encoding="utf-8"))["ship_proofs"]["merged_pull"][
+        "value"
+    ]
+    assert value["base"] == {"sha": _PROOF_BASE_SHA}
+
+
+def test_merged_head_stop_binds_its_proof_base_with_no_pr_associations_left(
+    monkeypatch, tmp_path, capsys
+):
+    """End to end on the real post-merge shape: `prs: []` on the run, base on the PR.
+
+    This is the live block that exposed the defect (PR #5769). The run carries no
+    `pull_requests` entries, so `_semantic_pr_base_sha` returns None and the merged
+    pull request record is the ONLY source of the proof base. With the narrowing
+    dropping it, `_semantic_evidence_for_run` refused with "does not identify the
+    exact PR proof base"; with it kept, the base binds and evaluation continues to
+    the next honest refusal (an expired artifact here, which is strictly PAST the
+    base binding — that is what makes it evidence the base bound at all).
+    """
+    repo, state_path = _session_repo(tmp_path)
+    head_sha = "a" * 40
+    seen: dict = {}
+    real_for_run = GUARD._semantic_evidence_for_run
+
+    def spy(owner, repo_name, run, *, role, expected_base_sha=None):
+        seen["expected_base_sha"] = expected_base_sha
+        return real_for_run(owner, repo_name, run, role=role, expected_base_sha=expected_base_sha)
+
+    def router(url: str):
+        if url.endswith("/actions/runs/31921385097"):
+            return {
+                "id": 31921385097,
+                "name": "ci",
+                "path": ".github/workflows/ci.yml",
+                "event": "pull_request",
+                "head_sha": head_sha,
+                "conclusion": "success",
+                "pull_requests": [],  # GitHub drops these once the PR closes.
+            }
+        if url.endswith("/actions/runs/31921385097/artifacts?per_page=100"):
+            return {
+                "total_count": 1,
+                "artifacts": [
+                    {
+                        "name": f"{GUARD.SEMANTIC_ARTIFACT_PREFIX}31921385097",
+                        "archive_download_url": "https://api.github.com/artifact.zip",
+                        "expired": True,
+                    }
+                ],
+            }
+        raise AssertionError(f"unexpected API call: {url}")
+
+    monkeypatch.setattr(GUARD, "_github_slug", lambda _root: ("acme", "widgets"))
+    monkeypatch.setattr(GUARD, "_latest_merged_pr", lambda *_a: _merged_pr_api_record())
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda *_a: [
+            {"name": "ci-pack-3", "status": "completed", "conclusion": "failure"},
+            {
+                "name": "ci-gate",
+                "status": "completed",
+                "conclusion": "success",
+                "details_url": (
+                    "https://github.com/acme/widgets/actions/runs/31921385097/job/1"
+                ),
+                "pull_requests": [],
+            },
+        ],
+    )
+    monkeypatch.setattr(GUARD, "_semantic_evidence_for_run", spy)
+    monkeypatch.setattr(GUARD, "_get_json", router)
+    _stub_remote_git(monkeypatch)
+
+    GUARD._stop(repo, state_path, {"hook_event_name": "Stop"})
+
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines() if line.strip()]
+    blocks = [line for line in lines if line.get("decision") == "block"]
+    assert blocks, lines
+    reason = blocks[0]["reason"]
+    assert seen.get("expected_base_sha") == _PROOF_BASE_SHA, reason
+    assert "does not identify the exact PR proof base" not in reason
+    assert "advertised semantic artifact is expired" in reason
