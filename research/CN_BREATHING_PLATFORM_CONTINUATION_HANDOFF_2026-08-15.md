@@ -14,6 +14,25 @@ A scheduled resume session is filed for shortly after the reset.
 
 ---
 
+## §0 ADDENDUM (session 1, ~17:3x PDT — read before §1)
+
+**CN-PR-0 SHIPPED FROM THE MAIN LOOP during the outage** (PR #5759, branch
+`claude/cn-pr0-calendar-threading`, armed merge-on-green): the reviewed-clean
+subset — `armed_pack.py` calendar threading, `lib/cn_calendar.sessions_behind`,
+and `engine/prophet_live/cn_clock.py` with TWO fixes beyond this doc's §1 rows:
+the 301/689/302 limit prefixes (the builder had already applied it — verified)
+AND a delay-aware `quote_age_min(..., delay_floor_min=)` anchor (bare wall-clock
+age darked the board for the first delay-floor minutes of every afternoon/open;
+the evaluator MUST pass the feed's declared delay, 15.0, when calling it).
+Proof: tests/test_cn_live_clock.py 40 passed + the US suite 461 passed unmodified.
+
+Consequences for §1/§3: those three files' rows are DONE once #5759 merges —
+when resuming, rebase everything onto fresh origin/main and take MAIN's copies
+(this WIP branch's cn_clock.py is superseded by the PR-0 version). cn_states /
+cn_pack / the evaluator must consume `quote_age_min`'s `delay_floor_min` param.
+
+---
+
 ## §1 Tree state at close (14 dirty paths, `git status` verbatim)
 
 | Path | Lane | State |
