@@ -1,164 +1,212 @@
 [
   {
     "id": "E.shell.brand",
-    "section": "shell",
+    "stable_id": "E.shell.brand",
+    "section": "S.shell",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "a.nav-brand"
   },
   {
     "id": "E.shell.search",
-    "section": "shell",
+    "stable_id": "E.shell.search",
+    "section": "S.shell",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "nav.site-nav .nav-search input"
   },
   {
     "id": "E.shell.nav.us",
-    "section": "shell",
+    "stable_id": "E.shell.nav.us",
+    "section": "S.shell",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "nav.site-nav a.nav-link[href='macro.html']"
   },
   {
     "id": "E.board.root",
-    "section": "board",
+    "stable_id": "E.board.root",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-standouts"
   },
   {
     "id": "E.board.title",
-    "section": "board",
+    "stable_id": "E.board.title",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-standouts h2"
   },
   {
     "id": "E.board.view.grid",
-    "section": "board-tools",
+    "stable_id": "E.board.view.grid",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-st-btn-grid"
   },
   {
     "id": "E.board.view.table",
-    "section": "board-tools",
+    "stable_id": "E.board.view.table",
+    "section": "S.board",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-st-btn-table"
   },
   {
     "id": "E.board.sub",
-    "section": "board",
+    "stable_id": "E.board.sub",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
-  },
-  {
-    "id": "E.board.note",
-    "section": "board",
-    "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
-  },
-  {
-    "id": "E.board.help",
-    "section": "board",
-    "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-board-sub"
   },
   {
     "id": "E.stage.all",
-    "section": "filters",
+    "stable_id": "E.stage.all",
+    "section": "S.board.filters",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-stage-filter [data-stagepick='all']"
   },
   {
     "id": "E.stage.live",
-    "section": "filters",
+    "stable_id": "E.stage.live",
+    "section": "S.board.filters",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-stage-filter [data-stagepick='live']"
   },
   {
     "id": "E.stage.setting_up",
-    "section": "filters",
+    "stable_id": "E.stage.setting_up",
+    "section": "S.board.filters",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-stage-filter [data-stagepick='setting_up']"
   },
   {
     "id": "E.stage.ran",
-    "section": "filters",
+    "stable_id": "E.stage.ran",
+    "section": "S.board.filters",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-stage-filter [data-stagepick='ran']"
   },
   {
     "id": "E.stage.basing",
-    "section": "filters",
+    "stable_id": "E.stage.basing",
+    "section": "S.board.filters",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-stage-filter [data-stagepick='basing']"
   },
   {
     "id": "E.stage.blocked",
-    "section": "filters",
+    "stable_id": "E.stage.blocked",
+    "section": "S.board.filters",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-stage-filter [data-stagepick='blocked']"
   },
   {
     "id": "E.card.ONTO",
-    "section": "cards",
+    "stable_id": "E.card.ONTO",
+    "section": "S.board",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "a.pvcard[data-ticker='ONTO']"
   },
   {
     "id": "E.card.ONTO.verb",
-    "section": "cards",
+    "stable_id": "E.card.ONTO.verb",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "a.pvcard[data-ticker='ONTO'] .pv-chip"
   },
   {
     "id": "E.card.ONTO.trigger",
-    "section": "cards",
+    "stable_id": "E.card.ONTO.trigger",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "a.pvcard[data-ticker='ONTO'] .pv-trg"
   },
   {
     "id": "E.card.ONTO.priority",
-    "section": "cards",
+    "stable_id": "E.card.ONTO.priority",
+    "section": "S.board",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
-  },
-  {
-    "id": "E.card.ONTO.zone",
-    "section": "cards",
-    "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
-  },
-  {
-    "id": "E.card.ONTO.date",
-    "section": "cards",
-    "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "a.pvcard[data-ticker='ONTO'] .pv-edn"
   },
   {
     "id": "E.board.more",
-    "section": "board",
+    "stable_id": "E.board.more",
+    "section": "S.board",
     "status": "tested",
-    "reason": null
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#us-standouts .sm-bar button.sm-btn:not(.sm-ghost)"
   },
   {
     "id": "E.board.track.btn",
-    "section": "track",
+    "stable_id": "E.board.track.btn",
+    "section": "S.board.track",
     "status": "tested",
-    "reason": null
-  },
-  {
-    "id": "E.board.track.dlg",
-    "section": "track",
-    "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
-  },
-  {
-    "id": "E.board.fn",
-    "section": "board",
-    "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": null,
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#trd-btn"
   },
   {
     "id": "E.live.panel",
-    "section": "prophet-live",
+    "stable_id": "E.live.panel",
+    "section": "S.board.live",
     "status": "not tested",
-    "reason": "no independent interaction branch in this calibration"
+    "reason": "no independent interaction branch in this calibration",
+    "found": true,
+    "resolution_status": "RESOLVED",
+    "selector_used": "#prophet-live"
   }
 ]

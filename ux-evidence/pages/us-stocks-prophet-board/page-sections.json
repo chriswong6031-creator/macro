@@ -1,11 +1,25 @@
 [
   {
+    "section_id": "S.shell",
     "id": "S.shell",
     "label": "Global shell / market nav",
-    "found": true,
     "order": 0,
-    "selector": "header, .topbar, nav",
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "nav.site-nav",
+    "selector_requested": "nav.site-nav",
+    "match_count": 1,
     "page_box": {
+      "x": 16,
+      "y": 44,
+      "w": 1408,
+      "h": 42,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
       "x": 16,
       "y": 44,
       "w": 1408,
@@ -20,40 +34,10 @@
         "text": ""
       },
       {
-        "tag": "link",
-        "id": null,
-        "cls": "",
-        "text": ""
-      },
-      {
         "tag": "div",
         "id": null,
         "cls": "nav-links",
-        "text": "MASTERMINDX United States ▾ China ▾ Hong Kong ▾ Canada ▾ International ▾ Other A"
-      },
-      {
-        "tag": "script",
-        "id": null,
-        "cls": "",
-        "text": ""
-      },
-      {
-        "tag": "script",
-        "id": null,
-        "cls": "",
-        "text": ""
-      },
-      {
-        "tag": "script",
-        "id": null,
-        "cls": "",
-        "text": ""
-      },
-      {
-        "tag": "script",
-        "id": null,
-        "cls": "",
-        "text": ""
+        "text": "MASTERMINDX United States ▾ China ▾ Hong Kong ▾ Canada ▾ International ▾ Other Assets ▾ Re"
       },
       {
         "tag": "div",
@@ -77,7 +61,7 @@
       {
         "tag": "a",
         "id": null,
-        "text": "MASTERMINDX"
+        "text": "MASTERMINDX — Home"
       },
       {
         "tag": "a",
@@ -193,102 +177,32 @@
         "tag": "a",
         "id": null,
         "text": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "Policy Watch政策观察PBoC and sector policy shifts央行动向与行业政策"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "Market Mechanics盘面机制Participation, limits and tape参与度、涨跌停与盘面"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "Special Situations特殊事件Unlocks, pledges and catalysts解禁、质押与催化事件"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "China News中国新闻↗"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "Strategies策略↗"
       }
     ],
-    "source": "shared nav partial / dashboard.html.j2"
+    "source_hint": "templates/_site_nav.html.j2",
+    "source": "templates/_site_nav.html.j2"
   },
   {
-    "id": "S.live",
-    "label": "Prophet live / forming today",
-    "found": true,
-    "order": 1,
-    "selector": "#prophet-live",
-    "page_box": {
-      "x": 0,
-      "y": 0,
-      "w": 0,
-      "h": 0
-    },
-    "viewport_height_footprint": 0,
-    "major_children": [
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "plv-hd",
-        "text": "Forming today今日正在形成 ?"
-      },
-      {
-        "tag": "div",
-        "id": "plv-sub",
-        "cls": "plv-sub",
-        "text": ""
-      },
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "plv-rail",
-        "text": "settles 4:00 pm ET美东 16:00 结算"
-      },
-      {
-        "tag": "div",
-        "id": "plv-cols",
-        "cls": "plv-cols",
-        "text": "Now当前 Cross level上穿价位 Since起始"
-      },
-      {
-        "tag": "div",
-        "id": "plv-body",
-        "cls": "plv-body",
-        "text": ""
-      },
-      {
-        "tag": "div",
-        "id": "plv-fn",
-        "cls": "plv-fn",
-        "text": ""
-      }
-    ],
-    "major_controls": [
-      {
-        "tag": "button",
-        "id": "plv-more",
-        "text": ""
-      }
-    ],
-    "source": "dashboard.html.j2 #prophet-live"
-  },
-  {
+    "section_id": "S.board",
     "id": "S.board",
     "label": "Prophet Stock Signals",
+    "order": 1,
     "found": true,
-    "order": 2,
-    "selector": "#us-standouts",
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#us-standouts",
+    "selector_requested": "#us-standouts",
+    "match_count": 1,
     "page_box": {
+      "x": 40,
+      "y": 828,
+      "w": 1360,
+      "h": 2127,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
       "x": 40,
       "y": 828,
       "w": 1360,
@@ -300,19 +214,13 @@
         "tag": "div",
         "id": null,
         "cls": "pb-hdrow",
-        "text": "PROPHET STOCK SIGNALS ⊞ Grid Table 69 shown · 77 setups · green dot = entry open"
+        "text": "PROPHET STOCK SIGNALS ⊞ Grid Table 69 shown · 77 setups · green dot = entry open, yellow ="
       },
       {
         "tag": "div",
         "id": null,
         "cls": "pbs-note",
         "text": "13 of 22 confirmed overnight · 0 adjusted, 9 left the board?"
-      },
-      {
-        "tag": "script",
-        "id": "us-stocktable-data",
-        "cls": "",
-        "text": "{ \"rows\": [{ \"ticker\": \"ONTO\", \"name\": \"Onto Innovation\", \"sector\": \"Information"
       },
       {
         "tag": "div",
@@ -324,13 +232,13 @@
         "tag": "div",
         "id": "us-stocktable-wrap",
         "cls": "",
-        "text": "Stage阶段All全部All stages全部阶段69ENTRYENTRY69Sector板块All全部All sectors全部板块69Communicat"
+        "text": "Stage阶段All全部All stages全部阶段69ENTRYENTRY69Sector板块All全部All sectors全部板块69Communication Servic"
       },
       {
         "tag": "div",
         "id": null,
         "cls": "nb-grid-section",
-        "text": "All 81 Live now 28 Setting up 31 Ran — don’t chase 20 Basing 1 Blocked 1 LIVE NO"
+        "text": "All 81 Live now 28 Setting up 31 Ran — don’t chase 20 Basing 1 Blocked 1 LIVE NOW 28 entry"
       },
       {
         "tag": "div",
@@ -342,13 +250,13 @@
         "tag": "div",
         "id": null,
         "cls": "topsetups",
-        "text": "More fresh triggers More names flashing a buy signal today. Signals already show"
+        "text": "More fresh triggers More names flashing a buy signal today. Signals already shown on cards"
       },
       {
         "tag": "div",
         "id": null,
         "cls": "topsetups leaders-strip",
-        "text": "Market leaders The strongest runners over the past three months. No fresh entry "
+        "text": "Market leaders The strongest runners over the past three months. No fresh entry yet — watc"
       }
     ],
     "major_controls": [
@@ -360,12 +268,7 @@
       {
         "tag": "button",
         "id": "us-st-btn-table",
-        "text": "Table"
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
+        "text": "Table view"
       },
       {
         "tag": "button",
@@ -395,7 +298,7 @@
       {
         "tag": "button",
         "id": null,
-        "text": "Clear filters清除筛选"
+        "text": "Close"
       },
       {
         "tag": "button",
@@ -413,105 +316,35 @@
         "text": "Close"
       },
       {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
         "tag": "button",
         "id": "st-chooser-reset",
         "text": "Reset to default恢复默认"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "ONTO"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "FTI"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "FDX"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "DAR"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "EQIX"
       }
     ],
-    "source": "templates/dashboard.html.j2 mode=stocks"
+    "source_hint": "templates/dashboard.html.j2 #us-standouts",
+    "source": "templates/dashboard.html.j2 #us-standouts"
   },
   {
-    "id": "S.stage",
-    "label": "Stage filter",
+    "section_id": "S.board.filters",
+    "id": "S.board.filters",
+    "label": "Stage filters",
+    "order": 2,
     "found": true,
-    "order": 3,
-    "selector": "#us-stage-filter",
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#us-stage-filter",
+    "selector_requested": "#us-stage-filter",
+    "match_count": 1,
     "page_box": {
+      "x": 59,
+      "y": 903,
+      "w": 1322,
+      "h": 39,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
       "x": 59,
       "y": 903,
       "w": 1322,
@@ -588,238 +421,30 @@
         "text": "Blocked 1"
       }
     ],
-    "source": "dashboard.html.j2"
+    "source_hint": "templates/dashboard.html.j2 #us-stage-filter",
+    "source": "templates/dashboard.html.j2 #us-stage-filter"
   },
   {
-    "id": "S.cards",
-    "label": "Card grid",
-    "found": true,
-    "order": 4,
-    "selector": "#us-standouts .nbgrid, #us-standouts",
-    "page_box": {
-      "x": 40,
-      "y": 828,
-      "w": 1360,
-      "h": 2127
-    },
-    "viewport_height_footprint": 2.127,
-    "major_children": [
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "pb-hdrow",
-        "text": "PROPHET STOCK SIGNALS ⊞ Grid Table 69 shown · 77 setups · green dot = entry open"
-      },
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "pbs-note",
-        "text": "13 of 22 confirmed overnight · 0 adjusted, 9 left the board?"
-      },
-      {
-        "tag": "script",
-        "id": "us-stocktable-data",
-        "cls": "",
-        "text": "{ \"rows\": [{ \"ticker\": \"ONTO\", \"name\": \"Onto Innovation\", \"sector\": \"Information"
-      },
-      {
-        "tag": "div",
-        "id": "st-count-chips",
-        "cls": "",
-        "text": "ENTRY入场 69"
-      },
-      {
-        "tag": "div",
-        "id": "us-stocktable-wrap",
-        "cls": "",
-        "text": "Stage阶段All全部All stages全部阶段69ENTRYENTRY69Sector板块All全部All sectors全部板块69Communicat"
-      },
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "nb-grid-section",
-        "text": "All 81 Live now 28 Setting up 31 Ran — don’t chase 20 Basing 1 Blocked 1 LIVE NO"
-      },
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "prophet-board-tools",
-        "text": "Track record·60% win · +1.19% a trade measurement updated What changed today ·30"
-      },
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "topsetups",
-        "text": "More fresh triggers More names flashing a buy signal today. Signals already show"
-      },
-      {
-        "tag": "div",
-        "id": null,
-        "cls": "topsetups leaders-strip",
-        "text": "Market leaders The strongest runners over the past three months. No fresh entry "
-      }
-    ],
-    "major_controls": [
-      {
-        "tag": "button",
-        "id": "us-st-btn-grid",
-        "text": "⊞ Grid"
-      },
-      {
-        "tag": "button",
-        "id": "us-st-btn-table",
-        "text": "Table"
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "button",
-        "id": null,
-        "text": "Clear search"
-      },
-      {
-        "tag": "button",
-        "id": null,
-        "text": "Stage阶段All全部"
-      },
-      {
-        "tag": "button",
-        "id": null,
-        "text": "Sector板块All全部"
-      },
-      {
-        "tag": "button",
-        "id": null,
-        "text": "Lane通道All全部"
-      },
-      {
-        "tag": "button",
-        "id": null,
-        "text": "Fresh only仅新信号 ≤2d"
-      },
-      {
-        "tag": "button",
-        "id": null,
-        "text": "Clear filters清除筛选"
-      },
-      {
-        "tag": "button",
-        "id": "st-reset-order",
-        "text": "↺ Reset order恢复默认排序"
-      },
-      {
-        "tag": "button",
-        "id": "st-col-btn",
-        "text": "Columns列设置 9/12"
-      },
-      {
-        "tag": "button",
-        "id": "st-chooser-close",
-        "text": "Close"
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "input",
-        "id": null,
-        "text": ""
-      },
-      {
-        "tag": "button",
-        "id": "st-chooser-reset",
-        "text": "Reset to default恢复默认"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "ONTO"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "FTI"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "FDX"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "DAR"
-      },
-      {
-        "tag": "a",
-        "id": null,
-        "text": "EQIX"
-      }
-    ],
-    "source": "_prophet_card.html.j2"
-  },
-  {
-    "id": "S.track",
+    "section_id": "S.board.track",
+    "id": "S.board.track",
     "label": "Track record",
+    "order": 3,
     "found": true,
-    "order": 5,
-    "selector": "#trd-btn",
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#trd-btn",
+    "selector_requested": "#trd-btn",
+    "match_count": 1,
     "page_box": {
+      "x": 59,
+      "y": 2331,
+      "w": 347,
+      "h": 36,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
       "x": 59,
       "y": 2331,
       "w": 347,
@@ -847,6 +472,76 @@
       }
     ],
     "major_controls": [],
-    "source": "track-record dialog"
+    "source_hint": "dashboard track-record control",
+    "source": "dashboard track-record control"
+  },
+  {
+    "section_id": "S.board.live",
+    "id": "S.board.live",
+    "label": "Prophet live",
+    "order": 4,
+    "found": true,
+    "visible": false,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "UNRESOLVED",
+    "selector_used": "#prophet-live",
+    "selector_requested": "#prophet-live",
+    "match_count": 1,
+    "page_box": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0
+    },
+    "viewport_height_footprint": 0.0,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "plv-hd",
+        "text": "Forming today今日正在形成 ?"
+      },
+      {
+        "tag": "div",
+        "id": "plv-sub",
+        "cls": "plv-sub",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "plv-rail",
+        "text": "settles 4:00 pm ET美东 16:00 结算"
+      },
+      {
+        "tag": "div",
+        "id": "plv-cols",
+        "cls": "plv-cols",
+        "text": "Now当前 Cross level上穿价位 Since起始"
+      },
+      {
+        "tag": "div",
+        "id": "plv-body",
+        "cls": "plv-body",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": "plv-fn",
+        "cls": "plv-fn",
+        "text": ""
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "dashboard #prophet-live (may be empty/hidden)",
+    "source": "dashboard #prophet-live (may be empty/hidden)"
   }
 ]

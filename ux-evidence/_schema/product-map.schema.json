@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "product-map.schema.json",
+  "title": "Phase 0 product map",
+  "type": "object",
+  "required": ["schema_version", "run_id", "repo_head_sha"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "run_id": {"type": "string"},
+    "route_families": {"type": "array"},
+    "route_instances": {"type": "array"},
+    "surfaces": {"type": "array"},
+    "capabilities": {"type": "array"},
+    "workflows": {"type": "array"}
+  }
+}

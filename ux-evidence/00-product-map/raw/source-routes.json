@@ -1,0 +1,1739 @@
+[
+  {
+    "path": "about-research.html",
+    "route_family_id": "RF.us.about-research",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "about.html",
+    "route_family_id": "RF.us.about",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "advanced.html",
+    "route_family_id": "RF.us.advanced",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "ai_desk.html",
+    "route_family_id": "RF.us.ai_desk",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "aibrief.html",
+    "route_family_id": "RF.us.aibrief",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "alerts.html",
+    "route_family_id": "RF.us.alerts",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "allocation.html",
+    "route_family_id": "RF.us.allocation",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "allocation_canada.html",
+    "route_family_id": "RF.ca.allocation_canada",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "allocation_china.html",
+    "route_family_id": "RF.cn.allocation_china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "allocation_hk.html",
+    "route_family_id": "RF.hk.allocation_hk",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "alt_data.html",
+    "route_family_id": "RF.us.alt_data",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "anticipation.html",
+    "route_family_id": "RF.us.anticipation",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "baskets.html",
+    "route_family_id": "RF.us.baskets",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "baskets_canada.html",
+    "route_family_id": "RF.ca.baskets_canada",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "baskets_china.html",
+    "route_family_id": "RF.cn.baskets_china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "baskets_china_ths.html",
+    "route_family_id": "RF.cn.baskets_china_ths",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "baskets_hk.html",
+    "route_family_id": "RF.hk.baskets_hk",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "baskets_intl.html",
+    "route_family_id": "RF.us.baskets_intl",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "biocatalyst.html",
+    "route_family_id": "RF.us.biocatalyst",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "bonds.html",
+    "route_family_id": "RF.us.bonds",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "btc_strategy.html",
+    "route_family_id": "RF.us.btc_strategy",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "calibration.html",
+    "route_family_id": "RF.us.calibration",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "canada.html",
+    "route_family_id": "RF.ca.canada",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "canada_heatmap.html",
+    "route_family_id": "RF.ca.canada_heatmap",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "canada_history.html",
+    "route_family_id": "RF.ca.canada_history",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "canada_stock.html",
+    "route_family_id": "RF.ca.stock_detail",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "canada_stocks.html",
+    "route_family_id": "RF.ca.canada_stocks",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "capital_structure.html",
+    "route_family_id": "RF.us.capital_structure",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "chat.html",
+    "route_family_id": "RF.us.chat",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china.html",
+    "route_family_id": "RF.cn.china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_allocation.html",
+    "route_family_id": "RF.cn.china_allocation",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_altdata.html",
+    "route_family_id": "RF.cn.china_altdata",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_heatmap.html",
+    "route_family_id": "RF.cn.china_heatmap",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_history.html",
+    "route_family_id": "RF.cn.china_history",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_intel.html",
+    "route_family_id": "RF.cn.china_intel",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_lookup.html",
+    "route_family_id": "RF.cn.china_lookup",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_mechanics.html",
+    "route_family_id": "RF.cn.china_mechanics",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_news.html",
+    "route_family_id": "RF.cn.china_news",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_policy_watch.html",
+    "route_family_id": "RF.cn.china_policy_watch",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_radar.html",
+    "route_family_id": "RF.cn.china_radar",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_sector_desk.html",
+    "route_family_id": "RF.cn.china_sector_desk",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_special_situations.html",
+    "route_family_id": "RF.cn.china_special_situations",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_stocks.html",
+    "route_family_id": "RF.cn.china_stocks",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_stocks_lab.html",
+    "route_family_id": "RF.cn.china_stocks_lab",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "china_strategies.html",
+    "route_family_id": "RF.cn.china_strategies",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "cn_reversal_sleeve.html",
+    "route_family_id": "RF.us.cn_reversal_sleeve",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "committee.html",
+    "route_family_id": "RF.us.committee",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "commodities.html",
+    "route_family_id": "RF.us.commodities",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "commodity_strategies.html",
+    "route_family_id": "RF.us.commodity_strategies",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "confluence_screener.html",
+    "route_family_id": "RF.us.confluence_screener",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "congress_trades.html",
+    "route_family_id": "RF.us.congress_trades",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "country_cycles.html",
+    "route_family_id": "RF.us.country_cycles",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "crossasset.html",
+    "route_family_id": "RF.us.crossasset",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "crypto.html",
+    "route_family_id": "RF.us.crypto",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "cycle.html",
+    "route_family_id": "RF.us.cycle",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "darkpool.html",
+    "route_family_id": "RF.us.darkpool",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "demand.html",
+    "route_family_id": "RF.us.demand",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "disclaimer.html",
+    "route_family_id": "RF.us.disclaimer",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "discovery.html",
+    "route_family_id": "RF.us.discovery",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "etfs.html",
+    "route_family_id": "RF.us.etfs",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "euro_area.html",
+    "route_family_id": "RF.intl.euro_area",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "factors.html",
+    "route_family_id": "RF.us.factors",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "flow_desk.html",
+    "route_family_id": "RF.us.flow_desk",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "flow_leaders.html",
+    "route_family_id": "RF.us.flow_leaders",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "flow_velocity.html",
+    "route_family_id": "RF.us.flow_velocity",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "foresight.html",
+    "route_family_id": "RF.us.foresight",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "forex.html",
+    "route_family_id": "RF.us.forex",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "fund_ako.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_akre.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_altarock.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_altimeter.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_appaloosa.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_aquamarine.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_bakerbros.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_basswood.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_baupost.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_berkshire.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_casdin.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_coatue.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_corvex.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_d1capital.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_dorsey.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_dragoneer.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_duquesne.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_durable.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_egerton.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_elliott.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_engaged.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_fairholme.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_gates.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_giverny.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_greenlea.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_himalaya.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_icahn.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_index.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_jana.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_kimmeridge.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_lightstreet.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_lonepine.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_mudrick.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_oaktree.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_pabrai.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_perceptive.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_pershing.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_polen.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_punchcard.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_racapital.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_rtw.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_sachem.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_scion.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_soros.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_starboard.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_tci.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_thirdpoint.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_tigerglobal.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_trian.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_valueact.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_viking.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fund_whalerock.html",
+    "route_family_id": "RF.fund.profile",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated fund profile; family RF.fund.profile"
+  },
+  {
+    "path": "fundamental_forensics.html",
+    "route_family_id": "RF.us.fundamental_forensics",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "gex.html",
+    "route_family_id": "RF.us.gex",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "government_revenue.html",
+    "route_family_id": "RF.us.government_revenue",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "history.html",
+    "route_family_id": "RF.us.history",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "hk.html",
+    "route_family_id": "RF.hk.hk",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "hk_heatmap.html",
+    "route_family_id": "RF.hk.hk_heatmap",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "hk_history.html",
+    "route_family_id": "RF.hk.hk_history",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "hk_lookup.html",
+    "route_family_id": "RF.hk.hk_lookup",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "hk_stocks.html",
+    "route_family_id": "RF.hk.hk_stocks",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "hk_stocks_lab.html",
+    "route_family_id": "RF.hk.hk_stocks_lab",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "impulse.html",
+    "route_family_id": "RF.us.impulse",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "index.html",
+    "route_family_id": "RF.us.index",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "india.html",
+    "route_family_id": "RF.intl.india",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "intelligence_hub.html",
+    "route_family_id": "RF.us.intelligence_hub",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "intl.html",
+    "route_family_id": "RF.intl.intl",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "intl_stock.html",
+    "route_family_id": "RF.intl.stock_detail",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "intl_stocks.html",
+    "route_family_id": "RF.intl.intl_stocks",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "intraday_flow.html",
+    "route_family_id": "RF.us.intraday_flow",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "ipo.html",
+    "route_family_id": "RF.us.ipo",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "japan.html",
+    "route_family_id": "RF.intl.japan",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "leader_radar.html",
+    "route_family_id": "RF.us.leader_radar",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "learn.html",
+    "route_family_id": "RF.us.learn",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "macro.html",
+    "route_family_id": "RF.us.macro",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "macro_context.html",
+    "route_family_id": "RF.us.macro_context",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "macro_signals.html",
+    "route_family_id": "RF.us.macro_signals",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "market_memory.html",
+    "route_family_id": "RF.us.market_memory",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "market_structure.html",
+    "route_family_id": "RF.us.market_structure",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "markets.html",
+    "route_family_id": "RF.us.markets",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "mastermind.html",
+    "route_family_id": "RF.us.mastermind",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "masterminds.html",
+    "route_family_id": "RF.us.masterminds",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "measurement.html",
+    "route_family_id": "RF.us.measurement",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "methodology.html",
+    "route_family_id": "RF.us.methodology",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "movers.html",
+    "route_family_id": "RF.us.movers",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "narrative_radar.html",
+    "route_family_id": "RF.us.narrative_radar",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "neural_web.html",
+    "route_family_id": "RF.us.neural_web",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "news.html",
+    "route_family_id": "RF.us.news",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "odds.html",
+    "route_family_id": "RF.us.odds",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "options.html",
+    "route_family_id": "RF.us.options",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "options_screener.html",
+    "route_family_id": "RF.us.options_screener",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "plans.html",
+    "route_family_id": "RF.us.plans",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "policy_watch.html",
+    "route_family_id": "RF.us.policy_watch",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "privacy.html",
+    "route_family_id": "RF.us.privacy",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "quant_lab.html",
+    "route_family_id": "RF.us.quant_lab",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "radar.html",
+    "route_family_id": "RF.us.radar",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "reports.html",
+    "route_family_id": "RF.us.reports",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "research_vault.html",
+    "route_family_id": "RF.us.research_vault",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "seasonality.html",
+    "route_family_id": "RF.us.seasonality",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "sector_central.html",
+    "route_family_id": "RF.us.sector_central",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "sector_central_china.html",
+    "route_family_id": "RF.cn.sector_central_china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "sector_cycles.html",
+    "route_family_id": "RF.us.sector_cycles",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "sector_cycles_china.html",
+    "route_family_id": "RF.cn.sector_cycles_china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "sector_heatmap.html",
+    "route_family_id": "RF.us.sector_heatmap",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "signal_lab.html",
+    "route_family_id": "RF.us.signal_lab",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "smart_money.html",
+    "route_family_id": "RF.us.smart_money",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "south_korea.html",
+    "route_family_id": "RF.intl.south_korea",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "special_situations.html",
+    "route_family_id": "RF.us.special_situations",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "spr.html",
+    "route_family_id": "RF.us.spr",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "spvector.html",
+    "route_family_id": "RF.us.spvector",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "stage_analysis.html",
+    "route_family_id": "RF.us.stage_analysis",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "start.html",
+    "route_family_id": "RF.us.start",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "state_of_themes.html",
+    "route_family_id": "RF.us.state_of_themes",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "stock.html",
+    "route_family_id": "RF.us.stock_detail",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "stock_seasonality.html",
+    "route_family_id": "RF.us.stock_seasonality",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "strategies.html",
+    "route_family_id": "RF.us.strategies",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "strategy_btc_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_copper_active.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_copper_macro.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_copper_swap.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_gold_active.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_gold_macro.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_gold_swap.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_oil_macro.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_oil_swap.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_silver_active.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_silver_macro.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cm_silver_swap.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cn_credit_margin.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cn_credit_vol.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cn_volmanaged.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cnmm_aggressive.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cnmm_conservative.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_cnmm_moderate.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_copper_growth.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_credit_carry.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_credit_gate_equity.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_curve_recession.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_dual_momentum.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_duration_timing.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_em_debt_carry.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_equalweight_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_eth_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_fin_conditions.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_flight_to_quality.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_gold_macro.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_golden_cross.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_ig_carry.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_lowvol_defensive.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_mm_aggressive.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_mm_conservative.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_mm_moderate.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_momentum_crashguard.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_nasdaq_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_net_liquidity.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_oil_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_quality_flight.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_sahm_timer.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_semis_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_smallcap_trend.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_vix_term_timer.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "strategy_vol_managed_sp.html",
+    "route_family_id": "RF.strategy.tactical",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated tactical strategy page; family RF.strategy.tactical"
+  },
+  {
+    "path": "subsector_rotation.html",
+    "route_family_id": "RF.us.subsector_rotation",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "subsector_rotation_china.html",
+    "route_family_id": "RF.cn.subsector_rotation_china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "subsectors.html",
+    "route_family_id": "RF.us.subsectors",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "subsectors_china.html",
+    "route_family_id": "RF.cn.subsectors_china",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "support.html",
+    "route_family_id": "RF.us.support",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "tech_lab.html",
+    "route_family_id": "RF.us.tech_lab",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "terms.html",
+    "route_family_id": "RF.us.terms",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "transmission.html",
+    "route_family_id": "RF.us.transmission",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "united_kingdom.html",
+    "route_family_id": "RF.intl.united_kingdom",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "us_stocks.html",
+    "route_family_id": "RF.us.us_stocks",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "us_stocks_lab.html",
+    "route_family_id": "RF.us.us_stocks_lab",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "us_track_record.html",
+    "route_family_id": "RF.us.us_track_record",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "validation_timeline.html",
+    "route_family_id": "RF.us.validation_timeline",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "vector.html",
+    "route_family_id": "RF.us.vector",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "vector_allocation.html",
+    "route_family_id": "RF.us.vector_allocation",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "watchlist.html",
+    "route_family_id": "RF.us.watchlist",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "whitehouse.html",
+    "route_family_id": "RF.us.whitehouse",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "winner_health.html",
+    "route_family_id": "RF.us.winner_health",
+    "discovery_source": "GENERATED_SITE",
+    "user_facing": true,
+    "reason": "generated top-level site HTML"
+  },
+  {
+    "path": "stock.html#<ticker>",
+    "route_family_id": "RF.us.stock_detail",
+    "discovery_source": "SOURCE_ROUTE",
+    "user_facing": true,
+    "reason": "templates/stock.html.j2 + site/stocks/*.html (2038 generated instances). Sample stock.html#ONTO.",
+    "instance_count_source": 2038
+  }
+]

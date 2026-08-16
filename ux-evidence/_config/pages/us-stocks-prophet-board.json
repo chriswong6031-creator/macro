@@ -1,0 +1,239 @@
+{
+  "page_id": "us-stocks-prophet-board",
+  "route_family_id": "RF.us.stock_dashboard",
+  "dossier_relpath": "ux-evidence/pages/us-stocks-prophet-board",
+  "url": "https://www.mastermind-x.com/us_stocks.html",
+  "requires_auth": false,
+  "local_html": "site/us_stocks.html",
+  "source_hint": "templates/dashboard.html.j2 mode=stocks + templates/_prophet_card.html.j2",
+  "provisional_archetype": "discovery / ranked decision board",
+  "sections": [
+    {
+      "stable_id": "S.shell",
+      "human_label": "Global shell / market nav",
+      "order": 0,
+      "selector_strategy": {"type": "css", "value": "nav.site-nav"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/_site_nav.html.j2"
+    },
+    {
+      "stable_id": "S.board",
+      "human_label": "Prophet Stock Signals",
+      "order": 1,
+      "selector_strategy": {"type": "css", "value": "#us-standouts"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/dashboard.html.j2 #us-standouts"
+    },
+    {
+      "stable_id": "S.board.filters",
+      "human_label": "Stage filters",
+      "order": 2,
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/dashboard.html.j2 #us-stage-filter"
+    },
+    {
+      "stable_id": "S.board.track",
+      "human_label": "Track record",
+      "order": 3,
+      "selector_strategy": {"type": "css", "value": "#trd-btn"},
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "dashboard track-record control"
+    },
+    {
+      "stable_id": "S.board.live",
+      "human_label": "Prophet live",
+      "order": 4,
+      "selector_strategy": {"type": "css", "value": "#prophet-live"},
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "dashboard #prophet-live (may be empty/hidden)"
+    }
+  ],
+  "controls": [
+    {
+      "stable_id": "E.shell.brand",
+      "human_label": "Brand / home",
+      "selector_strategy": {"type": "css", "value": "a.nav-brand"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.shell",
+      "required": true,
+      "source_hint": "templates/_navlinks.html.j2 a.nav-brand"
+    },
+    {
+      "stable_id": "E.shell.search",
+      "human_label": "Global ticker search",
+      "selector_strategy": {"type": "css", "value": "nav.site-nav .nav-search input"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.shell",
+      "required": true,
+      "source_hint": "templates/_site_nav.html.j2"
+    },
+    {
+      "stable_id": "E.shell.nav.us",
+      "human_label": "United States nav trigger",
+      "selector_strategy": {"type": "css", "value": "nav.site-nav a.nav-link[href='macro.html']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.shell",
+      "required": true,
+      "source_hint": "templates/_navlinks.html.j2 United States"
+    },
+    {
+      "stable_id": "E.board.root",
+      "human_label": "Prophet board root",
+      "selector_strategy": {"type": "css", "value": "#us-standouts"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": true
+    },
+    {
+      "stable_id": "E.board.title",
+      "human_label": "Board title",
+      "selector_strategy": {"type": "css", "value": "#us-standouts h2"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": false
+    },
+    {
+      "stable_id": "E.board.view.grid",
+      "human_label": "Grid view",
+      "selector_strategy": {"type": "css", "value": "#us-st-btn-grid"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": true
+    },
+    {
+      "stable_id": "E.board.view.table",
+      "human_label": "Table view",
+      "selector_strategy": {"type": "css", "value": "#us-st-btn-table"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": true
+    },
+    {
+      "stable_id": "E.board.sub",
+      "human_label": "Board subtitle",
+      "selector_strategy": {"type": "css", "value": "#us-board-sub"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": false
+    },
+    {
+      "stable_id": "E.stage.all",
+      "human_label": "Stage all",
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter [data-stagepick='all']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.filters",
+      "required": true
+    },
+    {
+      "stable_id": "E.stage.live",
+      "human_label": "Stage live",
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter [data-stagepick='live']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.filters",
+      "required": true
+    },
+    {
+      "stable_id": "E.stage.setting_up",
+      "human_label": "Stage setting up",
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter [data-stagepick='setting_up']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.filters",
+      "required": true
+    },
+    {
+      "stable_id": "E.stage.ran",
+      "human_label": "Stage ran",
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter [data-stagepick='ran']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.filters",
+      "required": true
+    },
+    {
+      "stable_id": "E.stage.basing",
+      "human_label": "Stage basing",
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter [data-stagepick='basing']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.filters",
+      "required": true
+    },
+    {
+      "stable_id": "E.stage.blocked",
+      "human_label": "Stage blocked",
+      "selector_strategy": {"type": "css", "value": "#us-stage-filter [data-stagepick='blocked']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.filters",
+      "required": true
+    },
+    {
+      "stable_id": "E.card.ONTO",
+      "human_label": "ONTO prophet card",
+      "selector_strategy": {"type": "css", "value": "a.pvcard[data-ticker='ONTO']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": true
+    },
+    {
+      "stable_id": "E.card.ONTO.verb",
+      "human_label": "ONTO verb chip",
+      "selector_strategy": {"type": "css", "value": "a.pvcard[data-ticker='ONTO'] .pv-chip"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": false
+    },
+    {
+      "stable_id": "E.card.ONTO.trigger",
+      "human_label": "ONTO trigger chip",
+      "selector_strategy": {"type": "css", "value": "a.pvcard[data-ticker='ONTO'] .pv-trg"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": false
+    },
+    {
+      "stable_id": "E.card.ONTO.priority",
+      "human_label": "ONTO priority",
+      "selector_strategy": {"type": "css", "value": "a.pvcard[data-ticker='ONTO'] .pv-edn"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": false
+    },
+    {
+      "stable_id": "E.board.more",
+      "human_label": "Show N more",
+      "selector_strategy": {
+        "type": "css",
+        "value": "#us-standouts .sm-bar button.sm-btn:not(.sm-ghost)"
+      },
+      "expected_cardinality": 1,
+      "evidence_section": "S.board",
+      "required": false,
+      "fallback_strategy": {
+        "type": "css_and_text",
+        "value": "#us-standouts .sm-bar button",
+        "text_contains": "Show"
+      },
+      "source_hint": "templates/theme.js injected .sm-bar .sm-btn"
+    },
+    {
+      "stable_id": "E.board.track.btn",
+      "human_label": "Track record",
+      "selector_strategy": {"type": "css", "value": "#trd-btn"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.track",
+      "required": false
+    },
+    {
+      "stable_id": "E.live.panel",
+      "human_label": "Prophet live panel",
+      "selector_strategy": {"type": "css", "value": "#prophet-live"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.board.live",
+      "required": false
+    }
+  ]
+}

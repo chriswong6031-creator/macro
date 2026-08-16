@@ -28,5 +28,7 @@
       "reason": "account-gated or missing locally (site/stockdata is gitignored)"
     }
   ],
-  "note": "Board HTML byte-compared. Detail payload is cookie-gated; local stockdata/ is gitignored."
+  "note": "Board HTML byte-compared. Detail payload is cookie-gated; local stockdata/ is gitignored.",
+  "repo_head_sha": "e5431db19e69902d8b93fbb60d12c9085e5f8ecc",
+  "parity_method": "sha256_live_vs_local_generated_html"
 }

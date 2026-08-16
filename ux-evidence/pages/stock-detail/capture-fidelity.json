@@ -1,6 +1,7 @@
 [
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_1440x1000.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1440x1000.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1440x1000.png",
     "requested": {
       "w": 1440,
       "h": 1000,
@@ -30,10 +31,29 @@
       "h": 1000
     },
     "horizontal_overflow": false,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3113,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3113
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_1440x1000_full.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1440x1000_full.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1440x1000_full.png",
     "requested": {
       "w": 1440,
       "h": 1000,
@@ -63,10 +83,29 @@
       "h": 3113
     },
     "horizontal_overflow": false,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 3113,
+      "png_dimensions_valid": true,
+      "full_page": true
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3113,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3113
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_00_y0.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_00_y0.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_00_y0.png",
     "requested": {
       "w": 1440,
       "h": 1000,
@@ -98,10 +137,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 0,
-    "scroll_y": 0
+    "scroll_y": 0,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3113,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3113
+    },
+    "requested_scroll_y": 0,
+    "observed_scroll_y": 0
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_01_y1000.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_01_y1000.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_01_y1000.png",
     "requested": {
       "w": 1440,
       "h": 1000,
@@ -133,10 +193,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 1,
-    "scroll_y": 1000
+    "scroll_y": 1000,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3113,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3113
+    },
+    "requested_scroll_y": 1000,
+    "observed_scroll_y": 1000
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_02_y2000.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_02_y2000.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_02_y2000.png",
     "requested": {
       "w": 1440,
       "h": 1000,
@@ -168,10 +249,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 2,
-    "scroll_y": 2000
+    "scroll_y": 2000,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3113,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3113
+    },
+    "requested_scroll_y": 2000,
+    "observed_scroll_y": 2000
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_03_y3000.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_03_y3000.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_1440x1000/detail_seg_03_y3000.png",
     "requested": {
       "w": 1440,
       "h": 1000,
@@ -203,10 +305,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 3,
-    "scroll_y": 3000
+    "scroll_y": 2113,
+    "capture_fidelity": {
+      "requested_width": 1440,
+      "requested_height": 1000,
+      "inner_width": 1440,
+      "inner_height": 1000,
+      "DPR": 1,
+      "PNG_width": 1440,
+      "PNG_height": 1000,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1440,
+      "document_scroll_height": 3113,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3113
+    },
+    "requested_scroll_y": 3000,
+    "observed_scroll_y": 2113
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_1280x900.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1280x900.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1280x900.png",
     "requested": {
       "w": 1280,
       "h": 900,
@@ -236,10 +359,29 @@
       "h": 900
     },
     "horizontal_overflow": false,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1280,
+      "requested_height": 900,
+      "inner_width": 1280,
+      "inner_height": 900,
+      "DPR": 1,
+      "PNG_width": 1280,
+      "PNG_height": 900,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1280,
+      "document_scroll_height": 3159,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3159
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_1024x800.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1024x800.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_1024x800.png",
     "requested": {
       "w": 1024,
       "h": 800,
@@ -269,10 +411,29 @@
       "h": 800
     },
     "horizontal_overflow": false,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 1024,
+      "requested_height": 800,
+      "inner_width": 1024,
+      "inner_height": 800,
+      "DPR": 1,
+      "PNG_width": 1024,
+      "PNG_height": 800,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 1024,
+      "document_scroll_height": 3138,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3138
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_768x900.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_768x900.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_768x900.png",
     "requested": {
       "w": 768,
       "h": 900,
@@ -302,10 +463,29 @@
       "h": 900
     },
     "horizontal_overflow": false,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 768,
+      "requested_height": 900,
+      "inner_width": 768,
+      "inner_height": 900,
+      "DPR": 1,
+      "PNG_width": 768,
+      "PNG_height": 900,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 768,
+      "document_scroll_height": 3378,
+      "horizontal_overflow": false,
+      "horizontal_overflow_px": 0,
+      "vertical_page_length": 3378
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_390x844.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_390x844.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_390x844.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -335,10 +515,29 @@
       "h": 844
     },
     "horizontal_overflow": false,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_default_390x844_full.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_default_390x844_full.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_default_390x844_full.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -368,10 +567,29 @@
       "h": 5090
     },
     "horizontal_overflow": true,
-    "pass": true
+    "pass": true,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 401,
+      "PNG_height": 5090,
+      "png_dimensions_valid": true,
+      "full_page": true
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    }
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_00_y0.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_00_y0.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_00_y0.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -403,10 +621,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 0,
-    "scroll_y": 0
+    "scroll_y": 0,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 0,
+    "observed_scroll_y": 0
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_01_y844.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_01_y844.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_01_y844.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -438,10 +677,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 1,
-    "scroll_y": 844
+    "scroll_y": 844,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 844,
+    "observed_scroll_y": 844
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_02_y1688.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_02_y1688.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_02_y1688.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -473,10 +733,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 2,
-    "scroll_y": 1688
+    "scroll_y": 1688,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 1688,
+    "observed_scroll_y": 1688
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_03_y2532.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_03_y2532.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_03_y2532.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -508,10 +789,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 3,
-    "scroll_y": 2532
+    "scroll_y": 2532,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 2532,
+    "observed_scroll_y": 2532
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_04_y3376.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_04_y3376.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_04_y3376.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -543,10 +845,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 4,
-    "scroll_y": 3376
+    "scroll_y": 3376,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 3376,
+    "observed_scroll_y": 3376
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_05_y4220.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_05_y4220.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_05_y4220.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -578,10 +901,31 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 5,
-    "scroll_y": 4220
+    "scroll_y": 4220,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 4220,
+    "observed_scroll_y": 4220
   },
   {
-    "path": "/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_06_y5064.png",
+    "path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_06_y5064.png",
+    "repo_relative_path": "ux-evidence/pages/stock-detail/screenshots/detail_full_segments_390x844/detail_seg_06_y5064.png",
     "requested": {
       "w": 390,
       "h": 844,
@@ -613,6 +957,26 @@
     "horizontal_overflow": false,
     "pass": true,
     "segment_index": 6,
-    "scroll_y": 5064
+    "scroll_y": 4246,
+    "capture_fidelity": {
+      "requested_width": 390,
+      "requested_height": 844,
+      "inner_width": 390,
+      "inner_height": 844,
+      "DPR": 1,
+      "PNG_width": 390,
+      "PNG_height": 844,
+      "png_dimensions_valid": true,
+      "full_page": false
+    },
+    "product_layout": {
+      "document_scroll_width": 401,
+      "document_scroll_height": 5090,
+      "horizontal_overflow": true,
+      "horizontal_overflow_px": 11,
+      "vertical_page_length": 5090
+    },
+    "requested_scroll_y": 5064,
+    "observed_scroll_y": 4246
   }
 ]

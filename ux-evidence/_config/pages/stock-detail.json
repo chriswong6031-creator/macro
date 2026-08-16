@@ -1,0 +1,355 @@
+{
+  "page_id": "stock-detail",
+  "route_family_id": "RF.us.stock_detail",
+  "dossier_relpath": "ux-evidence/pages/stock-detail",
+  "url": "https://www.mastermind-x.com/stock.html#ONTO",
+  "route_parameters": {"ticker": "ONTO"},
+  "requires_auth": true,
+  "local_html": "site/stock.html",
+  "source_hint": "templates/stock.html.j2",
+  "provisional_archetype": "security/company analyzer",
+  "sections": [
+    {
+      "stable_id": "S.shell",
+      "human_label": "Global shell",
+      "order": 0,
+      "selector_strategy": {"type": "css", "value": "nav.site-nav"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/_site_nav.html.j2"
+    },
+    {
+      "stable_id": "S.detail.identity",
+      "human_label": "Stock identity / header",
+      "order": 1,
+      "selector_strategy": {"type": "css", "value": "#result > .panel:first-of-type > .topline"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/stock.html.j2 .topline / #r_name"
+    },
+    {
+      "stable_id": "S.detail.decision",
+      "human_label": "Primary decision / verdict",
+      "order": 2,
+      "selector_strategy": {"type": "css", "value": "#sv-decision"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #sv-decision + stockview.js"
+    },
+    {
+      "stable_id": "S.detail.cycle",
+      "human_label": "Cycle & timing disclosure",
+      "order": 3,
+      "selector_strategy": {"type": "css", "value": "details.sv-deep"},
+      "expected_cardinality": 1,
+      "required": true,
+      "fallback_strategy": {
+        "type": "css_and_text",
+        "value": "details",
+        "text_contains": "Cycle & timing"
+      },
+      "source_hint": "templates/stock.html.j2 details.sv-deep"
+    },
+    {
+      "stable_id": "S.detail.chart",
+      "human_label": "Price / chart",
+      "order": 4,
+      "selector_strategy": {"type": "css", "value": "#tvbox"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #tvbox + site/chart.js"
+    },
+    {
+      "stable_id": "S.detail.momentum",
+      "human_label": "Momentum across timeframes",
+      "order": 5,
+      "selector_strategy": {"type": "css", "value": "#panel_mtf"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #panel_mtf"
+    },
+    {
+      "stable_id": "S.detail.evidence",
+      "human_label": "The evidence",
+      "order": 6,
+      "selector_strategy": {"type": "css", "value": "#sv-evidence"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #sv-evidence"
+    },
+    {
+      "stable_id": "S.detail.outlook",
+      "human_label": "Outlook / AI view",
+      "order": 7,
+      "selector_strategy": {
+        "type": "css_and_text",
+        "value": "details.sv-group",
+        "text_contains": "Outlook"
+      },
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "templates/stock.html.j2 details.sv-group Outlook"
+    },
+    {
+      "stable_id": "S.detail.fundamentals",
+      "human_label": "Fundamentals / financials",
+      "order": 8,
+      "selector_strategy": {
+        "type": "css_and_text",
+        "value": "details.sv-group",
+        "text_contains": "Fundamentals"
+      },
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "templates/stock.html.j2 details.sv-group Fundamentals"
+    },
+    {
+      "stable_id": "S.detail.options",
+      "human_label": "Options / positioning / ownership",
+      "order": 9,
+      "selector_strategy": {
+        "type": "css_and_text",
+        "value": "details.sv-group",
+        "text_contains": "Options, positioning"
+      },
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "templates/stock.html.j2 details.sv-group Options"
+    },
+    {
+      "stable_id": "S.detail.personality",
+      "human_label": "Stock personality / trading behavior",
+      "order": 10,
+      "selector_strategy": {"type": "css", "value": "#panel_personality"},
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "templates/stock.html.j2 #panel_personality (may be hidden)"
+    },
+    {
+      "stable_id": "S.detail.calibration",
+      "human_label": "Calibration / trust",
+      "order": 11,
+      "selector_strategy": {"type": "css", "value": "#panel_cal"},
+      "expected_cardinality": 1,
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #panel_cal"
+    },
+    {
+      "stable_id": "S.detail.method",
+      "human_label": "Method / help area",
+      "order": 12,
+      "selector_strategy": {"type": "css", "value": "p.sv-method"},
+      "expected_cardinality": 1,
+      "required": false,
+      "source_hint": "templates/stock.html.j2 p.sv-method"
+    }
+  ],
+  "controls": [
+    {
+      "stable_id": "E.shell.brand",
+      "human_label": "Brand / home",
+      "selector_strategy": {"type": "css", "value": "a.nav-brand"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.shell",
+      "required": true,
+      "source_hint": "templates/_navlinks.html.j2 a.nav-brand"
+    },
+    {
+      "stable_id": "E.shell.search",
+      "human_label": "Global ticker search",
+      "selector_strategy": {"type": "css", "value": "nav.site-nav .nav-search input"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.shell",
+      "required": true,
+      "source_hint": "templates/_site_nav.html.j2 nav-search input"
+    },
+    {
+      "stable_id": "E.detail.h1",
+      "human_label": "Stock name",
+      "selector_strategy": {"type": "css", "value": "#r_name"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.identity",
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #r_name"
+    },
+    {
+      "stable_id": "E.detail.decision",
+      "human_label": "Primary verdict band",
+      "selector_strategy": {"type": "css", "value": "#sv-decision"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.decision",
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #sv-decision"
+    },
+    {
+      "stable_id": "E.detail.lock",
+      "human_label": "Gated lock CTA",
+      "selector_strategy": {"type": "css", "value": ".lock-cta"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.decision",
+      "required": false,
+      "source_hint": "present only when payload gated"
+    },
+    {
+      "stable_id": "E.detail.cycle",
+      "human_label": "Cycle & timing detail",
+      "selector_strategy": {"type": "css", "value": "details.sv-deep"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.cycle",
+      "required": true,
+      "source_hint": "templates/stock.html.j2 details.sv-deep"
+    },
+    {
+      "stable_id": "E.detail.cycle.summary",
+      "human_label": "Cycle & timing summary",
+      "selector_strategy": {"type": "css", "value": "details.sv-deep > summary"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.cycle",
+      "required": true,
+      "source_hint": "templates/stock.html.j2 details.sv-deep > summary"
+    },
+    {
+      "stable_id": "E.detail.chart",
+      "human_label": "Chart plot container",
+      "selector_strategy": {"type": "css", "value": "#tvbox"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "templates/stock.html.j2 #tvbox"
+    },
+    {
+      "stable_id": "E.detail.chart.plot",
+      "human_label": "Chart plot surface",
+      "selector_strategy": {"type": "css", "value": "#tvbox .bchart-plot"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": false,
+      "source_hint": "site/chart.js .bchart-plot"
+    },
+    {
+      "stable_id": "E.detail.tf.1D",
+      "human_label": "1D",
+      "selector_strategy": {"type": "css", "value": "#tvbox button[data-tf='1D']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js button[data-tf]"
+    },
+    {
+      "stable_id": "E.detail.tf.3D",
+      "human_label": "3D",
+      "selector_strategy": {"type": "css", "value": "#tvbox button[data-tf='3D']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js button[data-tf]"
+    },
+    {
+      "stable_id": "E.detail.tf.1W",
+      "human_label": "1W",
+      "selector_strategy": {"type": "css", "value": "#tvbox button[data-tf='1W']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js button[data-tf]"
+    },
+    {
+      "stable_id": "E.detail.tf.1M",
+      "human_label": "1M",
+      "selector_strategy": {"type": "css", "value": "#tvbox button[data-tf='1M']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js button[data-tf]"
+    },
+    {
+      "stable_id": "E.detail.ind.EMA",
+      "human_label": "EMA",
+      "selector_strategy": {"type": "css", "value": "#tvbox button.bchart-chip[data-k='ema']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js bchart-chip"
+    },
+    {
+      "stable_id": "E.detail.ind.RSI",
+      "human_label": "RSI",
+      "selector_strategy": {"type": "css", "value": "#tvbox button.bchart-chip[data-k='rsi']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js bchart-chip"
+    },
+    {
+      "stable_id": "E.detail.ind.Stoch",
+      "human_label": "Stoch",
+      "selector_strategy": {"type": "css", "value": "#tvbox button.bchart-chip[data-k='stoch']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js bchart-chip"
+    },
+    {
+      "stable_id": "E.detail.ind.MACD",
+      "human_label": "MACD",
+      "selector_strategy": {"type": "css", "value": "#tvbox button.bchart-chip[data-k='macd']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js bchart-chip"
+    },
+    {
+      "stable_id": "E.detail.ind.StochRSI",
+      "human_label": "Stoch RSI",
+      "selector_strategy": {"type": "css", "value": "#tvbox button.bchart-chip[data-k='stochrsi']"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "source_hint": "site/chart.js bchart-chip"
+    },
+    {
+      "stable_id": "E.detail.chart.fullscreen",
+      "human_label": "Full screen",
+      "selector_strategy": {"type": "css", "value": "#tvbox button.bchart-fsbtn"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.chart",
+      "required": true,
+      "fallback_strategy": {"type": "aria", "role": "button", "name": "full screen"},
+      "source_hint": "site/chart.js .bchart-fsbtn"
+    },
+    {
+      "stable_id": "E.detail.alerts",
+      "human_label": "Alerts",
+      "selector_strategy": {"type": "css", "value": "#r_afbtn"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.detail.identity",
+      "required": false,
+      "source_hint": "templates/stock.html.j2 #r_afbtn (hidden until alerts exist)"
+    },
+    {
+      "stable_id": "E.detail.ask",
+      "human_label": "Ask Mastermind",
+      "selector_strategy": {"type": "css", "value": "#mmb-launch"},
+      "expected_cardinality": 1,
+      "evidence_section": "S.shell",
+      "required": false,
+      "fallback_strategy": {"type": "aria", "role": "button", "name": "ask mastermind"},
+      "source_hint": "templates/mm_brain.js #mmb-launch"
+    }
+  ],
+  "interactions": [
+    {
+      "interaction_id": "I.detail.cycle",
+      "element_stable_id": "E.detail.cycle.summary",
+      "section_id": "S.detail.cycle",
+      "baseline_state": "DETAIL_DEFAULT",
+      "action": {"type": "click", "target": "E.detail.cycle.summary"},
+      "expected_postconditions": [
+        {"kind": "js", "expr": "document.querySelector('details.sv-deep') && document.querySelector('details.sv-deep').open === true", "equals": true}
+      ],
+      "resulting_state_on_pass": "CYCLE_EXPANDED",
+      "side_effect_class": "READ_ONLY",
+      "fresh_baseline": true
+    }
+  ]
+}

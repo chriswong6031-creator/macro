@@ -1,0 +1,20 @@
+{
+  "schema_version": "1.0",
+  "collector_version_name": "v2.1",
+  "origin": "https://www.mastermind-x.com",
+  "device_scale_factor": 1,
+  "browser_channel": "chrome",
+  "calibration_viewports": [
+    {"name": "1440x1000", "width": 1440, "height": 1000},
+    {"name": "1280x900", "width": 1280, "height": 900},
+    {"name": "1024x800", "width": 1024, "height": 800},
+    {"name": "768x900", "width": 768, "height": 900},
+    {"name": "390x844", "width": 390, "height": 844}
+  ],
+  "phase0_viewports": [
+    {"name": "1440x1000", "width": 1440, "height": 1000},
+    {"name": "390x844", "width": 390, "height": 844}
+  ],
+  "source_parity_method": "sha256_live_vs_local_generated_html",
+  "supported_schema_versions": ["1.0-candidate", "1.0"]
+}

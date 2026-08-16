@@ -5,9 +5,10 @@ import sys
 from playwright.sync_api import sync_playwright
 
 sys.path.insert(0, str(Path(__file__).parent))
+from paths import evidence_root  # noqa
 from pw_lib import assert_and_shot, goto, launch_browser, load_aionui_cookies, new_page
 
-SHOTS = Path("/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board/screenshots")
+SHOTS = evidence_root() / "pages" / "us-stocks-prophet-board" / "screenshots"
 URL = "https://www.mastermind-x.com/us_stocks.html"
 W, H = 1440, 1000
 

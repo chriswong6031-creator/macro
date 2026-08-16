@@ -16,5 +16,17 @@
     "1024x800",
     "768x900",
     "390x844"
-  ]
+  ],
+  "schema_version": "1.0",
+  "collector_version": "e5431db19e69902d8b93fbb60d12c9085e5f8ecc",
+  "run_id": "20260816T171140Z-e5431db1",
+  "repo_head_sha": "e5431db19e69902d8b93fbb60d12c9085e5f8ecc",
+  "working_tree_dirty": true,
+  "browser_name": "chrome",
+  "browser_version": "151.0.7922.138",
+  "playwright_version": "unknown",
+  "device_scale_factor": 1,
+  "authenticated_session_used": true,
+  "source_parity_method": "sha256_live_vs_local_generated_html",
+  "operating_platform": "macOS-26.5-arm64-arm-64bit"
 }

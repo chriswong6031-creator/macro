@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "page-dossier.schema.json",
+  "title": "Page dossier",
+  "type": "object",
+  "description": "A page dossier is a directory. This schema documents required files and run metadata.",
+  "required": ["schema_version", "run_id", "repo_head_sha"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "run_id": {"type": "string"},
+    "repo_head_sha": {"type": "string", "minLength": 40}
+  }
+}

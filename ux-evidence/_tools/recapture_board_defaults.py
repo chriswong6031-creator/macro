@@ -5,12 +5,13 @@ from playwright.sync_api import sync_playwright
 import sys
 
 sys.path.insert(0, str(Path(__file__).parent))
+from paths import evidence_root  # noqa
 from pw_lib import (  # noqa
     annotate, assert_and_shot, capture_segments, dump_json,
     extract, goto, launch_browser, load_aionui_cookies, new_page,
 )
 
-BOARD = Path("/Users/chriswong/Documents/Cluade/macro-main/ux-evidence/pages/us-stocks-prophet-board")
+BOARD = evidence_root() / "pages" / "us-stocks-prophet-board"
 URL = "https://www.mastermind-x.com/us_stocks.html"
 VIEWS = [("1440x1000",1440,1000),("1280x900",1280,900),("1024x800",1024,800),("768x900",768,900),("390x844",390,844)]
 CATALOG = [
