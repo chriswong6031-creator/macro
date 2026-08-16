@@ -939,6 +939,7 @@ def test_production_openapi_mounts_every_attested_history_route() -> None:
 
     paths = main_mod.app.openapi().get("paths", {})
     assert "/api/forensics/state" in paths
+    assert "/api/forensics/health" in paths
     assert "/api/forensics/v1/attested-history/latest" in paths
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots" in paths
     assert "/api/forensics/v1/attested-history/snapshots/{snapshot_id}/roots/{root_cell_id}" in paths
@@ -949,6 +950,7 @@ def test_production_openapi_mounts_every_attested_history_route() -> None:
 # assertion above can never see it: only a real request proves it is mounted.
 _MOUNTED_PAID_PATHS = (
     "/api/forensics/state",
+    "/api/forensics/health",
     "/api/forensics/v1/attested-history/latest",
     f"/api/forensics/v1/attested-history/snapshots/{SNAPSHOT_ID}/roots",
     f"/api/forensics/v1/attested-history/snapshots/{SNAPSHOT_ID}/roots/{ROOT_ALL}",
@@ -960,10 +962,11 @@ def test_every_paid_route_is_mounted_on_the_assembled_production_app() -> None:
     """A dropped router presents only as a 404 on a paid endpoint, never as an error.
 
     Mounting used to be wrapped in ``except ImportError: pass``, so a renamed
-    dependency or a package missing on the VPS deleted all five entitled routes
+    dependency or a package missing on the VPS deleted all six entitled routes
     with no startup failure and no log line.  Assert what production proves:
     unauthenticated requests reach the entitlement boundary (401) instead of
-    falling through to the router's 404.
+    falling through to the router's 404. Six entitled routes: state, health,
+    and the four attested-history receipt paths.
     """
     import app.main as main_mod
 

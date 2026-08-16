@@ -50,11 +50,9 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<link rel="stylesheet" href="theme.css?v=54439ad9">
-<link rel="stylesheet" href="tier_preview.css?v=d390f599">
-<link rel="stylesheet" href="fundamental_forensics.css?v=20260811-ux">
-<link rel="preload" as="style" href="product-nav-icons.css?v=093ad1ea">
-<link rel="preload" as="style" href="navigation-refresh.css?v=c299c324">
+<link rel="stylesheet" href="theme.css">
+<link rel="stylesheet" href="tier_preview.css">
+<link rel="stylesheet" href="fundamental_forensics.css?v=20260816-ff0">
 </head>
 <body class="ff-page">
 
@@ -65,7 +63,7 @@
 
 
 
-    <link rel="stylesheet" href="navigation-refresh.css?v=c299c324">
+    <link rel="stylesheet" href="navigation-refresh.css">
     <div class="nav-links">
     
     <a class="nav-brand" href="start.html" aria-label="MASTERMINDX — Home">
@@ -277,10 +275,10 @@
     </div>
   </div>
   
-  <script src="logo_config.js?v=b37d33d3" defer></script>
-  <script src="stock-logos.js?v=cc29be53" defer></script>
-  <script src="live_config.js?v=52943e92" defer></script>
-  <script src="live.js?v=b245e3c3" defer></script>
+  <script src="logo_config.js"></script>
+  <script src="stock-logos.js"></script>
+  <script src="live_config.js"></script>
+  <script src="live.js"></script>
   <div class="nav-search">
     <span class="mag" aria-hidden="true"><svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="8.7" cy="8.7" r="5.6"></circle><path d="m12.9 12.9 4 4"></path></svg></span>
     <input type="text" autocomplete="off" aria-label="Search stocks"
@@ -331,14 +329,18 @@
       </div>
     </header>
 
-    <dl class="ff-run-meta" aria-label="Dataset status">
+    <dl class="ff-run-meta" id="ff-run-meta" aria-label="Source freshness" data-freshness="unavailable">
       <div>
-        <dt><span class="l-en">Filing data through</span><span class="l-zh">财报数据截至</span></dt>
+        <dt><span class="l-en">Source status</span><span class="l-zh">来源状态</span></dt>
+        <dd id="ff-freshness-status"><span class="l-en">Unavailable</span><span class="l-zh">不可用</span></dd>
+      </div>
+      <div>
+        <dt><span class="l-en">Latest source filing</span><span class="l-zh">最新来源披露日</span></dt>
         <dd id="ff-as-of">—</dd>
       </div>
       <div>
-        <dt><span class="l-en">Last refreshed</span><span class="l-zh">最近更新</span></dt>
-        <dd id="ff-generated-at">—</dd>
+        <dt><span class="l-en">Source snapshot</span><span class="l-zh">来源快照</span></dt>
+        <dd id="ff-source-snapshot">—</dd>
       </div>
       <div>
         <dt><span class="l-en">Built from</span><span class="l-zh">数据来源</span></dt>
@@ -404,6 +406,10 @@
           <div>
             <dt><span class="l-en">Basis</span><span class="l-zh">数据口径</span></dt>
             <dd><span class="l-en">Company Facts and filing text</span><span class="l-zh">公司事实与披露原文</span></dd>
+          </div>
+          <div>
+            <dt><span class="l-en">Last pass</span><span class="l-zh">最近一轮</span></dt>
+            <dd><span class="l-en">1,492 companies read, 1,054 changes ranked for a look</span><span class="l-zh">读取 1,492 家公司，排出 1,054 项值得一看的变化</span></dd>
           </div>
         </dl>
 
@@ -476,7 +482,7 @@
             <p id="ff-quick-signal-summary"><span class="l-en">We are comparing the latest filing with the prior period.</span><span class="l-zh">正在将最新财报与上一期进行对比。</span></p>
           </div>
           <button class="ff-quick-signal-open" type="button" data-open-primary-finding>
-            <span class="l-en">See why it matters</span><span class="l-zh">查看为什么重要</span> <span aria-hidden="true">→</span>
+            <span class="l-en">Open signal analysis</span><span class="l-zh">打开信号分析</span> <span aria-hidden="true">→</span>
           </button>
         </article>
       </div>
@@ -745,8 +751,8 @@
   </div>
 </template>
 
-<script src="theme.js?v=948020b9" defer></script>
-<script src="tier_preview.js?v=567a3603" defer></script>
-<script src="fundamental_forensics.js?v=20260811-ux" defer></script>
+<script src="theme.js" defer></script>
+<script src="tier_preview.js" defer></script>
+<script src="fundamental_forensics.js?v=20260816-ff0" defer></script>
 </body>
 </html>
