@@ -57,7 +57,7 @@ def _setting_values(unit: str, setting: str) -> list[str]:
 def _context_update_block() -> str:
     update = _text(UPDATE)
     start = update.index("# W1B.1 trusted context publisher:")
-    end = update.index("# macro-api: restart ONLY", start)
+    end = update.index("# BEGIN MACRO_API_RESTART_TRANSACTION", start)
     return update[start:end]
 
 
