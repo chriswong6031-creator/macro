@@ -86,9 +86,9 @@ changed:
 prs: [PENDING_AT_WRITE — filled at merge]
 
 verified:
-  - claim: "Full entry-radar CI line green (W1–W5 union post-merge)."
-    command: "python3 -m pytest <the legacy-jobs entry-radar line> -q"
-    result: "PENDING_AT_SHIP"
+  - claim: "Full entry-radar CI line green (W1–W5 union post-merge, 22 suites)."
+    command: "python3 -m pytest <the legacy-jobs entry-radar step's 22 files> -q"
+    result: "1370 passed, 2 skipped (W4's own seven suites: 480; 67 named test_W4R_* adversarial regressions)"
   - claim: "Prophet firewall byte-clean."
     command: "git diff --stat origin/main..HEAD -- engine/entry_signal.py engine/signal_gate.py engine/confluence_tiers.py engine/signal_quality.py 'engine/prophet_*.py' engine/washout_turn.py engine/mtf_upturn.py engine/technicals.py"
     result: "empty"
@@ -98,6 +98,18 @@ verified:
   - claim: "Real-vendor bounded smoke receipted (basis/session/timestamps/freshness)."
     command: "research/live_entry_radar/W4_REAL_DATA_SMOKE.md"
     result: "pack+proof 47/47 on real shapes; 4H grid exact on real minutes; basis gap 0.32–2.66 bp; W3 unverified row CLOSED"
+
+unresolved:
+  - "vendor_minutes treats a reader returning zero rows for a session as a
+    missing session (fail-closed into c3_incomplete_window) — conflating
+    fetch-fault with fetched-and-empty. Reachable only via synthetic readers
+    today (real vendor sessions return rows); documented in the dispositions,
+    refusal direction is the safe one."
+  - "W5's workstream row/handoff were still unwritten on main when this session
+    ended — their code merged mid-session (replay/**, reconciler, vendor,
+    stage-terminal scripts) and this PR's merge reconciled the shared files
+    (producers guard union, one W1..W5 CI step, sentinel SURFACES union,
+    update.sh sibling blocks). Their records are theirs to write."
 
 unverified:
   - claim: "5-min cadence across a full RTH session (§15 PR-4 gate line)."

@@ -152,10 +152,20 @@ def _caddy_public_exclusions() -> set[str]:
 
 
 def _update_block() -> str:
-    """The entry-radar self-arming block, cut out of update.sh by its own header."""
+    """The entry-radar self-arming block, cut out of update.sh by its own header.
+
+    The end anchor is the FIRST sibling block header that follows, whichever it
+    is — at the W4+W5 merge the customer-table backup block (MMX-001) landed
+    between this block and PRESS-FEEDS, and slicing to PRESS-FEEDS alone would
+    swallow it, importing its `grep -qE` into every count this suite asserts.
+    """
     assert "# LIVE ENTRY RADAR lanes" in UPDATE_SH, "no entry-radar block in update.sh"
     block = UPDATE_SH.split("# LIVE ENTRY RADAR lanes")[1]
-    return block.split("# PRESS-FEEDS is a long-running daemon")[0]
+    ends = [block.index(marker) for marker in
+            ("# CUSTOMER-TABLE BACKUP", "# PRESS-FEEDS is a long-running daemon")
+            if marker in block]
+    assert ends, "no sibling block follows the entry-radar block in update.sh"
+    return block[:min(ends)]
 
 
 def _changed_trigger() -> re.Pattern[str]:
