@@ -257,6 +257,7 @@ class R2Store:
     def __init__(self, bucket: str, client=None):
         self.bucket = bucket
         self._s3 = client if client is not None else _r2_client()
+        self.last_put_error: BaseException | None = None
 
     @property
     def available(self) -> bool:
@@ -576,6 +577,7 @@ class R2Store:
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
+        self.last_put_error = None
         if not self.available:
             return False
         try:
@@ -583,6 +585,7 @@ class R2Store:
                                 ContentType=content_type)
             return True
         except Exception as e:  # noqa: BLE001
+            self.last_put_error = e
             log.warning("r2 put failed %s: %s", key, e)
             return False
 
@@ -640,6 +643,7 @@ class LocalStore:
     def __init__(self, root: str | Path):
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
+        self.last_put_error: BaseException | None = None
 
     @property
     def available(self) -> bool:
@@ -1004,6 +1008,7 @@ class LocalStore:
 
     def put_bytes(self, key: str, data: bytes,
                   content_type: str = "application/octet-stream") -> bool:
+        self.last_put_error = None
         try:
             p = self._p(key)
             p.parent.mkdir(parents=True, exist_ok=True)
@@ -1012,6 +1017,7 @@ class LocalStore:
             os.replace(tmp, p)
             return True
         except Exception as e:  # noqa: BLE001
+            self.last_put_error = e
             log.warning("local put failed %s: %s", key, e)
             return False
 
