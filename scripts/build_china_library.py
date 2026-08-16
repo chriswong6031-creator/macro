@@ -138,13 +138,22 @@ def _prophet_ranking_contract() -> dict:
         # unchanged — no intelligence term enters it. The ORDER is new.
         "ordering": {
             "key": china_board_rank.INTEL_INTEREST_ORDER,
+            "requested_order_basis": china_board_rank.INTEL_INTEREST_ORDER,
+            "effective_order_basis": china_board_rank.INTEL_INTEREST_ORDER,
+            "order_mode": china_board_rank.ORDER_MODE_INTELLIGENCE,
+            "fallback_reason": None,
+            "intel_order_active": True,
+            "intel_coverage_complete": True,
             "primary": "intel_interest_score (engine/china_intel_interest.py)",
             "secondary": "prophet_score (the v3 score above)",
             "tiebreak": "ticker",
             "fallback": (
-                "a name with no measurable board-independent intelligence keeps its "
-                "v3 priority and is stamped intel_interest_basis=fallback_v3; it is "
-                "never scored zero"
+                "a bake uses one ordering basis globally. If every ranked name has "
+                "valid measured Intelligence interest — including a measured 0.0 — "
+                "the board orders by intel_interest_then_v3_score. If even one "
+                "ranked name lacks valid Intelligence evidence, the entire board "
+                "reverts to cn_prophet_v3_score order. Individual Intelligence "
+                "observations stay on the row; mixed-scale ranking is forbidden."
             ),
             "authority": (
                 "engine/china_board_rank.py is the sole live ranking authority. "
@@ -3058,9 +3067,10 @@ def main(alpha: dict | None = None) -> dict | None:
             _intel_coverage.get("n_fallback_v3", 0), time.time() - _t0_intel,
         )
         if not _intel_coverage.get("n_measured"):
-            print("::warning title=cn-prophet-v4-intel-blind::China Intelligence "
-                  "measured 0 board rows — v4 is ordering exactly as v3 tonight",
-                  flush=True)
+            log.warning(
+                "China Intelligence measured 0 board-map rows — ranking will "
+                "revert the entire board to v3 order if any ranked name is uncovered"
+            )
     except Exception as _intel_exc:  # noqa: BLE001 — ordering degrades, board never dies
         log.warning(
             "V4 intel interest unavailable (%s) — board orders on v3 priority tonight",
@@ -3233,12 +3243,19 @@ def main(alpha: dict | None = None) -> dict | None:
             for key, label in labels
         ]
         score = r.get("intel_interest_score")
-        lead = (
-            f"Interest {float(score):.1f}"
-            if r.get("intel_interest_basis") == china_board_rank.INTEL_BASIS_MEASURED
+        measured = (
+            r.get("intel_interest_basis") == china_board_rank.INTEL_BASIS_MEASURED
             and score is not None
-            else "Interest — (no intelligence read)"
         )
+        intel_active = (r.get("prophet") or {}).get("order_mode") == (
+            china_board_rank.ORDER_MODE_INTELLIGENCE
+        )
+        if measured and intel_active:
+            lead = f"Interest {float(score):.1f}"
+        elif measured:
+            lead = f"Interest {float(score):.1f} (order: v3 fallback)"
+        else:
+            lead = "Interest — (no intelligence read)"
         return (f"{lead} · Prophet {float(prophet.get('score') or 0):.1f}: "
                 + " + ".join(receipt))
 
@@ -3681,12 +3698,26 @@ def main(alpha: dict | None = None) -> dict | None:
             (r for _s, r in cand if r.get("alpha") is not None),
             key=lambda r: r["alpha"]))[:12]
         _ranking_contract = _prophet_ranking_contract()
+        _order = china_board_rank.order_provenance(_scored_candidates)
+        _ranking_contract["ordering"].update({
+            "requested_order_basis": _order["requested_order_basis"],
+            "effective_order_basis": _order["effective_order_basis"],
+            "order_mode": _order["order_mode"],
+            "fallback_reason": _order["fallback_reason"],
+            "intel_order_active": _order["intel_order_active"],
+            "intel_coverage_complete": _order["intel_coverage_complete"],
+        })
+        _ranked_intel = china_board_rank.intel_coverage_summary(_scored_candidates)
         _ranking_contract["input_coverage"] = {
             "reversal": _reversal_coverage,
-            # V4: how many rows the ordering key was actually MEASURED on. A board
-            # where every row fell back is a board ordered exactly as v3 ordered it,
-            # and this is how that stays visible rather than silent.
-            "intel_interest": _intel_coverage,
+            # V4: ranked-row coverage is the ordering authority. A board where
+            # any ranked name is uncovered reverts entirely to v3 order, and
+            # this receipt is how that stays visible rather than silent.
+            "intel_interest": {
+                **(_intel_coverage or {}),
+                **_ranked_intel,
+                "source": "ranked_rows",
+            },
         }
 
         # ── WASHOUT REVERSAL WATCH shelf (prereg §5.4 measurement lane) ────────

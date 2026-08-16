@@ -72,7 +72,8 @@ BOARD_DERIVED_TERMS_EXCLUDED = (
 
 #: Basis values stamped on every board row.  ``measured`` means the composite was
 #: computed from real board-independent evidence; ``fallback_v3`` means it was not
-#: computable and the row keeps its v3 priority.
+#: computable.  The live board consumes this coverage-atomically: one unavailable
+#: ranked name reverts the entire bake to v3 score order.
 BASIS_MEASURED = "measured"
 BASIS_FALLBACK = "fallback_v3"
 
@@ -467,11 +468,13 @@ def _trajectories(tickers: Iterable[str]) -> dict[str, dict]:
 
 
 def coverage(interest_map: Mapping[str, Mapping[str, Any]]) -> dict[str, Any]:
-    """Honest coverage receipt for the ordering contract.
+    """Honest coverage receipt for the interest map.
 
-    ``measured`` names are ordered by their interest score; ``fallback_v3`` names keep
-    their v3 priority.  A board where every name falls back is a board ordered exactly
-    as v3 ordered it, and this receipt is how that is visible rather than silent.
+    ``measured`` names carry a valid interest score (including 0.0).
+    ``fallback_v3`` names have no usable Intelligence evidence.  The live board
+    consumes this map coverage-atomically in :mod:`engine.china_board_rank`:
+    complete coverage orders by interest; any unavailable ranked name reverts
+    the entire bake to v3 score order.
     """
     total = len(interest_map)
     measured = [r for r in interest_map.values() if r.get("basis") == BASIS_MEASURED]

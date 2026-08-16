@@ -215,6 +215,13 @@ _OBJECT_COLS_CN = (
     "post_cushion_breach",         # bool but nullable — coerce to object
     "fill_basis",
     "basis_used",
+    # V4 coverage-atomic ordering provenance (forward-only; schema-union).
+    "order_mode",
+    "requested_order_basis",
+    "effective_order_basis",
+    "fallback_reason",
+    "intel_order_active",          # bool but nullable — coerce to object
+    "intel_coverage_complete",     # bool but nullable — coerce to object
 )
 
 # Own-market regime constraint note (documented null — see module docstring §3a)
@@ -704,6 +711,32 @@ def append_board(rows: list[dict], asof: str | None = None, top_n: int = 60,
             # forever (flagged by the rank-effectiveness build, PR #4570).
             "prophet_theme_timing": (
                 (_pr.get("components") or {}).get("theme_timing")
+            ),
+            # V4 coverage-atomic ordering provenance.  R4 treatment eligibility
+            # reads these columns: a bake that kept board_definition=cn_prophet_v4
+            # but ran v3 score order must not accrue as v4 treatment.  Forward-only;
+            # old parquet rows missing the columns stay null and fail closed.
+            "order_mode": r.get("order_mode") or _pr.get("order_mode"),
+            "requested_order_basis": (
+                r.get("requested_order_basis") or _pr.get("requested_order_basis")
+            ),
+            "effective_order_basis": (
+                r.get("effective_order_basis") or _pr.get("effective_order_basis")
+            ),
+            "fallback_reason": r.get("fallback_reason") or _pr.get("fallback_reason"),
+            "intel_order_active": (
+                r.get("intel_order_active")
+                if r.get("intel_order_active") is not None
+                else _pr.get("order_mode") == "intelligence_complete"
+                if _pr.get("order_mode") is not None
+                else None
+            ),
+            "intel_coverage_complete": (
+                r.get("intel_coverage_complete")
+                if r.get("intel_coverage_complete") is not None
+                else _pr.get("order_mode") == "intelligence_complete"
+                if _pr.get("order_mode") is not None
+                else None
             ),
             "tier": sig.get("tier_cascade"),
             "setup": r.get("setup"),

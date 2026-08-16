@@ -1,8 +1,8 @@
 """China Prophet V3 auto-tripwire specifications (G0.8 scaffolding).
 
 CONTRACT
-    This module is DATA, not a grader.  It declares the three comparisons the
-    ratified V3 slate must be watched on, each with its cohort definition, its
+    This module is DATA, not a grader.  It declares the four comparisons the
+    ratified V3/V4 slate must be watched on, each with its cohort definition, its
     threshold, and the action a breach triggers.  The nightly CN loser+miss
     telemetry engine (masterplan §5 W0, ``engine/cn_prophet_audit.py``) is the
     consumer: it computes each comparison from the accrued forward ledger, writes
@@ -17,8 +17,15 @@ WHY IT EXISTS
     G0.8 (masterplan §0, added 2026-08-04) requires every operator-ratified direct
     wiring to ship with (a) parallel shadow grading of the displaced definition,
     (b) a NAMED auto-tripwire with its threshold and revert action, and (c) a clean
-    single-commit revert path.  ``china_board_rank.v2_shadow_featured`` is (a);
-    this module is (b); the single R1-R3 commit is (c).
+    single-commit revert path.  ``china_board_rank.v2_shadow_featured`` is (a) for
+    the v3 admission change; ``china_board_rank.v3_shadow_featured`` is (a) for
+    the v4 ordering change; this module is (b); each race keeps its own one-field
+    revert path as (c).
+
+    R1-R3 are the v3 admission/theme/relay studies, carried forward into the v4
+    era.  V4 preserved every v3 admission rule and changed only the ORDER, so
+    those three comparisons stay meaningful against the live shelf.  R4 is the
+    v4-vs-v3 ordering race.  No forward v4 ordering edge is currently claimed.
 
 READING THE SPECS
     ``direction`` states which side the tripwire expects to be BETTER.  A breach is
@@ -31,7 +38,7 @@ READING THE SPECS
 """
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Mapping
 
 #: The definition the LIVE board stamps today.  Every R1-R3 cohort below is drawn
 #: from the live shelf, so this must move with ``china_board_rank.BOARD_DEFINITION``
@@ -153,6 +160,10 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
             "label": "v4_featured",
             "board_definition": LIVE_BOARD_DEFINITION,
             "lane": "featured",
+            # Coverage-atomic: a v4 bake that reverted to v3 score order is still
+            # board_definition=cn_prophet_v4, but it received control behavior.
+            # Those episodes stay in telemetry and must not accrue as treatment.
+            "effective_order_basis": "intel_interest_then_v3_score",
         },
         "control": {
             "label": "v3_order_shadow_featured",
@@ -179,10 +190,12 @@ TRIPWIRES: tuple[dict[str, Any], ...] = (
 
 
 def tripwire_specs() -> tuple[dict[str, Any], ...]:
-    """Return the three V3 tripwire specs as plain data.
+    """Return the four named tripwire specs as plain data.
 
-    A tuple of dicts, safe to serialise straight into the W0 nightly artifact.
-    Callers must not mutate the returned dicts in place — treat them as frozen.
+    R1-R3 are the v3 admission/theme/relay studies carried into the v4 era.
+    R4 is the v4-vs-v3 ordering race.  A tuple of dicts, safe to serialise
+    straight into the W0 nightly artifact.  Callers must not mutate the
+    returned dicts in place — treat them as frozen.
     """
     return TRIPWIRES
 
@@ -193,3 +206,51 @@ def tripwire_by_id(tripwire_id: str) -> dict[str, Any] | None:
         if spec["id"] == tripwire_id:
             return spec
     return None
+
+
+def episode_matches_arm(episode: Mapping[str, Any], arm: Mapping[str, Any]) -> bool:
+    """Return True if a ledger episode satisfies one tripwire arm.
+
+    Known keys (besides ``label``, which is display-only):
+
+    * ``board_definition`` — exact string match
+    * ``lane`` — exact string match
+    * ``lane_reason`` — must appear in the episode's ``lane_reasons`` list
+    * ``theme_timing`` — compared to ``prophet_theme_timing`` (or ``theme_timing``)
+    * ``effective_order_basis`` / ``order_mode`` / ``intel_order_active`` /
+      ``intel_coverage_complete`` — exact match on the persisted bake provenance
+
+    Unknown arm keys fail closed: the episode must carry an equal value.
+    A missing episode field never matches a required arm key.
+    """
+    for key, expected in arm.items():
+        if key == "label":
+            continue
+        if key == "lane_reason":
+            reasons = episode.get("lane_reasons")
+            if isinstance(reasons, str):
+                reasons = [reasons]
+            if not isinstance(reasons, (list, tuple)) or expected not in reasons:
+                return False
+            continue
+        if key == "theme_timing":
+            actual = episode.get("prophet_theme_timing", episode.get("theme_timing"))
+            if actual != expected:
+                return False
+            continue
+        if episode.get(key) != expected:
+            return False
+    return True
+
+
+def r4_treatment_eligible(episode: Mapping[str, Any]) -> bool:
+    """True iff this episode accrues toward the R4 v4-vs-v3 ordering race.
+
+    Requires the live v4 definition, the featured lane, and that intelligence
+    ordering actually ran.  A coverage-fallback bake is a v4 operational bake
+    and is not R4 treatment.
+    """
+    spec = tripwire_by_id("cn_v4_vs_v3_order_shadow_excess")
+    if spec is None:
+        return False
+    return episode_matches_arm(episode, spec["treatment"])
