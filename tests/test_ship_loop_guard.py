@@ -4487,3 +4487,142 @@ def test_merged_head_stop_binds_its_proof_base_with_no_pr_associations_left(
     assert seen.get("expected_base_sha") == _PROOF_BASE_SHA, reason
     assert "does not identify the exact PR proof base" not in reason
     assert "advertised semantic artifact is expired" in reason
+
+
+# ── evergreen bootstrap: execute the evaluated worktree's guard (#hardening) ─
+#
+# Settings.json launches this file from $CLAUDE_PROJECT_DIR (the primary
+# checkout). The tree being evaluated is a linked worktree. The executing copy
+# must become a one-shot bootstrap into that worktree's own hook, or fail closed
+# as hook_source_mismatch — never a misleading ci_failed from stale primary code.
+
+
+_STUB_HOOK = """\
+import json, os, sys
+from pathlib import Path
+raw = sys.stdin.buffer.read()
+receipt = os.environ.get("SHIP_LOOP_STUB_RECEIPT")
+if receipt:
+    Path(receipt).write_bytes(raw)
+sys.stdout.write(json.dumps({
+    "stub": True,
+    "file": __file__,
+    "delegated": os.environ.get("SHIP_LOOP_GUARD_DELEGATED"),
+    "cwd": os.getcwd(),
+}))
+"""
+
+
+def _git_repo_at(path: Path) -> Path:
+    path.mkdir(parents=True)
+    _git(path, "init", "-b", "main")
+    _git(path, "config", "user.name", "Test")
+    _git(path, "config", "user.email", "test@example.com")
+    (path / "kept.txt").write_text("baseline\n", encoding="utf-8")
+    _git(path, "add", "kept.txt")
+    _git(path, "commit", "-m", "initial")
+    return path
+
+
+def _linked_worktrees(tmp_path: Path) -> tuple[Path, Path]:
+    primary = _git_repo_at(tmp_path / "primary")
+    worktree = tmp_path / "worktree"
+    _git(primary, "worktree", "add", str(worktree))
+    return primary.resolve(), worktree.resolve()
+
+
+def _install_stub_hook(root: Path) -> Path:
+    target = root / ".claude" / "hooks" / "ship_loop_guard.py"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(_STUB_HOOK, encoding="utf-8")
+    return target
+
+
+def test_repo_root_prefers_payload_cwd_over_project_dir(monkeypatch, tmp_path):
+    primary = _git_repo_at(tmp_path / "primary")
+    session = _git_repo_at(tmp_path / "session")
+    monkeypatch.setenv("CLAUDE_PROJECT_DIR", str(primary))
+    monkeypatch.chdir(primary)
+    found = GUARD._repo_root({"cwd": str(session)})
+    assert found.resolve() == session.resolve()
+
+
+def test_same_source_and_evaluated_root_does_not_delegate(monkeypatch, tmp_path):
+    repo = _git_repo_at(tmp_path / "repo")
+    _install_stub_hook(repo)
+    spawned: list[Path] = []
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: repo)
+    monkeypatch.setattr(
+        GUARD,
+        "_spawn_delegated_guard",
+        lambda target, raw, *, cwd: spawned.append(target) or 0,
+    )
+    payload = {"cwd": str(repo), "hook_event_name": "Stop"}
+    assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is False
+    assert spawned == []
+
+
+def test_delegated_child_receives_original_payload_and_runs_once(
+    monkeypatch, tmp_path, capsys
+):
+    primary, worktree = _linked_worktrees(tmp_path)
+    _install_stub_hook(worktree)
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: primary)
+    receipt = tmp_path / "payload.bin"
+    monkeypatch.setenv("SHIP_LOOP_STUB_RECEIPT", str(receipt))
+    raw = b'{"cwd":"SESSION","hook_event_name":"Stop","keep":[1,2],"x":"y"}'
+    payload = {"cwd": str(worktree), "hook_event_name": "Stop"}
+    assert GUARD._delegate_to_evaluated_hook(payload, raw) is True
+    assert receipt.read_bytes() == raw
+    emitted = json.loads(capsys.readouterr().out)
+    assert emitted["stub"] is True
+    assert emitted["delegated"] == "1"
+    assert Path(emitted["file"]).resolve() == (
+        worktree / ".claude" / "hooks" / "ship_loop_guard.py"
+    ).resolve()
+
+    monkeypatch.setenv(GUARD.DELEGATION_ENV, "1")
+    assert GUARD._delegate_to_evaluated_hook(payload, raw) is False
+
+
+def test_missing_target_hook_fails_closed_as_source_mismatch(
+    monkeypatch, tmp_path, capsys
+):
+    primary, worktree = _linked_worktrees(tmp_path)
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: primary)
+    payload = {"cwd": str(worktree), "hook_event_name": "Stop"}
+    assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is True
+    emitted = json.loads(capsys.readouterr().out)
+    assert emitted["decision"] == "block"
+    reason = emitted["reason"]
+    assert "hook_source_mismatch" in reason
+    assert "ci_failed" not in reason
+    assert str(primary) in reason
+    assert str(worktree) in reason
+    assert "target hook unavailable" in reason
+
+
+def test_malformed_target_hook_fails_closed_as_source_mismatch(
+    monkeypatch, tmp_path, capsys
+):
+    primary, worktree = _linked_worktrees(tmp_path)
+    target = worktree / ".claude" / "hooks" / "ship_loop_guard.py"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("def oops(\n", encoding="utf-8")
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: primary)
+    payload = {"cwd": str(worktree), "hook_event_name": "Stop"}
+    assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is True
+    emitted = json.loads(capsys.readouterr().out)
+    assert emitted["decision"] == "block"
+    assert "hook_source_mismatch" in emitted["reason"]
+    assert "target hook malformed" in emitted["reason"]
+    assert "ci_failed" not in emitted["reason"]
+
+
+def test_unrelated_tmp_repo_is_not_a_source_mismatch(monkeypatch, tmp_path, capsys):
+    """Existing main() tests use disposable git repos that are not this clone."""
+    other = _git_repo_at(tmp_path / "other")
+    monkeypatch.setattr(GUARD, "_hook_source_root", lambda: GUARD._REPOSITORY_ROOT)
+    payload = {"cwd": str(other), "hook_event_name": "Stop"}
+    assert GUARD._delegate_to_evaluated_hook(payload, b"{}") is False
+    assert capsys.readouterr().out == ""

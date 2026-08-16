@@ -8,12 +8,14 @@ import re
 import threading
 from bisect import bisect_right
 from collections.abc import Mapping, Sequence
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from fastapi.responses import Response
+from fastapi.responses import JSONResponse, Response
 
+from engine.fundamental_forensics.health import evaluate_health
 from engine.fundamental_forensics.private_state import load_state_blob
 
 router = APIRouter()
@@ -140,6 +142,13 @@ def forensics_state(_user: dict = Depends(require_site_full_user)) -> Response:
             "X-Robots-Tag": "noindex, noarchive",
         },
     )
+
+
+@router.get("/api/forensics/health")
+def forensics_health(_user: dict = Depends(require_site_full_user)) -> JSONResponse:
+    """Return operational/source freshness, never private rows or storage keys."""
+    payload = evaluate_health(REPO, now=datetime.now(timezone.utc))
+    return JSONResponse(payload, headers=dict(_PRIVATE_HEADERS))
 
 
 # ---------------------------------------------------------------------------
