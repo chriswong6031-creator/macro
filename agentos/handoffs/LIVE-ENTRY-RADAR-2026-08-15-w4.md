@@ -83,7 +83,7 @@ changed:
       W3's unverified row — 4H grid/basis/freshness verified on real
       aggregates, 0.3–2.7 bp basis agreement); adversarial dispositions."
 
-prs: [PENDING_AT_WRITE — filled at merge]
+prs: [5768]
 
 verified:
   - claim: "Full entry-radar CI line green (W1–W5 union post-merge, 22 suites)."
