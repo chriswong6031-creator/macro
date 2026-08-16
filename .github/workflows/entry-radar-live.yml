@@ -1,0 +1,235 @@
+name: entry-radar-live
+# ─────────────────────────────────────────────────────────────────────────────
+# LIVE ENTRY RADAR — DORMANT BACKSTOP LANE, not the product cadence
+# (research/live_entry_radar/W4_LIVE_EVALUATOR_DESIGN.md §2, §3, §3b).
+#
+# THE PRODUCT LANE IS THE VPS TIMER PAIR
+# (app/deploy/macro-entry-radar-pack.{service,timer} builds the frozen pack
+# pre-open; app/deploy/macro-live-entry-radar.{service,timer} evaluates it every
+# five minutes in RTH). This workflow's crons ask for every 5 minutes; GitHub does
+# not deliver it. Measured 2026-07-30 on this repo: marketing-hot-tape.yml, also
+# */5 in RTH, ran 09:07Z then 12:19Z — ~3h12m apart; live-quotes.yml (*/15) ran
+# ~90 min apart. With ~58 workflows here, frequent schedules are deprioritised and
+# a 5-minute product cadence is not purchasable at any price.
+#
+# So this lane is kept for what it is actually good for: a rollback path and a
+# coarse backstop that still evaluates when the VPS is down or being rebuilt. It
+# stands itself down while the VPS is primary (see the job `if:` below), exactly
+# like prophet-live / live-quotes / intraday-fastpath / live-breadth / btc-live do.
+#
+# DORMANT TWICE OVER, and that is deliberate. The VPS units themselves ship
+# STAGED-NOT-ARMED behind ENTRY_RADAR_LIVE_ENABLE=1 in /etc/macro-live.env (design
+# §3b — go-live is an explicit operator act, not a repo commit), so until the
+# operator arms them there is no VPS writer either. This backstop's schedule is
+# still self-disabled while vars.VPS_LIVE_PRIMARY is 'true', because the host gate
+# answers "who owns the artifact", not "is the owner awake": a runner that starts
+# publishing the moment the VPS lane is quiet is exactly the second writer the gate
+# exists to prevent. A dispatch is how you run it on purpose.
+#
+# THE DOUBLE GATE (both conditions, and the nesting is the point):
+#   vars.ENTRY_RADAR_LIVE_DISABLED  the PROGRAM kill switch. Binds ALWAYS — a
+#                                   manual dispatch must not be able to run a lane
+#                                   the operator has stood down.
+#   vars.VPS_LIVE_PRIMARY           the HOST gate, the estate's standing idiom.
+#                                   workflow_dispatch bypasses THIS one only, which
+#                                   is the rollback path.
+#
+# THIS RUNS ON ubuntu-latest, NEVER the self-hosted macstudio pool: a per-session
+# lane on the render pool would eat the nightly's budget, which is law (masterplan
+# §3 runner-placement law, hot-tape precedent).
+#
+# LEDGER LAW (G0.2) + the W5 firewall. This lane writes NO data/ path and commits
+# nothing. Note `permissions: contents: read` and the total absence of a git step —
+# the only outputs from a runner are R2 keys. W4 owns no durable ledger at all
+# (design §0 "no W5 writer": zero data/entry_radar/** writes, runtime and spool
+# state only), and W5 is the separately authorized lane that will own one.
+#
+# WHY IT IS SAFE. Nothing here confirms, grades or advances anything; no alert
+# channel is wired; the payload is auth-gated by omission from the Caddy public
+# allowlist; and the kill switch above stands the whole lane down without a commit.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # GITHUB CRON HAS NO TIMEZONE — it is UTC, always. The session window is
+    # 09:25-16:15 America/New_York, which is 13:25-20:15Z under EDT and
+    # 14:25-21:15Z under EST, so a single UTC pair is wrong for half the year:
+    # from the November clock change it would wake an hour before the open and
+    # go dark for the last hour of every session — the hour whose state matters
+    # most, because an entry that never got a candidate has run out of session.
+    #
+    # These crons therefore span BOTH regimes, 13:25Z through 21:15Z, and the
+    # evaluator's own in_window (engine/entry_radar/live_eval.py) trims the
+    # off-season edges on the EASTERN clock (an EST 13:25Z tick is 08:25 ET and
+    # stands down; an EDT 21:15Z tick is 17:15 ET and stands down). The cost of
+    # the overlap is a handful of short no-op runs a day on ubuntu-latest; the
+    # cost of getting it wrong is a dark hour every session for five months.
+    #
+    # Three crons because GitHub's cron cannot express "every 5 minutes from
+    # :25 of one hour to :15 of another". Copied verbatim from prophet-live.yml:
+    # the two lanes cover the same session and a divergence between them would be
+    # a second definition of "when is the market open".
+    - cron: "25,30,35,40,45,50,55 13 * * 1-5"
+    - cron: "*/5 14-20 * * 1-5"
+    - cron: "0,5,10,15 21 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          DRY RUN — build the pack and run one evaluator pass, print the artifact,
+          the health receipt and the transitions, and write NOTHING to R2 and no
+          payload. The PR receipt mode.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read      # LEDGER LAW: this lane never commits. Do not widen this.
+
+concurrency:
+  # Two passes must never overlap: both would read the same journal and the same
+  # runtime ledger, and a transition could be spooled twice or a candidate opened
+  # against a half-written journal. Never cancel a pass in flight either — it may
+  # already have spooled its events, and spool-before-commit means a cancelled pass
+  # between the spool and the ledger write is exactly the state the next pass has
+  # to reconcile.
+  group: entry-radar-live
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    # TWO GATES — see THE DOUBLE GATE in the header. ENTRY_RADAR_LIVE_DISABLED
+    # binds always (including a manual dispatch); VPS_LIVE_PRIMARY is bypassed by
+    # workflow_dispatch only, which is the rollback path.
+    if: ${{ vars.ENTRY_RADAR_LIVE_DISABLED != 'true' && (github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true') }}
+    runs-on: ubuntu-latest      # OFF the render path — never the macstudio pool
+    # A pack build plus one evaluator pass. The pack is the long half (a per-name
+    # daily substrate read across the probe set); 20 minutes is generous head-room
+    # and still small enough that a wedged run frees the concurrency group.
+    timeout-minutes: 20
+    steps:
+      - name: checkout (shallow + sparse + blobless)
+        # SHALLOW, SPARSE AND BLOBLESS. A full clone of this heavy-churn repo is
+        # ~2.8GB across ~48k files and has blown a 25-minute job on its own
+        # (marketing-publish, 2026-07-28). The cone below is this lane's exact read
+        # surface, and cone mode always includes top-level files, so config.yml
+        # comes along:
+        #   engine, scripts, lib   — the code (entry_radar + the NYSE calendar)
+        #   collectors             — the bounded vendor minute reader's client
+        #   config                 — probe-set and lane config
+        #   data/stocks            — the CONFIRMED DAILY SUBSTRATE the pack freezes.
+        #                            This is the one cone entry prophet-live does
+        #                            not need and this lane cannot do without: the
+        #                            pack builder reads data/stocks/<SYM>.parquet
+        #                            per probe name. It is a READ — the reader
+        #                            deliberately never mkdirs, so a host without
+        #                            the store reports honestly instead of creating
+        #                            one (a data/ write by accident).
+        #   site/live              — display quote snapshot (quotes.json)
+        # Adding a read path to either script means adding it HERE too.
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            lib
+            collectors
+            config
+            data/stocks
+            site/live
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        # PANDAS/NUMPY/PYARROW ARE REQUIRED HERE, unlike prophet-live which
+        # deliberately installs neither. The difference is what the two lanes DO:
+        # prophet-live compares a live price to a level solved overnight and its
+        # state machine is stdlib, so it skips ~40s of install 80 times a day. This
+        # lane cannot — the pack builder freezes a PARQUET substrate
+        # (data/stocks/<SYM>.parquet, read through pyarrow into pandas) and the
+        # evaluator runs the REAL indicator chain (the unmodified W3 oracle:
+        # StochRSI/ATR over the frozen substrate, numpy underneath). Parity with
+        # confirmed-bar math is by construction only if the same code path runs,
+        # and that code path needs its dependencies.
+        # pyyaml: config.yml + the probe-set config. boto3: R2. The spool PUTs are
+        # S3 API calls — the public r2.dev base is read-only.
+        run: pip install --quiet pyyaml boto3 pandas numpy pyarrow
+
+      - name: runtime state plane (RUNNER-LOCAL, ephemeral, never a repo path)
+        # WITHOUT THIS THE BACKSTOP CANNOT PASS — it is not a nicety.
+        # Both scripts resolve their state dir the same way: `--state-dir` →
+        # `$ENTRY_RADAR_STATE_DIR` → the VPS path `/var/lib/macro-live/state/
+        # entry_radar`, else None. On a runner that VPS parent does not exist, so
+        # both resolve None: the builder has nowhere to write the frozen pack, the
+        # evaluator loads no pack at all, and `run_pass` takes the whole-cycle
+        # `stale_pack` refusal — every probe name unavailable, zero transitions,
+        # exit 5. Every run. The lane would read as wired and be structurally
+        # incapable of ever evaluating a single name, which is the worst state a
+        # backstop can be in: a rollback path that has never once worked.
+        #
+        # ONE EXPORT, NOT TWO STEP-LOCAL COPIES. The builder WRITES this plane and
+        # the evaluator READS it, so they must be the same path by construction
+        # rather than by two expressions staying equal across future edits. It has
+        # to be a $GITHUB_ENV export rather than a job-level `env:` block because
+        # the `runner` context is not available to `jobs.<id>.env` (GitHub's
+        # context-availability table) — and `env:` values are not shell-expanded,
+        # so a literal `$RUNNER_TEMP/...` would mkdir a directory named `$RUNNER_TEMP`.
+        #
+        # THE LIFETIME IS CORRECT, NOT A COMPROMISE. $RUNNER_TEMP is wiped when the
+        # job ends, so every backstop run is a cold start: no journal to replay, no
+        # ledger history, no warm 4H bucket cache. That is what this plane holds —
+        # RUNTIME state, not evidence. The durable owner of the lane's history is
+        # the VPS; the backstop exists to keep evaluating while the VPS is down,
+        # not to accumulate a second copy of its past. A cold start costs the
+        # incremental-observation memo and the bucket cache (so more vendor fetches
+        # inside the C3 budget), and it means the ledger's §10 re-arm history is
+        # absent — a name that would be `suppressed_by_rearm` on the VPS can arm
+        # here. Read the backstop's payload as a liveness signal, not as a ledger.
+        #
+        # LEDGER LAW (G0.2) IS UNTOUCHED: this is $RUNNER_TEMP, never a repo path,
+        # and nothing is committed — `permissions: contents: read` above and there
+        # is no git step in this file. DURABLE_WRITES stays empty by design.
+        run: |
+          echo "ENTRY_RADAR_STATE_DIR=$RUNNER_TEMP/entry-radar-state" >> "$GITHUB_ENV"
+          mkdir -p "$RUNNER_TEMP/entry-radar-state"
+
+      - name: build the evaluation pack (frozen substrate + inversion proof)
+        # Runs first and unconditionally: the evaluator refuses the whole cycle
+        # against a pack whose as_of is not the last completed session (§2 step 3,
+        # stale_pack), so on a runner there is no useful pass without a fresh
+        # build. The builder exits 0 "already current" if one already exists, which
+        # on a fresh runner checkout it never does.
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.entry_radar_live_pack --dry-run
+          else
+            python -m scripts.entry_radar_live_pack
+          fi
+
+      - name: evaluate one RTH pass against the frozen pack
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          # The same R2 data plane every build_* script publishes to. Absent creds
+          # → the pass still evaluates and spools nothing, which is honest: the
+          # payload says so in health.inputs.spool and the transitions are withheld
+          # rather than admitted unspooled (spool-before-consume, §2 step 8).
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.entry_radar_live --dry-run
+          else
+            python -m scripts.entry_radar_live
+          fi

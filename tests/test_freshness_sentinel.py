@@ -100,6 +100,32 @@ def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
     )
 
 
+#: The Live Entry Radar payload's own live-plane path (W4 SURFACES entry). Its
+#: date field is ``asof``, NOT the board's ``as_of`` — one character apart, and a
+#: reader stub that confuses them breaches this surface on every case.
+RADAR_PATH = "/live/entry_radar.json"
+
+
+def _entry_radar(asof: str | None = PROPHET_CURRENT_ASOF, *,
+                 mtime_age_hours: float = 0.1) -> fs.FetchResult:
+    """One live-plane read of entry_radar.json (W4 Live Entry Radar evaluator).
+
+    ``mtime_age_hours`` is tiny by default because this lane rewrites its payload
+    every five minutes in RTH — so, exactly like prophet_us, the stamp is worthless
+    and every staleness verdict has to come from ``asof`` alone. The surface's own
+    budget is a SESSION budget for that reason; the 5-minute cadence self-describes
+    inside ``health``, which the sentinel does not read.
+    """
+    doc: dict = {"schema": "mastermind.entry_radar_live/v1",
+                 "health": {"state": "live"}, "lanes": {}}
+    if asof is not None:
+        doc["asof"] = asof
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
+        body=json.dumps(doc),
+    )
+
+
 #: The path the READER's browser polls. The dashboard never fetches
 #: us_board_provisional.json — it paints from the ``board_state`` key on this
 #: artifact (templates/dashboard.html.j2 ``_plvData.board_state``), which a
@@ -152,25 +178,31 @@ ABSENT = fs.FetchResult(error="served read failed: FileNotFoundError: [Errno 2] 
 
 
 def _served(result: fs.FetchResult, live: fs.FetchResult | None = None,
-            strip: fs.FetchResult | None = None):
+            strip: fs.FetchResult | None = None,
+            radar: fs.FetchResult | None = None):
     """A served_reader stand-in.
 
-    PATH-AWARE, because one reader now answers three different artifacts: the
+    PATH-AWARE, because one reader now answers four different artifacts: the
     git-rsynced site.served tree (``/prophet/index.json``), the daemon-written
-    close-pass board (``/live/us_board_provisional.json``) and the client
-    artifact the SLA is measured against (``/live/prophet_live.json``). A stub
-    that answered them with the same body would hand one surface's payload to a
-    surface judged on a different field and manufacture a breach that has
-    nothing to do with the case under test — and, for the strip specifically,
-    would let a board payload with no ``board_state`` masquerade as a reader who
-    can see something.
+    close-pass board (``/live/us_board_provisional.json``), the client artifact
+    the SLA is measured against (``/live/prophet_live.json``) and the Live Entry
+    Radar payload (``/live/entry_radar.json``). A stub that answered them with the
+    same body would hand one surface's payload to a surface judged on a different
+    field and manufacture a breach that has nothing to do with the case under test
+    — the board carries ``as_of`` and the radar payload carries ``asof``, so a
+    shared fallback breaches the radar surface on every single case. And, for the
+    strip specifically, it would let a board payload with no ``board_state``
+    masquerade as a reader who can see something.
     """
     fallback = _provisional() if live is None else live
     strip = _live_strip() if strip is None else strip
+    radar = _entry_radar() if radar is None else radar
 
     def _read(root, path):
         if path == CLIENT_PATH:
             return strip
+        if path == RADAR_PATH:
+            return radar
         return fallback if path.startswith("/live/") else result
     return _read
 
@@ -183,6 +215,7 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "r2_massive_stock_day": _r2(10.0),
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
+        "entry_radar_live": _entry_radar(),
     }
 
 
@@ -211,11 +244,12 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         "china": _page(30.0),
         "hub": _page(30.0),
         "r2_massive_stock_day": _r2(30.0),
-        # prophet_us and us_board_provisional are judged on content, not on a
-        # stamp — they stay ok here, which is the point: the four bake surfaces
-        # answer independently.
+        # prophet_us, us_board_provisional and entry_radar_live are judged on
+        # content, not on a stamp — they stay ok here, which is the point: the four
+        # bake surfaces answer independently.
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
+        "entry_radar_live": _entry_radar(),
     }
     report = fs.evaluate(results, NOW)
     assert report["ok"] is False
@@ -305,6 +339,7 @@ def _stale_report(now: datetime = NOW) -> dict:
             # bake surfaces above are the breach set they assert on.
             "prophet_us": _prophet(),
             "us_board_provisional": _provisional(),
+            "entry_radar_live": _entry_radar(),
         },
         now,
     )
@@ -807,6 +842,8 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
         reads.append((str(served_dir), path))
         if path == CLIENT_PATH:
             return _live_strip()
+        if path == RADAR_PATH:
+            return _entry_radar()
         return _provisional() if path.startswith("/live/") else _prophet()
 
     rc = fs.run(
@@ -830,10 +867,13 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
     # which tickers are armed (research/PAYWALL_GIT_MIRROR_EXPOSURE_ADJUDICATION
     # .md) and is deliberately NOT in the public /live/ allowlist — so the
     # reader-side read goes to the same live-plane root as the board and never
-    # over HTTP either. Two roots, one reader, zero HTTP.
+    # over HTTP either. The Live Entry Radar payload joins on the same terms: also
+    # absent from the public allowlist (W4 design §3b — auth-gated by omission),
+    # also read off the live-plane root. Two roots, one reader, zero HTTP.
     assert reads == [
         ("/opt/macro/site.served", "/prophet/index.json"),
         (str(tmp_path / "public"), "/live/us_board_provisional.json"),
+        (str(tmp_path / "public"), RADAR_PATH),
         (str(tmp_path / "public"), CLIENT_PATH),
     ]
     assert not [u for u in urls if "us_board_provisional" in u], urls

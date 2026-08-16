@@ -11,6 +11,7 @@ end to end against a synthetic repo root and proves ``data/`` is untouched.
 """
 from __future__ import annotations
 
+import ast
 import json
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -374,15 +375,51 @@ def test_no_publish_env_refuses_the_spool(tmp_path, monkeypatch, capsys):
     assert line.startswith("::warning"), "annotations must start the line"
 
 
+#: The ONE module allowed a columnar writer, by name, with its reason.
+#:
+#: W4's nightly pack persists its frozen substrate as ``substrate.parquet`` under
+#: the INJECTED runtime state dir (``/var/lib/macro-live/state/entry_radar`` in
+#: production) — W4 design §1/§4 "runtime state, operational, never evidence".
+#: The law this test enforces is "Radar writes no DURABLE EVIDENCE store"; a
+#: columnar writer is a PROXY for that law, and here the proxy over-fires.  The
+#: exemption is narrow and pays for itself: the companion assertion below proves
+#: the exempted module names no ``data/`` path at all, which is the actual law.
+#: Widening this set requires the same proof.
+_COLUMNAR_WRITER_EXEMPT: dict[str, str] = {
+    "live_pack.py": "W4 pack substrate, written under the injected state_dir",
+}
+
+
 def test_no_production_module_uses_a_parquet_or_csv_writer():
     """A static backstop for the behavioural test above."""
     sources = [*(ROOT / "engine" / "entry_radar").rglob("*.py"),
                *(ROOT / "scripts").glob("entry_radar_*.py")]
     assert len(sources) >= 10
     for path in sources:
+        if path.name in _COLUMNAR_WRITER_EXEMPT:
+            continue
         text = path.read_text(encoding="utf-8")
         for banned in ("to_parquet", "to_csv", "to_feather"):
             assert banned not in text, f"{path.name} calls {banned} — W1 writes no durable store"
+
+
+def test_the_columnar_writer_exemption_names_no_data_path():
+    """The exemption above is only lawful while the exempted module avoids ``data/``.
+
+    Checked, not asserted in prose: the module may persist runtime state, and it
+    may not reach the durable evidence plane.  A module that grew a ``data/``
+    literal loses its exemption here rather than in a review nobody ran.
+    """
+    assert _COLUMNAR_WRITER_EXEMPT, "an empty exemption set makes this test vacuous"
+    for name in _COLUMNAR_WRITER_EXEMPT:
+        path = ROOT / "engine" / "entry_radar" / name
+        assert path.is_file(), f"{name} is exempted but does not exist"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        literals = [n.value for n in ast.walk(tree)
+                    if isinstance(n, ast.Constant) and isinstance(n.value, str)]
+        offenders = [s for s in literals
+                     if s == "data" or s.startswith("data/") or "/data/" in s]
+        assert offenders == [], f"{name} names a data/ path: {offenders}"
 
 
 @pytest.mark.parametrize("source_id,expected_max_minutes", [

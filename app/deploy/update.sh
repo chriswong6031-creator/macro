@@ -1576,6 +1576,91 @@ if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1 && \
 	fi
 fi
 
+# LIVE ENTRY RADAR lanes — the pre-open pack builder and the 5-min RTH evaluator
+# (research/live_entry_radar/W4_LIVE_EVALUATOR_DESIGN.md §3b, W4_DEPLOY_PLAN.md).
+# Four units in ONE block because they are one program: they go live together, they
+# share a cap set, and a session evaluated against a pack built by a different code
+# version is exactly the thing pack_hash exists to refuse.
+#
+# THE ARM GATE IS WHAT MAKES THIS BLOCK DIFFERENT FROM THE FOUR ABOVE. For Prophet,
+# close-pass and the sentinel, go-live is a REPO COMMIT and nothing else. For this
+# program the commissioning drew the deployment boundary at ACTIVATION (design §3b:
+# build + validate, no autonomous production service state), so go-live is an
+# explicit OPERATOR act — `ENTRY_RADAR_LIVE_ENABLE=1` in /etc/macro-live.env — and
+# the merge alone must leave the box exactly as it found it. The code path is still
+# the house self-arming shape: once the flag is set, the next macro-update tick
+# installs, verifies, enables and heals with no further operator step, and the
+# absent-file clause self-heals a failed verify or a removed unit.
+#
+# ENTRY_RADAR_LIVE_ENABLE is read by GREP, not by sourcing. update.sh reads no env
+# file anywhere else and runs under `set -euo pipefail` as root: sourcing an
+# operator-edited file here would execute whatever is in it, inside this script's
+# shell, with its `set -e` semantics — a deploy script that can be killed (or worse)
+# by a stray line in an unrelated env file. The `|| true` is load-bearing for the
+# same reason: under pipefail an unmatched grep is exit 1, which `set -e` would take
+# as a fatal error on the ordinary unarmed path.
+#
+# The ARM CHECK SITS OUTSIDE THE CHANGED TRIGGER, deliberately. A disarm has to work
+# on a tick where nothing changed at all: the operator's rollback is to DELETE the
+# env line, which touches no repo file, so a CHANGED-gated block would never notice
+# and the timers would run on forever. So the structure is: live-plane guard →
+# armed? → (CHANGED or absent) install/enable : disarm-if-installed. Only the INSTALL
+# half is CHANGED-gated; both arm directions are evaluated every pass.
+#
+# The .service files are NEVER restarted. They are oneshots — `systemctl restart`
+# would RUN a pass out of band: an evaluator pass outside the ET window against a
+# stale pack, or a pack build mid-session that the stale-pack gate would then have to
+# refuse. Only the timers are (re)armed.
+if systemctl is-enabled macro-live-fast.timer >/dev/null 2>&1; then
+	ENTRY_RADAR_ARM=$(grep -E '^ENTRY_RADAR_LIVE_ENABLE=' /etc/macro-live.env 2>/dev/null \
+		| tail -1 | cut -d= -f2- | tr -d "\"'[:space:]" || true)
+	if [ "${ENTRY_RADAR_ARM:-}" = "1" ]; then
+		if echo "$CHANGED" | grep -qE '^(app/deploy/macro-(live-entry-radar|entry-radar-pack)\.(service|timer)|scripts/entry_radar_live(_pack)?\.py|engine/entry_radar/live_.*\.py)$' || \
+		   [ ! -f /etc/systemd/system/macro-live-entry-radar.timer ] || \
+		   [ ! -f /etc/systemd/system/macro-entry-radar-pack.timer ]; then
+			ENTRY_RADAR_UNIT_SOURCES=(
+				"$APP_DIR/app/deploy/macro-live-entry-radar.service"
+				"$APP_DIR/app/deploy/macro-live-entry-radar.timer"
+				"$APP_DIR/app/deploy/macro-entry-radar-pack.service"
+				"$APP_DIR/app/deploy/macro-entry-radar-pack.timer"
+			)
+			if systemd-analyze verify "${ENTRY_RADAR_UNIT_SOURCES[@]}"; then
+				ENTRY_RADAR_UNIT_UPDATED=0
+				for UNIT_SOURCE in "${ENTRY_RADAR_UNIT_SOURCES[@]}"; do
+					UNIT=$(basename "$UNIT_SOURCE")
+					if ! cmp -s "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"; then
+						install -m 0644 "$UNIT_SOURCE" "/etc/systemd/system/$UNIT"
+						ENTRY_RADAR_UNIT_UPDATED=1
+					fi
+				done
+				if [ "$ENTRY_RADAR_UNIT_UPDATED" -eq 1 ]; then
+					systemctl daemon-reload
+					systemctl restart macro-live-entry-radar.timer macro-entry-radar-pack.timer 2>/dev/null || true
+					RECONCILED=1
+					echo "macro-update: entry-radar units updated"
+				fi
+				systemctl enable --now macro-live-entry-radar.timer macro-entry-radar-pack.timer >/dev/null 2>&1 || \
+					echo "macro-update: entry-radar timers could not be enabled" >&2
+			else
+				echo "macro-update: refusing entry-radar unit update — systemd-analyze verify failed" >&2
+			fi
+		fi
+	else
+		echo "macro-update: entry-radar: staged, not armed (ENTRY_RADAR_LIVE_ENABLE unset)"
+		# SYMMETRIC DISARM. Rollback is "remove the env line", so the block that
+		# arms on a flag must also stand the lane down when the flag goes away —
+		# otherwise the only rollback is a manual systemctl call the deploy plan
+		# does not describe. `disable --now` both stops the running timer and
+		# removes the timers.target wants link, so a reboot does not resurrect it.
+		if [ -f /etc/systemd/system/macro-live-entry-radar.timer ] || \
+		   [ -f /etc/systemd/system/macro-entry-radar-pack.timer ]; then
+			systemctl disable --now macro-live-entry-radar.timer macro-entry-radar-pack.timer >/dev/null 2>&1 || true
+			RECONCILED=1
+			echo "macro-update: entry-radar: disarmed — both timers disabled and stopped"
+		fi
+	fi
+fi
+
 # PRESS-FEEDS is a long-running daemon, unlike the oneshot live-plane timers
 # above. Arming remains an explicit operator choice: this block neither installs
 # an absent unit nor enables/starts an inactive one. Once the operator has
