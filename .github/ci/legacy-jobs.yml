@@ -1590,6 +1590,11 @@ jobs:
       # conviction-profile / B2 sites in scripts/build_intl_library.py. It belongs
       # next to test_intl_library_limited.py on this same run: line — same subject,
       # same pandas/pyarrow install, no new job.
+      #
+      # tests/test_fundamental_forensics_health.py rides this step (FF-0): same
+      # Filing Forensics workbench family as test_fundamental_forensics_ui.py and
+      # test_forensics_api.py. The install line already has fastapi/httpx/jsonschema;
+      # no new dependency.
       - name: render-guard + engine-contract tests (rot sweep 2026-07-02)
         run: >
           python -m pytest
@@ -1646,6 +1651,7 @@ jobs:
           tests/test_stock_personality_w4_surfaces.py
           tests/test_fundamental_forensics_page.py
           tests/test_fundamental_forensics_private_state.py
+          tests/test_fundamental_forensics_health.py
           tests/test_fundamental_forensics_ui.py
           tests/test_fundamental_forensics_acquisition.py
           tests/test_fundamental_forensics_disclosure_diff.py

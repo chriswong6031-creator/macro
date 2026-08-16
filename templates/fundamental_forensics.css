@@ -93,7 +93,7 @@ body.ff-page {
 
 .ff-run-meta {
   display: grid;
-  grid-template-columns: repeat(3, minmax(94px, auto));
+  grid-template-columns: repeat(4, minmax(94px, auto));
   margin: 0;
   padding: 0;
   gap: 8px;
@@ -114,7 +114,7 @@ body.ff-page {
 }
 
 .ff-run-meta dd {
-  max-width: 160px;
+  max-width: 180px;
   margin: 4px 0 0;
   overflow: hidden;
   font-family: var(--font-mono);
@@ -122,6 +122,18 @@ body.ff-page {
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.ff-run-meta[data-freshness="current"] { --ff-freshness-ink: var(--ok); }
+.ff-run-meta[data-freshness="stale"] { --ff-freshness-ink: var(--warn); }
+.ff-run-meta[data-freshness="degraded"] { --ff-freshness-ink: var(--act); }
+.ff-run-meta[data-freshness="unavailable"] { --ff-freshness-ink: var(--muted); }
+#ff-freshness-status {
+  color: var(--ff-freshness-ink, inherit);
+  font-family: var(--font-ui);
+  font-weight: 800;
+  letter-spacing: .06em;
+  text-transform: uppercase;
 }
 
 .ff-context-card,
@@ -749,6 +761,8 @@ body.ff-page {
   font-size: 22px;
   cursor: pointer;
 }
+
+.ff-evidence.is-open .ff-evidence-close { display: block; }
 
 .ff-evidence-body { padding: 16px 18px 22px; }
 
@@ -1894,6 +1908,21 @@ body.ff-modal-open #mmb-launch {
     max-height: calc(100vh - 36px);
     overflow-y: auto;
   }
+
+  .ff-evidence.is-open {
+    position: fixed;
+    z-index: 190;
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    display: block;
+    width: min(560px, calc(100vw - 32px));
+    max-height: none;
+    overflow-y: auto;
+    transform: translateX(0);
+    animation: ff-analysis-open .22s ease;
+    box-shadow: var(--ff-shadow);
+  }
 }
 
 @media (min-width: 701px) and (max-width: 1300px) {
@@ -2001,7 +2030,8 @@ body.ff-modal-open #mmb-launch {
 
   .ff-run-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 0; }
   .ff-run-meta > div { padding-left: 9px; }
-  .ff-run-meta > div:nth-child(3) { grid-column: 1 / -1; padding: 8px 0 0; border-top: 1px solid var(--ff-border); border-left: 0; }
+  .ff-run-meta > div:nth-child(n + 3) { padding-top: 8px; border-top: 1px solid var(--ff-border); }
+  .ff-run-meta > div:nth-child(odd) { padding-left: 0; border-left: 0; }
   .ff-run-meta dd { max-width: none; }
 
   .ff-context-card { grid-template-columns: 1fr; align-items: stretch; padding: 12px; gap: 12px; }
@@ -2117,12 +2147,18 @@ body.ff-modal-open #mmb-launch {
   .ff-value-cell strong { font-size: 8px; }
 }
 
+@keyframes ff-analysis-open {
+  from { transform: translateX(28px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ff-finding,
   .ff-disclosure-card,
   .ff-redline-card,
   .ff-evidence,
   .ff-receipt-inspector { transition: none; }
+  .ff-evidence.is-open { animation: none; }
   .ff-loading-dot { animation-duration: 1.8s; }
 }
 
@@ -2439,7 +2475,6 @@ body.ff-modal-open #mmb-launch {
    a broken page rather than a closed door. */
 .ff-workspace.ff-gated { grid-template-columns: minmax(0, 1fr); }
 
-.ff-workspace.ff-gated .ff-run-meta,
 .ff-workspace.ff-gated .ff-context-card,
 .ff-workspace.ff-gated .ff-tabs,
 .ff-workspace.ff-gated .ff-panel,
@@ -2598,7 +2633,7 @@ body.ff-page {
 
 .ff-run-meta {
   width: calc(100% - 28px);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   margin: -16px auto 0;
   padding: 11px 14px;
   border: 1px solid var(--ff-border);
@@ -2793,7 +2828,7 @@ html[data-theme="light"] .ff-quick-signal[data-priority="high"] { background: li
   .ff-hero-promise { flex-wrap: nowrap; margin-top: 17px; overflow-x: auto; gap: 6px; scrollbar-width: none; }
   .ff-hero-promise::-webkit-scrollbar { display: none; }
   .ff-hero-promise span { flex: 0 0 auto; min-height: 27px; padding: 4px 8px; font-size: 8.5px; }
-  .ff-run-meta { width: calc(100% - 16px); grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: -10px; padding: 9px 5px; }
+  .ff-run-meta { width: calc(100% - 16px); grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: -10px; padding: 9px 5px; }
   .ff-run-meta > div { min-width: 0; padding: 0 7px; }
   .ff-run-meta > div:nth-child(3) { grid-column: auto; margin-top: 0; padding: 0 7px; border-top: 0; border-left: 1px solid var(--ff-border); }
   .ff-run-meta dt { overflow: hidden; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
