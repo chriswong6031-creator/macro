@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "options.market_memory_context_local_receipt_store/v1",
+  "title": "Mac-local immutable options Market Memory receipt store objects",
+  "description": "Persisted-object contract for the W1A local replica. Filesystem ownership, modes, no-symlink descriptor anchoring, and read-only behavior are additional mandatory invariants enforced by the verifier.",
+  "oneOf": [
+    {"$ref": "#/$defs/rootMarker"},
+    {"$ref": "#/$defs/head"},
+    {"$ref": "#/$defs/descriptor"},
+    {"$ref": "#/$defs/highWater"}
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(?:\\.[0-9]{6})?Z$"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "tier",
+        "horizon_role",
+        "context_only",
+        "proposal_weight",
+        "may_rank",
+        "may_gate",
+        "may_size",
+        "may_escalate",
+        "may_trade",
+        "may_originate",
+        "may_select_options_candidate",
+        "may_execute",
+        "may_write_options_episode",
+        "may_append_outcome",
+        "may_train_prophet"
+      ],
+      "properties": {
+        "tier": {"const": "display"},
+        "horizon_role": {"const": "context"},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "may_rank": {"const": false},
+        "may_gate": {"const": false},
+        "may_size": {"const": false},
+        "may_escalate": {"const": false},
+        "may_trade": {"const": false},
+        "may_originate": {"const": false},
+        "may_select_options_candidate": {"const": false},
+        "may_execute": {"const": false},
+        "may_write_options_episode": {"const": false},
+        "may_append_outcome": {"const": false},
+        "may_train_prophet": {"const": false}
+      }
+    },
+    "evidencePolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "exact_requested_as_of_required",
+        "nearest_or_latest_fallback_allowed",
+        "reconstruction_fallback_allowed",
+        "hindsight_context_allowed",
+        "context_only",
+        "proposal_weight",
+        "retrieval_authority",
+        "forecast_authority",
+        "training_eligible",
+        "promotion_eligible"
+      ],
+      "properties": {
+        "exact_requested_as_of_required": {"const": true},
+        "nearest_or_latest_fallback_allowed": {"const": false},
+        "reconstruction_fallback_allowed": {"const": false},
+        "hindsight_context_allowed": {"const": false},
+        "context_only": {"const": true},
+        "proposal_weight": {"const": 0},
+        "retrieval_authority": {"const": false},
+        "forecast_authority": {"const": false},
+        "training_eligible": {"const": false},
+        "promotion_eligible": {"const": false}
+      }
+    },
+    "rootMarker": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "store_id",
+        "upstream_head_schema",
+        "upstream_reference_set_schema",
+        "upstream_reference_schema",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.market_memory_context_local_root/v1"},
+        "store_id": {"type": "string", "pattern": "^omctxlocal_[a-f0-9]{64}$"},
+        "upstream_head_schema": {"const": "options.market_memory_context_receipt_head/v1"},
+        "upstream_reference_set_schema": {"const": "options.market_memory_context_reference_set/v1"},
+        "upstream_reference_schema": {"const": "options.market_memory_context_reference/v1"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "head": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "store_id",
+        "descriptor_count",
+        "current_descriptor_sha256",
+        "current_descriptor_object_key",
+        "current_publication_id",
+        "current_published_at",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.market_memory_context_local_receipt_head/v1"},
+        "store_id": {"type": "string", "pattern": "^omctxlocal_[a-f0-9]{64}$"},
+        "descriptor_count": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "current_descriptor_sha256": {"$ref": "#/$defs/sha256"},
+        "current_descriptor_object_key": {
+          "type": "string",
+          "pattern": "^descriptors/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"
+        },
+        "current_publication_id": {"type": "string", "pattern": "^omctxpub_[a-f0-9]{64}$"},
+        "current_published_at": {"$ref": "#/$defs/timestamp"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "descriptor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "sequence",
+        "previous_descriptor_sha256",
+        "publication_id",
+        "published_at",
+        "deployed_commit",
+        "upstream_head_sha256",
+        "upstream_head_object_key",
+        "audit_id",
+        "audit_sha256",
+        "audit_object_key",
+        "reference_set_sha256",
+        "reference_set_object_sha256",
+        "reference_set_object_key",
+        "reference_count",
+        "evidence_policy",
+        "authority"
+      ],
+      "properties": {
+        "schema": {"const": "options.market_memory_context_local_publication_descriptor/v1"},
+        "sequence": {"type": "integer", "minimum": 0, "maximum": 999999},
+        "previous_descriptor_sha256": {
+          "oneOf": [
+            {"type": "null"},
+            {"$ref": "#/$defs/sha256"}
+          ]
+        },
+        "publication_id": {"type": "string", "pattern": "^omctxpub_[a-f0-9]{64}$"},
+        "published_at": {"$ref": "#/$defs/timestamp"},
+        "deployed_commit": {"type": "string", "pattern": "^[a-f0-9]{40,64}$"},
+        "upstream_head_sha256": {"$ref": "#/$defs/sha256"},
+        "upstream_head_object_key": {
+          "type": "string",
+          "pattern": "^heads/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"
+        },
+        "audit_id": {"type": "string", "pattern": "^omctxaudit_[a-f0-9]{64}$"},
+        "audit_sha256": {"$ref": "#/$defs/sha256"},
+        "audit_object_key": {
+          "type": "string",
+          "pattern": "^audits/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"
+        },
+        "reference_set_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_set_object_sha256": {"$ref": "#/$defs/sha256"},
+        "reference_set_object_key": {
+          "type": "string",
+          "pattern": "^reference_sets/[a-f0-9]{2}/[a-f0-9]{64}\\.json$"
+        },
+        "reference_count": {"type": "integer", "minimum": 0, "maximum": 4096},
+        "evidence_policy": {"$ref": "#/$defs/evidencePolicy"},
+        "authority": {"$ref": "#/$defs/authority"}
+      }
+    },
+    "highWater": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "store_id",
+        "root_marker_sha256",
+        "descriptor_count",
+        "sequence",
+        "descriptor_sha256",
+        "publication_id",
+        "published_at",
+        "upstream_head_sha256"
+      ],
+      "properties": {
+        "schema": {"const": "options.market_memory_context_local_high_water/v1"},
+        "store_id": {"type": "string", "pattern": "^omctxlocal_[a-f0-9]{64}$"},
+        "root_marker_sha256": {"$ref": "#/$defs/sha256"},
+        "descriptor_count": {"type": "integer", "minimum": 1, "maximum": 1000000},
+        "sequence": {"type": "integer", "minimum": 0, "maximum": 999999},
+        "descriptor_sha256": {"$ref": "#/$defs/sha256"},
+        "publication_id": {"type": "string", "pattern": "^omctxpub_[a-f0-9]{64}$"},
+        "published_at": {"$ref": "#/$defs/timestamp"},
+        "upstream_head_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
