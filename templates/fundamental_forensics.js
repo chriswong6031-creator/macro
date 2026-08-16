@@ -8,7 +8,6 @@
     ? '/data/fundamental_forensics/private/state.json.gz'
     : '/api/forensics/state';
   var HEALTH_URL = '/api/forensics/health';
-  var FRESHNESS_BUDGET_SECONDS = 30 * 24 * 60 * 60;
   var ATTESTED_HISTORY_URL = '/api/forensics/v1/attested-history';
   var DESKTOP_QUERY = '(min-width: 1100px)';
   var state = {

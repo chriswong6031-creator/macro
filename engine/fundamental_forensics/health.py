@@ -4,6 +4,14 @@ This module tells the truth about clocks the workbench already has.  It does
 not fetch SEC documents, run detectors, or mint a new history store.  Render
 and evaluation wall-clocks may appear as ``evaluated_at`` so a reader can see
 when the check ran; they are never used as source freshness.
+
+The composed state's ``generated_at`` is a source-snapshot clock (the latest
+EDGAR ``as_of`` / filed time the builder already stamps).  Health reports that
+value as ``broad_source_at`` only.  It is never relabelled as a composition,
+build, publication, or private-object clock.  Those fields stay null until a
+durable independent stamp exists — gzip mtime is 0, and ``public_summary.json``
+``generated_at`` is the same source-snapshot family plus a 30-day page-shell
+failsafe, not a build or publication receipt.
 """
 from __future__ import annotations
 
@@ -22,7 +30,13 @@ from engine.fundamental_forensics.private_state import (
 )
 
 HEALTH_SCHEMA = "fundamental_forensics.health.v1"
-FRESHNESS_BUDGET_SECONDS = 30 * 24 * 60 * 60
+# Daily pipeline SLA with weekend + one missed-nightly slack.  Distinct from
+# scripts.build_fundamental_forensics.PUBLIC_SUMMARY_MAX_AGE_DAYS (30), which
+# only stops frozen anonymous counts from advertising — not a freshness claim.
+# Four days: Friday bake → Monday is three, plus one extra outage night.  A
+# source that has not moved for a week cannot report Current.
+FRESHNESS_SLA_DAYS = 4
+FRESHNESS_BUDGET_SECONDS = FRESHNESS_SLA_DAYS * 24 * 60 * 60
 STATUSES = ("current", "stale", "degraded", "unavailable")
 REASON_SOURCE_CURRENT = "SOURCE_CURRENT"
 REASON_SOURCE_STALE = "SOURCE_STALE"
@@ -30,9 +44,6 @@ REASON_LAST_GOOD_STALE = "LAST_GOOD_STALE"
 REASON_STATE_MISSING = "STATE_MISSING"
 REASON_STATE_INVALID = "STATE_INVALID"
 REASON_SOURCE_CLOCK_MISSING = "SOURCE_CLOCK_MISSING"
-
-PUBLIC_SUMMARY_RELATIVE = Path("data/fundamental_forensics/public_summary.json")
-PUBLIC_SUMMARY_SCHEMA = "fundamental_forensics.public_summary/v1"
 
 _LEAK_TOKENS = (
     "object_key",
@@ -88,25 +99,6 @@ def _date_text(value: Any) -> str | None:
     if parsed is None:
         return None
     return parsed.date().isoformat()
-
-
-def read_public_summary_stamp(root: str | Path) -> datetime | None:
-    """Return the committed publication stamp even when it is stale.
-
-    The page-shell reader drops a summary past the print bound so frozen
-    counts cannot keep advertising.  Health still needs that stamp as
-    publication evidence.
-    """
-    path = Path(root) / PUBLIC_SUMMARY_RELATIVE
-    try:
-        import json
-
-        raw = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
-    if not isinstance(raw, Mapping) or raw.get("schema") != PUBLIC_SUMMARY_SCHEMA:
-        return None
-    return _parse_clock(raw.get("generated_at"))
 
 
 def _disclosure_projection_clock(document: Mapping[str, Any]) -> datetime | None:
@@ -171,7 +163,6 @@ def health_from_inputs(
     loaded: LoadedState,
     document: Mapping[str, Any] | None,
     now: datetime,
-    public_summary_at: datetime | None = None,
 ) -> dict[str, Any]:
     """Classify one already-loaded envelope.  ``now`` is evaluation time only."""
     evaluated = _aware_utc(now)
@@ -181,8 +172,8 @@ def health_from_inputs(
         "composed_state_at": None,
         "private_object_at": None,
         "disclosure_projection_at": None,
-        "last_successful_build_at": _iso(public_summary_at),
-        "last_publication_at": _iso(public_summary_at),
+        "last_successful_build_at": None,
+        "last_publication_at": None,
     }
     if loaded.origin == ORIGIN_MISSING or loaded.blob is None:
         return _payload(
@@ -215,15 +206,14 @@ def health_from_inputs(
     summary = document.get("summary") if isinstance(document.get("summary"), Mapping) else {}
     filing_date = _date_text(document.get("as_of") or summary.get("latest_filing"))
     disclosure_clock = _disclosure_projection_clock(document)
-    publication = public_summary_at or source_clock
     clocks = {
         "broad_source_at": _iso(source_clock),
         "latest_source_filing_date": filing_date,
-        "composed_state_at": _iso(source_clock),
+        "composed_state_at": None,
         "private_object_at": None,
         "disclosure_projection_at": _iso(disclosure_clock),
-        "last_successful_build_at": _iso(publication),
-        "last_publication_at": _iso(public_summary_at or (source_clock if loaded.origin != ORIGIN_MISSING else None)),
+        "last_successful_build_at": None,
+        "last_publication_at": None,
     }
     if source_clock is None:
         return _payload(
@@ -268,7 +258,6 @@ def evaluate_health(
     cache_seconds: float | None = None,
     loaded: LoadedState | None = None,
     document: Mapping[str, Any] | None = None,
-    public_summary_at: datetime | None = None,
 ) -> dict[str, Any]:
     """Return the private health contract for one repository root."""
     evaluated = _aware_utc(now or datetime.now(timezone.utc))
@@ -283,12 +272,10 @@ def evaluate_health(
             parsed = decode_state_blob(record.blob)
         except Exception:  # noqa: BLE001
             parsed = None
-    stamp = public_summary_at if public_summary_at is not None else read_public_summary_stamp(root)
     return health_from_inputs(
         loaded=record,
         document=parsed,
         now=evaluated,
-        public_summary_at=stamp,
     )
 
 

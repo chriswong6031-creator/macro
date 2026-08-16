@@ -4,6 +4,7 @@ from __future__ import annotations
 import gzip
 import hashlib
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -13,7 +14,7 @@ from jsonschema import Draft202012Validator
 from engine.fundamental_forensics import health as ff_health
 from engine.fundamental_forensics.health import (
     FRESHNESS_BUDGET_SECONDS,
-    HEALTH_SCHEMA,
+    FRESHNESS_SLA_DAYS,
     REASON_LAST_GOOD_STALE,
     REASON_SOURCE_CURRENT,
     REASON_SOURCE_STALE,
@@ -33,7 +34,7 @@ from engine.fundamental_forensics.private_state import (
     clear_state_cache,
     load_state_record,
 )
-from scripts.build_fundamental_forensics import compose_state
+from scripts.build_fundamental_forensics import PUBLIC_SUMMARY_MAX_AGE_DAYS, compose_state
 
 ROOT = Path(__file__).resolve().parents[1]
 SCHEMA_PATH = ROOT / "contracts" / "fundamental_forensics_health.schema.json"
@@ -121,7 +122,6 @@ def test_current_source_fixture_is_current() -> None:
         loaded=_loaded(document, ORIGIN_LOCAL),
         document=document,
         now=AUGUST,
-        public_summary_at=CURRENT_SOURCE,
     )
     _validate(payload)
     assert payload["status"] == "current"
@@ -130,6 +130,10 @@ def test_current_source_fixture_is_current() -> None:
     assert payload["clocks"]["latest_source_filing_date"] == "2026-08-15"
     assert payload["clocks"]["disclosure_projection_at"] == "2026-08-14T18:00:00Z"
     assert payload["clocks"]["disclosure_projection_at"] != "2099-01-01T00:00:00Z"
+    assert payload["clocks"]["composed_state_at"] is None
+    assert payload["clocks"]["last_successful_build_at"] is None
+    assert payload["clocks"]["last_publication_at"] is None
+    assert payload["clocks"]["private_object_at"] is None
     assert payload["age_seconds"] == int((AUGUST - CURRENT_SOURCE).total_seconds())
     assert payload["age_seconds"] <= FRESHNESS_BUDGET_SECONDS
     assert payload["private_object"]["origin"] == ORIGIN_LOCAL
@@ -161,6 +165,95 @@ def test_last_good_fallback_becomes_degraded_when_stale() -> None:
     assert payload["status"] == "degraded"
     assert payload["reason_code"] == REASON_LAST_GOOD_STALE
     assert payload["private_object"]["origin"] == ORIGIN_LAST_GOOD
+
+
+def test_seven_day_old_broad_source_is_stale() -> None:
+    source = AUGUST - timedelta(days=7)
+    document = _document(generated_at="2026-08-09T00:00:00Z", as_of="2026-08-09")
+    payload = health_from_inputs(
+        loaded=_loaded(document, ORIGIN_R2),
+        document=document,
+        now=AUGUST,
+    )
+    _validate(payload)
+    assert payload["status"] == "stale"
+    assert payload["reason_code"] == REASON_SOURCE_STALE
+    assert payload["age_seconds"] == int((AUGUST - source).total_seconds())
+    assert payload["age_seconds"] > FRESHNESS_BUDGET_SECONDS
+    assert FRESHNESS_SLA_DAYS == 4
+    assert FRESHNESS_BUDGET_SECONDS == 4 * 24 * 60 * 60
+    assert FRESHNESS_BUDGET_SECONDS < 7 * 24 * 60 * 60
+    assert FRESHNESS_SLA_DAYS != PUBLIC_SUMMARY_MAX_AGE_DAYS
+    assert PUBLIC_SUMMARY_MAX_AGE_DAYS == 30
+
+
+def test_source_generated_clock_is_not_relabelled_as_build_or_publication() -> None:
+    document = _document(generated_at="2026-08-15T12:00:00Z", as_of="2026-08-15")
+    payload = health_from_inputs(
+        loaded=_loaded(document, ORIGIN_LOCAL),
+        document=document,
+        now=AUGUST,
+    )
+    _validate(payload)
+    source = payload["clocks"]["broad_source_at"]
+    assert source == "2026-08-15T12:00:00Z"
+    for key in (
+        "composed_state_at",
+        "last_successful_build_at",
+        "last_publication_at",
+        "private_object_at",
+    ):
+        assert payload["clocks"][key] is None
+        assert payload["clocks"][key] != source
+
+
+def test_public_summary_generated_at_is_not_publication_evidence(tmp_path: Path) -> None:
+    document = _document(generated_at="2026-08-15T12:00:00Z", as_of="2026-08-15")
+    summary_dir = tmp_path / "data" / "fundamental_forensics"
+    summary_dir.mkdir(parents=True)
+    (summary_dir / "public_summary.json").write_text(
+        json.dumps(
+            {
+                "schema": "fundamental_forensics.public_summary/v1",
+                "generated_at": "2026-08-16T00:00:00Z",
+                "companies": 9,
+                "findings": 9,
+            }
+        ),
+        encoding="utf-8",
+    )
+    payload = evaluate_health(
+        tmp_path,
+        now=AUGUST,
+        loaded=_loaded(document, ORIGIN_LOCAL),
+        document=document,
+    )
+    _validate(payload)
+    assert payload["clocks"]["broad_source_at"] == "2026-08-15T12:00:00Z"
+    assert payload["clocks"]["composed_state_at"] is None
+    assert payload["clocks"]["last_successful_build_at"] is None
+    assert payload["clocks"]["last_publication_at"] is None
+    assert payload["clocks"]["private_object_at"] is None
+    assert "2026-08-16T00:00:00Z" not in (
+        payload["clocks"]["composed_state_at"],
+        payload["clocks"]["last_successful_build_at"],
+        payload["clocks"]["last_publication_at"],
+        payload["clocks"]["private_object_at"],
+    )
+
+
+def test_health_suite_is_named_in_engine_render_guards() -> None:
+    text = (ROOT / ".github" / "ci" / "legacy-jobs.yml").read_text(encoding="utf-8")
+    match = re.search(
+        r"(?ms)^  engine-render-guards:\n.*?(?=^  [A-Za-z0-9_-]+:)",
+        text,
+    )
+    assert match is not None, "engine-render-guards job missing from legacy-jobs.yml"
+    job = match.group(0)
+    assert "tests/test_fundamental_forensics_health.py" in job
+    assert "tests/test_fundamental_forensics_ui.py" in job
+    assert "tests/test_forensics_api.py" in job
+    assert "fastapi httpx jsonschema" in job
 
 
 def test_last_good_current_source_stays_current() -> None:
@@ -322,13 +415,6 @@ def test_health_endpoint_is_private_no_store_and_does_not_leak(monkeypatch) -> N
         "load_state_record",
         lambda *_args, **_kwargs: LoadedState(blob=blob, origin=ORIGIN_R2),
     )
-    monkeypatch.setattr(ff_health, "read_public_summary_stamp", lambda _root: JULY12)
-    monkeypatch.setattr(
-        ff_health,
-        "datetime",
-        type("Frozen", (), {"now": staticmethod(lambda tz=None: AUGUST), "fromisoformat": datetime.fromisoformat}),
-    )
-    # evaluate_health uses datetime.now only when now= is omitted; pin it.
     monkeypatch.setattr(
         forensics_api,
         "evaluate_health",
@@ -337,7 +423,6 @@ def test_health_endpoint_is_private_no_store_and_does_not_leak(monkeypatch) -> N
             now=AUGUST,
             loaded=LoadedState(blob=blob, origin=ORIGIN_R2),
             document=document,
-            public_summary_at=JULY12,
         ),
     )
     with _entitled_client() as client:
