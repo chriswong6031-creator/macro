@@ -10,8 +10,8 @@
    PAIRED plain-copy: templates/cn_prophet_live.js must byte-match
    site/cn_prophet_live.js.
 
-   Vocabulary fence (G0.6): nothing here says fired / confirmed / triggered /
-   refuted / falsifier / validated / 证伪.
+   Vocabulary fence (G0.6): glance copy stays observational. Settled-fact
+   tokens are banned by tests/test_cn_live_surface.py (BANNED).
 */
 (function () {
   "use strict";
