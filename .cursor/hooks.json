@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "hooks": {
+    "sessionStart": [
+      {
+        "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/worktree_sparse.py\" auto",
+        "timeout": 180
+      }
+    ],
+    "workspaceOpen": [
+      {
+        "command": "python3 \"$(git rev-parse --show-toplevel)/scripts/worktree_sparse.py\" auto",
+        "timeout": 180
+      }
+    ]
+  }
+}
