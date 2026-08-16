@@ -1,0 +1,74 @@
+name: cn-prophet-live
+# ─────────────────────────────────────────────────────────────────────────────
+# CN PROPHET LIVE — BACKSTOP LANE, not the product cadence
+# (research/CN_BREATHING_PLATFORM_ARCHITECTURE_2026-08-15.md §5).
+#
+# THE PRODUCT LANE IS THE VPS TIMER (app/deploy/macro-live-cnprophet.{service,timer}).
+# GitHub cron is disqualified for a 5-minute mainland cadence. This workflow is
+# a rollback path that still evaluates when the VPS is down or being rebuilt.
+# It stands itself down while the VPS is primary (vars.VPS_LIVE_PRIMARY).
+#
+# LEDGER LAW (G0.2). This lane writes NO data/ path and commits nothing.
+# Kill switch CN_PROPHET_LIVE_DISABLED binds always, including workflow_dispatch.
+# ─────────────────────────────────────────────────────────────────────────────
+on:
+  schedule:
+    # Mainland session is 01:10-07:15 UTC year-round (no DST). Coarse backstop:
+    # every 15 minutes across that span, plus a 07:15 close-board tick.
+    - cron: "10,25,40,55 1-6 * * 1-5"
+    - cron: "10 7 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: >-
+          DRY RUN — load the pack and quotes, evaluate, print the artifact, write
+          NOTHING to R2.
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cn-prophet-live
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    if: ${{ vars.CN_PROPHET_LIVE_DISABLED != 'true' && (github.event_name == 'workflow_dispatch' || vars.VPS_LIVE_PRIMARY != 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: checkout (shallow + sparse + blobless)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          sparse-checkout: |
+            engine
+            scripts
+            lib
+            site/live
+
+      - name: setup python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install deps
+        run: pip install --quiet pyyaml boto3
+
+      - name: evaluate the CN armed pack
+        env:
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET: ${{ secrets.R2_BUCKET }}
+        run: |
+          if [ "${DRY_RUN:-}" = "true" ]; then
+            python -m scripts.cn_live_evaluator --dry-run
+          else
+            python -m scripts.cn_live_evaluator
+          fi
