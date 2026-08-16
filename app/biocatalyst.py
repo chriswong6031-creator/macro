@@ -72,6 +72,9 @@ _TRIAL_SCREEN_CURSOR_VERSION = "s1"
 _TRIAL_SCREEN_CURSOR_DOMAIN = b"macro-biocatalyst:trial-screen:cursor-key:v1"
 _TRIAL_SCREEN_CURSOR_PROCESS_KEY = os.urandom(32)
 _TRIAL_SCREEN_MAX_CURSOR_OFFSET = 10_000
+# Access domain already gated by require_site_full_user. Production GoTrue users
+# carry a stable id and do not carry a commercial pricing-tier field.
+_CALLER_ACCESS_DOMAIN = "site_full"
 _PROSPECTIVE_ACCRUAL_STATES = frozenset(("baseline_established", "accruing"))
 _PROSPECTIVE_CHANGE_KINDS = frozenset(
     (
@@ -948,20 +951,23 @@ async def _read_peer_set_payload(request: Request) -> Any:
 
 
 def _peer_set_caller_binding(user: Mapping[str, Any]) -> dict[str, str]:
-    """Bind cursors to the stable authenticated subject and paid tier only."""
+    """Bind cursors to the authenticated subject and this API's access domain.
+
+    ``require_site_full_user`` has already enforced ``site_full``. Production
+    GoTrue users expose a stable ``id`` and do not carry a commercial ``tier``.
+    Isolation is therefore subject id plus the capability this route gated on
+    — not a pricing-tier field, not ``user_metadata``, and not a second
+    entitlement-store lookup. An incidental ``tier`` key is ignored.
+    """
 
     user_id = user.get("id")
-    entitlement = user.get("tier")
     if (
         not isinstance(user_id, str)
         or not user_id.strip()
         or len(user_id) > 256
-        or not isinstance(entitlement, str)
-        or not entitlement.strip()
-        or len(entitlement) > 80
     ):
         raise _unavailable()
-    return {"subject": user_id, "entitlement": entitlement}
+    return {"subject": user_id, "entitlement": _CALLER_ACCESS_DOMAIN}
 
 
 def _peer_set_query_binding(
