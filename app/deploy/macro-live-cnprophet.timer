@@ -1,0 +1,19 @@
+# CN Breathing Platform cadence. systemd calendars have no CST, so the window
+# is the UTC span that covers 09:10-15:15 CST year-round (CST = UTC+8, no DST):
+# 01:10Z-07:15Z. The pass itself stands down via
+# engine.prophet_live.cn_clock.is_evaluable (holiday / weekend / closed → <1s).
+#
+# :03/5 rather than :00/5 — same offset as the US prophet timer, so this oneshot
+# never contests the snapshot lane on the 5-minute boundary.
+[Unit]
+Description=Run the CN Prophet Live evaluator every five minutes across the mainland session
+
+[Timer]
+OnCalendar=Mon..Fri *-*-* 01..07:03/5:00 UTC
+AccuracySec=1s
+RandomizedDelaySec=10s
+Persistent=false
+Unit=macro-live-cnprophet.service
+
+[Install]
+WantedBy=timers.target

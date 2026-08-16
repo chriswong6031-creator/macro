@@ -1173,6 +1173,10 @@ def test_storage_failure_records_retryable_attempt_and_emits_no_manifest(tmp_pat
     assert manifests.empty
     assert attempts.iloc[0]["state"] == "storage_deferred"
     assert "verification failed" in attempts.iloc[0]["error"]
+    ingestion = json.loads((root / "ingestion_run.json").read_text())
+    assert ingestion["verdict"] == "fail"
+    assert ingestion["counters"]["selected"] >= 1
+    assert ingestion["counters"]["manifested_sources"] == 0
 
 
 class FailFirstWriteSourceStore:

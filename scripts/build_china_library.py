@@ -61,6 +61,46 @@ JUNK_SECTOR = "A-share"    # yfinance fallback bucket → route to the engine's 
 # gate-eligible name is preserved in one of the explicit depth lanes.
 BOARD_BUY_CAP = china_board_rank.FEATURED_CAP
 
+# Tradability floors (P6). Lifted so the CN live pack can apply the SAME
+# predicate the nightly board uses without importing this module's builder.
+# 30.0 exactly is the placeholder cap → treated as unknown, not a drop.
+MCAP_FLOOR_YI = 30.0
+STALE_DAYS = 15
+
+
+def stock_tradability_ok(
+    ticker: str,
+    *,
+    st_flag: bool = False,
+    name_zh: str | None = None,
+    mktcap: float | None = None,
+    adv_yi: float | None = None,
+) -> str | None:
+    """Return the drop reason (``st`` / ``mcap`` / ``adv``) or None if tradable.
+
+    Fail-closed on ST. The ADV / cap floors only exclude names we can PROVE are
+    below them — missing values pass through. Nightly behaviour is this function
+    plus the counter increment in the builder's inner wrapper.
+    """
+    del ticker  # identity is carried by the maps; kept for call-site symmetry
+    if st_flag or is_st(name_zh, None):
+        return "st"
+    if mktcap is not None and mktcap != MCAP_FLOOR_YI and mktcap < MCAP_FLOOR_YI:
+        return "mcap"
+    if adv_yi is not None and adv_yi < china_liquidity.ADV_FLOOR_YI:
+        return "adv"
+    return None
+
+
+def universe_price_adjustment() -> dict[str, str]:
+    """Per-name basis map for the CN store (yfinance ``auto_adjust=True``).
+
+    Empty = every name is on the default ``split_and_dividend_adjusted`` family.
+    The US stock library returns exceptions (breadth-cache raw accruals); the
+    China deep store does not have that split, so there is nothing to mark.
+    """
+    return {}
+
 
 def _prophet_ranking_contract() -> dict:
     """Public, versioned explanation of the live China Prophet priority."""
@@ -2145,18 +2185,17 @@ def main(alpha: dict | None = None) -> dict | None:
     STALE_DAYS = 15                 # a name whose last bar is >15 calendar days stale is likely
     #                                suspended/delisted (e.g. a frozen HK/A name) — never a live buy.
     def _tradability_ok(_t: str) -> bool:
-        # ST from the Tushare name field (carries the prefix) OR the name_zh fallback (usually
-        # blind — see the ST-flag sourcing above). Fail-CLOSED: either source flags → drop.
-        if st_flag_by.get(_t, False) or is_st(name_zh_by.get(_t), None):
-            screen_drop["st"] += 1
-            return False
-        _cap = mktcap_by.get(_t)
-        if _cap is not None and _cap != MCAP_FLOOR_YI and _cap < MCAP_FLOOR_YI:  # real sub-floor cap only
-            screen_drop["mcap"] += 1
-            return False
-        _adv = (liq_by.get(_t) or {}).get("adv_yi")
-        if _adv is not None and _adv < china_liquidity.ADV_FLOOR_YI:  # proven illiquid
-            screen_drop["adv"] += 1
+        # Same predicate the CN live pack applies (stock_tradability_ok). Counters
+        # stay here so the nightly log line is unchanged.
+        reason = stock_tradability_ok(
+            _t,
+            st_flag=st_flag_by.get(_t, False),
+            name_zh=name_zh_by.get(_t),
+            mktcap=mktcap_by.get(_t),
+            adv_yi=(liq_by.get(_t) or {}).get("adv_yi"),
+        )
+        if reason:
+            screen_drop[reason] += 1
             return False
         return True
 

@@ -1,5 +1,5 @@
 schema: house_law_checks.v1
-updated: "2026-08-15"
+updated: "2026-08-16"
 
 # Canonical registry of every house law and its enforcement status.
 # Maintained by scripts/check_house_law_registry.py (meta-guard).
@@ -1278,6 +1278,39 @@ checks:
     owner_program: neural-web
     notes: >
       Allowlist is config/dag.yml divergences section.
+
+  - law_id: cs.ingestion_health_gate
+    summary: >
+      Capital Structure selected filings with zero durable verified evidence
+      must fail the isolated capital_structure job. Compiler telemetry.as_of
+      is generation time, not source freshness. A proven empty/already-known
+      queue is the only permitted non-failing zero-progress result. Collect
+      stays green so the market plane is not frozen.
+    source_ref:
+      - scripts/check_capital_structure_health.py
+      - engine/capital_structure/ingestion_health.py
+      - "PR #5792"
+    severity: hard
+    check_script: scripts/check_capital_structure_health.py
+    ci_wiring:
+      - workflow: .github/workflows/daily.yml
+        job: capital_structure
+        lane: scheduled
+    selftest: false
+    selftest_exempt_reason: >
+      Gate script over on-disk ingestion_run/health artifacts; behavioral
+      coverage is tests/test_capital_structure_ingestion_health.py, including
+      an all-storage-failure path that must exit 1.
+    allowlist: null
+    ratchet: null
+    known_limits:
+      - The gate reads collector receipts after the CS compilers; it cannot
+        repair a dedicated-R2 AccessDenied ACL, only fail closed or fall back
+        at collect time via build_source_store(require_writable=True).
+    owner_program: capital-structure-intelligence
+    notes: >
+      Measured 2026-08-08→08-14: dedicated PutObject AccessDenied froze
+      source_manifest at 1,258 while both nightly jobs stayed green.
 
   - law_id: ops.builder_failstreaks
     summary: >

@@ -66,7 +66,7 @@ def test_t1a_direct_route_returns_contract_valid_partial_facts_only_set(monkeypa
 
     response = api._resolve_trial_peer_set_payload(
         {"nct_ids": ["NCT99999999", "NCT00000001"], "limit": 1},
-        user={"id": "paid-user", "tier": "pro"},
+        user={"id": "paid-user"},
     )
 
     payload = json.loads(response.body)
@@ -88,7 +88,7 @@ def test_t1a_legacy_projection_is_unavailable_not_false_all_uncovered(monkeypatc
     with pytest.raises(api.HTTPException) as caught:
         api._resolve_trial_peer_set_payload(
             {"nct_ids": ["NCT00000001", "NCT99999999"]},
-            user={"id": "paid-user", "tier": "pro"},
+            user={"id": "paid-user"},
         )
 
     assert caught.value.status_code == 503
@@ -99,7 +99,7 @@ def test_t1a_cursor_mismatch_rejects_before_public_projection_read(monkeypatch) 
     binding = api._peer_set_query_binding(
         cohort_nct_ids=("NCT00000001", "NCT00000002"),
         page_limit=1,
-        user={"id": "paid-user", "tier": "pro"},
+        user={"id": "paid-user"},
     )
     cursor = api._encode_peer_set_cursor(
         1,
@@ -117,7 +117,7 @@ def test_t1a_cursor_mismatch_rejects_before_public_projection_read(monkeypatch) 
     with pytest.raises(api.HTTPException) as caught:
         api._resolve_trial_peer_set_payload(
             {"nct_ids": ["NCT00000001", "NCT00000002"], "limit": 2, "cursor": cursor},
-            user={"id": "paid-user", "tier": "pro"},
+            user={"id": "paid-user"},
         )
     assert caught.value.status_code == 400
     assert caught.value.detail == "cursor query mismatch"

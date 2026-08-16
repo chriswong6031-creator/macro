@@ -171,6 +171,63 @@ def test_source_store_factory_is_explicit_local_or_none(tmp_path, monkeypatch):
     assert wrapper.store_id == STORE_ID_LOCAL
 
 
+def test_unwritable_dedicated_bucket_falls_back_to_shared_when_writable_required(
+    tmp_path, monkeypatch, capsys
+):
+    """Dedicated R2 constructing is not enough: PutObject AccessDenied must not
+    freeze the ledger. The collector write path probes put+readback and falls
+    through to the store that still holds the 1,258 retained objects (r2_shared).
+    """
+    from botocore.exceptions import ClientError
+
+    class AccessDeniedR2:
+        def __init__(self, bucket, client=None):
+            self.bucket = bucket
+            self.available = True
+            self.last_put_error = None
+
+        def put_bytes(self, key, data, content_type="application/octet-stream"):
+            self.last_put_error = ClientError(
+                {
+                    "Error": {"Code": "AccessDenied", "Message": "Access Denied"},
+                    "ResponseMetadata": {"HTTPStatusCode": 403},
+                },
+                "PutObject",
+            )
+            return False
+
+        def get_bytes(self, key):
+            return None
+
+        def get_bytes_strict_bounded(self, key, *, expected_byte_length, max_byte_length):
+            raise AssertionError("dedicated AccessDenied store must not reach readback")
+
+    def fake_r2(bucket, client=None):
+        if bucket == "capital-evidence":
+            return AccessDeniedR2(bucket, client)
+        return LocalStore(tmp_path / f"r2-{bucket}")
+
+    monkeypatch.delenv("CAPITAL_STRUCTURE_LOCAL_STORE", raising=False)
+    monkeypatch.delenv("R2_RESEARCH_BUCKET", raising=False)
+    monkeypatch.setenv("R2_CAPITAL_STRUCTURE_BUCKET", "capital-evidence")
+    monkeypatch.setenv("R2_BUCKET", "primary")
+    monkeypatch.setattr(source_store_module, "_capital_structure_r2_client", lambda: object())
+    monkeypatch.setattr(source_store_module, "_shared_r2_client", lambda: object())
+    monkeypatch.setattr(source_store_module, "R2Store", fake_r2)
+
+    preferred = build_source_store()
+    writable = build_source_store(require_writable=True)
+
+    assert preferred is not None and preferred.store_id == STORE_ID_DEDICATED_R2
+    assert writable is not None and writable.store_id == STORE_ID_SHARED_R2
+    receipt = writable.put_verified(b"shared-fallback-evidence", media_type="text/plain")
+    assert receipt is not None
+    out = capsys.readouterr().out
+    warning_lines = [line for line in out.splitlines() if "::warning" in line]
+    assert warning_lines and all(line.startswith("::warning") for line in warning_lines)
+    assert "r2_shared" in out
+
+
 def test_dedicated_capital_structure_bucket_uses_dedicated_client(monkeypatch):
     sentinel = object()
     captured = {}

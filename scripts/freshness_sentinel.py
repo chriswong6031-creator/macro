@@ -501,6 +501,40 @@ SURFACES: list[dict] = [
         # Coverage is DISCLOSED, never budgeted — see the module docstring.
         "facts": "armed_pack",
     },
+    # CN-W-L3 — the mainland runtime board, on the same VPS live plane as the
+    # US evening board. The ARTIFACT path is /live/cn_prophet_live.json (the
+    # file the china_stocks client polls). The SURFACE ID is cn_board_live on
+    # purpose: an earlier US-program pin treated the substring ``prophet_live``
+    # in a surface id as the reader's own file, and this id must never trip
+    # that (or a future revival of it). The path and the id are different
+    # nouns and that is load-bearing.
+    #
+    # ``absent_ok``: the file is legitimately absent until the first evaluator
+    # tick of a mainland session, and on holidays / weekends there is nothing
+    # to publish. Absence is the ordinary pre-publication state, not blindness.
+    #
+    # ``calendar``: "cn" routes sessions_behind and the SLA streak through
+    # lib.cn_calendar, not NYSE. A Friday NYSE session that is a mainland
+    # holiday must not green this surface, and Golden Week must not page it.
+    #
+    # The SLA is the close-board clock (spec §8): first_close_board_at ≤ 15:20
+    # CST on the session. Intraday ticks without a close_board do not stamp.
+    {
+        "id": "cn_board_live",
+        "kind": "live_file",
+        "path": "/live/cn_prophet_live.json",
+        "bake_budget_hours": None,
+        "delay_budget_days": None,
+        "asof_field": "session",
+        "asof_max_sessions_behind": 1,
+        "absent_ok": True,
+        "calendar": "cn",
+        "facts": "cn_live",
+        "sla": {
+            "by_cst": "15:20",
+            "sessions_required": 3,
+        },
+    },
 ]
 
 # The English renderings of the delayed-board marker. us_stocks
@@ -587,21 +621,30 @@ def read_served(served_dir: Path, path: str) -> FetchResult:
     )
 
 
-def sessions_behind(asof: str, now: datetime) -> int:
-    """Completed NYSE sessions the store stamped ``asof`` is missing (0 = current).
+def _calendar_mod(name: str | None):
+    """The session calendar a surface named, defaulting to NYSE.
 
+    Lazy, failure-guarded: the sentinel must survive a broken tree. Both
+    calendars are pure rule arithmetic with zero data dependencies.
+    """
+    if name == "cn":
+        from lib import cn_calendar  # noqa: PLC0415 — see sessions_behind
+        return cn_calendar
+    from lib import nyse_calendar  # noqa: PLC0415 — see sessions_behind
+    return nyse_calendar
+
+
+def sessions_behind(asof: str, now: datetime, *, calendar: str | None = None) -> int:
+    """Completed sessions the store stamped ``asof`` is missing (0 = current).
+
+    ``calendar="cn"`` routes through lib.cn_calendar; anything else is NYSE.
     Lazy, failure-guarded import for the same reason app.mailer is one: the
-    sentinel must survive a broken tree. lib/nyse_calendar is pure rule
-    arithmetic with zero data dependencies, so importing it costs the sentinel
-    none of its independence — but an ImportError still has to degrade to
-    "I can't tell" rather than to a verdict. Raises so the caller can map the
+    sentinel must survive a broken tree. Raises so the caller can map the
     failure to INDETERMINATE.
     """
     from datetime import date as _date  # noqa: PLC0415 — stdlib, kept with its one caller
 
-    from lib import nyse_calendar  # noqa: PLC0415 — see docstring
-
-    return nyse_calendar.sessions_behind(_date.fromisoformat(asof), now)
+    return _calendar_mod(calendar).sessions_behind(_date.fromisoformat(asof), now)
 
 
 def board_delay_stamp(body: str) -> str | None:
@@ -727,9 +770,37 @@ def armed_pack_facts(doc: object) -> dict:
 #: Surface ``facts`` name → extractor. A surface that names an UNKNOWN reader
 #: gets no facts rather than an exception: an unimplemented extractor must
 #: degrade the disclosure, never the watchdog.
+def cn_live_facts(doc: object) -> dict:
+    """The CN runtime-board payload's close-board stamp + coverage.
+
+    Total and optional: an intraday tick carries no close_board, and a missing
+    first_close_board_at must read as unmeasured — that is what withholds the
+    15:20 CST SLA stamp rather than inventing a zero.
+    """
+    if not isinstance(doc, dict):
+        return {}
+    board = doc.get("close_board")
+    board = board if isinstance(board, dict) else {}
+    liv = doc.get("liveness")
+    liv = liv if isinstance(liv, dict) else {}
+    cov = doc.get("coverage")
+    cov = cov if isinstance(cov, dict) else {}
+    first = board.get("first_close_board_at") or liv.get("first_close_board_at")
+    return {
+        "first_close_board_at": _opt_str(first),
+        "close_pending": _opt_bool(doc.get("close_pending")),
+        "coverage": {
+            "universe_n": _opt_int(cov.get("universe_n")),
+            "armed_n": _opt_int(cov.get("armed_n")),
+            "observable_n": _opt_int(cov.get("observable_n")),
+        },
+    }
+
+
 FACT_READERS = {
     "close_pass": close_pass_facts,
     "armed_pack": armed_pack_facts,
+    "cn_live": cn_live_facts,
 }
 
 
@@ -885,18 +956,20 @@ def check_surface(surface: dict, fr: FetchResult, now: datetime) -> dict:
             out["asof"] = stamp
             budget = surface["asof_max_sessions_behind"]
             try:
-                behind = sessions_behind(stamp, now)
+                behind = sessions_behind(stamp, now, calendar=surface.get("calendar"))
             except Exception as exc:  # noqa: BLE001 — bad date / unimportable calendar
+                cal_label = "mainland" if surface.get("calendar") == "cn" else "NYSE"
                 out["status"] = "indeterminate"
                 out["detail"] = (
-                    f"cannot measure {stamp!r} against the NYSE calendar"
+                    f"cannot measure {stamp!r} against the {cal_label} calendar"
                     f" ({type(exc).__name__}: {exc})"
                 )
                 return out
             out["asof_sessions_behind"] = behind
             if behind > budget:
+                cal_label = "mainland" if surface.get("calendar") == "cn" else "NYSE"
                 msg = (
-                    f"store as of {stamp} is {behind} completed NYSE session(s)"
+                    f"store as of {stamp} is {behind} completed {cal_label} session(s)"
                     f" behind the calendar (budget {budget})"
                 )
                 if bake_age_h is not None and bake_age_h <= BAKE_BUDGET_HOURS:
@@ -1115,6 +1188,20 @@ def _et(stamp: datetime) -> datetime | None:
         return None
 
 
+def _cst(stamp: datetime) -> datetime | None:
+    """A UTC instant on the Shanghai clock, or None when that is unknowable.
+
+    Same degrade-to-unknown contract as ``_et``: no tzdata must never answer
+    in UTC, which would read 07:10Z as "07:10, made 15:20" on a session the
+    close board actually missed by eight hours.
+    """
+    try:
+        from zoneinfo import ZoneInfo  # noqa: PLC0415 — see _et
+        return stamp.astimezone(ZoneInfo("Asia/Shanghai"))
+    except Exception:  # noqa: BLE001 — no tzdata must never fabricate a verdict
+        return None
+
+
 def record_first_fresh(record: dict, report: dict, now: datetime,
                        surfaces: list[dict] | None = None) -> dict:
     """Stamp the first definitively-fresh read of each SLA surface, per session.
@@ -1156,16 +1243,31 @@ def record_first_fresh(record: dict, report: dict, now: datetime,
         # unmet gate, never a free pass.
         if sla.get("client_path") and c.get("client_session") != session:
             continue
-        et = _et(now)
-        # Met means BOTH: on the session's own ET day, and by the deadline. The
-        # date half is not pedantry — a board published at 02:00 ET the next
-        # morning reads "02:00 ≤ 18:30" and would score as a pass on a session
-        # it missed entirely.
-        met = (
-            None if et is None
-            else (et.date().isoformat() == session
-                  and et.strftime("%H:%M") <= sla["by_et"])
-        )
+        if "by_cst" in sla:
+            # CN close-board SLA: the artifact's own first_close_board_at, not
+            # the sentinel's now. An intraday tick without a close board does
+            # not stamp — lunch and the morning session stay quiet.
+            landed = _instant((c.get("facts") or {}).get("first_close_board_at"))
+            if landed is None:
+                continue
+            cst = _cst(landed)
+            et = None
+            met = (
+                None if cst is None
+                else (cst.date().isoformat() == session
+                      and cst.strftime("%H:%M") <= sla["by_cst"])
+            )
+        else:
+            et = _et(now)
+            # Met means BOTH: on the session's own ET day, and by the deadline. The
+            # date half is not pedantry — a board published at 02:00 ET the next
+            # morning reads "02:00 ≤ 18:30" and would score as a pass on a session
+            # it missed entirely.
+            met = (
+                None if et is None
+                else (et.date().isoformat() == session
+                      and et.strftime("%H:%M") <= sla["by_et"])
+            )
         # THE DECOMPOSITION (PR-C). Written HERE, in the same append-only act
         # that stamps the session, because these five instants are only jointly
         # meaningful at the moment of first visibility: `now` is the visible
@@ -1176,11 +1278,20 @@ def record_first_fresh(record: dict, report: dict, now: datetime,
         facts = c.get("facts") or {}
         generated_at = facts.get("board_generated_at")
         observed_at = facts.get("close_observed_at")
-        per[s["id"]] = {
+        stamp: dict = {
             "first_fresh_at": now.isoformat(),
             "first_fresh_et": et.strftime("%H:%M") if et else None,
-            "by_et": sla["by_et"],
             "met": met,
+        }
+        if "by_cst" in sla:
+            stamp["by_cst"] = sla["by_cst"]
+            stamp["first_fresh_cst"] = (
+                cst.strftime("%H:%M") if cst is not None else None
+            )
+        else:
+            stamp["by_et"] = sla["by_et"]
+        per[s["id"]] = {
+            **stamp,
             "latency": {
                 # The two producer-side instants, verbatim and possibly null.
                 "close_observed_at": observed_at,
@@ -1232,9 +1343,10 @@ def sla_streak(record: dict, surface_id: str, now: datetime,
 
     (None, []) when the calendar cannot be imported: unknown, never a verdict.
     """
+    surface = next((s for s in SURFACES if s["id"] == surface_id), {})
     try:
-        from lib import nyse_calendar  # noqa: PLC0415 — see module docstring
-        last = nyse_calendar.expected_last_session(now)
+        cal = _calendar_mod(surface.get("calendar"))
+        last = cal.expected_last_session(now)
     except Exception:  # noqa: BLE001
         return None, []
 
@@ -1242,7 +1354,7 @@ def sla_streak(record: dict, surface_id: str, now: datetime,
     rows: list[dict] = []
     streak, broken = 0, False
     for n in range(cap):
-        day = last if n == 0 else nyse_calendar.session_n_back(last, n)
+        day = last if n == 0 else cal.session_n_back(last, n)
         if day is None:
             break
         entry = (sessions.get(day.isoformat()) or {}).get(surface_id) or {}
@@ -1271,12 +1383,16 @@ def sla_summary(record: dict, now: datetime,
         if not sla:
             continue
         streak, rows = sla_streak(record, s["id"], now)
-        out[s["id"]] = {
-            "by_et": sla["by_et"],
+        block: dict = {
             "sessions_required": sla.get("sessions_required"),
             "consecutive_met": streak,
             "recent": rows,
         }
+        if "by_cst" in sla:
+            block["by_cst"] = sla["by_cst"]
+        if "by_et" in sla:
+            block["by_et"] = sla["by_et"]
+        out[s["id"]] = block
     return out
 
 
@@ -1668,7 +1784,9 @@ def run(now: datetime, base: str, r2_base: str, public_dir: Path, state_dir: Pat
         # for evaluating the W-L1 gate ("five consecutive green sessions")
         # without perturbing the very measurement being read.
         for sid, s in sorted(sla_summary(load_first_fresh(state_dir), now).items()):
-            print(f"{sid}: SLA by {s['by_et']} ET | {s['consecutive_met']} consecutive"
+            zone = "CST" if s.get("by_cst") else "ET"
+            deadline = s.get("by_cst") or s.get("by_et")
+            print(f"{sid}: SLA by {deadline} {zone} | {s['consecutive_met']} consecutive"
                   f" of {s['sessions_required']} required"
                   + "".join(f"\n    {r['session']} {r['first_fresh_et'] or '--:--'}"
                             f" {'met' if r['met'] else 'MISSED'}" for r in s["recent"]))

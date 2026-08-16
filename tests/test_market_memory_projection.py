@@ -6,7 +6,7 @@ import copy
 import hashlib
 import inspect
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -581,8 +581,16 @@ def test_committed_regime_artifact_fails_closed_while_it_contains_nonfinite_json
     else:
         # This branch becomes the live canary when the upstream producer is
         # hardened; the test need not be rewritten merely because source debt
-        # was removed.
-        monkeypatch.setattr(projection, "_utc_now", lambda: datetime.now(timezone.utc))
+        # was removed. Pin the projector clock to the artifact's own built_at
+        # — wall time makes a git-tracked fixture expire every 36 hours and
+        # reds every full-suite pack after that.
+        raw = json.loads(body)
+        built_at = datetime.fromisoformat(
+            str(raw["freshness"]["built_at"]).replace("Z", "+00:00")
+        )
+        monkeypatch.setattr(
+            projection, "_utc_now", lambda: built_at + timedelta(minutes=1)
+        )
         projection.validate_macro_regime_snapshot(
             projection.build_macro_regime_snapshot(source)
         )
