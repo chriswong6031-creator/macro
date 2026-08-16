@@ -67,6 +67,14 @@ from pathlib import Path
 from typing import Any, Callable, NamedTuple, Optional
 from zoneinfo import ZoneInfo
 
+# The repo-root pin (house guard: test_check_script_import_pinning). Not a
+# formality here: ``--probe-close`` imports ``engine.close_pass`` IN-PROCESS,
+# and without the pin a direct ``python scripts/close_pass_host_runner.py``
+# from any other CWD would report the module "unavailable" for the wrong
+# reason — an import-path artifact wearing the absence contract's clothes.
+ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+
 _TAG = "close-pass-host"
 ET = ZoneInfo("America/New_York")
 

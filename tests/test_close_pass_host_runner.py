@@ -449,14 +449,22 @@ class FakeMassive:
         return self._result
 
 
-def test_an_absent_massive_close_reports_unavailable_rather_than_failing(capsys):
-    """PR-A is IN FLIGHT. Until it merges this import does not resolve, and the
-    only acceptable answer is "skip the wait" — never a traceback, and never a
-    non-zero exit the caller would have to distinguish from a broken venv."""
+def test_an_absent_massive_close_reports_unavailable_rather_than_failing(
+        monkeypatch, capsys):
+    """The absence is SIMULATED now. This test was written while PR-A was in
+    flight and leaned on the module's real absence; #5746 merged 2026-08-15 and
+    the lean broke in CI the same hour (status came back 'error' — present
+    module, no API key — not 'unavailable'). The CONTRACT outlives the sibling:
+    a sparse checkout, a revert, or a future package split must still skip the
+    wait rather than traceback, so the import failure is forced explicitly —
+    a ``sys.modules`` entry of ``None`` makes the import machinery raise."""
+    import sys as _sys
+    monkeypatch.setitem(_sys.modules, "engine.close_pass.massive_close", None)
     assert R.probe_close_main(SESSION) == 0
     payload = json.loads(capsys.readouterr().out.strip().splitlines()[-1])
     assert payload["status"] == "unavailable"
-    assert "massive_close" in payload["detail"] or "No module" in payload["detail"]
+    assert "massive_close" in payload["detail"] or "None" in payload["detail"] \
+        or "import" in payload["detail"].lower()
 
 
 @pytest.mark.parametrize("result,expected", [
