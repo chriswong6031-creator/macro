@@ -50,10 +50,12 @@ waves:
     title: Revival wave — coverage + latency + ruler (Chairman directive 2026-08-15)
     status: in_progress
     next_action: >
-      PR-A (Massive full-universe same-day closes, basis parity + corp-action darking),
-      PR-B (launchd primary clock at 16:00 ET, GitHub lane demoted to bounded backstop),
-      PR-C (close→candidate→visible latency ruler + stale-armed-pack watchdog).
-      Then: install launchd agent, replay acceptance with frozen static site.
+      PR-A MERGED (#5746: replay 253→1,684 evaluated, parity 1,741/1,741, 58
+      corp-action darked). Browser replay acceptance DONE on receipts (73-card
+      board mounts on frozen N−1 page; expired state refused; mobile clean).
+      REMAINING: land #5760 (clock) + #5761 (ruler) — both armed; deploy
+      scripts/install_closepass_launchd.sh on the Mac Studio after #5760;
+      verify sentinel pickup after #5761.
   - id: W-L2
     title: Breathing board — full-universe arming coverage + alerts
     status: todo
@@ -71,6 +73,8 @@ waves:
       → first_user_visible_at via scripts/close_pass_slo_report.py; repeat 3 sessions.
 landmines:
   - "The board universe store lacks most today-bars at close time — the keyless Yahoo heal refreshes the INDEX group only; without the Massive fill the evening board is a ~14% sample (measured 2026-08-14: 253/1,763 evaluated, 1,508 no_todays_bar)."
+  - "The client paints board_state ONLY off the real evaluator document — a bare {board_state: ...} artifact is refused upstream of the qualify chain. Any replay/rescue writer must annotate the evaluator doc the way close_pass_mirror does, never mint a shell."
+  - "The vendor ticker space is case-sensitive (TPC≠TpC, BCPC≠BCpC) — upper-casing before a join is last-row-wins across two different securities (DSC:MASSIVE-TICKER-CASE-IS-IDENTITY); massive_close matches case-exact, the corp-action guard darks both spellings by design."
   - "GitHub cron is not a product clock: close-pass cron drift measured 27-45 min, queue waits to 95 min, board landed 19:20 ET (2026-08-14); estate-wide 90min-3h12m gaps (DEC:LER-LIVE-LANE-VPS-5MIN-REST)."
   - "Two writers share live/prophet_live.json via CAS (mirror annotates board_state into the evaluator's artifact) — every failure direction must stay dark, never wrong; do not add a third writer."
   - "Never splice a raw same-day close onto a store series that had a same-session split/dividend — dark the name (skipped.corp_action_today); the nightly settles it. BYND 30:1 on 2026-08-14 is the live exemplar."
