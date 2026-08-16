@@ -90,8 +90,12 @@ from pathlib import Path
 from typing import Any
 
 _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
-if _CODE_ROOT not in sys.path:
-    sys.path.insert(0, _CODE_ROOT)
+# UNCONDITIONAL, position 0 — the conditional `if _CODE_ROOT not in sys.path`
+# shape is not a pin: when the root is already on the path BEHIND a foreign
+# package, the guard skips the insert and the foreign package still wins the
+# import (tests/test_check_script_import_pinning.py::_strong_pin; the same
+# comment rides scripts/entry_radar_universe.py and entry_radar_live_pack.py).
+sys.path.insert(0, _CODE_ROOT)
 
 from engine.entry_radar import live_eval as LE  # noqa: E402
 from engine.entry_radar import live_ledger as LL  # noqa: E402
