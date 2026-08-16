@@ -204,6 +204,16 @@ not a pre-checkout replacement for Claude's `WorktreeCreate`: the steady-state
 tree reaches the same 0.35–0.57 GiB, while initial creation may transiently write
 the full checkout before the setup removes the excluded paths.
 
+**Cursor IDE mechanism (shipped 2026-08-15).** Cursor has no pre-checkout
+`WorktreeCreate`. `.cursor/hooks.json` runs `python3 scripts/worktree_sparse.py
+auto` on `sessionStart` and `workspaceOpen`. `auto` converts only a linked
+worktree under a session root (`.claude/worktrees/` and siblings). That extra
+path check exists because the operator's designated local project root is
+itself a linked worktree of the occupied primary — a SessionStart hook keyed
+only on `git-dir != common-dir` would sparsify that 3.8 GiB tree on every
+Cursor chat. Cursor CLI / Agents Window post-create setup (`.cursor/worktrees.json`)
+and Grok Build `SessionStart` (`.grok/hooks/`) are a separate lane.
+
 **Host migration (one operator step, AFTER this merges).** The Studio's legacy wiring
 was deliberately left alone by the shipping session: repointing it before the merge
 would have aimed it at a script not yet on `main` and broken worktree creation for
