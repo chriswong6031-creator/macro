@@ -41,6 +41,8 @@ CONFIG_PATH = ROOT / "config" / "sparse_worktree.json"
 CODEX_ENVIRONMENT_PATH = ROOT / ".codex" / "environments" / "environment.toml"
 CODEX_HOOKS_PATH = ROOT / ".codex" / "hooks.json"
 CURSOR_HOOKS_PATH = ROOT / ".cursor" / "hooks.json"
+CURSOR_WORKTREES_PATH = ROOT / ".cursor" / "worktrees.json"
+GROK_HOOKS_PATH = ROOT / ".grok" / "hooks" / "sparse-worktree.json"
 
 
 def _load_hook():
@@ -402,6 +404,22 @@ def test_cursor_session_hooks_apply_the_same_sparse_profile():
         ]
         assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
                    for command in commands), (event, commands)
+
+
+def test_cursor_worktree_setup_applies_the_same_sparse_profile():
+    settings = json.loads(CURSOR_WORKTREES_PATH.read_text(encoding="utf-8"))
+    unix = settings.get("setup-worktree-unix") or settings.get("setup-worktree")
+    assert isinstance(unix, list), unix
+    assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
+               for command in unix), unix
+
+
+def test_grok_session_start_applies_the_same_sparse_profile():
+    settings = json.loads(GROK_HOOKS_PATH.read_text(encoding="utf-8"))
+    entries = settings["hooks"]["SessionStart"]
+    commands = [hook["command"] for entry in entries for hook in entry["hooks"]]
+    assert any("scripts/worktree_sparse.py" in command and command.endswith(" auto")
+               for command in commands), commands
 
 
 def test_hook_name_validation_rejects_path_traversal():

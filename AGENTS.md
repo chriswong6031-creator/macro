@@ -107,14 +107,19 @@ that believes the packet is wrong stops and escalates.
   off fresh `origin/main` sparsely before file checkout. Codex uses the checked-in
   `.codex/environments/environment.toml` setup plus the `.codex/hooks.json`
   `SessionStart` fallback; Cursor IDE uses `.cursor/hooks.json`
-  `sessionStart` and `workspaceOpen`. Those call `python3 scripts/worktree_sparse.py auto`,
+  `sessionStart` and `workspaceOpen`; Cursor CLI / Agents Window uses
+  `.cursor/worktrees.json` `setup-worktree-unix`; Grok uses
+  `.grok/hooks/sparse-worktree.json` `SessionStart`. Those call
+  `python3 scripts/worktree_sparse.py auto`,
   which acts only on a linked worktree sitting under a session root
   (`.claude/worktrees/` and siblings — never the occupied primary, and never the
   operator's designated local root, which is itself a linked worktree), and preserves
-  an existing sparse selection. Codex and Cursor expose these lifecycle points only after
-  Git creates the worktree, so they reach the same standing size but may incur one
-  transient full-checkout write during creation. Project-local Codex hooks require
-  one-time review/trust when their exact definition changes. All of these harnesses use
+  an existing sparse selection. Those harnesses expose setup/`SessionStart` only
+  after Git creates the worktree, so they reach the same standing size but may
+  incur one transient full-checkout write during creation. Project-local Codex
+  and Grok hooks require one-time review/trust when their exact definition
+  changes. Grok and Cursor default a new worktree to the current HEAD — pass
+  `--ref origin/main` / `--worktree-base origin/main`. All of these harnesses use
   each tracked top-level directory EXCEPT the heavy
   generated ones listed in `config/sparse_worktree.json` — `data/`, `site/`,
   `mockups/`, `verify_shots/` — because those are 87 % of a 3.8 GiB checkout
