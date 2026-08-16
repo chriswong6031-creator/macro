@@ -66,13 +66,33 @@ that believes the packet is wrong stops and escalates.
 
 ## Workspace and git
 
-- The canonical project home is `/Users/chriswong/Documents/Cluade`.
+- The canonical tree is GitHub `origin/main`
+  (`mastermindx-market-intelligence/macro`), never a local folder. The only local
+  project root is `/Users/chriswong/Documents/Cluade/macro-main` (operator
+  2026-08-15). Never open `/Users/chriswong/Documents/Cluade/Macro Dashboard` as a
+  workspace — not as a session working directory, not as an editor root.
+- At session start: `git fetch origin && git merge --ff-only origin/main`. If the
+  fast-forward fails, stop and tell the operator; do not rebase, reset, or force
+  past it.
+- `macro-main` is a linked worktree, not a second clone (verified 2026-08-15):
+  `macro-main/.git` is a gitfile pointing at
+  `Macro Dashboard/.git/worktrees/macro-main`, which still owns every object, ref,
+  config, remote, reflog, and the worktree registry — which is why `git worktree
+  list` run from `macro-main` prints `Macro Dashboard` first. Never delete, move,
+  rename, or iCloud-relocate `Macro Dashboard`, and never run repo-wide destructive
+  git operations from inside it: that would destroy `macro-main` and every sibling
+  worktree at once. The clone is also blobless (`blob:none`, promisor), so history
+  operations that need file contents fetch over the network.
 - Never create project work in `~/.codex/worktrees`, `/private/tmp`, or another
   Codex-only location. Never use a `codex/` branch for these repositories.
 - The primary checkout is shared and commonly dirty or detached. Do not change its
   files or git state. Fetch the remote default branch, then create a fresh worktree
   under this repository's `.claude/worktrees/<task>/` and use a `claude/<task>`
   branch.
+- A merged PR does not update any folder until that folder fast-forwards. Merging
+  is a GitHub-side event; every local checkout, worktree, runner workspace, and VPS
+  clone keeps its old bytes until it pulls. Verify state against `origin/main`,
+  never against the folder you are standing in.
 - Macro branches start from fresh `origin/main`; Terminal branches start from fresh
   `origin/master`. Never reuse a squash-merged branch.
 - Do not use the repo-global stash stack.
