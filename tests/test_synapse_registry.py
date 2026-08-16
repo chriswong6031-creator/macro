@@ -18,11 +18,16 @@ Tests
 11. no_restated_consumer_counts    — no prose in the registry restates a consumer
                                      count (both the flag and the negative-control
                                      side, so the rule can't pass by matching nothing).
+15. duplicate_yaml_keys_rejected   — repeated mapping keys hard-fail even though
+                                     yaml.safe_load succeeds (negative control).
+16. live_registry_has_no_duplicate_keys — committed synapse.yml is clean.
 """
 from __future__ import annotations
 
 import copy
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -37,6 +42,9 @@ from engine.neuralweb.synapse import (  # noqa: E402
     artifacts_by_owner,
     load_registry,
     validate_registry,
+)
+from scripts.check_synapse_registry import (  # noqa: E402
+    duplicate_yaml_key_violations,
 )
 
 _PLACEHOLDER_RE = re.compile(r"<[A-Z_]+>")
@@ -392,6 +400,49 @@ def test_registry_has_no_restated_consumer_counts():
     )
 
 
+# Tests 15-16: duplicate YAML keys (safe_load is blind)
+# ---------------------------------------------------------------------------
+
+_PLANTED_DUP_YAML = (
+    "meta:\n"
+    "  schema_version: 1\n"
+    "artifacts:\n"
+    "  _selftest_dup_keys:\n"
+    "    notes: first-value-discarded-by-safe-load\n"
+    "    notes: last-value-kept-by-safe-load\n"
+)
+
+
+def test_duplicate_yaml_keys_rejected_even_when_safe_load_succeeds():
+    """A repeated mapping key must hard-fail even though yaml.safe_load accepts it.
+
+    Negative control: if this assertion used the parsed dict from safe_load,
+    the duplicate would already be gone and the test would pass vacuously.
+    """
+    safe_loaded = yaml.safe_load(_PLANTED_DUP_YAML)
+    assert isinstance(safe_loaded, dict), "negative control: safe_load must succeed"
+    assert (
+        safe_loaded["artifacts"]["_selftest_dup_keys"]["notes"]
+        == "last-value-kept-by-safe-load"
+    ), "negative control: safe_load must keep the last value"
+
+    violations = duplicate_yaml_key_violations(_PLANTED_DUP_YAML)
+    assert any("notes" in v and "duplicate YAML key" in v for v in violations), (
+        "duplicate-key loader must report the repeated 'notes' key that "
+        f"safe_load discarded; got: {violations}"
+    )
+
+
+def test_live_registry_has_no_duplicate_keys():
+    """Committed config/synapse.yml must not repeat a mapping key."""
+    text = REGISTRY_PATH.read_text(encoding="utf-8")
+    violations = duplicate_yaml_key_violations(text)
+    assert violations == [], (
+        f"synapse.yml has {len(violations)} duplicate YAML key(s):\n"
+        + "\n".join(f"  {v}" for v in violations)
+    )
+
+
 @pytest.mark.parametrize("sample", [
     "  # --- 13 consumers ---",                              # bare section header
     "  # --- 0 consumers (display rail only) ---",           # annotated header
@@ -424,3 +475,20 @@ def test_non_count_consumer_prose_is_not_flagged(sample):
     from scripts.check_synapse_registry import check_consumer_count_claims
 
     assert check_consumer_count_claims(sample) == [], f"false positive: {sample!r}"
+def test_check_synapse_registry_selftest_covers_duplicate_keys():
+    """--selftest must plant a safe_load-blind duplicate and catch it."""
+    result = subprocess.run(
+        [sys.executable, str(REPO_ROOT / "scripts" / "check_synapse_registry.py"), "--selftest"],
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"--selftest exited {result.returncode}\n"
+        f"stdout:\n{result.stdout}\nstderr:\n{result.stderr}"
+    )
+    assert "duplicate YAML keys" in result.stdout, (
+        "--selftest must exercise the duplicate-key case; stdout was:\n"
+        f"{result.stdout}"
+    )

@@ -1,6 +1,9 @@
-"""SP1-A — short-pressure branch study. Frozen by
-research/short_side/SP1_SHORT_PRESSURE_PREREG.md §5 + Amendment 1 (both committed
-before this file ran).
+"""SP1-B — short-pressure branch study on a trading-day price index.
+
+Successor of SP1-A. Frozen by
+research/short_side/SP1_SHORT_PRESSURE_PREREG.md §5C (SUPERSESSION 1), committed
+before the calendar fix in this file ran. SP1-A's two published runs stay the
+record of the contaminated-calendar design; this file now implements SP1-B.
 
 Tests, on FINRA settlements 2018-01-12 -> 2026, entering at `knowable_date`:
 
@@ -34,6 +37,7 @@ sys.path.insert(0, str(_ROOT))
 from engine import short_pressure as sp  # noqa: E402
 from engine.json_strict import sanitize_non_finite  # noqa: E402
 from lib import config  # noqa: E402
+from lib.nyse_calendar import is_session, session_rows  # noqa: E402
 
 log = logging.getLogger(__name__)
 
@@ -43,9 +47,33 @@ MIN_NAMES_PER_DATE = 100
 SPLIT = pd.Timestamp("2022-01-01")
 
 
+def restrict_to_nyse_sessions(px: pd.DataFrame) -> pd.DataFrame:
+    """Keep only weekday NYSE sessions. Raises if any non-session row remains.
+
+    `session_rows` is the house helper, but it fail-opens (returns the original
+    frame) when every row is non-session or the filter errors. That default is
+    the wrong one for a study whose estimand *is* the trading-day index, so
+    this wrapper refuses to return a contaminated calendar. Prereg §5C.
+    """
+    filtered = session_rows(px, label="sp1_yahoo")
+    bad = [ts for ts in filtered.index if not is_session(pd.Timestamp(ts).date())]
+    if bad:
+        raise RuntimeError(
+            f"SP1-B price index is not a trading-day index: {len(bad)} "
+            f"non-session row(s) remain after session_rows (it may have "
+            f"fail-opened). First: {pd.Timestamp(bad[0]).date()}"
+        )
+    return filtered
+
+
 def load_prices() -> pd.DataFrame:
-    """Wide close panel from data/yahoo/. NOTE: this is the CURRENT universe —
-    survivorship is stated in the prereg amendment and is not fixable here."""
+    """Wide close panel from data/yahoo/, restricted to NYSE sessions.
+
+    NOTE: this is still the CURRENT universe — survivorship is stated in the
+    prereg and is not fixable here. The calendar restriction (prereg §5C)
+    drops weekend/holiday rows that non-equity files (crypto/FX/futures)
+    insert into the union index; it does not add delisted names.
+    """
     d = config.data_dir() / "yahoo"
     cols = {}
     for f in sorted(d.glob("*.parquet")):
@@ -57,7 +85,8 @@ def load_prices() -> pd.DataFrame:
         if len(s) > 250:
             cols[f.stem] = s
     px = pd.DataFrame(cols).sort_index()
-    return px[~px.index.duplicated(keep="last")]
+    px = px[~px.index.duplicated(keep="last")]
+    return restrict_to_nyse_sessions(px)
 
 
 def build_events(panel: pd.DataFrame, px: pd.DataFrame) -> pd.DataFrame:
@@ -320,13 +349,13 @@ def main() -> int:
             else f"sign is {_signs}, not significant")
     verdict = ("H0 REPLICATES — branch tests interpretable" if h0_replicates else
                f"H0 DOES NOT REPLICATE ({_why}) — per the "
-               "prereg the branch tests H1/H2 are UNINTERPRETABLE and SP1-A is a NULL")
+               "prereg the branch tests H1/H2 are UNINTERPRETABLE and SP1-B is a NULL")
 
     out = {
-        "study": "SP1-A", "generated": pd.Timestamp.now("UTC").isoformat(),
+        "study": "SP1-B", "generated": pd.Timestamp.now("UTC").isoformat(),
         "verdict": verdict, "h0_replicates": bool(h0_replicates),
         "diagnostics": diag,
-        "prereg": "research/short_side/SP1_SHORT_PRESSURE_PREREG.md (§5 + Amendment 1)",
+        "prereg": "research/short_side/SP1_SHORT_PRESSURE_PREREG.md (§5C SUPERSESSION 1)",
         "events": int(len(ev)), "entry_dates": int(ev["entry"].nunique()),
         "tickers": int(ev["ticker"].nunique()),
         "window": [str(ev["entry"].min().date()), str(ev["entry"].max().date())],
@@ -368,8 +397,37 @@ def main() -> int:
              f"{'yes' if r['both_halves_same_sign'] else 'NO'} |" for r in results]
     md = Path("reports/sp1-short-pressure.md")
     md.parent.mkdir(parents=True, exist_ok=True)
+    _wknd = cal.get("weekend_rows_in_event_window")
+    _span21 = cal.get(f"{HORIZONS[0]}_row_step_spans_weekday_sessions")
+    _span63 = cal.get(f"{HORIZONS[1]}_row_step_spans_weekday_sessions")
+    _cal_ok = (_wknd == 0 and _span21 == HORIZONS[0] and _span63 == HORIZONS[1])
+    _cal_status = (
+        f"in place — `calendar_audit` reads 0 weekend rows and "
+        f"{HORIZONS[0]}/{HORIZONS[1]} true sessions" if _cal_ok
+        else "NOT yet in place"
+    )
+    if _cal_ok:
+        _cal_prose = (
+            f"**Horizon labels are true NYSE sessions.** Measured on this run: "
+            f"{_wknd} of {cal.get('index_rows_in_event_window')} index rows in "
+            f"the event window are weekend rows, so a {HORIZONS[0]}-row step "
+            f"spans {_span21} weekday sessions and a {HORIZONS[1]}-row step "
+            f"spans {_span63}. The `h` column below is a session count. "
+            "Survivorship is still unfixed; no effect size here is quotable."
+        )
+    else:
+        _cal_prose = (
+            f"**Horizon labels are row offsets, not trading days.** Measured on "
+            f"this run: {_wknd} of {cal.get('index_rows_in_event_window')} "
+            f"index rows in the event window ({cal.get('weekend_row_pct')}%) "
+            f"are weekend rows, so a {HORIZONS[0]}-row step spans {_span21} "
+            f"weekday sessions and a {HORIZONS[1]}-row step spans {_span63}. "
+            "The `h` column below is the row offset. No effect size here is "
+            "quotable until this is fixed."
+        )
+
     md.write_text(
-        "# SP1-A — short-pressure branch study\n\n"
+        "# SP1-B — short-pressure branch study (trading-day index)\n\n"
         f"Prereg: `{out['prereg']}` (committed before this ran).\n\n"
         f"**Entry convention (read from the panel, not assumed here):** "
         f"{out['panel_lag_convention']}.\n\n"
@@ -378,16 +436,7 @@ def main() -> int:
         f"median {out['median_names_per_date']} names/date.\n"
         "Returns demeaned within date, so nothing here can come from market timing.\n\n"
         f"**Survivorship:** {out['survivorship_caveat']}\n\n"
-        f"**Horizon labels are row offsets, not trading days.** Measured on this run: "
-        f"{cal.get('weekend_rows_in_event_window')} of "
-        f"{cal.get('index_rows_in_event_window')} index rows in the event window "
-        f"({cal.get('weekend_row_pct')}%) are weekend rows contributed by non-equity "
-        f"files in `data/yahoo/` (crypto/FX/futures), so a "
-        f"{HORIZONS[0]}-row step spans "
-        f"{cal.get(f'{HORIZONS[0]}_row_step_spans_weekday_sessions')} weekday sessions "
-        f"and a {HORIZONS[1]}-row step spans "
-        f"{cal.get(f'{HORIZONS[1]}_row_step_spans_weekday_sessions')}. The `h` column "
-        "below is the row offset. No effect size here is quotable until this is fixed.\n\n"
+        f"{_cal_prose}\n\n"
         "| test | h | mean (pp) | NW t | q(BH) | 2018-21 / 2022-26 | same sign |\n"
         "|---|---|---|---|---|---|---|\n" + "\n".join(lines) + "\n\n"
         f"## Verdict\n\n**{verdict}.**\n\n"
@@ -425,12 +474,11 @@ def main() -> int:
         "Pre-declared expectation was null; it is null.\n"
         "- It does **not** overturn the published result. The honest statement is that "
         "this universe cannot test it.\n"
-        "- It **does** name the fixes: (1) a delisting-inclusive price panel "
+        "- It **does** name the remaining fix: a delisting-inclusive price panel "
         "(`collectors/edgar_delisting.py` + `edgar_deadname_prices.py` exist) and a wider "
-        "universe, for survivorship; and (2) a trading-day price index — `load_prices()` "
-        "unions every file in `data/yahoo/`, including weekend-trading non-equities, "
-        "which is what makes the `h` column a row offset rather than a session count. "
-        "Until both are fixed, short pressure stays display-tier context here.\n")
+        "universe, for survivorship. The trading-day price index (prereg §5C) is "
+        f"{_cal_status}. "
+        "Until survivorship is fixed, short pressure stays display-tier context here.\n")
     print(json.dumps(out["results"], indent=2))
     log.info("wrote %s", md)
     return 0

@@ -391,16 +391,40 @@ _COLUMNAR_WRITER_EXEMPT: dict[str, str] = {
 
 
 def test_no_production_module_uses_a_parquet_or_csv_writer():
-    """A static backstop for the behavioural test above."""
+    """A static backstop for the behavioural test above.
+
+    W5 amendment (lawful update with the contract, not a weakening): PR-5
+    introduces the two SANCTIONED writers — the nightly reconciler
+    (``scripts/reconcile_entry_radar.py``, the contract §7 sole durable
+    evidence writer, gated by ``ledger_lane.nightly_advance_enabled()`` and
+    covered by its own test suite) and the vendor SESSION-CACHE writer
+    (``scripts/entry_radar_vendor.py``), whose parquet writes land only under
+    a runner-injected cache dir OUTSIDE the repo (its own docstring law; it
+    hardcodes no repo path).  The pure engine package — including all of
+    ``engine/entry_radar/replay/`` — still writes nothing, and every OTHER
+    entry_radar script stays writer-free.  The reconciler's filename sits
+    outside this glob by construction; the vendor module is the one named
+    exemption.
+    """
+    # entry_radar_replay.py: the W5 results runner — writes ONLY under its
+    # --out-dir (research/live_entry_radar/w5_results) + the TrialLedger; the
+    # durable store stays the reconciler's alone (same fenced assertion below).
+    exempt = {"entry_radar_vendor.py", "entry_radar_replay.py"}
     sources = [*(ROOT / "engine" / "entry_radar").rglob("*.py"),
                *(ROOT / "scripts").glob("entry_radar_*.py")]
     assert len(sources) >= 10
     for path in sources:
         if path.name in _COLUMNAR_WRITER_EXEMPT:
             continue
+        if path.name in exempt:
+            text = path.read_text(encoding="utf-8")
+            assert "data/entry_radar" not in text, (
+                "the vendor cache writer must never target the durable store — "
+                "that path belongs to the nightly reconciler alone")
+            continue
         text = path.read_text(encoding="utf-8")
         for banned in ("to_parquet", "to_csv", "to_feather"):
-            assert banned not in text, f"{path.name} calls {banned} — W1 writes no durable store"
+            assert banned not in text, f"{path.name} calls {banned} — W5 keeps the engine and non-writer scripts store-free"
 
 
 def test_the_columnar_writer_exemption_names_no_data_path():

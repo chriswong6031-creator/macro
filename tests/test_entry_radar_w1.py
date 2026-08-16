@@ -739,7 +739,7 @@ def test_no_radar_module_imports_a_protected_module(path):
 # Triggers are the RUNTIME surfaces only. Deliberately NOT ``tests/test_entry_
 # radar_``: the guards contain runtime scope, which a tests-only diff cannot
 # stray from — and a fleet heal of these very guards must not re-trigger them.
-_RADAR_CODE_PREFIXES = ("engine/entry_radar/", "scripts/entry_radar_",
+_RADAR_CODE_PREFIXES = ("engine/entry_radar/", "scripts/entry_radar_", "scripts/reconcile_entry_radar.py",
                         "config/entry_radar.yml")
 
 
@@ -811,6 +811,9 @@ def test_radar_owns_only_its_declared_paths():
     owned_exact = {"config/entry_radar.yml", "templates/entry_radar.html.j2",
                    "site/entry_radar.html"}
     owned_prefixes = ("engine/entry_radar/", "scripts/entry_radar_",
+                      # the contract (§7.3) names the reconciler VERBATIM as the
+                      # sole durable writer — an owned path by the frozen text:
+                      "scripts/reconcile_entry_radar.py",
                       "tests/test_entry_radar_", "tests/fixtures/entry_radar/",
                       "data/entry_radar/",
                       "research/LIVE_ENTRY_RADAR_", "research/live_entry_radar/",

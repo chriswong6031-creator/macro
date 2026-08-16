@@ -47,7 +47,9 @@ insider      data/sec_insider/panel/*.parquet filing_date <= date trailing
              90 calendar days aggregate; absent-tolerant.
 short_int    historical dates: data/finra/short_interest_history.parquet unioned
              with the host-only short_interest_panel.parquet, resolved on
-             knowable_date (= settlement + 10 calendar days), basis='pit_settlement'.
+             knowable_date (= the 8th NYSE session after settlement, floored by
+             any stored knowable_date and by capture_date — lib/finra_knowable.py),
+             basis='pit_settlement'.
              Current dates: data/finra/short_interest.parquet snapshot,
              basis='snapshot_not_pit'.  Absent-tolerant, and a historical date the
              PIT stores cannot answer is absent — never the current snapshot.
@@ -89,6 +91,7 @@ from typing import Any
 
 from engine.fundamental_forensics.private_state import load_state
 from engine.fundamental_forensics.context_projection import compact_disclosure_context
+from lib.finra_knowable import KNOWABLE_LAG_SESSIONS, knowable_series
 
 import pandas as pd
 
@@ -823,13 +826,6 @@ def _insider_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
 # Short interest dimension
 # ---------------------------------------------------------------------------
 
-#: Mirrors KNOWABLE_LAG_DAYS in scripts/backfill_finra_short_interest.py, the
-#: canonical FINRA dissemination convention: FINRA publishes ~7 calendar days
-#: after settlement, and 10 is the deliberately conservative floor — erring long
-#: can only make a study pessimistic, erring short manufactures look-ahead.  The
-#: two constants are pinned together by a drift test; change them as a pair.
-_SI_KNOWABLE_LAG_DAYS = 10
-
 _si_cache: dict[str, pd.DataFrame | None] = {}
 _si_pit_cache: dict[str, pd.DataFrame | None] = {}
 
@@ -866,16 +862,47 @@ def _si_normalise(df: pd.DataFrame) -> pd.DataFrame:
     """Put one short-interest store on the (settlement_date, knowable_date) shape.
 
     settlement_date is a STRING in the history store and a datetime in the panel,
-    so both are coerced.  knowable_date is derived when the store does not carry
-    one: the history store has no publication field at all, and the panel's
-    column subset can degrade on an older vintage.  Derivation is the documented
-    convention, which is the only knowability evidence those rows have.
+    so both are coerced.
+
+    knowable_date is a MONOTONE FLOOR, never a straight read of whatever the
+    store carries: it starts at the convention (the 8th NYSE session after
+    settlement — lib/finra_knowable.py) and may only move LATER, never earlier.
+    Two things can push it later:
+
+      * a STORED knowable_date.  The panel's column was written by the RETIRED
+        +10-calendar-day rule, which lands 2-3 days EARLY on every settlement we
+        hold, so trusting it verbatim would re-import the leak this floor exists
+        to close.  The panel is gitignored/Mac-local and this change does not
+        regenerate it, so the stale column outlives the fix on real hosts.  Once
+        the backfill next runs under the session rule the stored value equals the
+        derived one and taking the max is a no-op — the floor is what makes the
+        interim honest, not a permanent distrust of the column.
+
+      * capture_date (history store).  collectors/finra.py stamps the collector's
+        own run date and dedups (settlement_date, ticker) with keep="last", so on
+        a restatement capture_date moves FORWARD and the earlier vintage is
+        deleted.  That makes it a SAFE knowability FLOOR for the value the store
+        now carries — it is never earlier than the date we actually held that
+        value — while still NOT making the store vintage-correct: the originally
+        published figure is gone, so this bounds knowability, it does not
+        reconstruct history.
+
+    The ``~(other > base)`` form is deliberate and NaT-safe in BOTH directions: a
+    NaT in ``other`` compares False and leaves the base untouched, and a NaT base
+    stays NaT (invisible to the ``knowable_date <= date_ts`` gate).  It is NOT
+    interchangeable with ``.max(axis=1)``, which would let a real capture_date
+    resurrect a row whose settlement date we could not parse.
     """
     df["settlement_date"] = pd.to_datetime(df["settlement_date"], errors="coerce")
+
+    knowable = knowable_series(df["settlement_date"])
     if "knowable_date" in df.columns:
-        df["knowable_date"] = pd.to_datetime(df["knowable_date"], errors="coerce")
-    else:
-        df["knowable_date"] = df["settlement_date"] + pd.Timedelta(days=_SI_KNOWABLE_LAG_DAYS)
+        stored = pd.to_datetime(df["knowable_date"], errors="coerce")
+        knowable = knowable.where(~(stored > knowable), stored)
+    if "capture_date" in df.columns:
+        capture = pd.to_datetime(df["capture_date"], errors="coerce")
+        knowable = knowable.where(~(capture > knowable), capture)
+    df["knowable_date"] = knowable
     return df
 
 
@@ -987,8 +1014,10 @@ def _si_snapshot_dim(ticker: str, data: Path) -> dict:
 def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
     """FINRA short interest: PIT for historical dates, snapshot for current ones.
 
-    A historical date resolves against the history/panel union on knowable_date
-    (= settlement + _SI_KNOWABLE_LAG_DAYS), basis='pit_settlement'.  The current
+    A historical date resolves against the history/panel union on knowable_date —
+    the KNOWABLE_LAG_SESSIONS-th NYSE session after settlement, floored upward by
+    any stored knowable_date and by the collector's capture_date (see
+    _si_normalise and lib/finra_knowable.py) — basis='pit_settlement'.  The current
     snapshot is NEVER consulted for a historical date: it holds only the latest
     settlement, so every historical hit against it was look-ahead by construction.
     A historical date the PIT stores cannot answer returns absent — falling back
@@ -1020,7 +1049,7 @@ def _short_int_dim(ticker: str, date_ts: pd.Timestamp, root: Path) -> dict:
     if knowable.empty:
         return _absent(
             f"short_interest: no settlement knowable on or before {date_ts.date()} "
-            f"(publication lag {_SI_KNOWABLE_LAG_DAYS}d)"
+            f"(publication lag {KNOWABLE_LAG_SESSIONS} sessions)"
         )
 
     # na_position keeps an undated settlement from outranking a real one; sorting

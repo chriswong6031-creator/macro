@@ -482,10 +482,15 @@ def radar_universe(
         for sym, rec in ((pack or {}).get("tickers") or {}).items():
             if not isinstance(rec, dict):
                 continue
+            raw_sym = str(sym).strip()
+            if raw_sym != raw_sym.upper():
+                # Self-fetch/card rendering is an uppercase house-symbol plane.
+                # Mixed-case Massive identities fail closed instead of aliasing.
+                continue
             rank = rec.get("adv_rank")
             try:
                 if rank is not None and float(rank) <= rank_max:
-                    _add(sym)
+                    _add(raw_sym)
             except (TypeError, ValueError):
                 continue
 

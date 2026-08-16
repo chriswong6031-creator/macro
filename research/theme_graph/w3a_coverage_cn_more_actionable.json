@@ -1,0 +1,1370 @@
+{
+  "case_a_cooccurrence": {
+    "isolated_ids": [
+      "002534.SZ",
+      "300274.SZ",
+      "300723.SZ",
+      "301662.SZ",
+      "600301.SS",
+      "603156.SS",
+      "603308.SS"
+    ],
+    "isolated_note": "these ids HAVE memberships, but share no concept with any other supplied id — the gap the per-name check cannot see",
+    "pairs_sharing_a_concept": [
+      {
+        "a": "002396.SZ",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:300378",
+          "ltheme:ths:300920",
+          "ltheme:ths:308366",
+          "ltheme:ths:308791"
+        ],
+        "shared": 4
+      },
+      {
+        "a": "002465.SZ",
+        "b": "300342.SZ",
+        "concepts": [
+          "ltheme:ths:300795",
+          "ltheme:ths:301786",
+          "ltheme:ths:309055",
+          "ltheme:ths:309128"
+        ],
+        "shared": 4
+      },
+      {
+        "a": "300456.SZ",
+        "b": "300476.SZ",
+        "concepts": [
+          "ltheme:ths:300378",
+          "ltheme:ths:308642",
+          "ltheme:ths:308828",
+          "ltheme:ths:309049"
+        ],
+        "shared": 4
+      },
+      {
+        "a": "002396.SZ",
+        "b": "002518.SZ",
+        "concepts": [
+          "ltheme:ths:301558",
+          "ltheme:ths:308366",
+          "ltheme:ths:308642"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "002396.SZ",
+        "b": "300456.SZ",
+        "concepts": [
+          "ltheme:ths:300378",
+          "ltheme:ths:308642",
+          "ltheme:ths:309049"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "002396.SZ",
+        "b": "300476.SZ",
+        "concepts": [
+          "ltheme:ths:300378",
+          "ltheme:ths:308642",
+          "ltheme:ths:309049"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "002465.SZ",
+        "b": "300353.SZ",
+        "concepts": [
+          "ltheme:ths:301786",
+          "ltheme:ths:308531",
+          "ltheme:ths:309128"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "002465.SZ",
+        "b": "300456.SZ",
+        "concepts": [
+          "ltheme:ths:300180",
+          "ltheme:ths:300795",
+          "ltheme:ths:309055"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "002465.SZ",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:301786",
+          "ltheme:ths:309055",
+          "ltheme:ths:309128"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "300342.SZ",
+        "b": "300456.SZ",
+        "concepts": [
+          "ltheme:ths:300722",
+          "ltheme:ths:300795",
+          "ltheme:ths:309055"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "300342.SZ",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:301786",
+          "ltheme:ths:309055",
+          "ltheme:ths:309128"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "300456.SZ",
+        "b": "301205.SZ",
+        "concepts": [
+          "ltheme:ths:300843",
+          "ltheme:ths:308642",
+          "ltheme:ths:309049"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "300456.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:300843",
+          "ltheme:ths:308828",
+          "ltheme:ths:309049"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "300476.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:308828",
+          "ltheme:ths:308832",
+          "ltheme:ths:309049"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "600877.SS",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:301546",
+          "ltheme:ths:309051",
+          "ltheme:ths:309055"
+        ],
+        "shared": 3
+      },
+      {
+        "a": "000837.SZ",
+        "b": "300353.SZ",
+        "concepts": [
+          "ltheme:ths:300200",
+          "ltheme:ths:300941"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "002396.SZ",
+        "b": "301205.SZ",
+        "concepts": [
+          "ltheme:ths:308642",
+          "ltheme:ths:309049"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "002396.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:309034",
+          "ltheme:ths:309049"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "002518.SZ",
+        "b": "300442.SZ",
+        "concepts": [
+          "ltheme:ths:308366",
+          "ltheme:ths:308828"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "002518.SZ",
+        "b": "300456.SZ",
+        "concepts": [
+          "ltheme:ths:308642",
+          "ltheme:ths:308828"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "002518.SZ",
+        "b": "300476.SZ",
+        "concepts": [
+          "ltheme:ths:308642",
+          "ltheme:ths:308828"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "002518.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:300200",
+          "ltheme:ths:301558"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300342.SZ",
+        "b": "300353.SZ",
+        "concepts": [
+          "ltheme:ths:301786",
+          "ltheme:ths:309128"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300342.SZ",
+        "b": "301592.SZ",
+        "concepts": [
+          "ltheme:ths:300082",
+          "ltheme:ths:309128"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300353.SZ",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:301786",
+          "ltheme:ths:309128"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300442.SZ",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:308366",
+          "ltheme:ths:309187"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300476.SZ",
+        "b": "300757.SZ",
+        "concepts": [
+          "ltheme:ths:307954",
+          "ltheme:ths:309065"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300476.SZ",
+        "b": "301205.SZ",
+        "concepts": [
+          "ltheme:ths:308642",
+          "ltheme:ths:309049"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "300757.SZ",
+        "b": "688726.SS",
+        "concepts": [
+          "ltheme:ths:308992",
+          "ltheme:ths:309084"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "301205.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:300843",
+          "ltheme:ths:309049"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "600259.SS",
+        "b": "600392.SS",
+        "concepts": [
+          "ltheme:ths:300382",
+          "ltheme:ths:300809"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "600877.SS",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:308791",
+          "ltheme:ths:309086"
+        ],
+        "shared": 2
+      },
+      {
+        "a": "000048.SZ",
+        "b": "002396.SZ",
+        "concepts": [
+          "ltheme:ths:300806"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "000048.SZ",
+        "b": "300476.SZ",
+        "concepts": [
+          "ltheme:ths:300836"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "000837.SZ",
+        "b": "002518.SZ",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "000837.SZ",
+        "b": "002706.SZ",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "000837.SZ",
+        "b": "603319.SS",
+        "concepts": [
+          "ltheme:ths:309000"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "000837.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002149.SZ",
+        "b": "002240.SZ",
+        "concepts": [
+          "ltheme:ths:300809"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002149.SZ",
+        "b": "002549.SZ",
+        "concepts": [
+          "ltheme:ths:308850"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002149.SZ",
+        "b": "600259.SS",
+        "concepts": [
+          "ltheme:ths:300809"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002149.SZ",
+        "b": "600392.SS",
+        "concepts": [
+          "ltheme:ths:300809"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002149.SZ",
+        "b": "688102.SS",
+        "concepts": [
+          "ltheme:ths:309108"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002149.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:300105"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002240.SZ",
+        "b": "600259.SS",
+        "concepts": [
+          "ltheme:ths:300809"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002240.SZ",
+        "b": "600392.SS",
+        "concepts": [
+          "ltheme:ths:300809"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002354.SZ",
+        "b": "002396.SZ",
+        "concepts": [
+          "ltheme:ths:301227"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002354.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:300019"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002354.SZ",
+        "b": "688327.SS",
+        "concepts": [
+          "ltheme:ths:309037"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "002465.SZ",
+        "concepts": [
+          "ltheme:ths:308535"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "300353.SZ",
+        "concepts": [
+          "ltheme:ths:300756"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "300442.SZ",
+        "concepts": [
+          "ltheme:ths:308366"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "600877.SS",
+        "concepts": [
+          "ltheme:ths:308791"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "601231.SS",
+        "concepts": [
+          "ltheme:ths:308791"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "603319.SS",
+        "concepts": [
+          "ltheme:ths:302010"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "603328.SS",
+        "concepts": [
+          "ltheme:ths:301715"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "688205.SS",
+        "concepts": [
+          "ltheme:ths:308977"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "688252.SS",
+        "concepts": [
+          "ltheme:ths:308366"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "688327.SS",
+        "concepts": [
+          "ltheme:ths:301209"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002396.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:301558"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002465.SZ",
+        "b": "301592.SZ",
+        "concepts": [
+          "ltheme:ths:309128"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002465.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:300642"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002465.SZ",
+        "b": "600877.SS",
+        "concepts": [
+          "ltheme:ths:309055"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002518.SZ",
+        "b": "002706.SZ",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002518.SZ",
+        "b": "300353.SZ",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002518.SZ",
+        "b": "301205.SZ",
+        "concepts": [
+          "ltheme:ths:308642"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002518.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:308828"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002518.SZ",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:308366"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002518.SZ",
+        "b": "688252.SS",
+        "concepts": [
+          "ltheme:ths:308366"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002549.SZ",
+        "b": "600673.SS",
+        "concepts": [
+          "ltheme:ths:300085"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002549.SZ",
+        "b": "688331.SS",
+        "concepts": [
+          "ltheme:ths:301252"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002706.SZ",
+        "b": "300353.SZ",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002706.SZ",
+        "b": "301005.SZ",
+        "concepts": [
+          "ltheme:ths:308775"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002706.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002922.SZ",
+        "b": "688252.SS",
+        "concepts": [
+          "ltheme:ths:308806"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "002922.SZ",
+        "b": "688411.SS",
+        "concepts": [
+          "ltheme:ths:309169"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300014.SZ",
+        "b": "301345.SZ",
+        "concepts": [
+          "ltheme:ths:301248"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300342.SZ",
+        "b": "600877.SS",
+        "concepts": [
+          "ltheme:ths:309055"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300353.SZ",
+        "b": "301592.SZ",
+        "concepts": [
+          "ltheme:ths:309128"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300353.SZ",
+        "b": "688327.SS",
+        "concepts": [
+          "ltheme:ths:308887"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300353.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:300200"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300442.SZ",
+        "b": "300456.SZ",
+        "concepts": [
+          "ltheme:ths:308828"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300442.SZ",
+        "b": "300476.SZ",
+        "concepts": [
+          "ltheme:ths:308828"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300442.SZ",
+        "b": "600601.SS",
+        "concepts": [
+          "ltheme:ths:308828"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300442.SZ",
+        "b": "688252.SS",
+        "concepts": [
+          "ltheme:ths:308366"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300442.SZ",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:309187"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300456.SZ",
+        "b": "300757.SZ",
+        "concepts": [
+          "ltheme:ths:308527"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300456.SZ",
+        "b": "600877.SS",
+        "concepts": [
+          "ltheme:ths:309055"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300456.SZ",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:300378"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300456.SZ",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:309055"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300456.SZ",
+        "b": "688726.SS",
+        "concepts": [
+          "ltheme:ths:308700"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300476.SZ",
+        "b": "603319.SS",
+        "concepts": [
+          "ltheme:ths:301121"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300476.SZ",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:300378"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300476.SZ",
+        "b": "688327.SS",
+        "concepts": [
+          "ltheme:ths:309121"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300757.SZ",
+        "b": "601231.SS",
+        "concepts": [
+          "ltheme:ths:300309"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300757.SZ",
+        "b": "688205.SS",
+        "concepts": [
+          "ltheme:ths:309151"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300953.SZ",
+        "b": "301031.SZ",
+        "concepts": [
+          "ltheme:ths:309106"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "300953.SZ",
+        "b": "603319.SS",
+        "concepts": [
+          "ltheme:ths:309113"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "301358.SZ",
+        "b": "600259.SS",
+        "concepts": [
+          "ltheme:ths:301577"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "301592.SZ",
+        "b": "600877.SS",
+        "concepts": [
+          "ltheme:ths:309154"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "301592.SZ",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:309128"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "600259.SS",
+        "b": "600877.SS",
+        "concepts": [
+          "ltheme:ths:301546"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "600259.SS",
+        "b": "688375.SS",
+        "concepts": [
+          "ltheme:ths:301546"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "600259.SS",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:308428"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "600330.SS",
+        "b": "603119.SS",
+        "concepts": [
+          "ltheme:ths:308432"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "600877.SS",
+        "b": "601231.SS",
+        "concepts": [
+          "ltheme:ths:308791"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "601231.SS",
+        "b": "688018.SS",
+        "concepts": [
+          "ltheme:ths:308791"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "601231.SS",
+        "b": "688327.SS",
+        "concepts": [
+          "ltheme:ths:308752"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "688018.SS",
+        "b": "688252.SS",
+        "concepts": [
+          "ltheme:ths:308366"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "688018.SS",
+        "b": "688676.SS",
+        "concepts": [
+          "ltheme:ths:309187"
+        ],
+        "shared": 1
+      },
+      {
+        "a": "688102.SS",
+        "b": "688469.SS",
+        "concepts": [
+          "ltheme:ths:300353"
+        ],
+        "shared": 1
+      }
+    ],
+    "zero_membership_ids": [
+      "300763.SZ"
+    ],
+    "zero_membership_note": "a different failure from isolation: no vocabulary at all, rather than no shared vocabulary"
+  },
+  "case_d_breadth": {
+    "breadth_distribution": {
+      "concepts_with_live_members": 505,
+      "max_members": 34,
+      "median_members": 10,
+      "p90_members": 19
+    },
+    "broad_only_ids": [
+      "300274.SZ",
+      "301358.SZ",
+      "600301.SS",
+      "603156.SS"
+    ],
+    "floor_note": "a REPORT PARAMETER, not a truth claim about where 'too broad' begins; the distribution below is what it should be read against",
+    "reporting_floor_members": 25
+  },
+  "generated_at": "2026-08-15T02:33:02Z",
+  "input": {
+    "ids_file": "/tmp/cn_more_ids.txt",
+    "n_supplied": 83,
+    "source_artifact": "site/factordata/china_standouts.json#more_actionable",
+    "source_asof": "2026-08-14"
+  },
+  "membership_detail": {
+    "000048.SZ": [
+      "ltheme:ths:300451",
+      "ltheme:ths:300806",
+      "ltheme:ths:300836",
+      "ltheme:ths:301576"
+    ],
+    "000837.SZ": [
+      "ltheme:ths:300200",
+      "ltheme:ths:300941",
+      "ltheme:ths:309000"
+    ],
+    "002149.SZ": [
+      "ltheme:ths:300105",
+      "ltheme:ths:300809",
+      "ltheme:ths:308467",
+      "ltheme:ths:308850",
+      "ltheme:ths:309056",
+      "ltheme:ths:309108"
+    ],
+    "002240.SZ": [
+      "ltheme:ths:300809"
+    ],
+    "002354.SZ": [
+      "ltheme:ths:300019",
+      "ltheme:ths:301050",
+      "ltheme:ths:301227",
+      "ltheme:ths:302027",
+      "ltheme:ths:309037",
+      "ltheme:ths:309093"
+    ],
+    "002396.SZ": [
+      "ltheme:ths:300188",
+      "ltheme:ths:300378",
+      "ltheme:ths:300756",
+      "ltheme:ths:300806",
+      "ltheme:ths:300920",
+      "ltheme:ths:301209",
+      "ltheme:ths:301227",
+      "ltheme:ths:301236",
+      "ltheme:ths:301558",
+      "ltheme:ths:301715",
+      "ltheme:ths:301997",
+      "ltheme:ths:302010",
+      "ltheme:ths:308366",
+      "ltheme:ths:308535",
+      "ltheme:ths:308642",
+      "ltheme:ths:308731",
+      "ltheme:ths:308791",
+      "ltheme:ths:308977",
+      "ltheme:ths:309020",
+      "ltheme:ths:309034",
+      "ltheme:ths:309049",
+      "ltheme:ths:309184",
+      "ltheme:ths:309264"
+    ],
+    "002465.SZ": [
+      "ltheme:ths:300180",
+      "ltheme:ths:300236",
+      "ltheme:ths:300642",
+      "ltheme:ths:300795",
+      "ltheme:ths:301786",
+      "ltheme:ths:308531",
+      "ltheme:ths:308535",
+      "ltheme:ths:309055",
+      "ltheme:ths:309128",
+      "ltheme:ths:309177"
+    ],
+    "002518.SZ": [
+      "ltheme:ths:300200",
+      "ltheme:ths:300682",
+      "ltheme:ths:300786",
+      "ltheme:ths:301365",
+      "ltheme:ths:301491",
+      "ltheme:ths:301558",
+      "ltheme:ths:306912",
+      "ltheme:ths:308366",
+      "ltheme:ths:308642",
+      "ltheme:ths:308828"
+    ],
+    "002534.SZ": [
+      "ltheme:ths:300223",
+      "ltheme:ths:301174"
+    ],
+    "002549.SZ": [
+      "ltheme:ths:300085",
+      "ltheme:ths:301252",
+      "ltheme:ths:308850"
+    ],
+    "002706.SZ": [
+      "ltheme:ths:300200",
+      "ltheme:ths:308775"
+    ],
+    "002922.SZ": [
+      "ltheme:ths:308806",
+      "ltheme:ths:309169"
+    ],
+    "300014.SZ": [
+      "ltheme:ths:301248"
+    ],
+    "300274.SZ": [
+      "ltheme:ths:308718"
+    ],
+    "300342.SZ": [
+      "ltheme:ths:300082",
+      "ltheme:ths:300722",
+      "ltheme:ths:300795",
+      "ltheme:ths:300814",
+      "ltheme:ths:301786",
+      "ltheme:ths:309055",
+      "ltheme:ths:309115",
+      "ltheme:ths:309128",
+      "ltheme:ths:309130"
+    ],
+    "300353.SZ": [
+      "ltheme:ths:300200",
+      "ltheme:ths:300402",
+      "ltheme:ths:300756",
+      "ltheme:ths:300941",
+      "ltheme:ths:301786",
+      "ltheme:ths:302182",
+      "ltheme:ths:308531",
+      "ltheme:ths:308761",
+      "ltheme:ths:308887",
+      "ltheme:ths:309128"
+    ],
+    "300442.SZ": [
+      "ltheme:ths:308366",
+      "ltheme:ths:308828",
+      "ltheme:ths:309068",
+      "ltheme:ths:309187"
+    ],
+    "300456.SZ": [
+      "ltheme:ths:300168",
+      "ltheme:ths:300180",
+      "ltheme:ths:300378",
+      "ltheme:ths:300722",
+      "ltheme:ths:300795",
+      "ltheme:ths:300843",
+      "ltheme:ths:300889",
+      "ltheme:ths:301016",
+      "ltheme:ths:301286",
+      "ltheme:ths:301471",
+      "ltheme:ths:307816",
+      "ltheme:ths:308527",
+      "ltheme:ths:308642",
+      "ltheme:ths:308700",
+      "ltheme:ths:308828",
+      "ltheme:ths:309004",
+      "ltheme:ths:309049",
+      "ltheme:ths:309055",
+      "ltheme:ths:309085",
+      "ltheme:ths:309089"
+    ],
+    "300476.SZ": [
+      "ltheme:ths:300037",
+      "ltheme:ths:300378",
+      "ltheme:ths:300836",
+      "ltheme:ths:301121",
+      "ltheme:ths:307954",
+      "ltheme:ths:308642",
+      "ltheme:ths:308828",
+      "ltheme:ths:308832",
+      "ltheme:ths:309049",
+      "ltheme:ths:309065",
+      "ltheme:ths:309119",
+      "ltheme:ths:309120",
+      "ltheme:ths:309121",
+      "ltheme:ths:309127"
+    ],
+    "300723.SZ": [
+      "ltheme:ths:300106",
+      "ltheme:ths:308822",
+      "ltheme:ths:308941"
+    ],
+    "300757.SZ": [
+      "ltheme:ths:300309",
+      "ltheme:ths:300830",
+      "ltheme:ths:307954",
+      "ltheme:ths:308527",
+      "ltheme:ths:308992",
+      "ltheme:ths:309065",
+      "ltheme:ths:309084",
+      "ltheme:ths:309151"
+    ],
+    "300763.SZ": [],
+    "300953.SZ": [
+      "ltheme:ths:309106",
+      "ltheme:ths:309113"
+    ],
+    "301005.SZ": [
+      "ltheme:ths:308775"
+    ],
+    "301031.SZ": [
+      "ltheme:ths:309106"
+    ],
+    "301205.SZ": [
+      "ltheme:ths:300843",
+      "ltheme:ths:308642",
+      "ltheme:ths:309049"
+    ],
+    "301345.SZ": [
+      "ltheme:ths:301248"
+    ],
+    "301358.SZ": [
+      "ltheme:ths:301577"
+    ],
+    "301592.SZ": [
+      "ltheme:ths:300082",
+      "ltheme:ths:309128",
+      "ltheme:ths:309154"
+    ],
+    "301662.SZ": [
+      "ltheme:ths:301096"
+    ],
+    "600259.SS": [
+      "ltheme:ths:300382",
+      "ltheme:ths:300704",
+      "ltheme:ths:300809",
+      "ltheme:ths:301546",
+      "ltheme:ths:301577",
+      "ltheme:ths:308428"
+    ],
+    "600301.SS": [
+      "ltheme:ths:301582",
+      "ltheme:ths:308864"
+    ],
+    "600330.SS": [
+      "ltheme:ths:308432"
+    ],
+    "600392.SS": [
+      "ltheme:ths:300382",
+      "ltheme:ths:300809"
+    ],
+    "600601.SS": [
+      "ltheme:ths:300019",
+      "ltheme:ths:300642",
+      "ltheme:ths:300843",
+      "ltheme:ths:308828",
+      "ltheme:ths:308832",
+      "ltheme:ths:309034",
+      "ltheme:ths:309049"
+    ],
+    "600673.SS": [
+      "ltheme:ths:300085",
+      "ltheme:ths:300926",
+      "ltheme:ths:308716"
+    ],
+    "600877.SS": [
+      "ltheme:ths:300723",
+      "ltheme:ths:301546",
+      "ltheme:ths:308791",
+      "ltheme:ths:309051",
+      "ltheme:ths:309055",
+      "ltheme:ths:309060",
+      "ltheme:ths:309086",
+      "ltheme:ths:309154"
+    ],
+    "601231.SS": [
+      "ltheme:ths:300309",
+      "ltheme:ths:308752",
+      "ltheme:ths:308791",
+      "ltheme:ths:309136"
+    ],
+    "603119.SS": [
+      "ltheme:ths:308432"
+    ],
+    "603156.SS": [
+      "ltheme:ths:306750"
+    ],
+    "603308.SS": [
+      "ltheme:ths:301424"
+    ],
+    "603319.SS": [
+      "ltheme:ths:300220",
+      "ltheme:ths:301121",
+      "ltheme:ths:302010",
+      "ltheme:ths:308805",
+      "ltheme:ths:309000",
+      "ltheme:ths:309113"
+    ],
+    "603328.SS": [
+      "ltheme:ths:301715"
+    ],
+    "688018.SS": [
+      "ltheme:ths:300378",
+      "ltheme:ths:300917",
+      "ltheme:ths:300920",
+      "ltheme:ths:301278",
+      "ltheme:ths:308300",
+      "ltheme:ths:308366",
+      "ltheme:ths:308791",
+      "ltheme:ths:308870",
+      "ltheme:ths:309086",
+      "ltheme:ths:309183",
+      "ltheme:ths:309187"
+    ],
+    "688102.SS": [
+      "ltheme:ths:300353",
+      "ltheme:ths:309108"
+    ],
+    "688205.SS": [
+      "ltheme:ths:308977",
+      "ltheme:ths:309151"
+    ],
+    "688252.SS": [
+      "ltheme:ths:302131",
+      "ltheme:ths:308366",
+      "ltheme:ths:308806"
+    ],
+    "688327.SS": [
+      "ltheme:ths:301166",
+      "ltheme:ths:301209",
+      "ltheme:ths:301494",
+      "ltheme:ths:308606",
+      "ltheme:ths:308752",
+      "ltheme:ths:308794",
+      "ltheme:ths:308887",
+      "ltheme:ths:309037",
+      "ltheme:ths:309121"
+    ],
+    "688331.SS": [
+      "ltheme:ths:301252"
+    ],
+    "688375.SS": [
+      "ltheme:ths:301546",
+      "ltheme:ths:301786",
+      "ltheme:ths:309051",
+      "ltheme:ths:309055",
+      "ltheme:ths:309128"
+    ],
+    "688411.SS": [
+      "ltheme:ths:309169"
+    ],
+    "688469.SS": [
+      "ltheme:ths:300353",
+      "ltheme:ths:308690"
+    ],
+    "688676.SS": [
+      "ltheme:ths:300105",
+      "ltheme:ths:300200",
+      "ltheme:ths:301558",
+      "ltheme:ths:308428",
+      "ltheme:ths:308479",
+      "ltheme:ths:308753",
+      "ltheme:ths:309187",
+      "ltheme:ths:309261"
+    ],
+    "688726.SS": [
+      "ltheme:ths:308700",
+      "ltheme:ths:308991",
+      "ltheme:ths:308992",
+      "ltheme:ths:309084"
+    ]
+  },
+  "resolved": 54,
+  "rule": "coverage_gaps.v1 (mechanical, LLM-free; case A co-occurrence + case D breadth signal). Cases B/C need theme_discovery clusters and co-movement state — deferred to W3B, where those inputs exist.",
+  "supplied": 83,
+  "unresolved": {
+    "000065.SZ": "no company node with this id or symbol",
+    "000628.SZ": "no company node with this id or symbol",
+    "001267.SZ": "no company node with this id or symbol",
+    "002023.SZ": "no company node with this id or symbol",
+    "002326.SZ": "no company node with this id or symbol",
+    "002531.SZ": "no company node with this id or symbol",
+    "002913.SZ": "no company node with this id or symbol",
+    "002925.SZ": "no company node with this id or symbol",
+    "300001.SZ": "no company node with this id or symbol",
+    "300045.SZ": "no company node with this id or symbol",
+    "300593.SZ": "no company node with this id or symbol",
+    "300687.SZ": "no company node with this id or symbol",
+    "300913.SZ": "no company node with this id or symbol",
+    "301216.SZ": "no company node with this id or symbol",
+    "301421.SZ": "no company node with this id or symbol",
+    "301487.SZ": "no company node with this id or symbol",
+    "301631.SZ": "no company node with this id or symbol",
+    "600396.SS": "no company node with this id or symbol",
+    "603127.SS": "no company node with this id or symbol",
+    "603530.SS": "no company node with this id or symbol",
+    "603667.SS": "no company node with this id or symbol",
+    "603876.SS": "no company node with this id or symbol",
+    "605198.SS": "no company node with this id or symbol",
+    "688068.SS": "no company node with this id or symbol",
+    "688083.SS": "no company node with this id or symbol",
+    "688153.SS": "no company node with this id or symbol",
+    "688190.SS": "no company node with this id or symbol",
+    "688690.SS": "no company node with this id or symbol",
+    "688717.SS": "no company node with this id or symbol"
+  }
+}

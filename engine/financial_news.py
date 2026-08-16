@@ -34,6 +34,7 @@ from contextvars import ContextVar
 from datetime import date, datetime, timedelta, timezone
 
 from lib import config
+from lib.massive_ticker import vendor_join_key
 from engine import news_common as nc
 from engine import qbus as _qbus          # W2: unified item/event store
 from engine import news_events as _ne     # W2: event-identity layer (display-only)
@@ -262,6 +263,36 @@ def _normalise(title: str, url: str, domain: str, seendate: str, source: str,
 # --------------------------------------------------------------------------- #
 # Polygon — ticker-tagged corpus
 # --------------------------------------------------------------------------- #
+def _polygon_articles(results: list[dict], now: datetime) -> list[dict]:
+    """Normalise Polygon rows without folding its case-sensitive ticker identity."""
+    out: list[dict] = []
+    crawled_at = now.isoformat()
+    for a in results:
+        ins = {vendor_join_key(i.get("ticker")): i.get("sentiment")
+               for i in (a.get("insights") or []) if isinstance(i, dict)
+               and vendor_join_key(i.get("ticker"))}
+        tks = [vendor_join_key(t) for t in (a.get("tickers") or [])
+               if vendor_join_key(t)]
+        sent = None
+        for t in tks:                       # first non-neutral insight as a hint
+            s = ins.get(t)
+            if s in ("positive", "negative"):
+                sent = {"positive": "pos", "negative": "neg"}[s]
+                break
+        pub = (a.get("publisher") or {})
+        dom = _domain_of(pub.get("homepage_url") or a.get("article_url", ""))
+        h = _normalise(a.get("title", ""), a.get("article_url", ""), dom,
+                       a.get("published_utc", ""), pub.get("name", dom), tks,
+                       a.get("description", ""), sent, "polygon", 1.0, now,
+                       _crawled_at=crawled_at)
+        if h:
+            h["per_ticker_sentiment"] = {k: {"positive": "pos", "negative": "neg",
+                                              "neutral": "neutral"}.get(v)
+                                          for k, v in ins.items()}
+            out.append(h)
+    return out
+
+
 def _polygon_news(cfg: dict, now: datetime) -> tuple[list[dict], str]:
     """Returns (items, detail) where detail is 'ok'|'no_key'|'http_<code>'|'exception'|'no_rows'."""
     key = config.secret("POLYGON_API_KEY") or config.secret("MASSIVE_API_KEY")
@@ -271,36 +302,13 @@ def _polygon_news(cfg: dict, now: datetime) -> tuple[list[dict], str]:
     since = (now - timedelta(days=int(cfg.get("window_days", 3)))).date().isoformat()
     params = {"order": "desc", "sort": "published_utc", "limit": "1000",
               "published_utc.gte": since, "apiKey": key}
-    out: list[dict] = []
-    crawled_at = now.isoformat()   # W2: stamp at ingest boundary
     try:
         import requests
         r = requests.get("https://api.polygon.io/v2/reference/news", params=params, timeout=30)
         if r.status_code != 200:
             log.warning("polygon news http %s", r.status_code)
             return [], f"http_{r.status_code}"
-        results = r.json().get("results", []) or []
-        for a in results:
-            ins = {i.get("ticker"): i.get("sentiment") for i in (a.get("insights") or [])
-                   if isinstance(i, dict)}
-            tks = [t.upper() for t in (a.get("tickers") or []) if t]
-            sent = None
-            for t in tks:                       # first non-neutral insight as a hint
-                s = ins.get(t)
-                if s in ("positive", "negative"):
-                    sent = {"positive": "pos", "negative": "neg"}[s]
-                    break
-            pub = (a.get("publisher") or {})
-            dom = _domain_of(pub.get("homepage_url") or a.get("article_url", ""))
-            h = _normalise(a.get("title", ""), a.get("article_url", ""), dom,
-                           a.get("published_utc", ""), pub.get("name", dom), tks,
-                           a.get("description", ""), sent, "polygon", 1.0, now,
-                           _crawled_at=crawled_at)
-            if h:
-                h["per_ticker_sentiment"] = {k: {"positive": "pos", "negative": "neg",
-                                                 "neutral": "neutral"}.get(v)
-                                             for k, v in ins.items()}
-                out.append(h)
+        out = _polygon_articles(r.json().get("results", []) or [], now)
         return out, ("ok" if out else "no_rows")
     except Exception as e:  # noqa: BLE001
         log.warning("polygon news failed (%s)", e)

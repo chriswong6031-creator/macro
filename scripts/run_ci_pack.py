@@ -15,9 +15,10 @@ get freshly recreated virtual environments; only jobs whose install commands
 are byte-identical share an environment.
 
 Which jobs land in which pack is decided ONCE, by ``build_plan``, and published
-as a hashed ``CIPackPlan`` (``--plan-only``).  Each pack recomputes the same
-pure function and refuses to run when its hash disagrees (``--expect-plan-sha``),
-so twelve runners can never quietly disagree about what the suite is.
+as a hashed ``CIPackPlan`` (``--plan-only``). Each pack consumes that exact JSON
+artifact, validates its hash/tree/head/base and manifest execution contracts,
+and never recomputes selection or partition, so twelve runners cannot quietly
+disagree about what the suite is.
 
 The validator is intentionally fail-closed.  A future job using services,
 containers, per-step conditions/environments, or an unfamiliar action must
@@ -30,17 +31,22 @@ destructive by design.  Local callers can safely use ``--validate-only``.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import functools
 import hashlib
 import json
 import os
 import re
+import signal
 import shutil
 import subprocess
 import sys
+import tempfile
+import threading
+import time
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 import yaml
 
@@ -49,11 +55,57 @@ import yaml
 # it identically; conditional pins can silently prefer an installed namesake.
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from scripts.ci_semantic_proof import (  # noqa: E402
+    FRAGMENT_SCHEMA,
+    PLAN_SCHEMA,
+    FailureAtomCollector,
+    SemanticProofError,
+    effective_proof_id,
+    job_exec_sha256,
+    step_spec_sha256,
+)
+from scripts.ci_authority_paths import (  # noqa: E402
+    AuthorityPathError,
+    is_ci_authority_path,
+)
+
 
 PACK_JOB_ID = "ci-pack"
 DISABLED_IF = "${{ false }}"
 ALLOWED_JOB_KEYS = {"if", "paths", "runs-on", "scope", "steps", "timeout-minutes"}
-ALLOWED_STEP_KEYS = {"name", "run", "uses", "with"}
+ALLOWED_STEP_KEYS = {"name", "proof_id", "run", "uses", "with"}
+
+# Changing any item in this string changes the job execution contract digest.
+# It deliberately describes only the infrastructure shared by all legacy jobs;
+# pack index and matrix position are transport trivia and never enter it.
+RUNNER_CONTRACT = "ci-pack/ubuntu-latest/python-3.12/node-20/v1"
+
+# Failure output is streamed live.  These caps cover only the small structured
+# atom collector retained alongside the stream; raw logs never enter evidence.
+FAILURE_CAPTURE_MAX_BYTES = 131_072
+FAILURE_CAPTURE_MAX_ATOMS = 64
+FAILURE_CAPTURE_MAX_LINE_BYTES = 4_096
+
+DEFAULT_BASE_REPLAY_BUDGET_SECONDS = 15 * 60
+SEMANTIC_DETAIL_MAX_BYTES = 1_024
+
+# Repo-binding Git variables must never reach a legacy step OR a runner
+# probe.  Injecting GIT_DIR/GIT_WORK_TREE into the job env (PR #5750,
+# 2026-08-15) made every child `git` operate on the pack checkout.  The
+# follow-up pack-9 own-red was the same family: the post-step
+# ``for-each-ref`` probe still bound GIT_DIR and exited 128, and a
+# timeout SIGKILL left packed-refs unreadable.  Runner-owned probes use
+# cwd/`git -C` discovery, set GIT_OPTIONAL_LOCKS=0, and heal a smashed
+# ref store so the next job still sees tests/*.py.
+REPO_BINDING_GIT_VARS = (
+    "GIT_DIR",
+    "GIT_WORK_TREE",
+    "GIT_INDEX_FILE",
+    "GIT_OBJECT_DIRECTORY",
+    "GIT_ALTERNATE_OBJECT_DIRECTORIES",
+    "GIT_COMMON_DIR",
+    "GIT_NAMESPACE",
+)
 
 # ---------------------------------------------------------------------------
 # Changed-path scoping (2026-08-09)
@@ -273,6 +325,187 @@ class LegacyJob:
     def is_scoped(self) -> bool:
         """Whether ANY tier can narrow this job off a diff."""
         return bool(self.paths or self.fallback_paths)
+
+
+@dataclass(frozen=True)
+class SemanticStepSpec:
+    """Stable semantic identity and execution contract for one manifest step."""
+
+    proof_id: str
+    step_spec_sha256: str
+    display_name: str = field(compare=False)
+    step_index: int = field(compare=False)
+    raw_step: Mapping[str, Any] = field(compare=False, repr=False)
+
+    def plan_dict(self) -> dict[str, str]:
+        # The display name and ordinal are diagnostics, never proof identity.
+        return {
+            "proof_id": self.proof_id,
+            "step_spec_sha256": self.step_spec_sha256,
+        }
+
+
+@dataclass(frozen=True)
+class SemanticJobSpec:
+    """Expected proof surface for one selected logical job."""
+
+    logical_job_id: str
+    pack_index: int
+    job_exec_sha256: str
+    steps: tuple[SemanticStepSpec, ...]
+
+    def plan_dict(self) -> dict[str, Any]:
+        return {
+            "logical_job_id": self.logical_job_id,
+            "pack_index": self.pack_index,
+            "job_exec_sha256": self.job_exec_sha256,
+            "steps": [step.plan_dict() for step in self.steps],
+        }
+
+
+@dataclass(frozen=True)
+class CommandObservation:
+    """One streamed command outcome without retained raw output."""
+
+    outcome: str
+    returncode: int | None
+    failure_signature: Mapping[str, Any] | None = None
+    detail: str | None = None
+
+
+@dataclass(frozen=True)
+class JobExecution:
+    """Raw facts produced by one logical job on one tree."""
+
+    logical_job_id: str
+    job_exec_sha256: str
+    infrastructure: Mapping[str, Any]
+    steps: tuple[Mapping[str, Any], ...]
+    failure: str | None
+
+    def fragment_dict(self) -> dict[str, Any]:
+        return {
+            "logical_job_id": self.logical_job_id,
+            "job_exec_sha256": self.job_exec_sha256,
+            "infrastructure": dict(self.infrastructure),
+            "steps": [dict(step) for step in self.steps],
+        }
+
+
+def _bounded_detail(value: object, *, limit: int = SEMANTIC_DETAIL_MAX_BYTES) -> str:
+    """Return a deterministic one-line diagnostic with a strict UTF-8 bound."""
+    text = _one_line(str(value))
+    encoded = text.encode("utf-8", "replace")
+    if len(encoded) <= limit:
+        return text
+    suffix = "…[truncated]".encode("utf-8")
+    return (encoded[: max(0, limit - len(suffix))] + suffix).decode(
+        "utf-8", "ignore"
+    )
+
+
+def _is_dependency_step(step: Mapping[str, Any]) -> bool:
+    command = str(step.get("run", ""))
+    return bool(command and "pip install" in command)
+
+
+def _provided_action_spec(step: Mapping[str, Any]) -> dict[str, Any]:
+    """Return one action contract the pack runner implements exactly.
+
+    A broad ``actions/checkout@`` prefix is not an execution contract. In
+    particular, four legacy jobs request full history while the transport
+    checkout is deliberately shallow. Keep the accepted surface closed so a
+    new action version/input cannot be silently skipped by the pack runner.
+    """
+    uses = step.get("uses")
+    raw_with = step.get("with")
+    if raw_with is None:
+        inputs: dict[str, Any] = {}
+    elif isinstance(raw_with, Mapping):
+        inputs = dict(raw_with)
+    else:
+        raise ManifestError("action with must be a mapping")
+    contract = {"uses": uses, "with": inputs}
+    allowed = (
+        {"uses": "actions/checkout@v4", "with": {}},
+        {"uses": "actions/checkout@v4", "with": {"fetch-depth": 0}},
+        {
+            "uses": "actions/setup-python@v5",
+            "with": {"python-version": "3.12"},
+        },
+        {"uses": "actions/setup-node@v4", "with": {"node-version": "20"}},
+    )
+    if contract not in allowed:
+        raise ManifestError(
+            "action is not provided by the pack runner with these exact inputs: "
+            + json.dumps(contract, sort_keys=True, separators=(",", ":"))
+        )
+    return contract
+
+
+def _job_action_contract(job: LegacyJob) -> tuple[dict[str, Any], ...]:
+    return tuple(
+        _provided_action_spec(step)
+        for step in job.definition.get("steps", [])
+        if isinstance(step, Mapping) and "uses" in step
+    )
+
+
+def semantic_step_specs(job: LegacyJob) -> tuple[SemanticStepSpec, ...]:
+    """Return every executable semantic step in manifest order.
+
+    Checkout/setup actions and the validated standalone dependency install are
+    infrastructure.  They intentionally receive no proof identity.
+    """
+    specs: list[SemanticStepSpec] = []
+    seen: dict[str, int] = {}
+    for index, step in enumerate(job.definition.get("steps", [])):
+        if not isinstance(step, Mapping) or "run" not in step:
+            continue
+        if _is_dependency_step(step):
+            continue
+        try:
+            proof_id = effective_proof_id(step)
+            digest = step_spec_sha256(step)
+        except SemanticProofError as exc:
+            raise ManifestError(
+                f"job {job.job_id!r} step {index + 1} has invalid semantic "
+                f"identity: {exc}"
+            ) from exc
+        if proof_id in seen:
+            raise ManifestError(
+                f"job {job.job_id!r} semantic proof_id {proof_id!r} is not "
+                f"unique (steps {seen[proof_id] + 1} and {index + 1}); add "
+                "explicit proof_id values only to the ambiguous steps"
+            )
+        seen[proof_id] = index
+        specs.append(
+            SemanticStepSpec(
+                proof_id=proof_id,
+                step_spec_sha256=digest,
+                display_name=str(step.get("name") or ""),
+                step_index=index,
+                raw_step=step,
+            )
+        )
+    return tuple(specs)
+
+
+def semantic_job_digest(job: LegacyJob) -> str:
+    """Digest execution/environment inputs shared by all semantic steps."""
+    actions = _job_action_contract(job)
+    action_digest = hashlib.sha256(
+        json.dumps(
+            actions,
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
+    ).hexdigest()
+    return job_exec_sha256(
+        dependency_install_command=dependency_command(job),
+        timeout_minutes=job.definition.get("timeout-minutes"),
+        runner_contract=f"{RUNNER_CONTRACT}/actions-{action_digest}",
+    )
 
 
 @functools.lru_cache(maxsize=None)
@@ -527,7 +760,9 @@ def _decode_changed_files(raw: str | None) -> list[str] | None:
     every plan.  Semantics: the token ``null`` and every malformed shape widen
     to ``None``; a JSON array of strings narrows to exactly its non-empty
     entries, in the ORDER the planner resolved them (never sorted — the hash in
-    ``changed_files_digest`` pins that order).
+    ``changed_files_digest`` pins that order). The exact empty array remains an
+    empty list, distinct from ``null``/uncertainty, so an empty-diff plan can be
+    consumed under the same sha256 it published.
     """
     if raw is None:
         return None
@@ -542,6 +777,8 @@ def _decode_changed_files(raw: str | None) -> list[str] | None:
         isinstance(path, str) for path in parsed
     ):
         return None
+    if not parsed:
+        return []
     return [path for path in parsed if path] or None
 
 
@@ -569,10 +806,10 @@ def _read_changed_files_handle(handle: str | None) -> tuple[str, list[str]]:
     (nothing configured), ``unreadable`` (configured, but the artifact never
     landed or is not text), ``malformed`` (present and not a changed-file
     handle), ``null`` (the planner's affirmative "no list"), and ``list``
-    (paths).  Normalisation is ``_decode_changed_files``'s, exactly — an array
-    that survives to nothing is reported as ``null``, because that is what the
-    planner hashed it to, and two readers that normalise differently would
-    refuse every plan.
+    (paths, including the exact empty array). Normalisation is
+    ``_decode_changed_files``'s, exactly. A non-empty array made only of empty
+    strings remains ``null``/uncertain; literal ``[]`` remains a known empty
+    list because its digest differs from the planner's no-list sentinel.
     """
     if not handle:
         return "absent", []
@@ -593,6 +830,8 @@ def _read_changed_files_handle(handle: str | None) -> tuple[str, list[str]]:
         isinstance(path, str) for path in parsed
     ):
         return "malformed", []
+    if not parsed:
+        return "list", []
     paths = [path for path in parsed if path]
     return ("list", paths) if paths else ("null", [])
 
@@ -985,6 +1224,22 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 findings.append(
                     f"{step_prefix} uses unsupported action {step['uses']!r}"
                 )
+            if has_uses:
+                try:
+                    _provided_action_spec(step)
+                except ManifestError as exc:
+                    findings.append(f"{step_prefix} {exc}")
+            elif "with" in step:
+                findings.append(f"{step_prefix} run step must not declare with")
+            if has_uses and "proof_id" in step:
+                findings.append(
+                    f"{step_prefix} is infrastructure and must not declare proof_id"
+                )
+            if has_run and _is_dependency_step(step) and "proof_id" in step:
+                findings.append(
+                    f"{step_prefix} is dependency infrastructure and must not "
+                    "declare proof_id"
+                )
         installs = [
             str(step["run"])
             for step in steps
@@ -1026,16 +1281,19 @@ def load_legacy_jobs(path: Path) -> list[LegacyJob]:
                 "any pull request"
             )
 
-        legacy.append(
-            LegacyJob(
-                job_id=str(job_id),
-                definition=raw_definition,
-                ordinal=ordinal,
-                weight=_job_weight(str(job_id), raw_definition),
-                paths=scope,
-                exclusive=exclusive,
-            )
+        job = LegacyJob(
+            job_id=str(job_id),
+            definition=raw_definition,
+            ordinal=ordinal,
+            weight=_job_weight(str(job_id), raw_definition),
+            paths=scope,
+            exclusive=exclusive,
         )
+        try:
+            semantic_step_specs(job)
+        except ManifestError as exc:
+            findings.append(str(exc))
+        legacy.append(job)
 
     if findings:
         raise ManifestError("\n".join(findings))
@@ -1066,9 +1324,11 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
 # each loading the manifest, each running infer_job_scopes over 180 jobs, each
 # re-deciding the same partition from the same inputs.  That decision is a pure
 # function of (manifest, changed set, scope mode, pack count), so it is now
-# computed ONCE by `build_plan`, published by `ci-plan` as a hashed document,
-# and merely CHECKED by each pack (`--expect-plan-sha`).  Twelve runners
-# silently disagreeing about what the suite is becomes one loud red instead.
+# computed ONCE by `build_plan`, published by `ci-plan` as a hashed artifact,
+# and CONSUMED by each pack (`--plan-json`). Packs still load and validate the
+# current manifest's semantic contracts, but never re-run inference or decide a
+# partition. Twelve runners silently disagreeing about the suite becomes one
+# loud plan-identity error instead.
 #
 # What this does NOT buy at this revision, measured 2026-08-11 against the real
 # 180-job manifest: it saved ZERO packs THEN.  Scope inference derived scopes for
@@ -1078,26 +1338,19 @@ def partition_jobs(jobs: Iterable[LegacyJob], pack_count: int) -> list[list[Lega
 # (``exclude_peer_test_ownership``); a one-test-file PR must no longer emit
 # twelve packs.  The empty-pack machinery is load-bearing for that narrowing.
 #
-# Nor does planning once make the packs cheaper, and the arithmetic runs the
-# OTHER way, so do not write that it does.  `--expect-plan-sha` requires each
-# pack to RECOMPUTE the plan (a pack that trusted a handed-down partition would
-# prove nothing), and a pack has always had to derive the partition anyway to
-# know which jobs are its own.  So the twelve inference passes did not go away:
-# ci-plan adds a THIRTEENTH, and unlike the other twelve it is serialised ahead
-# of the whole matrix.  On a pull request that pass costs ~106 s locally over the
-# 180-job manifest (measured 2026-08-11; scope inference is the expensive half of
-# a plan, everything else is ~0.2 s).
+# Historical v1 packs recomputed the plan to check one output hash, so the
+# planner added a thirteenth inference pass. Semantic v2 cannot do that: the
+# plan now contains the complete expected `(logical_job_id, proof_id)` surface,
+# execution digests, and exact tree/head/base provenance. Recomputing selection
+# would create a second proof universe. Artifact consumption is therefore a
+# correctness requirement; avoiding the repeated inference is incidental.
 #
 # What plan-once buys at this revision is therefore exactly two things, both
-# correctness rather than speed: twelve runners can no longer silently disagree
-# about what the suite IS — a divergence is one loud red at pack N instead of a
-# green check name covering a partition nobody published — and there is a single
-# stable aggregate (`ci-gate`) for branch protection to name now that a PR may
-# legitimately publish a subset of ci-pack-0..11.  The saving arrives only when
-# selection narrows enough to empty a pack.
+# correctness: runners cannot silently disagree about what the suite IS, and
+# `ci-gate` receives one complete expected proof surface even when scoped CI
+# legitimately launches only a subset of ci-pack-0..11.
 # ---------------------------------------------------------------------------
 
-PLAN_SCHEMA = "ci.pack_plan.v1"
 PLAN_MARKER = "CI_PACK_PLAN="
 
 
@@ -1116,10 +1369,19 @@ class CIPackPlan:
     pack_jobs: tuple[tuple[str, ...], ...]
     pack_weights: tuple[int, ...]
     nonempty_pack_indices: tuple[int, ...]
+    workflow_run_id: str
+    workflow: str
+    event: str
+    role: str
+    tested_tree_sha: str
+    subject_head_sha: str
+    base_sha: str
+    authority_changed: bool
+    semantic_jobs: tuple[SemanticJobSpec, ...]
     plan_sha256: str
     # Neither serialised nor hashed.  `scoped_jobs` carries the RESOLVED jobs so
-    # main() executes the very objects the plan partitioned instead of inferring
-    # scopes a second time and hoping the second pass agrees.  `predicted_job_ids`
+    # main() executes the manifest objects named by the consumed plan instead of
+    # inferring scopes a second time. `predicted_job_ids`
     # carries what select_jobs chose BEFORE a shadow/off override widened
     # `eligible_job_ids` back to the full manifest — that difference is the
     # entire output of the shadow lane.  Both are compare=False so two plans
@@ -1142,7 +1404,7 @@ class CIPackPlan:
     # travels out of band, so without a bounded pin inside the decision identity
     # a swapped or truncated artifact would silently re-scope the guards that
     # read it. A pack recomputing from the wrong file recomputes a different
-    # plan sha, and the existing --expect-plan-sha parity check refuses.
+    # plan sha, and the consuming pack's artifact/digest check refuses.
     changed_files_sha256: str = field(default="", compare=False, repr=False)
     changed_files_count: int = field(default=0, compare=False, repr=False)
 
@@ -1167,6 +1429,14 @@ class CIPackPlan:
         """
         return {
             "schema": self.schema,
+            "workflow_run_id": self.workflow_run_id,
+            "workflow": self.workflow,
+            "event": self.event,
+            "role": self.role,
+            "tested_tree_sha": self.tested_tree_sha,
+            "subject_head_sha": self.subject_head_sha,
+            "base_sha": self.base_sha,
+            "authority_changed": self.authority_changed,
             "changed_from": self.changed_from,
             "scope_mode": self.scope_mode,
             "reason": self.reason,
@@ -1187,6 +1457,7 @@ class CIPackPlan:
             "nonempty_pack_indices": list(self.nonempty_pack_indices),
             "matrix": self.matrix(),
             "has_work": self.has_work,
+            "semantic_jobs": [job.plan_dict() for job in self.semantic_jobs],
             "plan_sha256": self.plan_sha256,
             # The DIGEST and the COUNT, never the list. This document is printed
             # as one machine line in the planner's log, so an unbounded array
@@ -1200,6 +1471,14 @@ class CIPackPlan:
 
 def plan_hash_payload(
     *,
+    workflow_run_id: str,
+    workflow: str,
+    event: str,
+    role: str,
+    tested_tree_sha: str,
+    subject_head_sha: str,
+    base_sha: str,
+    authority_changed: bool,
     changed_from: str | None,
     scope_mode: str,
     changed_files_sha256: str,
@@ -1207,6 +1486,7 @@ def plan_hash_payload(
     eligible_job_ids: Iterable[str],
     pack_jobs: Iterable[Iterable[str]],
     pack_weights: Iterable[int],
+    semantic_jobs: Iterable[SemanticJobSpec | Mapping[str, Any]],
 ) -> dict[str, Any]:
     """Exactly what a pack must agree with ci-plan about, and nothing else.
 
@@ -1223,14 +1503,21 @@ def plan_hash_payload(
     against, this pins the diff itself.  It is what makes the out-of-band
     transport safe.  The list left the job outputs because a 350,264-byte
     `env:` string cannot cross execve, and an artifact is reachable by anything
-    that can write a file — so a pack recomputing from a swapped, truncated or
-    missing artifact recomputes a DIFFERENT plan sha, and the existing
-    `--expect-plan-sha` parity check refuses before a single legacy step runs.
-    Without this key that same pack would compute the published hash, pass
-    parity, and quietly run its guards over somebody else's diff.
+    that can write a file — so a consuming pack hashes the downloaded list and
+    refuses a swapped, truncated, or missing artifact before one semantic step
+    runs. Without this key it could quietly run guards over somebody else's
+    diff under a valid-looking plan.
     """
     return {
         "schema": PLAN_SCHEMA,
+        "workflow_run_id": workflow_run_id,
+        "workflow": workflow,
+        "event": event,
+        "role": role,
+        "tested_tree_sha": tested_tree_sha,
+        "subject_head_sha": subject_head_sha,
+        "base_sha": base_sha,
+        "authority_changed": authority_changed,
         "changed_from": changed_from,
         "scope_mode": scope_mode,
         "changed_files_sha256": changed_files_sha256,
@@ -1240,13 +1527,30 @@ def plan_hash_payload(
         "eligible_job_ids": list(eligible_job_ids),
         "pack_jobs": [list(jobs) for jobs in pack_jobs],
         "pack_weights": list(pack_weights),
+        "semantic_jobs": [
+            job.plan_dict() if isinstance(job, SemanticJobSpec) else dict(job)
+            for job in semantic_jobs
+        ],
     }
+
+
+def _canonical_json(payload: object) -> str:
+    """Canonical JSON — stable and type-sensitive (``true`` is not ``1``)."""
+    # The shared reconciler hashes canonical UTF-8 bytes with non-ASCII text
+    # preserved. Using json.dumps' default ensure_ascii=True here makes two
+    # equivalent documents hash differently as soon as a proof name contains
+    # Unicode — a real property of the production manifest.
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    )
 
 
 def _canonical_digest(payload: dict[str, Any]) -> str:
     """Canonical JSON sha256 — identical on any machine, Python, or dict order."""
-    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+    return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
 
 
 def build_plan(
@@ -1256,6 +1560,13 @@ def build_plan(
     changed_from: str | None,
     scope_mode: str,
     pack_count: int = 12,
+    workflow_run_id: str | None = None,
+    workflow: str | None = None,
+    event: str | None = None,
+    role: str | None = None,
+    tested_tree_sha: str | None = None,
+    subject_head_sha: str | None = None,
+    base_sha: str | None = None,
 ) -> CIPackPlan:
     """Decide, once, what this CI run executes.
 
@@ -1306,6 +1617,96 @@ def build_plan(
     # full-suite case and hashes to "" — an affirmative "no list", not a hash of
     # the empty list.
     changed_files_sha256 = changed_files_digest(changed)
+    tested_tree_sha = (
+        tested_tree_sha
+        or os.environ.get("CI_TESTED_TREE_SHA")
+        or os.environ.get("GITHUB_SHA")
+        or "unbound-tested-tree"
+    )
+    subject_head_sha = (
+        subject_head_sha
+        or os.environ.get("CI_SUBJECT_HEAD_SHA")
+        or tested_tree_sha
+    )
+    base_sha = (
+        base_sha
+        or os.environ.get("CI_BASE_SHA")
+        or changed_from
+        or tested_tree_sha
+    )
+    event = event or os.environ.get("GITHUB_EVENT_NAME") or (
+        "pull_request" if changed_from is not None else "workflow_dispatch"
+    )
+    role = role or os.environ.get("CI_SEMANTIC_ROLE") or (
+        "pr_head" if event == "pull_request" else "main"
+    )
+    if (role, event) not in {
+        ("pr_head", "pull_request"),
+        ("main", "workflow_dispatch"),
+    }:
+        raise ManifestError(
+            f"semantic plan role/event combination {role}/{event} is unsupported"
+        )
+    if role == "pr_head" and changed is None:
+        raise ManifestError(
+            "a PR semantic plan requires an exact changed-file inventory; "
+            "planner uncertainty may widen compatibility execution but cannot "
+            "mint authority_changed=false"
+        )
+    if role == "pr_head" and changed_from != base_sha:
+        raise ManifestError("PR semantic plan changed_from must equal exact base_sha")
+    if role == "main" and (
+        changed_from is not None
+        or tested_tree_sha != subject_head_sha
+        or tested_tree_sha != base_sha
+    ):
+        raise ManifestError(
+            "main semantic plan requires one tree/head/base SHA and no changed_from"
+        )
+    workflow_run_id = (
+        workflow_run_id or os.environ.get("GITHUB_RUN_ID") or "local"
+    )
+    workflow = workflow or os.environ.get("GITHUB_WORKFLOW") or "ci"
+    try:
+        authority_changed = bool(
+            role == "pr_head"
+            and changed is not None
+            and any(is_ci_authority_path(path) for path in changed)
+        )
+    except AuthorityPathError as exc:
+        raise ManifestError(f"changed-file authority path is invalid: {exc}") from exc
+    job_to_pack = {
+        job_id: pack_index
+        for pack_index, job_ids in enumerate(pack_jobs)
+        for job_id in job_ids
+    }
+    semantic_jobs = tuple(
+        SemanticJobSpec(
+            logical_job_id=job.job_id,
+            pack_index=job_to_pack[job.job_id],
+            job_exec_sha256=semantic_job_digest(job),
+            steps=semantic_step_specs(job),
+        )
+        for job in eligible
+    )
+    hash_payload = plan_hash_payload(
+        workflow_run_id=workflow_run_id,
+        workflow=workflow,
+        event=event,
+        role=role,
+        tested_tree_sha=tested_tree_sha,
+        subject_head_sha=subject_head_sha,
+        base_sha=base_sha,
+        authority_changed=authority_changed,
+        changed_from=changed_from,
+        scope_mode=scope_mode,
+        changed_files_sha256=changed_files_sha256,
+        pack_count=pack_count,
+        eligible_job_ids=eligible_job_ids,
+        pack_jobs=pack_jobs,
+        pack_weights=pack_weights,
+        semantic_jobs=semantic_jobs,
+    )
     return CIPackPlan(
         schema=PLAN_SCHEMA,
         changed_from=changed_from,
@@ -1320,17 +1721,16 @@ def build_plan(
         nonempty_pack_indices=tuple(
             index for index, pack in enumerate(pack_jobs) if pack
         ),
-        plan_sha256=_canonical_digest(
-            plan_hash_payload(
-                changed_from=changed_from,
-                scope_mode=scope_mode,
-                changed_files_sha256=changed_files_sha256,
-                pack_count=pack_count,
-                eligible_job_ids=eligible_job_ids,
-                pack_jobs=pack_jobs,
-                pack_weights=pack_weights,
-            )
-        ),
+        workflow_run_id=workflow_run_id,
+        workflow=workflow,
+        event=event,
+        role=role,
+        tested_tree_sha=tested_tree_sha,
+        subject_head_sha=subject_head_sha,
+        base_sha=base_sha,
+        authority_changed=authority_changed,
+        semantic_jobs=semantic_jobs,
+        plan_sha256=_canonical_digest(hash_payload),
         scoped_jobs=tuple(jobs),
         predicted_job_ids=predicted_job_ids,
         changed_paths=tuple(changed) if changed is not None else None,
@@ -1346,6 +1746,13 @@ def plan_from_workflow(
     scope_mode: str,
     pack_count: int = 12,
     changed_files_file: str | Path | None = None,
+    workflow_run_id: str | None = None,
+    workflow_name: str | None = None,
+    event: str | None = None,
+    role: str | None = None,
+    tested_tree_sha: str | None = None,
+    subject_head_sha: str | None = None,
+    base_sha: str | None = None,
 ) -> CIPackPlan:
     """Load the manifest, resolve the diff, and plan — the whole decision."""
     legacy = load_legacy_jobs(workflow)
@@ -1356,7 +1763,309 @@ def plan_from_workflow(
         changed_from=changed_from,
         scope_mode=scope_mode,
         pack_count=pack_count,
+        workflow_run_id=workflow_run_id,
+        workflow=workflow_name,
+        event=event,
+        role=role,
+        tested_tree_sha=tested_tree_sha,
+        subject_head_sha=subject_head_sha,
+        base_sha=base_sha,
     )
+
+
+def _load_json_object(path: Path, *, max_bytes: int = 5_000_000) -> dict[str, Any]:
+    def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        document: dict[str, Any] = {}
+        for key, value in pairs:
+            if key in document:
+                raise ManifestError(
+                    f"authoritative JSON contains duplicate key {key!r}"
+                )
+            document[key] = value
+        return document
+
+    try:
+        size = path.stat().st_size
+        if size > max_bytes:
+            raise ManifestError(f"{path} is {size} bytes (limit {max_bytes})")
+        payload = json.loads(
+            path.read_text(encoding="utf-8"),
+            object_pairs_hook=reject_duplicate_keys,
+        )
+    except ManifestError:
+        raise
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ManifestError(f"cannot load authoritative plan {path}: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise ManifestError(f"authoritative plan {path} must be a JSON object")
+    return payload
+
+
+def load_authoritative_plan(
+    path: Path,
+    *,
+    workflow: Path,
+    changed_files_file: str | Path | None = None,
+    expect_plan_sha: str | None = None,
+    expect_tested_tree_sha: str | None = None,
+    expect_subject_head_sha: str | None = None,
+    expect_base_sha: str | None = None,
+) -> CIPackPlan:
+    """Load the planner artifact without recomputing scope or partition.
+
+    The manifest is still validated and its semantic contracts must byte-for-
+    byte agree with the plan.  What is forbidden here is re-deciding selection:
+    the planner's selected jobs and pack assignment are the sole authority.
+    """
+    document = _load_json_object(path)
+    if document.get("schema") != PLAN_SCHEMA:
+        raise ManifestError(
+            f"authoritative plan schema must be {PLAN_SCHEMA!r}, got "
+            f"{document.get('schema')!r}"
+        )
+
+    def required_text(key: str) -> str:
+        value = document.get(key)
+        if not isinstance(value, str) or not value:
+            raise ManifestError(f"authoritative plan {key} must be non-empty text")
+        return value
+
+    published_sha = required_text("plan_sha256")
+    if not re.fullmatch(r"[0-9a-f]{64}", published_sha):
+        raise ManifestError("authoritative plan plan_sha256 must be lowercase hex")
+    identities = {
+        "tested_tree_sha": required_text("tested_tree_sha"),
+        "subject_head_sha": required_text("subject_head_sha"),
+        "base_sha": required_text("base_sha"),
+    }
+    for key, value in identities.items():
+        if not re.fullmatch(r"[0-9a-f]{40}", value):
+            raise ManifestError(
+                f"authoritative plan {key} must be an exact 40-hex commit SHA"
+            )
+    expectations = {
+        "plan_sha256": expect_plan_sha,
+        "tested_tree_sha": expect_tested_tree_sha,
+        "subject_head_sha": expect_subject_head_sha,
+        "base_sha": expect_base_sha,
+    }
+    actuals = {"plan_sha256": published_sha, **identities}
+    for key, expected in expectations.items():
+        if expected and actuals[key] != expected:
+            raise ManifestError(
+                f"authoritative plan {key} is {actuals[key]!r}, expected {expected!r}"
+            )
+
+    raw_packs = document.get("packs")
+    if not isinstance(raw_packs, list) or not raw_packs:
+        raise ManifestError("authoritative plan packs must be a non-empty list")
+    pack_jobs: list[tuple[str, ...]] = []
+    pack_weights: list[int] = []
+    for index, raw_pack in enumerate(raw_packs):
+        if (
+            not isinstance(raw_pack, dict)
+            or type(raw_pack.get("index")) is not int
+            or raw_pack.get("index") != index
+        ):
+            raise ManifestError(f"authoritative plan pack {index} is malformed")
+        raw_jobs = raw_pack.get("jobs")
+        weight = raw_pack.get("weight")
+        if (
+            not isinstance(raw_jobs, list)
+            or any(not isinstance(item, str) or not item for item in raw_jobs)
+            or type(weight) is not int
+            or weight < 0
+        ):
+            raise ManifestError(f"authoritative plan pack {index} is malformed")
+        pack_jobs.append(tuple(raw_jobs))
+        pack_weights.append(weight)
+    flattened = [job_id for pack in pack_jobs for job_id in pack]
+    if len(flattened) != len(set(flattened)):
+        raise ManifestError("authoritative plan assigns a logical job more than once")
+    eligible = document.get("eligible_jobs")
+    skipped = document.get("skipped_jobs")
+    if not isinstance(eligible, list) or eligible != flattened:
+        # Planner order is manifest order, whereas packs are execution bins.
+        # Compare membership below and preserve the planner's explicit order.
+        if (
+            not isinstance(eligible, list)
+            or any(not isinstance(item, str) or not item for item in eligible)
+            or set(eligible) != set(flattened)
+            or len(eligible) != len(flattened)
+        ):
+            raise ManifestError(
+                "authoritative plan eligible_jobs does not equal pack membership"
+            )
+    if (
+        not isinstance(skipped, list)
+        or any(not isinstance(item, str) or not item for item in skipped)
+        or len(skipped) != len(set(skipped))
+        or len(eligible) != len(set(eligible))
+        or set(eligible) & set(skipped)
+    ):
+        raise ManifestError("authoritative plan skipped_jobs is malformed")
+
+    all_jobs = load_legacy_jobs(workflow)
+    by_id = {job.job_id: job for job in all_jobs}
+    manifest_ids = set(by_id)
+    if set(eligible) | set(skipped) != manifest_ids:
+        raise ManifestError(
+            "authoritative plan selected/skipped inventory does not equal manifest"
+        )
+    pack_by_job = {
+        job_id: pack_index
+        for pack_index, job_ids in enumerate(pack_jobs)
+        for job_id in job_ids
+    }
+    semantic_jobs = tuple(
+        SemanticJobSpec(
+            logical_job_id=job_id,
+            pack_index=pack_by_job[job_id],
+            job_exec_sha256=semantic_job_digest(by_id[job_id]),
+            steps=semantic_step_specs(by_id[job_id]),
+        )
+        for job_id in eligible
+    )
+    published_semantic = document.get("semantic_jobs")
+    actual_semantic = [job.plan_dict() for job in semantic_jobs]
+    if _canonical_json(published_semantic) != _canonical_json(actual_semantic):
+        raise ManifestError(
+            "authoritative plan semantic inventory does not match this manifest"
+        )
+
+    changed_from = document.get("changed_from")
+    if changed_from is not None and not isinstance(changed_from, str):
+        raise ManifestError("authoritative plan changed_from must be text or null")
+    role = required_text("role")
+    if role not in {"pr_head", "main"}:
+        raise ManifestError("authoritative plan role must be pr_head or main")
+    event = required_text("event")
+    if (role, event) not in {
+        ("pr_head", "pull_request"),
+        ("main", "workflow_dispatch"),
+    }:
+        raise ManifestError(
+            f"authoritative plan role/event combination {role}/{event} is unsupported"
+        )
+    if role == "pr_head" and changed_from != identities["base_sha"]:
+        raise ManifestError(
+            "PR authoritative plan must diff and replay the same exact base SHA"
+        )
+    if role == "main" and (
+        changed_from is not None
+        or identities["tested_tree_sha"] != identities["subject_head_sha"]
+        or identities["tested_tree_sha"] != identities["base_sha"]
+    ):
+        raise ManifestError(
+            "main authoritative plan requires one identical tree/head/base SHA "
+            "and no changed_from"
+        )
+    scope_mode = required_text("scope_mode")
+    if scope_mode not in {"active", "shadow", "off"}:
+        raise ManifestError("authoritative plan scope_mode is unsupported")
+    changed_files_sha256 = document.get("changed_files_sha256")
+    changed_files_count = document.get("changed_files_count")
+    authority_changed = document.get("authority_changed")
+    if (
+        not isinstance(changed_files_sha256, str)
+        or (
+            changed_files_sha256 != ""
+            and not re.fullmatch(r"[0-9a-f]{64}", changed_files_sha256)
+        )
+        or type(changed_files_count) is not int
+        or changed_files_count < 0
+    ):
+        raise ManifestError("authoritative plan changed-file binding is malformed")
+    if type(authority_changed) is not bool:
+        raise ManifestError("authoritative plan authority_changed must be boolean")
+
+    payload = plan_hash_payload(
+        workflow_run_id=required_text("workflow_run_id"),
+        workflow=required_text("workflow"),
+        event=event,
+        role=role,
+        tested_tree_sha=identities["tested_tree_sha"],
+        subject_head_sha=identities["subject_head_sha"],
+        base_sha=identities["base_sha"],
+        authority_changed=authority_changed,
+        changed_from=changed_from,
+        scope_mode=scope_mode,
+        changed_files_sha256=changed_files_sha256,
+        pack_count=len(pack_jobs),
+        eligible_job_ids=eligible,
+        pack_jobs=pack_jobs,
+        pack_weights=pack_weights,
+        semantic_jobs=semantic_jobs,
+    )
+    computed_sha = _canonical_digest(payload)
+    if computed_sha != published_sha:
+        raise ManifestError(
+            f"authoritative plan digest is {published_sha}, computed {computed_sha}"
+        )
+
+    state, changed = _read_changed_files_handle(changed_files_file)
+    if changed_files_file is not None:
+        if state not in {"list", "null"}:
+            raise ManifestError(
+                f"changed-file artifact is {state}; cannot prove planner input"
+            )
+        resolved_changed = changed if state == "list" else None
+        if changed_files_digest(resolved_changed) != changed_files_sha256:
+            raise ManifestError("changed-file artifact digest disagrees with plan")
+        if len(changed) != changed_files_count:
+            raise ManifestError("changed-file artifact count disagrees with plan")
+        try:
+            computed_authority_changed = bool(
+                role == "pr_head"
+                and resolved_changed is not None
+                and any(is_ci_authority_path(item) for item in resolved_changed)
+            )
+        except AuthorityPathError as exc:
+            raise ManifestError(f"changed-file authority path is invalid: {exc}") from exc
+        if computed_authority_changed != authority_changed:
+            raise ManifestError(
+                "changed-file artifact authority classification disagrees with plan"
+            )
+    else:
+        resolved_changed = None
+
+    plan = CIPackPlan(
+        schema=PLAN_SCHEMA,
+        changed_from=changed_from,
+        scope_mode=scope_mode,
+        reason=required_text("reason"),
+        scope_summary=required_text("scope_summary"),
+        legacy_job_count=len(all_jobs),
+        eligible_job_ids=tuple(eligible),
+        skipped_job_ids=tuple(skipped),
+        pack_jobs=tuple(pack_jobs),
+        pack_weights=tuple(pack_weights),
+        nonempty_pack_indices=tuple(
+            index for index, job_ids in enumerate(pack_jobs) if job_ids
+        ),
+        workflow_run_id=required_text("workflow_run_id"),
+        workflow=required_text("workflow"),
+        event=event,
+        role=role,
+        tested_tree_sha=identities["tested_tree_sha"],
+        subject_head_sha=identities["subject_head_sha"],
+        base_sha=identities["base_sha"],
+        authority_changed=authority_changed,
+        semantic_jobs=semantic_jobs,
+        plan_sha256=published_sha,
+        scoped_jobs=tuple(all_jobs),
+        predicted_job_ids=tuple(eligible),
+        changed_paths=(
+            tuple(resolved_changed) if resolved_changed is not None else None
+        ),
+        changed_files_sha256=changed_files_sha256,
+        changed_files_count=changed_files_count,
+    )
+    if _canonical_json(plan.to_dict()) != _canonical_json(document):
+        raise ManifestError(
+            "authoritative plan contains inconsistent derived fields or unknown keys"
+        )
+    return plan
 
 
 def _full_matrix(pack_count: int) -> dict[str, list[dict[str, int]]]:
@@ -1448,6 +2157,25 @@ def _write_changed_files_artifact(
     return path
 
 
+def _atomic_write_json(
+    path: Path, payload: Mapping[str, Any], *, indent: int | None = None
+) -> None:
+    """Publish an authority artifact atomically; partial JSON is never visible."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
+    encoded = (
+        json.dumps(payload, indent=indent)
+        if indent is not None
+        else json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    )
+    try:
+        temporary.write_text(encoded + "\n", encoding="utf-8")
+        os.replace(temporary, path)
+    finally:
+        with contextlib.suppress(FileNotFoundError):
+            temporary.unlink()
+
+
 def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
     """Publish the plan in whichever forms the caller asked for."""
     if args.emit_changed_files:
@@ -1473,9 +2201,7 @@ def _emit_plan_artifacts(args: argparse.Namespace, plan: CIPackPlan) -> None:
                 flush=True,
             )
         else:
-            Path(args.emit_plan_json).write_text(
-                json.dumps(document, indent=2) + "\n", encoding="utf-8"
-            )
+            _atomic_write_json(Path(args.emit_plan_json), document, indent=2)
     if args.github_output is None:
         return
     if args.matrix_mode == "active":
@@ -1602,10 +2328,354 @@ def _workspace_root() -> Path:
     return root
 
 
-def _restore_workspace() -> None:
+def _trusted_git_environment(_root: Path | None = None) -> dict[str, str]:
+    """Clean env for runner-owned git: no repo-binding GIT_* vars.
+
+    Do not set GIT_DIR/GIT_WORK_TREE.  Binding those made the post-step
+    ``for-each-ref refs/replace`` probe exit 128 (unrun-picks-boards,
+    2026-08-15) against a checkout ``git -C`` / cwd discovery could still
+    see.  ``GIT_OPTIONAL_LOCKS=0`` keeps a leftover ``*.lock`` after a
+    SIGKILL'd step from turning a timeout into infrastructure unknown.
+    """
+    clean_env = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.startswith("GIT_")
+    }
+    for key in REPO_BINDING_GIT_VARS:
+        clean_env.pop(key, None)
+    clean_env["GIT_OPTIONAL_LOCKS"] = "0"
+    clean_env["GIT_NO_REPLACE_OBJECTS"] = "1"
+    return clean_env
+
+
+def _absolute_git_dir(root: Path) -> Path:
+    """Resolve the checkout's git dir without binding GIT_DIR into the env."""
+    result = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--absolute-git-dir"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+        env=_trusted_git_environment(root),
+    )
+    if result.returncode == 0 and result.stdout.strip():
+        return Path(result.stdout.strip())
+    candidate = root / ".git"
+    if candidate.is_file():
+        text = candidate.read_text(encoding="utf-8", errors="replace").strip()
+        prefix = "gitdir:"
+        if text.lower().startswith(prefix):
+            pointed = Path(text[len(prefix) :].strip())
+            if not pointed.is_absolute():
+                pointed = (root / pointed).resolve()
+            return pointed
+    return candidate.resolve()
+
+
+def _git_cmd(
+    root: Path,
+    env: Mapping[str, str],
+    *args: str,
+    check: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-C", str(root), *args],
+        cwd=root,
+        check=check,
+        capture_output=True,
+        text=True,
+        env=dict(env),
+    )
+
+
+def _git_boundary_probes(
+    root: Path, env: Mapping[str, str]
+) -> tuple[bool, str | None]:
+    """Return whether ``for-each-ref refs/replace`` and ``rev-parse HEAD`` work."""
+    refs = _git_cmd(root, env, "for-each-ref", "--format=%(refname)", "refs/replace")
+    head = _git_cmd(root, env, "rev-parse", "HEAD")
+    sha = head.stdout.strip().lower()
+    head_ok = head.returncode == 0 and bool(re.fullmatch(r"[0-9a-f]{40}", sha))
+    return refs.returncode == 0 and head_ok, sha if head_ok else None
+
+
+def _replace_refs_from_filesystem(git_dir: Path) -> list[str]:
+    """List ``refs/replace/**`` without asking Git to take a ref lock."""
+    found: list[str] = []
+    replace_dir = git_dir / "refs" / "replace"
+    if replace_dir.is_dir():
+        for path in sorted(replace_dir.rglob("*")):
+            if not path.is_file() or path.name.endswith(".lock"):
+                continue
+            found.append(path.relative_to(git_dir).as_posix())
+    packed = git_dir / "packed-refs"
+    if packed.is_file():
+        for line in packed.read_text(encoding="utf-8", errors="replace").splitlines():
+            if not line or line.startswith("#") or line.startswith("^"):
+                continue
+            parts = line.split()
+            if len(parts) >= 2 and parts[1].startswith("refs/replace/"):
+                found.append(parts[1])
+    return found
+
+
+def _git_rewrite_metadata(root: Path, env: Mapping[str, str]) -> tuple[list[str], Path]:
+    """Return replace-refs and the grafts path without fail-closing on probe 128.
+
+    ``git for-each-ref refs/replace`` exits 0 when the namespace is empty. Exit
+    128 is a lock, a killed sibling, or a confused GIT_DIR — not proof that
+    history was rewritten. Fall back to a filesystem listing so a racy probe
+    cannot turn a green (or merely timed-out) job into infrastructure unknown.
+    Reftable repositories have no loose ``refs/replace`` files; if the Git
+    listing fails there, refuse rather than silently miss a rewrite.
+    """
+    listed = _git_cmd(
+        root, env, "for-each-ref", "--format=%(refname)", "refs/replace"
+    )
+    git_dir = _absolute_git_dir(root)
+    if listed.returncode == 0:
+        refs = [line for line in listed.stdout.splitlines() if line.strip()]
+    else:
+        if not git_dir.is_dir():
+            raise RuntimeError(
+                "`git for-each-ref --format=%(refname) refs/replace` returned "
+                f"{listed.returncode} and git dir is not a directory "
+                f"({git_dir})"
+            )
+        if (git_dir / "reftable").is_dir():
+            raise RuntimeError(
+                "`git for-each-ref --format=%(refname) refs/replace` returned "
+                f"{listed.returncode} in a reftable repository; cannot confirm "
+                "the absence of replace refs from the filesystem"
+            )
+        refs = _replace_refs_from_filesystem(git_dir)
+    graft_text = _git_cmd(root, env, "rev-parse", "--git-path", "info/grafts")
+    if graft_text.returncode != 0:
+        graft_path = (
+            git_dir / "info" / "grafts"
+            if git_dir.is_dir()
+            else root / ".git" / "info" / "grafts"
+        )
+    else:
+        graft_path = Path(graft_text.stdout.strip())
+        if not graft_path.is_absolute():
+            graft_path = root / graft_path
+    return refs, graft_path
+
+
+def _heal_pack_git(root: Path, target: str | None, git_env: Mapping[str, str]) -> None:
+    """Rebuild a usable ref store after a child SIGKILL or packed-refs smash.
+
+    Measured 2026-08-15 on PR #5750 pack-9: a job-timeout SIGKILL left
+    ``packed-refs`` unreadable. ``rev-parse --absolute-git-dir`` still
+    worked, but ``for-each-ref refs/replace`` exited 128 and the post-step
+    probe reported infrastructure unknown, masking the timeout and
+    breaking every later pack job.
+    """
+    git_dir = _absolute_git_dir(root)
+    commondir = git_dir / "commondir"
+    if commondir.exists():
+        pointed = commondir.read_text(encoding="utf-8", errors="replace").strip()
+        common = Path(pointed)
+        if not common.is_absolute():
+            common = (git_dir / common).resolve()
+        if not common.is_dir():
+            commondir.unlink()
+    refs_dir = git_dir / "refs"
+    if refs_dir.is_file():
+        refs_dir.unlink()
+    refs_dir.mkdir(parents=True, exist_ok=True)
+    (refs_dir / "heads").mkdir(exist_ok=True)
+    (refs_dir / "tags").mkdir(exist_ok=True)
+    with contextlib.suppress(OSError):
+        os.chmod(refs_dir, 0o755)
+    _git_cmd(root, git_env, "config", "core.repositoryformatversion", "0")
+    _git_cmd(root, git_env, "config", "--unset-all", "extensions.refstorage")
+    if target and re.fullmatch(r"[0-9a-f]{40}", target.lower()):
+        (git_dir / "HEAD").write_text(f"{target}\n", encoding="utf-8")
+    elif not (git_dir / "HEAD").exists() or not (git_dir / "HEAD").stat().st_size:
+        (git_dir / "HEAD").write_text("ref: refs/heads/main\n", encoding="utf-8")
+    packed = git_dir / "packed-refs"
+    refs_probe = _git_cmd(
+        root, git_env, "for-each-ref", "--format=%(refname)", "refs/replace"
+    )
+    if refs_probe.returncode != 0 and packed.exists():
+        broken = git_dir / "packed-refs.broken"
+        with contextlib.suppress(FileNotFoundError):
+            broken.unlink()
+        packed.replace(broken)
+    _disable_sparse_checkout(root, git_env)
+    if target:
+        _git_cmd(root, git_env, "checkout", "--detach", "--force", target)
+        _git_cmd(root, git_env, "reset", "--hard", target)
+
+
+def _ensure_pack_git_usable(root: Path, target: str | None) -> bool:
+    """Heal a smashed checkout git dir. Return True if a repair ran."""
+    git_env = _trusted_git_environment(root)
+    ok, _head = _git_boundary_probes(root, git_env)
+    if ok:
+        return False
+    _heal_pack_git(root, target, git_env)
+    git_env = _trusted_git_environment(root)
+    ok, _head = _git_boundary_probes(root, git_env)
+    if not ok:
+        raise RuntimeError(
+            "unable to restore git for-each-ref refs/replace and rev-parse HEAD "
+            "after a pack job step"
+        )
+    return True
+
+
+def _assert_no_git_rewrites(root: Path) -> None:
+    env = _trusted_git_environment(root)
+    refs, graft_path = _git_rewrite_metadata(root, env)
+    if refs or graft_path.exists():
+        raise RuntimeError(
+            "checkout contains Git history rewrite metadata "
+            f"(replace_refs={refs}, grafts={graft_path.exists()})"
+        )
+
+
+def _disable_sparse_checkout(root: Path, git_env: Mapping[str, str]) -> None:
+    """Re-open a full tree before the hard reset.
+
+    ``git checkout --force`` honours an active sparse cone, so a prior step
+    that ran ``git sparse-checkout set`` (or inherited a leaked GIT_DIR and
+    did the same to this checkout) would leave later jobs without
+    ``tests/*.py``.  Disable first; the later checkout/reset then materializes
+    every path.  ``sparse-checkout disable`` needs a usable HEAD, so the
+    config/file fallback still runs when an orphan checkout left HEAD unborn.
+    """
+    subprocess.run(
+        ["git", "sparse-checkout", "disable"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "core.sparseCheckout", "false"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    subprocess.run(
+        ["git", "config", "index.sparse", "false"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    sparse_text = subprocess.run(
+        ["git", "rev-parse", "--git-path", "info/sparse-checkout"],
+        cwd=root,
+        env=dict(git_env),
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if sparse_text.returncode == 0:
+        sparse_path = Path(sparse_text.stdout.strip())
+        if not sparse_path.is_absolute():
+            sparse_path = root / sparse_path
+        with contextlib.suppress(FileNotFoundError):
+            sparse_path.unlink()
+
+
+def _restore_workspace(tested_tree_sha: str | None = None) -> None:
     """Restore the clean-checkout boundary that each old job received."""
-    subprocess.run(["git", "reset", "--hard", "HEAD"], check=True)
-    subprocess.run(["git", "clean", "-ffdx"], check=True)
+    root = Path.cwd().resolve()
+    _ensure_pack_git_usable(root, tested_tree_sha)
+    git_env = _trusted_git_environment(root)
+    replace_refs, graft_path = _git_rewrite_metadata(root, git_env)
+    for ref in replace_refs:
+        subprocess.run(
+            ["git", "update-ref", "-d", ref],
+            cwd=root,
+            env=git_env,
+            check=True,
+        )
+    with contextlib.suppress(FileNotFoundError):
+        graft_path.unlink()
+    _disable_sparse_checkout(root, git_env)
+    target = tested_tree_sha or "HEAD"
+    subprocess.run(
+        ["git", "checkout", "--detach", "--force", target],
+        cwd=root,
+        env=git_env,
+        check=True,
+    )
+    subprocess.run(["git", "reset", "--hard", target], cwd=root, env=git_env, check=True)
+    subprocess.run(["git", "clean", "-ffdx"], cwd=root, env=git_env, check=True)
+    if tested_tree_sha is not None:
+        observed = _current_commit_sha(root)
+        if observed != tested_tree_sha:
+            raise RuntimeError(
+                f"workspace restore resolved {observed}, expected {tested_tree_sha}"
+            )
+
+
+def _current_commit_sha(root: Path) -> str:
+    git_env = _trusted_git_environment(root)
+    result = _git_cmd(root, git_env, "rev-parse", "HEAD")
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip() or "no git output"
+        raise RuntimeError(f"git rev-parse HEAD exited {result.returncode}: {detail}")
+    value = result.stdout.strip().lower()
+    if not re.fullmatch(r"[0-9a-f]{40}", value):
+        raise RuntimeError(f"checkout HEAD is not an exact commit SHA: {value!r}")
+    return value
+
+
+def _prepare_provided_actions(
+    job: LegacyJob,
+    *,
+    root: Path,
+    tested_tree_sha: str | None,
+) -> None:
+    """Materialize the action semantics the pack workflow shares.
+
+    setup-python 3.12 and setup-node 20 are supplied by the pack job itself.
+    The ordinary checkout is represented by the exact-tree reset. A manifest
+    checkout requesting fetch-depth 0 additionally receives every advertised
+    branch and tag with complete history, matching checkout@v4's closed input
+    contract. Exact-base replay points ``origin`` at its isolated base-only
+    remote, so this same operation can never substitute moving current main.
+    """
+    contracts = _job_action_contract(job)
+    if not any(
+        contract == {
+            "uses": "actions/checkout@v4",
+            "with": {"fetch-depth": 0},
+        }
+        for contract in contracts
+    ):
+        return
+    if tested_tree_sha is None:
+        raise RuntimeError(
+            f"job {job.job_id!r} requires fetch-depth 0 without an exact tested tree"
+        )
+    subprocess.run(
+        [
+            "git",
+            "fetch",
+            "--no-recurse-submodules",
+            "--prune",
+            "--tags",
+            "--depth=2147483647",
+            "origin",
+            "+refs/heads/*:refs/remotes/origin/*",
+        ],
+        cwd=root,
+        env=_trusted_git_environment(root),
+        check=True,
+    )
 
 
 def _run_job(
@@ -1614,40 +2684,288 @@ def _run_job(
     base_ref: str,
     head_ref: str,
     command_env: dict[str, str],
-) -> str | None:
-    """Run one legacy job; return a failure description or ``None``."""
-    _restore_workspace()
+    tested_tree_sha: str | None = None,
+) -> JobExecution:
+    """Run one legacy job and account for every expected semantic step."""
+    _restore_workspace(tested_tree_sha)
+    _prepare_provided_actions(
+        job,
+        root=Path.cwd(),
+        tested_tree_sha=tested_tree_sha,
+    )
+    semantic_env = _child_git_environment(command_env)
+    if tested_tree_sha is not None:
+        # Bind replace-object *resolution* only.  Do not set GIT_DIR /
+        # GIT_WORK_TREE — those force every nested `git init` onto this tree.
+        semantic_env["GIT_NO_REPLACE_OBJECTS"] = "1"
     timeout_minutes = job.definition.get("timeout-minutes")
     timeout_seconds = int(timeout_minutes) * 60 if timeout_minutes else None
+    job_deadline = (
+        time.monotonic() + timeout_seconds if timeout_seconds is not None else None
+    )
+    specs = semantic_step_specs(job)
+    by_index = {spec.step_index: spec for spec in specs}
+    observations: list[dict[str, Any]] = []
+    failure: str | None = None
+    infrastructure: dict[str, Any] = {"outcome": "passed"}
 
     for index, step in enumerate(job.definition["steps"]):
-        if "uses" in step:
-            continue  # checkout/Python/Node are provided once by ci-pack.
-        if "pip install" in str(step.get("run", "")):
-            continue  # Prepared once for this exact dependency group.
-        step_name = str(step.get("name") or f"run step {index + 1}")
-        command = render_command(
-            str(step["run"]), base_ref=base_ref, head_ref=head_ref
-        )
-        print(f"::group::{job.job_id} — {step_name}", flush=True)
-        try:
-            result = subprocess.run(
-                ["bash", "-eo", "pipefail", "-c", command],
-                env=command_env,
-                timeout=timeout_seconds,
+        spec = by_index.get(index)
+        if spec is None:
+            continue  # checkout/setup/dependency-install infrastructure.
+        if failure is not None:
+            infrastructure_failed = infrastructure.get("outcome") != "passed"
+            observations.append(
+                {
+                    **spec.plan_dict(),
+                    "outcome": (
+                        "infrastructure_blocked"
+                        if infrastructure_failed
+                        else "not_run_prior_failure"
+                    ),
+                    "failure_signature": None,
+                    "detail": (
+                        infrastructure.get("detail", "runner infrastructure failed")
+                        if infrastructure_failed
+                        else "an earlier semantic step did not pass"
+                    ),
+                }
             )
-        except subprocess.TimeoutExpired:
-            print("::endgroup::", flush=True)
-            return f"{job.job_id}: timed out after {timeout_minutes} minutes"
-        print("::endgroup::", flush=True)
-        if result.returncode:
-            return (
+            continue
+        step_name = spec.display_name or spec.proof_id
+        group_open = False
+        try:
+            command = render_command(
+                str(step["run"]), base_ref=base_ref, head_ref=head_ref
+            )
+            print(f"::group::{job.job_id} — {step_name}", flush=True)
+            group_open = True
+            remaining = (
+                max(0.0, job_deadline - time.monotonic())
+                if job_deadline is not None
+                else None
+            )
+            if remaining is not None and remaining <= 0:
+                result = CommandObservation(
+                    outcome="timed_out",
+                    returncode=None,
+                    failure_signature=None,
+                    detail="logical job timeout exhausted before this step started",
+                )
+            else:
+                result = _stream_command(
+                    command,
+                    env=semantic_env,
+                    timeout_seconds=remaining,
+                )
+        except Exception as exc:  # noqa: BLE001 — preserve earlier observations
+            detail = _bounded_detail(exc)
+            infrastructure = {"outcome": "unknown", "detail": detail}
+            observations.append(
+                {
+                    **spec.plan_dict(),
+                    "outcome": "infrastructure_blocked",
+                    "failure_signature": None,
+                    "detail": detail,
+                }
+            )
+            failure = f"{job.job_id}: infrastructure unknown ({detail})"
+            continue
+        finally:
+            if group_open:
+                print("::endgroup::", flush=True)
+        record: dict[str, Any] = {
+            **spec.plan_dict(),
+            "outcome": result.outcome,
+            "failure_signature": (
+                dict(result.failure_signature)
+                if result.failure_signature is not None
+                else None
+            ),
+        }
+        if result.detail:
+            record["detail"] = result.detail
+        if tested_tree_sha is not None:
+            # Always leave for-each-ref/rev-parse working for the next step.
+            # A timed-out step was SIGKILL'd and may have smashed packed-refs;
+            # heal first, then only a *passed* step can still hide a rewrite.
+            try:
+                healed = _ensure_pack_git_usable(Path.cwd(), tested_tree_sha)
+            except Exception:  # noqa: BLE001 — last-ditch; proof already lost
+                healed = False
+                with contextlib.suppress(Exception):
+                    _ensure_pack_git_usable(Path.cwd(), tested_tree_sha)
+            if result.outcome == "passed":
+                try:
+                    _assert_no_git_rewrites(Path.cwd())
+                    observed_tree_sha = _current_commit_sha(Path.cwd())
+                    if observed_tree_sha != tested_tree_sha:
+                        raise RuntimeError(
+                            f"semantic step changed checkout HEAD to {observed_tree_sha}; "
+                            f"expected {tested_tree_sha}"
+                        )
+                    if healed:
+                        raise RuntimeError(
+                            "semantic step left git for-each-ref/rev-parse unusable"
+                        )
+                except Exception as exc:  # noqa: BLE001 — tree doubt blocks proof
+                    detail = _bounded_detail(exc)
+                    with contextlib.suppress(Exception):
+                        _ensure_pack_git_usable(Path.cwd(), tested_tree_sha)
+                    infrastructure = {"outcome": "unknown", "detail": detail}
+                    record = {
+                        **spec.plan_dict(),
+                        "outcome": "infrastructure_blocked",
+                        "failure_signature": None,
+                        "detail": detail,
+                    }
+                    failure = f"{job.job_id}: infrastructure unknown ({detail})"
+        observations.append(record)
+        if failure is not None and record["outcome"] == "infrastructure_blocked":
+            continue
+        if result.outcome == "timed_out":
+            failure = f"{job.job_id}: timed out after {timeout_minutes} minutes"
+        elif result.outcome == "failed":
+            failure = (
                 f"{job.job_id}: step {step_name!r} exited {result.returncode}"
             )
-    return None
+    return JobExecution(
+        logical_job_id=job.job_id,
+        job_exec_sha256=semantic_job_digest(job),
+        infrastructure=infrastructure,
+        steps=tuple(observations),
+        failure=failure,
+    )
 
 
-def _child_environment() -> dict[str, str]:
+def _stream_command(
+    command: str,
+    *,
+    env: Mapping[str, str],
+    timeout_seconds: int | float | None,
+) -> CommandObservation:
+    """Stream a child live while retaining only bounded structured atoms."""
+    deadline = (
+        time.monotonic() + max(0.0, float(timeout_seconds))
+        if timeout_seconds is not None
+        else None
+    )
+    collector = FailureAtomCollector(
+        max_bytes=FAILURE_CAPTURE_MAX_BYTES,
+        max_atoms=FAILURE_CAPTURE_MAX_ATOMS,
+        max_line_bytes=FAILURE_CAPTURE_MAX_LINE_BYTES,
+    )
+    process = subprocess.Popen(
+        ["bash", "-eo", "pipefail", "-c", command],
+        env=dict(env),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        bufsize=0,
+        start_new_session=True,
+    )
+    assert process.stdout is not None
+    pump_error: list[str] = []
+
+    def pump() -> None:
+        pending = bytearray()
+        discard_remainder = False
+        try:
+            while True:
+                chunk = process.stdout.read(4_096)
+                if not chunk:
+                    break
+                # Normal Actions output remains live.  Decode only for display;
+                # the collector receives the original bounded byte line.
+                print(chunk.decode("utf-8", "replace"), end="", flush=True)
+                pending.extend(chunk)
+                while b"\n" in pending:
+                    raw, _, rest = pending.partition(b"\n")
+                    pending = bytearray(rest)
+                    if not discard_remainder:
+                        collector.feed(bytes(raw) + b"\n")
+                    discard_remainder = False
+                if len(pending) > FAILURE_CAPTURE_MAX_LINE_BYTES:
+                    if not discard_remainder:
+                        collector.feed(
+                            bytes(pending[:FAILURE_CAPTURE_MAX_LINE_BYTES]),
+                            truncated=True,
+                        )
+                    pending.clear()
+                    discard_remainder = True
+            if pending and not discard_remainder:
+                collector.feed(bytes(pending))
+        except Exception as exc:  # noqa: BLE001 — never hide child completion
+            pump_error.append(_bounded_detail(exc))
+
+    reader = threading.Thread(target=pump, name="ci-pack-output", daemon=True)
+    reader.start()
+    timed_out = False
+    try:
+        wait_seconds = (
+            max(0.0, deadline - time.monotonic())
+            if deadline is not None
+            else None
+        )
+        process.wait(timeout=wait_seconds)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            process.wait(
+                timeout=(
+                    max(0.0, deadline - time.monotonic())
+                    if deadline is not None
+                    else 0
+                )
+            )
+    finally:
+        reader.join(
+            timeout=(
+                max(0.0, deadline - time.monotonic())
+                if deadline is not None
+                else 5
+            )
+        )
+        stream_incomplete = reader.is_alive()
+        with contextlib.suppress(OSError):
+            process.stdout.close()
+
+    if timed_out:
+        return CommandObservation(
+            outcome="timed_out",
+            returncode=process.returncode,
+            failure_signature=None,
+            detail="semantic step exceeded its job timeout",
+        )
+    if pump_error:
+        return CommandObservation(
+            outcome="failed",
+            returncode=process.returncode,
+            failure_signature=None,
+            detail=f"output stream failed: {pump_error[0]}",
+        )
+    if stream_incomplete:
+        return CommandObservation(
+            outcome="failed",
+            returncode=process.returncode,
+            failure_signature=None,
+            detail="output stream did not close with the semantic command",
+        )
+    if process.returncode:
+        signature = collector.signature()
+        return CommandObservation(
+            outcome="failed",
+            returncode=process.returncode,
+            failure_signature=signature,
+            detail=f"exited {process.returncode}",
+        )
+    return CommandObservation(outcome="passed", returncode=0)
+
+
+def _child_environment(
+    changed_files_file: str | Path | None = None,
+) -> dict[str, str]:
     """The base environment every legacy step inherits — file in, list out.
 
     ONE SOURCE FOR THE CHILDREN, AND IT IS THE FILE (2026-08-14, run
@@ -1661,19 +2979,31 @@ def _child_environment() -> dict[str, str]:
     than merely ignored.
     """
     command_env = os.environ.copy()
+    if changed_files_file is not None:
+        command_env["CI_CHANGED_FILES_FILE"] = str(changed_files_file)
     if command_env.get("CI_CHANGED_FILES_FILE"):
         command_env.pop("CI_CHANGED_FILES_JSON", None)
-    return command_env
+    return _child_git_environment(command_env)
+
+
+def _child_git_environment(command_env: Mapping[str, str]) -> dict[str, str]:
+    """Drop repo-binding Git vars so a child can `git init` in tmp_path."""
+    cleaned = dict(command_env)
+    for key in REPO_BINDING_GIT_VARS:
+        cleaned.pop(key, None)
+    return cleaned
 
 
 def _dependency_environment(
     install_command: str | None,
+    *,
+    changed_files_file: str | Path | None = None,
 ) -> dict[str, str]:
     """Build a clean, single-use dependency environment for a job group."""
     # `_child_environment`, never a bare `os.environ.copy()`: this is one of the
     # two places a legacy step's environment is assembled, and the E2BIG repair
     # lives there.
-    command_env = _child_environment()
+    command_env = _child_environment(changed_files_file)
     if install_command is None:
         return command_env
 
@@ -1700,16 +3030,594 @@ def _dependency_environment(
     return command_env
 
 
+def _blocked_job_execution(
+    job: LegacyJob,
+    *,
+    infrastructure_outcome: str,
+    detail: object,
+) -> JobExecution:
+    bounded = _bounded_detail(detail)
+    return JobExecution(
+        logical_job_id=job.job_id,
+        job_exec_sha256=semantic_job_digest(job),
+        infrastructure={"outcome": infrastructure_outcome, "detail": bounded},
+        steps=tuple(
+            {
+                **spec.plan_dict(),
+                "outcome": "infrastructure_blocked",
+                "failure_signature": None,
+                "detail": bounded,
+            }
+            for spec in semantic_step_specs(job)
+        ),
+        failure=f"{job.job_id}: infrastructure {infrastructure_outcome} ({bounded})",
+    )
+
+
+def _coerce_job_execution(
+    job: LegacyJob, value: JobExecution | str | None
+) -> JobExecution:
+    """Refuse a runner-internal result shape as infrastructure doubt."""
+    if isinstance(value, JobExecution):
+        return value
+    return _blocked_job_execution(
+        job,
+        infrastructure_outcome="unknown",
+        detail=(
+            "internal runner returned invalid execution result "
+            f"{type(value).__name__}"
+        ),
+    )
+
+
+def _write_semantic_fragment(path: Path, fragment: Mapping[str, Any]) -> None:
+    """Atomically write the bounded raw fragment consumed by ci-gate."""
+    _atomic_write_json(path, fragment)
+
+
+def _remaining_seconds(deadline: float) -> float:
+    return max(0.0, deadline - time.monotonic())
+
+
+def _git_run_bounded(
+    args: Sequence[str],
+    *,
+    cwd: Path,
+    deadline: float,
+    check: bool = True,
+    capture_output: bool = True,
+) -> subprocess.CompletedProcess[str]:
+    remaining = _remaining_seconds(deadline)
+    if remaining <= 0:
+        raise TimeoutError("exact-base replay budget exhausted")
+    return subprocess.run(
+        list(args),
+        cwd=cwd,
+        check=check,
+        capture_output=capture_output,
+        text=True,
+        timeout=remaining,
+    )
+
+
+def _ensure_exact_commit(root: Path, sha: str, *, deadline: float) -> str:
+    """Acquire only the exact replay commit; never widen to full history."""
+    if not re.fullmatch(r"[0-9a-fA-F]{40}", sha):
+        raise RuntimeError(f"base replay requires a full 40-hex SHA, got {sha!r}")
+    probe = _git_run_bounded(
+        ["git", "cat-file", "-e", f"{sha}^{{commit}}"],
+        cwd=root,
+        deadline=deadline,
+        check=False,
+    )
+    if probe.returncode:
+        _git_run_bounded(
+            ["git", "fetch", "--no-tags", "--depth=1", "origin", sha],
+            cwd=root,
+            deadline=deadline,
+        )
+    resolved = _git_run_bounded(
+        ["git", "rev-parse", f"{sha}^{{commit}}"],
+        cwd=root,
+        deadline=deadline,
+    ).stdout.strip()
+    if resolved.lower() != sha.lower():
+        raise RuntimeError(
+            f"exact-base acquisition resolved {resolved!r}, expected {sha!r}"
+        )
+    return resolved.lower()
+
+
+def _bounded_rmtree(path: Path, *, deadline: float) -> None:
+    """Start cleanup without letting teardown exceed the replay deadline."""
+    cleanup = threading.Thread(
+        target=shutil.rmtree,
+        args=(path,),
+        kwargs={"ignore_errors": True},
+        name="ci-base-replay-cleanup",
+        daemon=True,
+    )
+    cleanup.start()
+    cleanup.join(timeout=_remaining_seconds(deadline))
+
+
+@contextlib.contextmanager
+def _exact_base_worktree(
+    root: Path, sha: str, *, deadline: float
+) -> Iterator[Path]:
+    """Create an independent exact-base checkout with a pinned local origin.
+
+    A linked worktree shares refs and remote configuration with the head
+    checkout. That lets a base manifest's ordinary ``git fetch origin main``
+    substitute whatever main points to later. This repository shares only the
+    immutable object database; its refs/config/index are private, and its sole
+    origin branch is ``main`` at the exact replay SHA.
+    """
+    exact_sha = _ensure_exact_commit(root, sha, deadline=deadline)
+    runner_temp = Path(os.environ.get("RUNNER_TEMP") or tempfile.gettempdir())
+    holder = Path(tempfile.mkdtemp(prefix="ci-base-replay-", dir=runner_temp))
+    worktree = holder / "worktree"
+    repository = holder / "repository.git"
+    pinned_origin = holder / "origin.git"
+    try:
+        common_dir_text = _git_run_bounded(
+            ["git", "rev-parse", "--git-common-dir"],
+            cwd=root,
+            deadline=deadline,
+        ).stdout.strip()
+        common_dir = Path(common_dir_text)
+        if not common_dir.is_absolute():
+            common_dir = root / common_dir
+        shared_objects = (common_dir / "objects").resolve()
+
+        _git_run_bounded(
+            ["git", "init", "--bare", str(pinned_origin)],
+            cwd=root,
+            deadline=deadline,
+        )
+        (pinned_origin / "objects" / "info" / "alternates").write_text(
+            str(shared_objects) + "\n",
+            encoding="utf-8",
+        )
+        _git_run_bounded(
+            [
+                "git",
+                "--git-dir",
+                str(pinned_origin),
+                "update-ref",
+                "refs/heads/main",
+                exact_sha,
+            ],
+            cwd=root,
+            deadline=deadline,
+        )
+        _git_run_bounded(
+            [
+                "git",
+                "--git-dir",
+                str(pinned_origin),
+                "symbolic-ref",
+                "HEAD",
+                "refs/heads/main",
+            ],
+            cwd=root,
+            deadline=deadline,
+        )
+
+        _git_run_bounded(
+            ["git", "init", "--bare", str(repository)],
+            cwd=root,
+            deadline=deadline,
+        )
+        (repository / "objects" / "info" / "alternates").write_text(
+            str(shared_objects) + "\n",
+            encoding="utf-8",
+        )
+        worktree.mkdir()
+        for key, value in (
+            ("core.bare", "false"),
+            ("core.worktree", str(worktree)),
+        ):
+            _git_run_bounded(
+                ["git", "--git-dir", str(repository), "config", key, value],
+                cwd=root,
+                deadline=deadline,
+            )
+        _git_run_bounded(
+            [
+                "git",
+                "--git-dir",
+                str(repository),
+                "remote",
+                "add",
+                "origin",
+                str(pinned_origin),
+            ],
+            cwd=root,
+            deadline=deadline,
+        )
+        _git_run_bounded(
+            [
+                "git",
+                "--git-dir",
+                str(repository),
+                "update-ref",
+                "refs/remotes/origin/main",
+                exact_sha,
+            ],
+            cwd=root,
+            deadline=deadline,
+        )
+        _git_run_bounded(
+            [
+                "git",
+                "--git-dir",
+                str(repository),
+                "--work-tree",
+                str(worktree),
+                "checkout",
+                "--detach",
+                "--force",
+                exact_sha,
+            ],
+            cwd=root,
+            deadline=deadline,
+            capture_output=False,
+        )
+        (worktree / ".git").write_text(
+            f"gitdir: {repository}\n",
+            encoding="utf-8",
+        )
+        observed_head = _git_run_bounded(
+            ["git", "rev-parse", "HEAD"],
+            cwd=worktree,
+            deadline=deadline,
+        ).stdout.strip()
+        observed_main = _git_run_bounded(
+            ["git", "rev-parse", "origin/main"],
+            cwd=worktree,
+            deadline=deadline,
+        ).stdout.strip()
+        if observed_head != exact_sha or observed_main != exact_sha:
+            raise RuntimeError(
+                "isolated base checkout did not bind HEAD and origin/main to "
+                f"{exact_sha}"
+            )
+        yield worktree
+    finally:
+        _bounded_rmtree(holder, deadline=deadline)
+
+
+def _stream_process_with_deadline(
+    command: Sequence[str],
+    *,
+    cwd: Path,
+    env: Mapping[str, str],
+    deadline: float,
+) -> tuple[int | None, bool]:
+    """Run the base runner serially with inherited live output and one budget."""
+    remaining = _remaining_seconds(deadline)
+    if remaining <= 0:
+        return None, True
+    process = subprocess.Popen(
+        list(command),
+        cwd=cwd,
+        env=dict(env),
+        start_new_session=True,
+    )
+    try:
+        return process.wait(timeout=_remaining_seconds(deadline)), False
+    except subprocess.TimeoutExpired:
+        with contextlib.suppress(ProcessLookupError):
+            os.killpg(process.pid, signal.SIGKILL)
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            process.wait(timeout=_remaining_seconds(deadline))
+        return process.returncode, True
+
+
+def _base_replay_unavailable(base_sha: str, detail: object) -> dict[str, Any]:
+    return {
+        "tested_tree_sha": base_sha,
+        "outcome": "unavailable",
+        "detail": _bounded_detail(detail),
+    }
+
+
+def _run_exact_base_replays(
+    *,
+    root: Path,
+    plan: CIPackPlan,
+    records: list[dict[str, Any]],
+    budget_seconds: int,
+) -> None:
+    """Replay failed logical jobs serially under the exact base checkout."""
+    failed_records = [
+        record
+        for record in records
+        if any(
+            step.get("outcome") in {"failed", "timed_out"}
+            for step in record.get("steps", [])
+        )
+    ]
+    if not failed_records or plan.role != "pr_head":
+        return
+    deadline = time.monotonic() + max(1, budget_seconds)
+    base_sha = plan.base_sha
+    try:
+        with _exact_base_worktree(root, base_sha, deadline=deadline) as base_root:
+            base_runner = base_root / "scripts" / "run_ci_pack.py"
+            base_manifest = base_root / ".github" / "ci" / "legacy-jobs.yml"
+            for record in failed_records:
+                target_steps = [
+                    step
+                    for step in record["steps"]
+                    if step.get("outcome") in {"failed", "timed_out"}
+                ]
+                if _remaining_seconds(deadline) <= 0:
+                    replay = {
+                        "tested_tree_sha": base_sha,
+                        "outcome": "timed_out",
+                        "detail": "exact-base replay budget exhausted",
+                    }
+                    for step in target_steps:
+                        step["base_replay"] = replay
+                    continue
+                # Keep all runner outputs OUTSIDE the clean base worktree.
+                # `_run_job` hard-cleans that tree, and evidence generation must
+                # never mutate the subject it claims to have replayed.
+                child_temp = base_root.parent / "runner-temp"
+                child_temp.mkdir(exist_ok=True)
+                replay_path = child_temp / "base-replay.json"
+                with contextlib.suppress(FileNotFoundError):
+                    replay_path.unlink()
+                base_changed_files = child_temp / "changed-files.json"
+                base_changed_files.write_text("null\n", encoding="utf-8")
+                # A replay is a base-only execution context, not a PR runner
+                # wearing a different cwd. Build from a small non-capability
+                # allowlist: denylisting GITHUB_TOKEN alone still leaves the
+                # Actions runtime/artifact and OIDC bearer tokens live.
+                safe_parent_names = {
+                    "PATH",
+                    "SHELL",
+                    "LANG",
+                    "LANGUAGE",
+                    "LC_ALL",
+                    "TZ",
+                    "TERM",
+                    "COLORTERM",
+                    "NO_COLOR",
+                    "FORCE_COLOR",
+                    "SSL_CERT_FILE",
+                    "SSL_CERT_DIR",
+                    "REQUESTS_CA_BUNDLE",
+                    "CURL_CA_BUNDLE",
+                    "HTTP_PROXY",
+                    "HTTPS_PROXY",
+                    "ALL_PROXY",
+                    "NO_PROXY",
+                    "http_proxy",
+                    "https_proxy",
+                    "all_proxy",
+                    "no_proxy",
+                    "PYTHONUTF8",
+                    "PYTHONIOENCODING",
+                    "PYTHONDONTWRITEBYTECODE",
+                    "RUNNER_OS",
+                    "RUNNER_ARCH",
+                    "RUNNER_ENVIRONMENT",
+                    "RUNNER_TOOL_CACHE",
+                    "ImageOS",
+                    "ImageVersion",
+                }
+                child_env = {
+                    key: value
+                    for key, value in os.environ.items()
+                    if key in safe_parent_names or key.startswith("LC_")
+                }
+                child_home = child_temp / "home"
+                child_home.mkdir(exist_ok=True)
+                child_env.update(
+                    {
+                        "HOME": str(child_home),
+                        "TMPDIR": str(child_temp),
+                        "GITHUB_ACTIONS": "true",
+                        "GITHUB_WORKSPACE": str(base_root),
+                        "GITHUB_SHA": base_sha,
+                        "GITHUB_REF": "refs/heads/main",
+                        "GITHUB_REF_NAME": "main",
+                        "GITHUB_REF_TYPE": "branch",
+                        "GITHUB_HEAD_REF": "",
+                        "GITHUB_BASE_REF": "",
+                        "GITHUB_EVENT_NAME": "base_replay",
+                        "GITHUB_RUN_ID": plan.workflow_run_id,
+                        "GITHUB_WORKFLOW": plan.workflow,
+                        "RUNNER_TEMP": str(child_temp),
+                        "CI_DISABLE_BASE_REPLAY": "1",
+                        # Replay the base as BASE, never fetch/inspect the PR
+                        # branch through a dynamic manifest expression or a
+                        # head changed-file handle inherited from this pack.
+                        "CI_BASE_REF": "main",
+                        "CI_HEAD_REF": "main",
+                        "CI_CHANGED_FILES_FILE": str(base_changed_files),
+                        "CI_TESTED_TREE_SHA": base_sha,
+                        "CI_SUBJECT_HEAD_SHA": base_sha,
+                        "CI_BASE_SHA": base_sha,
+                        "CI_SEMANTIC_ROLE": "main",
+                    }
+                )
+                child_env.pop("CI_CHANGED_FILES_JSON", None)
+                command = [
+                    sys.executable,
+                    str(base_runner),
+                    "--workflow",
+                    str(base_manifest),
+                    "--execute",
+                    "--semantic-replay-job",
+                    str(record["logical_job_id"]),
+                    "--emit-semantic-fragment",
+                    str(replay_path),
+                    "--tested-tree-sha",
+                    base_sha,
+                    "--subject-head-sha",
+                    base_sha,
+                    "--base-sha",
+                    base_sha,
+                    "--role",
+                    "main",
+                    "--event",
+                    "base_replay",
+                    "--workflow-run-id",
+                    plan.workflow_run_id,
+                    "--workflow-name",
+                    plan.workflow,
+                    "--disable-base-replay",
+                ]
+                _returncode, timed_out = _stream_process_with_deadline(
+                    command,
+                    cwd=base_root,
+                    env=child_env,
+                    deadline=deadline,
+                )
+                if timed_out:
+                    replay: dict[str, Any] = {
+                        "tested_tree_sha": base_sha,
+                        "outcome": "timed_out",
+                        "detail": "exact-base replay budget exhausted",
+                    }
+                elif not replay_path.is_file():
+                    replay = _base_replay_unavailable(
+                        base_sha,
+                        "base runner did not emit semantic replay evidence "
+                        "(the base may predate the semantic epoch)",
+                    )
+                else:
+                    try:
+                        replay_doc = _load_json_object(replay_path)
+                        if replay_doc.get("schema") != FRAGMENT_SCHEMA:
+                            raise ManifestError("base replay fragment schema mismatch")
+                        if replay_doc.get("tested_tree_sha") != base_sha:
+                            raise ManifestError("base replay tree identity mismatch")
+                        if replay_doc.get("subject_head_sha") != base_sha:
+                            raise ManifestError("base replay subject identity mismatch")
+                        if replay_doc.get("base_sha") != base_sha:
+                            raise ManifestError("base replay base identity mismatch")
+                        if replay_doc.get("role") != "main":
+                            raise ManifestError("base replay role must be main")
+                        if replay_doc.get("job_present") is False:
+                            replay = {
+                                "tested_tree_sha": base_sha,
+                                "job_present": False,
+                            }
+                        else:
+                            replay_jobs = replay_doc.get("jobs")
+                            if not isinstance(replay_jobs, list) or len(replay_jobs) != 1:
+                                raise ManifestError(
+                                    "base replay must contain exactly one logical job"
+                                )
+                            base_job = replay_jobs[0]
+                            if base_job.get("logical_job_id") != record["logical_job_id"]:
+                                raise ManifestError("base replay logical job mismatch")
+                            replay = {
+                                "tested_tree_sha": base_sha,
+                                "job_present": True,
+                                "logical_job_id": base_job["logical_job_id"],
+                                "job_exec_sha256": base_job["job_exec_sha256"],
+                                "infrastructure": base_job["infrastructure"],
+                                "steps": base_job["steps"],
+                            }
+                    except (ManifestError, OSError, json.JSONDecodeError) as exc:
+                        replay = _base_replay_unavailable(base_sha, exc)
+                for step in target_steps:
+                    step["base_replay"] = replay
+    except (RuntimeError, subprocess.SubprocessError, TimeoutError, OSError) as exc:
+        replay = _base_replay_unavailable(base_sha, exc)
+        for record in failed_records:
+            for step in record.get("steps", []):
+                if step.get("outcome") in {"failed", "timed_out"}:
+                    step["base_replay"] = replay
+
+
 def execute_pack(
-    jobs: list[LegacyJob], *, shadow_predicted: frozenset[str] | None = None
+    jobs: list[LegacyJob],
+    *,
+    shadow_predicted: frozenset[str] | None = None,
+    plan: CIPackPlan | None = None,
+    pack_index: int = 0,
+    emit_semantic_fragment: Path | None = None,
+    enable_base_replay: bool = True,
+    base_replay_budget_seconds: int = DEFAULT_BASE_REPLAY_BUDGET_SECONDS,
+    changed_files_file: str | Path | None = None,
 ) -> int:
-    """Execute a pack, continuing after failures so one run reports all reds."""
-    _workspace_root()
+    """Execute a pack, account completely, and emit raw bounded evidence."""
+    root = _workspace_root()
     base_ref = os.environ.get("CI_BASE_REF", "main")
     head_ref = os.environ.get("CI_HEAD_REF", "")
     failures: list[str] = []
+    records: list[dict[str, Any]] = []
+    pack_infrastructure: list[dict[str, str]] = []
     current_dependency: object = object()
-    command_env = _child_environment()
+    dependency_error: str | None = None
+    bound_tree_sha = plan.tested_tree_sha if plan is not None else os.environ.get(
+        "CI_TESTED_TREE_SHA"
+    )
+    if bound_tree_sha is not None and not re.fullmatch(
+        r"[0-9a-f]{40}", bound_tree_sha
+    ):
+        bound_tree_sha = None
+    command_env = _child_environment(changed_files_file)
+    if plan is not None:
+        try:
+            observed_tree_sha = _current_commit_sha(root)
+            if observed_tree_sha != plan.tested_tree_sha:
+                raise RuntimeError(
+                    f"checkout HEAD {observed_tree_sha} does not match planned "
+                    f"tested tree {plan.tested_tree_sha}"
+                )
+        except Exception as exc:  # noqa: BLE001 — emit an explicit blocked pack
+            detail = _bounded_detail(exc)
+            records = [
+                _blocked_job_execution(
+                    job,
+                    infrastructure_outcome="runner_startup_failed",
+                    detail=detail,
+                ).fragment_dict()
+                for job in jobs
+            ]
+            failures = [
+                f"{job.job_id}: infrastructure runner_startup_failed ({detail})"
+                for job in jobs
+            ] or [f"ci-pack: runner_startup_failed ({detail})"]
+            for failure in failures:
+                job_id = failure.split(":", 1)[0]
+                print(f"::error title=legacy-job-{job_id}::{failure}", flush=True)
+            if emit_semantic_fragment is not None:
+                _write_semantic_fragment(
+                    emit_semantic_fragment,
+                    {
+                        "schema": FRAGMENT_SCHEMA,
+                        "workflow_run_id": plan.workflow_run_id,
+                        "workflow": plan.workflow,
+                        "event": plan.event,
+                        "role": plan.role,
+                        "tested_tree_sha": plan.tested_tree_sha,
+                        "subject_head_sha": plan.subject_head_sha,
+                        "base_sha": plan.base_sha,
+                        "plan_sha256": plan.plan_sha256,
+                        "pack_index": pack_index,
+                        "infrastructure": [
+                            {
+                                "outcome": "runner_startup_failed",
+                                "detail": detail,
+                            }
+                        ],
+                        "jobs": records,
+                    },
+                )
+            failed_ids = sorted(
+                failure.split(":", 1)[0] for failure in failures
+            )
+            print("CI_PACK_FAILED_JOBS=" + json.dumps(failed_ids), flush=True)
+            return 1
     try:
         # Adjacent jobs with an identical declared dependency set share that
         # exact environment.  A different set recreates the venv from scratch,
@@ -1721,14 +3629,48 @@ def execute_pack(
         for job in ordered_jobs:
             dependency = dependency_command(job)
             if dependency != current_dependency:
-                command_env = _dependency_environment(dependency)
                 current_dependency = dependency
-            failure = _run_job(
-                job,
-                base_ref=base_ref,
-                head_ref=head_ref,
-                command_env=command_env,
-            )
+                dependency_error = None
+                try:
+                    command_env = _dependency_environment(
+                        dependency,
+                        changed_files_file=changed_files_file,
+                    )
+                except Exception as exc:  # noqa: BLE001 — evidence must survive
+                    dependency_error = _bounded_detail(exc)
+            if dependency_error is not None:
+                execution = _blocked_job_execution(
+                    job,
+                    infrastructure_outcome="dependency_failed",
+                    detail=dependency_error,
+                )
+            else:
+                try:
+                    execution = _coerce_job_execution(
+                        job,
+                        _run_job(
+                            job,
+                            base_ref=base_ref,
+                            head_ref=head_ref,
+                            command_env=command_env,
+                            tested_tree_sha=bound_tree_sha,
+                        ),
+                    )
+                except Exception as exc:  # noqa: BLE001 — complete accounting
+                    execution = _blocked_job_execution(
+                        job,
+                        infrastructure_outcome=(
+                            "timed_out"
+                            if isinstance(
+                                exc,
+                                (TimeoutError, subprocess.TimeoutExpired),
+                            )
+                            else "unknown"
+                        ),
+                        detail=exc,
+                    )
+            failure = execution.failure
+            records.append(execution.fragment_dict())
             if failure:
                 failures.append(failure)
                 # title=legacy-job-<id> is what merge_on_green parses for
@@ -1751,7 +3693,72 @@ def execute_pack(
                     flush=True,
                 )
     finally:
-        _restore_workspace()
+        try:
+            _restore_workspace(bound_tree_sha)
+        except Exception as exc:  # noqa: BLE001 — fragment still gets written
+            detail = _bounded_detail(exc)
+            failures.append(f"ci-pack: final workspace restore failed ({detail})")
+            pack_infrastructure.append(
+                {"outcome": "unknown", "detail": f"workspace restore: {detail}"}
+            )
+
+    if plan is not None and enable_base_replay and not os.environ.get(
+        "CI_DISABLE_BASE_REPLAY"
+    ):
+        try:
+            _run_exact_base_replays(
+                root=root,
+                plan=plan,
+                records=records,
+                budget_seconds=base_replay_budget_seconds,
+            )
+        except Exception as exc:  # noqa: BLE001 — head fragment must survive
+            detail = _bounded_detail(exc)
+            print(
+                "::warning title=ci-base-replay::exact-base replay unavailable "
+                f"({detail})",
+                flush=True,
+            )
+            unavailable = _base_replay_unavailable(plan.base_sha, detail)
+            for record in records:
+                for step in record.get("steps", []):
+                    if step.get("outcome") in {"failed", "timed_out"}:
+                        step["base_replay"] = unavailable
+
+    if emit_semantic_fragment is not None:
+        if plan is not None:
+            identity = {
+                "workflow_run_id": plan.workflow_run_id,
+                "workflow": plan.workflow,
+                "event": plan.event,
+                "role": plan.role,
+                "tested_tree_sha": plan.tested_tree_sha,
+                "subject_head_sha": plan.subject_head_sha,
+                "base_sha": plan.base_sha,
+                "plan_sha256": plan.plan_sha256,
+            }
+        else:
+            tested = os.environ.get("CI_TESTED_TREE_SHA") or os.environ.get(
+                "GITHUB_SHA", "unbound-tested-tree"
+            )
+            identity = {
+                "workflow_run_id": os.environ.get("GITHUB_RUN_ID", "local"),
+                "workflow": os.environ.get("GITHUB_WORKFLOW", "ci"),
+                "event": os.environ.get("GITHUB_EVENT_NAME", "local"),
+                "role": os.environ.get("CI_SEMANTIC_ROLE", "main"),
+                "tested_tree_sha": tested,
+                "subject_head_sha": os.environ.get("CI_SUBJECT_HEAD_SHA", tested),
+                "base_sha": os.environ.get("CI_BASE_SHA", tested),
+                "plan_sha256": "replay-only",
+            }
+        fragment = {
+            "schema": FRAGMENT_SCHEMA,
+            **identity,
+            "pack_index": pack_index,
+            "infrastructure": pack_infrastructure,
+            "jobs": records,
+        }
+        _write_semantic_fragment(emit_semantic_fragment, fragment)
 
     failed_ids = sorted(
         {failure.split(":", 1)[0] for failure in failures if ":" in failure}
@@ -1772,6 +3779,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--pack-count", type=int, default=2)
     parser.add_argument("--execute", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
+    parser.add_argument(
+        "--plan-json",
+        type=Path,
+        default=None,
+        help=(
+            "consume this authoritative ci.pack_plan.v2 artifact; selection and "
+            "partition are never recomputed in this mode"
+        ),
+    )
     # Absent = run the full suite. main's baseline and workflow_dispatch pass
     # nothing here ON PURPOSE, so the complete manifest always audits main.
     parser.add_argument("--changed-from", default=None)
@@ -1822,8 +3838,37 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--expect-plan-sha",
         default=None,
-        help="refuse to execute unless the recomputed plan hashes to this sha256",
+        help="refuse to execute unless the authoritative plan has this sha256",
     )
+    parser.add_argument("--tested-tree-sha", default=None)
+    parser.add_argument("--subject-head-sha", default=None)
+    parser.add_argument("--base-sha", default=None)
+    parser.add_argument("--workflow-run-id", default=None)
+    parser.add_argument("--workflow-name", default=None)
+    parser.add_argument("--event", default=None)
+    parser.add_argument("--role", choices=("pr_head", "main"), default=None)
+    parser.add_argument("--expect-tested-tree-sha", default=None)
+    parser.add_argument("--expect-subject-head-sha", default=None)
+    parser.add_argument("--expect-base-sha", default=None)
+    parser.add_argument(
+        "--emit-semantic-fragment",
+        type=Path,
+        default=None,
+        help="write the bounded raw ci.semantic_fragment.v1 pack artifact",
+    )
+    parser.add_argument(
+        "--base-replay-budget-seconds",
+        type=int,
+        default=int(
+            os.environ.get(
+                "CI_BASE_REPLAY_BUDGET_SECONDS",
+                str(DEFAULT_BASE_REPLAY_BUDGET_SECONDS),
+            )
+        ),
+        help="one fail-closed serial budget shared by all exact-base replays",
+    )
+    parser.add_argument("--semantic-replay-job", default=None, help=argparse.SUPPRESS)
+    parser.add_argument("--disable-base-replay", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument(
         "--github-output",
         type=Path,
@@ -1848,6 +3893,14 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         parser.error("--execute and --validate-only are mutually exclusive")
     if args.execute and args.plan_only:
         parser.error("--execute and --plan-only are mutually exclusive")
+    if args.plan_json is not None and args.plan_only:
+        parser.error("--plan-json consumes a plan and cannot pair with --plan-only")
+    if args.semantic_replay_job and not args.execute:
+        parser.error("--semantic-replay-job requires --execute")
+    if args.semantic_replay_job and args.emit_semantic_fragment is None:
+        parser.error("--semantic-replay-job requires --emit-semantic-fragment")
+    if args.base_replay_budget_seconds < 1:
+        parser.error("--base-replay-budget-seconds must be positive")
     if not 0 <= args.pack_index < args.pack_count:
         parser.error("--pack-index must be between 0 and pack-count - 1")
     return args
@@ -1856,13 +3909,78 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        plan = plan_from_workflow(
-            args.workflow,
-            changed_from=args.changed_from,
-            scope_mode=args.scope_mode,
-            pack_count=args.pack_count,
-            changed_files_file=args.changed_files_file,
+        if args.semantic_replay_job:
+            jobs = load_legacy_jobs(args.workflow)
+            target = next(
+                (job for job in jobs if job.job_id == args.semantic_replay_job),
+                None,
+            )
+            tested = args.tested_tree_sha or os.environ.get("GITHUB_SHA") or ""
+            if target is None:
+                _write_semantic_fragment(
+                    args.emit_semantic_fragment,
+                    {
+                        "schema": FRAGMENT_SCHEMA,
+                        "workflow_run_id": args.workflow_run_id or "local",
+                        "workflow": args.workflow_name or "ci",
+                        "event": args.event or "base_replay",
+                        "role": args.role or "main",
+                        "tested_tree_sha": tested,
+                        "subject_head_sha": args.subject_head_sha or tested,
+                        "base_sha": args.base_sha or tested,
+                        "plan_sha256": "replay-only",
+                        "pack_index": 0,
+                        "infrastructure": [],
+                        "job_present": False,
+                        "jobs": [],
+                    },
+                )
+                return 0
+            identity_env = {
+                "CI_TESTED_TREE_SHA": tested,
+                "CI_SUBJECT_HEAD_SHA": args.subject_head_sha or tested,
+                "CI_BASE_SHA": args.base_sha or tested,
+                "CI_SEMANTIC_ROLE": args.role or "main",
+                "GITHUB_RUN_ID": args.workflow_run_id or "local",
+                "GITHUB_WORKFLOW": args.workflow_name or "ci",
+                "GITHUB_EVENT_NAME": args.event or "base_replay",
+            }
+            os.environ.update(identity_env)
+            return execute_pack(
+                [target],
+                pack_index=0,
+                emit_semantic_fragment=args.emit_semantic_fragment,
+                enable_base_replay=False,
+            )
+
+        changed_handle = args.changed_files_file or os.environ.get(
+            "CI_CHANGED_FILES_FILE"
         )
+        if args.plan_json is not None:
+            plan = load_authoritative_plan(
+                args.plan_json,
+                workflow=args.workflow,
+                changed_files_file=changed_handle,
+                expect_plan_sha=args.expect_plan_sha,
+                expect_tested_tree_sha=args.expect_tested_tree_sha,
+                expect_subject_head_sha=args.expect_subject_head_sha,
+                expect_base_sha=args.expect_base_sha,
+            )
+        else:
+            plan = plan_from_workflow(
+                args.workflow,
+                changed_from=args.changed_from,
+                scope_mode=args.scope_mode,
+                pack_count=args.pack_count,
+                changed_files_file=args.changed_files_file,
+                workflow_run_id=args.workflow_run_id,
+                workflow_name=args.workflow_name,
+                event=args.event,
+                role=args.role,
+                tested_tree_sha=args.tested_tree_sha,
+                subject_head_sha=args.subject_head_sha,
+                base_sha=args.base_sha,
+            )
         shadow = args.scope_mode == "shadow" and args.changed_from
         if shadow:
             predicted_ids = frozenset(plan.predicted_job_ids)
@@ -1905,10 +4023,8 @@ def main(argv: list[str] | None = None) -> int:
                 f"{list(plan.nonempty_pack_indices)}; plan sha256={plan.plan_sha256}."
             )
             return 0
-        # A pack whose recomputed plan differs from the published one would run a
-        # DIFFERENT suite under a check name the sweeper reads as proof of this
-        # one. Refuse here, before a single legacy step runs, and name both
-        # hashes so the divergence is diagnosable rather than merely red.
+        # Legacy/unpinned callers can still build locally; production packs
+        # consume --plan-json above and never recompute selection or partition.
         if args.expect_plan_sha and args.expect_plan_sha != plan.plan_sha256:
             # NAME THE CHANGED-FILE HANDLE FIRST (2026-08-14). Since
             # `changed_files_sha256` entered the hashed payload, the most likely
@@ -1932,7 +4048,7 @@ def main(argv: list[str] | None = None) -> int:
             )
             print(
                 "::error title=ci-plan-parity::pack "
-                f"{args.pack_index} recomputed plan {plan.plan_sha256} but ci-plan "
+                f"{args.pack_index} loaded plan {plan.plan_sha256} but ci-plan "
                 f"published {args.expect_plan_sha}; refusing to run a suite the "
                 "published plan does not describe",
                 flush=True,
@@ -1953,6 +4069,14 @@ def main(argv: list[str] | None = None) -> int:
             shadow_predicted=(
                 frozenset(plan.predicted_job_ids) if shadow else None
             ),
+            plan=plan,
+            pack_index=args.pack_index,
+            emit_semantic_fragment=args.emit_semantic_fragment,
+            enable_base_replay=(
+                args.plan_json is not None and not args.disable_base_replay
+            ),
+            base_replay_budget_seconds=args.base_replay_budget_seconds,
+            changed_files_file=changed_handle,
         )
     except Exception as exc:  # noqa: BLE001 — see _emit_planner_fallback
         # LAW: uncertainty WIDENS. On the ci-plan path an unplannable manifest
@@ -1963,8 +4087,40 @@ def main(argv: list[str] | None = None) -> int:
         if args.plan_only and args.github_output is not None:
             _emit_planner_fallback(args, exc)
             return 0
+        # A pinned pack may fail before it can materialize a replacement plan
+        # when the changed-file artifact is missing or malformed. Preserve the
+        # established operator-facing parity receipts in that earlier refusal
+        # path: the expected plan still exists, but this runner cannot prove the
+        # changed-file input needed to reconstruct it. This is diagnostic only;
+        # the exception below remains the fail-closed gate.
+        if args.expect_plan_sha:
+            handle = args.changed_files_file or os.environ.get(
+                "CI_CHANGED_FILES_FILE"
+            )
+            state, paths = _read_changed_files_handle(handle)
+            if state not in {"list", "null"}:
+                print(
+                    f"::error title=ci-changed-files::pack {args.pack_index} "
+                    f"could not reconstruct the published plan; changed paths "
+                    f"read as {state} from "
+                    f"{handle or '$CI_CHANGED_FILES_FILE (unset)'}"
+                    + (f" carrying {len(paths)} path(s)" if state == "list" else ""),
+                    flush=True,
+                )
+                print(
+                    "::error title=ci-plan-parity::pack "
+                    f"{args.pack_index} could not verify published plan "
+                    f"{args.expect_plan_sha}; refusing before legacy execution",
+                    flush=True,
+                )
         if isinstance(
-            exc, (ManifestError, RuntimeError, subprocess.CalledProcessError)
+            exc,
+            (
+                ManifestError,
+                RuntimeError,
+                SemanticProofError,
+                subprocess.CalledProcessError,
+            ),
         ):
             print(f"ci-pack validation/execution failed: {exc}", file=sys.stderr)
             return 2

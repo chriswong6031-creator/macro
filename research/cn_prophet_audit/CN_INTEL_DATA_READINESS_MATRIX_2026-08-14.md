@@ -1,11 +1,12 @@
 # China Intelligence → CN limit-alpha: data-readiness / PIT integration matrix (2026-08-14)
 
-Status: **DESIGN INPUT, NOT AUTHORITY.** This document classifies the repo's China
-evidence producers for the LATER convergence work (the post-P-B2 run order in the
-program home). It builds nothing, schedules nothing, changes no collector, and grants
-no family any tier. Rulings here bind future *construction shape* (what may be stamped
-PIT, what must accrue prospectively); every family still re-earns incremental value
-under its own preregistration before touching anything Prophet-facing
+Status: **DESIGN INPUT, NOT AUTHORITY.** Updated 2026-08-15 with the post-P-B2
+accrual-hardening wave (WS:CN-LIMIT-ALPHA, `DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE`).
+The 2026-08-14 census still classifies producers; §6 records which class-C families
+now accrue lawfully. This document still grants no family any scoring tier.
+Rulings here bind *construction shape* (what may be stamped PIT, what must accrue
+prospectively); every family still re-earns incremental value under its own
+preregistration before touching anything Prophet-facing
 (`research/CN_LIMIT_WASHOUT_PROGRAM_V2_2026-08-11.md` §2; DNR:KILL-CN-ADJUSTED-TAPE-
 LEGAL-LIMIT reopen chain unmodified).
 
@@ -13,11 +14,31 @@ Compiled by the P-B2 session (WS:CN-LIMIT-ALPHA) from a full producer census wit
 file:line receipts; the two load-bearing store-semantics rulings (§2, §3) were
 re-verified by hand in this checkout.
 
-**Standing composite ban (re-affirmed):** China Intelligence's `opportunity_score` /
-conviction composites and the intel-bus digest are display/context constructions
-(`engine/china_intel_bus.py` is stamped LEAF · CONTEXT-ONLY). They are NEVER imported
-into Prophet or any scoring layer. Only RAW evidence producers below are candidates,
-and only through fresh preregistered studies.
+**Standing composite rule — AMENDED 2026-08-15 (operator, "Handoff B").** The former
+absolute ("never China Intelligence composites in Prophet") is replaced by a
+PROVENANCE rule, because the thing that was actually dangerous was the feedback loop,
+not the word "composite":
+
+> Any displayed CN Prophet score or rank must trace to `engine/china_board_rank.py`.
+> China Intelligence may supply that scorer with registered BOARD-INDEPENDENT evidence,
+> including a board-independent intelligence-interest composite
+> (`engine/china_intel_interest.py`, `intel_interest_score`).
+> Raw `china_intel_hub.opportunity_score`, any Hub board-derived term, and anything
+> under `research/cn_prophet_audit/` may NEVER directly own Prophet rank.
+
+Board-derived terms, named: the Hub's `board_row` direction, its board-label edge leg,
+its board-ABSENT bonus, and the board's contribution to its leading-vs-lagging gap — plus
+any Prophet score or rank in any intelligence input. Those four terms are why the Hub's
+own `opportunity_score` stays banned: it carries the board's output back into itself, so
+ranking the board by it would close a loop. `china_intel_interest` re-derives the
+composite with all four structurally absent (declared in `BOARD_DERIVED_TERMS_EXCLUDED`,
+enforced by `tests/test_china_intel_interest.py`), which is what makes it admissible
+where the Hub composite is not.
+
+The intel-bus digest is unchanged: display/context only (`engine/china_intel_bus.py` is
+stamped LEAF · CONTEXT-ONLY). Raw evidence producers below remain candidates for any
+FURTHER authority (gate, size, score) only through fresh preregistered studies — this
+amendment grants ordering authority, and nothing else.
 
 ---
 
@@ -72,12 +93,14 @@ accrual only.
   carry the vendor's announcement date. **PIT class B+** (event-dated, accrual since
   the collector's start; availability assumption = ann_date ≈ public date). The best
   existing sell-side/guidance substrate in the repo.
-- `report_rc.parquet` — **verified in this checkout**: the trailing 30-day window is
-  written with a bare `to_parquet` overwrite and NO read-existing merge, while the
-  module's own comment says the history is the point. Rows older than the current
-  window are destroyed on every run. **PIT class C today, and a live accrual-loss
-  defect** — flagged for its own fix lane (append-only keep-first like its sibling).
-  Until fixed, report_rc cannot accrue an analyst-revision tape at all.
+- `report_rc.parquet` — **FIXED on main, PR #5614** (commit `1e3b16dd2aa`,
+  2026-08-14 17:29:28Z). `_accrue_rc` concatenates the existing store and
+  keep-firsts on `(ticker, report_date, org_name, author_name, quarter,
+  report_title)`. Re-verified 2026-08-15: `tests/test_tushare.py::test_report_rc_accrues_across_windows`
+  green; do not redo. **PIT class B** from the first successful refresh after
+  that merge. Rows destroyed by the pre-fix overwrite are gone; they were never
+  backfilled. The in-store `asof` is the capture stamp, not a vendor publication
+  time.
 
 ## §4 The matrix
 
@@ -91,15 +114,15 @@ or the module's own stamp. "Indep" = carrier-independence per §1.
 | Exact legal-limit spine | TuShare `daily`×`stk_limit` → private store (`china_tushare_spine.py`) | full-A (designed) | NOT SCHEDULED | none yet | D | NO | context_only; THE reopen path | Double-gated (empty trust allowlist + `BULK_HISTORICAL_BACKFILL_READY=False`); no live canary ever; AUTHORITY DECISION pending (operator) — a gate failure is never permission to edit the gate |
 | Realized limit pool | Eastmoney zt_pool → `data/china_zt_pool/pool.parquet` | whole market, partial vendor pool | daily/asia | append-only per session (backfillable) | B | partial (vendor's own board calc) | display | Session-calendar-anchored dates (08-08 heal); the detector recall cross-check substrate |
 | Money flow (per-name + sector) | TuShare `moneyflow_dc`/`_ind_dc` → snapshot + `moneyflow_hist`/`moneyflow_sector_hist` | whole market | daily/asia | hist stores append-only | B | YES | pending (`flow`) | Ready for prospective evidence windows now; trade-date rows, availability = collection day |
-| Margin (per-name) | TuShare `margin_detail` → `data/tushare/margin.parquet` | whole market | daily/asia | snapshot only | C | YES | display (`margin_detail`) | Needs an accrual store before any per-name margin evidence family exists (whole-market margin plane is separately `scored` for regime, not per-name) |
+| Margin (per-name) | TuShare `margin_detail` → `margin.parquet` (snapshot) + `margin_hist.parquet` (evidence) | whole market | daily/asia | snapshot + append-only hist | **A− from first live collect after 2026-08-15** | YES | display (`margin_detail`) | Hist keyed `(ticker, trade_date)` keep-first; trade_date ≠ first_seen. Snapshot consumers unchanged. See §6 |
 | Chips summary (胜率/成本) | TuShare `cyq_perf` → `chips.parquet` + `chips_hist.parquet` (grid) | whole mkt snapshot; hist = china_search panel only, ~1y grid | daily/asia | partial (panel-restricted grid) | B− | partial (vendor transform of price/volume + holder turnover) | pending (`winner_rate`) | W-P0 S5b already consumes hist; depth insufficient for 2011+ studies — P-C gate |
 | Chips distribution (筹码 histogram) | TuShare `cyq_chips` → `data/china_chips_distribution/` partitions | per-ticker per-call | NOT SCHEDULED | none in practice | D (design is A-grade: keep-first immutable + receipts) | partial | pending | The operator's named accumulation footprint; needs an armed accrual lane + quota budget before P-C can charter |
-| Broker 金股 | TuShare `broker_recommend` → `broker.parquet` | whole market | daily/asia | latest month ONLY | **C (§2 ruling)** | YES | display (`broker_gold`) | Prospective first-seen accrual store required before any evidence use |
+| Broker 金股 | TuShare `broker_recommend` → `broker.parquet` (latest-month snapshot) + `broker_hist.parquet` (evidence) | whole market | daily/asia | snapshot + append-only hist | **A− prospective / C historical (§2 + §6)** | YES | display (`broker_gold`) | Hist keyed `(month, ticker, broker)` keep-first. `known_at` only when vendor month == Asia/Shanghai collection month. Historical months = known_at UNKNOWN. See §6 |
 | Guidance + surprises | TuShare `forecast_vip` → `forecast.parquet` + `forecast_hist.parquet` | whole market | daily/asia | append-only, ann_date-stamped | B+ | YES | pending (`forecast_surprise`) | Best-in-repo event-dated fundamental tape; strongest first candidate for a preregistered orthogonal family |
-| Analyst reports/revisions | TuShare `report_rc` → `report_rc.parquet` | whole market, trailing 30d | daily/asia | **overwritten (defect, §3)** | C | YES | pending (`report_revisions`) | Blocked on the accrual fix; then prospective-only |
+| Analyst reports/revisions | TuShare `report_rc` → `report_rc.parquet` | whole market, trailing 30d | daily/asia | append-only keep-first (#5614) | **B from 2026-08-14 17:29:28Z** | YES | pending (`report_revisions`) | Accrual fix shipped; pre-fix window losses are gone and were not backfilled |
 | LHB (龙虎榜 inst/hot-money) | akshare Eastmoney → `data/china_lhb/detail.parquet` | whole market (board events) | daily/asia | append-only per asof (verified `_drip.append_snapshot`) | B | YES | pending (`lhb_inst`) | Institutional-seat split is the clean leg; trailing ~5d aggregation per row |
-| Block trades | akshare `stock_dzjy_mrtj` → `china_block_trades/detail.parquet` | whole market, trailing ~10d | daily/asia | snapshot overwritten | C | YES | (special-sits only) | Accrual store needed before evidence use |
-| Buybacks | akshare `stock_repurchase_em` → `china_buyback/buyback.parquet` | whole market | daily/asia | snapshot overwritten | C | YES | display (`buyback`) | Same prospective-accrual law |
+| Block trades | akshare `stock_dzjy_mrtj` → `detail.parquet` (trailing-window snapshot) + `events.parquet` (evidence) | whole market, trailing ~10d snapshot | daily/asia | snapshot + append-only events | **A− from first live collect after 2026-08-15** | YES | (special-sits only) | Events keyed `(ticker, event_date)` keep-first; event_date ≠ first_seen. Dateless raw rows are dropped, not dated. See §6 |
+| Buybacks | akshare `stock_repurchase_em` → `buyback.parquet` (snapshot) + `buyback_hist.parquet` (evidence) | whole market | daily/asia | snapshot + append-only hist | **A− from first live collect after 2026-08-15** | YES | display (`buyback`) | Hist keyed `(ticker, event_date, plan_key)`. Vendor 公告日期 is `event_date`, never `known_at`. Missing/ambiguous publication → first_seen is the clock. See §6 |
 | Holder counts (股东户数) | Eastmoney → `china_holder_counts/holder_counts.parquet` | whole market | daily/asia | append-only + `first_seen`/`fetched_at` | **A** | YES | pending (`holder_counts`) | The house PIT idiom exemplar — the pattern every class-C family should adopt |
 | Holder sale calendar (减持) | Eastmoney → per collector | whole market | daily/asia | append-only + first_seen; NOTICE_DATE is post-sale | A− | YES | context | Explicit caveat: notice ≠ plan announcement; availability = first_seen only |
 | Unlocks (解禁) | akshare → `china_unlocks/{detail,summary}.parquet` | whole market | daily/asia | event rows; append semantics unverified | B? | YES | (special-sits) | Verify append discipline before evidence use |
@@ -115,13 +138,12 @@ or the module's own stamp. "Indep" = carrier-independence per §1.
 
 ## §5 What this means for the convergence run order (design, not commitments)
 
-1. **Prospective/PIT accrual hardening is the highest-leverage next data wave** — it
-   is cheap, lawful, and every month of delay is a month of evidence that never
-   existed: adopt the `first_seen` idiom for the class-C families with genuine
-   carrier-independence (broker 金股 §2; report_rc after its defect fix §3; per-name
-   margin; block trades; buybacks). Each is an append-only store + a few lines of
-   collector change, off the render path. No authority is implied by accrual
-   (display-tier accrual ships freely under house epistemics).
+1. **Prospective/PIT accrual hardening for the named class-C families is DONE
+   (2026-08-15)** — see §6. `report_rc` was already fixed by #5614. Broker / per-name
+   margin / block trades / buybacks now write separate keep-first hist stores.
+   Display snapshots are unchanged. No authority is implied by accrual
+   (display-tier accrual ships freely under house epistemics). Do not score these
+   families; do not roll into P-C/P-D from this wave.
 2. **Already-usable event-dated tapes** for future preregistered families:
    `forecast_hist` (B+), LHB (B), holder counts (A), filings (A−), moneyflow hist
    (B), zt_pool (B). These can support studies whose windows start at each store's
@@ -136,7 +158,36 @@ or the module's own stamp. "Indep" = carrier-independence per §1.
    association must still demonstrate INCREMENTAL information over Prophet AND over
    the structural washout carrier in the P-D ablation arena before any scoring role.
 
-*Verified-by-hand in this checkout: broker overwrite semantics
-(collectors/tushare_broker.py), report_rc overwrite (collectors/tushare_forecast.py),
-LHB append discipline (collectors/china_lhb.py). All other rows carry census receipts;
-re-verify store-level claims before building on any single row.*
+*Verified-by-hand in this checkout (2026-08-15): report_rc keep-first accrual
+(collectors/tushare_forecast.py `_accrue_rc`, PR #5614); broker/margin/block/buyback
+hist writers + `tests/test_cn_intel_pit_accrual.py`. LHB append discipline
+(collectors/china_lhb.py) unchanged from the 2026-08-14 census. All other rows
+carry census receipts; re-verify store-level claims before building on any single
+row.*
+
+---
+
+## §6 Accrual hardening (2026-08-15) — what is now lawful
+
+Dialect (`DEC:CN-INTEL-PIT-HIST-KEEP-FIRST-SEPARATE`): separate hist file; keep-FIRST
+on identity (china_trade_detail, not `_drip` keep-last); `first_seen` immutable;
+atomic tmp+replace; abort if the existing store is unreadable. Shared helper:
+`collectors/_first_seen_store.py`. Evidence studies read the hist file, never
+reconstruct history from the current snapshot.
+
+| Family | Evidence store | Identity key | Evidence-start | Still non-PIT |
+|---|---|---|---|---|
+| report_rc | `data/tushare/report_rc.parquet` (in-place; no snapshot/hist split) | `(ticker, report_date, org_name, author_name, quarter, report_title)` keep-first | First successful refresh after **2026-08-14 17:29:28Z** (#5614). Exact row clock = that row's `asof`. | Rows overwritten before #5614 (unrecoverable). `asof` is capture stamp, not vendor publication time. |
+| Broker 金股 | `data/tushare/broker_hist.parquet` | `(month, ticker, broker)` | First successful `tushare_broker.refresh` after this change is live on the asia-close lane. Floor date **2026-08-15**. Exact start = `min(first_seen)` where `pit_eligible`. Store does not exist until that run. | `broker.parquet` (latest-month display). Any hist row with `pit_eligible=False` / `known_at=""`. Vendor month ≠ Asia/Shanghai collection month. Never stamp month-start as `known_at`. |
+| Per-name margin | `data/tushare/margin_hist.parquet` | `(ticker, trade_date)` | First successful `tushare_margin.refresh` after live. Floor **2026-08-15**. Exact start = `min(first_seen)`. | `margin.parquet` snapshot. `fin_pctile` (cross-section of that day) is snapshot-only. Pre-PR trade dates were not seeded. The free `china_margin_detail` drip is a different source and was not restated. |
+| Block trades | `data/china_block_trades/events.parquet` | `(ticker, event_date)` | First successful `china_block_trades.refresh` after live. Floor **2026-08-15**. Exact start = `min(first_seen)`. | `detail.parquet` trailing-window aggregate. Raw rows with no vendor 交易日期 are dropped (date is not fabricated). Event date ≠ known-at. |
+| Buybacks | `data/china_buyback/buyback_hist.parquet` | `(ticker, event_date, plan_key)` | First successful `china_buyback.refresh` after live. Floor **2026-08-15**. Exact start = `min(first_seen)`. | `buyback.parquet` snapshot. Vendor 公告日期 is `event_date` only. `known_at` is always collection `first_seen`. Plan start/end is never the evidence clock. |
+
+Remaining **P-C gates** (unchanged; this wave does not open them):
+
+1. Chips-distribution (`cyq_chips`) accrual lane armed + quota budget (class D today).
+2. Auction / 集合竞价 / minute-bar plane actually running (class D today).
+3. Full-A exact-plane spine authority decision (double gate stays operator-owned).
+
+Do not score these families. Do not add them to Prophet. Do not run P-B/P-D
+comparisons against them. Do not backfill claimed historical PIT evidence.

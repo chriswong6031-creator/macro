@@ -6,8 +6,12 @@ objective: >
   earned conditional authority: a frozen champion/challenger arena (G0-G2, C1-C5),
   typed evidence families with anti-double-count lineage, a contextual router under
   the Stock Identity method law, multi-head outcomes (selection/asymmetry/entry/
-  fragility/confidence), and a promotion gate that the current us_prophet_v2 champion
-  must lose before any live ranking change ships.
+  fragility/confidence), and a promotion gate for every rung above C1.
+  SUPERSEDED CLAUSE, kept as record: this objective read "and a promotion gate that the
+  current us_prophet_v2 champion must lose before any live ranking change ships" until
+  the Chairman override of 2026-08-15 (DEC:PROPHET-FUSION-IS-THE-CANONICAL-US-RANKER),
+  which made C1 the canonical US ranker (us_prophet_v3) without that gate. The gate is
+  NARROWED, not repealed: it still governs C2-C5 and every claim of predictive alpha.
 status: active
 program: prophet-us
 p0: US_PROPHET_ENTRY_TIMING
@@ -17,6 +21,8 @@ class: research
 blast_radius: user_facing
 ambiguity: scoped
 owns_paths:
+  - engine/us_prophet_fusion.py
+  - scripts/us_prophet_fusion_compare.py
   - research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md
   - research/prophet_fusion/
   - scripts/prophet_fusion_arena.py
@@ -25,6 +31,7 @@ owns_paths:
   - scripts/prophet_fusion_c2.py
 decisions:
   - DEC:PROPHET-ZERO-AUTHORITY-SUPERSEDED-BY-EARNED-CONDITIONAL-AUTHORITY
+  - DEC:PROPHET-FUSION-IS-THE-CANONICAL-US-RANKER
 landmines:
   - "Context-vector store accrual STOPPED 2026-08-07 (4 stamped days total) while the
     board runs nightly — chipped for diagnosis; PR-1 verifies the fix. Masterplan §4.0."
@@ -41,6 +48,19 @@ landmines:
   - "The two 'memories of the board' disagree: candidates store vs snapshots.jsonl buy
     lanes differ by 5 names on 2026-08-07 — arena joins key on the snapshot."
 do_not_redo:
+  - "Do not re-litigate C1's adoption against the w7 gate — DEC:PROPHET-FUSION-IS-THE-
+    CANONICAL-US-RANKER settled it on 2026-08-15. The gate still governs C2-C5."
+  - "Do not bump SELECTION_ERA for a ranking change. It names the SELECTION regime; the
+    override moved BOARD_DEFINITION only, and resetting the era restarts the H=63
+    episode clock the era's own revision ruling exists to protect."
+  - "Do not re-tune the variance floor because F8/F4 read near-constant on a live pool.
+    A sparse-but-variable event flag passing IS the registered acceptance test, the
+    floor is feature-only, and tuning it against an observed ordering is the same act
+    the PR-2 do_not_redo forbids against outcomes. Change the REGISTRY if the vote is
+    wrong."
+  - "Do not let a degraded night publish under us_prophet_v3. The fallback stamp
+    (us_prophet_v2_fallback) and the row-derived published_definition() exist so a
+    forward ledger can never pool a fusion-ranked night with a fallback one."
   - "Do not restore the additive potential_score, a confirming-desk-count score, or any
     unconditional composite — the CEO ruling explicitly does not authorize them."
   - "The two DNR row amendments LANDED in PR-0 (#5593):
@@ -72,9 +92,15 @@ waves:
     depends_on: [w1b]
     title: "PR-2 — C2 regularized family stack + redundancy matrices + incremental harness"
     status: in_progress
-  - id: w3
+  - id: w2b
     depends_on: [w2]
-    title: "PR-3 — nightly shadow-scoring lane + forward race instrumentation"
+    title: "PR-2b — CHAIRMAN OVERRIDE: C1 canonical (us_prophet_v3), v2 frozen to
+      us_prophet_v2_shadow, as-of-night presence+variance floors, board comparison"
+    status: done
+  - id: w3
+    depends_on: [w2b]
+    title: "PR-3 — nightly shadow-scoring lane + forward race instrumentation
+      (MEASUREMENT, no longer the production blocker for C1)"
     status: todo
   - id: w4
     depends_on: [w3]
@@ -90,20 +116,25 @@ waves:
     status: todo
   - id: w7
     depends_on: [w6]
-    title: "PR-7 — promotion prereg + DNR amendments + operator/CEO adjudication"
+    title: "PR-7 — promotion prereg + DNR amendments + operator/CEO adjudication for
+      the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  w2 IN FLIGHT (PR-2: C2 regularized family stack + redundancy matrices + incremental
-  harness per masterplan §14) — it inherits PR-1b's §9 family table and the C1-weights
-  question; the PR-1b shadow-accrual recommendation (G3, G4, C1-as-raced, C1-minus-F2,
-  each with the §4.4 confluence-only caveat and today-out-of-sample noted) feeds
-  PR-3's prereg, not production, and W2 registers NO new shadow rung. The short_int
-  pit_status flip (-> pit_settlement) sequenced by the #5602 addendum LANDED in PR-2
-  part 1. STILL OPEN from w1: the §13.0 live closure — no post-#5604-merge nightly
-  had completed as of 2026-08-14 ~23Z (tonight's cron run scheduled 22:52Z, pending;
-  last curated candidates stamp 2026-08-07, the 08-12 stamp is scan-tier-heal only) —
-  the first post-merge nightly must show a fresh curated stamp_date with quiet
-  staleness warnings, prior rows immutable, and the Aug 8-13 gap NOT backfilled.
+  w2b DONE — the Chairman override shipped: C1 is the canonical US ranker as
+  `us_prophet_v3` (engine/us_prophet_fusion.py, byte-parity-pinned against the raced
+  build_c1), the exact v2 scorer is frozen into `us_prophet_v2_shadow` (byte-parity
+  pinned against 69 published scores), the as-of-night presence+variance floors #5700
+  left unimplemented are in production, and
+  research/prophet_fusion/FUSION_BOARD_COMPARISON.md is the operator acceptance surface.
+  NEXT: (1) verify the first post-merge nightly publishes rank_by=us_prophet_v3 with a
+  fusion receipt and NO degradation stamp; (2) w3's shadow lane now instruments a race
+  whose champion side is already stamped nightly — re-cut its prereg against
+  `prophet_shadow` rather than a replayed G0; (3) the §18.5 honest limits are the first
+  measurement question, not a defect: F8/F4 handed 99%/97% of rows an identical
+  contribution on the first live pool, so today's ordering work is mostly F2 then F1/F5,
+  and whether a near-constant family should keep a vote is a REGISTRY question for w3 —
+  it may NOT be answered by re-tuning the variance floor (PR-2 do_not_redo). STILL OPEN
+  from w1: the §13.0 live closure (first post-#5604 nightly with a fresh curated stamp).
 ---
 
 ## Context
@@ -121,7 +152,13 @@ to exactly this program's gate).
 Consumes: Live Entry Radar entry events (entry experts + Entry head outcomes), Stock
 Identity fingerprints/epochs/fit interfaces (router substrate), the US context vector
 (sensory spine), the grades stores (rulers). Never duplicates: entry detection, identity
-stacks, hub logic, any producer engine. Live rank path untouched until w7's adjudication.
+stacks, hub logic, any producer engine.
+
+**The live rank path is C1 as of 2026-08-15** (`us_prophet_v3`). This line previously
+read "Live rank path untouched until w7's adjudication" — superseded by the Chairman
+override, preserved here as record. Forward arena work (w3-w7) continues as MEASUREMENT
+and is no longer the production blocker for C1; `us_prophet_v2_shadow` supplies the
+champion side of that race prospectively from the first night this ships.
 
 Sibling dependencies: `WS:LIVE-ENTRY-RADAR` (#5578) and `WS:STOCK-IDENTITY` (#5583) —
 both armed/unmerged as of 2026-08-14, so their records are not yet joinable here; add

@@ -223,6 +223,19 @@ def _compute_rows(min_signals: int = 2) -> list[dict]:
     return rows
 
 
+def full_rows(min_signals: int = 2) -> list[dict]:
+    """The FULL per-ticker convergence universe, unsliced. ``[]`` on failure. Never raises.
+
+    ``by_ticker`` publishes only a top/bottom/triple DISPLAY slice; consumers that need
+    per-name coverage (engine.china_intel_interest, the v4 board ordering) read this
+    instead. Same rows ``convergence_map`` summarises, with ``flags`` (crowding) kept."""
+    try:
+        return _compute_rows(min_signals)
+    except Exception as e:  # noqa: BLE001
+        log.error("china_altdata.full_rows failed (%s)", e)
+        return []
+
+
 def convergence_map() -> dict[str, dict]:
     """{ticker: {convergence, side, name, conviction100}} over the FULL universe — the join the
     radar uses to surface per-divergence candidate names. {} on failure. Never raises."""

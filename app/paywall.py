@@ -31,6 +31,7 @@ import logging
 import os
 import threading
 import time
+import urllib.error
 import urllib.parse
 import urllib.request
 import uuid
@@ -54,11 +55,18 @@ _ACTIVE = frozenset({"active", "trialing"})
 
 _CONFIG_CACHE: tuple[dict[str, Any], int] | None = None
 _CONFIG_LOCK = threading.Lock()
-#: sha256(token) -> (uid, email, expiry). The email rides along because the Pro host
-#: gate needs it for the operator allowlist and ``/auth/v1/user`` already returns it;
-#: see ``_fresh_identity`` for why it is not a second cache.
-_AUTH_CACHE: dict[str, tuple[str | None, str, float]] = {}
+#: sha256(token) -> (uid, email, expiry, record). Email and the Supabase user
+#: record ride along because ``/auth/v1/user`` already returns them on the same
+#: call; see ``_fresh_identity`` / ``_resolve_identity`` for why this is not a
+#: second cache. ``require_user`` reuses this entry — it does not mint its own.
+_AUTH_CACHE: dict[str, tuple[str | None, str, float, dict[str, Any] | None]] = {}
 _AUTH_LOCK = threading.Lock()
+#: Caps concurrent GET /auth/v1/user calls. Excess callers shed (busy) instead
+#: of pinning FastAPI's ~40-thread pool — that is what kept /api/health up
+#: during a vendor stall (MMX-004 / GATE-3).
+_AUTH_UPSTREAM_LIMIT = 8
+_AUTH_UPSTREAM_SEM = threading.BoundedSemaphore(_AUTH_UPSTREAM_LIMIT)
+_TOKEN_REJECT_HTTP = frozenset({400, 401, 403})
 
 
 @dataclass(frozen=True)
@@ -168,6 +176,106 @@ def _is_document(request: Request, path: str) -> bool:
     return path == "/" or path.lower().endswith(".html")
 
 
+@dataclass(frozen=True)
+class _Identity:
+    """One verification of one token. ``status`` is ok|invalid|outage|busy."""
+
+    uid: str | None
+    email: str
+    record: dict[str, Any] | None
+    status: str
+
+
+def _auth_cache_key(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _copy_record(record: dict[str, Any] | None) -> dict[str, Any] | None:
+    return dict(record) if isinstance(record, dict) else None
+
+
+def _cache_get(key: str) -> _Identity | None:
+    now = time.monotonic()
+    with _AUTH_LOCK:
+        hit = _AUTH_CACHE.get(key)
+        if not hit or hit[2] <= now:
+            return None
+        uid, email, _expiry, record = hit[0], hit[1], hit[2], hit[3] if len(hit) > 3 else None
+    if uid:
+        return _Identity(uid, email, _copy_record(record), "ok")
+    return _Identity(None, "", None, "invalid")
+
+
+def _cache_put(key: str, uid: str | None, email: str, record: dict[str, Any] | None) -> None:
+    ttl = _seconds("PAYWALL_AUTH_CACHE_SECONDS", 45.0, 1.0, 60.0)
+    now = time.monotonic()
+    with _AUTH_LOCK:
+        if len(_AUTH_CACHE) > 5000:
+            _AUTH_CACHE.clear()
+        _AUTH_CACHE[key] = (uid, email, now + ttl, _copy_record(record))
+
+
+def _fetch_supabase_user(token: str) -> _Identity:
+    """One bounded GET /auth/v1/user. Never writes the cache — caller decides."""
+    from app.main import SUPABASE_ANON_KEY, SUPABASE_URL  # noqa: PLC0415
+
+    if not _AUTH_UPSTREAM_SEM.acquire(blocking=False):
+        return _Identity(None, "", None, "busy")
+    try:
+        req = urllib.request.Request(
+            f"{SUPABASE_URL.rstrip('/')}/auth/v1/user",
+            headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_ANON_KEY},
+        )
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            data = json.loads(resp.read())
+    except urllib.error.HTTPError as exc:
+        # Supabase ANSWERED. 400/401/403 is a verdict on this token; 5xx/429 is
+        # the service failing and must not be remembered as "invalid".
+        if exc.code in _TOKEN_REJECT_HTTP:
+            return _Identity(None, "", None, "invalid")
+        return _Identity(None, "", None, "outage")
+    except Exception:  # noqa: BLE001 — timeout/DNS/TLS/reset/bad body: no verdict
+        return _Identity(None, "", None, "outage")
+    finally:
+        _AUTH_UPSTREAM_SEM.release()
+
+    if not isinstance(data, dict):
+        return _Identity(None, "", None, "invalid")
+    uid: str | None = None
+    candidate = data.get("id")
+    if isinstance(candidate, str):
+        try:
+            uuid.UUID(candidate)
+            uid = candidate
+        except (ValueError, TypeError):
+            uid = None
+    email = ""
+    addr = data.get("email")
+    if uid and isinstance(addr, str):
+        email = addr.strip().lower()
+    if not uid:
+        return _Identity(None, "", None, "invalid")
+    return _Identity(uid, email, dict(data), "ok")
+
+
+def _resolve_identity(token: str) -> _Identity:
+    """Shared identity lookup for the paywall and ``require_user``.
+
+    ONE cache (``_AUTH_CACHE``), keyed on ``sha256(token)``, TTL clamped 1–60s.
+    A cached valid record is served through a vendor blip for that TTL only.
+    Invalid/expired tokens are cached as rejected. Transport failures and a
+    full semaphore are not token verdicts and are not remembered.
+    """
+    key = _auth_cache_key(token)
+    hit = _cache_get(key)
+    if hit is not None:
+        return hit
+    ident = _fetch_supabase_user(token)
+    if ident.status in {"ok", "invalid"}:
+        _cache_put(key, ident.uid, ident.email, ident.record)
+    return ident
+
+
 def _fresh_identity(token: str) -> tuple[str | None, str]:
     """Verify token against Supabase with a ≤60s hashed-token cache; return (uid, email).
 
@@ -181,38 +289,10 @@ def _fresh_identity(token: str) -> tuple[str | None, str]:
 
     Email is ``''`` whenever it is absent, non-string, or the uid did not verify; the
     uid contract is unchanged (``None`` on any invalid/expired/upstream failure).
+    ``require_user`` reads the same cache entry — it does not keep a second map.
     """
-    from app.main import SUPABASE_ANON_KEY, SUPABASE_URL  # noqa: PLC0415
-
-    key = hashlib.sha256(token.encode("utf-8")).hexdigest()
-    now = time.monotonic()
-    with _AUTH_LOCK:
-        hit = _AUTH_CACHE.get(key)
-        if hit and hit[2] > now:
-            return hit[0], hit[1]
-    uid, email = None, ""
-    try:
-        req = urllib.request.Request(
-            f"{SUPABASE_URL.rstrip('/')}/auth/v1/user",
-            headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_ANON_KEY},
-        )
-        with urllib.request.urlopen(req, timeout=4) as resp:
-            data = json.loads(resp.read())
-        candidate = data.get("id")
-        if isinstance(candidate, str):
-            uuid.UUID(candidate)
-            uid = candidate
-        addr = data.get("email")
-        if uid and isinstance(addr, str):
-            email = addr.strip().lower()
-    except Exception:  # noqa: BLE001 — invalid/expired/upstream failure all deny
-        uid, email = None, ""
-    ttl = _seconds("PAYWALL_AUTH_CACHE_SECONDS", 45.0, 1.0, 60.0)
-    with _AUTH_LOCK:
-        if len(_AUTH_CACHE) > 5000:
-            _AUTH_CACHE.clear()
-        _AUTH_CACHE[key] = (uid, email, now + ttl)
-    return uid, email
+    ident = _resolve_identity(token)
+    return ident.uid, ident.email
 
 
 def _fresh_uid(token: str) -> str | None:

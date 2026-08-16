@@ -145,6 +145,14 @@ token_ceilings:
   fast: 5000000    # 5M tokens/month per user on fast lane
   pro: 2000000     # 2M tokens/month per user on pro lane
 
+# ── Global daily spend ceiling (WS-2 / GATE-2) ────────────────────────────────
+# Independent of every per-user / per-guest / per-device ledger. First of the
+# two that is hit wins. 0 disables that half. Env overrides (no deploy):
+#   BRAIN_GLOBAL_DAILY_REQUEST_CEILING
+#   BRAIN_GLOBAL_DAILY_TOKEN_CEILING
+global_daily_request_ceiling: 5000      # total allowed brain turns / UTC day
+global_daily_token_ceiling: 50000000    # total recorded tokens / UTC day
+
 # ── Tier resolver cache TTL ───────────────────────────────────────────────────
 tier_cache_ttl_seconds: 60
 

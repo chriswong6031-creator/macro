@@ -482,6 +482,7 @@ def test_security_critical_families_cannot_silently_weaken() -> None:
         "repository_static_internal_options_state": ("PRIVATE_OPERATIONAL", "PRIVATE_SERVICE"),
         "repository_static_internal_options_accruals": ("PRIVATE_OPERATIONAL", "PRIVATE_SERVICE"),
         "mastermind_response_logs": ("PRIVATE_OPERATIONAL", "OPERATOR_ONLY"),
+        "commercial_path_alert_ledger": ("PRIVATE_OPERATIONAL", "OPERATOR_ONLY"),
         "biocatalyst_vendor_source_evidence": ("VENDOR_RAW", "PRIVATE_SERVICE"),
         "biocatalyst_derived_product_lineage": ("PREMIUM_PRODUCT", "ESSENTIAL"),
         "terminal_seed_demo": ("PREMIUM_PRODUCT", "PRO"),

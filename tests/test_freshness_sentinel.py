@@ -88,12 +88,25 @@ def _prophet(asof: str | None = PROPHET_CURRENT_ASOF, *,
 
 
 def _provisional(as_of: str | None = PROPHET_CURRENT_ASOF, *,
-                 mtime_age_hours: float = 12.0) -> fs.FetchResult:
-    """One live-plane read of us_board_provisional.json (W-L1a close pass)."""
+                 mtime_age_hours: float = 12.0,
+                 built_at: str | None = None,
+                 meta: dict | None = None) -> fs.FetchResult:
+    """One live-plane read of us_board_provisional.json (W-L1a close pass).
+
+    ``built_at`` and ``meta`` are OMITTED by default, and that default is the
+    load-bearing one: it is the shape of every board this repo has published so
+    far, so every pre-existing test in this file doubles as proof that the PR-C
+    decomposition reads null on an old artifact instead of crashing or inventing
+    a zero. The full shape is opted into by the decomposition tests below.
+    """
     doc: dict = {"schema": "us_board_provisional/v1", "lane": "closepass",
                  "provisional": True}
     if as_of is not None:
         doc["as_of"] = as_of
+    if built_at is not None:
+        doc["built_at"] = built_at
+    if meta is not None:
+        doc["meta"] = meta
     return fs.FetchResult(
         status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
         body=json.dumps(doc),
@@ -124,6 +137,55 @@ def _entry_radar(asof: str | None = PROPHET_CURRENT_ASOF, *,
         status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
         body=json.dumps(doc),
     )
+
+
+#: The 2026-08-15 live read of the armed pack, verbatim — 91 armed of a 1,763
+#: universe with 1,535 names cut by the probe budget. Used as the healthy
+#: coverage shape so the disclosure tests assert against a real payload's
+#: proportions rather than round numbers that never occur.
+ARMED_COVERAGE = {"universe_n": 1763, "probed_n": 179, "armed_n": 91}
+ARMED_SKIPPED = {"insufficient_history": 44, "no_series": 2,
+                 "probe_cap_cross": 1535, "stale_series": 3}
+
+
+def _armed(as_of: str | None = PROPHET_CURRENT_ASOF, *,
+           mtime_age_hours: float = 6.0,
+           meta: dict | None = None) -> fs.FetchResult:
+    """One R2 read of live_flow/prophet_live_armed.json (the intraday lane's input).
+
+    ``mtime_age_hours`` is fresh by default for the same reason ``_prophet``'s
+    is: the object is re-PUT on every nightly, so its Last-Modified reports the
+    publish and can be perfectly current over a frozen ``as_of``. That is the
+    real 2026-08-15 shape (served 04:29Z on a pack stamped 08-13) and every
+    verdict below has to come from ``as_of`` alone.
+    """
+    doc: dict = {"schema": "prophet_live.pack/v1", "band_pct": 0.5}
+    if as_of is not None:
+        doc["as_of"] = as_of
+    doc["meta"] = dict(ARMED_COVERAGE, skipped=dict(ARMED_SKIPPED)) if meta is None else meta
+    return fs.FetchResult(
+        status=200, last_modified=NOW - timedelta(hours=mtime_age_hours),
+        body=json.dumps(doc),
+    )
+
+
+#: The R2 key the armed-pack surface reads (engine/prophet_live/r2io.PACK_KEY).
+ARMED_PATH = "/live_flow/prophet_live_armed.json"
+
+
+def _http_body(url: str, want_body: bool, page_body: str = HEALTHY_BODY,
+               armed_as_of: str | None = PROPHET_CURRENT_ASOF) -> str | None:
+    """The body an HTTP surface answers with, BY URL — for run()-level fetchers.
+
+    Path-aware for exactly the reason ``_served`` is. One fetcher now answers two
+    body-bearing shapes: an HTML page carrying the delayed-board marker, and the
+    armed pack's JSON. A stub that handed the page body to the pack would read
+    "body is not JSON" on every run-level test and drag a surface the case under
+    test is not about into the blindness set — a failure with nothing to teach.
+    """
+    if not want_body:
+        return None
+    return _armed(armed_as_of).body if url.endswith(ARMED_PATH) else page_body
 
 
 #: The path the READER's browser polls. The dashboard never fetches
@@ -216,6 +278,8 @@ def _fresh_results() -> dict[str, fs.FetchResult]:
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
+
+        "prophet_live_armed": _armed(),
     }
 
 
@@ -250,6 +314,13 @@ def test_dead_nightly_for_a_day_breaches_every_bake_surface():
         "prophet_us": _prophet(),
         "us_board_provisional": _provisional(),
         "entry_radar_live": _entry_radar(),
+
+        # The three content surfaces are judged on content, not on a stamp —
+        # they stay ok here, which is the point: the four bake surfaces answer
+        # independently.
+        "prophet_us": _prophet(),
+        "us_board_provisional": _provisional(),
+        "prophet_live_armed": _armed(),
     }
     report = fs.evaluate(results, NOW)
     assert report["ok"] is False
@@ -340,6 +411,8 @@ def _stale_report(now: datetime = NOW) -> dict:
             "prophet_us": _prophet(),
             "us_board_provisional": _provisional(),
             "entry_radar_live": _entry_radar(),
+
+            "prophet_live_armed": _armed(),
         },
         now,
     )
@@ -473,8 +546,8 @@ def test_simulated_dead_nightly_delivers_a_real_alert(tmp_path, monkeypatch, cap
 
         def dead_nightly_fetcher(url, *, want_body):
             lm = NOW - timedelta(hours=30)  # last bake: one dead nightly ago
-            body = HEALTHY_BODY if want_body else None
-            return fs.FetchResult(status=200, last_modified=lm, body=body)
+            return fs.FetchResult(status=200, last_modified=lm,
+                                  body=_http_body(url, want_body))
 
         rc = fs.run(
             now=NOW,
@@ -514,7 +587,7 @@ def test_fresh_run_writes_ok_state_and_exits_zero(tmp_path, monkeypatch):
         return fs.FetchResult(
             status=200,
             last_modified=NOW - timedelta(hours=10),
-            body=HEALTHY_BODY if want_body else None,
+            body=_http_body(url, want_body),
         )
 
     rc = fs.run(
@@ -557,8 +630,13 @@ def test_served_state_reads_not_ok_once_blind_past_threshold(tmp_path, monkeypat
     assert rc == 1
     served = json.loads((tmp_path / "public" / "live" / "staleness.json").read_text())
     assert served["ok"] is False
+    # Every surface except the close-pass board, whose absence is a NORMAL state
+    # and therefore exempt from the blindness counter. The armed pack is not
+    # exempt — it is written once a night and stays, so a read that stops
+    # answering is the sentinel losing sight of it.
     assert served["blind_surfaces"] == [
-        "china", "hub", "prophet_us", "r2_massive_stock_day", "us_stocks"
+        "china", "hub", "prophet_live_armed", "prophet_us", "r2_massive_stock_day",
+        "us_stocks",
     ]
     assert served["stale_surfaces"] == []  # blind, not provably stale — honest split
 
@@ -586,7 +664,7 @@ def test_alert_delivery_survives_an_unwritable_state_path(tmp_path, monkeypatch)
             return fs.FetchResult(
                 status=200,
                 last_modified=NOW - timedelta(hours=30),
-                body=HEALTHY_BODY if want_body else None,
+                body=_http_body(url, want_body),
             )
 
         rc = fs.run(
@@ -615,6 +693,12 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_sentinel_units_ship_and_are_oneshot_with_env_files():
     service = (ROOT / "app" / "deploy" / "macro-sentinel.service").read_text()
     assert "Type=oneshot" in service
+    # GATE-4 commercial pass rides this unit. It is ExecStart'd FIRST with '-'
+    # so a freshness breach cannot skip the money-path page and a commercial
+    # exit cannot skip the dead-man switch. Freshness still owns unit status.
+    assert "ExecStart=-/opt/macro/.venv/bin/python -m scripts.commercial_path_sentinel" in service
+    assert service.index("scripts.commercial_path_sentinel") < service.index(
+        "scripts.freshness_sentinel")
     assert "ExecStart=/opt/macro/.venv/bin/python -m scripts.freshness_sentinel" in service
     assert "EnvironmentFile=-/etc/macro-api.env" in service
     assert "EnvironmentFile=-/etc/macro-sentinel.env" in service
@@ -836,7 +920,7 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
     def spy_fetch(url, *, want_body):
         urls.append(url)
         return fs.FetchResult(status=200, last_modified=NOW - timedelta(hours=4),
-                              body=HEALTHY_BODY if want_body else None)
+                              body=_http_body(url, want_body))
 
     def spy_served(served_dir, path):
         reads.append((str(served_dir), path))
@@ -877,7 +961,22 @@ def test_prophet_is_read_from_the_served_tree_never_over_http(tmp_path, monkeypa
         (str(tmp_path / "public"), CLIENT_PATH),
     ]
     assert not [u for u in urls if "us_board_provisional" in u], urls
-    assert not [u for u in urls if "prophet_live" in u], urls
+    # The WALLED reader artifact, by its exact path. Deliberately not a
+    # "prophet_live" substring test any more: the armed pack below is a
+    # different artifact on a different plane whose name shares that prefix, and
+    # a substring assertion would have failed for a reason that has nothing to
+    # do with the wall it exists to guard.
+    assert not [u for u in urls if u.endswith(CLIENT_PATH)], urls
+    # …and the armed pack IS an HTTP read, on purpose. It is not on this box:
+    # the nightly PUTs it to R2 and the */5 evaluator pulls it from there
+    # (engine/prophet_live/r2io.PACK_KEY), so R2 is the only plane where "is the
+    # pack stale" is answerable. Reading a public object does not publish one —
+    # the key's PRIVATE_OPERATIONAL classification and the pending move off the
+    # shared bucket are unchanged by a GET, and when that move lands this
+    # surface 404s into the blindness escalation rather than going quietly green.
+    assert [u for u in urls if u.endswith(ARMED_PATH)] == [
+        "https://example.invalid" + ARMED_PATH
+    ], urls
 
 
 def test_read_served_round_trips_and_maps_a_missing_file_to_indeterminate(tmp_path):
@@ -1284,7 +1383,7 @@ def test_the_record_is_written_beside_the_state_and_rides_the_public_report(
 
     def fresh_fetcher(url, *, want_body):
         return fs.FetchResult(status=200, last_modified=ON_TIME - timedelta(hours=10),
-                              body=HEALTHY_BODY if want_body else None)
+                              body=_http_body(url, want_body))
 
     assert fs.run(now=ON_TIME, base="https://example.invalid",
                   r2_base="https://example.invalid",
@@ -1312,7 +1411,7 @@ def test_a_dry_run_reads_the_record_without_stamping_it(tmp_path, monkeypatch, c
     fs.run(now=ON_TIME, base="https://example.invalid", r2_base="https://example.invalid",
            public_dir=tmp_path / "public", state_dir=tmp_path / "state", dry_run=True,
            fetcher=lambda url, *, want_body: fs.FetchResult(
-               status=200, last_modified=ON_TIME, body=HEALTHY_BODY if want_body else None),
+               status=200, last_modified=ON_TIME, body=_http_body(url, want_body)),
            served_reader=_served(_prophet()))
     assert not (tmp_path / "state").exists()
     out = capsys.readouterr().out
@@ -1523,7 +1622,13 @@ def test_a_dark_reader_never_breaches_never_blinds_and_never_pages(read, label):
     assert report["ok"] is True, label
     assert report["stale_surfaces"] == [] and report["indeterminate_surfaces"] == []
     assert CLIENT_PATH not in report["surfaces"], label
-    assert not [k for k in report["surfaces"] if "prophet_live" in k], label
+    # Every surface whose PATH is the client artifact — not every id that shares
+    # a prefix with it. ``prophet_live_armed`` is a genuine surface reading a
+    # genuinely different artifact on R2; the thing that must never appear here
+    # is a surface pointed at the reader's own file.
+    assert not [
+        s["id"] for s in fs.SURFACES if s["path"] == CLIENT_PATH
+    ], label
     assert report["surfaces"]["us_board_provisional"]["client_session"] is None, label
 
     state: dict = {}
@@ -1592,7 +1697,7 @@ def test_a_dark_reader_is_diagnosable_from_the_operator_line_and_the_report(
 
     def fresh_fetcher(url, *, want_body):
         return fs.FetchResult(status=200, last_modified=ON_TIME - timedelta(hours=10),
-                              body=HEALTHY_BODY if want_body else None)
+                              body=_http_body(url, want_body))
 
     assert fs.run(now=ON_TIME, base="https://example.invalid",
                   r2_base="https://example.invalid",
@@ -1609,3 +1714,442 @@ def test_a_dark_reader_is_diagnosable_from_the_operator_line_and_the_report(
     assert json.loads(
         (tmp_path / "state" / "first_fresh.json").read_text()).get("sessions") in (
             None, {})
+
+
+# --------------------------------------------------------------------------- #
+# PR-C — the close → candidate → user-visible latency decomposition
+#
+# The W-L1 gate answers "did the board make 18:30 ET". It cannot answer "where
+# did the time go", and the measured Fri 2026-08-14 board is why that matters:
+# published 23:19:14Z (19:19 ET) against an 18:30 SLA and a 16:15 product
+# target, with nothing in the record able to say whether the hour went into
+# waiting for closes or into the pass itself.
+#
+# Every number below comes from that real board. The two failure modes these
+# pin are the ones a decomposition dies of: crashing on a payload that predates
+# the fields, and printing 0 where it means "not measured".
+# --------------------------------------------------------------------------- #
+FRI_SESSION = "2026-08-14"
+#: The live payload's own ``built_at``, verbatim (read off R2 on 2026-08-15).
+FRI_BUILT_AT = "2026-08-14T23:19:14.286019Z"
+#: 16:15 ET — the close stamp the sibling lane will add. On no published board
+#: yet, which is exactly why every reader of it is optional-tolerant.
+FRI_CLOSE_OBSERVED = "2026-08-14T20:15:00Z"
+#: 19:30 ET — the first 30-minute sentinel pass after that build.
+FRI_VISIBLE = datetime(2026, 8, 14, 23, 30, tzinfo=timezone.utc)
+#: The live payload's meta, verbatim. No close provenance: this is the shape
+#: every board published to date carries.
+FRI_META_TODAY = {"universe_n": 1763, "evaluated_n": 253, "admitted_n": 22,
+                  "skipped": {"no_todays_bar": 1508, "delisted": 2}}
+#: The same board once the sibling lane's close provenance lands.
+FRI_META_FULL = dict(
+    FRI_META_TODAY,
+    close_observed_at=FRI_CLOSE_OBSERVED,
+    close_source="store",
+    close_basis="split_dividend_adjusted",
+    close_finalized=True,
+    skipped=dict(FRI_META_TODAY["skipped"], corp_action_today=3),
+)
+
+
+def _results_at(now: datetime, board: fs.FetchResult) -> dict[str, fs.FetchResult]:
+    """A healthy estate as of ``now``, with one chosen close-pass board read.
+
+    Built against the caller's clock rather than the module-level NOW because
+    these cases run on 2026-08-14, six days later — reusing ``_fresh_results``
+    would leave four bake stamps a week old and drag the whole estate into a
+    breach that has nothing to do with the decomposition under test.
+    """
+    fresh = now - timedelta(hours=6)
+    return {
+        "us_stocks": fs.FetchResult(status=200, last_modified=fresh, body=HEALTHY_BODY),
+        "china": fs.FetchResult(status=200, last_modified=fresh, body=HEALTHY_BODY),
+        "hub": fs.FetchResult(status=200, last_modified=fresh, body=HEALTHY_BODY),
+        "r2_massive_stock_day": fs.FetchResult(status=200, last_modified=fresh),
+        "prophet_us": _prophet(FRI_SESSION),
+        "us_board_provisional": board,
+        "entry_radar_live": _entry_radar(FRI_SESSION),
+        "prophet_live_armed": _armed(FRI_SESSION),
+    }
+
+
+def _decomposed(board: fs.FetchResult, now: datetime = FRI_VISIBLE) -> dict:
+    """The stamped record for one board read — evaluate + record in one step."""
+    report = fs.evaluate(_results_at(now, board), now,
+                         client_reads=_client_reads(FRI_SESSION, observed_at=now))
+    assert report["surfaces"]["us_board_provisional"]["status"] == "ok"
+    return fs.record_first_fresh({}, report, now)["sessions"][FRI_SESSION][
+        "us_board_provisional"]
+
+
+def test_the_decomposition_splits_the_fri_2026_08_14_board_into_its_two_legs():
+    """The measurement the record could not make. 20:15Z close → 23:19Z build →
+    23:30Z visible: 3h04m of the evening was spent before the payload existed and
+    11 minutes after it, and the 18:30 SLA verdict alone says neither."""
+    entry = _decomposed(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT,
+                                     meta=FRI_META_FULL))
+    latency = entry["latency"]
+    assert latency["close_observed_at"] == FRI_CLOSE_OBSERVED
+    assert latency["board_generated_at"] == FRI_BUILT_AT
+    assert latency["first_user_visible_at"] == FRI_VISIBLE.isoformat()
+    assert latency["close_to_candidate_sec"] == 11054.3      # 3h 04m 14.3s
+    assert latency["candidate_to_visible_sec"] == 645.7      # 10m 45.7s
+    # The legs must actually decompose the whole: close → visible, no gap.
+    assert round(latency["close_to_candidate_sec"]
+                 + latency["candidate_to_visible_sec"], 1) == 11700.0
+
+    # …and the SLA verdict is unchanged and still says MISSED. The
+    # decomposition explains a failure; it must never launder one.
+    assert entry["met"] is False and entry["first_fresh_et"] == "19:30"
+
+
+def test_the_visible_leg_publishes_its_own_resolution_rather_than_implying_precision():
+    """The sentinel wakes every 30 minutes, so ``candidate_to_visible_sec`` is
+    known to ±1800s and a bare 645.7 would imply it is known to the second."""
+    entry = _decomposed(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT,
+                                     meta=FRI_META_FULL))
+    assert entry["latency"]["visible_resolution_sec"] == fs.VISIBLE_RESOLUTION_SECONDS
+    assert fs.VISIBLE_RESOLUTION_SECONDS == 1800
+    # The error bar is larger than the leg it qualifies here — which is the fact
+    # the field exists to make impossible to miss.
+    assert (entry["latency"]["visible_resolution_sec"]
+            > entry["latency"]["candidate_to_visible_sec"])
+
+
+def test_an_old_artifact_decomposes_to_nulls_never_to_zeroes():
+    """Every board published to date carries no close provenance and no
+    ``built_at``-derived legs. A zero would read as "the close was observed at
+    the instant it was published", which is a claim about the pipeline that
+    nothing measured. Null is the only honest answer."""
+    entry = _decomposed(_provisional(FRI_SESSION))          # today's real shape
+    latency = entry["latency"]
+    assert latency["close_observed_at"] is None
+    assert latency["board_generated_at"] is None
+    assert latency["close_to_candidate_sec"] is None
+    assert latency["candidate_to_visible_sec"] is None
+    # The two facts the sentinel measures ITSELF still land — a producer that
+    # says nothing must not blank the observer's own reading.
+    assert latency["first_user_visible_at"] == FRI_VISIBLE.isoformat()
+    assert latency["visible_resolution_sec"] == fs.VISIBLE_RESOLUTION_SECONDS
+    assert entry["provenance"] == {"close_source": None, "close_basis": None,
+                                   "close_finalized": None}
+    assert entry["coverage"] == {"universe_n": None, "evaluated_n": None,
+                                 "admitted_n": None}
+    assert entry["skipped"] is None
+    # And the SLA half is completely untouched by the absence.
+    assert entry["met"] is False and entry["first_fresh_at"] == FRI_VISIBLE.isoformat()
+
+
+def test_a_partial_artifact_carries_the_legs_it_can_and_nulls_the_rest():
+    """The in-between state this lands into: coverage and ``built_at`` present
+    (today's payload plus one field), close provenance still absent. One
+    measurable leg must not be withheld because its sibling is unmeasurable."""
+    entry = _decomposed(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT,
+                                     meta=FRI_META_TODAY))
+    assert entry["latency"]["close_to_candidate_sec"] is None      # no close stamp
+    assert entry["latency"]["candidate_to_visible_sec"] == 645.7   # measurable
+    assert entry["coverage"] == {"universe_n": 1763, "evaluated_n": 253,
+                                 "admitted_n": 22}
+    assert entry["skipped"] == {"no_todays_bar": 1508, "delisted": 2}
+
+
+def test_close_provenance_rides_the_stamp_including_a_false_finalized():
+    """``close_finalized: false`` is a MEASUREMENT — the board was built on a
+    close the exchange had not finalised. A falsy test would collapse it into
+    "the producer said nothing", which is the opposite claim."""
+    meta = dict(FRI_META_FULL, close_finalized=False, close_source="massive")
+    entry = _decomposed(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT, meta=meta))
+    assert entry["provenance"] == {
+        "close_source": "massive",
+        "close_basis": "split_dividend_adjusted",
+        "close_finalized": False,
+    }
+    assert entry["skipped"]["corp_action_today"] == 3
+
+
+def test_provenance_is_read_from_meta_or_from_the_payload_root():
+    """The sibling lane's final nesting is not merged. Both placements resolve,
+    and ``meta`` wins when they disagree — the more specific location is
+    authoritative rather than whichever the reader happened to check first."""
+    root = json.loads(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT,
+                                   meta=FRI_META_TODAY).body)
+    root["close_source"] = "store"
+    assert fs.close_pass_facts(root)["close_source"] == "store"
+
+    both = dict(root, meta=dict(FRI_META_TODAY, close_source="massive"))
+    assert fs.close_pass_facts(both)["close_source"] == "massive"
+
+
+def test_the_fact_readers_are_total_over_every_shape_a_payload_can_take():
+    """A watchdog that raises on a malformed payload is worse than no watchdog:
+    it takes the freshness verdicts down with the disclosure."""
+    for doc in (None, [], "", 0, {}, {"meta": None}, {"meta": []},
+                {"meta": {"skipped": "everything"}},
+                {"meta": {"universe_n": True, "evaluated_n": "253"}},
+                {"built_at": 17}):
+        close, armed = fs.close_pass_facts(doc), fs.armed_pack_facts(doc)
+        assert isinstance(close, dict) and isinstance(armed, dict)
+        # `bool` is an `int` subclass in Python; it must never publish as a count,
+        # and a stringified count is a producer bug rather than a number.
+        assert (close.get("coverage") or {}).get("universe_n") is None
+        assert (close.get("coverage") or {}).get("evaluated_n") is None
+        assert close.get("board_generated_at") is None
+
+
+def test_a_naive_producer_stamp_yields_no_leg_rather_than_a_guessed_hour():
+    """An ISO instant with no offset is an hour wrong seven months a year if
+    assumed UTC, and this figure's whole job is to be trusted to the minute."""
+    meta = dict(FRI_META_FULL, close_observed_at="2026-08-14T20:15:00")   # naive
+    entry = _decomposed(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT, meta=meta))
+    assert entry["latency"]["close_observed_at"] == "2026-08-14T20:15:00"  # recorded
+    assert entry["latency"]["close_to_candidate_sec"] is None              # not guessed
+
+
+def test_a_negative_leg_is_reported_as_measured_not_clamped_to_zero():
+    """A board stamped with a close it had not observed yet is a producer bug,
+    and 0.0 is exactly the value that would hide it behind something plausible."""
+    meta = dict(FRI_META_FULL, close_observed_at="2026-08-15T00:00:00Z")
+    entry = _decomposed(_provisional(FRI_SESSION, built_at=FRI_BUILT_AT, meta=meta))
+    assert entry["latency"]["close_to_candidate_sec"] == -2445.7
+
+
+# --------------------------------------------------------------------------- #
+# PR-C — the private/public boundary
+# --------------------------------------------------------------------------- #
+def test_the_private_facts_never_ride_the_publicly_served_staleness_file(
+        tmp_path, monkeypatch):
+    """/live/staleness.json is served to anyone with no registration wall. The
+    freshness VERDICTS are public by design; per-session coverage and provenance
+    for a default-deny artifact are a paywall decision with an owner (#3391), and
+    a watchdog must not take it by publishing as a side effect of measuring."""
+    for var in ("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID", "DISCORD_WEBHOOK_URL",
+                "DISCORD_WEBHOOK_WATCHLIST", "MAIL_SENTINEL_TO", "MAIL_SUPPORT_TO"):
+        monkeypatch.delenv(var, raising=False)
+
+    board = _provisional(FRI_SESSION, built_at=FRI_BUILT_AT, meta=FRI_META_FULL)
+    fs.run(now=FRI_VISIBLE, base="https://example.invalid",
+           r2_base="https://example.invalid",
+           public_dir=tmp_path / "public", state_dir=tmp_path / "state",
+           fetcher=lambda url, *, want_body: fs.FetchResult(
+               status=200, last_modified=FRI_VISIBLE - timedelta(hours=6),
+               body=_http_body(url, want_body, armed_as_of=FRI_SESSION)),
+           served_reader=_served(_prophet(FRI_SESSION), live=board,
+                                 strip=_live_strip(FRI_SESSION,
+                                                   observed_at=FRI_VISIBLE),
+                                 radar=_entry_radar(FRI_SESSION)))
+
+    raw = (tmp_path / "public" / "live" / "staleness.json").read_text()
+    served = json.loads(raw)
+    assert served["surfaces"], "the public report must still carry its surfaces"
+    for sid, check in served["surfaces"].items():
+        assert "facts" not in check, sid
+    # No coverage count leaked anywhere else in the served object either.
+    assert "1763" not in raw and "admitted_n" not in raw and "close_source" not in raw
+    # The public verdicts are all still there.
+    assert served["ok"] is True and served["sla"]["us_board_provisional"]["by_et"]
+
+    # …and the PRIVATE record has the whole decomposition.
+    record = json.loads((tmp_path / "state" / "first_fresh.json").read_text())
+    entry = record["sessions"][FRI_SESSION]["us_board_provisional"]
+    assert entry["latency"]["close_to_candidate_sec"] == 11054.3
+    assert entry["coverage"]["admitted_n"] == 22
+
+
+def test_public_report_is_a_projection_and_leaves_the_pass_report_intact():
+    """``record_first_fresh`` runs off the same object, so a stripper that
+    mutated it would silently empty the record it is stripping for."""
+    report = fs.evaluate(_results_at(FRI_VISIBLE, _provisional(
+        FRI_SESSION, built_at=FRI_BUILT_AT, meta=FRI_META_FULL)), FRI_VISIBLE)
+    public = fs.public_report(report)
+    assert "facts" not in public["surfaces"]["us_board_provisional"]
+    assert report["surfaces"]["us_board_provisional"]["facts"]["coverage"][
+        "admitted_n"] == 22
+    assert public["ok"] == report["ok"]
+    assert sorted(public["surfaces"]) == sorted(report["surfaces"])
+
+
+# --------------------------------------------------------------------------- #
+# PR-C — the record stays readable across versions
+#
+# The record is append-only and lives on the VPS across deploys, so the file the
+# next pass opens is the file the PREVIOUS version wrote. A reader that needed
+# the new keys to exist would take the SLA down on the first upgrade.
+# --------------------------------------------------------------------------- #
+#: A first_fresh.json exactly as the pre-PR-C sentinel wrote it.
+LEGACY_RECORD = {
+    "schema": fs.FIRST_FRESH_SCHEMA,
+    "updated_at": "2026-08-07T20:47:00+00:00",
+    "sessions": {
+        "2026-08-06": {"us_board_provisional": {
+            "first_fresh_at": "2026-08-06T21:00:00+00:00",
+            "first_fresh_et": "17:00", "by_et": "18:30", "met": True}},
+        "2026-08-07": {"us_board_provisional": {
+            "first_fresh_at": "2026-08-07T20:47:00+00:00",
+            "first_fresh_et": "16:47", "by_et": "18:30", "met": True}},
+    },
+}
+
+
+def test_a_pre_decomposition_record_still_reads_its_streak_and_summary():
+    streak, rows = fs.sla_streak(LEGACY_RECORD, "us_board_provisional", NOW)
+    assert streak == 2                      # 08-07 and 08-06 met, 08-05 absent
+    assert rows[0] == {"session": "2026-08-07", "first_fresh_et": "16:47", "met": True}
+    summary = fs.sla_summary(LEGACY_RECORD, NOW)["us_board_provisional"]
+    assert summary["consecutive_met"] == 2 and summary["sessions_required"] == 5
+
+
+def test_appending_a_decomposed_stamp_leaves_every_legacy_entry_byte_identical(
+        tmp_path):
+    """Append-only in both directions: the new session gains a ``latency`` block
+    and the old ones are not migrated, back-filled or touched."""
+    (tmp_path / "first_fresh.json").write_text(json.dumps(LEGACY_RECORD))
+    loaded = fs.load_first_fresh(tmp_path)
+    assert loaded == LEGACY_RECORD
+
+    report = fs.evaluate(
+        _results_at(FRI_VISIBLE, _provisional(FRI_SESSION, built_at=FRI_BUILT_AT,
+                                              meta=FRI_META_FULL)),
+        FRI_VISIBLE,
+        client_reads=_client_reads(FRI_SESSION, observed_at=FRI_VISIBLE),
+    )
+    updated = fs.record_first_fresh(loaded, report, FRI_VISIBLE)
+    for session, entry in LEGACY_RECORD["sessions"].items():
+        assert updated["sessions"][session] == entry, session
+    assert "latency" in updated["sessions"][FRI_SESSION]["us_board_provisional"]
+    # The legacy sessions still have no latency key — no silent back-fill.
+    assert "latency" not in updated["sessions"]["2026-08-07"]["us_board_provisional"]
+
+
+# --------------------------------------------------------------------------- #
+# PR-C — the stale-armed-pack watchdog
+#
+# live_flow/prophet_live_armed.json is the ONLY input the */5 intraday evaluator
+# reads. Measured 2026-08-15: served HTTP 200 with Last-Modified 2026-08-14
+# 04:29:13 GMT over an ``as_of`` of 2026-08-13 — the pack is being republished
+# and is a session behind, and no surface that existed before this one could see
+# it (it feeds no page bake, no board delay marker and no Prophet index field).
+# --------------------------------------------------------------------------- #
+def _armed_surface() -> dict:
+    return next(s for s in fs.SURFACES if s["id"] == "prophet_live_armed")
+
+
+def _armed_check(as_of: str | None, now: datetime = NOW, **kw) -> dict:
+    return fs.check_surface(_armed_surface(), _armed(as_of, **kw), now)
+
+
+def test_a_current_armed_pack_is_ok_and_discloses_its_coverage():
+    c = _armed_check(PROPHET_CURRENT_ASOF)
+    assert c["status"] == "ok" and c["asof_sessions_behind"] == 0
+    assert c["facts"]["coverage"] == {"universe_n": 1763, "probed_n": 179,
+                                      "armed_n": 91, "probe_cap_cross": 1535}
+    line = fs.facts_line(c)
+    assert "armed_n=91" in line and "probe_cap_cross=1535" in line
+
+
+def test_armed_coverage_is_disclosed_and_never_budgeted():
+    """91 armed of 1,763 with 1,535 cut by the probe cap is a PRODUCT question
+    owned by the Prophet Live lane. A watchdog that alarmed on it would be
+    inventing a threshold it has no standing to set; printing the numbers every
+    pass is what makes the next wave's threshold arguable from evidence."""
+    starved = _armed_check(PROPHET_CURRENT_ASOF,
+                           meta={"universe_n": 1763, "probed_n": 4, "armed_n": 0,
+                                 "skipped": {"probe_cap_cross": 1759}})
+    assert starved["status"] == "ok"          # zero armed does not page — yet
+    line = fs.facts_line(starved)
+    assert "armed_n=0" in line and "probe_cap_cross=1759" in line
+
+
+def test_the_2026_08_15_replay_reports_the_gap_and_pages_on_the_second_miss():
+    """The real gap, on the real calendar. Saturday 08-15: the pack is stamped
+    08-13 while Friday 08-14 has completed — one session missing, DISCLOSED on
+    the operator line and inside the absorbed-miss budget. Monday evening, with
+    the pack still frozen, the second miss pages.
+
+    A 0-session budget was measured wrong before it was written: the pack is
+    written by the NIGHTLY and lands ~00:30 ET the morning after its session
+    (Last-Modified 04:29:13Z, read 2026-08-15), while ``expected_last_session``
+    rolls at 17:00 ET — so a 0 budget breaches for ~7 hours every session day on
+    a perfectly healthy estate."""
+    saturday = datetime(2026, 8, 15, 10, 0, tzinfo=timezone.utc)
+    c = _armed_check("2026-08-13", saturday)
+    assert c["status"] == "ok"
+    assert c["asof"] == "2026-08-13" and c["asof_sessions_behind"] == 1
+
+    monday_evening = datetime(2026, 8, 17, 21, 30, tzinfo=timezone.utc)  # 17:30 ET
+    c = _armed_check("2026-08-13", monday_evening)
+    assert c["status"] == "stale" and c["asof_sessions_behind"] == 2
+    assert "2 completed NYSE session(s) behind" in c["detail"]
+    assert "budget 1" in c["detail"]
+
+
+def test_a_healthy_republish_over_a_frozen_pack_names_the_restamp_trap():
+    """The whole point of the surface. The object is being PUT on schedule and
+    its content is frozen; the detail line has to say so, because "Last-Modified
+    is 2 hours old" is the sentence that made this invisible."""
+    c = _armed_check("2026-08-05", mtime_age_hours=2.0)      # 2 behind at NOW
+    assert c["status"] == "stale"
+    assert "the file is being re-published, the store is not" in c["detail"]
+
+
+def test_a_weekend_never_manufactures_an_armed_pack_breach():
+    """Friday's pack read on Sunday is current: the calendar anchor is what lets
+    this budget be one session without flapping across every weekend."""
+    sunday = datetime(2026, 8, 9, 18, 0, tzinfo=timezone.utc)
+    assert _armed_check("2026-08-07", sunday)["status"] == "ok"
+
+
+def test_an_armed_pack_that_cannot_say_its_own_date_is_a_breach_not_a_pass():
+    c = _armed_check(None)
+    assert c["status"] == "stale"
+    assert "carries no usable 'as_of' field" in c["detail"]
+
+
+def test_a_missing_armed_pack_goes_blind_rather_than_absent():
+    """Unlike the evening board this artifact has no legitimate absent state —
+    it is written once a night and stays. A 404 (the shape a migration to the
+    private operational bucket would take) must escalate as the sentinel losing
+    sight of the surface, not pass as a normal pre-publication hour."""
+    assert _armed_surface().get("absent_ok") is None
+    c = fs.check_surface(_armed_surface(),
+                         fs.FetchResult(status=404, error="HTTP 404 Not Found"), NOW)
+    assert c["status"] == "indeterminate" and c["absent"] is False
+
+    results = _fresh_results()
+    results["prophet_live_armed"] = fs.FetchResult(status=404, error="HTTP 404 Not Found")
+    report = fs.evaluate(results, NOW)
+    state: dict = {}
+    alerts: list[str] = []
+    for i in range(fs.BLIND_AFTER):
+        alerts, state = fs.decide_alerts(report, state, NOW + timedelta(minutes=30 * i))
+    assert state["blind_counts"]["prophet_live_armed"] == fs.BLIND_AFTER
+    assert "SENTINEL BLIND" in alerts[-1] and "prophet_live_armed" in alerts[-1]
+
+
+def test_a_non_json_armed_body_is_indeterminate_not_stale():
+    """An error shell or a WAF interstitial wearing a 200 is a transport failure.
+    It must not be read as an outage verdict in either direction."""
+    c = fs.check_surface(
+        _armed_surface(),
+        fs.FetchResult(status=200, last_modified=NOW, body="<html>error</html>"), NOW)
+    assert c["status"] == "indeterminate" and "not JSON" in c["detail"]
+    assert c["facts"] == {}
+
+
+def test_the_armed_pack_is_fetched_with_a_body_and_the_manifest_still_is_not():
+    """A body is fetched only when something must be PARSED out of it. The armed
+    pack's watermark is inside the JSON; the massive-store manifest is judged on
+    its header alone and must stay a HEAD on a lane that runs every 30 minutes
+    forever."""
+    wanted: dict[str, bool] = {}
+
+    def spy(url, *, want_body):
+        wanted[url.rsplit("/", 1)[-1]] = want_body
+        return fs.FetchResult(status=200, last_modified=NOW,
+                              body=_http_body(url, want_body))
+
+    fs.run(now=NOW, base="https://example.invalid", r2_base="https://example.invalid",
+           public_dir=Path("/nonexistent"), state_dir=Path("/nonexistent"),
+           dry_run=True, fetcher=spy, served_reader=_served(_prophet()))
+    assert wanted["prophet_live_armed.json"] is True
+    assert wanted["_manifest.json"] is False
+    assert wanted["us_stocks.html"] is True

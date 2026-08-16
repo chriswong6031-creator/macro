@@ -4077,3 +4077,114 @@ def test_ui_contract_separates_scores_from_axis_labels():
     assert 'class="rkc-mood-axis rsx-axis-labels"' in source
     assert "rkc-mood-flag" not in source
     assert "@container risk-dialog (max-width:520px)" in source
+
+
+# ── merge artifacts are not competing verdicts (2026-08-15) ──────────────────
+#
+# Merging fires `pull_request: closed`, and ci.yml's concurrency block deliberately
+# starts a ZERO-RUNNER replacement for it. So every cleanly merged head carries two
+# ci-gate check-runs: the real concluded one, plus a `skipped` artifact created 12-15s
+# later BY the merge. Counting the artifact as a second opinion raised
+# "links multiple latest ci-gate workflow runs" on every merged head and blocked the
+# authoring session from stopping on work that had merged GREEN — with no session-side
+# remedy, because merged check-runs are immutable and `gh run rerun` preserves the run id.
+
+def _gate(run_id: int, conclusion: str) -> dict:
+    return {
+        "name": "ci-gate",
+        "conclusion": conclusion,
+        "details_url": f"https://github.com/o/r/actions/runs/{run_id}/job/1",
+    }
+
+
+def test_skipped_merge_artifact_does_not_make_evidence_ambiguous(monkeypatch):
+    """The real shape of merged PR #5754 head c02fc9eac6e8."""
+    seen: dict = {}
+
+    def _fake_get_json(url: str):
+        seen["url"] = url
+        raise AssertionError("stop after run resolution")
+
+    monkeypatch.setattr(GUARD, "_get_json", _fake_get_json)
+    runs = [_gate(31887298300, "success"), _gate(31889718105, "skipped")]
+    with pytest.raises(AssertionError, match="stop after run resolution"):
+        GUARD._semantic_evidence_for_head("o", "r", "c02fc9eac6e8", check_runs=runs)
+    # It resolved the DECISIVE run, not the merge artifact, and did not raise ambiguity.
+    assert "31887298300" in seen["url"]
+
+
+def test_two_decisive_ci_gates_still_raise_ambiguity():
+    """Fail-closed is preserved: two real conclusions remain irreconcilable."""
+    runs = [_gate(111, "success"), _gate(222, "failure")]
+    with pytest.raises(Exception, match="multiple latest ci-gate workflow runs"):
+        GUARD._semantic_evidence_for_head("o", "r", "deadbeefcafe", check_runs=runs)
+
+
+def test_only_skipped_ci_gates_do_not_resolve_to_a_run(monkeypatch):
+    """A head whose ONLY gate is skipped has no usable evidence — never a fake pass."""
+    called: dict = {"n": 0}
+
+    def _fake_get_json(url: str):
+        called["n"] += 1
+        raise AssertionError("must not resolve a run from skipped-only evidence")
+
+    monkeypatch.setattr(GUARD, "_get_json", _fake_get_json)
+    runs = [_gate(333, "skipped"), _gate(444, "skipped")]
+    # Two skipped ids remain ambiguous rather than silently choosing one.
+    with pytest.raises(Exception, match="multiple latest ci-gate workflow runs"):
+        GUARD._semantic_evidence_for_head("o", "r", "0123456789ab", check_runs=runs)
+    assert called["n"] == 0
+
+
+# ── a merged head cannot bind its own proof base (2026-08-15) ────────────────
+#
+# GitHub drops `pull_requests` from check-runs once the PR closes — measured on #5754's
+# ci-gate: `n_prs: 0` on BOTH entries — so `_semantic_pr_base_sha` returns None for every
+# merged head and the loader refused with "does not identify the exact PR proof base".
+# Same trap shape as the skipped-gate artifact: no session-side repair exists. The merged
+# pull request record still carries the authoritative base, so `_check_ci` threads it in.
+
+def _capture_base(monkeypatch):
+    seen: dict = {}
+
+    def _fake_loader(owner, repo, head_sha, *, check_runs=None, expected_base_sha=None):
+        seen["expected_base_sha"] = expected_base_sha
+        raise RuntimeError("stop after base binding")
+
+    monkeypatch.setattr(GUARD, "_semantic_evidence_for_head", _fake_loader)
+    monkeypatch.setattr(GUARD, "_head_can_advertise_semantic_evidence", lambda runs: True)
+    monkeypatch.setattr(
+        GUARD,
+        "_head_check_runs",
+        lambda owner, repo, sha: [
+            {"name": "ci-pack-1", "status": "completed", "conclusion": "failure"}
+        ],
+    )
+    return seen
+
+
+def test_merged_head_binds_its_proof_base_from_the_pull_request(monkeypatch, tmp_path):
+    """No association metadata survives the merge — the PR record is the fallback."""
+    seen = _capture_base(monkeypatch)
+    monkeypatch.setattr(GUARD, "_semantic_pr_base_sha", lambda *a, **k: None)
+    GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
+                    "claude/x", "b9473646cfba")
+    assert seen["expected_base_sha"] == "b9473646cfba"
+
+
+def test_check_run_bound_base_still_wins_over_the_pull_request_record(monkeypatch, tmp_path):
+    """The immutable, event-frozen base outranks the mutable PR record wherever it exists."""
+    seen = _capture_base(monkeypatch)
+    monkeypatch.setattr(GUARD, "_semantic_pr_base_sha", lambda *a, **k: "aaaaaaaaaaaa")
+    GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
+                    "claude/x", "b9473646cfba")
+    assert seen["expected_base_sha"] == "aaaaaaaaaaaa"
+
+
+def test_absent_base_everywhere_stays_none_rather_than_empty_string(monkeypatch, tmp_path):
+    """Fail-closed: an unbindable base must read as absent, never as a falsy base."""
+    seen = _capture_base(monkeypatch)
+    monkeypatch.setattr(GUARD, "_semantic_pr_base_sha", lambda *a, **k: None)
+    GUARD._check_ci(tmp_path, "o", "r", "head", "merge", "2026-08-15T14:22:11Z",
+                    "claude/x", "")
+    assert seen["expected_base_sha"] is None

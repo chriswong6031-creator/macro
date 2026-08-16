@@ -877,7 +877,7 @@
     var evt = det && det.evt ? det.evt : '<span class="dash">—</span>';
     var sect = r.s ? '<span class="mut" style="font-size:12px">' + secCell(r.s) + '</span>'
                    : '<span class="dash">—</span>';
-    return '<tr data-t="' + esc(r.t) + '"' + (openRows[r.t] ? ' aria-expanded="true"' : '') + '>' +
+    return '<tr data-t="' + esc(r.t) + '" aria-expanded="' + (openRows[r.t] ? 'true' : 'false') + '">' +
       '<td class="c-sym"><b>' + esc(r.t) + '</b><span class="co">' + esc(r.n) + '</span></td>' +
       '<td class="c-val num">' + px + '<span class="w">' + dayCell() + '</span></td>' +
       '<td class="c-sig">' + sig + '</td>' +
@@ -885,7 +885,8 @@
       '<td class="c-evt">' + evt + '</td>' +
       '<td class="c-sect">' + sect + '</td>' +
       '<td class="c-chg">' + (d ? '<span class="delta ' + d[0] + '"><i></i>' + te(esc(d[1]), esc(d[2])) + '</span>' : '') + '</td>' +
-      '<td class="c-exp"><button class="exp" type="button" data-exp="' + esc(r.t) + '" aria-label="' +
+      '<td class="c-exp"><button class="exp" type="button" data-exp="' + esc(r.t) +
+        '" aria-expanded="' + (openRows[r.t] ? 'true' : 'false') + '" aria-label="' +
         (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
     '</tr>' + (openRows[r.t] ? drawerHTML(r, 8) : '');
   }
@@ -943,6 +944,13 @@
       try { t1 = window.WRI.intelTier1(r.t, j) || ''; } catch (e) { t1 = ''; }
       try { t2 = intel(r.t, j, { inBook: false, weightPct: null }) || ''; } catch (e) { t2 = ''; }
       if (t1) cells.push('<div class="drw-full">' + t1 + '</div>');
+      else {
+        /* Tier-1 is name-level and must appear. An empty/thrown lead is a gap,
+           not n/app — say so rather than omit the lane (W4 2026-08-15). */
+        cells.push('<div class="drw-honest">' + te(
+          'The Tier-1 entry-state read for this name did not load. That is a gap in what we can show you, not a clean bill of health.',
+          '这只票的第一层入场状态没有加载出来。这是我们能展示的内容缺了一块，不代表它没问题。') + '</div>');
+      }
       if (t2) cells.push(t2);
       if (!t1 && !t2) {
         cells.push('<div class="drw-honest">' + te(
@@ -1381,7 +1389,7 @@
       : ANON_HEAD;
     host.innerHTML = head + '<tbody>' + filtered.map(function (x) {
       var open = !!openRows[x.sym];
-      return '<tr data-t="' + esc(x.sym) + '"' + (open ? ' aria-expanded="true"' : '') + '>' +
+      return '<tr data-t="' + esc(x.sym) + '" aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<td class="c-sym"><b>' + esc(x.sym) + '</b><span class="co"></span></td>' +
         '<td class="c-val num"><span class="fig">' + x.money.toFixed(1) + '%</span></td>' +
         '<td class="c-day num">' + dayCell() + '</td>' +
@@ -1405,7 +1413,8 @@
            because none of the gated scripts is on the page to compute it — and that is
            the honest offer: here is the shape of what we know, and what turns it on. */
         '<td class="c-exp"><button class="exp" type="button" data-exp="' + esc(x.sym) +
-          '" aria-label="' + (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
+          '" aria-expanded="' + (open ? 'true' : 'false') + '" aria-label="' +
+          (isZh() ? '详情' : 'Details') + '"><span class="car">⌄</span></button></td>' +
       '</tr>' +
       (open ? drawerHTML({ t: x.sym, n: '', s: '' }, 9, { remove: false }) : '');
     }).join('') + '</tbody>';
@@ -1586,24 +1595,6 @@
     var state = wsState();
     document.documentElement.setAttribute('data-ws-state', state);
 
-    // Feed the factor panel the current holdings — MODELED names only. The factor
-    // model is USD and carries no suffixed tickers, so a .HK/.SS/.TO name here would
-    // corrupt every book statistic downstream.
-    if (window.FX) {
-      var syms = blob.items.map(function (it) { return it.t; });
-      window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
-    }
-    /* The books model is built from watchlist names UNION open positions. portfolio.js
-       refreshes it with BOTH; this file only has the watchlist half, so calling it here
-       while a book exists rebuilds the model with `rows = null`, drops every market the
-       positions contributed, and `refresh()` then resets a persisted book filter to
-       "all" because its market looks absent. Symptom: picking Crypto silently snapped
-       back to all books. Only refresh here when nobody else can. */
-    var pfHasRows = !!(window.PF && window.PF.count && window.PF.count() > 0);
-    if (window.MB && window.MB.refresh && !pfHasRows) {
-      window.MB.refresh(blob.items.map(function (it) { return it.t; }), null, null);
-    }
-
     // mode-switch counts are what the user ACTUALLY has — an anonymous visitor has no
     // saved lists, so the count is ABSENT rather than borrowed
     var pfN = el('ws_modes') && el('ws_modes').querySelector('[data-count="pf"]');
@@ -1611,7 +1602,25 @@
     if (pfN) pfN.textContent = (state === 'anon-empty') ? '' : String(pfCount());
     if (wlN) wlN.textContent = (state.indexOf('anon') === 0) ? '' : String(listsCount());
 
-    if (mode === 'watchlists') { renderWatchlist(); return; }
+    if (mode === 'watchlists') {
+      // Watchlist names feed FX / the books strip ONLY in this mode. Doing it on
+      // every render — including the Portfolio click — is the W4 2026-08-15 chip
+      // drop: FX paints the watchlist as "this book's risk" while holdings is 0
+      // rows, and MB.refresh(watchlist, null) collapses a multi-market strip.
+      if (window.FX) {
+        var syms = blob.items.map(function (it) { return it.t; });
+        window.FX.update(window.MB ? window.MB.modeledOnly(syms) : syms);
+      }
+      /* The books model is built from watchlist names UNION open positions.
+         portfolio.js refreshes it with BOTH. This file only has the watchlist
+         half — calling refresh here while PF exists rebuilds the model with
+         `rows = null` and clears the strip. Anonymous / no-PF still owns this. */
+      if (window.MB && window.MB.refresh && !window.PF) {
+        window.MB.refresh(blob.items.map(function (it) { return it.t; }), null, null);
+      }
+      renderWatchlist();
+      return;
+    }
 
     if (state === 'anon-analyzed' && ENTERED) { renderAnonBook(); return; }
     if (state === 'anon-empty') { renderStarters(); return; }
@@ -1710,6 +1719,15 @@
     }
     return [];
   }
+  function resolveListName(id, fallback) {
+    if (fallback) return fallback;
+    if (!id) return '';
+    var rows = listsAll();
+    for (var i = 0; i < rows.length; i++) {
+      if (String(rows[i].id) === String(id)) return rows[i].name || '';
+    }
+    return '';
+  }
   function paintListMenu() {
     var menu = el('wl_listmenu'); if (!menu) return;
     var rows = listsAll();
@@ -1725,6 +1743,31 @@
       '<button type="button" data-listact="new">' + esc(L('newList')) + '</button>' +
       (rows.length ? '<button type="button" data-listact="rename">' + esc(L('renameList')) + '</button>' +
                      '<button type="button" data-listact="delete">' + esc(L('deleteList')) + '</button>' : '');
+  }
+  function cssEsc(s) {
+    if (typeof CSS !== 'undefined' && CSS.escape) return CSS.escape(s);
+    return String(s).replace(/[^a-zA-Z0-9_-]/g, '\\$&');
+  }
+  function expButton(t) {
+    if (typeof document === 'undefined' || !document.querySelector) return null;
+    return document.querySelector('.exp[data-exp="' + cssEsc(t) + '"]');
+  }
+  function toggleExp(t) {
+    if (!t) return;
+    if (openRows[t]) delete openRows[t]; else openRows[t] = true;
+    render();
+    var btn = expButton(t);
+    if (btn && btn.focus) btn.focus();
+  }
+  function closeOpenDrawers() {
+    var keys = Object.keys(openRows);
+    if (!keys.length) return false;
+    var t = keys[0];
+    delete openRows[t];
+    render();
+    var btn = expButton(t);
+    if (btn && btn.focus) btn.focus();
+    return true;
   }
   function toggleListMenu(open) {
     var menu = el('wl_listmenu'), btn = el('wl_listpick');
@@ -1845,14 +1888,17 @@
        diff push would be a wipe of the list being switched to. */
     bindList: function (id, name) {
       var nextId = id || null;
-      if (nextId === listId) { listName = nextId ? (name || listName) : ''; return listId; }
       listId = nextId;
-      listName = nextId ? (name || '') : '';
+      listName = nextId ? (resolveListName(nextId, name) || '') : '';
+      /* Always re-read. setActive writes the list cache and then rebinds the
+         SAME id — an early-return here kept the previous blob (the 53-name
+         default) on the first click (W4 2026-08-15). */
       blob = readStorage();
       render();
       return listId;
     },
     listId: function () { return listId; },
+    listName: function () { return listName; },
     storageKey: storageKey,
     shareParam: shareParam
   };
@@ -1958,11 +2004,14 @@
       if (!row) return;
       var id = row.getAttribute('data-list'), nm = row.getAttribute('data-name');
       toggleListMenu(false);
+      /* Bind NOW — label + cached rows — so the first click is not a no-op while
+         setActive fetches. The then() re-reads the just-written cache. */
+      window.WL.bindList(id, nm);
       if (window.WatchStore && window.WatchStore.lists && window.WatchStore.lists.setActive) {
         window.WatchStore.lists.setActive(id).then(function () {
           window.WL.bindList(id, nm);
         });
-      } else { window.WL.bindList(id, nm); }
+      }
     });
     document.addEventListener('click', function () { toggleListMenu(false); });
 
@@ -1975,11 +2024,7 @@
         render(); return;
       }
       var ex = e.target.closest('[data-exp]');
-      if (ex) {
-        var t = ex.getAttribute('data-exp');
-        if (openRows[t]) delete openRows[t]; else openRows[t] = true;
-        render(); return;
-      }
+      if (ex) { toggleExp(ex.getAttribute('data-exp')); return; }
       var rm = e.target.closest('[data-rm]');
       if (rm) { remove(rm.getAttribute('data-rm')); render(); pushCloud(); return; }
       var ad = e.target.closest('[data-add]');
@@ -2011,7 +2056,22 @@
     document.addEventListener('bk-change', render);
     document.addEventListener('wl-list-change', function (e) {
       var id = e && e.detail && e.detail.listId;
-      if (id) window.WL.bindList(id, listName);
+      var nm = e && e.detail && e.detail.name;
+      if (id) window.WL.bindList(id, nm);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key !== 'Escape') return;
+      var menu = el('wl_listmenu');
+      if (menu && menu.classList.contains('open')) {
+        toggleListMenu(false);
+        var pick = el('wl_listpick');
+        if (pick && pick.focus) pick.focus();
+        e.preventDefault();
+        return;
+      }
+      var dlg = el('dlg-holding');
+      if (dlg && dlg.classList.contains('open')) return;
+      if (closeOpenDrawers()) e.preventDefault();
     });
     // the store is the authority on the save state; the chip only paints it
     document.addEventListener('ws-save', function (e) {
@@ -2135,6 +2195,11 @@
          test can ever see — which is precisely the branch that must not be the only one
          that works. */
       drawerHTML: drawerHTML,
+      rowHTML: wlRowHTML,
+      setMode: setMode,
+      toggleExp: toggleExp,
+      closeOpenDrawers: closeOpenDrawers,
+      drawerOpen: function (t) { return !!openRows[t]; },
       __setDetail: function (t, d) { DETAIL[t] = d; }
     };
   }

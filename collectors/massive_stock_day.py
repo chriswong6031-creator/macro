@@ -9,7 +9,9 @@ store: the transient download cache (data/massive_flat/) holds universe-filtered
 frames keyed by (date, underlyings_hash) and is gitignored.
 
 This module builds and maintains a DERIVED per-ticker store:
-  data/massive_stock_day/<TICKER>.parquet  — append-only, index=date (UTC midnight)
+  data/massive_stock_day/<TICKER>.parquet  — all-uppercase vendor tickers (legacy path)
+  data/massive_stock_day/__case_v1/<hex>.parquet — mixed-case vendor tickers
+  (both append-only, index=date at UTC midnight; the second path is APFS-casefold-safe)
   data/massive_stock_day/_manifest.json   — freshness anchor (committed; rest gitignored)
 
 R2 IS THE CANONICAL HOME (2026-07-29).  The store lives under the Cloudflare R2 key
@@ -90,7 +92,8 @@ massive_store audit guard.
 
 GIT / R2 BOUNDARY
 -----------------
-data/massive_stock_day/*.parquet  → gitignored (multi-GB total), R2-canonical
+data/massive_stock_day/{*.parquet,__case_v1/*.parquet}
+                                  → gitignored (multi-GB total), R2-canonical
 data/massive_stock_day/_manifest.json → COMMITTED (freshness anchor for audit_r2)
 data/massive_stock_day/_backfill_state.json → COMMITTED (resume state, v2)
 
@@ -134,6 +137,7 @@ import pandas as pd
 
 from collectors.massive_flatfiles import fetch_aggs, latest_available, enabled
 from lib import config
+from lib.massive_ticker import artifact_relative_path, iter_artifact_paths
 
 log = logging.getLogger(__name__)
 
@@ -193,7 +197,7 @@ def _store_dir() -> Path:
 
 
 def _ticker_path(ticker: str) -> Path:
-    return _store_dir() / f"{ticker}.parquet"
+    return _store_dir() / artifact_relative_path(ticker)
 
 
 def _manifest_path() -> Path:
@@ -235,6 +239,7 @@ def _upsert_ticker(ticker: str, new_rows: pd.DataFrame) -> None:
     if new_rows.empty:
         return
     path = _ticker_path(ticker)
+    path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
         try:
             existing = pd.read_parquet(path)
@@ -460,7 +465,7 @@ def _scan_store_days() -> set[date]:
     large store (~2-3 min at 15k files) — used ONCE to migrate a v1 state file whose
     scalar high-water mark cannot be trusted as a coverage record."""
     days: set[date] = set()
-    for p in _store_dir().glob("*.parquet"):
+    for p in iter_artifact_paths(_store_dir()):
         try:
             idx = pd.read_parquet(p, columns=[]).index
             days.update(d.date() for d in pd.to_datetime(idx).normalize())
@@ -531,7 +536,7 @@ def _store_absent() -> str | None:
     path inside that function SCANS and SAVES, and the fence must not write anything.
     An empty/virgin state is not fenced — that is a legitimate first bootstrap.
     """
-    n = len(list(_store_dir().glob("*.parquet")))
+    n = sum(1 for _ in iter_artifact_paths(_store_dir()))
     if n >= _MIN_STORE_FILES:
         return None
     state = _load_backfill_state()
@@ -640,7 +645,7 @@ def backfill(
 
         if dirty >= 20:
             _save_backfill_state(processed)
-            n_t = len(list(_store_dir().glob("*.parquet")))
+            n_t = sum(1 for _ in iter_artifact_paths(_store_dir()))
             _write_manifest(n_t, max(processed), processed)
             log.info("massive_stock_day: %d fetched / %d skipped, %d tickers in store, "
                      "latest=%s", days_fetched, days_skipped, n_t, latest_date_written)
@@ -652,7 +657,7 @@ def backfill(
     # attempted (max_days cut).  Both retry on the next run.
     days_remaining = sum(1 for d in targets if d not in processed)
     _save_backfill_state(processed)
-    n_tickers = len(list(_store_dir().glob("*.parquet")))
+    n_tickers = sum(1 for _ in iter_artifact_paths(_store_dir()))
     if processed:
         _write_manifest(n_tickers, max(processed), processed)
 
