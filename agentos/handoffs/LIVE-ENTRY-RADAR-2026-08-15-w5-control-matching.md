@@ -139,7 +139,7 @@ danger_areas:
     scripts/check_validated_claims.py (missing allowlist under an omitted tree). Run the
     radar files by name instead — that is a sparse artifact, not a regression."
 
-prs: [5777]
+prs: [5780]
 discoveries: ["DSC:REFUSAL-BRANCH-HIDES-A-DEAD-LOOKUP"]
 ---
 
