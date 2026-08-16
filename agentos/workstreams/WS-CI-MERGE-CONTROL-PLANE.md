@@ -38,29 +38,27 @@ waves:
       bounded transport — the wiring pins enforce it.
   - id: W-SEMANTIC-PROOF
     title: Semantic CI proof identity and ancestry-valid healing
-    status: in_progress
+    status: done
     note: >
-      Fresh-main bounded implementation commissioned by the 2026-08-14 CEO V2
-      ruling is engineering-complete and awaiting its one pre-existing-gate
-      bootstrap proof. Execution packs are transport only; one shared law keys
-      evidence by logical job plus semantic proof ID, binds step/job execution
-      digests, compares bounded non-empty failure signatures against exact-base
-      BASE-code replay, accounts for every expected pack/job/step, and fails
-      closed on infrastructure or malformed/absent advertised evidence.
-      Authority-changing PRs cannot self-excuse. Main-red narrowing is allowed
-      only for non-overlapping semantic units and never for infrastructure;
-      ProofFreshness remains binding. Descendant healing requires real ancestry,
-      accepts a per-unit PASS inside an overall-red main run, and is monotone.
-      Both ship-loop and merge-on-green consume this same law. PR 5591 remains
-      the prototype/canonical historical W-REWRITE lineage and was used only for
-      surgical archaeology; this wave does not imply W-REWRITE is done.
+      CEO V2 semantic proof landed through PR 5750 as
+      064ebd53a9de3cd0fcc3eb813e634f30106eed03 on 2026-08-15. Current main
+      b2938ee302e16654de2858e820877cad096f2446 is a verified descendant. Main
+      semantic-producer run 31890203055 on descendant
+      719b13774da34e518da57591f2cf940cbe9c856c emitted
+      ci.semantic_evidence.v1 with status=clear for 194 jobs and no
+      infrastructure findings; merge-on-green consumer run 31892639093 then
+      completed successfully on that same merged head. Downstream merged-head
+      consumer fixes PR 5756 / 0e84abd736d0 and PR 5757 / 5c253e21b4f7 also
+      passed their exact-head semantic CI runs 31894942765 and 31896763803.
+      Execution packs remain transport only; shared semantic identity,
+      exact-base causality, complete accounting, infrastructure refusal,
+      ancestry-valid monotone healing, authority self-excuse refusal, and
+      ProofFreshness remain the governing contract. PR 5591 remains historical
+      W-REWRITE archaeology only; completing this wave does not commission or
+      complete W-REWRITE or any CI-speed/scoping wave.
 next_action: >
-  Run exactly one current required pre-existing bootstrap proof. If it is green,
-  land normally, verify merged main, and only then mark W-SEMANTIC-PROOF done. If
-  rotating unrelated fleet reds make the authority replacement unable to satisfy
-  the old gate, stop with the CEO V2 BOOTSTRAP LANDING REQUIRED packet; do not
-  self-excuse, admin-merge, or wait through repeated baselines. Do not begin the
-  separate CI speed/scoping wave.
+  STOP the W-SEMANTIC-PROOF wave. Keep W-REWRITE and CI-speed/scoping as
+  separately commissioned work; do not begin either from this completion.
 owns_paths:
   - ".github/workflows/ci.yml"
   - ".github/workflows/merge-on-green.yml"
