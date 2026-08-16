@@ -37,6 +37,7 @@ import hashlib
 import json
 import logging
 import time
+from collections import OrderedDict
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -257,9 +258,39 @@ def _daily_frame(results: Sequence[dict[str, Any]]) -> pd.DataFrame:
     return frame
 
 
+#: Parsed daily-cache frames, keyed by (path, mtime_ns, size) — see
+#: :func:`_read_daily_cache`.  Bounded so a long-lived process (the live
+#: gateway) cannot grow without limit; the replay's working set is far smaller.
+_DAILY_PARSE_CACHE: "OrderedDict[tuple[str, int, int], pd.DataFrame]" = OrderedDict()
+_DAILY_PARSE_CACHE_MAX = 4096
+
+
 def _read_daily_cache(path: Path) -> pd.DataFrame | None:
+    """Parse a pre-warmed daily cache file, MEMOIZED on (path, mtime, size).
+
+    ``daily_ohlcv`` is its only caller and calls it once per invocation, so the
+    W5 replay re-parsed the SAME parquet on every episode — the bench (SPY) and
+    sector-ETF legs are read once per episode by construction, and a name that
+    fires n times is read n times.  Re-parsing is pure waste: an unchanged file
+    yields an identical frame, so the key carries mtime_ns AND size and any
+    rewrite (including ``daily_ohlcv``'s own ``to_parquet`` merge-back) misses
+    the memo and re-reads.  Every branch ``daily_ohlcv`` takes afterwards —
+    ``_cache_covers``, fetch-or-not, ``_slice`` — is byte-identical either way.
+
+    The memoized frame is shared, and the callers treat it as read-only
+    (``_slice`` copies, ``_merge_daily`` concatenates); do not mutate it in place.
+    """
     if not path.exists():
         return None
+    try:
+        stat = path.stat()
+        key = (str(path), int(stat.st_mtime_ns), int(stat.st_size))
+    except OSError:  # noqa: BLE001 — an unstattable path is a miss, not a crash
+        return None
+    hit = _DAILY_PARSE_CACHE.get(key)
+    if hit is not None:
+        _DAILY_PARSE_CACHE.move_to_end(key)
+        return hit
     try:
         frame = pd.read_parquet(path)
     except Exception as exc:  # noqa: BLE001 — a corrupt cache is a miss, not a crash
@@ -271,7 +302,11 @@ def _read_daily_cache(path: Path) -> pd.DataFrame | None:
                           f"orchestrator's layout must match {list(DAILY_COLUMNS)}")
     frame.index = pd.DatetimeIndex(frame.index).normalize()
     frame.index.name = "session"
-    return frame[list(DAILY_COLUMNS)].sort_index()
+    parsed = frame[list(DAILY_COLUMNS)].sort_index()
+    _DAILY_PARSE_CACHE[key] = parsed
+    while len(_DAILY_PARSE_CACHE) > _DAILY_PARSE_CACHE_MAX:
+        _DAILY_PARSE_CACHE.popitem(last=False)
+    return parsed
 
 
 def _recorded_ranges(path: Path) -> list[tuple[date, date]]:
