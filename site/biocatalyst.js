@@ -1983,10 +1983,12 @@
       if (token !== state.detailToken) return; var detail = payload && valueAt(payload, 'trial'); if (!validTrial(detail) || nctOf(detail) !== id) throw markHydration(new Error('Invalid trial detail contract'), 'integrity_block', 200); state.detail = detail; showDetail(detail, queueEvidence, selectedRow());
     }).catch(function (error) {
       if (token !== state.detailToken || (error && error.name === 'AbortError')) return;
+      var kind = hydrationKind(error);
       if (error && error.status === 404) showInspectorEmpty(tr('Dossier unavailable', '档案暂不可用'), tr('This trial is no longer in the current verified record. No replacement record is inferred.', '该试验已不在当前已核验记录中。不会推断替代记录。'));
-      else if (hydrationKind(error) === 'locked' || isAccessError(error)) { lockWorkspace(); showInspectorEmpty(tr('Dossier locked', '档案已锁定'), tr('Full access is required before the current trial record can be shown.', '显示当前试验记录前需要完整访问权限。')); }
-      else if (hydrationKind(error) === 'integrity_block') showInspectorEmpty(tr('Results withheld', '结果暂不展示'), tr('The system received trial data but it did not pass the expected integrity check, so nothing is shown.', '系统已收到试验数据，但未通过完整性核验，因此不予展示。'));
-      else showInspectorEmpty(tr('Temporarily unavailable', '暂时无法读取'), tr('The trial service is not answering right now. Try again shortly. No records are inferred.', '试验服务当前无响应。请稍后再试。不会推断任何记录。'));
+      else if (kind === 'locked' || isAccessError(error)) { lockWorkspace(); showInspectorEmpty(tr('Dossier locked', '档案已锁定'), tr('Full access is required before the current trial record can be shown.', '显示当前试验记录前需要完整访问权限。')); }
+      else if (kind === 'integrity_block') showInspectorEmpty(tr('Results withheld', '结果暂不展示'), tr('The system received trial data but it did not pass the expected integrity check, so nothing is shown.', '系统已收到试验数据，但未通过完整性核验，因此不予展示。'));
+      else if (kind === 'source_outage') showInspectorEmpty(tr('Temporarily unavailable', '暂时无法读取'), tr('The trial service is not answering right now. Try again shortly. No records are inferred.', '试验服务当前无响应。请稍后再试。不会推断任何记录。'));
+      else showInspectorEmpty(tr('This dossier could not be shown', '此档案无法展示'), tr('The workspace hit an unexpected problem while drawing this dossier. Nothing is inferred.', '工作台在绘制此档案时出现意外问题。不会推断任何内容。'));
     }).finally(function () { if (state.detailController === controller) state.detailController = null; });
     if (trigger) trigger.setAttribute('aria-selected', 'true');
   }

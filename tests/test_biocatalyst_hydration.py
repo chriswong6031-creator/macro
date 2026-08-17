@@ -179,6 +179,28 @@ def screen_one_row() -> dict:
     }
 
 
+def trial_detail() -> dict:
+    return {
+        "trial": {
+            "nct_id": "NCT00000001",
+            "title": "Alpha Study",
+            "brief_title": "Alpha Study",
+        }
+    }
+
+
+def _screen_dossier_scenario(detail: dict) -> dict:
+    return {
+        "search": "?mode=screen",
+        "routes": {
+            "/api/biocatalyst/v1/trials:screen": _route(200, _json(screen_one_row())),
+            "/api/biocatalyst/v1/trials:screen/facets": _route(503, "{}"),
+            "/api/biocatalyst/v1/trials/NCT00000001": detail,
+        },
+        "clickTrial": "NCT00000001",
+    }
+
+
 def _route(status: int, body: str, content_type: str = "application/json") -> dict:
     return {"status": status, "body": body, "contentType": content_type}
 
@@ -491,6 +513,72 @@ def test_post_validation_render_exception_is_not_source_or_integrity(tmp_path: P
     assert out["workspaceState"] == "withheld"
     assert "This page could not be shown" in out["queue"]
     _forbidden_machine_text(out["queue"] + out["notice"] + out["status"] + out["why"])
+
+
+@needs_node
+def test_dossier_404_is_missing_record_not_outage(tmp_path: Path) -> None:
+    out = _run(tmp_path, _screen_dossier_scenario(_route(404, '{"detail":"missing"}')))
+    first, second = out["first"], out["second"]
+    assert first["workspaceState"] == "ready"
+    assert second["workspaceState"] == "ready"
+    assert "NCT00000001" in second["queue"]
+    assert "Dossier unavailable" in second["inspectorTitle"]
+    assert "no longer in the current verified record" in second["inspector"].lower()
+    assert "the trial service is not answering" not in (second["inspector"] + second["inspectorTitle"]).lower()
+
+
+@needs_node
+def test_dossier_503_is_source_outage_copy_without_clearing_list(tmp_path: Path) -> None:
+    out = _run(tmp_path, _screen_dossier_scenario(_route(503, '{"detail":"down"}')))
+    second = out["second"]
+    assert second["workspaceState"] == "ready"
+    assert "NCT00000001" in second["queue"]
+    assert "Temporarily unavailable" in second["inspectorTitle"]
+    assert "the trial service is not answering" in second["inspector"].lower()
+    assert "did not pass the expected integrity check" not in second["inspector"].lower()
+
+
+@needs_node
+def test_dossier_invalid_contract_200_is_integrity_withheld(tmp_path: Path) -> None:
+    out = _run(
+        tmp_path,
+        _screen_dossier_scenario(_route(200, _json({"trial": {"nct_id": "NCT00000001"}}))),
+    )
+    second = out["second"]
+    assert second["workspaceState"] == "ready"
+    assert "NCT00000001" in second["queue"]
+    assert "Results withheld" in second["inspectorTitle"]
+    assert "did not pass the expected integrity check" in second["inspector"].lower()
+    assert "the trial service is not answering" not in second["inspector"].lower()
+
+
+@needs_node
+def test_dossier_post_validation_render_exception_is_client_fault(tmp_path: Path) -> None:
+    needle = "function showDetail(detail, queueEvidence, queueItem) {"
+    hostile = (
+        "function showDetail(detail, queueEvidence, queueItem) { "
+        "throw new Error('hostile dossier render');"
+    )
+    source = JS.read_text(encoding="utf-8")
+    mutated = source.replace(needle, hostile, 1)
+    assert mutated != source
+    out = _run(
+        tmp_path,
+        _screen_dossier_scenario(_route(200, _json(trial_detail()))),
+        js_text=mutated,
+    )
+    first, second = out["first"], out["second"]
+    assert first["workspaceState"] == "ready"
+    assert second["workspaceState"] == "ready"
+    assert second["decisionState"] not in ("source_outage", "integrity_block")
+    assert "NCT00000001" in second["queue"]
+    inspector = (second["inspector"] + second["inspectorTitle"]).lower()
+    assert "this dossier could not be shown" in inspector
+    assert "nothing is inferred" in inspector
+    assert "the trial service is not answering" not in inspector
+    assert "did not pass the expected integrity check" not in inspector
+    assert "hostile dossier render" not in inspector
+    _forbidden_machine_text(second["inspector"] + second["inspectorTitle"] + second["queue"])
 
 
 @needs_node

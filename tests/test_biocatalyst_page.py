@@ -327,6 +327,10 @@ def test_biocatalyst_modes_default_to_milestones_and_preserve_verified_pages():
     assert "throw markHydration(contractError, 'integrity_block', 200);" in load_body
     assert "throw markHydration(displayError, 'client_fault', 200);" in load_body
     assert "kind === 'integrity_block' || state.contractFailed" not in js
+    select_body = js[js.index("function selectTrial(") : js.index("function updateMetadata(")]
+    assert "else if (kind === 'source_outage')" in select_body
+    assert "This dossier could not be shown" in select_body
+    assert "Nothing is inferred." in select_body
 
     # Entitlement loss invalidates both concurrent request lanes before any paid
     # rows are cleared, so a late dossier response cannot repaint the workspace.

@@ -415,6 +415,7 @@ function snapshot() {
     notice: byId['bci-state-notice'].textContent,
     queue: byId['bci-queue'].textContent,
     inspector: byId['bci-inspector-body'].textContent,
+    inspectorTitle: byId['bci-inspector-title'].textContent,
     subtitle: byId['bci-queue-subtitle'].textContent,
     stance: byId['bci-decision-stance'].textContent,
     why: byId['bci-decision-why'].textContent,
@@ -447,12 +448,22 @@ waitFor(function () { return settled(workspace.dataset.state || workspace.getAtt
   } else if (scenario.clickMode) {
     var button = byId['bci-mode-' + scenario.clickMode];
     button.click();
+  } else if (scenario.clickTrial) {
+    var row = document.querySelector('[data-trial-id="' + scenario.clickTrial + '"]');
+    if (!row) throw new Error('no trial row for ' + scenario.clickTrial);
+    row.click();
   } else {
     process.stdout.write(JSON.stringify({ first: first, second: null }));
     return;
   }
   var callsBefore = first.fetchCalls.length;
   return waitFor(function () {
+    if (scenario.clickTrial) {
+      var body = byId['bci-inspector-body'].textContent || '';
+      return fetchCalls.length > callsBefore &&
+        body.indexOf('Reading the current official record') < 0 &&
+        body.indexOf('正在读取当前官方记录') < 0;
+    }
     var state = workspace.dataset.state || workspace.getAttribute('data-state');
     return settled(state) && fetchCalls.length > callsBefore;
   }).then(function () {
