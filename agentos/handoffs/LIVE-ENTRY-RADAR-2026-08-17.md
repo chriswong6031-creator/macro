@@ -36,8 +36,7 @@ changed:
     what: "Append-only full-panel looks (this tree's Panel A + sibling Panel B
       confirmatory hashes). Smoke 81 names_shard rows untouched."
   - path: agentos/workstreams/WS-LIVE-ENTRY-RADAR.md
-    what: "W5 marked in_progress with confirmatory artifacts; next_action
-      updated."
+    what: "W5 marked done at #5825 squash 0394d6e16407 (2026-08-17T10:08:44Z)."
 
 verified:
   - claim: "Panel A control_match_unavailable count is 0 against 7546 episodes."
@@ -58,6 +57,9 @@ verified:
   - claim: "Q5 graded PASS_SHAPED with BH surviving."
     command: "python3 -c \"import json; q=json.load(open('research/live_entry_radar/w5_results/w5_results_panel_B.json'))['questions']['Q5']; print(q['verdict'], q['bh_survives'], q['primary']['stat'])\""
     result: "PASS_SHAPED True 13.434530490086045"
+  - claim: "Confirmatory-receipt PR #5825 is merged on origin/main."
+    command: "gh pr view 5825 --json state,mergedAt,mergeCommit --jq '{state,mergedAt,sha:.mergeCommit.oid}'; git log -1 --oneline origin/main"
+    result: "MERGED 2026-08-17T10:08:44Z squash 0394d6e16407"
 
 unverified:
   - claim: "The per-episode n_cell and k distributions (beyond the uninformative share)."
@@ -71,9 +73,8 @@ unresolved:
   - "Q2 TEST remains ACCRUING (n=1/6). The matched FIT tables are exploratory, not the confirmatory contrast."
 
 next_actions:
-  - "Ship this PR (commit, push, merge-on-green, stay through squash-merge)."
-  - "Optional follow-up: persist n_cell/k/overlap_share in _write_results so the next confirmatory dump carries pool histograms."
-  - "W6 Research Priority stays blocked on W5 records being on main — this PR is that closeout."
+  - "Optional: persist n_cell/k/overlap_share in _write_results so the next confirmatory dump carries pool histograms."
+  - "W6 Research Priority and W8 UI reference (#5737 already open) are the next fresh commissionings."
 
 do_not_redo:
   - "Do NOT convert the feature panel session column to datetime64 (still binding from the #5780 handoff)."
