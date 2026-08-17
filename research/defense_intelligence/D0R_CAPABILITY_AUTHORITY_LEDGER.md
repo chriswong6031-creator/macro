@@ -1,7 +1,7 @@
 # D0R Workstream C — Capability and authority ledger
 
-Completed **after** Workstream A (unentitled production browser) and Workstream B (HC101319C0006 / P00032 lineage).  
-`PROVEN_LIVE` is used only where this session observed production behavior. Entitled APIs are not `PROVEN_LIVE`.
+Completed after unentitled A, P00032 lineage, and entitled `site_full` recapture 2026-08-17T04:41Z.  
+`PROVEN_LIVE` requires a production observation this wave. Entitled cookie JSON and bearer `/api/government-revenue/*` 200 are now `PROVEN_LIVE`. Candidate Radar **UI** is not.
 
 **Global authority at D0R (any new V3 capability, and the current GovRev fence):**
 
@@ -63,9 +63,9 @@ Legend for Current state: `PROVEN_LIVE` | `BUILT_NOT_PROVEN` | `PARTIAL` | `DARK
 
 | Capability | User/machine job | Current state | Owner | Producer | Runner | Artifact/API | Consumer | Source | Freshness | Identity dep | Production proof | Authority | Blocker | V3 target | Wave | Acceptance test |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Candidate Radar | exact-linked research queue | `BLOCKED_BY_RIGHTS` in this browser; HEAD count 22 | candidates.py | `candidate_queue.json` | live + `build_government_revenue_candidates.py` | `/api/government-revenue/candidates` | radar JS | workspace + graph | generated 2026-08-13 | exact reviewed path | unentitled 0 + loading; HEAD 22 | display; cannot add candidates | 401 / missing bearer treated as unavailable not locked | entitled radar | D1 | site_full 200, count matches status |
-| Change Tape | governed award-change queue | `PARTIAL` | workspace.py | workspace.json | live | compact 2 / full 500 | Changes tab | award_events | 2026-08-13 | reviewed optional | 2 compact rows live | display | lock hides 498 | entitled 500 | D1 | entitled list = total |
-| Award Tape | award/action tape | `PARTIAL` | same | same | same | same 2 rows | Award tab | same | same | same | live count 2 | display | lock | entitled tape | D1 | same |
+| Candidate Radar | exact-linked research queue | `PARTIAL` — API `PROVEN_LIVE` 22; **UI locked** after site_full | candidates.py | `candidate_queue.json` | live + `build_government_revenue_candidates.py` | `/api/government-revenue/candidates` 200 `grcq1-d93ebaf6878402e3be09e490` | radar JS (bearer only) | workspace + graph | generated 2026-08-13 | exact reviewed path | bearer 200 total=22; overlay still membership | display; cannot add candidates | hydrate-once; does not reread cookie candidates.json | entitled radar UI | D1 | overlay gone; tab count=22 |
+| Change Tape | governed award-change queue | `PROVEN_LIVE` entitled 500; compact teaser still 2 | workspace.py | workspace.json | live | compact 2 / full 500 | Changes tab | award_events | 2026-08-13 | reviewed optional | entitled list 500; P00032 + balance sibling | display | anonymous lock; entitled loading banner leftover | keep 500 honest | D1 | banner clears after hydrate |
+| Award Tape | award/action tape | `PROVEN_LIVE` entitled 500 | same | same | same | same 500 | Award tab | same | same | same | live count 500 | display | same | entitled tape | D1 | same |
 | Opportunities | SAM desk | `BLOCKED_BY_DATA` | opportunities.py | opportunity_intelligence | live | empty array | Opportunities tab | SAM | unavailable | n/a | live 0 + freshness unavailable | display | source | live SAM | D1 | official notice |
 | Recompete Watch | derived expiry | `PARTIAL` | workspace recompete events | award end dates | live | compact 0; limitation says derived | Recompete tab | award POP | compact omission | ticker | live 0 under lock | display | lock + derivation-only | honest derived watch | D3 | derived row with source end date |
 | Budget & Programs | P-1/R-1 | `BROKEN`/`PROJECTION_MISSING` | budget_program.py | missing artifact | render expects file | no HEAD file | Budget tab | DoD comptroller | loading | program key | live 0 + missing git object | display | artifact never committed | budget desk | D1 | file exists and UI rows |
@@ -77,7 +77,7 @@ Legend for Current state: `PROVEN_LIVE` | `BUILT_NOT_PROVEN` | `PARTIAL` | `DARK
 | Saved state | briefcase views | `DARK_OR_DISCONNECTED` unentitled | briefcase JS | local; disabled until hydrate | n/a | Save/Delete disabled | briefcase | workspace | n/a | n/a | controls disabled | display | hydrate lock | entitled views | D1 | save/restore |
 | Alerts | local inbox | `DARK_OR_DISCONNECTED` unentitled | briefcase | local | n/a | Enable local alert disabled | inbox 0 | n/a | n/a | n/a | disabled | display | lock | entitled local alerts | D1 | enable + fire |
 | Exports | JSON/CSV | `DARK_OR_DISCONNECTED` unentitled | briefcase | client | n/a | Export disabled | n/a | workspace | n/a | n/a | disabled | display | lock | entitled export | D1 | file equals view |
-| API | paid read-model | `BUILT_NOT_PROVEN` | `app/government_revenue.py` | files under `/opt/macro` | VPS FastAPI | 24 GET routes | Terminal/page | artifacts | unknown vs HEAD | site_full | 401 missing bearer this session | display fence in payloads | no entitled token in this agent | entitled 200 contract tests against prod | D1 | bearer 200 schema |
+| API | paid read-model | `PROVEN_LIVE` bearer 200 (cookie-only still 401) | `app/government_revenue.py` | files under `/opt/macro` | VPS FastAPI | latest/candidates/workspace/events/mapping-backlog | page JS | artifacts | 2026-08-13 cut | site_full | bearer 200; cookie 401 missing bearer | display fence in payloads | two auth planes | keep split documented | D1 | session attaches bearer; UI rehydrates |
 
 ## Financial transmission
 

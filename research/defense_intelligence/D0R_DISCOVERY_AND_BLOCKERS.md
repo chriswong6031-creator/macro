@@ -4,15 +4,17 @@ Recorded 2026-08-17. **Do not fix in D0R.** D1-or-later unless noted as already-
 
 ## Bugs / degraded live behavior
 
-1. **Entitled desk unproven / unentitled teaser is the live default.** Compact page paints 2 of 500 workspace events and a membership banner. Paid JSON and `/api/government-revenue/*` 401. D1: entitled-browser rescue.
-2. **Candidate filmstrip says “Link status unavailable” instead of “Members only”.** Workspace hydration maps 401 → `locked`. Candidate radar fetch to `/api/government-revenue/candidates` returns `missing bearer token` and the ticker rail uses `unavailable`. Same access failure, two user meanings.
-3. **Agency facet / event agency empty.** Compact event `agency: {}` while official award is DISA/DoD. Facet ids are stringified Python dicts (`"{'id': 1174, ...}"`). Filter UX is degraded.
-4. **`dates.known_at.semantic = "official"`** on a projector first-seen clock. Mislabels ingestion time as a government field.
-5. **Late-discovery inconsistency.** JSON `is_late_discovery=true` on HC101319C0006; title is “New obligation observed”. Sibling HII row titles the lateness. A May action can be read as a fresh change.
-6. **Budget graph verifying forever / 0 programs.** `budget_program_graph.json` and `site/government-revenue-data/budget-program.json` are **absent from HEAD**, but `render.yml` and the API path list still name them. UI copy assumes a precomputed P-1/R-1 graph.
-7. **Opportunities freshness unavailable with headline 0.** Must not be filed as EMPTY_VALID.
-8. **HTML Last-Modified 2026-08-14 vs `#gov-data` generated_at 2026-08-13.** A later HTML bake did not refresh the evidence cut. Capture 2026-08-17 still shows Aug 13 clocks.
-9. **`/api/health` `commit` (`a0b2aba13b5`) ≠ `checkout` (`e7cdfa25732`).** Inherited from kickoff; still unexplained.
+1. **Entitled desk is a 500-row award-change tape, not a complete product.** Cookie workspace 200 / 500 proven. Candidate Radar UI still membership-locked after candidates API 200/22. Filmstrip still “Members only.” D1: rehydrate-on-auth.
+2. **Two auth planes.** Cookie JSON 200 does not make cookie-only `/api/government-revenue/*` 200. Radar uses bearer only.
+3. **Candidate filmstrip membership copy after sign-in.** Unentitled used “Link status unavailable”; entitled uses “Members only” despite site_full. Same access, still wrong meaning.
+4. **Agency facet / event agency empty.** Compact event `agency: {}` while official award is DISA/DoD. Facet ids are stringified Python dicts (`"{'id': 1174, ...}"`) — visible on entitled HII cards.
+5. **`dates.known_at.semantic = "official"`** on a projector first-seen clock. Mislabels ingestion time as a government field.
+6. **Late-discovery inconsistency.** JSON `is_late_discovery=true` on HC101319C0006; title is “New obligation observed”. Sibling HII row titles the lateness. A May action can be read as a fresh change. Entitled tape also shows `Reported obligated balance changed` on the same PIID.
+7. **Budget graph 0 programs.** Entitled copy: “Budget request rail unavailable.” Files still absent from HEAD.
+8. **Opportunities freshness unavailable with headline 0.** Must not be filed as EMPTY_VALID.
+9. **HTML/cut clocks.** Capture 2026-08-17 still shows Aug 13 evidence; health checkout `8b5cd60f706`.
+10. **`/api/health` `commit` (`a0b2aba13b5`) ≠ `checkout` (`8b5cd60f706`).** Inherited; still unexplained.
+11. **Leftover compact-loading banner** after 500-row hydrate.
 
 ## Stale or inert components
 
@@ -23,7 +25,7 @@ Recorded 2026-08-17. **Do not fix in D0R.** D1-or-later unless noted as already-
 
 ## Spec vs live contradictions
 
-- Architecture/kickoff: “Candidate Radar is a product tab.” Live unentitled: 0 + loading. Entitled: unproven.
+- Architecture/kickoff: “Candidate Radar is a product tab.” Live entitled: API 22, UI locked overlay. Unentitled: 0 + loading.
 - Status file `source_health.status=ok` vs UI “Partial or stale coverage” (client aging + opportunity unavailable + lock).
 - Graph `companies` 19 tickers vs compact company strip 21 (GE, BWXT extra). `#5424` would add BWXT on defense20-v1 — still **open**, not live.
 - Collection continued 2026-08-14 (new action-page sha) but published compact bundle remains 2026-08-13 / receipt `2a07ba19…`.
@@ -35,9 +37,10 @@ Recorded 2026-08-17. **Do not fix in D0R.** D1-or-later unless noted as already-
 
 ## D1 implications (not a D1 handoff)
 
-- Entitled production capture with a real `site_full` session.
-- Classify 401 on candidate API as locked, not unavailable, if that is the intended access meaning.
+- Rehydrate Candidate Radar and filmstrip after `MDXAuth` session; do not show membership CTA to site_full.
+- Classify 401 on candidate API as locked, not unavailable, if that is the intended access meaning; after 200, clear the lock.
 - Do not treat compact 2-row tape as the Change Tape product.
+- Attach bearer for `/api/government-revenue/*`; cookie JSON is a different plane.
 - Budget artifact: either publish the graph or stop the UI from spinning as if it exists.
 - SAM opportunities: restore a source or print SOURCE_UNAVAILABLE honestly (already closer than a fake zero).
 - Do not merge `#5424` from D0R.

@@ -1,0 +1,219 @@
+{
+  "hasMDXAuth": true,
+  "hasSessionFlag": true,
+  "clientType": "function",
+  "gotClient": true,
+  "hasSupabaseSession": true,
+  "hasAccessToken": true,
+  "tokenChars": 1259,
+  "usedBearerHeader": true,
+  "apis": [
+    {
+      "url": "/api/health",
+      "status": 200,
+      "ct": "application/json",
+      "schema": null,
+      "keys": [
+        "status",
+        "commit",
+        "checkout"
+      ],
+      "hint": {},
+      "error": null,
+      "locked": false,
+      "plan": null,
+      "bytes": 63
+    },
+    {
+      "url": "/api/me",
+      "status": 200,
+      "ct": "application/json",
+      "schema": null,
+      "keys": [
+        "role",
+        "tier",
+        "features",
+        "status",
+        "current_period_end",
+        "source",
+        "interval",
+        "chat_budget"
+      ],
+      "hint": {},
+      "error": null,
+      "locked": false,
+      "plan": {
+        "hasTier": true,
+        "hasPlan": false,
+        "site_full": null,
+        "fieldNames": [
+          "tier",
+          "status"
+        ]
+      },
+      "bytes": null
+    },
+    {
+      "url": "/api/government-revenue/latest",
+      "status": 200,
+      "ct": "application/json",
+      "schema": "company_government_revenue.v1",
+      "keys": [
+        "schema_version",
+        "workbench",
+        "as_of",
+        "known_at",
+        "generated_at",
+        "source",
+        "authority",
+        "freshness",
+        "coverage",
+        "market",
+        "companies",
+        "opportunity_intelligence",
+        "procurement_workspace"
+      ],
+      "hint": {
+        "as_of": "2026-08-13"
+      },
+      "error": null,
+      "locked": false,
+      "plan": null,
+      "bytes": 596798
+    },
+    {
+      "url": "/api/government-revenue/candidates?limit=5",
+      "status": 200,
+      "ct": "application/json",
+      "schema": "1.0.0",
+      "keys": [
+        "contract",
+        "schema_version",
+        "content_id",
+        "as_of",
+        "known_at",
+        "generated_at",
+        "total",
+        "items",
+        "next_cursor",
+        "mapping_backlog_total",
+        "counts",
+        "coverage",
+        "freshness",
+        "display_sort",
+        "authority",
+        "limitations"
+      ],
+      "hint": {
+        "total": 22,
+        "candidates": 5,
+        "as_of": "2026-08-13T23:59:59.999999+00:00",
+        "content_id": "grcq1-d93ebaf6878402e3be09e490"
+      },
+      "error": null,
+      "locked": false,
+      "plan": null,
+      "bytes": 45074
+    },
+    {
+      "url": "/api/government-revenue/workspace",
+      "status": 200,
+      "ct": "application/json",
+      "schema": "government_procurement_workspace.v2",
+      "keys": [
+        "schema_version",
+        "event_contract",
+        "as_of",
+        "known_at",
+        "generated_at",
+        "authority",
+        "freshness",
+        "coverage",
+        "facets",
+        "total",
+        "display_sort",
+        "federation_contract",
+        "limitations",
+        "events",
+        "next_cursor"
+      ],
+      "hint": {
+        "total": 500,
+        "events": 50,
+        "as_of": "2026-08-13"
+      },
+      "error": null,
+      "locked": false,
+      "plan": null,
+      "bytes": 412132
+    },
+    {
+      "url": "/api/government-revenue/events?limit=5",
+      "status": 200,
+      "ct": "application/json",
+      "schema": "government_procurement_workspace.v2",
+      "keys": [
+        "schema_version",
+        "event_contract",
+        "as_of",
+        "known_at",
+        "authority",
+        "freshness",
+        "query",
+        "events",
+        "next_cursor",
+        "total"
+      ],
+      "hint": {
+        "total": 31,
+        "events": 5,
+        "as_of": "2026-08-13"
+      },
+      "error": null,
+      "locked": false,
+      "plan": null,
+      "bytes": 57122
+    },
+    {
+      "url": "/api/government-revenue/mapping-backlog?limit=5",
+      "status": 200,
+      "ct": "application/json",
+      "schema": "1.0.0",
+      "keys": [
+        "contract",
+        "schema_version",
+        "content_id",
+        "as_of",
+        "known_at",
+        "generated_at",
+        "total",
+        "items",
+        "next_cursor",
+        "freshness",
+        "coverage",
+        "authority",
+        "limitations"
+      ],
+      "hint": {
+        "total": 21,
+        "candidates": 5,
+        "as_of": "2026-08-13T23:59:59.999999+00:00",
+        "content_id": "grcq1-d93ebaf6878402e3be09e490"
+      },
+      "error": null,
+      "locked": false,
+      "plan": null,
+      "bytes": 16977
+    }
+  ],
+  "href": "https://www.mastermind-x.com/government_revenue.html?signin=1",
+  "tabLabels": [
+    "Candidate Radar0",
+    "Changes500",
+    "Award tape500",
+    "Opportunities0",
+    "Recompete watch0",
+    "Budget & programs0",
+    "Companies21"
+  ]
+}

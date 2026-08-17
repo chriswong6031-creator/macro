@@ -27,11 +27,11 @@ waves:
   - id: D0R
     title: Financial-alpha reconnaissance and architecture freeze
     status: in_progress
-    pr: 5812
+    pr: 5814
     next_action: >
-      Entitled site_full browser census on government_revenue.html, then
-      architecture-handoff D0R workstreams B–H. Do not start D1. Do not
-      implement original D0. Do not merge #5424.
+      Review entitled A plus architecture B–H packets. Do not start D1
+      unless the operator orders it. Do not implement original D0. Do not
+      merge #5424.
   - id: D1
     title: Production truth and signed-in product rescue
     status: todo
@@ -65,9 +65,8 @@ do_not_redo:
   - "Do not treat GovTribe/GovCon capture parity as the product north star."
   - "Do not grant rank, gate, size, entry, or execution authority."
 next_action: >
-  Obtain a real site_full session and repeat the Government Revenue tab census.
-  Compact unentitled teaser, P00032 lineage, and capability ledger are filed.
-  Do not start D1.
+  Review entitled census and A–H architecture packets on PR 5814.
+  Radar UI still locked after candidates API 200. Do not start D1 unless ordered.
 ---
 
 ## Context

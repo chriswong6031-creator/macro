@@ -6,18 +6,25 @@
 **Canonical architecture:** `research/DEFENSE_PROCUREMENT_INTELLIGENCE_OS_V3_FINANCIAL_ALPHA_SUPERINTELLIGENCE_MASTERPLAN_2026-08-16.md`  
 **Canonical handoff:** `research/DEFENSE_PROCUREMENT_D0R_FINANCIAL_ALPHA_RECONNAISSANCE_HANDOFF_2026-08-16.md`
 
-Kickoff (#5812) is not acceptance. This continuation adds production-browser, lineage, and ledger packets.
+Kickoff (#5812) is not acceptance. This continuation adds entitled production-browser proof and architecture B–H.
 
 ## Continuation packets
 
 | Packet | Path |
 |---|---|
-| Unentitled browser acceptance | `research/defense_intelligence/D0R_ENTITLED_BROWSER_ACCEPTANCE.md` |
+| Browser acceptance (unentitled + entitled) | `research/defense_intelligence/D0R_ENTITLED_BROWSER_ACCEPTANCE.md` |
 | Golden award-change lineage | `research/defense_intelligence/D0R_GOLDEN_AWARD_CHANGE_LINEAGE.md` |
 | Capability/authority ledger | `research/defense_intelligence/D0R_CAPABILITY_AUTHORITY_LEDGER.md` |
+| Benchmark / workflow matrix | `research/defense_intelligence/D0R_BENCHMARK_AND_WORKFLOW_MATRIX.md` |
+| Archetype router / drivers | `research/defense_intelligence/D0R_DEFENSE_EQUITY_DRIVER_TAXONOMY.md` |
+| Historical casebook | `research/defense_intelligence/D0R_HISTORICAL_EVENT_CASEBOOK.md` |
+| Source / rights / PIT | `research/defense_intelligence/D0R_SOURCE_RIGHTS_AND_PIT_REGISTRY.md` |
+| Graph / contract freeze | `research/defense_intelligence/D0R_GRAPH_AND_CONTRACT_FREEZE.md` |
+| Golden universe | `research/defense_intelligence/D0R_GOLDEN_UNIVERSE_AND_ARCHETYPE_ROSTER.md` |
+| Experience architecture | `research/defense_intelligence/D0R_EXPERIENCE_ARCHITECTURE.md` |
 | Discoveries / blockers | `research/defense_intelligence/D0R_DISCOVERY_AND_BLOCKERS.md` |
 | Remaining work | `research/defense_intelligence/D0R_REMAINING_WORK.md` |
-| Screenshots | `research/defense_intelligence/evidence/d0r-unentitled-*.png` |
+| Screenshots | `evidence/d0r-unentitled-*.png`, `evidence/d0r-entitled-*.png` |
 
 ## Repository ancestry
 
@@ -28,11 +35,11 @@ Kickoff (#5812) is not acceptance. This continuation adds production-browser, li
 | Continuation worktree HEAD | `git rev-parse HEAD` in `.claude/worktrees/defense-procurement-d0r-cont` | `e7cdfa257322` at capture |
 | Open GovRev graph PR | `gh pr view 5424 --json state` | still open (`defense20-v1`). Do not fold in. |
 
-## Production / live (re-recorded 2026-08-17T01:51Z)
+## Production / live (re-recorded 2026-08-17T04:45Z entitled)
 
 | Claim | Command | Result |
 |---|---|---|
-| VPS checkout | `curl https://www.mastermind-x.com/api/health` | `{"status":"ok","commit":"a0b2aba13b5","checkout":"e7cdfa25732"}` — moved from `455284b7bea` |
+| VPS checkout | `curl https://www.mastermind-x.com/api/health` | `{"status":"ok","commit":"a0b2aba13b5","checkout":"8b5cd60f706"}` |
 | Underscore page | GET `government_revenue.html` | HTTP 200, 256555 bytes, title Government Revenue Foresight |
 | Hyphenated twin | GET `government-revenue.html` | HTTP 404 (not re-litigated; still 404) |
 | Anonymous latest.json | GET `government-revenue-data/latest.json` from the page | HTTP 401 locked `authentication_required` |
@@ -56,13 +63,12 @@ Unchanged clocks from kickoff for candidate status / latest.json (`generated_at`
 
 ## Explicitly unverified
 
-- Entitled signed-in tab census and 200 JSON.
 - VPS data-dir vs git HEAD after 2026-08-14 collection receipts.
 - Live Prophet annotation / Neural Web packet for this event.
-- Architecture-handoff D0R workstreams B–H (benchmarks, archetypes, casebook, registries, freeze, golden set, experience architecture).
+- Whether a hard reload would clear the Radar lock on the same session.
+- Workstream I (exact D1–D4 implementation handoffs).
 
 ## Next evidence to collect
 
-1. Entitled `site_full` session on the live page (operator sign-in; no tokens in git).
-2. Then resume architecture-handoff D0R B–H.
-3. Do not start D1.
+1. Operator review of A–H. D1 only if ordered (Radar rehydrate is the first product defect).
+2. Do not start D1 from this packet alone.
