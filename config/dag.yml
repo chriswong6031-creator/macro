@@ -3253,6 +3253,22 @@ lanes:
           scratch root through the exact code path tonight's engine gate runs and
           byte-compares every ticker against this lane's own projection output. A green
           publish with an unreadable bundle would otherwise surface only as a red render.
+  # ── filing-forensics-broad-sec.yml / poll_broad_sec ─────────────────────
+  - workflow: .github/workflows/filing-forensics-broad-sec.yml
+    job: poll_broad_sec
+    steps:
+      - id: fundamental_forensics_broad_sec_poll
+        module: scripts.run_fundamental_forensics_broad_sec
+        args: [--mode, incremental]
+        note: >
+          FF-1 incremental broad SEC source plane. Polls Submissions for every
+          issuer in data/edgar/fundamentals.parquet, admits exact SEC bytes into
+          the private fundamental_forensics/broad-sec/v1/ prefix, and fetches
+          Company Facts only when relevant 10-K/10-Q (and existing 20-F/40-F)
+          filing state changes. Shares concurrency group filing-forensics-sec
+          with Wave-2. Schedule is incremental only; recovery is explicit
+          workflow_dispatch. A partial poll exits non-zero and does not advance
+          latest-complete. Off the render path; no workbench rebuild.
   # ── theta-ops launchd lane (NOT daily.yml / NOT any GHA workflow) ──────────
   # W2 SURFACE (RIC program): whole-market dealer-surface history.
   # Runs on the ops host (Mac Studio / theta-ops-wt worktree) via launchd agents.

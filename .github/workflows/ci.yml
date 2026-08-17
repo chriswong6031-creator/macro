@@ -1216,6 +1216,11 @@ on:
       - "config/fundamental_forensics/wave2_targets.v1.json"
       - ".github/workflows/filing-forensics-sec.yml"
       - "tests/test_filing_forensics_sec_lane.py"
+      - "scripts/run_fundamental_forensics_broad_sec.py"
+      - ".github/workflows/filing-forensics-broad-sec.yml"
+      - "tests/test_filing_forensics_broad_sec_lane.py"
+      - "contracts/fundamental_forensics_broad_sec_run.schema.json"
+      - "contracts/fundamental_forensics_broad_sec_issuer_manifest.schema.json"
       # B4F is a controlled, one-shot AAPL bootstrap. Its runner and workflow
       # are both production-control surfaces: a test-only edit is covered by
       # the broad suite glob below, while an edit to the runner/workflow itself

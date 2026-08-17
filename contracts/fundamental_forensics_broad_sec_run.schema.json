@@ -1,0 +1,155 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/fundamental_forensics_broad_sec_run.schema.json",
+  "title": "Filing Forensics broad SEC poll run receipt",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "run_id",
+    "mode",
+    "status",
+    "reason_code",
+    "poll_started_at",
+    "poll_completed_at",
+    "recorded_at",
+    "selection_cutoff_at",
+    "recovery_from",
+    "latest_relevant_sec_accepted_at",
+    "universe",
+    "coverage",
+    "change_summary",
+    "failures",
+    "storage",
+    "companyfacts_as_of_policy"
+  ],
+  "properties": {
+    "schema": {"const": "fundamental_forensics.broad_sec.run.v1"},
+    "run_id": {"type": "string", "minLength": 8},
+    "mode": {"enum": ["incremental", "recovery"]},
+    "status": {"enum": ["complete", "degraded", "failed"]},
+    "reason_code": {
+      "type": "string",
+      "enum": [
+        "complete",
+        "universe_invalid",
+        "sec_429_exhausted",
+        "sec_5xx_exhausted",
+        "sec_timeout_exhausted",
+        "response_too_large",
+        "invalid_sec_json",
+        "source_binding_failure",
+        "store_write_failure",
+        "store_readback_failure",
+        "issuer_manifest_invalid",
+        "queue_overflow",
+        "historical_submissions_required"
+      ]
+    },
+    "poll_started_at": {"type": "string", "minLength": 20},
+    "poll_completed_at": {"type": "string", "minLength": 20},
+    "recorded_at": {"type": "string", "minLength": 20},
+    "selection_cutoff_at": {"type": "string", "minLength": 20},
+    "recovery_from": {"type": ["string", "null"]},
+    "latest_relevant_sec_accepted_at": {"type": ["string", "null"]},
+    "universe": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "universe_id",
+        "content_sha256",
+        "issuer_count",
+        "unique_ticker_count",
+        "unique_cik_count",
+        "canonical"
+      ],
+      "properties": {
+        "path": {"type": "string"},
+        "universe_id": {"type": "string"},
+        "content_sha256": {"type": ["string", "null"]},
+        "issuer_count": {"type": "integer", "minimum": 0},
+        "unique_ticker_count": {"type": "integer", "minimum": 0},
+        "unique_cik_count": {"type": "integer", "minimum": 0},
+        "canonical": {"type": "boolean"}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_issuers",
+        "observed_issuers",
+        "failed_issuers",
+        "companyfacts_fetched",
+        "companyfacts_skipped_unchanged",
+        "companyfacts_bytes_fetched",
+        "companyfacts_deferred",
+        "recovery_backlog"
+      ],
+      "properties": {
+        "expected_issuers": {"type": "integer", "minimum": 0},
+        "observed_issuers": {"type": "integer", "minimum": 0},
+        "failed_issuers": {"type": "integer", "minimum": 0},
+        "companyfacts_fetched": {"type": "integer", "minimum": 0},
+        "companyfacts_skipped_unchanged": {"type": "integer", "minimum": 0},
+        "companyfacts_bytes_fetched": {"type": "integer", "minimum": 0},
+        "companyfacts_deferred": {"type": "integer", "minimum": 0},
+        "recovery_backlog": {"type": "integer", "minimum": 0}
+      }
+    },
+    "change_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "new_relevant_accessions",
+        "affected_issuers",
+        "objects_admitted",
+        "manifests_admitted"
+      ],
+      "properties": {
+        "new_relevant_accessions": {"type": "integer", "minimum": 0},
+        "affected_issuers": {"type": "integer", "minimum": 0},
+        "objects_admitted": {"type": "integer", "minimum": 0},
+        "manifests_admitted": {"type": "integer", "minimum": 0}
+      }
+    },
+    "failures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ticker", "cik", "reason_code", "detail"],
+        "properties": {
+          "ticker": {"type": "string"},
+          "cik": {"type": "string"},
+          "reason_code": {"type": "string"},
+          "detail": {"type": "string"}
+        }
+      }
+    },
+    "storage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "prefix",
+        "run_key",
+        "observation_key",
+        "observation_sha256",
+        "observation_row_count",
+        "latest_observation_key",
+        "latest_complete_key"
+      ],
+      "properties": {
+        "prefix": {"const": "fundamental_forensics/broad-sec/v1"},
+        "run_key": {"type": "string"},
+        "observation_key": {"type": "string"},
+        "observation_sha256": {"type": ["string", "null"]},
+        "observation_row_count": {"type": "integer", "minimum": 0},
+        "latest_observation_key": {"type": "string"},
+        "latest_complete_key": {"type": "string"}
+      }
+    },
+    "companyfacts_as_of_policy": {"const": "current_observed_snapshot"}
+  }
+}
