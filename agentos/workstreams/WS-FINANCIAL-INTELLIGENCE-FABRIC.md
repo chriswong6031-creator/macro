@@ -21,21 +21,22 @@ owns_paths:
   - research/financial_intelligence_fabric/
   - contracts/financial_intelligence_packet.schema.json
   - engine/fundamental_forensics/financial_intelligence_packet.py
+  - engine/fundamental_forensics/synthetic_filing_package.py
   - scripts/build_financial_intelligence_packet.py
   - tests/test_fundamental_forensics_financial_intelligence_packet.py
+  - tests/test_fundamental_forensics_financial_intelligence_packet_r2.py
   - tests/fixtures/fundamental_forensics/filing_package_raw_ledger_v1.json
   - tests/fixtures/fundamental_forensics/expected_financial_intelligence_packet_v1.json
-depends_on:
-  - WS:CALCBENCH-FILING-FORENSICS-PARITY
+depends_on: []
 discoveries:
   - DSC:COMPANYFACTS-CANNOT-FEED-CORE-METRIC-QUERY
+  - DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM
 decisions:
   - DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE
   - DEC:FIF-1R-HERMETIC-PACKET-CONTRACT
 next_action: >
-  Operator re-reviews FIF-1R on PR #5809 (pure kernel, evidence_cells,
-  oneOf cell invariant, adversarial tests). Do not merge until that review
-  accepts. Do not start FIF-2.
+  Sol reviews the FIF-1R2 packet-contract PR. Do not merge until that review
+  accepts. Do not start FIF-2. Native auto-merge and merge-on-green stay disarmed.
 landmines:
   - >
     Core catalog is consolidated_only. Company Facts conversion sets
@@ -49,6 +50,14 @@ landmines:
     kernel exists to prevent.
   - >
     PR #5799 owns Earnings Intelligence E0/E1/E2 documents. FIF must not edit them.
+  - >
+    Legacy attested-history completion remains WS:CALCBENCH-FILING-FORENSICS-PARITY
+    and is blocked on the protected writer credential. That gate still binds
+    production issuer admission (FIF-3+). It does not block synthetic/semantic
+    FIF-1 packet-contract work.
+  - >
+    Removing merge-on-green does not disable GitHub native auto-merge.
+    See DSC:PR-HOLD-REQUIRES-NATIVE-AUTOMERGE-DISARM.
 do_not_redo:
   - Do not create a second semantic model, query kernel, or metric registry.
   - Do not fetch SEC data, write R2, add an API, page, detector, peer engine, LLM, or score in FIF-1.
@@ -57,6 +66,7 @@ do_not_redo:
   - Do not manufacture a filing-authority fixture by flipping dimensions_known or injecting revision_of onto Company Facts rows.
   - Do not put filesystem, schema, or digest discovery inside assemble_financial_intelligence_packet.
   - Do not silently add unrequested metrics to the user cells array.
+  - Do not treat removal of merge-on-green as a merge hold; disable GitHub native auto-merge too.
 waves:
   - id: FIF-0
     title: Program reset — land masterplan, naming, and collision map
@@ -67,14 +77,14 @@ waves:
     status: in_progress
     depends_on: [FIF-0]
     next_action: >
-      Operator re-reviews FIF-1R on PR #5809. Packet assembly is a pure
-      function of injected context; formula evidence is recursively closed
-      in evidence_cells; cells are exactly one of value or non_value_state.
+      Sol reviews FIF-1R2 contract closure. Packet assembly remains a pure
+      function of injected context; requested cells stay distinct from
+      evidence_cells; v1 freeze waits on that review.
   - id: FIF-2
     title: Read-only financial query API
     status: todo
     depends_on: [FIF-1]
-    next_action: Wait for FIF-1 acceptance. PR #5794 has merged; do not start FIF-2 until the packet is reviewed.
+    next_action: Wait for FIF-1 acceptance. Do not start FIF-2.
   - id: FIF-3
     title: Golden five-issuer vertical slice
     status: todo
@@ -110,7 +120,7 @@ waves:
   - id: FIF-11
     title: Broad scale and independent closure
     status: todo
-    depends_on: [FIF-9, FIF-10]
+    depends_on: [FIF-7, FIF-8, FIF-9, FIF-10]
 ---
 
 # Financial Intelligence Fabric
@@ -125,10 +135,13 @@ Canonical documents:
 
 Legacy attested-history completion remains `WS:CALCBENCH-FILING-FORENSICS-PARITY`
 and is blocked on the protected writer credential. This workstream does not
-replace that credential path.
+replace that credential path. Synthetic/semantic FIF-1 work is not blocked on
+that gate; production issuer promotion still is.
 
 FIF-1 preflight found no existing packet contract. The operator chose
 `DEC:FIF-1-INDEPENDENT-FILING-PACKAGE-FIXTURE`. Operator review of PR #5809
-then required FIF-1R (`DEC:FIF-1R-HERMETIC-PACKET-CONTRACT`): a pure
-assembler, recursively closed `evidence_cells`, and an exact oneOf cell
-invariant. Company Facts remains a witness only. FIF-2 is still stopped.
+then required FIF-1R (`DEC:FIF-1R-HERMETIC-PACKET-CONTRACT`) and FIF-1R2
+contract closure: bounded evidence, hostile fixture admission, entity
+isolation, two-clock plus rule-availability proofs, and packet-internal plus
+against-build-input validators. Company Facts remains a witness only. FIF-1
+stays in progress until Sol accepts. FIF-2 is still stopped.
