@@ -39,6 +39,10 @@ Continuation critic C (artifact `5ef3626`, REVISE) — bounded repairs on this P
 | VTC-C-002 | blocker | FIXED | `title=` removed. Priority uses `data-tip-en/zh` + sister lens popover + `tabindex="0"`. Expert slug is not a tooltip. `verify.py` R26 / P12. Mutation M26. |
 | VTC-C-003 | major | NOT_ACCEPTED_AS_BLOCKER | Featured = Best was the commissioned PRC-004 / VTC-003 fix. Best count stays dashed (unranked) until W6. Do not reverse. |
 | VTC-C-006 | major | FIXED | ≤720px keeps `.bh-purpose`; `.er-sister` may hide. Playwright P8b. |
+| RGX-001 / BLK-001 | blocker | FIXED | Sister wrap + `.pv-stance { min-width: auto }`. P11 0 occlusions. |
+| RGX-002 / MAJ-001 | major | FIXED | Spark null branches: stale / unavailable / raw / degraded / terminal. “No path yet” only for a true missing spark. P13. Mutation M27. |
+| RGX-003 | major | FIXED | Provisional Candidate chip is dashed; confirmed is filled. `[data-bar]` CSS. P14. Mutation M28. |
 
-No blocker-severity findings remain in the author pass. Independent critic C's two freeze blockers are repaired on this revision. Do not self-approve. Do not start W9.
+No blocker-severity findings remain on this revision. Do not self-approve. Do not start W9.
+
 

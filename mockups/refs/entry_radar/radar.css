@@ -440,6 +440,12 @@ html[data-theme="light"] .pvcard.pv-featured {
   background: var(--pvh-ink, var(--pvh));
   color: var(--panel, #fff); border-color: transparent;
 }
+/* Provisional is not confirmed. Filled chip is the confirmed glance mark. */
+.pvcard[data-bar="provisional_1d_live"] .pv-chip.er-lifechip {
+  background: transparent;
+  color: var(--pvh-ink, var(--pvh));
+  border: 1px dashed color-mix(in srgb, var(--pvh-ink, var(--pvh)) 55%, transparent);
+}
 .pv-chip--noread, .pv-chip--unav {
   color: var(--muted); background: transparent;
   border: 1px dashed color-mix(in srgb, var(--muted) 55%, transparent);
@@ -464,7 +470,7 @@ html[data-theme="light"] .pvcard.pv-featured {
   text-transform: none; letter-spacing: .02em; font-weight: 700;
 }
 
-.pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: auto; }
 .pv-axis {
   font-size: 7.5px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase;
   color: var(--muted); white-space: nowrap; flex: none; line-height: 1;

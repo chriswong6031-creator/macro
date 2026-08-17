@@ -233,6 +233,20 @@ def static_checks() -> None:
        ".bh-purpose { display: none; }" not in css and ".er-sister { display: none; }" in css.split("@media (max-width: 720px)", 1)[-1],
        "purpose stays; sister may hide")
 
+    # R27 — "No path yet" is only a true missing spark (RGX-002 / MAJ-001)
+    ok("R27 path-null-branches",
+       "Path unavailable" in js and "Path refused" in js and "Path closed" in js,
+       "unavailable/raw/terminal must not fall through to No path yet")
+    ok("R27b stance-does-not-shrink",
+       ".pv-stance { display: inline-flex; align-items: center; gap: 4px; min-width: auto; }" in css,
+       "min-width:0 lets the chip spill under the expert")
+
+    # R28 — provisional glance is dashed, not the filled confirmed chip (RGX-003)
+    ok("R28 provisional-dashed",
+       '[data-bar="provisional_1d_live"] .pv-chip.er-lifechip' in css
+       and "1px dashed" in css.split('[data-bar="provisional_1d_live"]', 1)[-1][:280],
+       "provisional must not share the filled confirmed chip")
+
 
 def playwright_checks(url: str) -> None:
     try:
@@ -339,6 +353,22 @@ def playwright_checks(url: str) -> None:
         titles = pg.evaluate(
             "() => [...document.querySelectorAll('[title]')].map(el => el.getAttribute('title'))")
         ok("P12 no-title-tooltips", len(titles) == 0, str(titles[:3]))
+        unav_txt = pgu.inner_text("body")
+        ok("P13 unav-not-no-path", "No path yet" not in unav_txt, "wrong null")
+        styles = pg.evaluate("""() => {
+          const prov = document.querySelector('.pvcard[data-bar="provisional_1d_live"] .er-lifechip');
+          const conf = document.querySelector('.pvcard[data-bar="confirmed"] .er-lifechip, .pvcard[data-bar="confirmed_4h"] .er-lifechip');
+          const ps = prov ? getComputedStyle(prov) : null;
+          const cs = conf ? getComputedStyle(conf) : null;
+          return {
+            prov: ps ? ps.borderTopStyle : null,
+            conf: cs ? cs.borderTopStyle : null,
+            sameBg: !!(ps && cs && ps.backgroundColor === cs.backgroundColor),
+          };
+        }""")
+        ok("P14 provisional-not-confirmed-chip",
+           styles.get("prov") == "dashed" and styles.get("sameBg") is False,
+           str(styles))
 
         pgl = page_at("theme=light&lang=en&state=board")
         bg = pgl.evaluate("() => getComputedStyle(document.querySelector('.pvcard')).backgroundColor")

@@ -106,9 +106,14 @@
 
   function spark(vals, r) {
     if (!vals || vals.length < 2) {
-      const msg = r && r.stale
-        ? both("Path is stale", "路径已过期")
-        : both("No path yet", "尚无路径");
+      let msg = both("No path yet", "尚无路径");
+      if (r && r.stale) msg = both("Path is stale", "路径已过期");
+      else if (r && r.raw_basis) msg = both("Path refused", "路径已拒绝");
+      else if (r && r.unavailable) msg = both("Path unavailable", "路径不可用");
+      else if (r && r.degraded) msg = both("Last usable path retained", "保留上次可用路径");
+      else if (r && (r.lifecycle === "expired" || r.lifecycle === "invalidated")) {
+        msg = both("Path closed", "路径已结束");
+      }
       return `<div class="pv-nochart"><span class="pv-nochart-l">${msg}</span></div>`;
     }
     const w = 240, h = 74, p = 4;

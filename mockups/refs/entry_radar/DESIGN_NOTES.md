@@ -88,7 +88,7 @@ Why-now copy is mechanical. No “huge upside”, no “92% likely”, no “AI 
 
 | State | Treatment |
 |---|---|
-| 1D LIVE provisional | dashed provisional freshness; never “Daily confirmed” |
+| 1D LIVE provisional | dashed lifecycle chip + dashed provisional freshness; never “Daily confirmed” |
 | G0 nightly confirmed | `nightly · confirmed` |
 | C3 confirmed 4H | `confirmed 4H` — not provisional |
 | Stale | dashed card, no featured aura, no hover lift, banner on the page |
@@ -131,7 +131,7 @@ From the R4 closure ledger (PR #5560), Radar refuses:
 - Card with no route (PRC-301) — **PRC-301 is not closed.** Founding surface has no `stock.html`. Cards are not links. A `#ticker` hash with no matching id is the same defect restated. Honest form is no link until a real destination exists.
 - Anon gate promising levels the card bans (PRC-302) — copy lists what Radar actually shows
 - Header that can only say “settled close” (PRC-305) — freshness branches
-- Chartless 24px void (VTC-301) — equalised 74px printed null. Stale is a freshness fact and keeps its path; “No path yet” is only for a true missing spark.
+- Chartless 24px void (VTC-301) — equalised 74px printed null. Stale is a freshness fact and keeps its path. Unavailable / raw-basis / degraded / terminal print Path unavailable / refused / retained / closed. “No path yet” is only for a true missing spark.
 - Stance/tape one-colour collision (DA-002) — tape uses `--ink-up/--ink-down`; lifecycle uses `--er-life`, never `--pv-buy` or `--ok`
 - Amber meaning three things (VTC-304) — amber is caution / stale only
 

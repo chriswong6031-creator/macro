@@ -422,7 +422,7 @@ window.RADAR_FIXTURES = {
     ticker: "FIX.RAW",
     name_en: "Fixture Raw-Basis Refusal",
     name_zh: "夹具原始基拒绝",
-    price: 52.10, change: null,
+    price: null, change: null,
     expert: "C1", expert_id: "C1_1D_LIVE_WASHOUT@1",
     lifecycle: "probing",
     bar_state: "unavailable",

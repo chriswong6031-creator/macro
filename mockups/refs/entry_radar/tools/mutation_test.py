@@ -120,6 +120,14 @@ MUTATIONS = [
      '          <span class="pv-pri" tabindex="0"',
      '          <span class="pv-pri" title="${esc(t(C.pri_tip))}" tabindex="0"',
      "R26"),
+    ("M27-unav-no-path", "radar.js",
+     '      else if (r && r.unavailable) msg = both("Path unavailable", "路径不可用");',
+     "",
+     "R27"),
+    ("M28-prov-filled", "radar.css",
+     '.pvcard[data-bar="provisional_1d_live"] .pv-chip.er-lifechip {',
+     ".pvcard[data-bar=\"never-provisional\"] .pv-chip.er-lifechip {",
+     "R28"),
 ]
 
 

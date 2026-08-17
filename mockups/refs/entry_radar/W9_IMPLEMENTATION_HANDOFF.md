@@ -15,8 +15,8 @@ Approved visual / component / reference behaviour from `mockups/refs/entry_radar
 - Expert lane row including the disabled C4 context chip and **Best · unranked** (count dashed)
 - Featured aura **= the Best-lane filter** (computed; the same set — not a silent 2-card glow)
 - One card per `(ticker, expert)` — multi-expert tickers do not collapse
-- Provisional vs confirmed vs nightly-confirmed freshness language
-- Stale / unavailable / raw-basis / degraded demotion (no live-candidate look). Stale keeps its path.
+- Provisional vs confirmed vs nightly-confirmed freshness language. Provisional Candidate chips are dashed; confirmed chips are filled.
+- Stale / unavailable / raw-basis / degraded demotion (no live-candidate look). Stale keeps its path. Unavailable / raw / terminal do not print “No path yet”.
 - False-start history on the card, not only in a tooltip
 - EN/ZH structural bilingualism
 - Priority: **one board-level ACCRUING line**; card slot is an em-dash
