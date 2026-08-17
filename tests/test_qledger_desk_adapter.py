@@ -460,6 +460,39 @@ def test_demand_chain_control_leg_resolves_through_membership_and_aliases(tmp_pa
     assert clock["control"] in {"XLK", "XLV"}
 
 
+def test_demand_chain_control_clock_uses_registration_today_not_wall_clock(tmp_path, monkeypatch):
+    """`today=` must reach `_start_control_clocks_for`.
+
+    Fixture asof is 2026-08-14; the next NYSE session (fill bar) is 2026-08-17.
+    The registrar previously ignored `today` and used ``datetime.now(UTC).date()``.
+    Once wall-clock UTC reached the fill bar, `_cohort_prospective` refused the
+    same fixture and the clock never started — same main SHA went green on
+    2026-08-16 and red on 2026-08-17.
+
+    MUTATION CONTROL: drop `today=` from the `register_batch` call in
+    `register_prospective`. With wall-clock frozen to the fill bar this test
+    fails on `clock is None`.
+    """
+    from datetime import datetime, timezone
+
+    _seed_membership(tmp_path)
+
+    class _WallClockFillBar(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            stamp = datetime(2026, 8, 17, 15, 0, 0, tzinfo=timezone.utc)
+            return stamp if tz is not None else stamp.replace(tzinfo=None)
+
+    monkeypatch.setattr(q, "datetime", _WallClockFillBar)
+    rows = [_demand_chain_row(ticker="NVDA")]
+    qda.register_prospective(
+        rows, family="demand_chain", root=tmp_path, today=TODAY,
+        sector_of=q.membership_gics_sector_of(tmp_path), git_sha="c0ffee")
+    clock = q.read_control_clock_start("demand_chain", tmp_path)
+    assert clock is not None
+    assert clock["control"] == "XLK"
+
+
 def test_an_unmappable_membership_value_is_named_not_collapsed(tmp_path, capsys):
     """REVIEW ROUND 2, F1 (BLOCKING). `membership_gics_sector_of` answers None for
     BOTH "ticker absent from the universe file" and "vocabulary the alias table
