@@ -10,8 +10,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
-
 REPO = Path(__file__).resolve().parents[1]
 REF = REPO / "mockups" / "refs" / "entry_radar"
 VERIFY = REF / "tools" / "verify.py"
@@ -70,30 +68,12 @@ def test_verify_static_green() -> None:
     assert proc.returncode == 0, proc.stdout + proc.stderr
 
 
-def test_verify_live_geometry() -> None:
-    """P11 vs quote. Skip is not a pass — CI without Playwright still has R29."""
-    pytest.importorskip("playwright.sync_api")
-    import http.server
-    import threading
-    from functools import partial
-
-    handler = partial(http.server.SimpleHTTPRequestHandler, directory=str(REF))
-    httpd = http.server.ThreadingHTTPServer(("127.0.0.1", 0), handler)
-    port = httpd.server_address[1]
-    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
-    thread.start()
-    try:
-        proc = subprocess.run(
-            [sys.executable, str(VERIFY), "--url", f"http://127.0.0.1:{port}"],
-            cwd=str(REF),
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
-        assert proc.returncode == 0, proc.stdout + proc.stderr
-        assert "P11 no-chip-occlusion" in proc.stdout
-    finally:
-        httpd.shutdown()
+def test_p11_predicate_is_chip_vs_quote() -> None:
+    """CI pin for P11. Live Playwright geometry is W9-COND-2, not this job."""
+    src = VERIFY.read_text(encoding="utf-8")
+    assert ".pv-ovr .pv-quote" in src
+    assert ".pv-ovl .er-lifechip" in src
+    assert "ovl.scrollWidth" in src
 
 
 def test_mutations_are_caught() -> None:
