@@ -1,77 +1,61 @@
 # D0R Current-State and Liveness Ledger
 
-**Status:** D0R Workstream A started, not complete.  
-**Base:** `origin/main` `455284b7beae` (2026-08-16, #5803 squash merge).  
-**Production checkout reported by `/api/health`:** `455284b7bea`.  
+**Status:** D0R continuation A/B/C filed; entitled A still open; D0R not accepted.  
+**Base at capture:** `origin/main` `e7cdfa257322` (2026-08-16, #5808).  
+**Production `/api/health`:** `checkout=e7cdfa25732`, `commit=a0b2aba13b5`.  
 **Graph on HEAD:** `recipient-graph:reviewed:2026-08-08:defense19-v1`.  
-**Open implementation collision:** #5424 defense20-v1 recipient graph.
+**Open implementation collision:** #5424 defense20-v1.
 
-Do not read this as a finished D0R. Rows below are either verified this session or explicitly `unverified`.
+Do not read this as a finished D0R.
 
 ## 1. What a user can actually open today
 
-| Surface | Anonymous result | Entitled result | Notes |
+| Surface | Anonymous / this-agent result | Entitled result | Notes |
 |---|---|---|---|
-| `https://www.mastermind-x.com/government_revenue.html` | HTTP 200, 256 KB HTML, tabs named in markup | unverified | Nav and template use underscore. This is the live page. |
-| `https://www.mastermind-x.com/government-revenue.html` | HTTP 404 | n/a | Dead twin. Do not cite as the product URL. |
-| `https://www.mastermind-x.com/government-revenue-data/latest.json` | HTTP 401 locked + `signin_url` | unverified | Access gate is live. Epistemics remain display/context-only on the artifact. |
-| `/api/government-revenue/*` | unverified anonymously; code path is `site_full` router-wide | unverified | 24 GET routes in `app/government_revenue.py`. |
+| `https://www.mastermind-x.com/government_revenue.html` | HTTP 200 compact teaser: 2 award-change rows, 21 companies, membership banner | unverified | Underscore URL. Evidence cut 2026-08-13. |
+| `https://www.mastermind-x.com/government-revenue.html` | HTTP 404 | n/a | Dead twin. |
+| `government-revenue-data/{latest,workspace,candidates}.json` | HTTP 401 locked `authentication_required` | unverified | Access gate live. |
+| `/api/government-revenue/*` | HTTP 401 `missing bearer token` | unverified | Router-wide `site_full`. |
+| Candidate Radar | 0, loading copy, filmstrip “Link status unavailable” | unverified | HEAD `candidate_count` 22 — 0 is not EMPTY_VALID. |
+| Changes / Award tape | 2 compact rows (HC101319C0006 IRDM, N0002415C2114 HII) of workspace `total` 500 | unverified | `PARTIAL` + `ENTITLEMENT_REQUIRED` for the rest. |
+| Opportunities | 0 | unverified | `SOURCE_UNAVAILABLE` in freshness. |
+| Recompete / Budget | 0 | unverified | Budget artifact missing on HEAD (`PROJECTION_MISSING`). |
+| Companies | 21 names | unverified | Link state blocked by candidate API. |
 
 ## 2. HEAD capability snapshot (git, 2026-08-13 clocks)
 
-From `candidate_projection_status.json` and `latest.json` at HEAD:
+Unchanged from kickoff: candidate_count 22; ledger_line_count 30; mapping_backlog_count 21; graph defense19-v1 digest `0733a966…`; latest.json as_of 2026-08-13; ingest truncated by safety cap; award_event_spine live; authority display/context_only.
 
-| Item | HEAD value | Clock | Healthy? |
-|---|---:|---|---|
-| candidate_count | 22 | generated_at 2026-08-13T09:24:42Z | unknown until entitled browser |
-| ledger_line_count | 30 | same | unknown |
-| mapping_backlog_count | 21 | same | unknown |
-| recipient graph | defense19-v1 digest `0733a966…` | reviewed 2026-08-08 | ready per status file |
-| latest.json as_of | 2026-08-13 | known_at 08:04:38Z | 3 days behind D0R date; do not call it "today" |
-| ingest truncation | `collection_truncated_by_safety_cap: true` | ingest_status | bounded sample, not a full corpus |
-| award_event_spine | live; 35239 action-version rows; 194 event snapshots | ingest_status | live ≠ complete |
-| authority | display / context_only | both artifacts | no rank/size/gate |
+New: live compact bundle id `grw2-dd9d7af893a7f3c773909351` matches HEAD workspace. Collection receipts for the golden award continue through 2026-08-14 with a new actions `response_sha256`; the published event is pinned to the 2026-08-12 receipt.
 
-Missing artifacts on HEAD `data/government_revenue/` (not in `git ls-tree`): `budget_program_graph.json` is referenced by the API path list but is not in the committed directory listing above. Treat budget-program graph as `unverified` until the file or an explicit absence is confirmed.
+Budget `budget_program_graph.json` / `budget-program.json` confirmed **absent** on HEAD (`git cat-file` miss).
 
-## 3. Engine / builder / DAG (exists ≠ live feature)
+## 3. Engine / builder / DAG
 
-Present on disk in this worktree:
+Present: 22 modules under `engine/government_revenue/`. Builders and `government-revenue-live.yml` remain the producer path. Render expects `budget-program.json` that is not committed.
 
-- `engine/government_revenue/` — 22 modules.
-- builders `scripts/build_government_revenue.py`, `scripts/build_government_revenue_candidates.py`.
-- DAG entries `build_government_revenue` and `check_government_revenue_projection`; live workflow `.github/workflows/government-revenue-live.yml`.
-- UI: `templates/government_revenue.html.j2` plus radar/dossiers/briefcase JS and parity CSS.
+Wired beyond the page: `federation.reviewed_award_change_context` → Prophet bridge + Neural Web context (live output not captured). `prophet_annotation.annotate_plans_from_repo` fail-open on Prophet plans.
 
-Not yet classified as wired vs built-but-inert: `prophet_annotation.py`, `shadow_context.py`, `sbir_progression.py`, `federation.py`, `market_context.py`, `issuer_graph_expansion.py`. A module file is not a user capability.
+Dark (tests only / no builder import): `shadow_context`, `market_context`, `sbir_progression`, `issuer_graph_expansion`.
 
-## 4. Authority split that must survive every later wave
+## 4. Authority split
 
-From `app/government_revenue.py` module docstring and HEAD artifacts:
-
-1. **Access** — paid `site_full`. Anonymous latest.json is 401 locked.
+1. **Access** — paid `site_full`. Anonymous artifacts 401 locked.
 2. **Epistemics** — display/context only. No rank, size, gate, originate, add-candidate, or escalate.
 
-V3 does not change either dimension. D0R must keep them separate.
+V3 does not change either dimension.
 
 ## 5. Identity / graph collision
 
-HEAD is defense19-v1. #5424 would publish defense20-v1 (BWXT + refreshed exact edges) and is still open. D2 must consume whichever graph is then on `origin/main`; it must not mint a parallel reviewed manifest (`DNR:LAW-REVIEWED-MANIFEST-CENSUS`).
-
-The 2026-08-11 Government Revenue handoff remains useful archaeology and is not current-state truth.
+HEAD is defense19-v1 (19 graph companies). Compact strip lists 21 names (includes GE, BWXT). #5424 defense20-v1 still open. D2 must not mint a parallel reviewed manifest (`DNR:LAW-REVIEWED-MANIFEST-CENSUS`).
 
 ## 6. Stop / continue
 
-Continue in this wave:
-
-1. entitled-browser capture;
-2. one source-to-screen lineage;
-3. capability/authority ledger including built-but-inert modules;
-4. confirm VPS data-dir vs HEAD.
+This continuation stops. Next authorized D0R action: entitled `site_full` browser census, then architecture-handoff workstreams B–H.
 
 Do not:
 
-- fix the hyphenated 404;
-- merge or rebase #5424 from D0R;
-- implement D1;
-- start original D0.
+- start D1 or original D0;
+- merge or rebase #5424;
+- repair the UI defects listed in `D0R_DISCOVERY_AND_BLOCKERS.md`;
+- grant rank/gate/size/entry/execution authority.
