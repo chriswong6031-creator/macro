@@ -1,0 +1,996 @@
+{
+  "role": "WebArea",
+  "name": "Stock analyzer — cycle & momentum",
+  "children": [
+    {
+      "role": "link",
+      "name": "MASTERMINDX — Home"
+    },
+    {
+      "role": "link",
+      "name": "United States ▾"
+    },
+    {
+      "role": "link",
+      "name": "China ▾"
+    },
+    {
+      "role": "link",
+      "name": "Hong Kong ▾"
+    },
+    {
+      "role": "link",
+      "name": "Canada ▾"
+    },
+    {
+      "role": "link",
+      "name": "International ▾"
+    },
+    {
+      "role": "link",
+      "name": "Other Assets ▾"
+    },
+    {
+      "role": "link",
+      "name": "Research ▾"
+    },
+    {
+      "role": "button",
+      "name": "Search tickers"
+    },
+    {
+      "role": "link",
+      "name": "Terminal"
+    },
+    {
+      "role": "button",
+      "name": "Settings",
+      "haspopup": "menu"
+    },
+    {
+      "role": "text",
+      "name": "🔎 "
+    },
+    {
+      "role": "text",
+      "name": "Search any stock, ETF, commodity or crypto in the bar above."
+    },
+    {
+      "role": "heading",
+      "name": "Onto Innovation (ONTO)",
+      "level": 1
+    },
+    {
+      "role": "text",
+      "name": "$331.71"
+    },
+    {
+      "role": "text",
+      "name": "BOTTOMING"
+    },
+    {
+      "role": "text",
+      "name": "Entry ▲ +32"
+    },
+    {
+      "role": "text",
+      "name": "light"
+    },
+    {
+      "role": "text",
+      "name": "High-beta momentum"
+    },
+    {
+      "role": "button",
+      "name": "Toggle alert feed"
+    },
+    {
+      "role": "text",
+      "name": "data through 2026-08-14"
+    },
+    {
+      "role": "text",
+      "name": "THE NAME"
+    },
+    {
+      "role": "text",
+      "name": "Solid name"
+    },
+    {
+      "role": "text",
+      "name": "62"
+    },
+    {
+      "role": "text",
+      "name": "/100"
+    },
+    {
+      "role": "text",
+      "name": "board rank"
+    },
+    {
+      "role": "text",
+      "name": "🛈 Validated edge"
+    },
+    {
+      "role": "text",
+      "name": "ACT NOW?"
+    },
+    {
+      "role": "text",
+      "name": "WAIT"
+    },
+    {
+      "role": "text",
+      "name": "Extended — wait for a pullback"
+    },
+    {
+      "role": "text",
+      "name": "Ran too far, too fast — wait for a pullback, don't chase."
+    },
+    {
+      "role": "text",
+      "name": "Timing"
+    },
+    {
+      "role": "text",
+      "name": ":"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "BOTTOMING"
+    },
+    {
+      "role": "text",
+      "name": "·"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "HALF SIZE"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "·"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "bottom-confidence 29"
+    },
+    {
+      "role": "text",
+      "name": "Suggested size"
+    },
+    {
+      "role": "text",
+      "name": "0%"
+    },
+    {
+      "role": "text",
+      "name": "avoid"
+    },
+    {
+      "role": "text",
+      "name": "⚠ "
+    },
+    {
+      "role": "text",
+      "name": "Top board rank, but timing, accounting, fundamentals blocks a buy now — the rank measures the name, not the moment."
+    },
+    {
+      "role": "text",
+      "name": "Mixed tape — balanced momentum / earnings edge"
+    },
+    {
+      "role": "text",
+      "name": "earnings · insider · revisions"
+    },
+    {
+      "role": "text",
+      "name": "58"
+    },
+    {
+      "role": "text",
+      "name": "Entry timing"
+    },
+    {
+      "role": "text",
+      "name": "19"
+    },
+    {
+      "role": "text",
+      "name": "Sector / theme"
+    },
+    {
+      "role": "text",
+      "name": "50"
+    },
+    {
+      "role": "text",
+      "name": "Quality / durability"
+    },
+    {
+      "role": "text",
+      "name": "42"
+    },
+    {
+      "role": "text",
+      "name": "WHY IT COULD WORK"
+    },
+    {
+      "role": "text",
+      "name": "Leads on earnings · insider · revisions"
+    },
+    {
+      "role": "text",
+      "name": "WHAT WOULD FLIP THIS"
+    },
+    {
+      "role": "text",
+      "name": "Accounting quality looks weak."
+    },
+    {
+      "role": "text",
+      "name": "Trades 44% above its long-term trend line. Buying here is chasing."
+    },
+    {
+      "role": "text",
+      "name": "Its market cycle still argues for waiting (bottoming)."
+    },
+    {
+      "role": "text",
+      "name": "Its Semiconductor Equipment (WFE) basket is crowded and stretched. Cap your size and do not add aggressively."
+    },
+    {
+      "role": "text",
+      "name": "Base 1d"
+    },
+    {
+      "role": "text",
+      "name": "Anchor: §7 take marker · 2026-08-13 · 1d"
+    },
+    {
+      "role": "text",
+      "name": "display-only · W6-C"
+    },
+    {
+      "role": "text",
+      "name": "Inv $211.76 (trough×0.97)"
+    },
+    {
+      "role": "DisclosureTriangle",
+      "name": "Cycle & timing detail"
+    },
+    {
+      "role": "heading",
+      "name": "Chart",
+      "level": 2
+    },
+    {
+      "role": "button",
+      "name": "1D"
+    },
+    {
+      "role": "button",
+      "name": "3D"
+    },
+    {
+      "role": "button",
+      "name": "1W"
+    },
+    {
+      "role": "button",
+      "name": "1M"
+    },
+    {
+      "role": "button",
+      "name": "EMA"
+    },
+    {
+      "role": "button",
+      "name": "RSI"
+    },
+    {
+      "role": "button",
+      "name": "Stoch"
+    },
+    {
+      "role": "button",
+      "name": "MACD"
+    },
+    {
+      "role": "button",
+      "name": "Stoch RSI"
+    },
+    {
+      "role": "text",
+      "name": "ONTO"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "~recon"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "2026-08-13"
+    },
+    {
+      "role": "text",
+      "name": "O"
+    },
+    {
+      "role": "text",
+      "name": " 337.35"
+    },
+    {
+      "role": "text",
+      "name": " H"
+    },
+    {
+      "role": "text",
+      "name": " 353.97"
+    },
+    {
+      "role": "text",
+      "name": " L"
+    },
+    {
+      "role": "text",
+      "name": " 321.67"
+    },
+    {
+      "role": "text",
+      "name": " C"
+    },
+    {
+      "role": "text",
+      "name": " 337.82"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "+0.14%"
+    },
+    {
+      "role": "text",
+      "name": "EMA20 294.49 EMA50 290.44 EMA200 240.52"
+    },
+    {
+      "role": "text",
+      "name": "RSI"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "60.6"
+    },
+    {
+      "role": "text",
+      "name": "Stoch RSI"
+    },
+    {
+      "role": "text",
+      "name": " "
+    },
+    {
+      "role": "text",
+      "name": "%K 100.0 · %D 96.2"
+    },
+    {
+      "role": "button",
+      "name": "Full screen"
+    },
+    {
+      "role": "heading",
+      "name": "Momentum across timeframes",
+      "level": 2
+    },
+    {
+      "role": "text",
+      "name": "DAILY"
+    },
+    {
+      "role": "text",
+      "name": "RSI"
+    },
+    {
+      "role": "text",
+      "name": "59"
+    },
+    {
+      "role": "text",
+      "name": "neutral"
+    },
+    {
+      "role": "text",
+      "name": "Stoch"
+    },
+    {
+      "role": "text",
+      "name": "98"
+    },
+    {
+      "role": "text",
+      "name": "overbought"
+    },
+    {
+      "role": "text",
+      "name": "MACD"
+    },
+    {
+      "role": "text",
+      "name": "▲"
+    },
+    {
+      "role": "text",
+      "name": "bullish"
+    },
+    {
+      "role": "text",
+      "name": "3-DAY"
+    },
+    {
+      "role": "text",
+      "name": "RSI"
+    },
+    {
+      "role": "text",
+      "name": "58"
+    },
+    {
+      "role": "text",
+      "name": "neutral"
+    },
+    {
+      "role": "text",
+      "name": "Stoch"
+    },
+    {
+      "role": "text",
+      "name": "44"
+    },
+    {
+      "role": "text",
+      "name": "neutral"
+    },
+    {
+      "role": "text",
+      "name": "MACD"
+    },
+    {
+      "role": "text",
+      "name": "▼"
+    },
+    {
+      "role": "text",
+      "name": "≈2d to ↑cross"
+    },
+    {
+      "role": "text",
+      "name": "WEEKLY"
+    },
+    {
+      "role": "text",
+      "name": "RSI"
+    },
+    {
+      "role": "text",
+      "name": "63"
+    },
+    {
+      "role": "text",
+      "name": "neutral"
+    },
+    {
+      "role": "text",
+      "name": "Stoch"
+    },
+    {
+      "role": "text",
+      "name": "33"
+    },
+    {
+      "role": "text",
+      "name": "neutral"
+    },
+    {
+      "role": "text",
+      "name": "MACD"
+    },
+    {
+      "role": "text",
+      "name": "▼"
+    },
+    {
+      "role": "text",
+      "name": "bearish"
+    },
+    {
+      "role": "text",
+      "name": "THE EVIDENCE"
+    },
+    {
+      "role": "text",
+      "name": "TREND"
+    },
+    {
+      "role": "text",
+      "name": "Up · +44% vs 200-day"
+    },
+    {
+      "role": "text",
+      "name": "Where price sits vs its 200-day average, and how strong the trend is (ADX)."
+    },
+    {
+      "role": "text",
+      "name": "MOMENTUM"
+    },
+    {
+      "role": "text",
+      "name": "Daily ▲ · 3-Day ▼ · Weekly ▼"
+    },
+    {
+      "role": "text",
+      "name": "Trend strength across daily/3-day/weekly clocks."
+    },
+    {
+      "role": "text",
+      "name": "EXTENSION"
+    },
+    {
+      "role": "text",
+      "name": "Parabolic — chase-risk"
+    },
+    {
+      "role": "text",
+      "name": "Ran too far above trend — high pullback risk."
+    },
+    {
+      "role": "text",
+      "name": "VOL SQUEEZE"
+    },
+    {
+      "role": "text",
+      "name": "Expansion — move underway"
+    },
+    {
+      "role": "text",
+      "name": "Compression → a move is loading; direction unconfirmed until it breaks."
+    },
+    {
+      "role": "text",
+      "name": "RELATIVE STRENGTH"
+    },
+    {
+      "role": "text",
+      "name": "alpha z +1.45 · #26/222 in sector"
+    },
+    {
+      "role": "text",
+      "name": "Price strength vs sector — context."
+    },
+    {
+      "role": "text",
+      "name": "VALUATION"
+    },
+    {
+      "role": "text",
+      "name": "Rich vs market"
+    },
+    {
+      "role": "text",
+      "name": "Cheap/rich vs the market — context, not a buy signal."
+    },
+    {
+      "role": "text",
+      "name": "QUALITY"
+    },
+    {
+      "role": "text",
+      "name": "Accounting warning"
+    },
+    {
+      "role": "text",
+      "name": "Accounting flags — verify before trusting the numbers."
+    },
+    {
+      "role": "text",
+      "name": "POSITIONING"
+    },
+    {
+      "role": "text",
+      "name": "short 5% float"
+    },
+    {
+      "role": "text",
+      "name": "Insider buying (an edge) and short interest (a risk)."
+    },
+    {
+      "role": "text",
+      "name": "RISK & SIZE"
+    },
+    {
+      "role": "text",
+      "name": "typical dip -12% · bad-case -34% · → suggested size 0%"
+    },
+    {
+      "role": "text",
+      "name": "Expected downside drives how big to size."
+    },
+    {
+      "role": "text",
+      "name": "MACRO EXPOSURE"
+    },
+    {
+      "role": "text",
+      "name": "rate β -0.30 · neutral-duration"
+    },
+    {
+      "role": "text",
+      "name": "Rate / inflation sensitivity — context, never scored."
+    },
+    {
+      "role": "text",
+      "name": "CATALYST"
+    },
+    {
+      "role": "text",
+      "name": "earnings 2026-08-06 · SUE -1.6 · revisions +0.8"
+    },
+    {
+      "role": "text",
+      "name": "Next earnings date and any earnings/revision edge."
+    },
+    {
+      "role": "DisclosureTriangle",
+      "name": "▸ Fundamentals & financials"
+    },
+    {
+      "role": "DisclosureTriangle",
+      "name": "▸ Options, positioning & ownership"
+    },
+    {
+      "role": "heading",
+      "name": "How this stock trades",
+      "level": 2
+    },
+    {
+      "role": "text",
+      "name": "Archetype"
+    },
+    {
+      "role": "text",
+      "name": "High-beta momentum"
+    },
+    {
+      "role": "text",
+      "name": "Factor DNA"
+    },
+    {
+      "role": "text",
+      "name": "quality_growth"
+    },
+    {
+      "role": "text",
+      "name": " · mixed"
+    },
+    {
+      "role": "text",
+      "name": "2026-08-13 00:00:00"
+    },
+    {
+      "role": "text",
+      "name": "Chart pattern"
+    },
+    {
+      "role": "text",
+      "name": "Volatile momentum vehicle"
+    },
+    {
+      "role": "text",
+      "name": "Ownership"
+    },
+    {
+      "role": "text",
+      "name": "Passive-index magnet"
+    },
+    {
+      "role": "text",
+      "name": "PLAYBOOK"
+    },
+    {
+      "role": "text",
+      "name": "Rent it, never own it; exit at climax volume, not on thesis."
+    },
+    {
+      "role": "text",
+      "name": "Entry timing scales with HV percentile; chart is blind post-event."
+    },
+    {
+      "role": "text",
+      "name": "Inclusion pop is gone; trade the deletion overshoot reversion."
+    },
+    {
+      "role": "text",
+      "name": "No active mode — slow playbook applies; read archetype + chart."
+    },
+    {
+      "role": "text",
+      "name": "DNA class T-1 as of 2026-08-13 00:00:00 · coverage: chart 80% · ownership 67% · micro 0% · 1 axis(es) missing · Context only — never ranks, sizes or gates"
+    },
+    {
+      "role": "text",
+      "name": "Full doctrine: research/STOCK_PERSONALITY_OPERATOR_PLAYBOOK_BY_FABLE.md"
+    },
+    {
+      "role": "heading",
+      "name": "How much to trust the state — measured 2000→2026 ?",
+      "level": 2
+    },
+    {
+      "role": "text",
+      "name": "state"
+    },
+    {
+      "role": "text",
+      "name": "samples"
+    },
+    {
+      "role": "text",
+      "name": "up next month"
+    },
+    {
+      "role": "text",
+      "name": "avg next month"
+    },
+    {
+      "role": "text",
+      "name": "typical dip"
+    },
+    {
+      "role": "text",
+      "name": "bad-case dip"
+    },
+    {
+      "role": "text",
+      "name": "DOWNTREND · AVOID"
+    },
+    {
+      "role": "text",
+      "name": "13909"
+    },
+    {
+      "role": "text",
+      "name": "59.7%"
+    },
+    {
+      "role": "text",
+      "name": "2.28%"
+    },
+    {
+      "role": "text",
+      "name": "-3.52%"
+    },
+    {
+      "role": "text",
+      "name": "-15.12%"
+    },
+    {
+      "role": "text",
+      "name": "NEARING A LOW · GET READY"
+    },
+    {
+      "role": "text",
+      "name": "7531"
+    },
+    {
+      "role": "text",
+      "name": "58.1%"
+    },
+    {
+      "role": "text",
+      "name": "1.65%"
+    },
+    {
+      "role": "text",
+      "name": "-3.16%"
+    },
+    {
+      "role": "text",
+      "name": "-12.03%"
+    },
+    {
+      "role": "text",
+      "name": "BOTTOMING · BUY SETUP"
+    },
+    {
+      "role": "text",
+      "name": "▸ you are here"
+    },
+    {
+      "role": "text",
+      "name": "30693"
+    },
+    {
+      "role": "text",
+      "name": "58.5%"
+    },
+    {
+      "role": "text",
+      "name": "1.55%"
+    },
+    {
+      "role": "text",
+      "name": "-2.96%"
+    },
+    {
+      "role": "text",
+      "name": "-11.03%"
+    },
+    {
+      "role": "text",
+      "name": "BUY ZONE · BUY"
+    },
+    {
+      "role": "text",
+      "name": "7337"
+    },
+    {
+      "role": "text",
+      "name": "58%"
+    },
+    {
+      "role": "text",
+      "name": "1.12%"
+    },
+    {
+      "role": "text",
+      "name": "-2.82%"
+    },
+    {
+      "role": "text",
+      "name": "-10.7%"
+    },
+    {
+      "role": "text",
+      "name": "UPTREND · HOLD"
+    },
+    {
+      "role": "text",
+      "name": "7330"
+    },
+    {
+      "role": "text",
+      "name": "59.1%"
+    },
+    {
+      "role": "text",
+      "name": "1.28%"
+    },
+    {
+      "role": "text",
+      "name": "-2.76%"
+    },
+    {
+      "role": "text",
+      "name": "-10.8%"
+    },
+    {
+      "role": "text",
+      "name": "NEARING A HIGH · TAKE PROFITS"
+    },
+    {
+      "role": "text",
+      "name": "20935"
+    },
+    {
+      "role": "text",
+      "name": "56.5%"
+    },
+    {
+      "role": "text",
+      "name": "1.12%"
+    },
+    {
+      "role": "text",
+      "name": "-2.99%"
+    },
+    {
+      "role": "text",
+      "name": "-10.55%"
+    },
+    {
+      "role": "text",
+      "name": "TOPPING · SELL SETUP"
+    },
+    {
+      "role": "text",
+      "name": "554"
+    },
+    {
+      "role": "text",
+      "name": "60.1%"
+    },
+    {
+      "role": "text",
+      "name": "1.21%"
+    },
+    {
+      "role": "text",
+      "name": "-3.3%"
+    },
+    {
+      "role": "text",
+      "name": "-11.84%"
+    },
+    {
+      "role": "text",
+      "name": "UNCONFIRMED TURN · HIGH-RISK · NIMBLE ONLY"
+    },
+    {
+      "role": "text",
+      "name": "27159"
+    },
+    {
+      "role": "text",
+      "name": "58%"
+    },
+    {
+      "role": "text",
+      "name": "1.38%"
+    },
+    {
+      "role": "text",
+      "name": "-3.2%"
+    },
+    {
+      "role": "text",
+      "name": "-12.43%"
+    },
+    {
+      "role": "text",
+      "name": "How to read this page: the verdict band is the one call; the timing line, fingerprint axes and evidence lanes are the supporting reads behind it; the collapsed sections hold the full detail. Everything here is display-only research context, never personalized investment advice — sizing is a risk-budget guide, not a recommendation."
+    },
+    {
+      "role": "text",
+      "name": "Generated 2026-08-14 23:12 UTC · charts rendered in-house with Lightweight Charts™ on our own price data · methodology & caveats: see any sector page footer."
+    },
+    {
+      "role": "text",
+      "name": "© 2026 Mastermind Inc"
+    },
+    {
+      "role": "button",
+      "name": "Ask Mastermind"
+    }
+  ]
+}

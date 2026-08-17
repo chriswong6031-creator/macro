@@ -1,0 +1,547 @@
+[
+  {
+    "section_id": "S.shell",
+    "id": "S.shell",
+    "label": "Global shell / market nav",
+    "order": 0,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "nav.site-nav",
+    "selector_requested": "nav.site-nav",
+    "match_count": 1,
+    "page_box": {
+      "x": 16,
+      "y": 44,
+      "w": 1408,
+      "h": 42,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 16,
+      "y": 44,
+      "w": 1408,
+      "h": 42
+    },
+    "viewport_height_footprint": 0.042,
+    "major_children": [
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "nav-toggle",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-links",
+        "text": "MASTERMINDX United States ▾ China ▾ Hong Kong ▾ Canada ▾ International ▾ Other Assets ▾ Re"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-search ticker-search",
+        "text": "NVDA"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-ctrls",
+        "text": "Terminal"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Toggle navigation menu"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "MASTERMINDX — Home"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "United States ▾"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Dashboard宏观仪表盘Regime, growth and inflation now当前周期、增长与通胀"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Stock Dashboard股票仪表盘Standouts, sectors and flows领涨股、板块与资金流"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Intraday Flow Tracker盘中资金流追踪Live session board — volume, tape and stance lanes ·"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Sector Intelligence行业情报Sectors, themes & rotation in one read板块、主题与轮动一页读"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Subsector Confluence子行业汇聚Entry-ready subsectors and stocks to review可关注的子行业与个股"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Strategies策略Tactical scorecards and positioning战术记分卡与仓位"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Alert Center警报中心Ranked market-moving alerts分级的市场异动警报"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "News Feed新闻流Catalysts, headlines and sentiment催化事件、头条与情绪"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Options — the workspace期权工作台Daily Brief · Flow · Scanner · Ticker · Leaders每日简报 "
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Dark Pool Desk暗池成交Off-exchange volume · short ratio · ATS venues场外成交量 · 融券比率 · A"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Structure市场结构GEX regime · machine flows · dispersion · weekly range做市商持仓 "
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Heatmap市场热力图↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Subsector Confluence子行业汇聚↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Browse U.S. markets浏览美国全部页面↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China ▾"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Dashboard宏观仪表盘A-share regime and breadthA股市况与市场广度"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Stock Dashboard股票仪表盘Standouts, alpha and setups强势股、超额收益与买点"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Heatmap市场热力图Every A-share at a glance全部A股一眼看尽"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China Intelligence中国情报中心Signals, policy and narratives信号、政策与市场叙事"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Sector Intelligence行业情报Gated board, cycle map and rotation in one研判、周期图谱和轮动，一页看完"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Narrative Radar题材雷达See which stories are running看清现在哪些题材在走"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速"
+      }
+    ],
+    "source_hint": "templates/_site_nav.html.j2",
+    "source": "templates/_site_nav.html.j2"
+  },
+  {
+    "section_id": "S.board",
+    "id": "S.board",
+    "label": "Prophet Stock Signals",
+    "order": 1,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#us-standouts",
+    "selector_requested": "#us-standouts",
+    "match_count": 1,
+    "page_box": {
+      "x": 40,
+      "y": 828,
+      "w": 1360,
+      "h": 2127,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 40,
+      "y": 828,
+      "w": 1360,
+      "h": 2127
+    },
+    "viewport_height_footprint": 2.127,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "pb-hdrow",
+        "text": "PROPHET STOCK SIGNALS ⊞ Grid Table 69 shown · 77 setups · green dot = entry open, yellow ="
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "pbs-note",
+        "text": "13 of 22 confirmed overnight · 0 adjusted, 9 left the board?"
+      },
+      {
+        "tag": "div",
+        "id": "st-count-chips",
+        "cls": "",
+        "text": "ENTRY入场 69"
+      },
+      {
+        "tag": "div",
+        "id": "us-stocktable-wrap",
+        "cls": "",
+        "text": "Stage阶段All全部All stages全部阶段69ENTRYENTRY69Sector板块All全部All sectors全部板块69Communication Servic"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nb-grid-section",
+        "text": "All 81 Live now 28 Setting up 31 Ran — don’t chase 20 Basing 1 Blocked 1 LIVE NOW 28 entry"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "prophet-board-tools",
+        "text": "Track record·60% win · +1.19% a trade measurement updated What changed today ·30"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "topsetups",
+        "text": "More fresh triggers More names flashing a buy signal today. Signals already shown on cards"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "topsetups leaders-strip",
+        "text": "Market leaders The strongest runners over the past three months. No fresh entry yet — watc"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": "us-st-btn-grid",
+        "text": "⊞ Grid"
+      },
+      {
+        "tag": "button",
+        "id": "us-st-btn-table",
+        "text": "Table view"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Clear search"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stage阶段All全部"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Sector板块All全部"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Lane通道All全部"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Fresh only仅新信号 ≤2d"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Close"
+      },
+      {
+        "tag": "button",
+        "id": "st-reset-order",
+        "text": "↺ Reset order恢复默认排序"
+      },
+      {
+        "tag": "button",
+        "id": "st-col-btn",
+        "text": "Columns列设置 9/12"
+      },
+      {
+        "tag": "button",
+        "id": "st-chooser-close",
+        "text": "Close"
+      },
+      {
+        "tag": "button",
+        "id": "st-chooser-reset",
+        "text": "Reset to default恢复默认"
+      }
+    ],
+    "source_hint": "templates/dashboard.html.j2 #us-standouts",
+    "source": "templates/dashboard.html.j2 #us-standouts"
+  },
+  {
+    "section_id": "S.board.filters",
+    "id": "S.board.filters",
+    "label": "Stage filters",
+    "order": 2,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#us-stage-filter",
+    "selector_requested": "#us-stage-filter",
+    "match_count": 1,
+    "page_box": {
+      "x": 59,
+      "y": 903,
+      "w": 1322,
+      "h": 39,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 59,
+      "y": 903,
+      "w": 1322,
+      "h": 39
+    },
+    "viewport_height_footprint": 0.039,
+    "major_children": [
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "",
+        "text": "All 81"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "",
+        "text": "Live now 28"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "",
+        "text": "Setting up 31"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "",
+        "text": "Ran — don’t chase 20"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "",
+        "text": "Basing 1"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "",
+        "text": "Blocked 1"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": null,
+        "text": "All 81"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Live now 28"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Setting up 31"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Ran — don’t chase 20"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Basing 1"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Blocked 1"
+      }
+    ],
+    "source_hint": "templates/dashboard.html.j2 #us-stage-filter",
+    "source": "templates/dashboard.html.j2 #us-stage-filter"
+  },
+  {
+    "section_id": "S.board.track",
+    "id": "S.board.track",
+    "label": "Track record",
+    "order": 3,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#trd-btn",
+    "selector_requested": "#trd-btn",
+    "match_count": 1,
+    "page_box": {
+      "x": 59,
+      "y": 2331,
+      "w": 347,
+      "h": 36,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 59,
+      "y": 2331,
+      "w": 347,
+      "h": 36
+    },
+    "viewport_height_footprint": 0.036,
+    "major_children": [
+      {
+        "tag": "svg",
+        "id": null,
+        "cls": "[object SVGAnimatedString]",
+        "text": ""
+      },
+      {
+        "tag": "span",
+        "id": null,
+        "cls": "trd-stat",
+        "text": "Track record·60% win · +1.19% a trade"
+      },
+      {
+        "tag": "span",
+        "id": null,
+        "cls": "trd-chev",
+        "text": ""
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "dashboard track-record control",
+    "source": "dashboard track-record control"
+  },
+  {
+    "section_id": "S.board.live",
+    "id": "S.board.live",
+    "label": "Prophet live",
+    "order": 4,
+    "found": true,
+    "visible": false,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "UNRESOLVED",
+    "selector_used": "#prophet-live",
+    "selector_requested": "#prophet-live",
+    "match_count": 1,
+    "page_box": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0
+    },
+    "viewport_height_footprint": 0.0,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "plv-hd",
+        "text": "Forming today今日正在形成 ?"
+      },
+      {
+        "tag": "div",
+        "id": "plv-sub",
+        "cls": "plv-sub",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "plv-rail",
+        "text": "settles 4:00 pm ET美东 16:00 结算"
+      },
+      {
+        "tag": "div",
+        "id": "plv-cols",
+        "cls": "plv-cols",
+        "text": "Now当前 Cross level上穿价位 Since起始"
+      },
+      {
+        "tag": "div",
+        "id": "plv-body",
+        "cls": "plv-body",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": "plv-fn",
+        "cls": "plv-fn",
+        "text": ""
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "dashboard #prophet-live (may be empty/hidden)",
+    "source": "dashboard #prophet-live (may be empty/hidden)"
+  }
+]

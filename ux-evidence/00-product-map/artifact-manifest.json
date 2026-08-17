@@ -1,0 +1,2196 @@
+{
+  "count": 219,
+  "artifacts": [
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/REVIEW_START_HERE.md",
+      "artifact_type": "text",
+      "sha256": "756e6cb48968b224df23d732c80fd306e2688527e39e6c79c49a79f62130c40c",
+      "byte_size": 828,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/VALIDATION.md",
+      "artifact_type": "text",
+      "sha256": "e97e34fabc818d24d405e7b98d68b318a7158c4edc1854dee329b8f898999177",
+      "byte_size": 654,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/capability-inventory.json",
+      "artifact_type": "json",
+      "sha256": "c02744938c2f7158f5a9c5ee3efc76bd3960642ad9eacac4cce6f884389884af",
+      "byte_size": 31509,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/capability-map-draft.md",
+      "artifact_type": "text",
+      "sha256": "290685ac5e8a8ca32cbc8291bee86624831b6d1dee58e6c89d26b5f6c044867d",
+      "byte_size": 7721,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/consolidation-history-observations.md",
+      "artifact_type": "text",
+      "sha256": "813783fdbd2317bdcbc00883f732c03f265b19d7ece02881842062d49c026983",
+      "byte_size": 1010,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/evidence-index.json",
+      "artifact_type": "manifest",
+      "sha256": "e72b6889a2c6f51f367029bf22cf5f6071c315a7be760ed1d16f828b77677911",
+      "byte_size": 220,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/navigation-graph.json",
+      "artifact_type": "json",
+      "sha256": "6cb0521665335ba93a2a9600a286412ca58e58b1b53b888016b990c419693d2e",
+      "byte_size": 2547679,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/navigation-graph.md",
+      "artifact_type": "text",
+      "sha256": "0439db10547078424878210a1d612249c1cb9f174ad3f452ff141310ed54ef18",
+      "byte_size": 166,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/navigation-tree.json",
+      "artifact_type": "json",
+      "sha256": "d6081a6dd7dbe3edc2881b76609df9aa24b8d2b4cca0a05b00532ed4c80f1fbe",
+      "byte_size": 69101,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/navigation-tree.md",
+      "artifact_type": "text",
+      "sha256": "e5102231d921ee3a6c8344ce836c4f89d5b5e17aa6f3e868cc54422c83ef6e9a",
+      "byte_size": 6122,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/LINEAGE.md",
+      "artifact_type": "text",
+      "sha256": "6d1563228bf15af0ad4dd3882b7ecb06d21c1aa8a3201146ae3000663bd09c07",
+      "byte_size": 386,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/REVIEW_START_HERE.md",
+      "artifact_type": "text",
+      "sha256": "ece068b84b2f23455f2db7a178813b81b21166f172491ac4d83988ee7cad18a7",
+      "byte_size": 1082,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/VALIDATION.md",
+      "artifact_type": "text",
+      "sha256": "48302be1b11cef9d111dc7a7ec8fa9036f88b0977c6445738b67235e0f96efb8",
+      "byte_size": 879,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/capability-map-draft.md",
+      "artifact_type": "text",
+      "sha256": "ecd9833592fcd7c8ee657471456dfac251a58745d7359c0747f26766994ad804",
+      "byte_size": 1250,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/evidence-index.json",
+      "artifact_type": "manifest",
+      "sha256": "e72b6889a2c6f51f367029bf22cf5f6071c315a7be760ed1d16f828b77677911",
+      "byte_size": 220,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/navigation-graph.md",
+      "artifact_type": "text",
+      "sha256": "c5c4ab93628f80da276542392dc4f2a824dd424fcd6f9252ea0e7438b68c5e78",
+      "byte_size": 8490,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/product-route-inventory.json",
+      "artifact_type": "json",
+      "sha256": "f15e9744f24bfac46dfce8d7bb3671ebc63f653ce6dde4b285d9f146c975ab29",
+      "byte_size": 879928,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/product-route-inventory.md",
+      "artifact_type": "text",
+      "sha256": "f2d61e80eab730a558ec99fc123e5b9b0c68383fa0547daca8c730c2f3f45710",
+      "byte_size": 14573,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/raw/nav-parsed.json",
+      "artifact_type": "json",
+      "sha256": "ecafe10ce4c9b7300a2c5f03e9729e35bd6da927492ea0ceaadc8dc81f47009b",
+      "byte_size": 14042,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/raw/shell-notes.json",
+      "artifact_type": "json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "byte_size": 3,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/raw/source-routes.json",
+      "artifact_type": "json",
+      "sha256": "eb0b4940837e7c60f7f5d37c4147ef9f30ff7abd1eb3e00389b2af58034c8d80",
+      "byte_size": 52212,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/run-manifest.json",
+      "artifact_type": "manifest",
+      "sha256": "d34a18964ed99a078c0126836f9de6d506dec2b92f58c440c3f5fecfbb967a68",
+      "byte_size": 828,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/source-route-reconciliation.md",
+      "artifact_type": "text",
+      "sha256": "7c2f6a34fc38666d4218d3678284dcd16d0655845619bb3f5bbc734b925b803d",
+      "byte_size": 418,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/surface-inventory.json",
+      "artifact_type": "json",
+      "sha256": "2d33be696829ec61839acc74288a94e4966a7cfb07c62c689982343e575aa717",
+      "byte_size": 75224,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/topology-observations.md",
+      "artifact_type": "text",
+      "sha256": "4f034f32a6b7dccfb7d23c6f2030fb1b60817d3d753855ea3931e0d36ae69267",
+      "byte_size": 1327,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/prior-runs/20260816T172029Z-e5431db1/workflow-map-draft.md",
+      "artifact_type": "text",
+      "sha256": "33e3c2259e7a724cb75c55ebc56a9e7913d7d37e6a18f66d52c30310cb96fb4d",
+      "byte_size": 781,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/product-route-inventory.json",
+      "artifact_type": "json",
+      "sha256": "0fd4b6c435f1f2038215c28f07d312f0dd9a33f73ff83a6749a545ededf9a405",
+      "byte_size": 306095,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/product-route-inventory.md",
+      "artifact_type": "text",
+      "sha256": "f2d61e80eab730a558ec99fc123e5b9b0c68383fa0547daca8c730c2f3f45710",
+      "byte_size": 14573,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/raw/anon-probes.json",
+      "artifact_type": "json",
+      "sha256": "e83fae922e608ee3348e5844c13f47086cb4aa77bf1d085a030e9f136319d48e",
+      "byte_size": 19902,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/raw/failures.json",
+      "artifact_type": "json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "byte_size": 3,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/raw/nav-parsed.json",
+      "artifact_type": "json",
+      "sha256": "ecafe10ce4c9b7300a2c5f03e9729e35bd6da927492ea0ceaadc8dc81f47009b",
+      "byte_size": 14042,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/raw/shell-notes.json",
+      "artifact_type": "json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "byte_size": 3,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/raw/source-routes.json",
+      "artifact_type": "json",
+      "sha256": "eb0b4940837e7c60f7f5d37c4147ef9f30ff7abd1eb3e00389b2af58034c8d80",
+      "byte_size": 52212,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/raw/source-scan.json",
+      "artifact_type": "json",
+      "sha256": "872af8aa241216fe5edf3f3a6f9528d52ce1f30849bb7aaa40437def7c8d732f",
+      "byte_size": 223,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/route-family-registry.json",
+      "artifact_type": "json",
+      "sha256": "cbb11b42e977622ac4f9784c85ab578c622a44bb58e312d016b08942db8ccb1b",
+      "byte_size": 140293,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/route-family-registry.md",
+      "artifact_type": "text",
+      "sha256": "876f1ec945171c264ebaf9ac1a3d066b0d405c169c7e88430ef08befa948f870",
+      "byte_size": 14998,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/route-instance-inventory.json",
+      "artifact_type": "json",
+      "sha256": "d05d0da11f9b6cd4125a172451bff39b0cb30bcccd528617b83e9c989e9f865b",
+      "byte_size": 166304,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/run-manifest.json",
+      "artifact_type": "manifest",
+      "sha256": "489a72239e401fc3fb4a7d08316cddb34cfd55a66a4344417933067b0a22e32f",
+      "byte_size": 1026,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/alerts.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "95542b60213fd8e07c1e518878664c5967d48045992bc9921573c91745de1618",
+      "byte_size": 282456,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/alerts.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "8bef843fdebadc9b458203aa39c9732cbd06acc11b7b3cacade964f6ceaef1ce",
+      "byte_size": 117568,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/allocation_canada.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "e2333ca8ee18cd41c54cb38660eefcf03b38f1c7d6fe952c9e0b4b5007cea5f0",
+      "byte_size": 305285,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/allocation_canada.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "3257fcad190c80ea3b6c7ed92f7833a2743f21e4727e77f34af07a835187bb16",
+      "byte_size": 157837,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/allocation_hk.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "5f4a270ad26121c494614d3b92b954592cc387def4308d6ae42a04995bfa0ffd",
+      "byte_size": 335405,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/allocation_hk.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "2e47cce1bb3d43d1f053cb5b155e280fef624a69cf542652ba16ff0fdeb13640",
+      "byte_size": 160792,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/alt_data.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "9cec17c1a9f187475cb1c142bf13342ca5246f7ed0b9ba900f2dc74b8d4c4dac",
+      "byte_size": 345835,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/alt_data.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "e8d68c56aa869febcfc9d9238c35ceca86dcf9de41b120056c2892da632bb641",
+      "byte_size": 153524,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_canada.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "7416004d10f4dff484bb0346386943d5396b65233e6d1ac5c70c2d9d33c206e6",
+      "byte_size": 333310,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_canada.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "ea625ae31c7bff6bd2ee508053487fcdae8c76db3f0b58092050abd3a6533eec",
+      "byte_size": 159508,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_china_ths.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "8417a1299cf0454751a95a4d92b2940a5ae96181f8795b02c4b54d7efb9bed00",
+      "byte_size": 290486,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_china_ths.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "f9e5e731ebeb69f663f76d4158870238524a7b60917fc812e301a488689a183b",
+      "byte_size": 186032,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_hk.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "5e6e582db625251ed3f8e1a17398c63c5dc62851f8ca2766d36650eadeacedac",
+      "byte_size": 339261,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_hk.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "72a4b71daca8ff06951a58a857dcffa461044796a37d8836eec428fc83f9e7d3",
+      "byte_size": 160311,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_intl.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "5d18dddb7e86dae0a179fa702c25c1444aacfd0d4efc2ae4a6a5d884c908c04c",
+      "byte_size": 358137,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/baskets_intl.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "342bc630ceae09aa554c95171b6bddf154876c0982cc508afa905d2548e27405",
+      "byte_size": 169747,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/biocatalyst.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "b2e67eb418c2484d952c4475cc288a06fe97e1b4ac141649bd71ae65d3299739",
+      "byte_size": 273555,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/biocatalyst.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "663597fe4a1a9153cc4025198e9fd8297390d13f63457d87de4d1863864e5fb9",
+      "byte_size": 128415,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/bonds.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "edcc92e695f913e43096ef9104fee122c827d5a323eacbb0ca2906b21bcbfa9b",
+      "byte_size": 347308,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/bonds.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "9954518d82f1725a299e9f8bd2142af6f724d399b7e8ce2d7b19d71317004404",
+      "byte_size": 161340,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "116254a69249061b1ce888ce5efdf1dd01aedde661f03662579877823c8fd9f4",
+      "byte_size": 380524,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "b5c4c9fb2aa3929557c5e3a057dfc4cffe75f3606de48f235f416ae514631b41",
+      "byte_size": 161959,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada_heatmap.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "ab7d287414edb0051033298dd98089271e9b36fefaba5e3034f4c2ab7761d285",
+      "byte_size": 392231,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada_heatmap.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "e36c904067e98252e2a536ff307511e8e7bff2f3506c76fffe0f32998fd0686b",
+      "byte_size": 155341,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada_stock.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "3e206c6b8c760379fb3da5f69749f6b4e89fff432d6b4869fe834145b4411542",
+      "byte_size": 210308,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada_stock.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "4ce476720d77dbd26e5accbe6e0d1f39b06dc93dd5278e3118e4b65d602ec349",
+      "byte_size": 98101,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada_stocks.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f4eabd69b84728d9f36d38cfe2aae575dca887c598f8c749595101a54dbb66e5",
+      "byte_size": 240839,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/canada_stocks.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "07a2ab124c88ce7a22575265652c22a8f7153ab3404d3336d7c304d022ccf725",
+      "byte_size": 105705,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/capital_structure.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "96d5e0fb79ea85a573e6af9f7f0c5061c88c2ad9f652f2a27ab1034b9e5bea13",
+      "byte_size": 382275,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/capital_structure.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "f7d6bb964623d889f76348d0503ee35d217f4fae53319e104dd5c0a5bdf58238",
+      "byte_size": 191499,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "0de390da0e8ed68282356dcadd36457c89ec8e176bbc88b74575d687dd216097",
+      "byte_size": 323496,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "56f7f7b25c1b65367c39f9ca02ba983911d155659bf92728a16e435d2944333c",
+      "byte_size": 130916,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_altdata.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "8ceb24357a37031b6c41a6064ec97edfae9d7a31db6a0d471f27059692378d43",
+      "byte_size": 347747,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_altdata.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "650ce966531b1f943ca3f33bc8938a20d994d5a6b02e4fe4182671ec8bed22a8",
+      "byte_size": 125693,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_heatmap.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "44e0227663f24a6749a7ca331c998fca2597a41f91aad69029c26805dd426f4e",
+      "byte_size": 437240,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_heatmap.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "e756ed55573690cd07706eb168a0de953585d17fa2b3a86defc8baea85bd73f7",
+      "byte_size": 155538,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_intel.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "4ed95368ec7c78c8e53c0196945a7c5de9c29010d68080a655a84230cbdf8a89",
+      "byte_size": 287817,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_intel.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "216a1d8e777edbf7ae161b9137c54e44077380309dd3572c8e6a68e886cd05b5",
+      "byte_size": 155805,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_mechanics.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f51897d37925ff58ba6c158d8c80328beeaa1b398b5d6ca7d2ae69812d8d25da",
+      "byte_size": 339303,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_mechanics.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "6ab8971f68ef82b8bba3b157d5f289f2543d30bb3cacedac8b1ec10539c9635f",
+      "byte_size": 154187,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_news.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f80cda8c86a1b1809f82899c3b23b6900775be883fb5ad13c9b36d862473c63f",
+      "byte_size": 337312,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_news.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "4ac457dbdb64710ca32b86760a7d524f04154e78e35d81d17687c116956f741e",
+      "byte_size": 134249,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_policy_watch.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "5992f8011b0770f45d0a093629aa394ca1668ff1ce04279508f8754c6040d3d4",
+      "byte_size": 370816,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_policy_watch.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "00d18a994b63b6ea76cfab9f79a8ca12798d9dfadc3a7587b729303b300604f7",
+      "byte_size": 166125,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_radar.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "b3f266d683b9958f213d212211d5608831fc243fc523373b5c539704d824430c",
+      "byte_size": 365853,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_radar.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "47a28e9feed94766e32bdf12a4e09cd67aebc5682fd1cd75c9d4e29871d753d5",
+      "byte_size": 158106,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_special_situations.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "ce68ed86b8be0583d79422942d4b186779e5feb4fddeda23c8efce4a9253979f",
+      "byte_size": 360266,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_special_situations.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "20a00d3aa66ee1f6524dc91addc2e73ad585785c903c5570f3138dba5bfd150c",
+      "byte_size": 164762,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_stocks.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "094db1f9bc80cfce22ff36c6a8c5e7b5ae4aab45b3b5a8b186f52a4be14174f1",
+      "byte_size": 305814,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_stocks.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "8a9e32400e7cd6a61b87fae114ec6092dbd4cd1f272ad50e408c000ac9d79de9",
+      "byte_size": 106040,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_strategies.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "538a0882ae73bcc40a36414e2e2980e170cf9db360d37815330b0fa476b0e24e",
+      "byte_size": 359451,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/china_strategies.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "76b3c0e8eebd6a344bfcddcc9ca5c18b45ef5f090099b574d5406275bc53d1fe",
+      "byte_size": 152203,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/commodities.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "2528d75e50328caf306a2f52a007019c9f854c6b54f6619d83cabd2bdc899fda",
+      "byte_size": 376731,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/commodities.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "6180857b20d552323a15b3b73a3931406a46eb8bf621b3089beb931922b373dd",
+      "byte_size": 175191,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/commodity_strategies.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "9a70d7062212322799591180a80b662629e44e9ca3392ba0da14c20c539b7111",
+      "byte_size": 384835,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/commodity_strategies.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "81b141502719c77f37ce08e3b9311112dd404debc1a3fef28ab1302c5980a4ad",
+      "byte_size": 167165,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/confluence_screener.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "71413c931d63985ab492fb6795469867d2e13f88d04407b754f6b81ce0ac83fd",
+      "byte_size": 315929,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/confluence_screener.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "43a60d1956c7743a376ddd316ce7326ce11fd1f0b5c5a1868c35818ffa8ca911",
+      "byte_size": 170539,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/country_cycles.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "08d45c204a32ebe024ea4811b1075f779070d4e5d1225acf33d9a290cb51e743",
+      "byte_size": 648324,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/country_cycles.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "6b7dcabbb71cbe89059e537ea9da426cd99b9fef246daf5e146e6e86ac1866d9",
+      "byte_size": 169095,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/cycle.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "71efdde3057151cbc966a5858d753ab853cbc3dea1f5e82d53419837e66a9a04",
+      "byte_size": 826599,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/cycle.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "09773c53975cca361c4b9b81da28b7b4b923c20644431c49bb1d66eb09bad44b",
+      "byte_size": 160317,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/darkpool.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "8102b707f61a1f89a1277c2b9bd342628af93e5e945190f61a02802f570a16c7",
+      "byte_size": 357981,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/darkpool.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "748236dc7a49f3960c2a7aff08a745134d2fb55d5909e25739f3c9fa54b04917",
+      "byte_size": 162631,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/etfs.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "a08745bde1b163325c9a78baade245a1985c06885def65ab8e46eb3202e3cd26",
+      "byte_size": 276588,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/etfs.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "12ff931613fcadb1116c562fa010d59eeccae509a66dd4605611982a7e29d798",
+      "byte_size": 138082,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/euro_area.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "fd5dcb6398eaef28ed0628f3e70919cb8d30eff30a5f56e5b6310127735367c2",
+      "byte_size": 372353,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/euro_area.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "cfd88483934058611cb7c6f75ed73518c3ff16ed95e272bc070a254978535e3b",
+      "byte_size": 160604,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/flow_velocity.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "a45005452b7fa8763e271e11771483c52472e965e43f1cd813a76db879766721",
+      "byte_size": 278024,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/flow_velocity.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "eb62094b6502ff63ee835b7ff9ace1f705de7b31697e1d07daf10384e28cd1c3",
+      "byte_size": 158621,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/foresight.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "1ceaa083eee4905fa87c3455bffdff48ececf5dde206dd1549899c57ca2def8c",
+      "byte_size": 316767,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/foresight.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "ca7c95f155911dc43bbf41f4eb1e1569e55f4c174c65f3aa43f975675338a3ca",
+      "byte_size": 150984,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/forex.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "541dca7a58503262cf8dc3fd74d67b09bcee23269578d3a87e14275b47432e0a",
+      "byte_size": 238211,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/forex.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "ea0e0dae93fa908b4f844c2641a0b9ce4a5d59da48d6aa5bcc9fa497d1fefdf2",
+      "byte_size": 132587,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/fund_berkshire.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "46db6be675aa3ee81ed61846e0977e4fb3547f8839a050cf5bdcd451670be443",
+      "byte_size": 278614,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/fund_berkshire.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "849806d74a0301ab138ae3238c08f121f8e9d0ec7436ed9708b9e174ff444eb2",
+      "byte_size": 118115,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/fundamental_forensics.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "a64b68ae22aec09b01cb8246fd1bb97347e63bd5d0c36d23eb59c16864fae539",
+      "byte_size": 617510,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/fundamental_forensics.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "72398ccbd83695484e33dbd95c13542f4be733e24cfafcbea5adcd6ad3f69346",
+      "byte_size": 206218,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/government_revenue.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "d6096dd3897115259c6a5e4747c65788b62dce2d34fa01f1ba4f8e06416fdee9",
+      "byte_size": 382858,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/government_revenue.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "561ef35e2923c4faa136e85df2f3a4d735477bb450183442f7a4f9149d880e63",
+      "byte_size": 160206,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/hk.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "29d174abb2b170519f4bdd943821168d0f238c7c935d4a4a58eddafcd6902ea5",
+      "byte_size": 346241,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/hk.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "22de9d96dd92f8523e83ea87bb5440e9d2004e9a9dd2386bc9dd047d4f8e0a69",
+      "byte_size": 143737,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/hk_heatmap.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "bb1da5d3898a6228409f48addf3dd6e16fd794536fb3eacbc63b65321141a276",
+      "byte_size": 384114,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/hk_heatmap.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "678eaf252c23a60609fcea2642f955f0f31392be91800ecb9d179792713ca1a2",
+      "byte_size": 159734,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/hk_stocks.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "99f461bfb0f086260b03d55d979ddd2e57b99c65edfaa3a8eb495e7bd157af81",
+      "byte_size": 246139,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/hk_stocks.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "5333ac7395380cefdec1210c174f1632cbf4139b92abbf4f95017105118f07b8",
+      "byte_size": 117896,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/index.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "3f0e1f47024460ecc07c381cdee5e903e03a8f4bf400c86ac61bc53325f81853",
+      "byte_size": 377065,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/index.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "d71e113822dc851371a95b6ed8473480e442a3cf9f62edd63a4373ed47fe3d1f",
+      "byte_size": 99274,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/india.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "866d61bdadd48b11086239896cdd4a6870c9b61eed885cd1b6ad36de8305abe0",
+      "byte_size": 360623,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/india.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "a96a82bc14a1d2dd8e3a3294d608897990a249fb27a70ea8e6d7be8c38bf1f1e",
+      "byte_size": 154658,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intelligence_hub.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "c8572c734022b4dd031cca82260e294a7ffde7cabc88e37f181f70aeb2f5cdc8",
+      "byte_size": 315442,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intelligence_hub.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "0b5417e18f102a0e0ef6e11d2d6bc9563bd1dd5dc8cb2fe6701528ccf0ce1fa4",
+      "byte_size": 138871,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intl.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "8a5146e46e9355a62f775a989a6f097e946dcc562f9123ea04f8bef6bf30f21e",
+      "byte_size": 346005,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intl.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "28e834dadfc14e08486a680a8838f79903162584fe80d92a74085adf57ff8144",
+      "byte_size": 156940,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intl_stock.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "6ee2d31af6256cd40ebf21630b13f8a0415c4065d6b7e85c5dd58924427773b1",
+      "byte_size": 210967,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intl_stock.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "71573fb976edd31e6c42b7a19a8b789d89f6eec31e6f8d7556e5b285755ced66",
+      "byte_size": 100219,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intl_stocks.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "07d6f91f208d7f804956d95692ceddc320ac423646d50ad909cae9d11b48c604",
+      "byte_size": 242692,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intl_stocks.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "e48945a347d1377fa59d8fde1e208e0f131d1670585396865f519fc07d4d34d2",
+      "byte_size": 104635,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intraday_flow.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "eb5d6c00a727528fe2cffa2f23bb8a3f6364927d8be82e177c4556bf11b19ff1",
+      "byte_size": 315643,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/intraday_flow.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "4261694117423551cdf0935c33e9aead31d1bba99c6dd615de04f6b25c8ce5e1",
+      "byte_size": 145991,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/japan.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "00a070812c1abf9ec74ae9d170211d78eda22c749286b79db413c8150bc50e45",
+      "byte_size": 360900,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/japan.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "51f437d38624c1f33abaa38f8c97b538079ca1ca115185dbf759ae9e540f1b26",
+      "byte_size": 160049,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/leader_radar.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f26f0d012fc8bd23b763fcee890c04988e51cd663b406e170d2e75530fe7f648",
+      "byte_size": 278200,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/leader_radar.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "7cb39037ffb956506f33688c6d19b5ec9fc8aab9b50b8690ddf21d5e558798e7",
+      "byte_size": 132230,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/macro.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "79fce788342e24947a27d16dfeb64a726099f61bb783f1392953c6c8a302e002",
+      "byte_size": 364597,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/macro.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "d2314323ce199923e9de4fb60a27a9b18315ff5c99b4c84d0e041865a0a58c86",
+      "byte_size": 129829,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/macro_context.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "6ed78b5bbe227a7c882f78a8ea9bc91f5d0d6b729593e29da2056d152aa425c3",
+      "byte_size": 339439,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/macro_context.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "54079892aa719f5fcec9139b47fb0c6cc60fd98ee3528b4be75dd51143ceac77",
+      "byte_size": 145914,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/market_memory.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "02e6d72bcb61a26a1b52640563d59e575428903a319525b8c27555877726697a",
+      "byte_size": 463785,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/market_memory.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "c614af2e433e1fb5ac4bcbbf87259f211902623f101f03aeb1028b681d8110d0",
+      "byte_size": 165386,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/market_structure.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "aeb9f8810256455d19a2db5a4574c52957aaca7eb38f653ed8defa80c1455fac",
+      "byte_size": 291673,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/market_structure.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "7b6d8c66f480416c4637bf4e1c0282fb682ac1820089490332a8c97e4a8bc1b9",
+      "byte_size": 182053,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/markets.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "11d0749476e9215e40afe8b50113e9b23e6b63c6d2fb235fc203d9dae2813fa8",
+      "byte_size": 551359,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/markets.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "c42525f3bc16e55365398066393bbe8322619546c7b2c209b8559e1477ab48e2",
+      "byte_size": 173169,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/narrative_radar.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "54652ef14f8c754138c82114c8278e70760794bdbdc6fb5eacdf938f6c11a3a7",
+      "byte_size": 331450,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/narrative_radar.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "05eddd10e934e73b8e11dbb0bed5865e47aa00a131dfdd916e3bc84388fde699",
+      "byte_size": 159556,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/neural_web.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "a31cfb1c5f5cd91f0d5e83c9562003dd56c73d7b18943a2941d58cf68f94005c",
+      "byte_size": 709090,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/neural_web.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "dc2fbad05d99784b7667b426266b1c552210184acccf300af64ef5cc4b0fcc2d",
+      "byte_size": 272589,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/news.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "4034d2b13a7081ef1f1071c7d6d5d263fbc90553f650ea38b3cfe8d86bb21fa6",
+      "byte_size": 284547,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/news.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "28718cbcc7b325d97f7cc0d415515e409388f8a8788ea987ef244922d06d74d5",
+      "byte_size": 133939,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/options.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "47dcf3ae098038e3d3cdbdc887b66e940e1aed40ab7676b9f338f5ec97963da2",
+      "byte_size": 240864,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/options.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "da5f85028643405ee67bc01260bdeb1143676ce00cdf1912cef868c883bf39ee",
+      "byte_size": 139337,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/policy_watch.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "ac16c0331b3d40e43e673a64bd1b5de73d7730ee2cf32bc6755a478f6f87e375",
+      "byte_size": 251706,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/policy_watch.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "373332d1c7a5c489f1815e01bc0f06d0f8a31daab8c438dd884d5a2d7046f5a4",
+      "byte_size": 127139,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/radar.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "b00e45a13f51df350468170681cd8021532ac21417aac48f8ad41278a4d6912c",
+      "byte_size": 392937,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/radar.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "a254e1d2eeeaa2ddeb87a6add0cead457b6cebd9e778d61fcf17afa6444a38f8",
+      "byte_size": 137040,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/reports.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "2a3f73b718ac292ce283e48e953816146a1e7af5bff1836777cc8427525cd9bc",
+      "byte_size": 320139,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/reports.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "413b9a07933df36b67a1c684465bd6f62231fa29c11c6a53b94ce3f37a11dc5d",
+      "byte_size": 155489,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/research_vault.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "daf8f5b01e877b04bb56c3813944430d516c94a82c63222a4ec83e7d778abc56",
+      "byte_size": 501877,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/research_vault.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "bd518ee0b9613ef272e577046cb2777f536a042aeec533d219ae21bc06d55daa",
+      "byte_size": 176541,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_central.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f1ac3b925faf175dd412d69a129fdfbc96666abae8158d1252773b8120721c0e",
+      "byte_size": 427587,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_central.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "1fbce357918212dfa0a2a16a37c05b1f277fa04d7930151f2731112d9891fa65",
+      "byte_size": 202489,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_central_china.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "18a5174f2507c2334ae411eae000fbdf41db15b478a3e447f12fdeed634acbeb",
+      "byte_size": 455547,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_central_china.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "50f03a6f5e126c7d6fc58425f5bf94482921655523bec4889801c0c2df3e4a6f",
+      "byte_size": 180329,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_cycles.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "000b0a9946166889d5c4190cffb0c773bf929c79303c8c4af2558d66820b00a2",
+      "byte_size": 559925,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_cycles.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "64f822bb42e4051b423f24ffce2fbc26bd08ed5f96e5243d6a667f35a4dfdc97",
+      "byte_size": 159973,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_cycles_china.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "eb564c885783a20f7a61fc1967c3c4309fd8a07ee63e8bfb4a77260a71c9565d",
+      "byte_size": 612809,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/sector_cycles_china.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "7aee0c2a2980988853d39e95c013a2d1d33cada86b33bf1e512794bef06fa27c",
+      "byte_size": 152014,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/shell_mobile_nav_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "e28631d0c9606a8191ac34e21e5cf1171f4ccb3cddc7a03b0813e65e53581e0e",
+      "byte_size": 33066,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/shell_research_menu_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "8299eeb0588dd0d4bddddcb597d0901d22f80428d01a4fcae4c83a9de8b598a2",
+      "byte_size": 313646,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/shell_us_menu_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "671c8ff469d0ebb4898db2ae02be5cd1f4ff13f23030073c780a25719203955c",
+      "byte_size": 313366,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/smart_money.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "b0f194f1f5987c98eeeea466338f8b9b4b7a49a025b4019d928fdc54d61dc9bf",
+      "byte_size": 352737,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/smart_money.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "33ef9cc97c5ad9fdbbe07f309c44c7c7912b0a78826015be15792b12040c019e",
+      "byte_size": 123210,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/south_korea.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "4b64310a6b1d2de5234365521fcdc197ea61521a8bdba8d074f469051ab2ed1c",
+      "byte_size": 361564,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/south_korea.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "6fca6e31439915e070ef047909c79968d86f920eb923b2c982daba4862d9e69e",
+      "byte_size": 157627,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/special_situations.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "57751f25f47d414382e41cb4051b19d97e5214e2bf06f979bcd7e7d8ca4ceb65",
+      "byte_size": 337397,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/special_situations.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "06dc8478fe1f1954c84d70ad096919b4c17f86f2285efe2cf25e5d7ee108b7bf",
+      "byte_size": 153223,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/spr.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "55e6a8e4f9492706b8ad8acef37b0b1923f3fc823c55907735c25c361c181c84",
+      "byte_size": 271079,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/spr.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "0691301f86fe7d880335eac6792023698cfd5470ab1467feb217f041ed5f78c1",
+      "byte_size": 112637,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stage_analysis.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "ed01e657324503f34bd6f84e692adb3d455a5065e020293534da6dd2777096bc",
+      "byte_size": 334756,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stage_analysis.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "f78b39bf7e761c2e688750d8932de9f0ffc94b095436be75fca296a5ed4294de",
+      "byte_size": 163913,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/start.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "694815249a4a76e3d1589b54007ed3b3337bc5dd7d544e484ffd9e3836622407",
+      "byte_size": 683911,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/start.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "27e6a8907aaa1770f29d2346722876f56d5831113e01aac532b792b56e5370fc",
+      "byte_size": 267900,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/state_of_themes.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "a44885d16d05cc72a5fdbd1abef5caa75445ea2b2d2b758568ec2f13f68afa3f",
+      "byte_size": 306974,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/state_of_themes.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "89b0e73c58a9dfc821be5ea978d827ff27896aacbd2b06efa7d9aa63079856fe",
+      "byte_size": 152030,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stock.html_ONTO_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f3792d90e5d3dbc4eb1457f79e8909708cb2d5d102c15a09cd498b1e0855682c",
+      "byte_size": 265998,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stock.html_ONTO_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "c5fb86bbc32de628639042930c125ca1c4b75b9cee77331547a93b8a8fcfb33d",
+      "byte_size": 118566,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stock_seasonality.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "410f3b532db24e03da9ba2f2e2f0ea50800191a66228dc4d196aa748b5a6964b",
+      "byte_size": 350052,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stock_seasonality.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "574020cc31c870f19a2b25cd6fdcbfa31ce2ad4e7e5b94abadcdbe90703665ad",
+      "byte_size": 160780,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stocks_earnings_index.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "6bfbfc380ae30c574eafe2bd0a775f78fadb3aeb1f011692e196a90bf6a33dac",
+      "byte_size": 462459,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/stocks_earnings_index.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "a9169b05097a8cdfc438d78f751c59c0d7cbba5a97306423c6c662ea25228ce9",
+      "byte_size": 210344,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/strategies.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "b722345d4c61a78b43216841e463ff36b0ac73ae46fc6ef029f7002bd90c3718",
+      "byte_size": 354213,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/strategies.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "9007404d32381d92bf5e9ded0bfe88fbc6181bd4e680e5f139eacaf6f52c00cf",
+      "byte_size": 145080,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/strategy_mm_moderate.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "dd776b654a21722789c1ed570d3814f0de2d9c00469530d5decaaa8f5cf45685",
+      "byte_size": 336096,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/strategy_mm_moderate.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "65b145d7c3d5ef502977ce25e35d1ad0285e4452784bc5b172fd0ccd83cf92a2",
+      "byte_size": 130115,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/united_kingdom.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "bddd04d7bbdd31b4a5d0202cc221be2ceee846260b62d3ae79624de9da853acd",
+      "byte_size": 362115,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/united_kingdom.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "0bb3d8b227389e318661a395f4aa4eeb51791abaacb249f990b3b671b3e422be",
+      "byte_size": 160399,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/us_stocks.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "f21445deb49ff1352b9d2baa282ec516d4bf14081d73300725d19b629fc154cc",
+      "byte_size": 297200,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/us_stocks.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "0e883907874ef2c3a0f09e5c2b351626a7ea92c2555a8cda689748e1f1c0892e",
+      "byte_size": 115410,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/watchlist.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "712f6567290209095b1819e28d185d31e22d50319670b377bf5a4db09820b7d4",
+      "byte_size": 237681,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/watchlist.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "bd4a061f439ff09d437237e636784dc7730b8ba9f0427d8f48a3fb86f38f4986",
+      "byte_size": 126541,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/winner_health.html_1440x1000.png",
+      "artifact_type": "screenshot",
+      "sha256": "8eccc07cf778aa44fcde9b88bfaba3120218913229e23cda8c9f2ad597fe1302",
+      "byte_size": 267069,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "1440x1000"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/screenshots/winner_health.html_390x844.png",
+      "artifact_type": "screenshot",
+      "sha256": "1252461a802e81ee98201b2a6ceba1a3aebcda583f326f404eef08a34de1e0c1",
+      "byte_size": 171526,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": "390x844"
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/source-route-reconciliation.md",
+      "artifact_type": "text",
+      "sha256": "78ad869e2daa70baae7ce10696cd3fe7a08fca74b9f5ff839f143cafb4a543ea",
+      "byte_size": 1688,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/surface-inventory.json",
+      "artifact_type": "json",
+      "sha256": "873762f9fc9cf2d6de29e8cf3f94dfd4fa1d9261deaa231d826f550405c40204",
+      "byte_size": 144903,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/surface-inventory.md",
+      "artifact_type": "text",
+      "sha256": "188536fcce0c1e73a28ee7abba5db40e77ee15890c4e2e9708faada727f3faa7",
+      "byte_size": 25393,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/terminology-map.json",
+      "artifact_type": "json",
+      "sha256": "1bcf15d5bfacb8b16d83fa9cdf9f0f7810394944e3e6c1f5257746072da414c2",
+      "byte_size": 7127,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/terminology-map.md",
+      "artifact_type": "text",
+      "sha256": "28f6f82c645c7cd90c3633ccc4fc70b6fab4b23d9e1564353d444666f277b34b",
+      "byte_size": 628,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/topology-observations.md",
+      "artifact_type": "text",
+      "sha256": "8c798780956a32536f3b35b13ed7d046df1560c2c0d59eb0fe72823deaf671ab",
+      "byte_size": 871,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/workflow-edges.json",
+      "artifact_type": "json",
+      "sha256": "91800790f5454addccdc85969a142fac3becb8ba0156aaa580b659a53ad0acfc",
+      "byte_size": 2480251,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    },
+    {
+      "repo_relative_path": "ux-evidence/00-product-map/workflow-map-draft.md",
+      "artifact_type": "text",
+      "sha256": "4e39369fb9f07a4dd3daec8282f554388310340e1ddba589c335aa231289716b",
+      "byte_size": 536,
+      "generated_by": "collect_topology:20260816T181752Z-931bb3c6",
+      "associated_route": "phase0.1",
+      "associated_state": null,
+      "associated_viewport": null
+    }
+  ],
+  "run_id": "20260816T181752Z-931bb3c6"
+}

@@ -1,0 +1,18 @@
+{
+  "observed_verified_states": [
+    "DETAIL_DEFAULT",
+    "CHART_1W",
+    "CYCLE_EXPANDED"
+  ],
+  "failed_attempts": [
+    {
+      "failed_attempt": "I.detail.chart_hover",
+      "error_summary": "plot found but tooltip/crosshair not verified"
+    }
+  ],
+  "transitions": [
+    "NAVIGATE -> DETAIL_DEFAULT",
+    "DETAIL_DEFAULT -> CHART_1W",
+    "DETAIL_DEFAULT -> CYCLE_EXPANDED"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "count": 7985,
+  "by_class": {
+    "UNKNOWN": 6,
+    "MARKETING": 24,
+    "LEGACY_ORPHAN": 47,
+    "LIVE_PRODUCT": 82,
+    "GENERATED_INSTANCE": 7767,
+    "REDIRECT_STUB": 10,
+    "UTILITY": 47,
+    "SEO_TWIN": 2
+  }
+}

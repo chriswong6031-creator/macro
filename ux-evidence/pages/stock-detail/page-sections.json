@@ -1,0 +1,928 @@
+[
+  {
+    "section_id": "S.shell",
+    "id": "S.shell",
+    "label": "Global shell",
+    "order": 0,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "nav.site-nav",
+    "selector_requested": "nav.site-nav",
+    "match_count": 1,
+    "page_box": {
+      "x": 16,
+      "y": 44,
+      "w": 1408,
+      "h": 42,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 16,
+      "y": 44,
+      "w": 1408,
+      "h": 42
+    },
+    "viewport_height_footprint": 0.042,
+    "major_children": [
+      {
+        "tag": "button",
+        "id": null,
+        "cls": "nav-toggle",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-links",
+        "text": "MASTERMINDX United States ▾ China ▾ Hong Kong ▾ Canada ▾ International ▾ Other Assets ▾ Re"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-search ticker-search",
+        "text": "60051"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "nav-ctrls",
+        "text": "Terminal"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Toggle navigation menu"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "MASTERMINDX — Home"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "United States ▾"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Dashboard宏观仪表盘Regime, growth and inflation now当前周期、增长与通胀"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Stock Dashboard股票仪表盘Standouts, sectors and flows领涨股、板块与资金流"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Intraday Flow Tracker盘中资金流追踪Live session board — volume, tape and stance lanes ·"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Sector Intelligence行业情报Sectors, themes & rotation in one read板块、主题与轮动一页读"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Subsector Confluence子行业汇聚Entry-ready subsectors and stocks to review可关注的子行业与个股"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Strategies策略Tactical scorecards and positioning战术记分卡与仓位"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Alert Center警报中心Ranked market-moving alerts分级的市场异动警报"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "News Feed新闻流Catalysts, headlines and sentiment催化事件、头条与情绪"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Options — the workspace期权工作台Daily Brief · Flow · Scanner · Ticker · Leaders每日简报 "
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Dark Pool Desk暗池成交Off-exchange volume · short ratio · ATS venues场外成交量 · 融券比率 · A"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Structure市场结构GEX regime · machine flows · dispersion · weekly range做市商持仓 "
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Heatmap市场热力图↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Subsector Confluence子行业汇聚↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Browse U.S. markets浏览美国全部页面↗"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China ▾"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Dashboard宏观仪表盘A-share regime and breadthA股市况与市场广度"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Stock Dashboard股票仪表盘Standouts, alpha and setups强势股、超额收益与买点"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Market Heatmap市场热力图Every A-share at a glance全部A股一眼看尽"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "China Intelligence中国情报中心Signals, policy and narratives信号、政策与市场叙事"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Sector Intelligence行业情报Gated board, cycle map and rotation in one研判、周期图谱和轮动，一页看完"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Narrative Radar题材雷达See which stories are running看清现在哪些题材在走"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "Capital Flow Velocity资金流速Where big money accelerates主力资金在哪里加速"
+      }
+    ],
+    "source_hint": "templates/_site_nav.html.j2",
+    "source": "templates/_site_nav.html.j2"
+  },
+  {
+    "section_id": "S.detail.identity",
+    "id": "S.detail.identity",
+    "label": "Stock identity / header",
+    "order": 1,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#result > .panel:first-of-type > .topline",
+    "selector_requested": "#result > .panel:first-of-type > .topline",
+    "match_count": 1,
+    "page_box": {
+      "x": 191,
+      "y": 155,
+      "w": 1058,
+      "h": 71,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 191,
+      "y": 155,
+      "w": 1058,
+      "h": 71
+    },
+    "viewport_height_footprint": 0.071,
+    "major_children": [
+      {
+        "tag": "h1",
+        "id": "r_name",
+        "cls": "",
+        "text": "Onto Innovation (ONTO)"
+      },
+      {
+        "tag": "span",
+        "id": "r_live_px",
+        "cls": "nb-px",
+        "text": "$331.71"
+      },
+      {
+        "tag": "span",
+        "id": "r_state",
+        "cls": "state st-TURN_SIGNALED",
+        "text": "BOTTOMING"
+      },
+      {
+        "tag": "span",
+        "id": "r_eq",
+        "cls": "eqbadge eq-up",
+        "text": "Entry ▲ +32 light"
+      },
+      {
+        "tag": "span",
+        "id": "r_archetype",
+        "cls": "arch a-high_beta_momentum",
+        "text": "High-beta momentum"
+      },
+      {
+        "tag": "span",
+        "id": "r_blowoff",
+        "cls": "bochip",
+        "text": ""
+      },
+      {
+        "tag": "span",
+        "id": null,
+        "cls": "",
+        "text": ""
+      },
+      {
+        "tag": "span",
+        "id": null,
+        "cls": "af-wrap",
+        "text": "🔔 Alerts 40 ▾"
+      },
+      {
+        "tag": "span",
+        "id": "r_asof",
+        "cls": "muted",
+        "text": "data through 2026-08-14"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": "r_afbtn",
+        "text": "Toggle alert feed"
+      },
+      {
+        "tag": "button",
+        "id": "af-close",
+        "text": "Close"
+      }
+    ],
+    "source_hint": "templates/stock.html.j2 .topline / #r_name",
+    "source": "templates/stock.html.j2 .topline / #r_name"
+  },
+  {
+    "section_id": "S.detail.decision",
+    "id": "S.detail.decision",
+    "label": "Primary decision / verdict",
+    "order": 2,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#sv-decision",
+    "selector_requested": "#sv-decision",
+    "match_count": 1,
+    "page_box": {
+      "x": 191,
+      "y": 236,
+      "w": 1058,
+      "h": 292,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 191,
+      "y": 236,
+      "w": 1058,
+      "h": 292
+    },
+    "viewport_height_footprint": 0.292,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "sv-decision sv-state-conflict",
+        "text": "THE NAME Solid name 62/100 board rank 🛈 Validated edge ACT NOW? WAIT Extended — wait for "
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "templates/stock.html.j2 #sv-decision + stockview.js",
+    "source": "templates/stock.html.j2 #sv-decision + stockview.js"
+  },
+  {
+    "section_id": "S.detail.cycle",
+    "id": "S.detail.cycle",
+    "label": "Cycle & timing disclosure",
+    "order": 3,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "details.sv-deep",
+    "selector_requested": "details.sv-deep",
+    "match_count": 1,
+    "page_box": {
+      "x": 191,
+      "y": 786,
+      "w": 1058,
+      "h": 31,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 191,
+      "y": 786,
+      "w": 1058,
+      "h": 31
+    },
+    "viewport_height_footprint": 0.031,
+    "major_children": [
+      {
+        "tag": "summary",
+        "id": null,
+        "cls": "",
+        "text": "Cycle & timing detail"
+      },
+      {
+        "tag": "div",
+        "id": "r_bc",
+        "cls": "bcbox bc-light",
+        "text": ""
+      },
+      {
+        "tag": "p",
+        "id": "r_age",
+        "cls": "agewhen",
+        "text": ""
+      },
+      {
+        "tag": "p",
+        "id": "r_early",
+        "cls": "early",
+        "text": ""
+      },
+      {
+        "tag": "p",
+        "id": "r_macro",
+        "cls": "macro-caution",
+        "text": ""
+      },
+      {
+        "tag": "ul",
+        "id": "r_points",
+        "cls": "points",
+        "text": ""
+      },
+      {
+        "tag": "div",
+        "id": "r_cyclebox",
+        "cls": "cyclebox",
+        "text": ""
+      },
+      {
+        "tag": "p",
+        "id": "r_flags",
+        "cls": "neg",
+        "text": ""
+      },
+      {
+        "tag": "p",
+        "id": "r_why",
+        "cls": "muted",
+        "text": ""
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "summary",
+        "id": null,
+        "text": "Cycle & timing detail"
+      }
+    ],
+    "source_hint": "templates/stock.html.j2 details.sv-deep",
+    "source": "templates/stock.html.j2 details.sv-deep"
+  },
+  {
+    "section_id": "S.detail.chart",
+    "id": "S.detail.chart",
+    "label": "Price / chart",
+    "order": 4,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#tvbox",
+    "selector_requested": "#tvbox",
+    "match_count": 1,
+    "page_box": {
+      "x": 191,
+      "y": 904,
+      "w": 1058,
+      "h": 559,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 191,
+      "y": 904,
+      "w": 1058,
+      "h": 559
+    },
+    "viewport_height_footprint": 0.559,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "bchart",
+        "text": "1D 3D 1W 1M EMA RSI Stoch MACD Stoch RSI ONTO ~recon 2026-08-13 O 337.35 H 353.97 L 321.67"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1D"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "3D"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1W"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "1M"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "EMA"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "RSI"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stoch"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "MACD"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Stoch RSI"
+      },
+      {
+        "tag": "button",
+        "id": null,
+        "text": "Full screen"
+      }
+    ],
+    "source_hint": "templates/stock.html.j2 #tvbox + site/chart.js",
+    "source": "templates/stock.html.j2 #tvbox + site/chart.js"
+  },
+  {
+    "section_id": "S.detail.momentum",
+    "id": "S.detail.momentum",
+    "label": "Momentum across timeframes",
+    "order": 5,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#panel_mtf",
+    "selector_requested": "#panel_mtf",
+    "match_count": 1,
+    "page_box": {
+      "x": 170,
+      "y": 1498,
+      "w": 1100,
+      "h": 228,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 170,
+      "y": 1498,
+      "w": 1100,
+      "h": 228
+    },
+    "viewport_height_footprint": 0.228,
+    "major_children": [
+      {
+        "tag": "h2",
+        "id": null,
+        "cls": "",
+        "text": "Momentum across timeframes"
+      },
+      {
+        "tag": "div",
+        "id": "r_mtf",
+        "cls": "",
+        "text": "DAILY RSI 59 neutral Stoch 98 overbought MACD ▲ bullish 3-DAY RSI 58 neutral Stoch 44 neut"
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "templates/stock.html.j2 #panel_mtf",
+    "source": "templates/stock.html.j2 #panel_mtf"
+  },
+  {
+    "section_id": "S.detail.evidence",
+    "id": "S.detail.evidence",
+    "label": "The evidence",
+    "order": 6,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#sv-evidence",
+    "selector_requested": "#sv-evidence",
+    "match_count": 1,
+    "page_box": {
+      "x": 170,
+      "y": 1741,
+      "w": 1100,
+      "h": 316,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 170,
+      "y": 1741,
+      "w": 1100,
+      "h": 316
+    },
+    "viewport_height_footprint": 0.316,
+    "major_children": [
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "sv-evidence-wrap",
+        "text": "THE EVIDENCE TREND Up · +44% vs 200-day Where price sits vs its 200-day average, and how s"
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "templates/stock.html.j2 #sv-evidence",
+    "source": "templates/stock.html.j2 #sv-evidence"
+  },
+  {
+    "section_id": "S.detail.outlook",
+    "id": "S.detail.outlook",
+    "label": "Outlook / AI view",
+    "order": 7,
+    "found": true,
+    "visible": false,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "UNRESOLVED",
+    "selector_used": "details.sv-group",
+    "selector_requested": "details.sv-group",
+    "match_count": 1,
+    "page_box": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 0,
+      "y": 0,
+      "w": 0,
+      "h": 0
+    },
+    "viewport_height_footprint": 0.0,
+    "major_children": [
+      {
+        "tag": "summary",
+        "id": null,
+        "cls": "",
+        "text": "Outlook & AI view前瞻与 AI 观点"
+      },
+      {
+        "tag": "div",
+        "id": "panel_anticipation",
+        "cls": "panel",
+        "text": "Anticipation — multi-horizon outcome cone预判 — 多周期结果锥 all assets →全部标的 → Stretch/Fragility拉"
+      },
+      {
+        "tag": "div",
+        "id": "ai-lean",
+        "cls": "panel",
+        "text": "AI judgment — accountable leanAI 研判 — 可问责判断"
+      },
+      {
+        "tag": "div",
+        "id": "stock-brief",
+        "cls": "panel",
+        "text": "AI brief — research contextAI 简报 — 研究背景"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "summary",
+        "id": null,
+        "text": "Outlook & AI view前瞻与 AI 观点"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "all assets →全部标的 →"
+      }
+    ],
+    "source_hint": "templates/stock.html.j2 details.sv-group Outlook",
+    "source": "templates/stock.html.j2 details.sv-group Outlook"
+  },
+  {
+    "section_id": "S.detail.fundamentals",
+    "id": "S.detail.fundamentals",
+    "label": "Fundamentals / financials",
+    "order": 8,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "details.sv-group",
+    "selector_requested": "details.sv-group",
+    "match_count": 1,
+    "page_box": {
+      "x": 170,
+      "y": 2063,
+      "w": 1100,
+      "h": 46,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 170,
+      "y": 2063,
+      "w": 1100,
+      "h": 46
+    },
+    "viewport_height_footprint": 0.046,
+    "major_children": [
+      {
+        "tag": "summary",
+        "id": null,
+        "cls": "",
+        "text": "Outlook & AI view前瞻与 AI 观点"
+      },
+      {
+        "tag": "div",
+        "id": "panel_anticipation",
+        "cls": "panel",
+        "text": "Anticipation — multi-horizon outcome cone预判 — 多周期结果锥 all assets →全部标的 → Stretch/Fragility拉"
+      },
+      {
+        "tag": "div",
+        "id": "ai-lean",
+        "cls": "panel",
+        "text": "AI judgment — accountable leanAI 研判 — 可问责判断"
+      },
+      {
+        "tag": "div",
+        "id": "stock-brief",
+        "cls": "panel",
+        "text": "AI brief — research contextAI 简报 — 研究背景"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "summary",
+        "id": null,
+        "text": "Outlook & AI view前瞻与 AI 观点"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "all assets →全部标的 →"
+      }
+    ],
+    "source_hint": "templates/stock.html.j2 details.sv-group Fundamentals",
+    "source": "templates/stock.html.j2 details.sv-group Fundamentals"
+  },
+  {
+    "section_id": "S.detail.options",
+    "id": "S.detail.options",
+    "label": "Options / positioning / ownership",
+    "order": 9,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "details.sv-group",
+    "selector_requested": "details.sv-group",
+    "match_count": 1,
+    "page_box": {
+      "x": 170,
+      "y": 2115,
+      "w": 1100,
+      "h": 46,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 170,
+      "y": 2115,
+      "w": 1100,
+      "h": 46
+    },
+    "viewport_height_footprint": 0.046,
+    "major_children": [
+      {
+        "tag": "summary",
+        "id": null,
+        "cls": "",
+        "text": "Outlook & AI view前瞻与 AI 观点"
+      },
+      {
+        "tag": "div",
+        "id": "panel_anticipation",
+        "cls": "panel",
+        "text": "Anticipation — multi-horizon outcome cone预判 — 多周期结果锥 all assets →全部标的 → Stretch/Fragility拉"
+      },
+      {
+        "tag": "div",
+        "id": "ai-lean",
+        "cls": "panel",
+        "text": "AI judgment — accountable leanAI 研判 — 可问责判断"
+      },
+      {
+        "tag": "div",
+        "id": "stock-brief",
+        "cls": "panel",
+        "text": "AI brief — research contextAI 简报 — 研究背景"
+      }
+    ],
+    "major_controls": [
+      {
+        "tag": "summary",
+        "id": null,
+        "text": "Outlook & AI view前瞻与 AI 观点"
+      },
+      {
+        "tag": "a",
+        "id": null,
+        "text": "all assets →全部标的 →"
+      }
+    ],
+    "source_hint": "templates/stock.html.j2 details.sv-group Options",
+    "source": "templates/stock.html.j2 details.sv-group Options"
+  },
+  {
+    "section_id": "S.detail.personality",
+    "id": "S.detail.personality",
+    "label": "Stock personality / trading behavior",
+    "order": 10,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#panel_personality",
+    "selector_requested": "#panel_personality",
+    "match_count": 1,
+    "page_box": {
+      "x": 170,
+      "y": 2161,
+      "w": 1100,
+      "h": 368,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 170,
+      "y": 2161,
+      "w": 1100,
+      "h": 368
+    },
+    "viewport_height_footprint": 0.368,
+    "major_children": [
+      {
+        "tag": "h2",
+        "id": null,
+        "cls": "",
+        "text": "How this stock trades"
+      },
+      {
+        "tag": "div",
+        "id": "r_personality",
+        "cls": "",
+        "text": "Archetype High-beta momentum Factor DNA quality_growth · mixed 2026-08-13 00:00:00 Chart p"
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "templates/stock.html.j2 #panel_personality (may be hidden)",
+    "source": "templates/stock.html.j2 #panel_personality (may be hidden)"
+  },
+  {
+    "section_id": "S.detail.calibration",
+    "id": "S.detail.calibration",
+    "label": "Calibration / trust",
+    "order": 11,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "#panel_cal",
+    "selector_requested": "#panel_cal",
+    "match_count": 1,
+    "page_box": {
+      "x": 170,
+      "y": 2545,
+      "w": 1100,
+      "h": 353,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 170,
+      "y": 2545,
+      "w": 1100,
+      "h": 353
+    },
+    "viewport_height_footprint": 0.353,
+    "major_children": [
+      {
+        "tag": "h2",
+        "id": null,
+        "cls": "",
+        "text": "How much to trust the state — measured 2000→2026 ?"
+      },
+      {
+        "tag": "div",
+        "id": null,
+        "cls": "tbl-scroll",
+        "text": "state samples up next month avg next month typical dip bad-case dip DOWNTREND · AVOID 1390"
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "templates/stock.html.j2 #panel_cal",
+    "source": "templates/stock.html.j2 #panel_cal"
+  },
+  {
+    "section_id": "S.detail.method",
+    "id": "S.detail.method",
+    "label": "Method / help area",
+    "order": 12,
+    "found": true,
+    "visible": true,
+    "resolution_status": "RESOLVED",
+    "geometry_status": "RESOLVED",
+    "selector_used": "p.sv-method",
+    "selector_requested": "p.sv-method",
+    "match_count": 1,
+    "page_box": {
+      "x": 172,
+      "y": 2914,
+      "w": 1096,
+      "h": 35,
+      "scrollX": 0,
+      "scrollY": 0
+    },
+    "viewport_box": {
+      "x": 172,
+      "y": 2914,
+      "w": 1096,
+      "h": 35
+    },
+    "viewport_height_footprint": 0.035,
+    "major_children": [
+      {
+        "tag": "span",
+        "id": null,
+        "cls": "l-en",
+        "text": "How to read this page: the verdict band is the one call; the timing line, fingerprint axes"
+      },
+      {
+        "tag": "span",
+        "id": null,
+        "cls": "l-zh",
+        "text": "如何阅读本页：结论条是唯一的判断；时机行、画像轴与依据栏是其背后的支撑读数；折叠区块收纳完整明细。本页所有内容仅供研究参考展示，并非个性化投资建议——仓位为风险预算参考，而非推荐。"
+      }
+    ],
+    "major_controls": [],
+    "source_hint": "templates/stock.html.j2 p.sv-method",
+    "source": "templates/stock.html.j2 p.sv-method"
+  }
+]

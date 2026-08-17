@@ -1,0 +1,368 @@
+[
+  {
+    "id": "I.detail.load",
+    "element_stable_id": "E.detail.decision",
+    "control": "page load",
+    "section": "hero",
+    "starting_state": "NAVIGATE",
+    "action": "goto stock.html#ONTO",
+    "expected_postcondition": {
+      "populated_or_locked": true
+    },
+    "observed_postcondition": {
+      "locked": false,
+      "tvbox": {
+        "w": 1058,
+        "h": 559
+      },
+      "title": "Stock analyzer — cycle & momentum"
+    },
+    "pass": true,
+    "attempt_status": "passed",
+    "resulting_state": "DETAIL_DEFAULT",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/stock.html#ONTO",
+      "session": "playwright-chrome",
+      "cookies_injected": true,
+      "baseline_state": "NAVIGATE"
+    },
+    "interaction_id": "I.detail.load",
+    "section_id": "hero",
+    "baseline_state": "NAVIGATE",
+    "expected_postconditions": {
+      "populated_or_locked": true
+    },
+    "observed_postconditions": {
+      "locked": false,
+      "tvbox": {
+        "w": 1058,
+        "h": 559
+      },
+      "title": "Stock analyzer — cycle & momentum"
+    },
+    "URL_before": null,
+    "URL_after": null,
+    "persistence": null,
+    "animation_evidence": null,
+    "side_effect_class": "READ_ONLY",
+    "screenshot_refs": []
+  },
+  {
+    "interaction_id": "I.detail.cycle",
+    "element_stable_id": "E.detail.cycle.summary",
+    "section_id": "S.detail.cycle",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/stock.html#ONTO",
+      "baseline_state": "DETAIL_DEFAULT",
+      "cookies_injected": true,
+      "fresh_baseline": true
+    },
+    "baseline_state": "DETAIL_DEFAULT",
+    "action": {
+      "type": "click",
+      "target": "details.sv-deep > summary"
+    },
+    "expected_postconditions": {
+      "open": true,
+      "expr": "details.sv-deep.open === true"
+    },
+    "URL_before": "https://www.mastermind-x.com/stock.html#ONTO",
+    "side_effect_class": "READ_ONLY",
+    "screenshot_refs": [
+      "ux-evidence/pages/stock-detail/screenshots/CYCLE_EXPANDED_1440x1000.png"
+    ],
+    "animation_evidence": null,
+    "persistence": "none",
+    "observed_postconditions": {
+      "found": true,
+      "open": true,
+      "match_count": 1,
+      "summary_text": "Cycle & timing detail"
+    },
+    "URL_after": "https://www.mastermind-x.com/stock.html#ONTO",
+    "url_changed": false,
+    "pass": true,
+    "attempt_status": "passed",
+    "resulting_state": "CYCLE_EXPANDED"
+  },
+  {
+    "id": "I.detail.chart_hover",
+    "element_stable_id": "E.detail.chart",
+    "control": "#tvbox plot hover",
+    "section": "chart",
+    "starting_state": "DETAIL_DEFAULT",
+    "action": "hover #tvbox at 72%,42% box={'x': 191, 'y': 903.640625, 'width': 1058, 'height': 559}",
+    "expected_postcondition": {
+      "plot_ge_200x120": true,
+      "hover_signal": true
+    },
+    "observed_postcondition": {
+      "ok": true,
+      "canvases": [
+        {
+          "w": 1004,
+          "h": 297,
+          "cw": 1004,
+          "ch": 297
+        },
+        {
+          "w": 1004,
+          "h": 297,
+          "cw": 1004,
+          "ch": 297
+        },
+        {
+          "w": 52,
+          "h": 297,
+          "cw": 52,
+          "ch": 297
+        },
+        {
+          "w": 52,
+          "h": 297,
+          "cw": 52,
+          "ch": 297
+        },
+        {
+          "w": 1004,
+          "h": 95,
+          "cw": 1004,
+          "ch": 95
+        },
+        {
+          "w": 1004,
+          "h": 95,
+          "cw": 1004,
+          "ch": 95
+        },
+        {
+          "w": 52,
+          "h": 95,
+          "cw": 52,
+          "ch": 95
+        },
+        {
+          "w": 52,
+          "h": 95,
+          "cw": 52,
+          "ch": 95
+        },
+        {
+          "w": 1004,
+          "h": 96,
+          "cw": 1004,
+          "ch": 96
+        },
+        {
+          "w": 1004,
+          "h": 96,
+          "cw": 1004,
+          "ch": 96
+        },
+        {
+          "w": 52,
+          "h": 96,
+          "cw": 52,
+          "ch": 96
+        },
+        {
+          "w": 52,
+          "h": 96,
+          "cw": 52,
+          "ch": 96
+        },
+        {
+          "w": 1004,
+          "h": 28,
+          "cw": 1004,
+          "ch": 28
+        },
+        {
+          "w": 1004,
+          "h": 28,
+          "cw": 1004,
+          "ch": 28
+        },
+        {
+          "w": 52,
+          "h": 28,
+          "cw": 52,
+          "ch": 28
+        }
+      ],
+      "anyTip": false,
+      "tooltip_text": null
+    },
+    "pass": false,
+    "attempt_status": "failed",
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/stock.html#ONTO",
+      "session": "playwright-chrome",
+      "cookies_injected": true,
+      "baseline_state": "DETAIL_DEFAULT"
+    },
+    "resulting_state": null,
+    "reason": "plot found but tooltip/crosshair not verified",
+    "interaction_id": "I.detail.chart_hover",
+    "section_id": "chart",
+    "baseline_state": "DETAIL_DEFAULT",
+    "expected_postconditions": {
+      "plot_ge_200x120": true,
+      "hover_signal": true
+    },
+    "observed_postconditions": {
+      "ok": true,
+      "canvases": [
+        {
+          "w": 1004,
+          "h": 297,
+          "cw": 1004,
+          "ch": 297
+        },
+        {
+          "w": 1004,
+          "h": 297,
+          "cw": 1004,
+          "ch": 297
+        },
+        {
+          "w": 52,
+          "h": 297,
+          "cw": 52,
+          "ch": 297
+        },
+        {
+          "w": 52,
+          "h": 297,
+          "cw": 52,
+          "ch": 297
+        },
+        {
+          "w": 1004,
+          "h": 95,
+          "cw": 1004,
+          "ch": 95
+        },
+        {
+          "w": 1004,
+          "h": 95,
+          "cw": 1004,
+          "ch": 95
+        },
+        {
+          "w": 52,
+          "h": 95,
+          "cw": 52,
+          "ch": 95
+        },
+        {
+          "w": 52,
+          "h": 95,
+          "cw": 52,
+          "ch": 95
+        },
+        {
+          "w": 1004,
+          "h": 96,
+          "cw": 1004,
+          "ch": 96
+        },
+        {
+          "w": 1004,
+          "h": 96,
+          "cw": 1004,
+          "ch": 96
+        },
+        {
+          "w": 52,
+          "h": 96,
+          "cw": 52,
+          "ch": 96
+        },
+        {
+          "w": 52,
+          "h": 96,
+          "cw": 52,
+          "ch": 96
+        },
+        {
+          "w": 1004,
+          "h": 28,
+          "cw": 1004,
+          "ch": 28
+        },
+        {
+          "w": 1004,
+          "h": 28,
+          "cw": 1004,
+          "ch": 28
+        },
+        {
+          "w": 52,
+          "h": 28,
+          "cw": 52,
+          "ch": 28
+        }
+      ],
+      "anyTip": false,
+      "tooltip_text": null
+    },
+    "URL_before": null,
+    "URL_after": null,
+    "persistence": null,
+    "animation_evidence": null,
+    "side_effect_class": "READ_ONLY",
+    "screenshot_refs": [
+      "ux-evidence/pages/stock-detail/screenshots/FAILED_detail_chart_hover_1440x1000.png"
+    ]
+  },
+  {
+    "id": "I.detail.tf_1w",
+    "element_stable_id": "E.detail.tf.1W",
+    "control": "Chart 1W",
+    "section": "chart",
+    "starting_state": "DETAIL_DEFAULT",
+    "action": "click",
+    "expected_postcondition": {
+      "state_name": "CHART_1W"
+    },
+    "preconditions": {
+      "url": "https://www.mastermind-x.com/stock.html#ONTO",
+      "session": "playwright-chrome",
+      "cookies_injected": true,
+      "baseline_state": "DETAIL_DEFAULT"
+    },
+    "url_before": "https://www.mastermind-x.com/stock.html#ONTO",
+    "observed_postcondition": {
+      "ok": true,
+      "className": "on",
+      "text": "1W",
+      "reason": null
+    },
+    "pass": true,
+    "url_after": "https://www.mastermind-x.com/stock.html#ONTO",
+    "url_changed": false,
+    "resulting_state": "CHART_1W",
+    "attempt_status": "passed",
+    "interaction_id": "I.detail.tf_1w",
+    "section_id": "chart",
+    "baseline_state": "DETAIL_DEFAULT",
+    "expected_postconditions": {
+      "state_name": "CHART_1W"
+    },
+    "observed_postconditions": {
+      "ok": true,
+      "className": "on",
+      "text": "1W",
+      "reason": null
+    },
+    "URL_before": "https://www.mastermind-x.com/stock.html#ONTO",
+    "URL_after": "https://www.mastermind-x.com/stock.html#ONTO",
+    "persistence": "none",
+    "animation_evidence": null,
+    "side_effect_class": "READ_ONLY",
+    "screenshot_refs": [
+      "ux-evidence/pages/stock-detail/screenshots/detail_chart_1w_1440x1000.png"
+    ]
+  }
+]

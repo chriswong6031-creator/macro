@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "interaction.schema.json",
+  "title": "Interaction record",
+  "type": "object",
+  "required": [
+    "interaction_id",
+    "element_stable_id",
+    "action",
+    "expected_postconditions",
+    "pass"
+  ],
+  "properties": {
+    "interaction_id": {"type": "string"},
+    "element_stable_id": {"type": "string"},
+    "section_id": {"type": ["string", "null"]},
+    "preconditions": {"type": "object"},
+    "baseline_state": {"type": ["string", "null"]},
+    "action": {},
+    "expected_postconditions": {},
+    "observed_postconditions": {},
+    "pass": {"type": "boolean"},
+    "attempt_status": {"type": "string"},
+    "resulting_state": {"type": ["string", "null"]},
+    "URL_before": {"type": ["string", "null"]},
+    "URL_after": {"type": ["string", "null"]},
+    "side_effect_class": {
+      "type": "string",
+      "enum": ["READ_ONLY", "LOCAL_DISPLAY_PREFERENCE", "PERSISTENT_MUTATION", "UNKNOWN"]
+    },
+    "screenshot_refs": {"type": "array", "items": {"type": "string"}}
+  }
+}

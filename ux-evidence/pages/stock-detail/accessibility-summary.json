@@ -1,0 +1,161 @@
+{
+  "headings": [
+    {
+      "role": "heading",
+      "name": "Onto Innovation (ONTO)",
+      "depth": 1,
+      "level": 1
+    },
+    {
+      "role": "heading",
+      "name": "Chart",
+      "depth": 1,
+      "level": 2
+    },
+    {
+      "role": "heading",
+      "name": "Momentum across timeframes",
+      "depth": 1,
+      "level": 2
+    },
+    {
+      "role": "heading",
+      "name": "How this stock trades",
+      "depth": 1,
+      "level": 2
+    },
+    {
+      "role": "heading",
+      "name": "How much to trust the state — measured 2000→2026 ?",
+      "depth": 1,
+      "level": 2
+    }
+  ],
+  "landmarks": [],
+  "controls": [
+    {
+      "role": "link",
+      "name": "MASTERMINDX — Home",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "United States ▾",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "China ▾",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "Hong Kong ▾",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "Canada ▾",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "International ▾",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "Other Assets ▾",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "Research ▾",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Search tickers",
+      "depth": 1
+    },
+    {
+      "role": "link",
+      "name": "Terminal",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Settings",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Toggle alert feed",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "1D",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "3D",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "1W",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "1M",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "EMA",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "RSI",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Stoch",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "MACD",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Stoch RSI",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Full screen",
+      "depth": 1
+    },
+    {
+      "role": "button",
+      "name": "Ask Mastermind",
+      "depth": 1
+    }
+  ],
+  "dialogs": [],
+  "anomalies": [],
+  "counts": {
+    "headings": 5,
+    "landmarks": 0,
+    "controls": 23,
+    "dialogs": 0,
+    "anomalies": 0
+  }
+}
