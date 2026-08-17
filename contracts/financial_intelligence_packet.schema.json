@@ -1,0 +1,468 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mastermind-x.com/contracts/financial_intelligence_packet.schema.json",
+  "title": "Financial intelligence packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "packet_id",
+    "content_sha256",
+    "entity",
+    "query",
+    "governance",
+    "periods",
+    "cells",
+    "evidence_cells",
+    "revisions",
+    "disclosure_changes",
+    "coverage",
+    "limitations",
+    "receipts",
+    "authority"
+  ],
+  "properties": {
+    "schema": {"const": "financial_intelligence_packet.v1"},
+    "packet_id": {"type": "string", "pattern": "^fip_[a-f0-9]{24}$"},
+    "content_sha256": {"$ref": "#/$defs/sha256"},
+    "built_at": {"$ref": "#/$defs/timestamp"},
+    "entity": {"$ref": "#/$defs/entity"},
+    "query": {"$ref": "#/$defs/query"},
+    "governance": {"$ref": "#/$defs/governance"},
+    "periods": {"type": "array", "items": {"$ref": "#/$defs/period"}},
+    "cells": {"type": "array", "items": {"$ref": "#/$defs/cell"}},
+    "evidence_cells": {"type": "array", "items": {"$ref": "#/$defs/cell"}},
+    "revisions": {"type": "array", "items": {"$ref": "#/$defs/revision"}},
+    "disclosure_changes": {"type": "array", "items": {"$ref": "#/$defs/disclosureChange"}},
+    "coverage": {"$ref": "#/$defs/coverage"},
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {"type": "string", "minLength": 1},
+      "uniqueItems": true
+    },
+    "receipts": {"$ref": "#/$defs/receipts"},
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["class", "display_only"],
+      "properties": {
+        "class": {"const": "context_only"},
+        "display_only": {"const": true}
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "nullableSha256": {
+      "anyOf": [
+        {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        {"type": "null"}
+      ]
+    },
+    "timestamp": {"type": "string", "format": "date-time", "pattern": "Z$"},
+    "nullableTimestamp": {"anyOf": [{"$ref": "#/$defs/timestamp"}, {"type": "null"}]},
+    "decimal": {"type": "string", "pattern": "^-?(0|[1-9][0-9]*)(\\.[0-9]+)?$"},
+    "nullableDecimal": {"anyOf": [{"$ref": "#/$defs/decimal"}, {"type": "null"}]},
+    "nonValueState": {"enum": ["missing", "unsupported", "not_evaluable", "not_applicable"]},
+    "entity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["entity_id", "cik", "ticker", "name", "identity_basis"],
+      "properties": {
+        "entity_id": {"type": "string", "minLength": 1},
+        "cik": {"type": "string", "pattern": "^[0-9]{10}$"},
+        "ticker": {"type": "string", "minLength": 1},
+        "name": {"type": "string", "minLength": 1},
+        "identity_basis": {"type": "string", "minLength": 1}
+      }
+    },
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "policy",
+        "source_event_cutoff",
+        "system_recorded_cutoff",
+        "requested_metrics",
+        "requested_periods",
+        "evaluation_mode"
+      ],
+      "properties": {
+        "policy": {"enum": ["as_reported", "latest_known_as_of", "latest_restated"]},
+        "source_event_cutoff": {"$ref": "#/$defs/timestamp"},
+        "system_recorded_cutoff": {"$ref": "#/$defs/timestamp"},
+        "requested_metrics": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "requested_periods": {
+          "type": "array",
+          "minItems": 1,
+          "items": {"type": "string", "minLength": 1}
+        },
+        "evaluation_mode": {"enum": ["historical_replay", "retrospective_research"]}
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_registry_version",
+        "metric_registry_digest",
+        "query_engine_version",
+        "packet_builder_version",
+        "packet_builder_digest"
+      ],
+      "properties": {
+        "metric_registry_version": {"type": "string", "minLength": 1},
+        "metric_registry_digest": {"$ref": "#/$defs/sha256"},
+        "query_engine_version": {"type": "string", "minLength": 1},
+        "packet_builder_version": {"const": "financial_intelligence_packet.builder/v1"},
+        "packet_builder_digest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "period": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "end", "period_id"],
+      "properties": {
+        "period_id": {"type": "string", "minLength": 1},
+        "kind": {"enum": ["duration", "instant"]},
+        "start": {"type": ["string", "null"], "format": "date"},
+        "end": {"type": "string", "format": "date"},
+        "fiscal_year": {"type": ["integer", "null"]},
+        "fiscal_quarter": {"type": ["integer", "null"]},
+        "calendar_kind": {"type": "string"},
+        "fiscal_year_weeks": {"type": ["integer", "null"]},
+        "week_count": {"type": ["integer", "null"]},
+        "inferred_week_count": {"type": ["integer", "null"]},
+        "semantics": {"type": "array", "items": {"type": "string"}},
+        "label": {"type": ["string", "null"]}
+      }
+    },
+    "cell": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "cell_id",
+        "metric_id",
+        "label",
+        "statement_family",
+        "period",
+        "value",
+        "non_value_state",
+        "unit",
+        "provenance_kind",
+        "source_occurrence_ids",
+        "accession",
+        "concept",
+        "taxonomy",
+        "source_url",
+        "source_digest",
+        "source_event_time",
+        "system_recorded_time",
+        "mapping_rule_id",
+        "mapping_rule_digest",
+        "formula_rule_id",
+        "formula_rule_digest",
+        "dependency_cell_ids",
+        "quality_state",
+        "coverage_state",
+        "reason"
+      ],
+      "properties": {
+        "cell_id": {"type": "string", "minLength": 1},
+        "metric_id": {"type": "string", "minLength": 1},
+        "label": {"type": "string", "minLength": 1},
+        "statement_family": {"type": "string", "minLength": 1},
+        "period": {"$ref": "#/$defs/periodObject"},
+        "value": {"$ref": "#/$defs/nullableDecimal"},
+        "non_value_state": {"anyOf": [{"$ref": "#/$defs/nonValueState"}, {"type": "null"}]},
+        "unit": {"type": ["string", "null"]},
+        "provenance_kind": {"enum": ["direct", "formula", "opaque", "none"]},
+        "source_occurrence_ids": {"type": "array", "items": {"type": "string"}},
+        "accession": {"type": ["string", "null"]},
+        "concept": {"type": ["string", "null"]},
+        "taxonomy": {"type": ["string", "null"]},
+        "source_url": {"type": ["string", "null"]},
+        "source_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "source_event_time": {"$ref": "#/$defs/nullableTimestamp"},
+        "system_recorded_time": {"$ref": "#/$defs/nullableTimestamp"},
+        "mapping_rule_id": {"type": ["string", "null"]},
+        "mapping_rule_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "formula_rule_id": {"type": ["string", "null"]},
+        "formula_rule_digest": {"anyOf": [{"$ref": "#/$defs/sha256"}, {"type": "null"}]},
+        "dependency_cell_ids": {"type": "array", "items": {"type": "string"}},
+        "quality_state": {"enum": ["valued", "missing", "unsupported", "not_evaluable", "not_applicable"]},
+        "coverage_state": {
+          "enum": [
+            "source_trace_complete",
+            "source_trace_incomplete",
+            "unmapped",
+            "not_applicable_period"
+          ]
+        },
+        "reason": {"type": ["string", "null"]}
+      },
+      "oneOf": [
+        {
+          "title": "valued_cell",
+          "properties": {
+            "value": {"$ref": "#/$defs/decimal"},
+            "non_value_state": {"type": "null"}
+          },
+          "required": ["value", "non_value_state"]
+        },
+        {
+          "title": "non_valued_cell",
+          "properties": {
+            "value": {"type": "null"},
+            "non_value_state": {"$ref": "#/$defs/nonValueState"}
+          },
+          "required": ["value", "non_value_state"]
+        }
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "value": {"$ref": "#/$defs/decimal"},
+              "provenance_kind": {"const": "direct"}
+            },
+            "required": ["value", "provenance_kind"]
+          },
+          "then": {
+            "properties": {
+              "accession": {"type": "string", "minLength": 1},
+              "source_occurrence_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              },
+              "source_digest": {"$ref": "#/$defs/sha256"},
+              "mapping_rule_id": {"type": "string", "minLength": 1},
+              "mapping_rule_digest": {"$ref": "#/$defs/sha256"}
+            },
+            "required": [
+              "accession",
+              "source_occurrence_ids",
+              "source_digest",
+              "mapping_rule_id",
+              "mapping_rule_digest"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "value": {"$ref": "#/$defs/decimal"},
+              "provenance_kind": {"const": "formula"}
+            },
+            "required": ["value", "provenance_kind"]
+          },
+          "then": {
+            "properties": {
+              "formula_rule_id": {"type": "string", "minLength": 1},
+              "formula_rule_digest": {"$ref": "#/$defs/sha256"},
+              "dependency_cell_ids": {
+                "type": "array",
+                "minItems": 1,
+                "items": {"type": "string", "minLength": 1}
+              }
+            },
+            "required": [
+              "formula_rule_id",
+              "formula_rule_digest",
+              "dependency_cell_ids"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {"value": {"$ref": "#/$defs/decimal"}},
+            "required": ["value"]
+          },
+          "then": {
+            "properties": {"provenance_kind": {"enum": ["direct", "formula"]}}
+          }
+        }
+      ]
+    },
+    "periodObject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "end"],
+      "properties": {
+        "kind": {"enum": ["duration", "instant"]},
+        "start": {"type": ["string", "null"], "format": "date"},
+        "end": {"type": "string", "format": "date"},
+        "fiscal_year": {"type": ["integer", "null"]},
+        "fiscal_quarter": {"type": ["integer", "null"]},
+        "calendar_kind": {"type": "string"},
+        "fiscal_year_weeks": {"type": ["integer", "null"]},
+        "week_count": {"type": ["integer", "null"]},
+        "inferred_week_count": {"type": ["integer", "null"]},
+        "semantics": {"type": "array", "items": {"type": "string"}},
+        "label": {"type": ["string", "null"]}
+      }
+    },
+    "revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "metric_id",
+        "period",
+        "original_value",
+        "revised_value",
+        "original_accession",
+        "revised_accession",
+        "original_source_event_time",
+        "original_recorded_time",
+        "revised_source_event_time",
+        "revised_recorded_time",
+        "absolute_delta",
+        "percentage_delta",
+        "visible_under_selected_policy_and_cutoffs",
+        "used_as_selected_value",
+        "uses_later_restatement",
+        "cell_id",
+        "original_occurrence_id",
+        "revised_occurrence_id"
+      ],
+      "properties": {
+        "metric_id": {"type": "string", "minLength": 1},
+        "period": {"$ref": "#/$defs/periodObject"},
+        "original_value": {"$ref": "#/$defs/nullableDecimal"},
+        "revised_value": {"$ref": "#/$defs/nullableDecimal"},
+        "original_accession": {"type": "string", "minLength": 1},
+        "revised_accession": {"type": "string", "minLength": 1},
+        "original_source_event_time": {"$ref": "#/$defs/timestamp"},
+        "original_recorded_time": {"$ref": "#/$defs/timestamp"},
+        "revised_source_event_time": {"$ref": "#/$defs/timestamp"},
+        "revised_recorded_time": {"$ref": "#/$defs/timestamp"},
+        "absolute_delta": {"$ref": "#/$defs/nullableDecimal"},
+        "percentage_delta": {"$ref": "#/$defs/nullableDecimal"},
+        "visible_under_selected_policy_and_cutoffs": {"type": "boolean"},
+        "used_as_selected_value": {"type": "boolean"},
+        "uses_later_restatement": {"type": "boolean"},
+        "cell_id": {"type": ["string", "null"]},
+        "original_occurrence_id": {"type": "string", "minLength": 1},
+        "revised_occurrence_id": {"type": "string", "minLength": 1}
+      }
+    },
+    "disclosureChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "disclosure_family",
+        "prior_accession",
+        "current_accession",
+        "change_type",
+        "title",
+        "summary",
+        "coverage",
+        "authority",
+        "source_receipts"
+      ],
+      "properties": {
+        "disclosure_family": {"type": "string", "minLength": 1},
+        "prior_accession": {"type": "string", "minLength": 1},
+        "current_accession": {"type": "string", "minLength": 1},
+        "change_type": {"type": "string", "minLength": 1},
+        "title": {"type": "string", "minLength": 1},
+        "summary": {"type": "string", "minLength": 1},
+        "coverage": {"type": "string", "minLength": 1},
+        "authority": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["class", "display_only"],
+          "properties": {
+            "class": {"const": "context_only"},
+            "display_only": {"const": true}
+          }
+        },
+        "source_receipts": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requested_metrics",
+        "valued_metrics",
+        "missing_metrics",
+        "unsupported_metrics",
+        "direct_cells",
+        "formula_cells",
+        "evidence_cells",
+        "formula_evidence_closed",
+        "periods_requested",
+        "periods_returned",
+        "source_trace_complete_count",
+        "governance_trace_complete_count",
+        "revision_coverage",
+        "disclosure_coverage_state",
+        "unmapped_extension_concept_count",
+        "unmapped_extension_concepts"
+      ],
+      "properties": {
+        "requested_metrics": {"type": "array", "items": {"type": "string"}},
+        "valued_metrics": {"type": "array", "items": {"type": "string"}},
+        "missing_metrics": {"type": "array", "items": {"type": "string"}},
+        "unsupported_metrics": {"type": "array", "items": {"type": "string"}},
+        "direct_cells": {"type": "integer", "minimum": 0},
+        "formula_cells": {"type": "integer", "minimum": 0},
+        "evidence_cells": {"type": "integer", "minimum": 0},
+        "formula_evidence_closed": {"const": true},
+        "periods_requested": {"type": "integer", "minimum": 0},
+        "periods_returned": {"type": "integer", "minimum": 0},
+        "source_trace_complete_count": {"type": "integer", "minimum": 0},
+        "governance_trace_complete_count": {"type": "integer", "minimum": 0},
+        "revision_coverage": {"type": "integer", "minimum": 0},
+        "disclosure_coverage_state": {"enum": ["not_supplied", "empty", "present"]},
+        "unmapped_extension_concept_count": {"type": "integer", "minimum": 0},
+        "unmapped_extension_concepts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["concept_qname", "occurrence_id", "accession", "value", "mapped"],
+            "properties": {
+              "concept_qname": {"type": "string", "minLength": 1},
+              "occurrence_id": {"type": "string", "minLength": 1},
+              "accession": {"type": "string", "minLength": 1},
+              "value": {"$ref": "#/$defs/nullableDecimal"},
+              "mapped": {"const": false}
+            }
+          }
+        }
+      }
+    },
+    "receipts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "filing_package_fixture_sha256",
+        "companyfacts_witness_sha256",
+        "submissions_witness_sha256",
+        "metric_registry_digest",
+        "packet_builder_digest",
+        "query_request_digest",
+        "source_receipt_count",
+        "governance_receipt_count"
+      ],
+      "properties": {
+        "filing_package_fixture_sha256": {"$ref": "#/$defs/nullableSha256"},
+        "companyfacts_witness_sha256": {"$ref": "#/$defs/nullableSha256"},
+        "submissions_witness_sha256": {"$ref": "#/$defs/nullableSha256"},
+        "metric_registry_digest": {"$ref": "#/$defs/sha256"},
+        "packet_builder_digest": {"$ref": "#/$defs/sha256"},
+        "query_request_digest": {"$ref": "#/$defs/sha256"},
+        "source_receipt_count": {"type": "integer", "minimum": 0},
+        "governance_receipt_count": {"type": "integer", "minimum": 0}
+      }
+    }
+  }
+}
