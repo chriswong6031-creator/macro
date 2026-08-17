@@ -2024,7 +2024,7 @@ def _start_control_clocks_for(new_rows: Iterable[dict],
 
 
 def register(claim: dict, root: Path | str | None = None,
-             *, dedupe: bool = True) -> dict:
+             *, dedupe: bool = True, today: date | None = None) -> dict:
     """Register ONE claim. Validates against the schema, stamps `claim_id`,
     `timestamp`, and `status`, then appends to data/qledger/claims.jsonl.
 
@@ -2057,12 +2057,12 @@ def register(claim: dict, root: Path | str | None = None,
     # P0d C3.1: the control evidence clock starts HERE, on the newly stored row
     # only — a dedupe hit above returns before this, so re-registering a claim can
     # never restart or re-stamp a clock.
-    _start_control_clocks_for([stored], root)
+    _start_control_clocks_for([stored], root, today=today)
     return stored
 
 
 def register_batch(claims: Iterable[dict], root: Path | str | None = None,
-                   *, dedupe: bool = True) -> list[dict]:
+                   *, dedupe: bool = True, today: date | None = None) -> list[dict]:
     """Register MANY claims with ONE store read and ONE append write
     (§5.1 sub-task 3 / §5.2 — required before any volume increase).
 
@@ -2112,7 +2112,7 @@ def register_batch(claims: Iterable[dict], root: Path | str | None = None,
                 fh.write(json.dumps(row, ensure_ascii=False, default=_json_default) + "\n")
         # P0d C3.1: NEW rows only. A batch that deduped entirely against the
         # store appends nothing and starts nothing.
-        _start_control_clocks_for(new_rows, root)
+        _start_control_clocks_for(new_rows, root, today=today)
     return results
 
 
