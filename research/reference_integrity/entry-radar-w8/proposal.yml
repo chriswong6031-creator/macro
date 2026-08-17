@@ -2,7 +2,7 @@ schema: mastermind.rig_proposal.v1
 reference_id: entry-radar-w8
 
 proposed_artifact:
-  frozen_sha: 9c8990daa45827938cb25fada61a906a15847c4e
+  frozen_sha: a8c763dc3dea094fb7c3201e5c3953b921b45464
   paths:
     - mockups/refs/entry_radar/index.html
     - mockups/refs/entry_radar/radar.css
