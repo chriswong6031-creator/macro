@@ -1027,6 +1027,29 @@
   .pbf-live { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
               overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; border: 0; }
 
+  /* ---- tier gate (docs/TIER_PREVIEW_PATTERN.md) — preview shell only; hydration
+     removes every trace. Controls are baked FULL and marked inert (never omitted —
+     the entitled viewer hydrates into the same DOM and would otherwise get no
+     filters), per the pattern doc's "Controls" section. */
+  .pbf-bar.gated { opacity: .45; pointer-events: none; user-select: none; }
+  .us-gate-note { display: flex; align-items: flex-start; gap: 8px; margin: 2px 0 10px;
+             padding: 10px 13px; border-radius: 11px; font-size: 12px; line-height: 1.5;
+             color: var(--muted); background: color-mix(in srgb, var(--link) 7%, transparent);
+             border: 1px solid color-mix(in srgb, var(--link) 20%, transparent); }
+  .us-gate-note svg { width: 13px; height: 13px; flex: none; margin-top: 2px; color: var(--link); }
+  .us-tier-wall { margin: 10px 0 4px; border-radius: 16px; border: 1px solid var(--line);
+             background: var(--panel); padding: 22px 24px 20px; text-align: center; }
+  .us-tw-h { font-size: 17px; font-weight: 800; letter-spacing: -.01em; color: var(--text); margin-bottom: 8px; }
+  .us-tw-p { font-size: 12.5px; line-height: 1.55; color: var(--muted); max-width: 440px; margin: 0 auto 16px; }
+  .us-tw-acts { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .us-tw-btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 24px;
+             border-radius: 11px; text-decoration: none; font-size: 13px; font-weight: 700; color: #fff;
+             background: linear-gradient(135deg, var(--link), #8b5cf6); }
+  .us-tw-note { font-size: 10.5px; color: var(--faint); }
+  .us-tw-signed { margin-top: 10px; font-size: 11.5px; }
+  .us-tw-signed a { color: var(--ink-link, var(--link)); text-decoration: none;
+             border-bottom: 1px solid color-mix(in srgb, var(--link) 40%, transparent); }
+
   /* filter visibility. The hide half and the reveal half target DISJOINT sets
      (`:not([data-stage=X])` vs `[data-stage=X]`), so they never fight on specificity.
      The reveal half exists because .sm-hidden is `display:none!important` — without
