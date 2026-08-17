@@ -68,4 +68,23 @@ Generic rows (“search”, “AI”, “graphs”) are forbidden. Each row is o
 | DEFER | Supplier BOM graphs, expert networks, licensed estimates until a named license exists. |
 | REJECT | GovCon CRM, proposal, teaming, bidder pipeline, and any “defense score.” |
 
-**First three jobs the current entitled page fails and D1 may rescue without new sources:** (1) Candidate Radar rehydrate after site_full 200; (2) honest budget-missing state / P-1 graph; (3) stop membership copy on an already-entitled filmstrip. Those are product-rescue, not benchmark clones.
+**First three jobs the current entitled page fails and D1 may rescue without new sources:** (1) Candidate Radar rehydrate after site_full 200; (2) honest budget-missing state (typed failure only — not a P-1 collector); (3) stop membership copy on an already-entitled filmstrip. Those are product-rescue, not benchmark clones.
+
+## B6. Reproducible evidence receipts (2026-08-17)
+
+Classification: **OBSERVED** = this session or the entitled 2026-08-17 census hit the live surface. **MARKETING** = vendor public page / commonly described job, not a paid trial. **OFFICIAL** = `.gov` page fetched or API probed. No proprietary UI was copied.
+
+| Row | Date | URL / artifact | Class | What was actually seen | What was not seen |
+|---|---|---|---|---|---|
+| Live GovRev desk | 2026-08-17T04:39Z | `https://www.mastermind-x.com/government_revenue.html` | OBSERVED | entitled Changes 500; Radar overlay lock; Budget 0; SAM 0 | paid competitor products |
+| USAspending transactions API | 2026-08-17 | `https://api.usaspending.gov/api/v2/transactions/` | OFFICIAL | GET returns **405 Method Not Allowed** (POST-only endpoint is live). P00032 previously POSTed in the golden lineage | bulk download completeness |
+| DoD Comptroller P-1/R-1 | 2026-08-17 | `https://comptroller.defense.gov/Budget-Materials/` | OFFICIAL | FY2027 War Budget Materials page lists P-1, P-1R, R-1 PDFs | parsed PE graph (ours is missing) |
+| SAM.gov | 2026-08-17 | HEAD `latest.json` `freshness.opportunities.status=unavailable` | OBSERVED (our rail) | typed unavailable; 0 records_visible | SAM public search UI this session |
+| DSCA 36(b) | — | `https://www.dsca.mil/` (public notices; not fetched this close) | MARKETING/OFFICIAL unverified this close | job exists as Congressional notification | stage≠sale not re-probed 2026-08-17 |
+| GAO | — | `https://www.gao.gov/` | OFFICIAL home (not a specific docket this close) | public docket/PDF job | Nunn-McCurdy PDF bytes this close |
+| AlphaSense / BamSEC / Quartr / Koyfin / TIKR | — | public marketing sites | MARKETING | investor jobs in B2 are **job descriptions**, not inspected paid UX | any licensed corpus, screenshot, or API |
+| Janes / Aviation Week / Govini | — | vendor sites | MARKETING | LICENSE/DEFER stands | paid ontology |
+| Bloomberg/FactSet | — | publicly described terminal jobs | MARKETING | event-study job only | any terminal function copied |
+
+**Gate 3 close rule:** GovTribe remains REJECT as north star. Rows above are enough to reproduce the *jobs* and the *live substrate failure*, not to claim we used those products.
+
