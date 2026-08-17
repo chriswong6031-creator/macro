@@ -248,6 +248,40 @@ The latest repository movement increases, rather than reduces, the need for
 BCI-0B. There are now more reusable owners and contracts to reconcile. Do not skip
 archaeology and hand a worker the full BCI wave list.
 
+## Amendment G — producer-first execution order
+
+The original masterplan listed the prospective BCI market-episode packet before the
+BioCatalyst-owned machine event projection. That order cannot support real production
+proof: a decision-time episode needs a real producer-owned event/revision input.
+
+The binding execution order is now:
+
+```text
+BCI-1  BioCatalyst-owned machine event projection
+  ↓
+BCI-2  prospective biopharma market episode + outcome sidecar
+  ↓
+BCI-3  commissioned event-study vertical
+```
+
+BCI-1 must be independently useful through a real immutable projection plus an
+inspection/verifier consumer. BCI-2 must consume those exact bytes. Neither may use
+the paid user API as a machine transport.
+
+## Amendment H — contradiction authority precedes shared current context
+
+BCI's legitimate context-only contradictions could otherwise change Portfolio
+candidacy or shrink indirectly through generic `graph_conflicts` counts. Therefore:
+
+- BCI-0D is not a late optional polish;
+- BCI-4 shared current context depends on BCI-0D;
+- before BCI-0D, BCI product/research may display local typed contradictions, but
+  no decision-visible shared contradiction edge or aggregate may reach Portfolio;
+- the fence must bind exact eligible action and promotion receipt, not merely an
+  all-false authority block on the source packet.
+
+The durable workstream is the binding wave/dependency record.
+
 ---
 
 # 3. Concurrency state now
@@ -261,7 +295,7 @@ archaeology and hand a worker the full BCI wave list.
 | Defense | D0R merged; D1 remains independent and separately authorized |
 | Earnings | Production recovery and E1 workspace merged; continue its own program |
 | Seasonality | Freeze broad expansion; inventory and rebase under BCI |
-| Neural Web/Portfolio authority | Separate BCI-0D hardening before decision-visible contradictions |
+| Neural Web/Portfolio authority | BCI-0D must precede shared decision-visible BCI contradictions |
 | Prophet | Continue its existing fusion program; BCI enters only as future F4 shadow evidence |
 
 ---
