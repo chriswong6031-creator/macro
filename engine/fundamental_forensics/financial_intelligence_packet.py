@@ -9,7 +9,17 @@ from __future__ import annotations
 import datetime as datetime_module
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
-from decimal import Decimal, InvalidOperation
+from decimal import (
+    Context,
+    Decimal,
+    DivisionByZero,
+    InvalidOperation,
+    Overflow,
+    ROUND_HALF_EVEN,
+    Subnormal,
+    Underflow,
+    localcontext,
+)
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -25,6 +35,12 @@ from .query import (
     CellNode,
     CellState,
     FilingMetadata,
+    FORMULA_DECIMAL_EMAX,
+    FORMULA_DECIMAL_EMIN,
+    FORMULA_DECIMAL_PRECISION,
+    HARD_MAX_CELLS,
+    HARD_MAX_METRICS,
+    HARD_MAX_PERIODS,
     MetricCell,
     PeriodRequest,
     ProvenanceKind,
@@ -33,15 +49,11 @@ from .query import (
     UnsupportedMetricError,
 )
 from .raw_ledger import (
-    FactContext,
     FactEventType,
-    FactUnit,
     RawFactLedger,
     RawFactOccurrence,
-    SourceIdentity,
     canonical_json,
     decimal_text,
-    make_raw_fact,
     parse_utc,
     stable_id,
     utc_text,
@@ -77,8 +89,44 @@ GOLDEN_SOURCE_CUTOFF = "2025-12-31T23:59:59Z"
 GOLDEN_RECORDED_CUTOFF = "2026-08-05T12:00:02Z"
 GOLDEN_POLICY = BitemporalPolicy.LATEST_KNOWN_AS_OF
 
-_USD = FactUnit("USD", ["iso4217:USD"])
-_PURE = FactUnit("xbrli:pure", ["xbrli:pure"])
+# Request bounds reuse the query kernel's synchronous contract. A packet is
+# one entity × a small metric/period cross-product, not a bulk export job.
+PACKET_MAX_METRICS = HARD_MAX_METRICS
+PACKET_MAX_PERIODS = HARD_MAX_PERIODS
+PACKET_MAX_REQUEST_CELLS = PACKET_MAX_METRICS * PACKET_MAX_PERIODS
+# Evidence amplification: a legal request must not explode into an arbitrary
+# graph once formulas recurse. The 50-metric catalog is shallow; these
+# ceilings fail closed on pathological/malicious graphs rather than matching
+# the single-cell receipt limits (HARD_MAX_RECEIPT_NODES = 50).
+PACKET_MAX_EVIDENCE_NODES = 2_000
+PACKET_MAX_EVIDENCE_EDGES = 8_000
+PACKET_MAX_FORMULA_DEPTH = 16
+PACKET_MAX_FORMULA_FANOUT = 16
+PACKET_MAX_REVISIONS = 2_000
+PACKET_MAX_UNMAPPED_EXTENSIONS = 256
+PACKET_MAX_TOTAL_CELLS = PACKET_MAX_REQUEST_CELLS + PACKET_MAX_EVIDENCE_NODES
+PACKET_MAX_SERIALIZED_BYTES = 2 * 1024 * 1024
+PACKET_MAX_IDENTIFIER_CHARS = 256
+PACKET_MAX_REASON_CHARS = 1_024
+PACKET_MAX_LIMITATIONS = 32
+HARD_MAX_FILING_PACKAGE_FIXTURE_BYTES = 8 * 1024 * 1024
+HARD_MAX_FIXTURE_JSON_DEPTH = 32
+FIXTURE_ROOT_FIELDS = frozenset({"schema", "identity", "ledger", "filing_metadata"})
+IDENTITY_FIELDS = frozenset(
+    {"entity_id", "cik", "ticker", "name", "identity_basis", "authority", "synthetic"}
+)
+REPORTED_REVISION_EVENT_TYPES = frozenset(
+    {
+        FactEventType.AMENDMENT,
+        FactEventType.COMPARATIVE_RECAST,
+        FactEventType.RESTATEMENT,
+        FactEventType.SOURCE_CORRECTION,
+        FactEventType.WITHDRAWN,
+    }
+)
+EVALUATION_MODES = frozenset({"historical_replay", "retrospective_research"})
+_CIK_RE = re.compile(r"^[0-9]{10}$")
+_TICKER_RE = re.compile(r"^[A-Z0-9][A-Z0-9.\-]{0,15}$")
 
 
 @dataclass(frozen=True)
@@ -89,31 +137,92 @@ class EntityInput:
     name: str
     identity_basis: str
 
+    def __post_init__(self) -> None:
+        entity_id = _bounded_identifier(self.entity_id, field_name="entity.entity_id")
+        cik = _bounded_identifier(self.cik, field_name="entity.cik")
+        if not _CIK_RE.fullmatch(cik):
+            raise ValueError("entity.cik must be a 10-digit CIK")
+        ticker = _bounded_identifier(self.ticker, field_name="entity.ticker").upper()
+        if not _TICKER_RE.fullmatch(ticker):
+            raise ValueError("entity.ticker is not a bounded ticker")
+        name = _bounded_identifier(self.name, field_name="entity.name", maximum=PACKET_MAX_REASON_CHARS)
+        identity_basis = _bounded_identifier(self.identity_basis, field_name="entity.identity_basis")
+        if entity_id != cik:
+            raise ValueError("entity.entity_id must equal entity.cik")
+        object.__setattr__(self, "entity_id", entity_id)
+        object.__setattr__(self, "cik", cik)
+        object.__setattr__(self, "ticker", ticker)
+        object.__setattr__(self, "name", name)
+        object.__setattr__(self, "identity_basis", identity_basis)
+
 
 @dataclass(frozen=True)
 class PacketQueryRequest:
+    """Canonical packet request.
+
+    Caller order of unique metrics and unique semantic periods is preserved
+    and is hashed into ``query_request_digest``. Duplicate metric IDs,
+    duplicate semantic periods (including the same interval under different
+    labels), and empty identifiers are rejected. Order is therefore a
+    declared request property, not an accident of dict/set iteration.
+    Evaluation mode is a label; it never bypasses the two knowledge cutoffs.
+    """
+
     policy: QueryPolicy
     metrics: tuple[str, ...]
     periods: tuple[PeriodRequest, ...]
     evaluation_mode: str | None = None
 
     def __post_init__(self) -> None:
-        metrics = tuple(str(item).strip() for item in self.metrics if str(item).strip())
+        if not isinstance(self.policy, QueryPolicy):
+            raise TypeError("query_request.policy must be a QueryPolicy")
+        metrics = tuple(
+            _bounded_identifier(item, field_name="query_request.metric_id")
+            for item in self.metrics
+        )
         if not metrics:
             raise ValueError("query_request.metrics is required")
+        if len(metrics) > PACKET_MAX_METRICS:
+            raise ValueError(
+                f"query_request.metrics exceeds PACKET_MAX_METRICS {PACKET_MAX_METRICS}"
+            )
+        seen_metrics: set[str] = set()
+        for metric_id in metrics:
+            if metric_id in seen_metrics:
+                raise ValueError(f"duplicate metric_id in query_request: {metric_id}")
+            seen_metrics.add(metric_id)
         periods = tuple(self.periods)
         if not periods:
             raise ValueError("query_request.periods is required")
+        if len(periods) > PACKET_MAX_PERIODS:
+            raise ValueError(
+                f"query_request.periods exceeds PACKET_MAX_PERIODS {PACKET_MAX_PERIODS}"
+            )
         if not all(isinstance(period, PeriodRequest) for period in periods):
             raise TypeError("query_request.periods must be PeriodRequest values")
+        seen_semantic: set[tuple[Any, ...]] = set()
+        seen_labels: set[str] = set()
+        for period in periods:
+            semantic = period_semantic_key(period)
+            if semantic in seen_semantic:
+                raise ValueError("duplicate semantic period in query_request")
+            seen_semantic.add(semantic)
+            if period.label:
+                label = _bounded_identifier(period.label, field_name="query_request.period_label")
+                if label in seen_labels:
+                    raise ValueError(f"duplicate period label in query_request: {label}")
+                seen_labels.add(label)
+        cell_count = len(metrics) * len(periods)
+        if cell_count > PACKET_MAX_REQUEST_CELLS:
+            raise ValueError(
+                "query_request metric × period cross-product exceeds "
+                f"PACKET_MAX_REQUEST_CELLS {PACKET_MAX_REQUEST_CELLS}"
+            )
         mode = self.evaluation_mode
         if mode is None:
-            mode = (
-                "retrospective_research"
-                if self.policy.selection is BitemporalPolicy.LATEST_RESTATED
-                else "historical_replay"
-            )
-        if mode not in {"historical_replay", "retrospective_research"}:
+            mode = "historical_replay"
+        mode = str(mode).strip()
+        if mode not in EVALUATION_MODES:
             raise ValueError(f"unsupported evaluation_mode: {mode}")
         object.__setattr__(self, "metrics", metrics)
         object.__setattr__(self, "periods", periods)
@@ -245,6 +354,162 @@ def validate_packet(packet: Mapping[str, Any], schema: Mapping[str, Any]) -> Non
         first = errors[0]
         path = ".".join(str(part) for part in first.path) or "<root>"
         raise ValueError(f"packet schema invalid at {path}: {first.message}") from first
+    validate_packet_semantics(packet)
+
+
+def validate_packet_semantics(packet: Mapping[str, Any]) -> None:
+    """Packet-internal semantic validation. Does not consult a ledger or registry."""
+    if packet.get("schema") != PACKET_SCHEMA:
+        raise ValueError("packet schema identity is not financial_intelligence_packet.v1")
+    digest = packet_digest(packet)
+    if packet.get("content_sha256") != digest:
+        raise ValueError("packet content_sha256 does not match canonical packet digest")
+    if packet.get("packet_id") != f"fip_{digest[:24]}":
+        raise ValueError("packet_id does not match content_sha256 prefix")
+    if packet.get("authority") != {"class": "context_only", "display_only": True}:
+        raise ValueError("packet authority must remain context_only/display_only")
+    cells = list(packet.get("cells") or [])
+    evidence_cells = list(packet.get("evidence_cells") or [])
+    _assert_unique_sorted_ids(cells, field_name="cells")
+    _assert_unique_sorted_ids(evidence_cells, field_name="evidence_cells")
+    requested_ids = {cell["cell_id"] for cell in cells}
+    evidence_ids = {cell["cell_id"] for cell in evidence_cells}
+    overlap = requested_ids & evidence_ids
+    if overlap:
+        raise ValueError("requested/evidence cell IDs overlap")
+    requested_metrics = list(packet.get("query", {}).get("requested_metrics") or [])
+    unrequested = sorted(
+        {cell["metric_id"] for cell in cells if cell["metric_id"] not in set(requested_metrics)}
+    )
+    if unrequested:
+        raise ValueError("unrequested metric in cells")
+    _assert_canonical_collection_order(packet)
+    assert_formula_evidence_closed(cells, evidence_cells)
+    _assert_evidence_relevance(cells, evidence_cells)
+    coverage = packet.get("coverage") or {}
+    if coverage.get("evidence_cells") != len(evidence_cells):
+        raise ValueError("coverage.evidence_cells does not match evidence_cells length")
+    if coverage.get("revision_coverage") != len(packet.get("revisions") or []):
+        raise ValueError("coverage.revision_coverage does not match revisions length")
+    unmapped = list(coverage.get("unmapped_extension_concepts") or [])
+    if coverage.get("unmapped_extension_concept_count") != len(unmapped):
+        raise ValueError("unmapped_extension_concept_count does not match listed concepts")
+    if coverage.get("unique_source_occurrence_count") is not None:
+        unique_ids = {
+            occurrence_id
+            for cell in [*cells, *evidence_cells]
+            for occurrence_id in cell.get("source_occurrence_ids") or []
+        }
+        if coverage["unique_source_occurrence_count"] != len(unique_ids):
+            raise ValueError("unique_source_occurrence_count is inconsistent")
+    for revision in packet.get("revisions") or []:
+        for key in ("original_occurrence_id", "revised_occurrence_id", "parent_occurrence_id"):
+            if not revision.get(key):
+                raise ValueError(f"revision missing {key}")
+        lineage = revision.get("lineage_occurrence_ids") or []
+        if revision["original_occurrence_id"] != lineage[0]:
+            raise ValueError("revision original_occurrence_id is not the lineage root")
+        if revision["revised_occurrence_id"] != lineage[-1]:
+            raise ValueError("revision revised_occurrence_id is not the lineage tip")
+
+
+def validate_packet_against_build_input(
+    packet: Mapping[str, Any],
+    *,
+    entity: EntityInput,
+    ledger: RawFactLedger,
+    filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
+    query_request: PacketQueryRequest,
+    metric_registry: MetricRegistry,
+    context: PacketBuildContext,
+    input_digests: PacketEvidenceDigests | Mapping[str, str | None] | None = None,
+) -> None:
+    """Validate a packet against the exact inputs used to assemble it. Pure."""
+    validate_packet_semantics(packet)
+    if packet["entity"]["entity_id"] != entity.entity_id or packet["entity"]["cik"] != entity.cik:
+        raise ValueError("packet entity does not match build entity")
+    if packet["entity"]["ticker"] != entity.ticker:
+        raise ValueError("packet ticker does not match build entity")
+    if packet["governance"]["packet_builder_digest"] != context.packet_builder_digest:
+        raise ValueError("packet builder digest does not match build context")
+    if packet["governance"]["metric_registry_digest"] != metric_registry.catalog_content_sha256:
+        raise ValueError("packet registry digest does not match supplied registry")
+    query_payload = _query_request_payload(query_request)
+    expected_query_digest = sha256(canonical_json(query_payload).encode("utf-8")).hexdigest()
+    if packet["receipts"]["query_request_digest"] != expected_query_digest:
+        raise ValueError("query_request_digest does not match supplied request")
+    digests = PacketEvidenceDigests.from_mapping(input_digests)
+    for name, value in digests.to_dict().items():
+        if packet["receipts"].get(name) != value:
+            raise ValueError(f"witness digest mismatch: {name}")
+    index = {event.occurrence_id: event for event in ledger.events}
+    for cell in all_packet_cells(packet):
+        if cell["value"] is None or cell["provenance_kind"] != "direct":
+            continue
+        selected = []
+        for occurrence_id in cell["source_occurrence_ids"]:
+            event = index.get(occurrence_id)
+            if event is None:
+                raise ValueError("source_occurrence_id is not in the supplied ledger")
+            if event.source.entity_id != entity.entity_id:
+                raise ValueError("source occurrence entity does not match packet entity")
+            if event.context.entity_identifier != entity.entity_id:
+                raise ValueError("source occurrence context entity does not match packet entity")
+            if cell.get("concept"):
+                expected = cell["concept"]
+                qname = event.concept_qname
+                taxonomy = cell.get("taxonomy")
+                qualified = f"{taxonomy}:{expected}" if taxonomy and ":" not in expected else expected
+                if qname != expected and qname != qualified and qname.split(":", 1)[-1] != expected:
+                    raise ValueError("source occurrence concept does not match cell")
+            meta_raw = filing_metadata.get(occurrence_id)
+            if meta_raw is None:
+                raise ValueError("source_occurrence_id has no filing metadata")
+            accession = (
+                meta_raw.accession
+                if isinstance(meta_raw, FilingMetadata)
+                else str(meta_raw["accession"])
+            )
+            digest = (
+                meta_raw.source_body_sha256
+                if isinstance(meta_raw, FilingMetadata)
+                else str(meta_raw["source_body_sha256"])
+            )
+            if accession != event.source.accession:
+                raise ValueError("filing metadata accession does not match occurrence")
+            if digest != event.source.body_sha256:
+                raise ValueError("filing metadata source digest does not match occurrence")
+            if cell.get("accession") == event.source.accession:
+                selected.append(event)
+        if not selected:
+            raise ValueError("valued direct cell cites no selected source occurrence")
+        if cell.get("source_digest") and not any(
+            event.source.body_sha256 == cell["source_digest"] for event in selected
+        ):
+            raise ValueError("selected source digest does not match cell")
+        if cell.get("source_event_time") and not any(
+            utc_text(event.clocks.accepted_at) == cell["source_event_time"] for event in selected
+        ):
+            raise ValueError("selected source clock does not match cell")
+        if cell.get("system_recorded_time") and not any(
+            utc_text(event.clocks.recorded_at) == cell["system_recorded_time"] for event in selected
+        ):
+            raise ValueError("selected system clock does not match cell")
+        if cell["metric_id"] in set(metric_registry.metric_ids):
+            contract = metric_registry.metric(cell["metric_id"])
+            mapping_id = cell.get("mapping_rule_id")
+            if mapping_id and mapping_id not in {rule.rule.rule_id for rule in contract.mappings}:
+                raise ValueError("mapping_rule_id is not in the supplied registry")
+    for cell in all_packet_cells(packet):
+        if cell["value"] is None or cell["provenance_kind"] != "formula":
+            continue
+        if cell["metric_id"] not in set(metric_registry.metric_ids):
+            raise ValueError("formula metric is not in the supplied registry")
+        contract = metric_registry.metric(cell["metric_id"])
+        formula_id = cell.get("formula_rule_id")
+        if contract.formula is None or contract.formula.rule.rule_id != formula_id:
+            raise ValueError("formula_rule_id is not in the supplied registry")
+    _assert_entity_isolation(entity, ledger, filing_metadata)
 
 
 def all_packet_cells(packet: Mapping[str, Any]) -> list[dict[str, Any]]:
@@ -266,11 +531,10 @@ def formula_leaves(packet: Mapping[str, Any], cell: Mapping[str, Any]) -> tuple[
     index = packet_cell_index(packet)
     leaves: dict[str, dict[str, Any]] = {}
 
-    def walk(node: Mapping[str, Any], seen: set[str]) -> None:
+    def walk(node: Mapping[str, Any], stack: tuple[str, ...]) -> None:
         cell_id = node["cell_id"]
-        if cell_id in seen:
-            return
-        seen.add(cell_id)
+        if cell_id in stack:
+            raise ValueError(f"formula dependency cycle at {cell_id}")
         kind = node["provenance_kind"]
         if kind == "direct":
             leaves[cell_id] = dict(node)
@@ -280,12 +544,17 @@ def formula_leaves(packet: Mapping[str, Any], cell: Mapping[str, Any]) -> tuple[
         deps = node["dependency_cell_ids"]
         if not deps:
             raise ValueError(f"formula cell {cell_id} has no dependency_cell_ids")
+        next_stack = (*stack, cell_id)
+        if len(next_stack) > PACKET_MAX_FORMULA_DEPTH:
+            raise ValueError(
+                f"formula graph depth exceeds PACKET_MAX_FORMULA_DEPTH {PACKET_MAX_FORMULA_DEPTH}"
+            )
         for dep_id in deps:
             if dep_id not in index:
                 raise ValueError(f"unresolved dependency {dep_id} of {cell_id}")
-            walk(index[dep_id], seen)
+            walk(index[dep_id], next_stack)
 
-    walk(cell, set())
+    walk(cell, ())
     return tuple(leaves[key] for key in sorted(leaves))
 
 
@@ -299,10 +568,19 @@ def assert_formula_evidence_closed(
     overlap = requested_ids & evidence_ids
     if overlap:
         raise ValueError(f"evidence_cells duplicate requested cells: {sorted(overlap)}")
+    if len(requested_ids) != len(cells) or len(evidence_ids) != len(evidence_cells):
+        raise ValueError("duplicate cell_id in packet cells")
     index = packet_cell_index(packet)
     for cell in all_packet_cells(packet):
+        deps = list(cell.get("dependency_cell_ids") or [])
+        if len(deps) != len(set(deps)):
+            raise ValueError(f"duplicate dependency of {cell['cell_id']}")
+        if len(deps) > PACKET_MAX_FORMULA_FANOUT:
+            raise ValueError(
+                f"formula fan-out exceeds PACKET_MAX_FORMULA_FANOUT {PACKET_MAX_FORMULA_FANOUT}"
+            )
         if cell["value"] is None:
-            for dep_id in cell["dependency_cell_ids"]:
+            for dep_id in deps:
                 if dep_id not in index:
                     raise ValueError(
                         f"unresolved dependency {dep_id} of {cell['cell_id']}"
@@ -313,11 +591,19 @@ def assert_formula_evidence_closed(
             _assert_valued_direct(cell)
         elif kind == "formula":
             _assert_valued_formula(cell)
-            formula_leaves(packet, cell)
+            leaves = formula_leaves(packet, cell)
+            if not leaves:
+                raise ValueError(f"valued formula {cell['cell_id']} has no direct leaves")
+            for leaf in leaves:
+                if leaf["value"] is None or leaf["provenance_kind"] != "direct":
+                    raise ValueError(
+                        f"valued formula {cell['cell_id']} does not terminate in valued direct facts"
+                    )
         else:
             raise ValueError(
                 f"valued cell {cell['cell_id']} has unsupported provenance_kind {kind}"
             )
+    _assert_evidence_graph_bounds(cells, evidence_cells)
 
 
 def _assert_valued_direct(cell: Mapping[str, Any]) -> None:
@@ -368,203 +654,71 @@ def default_packet_query(
     )
 
 
-def build_synthetic_filing_package_fixture() -> FilingPackageFixture:
-    """Independent filing-package ledger. Not derived from Company Facts rows."""
-    entity = EntityInput(
-        entity_id=SYNTHETIC_ENTITY_ID,
-        cik=SYNTHETIC_ENTITY_ID,
-        ticker=SYNTHETIC_TICKER,
-        name=SYNTHETIC_NAME,
-        identity_basis=FIXTURE_IDENTITY_BASIS,
-    )
-    fy2022 = FactContext(
-        context_id="c-fy2022",
-        entity_scheme="http://www.sec.gov/CIK",
-        entity_identifier=SYNTHETIC_ENTITY_ID,
-        start="2022-01-01",
-        end="2022-12-31",
-    )
-    fy2023 = FactContext(
-        context_id="c-fy2023",
-        entity_scheme="http://www.sec.gov/CIK",
-        entity_identifier=SYNTHETIC_ENTITY_ID,
-        start="2023-01-01",
-        end="2023-12-31",
-    )
-    fy2024 = FactContext(
-        context_id="c-fy2024",
-        entity_scheme="http://www.sec.gov/CIK",
-        entity_identifier=SYNTHETIC_ENTITY_ID,
-        start="2024-01-01",
-        end="2024-12-31",
-    )
-    instant_2023 = FactContext(
-        context_id="c-i-20231231",
-        entity_scheme="http://www.sec.gov/CIK",
-        entity_identifier=SYNTHETIC_ENTITY_ID,
-        instant="2023-12-31",
-    )
-    instant_2024 = FactContext(
-        context_id="c-i-20241231",
-        entity_scheme="http://www.sec.gov/CIK",
-        entity_identifier=SYNTHETIC_ENTITY_ID,
-        instant="2024-12-31",
-    )
-
-    k23 = _filing(
-        accession="0000999999-23-000010",
-        document_id="fip1-20221231.htm",
-        accepted_at="2023-02-15T16:00:00Z",
-        recorded_at="2023-02-15T16:05:00Z",
-        filed_at="2023-02-15",
-    )
-    k24 = _filing(
-        accession="0000999999-24-000010",
-        document_id="fip1-20231231.htm",
-        accepted_at="2024-02-15T16:00:00Z",
-        recorded_at="2024-02-15T16:05:00Z",
-        filed_at="2024-02-15",
-    )
-    k25 = _filing(
-        accession="0000999999-25-000010",
-        document_id="fip1-20241231.htm",
-        accepted_at="2025-02-15T16:00:00Z",
-        recorded_at="2025-02-15T16:05:00Z",
-        filed_at="2025-02-15",
-    )
-
-    fy2022_revenue_a = _usd_fact(
-        k23, "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", fy2022, "1000",
-        source_span=(0, 4), source_occurrence_key="fy2022-revenue-span-a",
-    )
-    fy2022_revenue_b = _usd_fact(
-        k23, "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", fy2022, "1000",
-        source_span=(80, 84), source_occurrence_key="fy2022-revenue-span-b",
-    )
-    fy2022_gp = _usd_fact(
-        k23, "us-gaap:GrossProfit", fy2022, "480",
-        source_span=(8, 11), source_occurrence_key="fy2022-gross-profit",
-    )
-    fy2023_revenue_original = _usd_fact(
-        k24, "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", fy2023, "1050",
-        source_span=(0, 4), source_occurrence_key="fy2023-revenue-original",
-    )
-    fy2023_gp = _usd_fact(
-        k24, "us-gaap:GrossProfit", fy2023, "500",
-        source_span=(8, 11), source_occurrence_key="fy2023-gross-profit",
-    )
-    ar_2023_original = _usd_fact(
-        k24, "us-gaap:AccountsReceivableNetCurrent", instant_2023, "120",
-        source_span=(20, 23), source_occurrence_key="ar-2023-original",
-    )
-    fy2024_revenue = _usd_fact(
-        k25, "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", fy2024, "1120",
-        source_span=(0, 4), source_occurrence_key="fy2024-revenue",
-    )
-    fy2024_gp = _usd_fact(
-        k25, "us-gaap:GrossProfit", fy2024, "560",
-        source_span=(8, 11), source_occurrence_key="fy2024-gross-profit",
-    )
-    fy2023_gp_restated = _usd_fact(
-        k25, "us-gaap:GrossProfit", fy2023, "500",
-        source_span=(12, 15), source_occurrence_key="fy2023-gross-profit-restated",
-        event_type=FactEventType.RESTATEMENT,
-        revision_of=fy2023_gp.occurrence_id,
-    )
-    fy2023_revenue_restated = _usd_fact(
-        k25, "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax", fy2023, "1060",
-        source_span=(40, 44), source_occurrence_key="fy2023-revenue-restated",
-        event_type=FactEventType.RESTATEMENT,
-        revision_of=fy2023_revenue_original.occurrence_id,
-    )
-    ar_2024 = _usd_fact(
-        k25, "us-gaap:AccountsReceivableNetCurrent", instant_2024, "155",
-        source_span=(20, 23), source_occurrence_key="ar-2024",
-    )
-    ar_2023_restated = _usd_fact(
-        k25, "us-gaap:AccountsReceivableNetCurrent", instant_2023, "121",
-        source_span=(60, 63), source_occurrence_key="ar-2023-restated",
-        event_type=FactEventType.RESTATEMENT,
-        revision_of=ar_2023_original.occurrence_id,
-    )
-    customer_count = make_raw_fact(
-        source=k25["source"],
-        concept_qname="custom:CustomerCount",
-        context=instant_2024,
-        unit=_PURE,
-        raw_token="42",
-        parsed_value="42",
-        dimensions_known=True,
-        decimals="0",
-        source_span=(90, 92),
-        source_occurrence_key="custom-customer-count",
-        accepted_at=k25["accepted_at"],
-        recorded_at=k25["recorded_at"],
-        event_type=FactEventType.FILED,
-    )
-    short_term_debt_2024 = _usd_fact(
-        k25, "us-gaap:ShortTermBorrowings", instant_2024, "10",
-        source_span=(200, 202), source_occurrence_key="std-2024",
-    )
-    long_term_debt_current_2024 = _usd_fact(
-        k25, "us-gaap:LongTermDebtCurrent", instant_2024, "20",
-        source_span=(204, 206), source_occurrence_key="ltdc-2024",
-    )
-    long_term_debt_2024 = _usd_fact(
-        k25, "us-gaap:LongTermDebtNoncurrent", instant_2024, "70",
-        source_span=(208, 210), source_occurrence_key="ltd-2024",
-    )
-    cash_2024 = _usd_fact(
-        k25, "us-gaap:CashAndCashEquivalentsAtCarryingValue", instant_2024, "15",
-        source_span=(212, 214), source_occurrence_key="cash-2024",
-    )
-
-    events = (
-        fy2022_revenue_a,
-        fy2022_revenue_b,
-        fy2022_gp,
-        fy2023_revenue_original,
-        fy2023_gp,
-        ar_2023_original,
-        fy2024_revenue,
-        fy2024_gp,
-        fy2023_gp_restated,
-        fy2023_revenue_restated,
-        ar_2024,
-        ar_2023_restated,
-        customer_count,
-        short_term_debt_2024,
-        long_term_debt_current_2024,
-        long_term_debt_2024,
-        cash_2024,
-    )
-    metadata = {}
-    for event in events:
-        filing = k23 if event.source.accession.endswith("23-000010") else (
-            k24 if event.source.accession.endswith("24-000010") else k25
-        )
-        metadata[event.occurrence_id] = {
-            "accession": event.source.accession,
-            "document_id": event.source.document_id,
-            "source_body_sha256": event.source.body_sha256,
-            "available_at": filing["recorded_at"],
-            "form": "10-K",
-            "filed_at": filing["filed_at"],
-        }
-    fixture = FilingPackageFixture(
-        entity=entity,
-        ledger=RawFactLedger(events),
-        filing_metadata=metadata,
-    )
-    _assert_independent_fixture(fixture.to_dict())
-    return fixture
-
-
 def load_filing_package_fixture(path: Path | str) -> FilingPackageFixture:
-    raw = _load_json_object(Path(path))
-    if raw.get("schema") != FIXTURE_SCHEMA:
-        raise ValueError(f"unsupported filing-package fixture schema: {raw.get('schema')!r}")
-    _assert_independent_fixture(raw)
+    payload = admit_filing_package_fixture_bytes(Path(path).read_bytes())
+    return filing_package_fixture_from_admitted(payload)
+
+
+def admit_filing_package_fixture_bytes(raw: bytes) -> dict[str, Any]:
+    """Admit an external fixture snapshot. Bytes are hostile until this returns."""
+    if type(raw) is not bytes:
+        raise TypeError("filing-package fixture payload must be bytes")
+    if not raw:
+        raise ValueError("filing-package fixture is empty")
+    if len(raw) > HARD_MAX_FILING_PACKAGE_FIXTURE_BYTES:
+        raise ValueError("filing-package fixture exceeds bounded byte size")
+    try:
+        text = raw.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise ValueError("filing-package fixture is not valid UTF-8") from exc
+
+    def reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+        parsed: dict[str, Any] = {}
+        for key, item in pairs:
+            if key in parsed:
+                raise ValueError(f"filing-package fixture JSON contains duplicate object key: {key}")
+            parsed[key] = item
+        return parsed
+
+    decoder = json.JSONDecoder(object_pairs_hook=reject_duplicate_keys)
+    try:
+        decoded, offset = decoder.raw_decode(text)
+    except (json.JSONDecodeError, ValueError, RecursionError) as exc:
+        raise ValueError(f"filing-package fixture payload is invalid JSON: {exc}") from exc
+    trailing = text[offset:]
+    if trailing.strip():
+        raise ValueError("filing-package fixture has trailing non-JSON content")
+    if not isinstance(decoded, dict):
+        raise ValueError("filing-package fixture must be a JSON object")
+    _assert_json_depth(decoded, maximum=HARD_MAX_FIXTURE_JSON_DEPTH)
+    extra = set(decoded) - FIXTURE_ROOT_FIELDS
+    if extra:
+        raise ValueError("filing-package fixture has unexpected root fields")
+    missing = FIXTURE_ROOT_FIELDS - set(decoded)
+    if missing:
+        raise ValueError("filing-package fixture is missing required root fields")
+    if decoded.get("schema") != FIXTURE_SCHEMA:
+        raise ValueError("unsupported filing-package fixture schema")
+    _assert_independent_fixture(decoded)
+    identity = decoded["identity"]
+    if not isinstance(identity, dict):
+        raise ValueError("filing-package fixture identity must be an object")
+    extra_identity = set(identity) - IDENTITY_FIELDS
+    if extra_identity:
+        raise ValueError("filing-package fixture identity has unexpected fields")
+    if identity.get("identity_basis") != FIXTURE_IDENTITY_BASIS:
+        raise ValueError("filing-package fixture identity_basis is required")
+    if identity.get("authority") != "filing_package_authoritative":
+        raise ValueError("filing-package fixture must declare filing-package authority")
+    if identity.get("synthetic") is not True:
+        raise ValueError("filing-package fixture must declare synthetic identity")
+    canonical = canonical_json(decoded).encode("utf-8")
+    if raw != canonical:
+        raise ValueError("filing-package fixture is not the exact canonical JSON bytes")
+    return decoded
+
+
+def filing_package_fixture_from_admitted(raw: Mapping[str, Any]) -> FilingPackageFixture:
     identity = raw["identity"]
     entity = EntityInput(
         entity_id=str(identity["entity_id"]),
@@ -573,12 +727,45 @@ def load_filing_package_fixture(path: Path | str) -> FilingPackageFixture:
         name=str(identity["name"]),
         identity_basis=str(identity["identity_basis"]),
     )
-    ledger = RawFactLedger.from_dict(raw["ledger"])
+    ledger_payload = raw["ledger"]
+    if not isinstance(ledger_payload, Mapping):
+        raise ValueError("filing-package fixture ledger must be an object")
+    ledger = RawFactLedger.from_dict(ledger_payload)
+    restored = ledger.to_dict()
+    if canonical_json(restored) != canonical_json(ledger_payload):
+        raise ValueError("filing-package fixture ledger is not a canonical restore")
+    metadata_raw = raw["filing_metadata"]
+    if not isinstance(metadata_raw, Mapping):
+        raise ValueError("filing-package fixture filing_metadata must be an object")
     metadata = {
         str(occurrence_id): dict(payload)
-        for occurrence_id, payload in raw["filing_metadata"].items()
+        for occurrence_id, payload in metadata_raw.items()
     }
-    return FilingPackageFixture(entity=entity, ledger=ledger, filing_metadata=metadata)
+    index = {event.occurrence_id: event for event in ledger.events}
+    for occurrence_id, payload in metadata.items():
+        event = index.get(occurrence_id)
+        if event is None:
+            raise ValueError("filing metadata refers to an unknown occurrence")
+        if str(payload.get("accession")) != event.source.accession:
+            raise ValueError("filing metadata accession does not match occurrence")
+        if str(payload.get("source_body_sha256")) != event.source.body_sha256:
+            raise ValueError("filing metadata source digest does not match occurrence")
+        if str(payload.get("document_id")) != event.source.document_id:
+            raise ValueError("filing metadata document_id does not match occurrence")
+    for event in ledger.events:
+        if event.occurrence_id not in metadata:
+            raise ValueError("occurrence is missing filing metadata")
+        recomputed = event.occurrence_id
+        if recomputed != event.occurrence_id:
+            raise ValueError("occurrence_id is not canonical")
+        if event.revision_of:
+            parent = index.get(event.revision_of)
+            if parent is None:
+                raise ValueError("revision_of does not resolve in the admitted ledger")
+    _assert_revision_acyclic(ledger)
+    fixture = FilingPackageFixture(entity=entity, ledger=ledger, filing_metadata=metadata)
+    _assert_entity_isolation(entity, ledger, metadata)
+    return fixture
 
 
 def assemble_financial_intelligence_packet(
@@ -597,6 +784,9 @@ def assemble_financial_intelligence_packet(
         raise ValueError("FIF-1 does not accept a disclosure projection")
     if not isinstance(context, PacketBuildContext):
         raise TypeError("context must be a PacketBuildContext")
+    if not isinstance(query_request, PacketQueryRequest):
+        raise TypeError("query_request must be a PacketQueryRequest")
+    _assert_entity_isolation(entity, ledger, filing_metadata)
     digests = PacketEvidenceDigests.from_mapping(input_digests)
     built_at_text = None
     if built_at is not None:
@@ -643,7 +833,8 @@ def assemble_financial_intelligence_packet(
             kernel_cells.append(kernel_cell)
             cells.append(_adapt_kernel_cell(kernel_cell, metric_registry.metric(metric_id)))
 
-    cells.sort(key=lambda item: (item["metric_id"], canonical_json(item["period"])))
+    cells.sort(key=lambda item: (item["metric_id"], canonical_json(item["period"]), item["cell_id"]))
+    _assert_requested_cell_cross_product(query_request, cells)
     evidence_cells = _evidence_cells(kernel_cells, cells, metric_registry)
     assert_formula_evidence_closed(cells, evidence_cells)
     revisions = _revision_records(
@@ -651,8 +842,23 @@ def assemble_financial_intelligence_packet(
         registry=metric_registry,
         query_request=query_request,
         cells=cells,
+        evidence_cells=evidence_cells,
     )
-    extension_evidence = _extension_evidence(ledger)
+    if len(revisions) > PACKET_MAX_REVISIONS:
+        raise ValueError(
+            f"packet revisions exceed PACKET_MAX_REVISIONS {PACKET_MAX_REVISIONS}"
+        )
+    extension_evidence = _extension_evidence(
+        ledger=ledger,
+        query_request=query_request,
+        cells=cells,
+        evidence_cells=evidence_cells,
+    )
+    if len(extension_evidence) > PACKET_MAX_UNMAPPED_EXTENSIONS:
+        raise ValueError(
+            "packet unmapped extensions exceed "
+            f"PACKET_MAX_UNMAPPED_EXTENSIONS {PACKET_MAX_UNMAPPED_EXTENSIONS}"
+        )
     coverage = _coverage(
         query_request,
         cells,
@@ -715,7 +921,22 @@ def assemble_financial_intelligence_packet(
     }
     if built_at_text is not None:
         packet["built_at"] = built_at_text
+    encoded = canonical_packet_bytes(packet)
+    if len(encoded) > PACKET_MAX_SERIALIZED_BYTES:
+        raise ValueError(
+            f"packet exceeds PACKET_MAX_SERIALIZED_BYTES {PACKET_MAX_SERIALIZED_BYTES}"
+        )
     validate_packet(packet, context.packet_schema)
+    validate_packet_against_build_input(
+        packet,
+        entity=entity,
+        ledger=ledger,
+        filing_metadata=filing_metadata,
+        query_request=query_request,
+        metric_registry=metric_registry,
+        context=context,
+        input_digests=digests,
+    )
     return packet
 
 
@@ -761,64 +982,6 @@ def build_financial_intelligence_packet_from_repo(
     )
 
 
-def _filing(
-    *,
-    accession: str,
-    document_id: str,
-    accepted_at: str,
-    recorded_at: str,
-    filed_at: str,
-) -> dict[str, Any]:
-    compact = accession.replace("-", "")
-    body = sha256(f"synthetic-filing-package:{accession}:{document_id}".encode("utf-8")).hexdigest()
-    return {
-        "accession": accession,
-        "document_id": document_id,
-        "accepted_at": accepted_at,
-        "recorded_at": recorded_at,
-        "filed_at": filed_at,
-        "source": SourceIdentity(
-            source="sec-edgar",
-            entity_id=SYNTHETIC_ENTITY_ID,
-            accession=accession,
-            document_id=document_id,
-            body_sha256=body,
-            source_url=(
-                f"https://www.sec.gov/Archives/edgar/data/999999/{compact}/{document_id}"
-            ),
-        ),
-    }
-
-
-def _usd_fact(
-    filing: Mapping[str, Any],
-    concept_qname: str,
-    context: FactContext,
-    value: str,
-    *,
-    source_span: tuple[int, int],
-    source_occurrence_key: str,
-    event_type: FactEventType = FactEventType.FILED,
-    revision_of: str | None = None,
-) -> RawFactOccurrence:
-    return make_raw_fact(
-        source=filing["source"],
-        concept_qname=concept_qname,
-        context=context,
-        unit=_USD,
-        raw_token=value,
-        parsed_value=value,
-        dimensions_known=True,
-        decimals="0",
-        source_span=source_span,
-        source_occurrence_key=source_occurrence_key,
-        accepted_at=filing["accepted_at"],
-        recorded_at=filing["recorded_at"],
-        event_type=event_type,
-        revision_of=revision_of,
-    )
-
-
 def _assert_independent_fixture(raw: Mapping[str, Any]) -> None:
     blob = canonical_json(raw)
     for marker in FORBIDDEN_COMPANYFACTS_MARKERS:
@@ -849,7 +1012,7 @@ def _adapt_kernel_cell(cell: MetricCell | CellNode, contract: Any) -> dict[str, 
         "non_value_state": non_value_state,
         "unit": cell.unit,
         "provenance_kind": provenance.kind.value if isinstance(provenance.kind, ProvenanceKind) else str(provenance.kind),
-        "source_occurrence_ids": list(provenance.source_occurrence_ids),
+        "source_occurrence_ids": sorted(provenance.source_occurrence_ids),
         "accession": provenance.accession,
         "concept": provenance.concept,
         "taxonomy": provenance.taxonomy,
@@ -970,39 +1133,58 @@ def _revision_records(
     registry: MetricRegistry,
     query_request: PacketQueryRequest,
     cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
 ) -> list[dict[str, Any]]:
     concept_map = _concept_to_metrics(registry)
-    requested_metrics = set(query_request.metrics)
-    retrospective = query_request.policy.selection is BitemporalPolicy.LATEST_RESTATED
+    packet_cells = [*cells, *evidence_cells]
+    relevant_metrics = {cell["metric_id"] for cell in packet_cells}
+    cited_occurrences = {
+        occurrence_id
+        for cell in packet_cells
+        for occurrence_id in cell.get("source_occurrence_ids") or []
+    }
     source_cutoff = query_request.policy.source_snapshot_at
     recorded_cutoff = query_request.policy.recorded_at
     records: list[dict[str, Any]] = []
     for event in ledger.events:
-        if event.event_type is not FactEventType.RESTATEMENT or not event.revision_of:
+        if event.event_type not in REPORTED_REVISION_EVENT_TYPES or not event.revision_of:
             continue
-        parent = ledger.by_id(event.revision_of)
+        knowable = (
+            event.clocks.accepted_at <= source_cutoff
+            and event.clocks.recorded_at <= recorded_cutoff
+        )
+        if not knowable:
+            continue
+        chain = ledger.revision_chain(event.occurrence_id)
+        if not chain:
+            raise ValueError("revision lineage does not resolve")
+        parent = chain[-2] if len(chain) >= 2 else None
+        if parent is None:
+            raise ValueError("revision event has no parent")
+        root = chain[0]
         metric_ids = [
             metric_id
             for metric_id in concept_map.get(event.concept_qname, ())
-            if metric_id in requested_metrics
+            if metric_id in relevant_metrics
         ]
         matching_periods = [
             period for period in query_request.periods if _period_matches_event(period, event)
         ]
-        if not metric_ids or not matching_periods:
+        cited = event.occurrence_id in cited_occurrences or parent.occurrence_id in cited_occurrences
+        if not metric_ids or (not matching_periods and not cited):
             continue
-        knowable = event.clocks.accepted_at <= source_cutoff and event.clocks.recorded_at <= recorded_cutoff
-        if not knowable and not retrospective:
+        if not matching_periods:
             continue
-        original_value = decimal_text(parent.parsed_value)
-        revised_value = decimal_text(event.parsed_value)
-        abs_delta, pct_delta = _revision_deltas(original_value, revised_value)
+        original_value = decimal_text(parent.parsed_value) if parent.parsed_value is not None else None
+        revised_value = decimal_text(event.parsed_value) if event.parsed_value is not None else None
+        abs_delta, relative_delta = _revision_deltas(original_value, revised_value)
+        lineage_ids = [item.occurrence_id for item in chain]
         for metric_id in metric_ids:
             for period in matching_periods:
                 cell = next(
                     (
                         item
-                        for item in cells
+                        for item in packet_cells
                         if item["metric_id"] == metric_id
                         and item["period"] == period.to_dict()
                     ),
@@ -1013,54 +1195,101 @@ def _revision_records(
                     {
                         "metric_id": metric_id,
                         "period": period.to_dict(),
+                        "event_type": event.event_type.value,
+                        "revision_hop": len(chain) - 1,
                         "original_value": original_value,
                         "revised_value": revised_value,
-                        "original_accession": parent.source.accession,
+                        "original_accession": root.source.accession,
                         "revised_accession": event.source.accession,
-                        "original_source_event_time": utc_text(parent.clocks.accepted_at),
-                        "original_recorded_time": utc_text(parent.clocks.recorded_at),
+                        "original_source_event_time": utc_text(root.clocks.accepted_at),
+                        "original_recorded_time": utc_text(root.clocks.recorded_at),
                         "revised_source_event_time": utc_text(event.clocks.accepted_at),
                         "revised_recorded_time": utc_text(event.clocks.recorded_at),
                         "absolute_delta": abs_delta,
-                        "percentage_delta": pct_delta,
-                        "visible_under_selected_policy_and_cutoffs": knowable or retrospective,
+                        "relative_delta": relative_delta,
+                        "visible_under_selected_policy_and_cutoffs": True,
                         "used_as_selected_value": selected,
                         "uses_later_restatement": selected
                         and query_request.policy.selection
                         in {BitemporalPolicy.LATEST_KNOWN_AS_OF, BitemporalPolicy.LATEST_RESTATED},
                         "cell_id": None if cell is None else cell["cell_id"],
-                        "original_occurrence_id": parent.occurrence_id,
+                        "original_occurrence_id": root.occurrence_id,
+                        "parent_occurrence_id": parent.occurrence_id,
                         "revised_occurrence_id": event.occurrence_id,
+                        "lineage_occurrence_ids": lineage_ids,
                     }
                 )
-    records.sort(key=lambda item: (item["metric_id"], canonical_json(item["period"])))
+    records.sort(
+        key=lambda item: (
+            item["metric_id"],
+            canonical_json(item["period"]),
+            item["revision_hop"],
+            item["revised_occurrence_id"],
+        )
+    )
     return records
 
 
 def _revision_deltas(original: str | None, revised: str | None) -> tuple[str | None, str | None]:
+    """Return (absolute_delta, relative_delta) under the packet Decimal context.
+
+    ``relative_delta`` is ``(new - old) / old``. It is a ratio, not a
+    percentage. Division by a zero original yields null rather than inf.
+    """
     try:
         if original is None or revised is None:
             return None, None
-        left = Decimal(original)
-        right = Decimal(revised)
-        delta = right - left
-        percent = None if left == 0 else decimal_text(delta / left)
-        return decimal_text(delta), percent
-    except (InvalidOperation, ValueError):
+        with localcontext(_packet_decimal_context()):
+            left = Decimal(original)
+            right = Decimal(revised)
+            delta = right - left
+            relative = None if left == 0 else decimal_text(delta / left)
+            return decimal_text(delta), relative
+    except (InvalidOperation, ZeroDivisionError, DivisionByZero, ValueError):
         return None, None
 
 
-def _extension_evidence(ledger: RawFactLedger) -> list[dict[str, Any]]:
+def _extension_evidence(
+    *,
+    ledger: RawFactLedger,
+    query_request: PacketQueryRequest,
+    cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    requested_metrics = set(query_request.metrics)
+    requested_concepts = {
+        cell["concept"]
+        for cell in [*cells, *evidence_cells]
+        if cell.get("concept")
+    }
+    source_cutoff = query_request.policy.source_snapshot_at
+    recorded_cutoff = query_request.policy.recorded_at
     rows = []
     for event in ledger.events:
         if event.concept_qname.startswith("us-gaap:"):
+            continue
+        knowable = (
+            event.clocks.accepted_at <= source_cutoff
+            and event.clocks.recorded_at <= recorded_cutoff
+        )
+        if not knowable:
+            continue
+        concept_leaf = event.concept_qname.split(":", 1)[-1]
+        relevant = (
+            event.concept_qname in requested_concepts
+            or concept_leaf in requested_metrics
+            or any(_period_matches_event(period, event) and concept_leaf in requested_metrics for period in query_request.periods)
+        )
+        if not relevant:
+            continue
+        if not any(_period_matches_event(period, event) for period in query_request.periods):
             continue
         rows.append(
             {
                 "concept_qname": event.concept_qname,
                 "occurrence_id": event.occurrence_id,
                 "accession": event.source.accession,
-                "value": decimal_text(event.parsed_value),
+                "value": decimal_text(event.parsed_value) if event.parsed_value is not None else None,
                 "mapped": False,
             }
         )
@@ -1075,6 +1304,23 @@ def _coverage(
     revisions: Sequence[Mapping[str, Any]],
     extension_evidence: Sequence[Mapping[str, Any]],
 ) -> dict[str, Any]:
+    """Coverage counts are defined as follows:
+
+    source_trace_complete_count
+        Number of requested+evidence cells whose coverage_state is
+        source_trace_complete (cell count, not unique facts).
+    governance_trace_complete_count
+        Number of requested+evidence valued cells that carry a mapping or
+        formula digest (cell count).
+    unique_source_occurrence_count
+        Distinct raw-ledger occurrence IDs cited by requested+evidence cells.
+    unique_governance_digest_count
+        Distinct mapping/formula digests cited by requested+evidence cells.
+    revision_coverage
+        Number of revision rows emitted for this request.
+    unmapped_extension_concept_count
+        Number of scoped unmapped extension rows, not the issuer's full custom dump.
+    """
     audited = [*cells, *evidence_cells]
     valued = [cell for cell in cells if cell["non_value_state"] is None]
     missing = [cell for cell in cells if cell["non_value_state"] == "missing"]
@@ -1088,6 +1334,17 @@ def _coverage(
         if cell["non_value_state"] is None
         and (cell["mapping_rule_digest"] or cell["formula_rule_digest"])
     ]
+    unique_occurrences = {
+        occurrence_id
+        for cell in audited
+        for occurrence_id in cell.get("source_occurrence_ids") or []
+    }
+    unique_governance = {
+        digest
+        for cell in audited
+        for digest in (cell.get("mapping_rule_digest"), cell.get("formula_rule_digest"))
+        if digest
+    }
     valued_metrics = sorted({cell["metric_id"] for cell in valued})
     missing_metrics = sorted({cell["metric_id"] for cell in missing})
     unsupported_metrics = sorted({cell["metric_id"] for cell in unsupported})
@@ -1110,6 +1367,8 @@ def _coverage(
         "periods_returned": len(returned_periods),
         "source_trace_complete_count": len(source_complete),
         "governance_trace_complete_count": len(governance_complete),
+        "unique_source_occurrence_count": len(unique_occurrences),
+        "unique_governance_digest_count": len(unique_governance),
         "revision_coverage": len(revisions),
         "disclosure_coverage_state": "not_supplied",
         "unmapped_extension_concept_count": len(extension_evidence),
@@ -1131,6 +1390,17 @@ def _limitations(entity: EntityInput) -> list[str]:
     ]
 
 
+def _query_request_payload(query_request: PacketQueryRequest) -> dict[str, Any]:
+    return {
+        "policy": query_request.policy.selection.value,
+        "source_event_cutoff": utc_text(query_request.policy.source_snapshot_at),
+        "system_recorded_cutoff": utc_text(query_request.policy.recorded_at),
+        "requested_metrics": list(query_request.metrics),
+        "requested_periods": [period.to_dict() for period in query_request.periods],
+        "evaluation_mode": query_request.evaluation_mode,
+    }
+
+
 def _receipts(
     *,
     metric_registry: MetricRegistry,
@@ -1140,15 +1410,10 @@ def _receipts(
     builder_digest: str,
     input_digests: PacketEvidenceDigests,
 ) -> dict[str, Any]:
-    query_payload = {
-        "policy": query_request.policy.selection.value,
-        "source_event_cutoff": utc_text(query_request.policy.source_snapshot_at),
-        "system_recorded_cutoff": utc_text(query_request.policy.recorded_at),
-        "requested_metrics": list(query_request.metrics),
-        "requested_periods": [period.to_dict() for period in query_request.periods],
-        "evaluation_mode": query_request.evaluation_mode,
-    }
+    query_payload = _query_request_payload(query_request)
     audited = [*cells, *evidence_cells]
+    # Reference count: one per source_occurrence_ids entry across requested+
+    # evidence cells. Duplicates are counted. Unique facts live in coverage.
     source_receipts = sum(len(cell["source_occurrence_ids"]) for cell in audited)
     governance_receipts = sum(
         1
@@ -1174,10 +1439,10 @@ def _period_record(period: PeriodRequest) -> dict[str, Any]:
 def _load_json_object(path: Path) -> dict[str, Any]:
     raw = path.read_bytes()
     if not raw:
-        raise ValueError(f"empty JSON object: {path.name}")
+        raise ValueError("empty JSON object")
     payload = json.loads(raw.decode("utf-8"))
     if not isinstance(payload, dict):
-        raise ValueError(f"{path.name} must be a JSON object")
+        raise ValueError("JSON payload must be an object")
     return payload
 
 
@@ -1187,6 +1452,232 @@ def sha256_file(path: Path) -> str:
 
 def load_core_registry(repo_root: Path | str) -> MetricRegistry:
     return load_core_metric_registry(Path(repo_root))
+
+
+def period_semantic_key(period: PeriodRequest) -> tuple[Any, ...]:
+    normalized = period.normalized
+    return (
+        normalized.kind.value if hasattr(normalized.kind, "value") else str(normalized.kind),
+        normalized.start.isoformat() if normalized.start else "",
+        normalized.end.isoformat(),
+        normalized.fiscal_year or 0,
+        normalized.fiscal_quarter or 0,
+        normalized.calendar_kind.value
+        if hasattr(normalized.calendar_kind, "value")
+        else str(normalized.calendar_kind),
+        normalized.fiscal_year_weeks or 0,
+        normalized.week_count or 0,
+    )
+
+
+def _bounded_identifier(value: Any, *, field_name: str, maximum: int = PACKET_MAX_IDENTIFIER_CHARS) -> str:
+    if isinstance(value, float):
+        raise ValueError(f"{field_name} cannot be a binary float")
+    text = str(value).strip()
+    if not text:
+        raise ValueError(f"{field_name} is required")
+    if any(ch.isspace() for ch in str(value)) and str(value) != text:
+        raise ValueError(f"{field_name} contains surrounding whitespace")
+    if len(text) > maximum:
+        raise ValueError(f"{field_name} exceeds bounded identifier length")
+    return text
+
+
+def _packet_decimal_context() -> Context:
+    context = Context(
+        prec=FORMULA_DECIMAL_PRECISION,
+        rounding=ROUND_HALF_EVEN,
+        Emin=FORMULA_DECIMAL_EMIN,
+        Emax=FORMULA_DECIMAL_EMAX,
+        capitals=1,
+        clamp=0,
+    )
+    for signal in (InvalidOperation, DivisionByZero, Overflow, Underflow, Subnormal):
+        context.traps[signal] = True
+    return context
+
+
+def _assert_json_depth(value: Any, *, maximum: int, depth: int = 0) -> None:
+    if depth > maximum:
+        raise ValueError("filing-package fixture JSON nesting exceeds the depth ceiling")
+    if isinstance(value, dict):
+        for item in value.values():
+            _assert_json_depth(item, maximum=maximum, depth=depth + 1)
+    elif isinstance(value, list):
+        for item in value:
+            _assert_json_depth(item, maximum=maximum, depth=depth + 1)
+
+
+def _assert_revision_acyclic(ledger: RawFactLedger) -> None:
+    index = {event.occurrence_id: event for event in ledger.events}
+    for event in ledger.events:
+        seen: set[str] = set()
+        current = event
+        while current.revision_of:
+            if current.occurrence_id in seen:
+                raise ValueError("revision lineage contains a cycle")
+            seen.add(current.occurrence_id)
+            parent = index.get(current.revision_of)
+            if parent is None:
+                raise ValueError("revision_of does not resolve in the admitted ledger")
+            current = parent
+
+
+def _assert_entity_isolation(
+    entity: EntityInput,
+    ledger: RawFactLedger,
+    filing_metadata: Mapping[str, FilingMetadata | Mapping[str, Any]],
+) -> None:
+    for event in ledger.events:
+        if event.source.entity_id != entity.entity_id:
+            raise ValueError("ledger occurrence entity does not match packet entity")
+        if event.context.entity_identifier != entity.entity_id:
+            raise ValueError("ledger context entity does not match packet entity")
+        meta = filing_metadata.get(event.occurrence_id)
+        if meta is None:
+            raise ValueError("ledger occurrence is missing filing metadata")
+        accession = meta.accession if isinstance(meta, FilingMetadata) else str(meta["accession"])
+        digest = (
+            meta.source_body_sha256
+            if isinstance(meta, FilingMetadata)
+            else str(meta["source_body_sha256"])
+        )
+        if accession != event.source.accession:
+            raise ValueError("filing metadata entity/source does not match occurrence")
+        if digest != event.source.body_sha256:
+            raise ValueError("filing metadata source digest does not match occurrence")
+
+
+def _assert_occurrence_matches_cell(
+    event: RawFactOccurrence,
+    cell: Mapping[str, Any],
+    entity: EntityInput,
+) -> None:
+    if event.source.entity_id != entity.entity_id:
+        raise ValueError("source occurrence entity does not match packet entity")
+    if cell.get("accession") and event.source.accession != cell["accession"]:
+        raise ValueError("source occurrence accession does not match cell")
+    if cell.get("concept") and event.concept_qname != cell["concept"]:
+        raise ValueError("source occurrence concept does not match cell")
+    if cell.get("source_digest") and event.source.body_sha256 != cell["source_digest"]:
+        raise ValueError("source occurrence digest does not match cell")
+    if cell.get("source_event_time") and utc_text(event.clocks.accepted_at) != cell["source_event_time"]:
+        raise ValueError("source occurrence source clock does not match cell")
+    if cell.get("system_recorded_time") and utc_text(event.clocks.recorded_at) != cell["system_recorded_time"]:
+        raise ValueError("source occurrence system clock does not match cell")
+
+
+def _assert_requested_cell_cross_product(
+    query_request: PacketQueryRequest,
+    cells: Sequence[Mapping[str, Any]],
+) -> None:
+    expected = len(query_request.metrics) * len(query_request.periods)
+    if len(cells) != expected:
+        raise ValueError("requested cells must be the exact metric × period cross-product")
+    seen: set[tuple[str, str]] = set()
+    for cell in cells:
+        key = (cell["metric_id"], canonical_json(cell["period"]))
+        if key in seen:
+            raise ValueError("duplicate requested cell")
+        seen.add(key)
+    for metric_id in query_request.metrics:
+        for period in query_request.periods:
+            key = (metric_id, canonical_json(period.to_dict()))
+            if key not in seen:
+                raise ValueError("missing requested cell for metric × period")
+
+
+def _assert_unique_sorted_ids(cells: Sequence[Mapping[str, Any]], *, field_name: str) -> None:
+    ids = [cell["cell_id"] for cell in cells]
+    if len(ids) != len(set(ids)):
+        raise ValueError(f"duplicate cell_id in {field_name}")
+    ordered = sorted(
+        cells,
+        key=lambda item: (item["metric_id"], canonical_json(item["period"]), item["cell_id"]),
+    )
+    if list(cells) != ordered:
+        raise ValueError(f"{field_name} are not in canonical order")
+
+
+def _assert_canonical_collection_order(packet: Mapping[str, Any]) -> None:
+    revisions = list(packet.get("revisions") or [])
+    sorted_revisions = sorted(
+        revisions,
+        key=lambda item: (
+            item["metric_id"],
+            canonical_json(item["period"]),
+            item.get("revision_hop", 0),
+            item["revised_occurrence_id"],
+        ),
+    )
+    if revisions != sorted_revisions:
+        raise ValueError("revisions are not in canonical order")
+    unmapped = list((packet.get("coverage") or {}).get("unmapped_extension_concepts") or [])
+    sorted_unmapped = sorted(
+        unmapped,
+        key=lambda item: (item["concept_qname"], item["occurrence_id"]),
+    )
+    if unmapped != sorted_unmapped:
+        raise ValueError("unmapped_extension_concepts are not in canonical order")
+    for cell in all_packet_cells(packet):
+        occ = list(cell.get("source_occurrence_ids") or [])
+        if occ != sorted(occ):
+            raise ValueError("source_occurrence_ids are not in canonical order")
+
+
+def _assert_evidence_relevance(
+    cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
+) -> None:
+    requested_ids = {cell["cell_id"] for cell in cells}
+    evidence_ids = {cell["cell_id"] for cell in evidence_cells}
+    index = {cell["cell_id"]: cell for cell in [*cells, *evidence_cells]}
+    reachable: set[str] = set()
+
+    def walk(cell_id: str, stack: tuple[str, ...]) -> None:
+        if cell_id in stack:
+            raise ValueError(f"formula dependency cycle at {cell_id}")
+        node = index.get(cell_id)
+        if node is None:
+            raise ValueError(f"unresolved dependency {cell_id}")
+        for dep_id in node.get("dependency_cell_ids") or []:
+            if dep_id in evidence_ids:
+                reachable.add(dep_id)
+            walk(dep_id, (*stack, cell_id))
+
+    for cell in cells:
+        walk(cell["cell_id"], ())
+    orphans = evidence_ids - reachable
+    if orphans:
+        raise ValueError("orphan evidence cells are not reachable from requested formulas")
+    unused_requested_deps = reachable - evidence_ids - requested_ids
+    if unused_requested_deps:
+        raise ValueError("dependency resolves neither to requested nor evidence cells")
+
+
+def _assert_evidence_graph_bounds(
+    cells: Sequence[Mapping[str, Any]],
+    evidence_cells: Sequence[Mapping[str, Any]],
+) -> None:
+    if len(evidence_cells) > PACKET_MAX_EVIDENCE_NODES:
+        raise ValueError(
+            f"evidence nodes exceed PACKET_MAX_EVIDENCE_NODES {PACKET_MAX_EVIDENCE_NODES}"
+        )
+    total = len(cells) + len(evidence_cells)
+    if total > PACKET_MAX_TOTAL_CELLS:
+        raise ValueError(f"packet cells exceed PACKET_MAX_TOTAL_CELLS {PACKET_MAX_TOTAL_CELLS}")
+    index = {cell["cell_id"]: cell for cell in [*cells, *evidence_cells]}
+    edges = 0
+    for cell in [*cells, *evidence_cells]:
+        deps = list(cell.get("dependency_cell_ids") or [])
+        edges += len(deps)
+        for dep_id in deps:
+            if dep_id not in index:
+                raise ValueError(f"unresolved dependency {dep_id} of {cell['cell_id']}")
+    if edges > PACKET_MAX_EVIDENCE_EDGES:
+        raise ValueError(
+            f"evidence edges exceed PACKET_MAX_EVIDENCE_EDGES {PACKET_MAX_EVIDENCE_EDGES}"
+        )
 
 
 # Imported datetime_module so tests can fail the builder if wall clock is used.
