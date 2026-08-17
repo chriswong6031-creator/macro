@@ -24,7 +24,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from engine.entry_radar.replay import controls, costs, outcomes, prereg, verdicts
+from engine.entry_radar.replay import (
+    assembly, confirmatory, controls, costs, outcomes, prereg, verdicts,
+)
 
 REPO = Path(__file__).resolve().parents[1]
 D0 = date(2021, 3, 15)          # decision session, comfortably inside TEST
@@ -779,3 +781,256 @@ def test_m_era_labelling_cannot_silently_promote_a_fit_row():
     assert test.era == "TEST" and test.evidence_tier == "TEST"
     assert outcomes.era_of(prereg.FIT_END) == "FIT"
     assert outcomes.era_of(prereg.FIT_END + timedelta(days=1)) == "TEST"
+
+
+# =========================================================================== #
+# W5.1 — control-pool diagnostics on the existing summary surface
+# =========================================================================== #
+#: Pre-W5.1 `_summary_table` keys.  Extra keys must APPEND; old readers ignore
+#: unknowns and must still find every name in this set.
+_W5_SUMMARY_LEGACY_KEYS = (
+    "cell", "n_episodes", "n_names", "excess_net_mean", "ci_low", "ci_high",
+    "p_boot", "t_cluster", "n_months", "eff_names", "floors_met",
+    "false_start_rate", "false_start_n", "mfe_median", "mae_median",
+    "fwd_ret_net_median", "cost_bps_median", "censored_n",
+    "uninformative_no_control_n",
+)
+_W5_POOL_KEYS = (
+    "n_cell_mean", "n_cell_median", "n_cell_min", "n_cell_max",
+    *(f"k_n_{i}" for i in range(prereg.CONTROL_K + 1)),
+    "overlap_share",
+)
+
+
+def _frozen_match(*, ticker="AAA", n_cell=12, controls_chosen=("BBB", "CCC"),
+                  uninformative=False, same_band=True) -> controls.ControlMatch:
+    return controls.ControlMatch(
+        ticker=ticker, session=D0, controls=tuple(controls_chosen),
+        n_cell=n_cell, uninformative_no_control=uninformative,
+        same_band_control=same_band,
+    )
+
+
+def _frozen_ref(**kw) -> outcomes.EpisodeRef:
+    daily = _daily()
+    return _episode(daily, **kw)
+
+
+def _frozen_outcome(ref: outcomes.EpisodeRef) -> outcomes.OutcomeRow:
+    return _attach(ref, _daily())
+
+
+def _legacy_summary_frame() -> pd.DataFrame:
+    """A pre-W5.1 episode frame: no n_cell column, n_controls present."""
+    return pd.DataFrame({
+        "name": ["AAA", "BBB"],
+        "session": [pd.Timestamp(D0), pd.Timestamp(D0)],
+        "detector": ["C2A", "C2A"],
+        "panel": ["A", "A"],
+        "era": ["TEST", "TEST"],
+        "excess_net": [None, None],
+        "false_start": [False, True],
+        "uninformative_no_control": [True, False],
+        "n_controls": [0, 5],
+        "same_band_support": [False, True],
+        "mfe": [0.01, 0.02],
+        "mae": [-0.01, -0.02],
+        "fwd_ret_net": [0.0, 0.01],
+        "cost_per_side_bps": [5.0, 5.0],
+        "censored": [False, False],
+        "cohort": ["unassigned", "unassigned"],
+        "regime": ["quiet", "quiet"],
+        "c32": [None, None],
+        "c2a_fired_in_episode": [False, False],
+        "common_eligible_c3_c2a": [False, False],
+    })
+
+
+def test_w51_episode_row_serializes_n_cell_and_selected_k_from_frozen_match():
+    """Writer copies already-produced fields; it does not rematch."""
+    ref = _frozen_ref()
+    row = _frozen_outcome(ref)
+    matched = _frozen_match(n_cell=12, controls_chosen=("BBB", "CCC"))
+    unmatched = _frozen_match(n_cell=40, controls_chosen=("BBB", "DDD"),
+                              same_band=True)
+    digest = (matched.n_cell, matched.controls, unmatched.same_band_control)
+    payload = assembly.episode_row(ref, row, matched, unmatched, {})
+    assert payload["n_cell"] == 12
+    assert payload["n_controls"] == 2
+    assert payload["same_band_support"] is True
+    assert (matched.n_cell, matched.controls, unmatched.same_band_control) == digest
+
+
+def test_w51_summary_table_persists_pool_diagnostics_and_keeps_legacy_keys():
+    ref = _frozen_ref()
+    row = _frozen_outcome(ref)
+    matched = _frozen_match(n_cell=12, controls_chosen=("BBB", "CCC", "DDD"))
+    unmatched = _frozen_match(same_band=True)
+    empty = _frozen_match(n_cell=0, controls_chosen=(), uninformative=True,
+                          same_band=False)
+    frame = pd.DataFrame([
+        assembly.episode_row(ref, row, matched, unmatched, {}),
+        assembly.episode_row(ref, row, empty, empty, {}),
+    ])
+    table = confirmatory._summary_table(frame, "primary_table_C2A")
+    assert set(_W5_SUMMARY_LEGACY_KEYS) <= set(table)
+    assert set(_W5_POOL_KEYS) <= set(table)
+    assert table["n_cell_mean"] == pytest.approx(6.0)
+    assert table["n_cell_median"] == pytest.approx(6.0)
+    assert table["n_cell_min"] == 0
+    assert table["n_cell_max"] == 12
+    assert table["k_n_0"] == 1
+    assert table["k_n_3"] == 1
+    assert table["k_n_5"] == 0
+    assert table["overlap_share"] == pytest.approx(0.5)
+    # CSV column order: legacy keys stay a prefix so old readers keep their
+    # positional mapping if they had one.
+    assert list(table)[: len(_W5_SUMMARY_LEGACY_KEYS)] == list(_W5_SUMMARY_LEGACY_KEYS)
+
+
+def test_w51_null_stays_null_when_diagnostics_are_not_applicable():
+    frame = pd.DataFrame({"name": ["AAA"], "excess_net": [None]})
+    table = confirmatory._summary_table(frame, "empty_diag")
+    assert table["n_cell_mean"] is None
+    assert table["n_cell_median"] is None
+    assert table["n_cell_min"] is None
+    assert table["n_cell_max"] is None
+    for i in range(prereg.CONTROL_K + 1):
+        assert table[f"k_n_{i}"] is None
+    assert table["overlap_share"] is None
+
+
+def test_w51_overlap_share_zero_is_defined_not_null():
+    frame = _legacy_summary_frame()
+    frame["same_band_support"] = [False, False]
+    table = confirmatory._summary_table(frame, "zero_overlap")
+    assert table["overlap_share"] == 0.0
+    assert table["overlap_share"] is not None
+
+
+def test_w51_legacy_summary_numbers_do_not_change_when_n_cell_is_added():
+    """No confirmatory statistic moves; only new keys appear."""
+    base = _legacy_summary_frame()
+    legacy = confirmatory._summary_table(base, "fit_table_C2A")
+    with_cell = base.copy()
+    with_cell["n_cell"] = [0, 9]
+    updated = confirmatory._summary_table(with_cell, "fit_table_C2A")
+    for key in _W5_SUMMARY_LEGACY_KEYS:
+        left, right = legacy[key], updated[key]
+        if left is None or (isinstance(left, float) and np.isnan(left)):
+            assert right is None or (isinstance(right, float) and np.isnan(right))
+        else:
+            assert left == right
+    assert updated["n_cell_mean"] == pytest.approx(4.5)
+    assert updated["k_n_0"] == 1
+    assert updated["k_n_5"] == 1
+
+
+def test_w51_writer_roundtrip_does_not_call_match(tmp_path, monkeypatch):
+    called = {"n": 0}
+    real = controls.match
+
+    def wrapped(*args, **kwargs):
+        called["n"] += 1
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(controls, "match", wrapped)
+    monkeypatch.setattr(assembly.controls, "match", wrapped)
+
+    ref = _frozen_ref()
+    row = _frozen_outcome(ref)
+    matched = _frozen_match(n_cell=7, controls_chosen=("BBB",))
+    unmatched = _frozen_match(n_cell=20, same_band=False)
+    frozen = (matched, unmatched)
+    payload = assembly.episode_row(ref, row, matched, unmatched, {})
+    table = confirmatory._summary_table(pd.DataFrame([payload]), "cell")
+    from scripts.entry_radar_replay import _write_results
+    _write_results({"panel": "T", "tables": {"cell": table},
+                    "questions": {}, "n_episodes": 1}, tmp_path)
+    assert called["n"] == 0
+    assert (matched, unmatched) == frozen
+    dumped = json.loads((tmp_path / "w5_results_panel_T.json").read_text(
+        encoding="utf-8"))
+    got = dumped["tables"]["cell"]
+    assert got["n_cell_mean"] == 7
+    assert got["k_n_1"] == 1
+    assert got["overlap_share"] == 0.0
+    # Old reader: drop the new keys and the legacy contract is intact.
+    legacy = {k: got[k] for k in _W5_SUMMARY_LEGACY_KEYS}
+    assert set(legacy) == set(_W5_SUMMARY_LEGACY_KEYS)
+
+
+def test_w51_already_produced_match_serializes_without_a_new_look():
+    """Real proof: serialize a match the machinery already produced.
+
+    Uses the battery's frozen synthetic panel — not a confirmatory replay, and
+    not a TrialLedger look.
+    """
+    panel = _panel()
+    candidate = panel[panel["ticker"] == "AAA"].iloc[0]
+    pool = panel[panel["ticker"] != "AAA"]
+    produced = controls.match(candidate, pool)
+    digest = (produced.ticker, produced.session, produced.controls,
+              produced.n_cell, produced.uninformative_no_control,
+              produced.same_band_control)
+    ref = _frozen_ref()
+    row = _frozen_outcome(ref)
+    unmatched = controls.match(candidate, pool, match_proximity=False)
+    payload = assembly.episode_row(ref, row, produced, unmatched, {})
+    table = confirmatory._summary_table(pd.DataFrame([payload]), "proof")
+    again = controls.match(candidate, pool)
+    assert (again.ticker, again.session, again.controls, again.n_cell,
+            again.uninformative_no_control, again.same_band_control) == digest
+    assert payload["n_cell"] == produced.n_cell == table["n_cell_mean"]
+    assert payload["n_controls"] == len(produced.controls)
+    assert table[f"k_n_{len(produced.controls)}"] == 1
+    assert table["overlap_share"] == float(unmatched.same_band_control)
+
+
+def test_w51_run_all_look_count_is_unchanged():
+    """Diagnostics ride existing summary cells; they do not spend a new look."""
+    src = inspect.getsource(confirmatory)
+    assert src.count("_spend(") == 19, (
+        "W5.1 must not add or remove a §13 look; _spend sites drifted")
+    spent: list[str] = []
+
+    class _Inputs:
+        panel = "A"
+        frame = _legacy_summary_frame()
+        refusals = ()
+        gate_receipts = ()
+        info_cutoff = None
+        seeds = {}
+        q5_pairs = None
+        fs_grid = None
+        row16_agreement = float("nan")
+
+        @staticmethod
+        def log_look(cell, config):
+            spent.append(cell)
+            return True
+
+    confirmatory.run_all(_Inputs)
+    assert spent == [
+        "q2_primary", "nc2_q2", "regime_quiet_C2A", "common_eligibility",
+    ], spent
+    assert "n_cell" not in spent and "overlap_share" not in spent
+
+
+def test_w51_json_bytes_are_sort_keyed_and_legacy_prefix_stable(tmp_path):
+    from scripts.entry_radar_replay import _write_results
+    table = confirmatory._summary_table(_legacy_summary_frame().assign(
+        n_cell=[0, 9]), "primary_table_C2A")
+    _write_results({"panel": "A", "tables": {"primary_table_C2A": table}},
+                   tmp_path)
+    raw = (tmp_path / "w5_results_panel_A.json").read_text(encoding="utf-8")
+    # sort_keys=True: n_cell_* sort among themselves; k_n_* are insertion-stable
+    # inside the object only after the dump sorts every key alphabetically.
+    parsed = json.loads(raw)
+    dumped_keys = list(json.loads(json.dumps(parsed, sort_keys=True))["tables"]
+                       ["primary_table_C2A"])
+    assert dumped_keys == sorted(table)
+    csv_header = (tmp_path / "w5_results_panel_A.tables.csv").read_text(
+        encoding="utf-8").splitlines()[0].split(",")
+    assert csv_header[: len(_W5_SUMMARY_LEGACY_KEYS)] == list(
+        _W5_SUMMARY_LEGACY_KEYS)

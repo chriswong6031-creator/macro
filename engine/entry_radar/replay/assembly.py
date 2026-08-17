@@ -142,6 +142,7 @@ def episode_row(
         "era": row.era, "excess_net": excess, "excess_net_unmatched": excess_un,
         "same_band_support": unmatched.same_band_control,
         "uninformative_no_control": matched.uninformative_no_control,
+        "n_cell": int(matched.n_cell),
         "n_controls": len(matched.controls), "false_start": row.false_start,
         "fwd_ret": row.fwd_ret, "fwd_ret_net": row.fwd_ret_net,
         "mfe": row.mfe, "mae": row.mae,
