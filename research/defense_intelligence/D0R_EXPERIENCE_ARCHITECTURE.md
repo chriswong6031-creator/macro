@@ -95,4 +95,15 @@ If the first screen cannot answer “what changed / why it might matter / what t
 | `d0r-entitled-tablet-820.png` | 820 |
 | `d0r-unentitled-*.png` | compact 2-row teaser for anonymous |
 
-D1 mockups for compositions 1–16, if built, go under the repo-approved mockups path **after** `python3 scripts/worktree_sparse.py add mockups` — not in this D0R session.
+D1–D2 **target** compositions (frozen this close, real golden data, not live-page screenshots) live under `research/defense_intelligence/evidence/compositions/` — not the omitted `mockups/` tree:
+
+| File | Surface | Widths |
+|---|---|---|
+| `d1-change-tape-rescued.html` | Change Tape after rescue (500, P00032 late, deobligation minus, agency **names**) | 1440 / 820 / 390 via CSS |
+| `d1-candidate-radar-entitled.html` | Radar **22** after site_full; mapping backlog 21; no membership overlay | same |
+| `d1-budget-sam-failure.html` | Typed Budget `PROJECTION_MISSING` + SAM `SOURCE_UNAVAILABLE` | same |
+| `d2-company-dossier-irdm.html` | IRDM dossier: SATCOM service, $18.4M obligation ≠ revenue, null denominator | same |
+
+These are the Gate 10 reference compositions. Entitled production PNGs remain **substrate** (`d0r-entitled-*.png`), not targets.
+
+D3–D16 compositions stay prose until those waves; D1 must not invent a third header or frontend scores.

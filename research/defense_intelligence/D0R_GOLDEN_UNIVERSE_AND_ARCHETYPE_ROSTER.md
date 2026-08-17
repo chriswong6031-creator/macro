@@ -36,10 +36,24 @@ This set is the acceptance cohort for D1–D17. It cannot be silently swapped to
 | 012450.KS Hanwha | Munitions/ship | 11,2,4 | | | | | | |
 | PLTR | Software/services | 5,8 | Army software | Attention | IR | Crowding | Not a munitions name | |
 | AXON | Adjacent | 8 | Less-lethal | Dual | IR | False defense tag | Negative control | |
-| SPR | Aero structures | 6 | Boeing content | Civil | 10-K | Dual-use | | |
+| ~~SPR~~ | **Historical identity only** | 6 | Spirit aerostructures | n/a live | Boeing 8-K 2025-12-08 | Listing terminated | **Do not use as live golden issuer** | **Absent from Stock Identity universe_snapshot_v1 (asof 2026-08-13)** |
 | MP | Materials | 9 | Rare earths | DPA | official | Offtake | | |
 
-Issuers counted (unique): LMT, RTX, NOC, GD, HII, BA, LHX, TDG, HWM, IRDM, LDOS, CACI, SAIC, BWXT, GE, HON, TXT, HEI, AVAV, KTOS, MRCY, VSAT, BAESY, RHM, SAAB, HO.PA, LDO, 012450.KS, PLTR, AXON, SPR, MP = **32**.
+Issuers counted (unique **live US + international research names**, SPR excluded from live set): LMT, RTX, NOC, GD, HII, BA, LHX, TDG, HWM, IRDM, LDOS, CACI, SAIC, BWXT, GE, HON, TXT, HEI, AVAV, KTOS, MRCY, VSAT, BAESY, RHM, SAAB, HO.PA, LDO, 012450.KS, PLTR, AXON, MP = **31 live + SPR historical**. Still ≥30.
+
+## G1b. Stock Identity validation (universe_snapshot_v1, asof 2026-08-13)
+
+Command: `pandas.read_parquet` on `git show HEAD:data/stock_identity/partition/universe_snapshot_v1.parquet` (2781 symbols). Columns used: `symbol`, `last_date`, `tape_ended`, `terminated_reason`, `compute_eligible`.
+
+| Ticker | In SI universe | tape_ended | compute_eligible | last_date | Ruling |
+|---|---|---|---|---|---|
+| LMT RTX NOC GD HII BA LHX TDG HWM IRDM LDOS BWXT GE HON TXT HEI AVAV KTOS MRCY VSAT PLTR AXON MP | yes | false | true | 2026-08-13 | **Live US golden** |
+| GEV | yes (GE split sibling) | false | true | 2026-08-13 | Keep as identity/M&A evidence; not a G1 replacement for GE |
+| **SPR** | **no row** | — | — | — | **Not a live issuer.** Boeing completed Spirit acquisition **2025-12-08** (Boeing 8-K `https://www.sec.gov/Archives/edgar/data/12927/000162828025055825/ba-20251208.htm`; Spirit 8-K `https://www.sec.gov/Archives/edgar/data/1364885/000110465925119096/tm2532915d1_8k.htm` — NYSE halt before open 2025-12-08). `config/us_search_aliases_zh.json` still maps SPR — alias only, not a tape. |
+| **CACI, SAIC** | **no row** | — | — | — | Still golden *research* names (services archetype). Coverage gap: not in this US SI snapshot. D2 must resolve share-class / listing before any candidate. |
+| BAESY, BAE, RHM, SAAB, HO, LDO, 012450, EADSY, RNMBY | **no row** | — | — | — | International / ADR not on this US SI plane. Keep as archetype 11 research names; do not mint `central:BAESY` here. Local listings (BA.L, RHM.DE, SAAB-B.ST, HO.PA, LDO.MI, 012450.KS) are **not** in the US snapshot. |
+
+Authority flags on the snapshot (`authority_*`) are all false — SI is identity, not rank/gate.
 
 Include at least: mega/large/mid/small; US+international; prime+supplier; pure+diversified; profit+growth; FP development (BA/NOC Sentinel); services+product; strong identity (IRDM) and weak (filmstrip extras); JV/M&A (L3Harris-Aerojet as related; GE split); dual-class/cross-list (BAESY ADR vs London).
 
@@ -106,4 +120,4 @@ First implementation war rooms: **1, 2, 8** if D1 rescue is US tape-first; **2, 
 
 ## G5. Freeze
 
-Do not replace IRDM or HII late-discovery as the D1 clock/identity cases. Do not drop international names solely because the US tape is the current substrate.
+Do not replace IRDM or HII late-discovery as the D1 clock/identity cases. Do not drop international names solely because the US tape is the current substrate. **Do not treat SPR as a live golden ticker.** Use it only as M&A/identity history (E67). `config/us_search_aliases_zh.json` SPR alias is not Stock Identity membership.

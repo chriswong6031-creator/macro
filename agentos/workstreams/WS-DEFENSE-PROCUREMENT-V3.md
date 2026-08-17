@@ -29,8 +29,8 @@ waves:
     status: in_progress
     pr: 5814
     next_action: >
-      Review entitled A plus architecture B–H packets. Do not start D1
-      unless the operator orders it. Do not implement original D0. Do not
+      Return closure packet (lineages, B/D/E/G/H harden, D1–D4 handoffs,
+      red-team DEC) to Sol for D0R acceptance. Do not start D1. Do not
       merge #5424.
   - id: D1
     title: Production truth and signed-in product rescue
@@ -58,15 +58,36 @@ landmines:
   - "HEAD recipient graph is defense19-v1. #5424 defense20-v1 is still open and must not be treated as live."
   - "Session worktrees are sparse by default. Never write into omitted data/ — that truncates the committed artifact."
   - "DNR:LAW-REVIEWED-MANIFEST-CENSUS — a reviewed recipient graph cannot re-time itself."
+  - "SPR is not a live issuer (Boeing close 2025-12-08; absent from Stock Identity universe)."
 do_not_redo:
   - "Do not start original D0. V2/D0 remain historical records only."
   - "Do not implement collectors, schemas, UI, Neural Web, or Prophet members in D0R."
   - "Do not create a second SEC, transcript, estimate, price, options, theme, identity, tenant, Neural Web, or Prophet plane."
   - "Do not treat GovTribe/GovCon capture parity as the product north star."
   - "Do not grant rank, gate, size, entry, or execution authority."
+  - "Do not treat SPR as a live golden ticker."
+  - "Do not invent 60 VERIFIED_CASE primaries."
+decisions:
+  - DEC:D0R-RED-TEAM-ADJUDICATION-2026-08-17
+discoveries:
+  - DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT
+  - DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT
+  - DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES
+  - DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200
+needs_ceo:
+  question: Accept the D0R closure packet on PR 5814 so the operator can authorize D1?
+  options:
+    - accept D0R; operator may then authorize D1 rescue only
+    - request more Gate 5 primary pins before acceptance
+    - reject; name remaining D0R gaps
+  recommendation: >
+    Accept as D0R research close with Gate 5 honest-labeled (6 VERIFIED_CASE,
+    61 RESEARCH_CANDIDATE). Do not authorize collectors. D1 remains a separate
+    operator order.
+  by_when: 2026-08-18
 next_action: >
-  Review entitled census and A–H architecture packets on PR 5814.
-  Radar UI still locked after candidates API 200. Do not start D1 unless ordered.
+  Sol reviews D0R closure on PR 5814. D0R not accepted; D1 unauthorized.
+  No #5424, no Prophet authority, no rank/gate/size/entry/execute.
 ---
 
 ## Context
@@ -78,9 +99,9 @@ research/design only. Canonical docs:
 - `research/DEFENSE_PROCUREMENT_D0R_FINANCIAL_ALPHA_RECONNAISSANCE_HANDOFF_2026-08-16.md`
 
 Kickoff evidence: `research/defense_intelligence/D0R_EVIDENCE_INDEX.md`.
-Continuation (unentitled browser, P00032 lineage, ledger):
-`research/defense_intelligence/D0R_ENTITLED_BROWSER_ACCEPTANCE.md`,
-`D0R_GOLDEN_AWARD_CHANGE_LINEAGE.md`,
-`D0R_CAPABILITY_AUTHORITY_LEDGER.md`.
+Closure packet (lineages L1–L6, B/D/E/G/H harden, I handoffs, red-team DEC)
+is on PR 5814 awaiting Sol D0R acceptance. D1 is not authorized.
 Discoveries: `DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT`,
-`DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT`.
+`DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT`,
+`DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES`,
+`DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200`.
