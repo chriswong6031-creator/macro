@@ -1077,10 +1077,10 @@ def redundancy_blocks(frame: C2Frame, registry: Registry, census: Mapping[str, A
                                   **_cross_section_cell(work, left, right)})
             # PIT DISCLOSURE.  Redundancy is a structural fact about the STORE and is
             # measured for every wired column, including members a BACKTEST frame may not
-            # join — but a measured cell must never read as admission.  `short_interest`
-            # is the live case: its `pit_settlement` status is NOT in
-            # BACKTEST_LAWFUL_STATUSES (F-5 deferred admission), so its columns appear
-            # here with the status attached and nowhere in any fitted path.
+            # join — but a measured cell must never read as admission.  Members whose
+            # pit_status is outside BACKTEST_LAWFUL_STATUSES appear here with the status
+            # attached and nowhere in any fitted path.  `short_interest` is PIT-lawful
+            # after #5705 / PR-3A; it is still not estimable on a three-settlement series.
             not_lawful = sorted({
                 f"{q} ({registry.members[q].pit_status})"
                 for q in registry.families[fam].members

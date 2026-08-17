@@ -34,6 +34,9 @@ decisions:
   - DEC:PROPHET-FUSION-IS-THE-CANONICAL-US-RANKER
   - DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW
   - DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-REGISTRY-QUESTION
+  - DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY
+discoveries:
+  - DSC:CHAMPION-BASELINE-COLUMNS-CARRY-THE-CHALLENGER
 landmines:
   - "A NIGHTLY CAN PUBLISH TO THE SITE AND NOT TO GIT. On 2026-08-16 run 31913143619
     the `publish` job deployed a canonical us_prophet_v3 board (Pages, 06:12:24Z) while
@@ -41,20 +44,22 @@ landmines:
     artifact (as_of 2026-08-13). The first v3 board was never committed. Anything that
     reads the repo to learn 'what shipped' is wrong on such a night — in either
     direction. Acceptance evidence for the override is the Pages artifact + that run's
-    engine log, NOT site/factordata/us_standouts.json on main."
-  - "Five per-leg store columns go NULL from the first us_prophet_v3 night —
-    us_context_vector.py:899-901/:1070-1071 and us_candidate_lanes.py:481-482 read
-    components/points off `prophet`, but on a v3 row the legs live on prophet_shadow.
-    Null-not-zero (so no gate breaks) and no US test pins them, so it is silent. Chipped
-    task_8c904665; leaving them null is a defensible answer."
+    engine log, NOT site/factordata/us_standouts.json on main. External availability
+    debt: issue #5742. Do not weaken the fail-closed checkpoint fence to make W3
+    look green. W3 counts durable paired stamps, not Pages-only nights."
+  - "RESOLVED by #5769 / DEC:US-SHADOW-ACCRUES-UNDER-ITS-OWN-COLUMN-FAMILY: the
+    retired v2 scorer accrues under prophet_shadow_* (13 columns). Canonical
+    prophet_* five-leg columns stay NULL on us_prophet_v3 by design — C1 has no
+    five-leg decomposition. Do not copy shadow values into canonical columns.
+    The pre-#5769 chip task_8c904665 is closed; do not reopen it."
   - "Context-vector store accrual STOPPED 2026-08-07 (4 stamped days total) while the
     board runs nightly — chipped for diagnosis; PR-1 verifies the fix. Masterplan §4.0."
-  - "short_int historical leakage FIXED in #5602: pit_settlement via knowable_date
-    (= settlement + 10d), historical dates never fall back to the snapshot. Residual:
-    committed history depth is 3 settlements (first knowable 2026-07-10) and the 2018+
-    panel parquet is absent on the primary checkout — re-run
-    scripts/backfill_finra_short_interest.py before deep historical joins; flip
-    families.yml pit_status only after PR-1a and #5602 both merge."
+  - "short_int producer law FIXED in #5705 (lib/finra_knowable.py): 8th NYSE session
+    after settlement, floored by stored knowable_date and by capture_date. Fusion
+    backtest admission of pit_settlement is reconciled in PR-3A. Residual: committed
+    history is still 3 settlements (first knowable 2026-07-22 under the capture
+    floor, not 2026-07-10); PIT-lawful does not mean statistically estimable.
+    Re-run scripts/backfill_finra_short_interest.py before deep historical joins."
   - "insider panel collector stopped at 2026q1 — insider__absent is 100% on Aug rows;
     the first-named lobe of the CEO ruling cannot be evaluated until repaired."
   - "data/edgar/sue_phase0.json records a shallow-panel WIRE verdict that the deep
@@ -77,6 +82,11 @@ do_not_redo:
     forward ledger can never pool a fusion-ranked night with a fallback one."
   - "Do not restore the additive potential_score, a confirming-desk-count score, or any
     unconditional composite — the CEO ruling explicitly does not authorize them."
+  - "Do not copy prophet_shadow_* into canonical prophet_* columns on v3."
+  - "Do not backfill the Pages-only v3 night; do not count retries of one as_of as
+    independent sessions; do not stamp shadow on us_prophet_v2_fallback."
+  - "Do not read W3 forward outcomes before research/prophet_fusion/W3_RACE_PREREG.md
+    is frozen, and do not treat PIT-lawful short interest as estimable."
   - "The two DNR row amendments LANDED in PR-0 (#5593):
     DNR:KILL-FUSED-COMPOSITE Amendment 3 and DNR:KILL-POSITIONING-FUSION Amendment 1,
     with compiled blocklists regenerated per masterplan §12 and §17 attack 13; do not
@@ -87,6 +97,8 @@ do_not_redo:
     stock_identity.* interfaces (#5583) and adopt its Method Law channels A/B/C."
 artifacts:
   - research/PROPHET_CONDITIONAL_FUSION_MASTERPLAN_BY_FABLE.md
+  - research/prophet_fusion/W3_SHADOW_RACE_RECUT.md
+  - research/prophet_fusion/W3_RACE_PREREG.md
 waves:
   - id: w0
     title: "PR-0 — architecture, census, frozen arena, adversarial review"
@@ -104,8 +116,13 @@ waves:
     pr: "#5667"
   - id: w2
     depends_on: [w1b]
-    title: "PR-2 — C2 regularized family stack + redundancy matrices + incremental harness"
-    status: in_progress
+    title: "PR-2 — C2 machinery (regularized family stack, redundancy/estimability,
+      variance-floor law, governed family table). Merged #5700. Real-frame C2
+      commissioning remains DATA-GATED (frozen fold law; 24 graded dates held /
+      91 needed at the #5700 measurement) and has NOT happened. Do not call C2
+      operationally validated on real folds."
+    status: done
+    pr: "#5700"
   - id: w2b
     depends_on: [w2]
     title: "PR-2b — CHAIRMAN OVERRIDE: C1 canonical (us_prophet_v3), v2 frozen to
@@ -118,12 +135,10 @@ waves:
     status: done
   - id: w3
     depends_on: [w2b]
-    title: "PR-3 — forward race instrumentation, RE-CUT 2026-08-15 against the live
-      prophet_shadow lane rather than a replayed G0 (the second scorer is deleted, not
-      deferred — production stamps the champion side nightly). Three lanes: forward race
-      (accrue now, read later, pre-registered, no promotion arm), family discrimination
-      via LOFO, coverage drift. Contract:
-      research/prophet_fusion/W3_SHADOW_RACE_RECUT.md"
+    title: "PR-3 — forward race instrumentation, split PR-3A..3D. Charter:
+      research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any
+      outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo
+      until PR-3D live-accepts instrumentation. PR-3A is semantics+prereg only."
     status: todo
   - id: w4
     depends_on: [w3]
@@ -143,30 +158,13 @@ waves:
       the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  w2b DONE — the Chairman override shipped: C1 is the canonical US ranker as
-  `us_prophet_v3` (engine/us_prophet_fusion.py, byte-parity-pinned against the raced
-  build_c1), the exact v2 scorer is frozen into `us_prophet_v2_shadow` (byte-parity
-  pinned against 69 published scores), the as-of-night presence+variance floors #5700
-  left unimplemented are in production, and
-  research/prophet_fusion/FUSION_BOARD_COMPARISON.md is the operator acceptance surface.
-  LIVE ACCEPTANCE CLOSED 2026-08-16 (handoff
-  PROPHET-CONDITIONAL-FUSION-2026-08-16-ACCEPTANCE.md): run 31913143619 published a
-  canonical `us_prophet_v3` board over 71 rows — 14 of 14 acceptance items PASS, order
-  comparison re-run on the new pool. Read from the PAGES DEPLOYMENT: that run's engine
-  job failed to push, so main still carries the pre-override v2 artifact and the ledger
-  day was lost (infrastructure, #5742 — not fusion). Both CEO adjudications recorded
-  (DEC:PROPHET-SHADOW-GRAIN-IS-A-PAIRED-ROW, DEC:FUSION-FAMILY-NEAR-CONSTANCY-IS-A-
-  REGISTRY-QUESTION) and w3 re-cut (research/prophet_fusion/W3_SHADOW_RACE_RECUT.md).
-  NEXT: w3 Lane A — build the forward-race accrual and PRE-REGISTER before any read; it
-  has no promotion arm and cannot "win". Lane B — lofo_displacement(), already
-  computable via aggregate(family_keys=...). Lane C — the OPEN question: LOFO reproduced
-  the same family ordering on the live pool (F1 6.28 > F2 5.66 > F5 2.54 >> F4 0.62 >
-  F8 0.11), but that pool overlaps the previous one 92% at the SAME as_of, so honest-N
-  is ONE session and whether F4/F8 near-constancy persists is unanswered. Note the
-  method finding: tie-share MISRANKS ordering contribution (F1 sits at 48% ties vs F2's
-  3% yet moves the order most), so the published separation table is a proxy, not the
-  measure. STILL OPEN from w1: the §13.0 live closure (first post-#5604 nightly with a
-  fresh curated stamp).
+  PR-3A (this wave) freezes W3 semantics and preregistration. After it merges, a
+  FRESH session starts PR-3B only: exact outcome-blind LOFO plus full member census.
+  Do not read forward C1-vs-shadow outcomes. w2 is done (#5700) but real C2
+  commissioning is still data-gated. w2b live-accepted. w3 stays todo until PR-3D.
+  Durable paired-race N remains 0 until the first post-#5769 candidates-store commit.
+  #5742 is external availability debt. Canonical five-leg nulls on v3 are correct
+  (#5769). STILL OPEN from w1: the §13.0 live-accrual closure.
 ---
 
 ## Context

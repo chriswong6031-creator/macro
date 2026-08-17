@@ -641,6 +641,85 @@ def is_spurious_check(name: str) -> bool:
     return "workers builds" in lowered and "macro" in lowered
 
 
+#: The inactive complementary ``ci-authority`` context. Each PR run fails the
+#: unused base so a retarget cannot reuse a success earned against another.
+#: This sweeper — and the arming predicate below — only admit PRs targeting
+#: main, so this name is a retarget-invalidation receipt, not a verdict.
+#: ``ci-authority/main`` stays binding. Do not widen this to the active
+#: context, and do not fold it into :func:`is_spurious_check`.
+CI_AUTHORITY_INACTIVE_CONTEXT = "ci-authority/codex/merge-queue-pilot"
+
+
+def is_non_binding_check(name: str, *, base_ref: str = "main") -> bool:
+    """Checks no main-target gate may read as a red this PR owns.
+
+    Two rules, kept distinct on purpose:
+
+    * :func:`is_spurious_check` — the known-spurious Cloudflare X. Widening
+      that allowlist is a ruling, not a refactor.
+    * For PRs targeting ``main``, :data:`CI_AUTHORITY_INACTIVE_CONTEXT` — red
+      by design on every such PR. The active ``ci-authority/main`` context
+      remains fully binding (pending and failure both block).
+
+    The ship-loop guard carries the identical pair
+    (``.claude/hooks/ship_loop_guard.py``, ``_is_non_binding_check``) without
+    importing this module: the hook must not acquire the application graph.
+    Call this from a gate; do not re-spell the inactive literal at the call
+    site — that is how ``decide_verdict`` and ``failing_check_names`` drifted.
+    """
+    if is_spurious_check(str(name or "")):
+        return True
+    return (
+        str(base_ref or "main") == "main"
+        and str(name or "") == CI_AUTHORITY_INACTIVE_CONTEXT
+    )
+
+
+def check_name(run: dict[str, Any]) -> str:
+    """A check-run ``name`` or a status-context ``context``; empty if neither."""
+    return str(run.get("name") or run.get("context") or "")
+
+
+def binding_status_checks(
+    checks: list[dict[str, Any]],
+    *,
+    base_ref: str = "main",
+) -> list[dict[str, Any]]:
+    """Rollup / check-run entries a main-target gate may judge as this PR's reds.
+
+    Filters :func:`is_non_binding_check` only. Empty input stays empty; an
+    all-non-binding list stays empty so callers fail closed rather than
+    treating "nothing binding is red" as green.
+    """
+    return [
+        check
+        for check in checks
+        if not is_non_binding_check(check_name(check), base_ref=base_ref)
+    ]
+
+
+def can_arm_merge_on_green(
+    runs: list[dict[str, Any]],
+    *,
+    base_ref: str = "main",
+) -> bool:
+    """Whether a session may add the ``merge-on-green`` label on this head.
+
+    This is the ARMING predicate, not the merge predicate. The sweeper still
+    decides whether an already-labeled PR merges; this answers whether a
+    session (or any other caller) may add the label. It uses the same
+    binding-check semantics as :func:`decide_verdict`: for PRs targeting
+    main, the inactive pilot authority context is not a red, an absence of
+    red is not a pass, and a real binding failure still refuses.
+
+    Non-main bases are out of scope for this label and return False.
+    """
+    if str(base_ref or "main") != "main":
+        return False
+    verdict, _names = decide_verdict(runs)
+    return verdict == "clean"
+
+
 def label_names(pull: dict[str, Any]) -> set[str]:
     return {str((label or {}).get("name") or "") for label in (pull.get("labels") or [])}
 
@@ -843,9 +922,7 @@ def decide_verdict(runs: list[dict[str, Any]]) -> tuple[str, list[str]]:
     considered = [
         run
         for run in runs
-        if not is_spurious_check(str(run.get("name") or ""))
-        and str(run.get("name") or "")
-        != "ci-authority/codex/merge-queue-pilot"
+        if not is_non_binding_check(str(run.get("name") or ""))
     ]
     if not considered:
         return "unproven", []
@@ -4999,8 +5076,7 @@ def failing_check_names(runs: list[dict[str, Any]]) -> set[str]:
     return {
         str(run.get("name") or "")
         for run in runs
-        if not is_spurious_check(str(run.get("name") or ""))
-        and str(run.get("name") or "") != "ci-authority/codex/merge-queue-pilot"
+        if not is_non_binding_check(str(run.get("name") or ""))
         and run.get("status") == "completed"
         and run.get("conclusion") not in CLEAN_CONCLUSIONS
     }
