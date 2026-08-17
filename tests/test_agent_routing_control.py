@@ -254,3 +254,24 @@ def test_context_hook_exposes_compact_route_map():
     assert "census->scout(sonnet)" in cp.stdout
     assert "judgment->Fable main loop" in cp.stdout
     assert "ROUTE orchestration" in cp.stdout
+
+
+def test_registry_cost_tiers_cannot_silently_drift():
+    registry = json.loads(REGISTRY.read_text())
+    routes = registry["routes"]
+    assert routes["extract"]["model"] == "haiku"
+    assert {r for r, s in routes.items() if s["model"] == "sonnet"} == {
+        "census", "research", "draft"
+    }
+    assert {r for r, s in routes.items() if s["model"] == "fable"} == {
+        "judgment", "orchestration"
+    }
+    assert routes["judgment"]["main_loop_only"] is True
+    assert routes["orchestration"]["requires_fable_why"] is True
+
+
+def test_cheap_routes_are_not_shipping_code_routes():
+    registry = json.loads(REGISTRY.read_text())
+    for route in ("extract", "census", "research"):
+        assert registry["routes"][route]["agent"] not in {"builder", "designer"}
+        assert registry["routes"][route]["model"] in {"haiku", "sonnet"}
