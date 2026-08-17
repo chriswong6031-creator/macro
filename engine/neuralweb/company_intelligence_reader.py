@@ -29,12 +29,20 @@ from engine.company_intelligence.contracts import (
     validate_context,
     validate_manifest,
 )
-from engine.company_intelligence.event_workspace import (
-    NEST as EVENT_WORKSPACE_NEST,
-    resolve_workspace_event_id,
-    validate_event_workspace,
-    validate_workspace_manifest,
-)
+
+
+_DEFAULT_BASE_URL = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence"
+_CACHE_TTL_SECONDS = 300.0
+_REQUEST_TIMEOUT_SECONDS = 8.0
+_MAX_MANIFEST_BYTES = 8 * 1024 * 1024
+_MAX_CONTEXT_BYTES = 512 * 1024
+_MAX_WORKSPACE_BYTES = 512 * 1024
+_MAX_HISTORY = 12
+_MAX_CONTEXT_CACHE_ENTRIES = 256
+# Keep this string identical to engine.company_intelligence.event_workspace.NEST.
+# The binder is imported only inside the workspace reader so Brain/API load
+# time does not pull Exhibit 99.1 parsing into the restart closure.
+_EVENT_WORKSPACE_NEST = "event_workspaces"
 
 
 _DEFAULT_BASE_URL = "https://pub-f7ffb4441c5f4ad983ca56ec7c651c61.r2.dev/company_intelligence"
@@ -412,31 +420,43 @@ def _event_projection(event: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _workspace_contracts():
+    """Import the workspace contract only when a workspace is actually read.
+
+    ``company_intelligence_reader`` is on the macro-api load path.  Binding
+    Exhibit 99.1 lives behind this seam so API import-closure tests do not
+    require a restart-regex expansion for ``engine.earnings_release``.
+    """
+    from engine.company_intelligence import event_workspace as mod
+    return mod
+
+
 def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, str]]:
     """Load marker + immutable generation for the event_workspaces nest."""
+    ws = _workspace_contracts()
     now = time.monotonic()
-    cache_key = f"{base_url}/{EVENT_WORKSPACE_NEST}"
+    cache_key = f"{base_url}/{_EVENT_WORKSPACE_NEST}"
     with _cache_lock:
         cached = _workspace_snapshot_cache.get(cache_key)
         if cached is not None and cached[0] > now:
             return copy.deepcopy(cached[1]), copy.deepcopy(cached[2])
 
-    marker_url = _object_url(base_url, f"{EVENT_WORKSPACE_NEST}/manifest.json")
+    marker_url = _object_url(base_url, f"{_EVENT_WORKSPACE_NEST}/manifest.json")
     marker_body = _fetch_bytes(marker_url, limit=_MAX_MANIFEST_BYTES)
     marker = _json_object(marker_body, name="event workspace marker")
     try:
-        validate_workspace_manifest(marker)
+        ws.validate_workspace_manifest(marker)
     except ContractError as exc:
         raise CompanyIntelligenceReadError("event workspace marker failed contract validation") from exc
 
     generation_id = str(marker["generation_id"])
     immutable_url = _object_url(
-        base_url, f"{EVENT_WORKSPACE_NEST}/generations/{generation_id}/manifest.json"
+        base_url, f"{_EVENT_WORKSPACE_NEST}/generations/{generation_id}/manifest.json"
     )
     immutable_body = _fetch_bytes(immutable_url, limit=_MAX_MANIFEST_BYTES)
     immutable = _json_object(immutable_body, name="event workspace immutable manifest")
     try:
-        validate_workspace_manifest(immutable)
+        ws.validate_workspace_manifest(immutable)
     except ContractError as exc:
         raise CompanyIntelligenceReadError(
             "event workspace immutable manifest failed contract validation"
@@ -463,9 +483,10 @@ def _load_workspace_snapshot(base_url: str) -> tuple[dict[str, Any], dict[str, s
 
 def _load_event_workspace(base_url: str, event_id: str) -> tuple[dict[str, Any], dict[str, str]]:
     """Resolve and hash-verify one generation-addressed event workspace."""
+    ws = _workspace_contracts()
     manifest, receipt = _load_workspace_snapshot(base_url)
     try:
-        canonical_id = resolve_workspace_event_id(event_id, manifest.get("aliases") or {})
+        canonical_id = ws.resolve_workspace_event_id(event_id, manifest.get("aliases") or {})
     except ContractError as exc:
         raise CompanyIntelligenceReadError("event workspace alias could not be resolved") from exc
     generation_id = str(manifest["generation_id"])
@@ -488,14 +509,14 @@ def _load_event_workspace(base_url: str, event_id: str) -> tuple[dict[str, Any],
         raise CompanyIntelligenceReadError("event workspace exceeds safe size bound")
 
     workspace_url = _object_url(
-        base_url, f"{EVENT_WORKSPACE_NEST}/generations/{generation_id}/{relative}"
+        base_url, f"{_EVENT_WORKSPACE_NEST}/generations/{generation_id}/{relative}"
     )
     body = _fetch_bytes(workspace_url, limit=_MAX_WORKSPACE_BYTES)
     if len(body) != expected_bytes or sha256(body).hexdigest() != expected_hash:
         raise CompanyIntelligenceReadError("event workspace failed immutable receipt verification")
     workspace = _json_object(body, name="event workspace")
     try:
-        validate_event_workspace(workspace)
+        ws.validate_event_workspace(workspace)
     except ContractError as exc:
         raise CompanyIntelligenceReadError("event workspace failed contract validation") from exc
     if workspace.get("generation_id") != generation_id or workspace.get("event_id") != canonical_id:
