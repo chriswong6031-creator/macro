@@ -53,6 +53,8 @@ Continuation critics of freeze `9c8990d` (product A BLOCK, visual B BLOCK) — b
 | RGXB-004 | nit | FIXED | DESIGN_NOTES §2: UNAVAILABLE is the freshness footer, not the lifecycle chip word. |
 | VTC-D-002 | major | FIXED | DESIGN_NOTES §5 no longer claims VTC-304 is fully inherited. Pre-candidate `--pv-wait` vs stale `--warn` is disclosed. |
 
-Do not self-approve. Do not start W9. Re-attest on the new artifact SHA.
+Visual re-attest of freeze `a8c763dc` (`opus-designer-w8-reattest-5737-B`): **PASS_WITH_CONDITIONS**. Prior BLOCK lifted. Four minor W9-facing conditions (VTC-B-401..404) recorded in `reviews/visual_taste.yml` and `W9_IMPLEMENTATION_HANDOFF.md`. No freeze re-cut.
+
+Do not self-approve. Do not start W9. Product re-attest of `a8c763dc` is still required before `verdict.yml`.
 
 

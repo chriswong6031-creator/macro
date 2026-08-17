@@ -23,8 +23,13 @@ Approved visual / component / reference behaviour from `mockups/refs/entry_radar
 - Opportunity drawer slot: `NOT YET MEASURED`
 - Cards are **not links** (no `stock.html` — Prophet PRC-301 is not closed)
 - Lifecycle hue is `--er-life`, never `--pv-buy` or `--ok`
-- 390px is one column that **fits** — do not pin it with `overflow-x: hidden`. Overlay wraps (sister). Overlay does not repeat the LIFECYCLE axis (it overflowed Pre-candidate under the price). C2 variant is not in the overlay. At ≤720px keep the purpose sentence; the sister line may hide.
+- 390px is one column that **fits** — do not pin it with `overflow-x: hidden`. Overlay wraps (sister). Overlay does **not** repeat a LIFECYCLE axis label — the chip is self-labelling; duplicating the axis overflowed Pre-candidate under the price. C2 variant is not in the overlay. At ≤720px keep the purpose sentence; the sister line may hide.
 - RIG checks in `tools/verify.py` + `tests/test_entry_radar_w8_rig.py` as the production regression floor (adapt selectors, do not weaken). **Static checks always run in CI.** Live geometry (P11 vs `.pv-ovr .pv-quote` at 1024/1280/1440, including rail overflow) runs when Playwright is installed via `verify.py --url` / `test_verify_live_geometry`. A skip without Playwright is **not** a pass of overlay geometry. Do not restore P11 to comparing two chips in the same left rail.
+
+- Overlay does **not** emit a visible LIFECYCLE axis. The overlay chip is self-labelling (the lifecycle *word* — Pre-candidate / Candidate / Probing — already sits in the body next to the weight mark). Do not restore `<span class="pv-axis">Lifecycle</span>` in the overlay; W8 hid it with `display:none` only so the RIG mutation stays testable. Production should omit the span.
+- Lifecycle glance ownership is an explicit W9 decision: overlay chip vs body `.pv-life-w` currently print the same word twice. Do not carry stacked repetition into production without choosing an owner.
+- P11 live geometry in `verify.py` is dark+EN at 1024/1280/1440. That is the worst case (longest chip, tightest grid). A green verify.py is not by itself proof of ZH/light/1920 parity — extend the probes if you copy the harness.
+- Amber is **not** single-meaning. Stale / degraded / false-start use `--warn`. Pre-candidate uses `--pv-wait`. Do not tell production amber is caution-only.
 
 Copy the **look and the information model**, not the synthetic payload.
 
