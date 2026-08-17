@@ -20,7 +20,17 @@ changed:
   - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
     what: NEW — workstream record (AD-0 awaiting review; AD-1 gated on review).
   - path: agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-17.md
-    what: NEW — this handoff.
+    what: NEW — this handoff (updated in place by the same-day Sol-review amendment pass).
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_DARK_POOL_INTELLIGENCE_OS_MASTERPLAN_2026-08-17.md
+    what: NEW (amendment pass) — governing masterplan committed in-repo per Sol review amendment 1; AD-0…AD-15 architecture is now durable repo state.
+  - path: agentos/decisions/DEC-AD-SIGNAL-VOCAB-RESTORES-SHORT.md
+    what: NEW (amendment pass) — SHORT restored to the Advanced Data signal vocabulary; D-law replaces the vocabulary ban (Sol review amendment 2).
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md
+    what: AMENDED — direction enum includes SHORT under the D-law; new §5.3 freezes the complete deterministic display-tier scoring/ranking method (intel_brief_heuristic/v1) so the builder has zero product-design decisions; test 14 pins the frozen constants (Sol review amendments 2+3).
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
+    what: AMENDED — masterplan cited at its in-repo path; RETIRE row carries the evidence-preservation law (runtime-only retirement); intraday fleet explicitly DISARMED BY DEFAULT pending AD-9.
+  - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
+    what: AMENDED — operator-held-masterplan landmine removed; fleet-disarmed + evidence-preservation landmines added; DEC linked; masterplan added to artifacts.
 verified:
   - claim: main_at_start is 7a6a6656e289 and production checkout matches it
     command: "git log -1 origin/main; curl -s https://www.mastermind-x.com/api/health"
@@ -62,7 +72,7 @@ do_not_redo:
 danger_areas:
   - DNR:KILL-POSITIONING-FUSION Amendment 1 scope — options positioning keys may earn authority ONLY inside the Prophet-US conditional-fusion arena.
   - Front-facing language law (operator 2026-07-27) — no falsifier/refuted vocabulary on any AD surface; invalidation renders as watch conditions.
-  - AVOID-not-SHORT (Options Confluence law 17) — AD-1's direction enum deliberately omits SHORT; changing that is a masterplan amendment, not an implementation choice.
+  - Direction law — SHORT is in the Advanced Data vocabulary (DEC:AD-SIGNAL-VOCAB-RESTORES-SHORT) but gated by the AD-1 §5.3 D-law; no insufficiently directional observation originates LONG or SHORT alone; zero SHORT emissions is a lawful output. Legacy confluence surfaces keep law 17 until their own docs are amended.
   - Sparse worktrees — AD-1 touches templates/site: opt in with `python3 scripts/worktree_sparse.py full` before render work.
 ---
 
