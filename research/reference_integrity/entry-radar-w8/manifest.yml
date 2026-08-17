@@ -1,7 +1,7 @@
 schema: mastermind.rig_manifest.v1
 reference_id: entry-radar-w8
 scope: full
-status: in_review
+status: approved
 
 surface:
   route: entry_radar.html
@@ -31,7 +31,8 @@ files:
     product_regression: reviews/product_regression.yml
     visual_taste: reviews/visual_taste.yml
   verdict: verdict.yml
+  approval: approval.yml
 
 # Founding reference for a surface that does not exist in production.
 # No predecessor on route entry_radar.html — continuity.yml is therefore omitted.
-# Status is in_review: this cycle does not self-approve (RIG §3 / §7).
+# Status is approved: reference-only. W9 production UI is a separate commissioning.

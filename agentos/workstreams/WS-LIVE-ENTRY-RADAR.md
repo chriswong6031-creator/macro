@@ -101,8 +101,8 @@ waves:
     pr: 5737
     depends_on: [W0]
     # Opened as a reviewable reference PR (#5737). NOT done until merged.
-    # Commissioning session 2026-08-17 re-freezes the nits artifact at
-    # 5ef3626d2e59c101dfd9cc76399fa97f11b0e561. Do not auto-roll W9.
+    # Commissioning 2026-08-17: freeze a8c763dc APPROVE_WITH_CONDITIONS.
+    # Do not auto-roll W9.
 
   - id: W9
     title: PR-9 production UI + live RTH verification
@@ -116,7 +116,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W5 is done (#5825). W8 is in commissioning on PR #5737 (reference-only; do not auto-roll W9). Parallel next wave is W6 (Research Priority). Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
+next_action: W8 is in commissioning on PR #5737 (freeze a8c763dc APPROVE_WITH_CONDITIONS, reference-only; do not auto-roll W9). Parallel next wave is W6 (Research Priority). Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
 ---
 
 ## Context

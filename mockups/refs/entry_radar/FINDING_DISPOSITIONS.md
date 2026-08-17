@@ -55,6 +55,6 @@ Continuation critics of freeze `9c8990d` (product A BLOCK, visual B BLOCK) — b
 
 Visual re-attest of freeze `a8c763dc` (`opus-designer-w8-reattest-5737-B`): **PASS_WITH_CONDITIONS**. Prior BLOCK lifted. Four minor W9-facing conditions (VTC-B-401..404) recorded in `reviews/visual_taste.yml` and `W9_IMPLEMENTATION_HANDOFF.md`. No freeze re-cut.
 
-Do not self-approve. Do not start W9. Product re-attest of `a8c763dc` is still required before `verdict.yml`.
+Product re-attest of freeze `a8c763dc` (`opus-reviewer-w8-reattest-5737-A`): **PASS_WITH_CONDITIONS**. Causal mutant control: axis restored → 68 occlusions / 176 rail overflows; freeze → 0. Visual re-attest: **PASS_WITH_CONDITIONS**. Design-authority verdict: **APPROVE_WITH_CONDITIONS** (W9-COND-1..5). Reference-only. Do not start W9.
 
 
