@@ -2609,3 +2609,16 @@
 {"id":"ob-2026-08-14-1203f04c27","from":"posting","to":"posted","at":"2026-08-14T23:59:57Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a7fabfd552e173cba943d09","external_url":null,"at":"2026-08-14T23:59:46Z","booked_at":"2026-08-15T00:36:46Z"}}
 {"id":"ob-2026-08-14-d23be80f9e","from":"approved","to":"posting","at":"2026-08-14T23:59:57Z","actor":"publisher","note":"in-flight (pre-publish)","receipt":null}
 {"id":"ob-2026-08-14-d23be80f9e","from":"posting","to":"posted","at":"2026-08-14T23:59:58Z","actor":"publisher","note":"published","receipt":{"backend":"buffer","external_id":"6a7fabfef22b84c3539ff466","external_url":null,"at":"2026-08-14T23:59:46Z","booked_at":"2026-08-15T00:42:46Z"}}
+{"id":"ob-2026-08-14-d43c18387c","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-317f94d392","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-afcfa0bd9e","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-97333f88e7","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-f4dbfe1900","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-fe296daaf2","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-8dace4ecd9","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-cd2b40257b","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-270f2137f2","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-09da229545","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-6020af9f71","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-cbad5b13c2","from":"approved","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
+{"id":"ob-2026-08-14-a6cf2ff959","from":"queued","to":"quarantined","at":"2026-08-17T23:53:25Z","actor":"approval-desk","note":"expired: superseded by tonight's plan","receipt":null}
