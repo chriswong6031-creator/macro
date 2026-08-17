@@ -1,0 +1,80 @@
+---
+workstream: "WS:ADVANCED-DATA-OPTIONS"
+session: claude/ad0-options-recovery-archaeology
+model: fable
+ended_because: complete
+mission: >
+  AD-0 recovery archaeology: reconstruct current-main + production truth for the options
+  EOD / off-exchange estate, adjudicate maturity and salvage, freeze the AD-1 slice, and
+  open one docs-only PR. No runtime changes.
+state_before: >
+  No workstream record existed for the options program. Prior state was fragmented across
+  ~30 research docs, the Options Confluence program of record (2026-07-16), the sparse-
+  selector PR chain (#5747 et al.), and an accompanying machine-generated evidence bundle
+  that had audited an EMPTY head (0 artifacts) and carried no usable evidence.
+changed:
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_AD0_CURRENT_STATE_AND_CAPABILITY_LEDGER_2026-08-17.md
+    what: NEW — full AD-0 ledger (maturity, production audit, UX audit, semantics, source/rights, salvage, no-rebuild, 25 answers).
+  - path: research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md
+    what: NEW — implementation-ready AD-1 handoff (outcome, exact allowed/forbidden files, source clocks, output contract, tests, production proof).
+  - path: agentos/workstreams/WS-ADVANCED-DATA-OPTIONS.md
+    what: NEW — workstream record (AD-0 awaiting review; AD-1 gated on review).
+  - path: agentos/handoffs/ADVANCED-DATA-OPTIONS-2026-08-17.md
+    what: NEW — this handoff.
+verified:
+  - claim: main_at_start is 7a6a6656e289 and production checkout matches it
+    command: "git log -1 origin/main; curl -s https://www.mastermind-x.com/api/health"
+    result: checkout 7a6a6656e28 == origin/main tip; app-binary commit 16874921e63 (older; semantics inferred)
+  - claim: EOD options source is Polygon snapshot in daily.yml, session-stamped
+    command: "grep -n POLYGON_API_KEY .github/workflows/daily.yml collectors/polygon_options.py; sed -n 38,50p scripts/build_polygon_gex.py; grep -n accrue_polygon_gex scripts/collect.py"
+    result: daily.yml:323 env; collect.py:841 invocation; _resolve_session stamps the described session
+  - claim: no options launchd unit is loaded on the Mac Studio
+    command: "launchctl list | grep -iE 'macro|mastermind'; launchctl print gui/501/<unit>; launchctl print system/<unit>; ls ~/Library/LaunchAgents"
+    result: zero options units loaded; only optionsnbbocohort installed-not-loaded; liveflow present only as .bak; sparse-selector receipt roots absent under ~/.mastermind_private
+  - claim: exactly one options-derived sign is in live Prophet rank
+    command: "sed -n 200,278p engine/us_prophet_fusion.py; sed -n 1105,1200p engine/us_board_rank.py"
+    result: gex_confirm_verdict in REGISTERED_SIGNS (F5_FLOW_POSITIONING); C1 fusion is canonical US rank authority (Chairman override 2026-08-15)
+  - claim: production surfaces and sessions as recorded in the ledger §1
+    command: "curl -sI/-s on options.html, darkpool.html, advanced.html, data JSONs; git show origin/main:site/{darkpool_eod,flow_desk,options_dislocation}.json; gh run list --workflow daily.yml/--workflow closing-bell.yml --limit 5"
+    result: options LM 08-15 00:45Z (session 08-13 settled, positions 08-14); darkpool asof 08-13; JSON data planes 401 auth-gated; committed==served where comparable
+  - claim: sparse-selector PR chain reconciled
+    command: "gh pr view 5747|5694|5696|5708|5711|5790|5801 --json state,mergedAt,mergeCommit,files"
+    result: six merged with SHAs recorded in ledger §2.3; #5711 closed unmerged duplicate of #5708; W1A modules imported only by their tests
+unverified:
+  - claim: /api/health "commit" field means last app-binary restart build
+    what_would_verify: a deploy-truth doc or reading app/deploy/update.sh restart semantics
+  - claim: closing-bell.yml did or did not run after Friday 17:25 ET on 2026-08-14
+    what_would_verify: one wider bounded `gh run list --workflow closing-bell.yml --limit 20 --created 2026-08-14..2026-08-16`
+  - claim: redistribution/derived-display rights for Polygon/massive-derived surfaces
+    what_would_verify: operator/vendor license confirmation (not in-repo)
+unresolved:
+  - Q3/D4 pair — options.prophet_shadow publishes nightly to R2 with zero consumers (its only coded consumer, the issue desk, is unscheduled); AD-5 must consume or retire it (masterplan §16.7).
+  - UNKNOWN_PENDING_PROOF — whether the host intraday fleet ever returns under Macro, given Terminal owns intraday options-flow authority; Chairman ruling needed (framed for AD-9).
+  - Library-imported dark builders (ledger §2.3 D6): function-level liveness inside live callers not adjudicated; check importer call graphs before any retirement action.
+next_actions:
+  - Chairman reviews the AD-0 PR (ledger + AD-1 handoff).
+  - On approval, commission AD-1 exactly per research/ADVANCED_DATA_OPTIONS_EOD_AD1_DAILY_INTELLIGENCE_BRIEF_HANDOFF_2026-08-17.md — one slice, stop after its production acceptance packet.
+  - Ratify or amend the salvage matrix RETIRE row (ledger §8) — recommendations only until ratified.
+do_not_redo:
+  - The four census lanes of AD-0 (EOD product path, sparse-selector PR chain, consumer planes, production probes) — results are in the ledger with commands; re-running them re-discovers the same estate.
+  - Any continuation of PR #5747 or re-arming of the sparse-selector canary — no consumer, proposal authority code-closed, activation window expiring 2026-08-21.
+  - A second program registry or a Macro-side copy of strategic state — the registry row is config/mastermind_programs.yml `options-intelligence`; this WS record is the program state.
+danger_areas:
+  - DNR:KILL-POSITIONING-FUSION Amendment 1 scope — options positioning keys may earn authority ONLY inside the Prophet-US conditional-fusion arena.
+  - Front-facing language law (operator 2026-07-27) — no falsifier/refuted vocabulary on any AD surface; invalidation renders as watch conditions.
+  - AVOID-not-SHORT (Options Confluence law 17) — AD-1's direction enum deliberately omits SHORT; changing that is a masterplan amendment, not an implementation choice.
+  - Sparse worktrees — AD-1 touches templates/site: opt in with `python3 scripts/worktree_sparse.py full` before render work.
+---
+
+## Summary
+
+AD-0 is complete as commissioned: a ruthless maturity ledger over the whole options/
+off-exchange estate (9 PROVEN_LIVE chains, 4 PARTIAL, a 15-unit dark host fleet, the
+sparse-selector path fully reconciled and inert, Sector at zero, one lawful live Prophet
+channel), a production audit anchored to /api/health and served-page evidence, a data-
+semantics adjudication of every inference the estate currently makes, a salvage/retire
+matrix, a no-rebuild plane map, and a frozen, implementation-ready AD-1 slice. The next
+builder does not need to rediscover the project: read the two research artifacts in
+`changed`, then the AD-1 handoff §0 gates. The AD-0 documentation PR opened from this
+session carries the final verdict block in its body; its number is recorded in the
+workstream wave entry once assigned.

@@ -21,6 +21,12 @@
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/ship_loop_guard.py\"",
             "timeout": 30,
             "statusMessage": "Loading the mandatory ship loop"
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/agent_routing_context.py\"",
+            "timeout": 10,
+            "statusMessage": "Loading agent routing control"
           }
         ]
       }
@@ -33,7 +39,7 @@
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/model_routing_guard.py\"",
             "timeout": 10,
-            "statusMessage": "Checking model routing"
+            "statusMessage": "Checking agent route, model, and commission"
           }
         ]
       },
@@ -43,6 +49,19 @@
           {
             "type": "command",
             "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/gh_quota_guard.py\""
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "extractor|scout|researcher|drafter|analyst|debugger|builder|reviewer|designer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/agent_return_guard.py\"",
+            "timeout": 10,
+            "statusMessage": "Checking worker evidence packet"
           }
         ]
       }
