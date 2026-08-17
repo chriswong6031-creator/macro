@@ -14,9 +14,10 @@ class: research
 blast_radius: user_facing
 ambiguity: specified
 next_action: >
-  After this E1P PR merges, dispatch or observe company-intelligence.yml,
-  prove GET event_workspaces/manifest.json is 200 and read_event_workspace
-  returns available:true on all four AAPL aliases, then stop. Do not start E2.
+  Heal the HTML-escaped SGML parser, redispatch company-intelligence.yml on
+  main, prove GET event_workspaces/manifest.json is 200 and
+  read_event_workspace returns available:true on all four AAPL aliases, then
+  stop. Do not start E2.
 owns_paths:
   - research/earnings_intelligence/**
   - research/EARNINGS_INTELLIGENCE_E0_FREEZE_ARCHAEOLOGY_AND_EXPERIENCE_HANDOFF_2026-08-16.md
@@ -32,6 +33,7 @@ discoveries:
   - "DSC:EARNINGS-PROVENANCE-SUBSTRATE-OUTRAN-THE-PRODUCT"
   - "DSC:EARNINGS-WIRE-AND-CI-DIVERGE-ON-THE-SAME-ISSUER"
   - "DSC:E1-READER-IS-NOT-THE-PRODUCTION-OBJECT"
+  - "DSC:EDGAR-INDEX-HEADERS-ARE-HTML-ESCAPED"
 do_not_redo:
   - Rebuild Terminal transcripts, Stage, Group Reads, TIL, or a standalone earnings app.
   - Treat Earnings Wire excerpt archive as the finished intelligence product.
@@ -39,6 +41,7 @@ do_not_redo:
   - Treat a production-shaped reader test as proof the R2 object exists.
   - Publish E1 test fixtures as production event_workspace truth.
   - Start E2 before GET company_intelligence/event_workspaces/manifest.json is 200.
+  - Parse EDGAR `-index-headers.html` without html.unescape.
 landmines:
   - v1 CI requires claim_citations_pending == true; do not flip the v1 invariant.
   - public_wire completeness is forced transcript-only; changing it is a contract change.
@@ -59,7 +62,7 @@ waves:
     title: Production activation of the AAPL FY2026 Q3 event_workspace nest
     status: in_progress
     depends_on: [E1]
-    next_action: Wire the sibling nest through company-intelligence.yml and prove the public reader.
+    next_action: Unescape EDGAR index-headers.html, redispatch company-intelligence.yml, prove the public reader.
   - id: E2
     title: Golden Event Workspace in existing Terminal + dossier
     status: todo
