@@ -168,12 +168,71 @@ def _verify_lineage_transition(
             raise ContractError("corrected packet prior story differs from direct parent")
 
 
+def _event_call_date(
+    evidence_root: Path,
+    event: Mapping[str, Any],
+    files: Mapping[str, Any],
+) -> str:
+    """Call date from the bound fact pack; empty when that object is not local."""
+    receipt = files.get(event["fact_pack"])
+    if not isinstance(receipt, Mapping):
+        return ""
+    object_key = receipt.get("object_key")
+    if not isinstance(object_key, str) or not object_key:
+        return ""
+    path = evidence_root / object_key
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
+        return ""
+    if not isinstance(payload, Mapping):
+        return ""
+    nested = payload.get("event")
+    if not isinstance(nested, Mapping):
+        return ""
+    return str(nested.get("date") or "")
+
+
+def _pending_new_event_keys(
+    evidence_manifest: Mapping[str, Any],
+    prior_index: Mapping[str, Mapping[str, Any]],
+    *,
+    policy_ref: Mapping[str, Any],
+    prior: Mapping[str, Any] | None,
+    evidence_root: Path | None = None,
+) -> list[str]:
+    """Newest-first keys that are not already reusable in the prior catalog."""
+    pending: list[tuple[str, str]] = []
+    for key, event in evidence_manifest["events"].items():
+        assert isinstance(event, Mapping)
+        prior_entry = prior_index.get(key)
+        if (
+            prior_entry is not None
+            and str(prior_entry["source_sha256"]) == str(event["source_sha256"])
+            and prior is not None
+            and dict(prior["policy"]) == policy_ref
+        ):
+            continue
+        if prior_entry is not None:
+            # Already-projected corrections stay in the catalog automatically.
+            continue
+        call_date = (
+            _event_call_date(evidence_root, event, evidence_manifest["files"])
+            if evidence_root is not None
+            else ""
+        )
+        pending.append((call_date, str(key)))
+    pending.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return [key for _date, key in pending]
+
+
 def build_story_packet_generation(
     evidence_dir: str | Path,
     *,
     policy: object | None = None,
     prior_manifest: object | None = None,
     prior_store_dir: str | Path | None = None,
+    max_new_events: int | None = None,
 ) -> tuple[dict[str, Any], dict[str, bytes]]:
     """Build an immutable aggregate marker plus only newly needed packet bytes.
 
@@ -181,6 +240,11 @@ def build_story_packet_generation(
     catalog.  Same event + same transcript-source SHA + same policy hash reuses
     the packet exactly; a changed transcript source receives the prior packet as
     correction lineage and therefore retains its logical story id.
+
+    ``max_new_events`` bounds how many *new* evidence keys one generation may
+    add.  The hourly lane uses this so a multi-thousand-event catch-up advances
+    over successive runs instead of trying to compile the whole delta at once.
+    ``None`` keeps the historical compile-everything behaviour.
     """
     evidence_root = Path(evidence_dir)
     evidence_manifest = _canonical_marker(evidence_root / "manifest.json", label="evidence root marker")
@@ -198,11 +262,23 @@ def build_story_packet_generation(
     if not set(prior_index) <= current_keys:
         missing = sorted(set(prior_index) - current_keys)
         raise ContractError(f"earnings evidence root shrank; refusing story packet catalog loss: {missing[:3]}")
+    if max_new_events is not None and max_new_events < 0:
+        raise ContractError("max_new_events must be >= 0")
+    pending = _pending_new_event_keys(
+        evidence_manifest,
+        prior_index,
+        policy_ref=policy_ref,
+        prior=prior,
+        evidence_root=evidence_root,
+    )
+    if max_new_events is not None:
+        pending = pending[:max_new_events]
+    selected_keys = set(prior_index) | set(pending)
 
     packets: dict[str, dict[str, Any]] = {}
     files: dict[str, dict[str, Any]] = {}
     artifacts: dict[str, bytes] = {}
-    for key in sorted(current_keys):
+    for key in sorted(selected_keys):
         event = evidence_manifest["events"][key]
         assert isinstance(event, Mapping)
         source_sha = str(event["source_sha256"])
@@ -347,6 +423,7 @@ def write_story_packet_generation(
     *,
     policy: object | None = None,
     prior_manifest: object | None = None,
+    max_new_events: int | None = None,
 ) -> tuple[Path, dict[str, Any]]:
     """Write immutable objects/generation, then atomically advance the marker."""
     root = Path(out_dir)
@@ -358,6 +435,7 @@ def write_story_packet_generation(
         policy=policy,
         prior_manifest=prior,
         prior_store_dir=root,
+        max_new_events=max_new_events,
     )
     for object_key, body in sorted(artifacts.items()):
         _write_immutable_object(root, object_key, body)
@@ -366,10 +444,23 @@ def write_story_packet_generation(
     return root / "generations" / str(manifest["generation_id"]), manifest
 
 
-def verify_story_packet_store(out_dir: str | Path, manifest: Mapping[str, Any] | None = None) -> dict[str, Any]:
-    """Read every current object and parent marker before reporting readiness."""
+def verify_story_packet_store(
+    out_dir: str | Path,
+    manifest: Mapping[str, Any] | None = None,
+    *,
+    lineage_depth: int | None = None,
+) -> dict[str, Any]:
+    """Read every current object and parent marker before reporting readiness.
+
+    ``lineage_depth`` bounds how many parent hops the hourly path replays.
+    ``None`` keeps the full-history audit.  ``1`` is enough to bind this
+    generation to its direct parent; the daily ``--audit-remote`` job still
+    walks the whole chain.
+    """
     root = Path(out_dir)
     try:
+        if lineage_depth is not None and lineage_depth < 0:
+            raise ContractError("lineage_depth must be >= 0")
         marker, marker_raw = _read_json_bytes(root / "manifest.json", label="story packet marker")
         if marker_raw != canonical_json_bytes(marker):
             raise ContractError("story packet marker is not canonical bytes")
@@ -386,7 +477,10 @@ def verify_story_packet_store(out_dir: str | Path, manifest: Mapping[str, Any] |
         # Every ancestor must be exact/canonical and catalog non-shrinking.
         cursor = marker
         seen: set[str] = set()
+        hops = 0
         while cursor["parent_generation_id"] is not None:
+            if lineage_depth is not None and hops >= lineage_depth:
+                break
             parent_id = str(cursor["parent_generation_id"])
             if parent_id in seen:
                 raise ContractError("story packet parent lineage cycle")
@@ -401,6 +495,7 @@ def verify_story_packet_store(out_dir: str | Path, manifest: Mapping[str, Any] |
             _verify_lineage_transition(cursor, cursor_packets, parent, parent_packets)
             cursor = parent
             cursor_packets = parent_packets
+            hops += 1
         return {
             "status": "ready",
             "warnings": [],

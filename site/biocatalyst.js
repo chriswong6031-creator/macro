@@ -114,6 +114,7 @@
     stateCodes: [],
     contractFailed: false,
     workspaceDown: false,
+    displayFailed: false,
     evidenceCell: null
   };
   var ui = {};
@@ -292,12 +293,43 @@
       return headers;
     }).catch(function () { return headers; });
   }
+  function markHydration(error, kind, status) {
+    if (!error || typeof error !== 'object') error = new Error(String(error || kind));
+    error.hydration = kind;
+    if (status != null) error.status = status;
+    return error;
+  }
+  function jsonContentType(response) {
+    var type = '';
+    try { type = (response.headers && response.headers.get) ? String(response.headers.get('content-type') || '') : ''; } catch (_error) { type = ''; }
+    if (!type) return true;
+    return /json/i.test(type);
+  }
+  function hydrationKind(error) {
+    if (!error || error.name === 'AbortError') return '';
+    if (error.hydration) return error.hydration;
+    if (isAccessError(error)) return 'locked';
+    if (error.status === 404) return 'not_found';
+    if (typeof error.status === 'number' && error.status >= 500) return 'source_outage';
+    return '';
+  }
   function fetchJson(url, signal) {
     return withAuth({ Accept: 'application/json' }).then(function (headers) {
       return fetch(url, { headers: headers, credentials: 'same-origin', cache: 'no-store', signal: signal });
     }).then(function (response) {
-      if (!response.ok) { var error = new Error('HTTP ' + response.status); error.status = response.status; throw error; }
-      return response.json();
+      var status = response.status;
+      if (status === 401 || status === 402 || status === 403) throw markHydration(new Error('HTTP ' + status), 'locked', status);
+      if (status === 404) { var missing = new Error('HTTP 404'); missing.status = 404; throw missing; }
+      if (!response.ok) throw markHydration(new Error('HTTP ' + status), 'source_outage', status);
+      if (!jsonContentType(response)) throw markHydration(new Error('HTTP 200 non-json'), 'integrity_block', 200);
+      return Promise.resolve(response.text()).then(function (raw) {
+        try { return JSON.parse(raw); }
+        catch (parseError) { throw markHydration(parseError, 'integrity_block', 200); }
+      });
+    }, function (networkError) {
+      if (networkError && networkError.name === 'AbortError') throw networkError;
+      if (networkError && networkError.hydration) throw networkError;
+      throw markHydration(networkError, 'source_outage', 0);
     });
   }
   function abort(name) {
@@ -1008,7 +1040,7 @@
 
   function setStatus(kind, label, detail) {
     ui.runStatus.classList.toggle('is-stale', kind === 'stale' || kind === 'restarted');
-    ui.runStatus.classList.toggle('is-unavailable', kind === 'unavailable' || kind === 'locked');
+    ui.runStatus.classList.toggle('is-unavailable', kind === 'unavailable' || kind === 'locked' || kind === 'source_outage' || kind === 'integrity_block' || kind === 'withheld');
     text(ui.status, label); text(ui.statusDetail, detail);
   }
   function setNotice(kind, message) { ui.notice.hidden = !message; ui.notice.className = 'bci-state-notice' + (kind ? ' is-' + kind : ''); text(ui.notice, message || ''); }
@@ -1447,8 +1479,8 @@
     var list = [], health = valueAt(state.payload, 'health') || {}, healthState = clean(valueAt(health, 'state')).toLowerCase();
     var knownAt = clean(valueAt(state.payload, 'as_of')), degraded = degradedFactCount(), partial = partialFactCount();
     if (state.accessLocked) noteState(list, 'locked', knownAt, 'this view needs full access.', '此视图需要完整访问权限。');
-    if (state.contractFailed) noteState(list, 'integrity_block', knownAt, 'this page did not match its published shape.', '此页面与已发布结构不一致。');
-    if (state.workspaceDown) noteState(list, 'source_outage', knownAt, 'the register is not answering right now.', '登记库当前没有响应。');
+    if (state.contractFailed) noteState(list, 'integrity_block', knownAt, 'received records failed an integrity check.', '收到的记录未通过完整性核验。');
+    if (state.workspaceDown) noteState(list, 'source_outage', knownAt, 'the trial service is not answering right now.', '试验服务当前没有响应。');
     if (healthState === 'unavailable' || degraded) noteState(list, 'source_capability_absent', knownAt, 'some fields cannot be read from this source.', '部分字段无法从此来源读取。');
     if (reviewPendingCount()) noteState(list, 'ambiguous_identity', knownAt, 'endpoint edits are not matched to a named endpoint.', '终点改动尚未对应到具体终点。');
     if (tapeConflicts()) noteState(list, 'contradiction', knownAt, 'one field was both added and removed.', '同一字段既新增又移除。');
@@ -1456,13 +1488,29 @@
     if (healthState === 'stale' || state.restarted) noteState(list, 'stale', knownAt, 'the register moved while this page loaded.', '本页加载期间登记库已更新。');
     if (isChangeMode() && state.rows.length) noteState(list, 'historical', knownAt, 'these are superseded record versions.', '这些是已被取代的记录版本。');
     if (partial) noteState(list, 'partial', knownAt, 'part of this set is not on the record.', '其中一部分未收录在记录中。');
-    if (state.hasLoaded && !state.rows.length && !state.accessLocked && !state.workspaceDown) noteState(list, 'empty', knownAt, 'nothing matches what you asked for.', '没有内容符合你的条件。');
+    if (state.hasLoaded && !state.rows.length && !state.accessLocked && !state.workspaceDown && !state.contractFailed && !state.displayFailed) {
+      if (isProspectiveMode()) noteState(list, 'empty', knownAt, 'no first-seen observations yet.', '尚无首次观测记录。');
+      else if (isScreenMode()) noteState(list, 'empty', knownAt, 'nothing matches what you asked for.', '没有内容符合你的条件。');
+      else if (isPeerMode() && !state.cohort.length) noteState(list, 'empty', knownAt, 'list the trials to compare.', '请列出要对照的试验。');
+      else if (isPeerMode()) noteState(list, 'empty', knownAt, 'none of the listed trials are covered.', '列出的试验均未收录。');
+      else if (isChangeMode()) noteState(list, 'empty', knownAt, 'no recorded field changes here.', '此处没有已记录字段变更。');
+      else noteState(list, 'empty', knownAt, 'no recorded dates in this window.', '此窗口内没有已记录日期。');
+    }
     if (!list.length) noteState(list, 'normal', knownAt, 'current, complete, and uncontested.', '当前、完整、无争议。');
     // Equal ranks resolve on earliest known_at, then on the lexical state code.
     list.sort(function (left, right) { return left.rank - right.rank || (left.known_at < right.known_at ? -1 : left.known_at > right.known_at ? 1 : (left.code < right.code ? -1 : 1)); });
     return list;
   }
   function paintDecision() {
+    if (state.displayFailed) {
+      var withheld = RESEARCH_STANCE.none;
+      state.stateCodes = [];
+      ui.decisionStance.className = 'bci-stamp-mark' + (withheld[2] ? ' ' + withheld[2] : '');
+      text(ui.decisionStance, tr(withheld[0], withheld[1]));
+      text(ui.decisionWhy, tr('this page could not be shown.', '此页面无法展示。'));
+      ui.decision.setAttribute('data-state', 'withheld');
+      return;
+    }
     var states = resolveStates(), primary = states[0], stance = RESEARCH_STANCE[STATE_STANCE[primary.code]] || RESEARCH_STANCE.none;
     state.stateCodes = states.map(function (item) { return item.code; });
     ui.decisionStance.className = 'bci-stamp-mark' + (stance[2] ? ' ' + stance[2] : '');
@@ -1932,12 +1980,15 @@
     openInspector(window.matchMedia('(max-width: 1120px)').matches, trigger); detailLoading();
     abort('detailController'); var controller = new AbortController(), token = state.detailToken + 1; state.detailToken = token; state.detailController = controller;
     fetchJson(TRIAL_API + '/' + encodeURIComponent(id), controller.signal).then(function (payload) {
-      if (token !== state.detailToken) return; var detail = payload && valueAt(payload, 'trial'); if (!validTrial(detail) || nctOf(detail) !== id) throw new Error('Invalid trial detail contract'); state.detail = detail; showDetail(detail, queueEvidence, selectedRow());
+      if (token !== state.detailToken) return; var detail = payload && valueAt(payload, 'trial'); if (!validTrial(detail) || nctOf(detail) !== id) throw markHydration(new Error('Invalid trial detail contract'), 'integrity_block', 200); state.detail = detail; showDetail(detail, queueEvidence, selectedRow());
     }).catch(function (error) {
       if (token !== state.detailToken || (error && error.name === 'AbortError')) return;
+      var kind = hydrationKind(error);
       if (error && error.status === 404) showInspectorEmpty(tr('Dossier unavailable', '档案暂不可用'), tr('This trial is no longer in the current verified record. No replacement record is inferred.', '该试验已不在当前已核验记录中。不会推断替代记录。'));
-      else if (isAccessError(error)) { lockWorkspace(); showInspectorEmpty(tr('Dossier locked', '档案已锁定'), tr('Full access is required before the current trial record can be shown.', '显示当前试验记录前需要完整访问权限。')); }
-      else showInspectorEmpty(tr('Dossier unavailable', '档案暂不可用'), tr('Retry later. The dossier does not fill fields absent from the official record.', '请稍后重试。档案不会填补官方记录中缺失的字段。'));
+      else if (kind === 'locked' || isAccessError(error)) { lockWorkspace(); showInspectorEmpty(tr('Dossier locked', '档案已锁定'), tr('Full access is required before the current trial record can be shown.', '显示当前试验记录前需要完整访问权限。')); }
+      else if (kind === 'integrity_block') showInspectorEmpty(tr('Results withheld', '结果暂不展示'), tr('The system received trial data but it did not pass the expected integrity check, so nothing is shown.', '系统已收到试验数据，但未通过完整性核验，因此不予展示。'));
+      else if (kind === 'source_outage') showInspectorEmpty(tr('Temporarily unavailable', '暂时无法读取'), tr('The trial service is not answering right now. Try again shortly. No records are inferred.', '试验服务当前无响应。请稍后再试。不会推断任何记录。'));
+      else showInspectorEmpty(tr('This dossier could not be shown', '此档案无法展示'), tr('The workspace hit an unexpected problem while drawing this dossier. Nothing is inferred.', '工作台在绘制此档案时出现意外问题。不会推断任何内容。'));
     }).finally(function () { if (state.detailController === controller) state.detailController = null; });
     if (trigger) trigger.setAttribute('aria-selected', 'true');
   }
@@ -1968,6 +2019,7 @@
     abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1; ui.refresh.classList.remove('is-spinning');
     state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = '';
     state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.appendFailed = false; state.accessLocked = true;
+    state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
     paintLockedWorkspace();
   }
   function paintAppendFailure() {
@@ -1991,6 +2043,33 @@
     showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when the current page is available.', '当前页面可用后，请选择一项' + activeSingularNoun() + '。'));
     paintFrame();
   }
+  function paintIntegrityWorkspace() {
+    ui.workspace.dataset.state = 'integrity_block'; clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', 'false'); ui.queueFooter.hidden = true;
+    setStatus('integrity_block', tr('Results withheld', '结果暂不展示'), tr('Integrity check did not pass', '未通过完整性核验'));
+    setNotice('error', tr('Trial data arrived but did not pass the integrity check. Results are withheld.', '已收到试验数据，但未通过完整性核验。结果暂不展示。'));
+    ui.queue.appendChild(emptyCard(tr('Results withheld', '结果暂不展示'), tr('The system received trial data but it did not pass the expected integrity check, so nothing is shown.', '系统已收到试验数据，但未通过完整性核验，因此不予展示。'), '×', true));
+    announce(tr('Results withheld after an integrity check.', '完整性核验后结果暂不展示。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Results are withheld until the integrity check passes.', '完整性核验通过前不展示档案。'));
+    paintFrame();
+  }
+  function paintSourceOutageWorkspace() {
+    ui.workspace.dataset.state = 'source_outage'; clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', 'false'); ui.queueFooter.hidden = true;
+    setStatus('source_outage', tr('Temporarily unavailable', '暂时无法读取'), tr('The trial service is not answering', '试验服务当前无响应'));
+    setNotice('error', tr('The trial service is not answering right now. Try again shortly. No records are inferred.', '试验服务当前无响应。请稍后再试。不会推断任何记录。'));
+    ui.queue.appendChild(emptyCard(tr('Temporarily unavailable', '暂时无法读取'), tr('The trial service is not answering right now. Try again shortly. No records are inferred.', '试验服务当前无响应。请稍后再试。不会推断任何记录。'), '×', true));
+    announce(tr('Temporarily unavailable.', '暂时无法读取。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when the current page is available.', '当前页面可用后，请选择一项' + activeSingularNoun() + '。'));
+    paintFrame();
+  }
+  function paintClientFaultWorkspace() {
+    ui.workspace.dataset.state = 'withheld'; clearChildren(ui.queue); ui.queue.setAttribute('aria-busy', 'false'); ui.queueFooter.hidden = true;
+    setStatus('withheld', tr('This page could not be shown', '此页面无法展示'), tr('Nothing is shown', '不予展示'));
+    setNotice('error', tr('The workspace hit an unexpected problem while drawing this page. Nothing is shown.', '工作台在绘制此页面时出现意外问题。因此不予展示。'));
+    ui.queue.appendChild(emptyCard(tr('This page could not be shown', '此页面无法展示'), tr('The workspace hit an unexpected problem while drawing this page. Nothing is shown.', '工作台在绘制此页面时出现意外问题。因此不予展示。'), '×', true));
+    announce(tr('This page could not be shown.', '此页面无法展示。'));
+    showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('This page could not be shown.', '此页面无法展示。'));
+    paintFrame();
+  }
   function handleUnavailable(error, options) {
     options = options || {};
     if (isAccessError(error)) {
@@ -2002,6 +2081,35 @@
     state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.selectedKey = ''; state.appendFailed = false; state.accessLocked = false; state.workspaceDown = true;
     paintUnavailableWorkspace();
   }
+  function handleHydrationFailure(error, options) {
+    options = options || {};
+    var kind = hydrationKind(error);
+    if (kind === 'locked' || isAccessError(error)) {
+      lockWorkspace();
+      showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when full access is confirmed.', '完整访问权限确认后，请选择一项' + activeSingularNoun() + '。'));
+      return;
+    }
+    if (options.append && state.rows.length && kind !== 'integrity_block' && kind !== 'client_fault') { preserveAppendFailure(); return; }
+    state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.selectedKey = ''; state.appendFailed = false; state.accessLocked = false;
+    if (kind === 'integrity_block') {
+      state.contractFailed = true;
+      state.workspaceDown = false;
+      state.displayFailed = false;
+      paintIntegrityWorkspace();
+      return;
+    }
+    if (kind === 'source_outage' || kind === 'not_found') {
+      state.contractFailed = false;
+      state.workspaceDown = true;
+      state.displayFailed = false;
+      paintSourceOutageWorkspace();
+      return;
+    }
+    state.contractFailed = false;
+    state.workspaceDown = false;
+    state.displayFailed = true;
+    paintClientFaultWorkspace();
+  }
   function loadMilestones(options) {
     options = options || {}; var append = options.append === true, cursor = append ? state.nextCursor : '';
     if (append && (!cursor || state.pageLoading)) return;
@@ -2009,6 +2117,7 @@
     state.loading = !append; state.pageLoading = append;
     if (!append) {
       state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false; if (!options.restarted) state.restarted = false;
+      state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
       ui.workspace.dataset.state = options.restarted ? 'generation-restarted' : (state.hasLoaded ? 'loading' : 'first-load'); loadingQueue(false);
       text(ui.subtitle, tr('Retrieving the verified ' + activeNoun() + ' page…', '正在获取已核验' + activeNoun() + '页面…')); setStatus('ready', tr('Retrieving ' + activeNoun(), '正在获取' + activeNoun()), tr('No records are in this page shell', '此页面外壳不含记录'));
     } else {
@@ -2018,7 +2127,7 @@
     if (!append) loadFacets();
     if (isPeerMode() && state.cohort.length < PEER_MIN_COHORT) {
       state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.loading = false; state.pageLoading = false;
-      state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.contractFailed = false; state.workspaceDown = false;
+      state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
       ui.refresh.classList.remove('is-spinning');
       ui.workspace.dataset.state = 'empty'; setStatus('ready', tr('Waiting for your list', '等待你的清单'), tr('Nothing is compared until you list it', '未列出前不会进行任何对照'));
       setNotice('', ''); text(ui.subtitle, tr('Exactly the trials you listed, side by side', '完全按你列出的试验并排显示')); text(ui.asOf, ''); renderQueue();
@@ -2026,32 +2135,46 @@
     }
     requestPage(cursor, controller.signal).then(function (payload) {
       if (token !== state.listToken) return;
-      state.contractFailed = false;
+      state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
+      var incomingGeneration, existingRows, pagination, rows;
       try {
         if (isProspectiveMode()) validateProspectiveEnvelope(payload);
         else if (isScreenMode()) validateScreenEnvelope(payload);
         else if (isPeerMode()) validatePeerEnvelope(payload);
         else if (isChangeMode()) validateChangeEnvelope(payload);
         else validateMilestoneEnvelope(payload);
-      } catch (contractError) { state.contractFailed = true; throw contractError; }
-      var incomingGeneration = generationKey(payload);
+        incomingGeneration = generationKey(payload);
+      } catch (contractError) {
+        state.contractFailed = true;
+        throw markHydration(contractError, 'integrity_block', 200);
+      }
       if (append && state.generation && incomingGeneration !== state.generation) {
         state.restarted = true; announce(tr('The registry page changed. Reloading the selected filters.', '登记页面已变化。正在重新加载所选筛选条件。'));
         loadMilestones({ replace: true, restarted: true }); return;
       }
-      var existingRows = append ? state.rows : [], pagination = payload.pagination, rows;
-      if (isProspectiveMode()) { rows = validateProspectivePage(payload.prospective_changes, existingRows); validateProspectivePagination(payload, existingRows, cursor, append ? state.payload : null); }
-      else if (isScreenMode()) { rows = validateScreenPage(payload.rows, existingRows); validateScreenPagination(payload, existingRows, cursor, append ? state.payload : null); }
-      else if (isPeerMode()) { rows = validatePeerPage(payload.trials, existingRows); validatePeerPagination(payload, existingRows, cursor, append ? state.payload : null); }
-      else if (isChangeMode()) { rows = validateChangePage(payload.change_tape, existingRows); validateChangePagination(payload, existingRows, cursor, append ? state.payload : null); }
-      else { rows = validateMilestonePage(payload.milestones, existingRows); validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null); }
+      try {
+        existingRows = append ? state.rows : []; pagination = payload.pagination;
+        if (isProspectiveMode()) { rows = validateProspectivePage(payload.prospective_changes, existingRows); validateProspectivePagination(payload, existingRows, cursor, append ? state.payload : null); }
+        else if (isScreenMode()) { rows = validateScreenPage(payload.rows, existingRows); validateScreenPagination(payload, existingRows, cursor, append ? state.payload : null); }
+        else if (isPeerMode()) { rows = validatePeerPage(payload.trials, existingRows); validatePeerPagination(payload, existingRows, cursor, append ? state.payload : null); }
+        else if (isChangeMode()) { rows = validateChangePage(payload.change_tape, existingRows); validateChangePagination(payload, existingRows, cursor, append ? state.payload : null); }
+        else { rows = validateMilestonePage(payload.milestones, existingRows); validateMilestonePagination(payload, existingRows, cursor, append ? state.payload : null); }
+      } catch (contractError) {
+        state.contractFailed = true;
+        throw markHydration(contractError, 'integrity_block', 200);
+      }
       if (append) state.rows = state.rows.concat(rows); else state.rows = rows;
-      state.payload = payload; state.generation = incomingGeneration; state.nextCursor = clean(valueAt(pagination, 'next_cursor')); state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.workspaceDown = false;
-      ui.workspace.dataset.state = state.restarted ? 'generation-restarted' : (state.rows.length ? 'ready' : 'empty'); updateMetadata(payload); setSubtitle(payload); renderQueue();
-      announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' ' + activeNoun() + '.', '已加载' + state.rows.length + '项' + activeNoun() + '。') : tr('No ' + activeNoun() + ' match these filters.', '没有' + activeNoun() + '匹配这些筛选条件。'));
-      if (!append && state.selectedId) {
-        var activeRow = selectedRow();
-        selectTrial(state.selectedId, activeRow && rowTrial(activeRow), activeRow && (valueAt(activeRow, 'evidence') || valueAt(activeRow, 'source')), false, null, activeRow && rowIdentity(activeRow));
+      state.payload = payload; state.generation = incomingGeneration; state.nextCursor = clean(valueAt(pagination, 'next_cursor')); state.loading = false; state.pageLoading = false; state.hasLoaded = true; state.appendFailed = false; state.accessLocked = false; state.workspaceDown = false; state.displayFailed = false;
+      try {
+        ui.workspace.dataset.state = state.restarted ? 'generation-restarted' : (state.rows.length ? 'ready' : 'empty'); updateMetadata(payload); setSubtitle(payload); renderQueue();
+        announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' ' + activeNoun() + '.', '已加载' + state.rows.length + '项' + activeNoun() + '。') : tr('No ' + activeNoun() + ' match these filters.', '没有' + activeNoun() + '匹配这些筛选条件。'));
+        if (!append && state.selectedId) {
+          var activeRow = selectedRow();
+          selectTrial(state.selectedId, activeRow && rowTrial(activeRow), activeRow && (valueAt(activeRow, 'evidence') || valueAt(activeRow, 'source')), false, null, activeRow && rowIdentity(activeRow));
+        }
+      } catch (displayError) {
+        state.rows = []; state.payload = null; state.nextCursor = ''; state.generation = ''; state.displayFailed = true; state.contractFailed = false; state.workspaceDown = false;
+        throw markHydration(displayError, 'client_fault', 200);
       }
     }).catch(function (error) {
       if (token !== state.listToken || (error && error.name === 'AbortError')) return;
@@ -2061,10 +2184,10 @@
         loadMilestones({ replace: true, restarted: true });
         return;
       }
-      handleUnavailable(error, { append: append });
+      handleHydrationFailure(error, { append: append });
     }).finally(function () {
       if (state.listController === controller) state.listController = null;
-      if (token === state.listToken) { ui.refresh.classList.remove('is-spinning'); state.loading = false; state.pageLoading = false; if (state.rows.length && !state.accessLocked) renderQueue(); }
+      if (token === state.listToken) { ui.refresh.classList.remove('is-spinning'); state.loading = false; state.pageLoading = false; if (state.rows.length && !state.accessLocked && !state.contractFailed && !state.workspaceDown && !state.displayFailed) renderQueue(); }
     });
   }
   function applyFilters() {
@@ -2103,7 +2226,7 @@
     if (!MODE_VALUES[value] || state.mode === value) return;
     abort('listController'); state.listToken += 1; abort('detailController'); state.detailToken += 1; abort('facetsController'); state.facetsToken += 1;
     state.mode = value; state.rows = []; state.nextCursor = ''; state.payload = null; state.generation = ''; state.appendFailed = false; state.accessLocked = false; state.restarted = false;
-    state.facets = null; state.contractFailed = false; state.workspaceDown = false;
+    state.facets = null; state.contractFailed = false; state.workspaceDown = false; state.displayFailed = false;
     state.selectedId = ''; state.selectedKey = ''; state.selected = null; state.detail = null; state.returnFocus = null;
     ui.inspector.classList.remove('is-open'); document.body.classList.remove('bci-inspector-open'); ui.scrim.hidden = true; syncInspectorDialog();
     syncControls(); localizeControls(); writeUrl();
@@ -2147,6 +2270,9 @@
     document.addEventListener('langchange', function () {
       syncControls(); localizeControls();
       if (state.accessLocked) { paintLockedWorkspace(); showInspectorEmpty(tr('Trial dossier', '试验档案'), tr('Choose a ' + activeSingularNoun() + ' when full access is confirmed.', '完整访问权限确认后，请选择一项' + activeSingularNoun() + '。')); return; }
+      if (state.displayFailed) { paintClientFaultWorkspace(); return; }
+      if (state.contractFailed) { paintIntegrityWorkspace(); return; }
+      if (state.workspaceDown) { paintSourceOutageWorkspace(); return; }
       if (ui.workspace.dataset.state === 'unavailable') { paintUnavailableWorkspace(); return; }
       if (state.appendFailed) paintAppendFailure();
       else if (state.payload) { updateMetadata(state.payload); setSubtitle(state.payload); renderQueue(); announce(state.rows.length ? tr('Loaded ' + state.rows.length + ' ' + activeNoun() + '.', '已加载' + state.rows.length + '项' + activeNoun() + '。') : tr('No ' + activeNoun() + ' match these filters.', '没有' + activeNoun() + '匹配这些筛选条件。')); }

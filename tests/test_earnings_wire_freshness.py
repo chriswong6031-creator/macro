@@ -7,6 +7,7 @@ while the archive is dead, not merely that it computes a number.
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import pytest
@@ -120,6 +121,31 @@ def test_an_unreadable_input_annotates_instead_of_passing_silently(tmp_path, cap
     out = capsys.readouterr().out
     assert rc == 1
     assert out.splitlines()[0].startswith("::error title=earnings-wire-freshness::")
+
+
+def test_future_scheduled_dates_do_not_set_the_upstream_ceiling() -> None:
+    """The Terminal dates map includes not-yet-completed calls.
+
+    Production reproduced this on 2026-08-16: the alarm said upstream=2026-08-20
+    against a 2026-07-29 archive. The freshness check must compare against the
+    newest completed transcript, not the calendar's next scheduled day.
+    """
+    report = audit(
+        _catalog({"AAA": ["2026-07-29"]}),
+        {
+            "generated_at": "2026-08-16T08:00:00Z",
+            "dates": {
+                "AAA/2026Q2": "2026-07-29",
+                "BBB/2026Q2": "2026-08-12",
+                "CCC/2026Q3": "2026-08-20",
+            },
+        },
+        as_of=date(2026, 8, 16),
+    )
+    assert report["newest_upstream_call_date"] == "2026-08-12"
+    assert report["as_of"] == "2026-08-16"
+    assert report["lag_days"] == 14
+    assert report["upstream_bodies_newer_than_published"] == 1
 
 
 def test_json_out_records_the_actionable_numbers(tmp_path) -> None:

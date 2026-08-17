@@ -226,3 +226,116 @@ def test_refresh_refuses_a_root_whose_immutable_generation_differs(tmp_path: Pat
     ] = b'{"forged":true}\n'
     with pytest.raises(refresh_module.RefreshError, match="differs from its root marker"):
         refresh_module.refresh(tmp_path / "run", promote=True, s3=fake, bucket="bucket")
+
+
+def _body_for(ticker: str, day: str, *, call_id: str) -> dict:
+    payload = _body()
+    payload["ticker"] = ticker
+    payload["id"] = call_id
+    payload["date"] = day
+    payload["title"] = f"{ticker} earnings call"
+    return payload
+
+
+def _write_evidence_many(root: Path, bodies: list[dict], *, generated_at: str) -> dict:
+    symbols: dict[str, list[str]] = {}
+    revisions: dict[str, str] = {}
+    dates: dict[str, str] = {}
+    pairs: list[EvidencePair] = []
+    for body in bodies:
+        body_sha = canonical_body_sha256(body)
+        symbols.setdefault(body["ticker"], []).append(body["id"])
+        revisions[f"{body['ticker']}/{body['id']}"] = body_sha
+        dates[f"{body['ticker']}/{body['id']}"] = body["date"]
+        index = {
+            "schema": "mastermind.tx-index/v1",
+            "generated_at": generated_at,
+            "symbols": {body["ticker"]: [body["id"]]},
+            "revisions": {f"{body['ticker']}/{body['id']}": body_sha},
+            "dates": {f"{body['ticker']}/{body['id']}": body["date"]},
+            "body_count": 1,
+            "symbol_count": 1,
+        }
+        fact_pack, claim_graph = build_evidence_pair(
+            body,
+            index_payload=index,
+            indexed_body_sha256=body_sha,
+            index_generated_at=generated_at,
+        )
+        pairs.append(EvidencePair(fact_pack=fact_pack, claim_graph=claim_graph, transcript=body))
+    _generation, manifest = write_generation(
+        root,
+        pairs,
+        coverage={
+            "selection_policy": "explicit_input",
+            "batch_limit": len(bodies),
+            "historical_completeness": False,
+            "index_body_count": len(bodies),
+            "index_generated_at": generated_at,
+        },
+    )
+    return manifest
+
+
+def test_refresh_projects_newest_new_events_first_across_bounded_runs(tmp_path: Path) -> None:
+    """A large evidence delta must advance the public catalog over several runs.
+
+    Newest-first is load-bearing for recovery: historical backfill must not
+    starve the post-freeze calls that visitors can actually see.
+    """
+    evidence = tmp_path / "evidence-source"
+    manifest = _write_evidence_many(
+        evidence,
+        [
+            _body_for("OLD", "2026-06-01", call_id="2026Q1"),
+            _body_for("MID", "2026-07-15", call_id="2026Q2"),
+            _body_for("NEW", "2026-08-05", call_id="2026Q2"),
+        ],
+        generated_at="2026-08-06T00:00:00Z",
+    )
+    fake = _FakeR2()
+    _seed_evidence(fake, evidence, manifest)
+
+    assert refresh_module.refresh(
+        tmp_path / "run-one",
+        promote=True,
+        s3=fake,
+        bucket="bucket",
+        max_new_events=1,
+    ) == 0
+    first = json.loads(fake.objects[f"{story_publisher.PREFIX}/manifest.json"])
+    assert set(first["packets"]) == {"NEW/2026Q2"}
+    assert first["evidence_root"]["generation_id"] == manifest["generation_id"]
+
+    assert refresh_module.refresh(
+        tmp_path / "run-two",
+        promote=True,
+        s3=fake,
+        bucket="bucket",
+        max_new_events=1,
+    ) == 0
+    second = json.loads(fake.objects[f"{story_publisher.PREFIX}/manifest.json"])
+    assert set(second["packets"]) == {"NEW/2026Q2", "MID/2026Q2"}
+    assert second["parent_generation_id"] == first["generation_id"]
+
+    assert refresh_module.refresh(
+        tmp_path / "run-three",
+        promote=True,
+        s3=fake,
+        bucket="bucket",
+        max_new_events=1,
+    ) == 0
+    third = json.loads(fake.objects[f"{story_publisher.PREFIX}/manifest.json"])
+    assert set(third["packets"]) == {"NEW/2026Q2", "MID/2026Q2", "OLD/2026Q1"}
+
+    fake.puts.clear()
+    assert refresh_module.refresh(
+        tmp_path / "run-four",
+        promote=True,
+        s3=fake,
+        bucket="bucket",
+        max_new_events=1,
+    ) == 0
+    assert fake.puts == []
+
+

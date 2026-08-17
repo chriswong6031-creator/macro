@@ -1,0 +1,17 @@
+{
+  "cik": "0000320193",
+  "accession": "0000320193-26-000018",
+  "form": "8-K",
+  "filing_date": "2026-07-30",
+  "acceptance_datetime": "2026-07-30T16:30:00Z",
+  "report_date": "2026-06-27",
+  "exhibit_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000018/a8-kex991q3202606272026.htm",
+  "eight_k_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019326000018/aapl-20260730.htm",
+  "call_date": "2026-07-30",
+  "fiscal_year": 2026,
+  "fiscal_quarter": 3,
+  "canonical_event_id": "evt_cik0000320193_2026q3_results",
+  "cie_alias": "cie_98e318c37ec1a2a1f83c45e1",
+  "narrative_alias": "AAPL/2026Q3",
+  "public_slug": "aapl-2026q3-call-record"
+}
