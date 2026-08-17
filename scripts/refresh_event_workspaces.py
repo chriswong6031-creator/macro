@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 from datetime import datetime, timezone
+from html import unescape as html_unescape
 import json
 import logging
 import re
@@ -108,11 +109,14 @@ def _http_get(url: str) -> tuple[int, bytes]:
 def _parse_sgml_manifest(text: str) -> list[tuple[str, str]]:
     """[(TYPE, FILENAME)] from a filing's SGML ``-index-headers.html``.
 
-    Same seam as ``collectors.edgar_8k._parse_sgml_manifest``: ``index.json``
-    ``type`` is the directory-listing icon name and is not a document map.
+    Same seam as ``collectors.edgar_8k._parse_sgml_manifest``: unescape first,
+    then split on ``<DOCUMENT>``. The live EDGAR page is HTML-escaped SGML
+    (``&lt;DOCUMENT&gt;``); splitting the raw bytes reports every exhibit as
+    absent. ``index.json`` ``type`` is the directory-listing icon name and is
+    not a document map.
     """
     out: list[tuple[str, str]] = []
-    for block in (text or "").split("<DOCUMENT>")[1:]:
+    for block in html_unescape(text or "").split("<DOCUMENT>")[1:]:
         kind = re.search(r"<TYPE>([^<\r\n]+)", block)
         name = re.search(r"<FILENAME>([^<\r\n]+)", block)
         if kind and name:

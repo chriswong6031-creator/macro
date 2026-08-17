@@ -21,7 +21,12 @@ from engine.company_intelligence.event_workspace import (
 from engine.earnings_transcript_intake import TranscriptRef, canonical_body_sha256
 from engine.neuralweb import company_intelligence_reader as reader
 from scripts.publish_company_intelligence_r2 import PUBLISH_CONFLICT, publish, publish_event_workspaces
-from scripts.refresh_event_workspaces import RefreshError, refresh
+from scripts.refresh_event_workspaces import (
+    RefreshError,
+    _parse_sgml_manifest,
+    _select_exhibit_99_1,
+    refresh,
+)
 
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures" / "company_intelligence"
@@ -127,10 +132,25 @@ def _submissions() -> dict:
 
 
 def _headers_html() -> str:
+    """Production EDGAR shape: HTML-escaped SGML inside index-headers.html."""
     return (
-        "<DOCUMENT>\n<TYPE>8-K\n<FILENAME>aapl-20260730.htm\n</DOCUMENT>\n"
-        f"<DOCUMENT>\n<TYPE>EX-99.1\n<FILENAME>{EXHIBIT_NAME}\n</DOCUMENT>\n"
+        "<HTML><HEAD><TITLE>SEC EDGAR Submission</TITLE></HEAD><BODY><PRE>"
+        "&lt;DOCUMENT&gt;\n&lt;TYPE&gt;8-K\n"
+        "&lt;FILENAME&gt;aapl-20260730.htm\n&lt;/DOCUMENT&gt;\n"
+        f"&lt;DOCUMENT&gt;\n&lt;TYPE&gt;EX-99.1\n&lt;FILENAME&gt;{EXHIBIT_NAME}\n"
+        "&lt;/DOCUMENT&gt;\n"
+        "</PRE></BODY></HTML>"
     )
+
+
+def test_html_escaped_index_headers_select_ex99_1() -> None:
+    manifest = _parse_sgml_manifest(_headers_html())
+    assert ("EX-99.1", EXHIBIT_NAME) in manifest
+    assert _select_exhibit_99_1(manifest) == EXHIBIT_NAME
+    # Literal split without unescape is the production miss from run 32039517591.
+    raw = _headers_html()
+    assert "<DOCUMENT>" not in raw
+    assert "&lt;DOCUMENT&gt;" in raw
 
 
 def _http_get_factory(exhibit_body: str | None = None):
