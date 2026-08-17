@@ -49,6 +49,7 @@ confidence: high
 reversibility: easy
 decided_by: chairman
 decided_at: 2026-07-21
+superseded_by: DEC:SONNET-BUILDS-AGAIN
 ---
 
 ## Grounds
@@ -64,3 +65,14 @@ A model-generation change that moves the quality frontier (e.g. a Sonnet-class t
 passes the operator's design/build bar), or measured evidence that Opus review reliably
 recovers Sonnet-draft quality on a lane. Reversal is an operator call, not a session call
 — the current table exists because sessions' own tier judgments drifted cheap.
+
+## SUPERSEDED 2026-08-17 by operator instruction
+
+The build lane is reversed: the `builder` agent type is re-pinned `model: sonnet`, and
+Sonnet builds shipping code again. The reversal came as a direct chat instruction
+("Change the agents.md file so that the ban on Sonnet being used as a worker is
+removed"), read as the operator call this record's own "what would reopen this" clause
+required, not a session's own initiative. The design lane (2026-07-18 order, folded into
+this record above) is untouched — `designer` stays Opus-pinned, and design *choices*
+still never route to a sonnet builder. Retained for provenance — the rationale here is
+still the reasoning that produced the 2026-07-21 order. See `DEC:SONNET-BUILDS-AGAIN`.

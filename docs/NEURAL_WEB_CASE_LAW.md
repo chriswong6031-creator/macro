@@ -1,6 +1,6 @@
 <!-- DO NOT EDIT BY HAND — regenerate with: python3 scripts/build_ruling_graph.py -->
 <!-- Source: config/ruling_graph.yml -->
-<!-- source_sha256: 3622ea91652e6c5233b6576012ba7d5f073c8e747bdb288395088c0066de9895 -->
+<!-- source_sha256: 8c52ae03e7a20139498b213b2060093727e101a0fe878d8429b385ea9880949c -->
 
 # Neural Web Case Law
 
@@ -3122,7 +3122,7 @@ Total rulings: 500
 
 - Status: `active_law` | Kind: `constitution` | Nondelegable: `True`
 
-**Ruling:** A PreToolUse hook (model_routing_guard.py) is wired in settings.json and denies Agent/Task spawns without an explicit model, fable spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter outside that gate, and Workflow scripts whose agent() calls carry no model:/agentType routing (or route to fable without a script-level FABLE-WHY line — operator re-enable 2026-07-18 'fable ultracode': fable workflow stages are gated on the same justification line, reserved for judge/synthesis stages, never bulk xN mechanical fan-outs). Model-pinned agent types builder (opus, build lane 2026-07-21), reviewer (opus), and designer (opus, design lane 2026-07-18) pass the guard without a model: param; orchestrator carries an opus floor with fable reachable only via the gate, always with explicit model.
+**Ruling:** A PreToolUse hook (model_routing_guard.py) is wired in settings.json and denies Agent/Task spawns without an explicit model, fable spawns outside the orchestrator+FABLE-WHY gate, fable-pinned agent frontmatter outside that gate, and Workflow scripts whose agent() calls carry no model:/agentType routing (or route to fable without a script-level FABLE-WHY line — operator re-enable 2026-07-18 'fable ultracode': fable workflow stages are gated on the same justification line, reserved for judge/synthesis stages, never bulk xN mechanical fan-outs). Model-pinned agent types builder (sonnet, build lane restored 2026-08-17 reversing the 2026-07-21 Opus-only order), reviewer (opus), and designer (opus, design lane 2026-07-18, unaffected by the build-lane reversal) pass the guard without a model: param; orchestrator carries an opus floor with fable reachable only via the gate, always with explicit model.
 
 **Scope fence:** Enforced at tool-call boundary via PreToolUse hook for all Agent/Task/Workflow invocations.
 
