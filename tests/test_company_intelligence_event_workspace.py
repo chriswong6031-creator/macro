@@ -27,10 +27,10 @@ from engine.company_intelligence.event_workspace import (
     LIVE_NARRATIVE_ALIAS,
     LIVE_PUBLIC_SLUG,
     apple_registry,
-    build_event_workspace,
     flagship_fiscal_period,
     write_workspace_generation,
 )
+from engine.company_intelligence.event_workspace_build import build_event_workspace
 from engine.company_intelligence.identity import company_id_for_cik
 from engine.company_intelligence.resolution import claim_citations_pending
 from engine.company_intelligence.views import build_bundle, write_generation

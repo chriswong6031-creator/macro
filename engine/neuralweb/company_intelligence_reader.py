@@ -423,9 +423,10 @@ def _event_projection(event: Mapping[str, Any]) -> dict[str, Any]:
 def _workspace_contracts():
     """Import the workspace contract only when a workspace is actually read.
 
-    ``company_intelligence_reader`` is on the macro-api load path.  Binding
-    Exhibit 99.1 lives behind this seam so API import-closure tests do not
-    require a restart-regex expansion for ``engine.earnings_release``.
+    ``company_intelligence_reader`` is on the macro-api load path.  Schema and
+    publication live in ``event_workspace``; Exhibit 99.1 binding lives in
+    ``event_workspace_build`` so exclusive CI jobs and the API import-closure
+    do not inherit ``engine.earnings_release``.
     """
     from engine.company_intelligence import event_workspace as mod
     return mod
