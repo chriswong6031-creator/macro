@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "route_marker": "ROUTE",
+  "status_values": [
+    "PASS",
+    "PARTIAL",
+    "BLOCKED",
+    "FAIL"
+  ],
+  "routes": {
+    "extract": {
+      "agent": "extractor",
+      "model": "haiku",
+      "purpose": "Literal extraction, normalization, formatting, or classification with no material judgment.",
+      "required_prompt_sections": [
+        "MISSION",
+        "SCOPE",
+        "NOT DONE UNLESS",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "census": {
+      "agent": "scout",
+      "model": "sonnet",
+      "purpose": "Read-only repository/system census, inventory, tracing, and factual mapping.",
+      "required_prompt_sections": [
+        "MISSION",
+        "WHY",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "QUESTIONS",
+        "NOT DONE UNLESS",
+        "EVIDENCE REQUIRED",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "research": {
+      "agent": "researcher",
+      "model": "sonnet",
+      "purpose": "Bounded non-code evidence gathering and source research; Fable retains final synthesis/adjudication.",
+      "required_prompt_sections": [
+        "MISSION",
+        "WHY",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "QUESTIONS",
+        "SOURCE STANDARD",
+        "NOT DONE UNLESS",
+        "EVIDENCE REQUIRED",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "draft": {
+      "agent": "drafter",
+      "model": "sonnet",
+      "purpose": "Non-authoritative document/prose draft from supplied inputs and frozen requirements.",
+      "required_prompt_sections": [
+        "MISSION",
+        "AUDIENCE",
+        "INPUTS",
+        "OWNED FILES",
+        "CONSTRAINTS",
+        "NOT DONE UNLESS",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "analysis": {
+      "agent": "analyst",
+      "model": "opus",
+      "purpose": "High-judgment technical, quantitative, causal, or architecture analysis feeding a Fable decision.",
+      "required_prompt_sections": [
+        "MISSION",
+        "DECISION SUPPORTED",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "ASSUMPTIONS",
+        "NOT DONE UNLESS",
+        "EVIDENCE REQUIRED",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "debug": {
+      "agent": "debugger",
+      "model": "opus",
+      "purpose": "Hard root-cause investigation and falsification; implementation remains a build task unless explicitly commissioned.",
+      "required_prompt_sections": [
+        "MISSION",
+        "SYMPTOM",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "NOT DONE UNLESS",
+        "EVIDENCE REQUIRED",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "build": {
+      "agent": "builder",
+      "model": "opus",
+      "purpose": "Shipping code, tests, refactors, implementation, or fully specified design implementation.",
+      "required_prompt_sections": [
+        "MISSION",
+        "WHY",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "FROZEN SPEC",
+        "OWNED FILES",
+        "TESTS",
+        "NOT DONE UNLESS",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "review": {
+      "agent": "reviewer",
+      "model": "opus",
+      "purpose": "Adversarial review, red-team critique, correctness/statistics/math checking, or verification of an existing artifact.",
+      "required_prompt_sections": [
+        "MISSION",
+        "ARTIFACT TO ATTACK",
+        "REVIEW STANDARD",
+        "SCOPE",
+        "NOT DONE UNLESS",
+        "EVIDENCE REQUIRED",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "design": {
+      "agent": "designer",
+      "model": "opus",
+      "purpose": "User-facing design judgment under the canonical design doctrine; builder implements only after specification is frozen.",
+      "required_prompt_sections": [
+        "MISSION",
+        "USER JOB",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "FROZEN CONSTRAINTS",
+        "REFERENCES",
+        "OWNED FILES",
+        "VISUAL VERIFICATION",
+        "NOT DONE UNLESS",
+        "RETURN"
+      ],
+      "required_return_sections": [
+        "STATUS",
+        "RESULT",
+        "EVIDENCE",
+        "GAPS",
+        "DEVIATIONS"
+      ]
+    },
+    "judgment": {
+      "agent": null,
+      "model": "fable",
+      "main_loop_only": true,
+      "purpose": "Final architecture, synthesis, adjudication, prioritization, irreversible tradeoffs, and acceptance.",
+      "required_prompt_sections": [],
+      "required_return_sections": []
+    },
+    "orchestration": {
+      "agent": "orchestrator",
+      "model": "fable",
+      "requires_fable_why": true,
+      "purpose": "Exceptional Fable child for work that fails the draft-and-review test.",
+      "required_prompt_sections": [
+        "MISSION",
+        "WHY",
+        "SCOPE",
+        "OUT OF SCOPE",
+        "NOT DONE UNLESS",
+        "RETURN"
+      ],
+      "required_return_sections": []
+    }
+  }
+}
