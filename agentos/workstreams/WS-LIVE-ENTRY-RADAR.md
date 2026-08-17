@@ -90,6 +90,7 @@ waves:
   - id: W5.1
     title: Persist control-pool diagnostics on the existing W5 summary surface
     status: in_progress
+    pr: 5833
     depends_on: [W5]
     # Serialization-only. Matching, CONTROL_K, M3, M14, NC-2, looks, and W6/W7
     # are untouched. First real histograms wait for the next natural W5/W7 dump.

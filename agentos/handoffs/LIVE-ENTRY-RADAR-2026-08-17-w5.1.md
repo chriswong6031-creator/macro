@@ -3,6 +3,7 @@ workstream: WS:LIVE-ENTRY-RADAR
 session: claude/w5-1-control-pool-obs
 model: local
 ended_because: complete
+prs: [5833]
 
 mission: >
   Optional Handoff 3 / W5.1: persist n_cell, selected k, and overlap_share on
