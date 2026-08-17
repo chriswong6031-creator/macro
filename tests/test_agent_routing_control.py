@@ -137,6 +137,36 @@ def test_fable_orchestration_without_why_is_denied():
     assert "missing valid" in denial(cp)
 
 
+def _opus_orchestration(with_skill=True):
+    # The Opus seat (operator 2026-08-17) spends no fable, so it carries no
+    # FABLE-WHY; what it must carry instead is the fable-mode skill directive.
+    prompt = commission("orchestration").replace(
+        "FABLE-WHY: orchestration: This program has irreversible cross-repo decisions that ordinary draft-and-review cannot recover.\n",
+        "",
+    )
+    if with_skill:
+        prompt += "\n\nInvoke the fable-mode skill (Skill tool) before substantive work."
+    return prompt
+
+
+def test_opus_orchestration_with_fable_mode_skill_is_allowed():
+    cp = run_hook(GUARD, direct_payload("orchestrator", _opus_orchestration(), model="opus"))
+    assert cp.returncode == 0
+    assert cp.stdout == ""
+
+
+def test_opus_orchestration_without_fable_mode_skill_is_denied():
+    cp = run_hook(
+        GUARD, direct_payload("orchestrator", _opus_orchestration(with_skill=False), model="opus")
+    )
+    assert "fable-mode" in denial(cp)
+
+
+def test_orchestration_on_other_models_is_still_denied():
+    cp = run_hook(GUARD, direct_payload("orchestrator", _opus_orchestration(), model="sonnet"))
+    assert "explicit model 'fable'" in denial(cp)
+
+
 def test_under_specified_commission_is_denied():
     prompt = commission("census").replace(
         "\nQUESTIONS:\nTrace sources, transforms, consumers, and unresolved dead paths.", ""
@@ -275,6 +305,13 @@ def test_registry_cost_tiers_cannot_silently_drift():
     }
     assert routes["judgment"]["main_loop_only"] is True
     assert routes["orchestration"]["requires_fable_why"] is True
+    # Opus may hold the orchestrator seat only under the fable-mode doctrine
+    # (operator 2026-08-17); the skill it names must actually exist.
+    assert routes["orchestration"]["opus_alternative"] == {
+        "model": "opus",
+        "requires_skill": "fable-mode",
+    }
+    assert (ROOT / ".claude" / "skills" / "fable-mode" / "SKILL.md").is_file()
 
 
 def test_read_only_routes_are_not_pointed_at_authoring_agents():

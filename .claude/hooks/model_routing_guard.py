@@ -187,17 +187,34 @@ def _route_direct_spawn(ti: dict, tool: str, registry: dict) -> None:
         )
 
     if route == "orchestration":
-        if explicit_family != "fable":
+        # Two legal forms (operator 2026-08-17): Fable (the exceptional child, with
+        # its FABLE-WHY spend-audit line) or Opus running the fable-mode skill for
+        # easier orchestration at half Fable's price. FABLE-WHY audits fable SPEND,
+        # so the Opus form requires the skill directive instead of the audit line.
+        opus_alt = spec.get("opus_alternative") or {}
+        alt_family = _model_family(str(opus_alt.get("model") or ""))
+        if alt_family and explicit_family == alt_family:
+            skill = str(opus_alt.get("requires_skill") or "")
+            if skill and skill.lower() not in prompt.lower():
+                _deny(
+                    "Blocked ROUTE orchestration on model 'opus': the commission must "
+                    f"direct the worker to load the `{skill}` skill first (mention "
+                    f"{skill!r} in the prompt). Opus holds the orchestrator seat only "
+                    "under that doctrine; otherwise use explicit model 'fable' + FABLE-WHY."
+                )
+        elif explicit_family != "fable":
             _deny(
-                "Blocked ROUTE orchestration: orchestrator requires explicit model 'fable'. "
+                "Blocked ROUTE orchestration: orchestrator requires explicit model 'fable' "
+                "(with FABLE-WHY) or 'opus' with a fable-mode skill directive. "
                 "Its frontmatter Opus model is a fail-safe floor, not permission to run the route."
             )
-        if not FABLE_WHY_RE.search(prompt):
-            _deny(
-                "Blocked ROUTE orchestration: missing valid "
-                "`FABLE-WHY: <orchestration|brainstorm|creative>: <specific reason>` "
-                "(specific reason must be at least 20 characters)."
-            )
+        else:
+            if not FABLE_WHY_RE.search(prompt):
+                _deny(
+                    "Blocked ROUTE orchestration: missing valid "
+                    "`FABLE-WHY: <orchestration|brainstorm|creative>: <specific reason>` "
+                    "(specific reason must be at least 20 characters)."
+                )
     else:
         # Named custom agents pin their model. If a caller redundantly supplies a model,
         # it may only match the registry; an upgrade/downgrade is a hard failure.

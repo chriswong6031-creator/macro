@@ -215,6 +215,10 @@
       "agent": "orchestrator",
       "model": "fable",
       "requires_fable_why": true,
+      "opus_alternative": {
+        "model": "opus",
+        "requires_skill": "fable-mode"
+      },
       "purpose": "Exceptional Fable child for work that fails the draft-and-review test.",
       "required_prompt_sections": [
         "MISSION",

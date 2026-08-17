@@ -211,13 +211,22 @@ def test_orchestrator_without_explicit_fable_denied():
     assert _is_deny(dec)
     rc, dec = _run(agent(model="opus", subagent_type="orchestrator", prompt=FABLE_WHY))
     assert _is_deny(dec)
-    # Routed, the explicit-fable requirement is the actual cause: the orchestrator's
-    # opus frontmatter is a fail-safe floor, not permission to run the route.
-    for model in ("", "opus"):
-        rc, dec = _run(agent(model=model, subagent_type="orchestrator",
-                             prompt=commission("orchestration")))
-        assert _is_deny(dec), f"expected deny for model={model!r}"
-        assert "requires explicit model 'fable'" in _reason(dec)
+    # Routed, no explicit model: the explicit-fable requirement is the actual cause —
+    # the orchestrator's opus frontmatter is a fail-safe floor, not route permission.
+    rc, dec = _run(agent(model="", subagent_type="orchestrator",
+                         prompt=commission("orchestration")))
+    assert _is_deny(dec)
+    assert "requires explicit model 'fable'" in _reason(dec)
+    # Routed explicit opus (operator 2026-08-17): legal ONLY with a fable-mode skill
+    # directive in the commission; without it, the denial names the missing directive.
+    rc, dec = _run(agent(model="opus", subagent_type="orchestrator",
+                         prompt=commission("orchestration")))
+    assert _is_deny(dec)
+    assert "fable-mode" in _reason(dec)
+    rc, dec = _run(agent(model="opus", subagent_type="orchestrator",
+                         prompt=commission("orchestration")
+                         + "\n\nInvoke the fable-mode skill before substantive work."))
+    assert not _is_deny(dec)
 
 
 # ---------------------------------------------------------------------------
