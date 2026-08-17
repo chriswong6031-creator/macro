@@ -107,6 +107,9 @@ from engine.entry_radar import four_hour as fh
 from engine.entry_radar import indicator_core as ic
 from engine.entry_radar import live_ledger as ll
 from engine.entry_radar import live_pack as lp
+from engine.entry_radar import research_priority as rp
+from engine.entry_radar.c5_adapter import C5_DETECTOR_ID
+from engine.entry_radar.g0_adapter import G0_DETECTOR_ID
 from engine.entry_radar.entry_events import EntryEventError, canonical_json
 from engine.entry_radar.readings import canonical_readings
 from engine.session_digest import session_window_et
@@ -279,7 +282,7 @@ FIREWALL_EXEMPT_KEYS: dict[str, str] = {
     "scored_authority": "the authority block's own name, all-false by construction",
     "detector_score": "§13 slot, pinned None — live_ledger.NULL_ONLY_FIELDS refuses "
                       "a value",
-    "research_priority": "§13 slot, pinned None — W6 territory",
+    "research_priority": "W6 RP1 payload object — attention ordinal, not an outcome score",
     "opportunity_score": "§13 slot, pinned None — W7 territory",
 }
 
@@ -1305,6 +1308,8 @@ def _refusal_payload(*, state: str, reasons: Sequence[str], now: datetime,
         "transitions": [],
         "events": [],
         "health": health,
+        "research_priority": _empty_priority_board(
+            computed_at=_iso(now), cycle_state=state, reason="cycle_refused"),
     }
     return payload, health
 
@@ -2229,6 +2234,139 @@ def _health(*, now: datetime, session: date, pack: lp.LivePack,
     }
 
 
+def _empty_priority_board(*, computed_at: str | None, cycle_state: str,
+                          reason: str) -> dict[str, Any]:
+    return {
+        "schema": rp.SCHEMA,
+        "policy_version": rp.POLICY_VERSION,
+        "status": rp.STATUS,
+        "meaning": rp.MEANING,
+        "does_not_claim": list(rp.DOES_NOT_CLAIM),
+        "computed_at": computed_at,
+        "cycle_state": cycle_state,
+        "population_n": 0,
+        "episodes": [],
+        "abstention": reason,
+    }
+
+
+def _state_name(value: Any) -> str:
+    return str(getattr(value, "value", value) or "")
+
+
+def _confirmed_closes(pack: lp.LivePack, ticker: str, session: date) -> list[float]:
+    daily = pack_daily_history(pack, ticker)
+    if daily is None:
+        return []
+    frame = daily.confirmed_through(session)
+    if frame is None or getattr(frame, "empty", True):
+        return []
+    out: list[float] = []
+    for value in frame["close"].tolist():
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            continue
+        if number == number and number not in (float("inf"), float("-inf")):
+            out.append(number)
+    return out
+
+
+def _priority_inputs(*, session: date, pack: lp.LivePack,
+                     results: Sequence[NameResult]) -> list[rp.EpisodeInput]:
+    """Developing expert observations for RP1, one row per (ticker, detector, variant)."""
+    bench = _confirmed_closes(pack, rp.BENCH_TICKER, session) or None
+    by_ticker = pack.by_ticker()
+    out: list[rp.EpisodeInput] = []
+    for result in results:
+        pack_name = by_ticker.get(result.ticker)
+        latest = result.observations[-1] if result.observations else None
+        atr = (latest.atr_prior_confirmed if latest is not None else None)
+        if atr is None and pack_name is not None:
+            atr = pack_name.atr14_prior_confirmed
+        measures = rp.measures_from_history(
+            _confirmed_closes(pack, result.ticker, session),
+            atr=atr,
+            sampled_close=(None if latest is None else latest.sampled_close),
+            running_sampled_low=(None if latest is None else latest.running_sampled_low),
+            k=(None if latest is None else latest.k),
+            d=(None if latest is None else latest.d),
+            hist=(None if latest is None else latest.hist),
+            bench_closes=bench,
+        )
+        availability = latest.availability if latest is not None else "unavailable"
+        freshness = latest.history_freshness if latest is not None else "unavailable"
+        known_at = latest.observed_at if latest is not None else None
+        fingerprint = pack_name.substrate_fingerprint if pack_name is not None else None
+        refs_base = tuple(
+            r for r in (pack.pack_hash, fingerprint) if r)
+
+        def add(*, detector_id: str, variant: str | None, state: str,
+                first_armed_at: str | None, candidate_at: str | None,
+                last_observed_at: str | None,
+                extra_refs: Sequence[str] = ()) -> None:
+            out.append(rp.EpisodeInput(
+                ticker=result.ticker,
+                detector_id=detector_id,
+                variant=variant,
+                state=state,
+                first_armed_at=first_armed_at,
+                candidate_at=candidate_at,
+                last_observed_at=last_observed_at,
+                known_at=known_at or last_observed_at,
+                availability=availability,
+                history_freshness=freshness,
+                name_state="evaluated" if not result.dark else "unavailable",
+                name_reasons=tuple(result.reasons),
+                evidence_refs=refs_base + tuple(extra_refs),
+                pack_hash=pack.pack_hash,
+                substrate_fingerprint=fingerprint,
+                measures=measures,
+            ))
+
+        for run in result.runs:
+            for episode in getattr(run, "episodes", ()) or ():
+                if not getattr(episode, "first_armed_at", None):
+                    continue
+                add(detector_id=str(episode.detector_id),
+                    variant=getattr(episode, "variant", None),
+                    state=_state_name(episode.state),
+                    first_armed_at=episode.first_armed_at,
+                    candidate_at=episode.candidate_at,
+                    last_observed_at=episode.last_observed_at,
+                    extra_refs=tuple(getattr(episode, "event_ids", ()) or ()))
+        nightly = (result.lanes or {}).get("nightly") or {}
+        for lane_key, detector_id in (("g0", G0_DETECTOR_ID), ("c5", C5_DETECTOR_ID)):
+            row = nightly.get(lane_key) if isinstance(nightly, Mapping) else None
+            if not isinstance(row, Mapping) or row.get("condition_met") is not True:
+                continue
+            add(detector_id=detector_id, variant=None,
+                state="CANDIDATE",
+                first_armed_at=str(row.get("observed_at") or known_at or ""),
+                candidate_at=str(row.get("observed_at") or known_at or ""),
+                last_observed_at=str(row.get("observed_at") or known_at or ""),
+                extra_refs=tuple(row.get("evidence_refs") or ()))
+    return out
+
+
+def _research_priority_board(*, now: datetime, session: date, pack: lp.LivePack,
+                             results: Sequence[NameResult],
+                             health: Mapping[str, Any]) -> dict[str, Any]:
+    """Projection-only RP1 board.  Does not write the episode ledger."""
+    cycle_state = str(health.get("state") or "live")
+    computed_at = _iso(now)
+    inputs = _priority_inputs(session=session, pack=pack, results=results)
+    return rp.assign(inputs, computed_at=computed_at, cycle_state=cycle_state)
+
+
+def _priority_lookup(board: Mapping[str, Any]
+                     ) -> dict[str, tuple[dict[str, Any], ...]]:
+    grouped: dict[str, list[dict[str, Any]]] = {}
+    for row in board.get("episodes") or []:
+        grouped.setdefault(str(row.get("ticker") or ""), []).append(dict(row))
+    return {ticker: tuple(rows) for ticker, rows in grouped.items()}
+
+
 def _payload(*, now: datetime, session: date, pack: lp.LivePack,
              results: Sequence[NameResult], delta: ll.PendingDelta,
              committed: bool, health: Mapping[str, Any]) -> dict[str, Any]:
@@ -2243,7 +2381,10 @@ def _payload(*, now: datetime, session: date, pack: lp.LivePack,
     a transition the ledger refused to admit would be the second source of truth
     the spool-before-consume law exists to prevent.
     """
-    rows = [_payload_row(r) for r in results]
+    board = _research_priority_board(now=now, session=session, pack=pack,
+                                     results=results, health=health)
+    lookup = _priority_lookup(board)
+    rows = [_payload_row(r, lookup.get(r.ticker, ())) for r in results]
     return {
         "schema": SCHEMA_LIVE_PAYLOAD,
         "asof": _iso(now),
@@ -2257,10 +2398,12 @@ def _payload(*, now: datetime, session: date, pack: lp.LivePack,
         "events": [copy.deepcopy(e) for e in delta.events] if committed else [],
         "suppressed": [dict(s) for r in results for s in r.suppressed],
         "health": dict(health),
+        "research_priority": board,
     }
 
 
-def _payload_row(result: NameResult) -> dict[str, Any]:
+def _payload_row(result: NameResult,
+                 priorities: Sequence[Mapping[str, Any]] = ()) -> dict[str, Any]:
     row: dict[str, Any] = {
         "ticker": result.ticker,
         "state": "evaluated" if not result.dark else "unavailable",
@@ -2275,6 +2418,8 @@ def _payload_row(result: NameResult) -> dict[str, Any]:
     }
     if result.dark:
         row["lanes"] = {}
+        if priorities:
+            row["research_priority"] = [dict(p) for p in priorities]
         return row
     active = _has_active_lane(result)
     row["cross_check"] = dict(result.cross_check) if result.cross_check else None
@@ -2291,6 +2436,8 @@ def _payload_row(result: NameResult) -> dict[str, Any]:
                                "sampled_close": latest.sampled_close,
                                "observed_at": latest.observed_at}
                               if latest is not None else None)
+    if priorities:
+        row["research_priority"] = [dict(p) for p in priorities]
     return row
 
 

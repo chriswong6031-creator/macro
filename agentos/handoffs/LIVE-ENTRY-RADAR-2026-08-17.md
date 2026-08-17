@@ -1,18 +1,22 @@
 ---
 workstream: WS:LIVE-ENTRY-RADAR
-session: claude/w5-confirmatory-replay
+session: claude/w5-confirmatory-replay + claude/w6-research-priority
 model: local
-ended_because: complete
+ended_because: blocked
 
 mission: >
-  Run the definitive Live Entry Radar W5 Panel-A/B confirmatory replays after
-  #5780 fixed the empty §7 control arm, read the refusal census first, report
-  recovered pool sizes and §7 reads, re-check M14/M3, and ship the artifacts.
+  ADDENDUM W6: implement RP1 Research Priority and open one PR for Sol review.
+  W5 original: Run the definitive Live Entry Radar W5 Panel-A/B confirmatory
+  replays after #5780 fixed the empty §7 control arm, read the refusal census
+  first, report recovered pool sizes and §7 reads, re-check M14/M3, and ship
+  the artifacts.
 
 state_before: >
-  PR #5780 (f8201036c139) was on main. No definitive w5_results_panel_*.json
-  existed. The 2026-08-15 5-name smoke spent 81 looks with n_refusals=543 vs
-  n_episodes=502 (void). Handoff
+  ADDENDUM W6: W5 done on main (#5825/#5827). W6 was todo. No open W6 collision
+  (W8 #5737 only). PR-0 scoring doctrine and W4 live evaluator already merged.
+  W5 original: PR #5780 (f8201036c139) was on main. No definitive
+  w5_results_panel_*.json existed. The 2026-08-15 5-name smoke spent 81 looks
+  with n_refusals=543 vs n_episodes=502 (void). Handoff
   agentos/handoffs/LIVE-ENTRY-RADAR-2026-08-15-w5-control-matching.md left the
   full-panel run as the next action. DSC:REFUSAL-BRANCH-HIDES-A-DEAD-LOOKUP.
 
@@ -36,7 +40,22 @@ changed:
     what: "Append-only full-panel looks (this tree's Panel A + sibling Panel B
       confirmatory hashes). Smoke 81 names_shard rows untouched."
   - path: agentos/workstreams/WS-LIVE-ENTRY-RADAR.md
-    what: "W5 marked done at #5825 squash 0394d6e16407 (2026-08-17T10:08:44Z)."
+    what: "W5 marked done at #5825 squash 0394d6e16407 (2026-08-17T10:08:44Z).
+      ADDENDUM W6: W6 in_progress, not done; next_action is Sol review."
+  - path: research/live_entry_radar/W6_RP1_POLICY.md
+    what: "ADDENDUM W6: frozen RP1 equal-Borda ordinal policy, written before ranking code."
+  - path: engine/entry_radar/research_priority.py
+    what: "ADDENDUM W6: pure deterministic RP1 ranker."
+  - path: engine/entry_radar/live_eval.py
+    what: "ADDENDUM W6: projection-seam wiring; payload research_priority board."
+  - path: engine/entry_radar/live_ledger.py
+    what: "ADDENDUM W6: durable research_priority stays null; W6 is payload-ephemeral."
+  - path: tests/test_entry_radar_w6_priority.py
+    what: "ADDENDUM W6: adversarial battery plus recovery-tape live seam."
+  - path: research/live_entry_radar/W6_RP1_RECEIPT_2026-08-17.md
+    what: "ADDENDUM W6: real-input proof (WASH C1/C2, VSHAPE G0/C5 seam, STALE/SHORT abstentions)."
+  - path: .github/ci/legacy-jobs.yml
+    what: "ADDENDUM W6: name the W6 suite in the existing entry-radar CI step."
 
 verified:
   - claim: "Panel A control_match_unavailable count is 0 against 7546 episodes."
@@ -60,29 +79,46 @@ verified:
   - claim: "Confirmatory-receipt PR #5825 is merged on origin/main."
     command: "gh pr view 5825 --json state,mergedAt,mergeCommit --jq '{state,mergedAt,sha:.mergeCommit.oid}'; git log -1 --oneline origin/main"
     result: "MERGED 2026-08-17T10:08:44Z squash 0394d6e16407"
+  - claim: "ADDENDUM W6: RP1 adversarial battery is green."
+    command: "/Users/chriswong/Documents/Cluade/Macro Dashboard/.venv/bin/python3 -m pytest tests/test_entry_radar_w6_priority.py -q"
+    result: "29 passed"
+  - claim: "ADDENDUM W6: Prophet paths are untouched vs origin/main."
+    command: "git diff origin/main --stat -- engine/entry_signal.py engine/prophet_*.py"
+    result: "empty"
 
 unverified:
   - claim: "The per-episode n_cell and k distributions (beyond the uninformative share)."
     what_would_verify: "Serialize ControlMatch.n_cell and len(controls) in _write_results / _summary_table on a future run. This run's JSON has zero n_cell keys."
   - claim: "§9 nc2_overlap at the 0.50 floor."
     what_would_verify: "A Q1 that clears M14, or an explicit overlap_share dump of the match_proximity=False arm. This run stored NaN on Q1/Q2/Q5."
+  - claim: "ADDENDUM W6: live VPS payload will emit rankable RP1 rows once ENTRY_RADAR_LIVE_ENABLE is armed on a session that actually develops episodes."
+    what_would_verify: "Post-merge commissioning against the real live/entry_radar.json after a developing RTH pass."
 
 unresolved:
+  - "ADDENDUM W6: Sol has not yet reviewed the RP1 PR against the outcome/authority firewall. W6 is not done."
   - "n_cell/k histograms were never written by the runner schema. Empty-cell share is the available proxy."
   - "Panel A and Panel B info_cutoffs differ (2026-08-16T01:23:09Z vs 2026-08-17T01:56:44Z) because sibling minute fetches appended the shared manifest during the A reruns. B does not use those minutes (G0/C5 staged tables)."
   - "Q2 TEST remains ACCRUING (n=1/6). The matched FIT tables are exploratory, not the confirmatory contrast."
 
 next_actions:
+  - "ADDENDUM W6: Sol reviews the Research Priority PR against the frozen outcome/authority firewall. Do not mark W6 done at merge."
+  - "ADDENDUM W6: after merge, commission RP1 against a real live payload (developing episodes), then mark W6 done."
+  - "Do not start W7 or W9."
   - "Optional: persist n_cell/k/overlap_share in _write_results so the next confirmatory dump carries pool histograms."
-  - "W6 Research Priority and W8 UI reference (#5737 already open) are the next fresh commissionings."
+  - "W8 UI reference remains #5737 (still ACCRUING / Best · unranked until W6 exists in production)."
 
 do_not_redo:
+  - "ADDENDUM W6: Do NOT fit RP1 weights to W5 Q5 G0 earliness or Panel-B H=10 excess."
+  - "ADDENDUM W6: Do NOT put Research Priority in live_pack.py or the durable episode ledger."
+  - "ADDENDUM W6: Nested payload keys must not contain forbidden tokens rank/score (use ordinal, priority_index, population_n, abstention)."
   - "Do NOT convert the feature panel session column to datetime64 (still binding from the #5780 handoff)."
   - "Do NOT interpret the 81 2026-08-15 names_shard looks. They are ledger facts and void."
   - "Do NOT re-derive whether D1/D2 were real. This run is the production proof they are gone (0 control_match_unavailable on both panels)."
   - "Do NOT treat Q1 UNINFORMATIVE as a matching failure. It is the pre-registered M14 floor at 69.86%."
 
 danger_areas:
+  - "ADDENDUM W6: FORBIDDEN_KEY_TOKENS is a substring match. unranked_reason / rankable_n fail liveness. research_priority as a key is inert; nested keys are not exempted by that name."
+  - "ADDENDUM W6: quote-only run_pass on the W4 pack does not arm C1; recovery_tape + builder is the live-seam proof. Do not treat an empty live board as a ranker failure."
   - "_attach_and_match still swallows Exception into control_match_unavailable. A new silent lookup bug would again look like data. Census-first remains the gate."
   - "A sparse worktree still truncates data/trial_ledger.jsonl on write. These runs used a FULL checkout."
   - "Sibling supervisors were restarting --panel A in a loop against the same cache; killing them was required so B could finish and so the manifest would stop growing."
@@ -99,3 +135,12 @@ episodes; FIT empty-cell share ~47%. Panel B: 0 `control_match_unavailable` /
 on M14 (69.86% < 90%). Q5 is PASS_SHAPED (+13.4 session G0 lead vs incumbent).
 Q2 TEST is ACCRUING. Receipt:
 `research/live_entry_radar/W5_CONFIRMATORY_RESULTS_2026-08-17.md`.
+
+## ADDENDUM W6 — Research Priority (not done)
+
+RP1 is a deterministic equal-Borda attention ordinal on the live evaluator
+projection seam. Policy `research/live_entry_radar/W6_RP1_POLICY.md`. Receipt
+`research/live_entry_radar/W6_RP1_RECEIPT_2026-08-17.md`. Durable ledger
+`research_priority` stays null. Prophet untouched. Sol reviews the PR against
+the frozen outcome/authority firewall. After merge, commission the live
+payload before marking W6 done. Do not start W7.

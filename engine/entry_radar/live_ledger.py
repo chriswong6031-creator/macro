@@ -57,11 +57,13 @@ requiring the §18 A5.0 correction protocol and a CEO ruling — not a W4 mechan
 choice.  The absence is the honest state, and it is stated here rather than left
 for a reader to notice.
 
-NO SCORES, ANYWHERE (§18 A5.0, §9)
------------------------------------
+NO SCORES ON THE DURABLE RECORD (§18 A5.0, §9)
+----------------------------------------------
 ``detector_score``, ``research_priority`` and ``opportunity_score`` are §13
-fields and they are ``None`` in W4, always — a non-None value is REFUSED at
-construction.  They are W6/W7 territory and a placeholder number in an
+fields and they are ``None`` on the ledger, always — a non-None value is REFUSED
+at construction.  W6 publishes Research Priority on the live *payload* only
+(ephemeral; a corrected frame recomputes current Priority and does not rewrite
+this store).  Opportunity Score remains W7.  A placeholder number in an
 append-only store is a number somebody later cites.
 """
 from __future__ import annotations
@@ -263,10 +265,10 @@ class LiveEpisode:
             if getattr(self, name) is not None:
                 raise LedgerError(
                     f"{self.detector_id} episode for {self.ticker} carries "
-                    f"{name}={getattr(self, name)!r}; W4 records lifecycle, provenance "
-                    f"and availability — the hand-authored number is W6/W7 territory "
-                    f"and a placeholder in an append-only store is a number somebody "
-                    f"later cites (contract §18 A5.0, §9)")
+                    f"{name}={getattr(self, name)!r}; W6/W7 territory — the durable "
+                    f"ledger records lifecycle, provenance and availability. W6 "
+                    f"Research Priority is ephemeral on the live payload; W7 is "
+                    f"not this store (contract §18 A5.0, §9, §13)")
         for block in _SWEPT_BLOCKS:
             bad = sorted(k for k in getattr(self, block)
                          if any(tok in str(k).lower() for tok in BANNED_FEATURE_TOKENS))
