@@ -1230,6 +1230,8 @@ on:
       - "contracts/fundamental_forensics_health.schema.json"
       - "contracts/fundamental_forensics_attested_history_operator.schema.json"
       - "contracts/fundamental_forensics_attested_history_preflight_receipt.schema.json"
+      - "contracts/financial_intelligence_packet.schema.json"
+      - "scripts/build_financial_intelligence_packet.py"
       - ".github/workflows/attested-history-operator.yml"
       - "templates/fundamental_forensics.html.j2"
       - "templates/fundamental_forensics.css"

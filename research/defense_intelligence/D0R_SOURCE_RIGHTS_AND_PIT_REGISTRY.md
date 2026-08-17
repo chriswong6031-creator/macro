@@ -53,3 +53,20 @@ Prioritization: investor information gain (identity, first-known, program/theme,
 ## Failure behavior (product)
 
 Print the typed state already used in A: `CURRENT` / `PARTIAL` / `STALE` / `EMPTY_VALID` / `SOURCE_UNAVAILABLE` / `PROJECTION_MISSING` / `SIGN_IN_REQUIRED` / `RIGHTS_BLOCKED`. Never coerce 0+unavailable into empty-valid.
+
+## E2. Verification receipts (this close)
+
+`verified_at` = 2026-08-17 unless noted. “Public; retain receipts” is not enough — each BUILD row now names the interface actually probed.
+
+| Source | verified_at | Interface probed | Auth / limits observed | History / PIT | Corrections | Rights |
+|---|---|---|---|---|---|---|
+| USAspending transactions | 2026-08-17 | GET `https://api.usaspending.gov/api/v2/transactions/` → **405** (POST-only). Prior D0R POST for award `306425727` returned P00032. | none; public JSON; rate unknown this close | `action_date` official; our `known_at` is collector | new action ids / versions; do not overwrite receipts | Public API ToS; we retain sha + receipt id |
+| USAspending award page | lineage | award `CONT_AWD_HC101319C0006_9700_-NONE-_-NONE-` / numeric 306425727 | none | action_date 2026-05-12 | P00032 vs balance-changed sibling both kept | Public |
+| SAM.gov | 2026-08-17 | **Our** `latest.json` `freshness.opportunities.status=unavailable`, `records_visible=0`, `observed_at=null` | live product: SOURCE_UNAVAILABLE | amendment history **not** collected | n/a | Public SAM exists; **our rail is down** — do not claim SAM access |
+| DoD Comptroller P-1/R-1 | 2026-08-17 | GET `https://comptroller.defense.gov/Budget-Materials/` 200; FY2027 P-1 and R-1 listed | none | FY vintage on the exhibit | errata via replacement PDFs | Public. **Our graph absent** = PROJECTION_MISSING |
+| SEC EDGAR | 2026-08-17 | Boeing 8-K `ba-20251208.htm` (CIK 12927); Spirit 8-K `tm2532915d1_8k.htm` (CIK 1364885) — acquisition completed 2025-12-08 | none | `accepted` / Date of Report | 8-K is a point filing | Public. Consume via SEC owner |
+| DSCA 36(b) | not re-fetched this close | registry URL only | — | notification date ≠ LOA | — | **UNVERIFIED this close** — keep BUILD intent, do not claim current HTML schema |
+| GAO | not a specific docket this close | gao.gov | — | release date | revisions | **UNVERIFIED docket** this close |
+| Janes / Aviation Week / Govini / estimates | — | not inspected | paid | vendor vintage | vendor | **LICENSE / not available** |
+
+Auth for **our** paid APIs (not the government sources): cookie JSON `government-revenue-data/{workspace,latest,candidates}.json` 200 after `site_full`; cookie-only `/api/government-revenue/*` **401 missing bearer**; bearer from `MDXAuth` unlocks the same APIs. Limits: workspace 500-cap; candidates `limit` paging (`MAX_PAGES=4` in `government-revenue-candidate-radar.js`).

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>D1 target — Budget and SAM typed failures</title>
+<link rel="stylesheet" href="d0r-target.css"/>
+</head>
+<body>
+<div class="frame">
+<p class="note">TARGET COMPOSITION · honest failure · do not coerce 0 into empty-valid · official P-1 still exists at comptroller.defense.gov</p>
+<p class="kicker">Government Revenue · Budget / Opportunities</p>
+<h1>Request rail and notices are down</h1>
+<div class="stance">
+  <span class="chip warn">PROJECTION_MISSING</span>
+  <span class="chip bad">SOURCE_UNAVAILABLE</span>
+  <span class="chip">Award tape still 500</span>
+</div>
+<div class="fail">
+  <b>Budget · PROJECTION_MISSING</b>
+  DoD Comptroller FY2027 P-1 and R-1 PDFs are public. Mastermind has no `government_budget_program_graph.v1` on HEAD, so `/api/government-revenue/budget-programs` cannot hydrate. This is not “no programs this year.”
+</div>
+<div class="fail">
+  <b>SAM / opportunities · SOURCE_UNAVAILABLE</b>
+  `latest.json` freshness.opportunities.status = unavailable; records_visible = 0; observed_at = null. This is not a valid empty bid week.
+</div>
+<div class="card">
+  <p><b>What to do.</b> Use the Change Tape. Do not wait on a spinner that says the compact cut is still loading. Do not start a P-1 collector inside D1. Do not treat a SAM outage as “no recompetes.”</p>
+  <p class="muted">D1 copies this typed state into the Budget and Opportunities tabs. Building the missing graph is a separately scoped wave.</p>
+</div>
+</div>
+</body>
+</html>

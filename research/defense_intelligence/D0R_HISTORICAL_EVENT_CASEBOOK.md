@@ -95,6 +95,26 @@ PIT legend: `replay-safe` = official timestamped primary (DoD PDF, EDGAR accessi
 | E62 | 2022 | book-to-bill miss | prime | Guidance vs awards | quarter | − | IR | Gov vs company | IR |
 | E63 | 2024 | classified charge | prime | Undisclosed program | year | − | 8-K limited | Classified economics | SEC |
 | E64 | 2025 | ceasefire discourse | munitions (2) | Inventory fill risk | year | − if believed | news | De-escalation | news |
+| E65 | 2018-03-22 | none on row (HII sibling exists) | deobligation | N0002415C2114 AZ0010 −$5.94M | Late collector 2026-08-08 | none as ticker event | **negative official $** | replay-safe action + known_at | Live negative lineage L2 | USAspending + HEAD workspace |
+| E66 | (effective ≪ known) | HII (4) | late discovery | N0002415C2114 award_discovered_late `govws-b19836e22bc86b6144fd410a` | Collector lag | n/a | identity+clock | replay-safe | Live HII clock case | HEAD workspace |
+| E67 | 2025-12-08 | SPR → BA (6,10) | identity / M&A | Boeing completed Spirit acquisition; NYSE halt SPR | Listing ends | n/a | identity | replay-safe 8-K | SPR is not a live issuer | SEC 8-K |
+
+## D8. VERIFIED_CASE vs RESEARCH_CANDIDATE (Gate 5 honesty)
+
+Gate 5 requires ≥60 **reviewed** events with pinned event/source/security/PIT. This close **does not invent 60 fake primary sources**. Rows E01–E64 remain in the book as the sampling frame. Status:
+
+| Status | Meaning | IDs |
+|---|---|---|
+| **VERIFIED_CASE** | Primary artifact or official URL pinned this program (HEAD GovRev, USAspending action id, or SEC 8-K opened 2026-08-17) | **E40–E42, E65–E67** (6). PIT: official `action_date` + collector `known_at` on E41/E42/E65/E66; SEC accepted 8-K on E67 (`ba-20251208`, Spirit `tm2532915d1_8k.htm`). Securities: IRDM live on Stock Identity; HII live; SPR **not** in SI universe (historical). |
+| **RESEARCH_CANDIDATE** | Architecture-useful, not a pinned primary this close. Qualitative market memory only. | **E01–E39, E43–E64** (61). |
+
+**Count:** 64+3 = **67 rows** in the book; **6 VERIFIED_CASE**; **61 RESEARCH_CANDIDATE**; academic papers in D2 remain citations, not case rows.
+
+**Selection disclosure:** verified set is biased toward *what the live tape actually contains* (USAspending award_change, late discovery, deobligation, one M&A identity close). It under-represents FMS, budget enactments, and EU home-FY events until those rails exist. That bias is why RESEARCH_CANDIDATE rows stay listed rather than deleted.
+
+**Balanced outcomes in the verified set:** E41 non-material positive obligation; E65 official negative dollars with **no ticker**; E66 late identity; E67 listing termination. Famous Ukraine winners are **not** in the verified set.
+
+D7 evaluation must still rebuild RESEARCH_CANDIDATE rows with PIT prices before any promotion. Gate 5 is **honest-labeled, not fake-closed**.
 
 ## D6. Hypothesis registry (preregistration candidates, not results)
 
