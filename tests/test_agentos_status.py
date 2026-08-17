@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -262,8 +263,10 @@ def test_schema_stays_fail_closed_while_the_view_stays_fail_open(
 ) -> None:
     """A malformed record reds `validate` and is EXCLUDED from — never blanks — the view."""
     target = store / "workstreams" / "WS-GMI-THEME-GRAPH.md"
+    # Mutate whatever status the live record carries; pinning its literal value made the
+    # fixture a silent no-op when the record's status legitimately changed (2026-08-17).
     target.write_text(
-        target.read_text(encoding="utf-8").replace("status: blocked", "status: humming", 1),
+        re.sub(r"(?m)^status: \S+", "status: humming", target.read_text(encoding="utf-8"), count=1),
         encoding="utf-8",
     )
     validated = _run("validate", "--root", str(store))
@@ -333,10 +336,9 @@ def test_malformed_dependency_target_makes_surviving_dependents_unknown(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
     target = store / "workstreams" / "WS-GMI-THEME-GRAPH.md"
+    # Status-agnostic mutation — see the fail-closed test above.
     target.write_text(
-        target.read_text(encoding="utf-8").replace(
-            "status: blocked", "status: malformed", 1
-        ),
+        re.sub(r"(?m)^status: \S+", "status: malformed", target.read_text(encoding="utf-8"), count=1),
         encoding="utf-8",
     )
     dependent = store / "workstreams" / "WS-WATCHLIST-PORTFOLIO-CEO.md"
@@ -601,6 +603,18 @@ def test_readiness_envelope_is_complete_canonical_and_identity_sorted(
 def test_readiness_states_explain_graph_and_authored_progress(
     store: Path, builds: Path, tmp_path: Path
 ) -> None:
+    # The blocked-parent case is SYNTHESIZED: force GMI-THEME-GRAPH to blocked in the
+    # fixture copy so the assertion no longer rides the live record's current status
+    # (which legitimately flipped to active on 2026-08-17 and silently un-blocked it).
+    parent = store / "workstreams" / "WS-GMI-THEME-GRAPH.md"
+    parent_text = re.sub(
+        r"(?m)^status: \S+",
+        'status: blocked\nblocked_by:\n  - "fixture: parent held blocked for the readiness case"',
+        parent.read_text(encoding="utf-8"),
+        count=1,
+    )
+    parent.write_text(parent_text, encoding="utf-8")
+
     out = tmp_path / "state.json"
     assert _status(store, out, "--now", FROZEN,
                    "--active-builds", str(builds)).returncode == 0

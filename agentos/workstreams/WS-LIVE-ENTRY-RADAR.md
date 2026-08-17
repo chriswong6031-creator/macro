@@ -87,6 +87,13 @@ waves:
     depends_on: [W3]
     # Confirmatory receipts on main: #5825 squash 0394d6e16407 (2026-08-17T10:08:44Z).
     # Code path #5741/#5780. 0 control_match_unavailable on both panels.
+  - id: W5.1
+    title: Persist control-pool diagnostics on the existing W5 summary surface
+    status: in_progress
+    pr: 5833
+    depends_on: [W5]
+    # Serialization-only. Matching, CONTROL_K, M3, M14, NC-2, looks, and W6/W7
+    # are untouched. First real histograms wait for the next natural W5/W7 dump.
   - id: W6
     title: PR-6 deterministic Research Priority (ACCRUING)
     status: todo
@@ -111,7 +118,7 @@ landmines:
   - "1D LIVE replay requires minute-level reconstruction; backfilling intraday observations from EOD closes is forbidden and mutation-tested (contract §5)."
   - "Depth is context, never authority (entry-stack expansion finding); no detector may require a StochRSI zero print."
   - "Expert Preservation ruling (contract §18 A1, DEC:LER-EXPERT-EVENT-FAMILIES-PRESERVED): Terminal's entry-event families are candidate experts — never flatten them into one entry_signal boolean or a generic category; preserve identity in the mastermind.entry_event.v1 store with typed promotion/de-dup edges and per-field field_origin. STARTER/RE-ENTRY names are operator-observed UI labels until PR-2 mints emitter-receipted enums. Radar records experts; the future Stock Identity / Expert Routing program (not created here) owns per-security selection AND must clear DNR:KILL-OUTCOME-AUDITION (per-name outcome audition is killed; structure-measurement tailoring is the open lane)."
-next_action: W5 is done (#5825). Next fresh commissionings are W6 (Research Priority) and W8 (UI reference; #5737 already open). Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
+next_action: W5.1 (control-pool diagnostics on the W5 summary surface) is the in-flight instrumentation patch; it must not delay W6. After it merges, next fresh commissionings remain W6 (Research Priority) and W8 (UI reference; #5737 already open). Q1 stays UNINFORMATIVE until M14 row-16 agreement clears 90%.
 ---
 
 ## Context

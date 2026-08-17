@@ -92,6 +92,9 @@ __all__ = [
     "admit_members",
     "aggregate",
     "fuse_board",
+    "diagnose_structure",
+    "W3_DIAGNOSTICS_SCHEMA",
+    "MEMBER_CENSUS_STATUSES",
 ]
 
 
@@ -313,6 +316,17 @@ FUSION_CONSTRUCTION = (
     "no family at all scores null — never zero."
 )
 
+#: Compact W3 structural-diagnostics schema. Outcome-blind. No authority.
+W3_DIAGNOSTICS_SCHEMA = "prophet_fusion.w3_structural.v1"
+W3_TOP_N = 30
+MEMBER_CENSUS_STATUSES: tuple[str, ...] = (
+    "voting",
+    "below_presence",
+    "vote_inert",
+    "collapsed_duplicate",
+    "absent",
+)
+
 
 # --------------------------------------------------------------------------- #
 # small helpers
@@ -494,37 +508,29 @@ def admit_members(
     for column, sign in sorted(table.items()):
         oriented = [(str(date), oriented_value(values.get(column), sign))
                     for date, values in rows]
-        present = sum(1 for _date, value in oriented if value is not None)
-        coverage = (present / n_rows) if n_rows else 0.0
+        stats = _member_frame_stats(oriented, dates=dates, n_rows=n_rows)
+        coverage = float(stats["coverage"])
         if coverage < presence_floor:
             dropped.append({"column": column, "family": sign.family,
                             "reason": "below_presence_floor",
                             "coverage": round(coverage, 6),
                             "presence_floor": presence_floor})
             continue
-        by_date: dict[str, set[float]] = defaultdict(set)
-        rows_per_date: dict[str, int] = defaultdict(int)
-        for date, value in oriented:
-            rows_per_date[date] += 1
-            if value is not None:
-                by_date[date].add(value)
+        share = float(stats["variation_share"])
+        evaluable_n = int(stats["evaluable_dates"])
         # A date holding fewer than VARIANCE_MIN_DISTINCT ROWS cannot carry variation
         # for ANY member — that is a fact about the pool's size, not about the
         # evidence — so it is excluded from the denominator rather than counted as a
         # date the member failed.  Counting it would make every member on a one-name
         # board vote-inert and refuse the whole plane, turning a legitimately tiny
         # board into a fabricated outage.
-        evaluable = [d for d in dates if rows_per_date[d] >= VARIANCE_MIN_DISTINCT]
-        varying = sum(1 for date in evaluable
-                      if len(by_date.get(date, ())) >= VARIANCE_MIN_DISTINCT)
-        share = (varying / len(evaluable)) if evaluable else 1.0
-        if apply_variance_floor and evaluable and share < VARIANCE_MIN_DATE_SHARE:
+        if apply_variance_floor and evaluable_n and share < VARIANCE_MIN_DATE_SHARE:
             dropped.append({"column": column, "family": sign.family,
                             "reason": "vote_inert",
                             "coverage": round(coverage, 6),
-                            "dates_with_variation": varying,
+                            "dates_with_variation": int(stats["dates_with_variation"]),
                             "frame_dates": len(dates),
-                            "evaluable_dates": len(evaluable),
+                            "evaluable_dates": evaluable_n,
                             "variation_share": round(share, 6),
                             "min_variation_share": VARIANCE_MIN_DATE_SHARE,
                             "note": ("present but constant across tonight's pool — "
@@ -554,6 +560,8 @@ class FusionPlane:
     members_dropped: list[dict[str, Any]]
     members_collapsed: list[dict[str, Any]]
     rows_by_n_families: dict[str, int] = field(default_factory=dict)
+    admission: Admission | None = None
+    extracted_members: tuple[dict[str, Any], ...] = ()
 
     def receipt(self) -> dict[str, Any]:
         """The board-level disclosure block — what voted, what abstained, and why."""
@@ -719,4 +727,318 @@ def fuse_board(rows: Sequence[Mapping[str, Any]],
     admission = admit_members([("live", values) for values in members])
     plane = aggregate(members, admission.admitted)
     plane.members_dropped = [dict(d) for d in admission.dropped]
+    plane.admission = admission
+    plane.extracted_members = tuple(dict(values) for values in members)
     return plane
+
+
+def _member_frame_stats(
+    oriented: Sequence[tuple[str, float | None]],
+    *,
+    dates: Sequence[str],
+    n_rows: int,
+) -> dict[str, Any]:
+    """Presence + variance measurements over one member's oriented frame.
+
+    Shared by the floor decision and the W3 census so the two cannot drift.  The
+    floor still DECIDES from these numbers; the census only reports them.
+    """
+    present = sum(1 for _date, value in oriented if value is not None)
+    coverage = (present / n_rows) if n_rows else 0.0
+    distinct = {value for _date, value in oriented if value is not None}
+    by_date: dict[str, set[float]] = defaultdict(set)
+    rows_per_date: dict[str, int] = defaultdict(int)
+    for date, value in oriented:
+        rows_per_date[date] += 1
+        if value is not None:
+            by_date[date].add(value)
+    evaluable = [date for date in dates if rows_per_date[date] >= VARIANCE_MIN_DISTINCT]
+    varying = sum(1 for date in evaluable
+                  if len(by_date.get(date, ())) >= VARIANCE_MIN_DISTINCT)
+    share = (varying / len(evaluable)) if evaluable else 1.0
+    return {
+        "coverage": coverage,
+        "n_present": present,
+        "distinct_values": len(distinct),
+        "dates_with_variation": varying,
+        "evaluable_dates": len(evaluable),
+        "frame_dates": len(dates),
+        "variation_share": share,
+    }
+
+
+def _stage_bucket_rank(stage: str) -> int:
+    """Lazy import: ``us_board_rank`` loads this module inside helpers."""
+    from engine.us_board_rank import stage_rank
+
+    return stage_rank(str(stage or ""))
+
+
+def _published_fusion_score(raw: float | None) -> float | None:
+    """The number the board actually sorts on — ``round(raw, 1)``, null stays null."""
+    if raw is None:
+        return None
+    return round(float(raw), 1)
+
+
+def diagnostic_sort_key(stage: str, raw_score: float | None, ticker: str) -> tuple:
+    """Canonical board order: stage bucket → scored before unscored → score → ticker.
+
+    The middle term is the load-bearing null law: a missing family is unscored,
+    never coerced to 0.0.  Score rounding matches the published ``prophet.score``
+    so a full-model reconstruction equals production rank.  Ablation still uses
+    exact in-memory family scores as the raw input, never the 2-decimal display
+    contribution.
+    """
+    published = _published_fusion_score(raw_score)
+    unscored = 1 if published is None else 0
+    return (
+        _stage_bucket_rank(stage),
+        unscored,
+        -float(published or 0.0),
+        str(ticker or ""),
+    )
+
+
+def _scores_from_family_rows(family_rows: Sequence[Mapping[str, float]]) -> list[float | None]:
+    scores: list[float | None] = []
+    for families in family_rows:
+        mean = _mean(families.values())
+        scores.append(None if mean is None else mean * 100.0)
+    return scores
+
+
+def _assign_ranks(keys: Sequence[tuple]) -> list[int]:
+    order = sorted(range(len(keys)), key=lambda index: keys[index])
+    ranks = [0] * len(keys)
+    for rank, index in enumerate(order, start=1):
+        ranks[index] = rank
+    return ranks
+
+
+def _dispersion(values: Sequence[float]) -> float:
+    if len(values) < 2:
+        return 0.0
+    mean = sum(values) / len(values)
+    return (sum((value - mean) ** 2 for value in values) / len(values)) ** 0.5
+
+
+def _mode_and_share(values: Sequence[float]) -> tuple[float | None, float]:
+    if not values:
+        return None, 0.0
+    counts: dict[float, int] = defaultdict(int)
+    for value in values:
+        counts[value] += 1
+    modal = max(counts.items(), key=lambda item: (item[1], -item[0]))[0]
+    return modal, counts[modal] / len(values)
+
+
+def _top_n_names(
+    tickers: Sequence[str], ranks: Sequence[int], *, n: int,
+) -> set[str]:
+    cutoff = min(n, len(tickers))
+    return {str(tickers[i]) for i, rank in enumerate(ranks) if rank <= cutoff}
+
+
+def diagnose_structure(
+    rows: Sequence[Mapping[str, Any]],
+    plane: FusionPlane,
+    *,
+    signs: Mapping[str, RegisteredSign] | None = None,
+    top_n: int = W3_TOP_N,
+) -> dict[str, Any]:
+    """Outcome-blind LOFO + member census.  Zero authority.  Does not mutate ``plane``.
+
+    LOFO law (frozen here, not re-derived from display values):
+
+    * the original admitted member set is held fixed — floors are never re-run
+    * exactly one evidence family is removed from the already-computed family scores
+    * exact in-memory family scores, never the 2-decimal display contribution
+    * a row whose last family is removed becomes unscored (null), never 0.0
+    * order is stage bucket → scored-before-unscored → ablated score → ticker
+
+    Tie-share is descriptive only.  This function never reads outcome / grade /
+    return columns even if the caller left them on ``rows``.
+    """
+    table = dict(signs or REGISTERED_SIGNS)
+    n = len(plane.family_scores)
+    if len(rows) != n:
+        raise ValueError(
+            f"diagnose_structure: {len(rows)} rows vs {n} family-score rows — "
+            "the diagnostic frame must be row-aligned with the fusion plane")
+
+    # Copy.  Ablation and census must not be able to write back into the plane
+    # that produced tonight's canonical score.
+    family_scores = [{str(key): float(value) for key, value in dict(row).items()}
+                     for row in plane.family_scores]
+    tickers = [str(row.get("ticker") or "") for row in rows]
+    stages = [str(row.get("stage") or "") for row in rows]
+    published_ranks = [row.get("score_rank") for row in rows]
+
+    admitted_frozen: tuple[str, ...]
+    if plane.admission is not None:
+        admitted_frozen = tuple(plane.admission.admitted)
+    else:
+        collapsed = {str(item.get("column") or "") for item in plane.members_collapsed}
+        voting = {str(item.get("column") or "") for item in plane.members_voting}
+        admitted_frozen = tuple(sorted(voting | collapsed - {""}))
+
+    full_scores = _scores_from_family_rows(family_scores)
+    full_keys = [diagnostic_sort_key(stages[i], full_scores[i], tickers[i])
+                 for i in range(n)]
+    full_ranks = _assign_ranks(full_keys)
+    published_ok = True
+    if any(rank is not None for rank in published_ranks):
+        published_ok = all(
+            published_ranks[i] is None or int(published_ranks[i]) == full_ranks[i]
+            for i in range(n))
+
+    families_to_ablate = list(plane.families_present) or sorted({
+        family for row in family_scores for family in row
+    })
+    lofo_rows: list[dict[str, Any]] = []
+    for family in families_to_ablate:
+        carrying = [row[family] for row in family_scores if family in row]
+        modal_value, modal_share = _mode_and_share(carrying)
+        ablated = [{key: value for key, value in row.items() if key != family}
+                   for row in family_scores]
+        ablated_scores = _scores_from_family_rows(ablated)
+        ablated_keys = [diagnostic_sort_key(stages[i], ablated_scores[i], tickers[i])
+                        for i in range(n)]
+        ablated_ranks = _assign_ranks(ablated_keys)
+        displacements = [abs(ablated_ranks[i] - full_ranks[i]) for i in range(n)]
+        moved = sum(1 for delta in displacements if delta)
+        before = _top_n_names(tickers, full_ranks, n=top_n)
+        after = _top_n_names(tickers, ablated_ranks, n=top_n)
+        lofo_rows.append({
+            "family": family,
+            "rows_carrying": len(carrying),
+            "distinct_values": len(set(carrying)),
+            "modal_value": modal_value,
+            "modal_share": modal_share,
+            "tie_share": modal_share,
+            "tie_share_is_descriptive_only": True,
+            "dispersion": _dispersion(carrying),
+            "mean_abs_rank_displacement": (
+                (sum(displacements) / n) if n else 0.0),
+            "max_abs_rank_displacement": max(displacements) if displacements else 0,
+            "rows_moved": moved,
+            "top30_churn": len(before ^ after),
+        })
+    lofo_rows.sort(key=lambda row: str(row["family"]))
+
+    census = _member_census(plane, table, admitted_frozen=admitted_frozen)
+
+    scored = sum(1 for score in full_scores if score is not None)
+    return {
+        "schema": W3_DIAGNOSTICS_SCHEMA,
+        "canonical_observation": True,
+        "construction": (
+            "exact leave-one-family-out on frozen admitted members; equal-weight "
+            "mean of remaining in-memory family scores; null stays null; canonical "
+            "board order (stage, scored-before-unscored, score, ticker). "
+            "Outcome-blind. Zero authority."
+        ),
+        "admitted_frozen": list(admitted_frozen),
+        "full_model_rank_matches_published": published_ok,
+        "rows_scored": scored,
+        "rows_unscored": n - scored,
+        "families_present": list(plane.families_present),
+        "families_absent": [dict(item) for item in plane.families_absent],
+        "lofo": lofo_rows,
+        "census": census,
+        "presence_floor": PRESENCE_FLOOR,
+        "variance_floor": {
+            "axis": "within_night_distinct_nonnull_oriented_values",
+            "min_distinct_values": VARIANCE_MIN_DISTINCT,
+            "min_variation_share": VARIANCE_MIN_DATE_SHARE,
+            "evaluated": "as_of_night",
+        },
+        "top_n": int(top_n),
+    }
+
+
+def _member_census(
+    plane: FusionPlane,
+    table: Mapping[str, RegisteredSign],
+    *,
+    admitted_frozen: Sequence[str],
+) -> list[dict[str, Any]]:
+    """One structural row per registered member.  Status from the frozen admission."""
+    dropped_by = {str(item.get("column") or ""): dict(item)
+                  for item in plane.members_dropped}
+    collapsed_by = {str(item.get("column") or ""): dict(item)
+                    for item in plane.members_collapsed}
+    voting = {str(item.get("column") or "") for item in plane.members_voting}
+    extracted = list(plane.extracted_members)
+    n_rows = len(extracted)
+    dates = ["live"]
+    admitted_set = set(admitted_frozen)
+
+    census: list[dict[str, Any]] = []
+    for column, sign in sorted(table.items()):
+        present_in_extract = bool(extracted) and all(column in row for row in extracted)
+        stats: dict[str, Any] = {
+            "coverage": None,
+            "distinct_values": None,
+            "variation_share": None,
+            "n_present": None,
+        }
+        if extracted and present_in_extract:
+            oriented = [("live", oriented_value(row.get(column), sign))
+                        for row in extracted]
+            stats = _member_frame_stats(oriented, dates=dates, n_rows=n_rows)
+
+        if column in collapsed_by:
+            status = "collapsed_duplicate"
+            reason = (f"identical oriented percentile vector as "
+                      f"{collapsed_by[column].get('duplicate_of')}")
+        elif column in voting:
+            status = "voting"
+            reason = "admitted and not collapsed"
+        elif column in dropped_by:
+            drop_reason = str(dropped_by[column].get("reason") or "")
+            if drop_reason == "below_presence_floor":
+                status = "below_presence"
+            elif drop_reason == "vote_inert":
+                status = "vote_inert"
+            else:
+                status = "below_presence" if drop_reason else "absent"
+            reason = drop_reason or "stood down"
+        elif not present_in_extract:
+            status = "absent"
+            reason = "registered member is not on tonight's extracted board row"
+        elif column not in admitted_set:
+            status = "absent"
+            reason = "registered but not admitted and not listed as dropped"
+        else:
+            status = "voting"
+            reason = "admitted"
+
+        coverage = stats.get("coverage")
+        variation = stats.get("variation_share")
+        census.append({
+            "member": column,
+            "family": sign.family,
+            "status": status,
+            "coverage": None if coverage is None else round(float(coverage), 6),
+            "distinct_values": stats.get("distinct_values"),
+            "variation_share": (
+                None if variation is None else round(float(variation), 6)),
+            "thresholds": {
+                "presence_floor": PRESENCE_FLOOR,
+                "min_distinct_values": VARIANCE_MIN_DISTINCT,
+                "min_variation_share": VARIANCE_MIN_DATE_SHARE,
+            },
+            "reason": reason,
+            "source": sign.source,
+            "staleness_basis": _STALENESS_BASIS.get(column),
+        })
+    return census
+
+
+#: Staleness basis only where the registered source already names one.  Never inferred.
+_STALENESS_BASIS: dict[str, str] = {
+    "smartmoney_add": "registry max_staleness_sessions: 63 (13F disclosure lag)",
+    "insider_cluster": "registry serving_dead: collector stopped at 2026q1",
+}

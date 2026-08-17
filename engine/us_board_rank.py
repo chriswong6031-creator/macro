@@ -1364,7 +1364,13 @@ def fusion_ranking_receipt(
     except Exception:  # noqa: BLE001 — the receipt must never be the thing that fails
         signs, presence_floor, min_distinct = {}, None, None
 
-    return {
+    floors_map = dict(floors) if floors else {}
+    # Compact W3 structural block is outcome-blind and has zero authority.
+    # Lift it out of `floors` so floor detail and the diagnostic stay separate.
+    # A degraded / fallback night never reaches here: those rows have no
+    # `prophet.fusion`, so the early None return above is the no-observation.
+    w3 = floors_map.pop("w3_structural", None)
+    out = {
         "score_kind": FUSION_SCORE_KIND,
         "construction": construction,
         "families_active": sorted(active),
@@ -1379,7 +1385,7 @@ def fusion_ranking_receipt(
             "min_distinct_values": min_distinct,
             "evaluated": "as_of_night",
         },
-        "floors": (dict(floors) if floors else
+        "floors": (floors_map if floors else
                    {"captured": False,
                     "note": "the caller did not request the floor detail; which "
                             "members voted is above, the measured reason each "
@@ -1390,6 +1396,9 @@ def fusion_ranking_receipt(
             "`prophet_shadow` with zero authority and is not what this board is "
             "ordered by"),
     }
+    if w3 is not None and not floors_map.get("degraded"):
+        out["w3_structural"] = w3
+    return out
 
 
 # --------------------------------------------------------------------------- #
@@ -1556,6 +1565,15 @@ def score_rows(
 
     _warn_on_dark_extension(pool, definition=definition)
 
+    # Capture the fusion-plane alignment BEFORE the canonical sort.  The plane is
+    # row-aligned with this order; score_rank is filled in after the sort and
+    # joined by ticker onto a copy so the diagnostic cannot see or write the
+    # live row objects.
+    diagnostic_rows: list[dict[str, Any]] | None = None
+    if fusion.applies and not fusion.degraded and fusion.plane is not None:
+        diagnostic_rows = [{"ticker": row.get("ticker"), "stage": row.get("stage")}
+                           for row in pool]
+
     # The SHADOW's own order, computed BEFORE the canonical sort and frozen onto the
     # row, so the retired champion's ranking survives as a gradeable number instead of
     # being inferable only by re-sorting the artifact.  Same key shape it always used —
@@ -1591,6 +1609,21 @@ def score_rows(
             sector_counts[sector] += 1
             row["featured"] = True
             row.pop("featured_blocked_by", None)
+
+    if diagnostic_rows is not None:
+        # Structural diagnostics run AFTER score/rank/display/featured are final.
+        # They read a ticker/stage/rank copy, never the live rows, and they do
+        # not write a new persistent artifact — the compact result rides the
+        # existing fusion receipt via the fusion_floors out-parameter.
+        published = {str(row.get("ticker") or ""): row.get("score_rank")
+                     for row in pool}
+        for item in diagnostic_rows:
+            item["score_rank"] = published.get(str(item.get("ticker") or ""))
+        from engine import us_prophet_fusion as fusion_mod
+
+        structural = fusion_mod.diagnose_structure(diagnostic_rows, fusion.plane)
+        if fusion_floors is not None:
+            fusion_floors["w3_structural"] = structural
     return pool
 
 

@@ -14,6 +14,8 @@ Input frame contract (one row per candidate episode, produced by the runner):
     false_start (bool|None), matched_pair_gap (Q5 signed session gap, NaN
     elsewhere), c2a_fired_in_episode (bool, C1 rows only), same_band_support
     (bool — §9 common-support flag from the unmatched match),
+    n_cell (CEM cell size before k-NN, from the matched ControlMatch),
+    n_controls (selected k = len(matched.controls)),
     cohort, regime, c32.
 """
 from __future__ import annotations
@@ -350,6 +352,46 @@ def _summary_table(frame: pd.DataFrame, cell: str) -> dict[str, Any]:
             frame["uninformative_no_control"].fillna(False).sum())
         if "uninformative_no_control" in frame else 0,
     }
+    out.update(_control_pool_diagnostics(frame))
+    return out
+
+
+def _control_pool_diagnostics(frame: pd.DataFrame) -> dict[str, Any]:
+    """Persist already-produced matching diagnostics onto the summary table.
+
+    Null when the frame never carried the column (pre-W5.1 / old readers).
+    Does not call ``controls.match`` and does not change any confirmatory
+    statistic — it only serializes what the matching machinery already made.
+    """
+    out: dict[str, Any] = {}
+    if "n_cell" in frame.columns:
+        cells = pd.to_numeric(frame["n_cell"], errors="coerce").dropna()
+        if len(cells):
+            out["n_cell_mean"] = float(cells.mean())
+            out["n_cell_median"] = float(cells.median())
+            out["n_cell_min"] = int(cells.min())
+            out["n_cell_max"] = int(cells.max())
+        else:
+            out["n_cell_mean"] = out["n_cell_median"] = None
+            out["n_cell_min"] = out["n_cell_max"] = None
+    else:
+        out["n_cell_mean"] = out["n_cell_median"] = None
+        out["n_cell_min"] = out["n_cell_max"] = None
+
+    if "n_controls" in frame.columns:
+        ks = pd.to_numeric(frame["n_controls"], errors="coerce").dropna()
+        counts = ks.astype(int).value_counts() if len(ks) else pd.Series(dtype=int)
+        for i in range(prereg.CONTROL_K + 1):
+            out[f"k_n_{i}"] = int(counts.get(i, 0))
+    else:
+        for i in range(prereg.CONTROL_K + 1):
+            out[f"k_n_{i}"] = None
+
+    if "same_band_support" in frame.columns:
+        support = frame["same_band_support"].dropna()
+        out["overlap_share"] = float(support.mean()) if len(support) else None
+    else:
+        out["overlap_share"] = None
     return out
 
 

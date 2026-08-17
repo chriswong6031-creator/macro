@@ -138,7 +138,9 @@ waves:
     title: "PR-3 — forward race instrumentation, split PR-3A..3D. Charter:
       research/prophet_fusion/W3_SHADOW_RACE_RECUT.md. Prereg (frozen before any
       outcome read): research/prophet_fusion/W3_RACE_PREREG.md. Status stays todo
-      until PR-3D live-accepts instrumentation. PR-3A is semantics+prereg only."
+      until PR-3D live-accepts instrumentation. PR-3A (#5813) is semantics+prereg.
+      PR-3B is outcome-blind LOFO + member census (no durable W3 store, no nightly
+      wiring)."
     status: todo
   - id: w4
     depends_on: [w3]
@@ -158,13 +160,15 @@ waves:
       the rungs ABOVE C1 (C1's adoption was taken by the 2026-08-15 override)"
     status: todo
 next_action: >
-  PR-3A (this wave) freezes W3 semantics and preregistration. After it merges, a
-  FRESH session starts PR-3B only: exact outcome-blind LOFO plus full member census.
-  Do not read forward C1-vs-shadow outcomes. w2 is done (#5700) but real C2
-  commissioning is still data-gated. w2b live-accepted. w3 stays todo until PR-3D.
-  Durable paired-race N remains 0 until the first post-#5769 candidates-store commit.
-  #5742 is external availability debt. Canonical five-leg nulls on v3 are correct
-  (#5769). STILL OPEN from w1: the §13.0 live-accrual closure.
+  PR-3B (this wave) lands exact outcome-blind LOFO plus the full member census on
+  the existing fusion receipt. After it merges, a FRESH session starts PR-3C only:
+  the durable paired forward ledger + us_prophet_ledgers wiring. Do not read
+  forward C1-vs-shadow outcomes. Do not create data/us_prophet_rank/w3 in this
+  wave. w2 is done (#5700) but real C2 commissioning is still data-gated. w2b
+  live-accepted. w3 stays todo until PR-3D. Durable paired-race N remains 0 until
+  the first post-#5769 candidates-store commit. #5742 is external availability
+  debt. Canonical five-leg nulls on v3 are correct (#5769). STILL OPEN from w1:
+  the §13.0 live-accrual closure.
 ---
 
 ## Context
