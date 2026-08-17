@@ -113,13 +113,52 @@ prophet_flags             all false
 
 E2 may not fetch CI v1 overlay as the glance once this payload exists for the event.
 
+### 4.1 Frozen production publication / read contract
+
+This is a binding of the **existing** Company Intelligence publication chain, not a new store.
+
+**Why the payload is a sibling object, not a v1 context field.** `company_intelligence_context.v1` is a closed public wire (`engine/company_intelligence/contracts.py`). `validate_context` refuses unknown keys; `validate_manifest` accepts only `companies/{TICKER}.json` and requires `len(files) == company_count`. Stuffing `event_workspace.v1` into that object would either break the teaser contract or silently invent a parallel schema. Additive evolution stays in a new object with a new reader, as that module already requires.
+
+**Writer (existing discipline, nested under the same product prefix).**
+
+| Piece | Frozen value |
+|---|---|
+| Product prefix | R2 / local root `company_intelligence/` — same prefix `write_generation` already publishes |
+| Workspace nest | `company_intelligence/event_workspaces/` |
+| Marker (last) | `event_workspaces/manifest.json` |
+| Immutable generation | `event_workspaces/generations/{generation_id}/manifest.json` |
+| Object | `event_workspaces/generations/{generation_id}/workspaces/{canonical_event_id}.json` |
+| Writer | `engine.company_intelligence.event_workspace.write_workspace_generation` — marker last, content-addressed `generation_id`, refuse in-place mutation of an immutable generation |
+| Not the writer | `views.write_generation` (v1 teaser only). Do not reopen that closed files map. |
+
+**Reader (the real E1 consumer; a golden JSON fixture is not one).**
+
+| Piece | Frozen value |
+|---|---|
+| Real production reader | `engine.neuralweb.company_intelligence_reader.read_event_workspace` |
+| Chain | public HTTPS origin → marker → immutable generation manifest → hash-verify workspace object → return the full `event_workspace.v1` |
+| Origin | same operator-controlled `COMPANY_INTELLIGENCE_R2_BASE_URL` family as the existing reader (`…/company_intelligence`), then the `event_workspaces/` nest |
+| Alias resolution | `event_id_adapter` before fetch: `cie_…`, `TICKER/YYYYQn`, and the public slug all resolve to `evt_cik…` |
+| Correction proof | same canonical `event_id`; new `generation_id`; reader returns the corrected generation (marker advanced) |
+| Not a consumer | `GET /api/company-intelligence/{ticker}` (bounded v1 teaser) |
+| Not a consumer | `read_company_intelligence` (teaser projector; `claim_citations_pending` stays `true` on v1 events) |
+| Not a consumer | a golden JSON fixture used *as* the observer. Fixtures may pin expected bytes; they do not satisfy E1 done. |
+
+Local tests wire the reader the same way `tests/test_company_intelligence_neural_reader.py` already does: `write_workspace_generation` to a temp tree, monkeypatch `_fetch_bytes` / origin, then call `read_event_workspace`. That is the production adapter under test, not a second architecture.
+
+If E1 discovers that this nest cannot be published without inventing a second product prefix, a second marker-last family, or a mutation of the closed v1 context/manifest — **stop and escalate**. Do not invent a parallel store.
+
+See `DEC:EARNINGS-EVENT-WORKSPACE-PUBLICATION-CONTRACT`.
+
 ---
 
 ## 5. Flagship event
 
 **AAPL FY2026 Q3** · call 2026-07-30 · live alias `cie_98e318c37ec1a2a1f83c45e1` · canonical `evt_cik0000320193_2026q3_results`.
 
-Success = this event bound from 8-K/Exhibit 99.1 + transcript through the compact payload into **one** Terminal Brief and **one** dossier module, with correction replay through that consumer.
+**E1 success** = this event bound from issuer identity + 8-K Item 2.02 / Exhibit 99.1 + existing transcript through canonical `evt_cik0000320193_2026q3_results` → `event_workspace.v1` on the frozen path in §4.1 → `read_event_workspace` observes the generation and a source-SHA correction (same event id, new `generation_id`, lifecycle `corrected`). No UI.
+
+**E1+E2 arc success** = that payload rendered into **one** Terminal Brief and **one** dossier module, with correction replay through those surfaces. Do not label Brief + dossier as E1 done.
 
 ---
 
@@ -131,13 +170,15 @@ engine/company_intelligence/identity.py
 engine/company_intelligence/event_id_adapter.py
 engine/company_intelligence/documents.py
 engine/company_intelligence/resolution.py      (derived pending)
+engine/company_intelligence/event_workspace.py (new: schema + write_workspace_generation)
+engine/neuralweb/company_intelligence_reader.py (add read_event_workspace only; do not widen the v1 teaser)
 engine/earnings_narrative/                     (bind release facts; do not replace Wire grammar)
 collectors/edgar_earnings_8k.py                (accession already present — join, don't re-scrape)
 tests/test_company_intelligence_*.py
 tests/fixtures/company_intelligence/           (add AAPL live fixture; do not rewrite synthetic CIKs)
 ```
 
-E1 may **not** touch: Terminal UI, dossier JS glance copy as the source of truth, Stage, Prophet rank path, Group Reads, TIL, slides OCR, search index, `config/mastermind_programs.yml` (ownership follow-up is a later docs/registry PR).
+E1 may **not** touch: Terminal UI, dossier JS glance copy as the source of truth, Stage, Prophet rank path, Group Reads, TIL, slides OCR, search index, `config/mastermind_programs.yml` (ownership follow-up is a later docs/registry PR), `views.write_generation`, `validate_context` / `validate_manifest` closed v1 maps, `app/company_intelligence.py`.
 
 ## 7. Files E2 may touch
 

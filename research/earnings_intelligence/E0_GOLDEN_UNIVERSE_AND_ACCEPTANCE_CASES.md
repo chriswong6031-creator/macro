@@ -91,4 +91,5 @@ Authority: `context_only`. No beat/miss vs consensus unless the basis matches (F
 - Resolving materially more than 155 corpus cases to `exact_receipt` (manufactured citations).
 - Minting GOOG and GOOGL as two issuer events.
 - Using synthetic corpus CIKs in production.
-- Declaring AAPL E1 done while the dossier still leads with `score_overlay` wording.
+- Declaring AAPL **E1** done without `read_event_workspace` observing the canonical payload and a correction replay.
+- Declaring the **E1+E2 arc** done while the dossier still leads with `score_overlay` wording.

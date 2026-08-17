@@ -24,15 +24,17 @@ changed:
   - path: research/earnings_intelligence/compositions/e0_real_data_specimen.html
     what: Real-data AAPL Q3 FY2026 specimen, not a product route.
   - path: research/earnings_intelligence/E0_E1_E2_CONTRACT_FREEZE.md
-    what: Identifiers, objects, payload, file allow-lists, program ownership.
+    what: Identifiers, objects, payload, §4.1 production publication/read contract, file allow-lists, program ownership.
   - path: research/earnings_intelligence/E1_IMPLEMENTATION_HANDOFF.md
-    what: Exact E1 acceptance for AAPL FY2026 Q3.
+    what: E1 stops at payload + read_event_workspace; Brief+dossier is E1+E2.
   - path: research/earnings_intelligence/E2_IMPLEMENTATION_HANDOFF.md
-    what: Exact E2 acceptance, blocked on E1.
+    what: Exact E2 acceptance, blocked on E1; labeled as E1+E2 arc success.
   - path: agentos/workstreams/WS-EARNINGS-INTELLIGENCE-OS.md
     what: Workstream under existing program key earnings-intelligence.
   - path: agentos/decisions/DEC-EARNINGS-INTELLIGENCE-PROGRAM-OWNERSHIP.md
     what: Keep earnings-intelligence; do not mint a second key in E0.
+  - path: agentos/decisions/DEC-EARNINGS-EVENT-WORKSPACE-PUBLICATION-CONTRACT.md
+    what: Freeze event_workspaces nest + read_event_workspace as the real E1 consumer.
   - path: agentos/discoveries/DSC-EARNINGS-WIRE-AND-CI-DIVERGE-ON-THE-SAME-ISSUER.md
     what: Live LMND/AAPL/GOOG plane split.
 verified:
@@ -54,11 +56,14 @@ verified:
   - claim: Calendar coverage is degraded despite a fresh newest stamp.
     command: python3 -c "import json; print(json.load(open('data/quality/earnings_freshness_audit.json'))['ok'], json.load(open('data/quality/earnings_freshness_audit.json'))['detail']['fresh_row_fraction'])"
     result: "ok False; fresh_row_fraction 0.1785 (as_of 2026-08-13)"
+  - claim: AAPL FY2026 Q3 8-K Item 2.02 lives at accession 0000320193-26-000018 (not a date join).
+    command: curl -sI https://www.sec.gov/Archives/edgar/data/320193/000032019326000018/aapl-20260730.htm
+    result: "SEC archives object for 0000320193-26-000018 (filing 2026-07-30); Exhibit 99.1 sibling a8-kex991q3202606272026.htm"
 unverified:
   - claim: Terminal origin/master CI v1 lenses match the explore census (Brief/Topics/Sources live; Peers/Slides spec-only).
     what_would_verify: Fast-forward charting-app to origin/master and open /analysis?symbol=AAPL&page=intelligence at 1440.
-  - claim: AAPL 8-K Item 2.02 accession for the 2026-07-30 print is in data/edgar/earnings_8k_dates.parquet.
-    what_would_verify: Query that parquet for CIK 0000320193 around 2026-07-30 on a full checkout.
+  - claim: data/edgar/earnings_8k_dates.parquet already carries accession 0000320193-26-000018 for CIK 320193.
+    what_would_verify: Query that parquet on a full checkout; join, do not re-scrape.
 unresolved:
   - Expanding owns/does_not_own on earnings-intelligence requires a generated-map PR after E0.
   - Production freshness repair remains an independent lane; E0 did not touch it.

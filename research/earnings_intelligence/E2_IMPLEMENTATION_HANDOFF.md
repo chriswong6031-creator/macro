@@ -1,8 +1,8 @@
 # E2 Implementation Handoff — Golden Event Workspace
 
-**Blocked on E1.** Do not start until `evt_cik0000320193_2026q3_results` has a live `event_workspace.v1` that passes the E1 gates.
+**Blocked on E1.** Do not start until `evt_cik0000320193_2026q3_results` has a live `event_workspace.v1` that passes the E1 gates, including observation by `read_event_workspace` on the frozen `company_intelligence/event_workspaces/` path.
 
-**Not done unless** the existing Terminal Company Intelligence workspace and the dossier glance module render AAPL Q3 FY2026 from that payload — what happened, reported/prior/consensus where basis matches, guidance change or typed absence, Q&A materiality without fake exchanges, history comparison, market reaction or `not_joined`, source completeness, exact evidence opens — at 1440 / 820 / 390, EN/ZH, dark/light.
+**E1+E2 arc success — not E1.** Not done unless the existing Terminal Company Intelligence workspace and the dossier glance module render AAPL Q3 FY2026 from that payload — what happened, reported/prior/consensus where basis matches, guidance change or typed absence, Q&A materiality without fake exchanges, history comparison, market reaction or `not_joined`, source completeness, exact evidence opens — at 1440 / 820 / 390, EN/ZH, dark/light. Read only through `read_event_workspace` / the published workspace object. Do not fetch CI v1 overlay as the glance.
 
 Read first: `E0_E1_E2_CONTRACT_FREEZE.md`, `E0_EXPERIENCE_ARCHITECTURE.md`, `compositions/e0_real_data_specimen.html`, Terminal `docs/COMPANY_INTELLIGENCE_V2_DELTA_SPEC.md` (spec only — do not treat screenshots as live proof), this file.
 

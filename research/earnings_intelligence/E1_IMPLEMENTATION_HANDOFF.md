@@ -1,10 +1,12 @@
 # E1 Implementation Handoff — Canonical truth convergence
 
-**Not done unless** one real event (AAPL FY2026 Q3, call 2026-07-30) is bound from issuer identity + 8-K/Exhibit 99.1 + transcript through exact per-claim receipts into `event_workspace.v1`, correction replay works through **one** consumer, and the change is merged and live-checked.
+**Not done unless** one real event (AAPL FY2026 Q3, call 2026-07-30) is bound from issuer identity + 8-K/Exhibit 99.1 + transcript through exact per-claim receipts into `event_workspace.v1` on the frozen §4.1 path, `engine.neuralweb.company_intelligence_reader.read_event_workspace` observes both the initial generation and a source-SHA correction, and the change is merged and live-checked.
+
+A golden JSON fixture may pin bytes. It is **not** the consumer. Terminal Brief + dossier glance is **E1+E2 arc success**, not E1.
 
 **Do not begin E2 in the same session.** Do not build UI.
 
-Read first, in order: repo `AGENTS.md`/`CLAUDE.md`; `research/earnings_intelligence/E0_E1_E2_CONTRACT_FREEZE.md`; `research/earnings_intelligence/E0_LINEAGE_AND_RUNTIME_MAP.md`; `research/EARNINGS_WAVE1_CONTRACT_FREEZE_2026-08-06.md`; this file.
+Read first, in order: repo `AGENTS.md`/`CLAUDE.md`; `research/earnings_intelligence/E0_E1_E2_CONTRACT_FREEZE.md` (§4.1 is the publication/read contract); `DEC:EARNINGS-EVENT-WORKSPACE-PUBLICATION-CONTRACT`; `research/earnings_intelligence/E0_LINEAGE_AND_RUNTIME_MAP.md`; `research/EARNINGS_WAVE1_CONTRACT_FREEZE_2026-08-06.md`; this file.
 
 ---
 
@@ -30,10 +32,10 @@ Control grammar (do not make this the flagship): IEX Q2 FY2026 live Wire already
 3. Every glance fact in `E0_GOLDEN_UNIVERSE_AND_ACCEPTANCE_CASES.md` §4 is either a `byte_replayed` span (release table or transcript) or a **typed absence**. Overlay prose must not remain the payload summary.
 4. `claim_citations_pending` on the **v2** payload is derived. v1 CI contexts still validate only with `true`.
 5. No beat/miss is emitted unless `basis_match` is true. Consensus may be `unlicensed_absent`.
-6. Mutating the source SHA on a fixture amendment keeps the same `event_id`, sets lifecycle `corrected`, and changes `generation_id`. One consumer (private record or a golden JSON fixture used as that consumer) reflects the correction.
+6. Mutating the source SHA on a fixture amendment keeps the same `event_id`, sets lifecycle `corrected`, and changes `generation_id`. `read_event_workspace` returns the corrected generation. A golden JSON fixture used *as* that observer does not count.
 7. Compact payload carries `authority=context_only` and Prophet flags all false.
-8. Files touched ⊆ the E1 allow-list in the contract freeze. No Terminal UI. No Stage. No Prophet rank path.
-9. `python3 scripts/agentos.py validate` exits 0 if records change. Relevant tests green. PR, squash-merge, live check that `event_workspace.v1` for this event exists on the published path E2 will read.
+8. Files touched ⊆ the E1 allow-list in the contract freeze. No Terminal UI. No Stage. No Prophet rank path. Do not mutate closed v1 `validate_context` / `validate_manifest`.
+9. `python3 scripts/agentos.py validate` exits 0 if records change. Relevant tests green. PR, squash-merge, live check that `event_workspace.v1` for this event exists at `company_intelligence/event_workspaces/` and is readable by `read_event_workspace`.
 
 ---
 
@@ -43,9 +45,9 @@ Control grammar (do not make this the flagship): IEX Q2 FY2026 live Wire already
 2. Mint canonical event + alias index (`event_id_adapter`).
 3. Bind 8-K + Exhibit 99.1; extract deterministic table facts (same-table revenue+EPS rule from `EARNINGS_WIRE_PROGRAM.md` L4).
 4. Bind the Terminal transcript revision; attach exact claims already in the evidence grammar.
-5. Emit `event_workspace.v1`.
-6. Correction replay fixture.
-7. Stop.
+5. Emit `event_workspace.v1` via `write_workspace_generation` onto `company_intelligence/event_workspaces/`.
+6. Prove `read_event_workspace` sees the payload, then replay a source-SHA correction through that same reader.
+7. Stop. Do not open Terminal Brief or the dossier.
 
 ---
 
