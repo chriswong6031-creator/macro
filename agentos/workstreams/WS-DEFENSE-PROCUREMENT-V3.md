@@ -27,10 +27,11 @@ waves:
   - id: D0R
     title: Financial-alpha reconnaissance and architecture freeze
     status: in_progress
-    pr: 5803
+    pr: 5814
     next_action: >
-      Continue Workstream A on claude/defense-procurement-d0r-20260816 from
-      origin/main 455284b7beae. Do not start original D0. Do not implement D1.
+      Review entitled A plus architecture B–H packets. Do not start D1
+      unless the operator orders it. Do not implement original D0. Do not
+      merge #5424.
   - id: D1
     title: Production truth and signed-in product rescue
     status: todo
@@ -64,9 +65,8 @@ do_not_redo:
   - "Do not treat GovTribe/GovCon capture parity as the product north star."
   - "Do not grant rank, gate, size, entry, or execution authority."
 next_action: >
-  Continue D0R Workstream A — production black-box with an entitled session,
-  runtime lineage for one award-change event, and a capability/authority ledger.
-  Stop before D1.
+  Review entitled census and A–H architecture packets on PR 5814.
+  Radar UI still locked after candidates API 200. Do not start D1 unless ordered.
 ---
 
 ## Context
@@ -78,3 +78,9 @@ research/design only. Canonical docs:
 - `research/DEFENSE_PROCUREMENT_D0R_FINANCIAL_ALPHA_RECONNAISSANCE_HANDOFF_2026-08-16.md`
 
 Kickoff evidence: `research/defense_intelligence/D0R_EVIDENCE_INDEX.md`.
+Continuation (unentitled browser, P00032 lineage, ledger):
+`research/defense_intelligence/D0R_ENTITLED_BROWSER_ACCEPTANCE.md`,
+`D0R_GOLDEN_AWARD_CHANGE_LINEAGE.md`,
+`D0R_CAPABILITY_AUTHORITY_LEDGER.md`.
+Discoveries: `DSC:GOVREV-COMPACT-TEASER-IS-THE-LIVE-DEFAULT`,
+`DSC:GOVREV-MAY-ACTION-AUGUST-KNOWN-AT`.

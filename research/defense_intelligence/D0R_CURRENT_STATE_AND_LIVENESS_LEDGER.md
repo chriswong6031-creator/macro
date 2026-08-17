@@ -1,77 +1,36 @@
 # D0R Current-State and Liveness Ledger
 
-**Status:** D0R Workstream A started, not complete.  
-**Base:** `origin/main` `455284b7beae` (2026-08-16, #5803 squash merge).  
-**Production checkout reported by `/api/health`:** `455284b7bea`.  
+**Status:** Entitled A captured; architecture B–H filed; D0R not accepted; D1 not started.  
+**Production `/api/health` (2026-08-17T04:45Z):** `checkout=8b5cd60f706`, `commit=a0b2aba13b5`.  
 **Graph on HEAD:** `recipient-graph:reviewed:2026-08-08:defense19-v1`.  
-**Open implementation collision:** #5424 defense20-v1 recipient graph.
+**Open implementation collision:** #5424 defense20-v1.
 
-Do not read this as a finished D0R. Rows below are either verified this session or explicitly `unverified`.
+Do not read this as a finished D0R.
 
 ## 1. What a user can actually open today
 
-| Surface | Anonymous result | Entitled result | Notes |
+| Surface | Anonymous | Entitled site_full (2026-08-17T04:41Z) | Notes |
 |---|---|---|---|
-| `https://www.mastermind-x.com/government_revenue.html` | HTTP 200, 256 KB HTML, tabs named in markup | unverified | Nav and template use underscore. This is the live page. |
-| `https://www.mastermind-x.com/government-revenue.html` | HTTP 404 | n/a | Dead twin. Do not cite as the product URL. |
-| `https://www.mastermind-x.com/government-revenue-data/latest.json` | HTTP 401 locked + `signin_url` | unverified | Access gate is live. Epistemics remain display/context-only on the artifact. |
-| `/api/government-revenue/*` | unverified anonymously; code path is `site_full` router-wide | unverified | 24 GET routes in `app/government_revenue.py`. |
+| `government_revenue.html` | 200 compact teaser: 2 rows, membership banner | 200; Changes/Award **500**; loading banner leftover | Underscore URL. Cut 2026-08-13. |
+| `government-revenue.html` | 404 | 404 | Dead twin. |
+| `government-revenue-data/{latest,workspace,candidates}.json` | 401 locked | **200** (workspace 500, candidates.json 22) | Cookie plane |
+| `/api/government-revenue/*` cookie-only | 401 missing bearer | **401** missing bearer | Needs Authorization |
+| `/api/government-revenue/*` with page bearer | n/a | **200** (workspace 500/50, candidates 22, mapping-backlog 21) | FastAPI plane |
+| Candidate Radar | 0 | **0 + membership overlay** despite API 22 | `DSC:GOVREV-CANDIDATE-RADAR-STAYS-LOCKED-AFTER-SITE-FULL-200` |
+| Changes / Award tape | 2 of 500 | **500** including P00032 + balance-changed sibling | Compact is not the desk |
+| Opportunities | 0 | 0 | `SOURCE_UNAVAILABLE` |
+| Recompete | 0 | 0 | not in this cut |
+| Budget | 0 | 0 “Budget request rail unavailable” | `PROJECTION_MISSING` |
+| Companies | 21; Link status unavailable | 21; **Members only** | copy not updated after auth |
 
-## 2. HEAD capability snapshot (git, 2026-08-13 clocks)
+## 2. HEAD capability snapshot
 
-From `candidate_projection_status.json` and `latest.json` at HEAD:
+Unchanged clocks: candidate_count 22; mapping_backlog 21; graph defense19-v1; latest as_of 2026-08-13. Budget files still absent. Collection receipts through 2026-08-14; published cut 2026-08-13.
 
-| Item | HEAD value | Clock | Healthy? |
-|---|---:|---|---|
-| candidate_count | 22 | generated_at 2026-08-13T09:24:42Z | unknown until entitled browser |
-| ledger_line_count | 30 | same | unknown |
-| mapping_backlog_count | 21 | same | unknown |
-| recipient graph | defense19-v1 digest `0733a966…` | reviewed 2026-08-08 | ready per status file |
-| latest.json as_of | 2026-08-13 | known_at 08:04:38Z | 3 days behind D0R date; do not call it "today" |
-| ingest truncation | `collection_truncated_by_safety_cap: true` | ingest_status | bounded sample, not a full corpus |
-| award_event_spine | live; 35239 action-version rows; 194 event snapshots | ingest_status | live ≠ complete |
-| authority | display / context_only | both artifacts | no rank/size/gate |
+## 3. Auth planes
 
-Missing artifacts on HEAD `data/government_revenue/` (not in `git ls-tree`): `budget_program_graph.json` is referenced by the API path list but is not in the committed directory listing above. Treat budget-program graph as `unverified` until the file or an explicit absence is confirmed.
+Cookie JSON and bearer APIs are separate (`DSC:GOVREV-COOKIE-JSON-AND-BEARER-API-ARE-TWO-PLANES`). Radar JS uses only the bearer queue.
 
-## 3. Engine / builder / DAG (exists ≠ live feature)
+## 4. Authority
 
-Present on disk in this worktree:
-
-- `engine/government_revenue/` — 22 modules.
-- builders `scripts/build_government_revenue.py`, `scripts/build_government_revenue_candidates.py`.
-- DAG entries `build_government_revenue` and `check_government_revenue_projection`; live workflow `.github/workflows/government-revenue-live.yml`.
-- UI: `templates/government_revenue.html.j2` plus radar/dossiers/briefcase JS and parity CSS.
-
-Not yet classified as wired vs built-but-inert: `prophet_annotation.py`, `shadow_context.py`, `sbir_progression.py`, `federation.py`, `market_context.py`, `issuer_graph_expansion.py`. A module file is not a user capability.
-
-## 4. Authority split that must survive every later wave
-
-From `app/government_revenue.py` module docstring and HEAD artifacts:
-
-1. **Access** — paid `site_full`. Anonymous latest.json is 401 locked.
-2. **Epistemics** — display/context only. No rank, size, gate, originate, add-candidate, or escalate.
-
-V3 does not change either dimension. D0R must keep them separate.
-
-## 5. Identity / graph collision
-
-HEAD is defense19-v1. #5424 would publish defense20-v1 (BWXT + refreshed exact edges) and is still open. D2 must consume whichever graph is then on `origin/main`; it must not mint a parallel reviewed manifest (`DNR:LAW-REVIEWED-MANIFEST-CENSUS`).
-
-The 2026-08-11 Government Revenue handoff remains useful archaeology and is not current-state truth.
-
-## 6. Stop / continue
-
-Continue in this wave:
-
-1. entitled-browser capture;
-2. one source-to-screen lineage;
-3. capability/authority ledger including built-but-inert modules;
-4. confirm VPS data-dir vs HEAD.
-
-Do not:
-
-- fix the hyphenated 404;
-- merge or rebase #5424 from D0R;
-- implement D1;
-- start original D0.
+All V3 / GovRev flags stay `can_rank/gate/size/entry/execute=false`. Prophet remains pick authority.
