@@ -616,3 +616,28 @@ def test_budget_program_runtime_uses_display_only_source_graph_and_receipts(tmp_
     assert out["drawer"]["title"] == "DoD budget source chain"
     assert "page_text_sha256" in out["drawer"]["html"]
     assert "can_originate_signal: false" in out["drawer"]["html"]
+
+
+@needs_node
+def test_budget_graph_absence_is_projection_missing_not_empty_valid(tmp_path: Path) -> None:
+    script = textwrap.dedent(
+        """
+        var window=globalThis, published=[];
+        window.fetch=function(){return Promise.resolve({ok:false,status:503,json:function(){return Promise.resolve({})}})};
+        %(dossier_js)s
+        function obj(x){return !!x&&typeof x==='object'&&!Array.isArray(x)} function arr(x){return Array.isArray(x)?x:[]}
+        function esc(x){return String(x==null?'':x)} function text(x,fb){return x==null||x===''?(fb==null?'—':fb):String(x)}
+        function n(x){var v=Number(x);return Number.isFinite(v)?v:null}
+        function money(x){return String(x)} function date(x){return String(x||'')} function tr(x){return x} function safeUrl(){return ''}
+        var ui=window.createGovernmentRevenueBudget({obj:obj,arr:arr,esc:esc,text:text,n:n,money:money,date:date,tr:tr,safeUrl:safeUrl,host:function(){return {className:'',innerHTML:'',querySelector:function(){return null}}},isSelected:function(){return false},onRows:function(rows,meta){published.push({rows:rows.length,status:meta.status})}});
+        ui.load().then(function(){process.stdout.write(JSON.stringify({published:published,state:ui.state()}))});
+        """
+    ) % {"dossier_js": DOSSIER_JS}
+    path = tmp_path / "budget_projection_missing.js"
+    path.write_text(script, encoding="utf-8")
+    result = subprocess.run(["node", str(path)], capture_output=True, text=True, timeout=30)
+    assert result.returncode == 0, result.stderr
+    out = json.loads(result.stdout)
+    assert out["state"] == "projection_missing"
+    assert out["published"][-1]["status"] == "projection_missing"
+    assert out["published"][-1]["rows"] == 0
