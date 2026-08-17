@@ -288,11 +288,149 @@ def publish(
     return 0
 
 
+_WORKSPACE_NEST = f"{_PREFIX}/event_workspaces"
+
+
+def _read_workspace_nest_manifest(out_dir: Path) -> dict[str, Any] | None:
+    try:
+        payload = json.loads(
+            (Path(out_dir) / "event_workspaces" / "manifest.json").read_text(encoding="utf-8")
+        )
+        return payload if isinstance(payload, dict) else None
+    except (OSError, json.JSONDecodeError):
+        return None
+
+
+def _remote_workspace_manifest_snapshot(s3: Any, bucket: str) -> tuple[dict[str, Any] | None, str | None]:
+    try:
+        response = s3.get_object(Bucket=bucket, Key=f"{_WORKSPACE_NEST}/manifest.json")
+        payload = json.loads(response["Body"].read())
+        return (payload if isinstance(payload, dict) else None, str(response.get("ETag") or "") or None)
+    except Exception:  # noqa: BLE001 - absent first sibling marker is normal
+        return None, None
+
+
+def publish_event_workspaces(
+    out_dir: Path,
+    *,
+    dry_run: bool = False,
+    expected_manifest_etag: str | None = None,
+    s3: Any | None = None,
+    bucket: str | None = None,
+) -> int:
+    """Publish the sibling ``event_workspaces/`` nest; never touch the v1 marker."""
+    from engine.company_intelligence.event_workspace import (  # noqa: PLC0415
+        validate_workspace_manifest,
+        WorkspaceError,
+    )
+
+    client = s3 if s3 is not None else _client()
+    if client is None:
+        log.info("no R2 credentials — skip event workspace publish")
+        return 0
+    target_bucket = bucket or os.environ.get("R2_BUCKET", "")
+    if not target_bucket:
+        log.error("R2_BUCKET not set")
+        return 1
+    manifest = _read_workspace_nest_manifest(out_dir)
+    if manifest is None:
+        log.error("event workspace nest missing; sibling marker not promoted")
+        return 1
+    try:
+        validate_workspace_manifest(manifest)
+    except WorkspaceError as exc:
+        log.error("refusing invalid event workspace generation: %s", exc)
+        return 1
+    remote_manifest, remote_etag = _remote_workspace_manifest_snapshot(client, target_bucket)
+    if remote_manifest is not None and canonical_json_bytes(remote_manifest) == canonical_json_bytes(manifest):
+        log.info("event workspace generation %s already promoted", manifest.get("generation_id"))
+        return 0
+    generation_id = str(manifest["generation_id"])
+    nest = Path(out_dir) / "event_workspaces"
+    errors = 0
+
+    def upload_workspace(item: tuple[str, Mapping[str, Any]]) -> tuple[str, Exception | None]:
+        relative, block = item
+        path = nest / "generations" / generation_id / relative
+        key = f"{_WORKSPACE_NEST}/generations/{generation_id}/{relative}"
+        expected_sha = str(block["sha256"])
+        try:
+            _publish_immutable_object(
+                client,
+                target_bucket,
+                key,
+                path.read_bytes(),
+                expected_sha,
+                dry_run=dry_run,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return key, exc
+        return key, None
+
+    with ThreadPoolExecutor(max_workers=UPLOAD_WORKERS, thread_name_prefix="event-workspaces-r2") as pool:
+        futures = [pool.submit(upload_workspace, item) for item in sorted(manifest["files"].items())]
+        for future in as_completed(futures):
+            key, exc = future.result()
+            if exc is not None:
+                log.error("event workspace payload upload failed: %s (%s)", key, exc)
+                errors += 1
+    generation_manifest = nest / "generations" / generation_id / "manifest.json"
+    generation_key = f"{_WORKSPACE_NEST}/generations/{generation_id}/manifest.json"
+    if not errors:
+        try:
+            _publish_immutable_object(
+                client,
+                target_bucket,
+                generation_key,
+                generation_manifest.read_bytes(),
+                bytes_sha256(generation_manifest),
+                dry_run=dry_run,
+            )
+        except Exception as exc:  # noqa: BLE001
+            log.error("event workspace generation manifest upload failed: %s", exc)
+            errors += 1
+    if errors:
+        log.error("event workspace payload publish incomplete; sibling marker not promoted")
+        return 1
+    if dry_run:
+        return 0
+    marker = nest / "manifest.json"
+    marker_sha = bytes_sha256(marker)
+    put_args: dict[str, Any] = {
+        "Bucket": target_bucket,
+        "Key": f"{_WORKSPACE_NEST}/manifest.json",
+        "Body": marker.read_bytes(),
+        "ContentType": "application/json",
+        "Metadata": {"sha256": marker_sha, "generation-id": generation_id},
+    }
+    condition = expected_manifest_etag if expected_manifest_etag is not None else remote_etag
+    if condition:
+        put_args["IfMatch"] = condition
+    else:
+        put_args["IfNoneMatch"] = "*"
+    try:
+        client.put_object(**put_args)
+    except Exception as exc:  # noqa: BLE001
+        if _is_precondition_failed(exc):
+            log.warning("event workspace marker promotion lost compare-and-swap for %s", generation_id)
+            return PUBLISH_CONFLICT
+        log.error("event workspace marker promotion failed: %s", exc)
+        return 1
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, default=Path("data/company_intelligence"))
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument(
+        "--event-workspaces",
+        action="store_true",
+        help="Publish only the sibling event_workspaces nest; leave the v1 marker untouched",
+    )
     args = parser.parse_args(argv)
+    if args.event_workspaces:
+        return publish_event_workspaces(args.out_dir, dry_run=args.dry_run)
     return publish(args.out_dir, dry_run=args.dry_run)
 
 

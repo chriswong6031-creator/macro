@@ -26,7 +26,6 @@ from engine.fundamental_forensics.financial_intelligence_packet import (
     assemble_financial_intelligence_packet,
     assert_formula_evidence_closed,
     build_financial_intelligence_packet_from_repo,
-    build_synthetic_filing_package_fixture,
     canonical_packet_bytes,
     default_packet_periods,
     digest_builder_source,
@@ -38,6 +37,13 @@ from engine.fundamental_forensics.financial_intelligence_packet import (
     packet_digest,
     sha256_file,
     validate_packet,
+)
+from engine.fundamental_forensics.synthetic_filing_package import (
+    SYNTHETIC_ENTITY_ID,
+    build_synthetic_filing_package_fixture,
+    filing as synthetic_filing,
+    usd_fact,
+    _USD,
 )
 from engine.fundamental_forensics.query import PeriodRequest, QueryPolicy
 from engine.fundamental_forensics.raw_ledger import (
@@ -214,7 +220,7 @@ def test_law6_latest_restated_is_labeled_hindsight() -> None:
     assert revision["revised_accession"] == "0000999999-25-000010"
     assert revision["uses_later_restatement"] is True
     assert packet["query"]["policy"] == "latest_restated"
-    assert packet["query"]["evaluation_mode"] == "retrospective_research"
+    assert packet["query"]["evaluation_mode"] == "historical_replay"
 
 
 def test_law7_receivables_follow_the_same_temporal_rule() -> None:
@@ -420,11 +426,11 @@ def _income_fixture(*, revenue: str, gross_profit: str, decimals: str = "0"):
     fy2024 = FactContext(
         context_id="c-fy2024-numeric",
         entity_scheme="http://www.sec.gov/CIK",
-        entity_identifier=packet_module.SYNTHETIC_ENTITY_ID,
+        entity_identifier=SYNTHETIC_ENTITY_ID,
         start="2024-01-01",
         end="2024-12-31",
     )
-    filing = packet_module._filing(
+    filing = synthetic_filing(
         accession="0000999999-26-000010",
         document_id="fip1-numeric.htm",
         accepted_at="2026-02-15T16:00:00Z",
@@ -437,7 +443,7 @@ def _income_fixture(*, revenue: str, gross_profit: str, decimals: str = "0"):
             source=filing["source"],
             concept_qname=concept,
             context=fy2024,
-            unit=packet_module._USD,
+            unit=_USD,
             raw_token=value,
             parsed_value=value,
             dimensions_known=True,

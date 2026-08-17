@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -59,7 +60,7 @@
   window.WL_STARTERS   = ["SPY", "QQQ", "BTC-USD", "GC=F"];
   // L3 regime input (baked risk_radar state + dominant label + vol regime).
   // null/absent => the book-read subline stays book-only. Book-derived text is client-side.
-  window.WRI_REGIME    = {"state": "caution", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "calm-contango", "asof": "2026-08-13"};
+  window.WRI_REGIME    = {"state": "caution", "dominant_label_en": "Trend extension watch", "dominant_label_zh": "\u8d8b\u52bf\u5ef6\u4f38\u89c2\u5bdf", "vol_regime": "calm-contango", "asof": "2026-08-14"};
   // Sector / theme names arrive as raw English on each index record, so the rows
   // this page paints client-side have no td() to reach. This is the glossary's
   // answer for the finite vocabulary (engine.i18n.sector_lexicon); a name it does
@@ -393,7 +394,7 @@
       <div class="sec-hd">
         <span class="sec-eyebrow" id="ws_book_eyebrow"><span class="l-en">Your book</span><span class="l-zh">你的持仓</span></span>
         <span class="sec-sub" id="ws_book_sub"></span>
-        <span class="sec-asof"><span class="l-en">as of last night&amp;rsquo;s close</span><span class="l-zh">数据截至昨夜收盘</span></span>
+        <span class="sec-asof"><span class="l-en">as of last night&rsquo;s close</span><span class="l-zh">数据截至昨夜收盘</span></span>
       </div>
       <div class="panel bookread">
         <div class="bk-meta" id="ws_book_meta"></div>
@@ -468,10 +469,10 @@
         <div class="rc-tabs" role="tablist" id="rc_tabs">
           <button class="rc-tab" type="button" role="tab" aria-selected="true"  data-rc="conc"><span class="l-en">Concentration</span><span class="l-zh">集中度</span></button>
           <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="corr"><span class="l-en">Correlation</span><span class="l-zh">相关性</span></button>
-          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="fact"><span class="l-en">Factors &amp;amp; macro</span><span class="l-zh">因子与宏观</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="fact"><span class="l-en">Factors &amp; macro</span><span class="l-zh">因子与宏观</span></button>
           <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="strs"><span class="l-en">Stress</span><span class="l-zh">压力情景</span></button>
           <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="evt"><span class="l-en">Events</span><span class="l-zh">事件</span></button>
-          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="weak"><span class="l-en">Weak links &amp;amp; strengths</span><span class="l-zh">弱点与支撑</span></button>
+          <button class="rc-tab" type="button" role="tab" aria-selected="false" data-rc="weak"><span class="l-en">Weak links &amp; strengths</span><span class="l-zh">弱点与支撑</span></button>
         </div>
         <div class="rc-body" id="rc_body"></div>
         <details class="lab">
@@ -514,7 +515,7 @@
         </div>
         <table class="hold" id="tbl_wl"></table>
         <div class="tbl-foot">
-          <span><span class="l-en">Analyzing a watchlist reads it as an &lt;b&gt;equal-weighted structure&lt;/b&gt; — a watchlist has no position sizes, so it is never treated as a portfolio.</span><span class="l-zh">分析自选股列表时按 &lt;b&gt;等权重结构&lt;/b&gt; 处理 —— 自选股没有仓位金额，因此绝不会被当成实际持仓来算。</span></span>
+          <span><span class="l-en">Analyzing a watchlist reads it as an <b>equal-weighted structure</b> — a watchlist has no position sizes, so it is never treated as a portfolio.</span><span class="l-zh">分析自选股列表时按 <b>等权重结构</b> 处理 —— 自选股没有仓位金额，因此绝不会被当成实际持仓来算。</span></span>
           <span class="grow" id="wl_rowcount"></span>
         </div>
       </div>
@@ -585,18 +586,18 @@
      SD routes each per-ticker fetch to its market's store through window.MB. -->
 <script src="market_books.js?v=2"></script>
 <script src="stockdata.js?v=3"></script>
-<script src="watchlist.js?v=8"></script>
+<script src="watchlist.js?v=9"></script>
 <script src="factor_exposure.js?v=3"></script>
 <!-- pure book-structure math + the risk publisher. risk_core.js must precede
      watchlist_risk.js; both need SD + FX. Signed-in only — the anonymous shell
      boots without them and the Risk rails render as lock shells (packet A9). -->
 <script src="risk_core.js?v=2"></script>
-<script src="watchlist_risk.js?v=5"></script>
-<script src="watchstore.js?v=5"></script>
-<script src="portfolio.js?v=5"></script>
+<script src="watchlist_risk.js?v=6"></script>
+<script src="watchstore.js?v=6"></script>
+<script src="portfolio.js?v=6"></script>
 <script src="mtf.js?v=b62aea2f" defer></script>
 <script src="theme.js?v=948020b9" defer></script>
-<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-14 23:12 UTC</p>
+<p class="muted" style="font-size:12px; text-align:center"><span class="l-en">Generated</span><span class="l-zh">生成于</span> 2026-08-17 13:49 UTC</p>
 <footer class="site-footer">
   <span class="made">© 2026 Mastermind Inc</span>
 </footer>

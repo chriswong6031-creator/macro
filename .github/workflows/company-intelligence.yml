@@ -3,7 +3,8 @@ name: company-intelligence
 # Rebuild the public, context-only company view as soon as its two committed
 # source planes move. This runs outside the shared Mac render lane: it reads
 # R2 + Terminal's public transcript marker, writes immutable R2 objects, and
-# advances exactly one mutable marker only after validation succeeds.
+# advances the v1 root marker and the sibling event_workspaces marker only
+# after each nest's own validation succeeds. The two markers are independent.
 on:
   schedule:
     - cron: "17 */3 * * *"
@@ -40,11 +41,17 @@ jobs:
           sparse-checkout: |
             engine/company_intelligence
             engine/earnings_transcript_intake.py
+            engine/earnings_release
+            engine/earnings_narrative
+            engine/fundamental_forensics
+            engine/press
             lib/config.py
             scripts/build_company_intelligence.py
             scripts/fetch_earnings_scores.py
             scripts/publish_company_intelligence_r2.py
             scripts/refresh_company_intelligence.py
+            scripts/refresh_event_workspaces.py
+            config/fundamental_forensics_disclosure_diff.v1.json
             engine/company_theme_exposure
             scripts/build_company_theme_exposure.py
             scripts/publish_company_theme_exposure_r2.py
@@ -92,10 +99,25 @@ jobs:
           # on the next schedule rather than reporting a false incident.
           if [ "$rc" -eq 2 ]; then
             echo "::notice title=company-intelligence::root manifest promotion lost a safe compare-and-swap race"
-            exit 0
-          fi
-          if [ "$rc" -ne 0 ]; then
+          elif [ "$rc" -ne 0 ]; then
             exit "$rc"
+          fi
+          WS_ARGS=(--work-dir "$RUNNER_TEMP/company-intelligence" --out-dir "$OUTPUT_DIR" --terminal-tx-index-url "$TERMINAL_TX_INDEX_URL")
+          if [ "${DRY_RUN:-false}" = "true" ]; then
+            WS_ARGS+=(--dry-run)
+          fi
+          set +e
+          python -m scripts.refresh_event_workspaces "${WS_ARGS[@]}"
+          ws_rc=$?
+          set -e
+          if [ "$ws_rc" -eq 2 ]; then
+            echo "::notice title=event-workspaces::sibling marker promotion lost a safe compare-and-swap race"
+          elif [ "$ws_rc" -ne 0 ]; then
+            echo "::error title=event-workspaces::flagship event workspace refresh failed; v1 Company Intelligence marker was not moved by this step"
+            exit "$ws_rc"
+          fi
+          if [ "$rc" -eq 2 ]; then
+            exit 0
           fi
           # This runs only after Company Intelligence returned a true success
           # (never after its safe lost-CAS race). The sidecar reads the exact

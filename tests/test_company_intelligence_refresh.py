@@ -119,5 +119,12 @@ def test_scheduled_workflow_contains_its_sparse_import_closure() -> None:
         "data/baskets/membership.json",
         "config/theme_crosswalk.yml",
         "data/neuralweb/theme_state.json",
+        "scripts/refresh_event_workspaces.py",
+        "engine/earnings_release",
+        "engine/earnings_narrative",
+        "engine/fundamental_forensics",
+        "config/fundamental_forensics_disclosure_diff.v1.json",
     ):
         assert path in workflow
+    assert "python -m scripts.refresh_event_workspaces" in workflow
+    assert 'if [ "$ws_rc" -eq 2 ]' in workflow

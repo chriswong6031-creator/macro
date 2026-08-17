@@ -1,6 +1,6 @@
 {
-  "generated_utc": "2026-08-14T23:10:29.960800+00:00",
-  "as_of": "2026-08-14",
+  "generated_utc": "2026-08-17T13:46:55.648570+00:00",
+  "as_of": "2026-08-17",
   "schema": "altdata.feed.v1",
   "source": "Quiver Quantitative (Trader plan)",
   "note": "Deterministic alt-data signals + normalized event feed for the reasoning brain. Display/context-only \u2014 not a scored axis.",
@@ -5940,6 +5940,15 @@
           "parties": "D"
         },
         {
+          "ticker": "CHRW",
+          "net": 14,
+          "buys": 14,
+          "sells": 0,
+          "members": 1,
+          "est_usd": 210007.0,
+          "parties": "D"
+        },
+        {
           "ticker": "ENTG",
           "net": 12,
           "buys": 12,
@@ -5947,15 +5956,6 @@
           "members": 2,
           "est_usd": 96006.0,
           "parties": "D/Republican"
-        },
-        {
-          "ticker": "CHRW",
-          "net": 12,
-          "buys": 14,
-          "sells": 2,
-          "members": 1,
-          "est_usd": 210007.0,
-          "parties": "D"
         },
         {
           "ticker": "FWONK",
@@ -5994,15 +5994,6 @@
           "parties": "D/Democratic/R/Republican"
         },
         {
-          "ticker": "T",
-          "net": 7,
-          "buys": 9,
-          "sells": 2,
-          "members": 4,
-          "est_usd": 279504.0,
-          "parties": "Democratic/R"
-        },
-        {
           "ticker": "MLM",
           "net": 7,
           "buys": 8,
@@ -6019,15 +6010,6 @@
           "members": 1,
           "est_usd": 97003.0,
           "parties": "D"
-        },
-        {
-          "ticker": "LPLA",
-          "net": 6,
-          "buys": 6,
-          "sells": 0,
-          "members": 1,
-          "est_usd": 48003.0,
-          "parties": "D/Democratic"
         },
         {
           "ticker": "TDG",
@@ -6048,25 +6030,34 @@
           "parties": "D/Democratic/R/Republican"
         },
         {
-          "ticker": "DDOG",
-          "net": 4,
-          "buys": 5,
-          "sells": 1,
-          "members": 2,
-          "est_usd": 89002.0,
+          "ticker": "T",
+          "net": 5,
+          "buys": 7,
+          "sells": 2,
+          "members": 4,
+          "est_usd": 214504.0,
           "parties": "Democratic/R"
+        },
+        {
+          "ticker": "FIS",
+          "net": 4,
+          "buys": 4,
+          "sells": 0,
+          "members": 2,
+          "est_usd": 32002.0,
+          "parties": "Democratic/R"
+        },
+        {
+          "ticker": "MNST",
+          "net": 4,
+          "buys": 4,
+          "sells": 0,
+          "members": 2,
+          "est_usd": 32002.0,
+          "parties": "D"
         }
       ],
       "sells": [
-        {
-          "ticker": "TSCO",
-          "net": -15,
-          "buys": 0,
-          "sells": 15,
-          "members": 3,
-          "est_usd": 0.0,
-          "parties": "D/Democratic/R"
-        },
         {
           "ticker": "WAB",
           "net": -14,
@@ -6086,13 +6077,13 @@
           "parties": "D"
         },
         {
-          "ticker": "SCI",
-          "net": -14,
+          "ticker": "TSCO",
+          "net": -13,
           "buys": 0,
-          "sells": 14,
-          "members": 1,
+          "sells": 13,
+          "members": 3,
           "est_usd": 0.0,
-          "parties": "D"
+          "parties": "D/Democratic/R"
         },
         {
           "ticker": "MKL",
@@ -6102,6 +6093,15 @@
           "members": 2,
           "est_usd": 0.0,
           "parties": "D/R"
+        },
+        {
+          "ticker": "SCI",
+          "net": -12,
+          "buys": 0,
+          "sells": 12,
+          "members": 1,
+          "est_usd": 0.0,
+          "parties": "D"
         },
         {
           "ticker": "LYV",
@@ -6178,20 +6178,20 @@
         {
           "ticker": "MSFT",
           "net": -6,
-          "buys": 9,
-          "sells": 15,
-          "members": 11,
-          "est_usd": 1181004.0,
+          "buys": 7,
+          "sells": 13,
+          "members": 10,
+          "est_usd": 56004.0,
           "parties": "D/Democratic/R/Republican"
         },
         {
-          "ticker": "CLH",
+          "ticker": "SPGI",
           "net": -6,
-          "buys": 0,
-          "sells": 6,
-          "members": 1,
-          "est_usd": 0.0,
-          "parties": "D"
+          "buys": 1,
+          "sells": 7,
+          "members": 5,
+          "est_usd": 8000.0,
+          "parties": "D/Democratic/R/Republican"
         }
       ]
     },
@@ -6201,23 +6201,23 @@
         "total_usd": 96369731.0,
         "contracts": 2,
         "agencies": 2,
-        "accel_x": 19.97,
+        "accel_x": 151.76,
         "top_agency": "Department of Homeland Security"
       },
       {
         "ticker": "MDLN",
-        "total_usd": 90005326.0,
-        "contracts": 16,
+        "total_usd": 89846223.0,
+        "contracts": 12,
         "agencies": 3,
-        "accel_x": 1.07,
+        "accel_x": 1.06,
         "top_agency": "Department of Veterans Affairs"
       },
       {
         "ticker": "GD",
-        "total_usd": 81653431.0,
-        "contracts": 28,
-        "agencies": 9,
-        "accel_x": 5.54,
+        "total_usd": 69879851.0,
+        "contracts": 26,
+        "agencies": 8,
+        "accel_x": 3.94,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6225,7 +6225,7 @@
         "total_usd": 58843421.0,
         "contracts": 6,
         "agencies": 2,
-        "accel_x": 5.07,
+        "accel_x": 5.19,
         "top_agency": "Department of Homeland Security"
       },
       {
@@ -6238,26 +6238,26 @@
       },
       {
         "ticker": "GEO",
-        "total_usd": 51462184.0,
-        "contracts": 4,
+        "total_usd": 35808184.0,
+        "contracts": 3,
         "agencies": 1,
-        "accel_x": 171.54,
+        "accel_x": 2.24,
         "top_agency": "Department of Homeland Security"
       },
       {
         "ticker": "AXON",
-        "total_usd": 35333390.0,
-        "contracts": 13,
-        "agencies": 6,
-        "accel_x": 3.32,
+        "total_usd": 35134227.0,
+        "contracts": 11,
+        "agencies": 5,
+        "accel_x": 3.98,
         "top_agency": "Department of Homeland Security"
       },
       {
         "ticker": "CDW",
-        "total_usd": 34793296.0,
-        "contracts": 70,
-        "agencies": 7,
-        "accel_x": 2.78,
+        "total_usd": 17740735.0,
+        "contracts": 51,
+        "agencies": 5,
+        "accel_x": 0.64,
         "top_agency": "Department of Transportation"
       },
       {
@@ -6267,14 +6267,6 @@
         "agencies": 2,
         "accel_x": 123.39,
         "top_agency": "Department of Energy"
-      },
-      {
-        "ticker": "F",
-        "total_usd": 15586097.0,
-        "contracts": 298,
-        "agencies": 1,
-        "accel_x": 1.31,
-        "top_agency": "General Services Administration"
       },
       {
         "ticker": "IBM",
@@ -6293,28 +6285,36 @@
         "top_agency": "Department of Health and Human Services"
       },
       {
+        "ticker": "F",
+        "total_usd": 13053287.0,
+        "contracts": 249,
+        "agencies": 1,
+        "accel_x": 1.03,
+        "top_agency": "General Services Administration"
+      },
+      {
         "ticker": "MCK",
-        "total_usd": 11057143.0,
-        "contracts": 113,
-        "agencies": 4,
-        "accel_x": 3.06,
+        "total_usd": 9885447.0,
+        "contracts": 84,
+        "agencies": 3,
+        "accel_x": 2.61,
         "top_agency": "Department of Justice"
       },
       {
-        "ticker": "PLTR",
-        "total_usd": 9483340.0,
-        "contracts": 1,
-        "agencies": 1,
-        "accel_x": 0.11,
-        "top_agency": "Department of Transportation"
+        "ticker": "TTEK",
+        "total_usd": 6857983.0,
+        "contracts": 13,
+        "agencies": 5,
+        "accel_x": 1.28,
+        "top_agency": "Environmental Protection Agency"
       },
       {
-        "ticker": "GM",
-        "total_usd": 8473203.0,
-        "contracts": 177,
+        "ticker": "PPC",
+        "total_usd": 6834600.0,
+        "contracts": 2,
         "agencies": 1,
-        "accel_x": 1.24,
-        "top_agency": "General Services Administration"
+        "accel_x": 0.96,
+        "top_agency": "Department of Agriculture"
       }
     ],
     "gov_grants": [
@@ -6461,13 +6461,13 @@
     "material_8k": [
       {
         "ticker": "NWS",
-        "count": 21,
+        "count": 19,
         "items": "8.01"
       },
       {
         "ticker": "ASPI",
-        "count": 8,
-        "items": "1.01, 7.01, 8.01"
+        "count": 6,
+        "items": "7.01"
       },
       {
         "ticker": "GLXY",
@@ -6500,24 +6500,9 @@
         "items": "8.01"
       },
       {
-        "ticker": "PLD",
-        "count": 4,
-        "items": "1.01, 2.03, 7.01, 8.01"
-      },
-      {
         "ticker": "QBTS",
         "count": 4,
         "items": "7.01"
-      },
-      {
-        "ticker": "STT",
-        "count": 4,
-        "items": "7.01, 8.01"
-      },
-      {
-        "ticker": "USAR",
-        "count": 4,
-        "items": "1.01, 2.01, 5.02, 7.01, 8.01"
       },
       {
         "ticker": "ALGT",
@@ -6550,11 +6535,6 @@
         "items": "1.01, 2.03, 5.02, 7.01"
       },
       {
-        "ticker": "CFG",
-        "count": 3,
-        "items": "7.01, 8.01"
-      },
-      {
         "ticker": "CHTR",
         "count": 3,
         "items": "1.01, 2.03, 7.01, 8.01"
@@ -6575,14 +6555,34 @@
         "items": "1.01, 5.02, 7.01"
       },
       {
-        "ticker": "DUK",
+        "ticker": "ECHO",
+        "count": 3,
+        "items": "2.01, 5.02, 7.01, 8.01"
+      },
+      {
+        "ticker": "EXE",
         "count": 3,
         "items": "7.01, 8.01"
       },
       {
-        "ticker": "ECHO",
+        "ticker": "JNJ",
         "count": 3,
-        "items": "2.01, 5.02, 7.01, 8.01"
+        "items": "5.02, 7.01"
+      },
+      {
+        "ticker": "LAC",
+        "count": 3,
+        "items": "1.01, 2.03, 7.01, 8.01"
+      },
+      {
+        "ticker": "LUV",
+        "count": 3,
+        "items": "1.01, 2.03, 5.02"
+      },
+      {
+        "ticker": "MQ",
+        "count": 3,
+        "items": "5.02, 8.01"
       }
     ],
     "special_situations": [
@@ -25547,7 +25547,7 @@
       {
         "ticker": "NVS",
         "phase3_starts": 7,
-        "halts": 5,
+        "halts": 4,
         "hot": true,
         "sample": "Study to Evaluate the effIcacy and Safety of Abelacimab in High-risk Patients With Atrial Fibrillation Who Have Been Deemed Unsuitable for Oral Anticoagulation"
       },
@@ -25728,13 +25728,6 @@
         "top_issue": "Consumer Issues/Safety/Products"
       },
       {
-        "ticker": "LMT",
-        "spend_usd": 4747920.0,
-        "filings": 18,
-        "spike_x": null,
-        "top_issue": "Defense"
-      },
-      {
         "ticker": "GD",
         "spend_usd": 4467500.0,
         "filings": 21,
@@ -25808,6 +25801,13 @@
         "ticker": "CHTR",
         "spend_usd": 3512500.0,
         "filings": 23,
+        "spike_x": null,
+        "top_issue": "Telecommunications"
+      },
+      {
+        "ticker": "T",
+        "spend_usd": 3495000.0,
+        "filings": 20,
         "spike_x": null,
         "top_issue": "Telecommunications"
       }
@@ -28896,266 +28896,266 @@
       {
         "ticker": "BIDU",
         "next_date": "2026-08-18",
-        "days_to": 4,
+        "days_to": 1,
         "eps_forecast": 1.19,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "HD",
         "next_date": "2026-08-18",
-        "days_to": 4,
+        "days_to": 1,
         "eps_forecast": 4.71,
         "last_surprise_pct": 0.9
       },
       {
         "ticker": "JKHY",
         "next_date": "2026-08-18",
-        "days_to": 4,
+        "days_to": 1,
         "eps_forecast": 1.43,
         "last_surprise_pct": 19.6
       },
       {
         "ticker": "KEYS",
         "next_date": "2026-08-18",
-        "days_to": 4,
+        "days_to": 1,
         "eps_forecast": 2.16,
         "last_surprise_pct": 24.0
       },
       {
         "ticker": "MRCY",
         "next_date": "2026-08-18",
-        "days_to": 4,
+        "days_to": 1,
         "eps_forecast": 0.2,
         "last_surprise_pct": 244.4
       },
       {
         "ticker": "TOL",
         "next_date": "2026-08-18",
-        "days_to": 4,
+        "days_to": 1,
         "eps_forecast": 2.9,
         "last_surprise_pct": 5.4
       },
       {
         "ticker": "LOW",
         "next_date": "2026-08-19",
-        "days_to": 5,
+        "days_to": 2,
         "eps_forecast": 4.25,
         "last_surprise_pct": 2.4
       },
       {
         "ticker": "TJX",
         "next_date": "2026-08-19",
-        "days_to": 5,
+        "days_to": 2,
         "eps_forecast": 1.18,
         "last_surprise_pct": 17.8
       },
       {
         "ticker": "BABA",
         "next_date": "2026-08-20",
-        "days_to": 6,
+        "days_to": 3,
         "eps_forecast": 1.77,
         "last_surprise_pct": -106.9
       },
       {
         "ticker": "ROST",
         "next_date": "2026-08-20",
-        "days_to": 6,
+        "days_to": 3,
         "eps_forecast": 1.92,
         "last_surprise_pct": 18.8
       },
       {
         "ticker": "WMT",
         "next_date": "2026-08-20",
-        "days_to": 6,
+        "days_to": 3,
         "eps_forecast": 0.73,
         "last_surprise_pct": 1.5
       },
       {
         "ticker": "INTU",
         "next_date": "2026-08-25",
-        "days_to": 11,
+        "days_to": 8,
         "eps_forecast": 2.14,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "A",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 1.48,
         "last_surprise_pct": 6.4
       },
       {
         "ticker": "CRM",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 2.35,
         "last_surprise_pct": 32.6
       },
       {
         "ticker": "CRWD",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 0.05,
         "last_surprise_pct": 33.3
       },
       {
         "ticker": "NVDA",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 2.01,
         "last_surprise_pct": 10.0
       },
       {
         "ticker": "OKTA",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 0.44,
         "last_surprise_pct": 32.3
       },
       {
         "ticker": "SNPS",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 2.67,
         "last_surprise_pct": 7.1
       },
       {
         "ticker": "VEEV",
         "next_date": "2026-08-26",
-        "days_to": 12,
+        "days_to": 9,
         "eps_forecast": 1.62,
         "last_surprise_pct": 2.6
       },
       {
         "ticker": "DG",
         "next_date": "2026-08-27",
-        "days_to": 13,
+        "days_to": 10,
         "eps_forecast": 2.0,
         "last_surprise_pct": 5.8
       },
       {
         "ticker": "WDAY",
         "next_date": "2026-08-27",
-        "days_to": 13,
+        "days_to": 10,
         "eps_forecast": 1.26,
         "last_surprise_pct": -3.4
       },
       {
         "ticker": "ESTC",
         "next_date": "2026-08-27",
-        "days_to": 13,
+        "days_to": 10,
         "eps_forecast": null,
         "last_surprise_pct": 88.9
       },
       {
         "ticker": "ASO",
         "next_date": "2026-09-01",
-        "days_to": 18,
+        "days_to": 15,
         "eps_forecast": 2.07,
         "last_surprise_pct": -3.6
       },
       {
         "ticker": "MDB",
         "next_date": "2026-09-01",
-        "days_to": 18,
+        "days_to": 15,
         "eps_forecast": 0.08,
         "last_surprise_pct": -50.0
       },
       {
         "ticker": "MDT",
         "next_date": "2026-09-01",
-        "days_to": 18,
+        "days_to": 15,
         "eps_forecast": 1.38,
         "last_surprise_pct": 0.7
       },
       {
         "ticker": "AVGO",
         "next_date": "2026-09-02",
-        "days_to": 19,
+        "days_to": 16,
         "eps_forecast": 2.83,
         "last_surprise_pct": 7.4
       },
       {
         "ticker": "CRDO",
         "next_date": "2026-09-02",
-        "days_to": 19,
+        "days_to": 16,
         "eps_forecast": 0.91,
         "last_surprise_pct": 19.5
       },
       {
         "ticker": "HPE",
         "next_date": "2026-09-02",
-        "days_to": 19,
+        "days_to": 16,
         "eps_forecast": 0.8,
         "last_surprise_pct": 52.3
       },
       {
         "ticker": "AI",
         "next_date": "2026-09-02",
-        "days_to": 19,
+        "days_to": 16,
         "eps_forecast": null,
         "last_surprise_pct": 2.7
       },
       {
         "ticker": "GTLB",
         "next_date": "2026-09-02",
-        "days_to": 19,
+        "days_to": 16,
         "eps_forecast": null,
         "last_surprise_pct": 66.7
       },
       {
         "ticker": "SNOW",
         "next_date": "2026-09-02",
-        "days_to": 19,
+        "days_to": 16,
         "eps_forecast": null,
         "last_surprise_pct": -18.6
       },
       {
         "ticker": "CIEN",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 1.45,
         "last_surprise_pct": 11.7
       },
       {
         "ticker": "DELL",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 4.65,
         "last_surprise_pct": 66.0
       },
       {
         "ticker": "DOCU",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 0.44,
         "last_surprise_pct": 18.4
       },
       {
         "ticker": "GIII",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 0.25,
         "last_surprise_pct": 30.0
       },
       {
         "ticker": "LULU",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 1.79,
         "last_surprise_pct": 1.2
       },
       {
         "ticker": "PATH",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 0.04,
         "last_surprise_pct": 50.0
       },
       {
         "ticker": "SAIC",
         "next_date": "2026-09-03",
-        "days_to": 20,
+        "days_to": 17,
         "eps_forecast": 2.25,
         "last_surprise_pct": 42.9
       }
@@ -29285,7 +29285,7 @@
           "special_situation",
           "trump"
         ],
-        "why": "gov_contract_accel: $11,057,143, 3.1x accel \u00b7 special_situation: Divestitures \u00b7 trump: MCKESSON CORP"
+        "why": "gov_contract_accel: $9,885,447, 2.6x accel \u00b7 special_situation: Divestitures \u00b7 trump: MCKESSON CORP"
       },
       {
         "ticker": "RSG",
@@ -29358,18 +29358,6 @@
         "why": "clinical_phase3_start: 13 new Phase-3, 1 halt(s) \u00b7 fda_label_expansion: IBRANCE \u00b7 trump: PFIZER INC"
       },
       {
-        "ticker": "PLTR",
-        "score": 4,
-        "weighted_score": 1.25,
-        "channel_list": [
-          "gov_contract",
-          "retail_buzz",
-          "stocktwits_bull",
-          "trump"
-        ],
-        "why": "gov_contract: $9,483,340 awarded \u00b7 retail_buzz: 91 WSB mentions \u00b7 stocktwits_bull: 100% bull \u00b7 324,401 watching \u00b7 trump: PALANTIR TECHNOLOGIES INC"
-      },
-      {
         "ticker": "BRK.B",
         "score": 2,
         "weighted_score": 1.2,
@@ -29397,7 +29385,7 @@
           "gov_contract_accel",
           "lobbying"
         ],
-        "why": "gov_contract_accel: $81,653,431, 5.5x accel \u00b7 lobbying: $4,467,500 lobbied"
+        "why": "gov_contract_accel: $69,879,851, 3.9x accel \u00b7 lobbying: $4,467,500 lobbied"
       },
       {
         "ticker": "IBM",
@@ -29409,6 +29397,17 @@
           "patent_cluster"
         ],
         "why": "github_momentum: +0.27% stars \u00b7 gov_contract: $15,553,044 awarded \u00b7 patent_cluster: 456 grants, 49 IPC classes"
+      },
+      {
+        "ticker": "LUV",
+        "score": 3,
+        "weighted_score": 1.15,
+        "channel_list": [
+          "activist_13d",
+          "app_demand",
+          "material_8k"
+        ],
+        "why": "activist_13d: 13D activist campaign \u00b7 app_demand: 4.84\u2605 \u00d7 7,150,288 reviews \u00b7 material_8k: 3 material 8-Ks (items 1.01, 2.03, 5.02)"
       },
       {
         "ticker": "AAPL",
@@ -29433,6 +29432,16 @@
         "why": "clinical_phase3_start: 9 new Phase-3, 2 halt(s) \u00b7 fda_label_expansion: KEYTRUDA QLEX \u00b7 special_situation: Tender Offers"
       },
       {
+        "ticker": "T",
+        "score": 2,
+        "weighted_score": 1.1,
+        "channel_list": [
+          "congress_cluster",
+          "lobbying"
+        ],
+        "why": "congress_cluster: 4 members net +5 \u00b7 lobbying: $3,495,000 lobbied"
+      },
+      {
         "ticker": "ACM",
         "score": 2,
         "weighted_score": 1.1,
@@ -29440,17 +29449,7 @@
           "gov_contract_accel",
           "special_situation"
         ],
-        "why": "gov_contract_accel: $58,843,421, 5.1x accel \u00b7 special_situation: Strategic Reviews"
-      },
-      {
-        "ticker": "DUK",
-        "score": 2,
-        "weighted_score": 1.1,
-        "channel_list": [
-          "insider_mspr",
-          "material_8k"
-        ],
-        "why": "insider_mspr: MSPR 100.0 \u00b7 material_8k: 3 material 8-Ks (items 7.01, 8.01)"
+        "why": "gov_contract_accel: $58,843,421, 5.2x accel \u00b7 special_situation: Strategic Reviews"
       },
       {
         "ticker": "GOOGL",
@@ -29472,6 +29471,16 @@
           "insider_mspr"
         ],
         "why": "gov_grant: $6,806,000 federal grant/loan \u00b7 insider_mspr: MSPR 100.0"
+      },
+      {
+        "ticker": "JNJ",
+        "score": 2,
+        "weighted_score": 1.05,
+        "channel_list": [
+          "material_8k",
+          "trump"
+        ],
+        "why": "material_8k: 3 material 8-Ks (items 5.02, 7.01) \u00b7 trump: JOHNSON & JOHNSON"
       },
       {
         "ticker": "LITE",
@@ -29512,16 +29521,6 @@
           "unusual_options"
         ],
         "why": "patent_cluster: 161 grants, 40 IPC classes \u00b7 unusual_options: 4.12\u00d7 vol/OI, balanced"
-      },
-      {
-        "ticker": "MLM",
-        "score": 2,
-        "weighted_score": 1.0,
-        "channel_list": [
-          "congress_buy",
-          "material_8k"
-        ],
-        "why": "congress_buy: 2 member(s) net +7 \u00b7 material_8k: 5 material 8-Ks (items 1.01, 5.02, 7.01, 8.01)"
       }
     ]
   }
